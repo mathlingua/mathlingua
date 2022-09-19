@@ -53,18 +53,30 @@ func setupScreen() {
 
 	app := tview.NewApplication()
 
-	outputArea := tview.NewTextView()
+	outputArea := tview.NewTextView().SetDynamicColors(true)
 	outputArea.SetTitle("Output").SetBorder(true)
 
-	helpInfo := tview.NewTextView().
-		SetText(" Press Ctrl-R to run, Ctrl-T to write a test case, and Ctrl-C to exit")
-	errorMessage := tview.NewTextView().SetTextAlign(tview.AlignRight)
+	helpInfo := tview.NewTextView().SetDynamicColors(true)
+	resetHelpInfo := func() {
+		helpInfo.SetText(" Press Ctrl-R to run, Ctrl-T to write a test case, and Ctrl-C to exit")
+	}
+	setHelpInfoError := func(message string) {
+		helpInfo.SetText(fmt.Sprintf("[red]%s[white]", message))
+	}
+	setHelpInfoSuccess := func(message string) {
+		helpInfo.SetText(fmt.Sprintf("[green]%s[white]", message))
+	}
+	resetHelpInfo()
+
+	position := tview.NewTextView().
+		SetDynamicColors(true).
+		SetTextAlign(tview.AlignRight)
 
 	startText := ""
 	if _, err := os.Stat(inputFile); !errors.Is(err, os.ErrNotExist) {
 		bytes, err := os.ReadFile(inputFile)
 		if err != nil {
-			errorMessage.SetText(err.Error())
+			setHelpInfoError(err.Error())
 			app.Stop()
 		}
 		startText = string(bytes)
@@ -74,17 +86,25 @@ func setupScreen() {
 	inputArea.SetTitle("Input").SetBorder(true)
 	inputArea.SetText(startText, false)
 
+	updateInfos := func() {
+		_, _, toRow, toColumn := inputArea.GetCursor()
+		position.SetText(fmt.Sprintf("Row: %d, Column: %d ", toRow+1, toColumn+1))
+	}
+
+	inputArea.SetMovedFunc(updateInfos)
+	updateInfos()
+
 	mainView := tview.NewGrid().
 		SetRows(0, 1).
 		AddItem(inputArea, 0, 0, 1, 1, 0, 0, true).
 		AddItem(outputArea, 0, 1, 1, 1, 0, 0, false).
 		AddItem(helpInfo, 1, 0, 1, 1, 0, 0, false).
-		AddItem(errorMessage, 1, 1, 1, 1, 0, 0, false)
+		AddItem(position, 1, 1, 1, 1, 0, 0, false)
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		errorMessage.SetText("")
+		resetHelpInfo()
 		if err := os.WriteFile(inputFile, []byte(inputArea.GetText()), 0644); err != nil {
-			errorMessage.SetText(err.Error())
+			setHelpInfoError(err.Error())
 		}
 
 		if event.Key() == tcell.KeyCtrlR || event.Key() == tcell.KeyCtrlT {
@@ -95,7 +115,7 @@ func setupScreen() {
 			if len(diagnostics) > 0 {
 				output := ""
 				for _, diag := range diagnostics {
-					output += fmt.Sprintf("%s (%d, %d): %s\n",
+					output += fmt.Sprintf("[red]%s[white] (%d, %d): %s\n",
 						diag.Type,
 						(diag.Position.Row + 1),
 						(diag.Position.Column + 1),
@@ -109,11 +129,13 @@ func setupScreen() {
 
 		if event.Key() == tcell.KeyCtrlT {
 			testcase, message, ok := createTestCase(inputArea.GetText())
-			errorMessage.SetText(message)
 			if ok {
+				setHelpInfoSuccess(message)
 				if err := os.WriteFile(testcaseFile, []byte(testcase), 0644); err != nil {
-					errorMessage.SetText(err.Error())
+					setHelpInfoError(err.Error())
 				}
+			} else {
+				setHelpInfoError(message)
 			}
 		}
 

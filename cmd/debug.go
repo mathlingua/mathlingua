@@ -43,11 +43,26 @@ var debugCommand = &cobra.Command{
 	},
 }
 
+var useStructuralParser bool
+var useFormulationParser bool
+var useIdParser bool
+var useFormParser bool
+
 func init() {
+	flags := debugCommand.Flags()
+	flags.BoolVar(&useStructuralParser, "structural", false, "Use the structural parser")
+	flags.BoolVar(&useFormulationParser, "formulation", false, "Use the formulation parser")
+	flags.BoolVar(&useIdParser, "id", false, "Use the id parser")
+	flags.BoolVar(&useFormParser, "form", false, "Use the form parser")
+	debugCommand.MarkFlagsMutuallyExclusive("structural", "formulation", "id", "form")
 	rootCmd.AddCommand(debugCommand)
 }
 
 func setupScreen() {
+	if !useStructuralParser && !useFormulationParser && !useIdParser && !useFormParser {
+		useStructuralParser = true
+	}
+
 	inputFile := path.Join("testbed", "input.txt")
 	testcaseFile := path.Join("testbed", "testcases.txt")
 
@@ -83,8 +98,20 @@ func setupScreen() {
 	}
 
 	inputArea := tview.NewTextArea()
-	inputArea.SetTitle("Input").SetBorder(true)
+	inputArea.SetBorder(true)
 	inputArea.SetText(startText, false)
+
+	if useStructuralParser {
+		inputArea.SetTitle("Input (structural)")
+	} else if useFormulationParser {
+		inputArea.SetTitle("Input (formulation)")
+	} else if useIdParser {
+		inputArea.SetTitle("Input (id)")
+	} else if useFormParser {
+		inputArea.SetTitle("Input (form)")
+	} else {
+		inputArea.SetTitle("Input")
+	}
 
 	updateInfos := func() {
 		_, _, toRow, toColumn := inputArea.GetCursor()
@@ -116,7 +143,7 @@ func setupScreen() {
 		if event.Key() == tcell.KeyCtrlR || event.Key() == tcell.KeyCtrlT {
 			outputArea.SetText("")
 
-			doc, tracker := parse(inputArea.GetText())
+			node, tracker := parse(inputArea.GetText())
 			diagnostics := tracker.Diagnostics()
 			if len(diagnostics) > 0 {
 				output := ""
@@ -129,7 +156,7 @@ func setupScreen() {
 				}
 				outputArea.SetText(output)
 			} else {
-				outputArea.SetText(mlglib.PrettyPrint(doc))
+				outputArea.SetText(mlglib.PrettyPrint(node))
 			}
 		}
 
@@ -154,7 +181,27 @@ func setupScreen() {
 	}
 }
 
-func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
+func parse(text string) (any, frontend.DiagnosticTracker) {
+	if useStructuralParser {
+		return parseForStructural(text)
+	} else {
+		panic("Unsupported parser")
+	}
+}
+
+// The output is: (testCase, errorMessage, successOrFailure)
+// errorMessage is blank if it is a success and a string if it is a failure
+func createTestCase(input string) (string, string, bool) {
+	if useStructuralParser {
+		return createTestCaseForStructural(input)
+	} else {
+		return "", "Unsupported parser", false
+	}
+}
+
+/////////////////////////////// structural parser ///////////////////////////////
+
+func parseForStructural(text string) (ast.Document, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 
 	lexer1 := phase1.NewLexer(text, tracker)
@@ -167,10 +214,8 @@ func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
 	return doc, tracker
 }
 
-// The output is: (testCase, errorMessage, successOrFailure)
-// errorMessage is blank if it is a success and a string if it is a failure
-func createTestCase(input string) (string, string, bool) {
-	doc, tracker := parse(input)
+func createTestCaseForStructural(input string) (string, string, bool) {
+	doc, tracker := parseForStructural(input)
 	diagnostics := tracker.Diagnostics()
 	if len(diagnostics) > 0 {
 		return "", "Diagnostics exist: Cannot create test case", false

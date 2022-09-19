@@ -407,7 +407,7 @@ func (fp *formulationParser) expressionType(additionalTerminators ...ast.TokenTy
 		res, consolidateOk := Consolidate(exp.Children, fp.tracker)
 		return res.(ast.ExpressionType), consolidateOk
 	}
-	return nil, true
+	return nil, false
 }
 
 func (fp *formulationParser) isExpressionTerminator(tokenType ast.TokenType) bool {

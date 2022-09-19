@@ -16,19 +16,7 @@
 
 package phase5
 
-import (
-	"mathlingua/internal/ast"
-	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/phase1"
-	"mathlingua/internal/frontend/phase2"
-	"mathlingua/internal/frontend/phase3"
-	"mathlingua/internal/frontend/phase4"
-	"mathlingua/internal/mlglib"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
-
+/*
 func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 
@@ -108,3 +96,4 @@ then: 'x'`
 }`
 	runTest(t, input, expected)
 }
+*/

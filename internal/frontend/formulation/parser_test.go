@@ -139,18 +139,39 @@ func TestChainExpressionWithNames(t *testing.T) {
 					IsStropped:      false,
 					HasQuestionMark: false,
 					VarArg:          ast.VarArgData{},
+					MetaData: ast.MetaData{
+						Start: ast.Position{
+							Offset: 0,
+							Row:    0,
+							Column: 0,
+						},
+					},
 				},
 				ast.NameForm{
 					Text:            "b",
 					IsStropped:      false,
 					HasQuestionMark: false,
 					VarArg:          ast.VarArgData{},
+					MetaData: ast.MetaData{
+						Start: ast.Position{
+							Offset: 2,
+							Row:    0,
+							Column: 2,
+						},
+					},
 				},
 				ast.NameForm{
 					Text:            "c",
 					IsStropped:      false,
 					HasQuestionMark: false,
 					VarArg:          ast.VarArgData{},
+					MetaData: ast.MetaData{
+						Start: ast.Position{
+							Offset: 4,
+							Row:    0,
+							Column: 4,
+						},
+					},
 				},
 			},
 		})
@@ -165,6 +186,13 @@ func TestChainExpressionWithFunctionCall(t *testing.T) {
 					IsStropped:      false,
 					HasQuestionMark: false,
 					VarArg:          ast.VarArgData{},
+					MetaData: ast.MetaData{
+						Start: ast.Position{
+							Offset: 0,
+							Row:    0,
+							Column: 0,
+						},
+					},
 				},
 				ast.FunctionCallExpression{
 					Target: ast.NameForm{
@@ -172,6 +200,13 @@ func TestChainExpressionWithFunctionCall(t *testing.T) {
 						IsStropped:      false,
 						HasQuestionMark: false,
 						VarArg:          ast.VarArgData{},
+						MetaData: ast.MetaData{
+							Start: ast.Position{
+								Offset: 2,
+								Row:    0,
+								Column: 2,
+							},
+						},
 					},
 					Args: []ast.ExpressionType{
 						ast.NameForm{
@@ -179,6 +214,20 @@ func TestChainExpressionWithFunctionCall(t *testing.T) {
 							IsStropped:      false,
 							HasQuestionMark: false,
 							VarArg:          ast.VarArgData{},
+							MetaData: ast.MetaData{
+								Start: ast.Position{
+									Offset: 4,
+									Row:    0,
+									Column: 4,
+								},
+							},
+						},
+					},
+					MetaData: ast.MetaData{
+						Start: ast.Position{
+							Offset: 2,
+							Row:    0,
+							Column: 2,
 						},
 					},
 				},
@@ -187,6 +236,13 @@ func TestChainExpressionWithFunctionCall(t *testing.T) {
 					IsStropped:      false,
 					HasQuestionMark: false,
 					VarArg:          ast.VarArgData{},
+					MetaData: ast.MetaData{
+						Start: ast.Position{
+							Offset: 7,
+							Row:    0,
+							Column: 7,
+						},
+					},
 				},
 			},
 		})

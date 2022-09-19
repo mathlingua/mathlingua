@@ -217,6 +217,10 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 }
 
 func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionType, bool) {
+	if set, ok := fp.conditionalSetExpression(); ok {
+		return set, ok
+	}
+
 	if fun, ok := fp.functionCallExpression(); ok {
 		return fun, ok
 	}
@@ -226,10 +230,6 @@ func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionType,
 	}
 
 	if set, ok := fp.fixedSetExpression(); ok {
-		return set, ok
-	}
-
-	if set, ok := fp.conditionalSetExpression(); ok {
 		return set, ok
 	}
 
@@ -402,8 +402,8 @@ func max(x, y int) int {
 	}
 }
 
-func (fp *formulationParser) expressionType() (ast.ExpressionType, bool) {
-	if exp, ok := fp.pseudoExpression(); ok {
+func (fp *formulationParser) expressionType(additionalTerminators ...ast.TokenType) (ast.ExpressionType, bool) {
+	if exp, ok := fp.pseudoExpression(additionalTerminators...); ok {
 		res, consolidateOk := Consolidate(exp.Children, fp.tracker)
 		return res.(ast.ExpressionType), consolidateOk
 	}
@@ -418,7 +418,19 @@ func (fp *formulationParser) isExpressionTerminator(tokenType ast.TokenType) boo
 		tokenType == ast.Semicolon
 }
 
-func (fp *formulationParser) pseudoExpression() (ast.PseudoExpression, bool) {
+func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.TokenType) (ast.PseudoExpression, bool) {
+	isTerminator := func(tokType ast.TokenType) bool {
+		if fp.isExpressionTerminator(tokType) {
+			return true
+		}
+		for _, t := range additionalTerminators {
+			if tokType == t {
+				return true
+			}
+		}
+		return false
+	}
+
 	start := fp.lexer.Position()
 	children := make([]ast.NodeType, 0)
 	prevOffset := -1
@@ -434,18 +446,18 @@ func (fp *formulationParser) pseudoExpression() (ast.PseudoExpression, bool) {
 			prevOffset = fp.lexer.Peek().Position.Offset
 		}
 
-		if fp.isExpressionTerminator(fp.lexer.Peek().Type) {
+		if isTerminator(fp.lexer.Peek().Type) {
 			break
 		}
 
-		if op, ok := fp.operatorType(); ok {
+		if lit, ok := fp.literalExpressionType(); ok {
+			children = append(children, lit)
+		} else if op, ok := fp.operatorType(); ok {
 			children = append(children, op)
 		} else if pseudoToken, ok := fp.pseudoTokenNode(); ok {
 			children = append(children, pseudoToken)
 		} else if chain, ok := fp.chainExpression(); ok {
 			children = append(children, chain)
-		} else if lit, ok := fp.literalExpressionType(); ok {
-			children = append(children, lit)
 		} else if name, ok := fp.nameForm(); ok {
 			children = append(children, name)
 		} else if ord, ok := fp.nameOrdinalCallExpression(); ok {
@@ -635,7 +647,7 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 	}
 
 	fp.expect(ast.LCurly)
-	target, ok := fp.expressionType()
+	target, ok := fp.expressionType(ast.Bar)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetExpression{}, false

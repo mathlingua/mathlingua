@@ -527,16 +527,6 @@ func (p *parser) toProvidesDefinesSection(section phase4.Section) *ast.ProvidesD
 	}
 }
 
-func (p *parser) toProvidesStatesDefinesType(section phase4.Section) (ast.ProvidesStatesDefinesType, bool) {
-	if section.Name == "states" {
-		return *p.toProvidesStatesSection(section), true
-	} else if section.Name == "defines" {
-		return *p.toProvidesDefinesSection(section), true
-	} else {
-		return nil, false
-	}
-}
-
 func (p *parser) toInfixSection(section phase4.Section) *ast.InfixSection {
 	return &ast.InfixSection{
 		Infix: p.oneOrMoreTargets(section),

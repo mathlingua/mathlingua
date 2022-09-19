@@ -255,6 +255,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 	}
 
 	if len(items) == 0 {
+		fp.error("Expected an expression")
 		return nil, false
 	}
 
@@ -405,7 +406,12 @@ func max(x, y int) int {
 func (fp *formulationParser) expressionType(additionalTerminators ...ast.TokenType) (ast.ExpressionType, bool) {
 	if exp, ok := fp.pseudoExpression(additionalTerminators...); ok {
 		res, consolidateOk := Consolidate(exp.Children, fp.tracker)
-		return res.(ast.ExpressionType), consolidateOk
+		if resAsExp, resAsExpOk := res.(ast.ExpressionType); resAsExpOk {
+			return resAsExp, consolidateOk
+		} else {
+			fp.error("Expected an Expression")
+			return nil, false
+		}
 	}
 	return nil, false
 }

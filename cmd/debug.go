@@ -58,13 +58,13 @@ func setupScreen() {
 
 	helpInfo := tview.NewTextView().SetDynamicColors(true)
 	resetHelpInfo := func() {
-		helpInfo.SetText(" Press Ctrl-R to run, Ctrl-T to write a test case, and Ctrl-C to exit")
+		helpInfo.SetText(" Ctrl-R: check, Ctrl-T: write test case, Ctrl-C: exit, Ctrl-K: clear")
 	}
 	setHelpInfoError := func(message string) {
-		helpInfo.SetText(fmt.Sprintf("[red]%s[white]", message))
+		helpInfo.SetText(fmt.Sprintf(" [red]%s[white]", message))
 	}
 	setHelpInfoSuccess := func(message string) {
-		helpInfo.SetText(fmt.Sprintf("[green]%s[white]", message))
+		helpInfo.SetText(fmt.Sprintf(" [green]%s[white]", message))
 	}
 	resetHelpInfo()
 
@@ -105,6 +105,12 @@ func setupScreen() {
 		resetHelpInfo()
 		if err := os.WriteFile(inputFile, []byte(inputArea.GetText()), 0644); err != nil {
 			setHelpInfoError(err.Error())
+		}
+
+		if event.Key() == tcell.KeyCtrlK {
+			inputArea.SetText("", false)
+			outputArea.SetText("")
+			return nil
 		}
 
 		if event.Key() == tcell.KeyCtrlR || event.Key() == tcell.KeyCtrlT {

@@ -210,6 +210,9 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 	return ast.VarArgData{
 		IsVarArg:    true,
 		VarArgCount: varArgCount,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
@@ -319,6 +322,9 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 				Target: opExp.Target,
 				Lhs:    lhs,
 				Rhs:    rhs,
+				MetaData: ast.MetaData{
+					Start: start,
+				},
 			}, true
 		}
 	}
@@ -348,6 +354,9 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 		return ast.IsExpression{
 			Lhs: lhs,
 			Rhs: rhs,
+			MetaData: ast.MetaData{
+				Start: start,
+			},
 		}, true
 	} else if isNotIndex >= 0 {
 		lhs := make([]ast.ExpressionType, 0)
@@ -368,6 +377,9 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 		return ast.IsNotExpression{
 			Lhs: lhs,
 			Rhs: rhs,
+			MetaData: ast.MetaData{
+				Start: start,
+			},
 		}, true
 	} else {
 		panic("Unreachable code")
@@ -473,6 +485,9 @@ func (fp *formulationParser) pseudoExpression() (ast.PseudoExpression, bool) {
 	}
 	return ast.PseudoExpression{
 		Children: children,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
@@ -523,10 +538,14 @@ func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpressio
 	return ast.FunctionCallExpression{
 		Target: target,
 		Args:   args,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LParen)
 	if !ok {
@@ -554,10 +573,14 @@ func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
 	fp.lexer.Commit(id)
 	return ast.TupleExpression{
 		Args: args,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) fixedSetExpression() (ast.FixedSetExpression, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LCurly)
 	if !ok {
@@ -591,10 +614,14 @@ func (fp *formulationParser) fixedSetExpression() (ast.FixedSetExpression, bool)
 	fp.lexer.Commit(id)
 	return ast.FixedSetExpression{
 		Args: args,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpression, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	symbols, ok := fp.squareParams()
 	if !ok {
@@ -647,6 +674,9 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 		Symbols:    symbols,
 		Target:     target,
 		Conditions: conditions,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
@@ -675,6 +705,7 @@ func (fp *formulationParser) chainExpressionPart() (ast.ExpressionType, bool) {
 }
 
 func (fp *formulationParser) chainExpression() (ast.ChainExpression, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	parts := make([]ast.ExpressionType, 0)
 	for fp.lexer.HasNext() {
@@ -697,10 +728,14 @@ func (fp *formulationParser) chainExpression() (ast.ChainExpression, bool) {
 	fp.lexer.Commit(id)
 	return ast.ChainExpression{
 		Parts: parts,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) nameOrdinalCallExpression() (ast.NameOrdinalCallExpression, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	name, ok := fp.nameForm()
 	if !ok {
@@ -730,10 +765,14 @@ func (fp *formulationParser) nameOrdinalCallExpression() (ast.NameOrdinalCallExp
 	return ast.NameOrdinalCallExpression{
 		Target: name,
 		Arg:    exp,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) pseudoToken(expectedType ast.TokenType) (ast.PseudoTokenNode, bool) {
+	start := fp.lexer.Position()
 	tok, ok := fp.token(expectedType)
 	if !ok {
 		return ast.PseudoTokenNode{}, false
@@ -741,6 +780,9 @@ func (fp *formulationParser) pseudoToken(expectedType ast.TokenType) (ast.Pseudo
 	return ast.PseudoTokenNode{
 		Text: tok.Text,
 		Type: tok.Type,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
@@ -813,15 +855,20 @@ func (fp *formulationParser) operatorType() (ast.OperatorType, bool) {
 }
 
 func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (ast.NonEnclosedNonCommandOperatorTarget, bool) {
+	start := fp.lexer.Position()
 	if tok, ok := fp.token(ast.Operator); ok {
 		return ast.NonEnclosedNonCommandOperatorTarget{
 			Text: tok.Text,
+			MetaData: ast.MetaData{
+				Start: start,
+			},
 		}, true
 	}
 	return ast.NonEnclosedNonCommandOperatorTarget{}, false
 }
 
 func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNonCommandOperatorTarget, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	if _, ok := fp.token(ast.LSquare); !ok {
 		fp.lexer.RollBack(id)
@@ -842,10 +889,14 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNon
 	fp.lexer.Commit(id)
 	return ast.EnclosedNonCommandOperatorTarget{
 		Target: exp,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) commandOperatorTarget() (ast.CommandOperatorTarget, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	cmd, ok := fp.commandExpression()
 	if !ok {
@@ -862,10 +913,14 @@ func (fp *formulationParser) commandOperatorTarget() (ast.CommandOperatorTarget,
 	fp.lexer.Commit(id)
 	return ast.CommandOperatorTarget{
 		Command: cmd,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
+	start := fp.lexer.Position()
 	if !fp.hasHas(ast.Colon, ast.Name) {
 		return ast.NamedArg{}, false
 	}
@@ -884,10 +939,14 @@ func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
 	return ast.NamedArg{
 		Name: name,
 		Args: args,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) subSupArgs() (ast.SubSupArgs, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	squareArgs, ok := fp.squareParams()
 	if !ok {
@@ -913,10 +972,14 @@ func (fp *formulationParser) subSupArgs() (ast.SubSupArgs, bool) {
 		SquareArgs: squareArgs,
 		SubArgs:    subArgs,
 		SupArgs:    supArgs,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) commandExpression() (ast.CommandExpression, bool) {
+	start := fp.lexer.Position()
 	if !fp.hasHas(ast.BackSlash, ast.Name) {
 		return ast.CommandExpression{}, false
 	}
@@ -964,10 +1027,14 @@ func (fp *formulationParser) commandExpression() (ast.CommandExpression, bool) {
 		CurlyArgs:  &curlyArgs,
 		NamedArgs:  &namedArgs,
 		ParenArgs:  &parenArgs,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, bool) {
+	start := fp.lexer.Position()
 	if !fp.hasHas(ast.BackSlash, ast.Name) {
 		return ast.CommandAtExpression{}, false
 	}
@@ -1008,12 +1075,16 @@ func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, boo
 	return ast.CommandAtExpression{
 		Names:      names,
 		Expression: exp,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 /////////////////////////// forms ///////////////////////////////////////
 
 func (fp *formulationParser) form() (ast.NodeType, bool) {
+	start := fp.lexer.Position()
 	if fp.hasHas(ast.Name, ast.ColonEquals) {
 		id := fp.lexer.Snapshot()
 		name, ok := fp.nameForm()
@@ -1034,6 +1105,9 @@ func (fp *formulationParser) form() (ast.NodeType, bool) {
 		return ast.StructuralColonEqualsForm{
 			Lhs: name,
 			Rhs: rhs,
+			MetaData: ast.MetaData{
+				Start: start,
+			},
 		}, true
 	} else {
 		return fp.structuralFormType()
@@ -1185,6 +1259,7 @@ func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool)
 }
 
 func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
+	start := fp.lexer.Position()
 	if !fp.has(ast.Name) {
 		return ast.NameForm{}, false
 	}
@@ -1223,10 +1298,14 @@ func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 			IsVarArg:    isVarArg,
 			VarArgCount: varArgCount,
 		},
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
+	start := fp.lexer.Position()
 	if !fp.hasHas(ast.Name, ast.LParen) {
 		return ast.FunctionForm{}, false
 	}
@@ -1263,10 +1342,14 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 		Target: target,
 		Params: params,
 		VarArg: varArgData,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) functionExpressionForm() (ast.FunctionExpressionForm, bool) {
+	start := fp.lexer.Position()
 	if !fp.hasHas(ast.Name, ast.LSquare) {
 		return ast.FunctionExpressionForm{}, false
 	}
@@ -1303,10 +1386,14 @@ func (fp *formulationParser) functionExpressionForm() (ast.FunctionExpressionFor
 		Target: target,
 		Params: params,
 		VarArg: varArgData,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LParen)
 	if !ok {
@@ -1336,10 +1423,14 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 	return ast.TupleForm{
 		Params: params,
 		VarArg: varArg,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) fixedSetForm() (ast.FixedSetForm, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LCurly)
 	if !ok {
@@ -1375,10 +1466,14 @@ func (fp *formulationParser) fixedSetForm() (ast.FixedSetForm, bool) {
 	return ast.FixedSetForm{
 		Params: params,
 		VarArg: varArg,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	if _, ok := fp.token(ast.LCurly); !ok {
 		fp.lexer.RollBack(id)
@@ -1408,6 +1503,9 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 	return ast.ConditionalSetForm{
 		Target: target,
 		VarArg: varArg,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
@@ -1450,6 +1548,7 @@ func (fp *formulationParser) idType() (ast.IdType, bool) {
 }
 
 func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	symbols, ok := fp.squareParams()
 	if !ok {
@@ -1492,10 +1591,14 @@ func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, b
 		Symbols:   symbols,
 		Target:    target,
 		Condition: condition,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
+	start := fp.lexer.Position()
 	if !fp.hasHas(ast.Colon, ast.Name) {
 		return ast.NamedParam{}, false
 	}
@@ -1514,10 +1617,14 @@ func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
 	return ast.NamedParam{
 		Name:   name,
 		Params: params,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) subSupParams() (ast.SubSupParams, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	squareParams, ok := fp.squareParams()
 	if !ok {
@@ -1543,10 +1650,14 @@ func (fp *formulationParser) subSupParams() (ast.SubSupParams, bool) {
 		SquareParams: squareParams,
 		SubParams:    subParams,
 		SupParams:    supParams,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) commandId() (ast.CommandId, bool) {
+	start := fp.lexer.Position()
 	if !fp.hasHas(ast.BackSlash, ast.Name) {
 		return ast.CommandId{}, false
 	}
@@ -1593,10 +1704,14 @@ func (fp *formulationParser) commandId() (ast.CommandId, bool) {
 		CurlyParams:  &curlyParams,
 		NamedParams:  &namedParams,
 		ParenParams:  &parenParams,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) commandAtId() (ast.CommandAtId, bool) {
+	start := fp.lexer.Position()
 	if !fp.hasHas(ast.BackSlash, ast.Name) {
 		return ast.CommandAtId{}, false
 	}
@@ -1638,12 +1753,16 @@ func (fp *formulationParser) commandAtId() (ast.CommandAtId, bool) {
 	return ast.CommandAtId{
 		Names: names,
 		Param: literal,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }
 
 //////////////////////////////// signature ////////////////////////////////////////////
 
 func (fp *formulationParser) signature() (ast.Signature, bool) {
+	start := fp.lexer.Position()
 	if !fp.hasHas(ast.BackSlash, ast.LSquare) {
 		return ast.Signature{}, false
 	}
@@ -1689,5 +1808,8 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 		MainNames:       mainNames,
 		NamedGroupNames: namedGroupNames,
 		HasAtSymbol:     hasAtSymbol,
+		MetaData: ast.MetaData{
+			Start: start,
+		},
 	}, true
 }

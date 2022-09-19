@@ -25,225 +25,444 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func runTest(t *testing.T, text string, expected ast.NodeType) {
+func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
-	actual, ok := ParseExpression(text, ast.Position{
-		Offset: 0,
-		Row:    0,
-		Column: 0,
-	}, tracker)
-	assert.True(t, ok)
-	assert.Equal(t, 0, tracker.Length())
+	node, _ := ParseExpression(text, ast.Position{}, tracker)
+	return node, tracker
+}
 
-	actualStr := mlglib.PrettyPrint(actual)
-	expectedStr := mlglib.PrettyPrint(expected)
+func runTest(t *testing.T, input string, expected string) {
+	doc, tracker := parse(input)
+	actual := mlglib.PrettyPrint(doc)
 
-	assert.Equal(t, expectedStr, actualStr)
+	assert.Equal(t, expected, actual)
+	assert.Equal(t, 0, len(tracker.Diagnostics()))
 }
 
 func TestIdentifier(t *testing.T) {
-	runTest(t, "x",
-		ast.NameForm{
-			Text:            "x",
-			IsStropped:      false,
-			HasQuestionMark: false,
-			VarArg:          ast.VarArgData{},
-		})
+	input := `x`
+	expected := `ast.NameForm{
+  Text: "x",
+  IsStropped: false,
+  HasQuestionMark: false,
+  VarArg: ast.VarArgData{
+    IsVarArg: false,
+    VarArgCount: nil,
+    MetaData: ast.MetaData{
+      Start: ast.Position{
+        Offset: 0,
+        Row: 0,
+        Column: 0,
+      },
+    },
+  },
+  MetaData: ast.MetaData{
+    Start: ast.Position{
+      Offset: 0,
+      Row: 0,
+      Column: 0,
+    },
+  },
+}`
+	runTest(t, input, expected)
 }
 
 func TestMultiCharIdentifier(t *testing.T) {
-	runTest(t, "abc",
-		ast.NameForm{
-			Text:            "abc",
-			IsStropped:      false,
-			HasQuestionMark: false,
-			VarArg:          ast.VarArgData{},
-		})
+	input := `abc`
+	expected := `ast.NameForm{
+  Text: "abc",
+  IsStropped: false,
+  HasQuestionMark: false,
+  VarArg: ast.VarArgData{
+    IsVarArg: false,
+    VarArgCount: nil,
+    MetaData: ast.MetaData{
+      Start: ast.Position{
+        Offset: 0,
+        Row: 0,
+        Column: 0,
+      },
+    },
+  },
+  MetaData: ast.MetaData{
+    Start: ast.Position{
+      Offset: 0,
+      Row: 0,
+      Column: 0,
+    },
+  },
+}`
+	runTest(t, input, expected)
 }
 
 func TestIdentifierQuestion(t *testing.T) {
-	runTest(t, "x?",
-		ast.NameForm{
-			Text:            "x",
-			IsStropped:      false,
-			HasQuestionMark: true,
-			VarArg:          ast.VarArgData{},
-		})
+	input := `x?`
+	expected := `ast.NameForm{
+  Text: "x",
+  IsStropped: false,
+  HasQuestionMark: true,
+  VarArg: ast.VarArgData{
+    IsVarArg: false,
+    VarArgCount: nil,
+    MetaData: ast.MetaData{
+      Start: ast.Position{
+        Offset: 0,
+        Row: 0,
+        Column: 0,
+      },
+    },
+  },
+  MetaData: ast.MetaData{
+    Start: ast.Position{
+      Offset: 0,
+      Row: 0,
+      Column: 0,
+    },
+  },
+}`
+	runTest(t, input, expected)
 }
 
 func TestStroppedIdentifier(t *testing.T) {
-	runTest(t, "\"ab c\"",
-		ast.NameForm{
-			Text:            "ab c",
-			IsStropped:      true,
-			HasQuestionMark: false,
-			VarArg:          ast.VarArgData{},
-		})
+	input := `"ab c"`
+	expected := `ast.NameForm{
+  Text: "ab c",
+  IsStropped: true,
+  HasQuestionMark: false,
+  VarArg: ast.VarArgData{
+    IsVarArg: false,
+    VarArgCount: nil,
+    MetaData: ast.MetaData{
+      Start: ast.Position{
+        Offset: 0,
+        Row: 0,
+        Column: 0,
+      },
+    },
+  },
+  MetaData: ast.MetaData{
+    Start: ast.Position{
+      Offset: 0,
+      Row: 0,
+      Column: 0,
+    },
+  },
+}`
+	runTest(t, input, expected)
 }
 
 func TestStroppedIdentifierQuestion(t *testing.T) {
-	runTest(t, "\"ab c\"?",
-		ast.NameForm{
-			Text:            "ab c",
-			IsStropped:      true,
-			HasQuestionMark: true,
-			VarArg:          ast.VarArgData{},
-		})
+	input := `"ab c"?`
+	expected := `ast.NameForm{
+  Text: "ab c",
+  IsStropped: true,
+  HasQuestionMark: true,
+  VarArg: ast.VarArgData{
+    IsVarArg: false,
+    VarArgCount: nil,
+    MetaData: ast.MetaData{
+      Start: ast.Position{
+        Offset: 0,
+        Row: 0,
+        Column: 0,
+      },
+    },
+  },
+  MetaData: ast.MetaData{
+    Start: ast.Position{
+      Offset: 0,
+      Row: 0,
+      Column: 0,
+    },
+  },
+}`
+	runTest(t, input, expected)
 }
 
 func TestVarArgIdentifier(t *testing.T) {
-	runTest(t, "abc...",
-		ast.NameForm{
-			Text:            "abc",
-			IsStropped:      false,
-			HasQuestionMark: false,
-			VarArg: ast.VarArgData{
-				IsVarArg:    true,
-				VarArgCount: nil,
-			},
-		})
+	input := `abc...`
+	expected := `ast.NameForm{
+  Text: "abc",
+  IsStropped: false,
+  HasQuestionMark: false,
+  VarArg: ast.VarArgData{
+    IsVarArg: true,
+    VarArgCount: nil,
+    MetaData: ast.MetaData{
+      Start: ast.Position{
+        Offset: 0,
+        Row: 0,
+        Column: 0,
+      },
+    },
+  },
+  MetaData: ast.MetaData{
+    Start: ast.Position{
+      Offset: 0,
+      Row: 0,
+      Column: 0,
+    },
+  },
+}`
+	runTest(t, input, expected)
 }
 
 func TestStroppedVarArgIdentifier(t *testing.T) {
-	runTest(t, "\"ab c\"...",
-		ast.NameForm{
-			Text:            "ab c",
-			IsStropped:      true,
-			HasQuestionMark: false,
-			VarArg: ast.VarArgData{
-				IsVarArg:    true,
-				VarArgCount: nil,
-			},
-		})
+	input := `"ab c"?`
+	expected := `ast.NameForm{
+  Text: "ab c",
+  IsStropped: true,
+  HasQuestionMark: true,
+  VarArg: ast.VarArgData{
+    IsVarArg: false,
+    VarArgCount: nil,
+    MetaData: ast.MetaData{
+      Start: ast.Position{
+        Offset: 0,
+        Row: 0,
+        Column: 0,
+      },
+    },
+  },
+  MetaData: ast.MetaData{
+    Start: ast.Position{
+      Offset: 0,
+      Row: 0,
+      Column: 0,
+    },
+  },
+}`
+	runTest(t, input, expected)
 }
 
 func TestStroppedVarArgIdentifierQuestion(t *testing.T) {
-	runTest(t, "\"ab c\"...?",
-		ast.NameForm{
-			Text:            "ab c",
-			IsStropped:      true,
-			HasQuestionMark: true,
-			VarArg: ast.VarArgData{
-				IsVarArg:    true,
-				VarArgCount: nil,
-			},
-		})
+	input := `"ab c"...?`
+	expected := `ast.NameForm{
+  Text: "ab c",
+  IsStropped: true,
+  HasQuestionMark: true,
+  VarArg: ast.VarArgData{
+    IsVarArg: true,
+    VarArgCount: nil,
+    MetaData: ast.MetaData{
+      Start: ast.Position{
+        Offset: 0,
+        Row: 0,
+        Column: 0,
+      },
+    },
+  },
+  MetaData: ast.MetaData{
+    Start: ast.Position{
+      Offset: 0,
+      Row: 0,
+      Column: 0,
+    },
+  },
+}`
+	runTest(t, input, expected)
 }
 
 func TestChainExpressionWithNames(t *testing.T) {
-	runTest(t, "a.b.c",
-		ast.ChainExpression{
-			Parts: []ast.ExpressionType{
-				ast.NameForm{
-					Text:            "a",
-					IsStropped:      false,
-					HasQuestionMark: false,
-					VarArg:          ast.VarArgData{},
-					MetaData: ast.MetaData{
-						Start: ast.Position{
-							Offset: 0,
-							Row:    0,
-							Column: 0,
-						},
-					},
-				},
-				ast.NameForm{
-					Text:            "b",
-					IsStropped:      false,
-					HasQuestionMark: false,
-					VarArg:          ast.VarArgData{},
-					MetaData: ast.MetaData{
-						Start: ast.Position{
-							Offset: 2,
-							Row:    0,
-							Column: 2,
-						},
-					},
-				},
-				ast.NameForm{
-					Text:            "c",
-					IsStropped:      false,
-					HasQuestionMark: false,
-					VarArg:          ast.VarArgData{},
-					MetaData: ast.MetaData{
-						Start: ast.Position{
-							Offset: 4,
-							Row:    0,
-							Column: 4,
-						},
-					},
-				},
-			},
-		})
+	input := `a.b.c`
+	expected := `ast.ChainExpression{
+  Parts: []ast.ExpressionType{
+    ast.NameForm{
+      Text: "a",
+      IsStropped: false,
+      HasQuestionMark: false,
+      VarArg: ast.VarArgData{
+        IsVarArg: false,
+        VarArgCount: nil,
+        MetaData: ast.MetaData{
+          Start: ast.Position{
+            Offset: 0,
+            Row: 0,
+            Column: 0,
+          },
+        },
+      },
+      MetaData: ast.MetaData{
+        Start: ast.Position{
+          Offset: 0,
+          Row: 0,
+          Column: 0,
+        },
+      },
+    },
+    ast.NameForm{
+      Text: "b",
+      IsStropped: false,
+      HasQuestionMark: false,
+      VarArg: ast.VarArgData{
+        IsVarArg: false,
+        VarArgCount: nil,
+        MetaData: ast.MetaData{
+          Start: ast.Position{
+            Offset: 0,
+            Row: 0,
+            Column: 0,
+          },
+        },
+      },
+      MetaData: ast.MetaData{
+        Start: ast.Position{
+          Offset: 2,
+          Row: 0,
+          Column: 2,
+        },
+      },
+    },
+    ast.NameForm{
+      Text: "c",
+      IsStropped: false,
+      HasQuestionMark: false,
+      VarArg: ast.VarArgData{
+        IsVarArg: false,
+        VarArgCount: nil,
+        MetaData: ast.MetaData{
+          Start: ast.Position{
+            Offset: 0,
+            Row: 0,
+            Column: 0,
+          },
+        },
+      },
+      MetaData: ast.MetaData{
+        Start: ast.Position{
+          Offset: 4,
+          Row: 0,
+          Column: 4,
+        },
+      },
+    },
+  },
+  MetaData: ast.MetaData{
+    Start: ast.Position{
+      Offset: 0,
+      Row: 0,
+      Column: 0,
+    },
+  },
+}`
+	runTest(t, input, expected)
 }
 
 func TestChainExpressionWithFunctionCall(t *testing.T) {
-	runTest(t, "a.f(b).c",
-		ast.ChainExpression{
-			Parts: []ast.ExpressionType{
-				ast.NameForm{
-					Text:            "a",
-					IsStropped:      false,
-					HasQuestionMark: false,
-					VarArg:          ast.VarArgData{},
-					MetaData: ast.MetaData{
-						Start: ast.Position{
-							Offset: 0,
-							Row:    0,
-							Column: 0,
-						},
-					},
-				},
-				ast.FunctionCallExpression{
-					Target: ast.NameForm{
-						Text:            "f",
-						IsStropped:      false,
-						HasQuestionMark: false,
-						VarArg:          ast.VarArgData{},
-						MetaData: ast.MetaData{
-							Start: ast.Position{
-								Offset: 2,
-								Row:    0,
-								Column: 2,
-							},
-						},
-					},
-					Args: []ast.ExpressionType{
-						ast.NameForm{
-							Text:            "b",
-							IsStropped:      false,
-							HasQuestionMark: false,
-							VarArg:          ast.VarArgData{},
-							MetaData: ast.MetaData{
-								Start: ast.Position{
-									Offset: 4,
-									Row:    0,
-									Column: 4,
-								},
-							},
-						},
-					},
-					MetaData: ast.MetaData{
-						Start: ast.Position{
-							Offset: 2,
-							Row:    0,
-							Column: 2,
-						},
-					},
-				},
-				ast.NameForm{
-					Text:            "c",
-					IsStropped:      false,
-					HasQuestionMark: false,
-					VarArg:          ast.VarArgData{},
-					MetaData: ast.MetaData{
-						Start: ast.Position{
-							Offset: 7,
-							Row:    0,
-							Column: 7,
-						},
-					},
-				},
-			},
-		})
+	input := `a.f(b).c`
+	expected := `ast.ChainExpression{
+  Parts: []ast.ExpressionType{
+    ast.NameForm{
+      Text: "a",
+      IsStropped: false,
+      HasQuestionMark: false,
+      VarArg: ast.VarArgData{
+        IsVarArg: false,
+        VarArgCount: nil,
+        MetaData: ast.MetaData{
+          Start: ast.Position{
+            Offset: 0,
+            Row: 0,
+            Column: 0,
+          },
+        },
+      },
+      MetaData: ast.MetaData{
+        Start: ast.Position{
+          Offset: 0,
+          Row: 0,
+          Column: 0,
+        },
+      },
+    },
+    ast.FunctionCallExpression{
+      Target: ast.NameForm{
+        Text: "f",
+        IsStropped: false,
+        HasQuestionMark: false,
+        VarArg: ast.VarArgData{
+          IsVarArg: false,
+          VarArgCount: nil,
+          MetaData: ast.MetaData{
+            Start: ast.Position{
+              Offset: 0,
+              Row: 0,
+              Column: 0,
+            },
+          },
+        },
+        MetaData: ast.MetaData{
+          Start: ast.Position{
+            Offset: 2,
+            Row: 0,
+            Column: 2,
+          },
+        },
+      },
+      Args: []ast.ExpressionType{
+        ast.NameForm{
+          Text: "b",
+          IsStropped: false,
+          HasQuestionMark: false,
+          VarArg: ast.VarArgData{
+            IsVarArg: false,
+            VarArgCount: nil,
+            MetaData: ast.MetaData{
+              Start: ast.Position{
+                Offset: 0,
+                Row: 0,
+                Column: 0,
+              },
+            },
+          },
+          MetaData: ast.MetaData{
+            Start: ast.Position{
+              Offset: 4,
+              Row: 0,
+              Column: 4,
+            },
+          },
+        },
+      },
+      MetaData: ast.MetaData{
+        Start: ast.Position{
+          Offset: 2,
+          Row: 0,
+          Column: 2,
+        },
+      },
+    },
+    ast.NameForm{
+      Text: "c",
+      IsStropped: false,
+      HasQuestionMark: false,
+      VarArg: ast.VarArgData{
+        IsVarArg: false,
+        VarArgCount: nil,
+        MetaData: ast.MetaData{
+          Start: ast.Position{
+            Offset: 0,
+            Row: 0,
+            Column: 0,
+          },
+        },
+      },
+      MetaData: ast.MetaData{
+        Start: ast.Position{
+          Offset: 7,
+          Row: 0,
+          Column: 7,
+        },
+      },
+    },
+  },
+  MetaData: ast.MetaData{
+    Start: ast.Position{
+      Offset: 0,
+      Row: 0,
+      Column: 0,
+    },
+  },
+}`
+	runTest(t, input, expected)
 }

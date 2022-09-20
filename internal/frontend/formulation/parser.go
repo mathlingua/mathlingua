@@ -464,12 +464,12 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 			children = append(children, pseudoToken)
 		} else if chain, ok := fp.chainExpression(); ok {
 			children = append(children, chain)
-		} else if name, ok := fp.nameForm(); ok {
-			children = append(children, name)
 		} else if ord, ok := fp.nameOrdinalCallExpression(); ok {
 			children = append(children, ord)
 		} else if fun, ok := fp.functionForm(); ok {
 			children = append(children, fun)
+		} else if name, ok := fp.nameForm(); ok {
+			children = append(children, name)
 		} else if fun, ok := fp.functionExpressionForm(); ok {
 			children = append(children, fun)
 		} else if fun, ok := fp.functionCallExpression(); ok {

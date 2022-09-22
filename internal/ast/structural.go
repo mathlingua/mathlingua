@@ -746,8 +746,8 @@ var DescribesSections = []string{
 	LowerSuchThatQuestionName,
 	LowerExtendsQuestionName,
 	LowerSatisfiesQuestionName,
-	UpperViewableQuestionName,
 	UpperProvidesQuestionName,
+	UpperViewableQuestionName,
 	UpperUsingQuestionName,
 	UpperCodifiedName,
 	UpperDocumentedQuestionName,
@@ -765,8 +765,8 @@ type DescribesGroup struct {
 	SuchThat   *SuchThatSection
 	Extends    *ExtendsSection
 	Satisfies  *SatisfiesSection
-	Viewable   *ViewableSection
 	Provides   *ProvidesSection
+	Viewable   *ViewableSection
 	Using      *UsingSection
 	Codified   CodifiedSection
 	Documented *DocumentedSection
@@ -805,8 +805,8 @@ var DeclaresSections = []string{
 	LowerSuchThatQuestionName,
 	LowerMeansQuestionName,
 	LowerDefinesQuestionName,
-	UpperViewableQuestionName,
 	UpperProvidesQuestionName,
+	UpperViewableQuestionName,
 	UpperUsingQuestionName,
 	UpperCodifiedName,
 	UpperDocumentedQuestionName,
@@ -824,8 +824,8 @@ type DeclaresGroup struct {
 	SuchThat   *SuchThatSection
 	Means      *MeansSection
 	Defines    *DefinesSection
-	Viewable   *ViewableSection
 	Provides   *ProvidesSection
+	Viewable   *ViewableSection
 	Using      *UsingSection
 	Codified   CodifiedSection
 	Documented *DocumentedSection

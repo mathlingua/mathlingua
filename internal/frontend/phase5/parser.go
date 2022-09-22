@@ -1174,13 +1174,13 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	if sec, ok := sections[ast.LowerSatisfiesName]; ok {
 		satisfies = p.toSatisfiesSection(sec)
 	}
-	var viewable *ast.ViewableSection
-	if sec, ok := sections[ast.UpperViewableName]; ok {
-		viewable = p.toViewableSection(sec)
-	}
 	var provides *ast.ProvidesSection
 	if sec, ok := sections[ast.UpperProvidesName]; ok {
 		provides = p.toProvidesSection(sec)
+	}
+	var viewable *ast.ViewableSection
+	if sec, ok := sections[ast.UpperViewableName]; ok {
+		viewable = p.toViewableSection(sec)
 	}
 	var using *ast.UsingSection
 	if sec, ok := sections[ast.UpperUsingName]; ok {
@@ -1278,13 +1278,13 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 	if sec, ok := sections[ast.LowerDefinesName]; ok {
 		defines = p.toDefinesSection(sec)
 	}
-	var viewable *ast.ViewableSection
-	if sec, ok := sections[ast.UpperViewableName]; ok {
-		viewable = p.toViewableSection(sec)
-	}
 	var provides *ast.ProvidesSection
 	if sec, ok := sections[ast.UpperProvidesName]; ok {
 		provides = p.toProvidesSection(sec)
+	}
+	var viewable *ast.ViewableSection
+	if sec, ok := sections[ast.UpperViewableName]; ok {
+		viewable = p.toViewableSection(sec)
 	}
 	var using *ast.UsingSection
 	if sec, ok := sections[ast.UpperUsingName]; ok {

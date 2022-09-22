@@ -40,16 +40,16 @@ type parser struct {
 /////////////////////////// allOf ///////////////////////////////////////
 
 func (p *parser) toAllOfGroup(group phase4.Group) (ast.AllOfGroup, bool) {
-	if !startsWithSections(group, "allOf") {
+	if !startsWithSections(group, ast.LowerAllOfName) {
 		return ast.AllOfGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "allOf")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.AllOfSections...)
 	if !ok {
 		return ast.AllOfGroup{}, false
 	}
 	return ast.AllOfGroup{
-		AllOf: *p.toAllOfSection(sections["allOf"]),
+		AllOf: *p.toAllOfSection(sections[ast.LowerAllOfName]),
 	}, true
 }
 
@@ -62,16 +62,16 @@ func (p *parser) toAllOfSection(section phase4.Section) *ast.AllOfSection {
 /////////////////////////////// not //////////////////////////////////////
 
 func (p *parser) toNotGroup(group phase4.Group) (ast.NotGroup, bool) {
-	if !startsWithSections(group, "not") {
+	if !startsWithSections(group, ast.LowerNotName) {
 		return ast.NotGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "not")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.NotSections...)
 	if !ok {
 		return ast.NotGroup{}, false
 	}
 	return ast.NotGroup{
-		Not: *p.toNotSection(sections["not"]),
+		Not: *p.toNotSection(sections[ast.LowerNotName]),
 	}, true
 }
 
@@ -84,16 +84,16 @@ func (p *parser) toNotSection(section phase4.Section) *ast.NotSection {
 //////////////////////////////////// anyOf ////////////////////////////////
 
 func (p *parser) toAnyOfGroup(group phase4.Group) (ast.AnyOfGroup, bool) {
-	if !startsWithSections(group, "anyOf") {
+	if !startsWithSections(group, ast.LowerAnyOfName) {
 		return ast.AnyOfGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "anyOf")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.AnyOfSections...)
 	if !ok {
 		return ast.AnyOfGroup{}, false
 	}
 	return ast.AnyOfGroup{
-		AnyOf: *p.toAnyOfSection(sections["anyOf"]),
+		AnyOf: *p.toAnyOfSection(sections[ast.LowerAnyOfName]),
 	}, true
 }
 
@@ -106,16 +106,16 @@ func (p *parser) toAnyOfSection(section phase4.Section) *ast.AnyOfSection {
 ////////////////////////////////////// oneOf /////////////////////////////
 
 func (p *parser) toOneOfGroup(group phase4.Group) (ast.OneOfGroup, bool) {
-	if !startsWithSections(group, "oneOf") {
+	if !startsWithSections(group, ast.LowerOneOfName) {
 		return ast.OneOfGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "oneOf")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.OneOfSections...)
 	if !ok {
 		return ast.OneOfGroup{}, false
 	}
 	return ast.OneOfGroup{
-		OneOf: *p.toOneOfSection(sections["oneOf"]),
+		OneOf: *p.toOneOfSection(sections[ast.LowerOneOfName]),
 	}, true
 }
 
@@ -128,24 +128,21 @@ func (p *parser) toOneOfSection(section phase4.Section) *ast.OneOfSection {
 /////////////////////////////// exists //////////////////////////////////
 
 func (p *parser) toExistsGroup(group phase4.Group) (ast.ExistsGroup, bool) {
-	if !startsWithSections(group, "exists") {
+	if !startsWithSections(group, ast.LowerExistsName) {
 		return ast.ExistsGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"exists",
-		"where?",
-		"suchThat?")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ExistsSections...)
 	if !ok {
 		return ast.ExistsGroup{}, false
 	}
-	exists := *p.toExistsSection(sections["exists"])
+	exists := *p.toExistsSection(sections[ast.LowerExistsName])
 	var where *ast.WhereSection
-	if sect, ok := sections["where"]; ok {
+	if sect, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sect)
 	}
 	var suchThat *ast.SuchThatSection
-	if sect, ok := sections["suchThat"]; ok {
+	if sect, ok := sections[ast.LowerSuchThatName]; ok {
 		suchThat = p.toSuchThatSection(sect)
 	}
 	return ast.ExistsGroup{
@@ -176,24 +173,21 @@ func (p *parser) toSuchThatSection(section phase4.Section) *ast.SuchThatSection 
 /////////////////////////////// existsUnique //////////////////////////////////
 
 func (p *parser) toExistsUniqueGroup(group phase4.Group) (ast.ExistsUniqueGroup, bool) {
-	if !startsWithSections(group, "existsUnique") {
+	if !startsWithSections(group, ast.LowerExistsUniqueName) {
 		return ast.ExistsUniqueGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"existsUnique",
-		"where?",
-		"suchThat?")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ExistsUniqueSections...)
 	if !ok {
 		return ast.ExistsUniqueGroup{}, false
 	}
-	existsUnique := *p.toExistsUniqueSection(sections["existsUnique"])
+	existsUnique := *p.toExistsUniqueSection(sections[ast.LowerExistsUniqueName])
 	var where *ast.WhereSection
-	if sect, ok := sections["where"]; ok {
+	if sect, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sect)
 	}
 	var suchThat *ast.SuchThatSection
-	if sect, ok := sections["suchThat"]; ok {
+	if sect, ok := sections[ast.LowerSuchThatName]; ok {
 		suchThat = p.toSuchThatSection(sect)
 	}
 	return ast.ExistsUniqueGroup{
@@ -212,28 +206,24 @@ func (p *parser) toExistsUniqueSection(section phase4.Section) *ast.ExistsUnique
 ///////////////////////// forAll /////////////////////////////////////////
 
 func (p *parser) toForAllGroup(group phase4.Group) (ast.ForAllGroup, bool) {
-	if !startsWithSections(group, "forAll") {
+	if !startsWithSections(group, ast.LowerForAllName) {
 		return ast.ForAllGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"forAll",
-		"where?",
-		"suchThat?",
-		"then")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ForAllSections...)
 	if !ok {
 		return ast.ForAllGroup{}, false
 	}
-	forAll := *p.toForAllSection(sections["forAll"])
+	forAll := *p.toForAllSection(sections[ast.LowerForAllName])
 	var where *ast.WhereSection
-	if sec, ok := sections["where"]; ok {
+	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
-	if sec, ok := sections["suchThat"]; ok {
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
 		suchThat = p.toSuchThatSection(sec)
 	}
-	then := *p.toThenSection(sections["then"])
+	then := *p.toThenSection(sections[ast.LowerThenName])
 	return ast.ForAllGroup{
 		ForAll:   forAll,
 		Where:    where,
@@ -257,19 +247,17 @@ func (p *parser) toThenSection(section phase4.Section) *ast.ThenSection {
 /////////////////////////////// if ///////////////////////////////////////
 
 func (p *parser) toIfGroup(group phase4.Group) (ast.IfGroup, bool) {
-	if !startsWithSections(group, "if") {
+	if !startsWithSections(group, ast.LowerIfName) {
 		return ast.IfGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"if",
-		"then")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.IfSections...)
 	if !ok {
 		return ast.IfGroup{}, false
 	}
 	return ast.IfGroup{
-		If:   *p.toIfSection(sections["if"]),
-		Then: *p.toThenSection(sections["then"]),
+		If:   *p.toIfSection(sections[ast.LowerIfName]),
+		Then: *p.toThenSection(sections[ast.LowerThenName]),
 	}, true
 }
 
@@ -282,19 +270,17 @@ func (p *parser) toIfSection(section phase4.Section) *ast.IfSection {
 /////////////////////////////// iff ///////////////////////////////////////
 
 func (p *parser) toIffGroup(group phase4.Group) (ast.IffGroup, bool) {
-	if !startsWithSections(group, "iff") {
+	if !startsWithSections(group, ast.LowerIffName) {
 		return ast.IffGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"iff",
-		"then")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.IffSections...)
 	if !ok {
 		return ast.IffGroup{}, false
 	}
 	return ast.IffGroup{
-		Iff:  *p.toIffSection(sections["iff"]),
-		Then: *p.toThenSection(sections["then"]),
+		Iff:  *p.toIffSection(sections[ast.LowerIffName]),
+		Then: *p.toThenSection(sections[ast.LowerThenName]),
 	}, true
 }
 
@@ -307,21 +293,18 @@ func (p *parser) toIffSection(section phase4.Section) *ast.IffSection {
 /////////////////////////// generated ////////////////////////////////////
 
 func (p *parser) toGeneratedGroup(group phase4.Group) (ast.GeneratedGroup, bool) {
-	if !startsWithSections(group, "generated") {
+	if !startsWithSections(group, ast.LowerGeneratedName) {
 		return ast.GeneratedGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"generated",
-		"from",
-		"when?")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.GeneratedSections...)
 	if !ok {
 		return ast.GeneratedGroup{}, false
 	}
-	generated := *p.toGeneratedSection(sections["generated"])
-	from := *p.toFromSection(sections["from"])
+	generated := *p.toGeneratedSection(sections[ast.LowerGeneratedName])
+	from := *p.toFromSection(sections[ast.LowerFromName])
 	var when *ast.WhenSection
-	if sec, ok := sections["when"]; ok {
+	if sec, ok := sections[ast.LowerWhenName]; ok {
 		when = p.toWhenSection(sec)
 	}
 	return ast.GeneratedGroup{
@@ -351,12 +334,12 @@ func (p *parser) toWhenSection(section phase4.Section) *ast.WhenSection {
 ///////////////////////////// piecewise /////////////////////////////////
 
 func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool) {
-	if !startsWithSections(group, "piecewise") {
+	if !startsWithSections(group, ast.LowerPiecewiseName) {
 		return ast.PiecewiseGroup{}, false
 	}
 
 	sections := group.Sections
-	if len(sections) == 0 || sections[0].Name != "piecewise" {
+	if len(sections) == 0 || sections[0].Name != ast.LowerPiecewiseName {
 		return ast.PiecewiseGroup{}, false
 	}
 	piecewise := *p.toPiecewiseSection(sections[0])
@@ -364,22 +347,22 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 	i := 1
 	for i < len(sections) {
 		section1 := sections[i]
-		if section1.Name == "else" {
+		if section1.Name == ast.LowerElseName {
 			break
 		}
 		i++
-		if section1.Name != "if" {
-			p.tracker.Append(newError(fmt.Sprintf("Expected section 'if' but found '%s'", section1.Name), section1.MetaData.Start))
+		if section1.Name != ast.LowerIfName {
+			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' but found '%s'", ast.LowerIfName, section1.Name), section1.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
 		if i >= len(sections) {
-			p.tracker.Append(newError("Expected section 'then' to follow an 'if' section", section1.MetaData.Start))
+			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' to follow an '%s' section", ast.LowerThenName, ast.LowerIfName), section1.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
 		section2 := sections[i]
 		i++
-		if section2.Name != "else" {
-			p.tracker.Append(newError(fmt.Sprintf("Expected section 'then' but found '%s'", section2.Name), section2.MetaData.Start))
+		if section2.Name != ast.LowerElseName {
+			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' but found '%s'", ast.LowerThenName, section2.Name), section2.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
 		ifThens = append(ifThens, ast.IfThen{
@@ -388,7 +371,7 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 		})
 	}
 	var elseSec *ast.ElseSection
-	if i < len(sections) && sections[i].Name == "else" {
+	if i < len(sections) && sections[i].Name == ast.LowerElseName {
 		elseSec = p.toElseSection(sections[i])
 		i++
 	}
@@ -422,19 +405,17 @@ func (p *parser) toElseSection(section phase4.Section) *ast.ElseSection {
 /////////////////////////////// as via ///////////////////////////////////
 
 func (p *parser) toAsViaGroup(group phase4.Group) (ast.AsViaGroup, bool) {
-	if !startsWithSections(group, "view", "as") {
+	if !startsWithSections(group, ast.LowerViewName, ast.LowerAsName) {
 		return ast.AsViaGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"as",
-		"via")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.AsViaSections...)
 	if !ok {
 		return ast.AsViaGroup{}, false
 	}
 	return ast.AsViaGroup{
-		As:  *p.toAsSection(sections["as"]),
-		Via: *p.toViaSection(sections["via"]),
+		As:  *p.toAsSection(sections[ast.LowerAsName]),
+		Via: *p.toViaSection(sections[ast.LowerViaName]),
 	}, true
 }
 
@@ -453,26 +434,22 @@ func (p *parser) toViaSection(section phase4.Section) *ast.ViaSection {
 ////////////////////////// as through ////////////////////////////////////
 
 func (p *parser) toAsThroughGroup(group phase4.Group) (ast.AsThroughGroup, bool) {
-	if !startsWithSections(group, "as", "through") {
+	if !startsWithSections(group, ast.LowerAsName, ast.LowerThroughName) {
 		return ast.AsThroughGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"as",
-		"through",
-		"as?",
-		"states?")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.AsThroughStatesSections...)
 	if !ok {
 		return ast.AsThroughGroup{}, false
 	}
-	as := *p.toAsSection(sections["as"])
-	through := *p.toThroughSection(sections["through"])
+	as := *p.toAsSection(sections[ast.LowerAsName])
+	through := *p.toThroughSection(sections[ast.LowerThroughName])
 	var throughAs *ast.AsSection
-	if sec, ok := sections["as1"]; ok {
+	if sec, ok := sections[ast.LowerAsName+"1"]; ok {
 		throughAs = p.toAsSection(sec)
 	}
 	var states *ast.AsStatesSection
-	if sec, ok := sections["states"]; ok {
+	if sec, ok := sections[ast.LowerStatesName]; ok {
 		states = p.toAsStatesSection(sec)
 	}
 	return ast.AsThroughGroup{
@@ -552,40 +529,34 @@ func (p *parser) toSymbolSection(section phase4.Section) *ast.SymbolSection {
 }
 
 func (p *parser) toInfixGroup(group phase4.Group) (ast.InfixGroup, bool) {
-	if !startsWithSections(group, "infix") {
+	if !startsWithSections(group, ast.LowerInfixName) {
 		return ast.InfixGroup{}, false
 	}
 
-	if endsWithSection(group, "states") {
-		sections, ok := IdentifySections(group.Sections, p.tracker,
-			"infix",
-			"when?",
-			"states")
+	if endsWithSection(group, ast.UpperStatesName) {
+		sections, ok := IdentifySections(group.Sections, p.tracker, ast.InfixStatesSections...)
 		if ok {
-			infix := *p.toInfixSection(sections["infix"])
+			infix := *p.toInfixSection(sections[ast.LowerInfixName])
 			var when *ast.WhenSection
-			if sec, ok := sections["when"]; ok {
+			if sec, ok := sections[ast.LowerWhenName]; ok {
 				when = p.toWhenSection(sec)
 			}
-			states := *p.toProvidesStatesSection(sections["states"])
+			states := *p.toProvidesStatesSection(sections[ast.UpperStatesName])
 			return ast.InfixGroup{
 				Infix:         infix,
 				When:          when,
 				StatesDefines: states,
 			}, true
 		}
-	} else if endsWithSection(group, "defines") {
-		sections, ok := IdentifySections(group.Sections, p.tracker,
-			"infix",
-			"when?",
-			"defines")
+	} else if endsWithSection(group, ast.LowerDefinesName) {
+		sections, ok := IdentifySections(group.Sections, p.tracker, ast.InfixDefinesSections...)
 		if ok {
-			infix := *p.toInfixSection(sections["infix"])
+			infix := *p.toInfixSection(sections[ast.LowerInfixName])
 			var when *ast.WhenSection
-			if sec, ok := sections["when"]; ok {
+			if sec, ok := sections[ast.LowerWhenName]; ok {
 				when = p.toWhenSection(sec)
 			}
-			defines := *p.toProvidesDefinesSection(sections["defines"])
+			defines := *p.toProvidesDefinesSection(sections[ast.LowerDefinesName])
 			return ast.InfixGroup{
 				Infix:         infix,
 				When:          when,
@@ -593,56 +564,41 @@ func (p *parser) toInfixGroup(group phase4.Group) (ast.InfixGroup, bool) {
 			}, true
 		}
 	}
-	p.tracker.Append(newError(`Expected:
-
-infix:
-when?:
-states:
-
-or
-
-infix:
-when?:
-defines:
-`, group.Start()))
+	p.tracker.Append(newError(fmt.Sprintf("Expected:\n\n%s\n\nor\n\n%s\n",
+		sectionNamesToString(ast.InfixStatesSections), sectionNamesToString(ast.InfixDefinesSections)),
+		group.Start()))
 	return ast.InfixGroup{}, false
 }
 
 func (p *parser) toPrefixGroup(group phase4.Group) (ast.PrefixGroup, bool) {
-	if !startsWithSections(group, "prefix") {
+	if !startsWithSections(group, ast.LowerPrefixName) {
 		return ast.PrefixGroup{}, false
 	}
 
-	if endsWithSection(group, "states") {
-		sections, ok := IdentifySections(group.Sections, p.tracker,
-			"prefix",
-			"when?",
-			"states")
+	if endsWithSection(group, ast.UpperStatesName) {
+		sections, ok := IdentifySections(group.Sections, p.tracker, ast.PrefixStatesSections...)
 		if ok {
-			prefix := *p.toPrefixSection(sections["prefix"])
+			prefix := *p.toPrefixSection(sections[ast.LowerPrefixName])
 			var when *ast.WhenSection
-			if sec, ok := sections["when"]; ok {
+			if sec, ok := sections[ast.LowerWhenName]; ok {
 				when = p.toWhenSection(sec)
 			}
-			states := *p.toProvidesStatesSection(sections["states"])
+			states := *p.toProvidesStatesSection(sections[ast.UpperStatesName])
 			return ast.PrefixGroup{
 				Prefix:        prefix,
 				When:          when,
 				StatesDefines: states,
 			}, true
 		}
-	} else if endsWithSection(group, "defines") {
-		sections, ok := IdentifySections(group.Sections, p.tracker,
-			"prefix",
-			"when?",
-			"defines")
+	} else if endsWithSection(group, ast.LowerDefinesName) {
+		sections, ok := IdentifySections(group.Sections, p.tracker, ast.PrefixDefinesSections...)
 		if ok {
-			prefix := *p.toPrefixSection(sections["prefix"])
+			prefix := *p.toPrefixSection(sections[ast.LowerPrefixName])
 			var when *ast.WhenSection
-			if sec, ok := sections["when"]; ok {
+			if sec, ok := sections[ast.LowerWhenName]; ok {
 				when = p.toWhenSection(sec)
 			}
-			defines := *p.toProvidesDefinesSection(sections["defines"])
+			defines := *p.toProvidesDefinesSection(sections[ast.LowerDefinesName])
 			return ast.PrefixGroup{
 				Prefix:        prefix,
 				When:          when,
@@ -650,56 +606,41 @@ func (p *parser) toPrefixGroup(group phase4.Group) (ast.PrefixGroup, bool) {
 			}, true
 		}
 	}
-	p.tracker.Append(newError(`Expected:
-
-prefix:
-when?:
-states:
-
-or
-
-prefix:
-when?:
-defines:
-`, group.Start()))
+	p.tracker.Append(newError(fmt.Sprintf("Expected:\n\n%s\n\nor\n\n%s\n",
+		sectionNamesToString(ast.PrefixStatesSections), sectionNamesToString(ast.PrefixDefinesSections)),
+		group.Start()))
 	return ast.PrefixGroup{}, false
 }
 
 func (p *parser) toPostfixGroup(group phase4.Group) (ast.PostfixGroup, bool) {
-	if !startsWithSections(group, "postfix") {
+	if !startsWithSections(group, ast.LowerPostfixName) {
 		return ast.PostfixGroup{}, false
 	}
 
-	if endsWithSection(group, "states") {
-		sections, ok := IdentifySections(group.Sections, p.tracker,
-			"postfix",
-			"when?",
-			"states")
+	if endsWithSection(group, ast.UpperStatesName) {
+		sections, ok := IdentifySections(group.Sections, p.tracker, ast.PostfixStatesSections...)
 		if ok {
-			postfix := *p.toPostfixSection(sections["postfix"])
+			postfix := *p.toPostfixSection(sections[ast.LowerPostfixName])
 			var when *ast.WhenSection
-			if sec, ok := sections["when"]; ok {
+			if sec, ok := sections[ast.LowerWhenName]; ok {
 				when = p.toWhenSection(sec)
 			}
-			states := *p.toProvidesStatesSection(sections["states"])
+			states := *p.toProvidesStatesSection(sections[ast.UpperStatesName])
 			return ast.PostfixGroup{
 				Postfix:       postfix,
 				When:          when,
 				StatesDefines: states,
 			}, true
 		}
-	} else if endsWithSection(group, "defines") {
-		sections, ok := IdentifySections(group.Sections, p.tracker,
-			"postfix",
-			"when?",
-			"defines")
+	} else if endsWithSection(group, ast.LowerDefinesName) {
+		sections, ok := IdentifySections(group.Sections, p.tracker, ast.PostfixDefinesSections...)
 		if ok {
-			postfix := *p.toPostfixSection(sections["postfix"])
+			postfix := *p.toPostfixSection(sections[ast.LowerPostfixName])
 			var when *ast.WhenSection
-			if sec, ok := sections["when"]; ok {
+			if sec, ok := sections[ast.LowerWhenName]; ok {
 				when = p.toWhenSection(sec)
 			}
-			defines := *p.toProvidesDefinesSection(sections["defines"])
+			defines := *p.toProvidesDefinesSection(sections[ast.LowerDefinesName])
 			return ast.PostfixGroup{
 				Postfix:       postfix,
 				When:          when,
@@ -707,75 +648,25 @@ func (p *parser) toPostfixGroup(group phase4.Group) (ast.PostfixGroup, bool) {
 			}, true
 		}
 	}
-	p.tracker.Append(newError(`Expected:
-
-postfix:
-when?:
-states:
-
-or
-
-postfix:
-when?:
-defines:
-	`, group.Start()))
+	p.tracker.Append(newError(fmt.Sprintf("Expected:\n\n%s\n\nor\n\n%s\n",
+		sectionNamesToString(ast.PostfixStatesSections), sectionNamesToString(ast.PostfixDefinesSections)),
+		group.Start()))
 	return ast.PostfixGroup{}, false
 }
 
 func (p *parser) toSymbolGroup(group phase4.Group) (ast.SymbolGroup, bool) {
-	if !startsWithSections(group, "symbol") {
+	if !startsWithSections(group, ast.LowerSymbolName) {
 		return ast.SymbolGroup{}, false
 	}
-
-	if endsWithSection(group, "states") {
-		sections, ok := IdentifySections(group.Sections, p.tracker,
-			"symbol",
-			"when?",
-			"states")
-		if ok {
-			symbol := *p.toSymbolSection(sections["symbol"])
-			var when *ast.WhenSection
-			if sec, ok := sections["when"]; ok {
-				when = p.toWhenSection(sec)
-			}
-			states := *p.toProvidesStatesSection(sections["states"])
-			return ast.SymbolGroup{
-				Symbol:        symbol,
-				When:          when,
-				StatesDefines: states,
-			}, true
-		}
-	} else if endsWithSection(group, "defines") {
-		sections, ok := IdentifySections(group.Sections, p.tracker,
-			"symbol",
-			"when?",
-			"defines")
-		if ok {
-			symbol := *p.toSymbolSection(sections["symbol"])
-			var when *ast.WhenSection
-			if sec, ok := sections["when"]; ok {
-				when = p.toWhenSection(sec)
-			}
-			defines := *p.toProvidesDefinesSection(sections["defines"])
-			return ast.SymbolGroup{
-				Symbol:        symbol,
-				When:          when,
-				StatesDefines: defines,
-			}, true
-		}
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.SymbolSections...)
+	if ok {
+		symbol := *p.toSymbolSection(sections[ast.LowerSymbolName])
+		defines := *p.toProvidesDefinesSection(sections[ast.LowerDefinesName])
+		return ast.SymbolGroup{
+			Symbol:  symbol,
+			Defines: defines,
+		}, true
 	}
-	p.tracker.Append(newError(`Expected:
-
-symbol:
-when?:
-states:
-
-or
-
-symbol:
-when?:
-defines:
-	`, group.Start()))
 	return ast.SymbolGroup{}, false
 }
 
@@ -822,16 +713,16 @@ func (p *parser) toCodifiedTypeFromGroup(group phase4.Group) (ast.CodifiedType, 
 }
 
 func (p *parser) toWrittenGroup(group phase4.Group) (ast.WrittenGroup, bool) {
-	if !startsWithSections(group, "written") {
+	if !startsWithSections(group, ast.LowerWrittenName) {
 		return ast.WrittenGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "written")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.WrittenSections...)
 	if !ok {
 		return ast.WrittenGroup{}, false
 	}
 	return ast.WrittenGroup{
-		Written: *p.toWrittenSection(sections["written"]),
+		Written: *p.toWrittenSection(sections[ast.LowerWrittenName]),
 	}, true
 }
 
@@ -842,16 +733,16 @@ func (p *parser) toWrittenSection(section phase4.Section) *ast.WrittenSection {
 }
 
 func (p *parser) toCalledGroup(group phase4.Group) (ast.CalledGroup, bool) {
-	if !startsWithSections(group, "called") {
+	if !startsWithSections(group, ast.LowerCalledName) {
 		return ast.CalledGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "called")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.CalledSections...)
 	if !ok {
 		return ast.CalledGroup{}, false
 	}
 	return ast.CalledGroup{
-		Called: *p.toCalledSection(sections["called"]),
+		Called: *p.toCalledSection(sections[ast.LowerCalledName]),
 	}, true
 }
 
@@ -862,18 +753,16 @@ func (p *parser) toCalledSection(section phase4.Section) *ast.CalledSection {
 }
 
 func (p *parser) toWritingGroup(group phase4.Group) (ast.WritingGroup, bool) {
-	if !startsWithSections(group, "writing") {
+	if !startsWithSections(group, ast.LowerWritingName) {
 		return ast.WritingGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"writing",
-		"as")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.WritingSections...)
 	if !ok {
 		return ast.WritingGroup{}, false
 	}
-	writing := *p.toWritingSection(sections["writing"])
-	as := *p.toWritingAsSection(sections["as"])
+	writing := *p.toWritingSection(sections[ast.LowerWritingName])
+	as := *p.toWritingAsSection(sections[ast.LowerAsName])
 	return ast.WritingGroup{
 		Writing: writing,
 		As:      as,
@@ -927,16 +816,16 @@ func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool
 }
 
 func (p *parser) toLooselyGroup(group phase4.Group) (ast.LooselyGroup, bool) {
-	if !startsWithSections(group, "loosely") {
+	if !startsWithSections(group, ast.LowerLooselyName) {
 		return ast.LooselyGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "loosely")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LooselySections...)
 	if !ok {
 		return ast.LooselyGroup{}, false
 	}
 	return ast.LooselyGroup{
-		Loosely: *p.toLooselySection(sections["loosely"]),
+		Loosely: *p.toLooselySection(sections[ast.LowerLooselyName]),
 	}, true
 }
 
@@ -947,16 +836,16 @@ func (p *parser) toLooselySection(section phase4.Section) *ast.LooselySection {
 }
 
 func (p *parser) toOverviewGroup(group phase4.Group) (ast.OverviewGroup, bool) {
-	if !startsWithSections(group, "overview") {
+	if !startsWithSections(group, ast.LowerOverviewName) {
 		return ast.OverviewGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "overview")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.OverviewSections...)
 	if !ok {
 		return ast.OverviewGroup{}, false
 	}
 	return ast.OverviewGroup{
-		Overview: *p.toOverviewSection(sections["overview"]),
+		Overview: *p.toOverviewSection(sections[ast.LowerOverviewName]),
 	}, true
 }
 
@@ -967,16 +856,16 @@ func (p *parser) toOverviewSection(section phase4.Section) *ast.OverviewSection 
 }
 
 func (p *parser) toMotivationGroup(group phase4.Group) (ast.MotivationGroup, bool) {
-	if !startsWithSections(group, "motivation") {
+	if !startsWithSections(group, ast.LowerMotivationName) {
 		return ast.MotivationGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "motivation")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.MotivationSections...)
 	if !ok {
 		return ast.MotivationGroup{}, false
 	}
 	return ast.MotivationGroup{
-		Motivation: *p.toMotivationSection(sections["motivation"]),
+		Motivation: *p.toMotivationSection(sections[ast.LowerMotivationName]),
 	}, true
 }
 
@@ -987,16 +876,16 @@ func (p *parser) toMotivationSection(section phase4.Section) *ast.MotivationSect
 }
 
 func (p *parser) toHistoryGroup(group phase4.Group) (ast.HistoryGroup, bool) {
-	if !startsWithSections(group, "history") {
+	if !startsWithSections(group, ast.LowerHistoryName) {
 		return ast.HistoryGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "history")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.HistorySections...)
 	if !ok {
 		return ast.HistoryGroup{}, false
 	}
 	return ast.HistoryGroup{
-		History: *p.toHistorySection(sections["history"]),
+		History: *p.toHistorySection(sections[ast.LowerHistoryName]),
 	}, true
 }
 
@@ -1007,16 +896,16 @@ func (p *parser) toHistorySection(section phase4.Section) *ast.HistorySection {
 }
 
 func (p *parser) toExamplesGroup(group phase4.Group) (ast.ExamplesGroup, bool) {
-	if !startsWithSections(group, "examples") {
+	if !startsWithSections(group, ast.LowerExamplesName) {
 		return ast.ExamplesGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "examples")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ExamplesSections...)
 	if !ok {
 		return ast.ExamplesGroup{}, false
 	}
 	return ast.ExamplesGroup{
-		Examples: *p.toExamplesSection(sections["examples"]),
+		Examples: *p.toExamplesSection(sections[ast.LowerExamplesName]),
 	}, true
 }
 
@@ -1027,16 +916,16 @@ func (p *parser) toExamplesSection(section phase4.Section) *ast.ExamplesSection 
 }
 
 func (p *parser) toRelatedGroup(group phase4.Group) (ast.RelatedGroup, bool) {
-	if !startsWithSections(group, "related") {
+	if !startsWithSections(group, ast.LowerRelatedName) {
 		return ast.RelatedGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "related")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.RelatedSections...)
 	if !ok {
 		return ast.RelatedGroup{}, false
 	}
 	return ast.RelatedGroup{
-		Related: *p.toRelatedSection(sections["related"]),
+		Related: *p.toRelatedSection(sections[ast.LowerRelatedName]),
 	}, true
 }
 
@@ -1047,16 +936,16 @@ func (p *parser) toRelatedSection(section phase4.Section) *ast.RelatedSection {
 }
 
 func (p *parser) toDiscoveredGroup(group phase4.Group) (ast.DiscoveredGroup, bool) {
-	if !startsWithSections(group, "discovered") {
+	if !startsWithSections(group, ast.LowerDiscoveredName) {
 		return ast.DiscoveredGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "discovered")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.DiscoveredSections...)
 	if !ok {
 		return ast.DiscoveredGroup{}, false
 	}
 	return ast.DiscoveredGroup{
-		Discovered: *p.toDiscoveredSection(sections["discovered"]),
+		Discovered: *p.toDiscoveredSection(sections[ast.LowerDiscoveredName]),
 	}, true
 }
 
@@ -1067,16 +956,16 @@ func (p *parser) toDiscoveredSection(section phase4.Section) *ast.DiscoveredSect
 }
 
 func (p *parser) toNotesGroup(group phase4.Group) (ast.NotesGroup, bool) {
-	if !startsWithSections(group, "notes") {
+	if !startsWithSections(group, ast.LowerNotesName) {
 		return ast.NotesGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "notes")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.NotesSections...)
 	if !ok {
 		return ast.NotesGroup{}, false
 	}
 	return ast.NotesGroup{
-		Notes: *p.toNotesSection(sections["notes"]),
+		Notes: *p.toNotesSection(sections[ast.LowerNotesName]),
 	}, true
 }
 
@@ -1130,8 +1019,13 @@ func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, 
 	} else if grp, ok := p.toSymbolGroup(group); ok {
 		return grp, true
 	} else {
-		p.tracker.Append(newError("Unrecognized argument for Provides:\n"+
-			"Expected one of:\n\nsymbol:\n\nprefix:\n\ninfix:\n\npostfix:\n", group.Start()))
+		p.tracker.Append(newError(fmt.Sprintf("Unrecognized argument for %s:\n"+
+			"Expected one of:\n\n%s:\n\n%s:\n\n%s:\n\n%s:\n",
+			ast.UpperProvidesName,
+			ast.LowerSymbolName,
+			ast.LowerPrefixName,
+			ast.LowerInfixName,
+			ast.LowerPostfixName), group.Start()))
 		return nil, false
 	}
 }
@@ -1191,33 +1085,33 @@ func (p *parser) toLabelSection(section phase4.Section) *ast.LabelSection {
 }
 
 func (p *parser) toLabelGroup(group phase4.Group) (ast.LabelGroup, bool) {
-	if !startsWithSections(group, "label") {
+	if !startsWithSections(group, ast.LowerLabelName) {
 		return ast.LabelGroup{}, false
 	}
 
 	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"label",
-		"by")
+		ast.LowerLabelName,
+		ast.LowerByName)
 	if !ok {
 		return ast.LabelGroup{}, false
 	}
 	return ast.LabelGroup{
-		Label: *p.toLabelSection(sections["label"]),
-		By:    *p.toBySection(sections["by"]),
+		Label: *p.toLabelSection(sections[ast.LowerLabelName]),
+		By:    *p.toBySection(sections[ast.LowerByName]),
 	}, true
 }
 
 func (p *parser) toByGroup(group phase4.Group) (ast.ByGroup, bool) {
-	if !startsWithSections(group, "by") {
+	if !startsWithSections(group, ast.LowerByName) {
 		return ast.ByGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, "by")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerByName)
 	if !ok {
 		return ast.ByGroup{}, false
 	}
 	return ast.ByGroup{
-		By: *p.toBySection(sections["by"]),
+		By: *p.toBySection(sections[ast.LowerByName]),
 	}, true
 }
 
@@ -1246,82 +1140,67 @@ func (p *parser) toMetadataSection(section phase4.Section) *ast.MetadataSection 
 //////////////////////// describes //////////////////////////////////////
 
 func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool) {
-	if !startsWithSections(group, "Describes") {
+	if !startsWithSections(group, ast.UpperDescribesName) {
 		return ast.DescribesGroup{}, false
 	}
 
 	id := p.getId(group, true)
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"Describes",
-		"with?",
-		"given?",
-		"when?",
-		"suchThat?",
-		"extends?",
-		"satisfies?",
-		"Viewable?",
-		"Provides?",
-		"Using?",
-		"Codified",
-		"Documented?",
-		"Justified?",
-		"References?",
-		"Metadata?")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.DescribesSections...)
 	if !ok || id == nil {
 		return ast.DescribesGroup{}, false
 	}
-	describes := *p.toDescribesSection(sections["Describes"])
+	describes := *p.toDescribesSection(sections[ast.UpperDescribesName])
 	var with *ast.WithSection
-	if sec, ok := sections["with"]; ok {
+	if sec, ok := sections[ast.LowerWithName]; ok {
 		with = p.toWithSection(sec)
 	}
 	var given *ast.GivenSection
-	if sec, ok := sections["given"]; ok {
+	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
 	var when *ast.WhenSection
-	if sec, ok := sections["when"]; ok {
+	if sec, ok := sections[ast.LowerWhenName]; ok {
 		when = p.toWhenSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
-	if sec, ok := sections["suchThat"]; ok {
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
 		suchThat = p.toSuchThatSection(sec)
 	}
 	var extends *ast.ExtendsSection
-	if sec, ok := sections["extends"]; ok {
+	if sec, ok := sections[ast.LowerExtendsName]; ok {
 		extends = p.toExtendsSection(sec)
 	}
 	var satisfies *ast.SatisfiesSection
-	if sec, ok := sections["satisfies"]; ok {
+	if sec, ok := sections[ast.LowerSatisfiesName]; ok {
 		satisfies = p.toSatisfiesSection(sec)
 	}
 	var viewable *ast.ViewableSection
-	if sec, ok := sections["Viewable"]; ok {
+	if sec, ok := sections[ast.UpperViewableName]; ok {
 		viewable = p.toViewableSection(sec)
 	}
 	var provides *ast.ProvidesSection
-	if sec, ok := sections["Provides"]; ok {
+	if sec, ok := sections[ast.UpperProvidesName]; ok {
 		provides = p.toProvidesSection(sec)
 	}
 	var using *ast.UsingSection
-	if sec, ok := sections["Using"]; ok {
+	if sec, ok := sections[ast.UpperUsingName]; ok {
 		using = p.toUsingSection(sec)
 	}
-	codified := *p.toCodifiedSection(sections["Codified"])
+	codified := *p.toCodifiedSection(sections[ast.UpperCodifiedName])
 	var documented *ast.DocumentedSection
-	if sec, ok := sections["Documented"]; ok {
+	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
 	}
 	var justified *ast.JustifiedSection
-	if sec, ok := sections["Justified"]; ok {
+	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		justified = p.toJustifiedSection(sec)
 	}
 	var references *ast.ReferencesSection
-	if sec, ok := sections["Justified"]; ok {
+	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		references = p.toReferencesSection(sec)
 	}
 	var metadata *ast.MetadataSection
-	if sec, ok := sections["Metadata"]; ok {
+	if sec, ok := sections[ast.UpperMetadataName]; ok {
 		metadata = p.toMetadataSection(sec)
 	}
 	return ast.DescribesGroup{
@@ -1365,82 +1244,67 @@ func (p *parser) toSatisfiesSection(section phase4.Section) *ast.SatisfiesSectio
 /////////////////////// declares ////////////////////////////////////////
 
 func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
-	if !startsWithSections(group, "Declares") {
+	if !startsWithSections(group, ast.UpperDeclaresName) {
 		return ast.DeclaresGroup{}, false
 	}
 
 	id := p.getId(group, true)
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"Declares",
-		"with?",
-		"given?",
-		"when?",
-		"suchThat?",
-		"means?",
-		"defines?",
-		"Viewable?",
-		"Provides?",
-		"Using?",
-		"Codified",
-		"Documented?",
-		"Justified?",
-		"References?",
-		"Metadata?")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.DeclaresSections...)
 	if !ok || id == nil {
 		return ast.DeclaresGroup{}, false
 	}
-	declares := *p.toDeclaresSection(sections["Declares"])
+	declares := *p.toDeclaresSection(sections[ast.UpperDeclaresName])
 	var with *ast.WithSection
-	if sec, ok := sections["with"]; ok {
+	if sec, ok := sections[ast.LowerWithName]; ok {
 		with = p.toWithSection(sec)
 	}
 	var given *ast.GivenSection
-	if sec, ok := sections["given"]; ok {
+	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
 	var when *ast.WhenSection
-	if sec, ok := sections["when"]; ok {
+	if sec, ok := sections[ast.LowerWhenName]; ok {
 		when = p.toWhenSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
-	if sec, ok := sections["suchThat"]; ok {
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
 		suchThat = p.toSuchThatSection(sec)
 	}
 	var means *ast.MeansSection
-	if sec, ok := sections["means"]; ok {
+	if sec, ok := sections[ast.LowerMeansName]; ok {
 		means = p.toMeansSection(sec)
 	}
 	var defines *ast.DefinesSection
-	if sec, ok := sections["defines"]; ok {
+	if sec, ok := sections[ast.LowerDefinesName]; ok {
 		defines = p.toDefinesSection(sec)
 	}
 	var viewable *ast.ViewableSection
-	if sec, ok := sections["Viewable"]; ok {
+	if sec, ok := sections[ast.UpperViewableName]; ok {
 		viewable = p.toViewableSection(sec)
 	}
 	var provides *ast.ProvidesSection
-	if sec, ok := sections["Provides"]; ok {
+	if sec, ok := sections[ast.UpperProvidesName]; ok {
 		provides = p.toProvidesSection(sec)
 	}
 	var using *ast.UsingSection
-	if sec, ok := sections["Using"]; ok {
+	if sec, ok := sections[ast.UpperUsingName]; ok {
 		using = p.toUsingSection(sec)
 	}
-	codified := *p.toCodifiedSection(sections["Codified"])
+	codified := *p.toCodifiedSection(sections[ast.UpperCodifiedName])
 	var documented *ast.DocumentedSection
-	if sec, ok := sections["Documented"]; ok {
+	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
 	}
 	var justified *ast.JustifiedSection
-	if sec, ok := sections["Justified"]; ok {
+	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		justified = p.toJustifiedSection(sec)
 	}
 	var references *ast.ReferencesSection
-	if sec, ok := sections["Justified"]; ok {
+	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		references = p.toReferencesSection(sec)
 	}
 	var metadata *ast.MetadataSection
-	if sec, ok := sections["Metadata"]; ok {
+	if sec, ok := sections[ast.UpperMetadataName]; ok {
 		metadata = p.toMetadataSection(sec)
 	}
 	return ast.DeclaresGroup{
@@ -1490,59 +1354,48 @@ func (p *parser) toDefinesSection(section phase4.Section) *ast.DefinesSection {
 /////////////////////// states //////////////////////////////////////////
 
 func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
-	if !startsWithSections(group, "States") {
+	if !startsWithSections(group, ast.UpperStatesName) {
 		return ast.StatesGroup{}, false
 	}
 
 	id := p.getId(group, true)
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"States",
-		"given?",
-		"when?",
-		"suchThat?",
-		"that",
-		"Using?",
-		"Codified",
-		"Documented?",
-		"Justified?",
-		"References?",
-		"Metadata?")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.StatesSections...)
 	if !ok || id == nil {
 		return ast.StatesGroup{}, false
 	}
-	states := *p.toStatesSection(sections["States"])
+	states := *p.toStatesSection(sections[ast.UpperStatesName])
 	var given *ast.GivenSection
-	if sec, ok := sections["given"]; ok {
+	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
 	var when *ast.WhenSection
-	if sec, ok := sections["when"]; ok {
+	if sec, ok := sections[ast.LowerWhenName]; ok {
 		when = p.toWhenSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
-	if sec, ok := sections["suchThat"]; ok {
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
 		suchThat = p.toSuchThatSection(sec)
 	}
-	that := *p.toThatSection(sections["that"])
+	that := *p.toThatSection(sections[ast.LowerThatName])
 	var using *ast.UsingSection
-	if sec, ok := sections["Using"]; ok {
+	if sec, ok := sections[ast.UpperUsingName]; ok {
 		using = p.toUsingSection(sec)
 	}
-	codified := *p.toCodifiedSection(sections["Codified"])
+	codified := *p.toCodifiedSection(sections[ast.UpperCodifiedName])
 	var documented *ast.DocumentedSection
-	if sec, ok := sections["Documented"]; ok {
+	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
 	}
 	var justified *ast.JustifiedSection
-	if sec, ok := sections["Justified"]; ok {
+	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		justified = p.toJustifiedSection(sec)
 	}
 	var references *ast.ReferencesSection
-	if sec, ok := sections["References"]; ok {
+	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
 	}
 	var metadata *ast.MetadataSection
-	if sec, ok := sections["Metadata"]; ok {
+	if sec, ok := sections[ast.UpperMetadataName]; ok {
 		metadata = p.toMetadataSection(sec)
 	}
 	return ast.StatesGroup{
@@ -1579,57 +1432,47 @@ func (p *parser) toThatSection(section phase4.Section) *ast.ThatSection {
 /////////////////////// axiom ///////////////////////////////////////////
 
 func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
-	if !startsWithSections(group, "Axiom") {
+	if !startsWithSections(group, ast.UpperAxiomName) {
 		return ast.AxiomGroup{}, false
 	}
 
 	id := p.getId(group, false)
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"Axiom",
-		"given?",
-		"where?",
-		"suchThat?",
-		"then",
-		"iff?",
-		"Using?",
-		"Documented?",
-		"References?",
-		"Metadata?")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.AxiomSections...)
 	if !ok {
 		return ast.AxiomGroup{}, false
 	}
-	axiom := *p.toAxiomSection(sections["Axiom"])
+	axiom := *p.toAxiomSection(sections[ast.UpperAxiomName])
 	var given *ast.GivenSection
-	if sec, ok := sections["given"]; ok {
+	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
 	var where *ast.WhereSection
-	if sec, ok := sections["where"]; ok {
+	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
-	if sec, ok := sections["suchThat"]; ok {
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
 		suchThat = p.toSuchThatSection(sec)
 	}
-	then := *p.toThenSection(sections["then"])
+	then := *p.toThenSection(sections[ast.LowerThenName])
 	var iff *ast.IffSection
-	if sec, ok := sections["iff"]; ok {
+	if sec, ok := sections[ast.LowerIffName]; ok {
 		iff = p.toIffSection(sec)
 	}
 	var using *ast.UsingSection
-	if sec, ok := sections["Using"]; ok {
+	if sec, ok := sections[ast.UpperUsingName]; ok {
 		using = p.toUsingSection(sec)
 	}
 	var documented *ast.DocumentedSection
-	if sec, ok := sections["Documented"]; ok {
+	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
 	}
 	var references *ast.ReferencesSection
-	if sec, ok := sections["References"]; ok {
+	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
 	}
 	var metadata *ast.MetadataSection
-	if sec, ok := sections["Metadata"]; ok {
+	if sec, ok := sections[ast.UpperMetadataName]; ok {
 		metadata = p.toMetadataSection(sec)
 	}
 	return ast.AxiomGroup{
@@ -1662,57 +1505,47 @@ func (p *parser) toGivenSection(section phase4.Section) *ast.GivenSection {
 /////////////////////// conjecture //////////////////////////////////////
 
 func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, bool) {
-	if !startsWithSections(group, "Conjecture") {
+	if !startsWithSections(group, ast.UpperConjectureName) {
 		return ast.ConjectureGroup{}, false
 	}
 
 	id := p.getId(group, false)
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"Conjecture",
-		"given?",
-		"where?",
-		"suchThat?",
-		"then",
-		"iff?",
-		"Using?",
-		"Documented?",
-		"References?",
-		"Metadata?")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ConjectureSections...)
 	if !ok {
 		return ast.ConjectureGroup{}, false
 	}
-	conjecture := *p.toConjectureSection(sections["Conjecture"])
+	conjecture := *p.toConjectureSection(sections[ast.UpperConjectureName])
 	var given *ast.GivenSection
-	if sec, ok := sections["given"]; ok {
+	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
 	var where *ast.WhereSection
-	if sec, ok := sections["where"]; ok {
+	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
-	if sec, ok := sections["suchThat"]; ok {
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
 		suchThat = p.toSuchThatSection(sec)
 	}
-	then := *p.toThenSection(sections["then"])
+	then := *p.toThenSection(sections[ast.LowerThenName])
 	var iff *ast.IffSection
-	if sec, ok := sections["iff"]; ok {
+	if sec, ok := sections[ast.LowerIffName]; ok {
 		iff = p.toIffSection(sec)
 	}
 	var using *ast.UsingSection
-	if sec, ok := sections["Using"]; ok {
+	if sec, ok := sections[ast.UpperUsingName]; ok {
 		using = p.toUsingSection(sec)
 	}
 	var documented *ast.DocumentedSection
-	if sec, ok := sections["Documented"]; ok {
+	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
 	}
 	var references *ast.ReferencesSection
-	if sec, ok := sections["References"]; ok {
+	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
 	}
 	var metadata *ast.MetadataSection
-	if sec, ok := sections["Metadata"]; ok {
+	if sec, ok := sections[ast.UpperMetadataName]; ok {
 		metadata = p.toMetadataSection(sec)
 	}
 	return ast.ConjectureGroup{
@@ -1739,62 +1572,51 @@ func (p *parser) toConjectureSection(section phase4.Section) *ast.ConjectureSect
 /////////////////////// theorem /////////////////////////////////////////
 
 func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
-	if !startsWithSections(group, "Theorem") {
+	if !startsWithSections(group, ast.UpperTheoremName) {
 		return ast.TheoremGroup{}, false
 	}
 
 	id := p.getId(group, false)
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"Theorem",
-		"given?",
-		"where?",
-		"suchThat?",
-		"then",
-		"iff?",
-		"Using?",
-		"Proof?",
-		"Documented?",
-		"References?",
-		"Metadata?")
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.TheoremSections...)
 	if !ok {
 		return ast.TheoremGroup{}, false
 	}
-	theorem := *p.toTheoremSection(sections["Theorem"])
+	theorem := *p.toTheoremSection(sections[ast.UpperTheoremName])
 	var given *ast.GivenSection
-	if sec, ok := sections["given"]; ok {
+	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
 	var where *ast.WhereSection
-	if sec, ok := sections["where"]; ok {
+	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
-	if sec, ok := sections["suchThat"]; ok {
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
 		suchThat = p.toSuchThatSection(sec)
 	}
-	then := *p.toThenSection(sections["then"])
+	then := *p.toThenSection(sections[ast.LowerThenName])
 	var iff *ast.IffSection
-	if sec, ok := sections["iff"]; ok {
+	if sec, ok := sections[ast.LowerIffName]; ok {
 		iff = p.toIffSection(sec)
 	}
 	var using *ast.UsingSection
-	if sec, ok := sections["Using"]; ok {
+	if sec, ok := sections[ast.UpperUsingName]; ok {
 		using = p.toUsingSection(sec)
 	}
 	var proof *ast.ProofSection
-	if sec, ok := sections["Proof"]; ok {
+	if sec, ok := sections[ast.UpperProofName]; ok {
 		proof = p.toProofSection(sec)
 	}
 	var documented *ast.DocumentedSection
-	if sec, ok := sections["Documented"]; ok {
+	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
 	}
 	var references *ast.ReferencesSection
-	if sec, ok := sections["References"]; ok {
+	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
 	}
 	var metadata *ast.MetadataSection
-	if sec, ok := sections["Metadata"]; ok {
+	if sec, ok := sections[ast.UpperMetadataName]; ok {
 		metadata = p.toMetadataSection(sec)
 	}
 	return ast.TheoremGroup{
@@ -1836,7 +1658,7 @@ func (p *parser) toTextBlockItem(block phase4.TextBlock) *ast.TextBlockItem {
 ///////////////////////////////// specify /////////////////////////////////
 
 func (p *parser) toSpecifyGroup(group phase4.Group) (ast.SpecifyGroup, bool) {
-	if !startsWithSections(group, "Specify") {
+	if !startsWithSections(group, ast.UpperSpecifyName) {
 		return ast.SpecifyGroup{}, false
 	}
 
@@ -1846,7 +1668,7 @@ func (p *parser) toSpecifyGroup(group phase4.Group) (ast.SpecifyGroup, bool) {
 ///////////////////////////////// topic ////////////////////////////////////
 
 func (p *parser) toTopicGroup(group phase4.Group) (ast.TopicGroup, bool) {
-	if !startsWithSections(group, "Topic") {
+	if !startsWithSections(group, ast.UpperTopicName) {
 		return ast.TopicGroup{}, false
 	}
 
@@ -1856,7 +1678,7 @@ func (p *parser) toTopicGroup(group phase4.Group) (ast.TopicGroup, bool) {
 //////////////////////////////////// note //////////////////////////////////
 
 func (p *parser) toNoteGroup(group phase4.Group) (ast.NoteGroup, bool) {
-	if !startsWithSections(group, "Note") {
+	if !startsWithSections(group, ast.UpperNoteName) {
 		return ast.NoteGroup{}, false
 	}
 
@@ -2199,4 +2021,15 @@ func newError(message string, position ast.Position) frontend.Diagnostic {
 		Message:  message,
 		Position: position,
 	}
+}
+
+func sectionNamesToString(names []string) string {
+	result := ""
+	for i, name := range names {
+		result += name + ":"
+		if i != len(names)-1 {
+			result += "\n"
+		}
+	}
+	return result
 }

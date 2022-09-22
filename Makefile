@@ -38,3 +38,7 @@ setup:
 .PHONY: testbed
 testbed:
 	go build -o testbed/mlg main.go && cd testbed && ./mlg $(args)
+
+.PHONY: debug
+debug:
+	go run main.go debug $(args)

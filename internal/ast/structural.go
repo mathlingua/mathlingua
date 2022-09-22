@@ -358,7 +358,7 @@ func (AsThroughGroup) ViewableType() {}
 
 var AsViaSections = []string{
 	LowerAsName,
-	"via",
+	LowerViaName,
 }
 
 type AsViaGroup struct {

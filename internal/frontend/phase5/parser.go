@@ -672,23 +672,23 @@ func (p *parser) toSymbolGroup(group phase4.Group) (ast.SymbolGroup, bool) {
 
 ////////////////////// codified documented items /////////////////////////////////
 
-func (p *parser) toWrittenGroup(group phase4.Group) (ast.WrittenGroup, bool) {
-	if !startsWithSections(group, ast.LowerWrittenName) {
-		return ast.WrittenGroup{}, false
+func (p *parser) toExpresedGroup(group phase4.Group) (ast.ExpressedGroup, bool) {
+	if !startsWithSections(group, ast.LowerExpressedName) {
+		return ast.ExpressedGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.WrittenSections...)
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ExpressedSections...)
 	if !ok {
-		return ast.WrittenGroup{}, false
+		return ast.ExpressedGroup{}, false
 	}
-	return ast.WrittenGroup{
-		Written: *p.toWrittenSection(sections[ast.LowerWrittenName]),
+	return ast.ExpressedGroup{
+		Expressed: *p.toExpressedSection(sections[ast.LowerExpressedName]),
 	}, true
 }
 
-func (p *parser) toWrittenSection(section phase4.Section) *ast.WrittenSection {
-	return &ast.WrittenSection{
-		Written: p.oneOrMoreTextItems(section),
+func (p *parser) toExpressedSection(section phase4.Section) *ast.ExpressedSection {
+	return &ast.ExpressedSection{
+		Expressed: p.oneOrMoreTextItems(section),
 	}
 }
 
@@ -712,31 +712,31 @@ func (p *parser) toCalledSection(section phase4.Section) *ast.CalledSection {
 	}
 }
 
-func (p *parser) toWritingGroup(group phase4.Group) (ast.WritingGroup, bool) {
-	if !startsWithSections(group, ast.LowerWritingName) {
-		return ast.WritingGroup{}, false
+func (p *parser) toExpressingGroup(group phase4.Group) (ast.ExpressingGroup, bool) {
+	if !startsWithSections(group, ast.LowerExpressingName) {
+		return ast.ExpressingGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.WritingSections...)
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ExpressingSections...)
 	if !ok {
-		return ast.WritingGroup{}, false
+		return ast.ExpressingGroup{}, false
 	}
-	writing := *p.toWritingSection(sections[ast.LowerWritingName])
-	as := *p.toWritingAsSection(sections[ast.LowerAsName])
-	return ast.WritingGroup{
-		Writing: writing,
-		As:      as,
+	expressing := *p.toExpressingSection(sections[ast.LowerExpressingName])
+	as := *p.toExpressingAsSection(sections[ast.LowerAsName])
+	return ast.ExpressingGroup{
+		Expressing: expressing,
+		As:         as,
 	}, true
 }
 
-func (p *parser) toWritingSection(section phase4.Section) *ast.WritingSection {
-	return &ast.WritingSection{
-		Writing: p.oneOrMoreTargets(section),
+func (p *parser) toExpressingSection(section phase4.Section) *ast.ExpressingSection {
+	return &ast.ExpressingSection{
+		Expressing: p.oneOrMoreTargets(section),
 	}
 }
 
-func (p *parser) toWritingAsSection(section phase4.Section) *ast.WritingAsSection {
-	return &ast.WritingAsSection{
+func (p *parser) toExpressingAsSection(section phase4.Section) *ast.ExpressingAsSection {
+	return &ast.ExpressingAsSection{
 		As: p.oneOrMoreTextItems(section),
 	}
 }
@@ -768,9 +768,9 @@ func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool
 			return grp, true
 		} else if grp, ok := p.toNotesGroup(group); ok {
 			return grp, true
-		} else if grp, ok := p.toWrittenGroup(group); ok {
+		} else if grp, ok := p.toExpresedGroup(group); ok {
 			return grp, true
-		} else if grp, ok := p.toWritingGroup(group); ok {
+		} else if grp, ok := p.toExpressingGroup(group); ok {
 			return grp, true
 		} else if grp, ok := p.toCalledGroup(group); ok {
 			return grp, true

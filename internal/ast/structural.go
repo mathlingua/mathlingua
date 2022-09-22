@@ -33,6 +33,8 @@ const LowerElseQuestionName = LowerElseName + "?"
 const LowerExamplesName = "examples"
 const LowerExistsName = "exists"
 const LowerExistsUniqueName = "existsUnique"
+const LowerExpressingName = "expressing"
+const LowerExpressedName = "expressed"
 const LowerExtendsName = "extends"
 const LowerExtendsQuestionName = LowerExtendsName + "?"
 const LowerForAllName = "forAll"
@@ -84,8 +86,6 @@ const LowerWhereName = "where"
 const LowerWhereQuestionName = LowerWhereName + "?"
 const LowerWithName = "with"
 const LowerWithQuestionName = LowerWithName + "?"
-const LowerWritingName = "writing"
-const LowerWrittenName = "written"
 const LowerZeroName = "zero"
 const UpperAxiomName = "Axiom"
 const UpperConjectureName = "Conjecture"
@@ -503,14 +503,14 @@ type ProvidesDefinesSection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
-var WrittenSections = []string{LowerWrittenName}
+var ExpressedSections = []string{LowerExpressedName}
 
-type WrittenGroup struct {
-	Written WrittenSection
+type ExpressedGroup struct {
+	Expressed ExpressedSection
 }
 
-type WrittenSection struct {
-	Written []TextItem
+type ExpressedSection struct {
+	Expressed []TextItem
 }
 
 var CalledSections = []string{LowerCalledName}
@@ -523,18 +523,18 @@ type CalledSection struct {
 	Called []TextItem
 }
 
-var WritingSections = []string{LowerWritingName, LowerAsName}
+var ExpressingSections = []string{LowerExpressingName, LowerAsName}
 
-type WritingGroup struct {
-	Writing WritingSection
-	As      WritingAsSection
+type ExpressingGroup struct {
+	Expressing ExpressingSection
+	As         ExpressingAsSection
 }
 
-type WritingSection struct {
-	Writing []Target
+type ExpressingSection struct {
+	Expressing []Target
 }
 
-type WritingAsSection struct {
+type ExpressingAsSection struct {
 	As []TextItem
 }
 
@@ -552,8 +552,8 @@ func (ExamplesGroup) DocumentedType()   {}
 func (RelatedGroup) DocumentedType()    {}
 func (DiscoveredGroup) DocumentedType() {}
 func (NotesGroup) DocumentedType()      {}
-func (WrittenGroup) DocumentedType()    {}
-func (WritingGroup) DocumentedType()    {}
+func (ExpressedGroup) DocumentedType()  {}
+func (ExpressingGroup) DocumentedType() {}
 func (CalledGroup) DocumentedType()     {}
 
 var LooselySections = []string{LowerLooselyName}

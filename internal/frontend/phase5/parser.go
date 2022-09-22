@@ -670,47 +670,7 @@ func (p *parser) toSymbolGroup(group phase4.Group) (ast.SymbolGroup, bool) {
 	return ast.SymbolGroup{}, false
 }
 
-////////////////////////////// codified /////////////////////////////////
-
-func (p *parser) toCodifiedSection(section phase4.Section) *ast.CodifiedSection {
-	return &ast.CodifiedSection{
-		Codified: p.oneOrMoreCodifiedType(section),
-	}
-}
-
-func (p *parser) oneOrMoreCodifiedType(section phase4.Section) []ast.CodifiedType {
-	return oneOrMore(p.toCodifiedTypes(section.Args), section.MetaData.Start, p.tracker)
-}
-
-func (p *parser) toCodifiedTypes(args []phase4.Argument) []ast.CodifiedType {
-	result := make([]ast.CodifiedType, 0)
-	for _, arg := range args {
-		if codeType, ok := p.toCodifiedTypeFromArg(arg); ok {
-			result = append(result, codeType)
-		}
-	}
-	return result
-}
-
-func (p *parser) toCodifiedTypeFromArg(arg phase4.Argument) (ast.CodifiedType, bool) {
-	group, ok := arg.Arg.(phase4.Group)
-	if !ok {
-		return nil, false
-	}
-	return p.toCodifiedTypeFromGroup(group)
-}
-
-func (p *parser) toCodifiedTypeFromGroup(group phase4.Group) (ast.CodifiedType, bool) {
-	if grp, ok := p.toWrittenGroup(group); ok {
-		return grp, true
-	} else if grp, ok := p.toCalledGroup(group); ok {
-		return grp, true
-	} else if grp, ok := p.toWritingGroup(group); ok {
-		return grp, true
-	} else {
-		return nil, false
-	}
-}
+////////////////////// codified documented items /////////////////////////////////
 
 func (p *parser) toWrittenGroup(group phase4.Group) (ast.WrittenGroup, bool) {
 	if !startsWithSections(group, ast.LowerWrittenName) {
@@ -807,6 +767,12 @@ func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool
 		} else if grp, ok := p.toDiscoveredGroup(group); ok {
 			return grp, true
 		} else if grp, ok := p.toNotesGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toWrittenGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toWritingGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toCalledGroup(group); ok {
 			return grp, true
 		}
 	}
@@ -1186,7 +1152,6 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		justified = p.toJustifiedSection(sec)
 	}
-	codified := *p.toCodifiedSection(sections[ast.UpperCodifiedName])
 	var documented *ast.DocumentedSection
 	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
@@ -1215,7 +1180,6 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		Provides:   provides,
 		Viewable:   viewable,
 		Justified:  justified,
-		Codified:   codified,
 		Documented: documented,
 		References: references,
 		Using:      using,
@@ -1290,7 +1254,6 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		justified = p.toJustifiedSection(sec)
 	}
-	codified := *p.toCodifiedSection(sections[ast.UpperCodifiedName])
 	var documented *ast.DocumentedSection
 	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
@@ -1319,7 +1282,6 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 		Viewable:   viewable,
 		Provides:   provides,
 		Justified:  justified,
-		Codified:   codified,
 		Documented: documented,
 		References: references,
 		Using:      using,
@@ -1377,7 +1339,6 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		suchThat = p.toSuchThatSection(sec)
 	}
 	that := *p.toThatSection(sections[ast.LowerThatName])
-	codified := *p.toCodifiedSection(sections[ast.UpperCodifiedName])
 	var documented *ast.DocumentedSection
 	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
@@ -1405,7 +1366,6 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		When:       when,
 		SuchThat:   suchThat,
 		That:       that,
-		Codified:   codified,
 		Documented: documented,
 		Justified:  justified,
 		References: references,

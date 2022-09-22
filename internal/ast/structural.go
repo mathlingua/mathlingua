@@ -88,7 +88,6 @@ const LowerWritingName = "writing"
 const LowerWrittenName = "written"
 const LowerZeroName = "zero"
 const UpperAxiomName = "Axiom"
-const UpperCodifiedName = "Codified"
 const UpperConjectureName = "Conjecture"
 const UpperDeclaresName = "Declares"
 const UpperDescribesName = "Describes"
@@ -504,18 +503,6 @@ type ProvidesDefinesSection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
-type CodifiedSection struct {
-	Codified []CodifiedType
-}
-
-type CodifiedType interface {
-	CodifiedType()
-}
-
-func (WrittenGroup) CodifiedType() {}
-func (CalledGroup) CodifiedType()  {}
-func (WritingGroup) CodifiedType() {}
-
 var WrittenSections = []string{LowerWrittenName}
 
 type WrittenGroup struct {
@@ -565,6 +552,9 @@ func (ExamplesGroup) DocumentedType()   {}
 func (RelatedGroup) DocumentedType()    {}
 func (DiscoveredGroup) DocumentedType() {}
 func (NotesGroup) DocumentedType()      {}
+func (WrittenGroup) DocumentedType()    {}
+func (WritingGroup) DocumentedType()    {}
+func (CalledGroup) DocumentedType()     {}
 
 var LooselySections = []string{LowerLooselyName}
 
@@ -749,7 +739,6 @@ var DescribesSections = []string{
 	UpperProvidesQuestionName,
 	UpperViewableQuestionName,
 	UpperJustifiedQuestionName,
-	UpperCodifiedName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperUsingQuestionName,
@@ -768,7 +757,6 @@ type DescribesGroup struct {
 	Provides   *ProvidesSection
 	Viewable   *ViewableSection
 	Justified  *JustifiedSection
-	Codified   CodifiedSection
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Using      *UsingSection
@@ -808,7 +796,6 @@ var DeclaresSections = []string{
 	UpperProvidesQuestionName,
 	UpperViewableQuestionName,
 	UpperJustifiedQuestionName,
-	UpperCodifiedName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperUsingQuestionName,
@@ -827,7 +814,6 @@ type DeclaresGroup struct {
 	Provides   *ProvidesSection
 	Viewable   *ViewableSection
 	Justified  *JustifiedSection
-	Codified   CodifiedSection
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Using      *UsingSection
@@ -854,7 +840,6 @@ var StatesSections = []string{
 	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
 	LowerThatName,
-	UpperCodifiedName,
 	UpperDocumentedQuestionName,
 	UpperJustifiedQuestionName,
 	UpperReferencesQuestionName,
@@ -869,7 +854,6 @@ type StatesGroup struct {
 	When       *WhenSection
 	SuchThat   *SuchThatSection
 	That       ThatSection
-	Codified   CodifiedSection
 	Documented *DocumentedSection
 	Justified  *JustifiedSection
 	References *ReferencesSection

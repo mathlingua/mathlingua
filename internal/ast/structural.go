@@ -146,6 +146,8 @@ func (OneOfGroup) Clause()            {}
 func (ExistsGroup) Clause()           {}
 func (ExistsUniqueGroup) Clause()     {}
 func (ForAllGroup) Clause()           {}
+func (IfGroup) Clause()               {}
+func (IffGroup) Clause()              {}
 
 //////////////////////////////////////////////////////////////////////////////
 

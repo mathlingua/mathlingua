@@ -1744,6 +1744,10 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 			return grp
 		} else if grp, ok := p.toExistsUniqueGroup(data); ok {
 			return grp
+		} else if grp, ok := p.toIfGroup(data); ok {
+			return grp
+		} else if grp, ok := p.toIffGroup(data); ok {
+			return grp
 		}
 	}
 

@@ -777,7 +777,6 @@ func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool
 		}
 	}
 
-	p.tracker.Append(newError("Expected a documented item", arg.MetaData.Start))
 	return nil, false
 }
 
@@ -1707,7 +1706,7 @@ func (p *parser) toIdItem(text string, position ast.Position) *ast.IdItem {
 
 func (p *parser) getId(group phase4.Group, required bool) *ast.IdItem {
 	if required && group.Id == nil {
-		p.tracker.Append(newError("Expected an id", group.MetaData.Start))
+		p.tracker.Append(newError("Expected a [...] item", group.MetaData.Start))
 		return nil
 	} else if group.Id == nil {
 		return nil
@@ -1751,7 +1750,9 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 		}
 	}
 
-	p.tracker.Append(newError("Expected a clause", arg.MetaData.Start))
+	p.tracker.Append(newError(fmt.Sprintf("Expected a '...', `...`, %s:, %s:, %s:, %s:, or %s: item",
+		ast.LowerExistsName, ast.LowerExistsUniqueName, ast.LowerForAllName, ast.LowerIfName, ast.LowerIffName),
+		arg.MetaData.Start))
 	return ast.Formulation[ast.NodeType]{}
 }
 
@@ -1768,7 +1769,7 @@ func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 			return ast.Spec{}
 		}
 	default:
-		p.tracker.Append(newError("Expected a specification", arg.MetaData.Start))
+		p.tracker.Append(newError("Expected a '... is ...' or a '... <op> ...' item", arg.MetaData.Start))
 		return ast.Spec{}
 	}
 }
@@ -1786,7 +1787,7 @@ func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 			return ast.Target{}
 		}
 	default:
-		p.tracker.Append(newError("Expected a target", arg.MetaData.Start))
+		p.tracker.Append(newError("Expected a name, function, set, tuple, or ':=' declaration", arg.MetaData.Start))
 		return ast.Target{}
 	}
 }
@@ -1798,7 +1799,7 @@ func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
 			RawText: data.Text,
 		}
 	default:
-		p.tracker.Append(newError("Expected a text item", arg.MetaData.Start))
+		p.tracker.Append(newError("Expected a \"...\" item", arg.MetaData.Start))
 		return ast.TextItem{}
 	}
 }
@@ -1869,7 +1870,11 @@ func (p *parser) toDocumentedTypes(args []phase4.Argument) []ast.DocumentedType 
 		if doc, ok := p.toDocumentedType(arg); ok {
 			result = append(result, doc)
 		} else {
-			p.tracker.Append(newError("Expected a documented type", arg.MetaData.Start))
+			p.tracker.Append(newError(fmt.Sprintf(
+				"Expected a %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, or %s: item",
+				ast.LowerLooselyName, ast.LowerOverviewName, ast.LowerMotivationName, ast.LowerHistoryName,
+				ast.LowerExamplesName, ast.LowerRelatedName, ast.LowerDiscoveredName, ast.LowerNotesName,
+				ast.LowerExpressedName, ast.LowerExpressingName, ast.LowerCalledName), arg.MetaData.Start))
 		}
 	}
 	return result

@@ -1182,10 +1182,6 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	if sec, ok := sections[ast.UpperViewableName]; ok {
 		viewable = p.toViewableSection(sec)
 	}
-	var using *ast.UsingSection
-	if sec, ok := sections[ast.UpperUsingName]; ok {
-		using = p.toUsingSection(sec)
-	}
 	codified := *p.toCodifiedSection(sections[ast.UpperCodifiedName])
 	var documented *ast.DocumentedSection
 	if sec, ok := sections[ast.UpperDocumentedName]; ok {
@@ -1198,6 +1194,10 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	var references *ast.ReferencesSection
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		references = p.toReferencesSection(sec)
+	}
+	var using *ast.UsingSection
+	if sec, ok := sections[ast.UpperUsingName]; ok {
+		using = p.toUsingSection(sec)
 	}
 	var metadata *ast.MetadataSection
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
@@ -1214,11 +1214,11 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		Satisfies:  satisfies,
 		Viewable:   viewable,
 		Provides:   provides,
-		Using:      using,
 		Codified:   codified,
 		Documented: documented,
 		Justified:  justified,
 		References: references,
+		Using:      using,
 		Metadata:   metadata,
 	}, true
 }
@@ -1286,10 +1286,6 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 	if sec, ok := sections[ast.UpperViewableName]; ok {
 		viewable = p.toViewableSection(sec)
 	}
-	var using *ast.UsingSection
-	if sec, ok := sections[ast.UpperUsingName]; ok {
-		using = p.toUsingSection(sec)
-	}
 	codified := *p.toCodifiedSection(sections[ast.UpperCodifiedName])
 	var documented *ast.DocumentedSection
 	if sec, ok := sections[ast.UpperDocumentedName]; ok {
@@ -1302,6 +1298,10 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 	var references *ast.ReferencesSection
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		references = p.toReferencesSection(sec)
+	}
+	var using *ast.UsingSection
+	if sec, ok := sections[ast.UpperUsingName]; ok {
+		using = p.toUsingSection(sec)
 	}
 	var metadata *ast.MetadataSection
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
@@ -1318,11 +1318,11 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 		Defines:    defines,
 		Viewable:   viewable,
 		Provides:   provides,
-		Using:      using,
 		Codified:   codified,
 		Documented: documented,
 		Justified:  justified,
 		References: references,
+		Using:      using,
 		Metadata:   metadata,
 	}, true
 }
@@ -1377,10 +1377,6 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		suchThat = p.toSuchThatSection(sec)
 	}
 	that := *p.toThatSection(sections[ast.LowerThatName])
-	var using *ast.UsingSection
-	if sec, ok := sections[ast.UpperUsingName]; ok {
-		using = p.toUsingSection(sec)
-	}
 	codified := *p.toCodifiedSection(sections[ast.UpperCodifiedName])
 	var documented *ast.DocumentedSection
 	if sec, ok := sections[ast.UpperDocumentedName]; ok {
@@ -1394,6 +1390,10 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
 	}
+	var using *ast.UsingSection
+	if sec, ok := sections[ast.UpperUsingName]; ok {
+		using = p.toUsingSection(sec)
+	}
 	var metadata *ast.MetadataSection
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
 		metadata = p.toMetadataSection(sec)
@@ -1405,11 +1405,11 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		When:       when,
 		SuchThat:   suchThat,
 		That:       that,
-		Using:      using,
 		Codified:   codified,
 		Documented: documented,
 		Justified:  justified,
 		References: references,
+		Using:      using,
 		Metadata:   metadata,
 	}, true
 }
@@ -1459,10 +1459,6 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 	if sec, ok := sections[ast.LowerIffName]; ok {
 		iff = p.toIffSection(sec)
 	}
-	var using *ast.UsingSection
-	if sec, ok := sections[ast.UpperUsingName]; ok {
-		using = p.toUsingSection(sec)
-	}
 	var documented *ast.DocumentedSection
 	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
@@ -1470,6 +1466,10 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 	var references *ast.ReferencesSection
 	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
+	}
+	var using *ast.UsingSection
+	if sec, ok := sections[ast.UpperUsingName]; ok {
+		using = p.toUsingSection(sec)
 	}
 	var metadata *ast.MetadataSection
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
@@ -1483,9 +1483,9 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 		SuchThat:   suchThat,
 		Then:       then,
 		Iff:        iff,
-		Using:      using,
 		Documented: documented,
 		References: references,
+		Using:      using,
 		Metadata:   metadata,
 	}, true
 }
@@ -1532,10 +1532,6 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 	if sec, ok := sections[ast.LowerIffName]; ok {
 		iff = p.toIffSection(sec)
 	}
-	var using *ast.UsingSection
-	if sec, ok := sections[ast.UpperUsingName]; ok {
-		using = p.toUsingSection(sec)
-	}
 	var documented *ast.DocumentedSection
 	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
@@ -1543,6 +1539,10 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 	var references *ast.ReferencesSection
 	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
+	}
+	var using *ast.UsingSection
+	if sec, ok := sections[ast.UpperUsingName]; ok {
+		using = p.toUsingSection(sec)
 	}
 	var metadata *ast.MetadataSection
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
@@ -1556,9 +1556,9 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 		SuchThat:   suchThat,
 		Then:       then,
 		Iff:        iff,
-		Using:      using,
 		Documented: documented,
 		References: references,
+		Using:      using,
 		Metadata:   metadata,
 	}, true
 }
@@ -1599,10 +1599,6 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 	if sec, ok := sections[ast.LowerIffName]; ok {
 		iff = p.toIffSection(sec)
 	}
-	var using *ast.UsingSection
-	if sec, ok := sections[ast.UpperUsingName]; ok {
-		using = p.toUsingSection(sec)
-	}
 	var proof *ast.ProofSection
 	if sec, ok := sections[ast.UpperProofName]; ok {
 		proof = p.toProofSection(sec)
@@ -1614,6 +1610,10 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 	var references *ast.ReferencesSection
 	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
+	}
+	var using *ast.UsingSection
+	if sec, ok := sections[ast.UpperUsingName]; ok {
+		using = p.toUsingSection(sec)
 	}
 	var metadata *ast.MetadataSection
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
@@ -1627,10 +1627,10 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 		SuchThat:   suchThat,
 		Then:       then,
 		Iff:        iff,
-		Using:      using,
 		Proof:      proof,
 		Documented: documented,
 		References: references,
+		Using:      using,
 		Metadata:   metadata,
 	}, true
 }

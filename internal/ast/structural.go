@@ -748,11 +748,11 @@ var DescribesSections = []string{
 	LowerSatisfiesQuestionName,
 	UpperProvidesQuestionName,
 	UpperViewableQuestionName,
-	UpperUsingQuestionName,
 	UpperCodifiedName,
 	UpperDocumentedQuestionName,
 	UpperJustifiedQuestionName,
 	UpperReferencesQuestionName,
+	UpperUsingQuestionName,
 	UpperMetadataQuestionName,
 }
 
@@ -767,11 +767,11 @@ type DescribesGroup struct {
 	Satisfies  *SatisfiesSection
 	Provides   *ProvidesSection
 	Viewable   *ViewableSection
-	Using      *UsingSection
 	Codified   CodifiedSection
 	Documented *DocumentedSection
 	Justified  *JustifiedSection
 	References *ReferencesSection
+	Using      *UsingSection
 	Metadata   *MetadataSection
 }
 
@@ -807,11 +807,11 @@ var DeclaresSections = []string{
 	LowerDefinesQuestionName,
 	UpperProvidesQuestionName,
 	UpperViewableQuestionName,
-	UpperUsingQuestionName,
 	UpperCodifiedName,
 	UpperDocumentedQuestionName,
 	UpperJustifiedQuestionName,
 	UpperReferencesQuestionName,
+	UpperUsingQuestionName,
 	UpperMetadataQuestionName,
 }
 
@@ -826,11 +826,11 @@ type DeclaresGroup struct {
 	Defines    *DefinesSection
 	Provides   *ProvidesSection
 	Viewable   *ViewableSection
-	Using      *UsingSection
 	Codified   CodifiedSection
 	Documented *DocumentedSection
 	Justified  *JustifiedSection
 	References *ReferencesSection
+	Using      *UsingSection
 	Metadata   *MetadataSection
 }
 
@@ -854,11 +854,11 @@ var StatesSections = []string{
 	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
 	LowerThatName,
-	UpperUsingQuestionName,
 	UpperCodifiedName,
 	UpperDocumentedQuestionName,
 	UpperJustifiedQuestionName,
 	UpperReferencesQuestionName,
+	UpperUsingQuestionName,
 	UpperMetadataQuestionName,
 }
 
@@ -869,11 +869,11 @@ type StatesGroup struct {
 	When       *WhenSection
 	SuchThat   *SuchThatSection
 	That       ThatSection
-	Using      *UsingSection
 	Codified   CodifiedSection
 	Documented *DocumentedSection
 	Justified  *JustifiedSection
 	References *ReferencesSection
+	Using      *UsingSection
 	Metadata   *MetadataSection
 }
 
@@ -923,9 +923,9 @@ var AxiomSections = []string{
 	LowerSuchThatQuestionName,
 	LowerThenName,
 	LowerIffQuestionName,
-	UpperUsingQuestionName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
+	UpperUsingQuestionName,
 	UpperMetadataQuestionName,
 }
 
@@ -937,9 +937,9 @@ type AxiomGroup struct {
 	SuchThat   *SuchThatSection
 	Then       ThenSection
 	Iff        *IffSection
-	Using      *UsingSection
 	Documented *DocumentedSection
 	References *ReferencesSection
+	Using      *UsingSection
 	Metadata   *MetadataSection
 }
 
@@ -956,9 +956,9 @@ var ConjectureSections = []string{
 	LowerSuchThatQuestionName,
 	LowerThenName,
 	LowerIffQuestionName,
-	UpperUsingQuestionName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
+	UpperUsingQuestionName,
 	UpperMetadataQuestionName,
 }
 
@@ -970,9 +970,9 @@ type ConjectureGroup struct {
 	SuchThat   *SuchThatSection
 	Then       ThenSection
 	Iff        *IffSection
-	Using      *UsingSection
 	Documented *DocumentedSection
 	References *ReferencesSection
+	Using      *UsingSection
 	Metadata   *MetadataSection
 }
 
@@ -989,10 +989,10 @@ var TheoremSections = []string{
 	LowerSuchThatQuestionName,
 	LowerThenName,
 	LowerIffQuestionName,
-	UpperUsingQuestionName,
 	UpperProofName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
+	UpperUsingQuestionName,
 	UpperMetadataQuestionName,
 }
 
@@ -1004,10 +1004,10 @@ type TheoremGroup struct {
 	SuchThat   *SuchThatSection
 	Then       ThenSection
 	Iff        *IffSection
-	Using      *UsingSection
 	Proof      *ProofSection
 	Documented *DocumentedSection
 	References *ReferencesSection
+	Using      *UsingSection
 	Metadata   *MetadataSection
 }
 

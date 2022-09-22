@@ -1182,14 +1182,14 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	if sec, ok := sections[ast.UpperViewableName]; ok {
 		viewable = p.toViewableSection(sec)
 	}
+	var justified *ast.JustifiedSection
+	if sec, ok := sections[ast.UpperJustifiedName]; ok {
+		justified = p.toJustifiedSection(sec)
+	}
 	codified := *p.toCodifiedSection(sections[ast.UpperCodifiedName])
 	var documented *ast.DocumentedSection
 	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
-	}
-	var justified *ast.JustifiedSection
-	if sec, ok := sections[ast.UpperJustifiedName]; ok {
-		justified = p.toJustifiedSection(sec)
 	}
 	var references *ast.ReferencesSection
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
@@ -1212,11 +1212,11 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		SuchThat:   suchThat,
 		Extends:    extends,
 		Satisfies:  satisfies,
-		Viewable:   viewable,
 		Provides:   provides,
+		Viewable:   viewable,
+		Justified:  justified,
 		Codified:   codified,
 		Documented: documented,
-		Justified:  justified,
 		References: references,
 		Using:      using,
 		Metadata:   metadata,
@@ -1286,14 +1286,14 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 	if sec, ok := sections[ast.UpperViewableName]; ok {
 		viewable = p.toViewableSection(sec)
 	}
+	var justified *ast.JustifiedSection
+	if sec, ok := sections[ast.UpperJustifiedName]; ok {
+		justified = p.toJustifiedSection(sec)
+	}
 	codified := *p.toCodifiedSection(sections[ast.UpperCodifiedName])
 	var documented *ast.DocumentedSection
 	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
-	}
-	var justified *ast.JustifiedSection
-	if sec, ok := sections[ast.UpperJustifiedName]; ok {
-		justified = p.toJustifiedSection(sec)
 	}
 	var references *ast.ReferencesSection
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
@@ -1318,9 +1318,9 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 		Defines:    defines,
 		Viewable:   viewable,
 		Provides:   provides,
+		Justified:  justified,
 		Codified:   codified,
 		Documented: documented,
-		Justified:  justified,
 		References: references,
 		Using:      using,
 		Metadata:   metadata,

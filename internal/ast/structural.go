@@ -748,9 +748,9 @@ var DescribesSections = []string{
 	LowerSatisfiesQuestionName,
 	UpperProvidesQuestionName,
 	UpperViewableQuestionName,
+	UpperJustifiedQuestionName,
 	UpperCodifiedName,
 	UpperDocumentedQuestionName,
-	UpperJustifiedQuestionName,
 	UpperReferencesQuestionName,
 	UpperUsingQuestionName,
 	UpperMetadataQuestionName,
@@ -767,9 +767,9 @@ type DescribesGroup struct {
 	Satisfies  *SatisfiesSection
 	Provides   *ProvidesSection
 	Viewable   *ViewableSection
+	Justified  *JustifiedSection
 	Codified   CodifiedSection
 	Documented *DocumentedSection
-	Justified  *JustifiedSection
 	References *ReferencesSection
 	Using      *UsingSection
 	Metadata   *MetadataSection
@@ -807,9 +807,9 @@ var DeclaresSections = []string{
 	LowerDefinesQuestionName,
 	UpperProvidesQuestionName,
 	UpperViewableQuestionName,
+	UpperJustifiedQuestionName,
 	UpperCodifiedName,
 	UpperDocumentedQuestionName,
-	UpperJustifiedQuestionName,
 	UpperReferencesQuestionName,
 	UpperUsingQuestionName,
 	UpperMetadataQuestionName,
@@ -826,9 +826,9 @@ type DeclaresGroup struct {
 	Defines    *DefinesSection
 	Provides   *ProvidesSection
 	Viewable   *ViewableSection
+	Justified  *JustifiedSection
 	Codified   CodifiedSection
 	Documented *DocumentedSection
-	Justified  *JustifiedSection
 	References *ReferencesSection
 	Using      *UsingSection
 	Metadata   *MetadataSection

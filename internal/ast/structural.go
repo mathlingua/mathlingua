@@ -99,6 +99,7 @@ const UpperMetadataName = "Metadata"
 const UpperMetadataQuestionName = UpperMetadataName + "?"
 const UpperNoteName = "Note"
 const UpperProofName = "Proof"
+const UpperProofQuestionName = UpperProofName + "?"
 const UpperProvidesName = "Provides"
 const UpperProvidesQuestionName = UpperProvidesName + "?"
 const UpperReferencesName = "References"
@@ -975,7 +976,7 @@ var TheoremSections = []string{
 	LowerSuchThatQuestionName,
 	LowerThenName,
 	LowerIffQuestionName,
-	UpperProofName,
+	UpperProofQuestionName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperUsingQuestionName,

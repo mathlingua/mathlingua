@@ -61,6 +61,7 @@ func (CommandAtId) NodeType()                            {}
 func (PrefixOperatorId) NodeType()                       {}
 func (PostfixOperatorId) NodeType()                      {}
 func (InfixOperatorId) NodeType()                        {}
+func (InfixCommandOperatorId) NodeType()                 {}
 func (PseudoTokenNode) NodeType()                        {}
 func (PseudoExpression) NodeType()                       {}
 func (MultiplexedInfixOperatorCallExpression) NodeType() {}
@@ -98,6 +99,7 @@ func (n CommandAtId) Start() Position                            { return n.Meta
 func (n PrefixOperatorId) Start() Position                       { return n.MetaData.Start }
 func (n PostfixOperatorId) Start() Position                      { return n.MetaData.Start }
 func (n InfixOperatorId) Start() Position                        { return n.MetaData.Start }
+func (n InfixCommandOperatorId) Start() Position                 { return n.MetaData.Start }
 func (n PseudoTokenNode) Start() Position                        { return n.MetaData.Start }
 func (n PseudoExpression) Start() Position                       { return n.MetaData.Start }
 func (n MultiplexedInfixOperatorCallExpression) Start() Position { return n.MetaData.Start }
@@ -481,11 +483,12 @@ type IdType interface {
 	IdType()
 }
 
-func (CommandId) IdType()         {} // DONE
-func (CommandAtId) IdType()       {} // DONE
-func (PrefixOperatorId) IdType()  {}
-func (PostfixOperatorId) IdType() {}
-func (InfixOperatorId) IdType()   {}
+func (CommandId) IdType()              {} // DONE
+func (CommandAtId) IdType()            {} // DONE
+func (PrefixOperatorId) IdType()       {}
+func (PostfixOperatorId) IdType()      {}
+func (InfixOperatorId) IdType()        {}
+func (InfixCommandOperatorId) IdType() {}
 
 // DONE
 type SubSupParams struct {
@@ -513,6 +516,16 @@ type CommandId struct {
 	MetaData     MetaData
 }
 
+// \function:on{A}:to{B}/
+type InfixCommandId struct {
+	Names        []NameForm
+	SubSupParams *SubSupParams
+	CurlyParams  *[]StructuralFormType
+	NamedParams  *[]NamedParam
+	ParenParams  *[]NameForm
+	MetaData     MetaData
+}
+
 // DONE
 // \set@[x]{f[x] | g[x]}
 type CommandAtId struct {
@@ -523,22 +536,29 @@ type CommandAtId struct {
 
 // +x
 type PrefixOperatorId struct {
-	Operator NameForm
+	Operator NonEnclosedNonCommandOperatorTarget
 	Param    StructuralFormType
 	MetaData MetaData
 }
 
 // -x
 type PostfixOperatorId struct {
-	Operator NameForm
+	Operator NonEnclosedNonCommandOperatorTarget
 	Param    StructuralFormType
 	MetaData MetaData
 }
 
-// A \subset/ B
 type InfixOperatorId struct {
 	Lhs      StructuralFormType
-	Operator CommandId
+	Operator NonEnclosedNonCommandOperatorTarget
+	Rhs      StructuralFormType
+	MetaData MetaData
+}
+
+// A \subset/ B
+type InfixCommandOperatorId struct {
+	Lhs      StructuralFormType
+	Operator InfixCommandId
 	Rhs      StructuralFormType
 	MetaData MetaData
 }

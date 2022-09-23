@@ -104,18 +104,18 @@ func (fp *formulationParser) next() ast.Token {
 	return fp.lexer.Next()
 }
 
+func (fp *formulationParser) errorAt(message string, position ast.Position) {
+	fp.tracker.Append(frontend.Diagnostic{
+		Type:     frontend.Error,
+		Origin:   frontend.FormulationParserOrigin,
+		Message:  message,
+		Position: position,
+	})
+}
+
 func (fp *formulationParser) error(message string) {
 	position := fp.lexer.Position()
-	fp.tracker.Append(frontend.Diagnostic{
-		Type:    frontend.Error,
-		Origin:  frontend.FormulationParserOrigin,
-		Message: message,
-		Position: ast.Position{
-			Offset: position.Offset + fp.start.Offset,
-			Row:    position.Row + fp.start.Row,
-			Column: position.Column + fp.start.Column,
-		},
-	})
+	fp.errorAt(message, position)
 }
 
 func (fp *formulationParser) finalize() {
@@ -1554,15 +1554,127 @@ func (fp *formulationParser) literalFormType() (ast.LiteralFormType, bool) {
 ////////////////////////////// id forms //////////////////////////////////
 
 func (fp *formulationParser) idType() (ast.IdType, bool) {
-	if cmd, ok := fp.commandId(); ok {
+	if op, ok := fp.infixCommandOperatorId(); ok {
+		return op, ok
+	} else if op, ok := fp.infixOperatorId(); ok {
+		return op, ok
+	} else if op, ok := fp.prefixOperatorId(); ok {
+		return op, ok
+	} else if op, ok := fp.postfixOperatorId(); ok {
+		return op, ok
+	} else if cmd, ok := fp.commandId(); ok {
 		return cmd, ok
+	} else if cmd, ok := fp.commandAtId(); ok {
+		return cmd, ok
+	} else {
+		return nil, false
+	}
+}
+
+func (fp *formulationParser) infixCommandOperatorId() (ast.InfixCommandOperatorId, bool) {
+	id := fp.lexer.Snapshot()
+
+	lhs, ok := fp.structuralFormType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.InfixCommandOperatorId{}, false
 	}
 
-	if cmd, ok := fp.commandAtId(); ok {
-		return cmd, ok
+	op, ok := fp.infixCommandId()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.InfixCommandOperatorId{}, false
 	}
 
-	return nil, false
+	rhs, ok := fp.structuralFormType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.InfixCommandOperatorId{}, false
+	}
+
+	fp.lexer.Commit(id)
+	return ast.InfixCommandOperatorId{
+		Lhs:      lhs,
+		Operator: op,
+		Rhs:      rhs,
+		MetaData: op.MetaData,
+	}, true
+}
+
+func (fp *formulationParser) infixOperatorId() (ast.InfixOperatorId, bool) {
+	id := fp.lexer.Snapshot()
+
+	lhs, ok := fp.structuralFormType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.InfixOperatorId{}, false
+	}
+
+	op, ok := fp.nonEnclosedNonCommandOperatorTarget()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.InfixOperatorId{}, false
+	}
+
+	rhs, ok := fp.structuralFormType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.InfixOperatorId{}, false
+	}
+
+	fp.lexer.Commit(id)
+	return ast.InfixOperatorId{
+		Lhs:      lhs,
+		Operator: op,
+		Rhs:      rhs,
+		MetaData: op.MetaData,
+	}, true
+}
+
+func (fp *formulationParser) postfixOperatorId() (ast.PostfixOperatorId, bool) {
+	id := fp.lexer.Snapshot()
+
+	param, ok := fp.structuralFormType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.PostfixOperatorId{}, false
+	}
+
+	op, ok := fp.nonEnclosedNonCommandOperatorTarget()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.PostfixOperatorId{}, false
+	}
+
+	fp.lexer.Commit(id)
+	return ast.PostfixOperatorId{
+		Operator: op,
+		Param:    param,
+		MetaData: op.MetaData,
+	}, true
+}
+
+func (fp *formulationParser) prefixOperatorId() (ast.PrefixOperatorId, bool) {
+	id := fp.lexer.Snapshot()
+
+	op, ok := fp.nonEnclosedNonCommandOperatorTarget()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.PrefixOperatorId{}, false
+	}
+
+	param, ok := fp.structuralFormType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.PrefixOperatorId{}, false
+	}
+
+	fp.lexer.Commit(id)
+	return ast.PrefixOperatorId{
+		Operator: op,
+		Param:    param,
+		MetaData: op.MetaData,
+	}, true
 }
 
 func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, bool) {
@@ -1671,6 +1783,31 @@ func (fp *formulationParser) subSupParams() (ast.SubSupParams, bool) {
 		MetaData: ast.MetaData{
 			Start: start,
 		},
+	}, true
+}
+
+func (fp *formulationParser) infixCommandId() (ast.InfixCommandId, bool) {
+	id := fp.lexer.Snapshot()
+	cmd, ok := fp.commandId()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.InfixCommandId{}, false
+	}
+
+	_, ok = fp.token(ast.Slash)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.InfixCommandId{}, false
+	}
+
+	fp.lexer.Commit(id)
+	return ast.InfixCommandId{
+		Names:        cmd.Names,
+		SubSupParams: cmd.SubSupParams,
+		CurlyParams:  cmd.CurlyParams,
+		NamedParams:  cmd.NamedParams,
+		ParenParams:  cmd.ParenParams,
+		MetaData:     cmd.MetaData,
 	}, true
 }
 

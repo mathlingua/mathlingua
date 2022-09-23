@@ -119,9 +119,9 @@ func (fp *formulationParser) error(message string) {
 }
 
 func (fp *formulationParser) finalize() {
-	for fp.lexer.HasNext() {
+	if fp.lexer.HasNext() {
 		next := fp.lexer.Next()
-		fp.error(fmt.Sprintf("Unexpected token '%s'", next.Text))
+		fp.error(fmt.Sprintf("Token '%s' and all of the following are unexpected", next.Text))
 	}
 }
 

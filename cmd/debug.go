@@ -132,6 +132,15 @@ func setupScreen() {
 		AddItem(position, 1, 1, 1, 1, 0, 0, false)
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyCtrlSpace {
+			if app.GetFocus() == outputArea {
+				app.SetFocus(inputArea)
+			} else {
+				app.SetFocus(outputArea)
+			}
+			return event
+		}
+
 		resetHelpInfo()
 		if err := os.WriteFile(inputFile, []byte(inputArea.GetText()), 0644); err != nil {
 			setHelpInfoError(err.Error())

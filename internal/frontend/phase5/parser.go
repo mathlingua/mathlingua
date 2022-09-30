@@ -529,20 +529,12 @@ func (p *parser) toOperationsGroup(group phase4.Group) (ast.OperationsGroup, boo
 		if sec, ok := sections[ast.LowerWhenName]; ok {
 			when = p.toWhenSection(sec)
 		}
-		var defines *ast.DefinesSection
-		if sec, ok := sections[ast.LowerDefinesName]; ok {
-			defines = p.toDefinesSection(sec)
-		}
-		var states *ast.StatesSection
-		if sec, ok := sections[ast.LowerStatesName]; ok {
-			states = p.toStatesSection(sec)
-		}
+		specify := *p.toSpecifySection(sections[ast.LowerSpecifyName])
 		return ast.OperationsGroup{
 			Operations: operations,
 			Given:      given,
 			When:       when,
-			Defines:    defines,
-			States:     states,
+			Specify:    specify,
 		}, true
 	}
 	return ast.OperationsGroup{}, false
@@ -551,6 +543,12 @@ func (p *parser) toOperationsGroup(group phase4.Group) (ast.OperationsGroup, boo
 func (p *parser) toOperationsSection(section phase4.Section) *ast.OperationsSection {
 	p.verifyNoArgs(section)
 	return &ast.OperationsSection{}
+}
+
+func (p *parser) toSpecifySection(section phase4.Section) *ast.SpecifySection {
+	return &ast.SpecifySection{
+		Specify: p.oneOrMoreClauses(section),
+	}
 }
 
 ////////////////////// codified documented items /////////////////////////////////

@@ -110,6 +110,7 @@ const UpperViewableName = "Viewable"
 const UpperViewableQuestionName = UpperViewableName + "?"
 const LowerMembersName = "members"
 const LowerOperationsName = "operations"
+const LowerSpecifyName = "specify"
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -409,19 +410,21 @@ var OperationsSections = []string{
 	LowerOperationsName,
 	LowerGivenQuestionName,
 	LowerWhenQuestionName,
-	LowerDefinesQuestionName,
-	LowerStatesQuestionName,
+	LowerSpecifyName,
 }
 
 type OperationsGroup struct {
 	Operations OperationsSection
 	Given      *GivenSection
 	When       *WhenSection
-	Defines    *DefinesSection
-	States     *StatesSection
+	Specify    SpecifySection
 }
 
 type OperationsSection struct {
+}
+
+type SpecifySection struct {
+	Specify []Clause
 }
 
 var MembersSections = []string{LowerMembersName}

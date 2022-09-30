@@ -490,184 +490,67 @@ func (p *parser) toViewableType(group phase4.Group) (ast.ViewableType, bool) {
 	return nil, false
 }
 
-////////////////////// infix, prefix, postfix, symbol ///////////////////
+//////////////////////////////////// provides ///////////////////////////////
 
-func (p *parser) toProvidesStatesSection(section phase4.Section) *ast.ProvidesStatesSection {
-	return &ast.ProvidesStatesSection{
-		Clause: p.exactlyOneClause(section),
-	}
-}
-
-func (p *parser) toProvidesDefinesSection(section phase4.Section) *ast.ProvidesDefinesSection {
-	return &ast.ProvidesDefinesSection{
-		Clause: p.exactlyOneClause(section),
-	}
-}
-
-func (p *parser) toInfixSection(section phase4.Section) *ast.InfixSection {
-	return &ast.InfixSection{
-		Infix: p.oneOrMoreTargets(section),
-	}
-}
-
-func (p *parser) toPrefixSection(section phase4.Section) *ast.PrefixSection {
-	return &ast.PrefixSection{
-		Prefix: p.oneOrMoreTargets(section),
-	}
-}
-
-func (p *parser) toPostfixSection(section phase4.Section) *ast.PostfixSection {
-	return &ast.PostfixSection{
-		Postfix: p.oneOrMoreTargets(section),
-	}
-}
-
-func (p *parser) toSymbolSection(section phase4.Section) *ast.SymbolSection {
-	return &ast.SymbolSection{
-		Symbol: p.oneOrMoreTargets(section),
-	}
-}
-
-func (p *parser) toInfixGroup(group phase4.Group) (ast.InfixGroup, bool) {
-	if !startsWithSections(group, ast.LowerInfixName) {
-		return ast.InfixGroup{}, false
+func (p *parser) toMembersGroup(group phase4.Group) (ast.MembersGroup, bool) {
+	if !startsWithSections(group, ast.LowerMembersName) {
+		return ast.MembersGroup{}, false
 	}
 
-	if endsWithSection(group, ast.UpperStatesName) {
-		sections, ok := IdentifySections(group.Sections, p.tracker, ast.InfixStatesSections...)
-		if ok {
-			infix := *p.toInfixSection(sections[ast.LowerInfixName])
-			var when *ast.WhenSection
-			if sec, ok := sections[ast.LowerWhenName]; ok {
-				when = p.toWhenSection(sec)
-			}
-			states := *p.toProvidesStatesSection(sections[ast.UpperStatesName])
-			return ast.InfixGroup{
-				Infix:         infix,
-				When:          when,
-				StatesDefines: states,
-			}, true
-		}
-	} else if endsWithSection(group, ast.LowerDefinesName) {
-		sections, ok := IdentifySections(group.Sections, p.tracker, ast.InfixDefinesSections...)
-		if ok {
-			infix := *p.toInfixSection(sections[ast.LowerInfixName])
-			var when *ast.WhenSection
-			if sec, ok := sections[ast.LowerWhenName]; ok {
-				when = p.toWhenSection(sec)
-			}
-			defines := *p.toProvidesDefinesSection(sections[ast.LowerDefinesName])
-			return ast.InfixGroup{
-				Infix:         infix,
-				When:          when,
-				StatesDefines: defines,
-			}, true
-		}
-	}
-	p.tracker.Append(newError(fmt.Sprintf("Expected:\n\n%s\n\nor\n\n%s\n",
-		sectionNamesToString(ast.InfixStatesSections), sectionNamesToString(ast.InfixDefinesSections)),
-		group.Start()))
-	return ast.InfixGroup{}, false
-}
-
-func (p *parser) toPrefixGroup(group phase4.Group) (ast.PrefixGroup, bool) {
-	if !startsWithSections(group, ast.LowerPrefixName) {
-		return ast.PrefixGroup{}, false
-	}
-
-	if endsWithSection(group, ast.UpperStatesName) {
-		sections, ok := IdentifySections(group.Sections, p.tracker, ast.PrefixStatesSections...)
-		if ok {
-			prefix := *p.toPrefixSection(sections[ast.LowerPrefixName])
-			var when *ast.WhenSection
-			if sec, ok := sections[ast.LowerWhenName]; ok {
-				when = p.toWhenSection(sec)
-			}
-			states := *p.toProvidesStatesSection(sections[ast.UpperStatesName])
-			return ast.PrefixGroup{
-				Prefix:        prefix,
-				When:          when,
-				StatesDefines: states,
-			}, true
-		}
-	} else if endsWithSection(group, ast.LowerDefinesName) {
-		sections, ok := IdentifySections(group.Sections, p.tracker, ast.PrefixDefinesSections...)
-		if ok {
-			prefix := *p.toPrefixSection(sections[ast.LowerPrefixName])
-			var when *ast.WhenSection
-			if sec, ok := sections[ast.LowerWhenName]; ok {
-				when = p.toWhenSection(sec)
-			}
-			defines := *p.toProvidesDefinesSection(sections[ast.LowerDefinesName])
-			return ast.PrefixGroup{
-				Prefix:        prefix,
-				When:          when,
-				StatesDefines: defines,
-			}, true
-		}
-	}
-	p.tracker.Append(newError(fmt.Sprintf("Expected:\n\n%s\n\nor\n\n%s\n",
-		sectionNamesToString(ast.PrefixStatesSections), sectionNamesToString(ast.PrefixDefinesSections)),
-		group.Start()))
-	return ast.PrefixGroup{}, false
-}
-
-func (p *parser) toPostfixGroup(group phase4.Group) (ast.PostfixGroup, bool) {
-	if !startsWithSections(group, ast.LowerPostfixName) {
-		return ast.PostfixGroup{}, false
-	}
-
-	if endsWithSection(group, ast.UpperStatesName) {
-		sections, ok := IdentifySections(group.Sections, p.tracker, ast.PostfixStatesSections...)
-		if ok {
-			postfix := *p.toPostfixSection(sections[ast.LowerPostfixName])
-			var when *ast.WhenSection
-			if sec, ok := sections[ast.LowerWhenName]; ok {
-				when = p.toWhenSection(sec)
-			}
-			states := *p.toProvidesStatesSection(sections[ast.UpperStatesName])
-			return ast.PostfixGroup{
-				Postfix:       postfix,
-				When:          when,
-				StatesDefines: states,
-			}, true
-		}
-	} else if endsWithSection(group, ast.LowerDefinesName) {
-		sections, ok := IdentifySections(group.Sections, p.tracker, ast.PostfixDefinesSections...)
-		if ok {
-			postfix := *p.toPostfixSection(sections[ast.LowerPostfixName])
-			var when *ast.WhenSection
-			if sec, ok := sections[ast.LowerWhenName]; ok {
-				when = p.toWhenSection(sec)
-			}
-			defines := *p.toProvidesDefinesSection(sections[ast.LowerDefinesName])
-			return ast.PostfixGroup{
-				Postfix:       postfix,
-				When:          when,
-				StatesDefines: defines,
-			}, true
-		}
-	}
-	p.tracker.Append(newError(fmt.Sprintf("Expected:\n\n%s\n\nor\n\n%s\n",
-		sectionNamesToString(ast.PostfixStatesSections), sectionNamesToString(ast.PostfixDefinesSections)),
-		group.Start()))
-	return ast.PostfixGroup{}, false
-}
-
-func (p *parser) toSymbolGroup(group phase4.Group) (ast.SymbolGroup, bool) {
-	if !startsWithSections(group, ast.LowerSymbolName) {
-		return ast.SymbolGroup{}, false
-	}
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.SymbolSections...)
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.MembersSections...)
 	if ok {
-		symbol := *p.toSymbolSection(sections[ast.LowerSymbolName])
-		defines := *p.toProvidesDefinesSection(sections[ast.LowerDefinesName])
-		return ast.SymbolGroup{
-			Symbol:  symbol,
-			Defines: defines,
+		members := *p.toMembersSection(sections[ast.LowerMembersName])
+		return ast.MembersGroup{
+			Members: members,
 		}, true
 	}
-	return ast.SymbolGroup{}, false
+	return ast.MembersGroup{}, false
+}
+
+func (p *parser) toMembersSection(section phase4.Section) *ast.MembersSection {
+	return &ast.MembersSection{
+		Members: p.oneOrMoreSpecs(section),
+	}
+}
+
+func (p *parser) toOperationsGroup(group phase4.Group) (ast.OperationsGroup, bool) {
+	if !startsWithSections(group, ast.LowerOperationsName) {
+		return ast.OperationsGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.OperationsSections...)
+	if ok {
+		operations := *p.toOperationsSection(sections[ast.LowerOperationsName])
+		var given *ast.GivenSection
+		if sec, ok := sections[ast.LowerGivenName]; ok {
+			given = p.toGivenSection(sec)
+		}
+		var when *ast.WhenSection
+		if sec, ok := sections[ast.LowerWhenName]; ok {
+			when = p.toWhenSection(sec)
+		}
+		var defines *ast.DefinesSection
+		if sec, ok := sections[ast.LowerDefinesName]; ok {
+			defines = p.toDefinesSection(sec)
+		}
+		var states *ast.StatesSection
+		if sec, ok := sections[ast.LowerStatesName]; ok {
+			states = p.toStatesSection(sec)
+		}
+		return ast.OperationsGroup{
+			Operations: operations,
+			Given:      given,
+			When:       when,
+			Defines:    defines,
+			States:     states,
+		}, true
+	}
+	return ast.OperationsGroup{}, false
+}
+
+func (p *parser) toOperationsSection(section phase4.Section) *ast.OperationsSection {
+	p.verifyNoArgs(section)
+	return &ast.OperationsSection{}
 }
 
 ////////////////////// codified documented items /////////////////////////////////
@@ -975,22 +858,16 @@ func (p *parser) toProvidesTypeFromArg(arg phase4.Argument) (ast.ProvidesType, b
 }
 
 func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, bool) {
-	if grp, ok := p.toInfixGroup(group); ok {
+	if grp, ok := p.toOperationsGroup(group); ok {
 		return grp, true
-	} else if grp, ok := p.toPrefixGroup(group); ok {
-		return grp, true
-	} else if grp, ok := p.toPostfixGroup(group); ok {
-		return grp, true
-	} else if grp, ok := p.toSymbolGroup(group); ok {
+	} else if grp, ok := p.toMembersGroup(group); ok {
 		return grp, true
 	} else {
 		p.tracker.Append(newError(fmt.Sprintf("Unrecognized argument for %s:\n"+
-			"Expected one of:\n\n%s:\n\n%s:\n\n%s:\n\n%s:\n",
+			"Expected one of:\n\n%s:\n\n%s:\n",
 			ast.UpperProvidesName,
-			ast.LowerSymbolName,
-			ast.LowerPrefixName,
-			ast.LowerInfixName,
-			ast.LowerPostfixName), group.Start()))
+			ast.LowerOperationsName,
+			ast.LowerMembersName), group.Start()))
 		return nil, false
 	}
 }

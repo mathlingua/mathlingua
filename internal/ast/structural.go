@@ -47,7 +47,6 @@ const LowerIdName = "id"
 const LowerIfName = "if"
 const LowerIffName = "iff"
 const LowerIffQuestionName = LowerIffName + "?"
-const LowerInfixName = "infix"
 const LowerIsName = "is"
 const LowerLabelName = "label"
 const LowerLooselyName = "loosely"
@@ -64,8 +63,6 @@ const LowerOverviewName = "overview"
 const LowerPiecewiseName = "piecewise"
 const LowerPositiveFloatName = "positiveFloat"
 const LowerPositiveIntName = "positiveInt"
-const LowerPostfixName = "postfix"
-const LowerPrefixName = "prefix"
 const LowerRelatedName = "related"
 const LowerSatisfiesName = "satisfies"
 const LowerSatisfiesQuestionName = LowerSatisfiesName + "?"
@@ -74,7 +71,6 @@ const LowerStatesQuestion = "states"
 const LowerStatesQuestionName = LowerStatesName + "?"
 const LowerSuchThatName = "suchThat"
 const LowerSuchThatQuestionName = LowerSuchThatName + "?"
-const LowerSymbolName = "symbol"
 const LowerThatName = "that"
 const LowerThenName = "then"
 const LowerThroughName = "through"
@@ -112,6 +108,8 @@ const UpperUsingName = "Using"
 const UpperUsingQuestionName = UpperUsingName + "?"
 const UpperViewableName = "Viewable"
 const UpperViewableQuestionName = UpperViewableName + "?"
+const LowerMembersName = "members"
+const LowerOperationsName = "operations"
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -404,104 +402,36 @@ type ProvidesType interface {
 	ProvidesType()
 }
 
-func (InfixGroup) ProvidesType()   {}
-func (PrefixGroup) ProvidesType()  {}
-func (PostfixGroup) ProvidesType() {}
-func (SymbolGroup) ProvidesType()  {}
+func (OperationsGroup) ProvidesType() {}
+func (MembersGroup) ProvidesType()    {}
 
-var InfixStatesSections = []string{
-	LowerInfixName,
+var OperationsSections = []string{
+	LowerOperationsName,
+	LowerGivenQuestionName,
 	LowerWhenQuestionName,
-	LowerStatesName,
+	LowerDefinesQuestionName,
+	LowerStatesQuestionName,
 }
 
-var InfixDefinesSections = []string{
-	LowerInfixName,
-	LowerWhenQuestionName,
-	LowerDefinesName,
+type OperationsGroup struct {
+	Operations OperationsSection
+	Given      *GivenSection
+	When       *WhenSection
+	Defines    *DefinesSection
+	States     *StatesSection
 }
 
-type InfixGroup struct {
-	Infix         InfixSection
-	When          *WhenSection
-	StatesDefines ProvidesStatesDefinesType
+type OperationsSection struct {
 }
 
-var PrefixStatesSections = []string{
-	LowerPrefixName,
-	LowerWhenQuestionName,
-	LowerStatesName,
+var MembersSections = []string{LowerMembersName}
+
+type MembersGroup struct {
+	Members MembersSection
 }
 
-var PrefixDefinesSections = []string{
-	LowerPrefixName,
-	LowerWhenQuestionName,
-	LowerDefinesName,
-}
-
-type PrefixGroup struct {
-	Prefix        PrefixSection
-	When          *WhenSection
-	StatesDefines ProvidesStatesDefinesType
-}
-
-var PostfixStatesSections = []string{
-	LowerPostfixName,
-	LowerWhenQuestionName,
-	LowerStatesName,
-}
-
-var PostfixDefinesSections = []string{
-	LowerPostfixName,
-	LowerWhenQuestionName,
-	LowerDefinesName,
-}
-
-type PostfixGroup struct {
-	Postfix       PostfixSection
-	When          *WhenSection
-	StatesDefines ProvidesStatesDefinesType
-}
-
-var SymbolSections = []string{
-	LowerSymbolName,
-	LowerDefinesName,
-}
-
-type SymbolGroup struct {
-	Symbol  SymbolSection
-	Defines ProvidesDefinesSection
-}
-
-type InfixSection struct {
-	Infix []Target
-}
-
-type PrefixSection struct {
-	Prefix []Target
-}
-
-type PostfixSection struct {
-	Postfix []Target
-}
-
-type SymbolSection struct {
-	Symbol []Target
-}
-
-type ProvidesStatesDefinesType interface {
-	ProvidesStatesDefinesType()
-}
-
-func (ProvidesStatesSection) ProvidesStatesDefinesType()  {}
-func (ProvidesDefinesSection) ProvidesStatesDefinesType() {}
-
-type ProvidesStatesSection struct {
-	Clause Clause
-}
-
-type ProvidesDefinesSection struct {
-	Clause Clause
+type MembersSection struct {
+	Members []Spec
 }
 
 //////////////////////////////////////////////////////////////////////////////

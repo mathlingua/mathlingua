@@ -216,11 +216,20 @@ func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 		case cur.Symbol == ':':
 			if i < len(chars) && chars[i].Symbol == '=' {
 				i++ // move past the =
-				appendToken(ast.Token{
-					Type:     ast.ColonEquals,
-					Text:     ":=",
-					Position: cur.Position,
-				})
+				if i < len(chars) && chars[i].Symbol == '>' {
+					i++ // move past the >
+					appendToken(ast.Token{
+						Type:     ast.ColonArrow,
+						Text:     ":=>",
+						Position: cur.Position,
+					})
+				} else {
+					appendToken(ast.Token{
+						Type:     ast.ColonEquals,
+						Text:     ":=",
+						Position: cur.Position,
+					})
+				}
 			} else {
 				appendToken(ast.Token{
 					Type:     ast.Colon,

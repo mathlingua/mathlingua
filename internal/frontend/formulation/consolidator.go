@@ -125,8 +125,15 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]], tracker frontend
 			Rhs:    lhs,
 		}
 	case ast.PseudoTokenNode:
-		// a token, for example :=, is, isnot
+		// a token, for example :=, :=>, is, isnot
 		switch {
+		case top.Type == ast.ColonArrow:
+			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
+			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
+			return ast.ExpressionColonArrowItem{
+				Lhs: lhs,
+				Rhs: rhs,
+			}
 		case top.Type == ast.ColonEquals:
 			lhs := checkType(toNode(items, tracker), default_structural_form, "Structural Form", tracker)
 			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)

@@ -56,6 +56,7 @@ const (
 	BackSlash             TokenType = "BackSlash"
 	Semicolon             TokenType = "Semicolon"
 	ColonEquals           TokenType = "ColonEquals"
+	ColonArrow            TokenType = "ColonArrow"
 	DotDotDot             TokenType = "DotDotDot"
 	QuestionMark          TokenType = "QuestionMark"
 	Is                    TokenType = "Is"

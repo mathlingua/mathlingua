@@ -53,6 +53,7 @@ func (Signature) NodeType()                              {}
 func (MetaKinds) NodeType()                              {}
 func (StructuralColonEqualsForm) NodeType()              {}
 func (ExpressionColonEqualsItem) NodeType()              {}
+func (ExpressionColonArrowItem) NodeType()               {}
 func (EnclosedNonCommandOperatorTarget) NodeType()       {}
 func (NonEnclosedNonCommandOperatorTarget) NodeType()    {}
 func (CommandOperatorTarget) NodeType()                  {}
@@ -91,6 +92,7 @@ func (n Signature) Start() Position                              { return n.Meta
 func (n MetaKinds) Start() Position                              { return n.MetaData.Start }
 func (n StructuralColonEqualsForm) Start() Position              { return n.MetaData.Start }
 func (n ExpressionColonEqualsItem) Start() Position              { return n.MetaData.Start }
+func (n ExpressionColonArrowItem) Start() Position               { return n.MetaData.Start }
 func (n EnclosedNonCommandOperatorTarget) Start() Position       { return n.MetaData.Start }
 func (n NonEnclosedNonCommandOperatorTarget) Start() Position    { return n.MetaData.Start }
 func (n CommandOperatorTarget) Start() Position                  { return n.MetaData.Start }
@@ -255,6 +257,7 @@ func (IsExpression) ExpressionType()                           {}
 func (IsNotExpression) ExpressionType()                        {}
 func (MultiplexedInfixOperatorCallExpression) ExpressionType() {}
 func (ExpressionColonEqualsItem) ExpressionType()              {}
+func (ExpressionColonArrowItem) ExpressionType()               {}
 
 // DONE
 // f(x + y, z) or (f + g)(x)
@@ -438,6 +441,13 @@ type StructuralColonEqualsForm struct {
 // f(x) := x + 1
 type ExpressionColonEqualsItem struct {
 	Lhs      StructuralFormType
+	Rhs      ExpressionType
+	MetaData MetaData
+}
+
+// x + y :=> x
+type ExpressionColonArrowItem struct {
+	Lhs      ExpressionType
 	Rhs      ExpressionType
 	MetaData MetaData
 }

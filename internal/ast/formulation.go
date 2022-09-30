@@ -459,15 +459,19 @@ func (CommandOperatorTarget) OperatorType()               {} // DONE
 // DONE
 // [x] or [x + y]
 type EnclosedNonCommandOperatorTarget struct {
-	Target   ExpressionType
-	MetaData MetaData
+	Target        ExpressionType
+	HasLeftColon  bool
+	HasRightColon bool
+	MetaData      MetaData
 }
 
 // DONE
-// * or ++
+// *, ++, :+, or +:
 type NonEnclosedNonCommandOperatorTarget struct {
-	Text     string
-	MetaData MetaData
+	Text          string
+	HasLeftColon  bool
+	HasRightColon bool
+	MetaData      MetaData
 }
 
 // DONE

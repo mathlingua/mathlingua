@@ -874,20 +874,37 @@ func (fp *formulationParser) operatorType() (ast.OperatorType, bool) {
 
 func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (ast.NonEnclosedNonCommandOperatorTarget, bool) {
 	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	hasLeftColon := false
+	if _, ok := fp.token(ast.Colon); ok {
+		hasLeftColon = true
+	}
 	if tok, ok := fp.token(ast.Operator); ok {
+		fp.lexer.Commit(id)
+		hasRightColon := false
+		if _, ok := fp.token(ast.Colon); ok {
+			hasRightColon = true
+		}
 		return ast.NonEnclosedNonCommandOperatorTarget{
-			Text: tok.Text,
+			Text:          tok.Text,
+			HasLeftColon:  hasLeftColon,
+			HasRightColon: hasRightColon,
 			MetaData: ast.MetaData{
 				Start: start,
 			},
 		}, true
 	}
+	fp.lexer.RollBack(id)
 	return ast.NonEnclosedNonCommandOperatorTarget{}, false
 }
 
 func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNonCommandOperatorTarget, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
+	hasLeftColon := false
+	if _, ok := fp.token(ast.Colon); ok {
+		hasLeftColon = true
+	}
 	if _, ok := fp.token(ast.LSquare); !ok {
 		fp.lexer.RollBack(id)
 		return ast.EnclosedNonCommandOperatorTarget{}, false
@@ -904,9 +921,16 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNon
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 
+	hasRightColon := false
+	if _, ok := fp.token(ast.Colon); ok {
+		hasRightColon = true
+	}
+
 	fp.lexer.Commit(id)
 	return ast.EnclosedNonCommandOperatorTarget{
-		Target: exp,
+		Target:        exp,
+		HasLeftColon:  hasLeftColon,
+		HasRightColon: hasRightColon,
 		MetaData: ast.MetaData{
 			Start: start,
 		},

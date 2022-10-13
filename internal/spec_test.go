@@ -67,7 +67,7 @@ var all_group_test_cases = []testCase{
 		expected: []string{
 			"existsUnique",
 			"where?",
-			"suchThat?",
+			"suchThat",
 		},
 	},
 	{
@@ -260,7 +260,7 @@ var all_group_test_cases = []testCase{
 	{
 		actual: ast.StatesSections,
 		expected: []string{
-			"states",
+			"States",
 			"given?",
 			"when?",
 			"suchThat?",

@@ -186,10 +186,7 @@ func (p *parser) toExistsUniqueGroup(group phase4.Group) (ast.ExistsUniqueGroup,
 	if sect, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sect)
 	}
-	var suchThat *ast.SuchThatSection
-	if sect, ok := sections[ast.LowerSuchThatName]; ok {
-		suchThat = p.toSuchThatSection(sect)
-	}
+	suchThat := *p.toSuchThatSection(sections[ast.LowerSuchThatName])
 	return ast.ExistsUniqueGroup{
 		ExistsUnique: existsUnique,
 		Where:        where,

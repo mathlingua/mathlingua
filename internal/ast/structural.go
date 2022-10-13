@@ -228,13 +228,13 @@ type SuchThatSection struct {
 var ExistsUniqueSections = []string{
 	LowerExistsUniqueName,
 	LowerWhereQuestionName,
-	LowerSuchThatQuestionName,
+	LowerSuchThatName,
 }
 
 type ExistsUniqueGroup struct {
 	ExistsUnique ExistsUniqueSection
 	Where        *WhereSection
-	SuchThat     *SuchThatSection
+	SuchThat     SuchThatSection
 }
 
 type ExistsUniqueSection struct {
@@ -771,7 +771,7 @@ type DefinesSection struct {
 //////////////////////////////////////////////////////////////////////////////
 
 var StatesSections = []string{
-	LowerStatesName,
+	UpperStatesName,
 	LowerGivenQuestionName,
 	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,

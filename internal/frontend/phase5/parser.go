@@ -867,11 +867,11 @@ func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, 
 	}
 }
 
-////////////////////////// using ////////////////////////////////////////
+////////////////////////// aliases ////////////////////////////////////////
 
-func (p *parser) toUsingSection(section phase4.Section) *ast.UsingSection {
-	return &ast.UsingSection{
-		Using: p.oneOrMoreClauses(section),
+func (p *parser) toAliasesSection(section phase4.Section) *ast.AliasesSection {
+	return &ast.AliasesSection{
+		Aliases: p.oneOrMoreClauses(section),
 	}
 }
 
@@ -1031,9 +1031,9 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		references = p.toReferencesSection(sec)
 	}
-	var using *ast.UsingSection
+	var aliases *ast.AliasesSection
 	if sec, ok := sections[ast.UpperUsingName]; ok {
-		using = p.toUsingSection(sec)
+		aliases = p.toAliasesSection(sec)
 	}
 	var metadata *ast.MetadataSection
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
@@ -1053,7 +1053,7 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		Justified:  justified,
 		Documented: documented,
 		References: references,
-		Using:      using,
+		Aliases:    aliases,
 		Metadata:   metadata,
 	}, true
 }
@@ -1133,9 +1133,9 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		references = p.toReferencesSection(sec)
 	}
-	var using *ast.UsingSection
+	var aliases *ast.AliasesSection
 	if sec, ok := sections[ast.UpperUsingName]; ok {
-		using = p.toUsingSection(sec)
+		aliases = p.toAliasesSection(sec)
 	}
 	var metadata *ast.MetadataSection
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
@@ -1155,7 +1155,7 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 		Justified:  justified,
 		Documented: documented,
 		References: references,
-		Using:      using,
+		Aliases:    aliases,
 		Metadata:   metadata,
 	}, true
 }
@@ -1222,9 +1222,9 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
 	}
-	var using *ast.UsingSection
+	var aliases *ast.AliasesSection
 	if sec, ok := sections[ast.UpperUsingName]; ok {
-		using = p.toUsingSection(sec)
+		aliases = p.toAliasesSection(sec)
 	}
 	var metadata *ast.MetadataSection
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
@@ -1240,7 +1240,7 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		Documented: documented,
 		Justified:  justified,
 		References: references,
-		Using:      using,
+		Aliases:    aliases,
 		Metadata:   metadata,
 	}, true
 }
@@ -1298,9 +1298,9 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
 	}
-	var using *ast.UsingSection
+	var aliases *ast.AliasesSection
 	if sec, ok := sections[ast.UpperUsingName]; ok {
-		using = p.toUsingSection(sec)
+		aliases = p.toAliasesSection(sec)
 	}
 	var metadata *ast.MetadataSection
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
@@ -1316,7 +1316,7 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 		Iff:        iff,
 		Documented: documented,
 		References: references,
-		Using:      using,
+		Aliases:    aliases,
 		Metadata:   metadata,
 	}, true
 }
@@ -1371,9 +1371,9 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
 	}
-	var using *ast.UsingSection
+	var aliases *ast.AliasesSection
 	if sec, ok := sections[ast.UpperUsingName]; ok {
-		using = p.toUsingSection(sec)
+		aliases = p.toAliasesSection(sec)
 	}
 	var metadata *ast.MetadataSection
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
@@ -1389,7 +1389,7 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 		Iff:        iff,
 		Documented: documented,
 		References: references,
-		Using:      using,
+		Aliases:    aliases,
 		Metadata:   metadata,
 	}, true
 }
@@ -1442,9 +1442,9 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
 	}
-	var using *ast.UsingSection
+	var aliases *ast.AliasesSection
 	if sec, ok := sections[ast.UpperUsingName]; ok {
-		using = p.toUsingSection(sec)
+		aliases = p.toAliasesSection(sec)
 	}
 	var metadata *ast.MetadataSection
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
@@ -1461,7 +1461,7 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 		Proof:      proof,
 		Documented: documented,
 		References: references,
-		Using:      using,
+		Aliases:    aliases,
 		Metadata:   metadata,
 	}, true
 }

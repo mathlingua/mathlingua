@@ -586,8 +586,8 @@ type ProvidesSection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
-type UsingSection struct {
-	Using []Clause
+type AliasesSection struct {
+	Aliases []Clause
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -695,7 +695,7 @@ type DescribesGroup struct {
 	Justified  *JustifiedSection
 	Documented *DocumentedSection
 	References *ReferencesSection
-	Using      *UsingSection
+	Aliases    *AliasesSection
 	Metadata   *MetadataSection
 }
 
@@ -752,7 +752,7 @@ type DeclaresGroup struct {
 	Justified  *JustifiedSection
 	Documented *DocumentedSection
 	References *ReferencesSection
-	Using      *UsingSection
+	Aliases    *AliasesSection
 	Metadata   *MetadataSection
 }
 
@@ -793,7 +793,7 @@ type StatesGroup struct {
 	Documented *DocumentedSection
 	Justified  *JustifiedSection
 	References *ReferencesSection
-	Using      *UsingSection
+	Aliases    *AliasesSection
 	Metadata   *MetadataSection
 }
 
@@ -859,7 +859,7 @@ type AxiomGroup struct {
 	Iff        *IffSection
 	Documented *DocumentedSection
 	References *ReferencesSection
-	Using      *UsingSection
+	Aliases    *AliasesSection
 	Metadata   *MetadataSection
 }
 
@@ -892,7 +892,7 @@ type ConjectureGroup struct {
 	Iff        *IffSection
 	Documented *DocumentedSection
 	References *ReferencesSection
-	Using      *UsingSection
+	Aliases    *AliasesSection
 	Metadata   *MetadataSection
 }
 
@@ -927,7 +927,7 @@ type TheoremGroup struct {
 	Proof      *ProofSection
 	Documented *DocumentedSection
 	References *ReferencesSection
-	Using      *UsingSection
+	Aliases    *AliasesSection
 	Metadata   *MetadataSection
 }
 

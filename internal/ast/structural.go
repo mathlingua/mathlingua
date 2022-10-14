@@ -42,6 +42,8 @@ const LowerFromName = "from"
 const LowerGeneratedName = "generated"
 const LowerGivenName = "given"
 const LowerGivenQuestionName = LowerGivenName + "?"
+const LowerUsingName = "using"
+const LowerUsingQuestionName = LowerUsingName + "?"
 const LowerHistoryName = "history"
 const LowerIdName = "id"
 const LowerIfName = "if"
@@ -49,7 +51,7 @@ const LowerIffName = "iff"
 const LowerIffQuestionName = LowerIffName + "?"
 const LowerIsName = "is"
 const LowerLabelName = "label"
-const LowerLooselyName = "loosely"
+const LowerDetailsName = "details"
 const LowerMeansName = "means"
 const LowerMeansQuestionName = LowerMeansName + "?"
 const LowerMotivationName = "motivation"
@@ -104,13 +106,19 @@ const UpperSpecifyName = "Specify"
 const UpperStatesName = "States"
 const UpperTheoremName = "Theorem"
 const UpperTopicName = "Topic"
-const UpperUsingName = "Using"
-const UpperUsingQuestionName = UpperUsingName + "?"
 const UpperViewableName = "Viewable"
 const UpperViewableQuestionName = UpperViewableName + "?"
 const LowerMembersName = "members"
 const LowerOperationsName = "operations"
 const LowerSpecifyName = "specify"
+const UpperAliasesName = "Aliases"
+const UpperAliasesQuestionName = UpperAliasesName + "?"
+const LowerProvidedName = "provided"
+const LowerProvidedQuestionName = LowerProvidedName + "?"
+const LowerIntoName = "into"
+const LowerAliasedName = "aliased"
+const LowerOnName = "on"
+const LowerOnQuestionName = LowerOnName + "?"
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -131,6 +139,7 @@ type TextItem struct {
 type IdItem = Formulation[NodeType]
 type Target = Formulation[NodeType]
 type Spec = Formulation[NodeType]
+type Alias = Formulation[NodeType]
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -148,6 +157,7 @@ func (ExistsUniqueGroup) Clause()     {}
 func (ForAllGroup) Clause()           {}
 func (IfGroup) Clause()               {}
 func (IffGroup) Clause()              {}
+func (WhenGroup) Clause()             {}
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -350,12 +360,39 @@ type ElseSection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
+var WhenSections = []string{
+	LowerWhenName,
+	LowerThenName,
+}
+
+type WhenGroup struct {
+	When WhenSection
+	Then ThenSection
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
 type ViewableType interface {
 	ViewableType()
 }
 
 func (AsViaGroup) ViewableType()     {}
 func (AsThroughGroup) ViewableType() {}
+func (IntoViaGroup) ViewableType()   {}
+
+var IntoViaSections = []string{
+	LowerIntoName,
+	LowerViaName,
+}
+
+type IntoViaGroup struct {
+	Into IntoSection
+	Via  ViaSection
+}
+
+type IntoSection struct {
+	Into Target
+}
 
 var AsViaSections = []string{
 	LowerAsName,
@@ -408,33 +445,46 @@ func (MembersGroup) ProvidesType()    {}
 
 var OperationsSections = []string{
 	LowerOperationsName,
-	LowerGivenQuestionName,
+	LowerOnQuestionName,
+	LowerUsingQuestionName,
 	LowerWhenQuestionName,
-	LowerSpecifyName,
+	LowerAliasedName,
 }
 
 type OperationsGroup struct {
 	Operations OperationsSection
-	Given      *GivenSection
+	On         *OnSection
+	Using      *UsingSection
 	When       *WhenSection
-	Specify    SpecifySection
+	Aliased    AliasedSection
 }
 
 type OperationsSection struct {
+}
+
+type OnSection struct {
+	On []Target
 }
 
 type SpecifySection struct {
 	Specify []Clause
 }
 
-var MembersSections = []string{LowerMembersName}
+var MembersSections = []string{
+	LowerMembersName,
+	LowerAliasedName,
+}
 
 type MembersGroup struct {
 	Members MembersSection
+	Aliased AliasedSection
 }
 
 type MembersSection struct {
-	Members []Spec
+}
+
+type AliasedSection struct {
+	Aliased []Alias
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -480,7 +530,7 @@ type DocumentedType interface {
 	DocumentedType()
 }
 
-func (LooselyGroup) DocumentedType()    {}
+func (DetailsGroup) DocumentedType()    {}
 func (OverviewGroup) DocumentedType()   {}
 func (MotivationGroup) DocumentedType() {}
 func (HistoryGroup) DocumentedType()    {}
@@ -492,14 +542,14 @@ func (ExpressedGroup) DocumentedType()  {}
 func (ExpressingGroup) DocumentedType() {}
 func (CalledGroup) DocumentedType()     {}
 
-var LooselySections = []string{LowerLooselyName}
+var DetailsSections = []string{LowerDetailsName}
 
-type LooselyGroup struct {
-	Loosely LooselySection
+type DetailsGroup struct {
+	Details DetailsSection
 }
 
-type LooselySection struct {
-	Loosely TextItem
+type DetailsSection struct {
+	Details TextItem
 }
 
 var OverviewSections = []string{LowerOverviewName}
@@ -587,7 +637,7 @@ type ProvidesSection struct {
 //////////////////////////////////////////////////////////////////////////////
 
 type AliasesSection struct {
-	Aliases []Clause
+	Aliases []Alias
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -667,8 +717,8 @@ type IdSection struct {
 var DescribesSections = []string{
 	UpperDescribesName,
 	LowerWithQuestionName,
-	LowerGivenQuestionName,
-	LowerWhenQuestionName,
+	LowerUsingQuestionName,
+	LowerProvidedQuestionName,
 	LowerSuchThatQuestionName,
 	LowerExtendsQuestionName,
 	LowerSatisfiesQuestionName,
@@ -677,7 +727,7 @@ var DescribesSections = []string{
 	UpperJustifiedQuestionName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
-	UpperUsingQuestionName,
+	UpperAliasesQuestionName,
 	UpperMetadataQuestionName,
 }
 
@@ -685,8 +735,8 @@ type DescribesGroup struct {
 	Id         IdItem
 	Describes  DescribesSection
 	With       *WithSection
-	Given      *GivenSection
-	When       *WhenSection
+	Using      *UsingSection
+	Provided   *ProvidedSection
 	SuchThat   *SuchThatSection
 	Extends    *ExtendsSection
 	Satisfies  *SatisfiesSection
@@ -711,6 +761,14 @@ type GivenSection struct {
 	Given []Target
 }
 
+type UsingSection struct {
+	Using []Target
+}
+
+type ProvidedSection struct {
+	Provided []Spec
+}
+
 type ExtendsSection struct {
 	Extends []Clause
 }
@@ -724,8 +782,8 @@ type SatisfiesSection struct {
 var DeclaresSections = []string{
 	UpperDeclaresName,
 	LowerWithQuestionName,
-	LowerGivenQuestionName,
-	LowerWhenQuestionName,
+	LowerUsingQuestionName,
+	LowerProvidedQuestionName,
 	LowerSuchThatQuestionName,
 	LowerMeansQuestionName,
 	LowerDefinesQuestionName,
@@ -734,7 +792,7 @@ var DeclaresSections = []string{
 	UpperJustifiedQuestionName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
-	UpperUsingQuestionName,
+	UpperAliasesQuestionName,
 	UpperMetadataQuestionName,
 }
 
@@ -742,8 +800,8 @@ type DeclaresGroup struct {
 	Id         IdItem
 	Declares   DeclaresSection
 	With       *WithSection
-	Given      *GivenSection
-	When       *WhenSection
+	Using      *UsingSection
+	Provided   *ProvidedSection
 	SuchThat   *SuchThatSection
 	Means      *MeansSection
 	Defines    *DefinesSection
@@ -772,22 +830,24 @@ type DefinesSection struct {
 
 var StatesSections = []string{
 	UpperStatesName,
-	LowerGivenQuestionName,
-	LowerWhenQuestionName,
+	LowerWithQuestionName,
+	LowerUsingQuestionName,
+	LowerProvidedQuestionName,
 	LowerSuchThatQuestionName,
 	LowerThatName,
 	UpperDocumentedQuestionName,
 	UpperJustifiedQuestionName,
 	UpperReferencesQuestionName,
-	UpperUsingQuestionName,
+	UpperAliasesQuestionName,
 	UpperMetadataQuestionName,
 }
 
 type StatesGroup struct {
 	Id         IdItem
 	States     StatesSection
-	Given      *GivenSection
-	When       *WhenSection
+	With       *WithSection
+	Using      *UsingSection
+	Provided   *ProvidedSection
 	SuchThat   *SuchThatSection
 	That       ThatSection
 	Documented *DocumentedSection
@@ -845,7 +905,7 @@ var AxiomSections = []string{
 	LowerIffQuestionName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
-	UpperUsingQuestionName,
+	UpperAliasesQuestionName,
 	UpperMetadataQuestionName,
 }
 
@@ -878,7 +938,7 @@ var ConjectureSections = []string{
 	LowerIffQuestionName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
-	UpperUsingQuestionName,
+	UpperAliasesQuestionName,
 	UpperMetadataQuestionName,
 }
 
@@ -912,7 +972,7 @@ var TheoremSections = []string{
 	UpperProofQuestionName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
-	UpperUsingQuestionName,
+	UpperAliasesQuestionName,
 	UpperMetadataQuestionName,
 }
 
@@ -953,23 +1013,6 @@ type TopicGroup struct {
 }
 
 type TopicSection struct {
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-var NoteSections = []string{
-	UpperNoteName,
-	LowerContentName,
-	UpperMetadataQuestionName,
-}
-
-type NoteGroup struct {
-	Note     NoteSection
-	Content  ContentSection
-	Metadata *MetadataSection
-}
-
-type NoteSection struct {
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1058,7 +1101,6 @@ func (AxiomGroup) TopLevelItemType()      {}
 func (ConjectureGroup) TopLevelItemType() {}
 func (TheoremGroup) TopLevelItemType()    {}
 func (SpecifyGroup) TopLevelItemType()    {}
-func (NoteGroup) TopLevelItemType()       {}
 func (TopicGroup) TopLevelItemType()      {}
 
 type Document struct {

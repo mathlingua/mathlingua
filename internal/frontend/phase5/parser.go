@@ -328,6 +328,23 @@ func (p *parser) toWhenSection(section phase4.Section) *ast.WhenSection {
 	}
 }
 
+//////////////////////////////// when ////////////////////////////////////
+
+func (p *parser) toWhenGroup(group phase4.Group) (ast.WhenGroup, bool) {
+	if !startsWithSections(group, ast.LowerWhenName) {
+		return ast.WhenGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.WhenSections...)
+	if !ok {
+		return ast.WhenGroup{}, false
+	}
+	return ast.WhenGroup{
+		When: *p.toWhenSection(sections[ast.LowerWhenName]),
+		Then: *p.toThenSection(sections[ast.LowerThenName]),
+	}, true
+}
+
 ///////////////////////////// piecewise /////////////////////////////////
 
 func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool) {
@@ -396,6 +413,29 @@ func (p *parser) toPiecewiseSection(section phase4.Section) *ast.PiecewiseSectio
 func (p *parser) toElseSection(section phase4.Section) *ast.ElseSection {
 	return &ast.ElseSection{
 		Items: p.oneOrMoreClauses(section),
+	}
+}
+
+/////////////////////////////// into via //////////////////////////////////
+
+func (p *parser) toIntoViaGroup(group phase4.Group) (ast.IntoViaGroup, bool) {
+	if !startsWithSections(group, ast.LowerIntoName) {
+		return ast.IntoViaGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.IntoViaSections...)
+	if !ok {
+		return ast.IntoViaGroup{}, false
+	}
+	return ast.IntoViaGroup{
+		Into: *p.toIntoSection(sections[ast.LowerIntoName]),
+		Via:  *p.toViaSection(sections[ast.LowerViaName]),
+	}, true
+}
+
+func (p *parser) toIntoSection(section phase4.Section) *ast.IntoSection {
+	return &ast.IntoSection{
+		Into: p.exactlyOneTarget(section),
 	}
 }
 
@@ -484,6 +524,10 @@ func (p *parser) toViewableType(group phase4.Group) (ast.ViewableType, bool) {
 		return grp, true
 	}
 
+	if grp, ok := p.toIntoViaGroup(group); ok {
+		return grp, true
+	}
+
 	return nil, false
 }
 
@@ -495,18 +539,24 @@ func (p *parser) toMembersGroup(group phase4.Group) (ast.MembersGroup, bool) {
 	}
 
 	sections, ok := IdentifySections(group.Sections, p.tracker, ast.MembersSections...)
-	if ok {
-		members := *p.toMembersSection(sections[ast.LowerMembersName])
-		return ast.MembersGroup{
-			Members: members,
-		}, true
+	if !ok {
+		return ast.MembersGroup{}, false
 	}
-	return ast.MembersGroup{}, false
+
+	return ast.MembersGroup{
+		Members: *p.toMembersSection(sections[ast.LowerMembersName]),
+		Aliased: *p.toAliasedSection(sections[ast.LowerAliasedName]),
+	}, true
 }
 
 func (p *parser) toMembersSection(section phase4.Section) *ast.MembersSection {
-	return &ast.MembersSection{
-		Members: p.oneOrMoreSpecs(section),
+	p.verifyNoArgs(section)
+	return &ast.MembersSection{}
+}
+
+func (p *parser) toAliasedSection(section phase4.Section) *ast.AliasedSection {
+	return &ast.AliasedSection{
+		Aliased: p.oneOrMoreAliases(section),
 	}
 }
 
@@ -518,20 +568,25 @@ func (p *parser) toOperationsGroup(group phase4.Group) (ast.OperationsGroup, boo
 	sections, ok := IdentifySections(group.Sections, p.tracker, ast.OperationsSections...)
 	if ok {
 		operations := *p.toOperationsSection(sections[ast.LowerOperationsName])
-		var given *ast.GivenSection
-		if sec, ok := sections[ast.LowerGivenName]; ok {
-			given = p.toGivenSection(sec)
+		var on *ast.OnSection
+		if sec, ok := sections[ast.LowerOnName]; ok {
+			on = p.toOnSection(sec)
+		}
+		var using *ast.UsingSection
+		if sec, ok := sections[ast.LowerUsingName]; ok {
+			using = p.toUsingSection(sec)
 		}
 		var when *ast.WhenSection
 		if sec, ok := sections[ast.LowerWhenName]; ok {
 			when = p.toWhenSection(sec)
 		}
-		specify := *p.toSpecifySection(sections[ast.LowerSpecifyName])
+		aliased := *p.toAliasedSection(sections[ast.LowerAliasedName])
 		return ast.OperationsGroup{
 			Operations: operations,
-			Given:      given,
+			On:         on,
+			Using:      using,
 			When:       when,
-			Specify:    specify,
+			Aliased:    aliased,
 		}, true
 	}
 	return ast.OperationsGroup{}, false
@@ -540,6 +595,12 @@ func (p *parser) toOperationsGroup(group phase4.Group) (ast.OperationsGroup, boo
 func (p *parser) toOperationsSection(section phase4.Section) *ast.OperationsSection {
 	p.verifyNoArgs(section)
 	return &ast.OperationsSection{}
+}
+
+func (p *parser) toOnSection(section phase4.Section) *ast.OnSection {
+	return &ast.OnSection{
+		On: p.oneOrMoreTargets(section),
+	}
 }
 
 func (p *parser) toSpecifySection(section phase4.Section) *ast.SpecifySection {
@@ -630,7 +691,7 @@ func (p *parser) toDocumentedSection(section phase4.Section) *ast.DocumentedSect
 func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool) {
 	switch group := arg.Arg.(type) {
 	case phase4.Group:
-		if grp, ok := p.toLooselyGroup(group); ok {
+		if grp, ok := p.toDetailsGroup(group); ok {
 			return grp, true
 		} else if grp, ok := p.toOverviewGroup(group); ok {
 			return grp, true
@@ -658,23 +719,23 @@ func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool
 	return nil, false
 }
 
-func (p *parser) toLooselyGroup(group phase4.Group) (ast.LooselyGroup, bool) {
-	if !startsWithSections(group, ast.LowerLooselyName) {
-		return ast.LooselyGroup{}, false
+func (p *parser) toDetailsGroup(group phase4.Group) (ast.DetailsGroup, bool) {
+	if !startsWithSections(group, ast.LowerDetailsName) {
+		return ast.DetailsGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LooselySections...)
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.DetailsSections...)
 	if !ok {
-		return ast.LooselyGroup{}, false
+		return ast.DetailsGroup{}, false
 	}
-	return ast.LooselyGroup{
-		Loosely: *p.toLooselySection(sections[ast.LowerLooselyName]),
+	return ast.DetailsGroup{
+		Details: *p.toDetailsSection(sections[ast.LowerDetailsName]),
 	}, true
 }
 
-func (p *parser) toLooselySection(section phase4.Section) *ast.LooselySection {
-	return &ast.LooselySection{
-		Loosely: p.exactlyOneTextItem(section),
+func (p *parser) toDetailsSection(section phase4.Section) *ast.DetailsSection {
+	return &ast.DetailsSection{
+		Details: p.exactlyOneTextItem(section),
 	}
 }
 
@@ -871,7 +932,7 @@ func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, 
 
 func (p *parser) toAliasesSection(section phase4.Section) *ast.AliasesSection {
 	return &ast.AliasesSection{
-		Aliases: p.oneOrMoreClauses(section),
+		Aliases: p.oneOrMoreAliases(section),
 	}
 }
 
@@ -991,13 +1052,13 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	if sec, ok := sections[ast.LowerWithName]; ok {
 		with = p.toWithSection(sec)
 	}
-	var given *ast.GivenSection
-	if sec, ok := sections[ast.LowerGivenName]; ok {
-		given = p.toGivenSection(sec)
+	var using *ast.UsingSection
+	if sec, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sec)
 	}
-	var when *ast.WhenSection
-	if sec, ok := sections[ast.LowerWhenName]; ok {
-		when = p.toWhenSection(sec)
+	var provided *ast.ProvidedSection
+	if sec, ok := sections[ast.LowerProvidedName]; ok {
+		provided = p.toProvidedSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
 	if sec, ok := sections[ast.LowerSuchThatName]; ok {
@@ -1032,7 +1093,7 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		references = p.toReferencesSection(sec)
 	}
 	var aliases *ast.AliasesSection
-	if sec, ok := sections[ast.UpperUsingName]; ok {
+	if sec, ok := sections[ast.UpperAliasesName]; ok {
 		aliases = p.toAliasesSection(sec)
 	}
 	var metadata *ast.MetadataSection
@@ -1043,8 +1104,8 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		Id:         *id,
 		Describes:  describes,
 		With:       with,
-		Given:      given,
-		When:       when,
+		Using:      using,
+		Provided:   provided,
 		SuchThat:   suchThat,
 		Extends:    extends,
 		Satisfies:  satisfies,
@@ -1093,13 +1154,13 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 	if sec, ok := sections[ast.LowerWithName]; ok {
 		with = p.toWithSection(sec)
 	}
-	var given *ast.GivenSection
-	if sec, ok := sections[ast.LowerGivenName]; ok {
-		given = p.toGivenSection(sec)
+	var using *ast.UsingSection
+	if sec, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sec)
 	}
-	var when *ast.WhenSection
-	if sec, ok := sections[ast.LowerWhenName]; ok {
-		when = p.toWhenSection(sec)
+	var provided *ast.ProvidedSection
+	if sec, ok := sections[ast.LowerProvidedName]; ok {
+		provided = p.toProvidedSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
 	if sec, ok := sections[ast.LowerSuchThatName]; ok {
@@ -1134,7 +1195,7 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 		references = p.toReferencesSection(sec)
 	}
 	var aliases *ast.AliasesSection
-	if sec, ok := sections[ast.UpperUsingName]; ok {
+	if sec, ok := sections[ast.UpperAliasesName]; ok {
 		aliases = p.toAliasesSection(sec)
 	}
 	var metadata *ast.MetadataSection
@@ -1145,8 +1206,8 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 		Id:         *id,
 		Declares:   declares,
 		With:       with,
-		Given:      given,
-		When:       when,
+		Using:      using,
+		Provided:   provided,
 		SuchThat:   suchThat,
 		Means:      means,
 		Defines:    defines,
@@ -1197,13 +1258,17 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		return ast.StatesGroup{}, false
 	}
 	states := *p.toStatesSection(sections[ast.UpperStatesName])
-	var given *ast.GivenSection
-	if sec, ok := sections[ast.LowerGivenName]; ok {
-		given = p.toGivenSection(sec)
+	var with *ast.WithSection
+	if sec, ok := sections[ast.LowerWithName]; ok {
+		with = p.toWithSection(sec)
 	}
-	var when *ast.WhenSection
-	if sec, ok := sections[ast.LowerWhenName]; ok {
-		when = p.toWhenSection(sec)
+	var using *ast.UsingSection
+	if sec, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sec)
+	}
+	var provided *ast.ProvidedSection
+	if sec, ok := sections[ast.LowerProvidedName]; ok {
+		provided = p.toProvidedSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
 	if sec, ok := sections[ast.LowerSuchThatName]; ok {
@@ -1223,7 +1288,7 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		references = p.toReferencesSection(sec)
 	}
 	var aliases *ast.AliasesSection
-	if sec, ok := sections[ast.UpperUsingName]; ok {
+	if sec, ok := sections[ast.UpperAliasesName]; ok {
 		aliases = p.toAliasesSection(sec)
 	}
 	var metadata *ast.MetadataSection
@@ -1233,8 +1298,9 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 	return ast.StatesGroup{
 		Id:         *id,
 		States:     states,
-		Given:      given,
-		When:       when,
+		With:       with,
+		Using:      using,
+		Provided:   provided,
 		SuchThat:   suchThat,
 		That:       that,
 		Documented: documented,
@@ -1299,7 +1365,7 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 		references = p.toReferencesSection(sec)
 	}
 	var aliases *ast.AliasesSection
-	if sec, ok := sections[ast.UpperUsingName]; ok {
+	if sec, ok := sections[ast.UpperAliasesName]; ok {
 		aliases = p.toAliasesSection(sec)
 	}
 	var metadata *ast.MetadataSection
@@ -1330,6 +1396,18 @@ func (p *parser) toAxiomSection(section phase4.Section) *ast.AxiomSection {
 func (p *parser) toGivenSection(section phase4.Section) *ast.GivenSection {
 	return &ast.GivenSection{
 		Given: p.oneOrMoreTargets(section),
+	}
+}
+
+func (p *parser) toUsingSection(section phase4.Section) *ast.UsingSection {
+	return &ast.UsingSection{
+		Using: p.oneOrMoreTargets(section),
+	}
+}
+
+func (p *parser) toProvidedSection(section phase4.Section) *ast.ProvidedSection {
+	return &ast.ProvidedSection{
+		Provided: p.oneOrMoreSpecs(section),
 	}
 }
 
@@ -1372,7 +1450,7 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 		references = p.toReferencesSection(sec)
 	}
 	var aliases *ast.AliasesSection
-	if sec, ok := sections[ast.UpperUsingName]; ok {
+	if sec, ok := sections[ast.UpperAliasesName]; ok {
 		aliases = p.toAliasesSection(sec)
 	}
 	var metadata *ast.MetadataSection
@@ -1443,7 +1521,7 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 		references = p.toReferencesSection(sec)
 	}
 	var aliases *ast.AliasesSection
-	if sec, ok := sections[ast.UpperUsingName]; ok {
+	if sec, ok := sections[ast.UpperAliasesName]; ok {
 		aliases = p.toAliasesSection(sec)
 	}
 	var metadata *ast.MetadataSection
@@ -1503,17 +1581,40 @@ func (p *parser) toTopicGroup(group phase4.Group) (ast.TopicGroup, bool) {
 		return ast.TopicGroup{}, false
 	}
 
-	return ast.TopicGroup{}, false
-}
-
-//////////////////////////////////// note //////////////////////////////////
-
-func (p *parser) toNoteGroup(group phase4.Group) (ast.NoteGroup, bool) {
-	if !startsWithSections(group, ast.UpperNoteName) {
-		return ast.NoteGroup{}, false
+	id := p.getId(group, true)
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.TopicSections...)
+	if !ok || id == nil {
+		return ast.TopicGroup{}, false
+	}
+	topic := *p.toTopicSection(sections[ast.UpperTopicName])
+	content := *p.toContentSection(sections[ast.LowerContentName])
+	var references *ast.ReferencesSection
+	if sec, ok := sections[ast.UpperJustifiedName]; ok {
+		references = p.toReferencesSection(sec)
+	}
+	var metadata *ast.MetadataSection
+	if sec, ok := sections[ast.UpperMetadataName]; ok {
+		metadata = p.toMetadataSection(sec)
 	}
 
-	return ast.NoteGroup{}, false
+	return ast.TopicGroup{
+		Id:         *id,
+		Topic:      topic,
+		Content:    content,
+		References: references,
+		Metadata:   metadata,
+	}, true
+}
+
+func (p *parser) toTopicSection(section phase4.Section) *ast.TopicSection {
+	p.verifyNoArgs(section)
+	return &ast.TopicSection{}
+}
+
+func (p *parser) toContentSection(section phase4.Section) *ast.ContentSection {
+	return &ast.ContentSection{
+		Content: p.exactlyOneTextItem(section),
+	}
 }
 
 //////////////////////////////// top level items //////////////////////////
@@ -1536,8 +1637,6 @@ func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelI
 		} else if grp, ok := p.toTheoremGroup(item); ok {
 			return grp, true
 		} else if grp, ok := p.toSpecifyGroup(item); ok {
-			return grp, true
-		} else if grp, ok := p.toNoteGroup(item); ok {
 			return grp, true
 		} else if grp, ok := p.toTopicGroup(item); ok {
 			return grp, ok
@@ -1619,6 +1718,8 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 			return grp
 		} else if grp, ok := p.toIffGroup(data); ok {
 			return grp
+		} else if grp, ok := p.toWhenGroup(data); ok {
+			return grp
 		}
 	}
 
@@ -1644,6 +1745,21 @@ func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 		p.tracker.Append(newError("Expected a '... is ...' or a '... <op> ...' item", arg.MetaData.Start))
 		return ast.Spec{}
 	}
+}
+
+func (p *parser) toAlias(arg phase4.Argument) ast.Spec {
+	switch data := arg.Arg.(type) {
+	case phase4.FormulationArgumentData:
+		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker); ok {
+			return ast.Spec{
+				RawText: data.Text,
+				Root:    node,
+				Label:   nil,
+			}
+		}
+	}
+	p.tracker.Append(newError("Expected a '... :=> ...' item", arg.MetaData.Start))
+	return ast.Spec{}
 }
 
 func (p *parser) toTarget(arg phase4.Argument) ast.Target {
@@ -1712,6 +1828,14 @@ func (p *parser) toSpecs(args []phase4.Argument) []ast.Spec {
 	return result
 }
 
+func (p *parser) toAliases(args []phase4.Argument) []ast.Alias {
+	result := make([]ast.Alias, 0)
+	for _, arg := range args {
+		result = append(result, p.toAlias(arg))
+	}
+	return result
+}
+
 func (p *parser) toTargets(args []phase4.Argument) []ast.Target {
 	result := make([]ast.Target, 0)
 	for _, arg := range args {
@@ -1744,7 +1868,7 @@ func (p *parser) toDocumentedTypes(args []phase4.Argument) []ast.DocumentedType 
 		} else {
 			p.tracker.Append(newError(fmt.Sprintf(
 				"Expected a %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, or %s: item",
-				ast.LowerLooselyName, ast.LowerOverviewName, ast.LowerMotivationName, ast.LowerHistoryName,
+				ast.LowerDetailsName, ast.LowerOverviewName, ast.LowerMotivationName, ast.LowerHistoryName,
 				ast.LowerExamplesName, ast.LowerRelatedName, ast.LowerDiscoveredName, ast.LowerNotesName,
 				ast.LowerExpressedName, ast.LowerExpressingName, ast.LowerCalledName), arg.MetaData.Start))
 		}
@@ -1771,6 +1895,10 @@ func (p *parser) exactlyOneClause(section phase4.Section) ast.Clause {
 
 func (p *parser) oneOrMoreSpecs(section phase4.Section) []ast.Spec {
 	return oneOrMore(p.toSpecs(section.Args), section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) oneOrMoreAliases(section phase4.Section) []ast.Alias {
+	return oneOrMore(p.toAliases(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneSpec(section phase4.Section) ast.Spec {

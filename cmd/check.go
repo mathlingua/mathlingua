@@ -30,10 +30,12 @@ var checkCommand = &cobra.Command{
 	Args: cobra.MinimumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		debug, _ := rootCmd.PersistentFlags().GetBool("debug")
-		mlg.NewMlg(mlg.NewLogger()).Check(args, debug)
+		json, _ := cmd.Flags().GetBool("json")
+		mlg.NewMlg(mlg.NewLogger()).Check(args, json, debug)
 	},
 }
 
 func init() {
+	checkCommand.Flags().BoolP("json", "", false, "Output diagnostics in JSON format")
 	rootCmd.AddCommand(checkCommand)
 }

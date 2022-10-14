@@ -17,6 +17,7 @@
 package mlg
 
 import (
+	"encoding/json"
 	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
@@ -37,7 +38,7 @@ type Mlg interface {
 	 * will be processed and for any directory, all `.math` files recursively
 	 * in the directory will be processed.
 	 */
-	Check(paths []string, dedug bool)
+	Check(paths []string, json bool, dedug bool)
 	Doc()
 	Clean()
 	Version() string
@@ -53,6 +54,21 @@ func NewMlg(logger Logger) Mlg {
 
 type mlg struct {
 	logger Logger
+}
+
+type diagnosticInfo struct {
+	Type      string `json:"type"`
+	Path      string `json:"path"`
+	Message   string `json:"message"`
+	DebugInfo string `json:"debugInfo"`
+	Row       int    `json:"row"`
+	Column    int    `json:"column"`
+}
+
+type checkResult struct {
+	GeneralWarnings []string         `json:"generalWarnings"`
+	GeneralErrors   []string         `json:"generalErrors"`
+	Diagnostics     []diagnosticInfo `json:"diagnostics"`
 }
 
 func parse(text string) (phase4.Root, []frontend.Diagnostic) {
@@ -80,7 +96,13 @@ func parseDocument(text string) (ast.Document, []frontend.Diagnostic) {
 	return doc, tracker.Diagnostics()
 }
 
-func (m *mlg) Check(paths []string, debug bool) {
+func (m *mlg) Check(paths []string, showJson bool, debug bool) {
+	result := checkResult{
+		GeneralWarnings: make([]string, 0),
+		GeneralErrors:   make([]string, 0),
+		Diagnostics:     make([]diagnosticInfo, 0),
+	}
+
 	if len(paths) == 0 {
 		paths = append(paths, "content")
 	} else {
@@ -88,7 +110,8 @@ func (m *mlg) Check(paths []string, debug bool) {
 			stat, _ := os.Stat(p)
 			isDir := stat != nil && stat.IsDir()
 			if !isDir && !strings.HasSuffix(p, ".math") {
-				m.logger.Warning(fmt.Sprintf("File %s is not a MathLingua (.math) file and will be ignored", p))
+				result.GeneralWarnings = append(result.GeneralWarnings,
+					fmt.Sprintf("File %s is not a MathLingua (.math) file and will be ignored", p))
 			}
 		}
 	}
@@ -98,12 +121,14 @@ func (m *mlg) Check(paths []string, debug bool) {
 		err := filepath.Walk(p, func(p string, info os.FileInfo, err error) error {
 			if err != nil {
 				numErrors++
+				result.GeneralErrors = append(result.GeneralErrors, err.Error())
 				return err
 			}
 
 			stat, err := os.Stat(p)
 			if err != nil {
 				numErrors++
+				result.GeneralErrors = append(result.GeneralErrors, err.Error())
 				return err
 			}
 
@@ -114,25 +139,26 @@ func (m *mlg) Check(paths []string, debug bool) {
 			bytes, err := os.ReadFile(p)
 			if err != nil {
 				numErrors++
+				result.GeneralErrors = append(result.GeneralErrors, err.Error())
 				return err
 			}
 
 			numFilesProcessed++
 			_, diagnostics := parseDocument(string(bytes))
-			for index, diag := range diagnostics {
-				// make sure there is a space between errors including errors
-				// from other files that have already been reported
-				if index > 0 || numErrors > 0 {
-					// have a blank line between errors
-					m.logger.Log("")
-				}
-
+			for _, diag := range diagnostics {
 				debugInfo := ""
 				if debug {
 					debugInfo = fmt.Sprintf(" [%s]", diag.Origin)
 				}
 
-				m.logger.Error(fmt.Sprintf("%s (%d, %d)%s\n%s", p, diag.Position.Row+1, diag.Position.Column+1, debugInfo, diag.Message))
+				result.Diagnostics = append(result.Diagnostics, diagnosticInfo{
+					Type:      string(diag.Type),
+					Path:      p,
+					Message:   diag.Message,
+					DebugInfo: debugInfo,
+					Row:       diag.Position.Row,
+					Column:    diag.Position.Column,
+				})
 			}
 			numErrors += len(diagnostics)
 
@@ -140,9 +166,18 @@ func (m *mlg) Check(paths []string, debug bool) {
 		})
 
 		if err != nil {
-			m.logger.Error(err.Error())
+			result.GeneralErrors = append(result.GeneralErrors, err.Error())
 			continue
 		}
+	}
+
+	if showJson {
+		if data, err := json.MarshalIndent(result, "", "  "); err != nil {
+			m.logger.Error(fmt.Sprintf("{\"generalErrors\": [\"%s\"]}", err))
+		} else {
+			m.logger.Log(string(data))
+		}
+		return
 	}
 
 	var errorText string
@@ -157,6 +192,23 @@ func (m *mlg) Check(paths []string, debug bool) {
 		filesText = "file"
 	} else {
 		filesText = "files"
+	}
+
+	for _, warning := range result.GeneralWarnings {
+		m.logger.Warning(warning)
+	}
+
+	for _, err := range result.GeneralErrors {
+		m.logger.Error(err)
+	}
+
+	for index, info := range result.Diagnostics {
+		if index > 0 {
+			// print a line between each error
+			m.logger.Log("")
+		}
+		m.logger.Error(fmt.Sprintf("%s (%d, %d)%s\n%s",
+			info.Path, info.Row+1, info.Column+1, info.DebugInfo, info.Message))
 	}
 
 	if numErrors > 0 {

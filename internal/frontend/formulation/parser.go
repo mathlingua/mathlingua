@@ -488,7 +488,7 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 			children = append(children, cmd)
 		} else if cmd, ok := fp.commandAtExpression(); ok {
 			children = append(children, cmd)
-		} else if cmd, ok := fp.commandExpression(); ok {
+		} else if cmd, ok := fp.commandExpression(false); ok {
 			children = append(children, cmd)
 		} else {
 			if fp.lexer.HasNext() {
@@ -948,7 +948,7 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNon
 func (fp *formulationParser) commandOperatorTarget() (ast.CommandOperatorTarget, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-	cmd, ok := fp.commandExpression()
+	cmd, ok := fp.commandExpression(true)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.CommandOperatorTarget{}, false
@@ -1028,7 +1028,7 @@ func (fp *formulationParser) subSupArgs() (ast.SubSupArgs, bool) {
 	}, true
 }
 
-func (fp *formulationParser) commandExpression() (ast.CommandExpression, bool) {
+func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandExpression, bool) {
 	start := fp.lexer.Position()
 	if !fp.hasHas(ast.BackSlash, ast.Name) {
 		return ast.CommandExpression{}, false
@@ -1042,7 +1042,20 @@ func (fp *formulationParser) commandExpression() (ast.CommandExpression, bool) {
 		if name, ok := fp.nameForm(); ok {
 			names = append(names, name)
 		} else {
-			break
+			if !allowOperator {
+				break
+			}
+			if op, ok := fp.operatorToken(); ok {
+				names = append(names, ast.NameForm{
+					Text:            op.Text,
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg:          ast.VarArgData{},
+					MetaData:        op.MetaData,
+				})
+			} else {
+				break
+			}
 		}
 		if fp.has(ast.Dot) {
 			fp.expect(ast.Dot)
@@ -1594,7 +1607,7 @@ func (fp *formulationParser) idType() (ast.IdType, bool) {
 		return op, ok
 	} else if op, ok := fp.postfixOperatorId(); ok {
 		return op, ok
-	} else if cmd, ok := fp.commandId(); ok {
+	} else if cmd, ok := fp.commandId(false); ok {
 		return cmd, ok
 	} else if cmd, ok := fp.commandAtId(); ok {
 		return cmd, ok
@@ -1820,7 +1833,7 @@ func (fp *formulationParser) subSupParams() (ast.SubSupParams, bool) {
 
 func (fp *formulationParser) infixCommandId() (ast.InfixCommandId, bool) {
 	id := fp.lexer.Snapshot()
-	cmd, ok := fp.commandId()
+	cmd, ok := fp.commandId(true)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandId{}, false
@@ -1843,7 +1856,7 @@ func (fp *formulationParser) infixCommandId() (ast.InfixCommandId, bool) {
 	}, true
 }
 
-func (fp *formulationParser) commandId() (ast.CommandId, bool) {
+func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool) {
 	start := fp.lexer.Position()
 	if !fp.hasHas(ast.BackSlash, ast.Name) {
 		return ast.CommandId{}, false
@@ -1856,7 +1869,20 @@ func (fp *formulationParser) commandId() (ast.CommandId, bool) {
 		if name, ok := fp.nameForm(); ok {
 			names = append(names, name)
 		} else {
-			break
+			if !allowOperator {
+				break
+			}
+			if op, ok := fp.operatorToken(); ok {
+				names = append(names, ast.NameForm{
+					Text:            op.Text,
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg:          ast.VarArgData{},
+					MetaData:        op.MetaData,
+				})
+			} else {
+				break
+			}
 		}
 		if fp.has(ast.Dot) {
 			fp.expect(ast.Dot)

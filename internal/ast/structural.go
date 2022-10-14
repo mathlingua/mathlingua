@@ -440,8 +440,21 @@ type ProvidesType interface {
 	ProvidesType()
 }
 
-func (OperationsGroup) ProvidesType() {}
-func (MembersGroup) ProvidesType()    {}
+func (SimpleOperationsGroup) ProvidesType() {}
+func (OperationsGroup) ProvidesType()       {}
+func (MembersGroup) ProvidesType()          {}
+
+var SimpleOperationsSections = []string{
+	LowerOperationsName,
+}
+
+type SimpleOperationsGroup struct {
+	Operations SimpleOperationsSection
+}
+
+type SimpleOperationsSection struct {
+	Operations []Alias
+}
 
 var OperationsSections = []string{
 	LowerOperationsName,
@@ -472,15 +485,14 @@ type SpecifySection struct {
 
 var MembersSections = []string{
 	LowerMembersName,
-	LowerAliasedName,
 }
 
 type MembersGroup struct {
 	Members MembersSection
-	Aliased AliasedSection
 }
 
 type MembersSection struct {
+	Members []Alias
 }
 
 type AliasedSection struct {

@@ -136,10 +136,15 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
+		actual: ast.SimpleOperationsSections,
+		expected: []string{
+			"operations",
+		},
+	},
+	{
 		actual: ast.MembersSections,
 		expected: []string{
 			"members",
-			"aliased",
 		},
 	},
 	{

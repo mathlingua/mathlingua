@@ -545,13 +545,13 @@ func (p *parser) toMembersGroup(group phase4.Group) (ast.MembersGroup, bool) {
 
 	return ast.MembersGroup{
 		Members: *p.toMembersSection(sections[ast.LowerMembersName]),
-		Aliased: *p.toAliasedSection(sections[ast.LowerAliasedName]),
 	}, true
 }
 
 func (p *parser) toMembersSection(section phase4.Section) *ast.MembersSection {
-	p.verifyNoArgs(section)
-	return &ast.MembersSection{}
+	return &ast.MembersSection{
+		Members: p.oneOrMoreAliases(section),
+	}
 }
 
 func (p *parser) toAliasedSection(section phase4.Section) *ast.AliasedSection {
@@ -560,8 +560,29 @@ func (p *parser) toAliasedSection(section phase4.Section) *ast.AliasedSection {
 	}
 }
 
+func (p *parser) toSimpleOperationsGroup(group phase4.Group) (ast.SimpleOperationsGroup, bool) {
+	if !startsWithSections(group, ast.LowerOperationsName) || len(group.Sections) != 1 {
+		return ast.SimpleOperationsGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.SimpleOperationsSections...)
+	if !ok {
+		return ast.SimpleOperationsGroup{}, false
+	}
+
+	return ast.SimpleOperationsGroup{
+		Operations: *p.toSimpleOperationsSection(sections[ast.LowerOperationsName]),
+	}, true
+}
+
+func (p *parser) toSimpleOperationsSection(section phase4.Section) *ast.SimpleOperationsSection {
+	return &ast.SimpleOperationsSection{
+		Operations: p.oneOrMoreAliases(section),
+	}
+}
+
 func (p *parser) toOperationsGroup(group phase4.Group) (ast.OperationsGroup, bool) {
-	if !startsWithSections(group, ast.LowerOperationsName) {
+	if !startsWithSections(group, ast.LowerOperationsName) || !endsWithSection(group, ast.LowerAliasedName) {
 		return ast.OperationsGroup{}, false
 	}
 
@@ -914,7 +935,9 @@ func (p *parser) toProvidesTypeFromArg(arg phase4.Argument) (ast.ProvidesType, b
 }
 
 func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, bool) {
-	if grp, ok := p.toOperationsGroup(group); ok {
+	if grp, ok := p.toSimpleOperationsGroup(group); ok {
+		return grp, true
+	} else if grp, ok := p.toOperationsGroup(group); ok {
 		return grp, true
 	} else if grp, ok := p.toMembersGroup(group); ok {
 		return grp, true

@@ -245,12 +245,6 @@ func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 						Text:     "is",
 						Position: cur.Position,
 					})
-				} else if name == "isnot" {
-					appendToken(ast.Token{
-						Type:     ast.IsNot,
-						Text:     "isnot",
-						Position: cur.Position,
-					})
 				} else if name == "as" {
 					appendToken(ast.Token{
 						Type:     ast.As,

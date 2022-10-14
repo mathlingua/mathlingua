@@ -148,13 +148,6 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]], tracker frontend
 				Lhs: []ast.ExpressionType{lhs},
 				Rhs: []ast.KindType{rhs},
 			}
-		case top.Type == ast.IsNot:
-			rhs := checkType(toNode(items, tracker), default_kind_type, "Kind Type", tracker)
-			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
-			return ast.IsNotExpression{
-				Lhs: []ast.ExpressionType{lhs},
-				Rhs: []ast.KindType{rhs},
-			}
 		case top.Type == ast.As:
 			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
 			rhs := checkType(toNode(items, tracker), default_signature, "Signature", tracker)
@@ -246,8 +239,6 @@ func isOperator(node ast.NodeType) bool {
 		case ast.Operator:
 			return true
 		case ast.Is:
-			return true
-		case ast.IsNot:
 			return true
 		case ast.As:
 			return true

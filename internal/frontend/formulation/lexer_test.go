@@ -27,7 +27,7 @@ import (
 func TestFormulationLexer(t *testing.T) {
 	tracker := frontend.NewDiagnosticTracker()
 	lexer := NewLexer(`
-xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is \something/ x as \[something] "*+" name' isnot @
+xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is \something/ x as \[something] "*+" name' @
 `, tracker)
 
 	actual := "\n"
@@ -104,7 +104,6 @@ something Name
 ] RSquare
 "*+" Name
 name' Name
-isnot IsNot
 @ At
 `
 

@@ -812,10 +812,6 @@ func (fp *formulationParser) isKeyword() (ast.PseudoTokenNode, bool) {
 	return fp.pseudoToken(ast.Is)
 }
 
-func (fp *formulationParser) isNotKeyword() (ast.PseudoTokenNode, bool) {
-	return fp.pseudoToken(ast.IsNot)
-}
-
 func (fp *formulationParser) isQuestionMarkKeyword() (ast.PseudoTokenNode, bool) {
 	return fp.pseudoToken(ast.QuestionMark)
 }
@@ -839,10 +835,6 @@ func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 
 	if is, ok := fp.isKeyword(); ok {
 		return is, ok
-	}
-
-	if isNot, ok := fp.isNotKeyword(); ok {
-		return isNot, ok
 	}
 
 	if question, ok := fp.isQuestionMarkKeyword(); ok {

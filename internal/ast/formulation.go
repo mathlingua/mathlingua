@@ -45,7 +45,7 @@ func (PrefixOperatorCallExpression) NodeType()           {}
 func (PostfixOperatorCallExpression) NodeType()          {}
 func (InfixOperatorCallExpression) NodeType()            {}
 func (IsExpression) NodeType()                           {}
-func (IsNotExpression) NodeType()                        {}
+func (ExtendsExpression) NodeType()                      {}
 func (AsExpression) NodeType()                           {}
 func (NameOrdinalCallExpression) NodeType()              {}
 func (ChainExpression) NodeType()                        {}
@@ -84,7 +84,7 @@ func (n PrefixOperatorCallExpression) Start() Position           { return n.Meta
 func (n PostfixOperatorCallExpression) Start() Position          { return n.MetaData.Start }
 func (n InfixOperatorCallExpression) Start() Position            { return n.MetaData.Start }
 func (n IsExpression) Start() Position                           { return n.MetaData.Start }
-func (n IsNotExpression) Start() Position                        { return n.MetaData.Start }
+func (n ExtendsExpression) Start() Position                      { return n.MetaData.Start }
 func (n AsExpression) Start() Position                           { return n.MetaData.Start }
 func (n NameOrdinalCallExpression) Start() Position              { return n.MetaData.Start }
 func (n ChainExpression) Start() Position                        { return n.MetaData.Start }
@@ -244,7 +244,7 @@ func (ChainExpression) ExpressionType()                        {}
 func (PseudoTokenNode) ExpressionType()                        {}
 func (PseudoExpression) ExpressionType()                       {}
 func (IsExpression) ExpressionType()                           {}
-func (IsNotExpression) ExpressionType()                        {}
+func (ExtendsExpression) ExpressionType()                      {}
 func (MultiplexedInfixOperatorCallExpression) ExpressionType() {}
 func (ExpressionColonEqualsItem) ExpressionType()              {}
 func (ExpressionColonArrowItem) ExpressionType()               {}
@@ -342,8 +342,8 @@ type IsExpression struct {
 	MetaData MetaData
 }
 
-// x isnot \y
-type IsNotExpression struct {
+// x extends \y
+type ExtendsExpression struct {
 	Lhs      []ExpressionType
 	Rhs      []KindType
 	MetaData MetaData

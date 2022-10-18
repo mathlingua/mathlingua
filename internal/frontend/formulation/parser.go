@@ -264,7 +264,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 	}
 
 	isIndex := -1
-	isNotIndex := -1
+	extendsIndex := -1
 
 	minPrecIndexMinIndex := math.MaxInt
 	minPrecIndexMaxIndex := -1
@@ -279,12 +279,12 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 			isIndex = i
 		}
 
-		_, isNotOk := item.(ast.IsNotExpression)
-		if isNotOk {
-			if isNotIndex >= 0 {
-				fp.error("'isnot' statements cannot be nested")
+		_, extendsOk := item.(ast.ExtendsExpression)
+		if extendsOk {
+			if extendsIndex >= 0 {
+				fp.error("'extends' statements cannot be nested")
 			}
-			isNotIndex = i
+			extendsIndex = i
 		}
 
 		prec, isInfix := GetPrecedenceAndIfInfix(item)
@@ -297,9 +297,9 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 		}
 	}
 
-	// if there isn't an 'is' or 'isnot' statement and there
+	// if there isn't an 'is' or 'extends' statement and there
 	// is at least one infix operator
-	if isIndex == -1 && isNotIndex == -1 && minPrecIndexMaxIndex >= 0 {
+	if isIndex == -1 && extendsIndex == -1 && minPrecIndexMaxIndex >= 0 {
 		if minPrecIndexMinIndex != minPrecIndexMaxIndex {
 			fp.error("A multiplexed operator can only be used if exactly one operator has minimum precedence")
 			return nil, false
@@ -330,10 +330,10 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 		}
 	}
 
-	if isIndex >= 0 && isNotIndex >= 0 {
-		fp.error("'is' and 'isnot' statements cannot be used together")
+	if isIndex >= 0 && extendsIndex >= 0 {
+		fp.error("'is' and 'extends' statements cannot be used together")
 		return nil, false
-	} else if isIndex == -1 && isNotIndex == -1 {
+	} else if isIndex == -1 && extendsIndex == -1 {
 		fp.error("multiple comma separated expressions is not supported in this context")
 		return nil, false
 	} else if isIndex >= 0 {
@@ -359,23 +359,23 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 				Start: start,
 			},
 		}, true
-	} else if isNotIndex >= 0 {
+	} else if extendsIndex >= 0 {
 		lhs := make([]ast.ExpressionType, 0)
 		rhs := make([]ast.KindType, 0)
 		i := 0
-		for i < isNotIndex {
+		for i < extendsIndex {
 			lhs = append(lhs, items[i])
 			i++
 		}
-		isExp := items[isNotIndex].(ast.IsNotExpression)
+		isExp := items[extendsIndex].(ast.ExtendsExpression)
 		lhs = append(lhs, isExp.Lhs...)
 		rhs = append(rhs, isExp.Rhs...)
-		i = isNotIndex + 1
+		i = extendsIndex + 1
 		for i < len(items) {
 			rhs = append(rhs, items[i].(ast.KindType))
 			i++
 		}
-		return ast.IsNotExpression{
+		return ast.ExtendsExpression{
 			Lhs: lhs,
 			Rhs: rhs,
 			MetaData: ast.MetaData{
@@ -812,6 +812,10 @@ func (fp *formulationParser) isKeyword() (ast.PseudoTokenNode, bool) {
 	return fp.pseudoToken(ast.Is)
 }
 
+func (fp *formulationParser) extendsKeyword() (ast.PseudoTokenNode, bool) {
+	return fp.pseudoToken(ast.Extends)
+}
+
 func (fp *formulationParser) isQuestionMarkKeyword() (ast.PseudoTokenNode, bool) {
 	return fp.pseudoToken(ast.QuestionMark)
 }
@@ -835,6 +839,10 @@ func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 
 	if is, ok := fp.isKeyword(); ok {
 		return is, ok
+	}
+
+	if extends, ok := fp.extendsKeyword(); ok {
+		return extends, ok
 	}
 
 	if question, ok := fp.isQuestionMarkKeyword(); ok {

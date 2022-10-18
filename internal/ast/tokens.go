@@ -60,6 +60,7 @@ const (
 	DotDotDot             TokenType = "DotDotDot"
 	QuestionMark          TokenType = "QuestionMark"
 	Is                    TokenType = "Is"
+	Extends               TokenType = "Extends"
 	As                    TokenType = "As"
 	Caret                 TokenType = "Caret"
 	At                    TokenType = "At"

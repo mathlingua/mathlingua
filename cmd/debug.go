@@ -160,10 +160,11 @@ func setupScreen() {
 			if len(diagnostics) > 0 {
 				output := ""
 				for _, diag := range diagnostics {
-					output += fmt.Sprintf("[red]%s[white] (%d, %d): %s\n",
+					output += fmt.Sprintf("[red]%s[white] (%d, %d) {%s}: %s\n",
 						diag.Type,
 						(diag.Position.Row + 1),
 						(diag.Position.Column + 1),
+						diag.Origin,
 						diag.Message)
 				}
 				outputArea.SetText(output)

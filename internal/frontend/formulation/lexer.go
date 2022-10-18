@@ -245,6 +245,12 @@ func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 						Text:     "is",
 						Position: cur.Position,
 					})
+				} else if name == "extends" {
+					appendToken(ast.Token{
+						Type:     ast.Extends,
+						Text:     "extends",
+						Position: cur.Position,
+					})
 				} else if name == "as" {
 					appendToken(ast.Token{
 						Type:     ast.As,

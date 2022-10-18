@@ -1160,19 +1160,19 @@ func (p *parser) toSatisfiesSection(section phase4.Section) *ast.SatisfiesSectio
 	}
 }
 
-/////////////////////// declares ////////////////////////////////////////
+/////////////////////// defines ////////////////////////////////////////
 
-func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
-	if !startsWithSections(group, ast.UpperDeclaresName) {
-		return ast.DeclaresGroup{}, false
+func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
+	if !startsWithSections(group, ast.UpperDefinesName) {
+		return ast.DefinesGroup{}, false
 	}
 
 	id := p.getId(group, true)
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.DeclaresSections...)
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.DefinesSections...)
 	if !ok || id == nil {
-		return ast.DeclaresGroup{}, false
+		return ast.DefinesGroup{}, false
 	}
-	declares := *p.toDeclaresSection(sections[ast.UpperDeclaresName])
+	defines := *p.toDefinesSection(sections[ast.UpperDefinesName])
 	var with *ast.WithSection
 	if sec, ok := sections[ast.LowerWithName]; ok {
 		with = p.toWithSection(sec)
@@ -1193,9 +1193,9 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 	if sec, ok := sections[ast.LowerMeansName]; ok {
 		means = p.toMeansSection(sec)
 	}
-	var defines *ast.DefinesSection
-	if sec, ok := sections[ast.LowerDefinesName]; ok {
-		defines = p.toDefinesSection(sec)
+	var specifies *ast.SpecifiesSection
+	if sec, ok := sections[ast.LowerSpecifiesName]; ok {
+		specifies = p.toSpecifiesSection(sec)
 	}
 	var provides *ast.ProvidesSection
 	if sec, ok := sections[ast.UpperProvidesName]; ok {
@@ -1225,15 +1225,15 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 	if sec, ok := sections[ast.UpperMetadataName]; ok {
 		metadata = p.toMetadataSection(sec)
 	}
-	return ast.DeclaresGroup{
+	return ast.DefinesGroup{
 		Id:         *id,
-		Declares:   declares,
+		Defines:    defines,
 		With:       with,
 		Using:      using,
 		Provided:   provided,
 		SuchThat:   suchThat,
 		Means:      means,
-		Defines:    defines,
+		Specifies:  specifies,
 		Viewable:   viewable,
 		Provides:   provides,
 		Justified:  justified,
@@ -1244,9 +1244,9 @@ func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 	}, true
 }
 
-func (p *parser) toDeclaresSection(section phase4.Section) *ast.DeclaresSection {
-	return &ast.DeclaresSection{
-		Declares: p.exactlyOneTarget(section),
+func (p *parser) toDefinesSection(section phase4.Section) *ast.DefinesSection {
+	return &ast.DefinesSection{
+		Defines: p.exactlyOneTarget(section),
 	}
 }
 
@@ -1262,9 +1262,9 @@ func (p *parser) toMeansSection(section phase4.Section) *ast.MeansSection {
 	}
 }
 
-func (p *parser) toDefinesSection(section phase4.Section) *ast.DefinesSection {
-	return &ast.DefinesSection{
-		Defines: p.oneOrMoreClauses(section),
+func (p *parser) toSpecifiesSection(section phase4.Section) *ast.SpecifiesSection {
+	return &ast.SpecifiesSection{
+		Specifies: p.oneOrMoreClauses(section),
 	}
 }
 
@@ -1647,7 +1647,7 @@ func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelI
 	case phase4.TextBlock:
 		return p.toTextBlockItem(item), true
 	case phase4.Group:
-		if grp, ok := p.toDeclaresGroup(item); ok {
+		if grp, ok := p.toDefinesGroup(item); ok {
 			return grp, true
 		} else if grp, ok := p.toDescribesGroup(item); ok {
 			return grp, true

@@ -253,15 +253,15 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.DeclaresSections,
+		actual: ast.DefinesSections,
 		expected: []string{
-			"Declares",
+			"Defines",
 			"with?",
 			"using?",
 			"provided?",
 			"suchThat?",
 			"means?",
-			"defines?",
+			"specifies",
 			"Provides?",
 			"Viewable?",
 			"Justified?",

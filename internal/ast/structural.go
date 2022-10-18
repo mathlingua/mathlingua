@@ -25,8 +25,7 @@ const LowerAsQuestionName = LowerAsName + "?"
 const LowerByName = "by"
 const LowerCalledName = "called"
 const LowerContentName = "content"
-const LowerDefinesName = "defines"
-const LowerDefinesQuestionName = LowerDefinesName + "?"
+const LowerSpecifiesName = "specifies"
 const LowerDiscoveredName = "discovered"
 const LowerElseName = "else"
 const LowerElseQuestionName = LowerElseName + "?"
@@ -87,7 +86,7 @@ const LowerWithQuestionName = LowerWithName + "?"
 const LowerZeroName = "zero"
 const UpperAxiomName = "Axiom"
 const UpperConjectureName = "Conjecture"
-const UpperDeclaresName = "Declares"
+const UpperDefinesName = "Defines"
 const UpperDescribesName = "Describes"
 const UpperDocumentedName = "Documented"
 const UpperDocumentedQuestionName = UpperDocumentedName + "?"
@@ -791,14 +790,14 @@ type SatisfiesSection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
-var DeclaresSections = []string{
-	UpperDeclaresName,
+var DefinesSections = []string{
+	UpperDefinesName,
 	LowerWithQuestionName,
 	LowerUsingQuestionName,
 	LowerProvidedQuestionName,
 	LowerSuchThatQuestionName,
 	LowerMeansQuestionName,
-	LowerDefinesQuestionName,
+	LowerSpecifiesName,
 	UpperProvidesQuestionName,
 	UpperViewableQuestionName,
 	UpperJustifiedQuestionName,
@@ -808,15 +807,15 @@ var DeclaresSections = []string{
 	UpperMetadataQuestionName,
 }
 
-type DeclaresGroup struct {
+type DefinesGroup struct {
 	Id         IdItem
-	Declares   DeclaresSection
+	Defines    DefinesSection
 	With       *WithSection
 	Using      *UsingSection
 	Provided   *ProvidedSection
 	SuchThat   *SuchThatSection
 	Means      *MeansSection
-	Defines    *DefinesSection
+	Specifies  *SpecifiesSection
 	Provides   *ProvidesSection
 	Viewable   *ViewableSection
 	Justified  *JustifiedSection
@@ -826,16 +825,16 @@ type DeclaresGroup struct {
 	Metadata   *MetadataSection
 }
 
-type DeclaresSection struct {
-	Declares Target
+type DefinesSection struct {
+	Defines Target
 }
 
 type MeansSection struct {
 	Means Clause
 }
 
-type DefinesSection struct {
-	Defines []Clause
+type SpecifiesSection struct {
+	Specifies []Clause
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1106,7 +1105,7 @@ type TopLevelItemType interface {
 }
 
 func (TextBlockItem) TopLevelItemType()   {}
-func (DeclaresGroup) TopLevelItemType()   {}
+func (DefinesGroup) TopLevelItemType()    {}
 func (DescribesGroup) TopLevelItemType()  {}
 func (StatesGroup) TopLevelItemType()     {}
 func (AxiomGroup) TopLevelItemType()      {}

@@ -106,10 +106,14 @@ func (fp *formulationParser) next() ast.Token {
 
 func (fp *formulationParser) errorAt(message string, position ast.Position) {
 	fp.tracker.Append(frontend.Diagnostic{
-		Type:     frontend.Error,
-		Origin:   frontend.FormulationParserOrigin,
-		Message:  message,
-		Position: position,
+		Type:    frontend.Error,
+		Origin:  frontend.FormulationParserOrigin,
+		Message: message,
+		Position: ast.Position{
+			Row:    fp.start.Row + position.Row,
+			Column: fp.start.Column + position.Column,
+			Offset: fp.start.Offset + position.Offset,
+		},
 	})
 }
 

@@ -1106,10 +1106,8 @@ func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, boo
 		return ast.CommandAtExpression{}, false
 	}
 
-	// move past the backslash
-	fp.expect(ast.BackSlash)
-
 	id := fp.lexer.Snapshot()
+	fp.expect(ast.BackSlash)
 	names := make([]ast.NameForm, 0)
 	for fp.lexer.HasNext() {
 		if name, ok := fp.nameForm(); ok {
@@ -1936,8 +1934,8 @@ func (fp *formulationParser) commandAtId() (ast.CommandAtId, bool) {
 		return ast.CommandAtId{}, false
 	}
 
-	fp.expect(ast.BackSlash)
 	id := fp.lexer.Snapshot()
+	fp.expect(ast.BackSlash)
 	names := make([]ast.NameForm, 0)
 	for fp.lexer.HasNext() {
 		if name, ok := fp.nameForm(); ok {

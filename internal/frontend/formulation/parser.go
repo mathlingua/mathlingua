@@ -104,16 +104,20 @@ func (fp *formulationParser) next() ast.Token {
 	return fp.lexer.Next()
 }
 
+func (fp *formulationParser) getShiftedPosition(position ast.Position) ast.Position {
+	return ast.Position{
+		Row:    fp.start.Row + position.Row,
+		Column: fp.start.Column + position.Column,
+		Offset: fp.start.Offset + position.Offset,
+	}
+}
+
 func (fp *formulationParser) errorAt(message string, position ast.Position) {
 	fp.tracker.Append(frontend.Diagnostic{
-		Type:    frontend.Error,
-		Origin:  frontend.FormulationParserOrigin,
-		Message: message,
-		Position: ast.Position{
-			Row:    fp.start.Row + position.Row,
-			Column: fp.start.Column + position.Column,
-			Offset: fp.start.Offset + position.Offset,
-		},
+		Type:     frontend.Error,
+		Origin:   frontend.FormulationParserOrigin,
+		Message:  message,
+		Position: fp.getShiftedPosition(position),
 	})
 }
 
@@ -215,7 +219,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 		IsVarArg:    true,
 		VarArgCount: varArgCount,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -328,7 +332,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 				Lhs:    lhs,
 				Rhs:    rhs,
 				MetaData: ast.MetaData{
-					Start: start,
+					Start: fp.getShiftedPosition(start),
 				},
 			}, true
 		}
@@ -360,7 +364,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 			Lhs: lhs,
 			Rhs: rhs,
 			MetaData: ast.MetaData{
-				Start: start,
+				Start: fp.getShiftedPosition(start),
 			},
 		}, true
 	} else if extendsIndex >= 0 {
@@ -383,7 +387,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 			Lhs: lhs,
 			Rhs: rhs,
 			MetaData: ast.MetaData{
-				Start: start,
+				Start: fp.getShiftedPosition(start),
 			},
 		}, true
 	} else {
@@ -508,7 +512,7 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 	return ast.PseudoExpression{
 		Children: children,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -561,7 +565,7 @@ func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpressio
 		Target: target,
 		Args:   args,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -596,7 +600,7 @@ func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
 	return ast.TupleExpression{
 		Args: args,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -637,7 +641,7 @@ func (fp *formulationParser) fixedSetExpression() (ast.FixedSetExpression, bool)
 	return ast.FixedSetExpression{
 		Args: args,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -697,7 +701,7 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 		Target:     target,
 		Conditions: conditions,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -751,7 +755,7 @@ func (fp *formulationParser) chainExpression() (ast.ChainExpression, bool) {
 	return ast.ChainExpression{
 		Parts: parts,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -788,7 +792,7 @@ func (fp *formulationParser) nameOrdinalCallExpression() (ast.NameOrdinalCallExp
 		Target: name,
 		Arg:    exp,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -803,7 +807,7 @@ func (fp *formulationParser) pseudoToken(expectedType ast.TokenType) (ast.Pseudo
 		Text: tok.Text,
 		Type: tok.Type,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -902,7 +906,7 @@ func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (ast.NonEnclo
 			HasLeftColon:  hasLeftColon,
 			HasRightColon: hasRightColon,
 			MetaData: ast.MetaData{
-				Start: start,
+				Start: fp.getShiftedPosition(start),
 			},
 		}, true
 	}
@@ -944,7 +948,7 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNon
 		HasLeftColon:  hasLeftColon,
 		HasRightColon: hasRightColon,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -968,7 +972,7 @@ func (fp *formulationParser) commandOperatorTarget() (ast.CommandOperatorTarget,
 	return ast.CommandOperatorTarget{
 		Command: cmd,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -994,7 +998,7 @@ func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
 		Name: name,
 		Args: args,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1027,7 +1031,7 @@ func (fp *formulationParser) subSupArgs() (ast.SubSupArgs, bool) {
 		SubArgs:    subArgs,
 		SupArgs:    supArgs,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1095,7 +1099,7 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 		NamedArgs:  &namedArgs,
 		ParenArgs:  &parenArgs,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1144,7 +1148,7 @@ func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, boo
 		Names:      names,
 		Expression: exp,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1174,7 +1178,7 @@ func (fp *formulationParser) form() (ast.NodeType, bool) {
 			Lhs: name,
 			Rhs: rhs,
 			MetaData: ast.MetaData{
-				Start: start,
+				Start: fp.getShiftedPosition(start),
 			},
 		}, true
 	} else {
@@ -1367,7 +1371,7 @@ func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 			VarArgCount: varArgCount,
 		},
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1411,7 +1415,7 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 		Params: params,
 		VarArg: varArgData,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1455,7 +1459,7 @@ func (fp *formulationParser) functionExpressionForm() (ast.FunctionExpressionFor
 		Params: params,
 		VarArg: varArgData,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1492,7 +1496,7 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 		Params: params,
 		VarArg: varArg,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1535,7 +1539,7 @@ func (fp *formulationParser) fixedSetForm() (ast.FixedSetForm, bool) {
 		Params: params,
 		VarArg: varArg,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1572,7 +1576,7 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 		Target: target,
 		VarArg: varArg,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1772,7 +1776,7 @@ func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, b
 		Target:    target,
 		Condition: condition,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1798,7 +1802,7 @@ func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
 		Name:   name,
 		Params: params,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1831,7 +1835,7 @@ func (fp *formulationParser) subSupParams() (ast.SubSupParams, bool) {
 		SubParams:    subParams,
 		SupParams:    supParams,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1923,7 +1927,7 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 		NamedParams:  &namedParams,
 		ParenParams:  &parenParams,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -1972,7 +1976,7 @@ func (fp *formulationParser) commandAtId() (ast.CommandAtId, bool) {
 		Names: names,
 		Param: literal,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }
@@ -2027,7 +2031,7 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 		NamedGroupNames: namedGroupNames,
 		HasAtSymbol:     hasAtSymbol,
 		MetaData: ast.MetaData{
-			Start: start,
+			Start: fp.getShiftedPosition(start),
 		},
 	}, true
 }

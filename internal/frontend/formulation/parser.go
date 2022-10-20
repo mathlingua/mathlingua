@@ -1614,9 +1614,9 @@ func (fp *formulationParser) idType() (ast.IdType, bool) {
 		return op, ok
 	} else if op, ok := fp.postfixOperatorId(); ok {
 		return op, ok
-	} else if cmd, ok := fp.commandId(false); ok {
-		return cmd, ok
 	} else if cmd, ok := fp.commandAtId(); ok {
+		return cmd, ok
+	} else if cmd, ok := fp.commandId(false); ok {
 		return cmd, ok
 	} else {
 		return nil, false

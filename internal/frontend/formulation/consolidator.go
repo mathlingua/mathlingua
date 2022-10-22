@@ -136,7 +136,7 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]], tracker frontend
 			}
 		case top.Type == ast.ColonEquals:
 			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
-			lhs := checkType(toNode(items, tracker), default_structural_form, "Structural Form", tracker, top.Start())
+			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 			return ast.ExpressionColonEqualsItem{
 				Lhs: lhs,
 				Rhs: rhs,

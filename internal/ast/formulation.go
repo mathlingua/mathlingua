@@ -421,7 +421,7 @@ type StructuralColonEqualsForm struct {
 
 // f(x) := x + 1
 type ExpressionColonEqualsItem struct {
-	Lhs      StructuralFormType
+	Lhs      ExpressionType
 	Rhs      ExpressionType
 	MetaData MetaData
 }

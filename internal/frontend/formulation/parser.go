@@ -1332,7 +1332,7 @@ func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool)
 
 func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 	start := fp.lexer.Position()
-	if !fp.has(ast.Name) {
+	if !fp.has(ast.Name) && !fp.has(ast.Operator) {
 		return ast.NameForm{}, false
 	}
 

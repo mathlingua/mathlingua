@@ -554,12 +554,6 @@ func (p *parser) toMembersSection(section phase4.Section) *ast.MembersSection {
 	}
 }
 
-func (p *parser) toAliasedSection(section phase4.Section) *ast.AliasedSection {
-	return &ast.AliasedSection{
-		Aliased: p.oneOrMoreAliases(section),
-	}
-}
-
 func (p *parser) toSimpleOperationsGroup(group phase4.Group) (ast.SimpleOperationsGroup, bool) {
 	if !startsWithSections(group, ast.LowerOperationsName) || len(group.Sections) != 1 {
 		return ast.SimpleOperationsGroup{}, false
@@ -582,7 +576,7 @@ func (p *parser) toSimpleOperationsSection(section phase4.Section) *ast.SimpleOp
 }
 
 func (p *parser) toOperationsGroup(group phase4.Group) (ast.OperationsGroup, bool) {
-	if !startsWithSections(group, ast.LowerOperationsName) || !endsWithSection(group, ast.LowerAliasedName) {
+	if !startsWithSections(group, ast.LowerOperationsName) || !endsWithSection(group, ast.LowerAliasesName) {
 		return ast.OperationsGroup{}, false
 	}
 
@@ -601,13 +595,13 @@ func (p *parser) toOperationsGroup(group phase4.Group) (ast.OperationsGroup, boo
 		if sec, ok := sections[ast.LowerWhenName]; ok {
 			when = p.toWhenSection(sec)
 		}
-		aliased := *p.toAliasedSection(sections[ast.LowerAliasedName])
+		aliases := *p.toAliasesSection(sections[ast.LowerAliasesName])
 		return ast.OperationsGroup{
 			Operations: operations,
 			On:         on,
 			Using:      using,
 			When:       when,
-			Aliased:    aliased,
+			Aliases:    aliases,
 		}, true
 	}
 	return ast.OperationsGroup{}, false

@@ -115,7 +115,7 @@ const UpperAliasesQuestionName = UpperAliasesName + "?"
 const LowerProvidedName = "provided"
 const LowerProvidedQuestionName = LowerProvidedName + "?"
 const LowerIntoName = "into"
-const LowerAliasedName = "aliased"
+const LowerAliasesName = "aliases"
 const LowerOnName = "on"
 const LowerOnQuestionName = LowerOnName + "?"
 
@@ -460,7 +460,7 @@ var OperationsSections = []string{
 	LowerOnQuestionName,
 	LowerUsingQuestionName,
 	LowerWhenQuestionName,
-	LowerAliasedName,
+	LowerAliasesName,
 }
 
 type OperationsGroup struct {
@@ -468,7 +468,7 @@ type OperationsGroup struct {
 	On         *OnSection
 	Using      *UsingSection
 	When       *WhenSection
-	Aliased    AliasedSection
+	Aliases    AliasesSection
 }
 
 type OperationsSection struct {
@@ -492,10 +492,6 @@ type MembersGroup struct {
 
 type MembersSection struct {
 	Members []Alias
-}
-
-type AliasedSection struct {
-	Aliased []Alias
 }
 
 //////////////////////////////////////////////////////////////////////////////

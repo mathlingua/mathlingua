@@ -64,6 +64,8 @@ const (
 	As                    TokenType = "As"
 	Caret                 TokenType = "Caret"
 	At                    TokenType = "At"
+	LSquareColon          TokenType = "LSquareColon"
+	ColonRSquare          TokenType = "ColonRSquare"
 )
 
 type Token struct {

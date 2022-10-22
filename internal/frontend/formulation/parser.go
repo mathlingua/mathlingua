@@ -498,6 +498,8 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 			children = append(children, cmd)
 		} else if cmd, ok := fp.commandExpression(false); ok {
 			children = append(children, cmd)
+		} else if kind, ok := fp.metaKinds(); ok {
+			children = append(children, kind)
 		} else {
 			if fp.lexer.HasNext() {
 				next := fp.lexer.Next()
@@ -511,6 +513,47 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 	}
 	return ast.PseudoExpression{
 		Children: children,
+		MetaData: ast.MetaData{
+			Start: fp.getShiftedPosition(start),
+		},
+	}, true
+}
+
+func (fp *formulationParser) metaKinds() (ast.MetaKinds, bool) {
+	start := fp.lexer.Position()
+	if !fp.has(ast.LSquareColon) {
+		return ast.MetaKinds{}, false
+	}
+
+	fp.expect(ast.LSquareColon)
+	kinds := make([]string, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(ast.ColonRSquare) {
+			break
+		}
+
+		if len(kinds) > 0 {
+			fp.expect(ast.Comma)
+		}
+
+		if tok, ok := fp.token(ast.Name); ok {
+			kind := tok.Text
+			if kind == "specification" || kind == "statement" || kind == "expression" {
+				kinds = append(kinds, kind)
+			} else {
+				fp.error("Expected one of 'specification', 'statement', 'expression'")
+				// move past the unexpected token
+				fp.lexer.Next()
+			}
+		} else {
+			fp.error("Expected one of 'specification', 'statement', 'expression'")
+			// move past the unexpected token
+			fp.lexer.Next()
+		}
+	}
+	fp.expect(ast.ColonRSquare)
+	return ast.MetaKinds{
+		Kinds: kinds,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
 		},

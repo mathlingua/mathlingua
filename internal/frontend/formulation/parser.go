@@ -1511,7 +1511,7 @@ func (fp *formulationParser) fixedSetForm() (ast.FixedSetForm, bool) {
 	}
 	params := make([]ast.StructuralFormType, 0)
 	for fp.lexer.HasNext() {
-		if fp.has(ast.RParen) {
+		if fp.has(ast.RCurly) {
 			break
 		}
 

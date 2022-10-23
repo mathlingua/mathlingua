@@ -50,6 +50,7 @@ var useStructuralParser bool
 var useFormulationParser bool
 var useIdParser bool
 var useFormParser bool
+var direct bool
 
 func init() {
 	flags := debugCommand.Flags()
@@ -57,6 +58,7 @@ func init() {
 	flags.BoolVar(&useFormulationParser, "formulation", false, "Use the formulation parser")
 	flags.BoolVar(&useIdParser, "id", false, "Use the id parser")
 	flags.BoolVar(&useFormParser, "form", false, "Use the form parser")
+	flags.BoolVar(&direct, "direct", false, "Directly check the input.txt text and don't open the ux")
 	debugCommand.MarkFlagsMutuallyExclusive("structural", "formulation", "id", "form")
 	rootCmd.AddCommand(debugCommand)
 }
@@ -67,6 +69,40 @@ func setupScreen() {
 	}
 
 	inputFile := path.Join("testbed", "input.txt")
+
+	if direct {
+		_, err := os.Stat(inputFile)
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
+		bytes, err := os.ReadFile(inputFile)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
+		node, tracker := parse(string(bytes))
+
+		fmt.Println("AST:")
+		fmt.Println(mlglib.PrettyPrint(node))
+
+		fmt.Println("Diagnostics:")
+		diagnostics := tracker.Diagnostics()
+		if len(diagnostics) > 0 {
+			for _, diag := range diagnostics {
+				fmt.Printf("%s (%d, %d) {%s}: %s\n",
+					diag.Type,
+					(diag.Position.Row + 1),
+					(diag.Position.Column + 1),
+					diag.Origin,
+					diag.Message)
+			}
+		}
+		os.Exit(0)
+	}
+
 	testcaseFile := path.Join("testbed", "testcases.txt")
 
 	app := tview.NewApplication()

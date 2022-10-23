@@ -255,6 +255,17 @@ func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 			}
 		default:
 			if name, ok := getName(cur); ok {
+				if i+1 < len(chars) && chars[i].Symbol == '_' && isNameSymbol(chars[i+1].Symbol) {
+					name += "_"
+					i++ // move past the _
+					firstChar := chars[i]
+					i++ // move past the first char
+					if subName, ok := getName(firstChar); ok {
+						name += subName
+					} else {
+						name += string(firstChar.Symbol)
+					}
+				}
 				if name == "is" {
 					appendToken(ast.Token{
 						Type:     ast.Is,
@@ -281,6 +292,17 @@ func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 					})
 				}
 			} else if op, ok := getOperator(cur); ok {
+				if i+1 < len(chars) && chars[i].Symbol == '_' && isNameSymbol(chars[i+1].Symbol) {
+					op += "_"
+					i++ // move past the _
+					firstChar := chars[i]
+					i++ // move past the first char
+					if subName, ok := getName(firstChar); ok {
+						op += subName
+					} else {
+						op += string(firstChar.Symbol)
+					}
+				}
 				appendToken(ast.Token{
 					Type:     ast.Operator,
 					Text:     op,

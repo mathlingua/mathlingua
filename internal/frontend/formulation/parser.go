@@ -464,14 +464,14 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 			break
 		}
 
-		if lit, ok := fp.literalExpressionType(); ok {
-			children = append(children, lit)
-		} else if op, ok := fp.operatorType(); ok {
+		if op, ok := fp.operatorType(); ok {
 			children = append(children, op)
+		} else if chain, ok := fp.chainExpression(false); ok {
+			children = append(children, chain)
+		} else if lit, ok := fp.literalExpressionType(); ok {
+			children = append(children, lit)
 		} else if pseudoToken, ok := fp.pseudoTokenNode(); ok {
 			children = append(children, pseudoToken)
-		} else if chain, ok := fp.chainExpression(); ok {
-			children = append(children, chain)
 		} else if ord, ok := fp.nameOrdinalCallExpression(); ok {
 			children = append(children, ord)
 		} else if fun, ok := fp.functionForm(); ok {
@@ -750,34 +750,43 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 }
 
 func (fp *formulationParser) chainExpressionPart() (ast.ExpressionType, bool) {
-	if fun, ok := fp.functionCallExpression(); ok {
-		return fun, ok
-	}
+	//if fun, ok := fp.functionCallExpression(); ok {
+	//	return fun, ok
+	//}
 
 	if name, ok := fp.nameForm(); ok {
 		return name, ok
 	}
 
-	if tuple, ok := fp.tupleExpression(); ok {
-		return tuple, ok
-	}
+	//if tuple, ok := fp.tupleExpression(); ok {
+	//	return tuple, ok
+	//}
 
-	if set, ok := fp.fixedSetExpression(); ok {
-		return set, ok
-	}
+	//if set, ok := fp.fixedSetExpression(); ok {
+	//	return set, ok
+	//}
 
-	if set, ok := fp.conditionalSetExpression(); ok {
-		return set, ok
-	}
+	//if set, ok := fp.conditionalSetExpression(); ok {
+	//	return set, ok
+	//}
 
 	return nil, false
 }
 
-func (fp *formulationParser) chainExpression() (ast.ChainExpression, bool) {
+func (fp *formulationParser) chainExpression(allowTrailingOperator bool) (ast.ChainExpression, bool) {
+	hasTrailingOperator := false
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	parts := make([]ast.ExpressionType, 0)
 	for fp.lexer.HasNext() {
+		if allowTrailingOperator && len(parts) > 0 {
+			opName, ok := fp.operatorAsNameForm()
+			if ok {
+				hasTrailingOperator = true
+				parts = append(parts, opName)
+				break
+			}
+		}
 		part, ok := fp.chainExpressionPart()
 		if !ok {
 			fp.lexer.RollBack(id)
@@ -796,7 +805,8 @@ func (fp *formulationParser) chainExpression() (ast.ChainExpression, bool) {
 	}
 	fp.lexer.Commit(id)
 	return ast.ChainExpression{
-		Parts: parts,
+		Parts:               parts,
+		HasTrailingOperator: hasTrailingOperator,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
 		},
@@ -969,13 +979,29 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNon
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 
-	exp, ok := fp.expressionType()
-	if !ok {
+	var target ast.ExpressionType
+	if opName, ok := fp.operatorAsNameForm(); ok {
+		target = opName
+	}
+
+	if target == nil {
+		if chain, ok := fp.chainExpression(true); ok {
+			target = chain
+		}
+	}
+
+	if target == nil {
+		if name, ok := fp.nameForm(); ok {
+			target = name
+		}
+	}
+
+	if target == nil {
 		fp.lexer.RollBack(id)
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 
-	if _, ok = fp.token(ast.RSquare); !ok {
+	if _, ok := fp.token(ast.RSquare); !ok {
 		fp.lexer.RollBack(id)
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
@@ -985,9 +1011,17 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNon
 		hasRightColon = true
 	}
 
+	if !hasRightColon && fp.has(ast.LCurly) {
+		// in this case the text is of the form [...]{
+		// which means the [] should not be treated as a
+		// unit, but are instead part of a set expression
+		fp.lexer.RollBack(id)
+		return ast.EnclosedNonCommandOperatorTarget{}, false
+	}
+
 	fp.lexer.Commit(id)
 	return ast.EnclosedNonCommandOperatorTarget{
-		Target:        exp,
+		Target:        target,
 		HasLeftColon:  hasLeftColon,
 		HasRightColon: hasRightColon,
 		MetaData: ast.MetaData{
@@ -1354,6 +1388,10 @@ func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool)
 		return funExp, true
 	}
 
+	if name, ok := fp.operatorAsNameForm(); ok {
+		return name, true
+	}
+
 	if name, ok := fp.nameForm(); ok {
 		return name, true
 	}
@@ -1373,9 +1411,28 @@ func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool)
 	return nil, false
 }
 
+func (fp *formulationParser) operatorAsNameForm() (ast.NameForm, bool) {
+	if !fp.has(ast.Operator) {
+		return ast.NameForm{}, false
+	}
+	next := fp.next()
+	return ast.NameForm{
+		Text:            next.Text,
+		IsStropped:      false,
+		HasQuestionMark: false,
+		VarArg: ast.VarArgData{
+			IsVarArg:    false,
+			VarArgCount: nil,
+		},
+		MetaData: ast.MetaData{
+			Start: fp.getShiftedPosition(next.Position),
+		},
+	}, true
+}
+
 func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 	start := fp.lexer.Position()
-	if !fp.has(ast.Name) && !fp.has(ast.Operator) {
+	if !fp.has(ast.Name) {
 		return ast.NameForm{}, false
 	}
 

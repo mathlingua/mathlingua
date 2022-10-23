@@ -366,8 +366,9 @@ type NameOrdinalCallExpression struct {
 
 // (x + y).z.a.b
 type ChainExpression struct {
-	Parts    []ExpressionType
-	MetaData MetaData
+	Parts               []ExpressionType
+	HasTrailingOperator bool
+	MetaData            MetaData
 }
 
 ///////////////////////////////////////////////////////////////////////////////

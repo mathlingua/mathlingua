@@ -109,6 +109,7 @@ const UpperViewableName = "Viewable"
 const UpperViewableQuestionName = UpperViewableName + "?"
 const LowerMembersName = "members"
 const LowerOperationsName = "operations"
+const LowerOperationName = "operation"
 const LowerSpecifyName = "specify"
 const UpperAliasesName = "Aliases"
 const UpperAliasesQuestionName = UpperAliasesName + "?"
@@ -437,9 +438,10 @@ type ProvidesType interface {
 	ProvidesType()
 }
 
-func (SimpleOperationsGroup) ProvidesType() {}
-func (OperationsGroup) ProvidesType()       {}
-func (MembersGroup) ProvidesType()          {}
+func (SimpleOperationsGroup) ProvidesType()   {}
+func (OperationsGroup) ProvidesType()         {}
+func (MembersGroup) ProvidesType()            {}
+func (OperationExpressedGroup) ProvidesType() {}
 
 var SimpleOperationsSections = []string{
 	LowerOperationsName,
@@ -467,6 +469,20 @@ type OperationsGroup struct {
 	Using      *UsingSection
 	When       *WhenSection
 	Aliases    AliasesSection
+}
+
+var OperationExpressedSections = []string{
+	LowerOperationName,
+	LowerExpressedName,
+}
+
+type OperationExpressedGroup struct {
+	Operation OperationSection
+	Expressed ExpressedSection
+}
+
+type OperationSection struct {
+	Operation Alias
 }
 
 type OperationsSection struct {

@@ -554,6 +554,28 @@ func (p *parser) toMembersSection(section phase4.Section) *ast.MembersSection {
 	}
 }
 
+func (p *parser) toOperationExpressedGroup(group phase4.Group) (ast.OperationExpressedGroup, bool) {
+	if !startsWithSections(group, ast.LowerOperationName) || !endsWithSection(group, ast.LowerExpressedName) {
+		return ast.OperationExpressedGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.OperationExpressedSections...)
+	if !ok {
+		return ast.OperationExpressedGroup{}, false
+	}
+
+	return ast.OperationExpressedGroup{
+		Operation: *p.toOperationSection(sections[ast.LowerOperationName]),
+		Expressed: *p.toExpressedSection(sections[ast.LowerExpressedName]),
+	}, true
+}
+
+func (p *parser) toOperationSection(section phase4.Section) *ast.OperationSection {
+	return &ast.OperationSection{
+		Operation: p.exactlyOneAlias(section),
+	}
+}
+
 func (p *parser) toSimpleOperationsGroup(group phase4.Group) (ast.SimpleOperationsGroup, bool) {
 	if !startsWithSections(group, ast.LowerOperationsName) || len(group.Sections) != 1 {
 		return ast.SimpleOperationsGroup{}, false
@@ -934,6 +956,8 @@ func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, 
 	} else if grp, ok := p.toOperationsGroup(group); ok {
 		return grp, true
 	} else if grp, ok := p.toMembersGroup(group); ok {
+		return grp, true
+	} else if grp, ok := p.toOperationExpressedGroup(group); ok {
 		return grp, true
 	} else {
 		p.tracker.Append(newError(fmt.Sprintf("Unrecognized argument for %s:\n"+
@@ -1910,6 +1934,11 @@ func (p *parser) oneOrMoreSpecs(section phase4.Section) []ast.Spec {
 
 func (p *parser) oneOrMoreAliases(section phase4.Section) []ast.Alias {
 	return oneOrMore(p.toAliases(section.Args), section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) exactlyOneAlias(section phase4.Section) ast.Alias {
+	var def ast.Alias = ast.Formulation[ast.NodeType]{}
+	return exactlyOne(p.toAliases(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneSpec(section phase4.Section) ast.Spec {

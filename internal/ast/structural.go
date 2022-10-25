@@ -112,8 +112,6 @@ const LowerOperationsName = "operations"
 const LowerSpecifyName = "specify"
 const UpperAliasesName = "Aliases"
 const UpperAliasesQuestionName = UpperAliasesName + "?"
-const LowerProvidedName = "provided"
-const LowerProvidedQuestionName = LowerProvidedName + "?"
 const LowerIntoName = "into"
 const LowerAliasesName = "aliases"
 const LowerOnName = "on"
@@ -327,7 +325,7 @@ type FromSection struct {
 }
 
 type WhenSection struct {
-	Items []Clause
+	When []Clause
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -725,7 +723,7 @@ var DescribesSections = []string{
 	UpperDescribesName,
 	LowerWithQuestionName,
 	LowerUsingQuestionName,
-	LowerProvidedQuestionName,
+	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
 	LowerExtendsQuestionName,
 	LowerSatisfiesQuestionName,
@@ -743,7 +741,7 @@ type DescribesGroup struct {
 	Describes  DescribesSection
 	With       *WithSection
 	Using      *UsingSection
-	Provided   *ProvidedSection
+	When       *WhenSection
 	SuchThat   *SuchThatSection
 	Extends    *ExtendsSection
 	Satisfies  *SatisfiesSection
@@ -772,10 +770,6 @@ type UsingSection struct {
 	Using []Target
 }
 
-type ProvidedSection struct {
-	Provided []Spec
-}
-
 type ExtendsSection struct {
 	Extends []Clause
 }
@@ -790,7 +784,7 @@ var DefinesSections = []string{
 	UpperDefinesName,
 	LowerWithQuestionName,
 	LowerUsingQuestionName,
-	LowerProvidedQuestionName,
+	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
 	LowerMeansQuestionName,
 	LowerSpecifiesName,
@@ -808,7 +802,7 @@ type DefinesGroup struct {
 	Defines    DefinesSection
 	With       *WithSection
 	Using      *UsingSection
-	Provided   *ProvidedSection
+	When       *WhenSection
 	SuchThat   *SuchThatSection
 	Means      *MeansSection
 	Specifies  *SpecifiesSection
@@ -839,7 +833,7 @@ var StatesSections = []string{
 	UpperStatesName,
 	LowerWithQuestionName,
 	LowerUsingQuestionName,
-	LowerProvidedQuestionName,
+	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
 	LowerThatName,
 	UpperDocumentedQuestionName,
@@ -854,7 +848,7 @@ type StatesGroup struct {
 	States     StatesSection
 	With       *WithSection
 	Using      *UsingSection
-	Provided   *ProvidedSection
+	When       *WhenSection
 	SuchThat   *SuchThatSection
 	That       ThatSection
 	Documented *DocumentedSection

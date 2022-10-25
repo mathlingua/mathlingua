@@ -324,7 +324,7 @@ func (p *parser) toFromSection(section phase4.Section) *ast.FromSection {
 
 func (p *parser) toWhenSection(section phase4.Section) *ast.WhenSection {
 	return &ast.WhenSection{
-		Items: p.oneOrMoreClauses(section),
+		When: p.oneOrMoreClauses(section),
 	}
 }
 
@@ -1073,9 +1073,9 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	if sec, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sec)
 	}
-	var provided *ast.ProvidedSection
-	if sec, ok := sections[ast.LowerProvidedName]; ok {
-		provided = p.toProvidedSection(sec)
+	var when *ast.WhenSection
+	if sec, ok := sections[ast.LowerWhenName]; ok {
+		when = p.toWhenSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
 	if sec, ok := sections[ast.LowerSuchThatName]; ok {
@@ -1122,7 +1122,7 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		Describes:  describes,
 		With:       with,
 		Using:      using,
-		Provided:   provided,
+		When:       when,
 		SuchThat:   suchThat,
 		Extends:    extends,
 		Satisfies:  satisfies,
@@ -1175,9 +1175,9 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 	if sec, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sec)
 	}
-	var provided *ast.ProvidedSection
-	if sec, ok := sections[ast.LowerProvidedName]; ok {
-		provided = p.toProvidedSection(sec)
+	var when *ast.WhenSection
+	if sec, ok := sections[ast.LowerWhenName]; ok {
+		when = p.toWhenSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
 	if sec, ok := sections[ast.LowerSuchThatName]; ok {
@@ -1224,7 +1224,7 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 		Defines:    defines,
 		With:       with,
 		Using:      using,
-		Provided:   provided,
+		When:       when,
 		SuchThat:   suchThat,
 		Means:      means,
 		Specifies:  specifies,
@@ -1283,9 +1283,9 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 	if sec, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sec)
 	}
-	var provided *ast.ProvidedSection
-	if sec, ok := sections[ast.LowerProvidedName]; ok {
-		provided = p.toProvidedSection(sec)
+	var when *ast.WhenSection
+	if sec, ok := sections[ast.LowerWhenName]; ok {
+		when = p.toWhenSection(sec)
 	}
 	var suchThat *ast.SuchThatSection
 	if sec, ok := sections[ast.LowerSuchThatName]; ok {
@@ -1317,7 +1317,7 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		States:     states,
 		With:       with,
 		Using:      using,
-		Provided:   provided,
+		When:       when,
 		SuchThat:   suchThat,
 		That:       that,
 		Documented: documented,
@@ -1419,12 +1419,6 @@ func (p *parser) toGivenSection(section phase4.Section) *ast.GivenSection {
 func (p *parser) toUsingSection(section phase4.Section) *ast.UsingSection {
 	return &ast.UsingSection{
 		Using: p.oneOrMoreTargets(section),
-	}
-}
-
-func (p *parser) toProvidedSection(section phase4.Section) *ast.ProvidedSection {
-	return &ast.ProvidedSection{
-		Provided: p.oneOrMoreSpecs(section),
 	}
 }
 

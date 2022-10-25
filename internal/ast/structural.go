@@ -108,6 +108,7 @@ const UpperTopicName = "Topic"
 const UpperViewableName = "Viewable"
 const UpperViewableQuestionName = UpperViewableName + "?"
 const LowerMembersName = "members"
+const LowerMemberName = "member"
 const LowerOperationsName = "operations"
 const LowerOperationName = "operation"
 const LowerSpecifyName = "specify"
@@ -442,6 +443,7 @@ func (SimpleOperationsGroup) ProvidesType()   {}
 func (OperationsGroup) ProvidesType()         {}
 func (MembersGroup) ProvidesType()            {}
 func (OperationExpressedGroup) ProvidesType() {}
+func (MemberExpressedGroup) ProvidesType()    {}
 
 var SimpleOperationsSections = []string{
 	LowerOperationsName,
@@ -506,6 +508,20 @@ type MembersGroup struct {
 
 type MembersSection struct {
 	Members []Alias
+}
+
+var MemberExpressedSections = []string{
+	LowerMemberName,
+	LowerExpressedName,
+}
+
+type MemberExpressedGroup struct {
+	Member    MemberSection
+	Expressed ExpressedSection
+}
+
+type MemberSection struct {
+	Member Alias
 }
 
 //////////////////////////////////////////////////////////////////////////////

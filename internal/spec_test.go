@@ -400,6 +400,13 @@ var all_group_test_cases = []testCase{
 			"expressed",
 		},
 	},
+	{
+		actual: ast.MemberExpressedSections,
+		expected: []string{
+			"member",
+			"expressed",
+		},
+	},
 }
 
 func TestSpec(t *testing.T) {

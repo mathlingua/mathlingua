@@ -554,6 +554,28 @@ func (p *parser) toMembersSection(section phase4.Section) *ast.MembersSection {
 	}
 }
 
+func (p *parser) toMemberExpressedGroup(group phase4.Group) (ast.MemberExpressedGroup, bool) {
+	if !startsWithSections(group, ast.LowerMemberName) || !endsWithSection(group, ast.LowerExpressedName) {
+		return ast.MemberExpressedGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.MemberExpressedSections...)
+	if !ok {
+		return ast.MemberExpressedGroup{}, false
+	}
+
+	return ast.MemberExpressedGroup{
+		Member:    *p.toMemberSection(sections[ast.LowerMemberName]),
+		Expressed: *p.toExpressedSection(sections[ast.LowerExpressedName]),
+	}, true
+}
+
+func (p *parser) toMemberSection(section phase4.Section) *ast.MemberSection {
+	return &ast.MemberSection{
+		Member: p.exactlyOneAlias(section),
+	}
+}
+
 func (p *parser) toOperationExpressedGroup(group phase4.Group) (ast.OperationExpressedGroup, bool) {
 	if !startsWithSections(group, ast.LowerOperationName) || !endsWithSection(group, ast.LowerExpressedName) {
 		return ast.OperationExpressedGroup{}, false
@@ -958,6 +980,8 @@ func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, 
 	} else if grp, ok := p.toMembersGroup(group); ok {
 		return grp, true
 	} else if grp, ok := p.toOperationExpressedGroup(group); ok {
+		return grp, true
+	} else if grp, ok := p.toMemberExpressedGroup(group); ok {
 		return grp, true
 	} else {
 		p.tracker.Append(newError(fmt.Sprintf("Unrecognized argument for %s:\n"+

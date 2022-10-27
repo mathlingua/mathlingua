@@ -394,7 +394,7 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.OperationExpressedSections,
+		actual: ast.SimpleOperationExpressedSections,
 		expected: []string{
 			"operation",
 			"expressed",

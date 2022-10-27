@@ -576,17 +576,17 @@ func (p *parser) toMemberSection(section phase4.Section) *ast.MemberSection {
 	}
 }
 
-func (p *parser) toOperationExpressedGroup(group phase4.Group) (ast.OperationExpressedGroup, bool) {
+func (p *parser) toOperationExpressedGroup(group phase4.Group) (ast.SimpleOperationExpressedGroup, bool) {
 	if !startsWithSections(group, ast.LowerOperationName) || !endsWithSection(group, ast.LowerExpressedName) {
-		return ast.OperationExpressedGroup{}, false
+		return ast.SimpleOperationExpressedGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.OperationExpressedSections...)
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.SimpleOperationExpressedSections...)
 	if !ok {
-		return ast.OperationExpressedGroup{}, false
+		return ast.SimpleOperationExpressedGroup{}, false
 	}
 
-	return ast.OperationExpressedGroup{
+	return ast.SimpleOperationExpressedGroup{
 		Operation: *p.toOperationSection(sections[ast.LowerOperationName]),
 		Expressed: *p.toExpressedSection(sections[ast.LowerExpressedName]),
 	}, true

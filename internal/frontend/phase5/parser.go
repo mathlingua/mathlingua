@@ -576,7 +576,7 @@ func (p *parser) toMemberSection(section phase4.Section) *ast.MemberSection {
 	}
 }
 
-func (p *parser) toOperationExpressedGroup(group phase4.Group) (ast.SimpleOperationExpressedGroup, bool) {
+func (p *parser) toSimpleOperationExpressedGroup(group phase4.Group) (ast.SimpleOperationExpressedGroup, bool) {
 	if !startsWithSections(group, ast.LowerOperationName) || !endsWithSection(group, ast.LowerExpressedName) {
 		return ast.SimpleOperationExpressedGroup{}, false
 	}
@@ -617,6 +617,40 @@ func (p *parser) toSimpleOperationsSection(section phase4.Section) *ast.SimpleOp
 	return &ast.SimpleOperationsSection{
 		Operations: p.oneOrMoreAliases(section),
 	}
+}
+
+func (p *parser) toOperationExpressedGroup(group phase4.Group) (ast.OperationExpressedGroup, bool) {
+	if !startsWithSections(group, ast.LowerOperationsName) || !endsWithSection(group, ast.LowerAliasesName) {
+		return ast.OperationExpressedGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.OperationExpressedSections...)
+	if ok {
+		operation := *p.toOperationSection(sections[ast.LowerOperationName])
+		var on *ast.OnSection
+		if sec, ok := sections[ast.LowerOnName]; ok {
+			on = p.toOnSection(sec)
+		}
+		var using *ast.UsingSection
+		if sec, ok := sections[ast.LowerUsingName]; ok {
+			using = p.toUsingSection(sec)
+		}
+		var when *ast.WhenSection
+		if sec, ok := sections[ast.LowerWhenName]; ok {
+			when = p.toWhenSection(sec)
+		}
+		aliases := *p.toSingleAliasesSection(sections[ast.LowerAliasesName])
+		expressed := *p.toExpressedSection(sections[ast.LowerExpressedName])
+		return ast.OperationExpressedGroup{
+			Operation: operation,
+			On:        on,
+			Using:     using,
+			When:      when,
+			Aliases:   aliases,
+			Expressed: expressed,
+		}, true
+	}
+	return ast.OperationExpressedGroup{}, false
 }
 
 func (p *parser) toOperationsGroup(group phase4.Group) (ast.OperationsGroup, bool) {
@@ -670,7 +704,7 @@ func (p *parser) toSpecifySection(section phase4.Section) *ast.SpecifySection {
 
 ////////////////////// codified documented items /////////////////////////////////
 
-func (p *parser) toExpresedGroup(group phase4.Group) (ast.ExpressedGroup, bool) {
+func (p *parser) toExpressedGroup(group phase4.Group) (ast.ExpressedGroup, bool) {
 	if !startsWithSections(group, ast.LowerExpressedName) {
 		return ast.ExpressedGroup{}, false
 	}
@@ -766,7 +800,7 @@ func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool
 			return grp, true
 		} else if grp, ok := p.toNotesGroup(group); ok {
 			return grp, true
-		} else if grp, ok := p.toExpresedGroup(group); ok {
+		} else if grp, ok := p.toExpressedGroup(group); ok {
 			return grp, true
 		} else if grp, ok := p.toExpressingGroup(group); ok {
 			return grp, true
@@ -977,9 +1011,11 @@ func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, 
 		return grp, true
 	} else if grp, ok := p.toOperationsGroup(group); ok {
 		return grp, true
+	} else if grp, ok := p.toOperationExpressedGroup(group); ok {
+		return grp, true
 	} else if grp, ok := p.toMembersGroup(group); ok {
 		return grp, true
-	} else if grp, ok := p.toOperationExpressedGroup(group); ok {
+	} else if grp, ok := p.toSimpleOperationExpressedGroup(group); ok {
 		return grp, true
 	} else if grp, ok := p.toMemberExpressedGroup(group); ok {
 		return grp, true
@@ -998,6 +1034,12 @@ func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, 
 func (p *parser) toAliasesSection(section phase4.Section) *ast.AliasesSection {
 	return &ast.AliasesSection{
 		Aliases: p.oneOrMoreAliases(section),
+	}
+}
+
+func (p *parser) toSingleAliasesSection(section phase4.Section) *ast.SingleAliasesSection {
+	return &ast.SingleAliasesSection{
+		Aliases: p.exactlyOneAlias(section),
 	}
 }
 

@@ -444,6 +444,7 @@ func (OperationsGroup) ProvidesType()               {}
 func (MembersGroup) ProvidesType()                  {}
 func (SimpleOperationExpressedGroup) ProvidesType() {}
 func (MemberExpressedGroup) ProvidesType()          {}
+func (OperationExpressedGroup) ProvidesType()       {}
 
 var SimpleOperationsSections = []string{
 	LowerOperationsName,
@@ -471,6 +472,28 @@ type OperationsGroup struct {
 	Using      *UsingSection
 	When       *WhenSection
 	Aliases    AliasesSection
+}
+
+var OperationExpressedSections = []string{
+	LowerOperationName,
+	LowerOnQuestionName,
+	LowerUsingQuestionName,
+	LowerWhenQuestionName,
+	LowerAliasesName,
+	LowerExpressedName,
+}
+
+type OperationExpressedGroup struct {
+	Operation OperationSection
+	On        *OnSection
+	Using     *UsingSection
+	When      *WhenSection
+	Aliases   SingleAliasesSection
+	Expressed ExpressedSection
+}
+
+type SingleAliasesSection struct {
+	Aliases Alias
 }
 
 var SimpleOperationExpressedSections = []string{

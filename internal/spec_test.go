@@ -136,6 +136,17 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
+		actual: ast.OperationExpressedSections,
+		expected: []string{
+			"operation",
+			"on?",
+			"using?",
+			"when?",
+			"aliases",
+			"expressed",
+		},
+	},
+	{
 		actual: ast.SimpleOperationsSections,
 		expected: []string{
 			"operations",

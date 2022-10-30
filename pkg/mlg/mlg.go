@@ -26,6 +26,7 @@ import (
 	"mathlingua/internal/frontend/phase3"
 	"mathlingua/internal/frontend/phase4"
 	"mathlingua/internal/frontend/phase5"
+	"mathlingua/internal/server"
 	"os"
 	"path"
 	"path/filepath"
@@ -221,7 +222,7 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 }
 
 func (m *mlg) View() {
-	// TODO: implement this
+	server.Start()
 }
 
 func (m *mlg) Doc() {

@@ -39,6 +39,7 @@ type Mlg interface {
 	 * in the directory will be processed.
 	 */
 	Check(paths []string, json bool, dedug bool)
+	View()
 	Doc()
 	Clean()
 	Version() string
@@ -217,6 +218,10 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 	} else {
 		m.logger.Success(fmt.Sprintf("Processed %d %s and found 0 errors", numFilesProcessed, filesText))
 	}
+}
+
+func (m *mlg) View() {
+	// TODO: implement this
 }
 
 func (m *mlg) Doc() {

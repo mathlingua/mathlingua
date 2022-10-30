@@ -104,7 +104,7 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 	}
 
 	if len(paths) == 0 {
-		paths = append(paths, "content")
+		paths = append(paths, ".")
 	} else {
 		for _, p := range paths {
 			stat, _ := os.Stat(p)
@@ -220,7 +220,7 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 }
 
 func (m *mlg) Doc() {
-	err := filepath.Walk("content", func(p string, info os.FileInfo, err error) error {
+	err := filepath.Walk(".", func(p string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

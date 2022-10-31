@@ -3,6 +3,14 @@
 build:
 	go build -o testbed/mlg main.go
 
+.PHONY: web
+web:
+	cd web && yarn build
+
+.PHONY: all
+all:
+	make web && make
+
 .PHONY: run
 run:
 	go run main.go

@@ -24,6 +24,7 @@ import (
 	"mathlingua/internal/frontend/phase2"
 	"mathlingua/internal/frontend/phase3"
 	"mathlingua/internal/frontend/phase4"
+	"mathlingua/web"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -36,6 +37,7 @@ func Start() {
 	router := mux.NewRouter()
 	router.HandleFunc("/api/paths", paths).Methods("GET")
 	router.HandleFunc("/api/page", page).Methods("GET")
+	router.PathPrefix("/").Handler(web.AssetHandler{})
 
 	if err := http.ListenAndServe(":8080", router); err != nil {
 		fmt.Println(err.Error())

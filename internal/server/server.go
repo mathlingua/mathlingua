@@ -35,6 +35,7 @@ import (
 
 func Start() {
 	router := mux.NewRouter()
+	router.Use(handleCors)
 	router.HandleFunc("/api/paths", paths).Methods("GET")
 	router.HandleFunc("/api/page", page).Methods("GET")
 	router.PathPrefix("/").Handler(web.AssetHandler{})
@@ -83,6 +84,7 @@ type PageResponse struct {
 	Error       string
 	Diagnostics []frontend.Diagnostic
 	Root        phase4.Root
+	Html        string
 }
 
 func page(writer http.ResponseWriter, request *http.Request) {
@@ -98,11 +100,13 @@ func page(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	root, diagnostics := parse(string(bytes))
+	input := string(bytes)
+	root, diagnostics := parse(input)
 
 	resp := PageResponse{
 		Diagnostics: diagnostics,
 		Root:        root,
+		Html:        GetHtmlForRoot(input, root, diagnostics),
 	}
 
 	writeResponse(writer, &resp)
@@ -119,6 +123,20 @@ func writeResponse[T any](writer http.ResponseWriter, resp *T) {
 	}
 }
 
+func handleCors(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT")
+		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type")
+
+		if r.Method == "OPTIONS" {
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func parse(text string) (phase4.Root, []frontend.Diagnostic) {
 	tracker := frontend.NewDiagnosticTracker()
 
@@ -129,4 +147,80 @@ func parse(text string) (phase4.Root, []frontend.Diagnostic) {
 	root := phase4.Parse(lexer3, tracker)
 
 	return root, tracker.Diagnostics()
+}
+
+func GetHtmlForRoot(input string, root phase4.Root, diagnostics []frontend.Diagnostic) string {
+	output := `
+<html>
+	<head>
+		<style>
+			.mathlingua-top-level-entity {
+				font-family: monospace;
+				border: solid;
+				border-width: 1px;
+				border-color: #555555;
+				box-shadow: 0 1px 5px rgba(0,0,0,.2);
+				padding: 1ex;
+				margin: 1ex;
+				width: max-content;
+				height: max-content;
+			}
+
+			.mathlingua-top-level-text-block {
+				padding: 1ex;
+			}
+
+			.mathlingua-text-block {
+				color: #555;
+			}
+
+			.mathlingua-id {
+				color: #50a;
+			}
+
+			.mathlingua-header {
+				color: #05b;
+			}
+
+			.mathlingua-text {
+				color: #386930;
+			}
+
+			.mathlingua-formulation {
+				color: darkcyan;
+			}
+
+			.mathlingua-error {
+				color: darkred;
+			}
+		</style>
+	</head>
+<body>
+`
+	if len(diagnostics) == 0 {
+		for _, node := range root.Nodes {
+			writer := phase4.NewHtmlCodeWriter()
+			node.ToCode(writer)
+			switch node.(type) {
+			case phase4.TextBlock:
+				output += "<div class='mathlingua-top-level-text-block'>\n"
+				output += writer.String()
+				output += "\n</div>\n"
+			default:
+				output += "<div class='mathlingua-top-level-entity'>\n"
+				output += writer.String()
+				output += "\n</div>\n"
+			}
+		}
+	} else {
+		output += fmt.Sprintf("<pre>%s</pre>", input)
+		for _, diag := range diagnostics {
+			output += fmt.Sprintf("<div><span class='mathlingua-error'>ERROR(%d, %d): </span>",
+				diag.Position.Row+1, diag.Position.Column+1)
+			output += fmt.Sprintf("%s</div>", diag.Message)
+		}
+	}
+	output += "\n</body>\n</html>"
+
+	return output
 }

@@ -1,24 +1,24 @@
 import React from 'react';
+
 import { Theme, useTheme } from './hooks';
 
 export interface ShellProps {
   sidebarContent: React.ReactNode;
   topbarContent: React.ReactNode;
   mainContent: React.ReactNode;
+  showSidebar: boolean;
 }
 
 export function Shell(props: ShellProps) {
   const theme = useTheme();
-
-  const [showSidebar, setShowSidebar] = React.useState(true);
-  const styles = getStyles(theme, showSidebar);
+  const styles = getStyles(theme, props.showSidebar);
 
   return (
     <>
       <span style={styles.topbar}>
-        <button onClick={() => setShowSidebar(!showSidebar)}>Click</button>
+        {props.topbarContent}
       </span>
-      <span style={styles.sidebar}>
+      <span style={props.showSidebar ? styles.sidebar : styles.hidden}>
         {props.sidebarContent}
       </span>
       <span style={styles.content}>
@@ -45,7 +45,7 @@ function getStyles(theme: Theme, showSidebar: boolean) {
     content: {
       position: 'fixed',
       marginLeft: sidebarWidth,
-      marginTop: theme.sizeXLarge,
+      marginTop: theme.sizeLarge,
       marginRight: 0,
       marginBottom: 0,
       padding: 0,
@@ -53,6 +53,9 @@ function getStyles(theme: Theme, showSidebar: boolean) {
       width: '100%',
       overflow: 'auto',
       background: 'white',
+      borderTop: 'solid',
+      borderColor: theme.gray,
+      borderWidth: 1,
     },
     topbar: {
       position: 'fixed',
@@ -62,7 +65,10 @@ function getStyles(theme: Theme, showSidebar: boolean) {
       marginTop: 0,
       marginBottom: 0,
       width: '100%',
-      height: theme.sizeXLarge,
+      height: theme.sizeLarge,
+    },
+    hidden: {
+      display: 'none',
     },
   } as const;
 }

@@ -241,77 +241,7 @@ func (m *mlg) Doc() {
 
 				input := string(bytes)
 				root, diagnostics := parse(input)
-				output := `
-<html>
-	<head>
-		<style>
-			.mathlingua-top-level-entity {
-				font-family: monospace;
-				border: solid;
-				border-width: 1px;
-				border-color: #555555;
-				box-shadow: 0 1px 5px rgba(0,0,0,.2);
-				padding: 1ex;
-				margin: 1ex;
-				width: max-content;
-				height: max-content;
-			}
-
-			.mathlingua-top-level-text-block {
-				padding: 1ex;
-			}
-
-			.mathlingua-text-block {
-				color: #555;
-			}
-
-			.mathlingua-id {
-				color: #50a;
-			}
-
-			.mathlingua-header {
-				color: #05b;
-			}
-
-			.mathlingua-text {
-				color: #386930;
-			}
-
-			.mathlingua-formulation {
-				color: darkcyan;
-			}
-
-			.mathlingua-error {
-				color: darkred;
-			}
-		</style>
-	</head>
-<body>
-`
-				if len(diagnostics) == 0 {
-					for _, node := range root.Nodes {
-						writer := phase4.NewHtmlCodeWriter()
-						node.ToCode(writer)
-						switch node.(type) {
-						case phase4.TextBlock:
-							output += "<div class='mathlingua-top-level-text-block'>\n"
-							output += writer.String()
-							output += "\n</div>\n"
-						default:
-							output += "<div class='mathlingua-top-level-entity'>\n"
-							output += writer.String()
-							output += "\n</div>\n"
-						}
-					}
-				} else {
-					output += fmt.Sprintf("<pre>%s</pre>", input)
-					for _, diag := range diagnostics {
-						output += fmt.Sprintf("<div><span class='mathlingua-error'>ERROR(%d, %d): </span>",
-							diag.Position.Row+1, diag.Position.Column+1)
-						output += fmt.Sprintf("%s</div>", diag.Message)
-					}
-				}
-				output += "\n</body>\n</html>"
+				output := server.GetHtmlForRoot(input, root, diagnostics)
 
 				base := path.Dir(htmlDocPath)
 				doWrite := true

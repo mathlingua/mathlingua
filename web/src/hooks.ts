@@ -1,6 +1,7 @@
 
 export interface Theme {
   sidebarWidth: number;
+  sizeXXSmall: number;
   sizeXSmall: number;
   sizeSmall: number;
   sizeMedium: number;
@@ -12,7 +13,8 @@ export interface Theme {
 
 export function useTheme(): Theme {
   return {
-    sidebarWidth: 200,
+    sidebarWidth: 250,
+    sizeXXSmall: 4,
     sizeXSmall: 8,
     sizeSmall: 16,
     sizeMedium: 24,

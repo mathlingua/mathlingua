@@ -6,6 +6,7 @@ import { useFetch } from 'usehooks-ts';
 import { Theme, useTheme } from './hooks';
 import { Shell } from './Shell';
 import { Sidebar } from './Sidebar';
+import { PageResponse } from './types';
 
 export function App() {
   const theme = useTheme();
@@ -14,7 +15,7 @@ export function App() {
   const [showSidebar, setShowSidebar] = React.useState(true);
 
   const [activePath, setActivePath] = React.useState<string>('');
-  const { data } = useFetch(`/api/page?path=${encodeURIComponent(activePath)}`);
+  const { data } = useFetch<PageResponse>(`/api/page?path=${encodeURIComponent(activePath)}`);
 
   const topbar = (
     <button style={styles.menuButton}
@@ -28,7 +29,7 @@ export function App() {
   const mainContent = (
     <div style={styles.content}
          dangerouslySetInnerHTML={{
-           __html: (data as any)?.Html ?? ''
+           __html: data?.Html ?? ''
          }}>
     </div>
   );

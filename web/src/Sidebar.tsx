@@ -5,6 +5,7 @@ import 'rsuite/dist/rsuite.css';
 
 import { useFetch } from 'usehooks-ts';
 import { Theme, useTheme } from './hooks';
+import { PathsResponse } from './types';
 
 export interface SidebarProps {
   onSelect: (path: string) => void;
@@ -14,10 +15,8 @@ export function Sidebar(props: SidebarProps) {
   const theme = useTheme();
   const styles = getStyles(theme);
 
-  const { data } = useFetch('/api/paths');
-
-  const paths = (data as any)?.Paths as string[];
-  const treeData = buildTreeNode(paths ?? []);
+  const { data } = useFetch<PathsResponse>('/api/paths');
+  const treeData = buildTreeNode(data?.Paths ?? []);
 
   return (
     <span style={styles.bottom}>

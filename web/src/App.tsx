@@ -3,9 +3,9 @@ import React from 'react';
 import MenuIcon from '@rsuite/icons/Menu';
 
 import { useFetch } from 'usehooks-ts';
-import { Theme, useTheme } from './hooks';
-import { Shell } from './Shell';
-import { Sidebar } from './Sidebar';
+import { Theme, useTheme } from './hooks/theme';
+import { Shell } from './components/Shell';
+import { Sidebar } from './components/Sidebar';
 import { PageResponse } from './types';
 
 export function App() {

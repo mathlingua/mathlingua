@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Theme, useTheme } from './hooks';
+import { Theme, useTheme } from '../hooks/theme';
 
 export interface ShellProps {
   sidebarContent: React.ReactNode;

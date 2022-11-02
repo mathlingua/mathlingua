@@ -4,8 +4,8 @@ import { Tree } from 'rsuite';
 import 'rsuite/dist/rsuite.css';
 
 import { useFetch } from 'usehooks-ts';
-import { Theme, useTheme } from './hooks';
-import { PathsResponse } from './types';
+import { Theme, useTheme } from '../hooks/theme';
+import { PathsResponse } from '../types';
 
 export interface SidebarProps {
   onSelect: (path: string) => void;

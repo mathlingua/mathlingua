@@ -21,6 +21,19 @@ import (
 	"mathlingua/internal/ast"
 )
 
+type NodeType string
+
+const (
+	TextBlockType                NodeType = "TextBlockType"
+	RootType                     NodeType = "RootType"
+	GroupType                    NodeType = "GroupType"
+	SectionType                  NodeType = "SectionType"
+	ArgumentType                 NodeType = "ArgumentType"
+	TextArgumentDataType         NodeType = "TextArgumentDataType"
+	FormulationArgumentDataType  NodeType = "FormulationArgumentDataType"
+	ArgumentTextArgumentDataType NodeType = "ArgumentTextArgumentDataType"
+)
+
 type MetaData struct {
 	Start ast.Position
 }
@@ -32,6 +45,7 @@ type Node interface {
 }
 
 type Group struct {
+	Type     NodeType
 	Id       *string
 	Sections []Section
 	MetaData MetaData
@@ -69,6 +83,7 @@ func (g Group) Start() ast.Position {
 }
 
 type Section struct {
+	Type     NodeType
 	Name     string
 	Args     []Argument
 	MetaData MetaData
@@ -111,6 +126,7 @@ func (s Section) ChildAt(index int) Node {
 }
 
 type Argument struct {
+	Type     NodeType
 	IsInline bool
 	Arg      ArgumentDataType
 	MetaData MetaData
@@ -144,6 +160,7 @@ func (a Argument) ChildAt(index int) Node {
 }
 
 type TextArgumentData struct {
+	Type     NodeType
 	Text     string
 	MetaData MetaData
 }
@@ -165,6 +182,7 @@ func (t TextArgumentData) ChildAt(index int) Node {
 }
 
 type FormulationArgumentData struct {
+	Type     NodeType
 	Text     string
 	MetaData MetaData
 }
@@ -186,6 +204,7 @@ func (f FormulationArgumentData) ChildAt(index int) Node {
 }
 
 type ArgumentTextArgumentData struct {
+	Type     NodeType
 	Text     string
 	MetaData MetaData
 }
@@ -216,6 +235,7 @@ func (FormulationArgumentData) ArgumentDataType()  {}
 func (ArgumentTextArgumentData) ArgumentDataType() {}
 
 type TextBlock struct {
+	Type     NodeType
 	Text     string
 	MetaData MetaData
 }
@@ -242,6 +262,7 @@ func (t TextBlock) Start() ast.Position {
 }
 
 type Root struct {
+	Type     NodeType
 	Nodes    []TopLevelNodeType
 	MetaData MetaData
 }

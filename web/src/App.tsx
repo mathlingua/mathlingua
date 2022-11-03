@@ -7,12 +7,13 @@ import { Theme, useTheme } from './hooks/theme';
 import { Shell } from './components/Shell';
 import { Sidebar } from './components/Sidebar';
 import { PageResponse } from './types';
+import { RootView } from './components/ast/RootView';
 
 export function App() {
   const theme = useTheme();
-  const styles = getStyles(theme);
 
   const [showSidebar, setShowSidebar] = React.useState(true);
+  const styles = getStyles(theme, showSidebar);
 
   const [activePath, setActivePath] = React.useState<string>('');
   const { data } = useFetch<PageResponse>(`/api/page?path=${encodeURIComponent(activePath)}`);
@@ -24,13 +25,15 @@ export function App() {
     </button>
   );
 
-  const sidebar = <Sidebar onSelect={setActivePath}/>;
+  const sidebar = <Sidebar onSelect={(path) => {
+    if (path.endsWith('.math')) {
+      setActivePath(path);
+    }
+  }}/>;
 
   const mainContent = (
-    <div style={styles.content}
-         dangerouslySetInnerHTML={{
-           __html: data?.Html ?? ''
-         }}>
+    <div style={styles.content}>
+      {data?.Root && <RootView node={data?.Root} />}
     </div>
   );
 
@@ -43,11 +46,14 @@ export function App() {
   );
 }
 
-function getStyles(theme: Theme) {
+function getStyles(theme: Theme, sidebarVisible: boolean) {
   return {
     content: {
       margin: theme.sizeSmall,
-      paddingBottom: theme.sizeXXLarge,
+      padding: theme.sizeXXLarge,
+      maxWidth: '800px',
+      marginLeft: sidebarVisible ? theme.sizeXXLarge : 'auto',
+      marginRight: 'auto',
     },
     menuButton: {
       background: 'none',

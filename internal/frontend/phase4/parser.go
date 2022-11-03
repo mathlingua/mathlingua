@@ -86,6 +86,7 @@ func (p *phase4Parser) root() Root {
 		} else if peek.Type == ast.TextBlock {
 			textBlock := p.lexer.Next()
 			nodes = append(nodes, TextBlock{
+				Type: TextBlockType,
 				Text: textBlock.Text,
 				MetaData: MetaData{
 					Start: textBlock.Position,
@@ -98,6 +99,7 @@ func (p *phase4Parser) root() Root {
 		}
 	}
 	return Root{
+		Type:  RootType,
 		Nodes: nodes,
 		MetaData: MetaData{
 			Start: start,
@@ -124,6 +126,7 @@ func (p *phase4Parser) group(id *string) (Group, bool) {
 	p.skipAheadPast(ast.EndGroup, "Unterminated group")
 
 	return Group{
+		Type:     GroupType,
 		Id:       id,
 		Sections: sections,
 		MetaData: MetaData{
@@ -157,6 +160,7 @@ func (p *phase4Parser) section() (Section, bool) {
 
 	p.skipAheadPast(ast.EndSection, "Unterminated section")
 	return Section{
+		Type: SectionType,
 		Name: name,
 		Args: args,
 		MetaData: MetaData{
@@ -174,6 +178,7 @@ func (p *phase4Parser) argument() (Argument, bool) {
 		if data, ok := p.argumentData(); ok {
 			found = true
 			arg = Argument{
+				Type:     ArgumentType,
 				IsInline: true,
 				Arg:      data,
 				MetaData: MetaData{
@@ -195,6 +200,7 @@ func (p *phase4Parser) argument() (Argument, bool) {
 		if data, ok := p.argumentData(); ok {
 			found = true
 			arg = Argument{
+				Type:     ArgumentType,
 				IsInline: false,
 				Arg:      data,
 				MetaData: MetaData{
@@ -215,6 +221,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 	if p.has(ast.ArgumentText) {
 		arg := p.lexer.Next()
 		return ArgumentTextArgumentData{
+			Type: ArgumentTextArgumentDataType,
 			Text: arg.Text,
 			MetaData: MetaData{
 				Start: arg.Position,
@@ -225,6 +232,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 	if p.has(ast.FormulationTokenType) {
 		arg := p.lexer.Next()
 		return FormulationArgumentData{
+			Type: FormulationArgumentDataType,
 			Text: arg.Text,
 			MetaData: MetaData{
 				Start: arg.Position,
@@ -235,6 +243,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 	if p.has(ast.Text) {
 		arg := p.lexer.Next()
 		return TextArgumentData{
+			Type: TextArgumentDataType,
 			Text: arg.Text,
 			MetaData: MetaData{
 				Start: arg.Position,

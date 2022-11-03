@@ -16,14 +16,28 @@ export function Sidebar(props: SidebarProps) {
   const styles = getStyles(theme);
 
   const { data } = useFetch<PathsResponse>('/api/paths');
-  const treeData = buildTreeNode(data?.Paths ?? []);
+  const paths = data?.Paths
+  const { tree: treeData, allPaths } = buildTreeNode(paths ?? []);
+
+  const [expandedValues, setExpandedValues] = React.useState(new Set(allPaths));
 
   return (
     <span style={styles.bottom}>
       <Tree
         style={styles.tree}
         data={treeData.children ?? []}
-        onSelect={(val) => props.onSelect(val.value as string)}
+        onSelect={(val) => {
+          const value = val.value as string;
+          props.onSelect(value);
+          const newExpandedValues = new Set(Array.from(expandedValues));
+          if (expandedValues.has(value)) {
+            newExpandedValues.delete(value);
+          } else {
+            newExpandedValues.add(value);
+          }
+          setExpandedValues(newExpandedValues);
+        }}
+        expandItemValues={Array.from(expandedValues)}
         renderTreeNode={node => (
           <span style={node.children ? styles.bold : undefined}>
             {(node.label as string ?? '').replace(/_/g, ' ').replace('.math', '')}
@@ -80,19 +94,23 @@ interface TreeNode {
   children?: TreeNode[];
 }
 
-function buildTreeNode(paths: string[]): TreeNode {
+function buildTreeNode(paths: string[]): { tree: TreeNode; allPaths: string[]; } {
+  const allPaths: string[] = [];
   const sentinal: TreeNode = {
     label: '',
     value: '',
     children: undefined,
   };
   for (const path of paths) {
-    populateTreeNode(sentinal, path.split('/'), 0);
+    populateTreeNode(sentinal, path.split('/'), 0, allPaths);
   }
-  return sentinal;
+  return {
+    tree: sentinal,
+    allPaths,
+  };
 }
 
-function populateTreeNode(root: TreeNode, parts: string[], index: number) {
+function populateTreeNode(root: TreeNode, parts: string[], index: number, allPaths: string[]) {
   if (index >= parts.length) {
     return;
   }
@@ -110,13 +128,15 @@ function populateTreeNode(root: TreeNode, parts: string[], index: number) {
   if (curIndex >= 0) {
     nextRoot = root.children[curIndex];
   } else {
+    const value = parts.slice(0, index+1).join('/');
     nextRoot = {
       label: cur,
-      value: parts.slice(0, index+1).join('/'),
+      value,
       children: undefined,
     };
+    allPaths.push(value);
     root.children.push(nextRoot);
   }
 
-  populateTreeNode(nextRoot, parts, index+1);
+  populateTreeNode(nextRoot, parts, index+1, allPaths);
 }

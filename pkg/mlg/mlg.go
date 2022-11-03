@@ -28,7 +28,6 @@ import (
 	"mathlingua/internal/frontend/phase5"
 	"mathlingua/internal/server"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -41,8 +40,6 @@ type Mlg interface {
 	 */
 	Check(paths []string, json bool, dedug bool)
 	View()
-	Doc()
-	Clean()
 	Version() string
 }
 
@@ -223,79 +220,6 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 
 func (m *mlg) View() {
 	server.Start()
-}
-
-func (m *mlg) Doc() {
-	err := filepath.Walk(".", func(p string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if !info.IsDir() && strings.HasSuffix(p, ".math") {
-			bytes, err := os.ReadFile(p)
-			if err != nil {
-				m.logger.Error(fmt.Sprintf("Failed to read '%s': %s", p, err))
-			} else {
-				htmlRelPath := strings.TrimSuffix(p, ".math") + ".html"
-				htmlDocPath := path.Join("docs", htmlRelPath)
-
-				input := string(bytes)
-				root, diagnostics := parse(input)
-				output := server.GetHtmlForRoot(input, root, diagnostics)
-
-				base := path.Dir(htmlDocPath)
-				doWrite := true
-				if err := os.MkdirAll(base, 0700); err != nil {
-					if !os.IsExist(err) {
-						doWrite = false
-						m.logger.Error(fmt.Sprintf("Failed to create the directory '%s': %s", base, err))
-					}
-				}
-
-				if doWrite {
-					if err := os.WriteFile(htmlDocPath, []byte(output), 0644); err != nil {
-						m.logger.Error(fmt.Sprintf("Failed to generate '%s': %s", htmlDocPath, err))
-					}
-				}
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil && !os.IsNotExist(err) {
-		fmt.Printf("ERROR: Failed to generate documentation: %s", err)
-	}
-}
-
-func (m *mlg) logCleanError(message string) {
-	m.logger.Error(fmt.Sprintf("Failed to delete the 'docs' directory: %s", message))
-}
-
-func (m *mlg) Clean() {
-	stat, err := os.Stat("docs")
-	if err != nil {
-		// if there is an error getting stats for the directory
-		// it could be because it doesn't exist or for some other
-		// reason.  If it is because it doesn't exist, then there
-		// is nothing that needs to be done.  Otherwise, log an
-		// error and stop.
-		if !os.IsNotExist(err) {
-			m.logCleanError(err.Error())
-			return
-		}
-	}
-
-	if !stat.IsDir() {
-		m.logCleanError("It exists but is not a directory")
-		return
-	}
-
-	if err := os.RemoveAll("docs"); err != nil {
-		m.logCleanError(err.Error())
-	} else {
-		m.logger.Success("Deleted the 'docs' directory.")
-	}
 }
 
 func (m *mlg) Version() string {

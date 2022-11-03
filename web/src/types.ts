@@ -33,7 +33,6 @@ export interface PageResponse {
 	Error: string;
 	Diagnostics: Diagnostic[] | null;
 	Root: Root;
-	Html: string;
 }
 
 export interface MetaData {

@@ -11,61 +11,61 @@ export interface ShellProps {
 
 export function Shell(props: ShellProps) {
   const theme = useTheme();
-  const styles = getStyles(theme, props.showSidebar);
+  const styles = getStyles(theme);
 
   return (
-    <>
-      <span style={styles.topbar}>
+    <div style={styles.wrapper}>
+      <div style={styles.topbar}>
         {props.topbarContent}
-      </span>
-      <span style={props.showSidebar ? styles.sidebar : styles.hidden}>
-        {props.sidebarContent}
-      </span>
-      <span style={styles.content}>
+      </div>
+      <div style={styles.leftSidebar}>
+        {props.showSidebar && props.sidebarContent}
+      </div>
+      <div style={styles.content}>
         {props.mainContent}
-      </span>
-    </>
+      </div>
+      <div style={styles.rightSidebar}>
+      </div>
+    </div>
   );
 }
 
-function getStyles(theme: Theme, showSidebar: boolean) {
-  const sidebarWidth = showSidebar ? theme.sidebarWidth : 0;
+function getStyles(theme: Theme) {
   return {
-    sidebar: {
+    wrapper: {
+      display: 'grid',
+      gridTemplateColumns: `${theme.sidebarWidth}px auto auto ${theme.sidebarWidth}px`,
+      gridTemplateAreas: `
+        'topbar      topbar  topbar  topbar'
+        'leftSidebar content content rightSidebar'
+      `,
+      overflow: 'scroll',
+    },
+    leftSidebar: {
+      gridArea: 'leftSidebar',
       position: 'fixed',
-      height: '100%',
-      width: sidebarWidth,
-      margin: 0,
-      padding: 0,
-      overflow: 'auto',
-      borderRight: 'solid',
-      borderColor: theme.gray,
-      borderWidth: 1,
+      top: theme.sizeXLarge,
+      left: 0,
+      overflow: 'scroll',
+      width: theme.sidebarWidth,
+      height: `calc(100% - ${theme.sizeXLarge}px)`,
+    },
+    rightSidebar: {
+      gridArea: 'rightSidebar',
     },
     content: {
-      position: 'fixed',
-      marginLeft: sidebarWidth,
-      marginTop: theme.sizeLarge,
-      marginRight: 0,
-      marginBottom: 0,
-      padding: 0,
-      height: '100%',
-      width: '100%',
-      overflow: 'auto',
-      background: 'white',
-      borderTop: 'solid',
-      borderColor: theme.gray,
-      borderWidth: 1,
+      gridArea: 'content',
+      position: 'relative',
+      overflow: 'scroll',
+      marginTop: theme.sizeXLarge,
     },
     topbar: {
+      gridArea: 'topbar',
       position: 'fixed',
-      marginLeft: sidebarWidth,
-      padding: 0,
-      marginRight: 0,
-      marginTop: 0,
-      marginBottom: 0,
       width: '100%',
-      height: theme.sizeLarge,
+      height: theme.sizeXLarge,
+      top: 0,
+      left: 0,
     },
     hidden: {
       display: 'none',

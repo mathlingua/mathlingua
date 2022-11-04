@@ -21,8 +21,12 @@ export function Sidebar(props: SidebarProps) {
 
   const [expandedValues, setExpandedValues] = React.useState(new Set(allPaths));
 
+  if (data == undefined) {
+    return <div style={styles.loading}>Loading...</div>;
+  }
+
   return (
-    <span style={styles.bottom}>
+    <>
       <Tree
         style={styles.tree}
         data={treeData.children ?? []}
@@ -44,37 +48,14 @@ export function Sidebar(props: SidebarProps) {
           </span>
         )}
       />
-    </span>
+    </>
   );
 }
 
 function getStyles(theme: Theme) {
   return {
-    top: {
-      height: theme.sizeXLarge,
-      width: theme.sidebarWidth,
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      margin: 0,
-      padding: 0,
-      borderBottom: 'solid',
-      borderBottomColor: theme.gray,
-      borderBottomWidth: 1,
-    },
-    bottom: {
-      height: '100%',
-      width: theme.sidebarWidth,
-      position: 'fixed',
-      marginTop: 0,
-      marginBottom: 0,
-      marginLeft: 0,
-      marginRight: 0,
-      padding: 0,
-      overflow: 'auto',
-      borderRight: 'solid',
-      borderColor: theme.gray,
-      borderWidth: 1,
+    loading: {
+      margin: theme.sizeXSmall,
     },
     tree: {
       height: '100%',

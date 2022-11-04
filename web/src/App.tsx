@@ -25,11 +25,15 @@ export function App() {
     </button>
   );
 
-  const sidebar = <Sidebar onSelect={(path) => {
-    if (path.endsWith('.math')) {
-      setActivePath(path);
-    }
-  }}/>;
+  const sidebar = (
+    <div style={styles.sidebar}>
+      <Sidebar onSelect={(path) => {
+        if (path.endsWith('.math')) {
+          setActivePath(path);
+        }
+      }}/>
+    </div>
+  );
 
   const mainContent = (
     <div style={styles.content}>
@@ -38,22 +42,28 @@ export function App() {
   );
 
   return (
-    <Shell
-      showSidebar={showSidebar}
-      topbarContent={topbar}
-      sidebarContent={sidebar}
-      mainContent={mainContent} />
+    <div>
+      <Shell
+        showSidebar={showSidebar}
+        topbarContent={topbar}
+        sidebarContent={sidebar}
+        mainContent={mainContent} />
+    </div>
   );
 }
 
 function getStyles(theme: Theme, sidebarVisible: boolean) {
   return {
+    sidebar: {
+      width: 'max-content',
+      height: 'max-content',
+    },
     content: {
-      margin: theme.sizeSmall,
-      padding: theme.sizeXXLarge,
-      maxWidth: '800px',
-      marginLeft: sidebarVisible ? theme.sizeXXLarge : 'auto',
+      height: 'max-content',
+      overflow: 'scroll',
+      marginLeft: 'auto',
       marginRight: 'auto',
+      width: '800px',
     },
     menuButton: {
       background: 'none',

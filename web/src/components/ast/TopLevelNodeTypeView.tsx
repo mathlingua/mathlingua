@@ -36,6 +36,7 @@ const styles = {
     overflow: 'auto',
     marginLeft: 'auto',
     marginRight: 'auto',
+    borderRadius: 2,
   },
   mathlinguaTopLevelTextBlock: {
     color: '#555555',

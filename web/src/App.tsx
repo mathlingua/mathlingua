@@ -37,18 +37,20 @@ export function App() {
 
   const mainContent = (
     <div style={styles.content}>
-      {data?.Root && <RootView node={data?.Root} />}
+      {data?.Root && (
+        <div style={styles.page}>
+          <RootView node={data?.Root} />
+        </div>
+      )}
     </div>
   );
 
   return (
-    <div>
-      <Shell
-        showSidebar={showSidebar}
-        topbarContent={topbar}
-        sidebarContent={sidebar}
-        mainContent={mainContent} />
-    </div>
+    <Shell
+      showSidebar={showSidebar}
+      topbarContent={topbar}
+      sidebarContent={sidebar}
+      mainContent={mainContent} />
   );
 }
 
@@ -69,6 +71,16 @@ function getStyles(theme: Theme) {
       background: 'none',
       border: 'none',
       margin: theme.sizeXSmall,
+    },
+    page: {
+      background: 'white',
+      boxShadow: '0 1px 5px rgba(0,0,0,.2)',
+      paddingLeft: '4em',
+      paddingRight: '4em',
+      paddingTop: '2em',
+      paddingBottom: '2em',
+      margin: '1ex',
+      borderRadius: 2,
     },
   };
 }

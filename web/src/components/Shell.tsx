@@ -40,6 +40,8 @@ function getStyles(theme: Theme, showSidebar: boolean) {
         'leftSidebar content content rightSidebar'
       `,
       overflow: 'scroll',
+      background: theme.background,
+      height: '100%',
     },
     leftSidebar: {
       gridArea: 'leftSidebar',
@@ -50,10 +52,17 @@ function getStyles(theme: Theme, showSidebar: boolean) {
       width: showSidebar ? theme.sidebarWidth : 0,
       transition: '0.5s',
       height: `calc(100% - ${theme.sizeXLarge}px)`,
-      borderRight: showSidebar ? 'solid' : 'none',
-      borderColor: showSidebar ? theme.gray : 'white',
-      borderWidth: showSidebar ? 1 : 0,
       background: 'white',
+      borderRight: 'solid',
+      borderRightColor: theme.border,
+      borderRightWidth: 1,
+      borderTop: 'solid',
+      borderTopColor: theme.border,
+      borderTopWidth: 1,
+      borderBottom: 'solid',
+      borderBottomColor: theme.border,
+      borderBottomWidth: 1,
+      borderTopRightRadius: 2,
     },
     rightSidebar: {
       gridArea: 'rightSidebar',
@@ -71,11 +80,8 @@ function getStyles(theme: Theme, showSidebar: boolean) {
       height: theme.sizeXLarge,
       top: 0,
       left: 0,
-      borderBottom: 'solid',
-      borderColor: theme.gray,
-      borderWidth: 1,
-      background: 'white',
-      zIndex: 1, // so the topbar covers the page content
+      border: 'none',
+      background: theme.background,
     },
     hidden: {
       display: 'none',

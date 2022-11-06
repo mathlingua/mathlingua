@@ -8,7 +8,8 @@ export interface Theme {
   sizeLarge: number;
   sizeXLarge: number;
   sizeXXLarge: number;
-  gray: string;
+  border: string;
+  background: string;
 }
 
 export function useTheme(): Theme {
@@ -21,6 +22,7 @@ export function useTheme(): Theme {
     sizeLarge: 32,
     sizeXLarge: 48,
     sizeXXLarge: 56,
-    gray: '#cccccc',
+    border: '#cccccc',
+    background: '#eeeeef',
   };
 }

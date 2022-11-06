@@ -4,13 +4,31 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+  font-family: Georgia,"Times New Roman",Times,serif !important;
   color: black !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  color: #05b !important;
+  text-align: center;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+.rs-tree-node-active .rs-tree-node-label-content {
+  background: none !important;
+}
+
+.rs-tree > *:hover {
+  background: none !important;
+}
+
+.rs-tree-node-active .rs-tree-node-label-content {
+  background: none !important;
+  color: #05b !important;
 }

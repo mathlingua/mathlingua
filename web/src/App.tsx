@@ -13,7 +13,7 @@ export function App() {
   const theme = useTheme();
 
   const [showSidebar, setShowSidebar] = React.useState(true);
-  const styles = getStyles(theme, showSidebar);
+  const styles = getStyles(theme);
 
   const [activePath, setActivePath] = React.useState<string>('');
   const { data } = useFetch<PageResponse>(`/api/page?path=${encodeURIComponent(activePath)}`);
@@ -52,7 +52,7 @@ export function App() {
   );
 }
 
-function getStyles(theme: Theme, sidebarVisible: boolean) {
+function getStyles(theme: Theme) {
   return {
     sidebar: {
       width: 'max-content',
@@ -68,7 +68,7 @@ function getStyles(theme: Theme, sidebarVisible: boolean) {
     menuButton: {
       background: 'none',
       border: 'none',
-      margin: theme.sizeXXSmall,
+      margin: theme.sizeXSmall,
     },
   };
 }

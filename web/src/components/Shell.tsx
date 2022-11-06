@@ -11,7 +11,7 @@ export interface ShellProps {
 
 export function Shell(props: ShellProps) {
   const theme = useTheme();
-  const styles = getStyles(theme);
+  const styles = getStyles(theme, props.showSidebar);
 
   return (
     <div style={styles.wrapper}>
@@ -19,7 +19,7 @@ export function Shell(props: ShellProps) {
         {props.topbarContent}
       </div>
       <div style={styles.leftSidebar}>
-        {props.showSidebar && props.sidebarContent}
+        {props.sidebarContent}
       </div>
       <div style={styles.content}>
         {props.mainContent}
@@ -30,7 +30,7 @@ export function Shell(props: ShellProps) {
   );
 }
 
-function getStyles(theme: Theme) {
+function getStyles(theme: Theme, showSidebar: boolean) {
   return {
     wrapper: {
       display: 'grid',
@@ -47,8 +47,13 @@ function getStyles(theme: Theme) {
       top: theme.sizeXLarge,
       left: 0,
       overflow: 'scroll',
-      width: theme.sidebarWidth,
+      width: showSidebar ? theme.sidebarWidth : 0,
+      transition: '0.5s',
       height: `calc(100% - ${theme.sizeXLarge}px)`,
+      borderRight: showSidebar ? 'solid' : 'none',
+      borderColor: showSidebar ? theme.gray : 'white',
+      borderWidth: showSidebar ? 1 : 0,
+      background: 'white',
     },
     rightSidebar: {
       gridArea: 'rightSidebar',
@@ -66,6 +71,11 @@ function getStyles(theme: Theme) {
       height: theme.sizeXLarge,
       top: 0,
       left: 0,
+      borderBottom: 'solid',
+      borderColor: theme.gray,
+      borderWidth: 1,
+      background: 'white',
+      zIndex: 1, // so the topbar covers the page content
     },
     hidden: {
       display: 'none',

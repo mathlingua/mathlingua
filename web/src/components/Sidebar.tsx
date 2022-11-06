@@ -58,10 +58,10 @@ function getStyles(theme: Theme) {
       margin: theme.sizeXSmall,
     },
     tree: {
-      height: '100%',
       maxHeight: 'fit-content',
-      width: '100%',
       maxWidth: 'fit-content',
+      minWidth: theme.sidebarWidth,
+      minHeight: `calc(100vh - ${theme.sizeXLarge}px)`,
     },
     bold: {
       fontWeight: 'bold',

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { Tree } from 'rsuite';
 import 'rsuite/dist/rsuite.css';
@@ -19,7 +19,14 @@ export function Sidebar(props: SidebarProps) {
   const paths = data?.Paths
   const { tree: treeData, allPaths } = buildTreeNode(paths ?? []);
 
-  const [expandedValues, setExpandedValues] = React.useState(new Set(allPaths));
+  const firstPath = allPaths[0];
+  const [expandedValues, setExpandedValues] = React.useState([] as string[]);
+  useEffect(() => {
+    if (firstPath !== undefined) {
+      props.onSelect(firstPath);
+      setExpandedValues(decomposePath(firstPath));
+    }
+  }, [firstPath]);
 
   if (data == undefined) {
     return <div style={styles.loading}>Loading...</div>;
@@ -34,14 +41,15 @@ export function Sidebar(props: SidebarProps) {
           const value = val.value as string;
           props.onSelect(value);
           const newExpandedValues = new Set(Array.from(expandedValues));
-          if (expandedValues.has(value)) {
+          if (expandedValues.indexOf(value) >= 0) {
             newExpandedValues.delete(value);
           } else {
             newExpandedValues.add(value);
           }
-          setExpandedValues(newExpandedValues);
+          setExpandedValues(Array.from(newExpandedValues));
         }}
-        expandItemValues={Array.from(expandedValues)}
+        defaultValue={firstPath}
+        expandItemValues={expandedValues}
         renderTreeNode={node => (
           <span style={node.children ? styles.bold : undefined}>
             {(node.label as string ?? '').replace(/_/g, ' ').replace('.math', '')}
@@ -91,6 +99,24 @@ function buildTreeNode(paths: string[]): { tree: TreeNode; allPaths: string[]; }
   };
 }
 
+// Given "a/b/c/d" returns ["a", "a/b", "a/b/c", "a/b/c/d"]
+function decomposePath(path: string | undefined): string[] {
+  if (path === undefined) {
+    return [];
+  }
+
+  const result: string[] = [];
+  let buffer = '';
+  for (const part of path.split('/')) {
+    if (buffer.length > 0) {
+      buffer += '/';
+    }
+    buffer += part;
+    result.push(buffer);
+  }
+  return result;
+}
+
 function populateTreeNode(root: TreeNode, parts: string[], index: number, allPaths: string[]) {
   if (index >= parts.length) {
     return;
@@ -115,7 +141,9 @@ function populateTreeNode(root: TreeNode, parts: string[], index: number, allPat
       value,
       children: undefined,
     };
-    allPaths.push(value);
+    if (value.endsWith('.math')) {
+      allPaths.push(value);
+    }
     root.children.push(nextRoot);
   }
 

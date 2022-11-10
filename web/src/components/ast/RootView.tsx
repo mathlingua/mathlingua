@@ -4,6 +4,7 @@ import { TopLevelNodeTypeView } from './TopLevelNodeTypeView';
 
 export interface RootViewProps {
   node: Root;
+  isOnSmallScreen: boolean;
 }
 
 export const RootView = (props: RootViewProps) => {
@@ -12,7 +13,7 @@ export const RootView = (props: RootViewProps) => {
       {
         props.node.Nodes?.map((node, index) => (
           <span key={index}>
-            <TopLevelNodeTypeView node={node} />
+            <TopLevelNodeTypeView node={node} isOnSmallScreen={props.isOnSmallScreen} />
           </span>
         ))
       }

@@ -10,6 +10,7 @@ export interface Theme {
   sizeXXLarge: number;
   border: string;
   background: string;
+  mainWidth: number;
 }
 
 export function useTheme(): Theme {
@@ -24,5 +25,6 @@ export function useTheme(): Theme {
     sizeXXLarge: 56,
     border: '#cccccc',
     background: '#eeeeef',
+    mainWidth: 800,
   };
 }

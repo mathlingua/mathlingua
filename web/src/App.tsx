@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import MenuIcon from '@rsuite/icons/Menu';
 
@@ -12,8 +12,15 @@ import { RootView } from './components/ast/RootView';
 export function App() {
   const theme = useTheme();
 
-  const [showSidebar, setShowSidebar] = React.useState(true);
-  const styles = getStyles(theme);
+  const [screenWidth, setScreenWidth] = useState(window.screen.availWidth);
+  const isOnSmallScreen = determineIsOnSmallScreen(screenWidth, theme);
+  const [showSidebar, setShowSidebar] = React.useState(!isOnSmallScreen);
+
+  window.addEventListener('resize', () => {
+    setScreenWidth(window.screen.availWidth);
+  });
+
+  const styles = getStyles(theme, isOnSmallScreen);
 
   const [activePath, setActivePath] = React.useState<string>('');
   const { data } = useFetch<PageResponse>(`/api/page?path=${encodeURIComponent(activePath)}`);
@@ -39,7 +46,7 @@ export function App() {
     <div style={styles.content}>
       {data?.Root && (
         <div style={styles.page}>
-          <RootView node={data?.Root} />
+          <RootView node={data?.Root} isOnSmallScreen={isOnSmallScreen} />
         </div>
       )}
     </div>
@@ -50,11 +57,12 @@ export function App() {
       showSidebar={showSidebar}
       topbarContent={topbar}
       sidebarContent={sidebar}
-      mainContent={mainContent} />
+      mainContent={mainContent}
+      isOnSmallScreen={isOnSmallScreen} />
   );
 }
 
-function getStyles(theme: Theme) {
+function getStyles(theme: Theme, isOnSmallScreen: boolean) {
   return {
     sidebar: {
       width: 'max-content',
@@ -65,7 +73,7 @@ function getStyles(theme: Theme) {
       overflow: 'scroll',
       marginLeft: 'auto',
       marginRight: 'auto',
-      width: '800px',
+      width: isOnSmallScreen ? '100%' : theme.mainWidth,
     },
     menuButton: {
       background: 'none',
@@ -75,12 +83,17 @@ function getStyles(theme: Theme) {
     page: {
       background: 'white',
       boxShadow: '0 1px 5px rgba(0,0,0,.2)',
-      paddingLeft: '4em',
-      paddingRight: '4em',
-      paddingTop: '2em',
-      paddingBottom: '2em',
+      paddingLeft: isOnSmallScreen ? '2em' : '4em',
+      paddingRight: isOnSmallScreen ? '2em' : '4em',
+      paddingTop: isOnSmallScreen ? '2em' : '2em',
+      paddingBottom: isOnSmallScreen ? '2em' : '2em',
       margin: '1ex',
       borderRadius: 2,
     },
   };
+}
+
+export function determineIsOnSmallScreen(screenWidth: number, theme: Theme) {
+  const maxWidth = theme.sidebarWidth*2 + theme.mainWidth;
+  return screenWidth <= maxWidth;
 }

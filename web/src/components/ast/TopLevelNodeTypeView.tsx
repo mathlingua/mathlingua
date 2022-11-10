@@ -5,10 +5,12 @@ import { TextBlockView } from './TextBlockView';
 
 export interface TopLevelNodeTypeViewProps {
   node: TopLevelNodeType;
+  isOnSmallScreen: boolean;
 }
 
 export const TopLevelNodeTypeView = (props: TopLevelNodeTypeViewProps) => {
   const isGroup = (props.node as any).Sections;
+  const styles = getTopLevelNodeTypeViewStyles(props.isOnSmallScreen);
   if (isGroup) {
     return (
       <div style={styles.mathlinguaTopLevelEntity}>
@@ -24,22 +26,24 @@ export const TopLevelNodeTypeView = (props: TopLevelNodeTypeViewProps) => {
   }
 };
 
-const styles = {
-  mathlinguaTopLevelEntity: {
-    fontFamily: 'monospace',
-    boxShadow: '0 1px 5px rgba(0,0,0,.2)',
-    padding: '2ex',
-    margin: '1ex',
-    width: 'max-content',
-    height: 'max-content',
-    maxWidth: '50%',
-    overflow: 'auto',
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    borderRadius: 2,
-  },
-  mathlinguaTopLevelTextBlock: {
-    color: '#555555',
-    maxWidth: '100%',
-  },
-};
+function getTopLevelNodeTypeViewStyles(isOnSmallScreen: boolean) {
+  return {
+    mathlinguaTopLevelEntity: {
+      fontFamily: 'monospace',
+      boxShadow: '0 1px 5px rgba(0,0,0,.2)',
+      padding: '2ex',
+      margin: '1ex',
+      width: 'max-content',
+      height: 'max-content',
+      maxWidth: isOnSmallScreen ? '100%' : '50%',
+      overflow: 'auto',
+      marginLeft: 'auto',
+      marginRight: 'auto',
+      borderRadius: 2,
+    },
+    mathlinguaTopLevelTextBlock: {
+      color: '#555555',
+      maxWidth: '100%',
+    },
+  };
+}

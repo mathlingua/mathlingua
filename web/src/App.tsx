@@ -37,6 +37,9 @@ export function App() {
       <Sidebar onSelect={(path) => {
         if (path.endsWith('.math')) {
           setActivePath(path);
+          if (isOnSmallScreen) {
+            setShowSidebar(false);
+          }
         }
       }}/>
     </div>

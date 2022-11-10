@@ -19,6 +19,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/phase1"
 	"mathlingua/internal/frontend/phase2"
@@ -52,31 +53,9 @@ type PathsResponse struct {
 
 func paths(writer http.ResponseWriter, request *http.Request) {
 	setJsonContentType(writer)
-
-	paths := make([]string, 0)
-	err := filepath.Walk(".", func(p string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if !info.IsDir() && strings.HasSuffix(p, ".math") {
-			paths = append(paths, p)
-		}
-
-		return nil
-	})
-
-	var resp PathsResponse
-	if err != nil {
-		resp = PathsResponse{
-			Error: err.Error(),
-		}
-	} else {
-		resp = PathsResponse{
-			Paths: paths,
-		}
+	resp := PathsResponse{
+		Paths: findAllMathlinguaFiles("."),
 	}
-
 	writeResponse(writer, &resp)
 }
 
@@ -84,6 +63,30 @@ type PageResponse struct {
 	Error       string
 	Diagnostics []frontend.Diagnostic
 	Root        phase4.Root
+}
+
+func findAllMathlinguaFiles(dir string) []string {
+	children, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+
+	result := make([]string, 0)
+	for _, child := range children {
+		name := child.Name()
+		if strings.HasPrefix(name, ".") {
+			// skip hidden dirs
+			continue
+		}
+		fullpath := filepath.Join(dir, name)
+		if child.IsDir() {
+			result = append(result, findAllMathlinguaFiles(fullpath)...)
+		} else if strings.HasSuffix(child.Name(), ".math") {
+			result = append(result, fullpath)
+		}
+	}
+
+	return result
 }
 
 func page(writer http.ResponseWriter, request *http.Request) {

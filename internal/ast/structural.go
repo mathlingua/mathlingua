@@ -157,6 +157,7 @@ func (ForAllGroup) Clause()           {}
 func (IfGroup) Clause()               {}
 func (IffGroup) Clause()              {}
 func (WhenGroup) Clause()             {}
+func (PiecewiseGroup) Clause()        {}
 
 //////////////////////////////////////////////////////////////////////////////
 

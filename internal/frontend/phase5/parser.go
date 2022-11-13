@@ -1821,6 +1821,8 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 			return grp
 		} else if grp, ok := p.toWhenGroup(data); ok {
 			return grp
+		} else if grp, ok := p.toPiecewiseGroup(data); ok {
+			return grp
 		}
 	}
 

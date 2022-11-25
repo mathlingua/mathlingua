@@ -16,8 +16,6 @@
 
 package backend
 
-import "mathlingua/internal/ast"
-
 // Describes the set of one or more signatures that describe a name.
 // For example, this interface describes what it means for a name,
 // `x`, to be `x is \a` and `x is \b`.
@@ -111,22 +109,22 @@ type Pattern interface {
 type CommandPattern struct {
 }
 
-func (cp CommandPattern) Matches(command ast.CommandExpression) PatternMatch[ast.ExpressionType]
+// func (cp CommandPattern) Matches(command ast.CommandExpression) PatternMatch[ast.ExpressionType]
 
 type PrefixOperatorPattern struct {
 }
 
-func (pp PrefixOperatorPattern) Matches(command ast.PrefixOperatorCallExpression) PatternMatch[ast.ExpressionType]
+// func (pp PrefixOperatorPattern) Matches(command ast.PrefixOperatorCallExpression) PatternMatch[ast.ExpressionType]
 
 type PostfixOperatorPattern struct {
 }
 
-func (pp PostfixOperatorPattern) Matches(command ast.PostfixOperatorCallExpression) PatternMatch[ast.ExpressionType]
+// func (pp PostfixOperatorPattern) Matches(command ast.PostfixOperatorCallExpression) PatternMatch[ast.ExpressionType]
 
 type InfixOperatorExpression struct {
 }
 
-func (ip InfixOperatorExpression) Matches(command ast.InfixOperatorCallExpression) PatternMatch[ast.ExpressionType]
+// func (ip InfixOperatorExpression) Matches(command ast.InfixOperatorCallExpression) PatternMatch[ast.ExpressionType]
 
 type NamePattern struct {
 }

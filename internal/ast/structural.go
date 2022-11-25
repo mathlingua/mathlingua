@@ -158,6 +158,23 @@ func (IfGroup) Clause()               {}
 func (IffGroup) Clause()              {}
 func (WhenGroup) Clause()             {}
 func (PiecewiseGroup) Clause()        {}
+func (GivenGroup) Clause()            {}
+
+//////////////////////////////////////////////////////////////////////////////
+
+var GivenSections = []string{
+	LowerGivenName,
+	LowerWhereQuestionName,
+	LowerSuchThatQuestionName,
+	LowerThenName,
+}
+
+type GivenGroup struct {
+	Given    GivenSection
+	Where    *WhereSection
+	SuchThat *SuchThatSection
+	Then     ThenSection
+}
 
 //////////////////////////////////////////////////////////////////////////////
 

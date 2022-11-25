@@ -37,6 +37,35 @@ type parser struct {
 	tracker frontend.DiagnosticTracker
 }
 
+//////////////////////////// given ///////////////////////////////////////
+
+func (p *parser) toGivenGroup(group phase4.Group) (ast.GivenGroup, bool) {
+	if !startsWithSections(group, ast.LowerGivenName) {
+		return ast.GivenGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.GivenSections...)
+	if !ok {
+		return ast.GivenGroup{}, false
+	}
+	given := *p.toGivenSection(sections[ast.LowerGivenName])
+	var where *ast.WhereSection
+	if sect, ok := sections[ast.LowerWhereName]; ok {
+		where = p.toWhereSection(sect)
+	}
+	var suchThat *ast.SuchThatSection
+	if sect, ok := sections[ast.LowerSuchThatName]; ok {
+		suchThat = p.toSuchThatSection(sect)
+	}
+	then := *p.toThenSection(sections[ast.LowerThenName])
+	return ast.GivenGroup{
+		Given:    given,
+		Where:    where,
+		SuchThat: suchThat,
+		Then:     then,
+	}, true
+}
+
 /////////////////////////// allOf ///////////////////////////////////////
 
 func (p *parser) toAllOfGroup(group phase4.Group) (ast.AllOfGroup, bool) {
@@ -1822,6 +1851,8 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 		} else if grp, ok := p.toWhenGroup(data); ok {
 			return grp
 		} else if grp, ok := p.toPiecewiseGroup(data); ok {
+			return grp
+		} else if grp, ok := p.toGivenGroup(data); ok {
 			return grp
 		}
 	}

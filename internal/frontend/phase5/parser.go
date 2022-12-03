@@ -316,47 +316,6 @@ func (p *parser) toIffSection(section phase4.Section) *ast.IffSection {
 	}
 }
 
-/////////////////////////// generated ////////////////////////////////////
-
-func (p *parser) toGeneratedGroup(group phase4.Group) (ast.GeneratedGroup, bool) {
-	if !startsWithSections(group, ast.LowerGeneratedName) {
-		return ast.GeneratedGroup{}, false
-	}
-
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.GeneratedSections...)
-	if !ok {
-		return ast.GeneratedGroup{}, false
-	}
-	generated := *p.toGeneratedSection(sections[ast.LowerGeneratedName])
-	from := *p.toFromSection(sections[ast.LowerFromName])
-	var when *ast.WhenSection
-	if sec, ok := sections[ast.LowerWhenName]; ok {
-		when = p.toWhenSection(sec)
-	}
-	return ast.GeneratedGroup{
-		Generated: generated,
-		From:      from,
-		When:      when,
-	}, true
-}
-
-func (p *parser) toGeneratedSection(section phase4.Section) *ast.GeneratedSection {
-	p.verifyNoArgs(section)
-	return &ast.GeneratedSection{}
-}
-
-func (p *parser) toFromSection(section phase4.Section) *ast.FromSection {
-	return &ast.FromSection{
-		Items: p.oneOrMoreTargets(section),
-	}
-}
-
-func (p *parser) toWhenSection(section phase4.Section) *ast.WhenSection {
-	return &ast.WhenSection{
-		When: p.oneOrMoreClauses(section),
-	}
-}
-
 //////////////////////////////// when ////////////////////////////////////
 
 func (p *parser) toWhenGroup(group phase4.Group) (ast.WhenGroup, bool) {
@@ -372,6 +331,10 @@ func (p *parser) toWhenGroup(group phase4.Group) (ast.WhenGroup, bool) {
 		When: *p.toWhenSection(sections[ast.LowerWhenName]),
 		Then: *p.toThenSection(sections[ast.LowerThenName]),
 	}, true
+}
+
+func (p *parser) toWhenSection(section phase4.Section) *ast.WhenSection {
+	return &ast.WhenSection{When: p.oneOrMoreClauses(section)}
 }
 
 ///////////////////////////// piecewise /////////////////////////////////

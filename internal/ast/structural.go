@@ -37,8 +37,6 @@ const LowerExpressedName = "expressed"
 const LowerExtendsName = "extends"
 const LowerExtendsQuestionName = LowerExtendsName + "?"
 const LowerForAllName = "forAll"
-const LowerFromName = "from"
-const LowerGeneratedName = "generated"
 const LowerGivenName = "given"
 const LowerGivenQuestionName = LowerGivenName + "?"
 const LowerUsingName = "using"
@@ -339,24 +337,6 @@ type IffSection struct {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-
-var GeneratedSections = []string{
-	LowerGeneratedName,
-	LowerFromName,
-	LowerWhenQuestionName,
-}
-
-type GeneratedGroup struct {
-	Generated GeneratedSection
-	From      FromSection
-	When      *WhenSection
-}
-
-type GeneratedSection struct{}
-
-type FromSection struct {
-	Items []Target
-}
 
 type WhenSection struct {
 	When []Clause

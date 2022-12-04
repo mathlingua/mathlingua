@@ -4,7 +4,6 @@ import { IdView } from './IdView';
 import { Indent } from './Indent';
 import { Newline } from './Newline';
 import { SectionView } from './SectionView';
-import { Space } from './Space';
 
 export interface GroupViewProps {
   node: Group;

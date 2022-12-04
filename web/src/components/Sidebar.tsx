@@ -11,7 +11,7 @@ export interface SidebarProps {
   onSelect: (path: string) => void;
 }
 
-export function Sidebar(props: SidebarProps) {
+export function Sidebar({ onSelect }: SidebarProps) {
   const theme = useTheme();
   const styles = getStyles(theme);
 
@@ -23,12 +23,12 @@ export function Sidebar(props: SidebarProps) {
   const [expandedValues, setExpandedValues] = React.useState([] as string[]);
   useEffect(() => {
     if (firstPath !== undefined) {
-      props.onSelect(firstPath);
+      onSelect(firstPath);
       setExpandedValues(decomposePath(firstPath));
     }
-  }, [firstPath]);
+  }, [firstPath, onSelect]);
 
-  if (data == undefined) {
+  if (data === undefined) {
     return <div style={styles.loading}>Loading...</div>;
   }
 
@@ -39,7 +39,7 @@ export function Sidebar(props: SidebarProps) {
         data={treeData.children ?? []}
         onSelect={(val) => {
           const value = val.value as string;
-          props.onSelect(value);
+          onSelect(value);
           const newExpandedValues = new Set(Array.from(expandedValues));
           if (expandedValues.indexOf(value) >= 0) {
             newExpandedValues.delete(value);

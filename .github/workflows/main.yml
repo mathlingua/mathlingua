@@ -24,7 +24,9 @@ jobs:
       with:
         node-version: 16
     - name: Setup Yarn
-      run: make installyarn
+      run: npm install -g yarn
+    - name: Setup react-scripts
+      run: npm install -g react-scripts
     - name: Build the application
       run: make all
     - name: Test the application

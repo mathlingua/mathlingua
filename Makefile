@@ -3,6 +3,10 @@
 build:
 	go build -o testbed/mlg main.go
 
+.PHONY: setupweb
+web:
+	cd web && yarn install
+
 .PHONY: web
 web:
 	cd web && yarn build
@@ -39,7 +43,7 @@ format:
 deps:
 	go mod download
 
-.PHONY: setup
+.PHONY: setupgo
 setup:
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/go/bin v1.49.0
 

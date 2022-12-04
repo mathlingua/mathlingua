@@ -15,9 +15,13 @@ jobs:
         os: [ubuntu-latest, macOS-latest]
     steps:
     - uses: actions/checkout@v2
+    - name: Setup yarn
+      uses: mskelton/setup-yarn@v1
     - name: Setup Go
       uses: actions/setup-go@v2
       with:
         go-version: 1.19
+    - name: Build the application
+      run: make all
     - name: Test the application
-      run: go test ./...
+      run: make test

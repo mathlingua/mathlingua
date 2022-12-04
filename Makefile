@@ -7,6 +7,10 @@ build:
 web:
 	cd web && yarn build
 
+.PHONY: installyarn
+installyarn:
+	npm install -g yarn
+
 .PHONY: all
 all:
 	make web && make

@@ -4,7 +4,7 @@ build:
 	go build -o testbed/mlg main.go
 
 .PHONY: setupweb
-web:
+setupweb:
 	cd web && yarn install
 
 .PHONY: web

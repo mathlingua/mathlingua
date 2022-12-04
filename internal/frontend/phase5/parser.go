@@ -525,6 +525,98 @@ func (p *parser) toViewableType(group phase4.Group) (ast.ViewableType, bool) {
 
 //////////////////////////////////// provides ///////////////////////////////
 
+func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGroup, bool) {
+	if !startsWithSections(group, ast.LowerSymbolName) {
+		return ast.SymbolWrittenGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.SymbolSections...)
+	if !ok {
+		return ast.SymbolWrittenGroup{}, false
+	}
+	symbol := *p.toSymbolSection(sections[ast.LowerSymbolName])
+	var written *ast.WrittenSection
+	if sect, ok := sections[ast.LowerWrittenName]; ok {
+		written = p.toWrittenSection(sect)
+	}
+	return ast.SymbolWrittenGroup{
+		Symbol:  symbol,
+		Written: written,
+	}, true
+}
+
+func (p *parser) toSymbolSection(section phase4.Section) *ast.SymbolSection {
+	return &ast.SymbolSection{
+		Symbol: p.exactlyOneAlias(section),
+	}
+}
+
+func (p *parser) toWrittenSection(section phase4.Section) *ast.WrittenSection {
+	return &ast.WrittenSection{
+		Written: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toConnectionGroup(group phase4.Group) (ast.ConnectionGroup, bool) {
+	if !startsWithSections(group, ast.LowerConnectionName) {
+		return ast.ConnectionGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ConnectionSections...)
+	if !ok {
+		return ast.ConnectionGroup{}, false
+	}
+
+	connection := *p.toConnectionSection(sections[ast.LowerConnectionName])
+	var using *ast.UsingSection
+	if sect, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sect)
+	}
+	means := *p.toMeansSection(sections[ast.LowerMeansName])
+	var signifies *ast.SignifiesSection
+	if sect, ok := sections[ast.LowerSignifiesName]; ok {
+		signifies = p.toSignifiesSection(sect)
+	}
+	var viewable *ast.ConnectionViewableSection
+	if sect, ok := sections[ast.LowerViewableName]; ok {
+		viewable = p.toConnectionViewableSection(sect)
+	}
+	var through *ast.ConnectionThroughSection
+	if sect, ok := sections[ast.LowerThroughName]; ok {
+		through = p.toConnectionThroughSection(sect)
+	}
+	return ast.ConnectionGroup{
+		Connection: connection,
+		Using:      using,
+		Means:      means,
+		Signfies:   signifies,
+		Viewable:   viewable,
+		Through:    through,
+	}, true
+}
+
+func (p *parser) toConnectionSection(section phase4.Section) *ast.ConnectionSection {
+	p.verifyNoArgs(section)
+	return &ast.ConnectionSection{}
+}
+
+func (p *parser) toSignifiesSection(section phase4.Section) *ast.SignifiesSection {
+	return &ast.SignifiesSection{
+		Signifies: p.exactlyOneSpec(section),
+	}
+}
+
+func (p *parser) toConnectionViewableSection(section phase4.Section) *ast.ConnectionViewableSection {
+	p.verifyNoArgs(section)
+	return &ast.ConnectionViewableSection{}
+}
+
+func (p *parser) toConnectionThroughSection(section phase4.Section) *ast.ConnectionThroughSection {
+	return &ast.ConnectionThroughSection{
+		Through: p.exactlyOneFormulation(section),
+	}
+}
+
 func (p *parser) toMembersGroup(group phase4.Group) (ast.MembersGroup, bool) {
 	if !startsWithSections(group, ast.LowerMembersName) {
 		return ast.MembersGroup{}, false
@@ -1011,6 +1103,10 @@ func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, 
 		return grp, true
 	} else if grp, ok := p.toMemberExpressedGroup(group); ok {
 		return grp, true
+	} else if grp, ok := p.toSymbolWrittenGroup(group); ok {
+		return grp, true
+	} else if grp, ok := p.toConnectionGroup(group); ok {
+		return grp, ok
 	} else {
 		p.tracker.Append(newError(fmt.Sprintf("Unrecognized argument for %s:\n"+
 			"Expected one of:\n\n%s:\n\n%s:\n",
@@ -1780,6 +1876,22 @@ func (p *parser) getId(group phase4.Group, required bool) *ast.IdItem {
 
 ////////////////////////// arguments ////////////////////////////////////
 
+func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.NodeType] {
+	switch data := arg.Arg.(type) {
+	case phase4.FormulationArgumentData:
+		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker); ok {
+			return ast.Formulation[ast.NodeType]{
+				RawText: data.Text,
+				Root:    node,
+				Label:   nil,
+			}
+		}
+	}
+
+	p.tracker.Append(newError("Expected a formulation", arg.MetaData.Start))
+	return ast.Formulation[ast.NodeType]{}
+}
+
 func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
@@ -1909,6 +2021,14 @@ func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[ast.Signat
 
 //////////////////////// argument lists /////////////////////////////////
 
+func (p *parser) toFormulations(args []phase4.Argument) []ast.Formulation[ast.NodeType] {
+	result := make([]ast.Formulation[ast.NodeType], 0)
+	for _, arg := range args {
+		result = append(result, p.toFormulation(arg))
+	}
+	return result
+}
+
 func (p *parser) toClauses(args []phase4.Argument) []ast.Clause {
 	result := make([]ast.Clause, 0)
 	for _, arg := range args {
@@ -1988,6 +2108,11 @@ func (p *parser) oneOrMoreClauses(section phase4.Section) []ast.Clause {
 func (p *parser) exactlyOneClause(section phase4.Section) ast.Clause {
 	var def ast.Clause = ast.Formulation[ast.NodeType]{}
 	return exactlyOne(p.toClauses(section.Args), def, section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) exactlyOneFormulation(section phase4.Section) ast.Formulation[ast.NodeType] {
+	var def ast.Formulation[ast.NodeType] = ast.Formulation[ast.NodeType]{}
+	return exactlyOne(p.toFormulations(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreSpecs(section phase4.Section) []ast.Spec {

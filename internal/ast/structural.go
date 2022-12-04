@@ -130,6 +130,16 @@ const LowerVolumeName = "volume"
 const LowerMonthName = "month"
 const LowerYearName = "year"
 const LowerDescriptionName = "description"
+const LowerSymbolName = "symbol"
+const LowerWrittenName = "written"
+const LowerWrittenQuestionName = LowerWrittenName + "?"
+const LowerConnectionName = "connection"
+const LowerToName = "to"
+const LowerSignifiesName = "signifies"
+const LowerSignifiesQuestionName = LowerSignifiesName + "?"
+const LowerViewableName = "viewable"
+const LowerViewableQuestionName = LowerViewableName + "?"
+const LowerThroughQuestionName = LowerThroughName + "?"
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -151,6 +161,7 @@ type IdItem = Formulation[NodeType]
 type Target = Formulation[NodeType]
 type Spec = Formulation[NodeType]
 type Alias = Formulation[NodeType]
+type SymbolAlias = Formulation[NodeType]
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -457,6 +468,64 @@ func (MembersGroup) ProvidesType()                  {}
 func (SimpleOperationExpressedGroup) ProvidesType() {}
 func (MemberExpressedGroup) ProvidesType()          {}
 func (OperationExpressedGroup) ProvidesType()       {}
+
+func (SymbolWrittenGroup) ProvidesType() {}
+func (ConnectionGroup) ProvidesType()    {}
+
+var SymbolSections = []string{
+	LowerSymbolName,
+	LowerWrittenQuestionName,
+}
+
+type SymbolSection struct {
+	Symbol SymbolAlias
+}
+
+type WrittenSection struct {
+	Written []TextItem
+}
+
+type SymbolWrittenGroup struct {
+	Symbol  SymbolSection
+	Written *WrittenSection
+}
+
+var ConnectionSections = []string{
+	LowerConnectionName,
+	LowerToName,
+	LowerUsingQuestionName,
+	LowerMeansName,
+	LowerSignifiesQuestionName,
+	LowerViewableQuestionName,
+	LowerThroughQuestionName,
+}
+
+type ConnectionSection struct {
+}
+
+type ToSection struct {
+	To Target
+}
+
+type SignifiesSection struct {
+	Signifies Spec
+}
+
+type ConnectionViewableSection struct {
+}
+
+type ConnectionThroughSection struct {
+	Through Formulation[NodeType]
+}
+
+type ConnectionGroup struct {
+	Connection ConnectionSection
+	Using      *UsingSection
+	Means      MeansSection
+	Signfies   *SignifiesSection
+	Viewable   *ConnectionViewableSection
+	Through    *ConnectionThroughSection
+}
 
 var SimpleOperationsSections = []string{
 	LowerOperationsName,

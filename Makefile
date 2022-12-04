@@ -3,14 +3,6 @@
 build:
 	go build -o testbed/mlg main.go
 
-.PHONY: setupweb
-setupweb:
-	cd web && yarn install
-
-.PHONY: web
-web:
-	cd web && yarn build
-
 .PHONY: all
 all:
 	make web && make
@@ -22,6 +14,10 @@ run:
 .PHONY: test
 test:
 	go test ./...
+
+.PHONY: setupgo
+setup:
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/go/bin v1.49.0
 
 .PHONY: vet
 vet:
@@ -43,10 +39,6 @@ format:
 deps:
 	go mod download
 
-.PHONY: setupgo
-setup:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/go/bin v1.49.0
-
 .PHONY: testbed
 testbed:
 	go build -o testbed/mlg main.go && cd testbed && ./mlg $(args)
@@ -54,3 +46,11 @@ testbed:
 .PHONY: debug
 debug:
 	go run main.go debug $(args)
+
+.PHONY: setupweb
+setupweb:
+	cd web && yarn install
+
+.PHONY: web
+web:
+	cd web && yarn build

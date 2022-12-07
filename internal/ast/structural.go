@@ -143,6 +143,40 @@ const LowerThroughQuestionName = LowerThroughName + "?"
 
 ///////////////////////////////////////////////////////////////////////
 
+type IdItem struct {
+	RawText string
+	Root    NodeType
+	Label   *string
+}
+
+type Target struct {
+	RawText string
+	Root    NodeType
+	Label   *string
+}
+
+type Spec struct {
+	RawText string
+	Root    NodeType
+	Label   *string
+}
+
+type Alias struct {
+	RawText string
+	Root    NodeType
+	Label   *string
+}
+
+func (Alias) ProvidesType() {}
+
+type SymbolAlias struct {
+	RawText string
+	Root    NodeType
+	Label   *string
+}
+
+func (SymbolAlias) ProvidesType() {}
+
 type Formulation[T NodeType] struct {
 	RawText string
 	Root    T
@@ -156,12 +190,6 @@ type MetaData struct {
 type TextItem struct {
 	RawText string
 }
-
-type IdItem = Formulation[NodeType]
-type Target = Formulation[NodeType]
-type Spec = Formulation[NodeType]
-type Alias = Formulation[NodeType]
-type SymbolAlias = Formulation[NodeType]
 
 //////////////////////////////////////////////////////////////////////////////
 

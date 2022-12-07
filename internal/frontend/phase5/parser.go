@@ -547,7 +547,7 @@ func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGrou
 
 func (p *parser) toSymbolSection(section phase4.Section) *ast.SymbolSection {
 	return &ast.SymbolSection{
-		Symbol: p.exactlyOneAlias(section),
+		Symbol: p.exactlyOneSymbolAlias(section),
 	}
 }
 
@@ -1083,8 +1083,8 @@ func (p *parser) toProvidesTypes(args []phase4.Argument) []ast.ProvidesType {
 }
 
 func (p *parser) toProvidesTypeFromArg(arg phase4.Argument) (ast.ProvidesType, bool) {
-	if formulation, ok := arg.Arg.(phase4.FormulationArgumentData); ok {
-		return p.toAlias(formulation), true
+	if _, ok := arg.Arg.(phase4.FormulationArgumentData); ok {
+		return p.toAlias(arg), true
 	}
 
 	group, ok := arg.Arg.(phase4.Group)
@@ -1975,6 +1975,21 @@ func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 	return ast.Alias{}
 }
 
+func (p *parser) toSymbolAlias(arg phase4.Argument) ast.SymbolAlias {
+	switch data := arg.Arg.(type) {
+	case phase4.FormulationArgumentData:
+		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker); ok {
+			return ast.SymbolAlias{
+				RawText: data.Text,
+				Root:    node,
+				Label:   nil,
+			}
+		}
+	}
+	p.tracker.Append(newError("Expected a '... :=> ...' item", arg.MetaData.Start))
+	return ast.SymbolAlias{}
+}
+
 func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 	switch data := arg.Arg.(type) {
 	case phase4.ArgumentTextArgumentData:
@@ -2057,6 +2072,14 @@ func (p *parser) toAliases(args []phase4.Argument) []ast.Alias {
 	return result
 }
 
+func (p *parser) toSymbolAliases(args []phase4.Argument) []ast.SymbolAlias {
+	result := make([]ast.SymbolAlias, 0)
+	for _, arg := range args {
+		result = append(result, p.toSymbolAlias(arg))
+	}
+	return result
+}
+
 func (p *parser) toTargets(args []phase4.Argument) []ast.Target {
 	result := make([]ast.Target, 0)
 	for _, arg := range args {
@@ -2128,12 +2151,17 @@ func (p *parser) oneOrMoreAliases(section phase4.Section) []ast.Alias {
 }
 
 func (p *parser) exactlyOneAlias(section phase4.Section) ast.Alias {
-	var def ast.Alias = ast.Formulation[ast.NodeType]{}
+	var def ast.Alias = ast.Alias{}
 	return exactlyOne(p.toAliases(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
+func (p *parser) exactlyOneSymbolAlias(section phase4.Section) ast.SymbolAlias {
+	var def ast.SymbolAlias = ast.SymbolAlias{}
+	return exactlyOne(p.toSymbolAliases(section.Args), def, section.MetaData.Start, p.tracker)
+}
+
 func (p *parser) exactlyOneSpec(section phase4.Section) ast.Spec {
-	var def ast.Spec = ast.Formulation[ast.NodeType]{}
+	var def ast.Spec = ast.Spec{}
 	return exactlyOne(p.toSpecs(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
@@ -2150,7 +2178,7 @@ func (p *parser) zeroOrMoreTextItems(section phase4.Section) []ast.TextItem {
 }
 
 func (p *parser) exactlyOneTarget(section phase4.Section) ast.Target {
-	var def ast.Target = ast.Formulation[ast.NodeType]{}
+	var def ast.Target = ast.Target{}
 	return exactlyOne(p.toTargets(section.Args), def, section.MetaData.Start, p.tracker)
 }
 

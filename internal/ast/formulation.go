@@ -413,9 +413,9 @@ type ColonEqualsType interface {
 func (StructuralColonEqualsForm) ColonEqualsType() {}
 func (ExpressionColonEqualsItem) ColonEqualsType() {}
 
-// X := (a, b)
+// X := (a, b) or f(x) := y
 type StructuralColonEqualsForm struct {
-	Lhs      NameForm
+	Lhs      StructuralFormType
 	Rhs      StructuralFormType
 	MetaData MetaData
 }

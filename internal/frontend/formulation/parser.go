@@ -1234,14 +1234,20 @@ func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, boo
 
 func (fp *formulationParser) form() (ast.NodeType, bool) {
 	start := fp.lexer.Position()
-	if fp.hasHas(ast.Name, ast.ColonEquals) {
-		id := fp.lexer.Snapshot()
-		name, ok := fp.nameForm()
-		if !ok {
-			fp.lexer.RollBack(id)
-			return nil, false
-		}
+	id := fp.lexer.Snapshot()
+	lhs, ok := fp.structuralFormType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return nil, false
+	}
 
+	if !fp.has(ast.ColonEquals) {
+		fp.lexer.Commit(id)
+		return lhs, true
+	}
+
+	switch lhs.(type) {
+	case ast.NameForm:
 		fp.expect(ast.ColonEquals)
 		rhs, ok := fp.structuralFormType()
 		if !ok {
@@ -1252,14 +1258,32 @@ func (fp *formulationParser) form() (ast.NodeType, bool) {
 
 		fp.lexer.Commit(id)
 		return ast.StructuralColonEqualsForm{
-			Lhs: name,
+			Lhs: lhs,
 			Rhs: rhs,
 			MetaData: ast.MetaData{
 				Start: fp.getShiftedPosition(start),
 			},
 		}, true
-	} else {
-		return fp.structuralFormType()
+	case ast.FunctionForm:
+		fp.expect(ast.ColonEquals)
+		rhs, ok := fp.structuralFormType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			fp.error("Expected an item on the righ-hand-side of :=")
+			return nil, false
+		}
+
+		fp.lexer.Commit(id)
+		return ast.StructuralColonEqualsForm{
+			Lhs: lhs,
+			Rhs: rhs,
+			MetaData: ast.MetaData{
+				Start: fp.getShiftedPosition(start),
+			},
+		}, true
+	default:
+		fp.lexer.Commit(id)
+		return lhs, true
 	}
 }
 

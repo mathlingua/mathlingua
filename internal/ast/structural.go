@@ -169,14 +169,6 @@ type Alias struct {
 
 func (Alias) ProvidesType() {}
 
-type SymbolAlias struct {
-	RawText string
-	Root    NodeType
-	Label   *string
-}
-
-func (SymbolAlias) ProvidesType() {}
-
 type Formulation[T NodeType] struct {
 	RawText string
 	Root    T
@@ -506,7 +498,7 @@ var SymbolSections = []string{
 }
 
 type SymbolSection struct {
-	Symbol SymbolAlias
+	Symbol Alias
 }
 
 type WrittenSection struct {

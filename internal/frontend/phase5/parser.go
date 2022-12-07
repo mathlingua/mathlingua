@@ -408,121 +408,6 @@ func (p *parser) toElseSection(section phase4.Section) *ast.ElseSection {
 	}
 }
 
-/////////////////////////////// into via //////////////////////////////////
-
-func (p *parser) toIntoViaGroup(group phase4.Group) (ast.IntoViaGroup, bool) {
-	if !startsWithSections(group, ast.LowerIntoName) {
-		return ast.IntoViaGroup{}, false
-	}
-
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.IntoViaSections...)
-	if !ok {
-		return ast.IntoViaGroup{}, false
-	}
-	return ast.IntoViaGroup{
-		Into: *p.toIntoSection(sections[ast.LowerIntoName]),
-		Via:  *p.toViaSection(sections[ast.LowerViaName]),
-	}, true
-}
-
-func (p *parser) toIntoSection(section phase4.Section) *ast.IntoSection {
-	return &ast.IntoSection{
-		Into: p.exactlyOneTarget(section),
-	}
-}
-
-/////////////////////////////// as via ///////////////////////////////////
-
-func (p *parser) toAsViaGroup(group phase4.Group) (ast.AsViaGroup, bool) {
-	if !startsWithSections(group, ast.LowerViewName, ast.LowerAsName) {
-		return ast.AsViaGroup{}, false
-	}
-
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.AsViaSections...)
-	if !ok {
-		return ast.AsViaGroup{}, false
-	}
-	return ast.AsViaGroup{
-		As:  *p.toAsSection(sections[ast.LowerAsName]),
-		Via: *p.toViaSection(sections[ast.LowerViaName]),
-	}, true
-}
-
-func (p *parser) toAsSection(section phase4.Section) *ast.AsSection {
-	return &ast.AsSection{
-		As: p.exactlyOneSignatureItem(section),
-	}
-}
-
-func (p *parser) toViaSection(section phase4.Section) *ast.ViaSection {
-	return &ast.ViaSection{
-		Via: p.exactlyOneClause(section),
-	}
-}
-
-////////////////////////// as through ////////////////////////////////////
-
-func (p *parser) toAsThroughGroup(group phase4.Group) (ast.AsThroughGroup, bool) {
-	if !startsWithSections(group, ast.LowerAsName, ast.LowerThroughName) {
-		return ast.AsThroughGroup{}, false
-	}
-
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.AsThroughStatesSections...)
-	if !ok {
-		return ast.AsThroughGroup{}, false
-	}
-	as := *p.toAsSection(sections[ast.LowerAsName])
-	through := *p.toThroughSection(sections[ast.LowerThroughName])
-	var throughAs *ast.AsSection
-	if sec, ok := sections[ast.LowerAsName+"1"]; ok {
-		throughAs = p.toAsSection(sec)
-	}
-	var states *ast.AsStatesSection
-	if sec, ok := sections[ast.LowerStatesName]; ok {
-		states = p.toAsStatesSection(sec)
-	}
-	return ast.AsThroughGroup{
-		As:        as,
-		Through:   through,
-		ThroughAs: throughAs,
-		States:    states,
-	}, true
-}
-
-func (p *parser) toThroughSection(section phase4.Section) *ast.ThroughSection {
-	return &ast.ThroughSection{
-		Through: p.exactlyOneSpec(section),
-	}
-}
-
-func (p *parser) toAsStatesSection(section phase4.Section) *ast.AsStatesSection {
-	return &ast.AsStatesSection{
-		As: p.exactlyOneSignatureItem(section),
-	}
-}
-
-////////////////////////////// viewable type ///////////////////////////
-
-func (p *parser) toViewableSection(section phase4.Section) *ast.ViewableSection {
-	return nil
-}
-
-func (p *parser) toViewableType(group phase4.Group) (ast.ViewableType, bool) {
-	if grp, ok := p.toAsViaGroup(group); ok {
-		return grp, true
-	}
-
-	if grp, ok := p.toAsThroughGroup(group); ok {
-		return grp, true
-	}
-
-	if grp, ok := p.toIntoViaGroup(group); ok {
-		return grp, true
-	}
-
-	return nil, false
-}
-
 //////////////////////////////////// provides ///////////////////////////////
 
 func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGroup, bool) {
@@ -1111,10 +996,6 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	if sec, ok := sections[ast.UpperProvidesName]; ok {
 		provides = p.toProvidesSection(sec)
 	}
-	var viewable *ast.ViewableSection
-	if sec, ok := sections[ast.UpperViewableName]; ok {
-		viewable = p.toViewableSection(sec)
-	}
 	var justified *ast.JustifiedSection
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		justified = p.toJustifiedSection(sec)
@@ -1145,7 +1026,6 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		Extends:    extends,
 		Satisfies:  satisfies,
 		Provides:   provides,
-		Viewable:   viewable,
 		Justified:  justified,
 		Documented: documented,
 		References: references,
@@ -1213,10 +1093,6 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 	if sec, ok := sections[ast.UpperProvidesName]; ok {
 		provides = p.toProvidesSection(sec)
 	}
-	var viewable *ast.ViewableSection
-	if sec, ok := sections[ast.UpperViewableName]; ok {
-		viewable = p.toViewableSection(sec)
-	}
 	var justified *ast.JustifiedSection
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		justified = p.toJustifiedSection(sec)
@@ -1246,7 +1122,6 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 		SuchThat:   suchThat,
 		Means:      means,
 		Specifies:  specifies,
-		Viewable:   viewable,
 		Provides:   provides,
 		Justified:  justified,
 		Documented: documented,

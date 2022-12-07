@@ -110,22 +110,6 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.AsViaSections,
-		expected: []string{
-			"as",
-			"via",
-		},
-	},
-	{
-		actual: ast.AsThroughStatesSections,
-		expected: []string{
-			"as",
-			"through",
-			"as?",
-			"states?",
-		},
-	},
-	{
 		actual: ast.ExpressedSections,
 		expected: []string{
 			"expressed",

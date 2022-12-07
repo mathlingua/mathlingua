@@ -414,70 +414,6 @@ type WhenGroup struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
-type ViewableType interface {
-	ViewableType()
-}
-
-func (AsViaGroup) ViewableType()     {}
-func (AsThroughGroup) ViewableType() {}
-func (IntoViaGroup) ViewableType()   {}
-
-var IntoViaSections = []string{
-	LowerIntoName,
-	LowerViaName,
-}
-
-type IntoViaGroup struct {
-	Into IntoSection
-	Via  ViaSection
-}
-
-type IntoSection struct {
-	Into Target
-}
-
-var AsViaSections = []string{
-	LowerAsName,
-	LowerViaName,
-}
-
-type AsViaGroup struct {
-	As  AsSection
-	Via ViaSection
-}
-
-var AsThroughStatesSections = []string{
-	LowerAsName,
-	LowerThroughName,
-	LowerAsQuestionName,
-	LowerStatesQuestionName,
-}
-
-type AsThroughGroup struct {
-	As        AsSection
-	Through   ThroughSection
-	ThroughAs *AsSection
-	States    *AsStatesSection
-}
-
-type AsSection struct {
-	As Formulation[Signature]
-}
-
-type ViaSection struct {
-	Via Clause
-}
-
-type ThroughSection struct {
-	Through Spec
-}
-
-type AsStatesSection struct {
-	As Formulation[Signature]
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
 type ProvidesType interface {
 	ProvidesType()
 }
@@ -700,12 +636,6 @@ type NotesSection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
-type ViewableSection struct {
-	Viewable []ViewableType
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
 type ProvidesSection struct {
 	Provides []ProvidesType
 }
@@ -817,7 +747,6 @@ type DescribesGroup struct {
 	Extends    *ExtendsSection
 	Satisfies  *SatisfiesSection
 	Provides   *ProvidesSection
-	Viewable   *ViewableSection
 	Justified  *JustifiedSection
 	Documented *DocumentedSection
 	References *ReferencesSection
@@ -878,7 +807,6 @@ type DefinesGroup struct {
 	Means      *MeansSection
 	Specifies  *SpecifiesSection
 	Provides   *ProvidesSection
-	Viewable   *ViewableSection
 	Justified  *JustifiedSection
 	Documented *DocumentedSection
 	References *ReferencesSection

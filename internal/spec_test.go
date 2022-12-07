@@ -126,39 +126,6 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.OperationsSections,
-		expected: []string{
-			"operations",
-			"on?",
-			"using?",
-			"when?",
-			"aliases",
-		},
-	},
-	{
-		actual: ast.OperationExpressedSections,
-		expected: []string{
-			"operation",
-			"on?",
-			"using?",
-			"when?",
-			"aliases",
-			"expressed",
-		},
-	},
-	{
-		actual: ast.SimpleOperationsSections,
-		expected: []string{
-			"operations",
-		},
-	},
-	{
-		actual: ast.MembersSections,
-		expected: []string{
-			"members",
-		},
-	},
-	{
 		actual: ast.ExpressedSections,
 		expected: []string{
 			"expressed",
@@ -402,20 +369,6 @@ var all_group_test_cases = []testCase{
 		actual: ast.SpecifySections,
 		expected: []string{
 			"Specify",
-		},
-	},
-	{
-		actual: ast.SimpleOperationExpressedSections,
-		expected: []string{
-			"operation",
-			"expressed",
-		},
-	},
-	{
-		actual: ast.MemberExpressedSections,
-		expected: []string{
-			"member",
-			"expressed",
 		},
 	},
 }

@@ -482,13 +482,6 @@ type ProvidesType interface {
 	ProvidesType()
 }
 
-func (SimpleOperationsGroup) ProvidesType()         {}
-func (OperationsGroup) ProvidesType()               {}
-func (MembersGroup) ProvidesType()                  {}
-func (SimpleOperationExpressedGroup) ProvidesType() {}
-func (MemberExpressedGroup) ProvidesType()          {}
-func (OperationExpressedGroup) ProvidesType()       {}
-
 func (SymbolWrittenGroup) ProvidesType() {}
 func (ConnectionGroup) ProvidesType()    {}
 
@@ -547,64 +540,12 @@ type ConnectionGroup struct {
 	Through    *ConnectionThroughSection
 }
 
-var SimpleOperationsSections = []string{
-	LowerOperationsName,
-}
-
-type SimpleOperationsGroup struct {
-	Operations SimpleOperationsSection
-}
-
 type SimpleOperationsSection struct {
 	Operations []Alias
 }
 
-var OperationsSections = []string{
-	LowerOperationsName,
-	LowerOnQuestionName,
-	LowerUsingQuestionName,
-	LowerWhenQuestionName,
-	LowerAliasesName,
-}
-
-type OperationsGroup struct {
-	Operations OperationsSection
-	On         *OnSection
-	Using      *UsingSection
-	When       *WhenSection
-	Aliases    AliasesSection
-}
-
-var OperationExpressedSections = []string{
-	LowerOperationName,
-	LowerOnQuestionName,
-	LowerUsingQuestionName,
-	LowerWhenQuestionName,
-	LowerAliasesName,
-	LowerExpressedName,
-}
-
-type OperationExpressedGroup struct {
-	Operation OperationSection
-	On        *OnSection
-	Using     *UsingSection
-	When      *WhenSection
-	Aliases   SingleAliasesSection
-	Expressed ExpressedSection
-}
-
 type SingleAliasesSection struct {
 	Aliases Alias
-}
-
-var SimpleOperationExpressedSections = []string{
-	LowerOperationName,
-	LowerExpressedName,
-}
-
-type SimpleOperationExpressedGroup struct {
-	Operation OperationSection
-	Expressed ExpressedSection
 }
 
 type OperationSection struct {
@@ -620,32 +561,6 @@ type OnSection struct {
 
 type SpecifySection struct {
 	Specify []Clause
-}
-
-var MembersSections = []string{
-	LowerMembersName,
-}
-
-type MembersGroup struct {
-	Members MembersSection
-}
-
-type MembersSection struct {
-	Members []Alias
-}
-
-var MemberExpressedSections = []string{
-	LowerMemberName,
-	LowerExpressedName,
-}
-
-type MemberExpressedGroup struct {
-	Member    MemberSection
-	Expressed ExpressedSection
-}
-
-type MemberSection struct {
-	Member Alias
 }
 
 //////////////////////////////////////////////////////////////////////////////

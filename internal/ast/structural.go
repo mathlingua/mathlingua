@@ -44,6 +44,7 @@ const LowerUsingQuestionName = LowerUsingName + "?"
 const LowerHistoryName = "history"
 const LowerIdName = "id"
 const LowerIfName = "if"
+const LowerIfQuestionName = LowerIfName + "?"
 const LowerIffName = "iff"
 const LowerIffQuestionName = LowerIffName + "?"
 const LowerIsName = "is"
@@ -900,9 +901,9 @@ var AxiomSections = []string{
 	UpperAxiomName,
 	LowerGivenQuestionName,
 	LowerWhereQuestionName,
-	LowerSuchThatQuestionName,
-	LowerThenName,
+	LowerIfQuestionName,
 	LowerIffQuestionName,
+	LowerThenName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
@@ -914,9 +915,9 @@ type AxiomGroup struct {
 	Axiom      AxiomSection
 	Given      *GivenSection
 	Where      *WhereSection
-	SuchThat   *SuchThatSection
-	Then       ThenSection
+	If         *IfSection
 	Iff        *IffSection
+	Then       ThenSection
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
@@ -933,9 +934,9 @@ var ConjectureSections = []string{
 	UpperConjectureName,
 	LowerGivenQuestionName,
 	LowerWhereQuestionName,
-	LowerSuchThatQuestionName,
-	LowerThenName,
+	LowerIfQuestionName,
 	LowerIffQuestionName,
+	LowerThenName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
@@ -947,9 +948,9 @@ type ConjectureGroup struct {
 	Conjecture ConjectureSection
 	Given      *GivenSection
 	Where      *WhereSection
-	SuchThat   *SuchThatSection
-	Then       ThenSection
+	If         *IfSection
 	Iff        *IffSection
+	Then       ThenSection
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
@@ -966,9 +967,9 @@ var TheoremSections = []string{
 	UpperTheoremName,
 	LowerGivenQuestionName,
 	LowerWhereQuestionName,
-	LowerSuchThatQuestionName,
-	LowerThenName,
+	LowerIfQuestionName,
 	LowerIffQuestionName,
+	LowerThenName,
 	UpperProofQuestionName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
@@ -981,9 +982,9 @@ type TheoremGroup struct {
 	Theorem    TheoremSection
 	Given      *GivenSection
 	Where      *WhereSection
-	SuchThat   *SuchThatSection
-	Then       ThenSection
+	If         *IfSection
 	Iff        *IffSection
+	Then       ThenSection
 	Proof      *ProofSection
 	Documented *DocumentedSection
 	References *ReferencesSection

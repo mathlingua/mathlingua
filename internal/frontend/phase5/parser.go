@@ -1257,15 +1257,15 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
-	var suchThat *ast.SuchThatSection
-	if sec, ok := sections[ast.LowerSuchThatName]; ok {
-		suchThat = p.toSuchThatSection(sec)
+	var ifSec *ast.IfSection
+	if sec, ok := sections[ast.LowerIfName]; ok {
+		ifSec = p.toIfSection(sec)
 	}
-	then := *p.toThenSection(sections[ast.LowerThenName])
 	var iff *ast.IffSection
 	if sec, ok := sections[ast.LowerIffName]; ok {
 		iff = p.toIffSection(sec)
 	}
+	then := *p.toThenSection(sections[ast.LowerThenName])
 	var documented *ast.DocumentedSection
 	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
@@ -1287,9 +1287,9 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 		Axiom:      axiom,
 		Given:      given,
 		Where:      where,
-		SuchThat:   suchThat,
-		Then:       then,
+		If:         ifSec,
 		Iff:        iff,
+		Then:       then,
 		Documented: documented,
 		References: references,
 		Aliases:    aliases,
@@ -1336,15 +1336,15 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
-	var suchThat *ast.SuchThatSection
-	if sec, ok := sections[ast.LowerSuchThatName]; ok {
-		suchThat = p.toSuchThatSection(sec)
+	var ifSec *ast.IfSection
+	if sec, ok := sections[ast.LowerIfName]; ok {
+		ifSec = p.toIfSection(sec)
 	}
-	then := *p.toThenSection(sections[ast.LowerThenName])
 	var iff *ast.IffSection
 	if sec, ok := sections[ast.LowerIffName]; ok {
 		iff = p.toIffSection(sec)
 	}
+	then := *p.toThenSection(sections[ast.LowerThenName])
 	var documented *ast.DocumentedSection
 	if sec, ok := sections[ast.UpperDocumentedName]; ok {
 		documented = p.toDocumentedSection(sec)
@@ -1366,9 +1366,9 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 		Conjecture: conjecture,
 		Given:      given,
 		Where:      where,
-		SuchThat:   suchThat,
-		Then:       then,
+		If:         ifSec,
 		Iff:        iff,
+		Then:       then,
 		Documented: documented,
 		References: references,
 		Aliases:    aliases,
@@ -1403,15 +1403,15 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
-	var suchThat *ast.SuchThatSection
-	if sec, ok := sections[ast.LowerSuchThatName]; ok {
-		suchThat = p.toSuchThatSection(sec)
+	var ifSec *ast.IfSection
+	if sec, ok := sections[ast.LowerIfName]; ok {
+		ifSec = p.toIfSection(sec)
 	}
-	then := *p.toThenSection(sections[ast.LowerThenName])
 	var iff *ast.IffSection
 	if sec, ok := sections[ast.LowerIffName]; ok {
 		iff = p.toIffSection(sec)
 	}
+	then := *p.toThenSection(sections[ast.LowerThenName])
 	var proof *ast.ProofSection
 	if sec, ok := sections[ast.UpperProofName]; ok {
 		proof = p.toProofSection(sec)
@@ -1437,9 +1437,9 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 		Theorem:    theorem,
 		Given:      given,
 		Where:      where,
-		SuchThat:   suchThat,
-		Then:       then,
+		If:         ifSec,
 		Iff:        iff,
+		Then:       then,
 		Proof:      proof,
 		Documented: documented,
 		References: references,

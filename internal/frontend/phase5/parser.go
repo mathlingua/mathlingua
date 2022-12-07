@@ -1083,6 +1083,10 @@ func (p *parser) toProvidesTypes(args []phase4.Argument) []ast.ProvidesType {
 }
 
 func (p *parser) toProvidesTypeFromArg(arg phase4.Argument) (ast.ProvidesType, bool) {
+	if formulation, ok := arg.Arg.(phase4.FormulationArgumentData); ok {
+		return p.toAlias(formulation), true
+	}
+
 	group, ok := arg.Arg.(phase4.Group)
 	if !ok {
 		return nil, false
@@ -1956,11 +1960,11 @@ func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 	}
 }
 
-func (p *parser) toAlias(arg phase4.Argument) ast.Spec {
+func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker); ok {
-			return ast.Spec{
+			return ast.Alias{
 				RawText: data.Text,
 				Root:    node,
 				Label:   nil,
@@ -1968,7 +1972,7 @@ func (p *parser) toAlias(arg phase4.Argument) ast.Spec {
 		}
 	}
 	p.tracker.Append(newError("Expected a '... :=> ...' item", arg.MetaData.Start))
-	return ast.Spec{}
+	return ast.Alias{}
 }
 
 func (p *parser) toTarget(arg phase4.Argument) ast.Target {

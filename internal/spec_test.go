@@ -190,12 +190,6 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.IdSections,
-		expected: []string{
-			"id",
-		},
-	},
-	{
 		actual: ast.DescribesSections,
 		expected: []string{
 			"Describes",
@@ -210,7 +204,6 @@ var all_group_test_cases = []testCase{
 			"Documented?",
 			"References?",
 			"Aliases?",
-			"Metadata?",
 		},
 	},
 	{
@@ -228,7 +221,6 @@ var all_group_test_cases = []testCase{
 			"Documented?",
 			"References?",
 			"Aliases?",
-			"Metadata?",
 		},
 	},
 	{
@@ -244,7 +236,6 @@ var all_group_test_cases = []testCase{
 			"Justified?",
 			"References?",
 			"Aliases?",
-			"Metadata?",
 		},
 	},
 	{
@@ -254,7 +245,6 @@ var all_group_test_cases = []testCase{
 			"of",
 			"content",
 			"References?",
-			"Metadata?",
 		},
 	},
 	{
@@ -269,7 +259,6 @@ var all_group_test_cases = []testCase{
 			"Documented?",
 			"References?",
 			"Aliases?",
-			"Metadata?",
 		},
 	},
 	{
@@ -284,7 +273,6 @@ var all_group_test_cases = []testCase{
 			"Documented?",
 			"References?",
 			"Aliases?",
-			"Metadata?",
 		},
 	},
 	{
@@ -300,7 +288,6 @@ var all_group_test_cases = []testCase{
 			"Documented?",
 			"References?",
 			"Aliases?",
-			"Metadata?",
 		},
 	},
 	{
@@ -309,7 +296,6 @@ var all_group_test_cases = []testCase{
 			"Topic",
 			"content",
 			"References?",
-			"Metadata?",
 		},
 	},
 	{

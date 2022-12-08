@@ -91,8 +91,6 @@ const UpperDocumentedName = "Documented"
 const UpperDocumentedQuestionName = UpperDocumentedName + "?"
 const UpperJustifiedName = "Justified"
 const UpperJustifiedQuestionName = UpperJustifiedName + "?"
-const UpperMetadataName = "Metadata"
-const UpperMetadataQuestionName = UpperMetadataName + "?"
 const UpperNoteName = "Note"
 const UpperProofName = "Proof"
 const UpperProofQuestionName = UpperProofName + "?"
@@ -697,30 +695,6 @@ type ReferencesSection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
-type MetadataSection struct {
-	Metadata []MetadataType
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-type MetadataType interface {
-	MetadataType()
-}
-
-func (IdGroup) MetadataType() {}
-
-var IdSections = []string{LowerIdName}
-
-type IdGroup struct {
-	Id IdSection
-}
-
-type IdSection struct {
-	Id TextItem
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
 var DescribesSections = []string{
 	UpperDescribesName,
 	LowerWithQuestionName,
@@ -734,7 +708,6 @@ var DescribesSections = []string{
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
-	UpperMetadataQuestionName,
 }
 
 type DescribesGroup struct {
@@ -751,7 +724,6 @@ type DescribesGroup struct {
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
-	Metadata   *MetadataSection
 }
 
 type DescribesSection struct {
@@ -793,7 +765,6 @@ var DefinesSections = []string{
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
-	UpperMetadataQuestionName,
 }
 
 type DefinesGroup struct {
@@ -810,7 +781,6 @@ type DefinesGroup struct {
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
-	Metadata   *MetadataSection
 }
 
 type DefinesSection struct {
@@ -838,7 +808,6 @@ var StatesSections = []string{
 	UpperJustifiedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
-	UpperMetadataQuestionName,
 }
 
 type StatesGroup struct {
@@ -853,7 +822,6 @@ type StatesGroup struct {
 	Justified  *JustifiedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
-	Metadata   *MetadataSection
 }
 
 type StatesSection struct {
@@ -870,7 +838,6 @@ var ProofSections = []string{
 	LowerOfName,
 	LowerContentName,
 	UpperReferencesQuestionName,
-	UpperMetadataQuestionName,
 }
 
 type ProofGroup struct {
@@ -878,7 +845,6 @@ type ProofGroup struct {
 	Of         OfSection
 	Content    ContentSection
 	References *ReferencesSection
-	Metadata   *MetadataSection
 }
 
 type ProofSection struct {
@@ -905,7 +871,6 @@ var AxiomSections = []string{
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
-	UpperMetadataQuestionName,
 }
 
 type AxiomGroup struct {
@@ -919,7 +884,6 @@ type AxiomGroup struct {
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
-	Metadata   *MetadataSection
 }
 
 type AxiomSection struct {
@@ -938,7 +902,6 @@ var ConjectureSections = []string{
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
-	UpperMetadataQuestionName,
 }
 
 type ConjectureGroup struct {
@@ -952,7 +915,6 @@ type ConjectureGroup struct {
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
-	Metadata   *MetadataSection
 }
 
 type ConjectureSection struct {
@@ -972,7 +934,6 @@ var TheoremSections = []string{
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
-	UpperMetadataQuestionName,
 }
 
 type TheoremGroup struct {
@@ -987,7 +948,6 @@ type TheoremGroup struct {
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
-	Metadata   *MetadataSection
 }
 
 type TheoremSection struct {
@@ -1000,7 +960,6 @@ var TopicSections = []string{
 	UpperTopicName,
 	LowerContentName,
 	UpperReferencesQuestionName,
-	UpperMetadataQuestionName,
 }
 
 type TopicGroup struct {
@@ -1008,7 +967,6 @@ type TopicGroup struct {
 	Topic      TopicSection
 	Content    ContentSection
 	References *ReferencesSection
-	Metadata   *MetadataSection
 }
 
 type TopicSection struct {

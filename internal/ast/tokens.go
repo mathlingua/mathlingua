@@ -62,7 +62,6 @@ const (
 	Is                    TokenType = "Is"
 	Extends               TokenType = "Extends"
 	As                    TokenType = "As"
-	Caret                 TokenType = "Caret"
 	At                    TokenType = "At"
 	LSquareColon          TokenType = "LSquareColon"
 	ColonRSquare          TokenType = "ColonRSquare"

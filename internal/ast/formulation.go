@@ -276,13 +276,6 @@ type ConditionalSetExpression struct {
 	MetaData   MetaData
 }
 
-type SubSupArgs struct {
-	SquareArgs []StructuralFormType
-	SubArgs    []ExpressionType
-	SupArgs    []ExpressionType
-	MetaData   MetaData
-}
-
 type NamedArg struct {
 	Name     NameForm
 	Args     *[]ExpressionType
@@ -292,7 +285,7 @@ type NamedArg struct {
 // \function:on{A}:to{B}
 type CommandExpression struct {
 	Names      []NameForm
-	SubSupArgs *SubSupArgs
+	SquareArgs *[]StructuralFormType
 	CurlyArgs  *[]ExpressionType
 	NamedArgs  *[]NamedArg
 	ParenArgs  *[]ExpressionType
@@ -482,13 +475,6 @@ func (PostfixOperatorId) IdType()      {}
 func (InfixOperatorId) IdType()        {}
 func (InfixCommandOperatorId) IdType() {}
 
-type SubSupParams struct {
-	SquareParams []StructuralFormType
-	SubParams    []StructuralFormType
-	SupParams    []StructuralFormType
-	MetaData     MetaData
-}
-
 type NamedParam struct {
 	Name     NameForm
 	Params   *[]StructuralFormType
@@ -498,7 +484,7 @@ type NamedParam struct {
 // \function:on{A}:to{B}
 type CommandId struct {
 	Names        []NameForm
-	SubSupParams *SubSupParams
+	SquareParams *[]StructuralFormType
 	CurlyParams  *[]StructuralFormType
 	NamedParams  *[]NamedParam
 	ParenParams  *[]NameForm
@@ -508,7 +494,7 @@ type CommandId struct {
 // \function:on{A}:to{B}/
 type InfixCommandId struct {
 	Names        []NameForm
-	SubSupParams *SubSupParams
+	SquareParams *[]StructuralFormType
 	CurlyParams  *[]StructuralFormType
 	NamedParams  *[]NamedParam
 	ParenParams  *[]NameForm

@@ -110,9 +110,9 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.ExpressedSections,
+		actual: ast.WrittenSections,
 		expected: []string{
-			"expressed",
+			"written",
 		},
 	},
 	{
@@ -122,9 +122,9 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.ExpressingSections,
+		actual: ast.WritingSections,
 		expected: []string{
-			"expressing",
+			"writing",
 			"as",
 		},
 	},
@@ -215,7 +215,7 @@ var all_group_test_cases = []testCase{
 			"when?",
 			"suchThat?",
 			"means?",
-			"specifies",
+			"specifies?",
 			"Provides?",
 			"Justified?",
 			"Documented?",

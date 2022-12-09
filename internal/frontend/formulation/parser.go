@@ -749,12 +749,45 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 	}, true
 }
 
-func (fp *formulationParser) chainExpressionPart() (ast.ExpressionType, bool) {
-	//if fun, ok := fp.functionCallExpression(); ok {
-	//	return fun, ok
-	//}
+func toNameForm(tok ast.PseudoTokenNode) ast.NameForm {
+	return ast.NameForm{
+		Text:            tok.Text,
+		IsStropped:      false,
+		HasQuestionMark: false,
+		VarArg: ast.VarArgData{
+			IsVarArg:    false,
+			VarArgCount: nil,
+		},
+		MetaData: tok.MetaData,
+	}
+}
 
+func (fp *formulationParser) chainName() (ast.NameForm, bool) {
 	if name, ok := fp.nameForm(); ok {
+		return name, ok
+	}
+
+	if tok, ok := fp.isKeyword(); ok {
+		return toNameForm(tok), ok
+	}
+
+	if tok, ok := fp.asKeyword(); ok {
+		return toNameForm(tok), ok
+	}
+
+	if tok, ok := fp.extendsKeyword(); ok {
+		return toNameForm(tok), ok
+	}
+
+	return ast.NameForm{}, false
+}
+
+func (fp *formulationParser) chainExpressionPart() (ast.ExpressionType, bool) {
+	if fun, ok := fp.functionCallExpression(); ok {
+		return fun, ok
+	}
+
+	if name, ok := fp.chainName(); ok {
 		return name, ok
 	}
 
@@ -769,6 +802,21 @@ func (fp *formulationParser) chainExpressionPart() (ast.ExpressionType, bool) {
 	//if set, ok := fp.conditionalSetExpression(); ok {
 	//	return set, ok
 	//}
+
+	// We want to allow expressions such as (x + y).inv
+	id := fp.lexer.Snapshot()
+	if tuple, ok := fp.tupleExpression(); ok {
+		if len(tuple.Args) == 1 {
+			fp.lexer.Commit(id)
+			return tuple, ok
+		} else {
+			fp.lexer.RollBack(id)
+			fp.error("A tuple cannot be part of a chain expression")
+			return nil, false
+		}
+	} else {
+		fp.lexer.RollBack(id)
+	}
 
 	return nil, false
 }
@@ -882,7 +930,20 @@ func (fp *formulationParser) isQuestionMarkKeyword() (ast.PseudoTokenNode, bool)
 }
 
 func (fp *formulationParser) operatorToken() (ast.PseudoTokenNode, bool) {
-	return fp.pseudoToken(ast.Operator)
+	if tok, ok := fp.pseudoToken(ast.Operator); ok {
+		return tok, true
+	}
+
+	// a slash can also be an operator but has its own lexer token type
+	if tok, ok := fp.pseudoToken(ast.Slash); ok {
+		return ast.PseudoTokenNode{
+			Text:     tok.Text,
+			Type:     ast.Operator,
+			MetaData: tok.MetaData,
+		}, true
+	}
+
+	return ast.PseudoTokenNode{}, false
 }
 
 func (fp *formulationParser) colonEqualsToken() (ast.PseudoTokenNode, bool) {
@@ -948,7 +1009,7 @@ func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (ast.NonEnclo
 	if _, ok := fp.token(ast.Colon); ok {
 		hasLeftColon = true
 	}
-	if tok, ok := fp.token(ast.Operator); ok {
+	if tok, ok := fp.operatorToken(); ok {
 		fp.lexer.Commit(id)
 		hasRightColon := false
 		if _, ok := fp.token(ast.Colon); ok {
@@ -1080,42 +1141,9 @@ func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
 	}, true
 }
 
-func (fp *formulationParser) subSupArgs() (ast.SubSupArgs, bool) {
-	start := fp.lexer.Position()
-	id := fp.lexer.Snapshot()
-	squareArgs, ok := fp.squareParams()
-	if !ok {
-		fp.lexer.RollBack(id)
-		return ast.SubSupArgs{}, false
-	}
-
-	subArgs := make([]ast.ExpressionType, 0)
-	supArgs := make([]ast.ExpressionType, 0)
-
-	if fp.has(ast.Underscore) {
-		fp.expect(ast.Underscore)
-		subArgs, _ = fp.curlyArgs()
-	}
-
-	if fp.has(ast.Caret) {
-		fp.expect(ast.Caret)
-		supArgs, _ = fp.curlyArgs()
-	}
-
-	fp.lexer.Commit(id)
-	return ast.SubSupArgs{
-		SquareArgs: squareArgs,
-		SubArgs:    subArgs,
-		SupArgs:    supArgs,
-		MetaData: ast.MetaData{
-			Start: fp.getShiftedPosition(start),
-		},
-	}, true
-}
-
 func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandExpression, bool) {
 	start := fp.lexer.Position()
-	if !fp.hasHas(ast.BackSlash, ast.Name) {
+	if !fp.has(ast.BackSlash) {
 		return ast.CommandExpression{}, false
 	}
 
@@ -1124,7 +1152,7 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 	fp.expect(ast.BackSlash)
 	names := make([]ast.NameForm, 0)
 	for fp.lexer.HasNext() {
-		if name, ok := fp.nameForm(); ok {
+		if name, ok := fp.chainName(); ok {
 			names = append(names, name)
 		} else {
 			if !allowOperator {
@@ -1154,7 +1182,7 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 		return ast.CommandExpression{}, false
 	}
 
-	subSupArgs, _ := fp.subSupArgs()
+	squareArgs, _ := fp.squareParams()
 	curlyArgs, _ := fp.curlyArgs()
 
 	namedArgs := make([]ast.NamedArg, 0)
@@ -1171,7 +1199,7 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 	fp.lexer.Commit(id)
 	return ast.CommandExpression{
 		Names:      names,
-		SubSupArgs: &subSupArgs,
+		SquareArgs: &squareArgs,
 		CurlyArgs:  &curlyArgs,
 		NamedArgs:  &namedArgs,
 		ParenArgs:  &parenArgs,
@@ -1183,7 +1211,7 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 
 func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, bool) {
 	start := fp.lexer.Position()
-	if !fp.hasHas(ast.BackSlash, ast.Name) {
+	if !fp.has(ast.BackSlash) {
 		return ast.CommandAtExpression{}, false
 	}
 
@@ -1931,39 +1959,6 @@ func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
 	}, true
 }
 
-func (fp *formulationParser) subSupParams() (ast.SubSupParams, bool) {
-	start := fp.lexer.Position()
-	id := fp.lexer.Snapshot()
-	squareParams, ok := fp.squareParams()
-	if !ok {
-		fp.lexer.RollBack(id)
-		return ast.SubSupParams{}, false
-	}
-
-	subParams := make([]ast.StructuralFormType, 0)
-	supParams := make([]ast.StructuralFormType, 0)
-
-	if fp.has(ast.Underscore) {
-		fp.expect(ast.Underscore)
-		subParams, _ = fp.curlyParams()
-	}
-
-	if fp.has(ast.Caret) {
-		fp.expect(ast.Caret)
-		supParams, _ = fp.curlyParams()
-	}
-
-	fp.lexer.Commit(id)
-	return ast.SubSupParams{
-		SquareParams: squareParams,
-		SubParams:    subParams,
-		SupParams:    supParams,
-		MetaData: ast.MetaData{
-			Start: fp.getShiftedPosition(start),
-		},
-	}, true
-}
-
 func (fp *formulationParser) infixCommandId() (ast.InfixCommandId, bool) {
 	id := fp.lexer.Snapshot()
 	cmd, ok := fp.commandId(true)
@@ -1981,7 +1976,7 @@ func (fp *formulationParser) infixCommandId() (ast.InfixCommandId, bool) {
 	fp.lexer.Commit(id)
 	return ast.InfixCommandId{
 		Names:        cmd.Names,
-		SubSupParams: cmd.SubSupParams,
+		SquareParams: cmd.SquareParams,
 		CurlyParams:  cmd.CurlyParams,
 		NamedParams:  cmd.NamedParams,
 		ParenParams:  cmd.ParenParams,
@@ -1991,7 +1986,7 @@ func (fp *formulationParser) infixCommandId() (ast.InfixCommandId, bool) {
 
 func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool) {
 	start := fp.lexer.Position()
-	if !fp.hasHas(ast.BackSlash, ast.Name) {
+	if !fp.has(ast.BackSlash) {
 		return ast.CommandId{}, false
 	}
 
@@ -1999,7 +1994,7 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 	fp.expect(ast.BackSlash)
 	names := make([]ast.NameForm, 0)
 	for fp.lexer.HasNext() {
-		if name, ok := fp.nameForm(); ok {
+		if name, ok := fp.chainName(); ok {
 			names = append(names, name)
 		} else {
 			if !allowOperator {
@@ -2029,7 +2024,7 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 		return ast.CommandId{}, false
 	}
 
-	subSupParams, _ := fp.subSupParams()
+	squareParams, _ := fp.squareParams()
 	curlyParams, _ := fp.curlyParams()
 
 	namedParams := make([]ast.NamedParam, 0)
@@ -2046,7 +2041,7 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 	fp.lexer.Commit(id)
 	return ast.CommandId{
 		Names:        names,
-		SubSupParams: &subSupParams,
+		SquareParams: &squareParams,
 		CurlyParams:  &curlyParams,
 		NamedParams:  &namedParams,
 		ParenParams:  &parenParams,
@@ -2058,7 +2053,7 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 
 func (fp *formulationParser) commandAtId() (ast.CommandAtId, bool) {
 	start := fp.lexer.Position()
-	if !fp.hasHas(ast.BackSlash, ast.Name) {
+	if !fp.has(ast.BackSlash) {
 		return ast.CommandAtId{}, false
 	}
 
@@ -2066,7 +2061,7 @@ func (fp *formulationParser) commandAtId() (ast.CommandAtId, bool) {
 	fp.expect(ast.BackSlash)
 	names := make([]ast.NameForm, 0)
 	for fp.lexer.HasNext() {
-		if name, ok := fp.nameForm(); ok {
+		if name, ok := fp.chainName(); ok {
 			names = append(names, name)
 		} else {
 			break

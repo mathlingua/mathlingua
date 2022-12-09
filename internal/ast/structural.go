@@ -26,14 +26,13 @@ const LowerByName = "by"
 const LowerCalledName = "called"
 const LowerContentName = "content"
 const LowerSpecifiesName = "specifies"
+const LowerSpecifiesQuestionName = LowerSpecifiesName + "?"
 const LowerDiscoveredName = "discovered"
 const LowerElseName = "else"
 const LowerElseQuestionName = LowerElseName + "?"
 const LowerExamplesName = "examples"
 const LowerExistsName = "exists"
 const LowerExistsUniqueName = "existsUnique"
-const LowerExpressingName = "expressing"
-const LowerExpressedName = "expressed"
 const LowerExtendsName = "extends"
 const LowerExtendsQuestionName = LowerExtendsName + "?"
 const LowerForAllName = "forAll"
@@ -132,6 +131,7 @@ const LowerDescriptionName = "description"
 const LowerSymbolName = "symbol"
 const LowerWrittenName = "written"
 const LowerWrittenQuestionName = LowerWrittenName + "?"
+const LowerWritingName = "writing"
 const LowerConnectionName = "connection"
 const LowerToName = "to"
 const LowerSignifiesName = "signifies"
@@ -500,14 +500,10 @@ type SpecifySection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
-var ExpressedSections = []string{LowerExpressedName}
+var WrittenSections = []string{LowerWrittenName}
 
-type ExpressedGroup struct {
-	Expressed ExpressedSection
-}
-
-type ExpressedSection struct {
-	Expressed []TextItem
+type WrittenGroup struct {
+	Written WrittenSection
 }
 
 var CalledSections = []string{LowerCalledName}
@@ -520,18 +516,18 @@ type CalledSection struct {
 	Called []TextItem
 }
 
-var ExpressingSections = []string{LowerExpressingName, LowerAsName}
+var WritingSections = []string{LowerWritingName, LowerAsName}
 
-type ExpressingGroup struct {
-	Expressing ExpressingSection
-	As         ExpressingAsSection
+type WritingGroup struct {
+	Writing WritingSection
+	As      WritingAsSection
 }
 
-type ExpressingSection struct {
-	Expressing []Target
+type WritingSection struct {
+	Writing Target
 }
 
-type ExpressingAsSection struct {
+type WritingAsSection struct {
 	As []TextItem
 }
 
@@ -549,8 +545,8 @@ func (ExamplesGroup) DocumentedType()   {}
 func (RelatedGroup) DocumentedType()    {}
 func (DiscoveredGroup) DocumentedType() {}
 func (NotesGroup) DocumentedType()      {}
-func (ExpressedGroup) DocumentedType()  {}
-func (ExpressingGroup) DocumentedType() {}
+func (WrittenGroup) DocumentedType()    {}
+func (WritingGroup) DocumentedType()    {}
 func (CalledGroup) DocumentedType()     {}
 
 var DetailsSections = []string{LowerDetailsName}
@@ -759,7 +755,7 @@ var DefinesSections = []string{
 	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
 	LowerMeansQuestionName,
-	LowerSpecifiesName,
+	LowerSpecifiesQuestionName,
 	UpperProvidesQuestionName,
 	UpperJustifiedQuestionName,
 	UpperDocumentedQuestionName,

@@ -194,12 +194,6 @@ func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 				Text:     "?",
 				Position: cur.Position,
 			})
-		case cur.Symbol == '^':
-			appendToken(ast.Token{
-				Type:     ast.Caret,
-				Text:     "^",
-				Position: cur.Position,
-			})
 		case cur.Symbol == '"':
 			name := getStroppedName(cur)
 			appendToken(ast.Token{

@@ -76,7 +76,7 @@ _ Underscore
 { LCurly
 a Name
 } RCurly
-^ Caret
+^ Operator
 { LCurly
 b Name
 } RCurly

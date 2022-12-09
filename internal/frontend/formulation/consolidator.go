@@ -129,7 +129,8 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]], tracker frontend
 		switch {
 		case top.Type == ast.ColonArrow:
 			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
-			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
+			tmp := toNode(items, tracker)
+			lhs := checkType(tmp, default_expression, "Expression", tracker, top.Start())
 			return ast.ExpressionColonArrowItem{
 				Lhs: lhs,
 				Rhs: rhs,
@@ -173,25 +174,30 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]], tracker frontend
 func toShuntingYardItems(nodes []ast.NodeType) []ShuntingYardItem[ast.NodeType] {
 	result := make([]ShuntingYardItem[ast.NodeType], 0)
 	isOperators := make([]bool, len(nodes))
+	isSpecialOperators := make([]bool, len(nodes))
 	for i, node := range nodes {
 		isOperators[i] = isOperator(node)
+		isSpecialOperators[i] = isSpecialOperator(node)
 	}
 	itemTypes := make([]ItemType, len(nodes))
-	for i, curIsOp := range isOperators {
+	for i := range isOperators {
+		curIsOp := isOperators[i]
+		curIsSpecialOp := isSpecialOperators[i]
+
 		prevType := none
-		curType := toIsOperatorToGeneralItemType(curIsOp)
+		curType := toIsOperatorToGeneralItemType(curIsOp, curIsSpecialOp)
 		nextType := none
 
 		if i == 0 {
 			prevType = none
 		} else {
-			prevType = toIsOperatorToGeneralItemType(isOperators[i-1])
+			prevType = toIsOperatorToGeneralItemType(isOperators[i-1], isSpecialOperators[i-1])
 		}
 
 		if i == len(isOperators)-1 {
 			nextType = none
 		} else {
-			nextType = toIsOperatorToGeneralItemType(isOperators[i+1])
+			nextType = toIsOperatorToGeneralItemType(isOperators[i+1], isSpecialOperators[i+1])
 		}
 
 		itemTypes[i] = getGeneralOperatorType(prevType, curType, nextType)
@@ -210,9 +216,11 @@ func toShuntingYardItems(nodes []ast.NodeType) []ShuntingYardItem[ast.NodeType] 
 	return result
 }
 
-func toIsOperatorToGeneralItemType(isOperator bool) generalItemType {
+func toIsOperatorToGeneralItemType(isOperator bool, isSpecialOperator bool) generalItemType {
 	if isOperator {
 		return operator
+	} else if isSpecialOperator {
+		return specialOperator
 	} else {
 		return operand
 	}
@@ -242,11 +250,54 @@ func isOperator(node ast.NodeType) bool {
 		// a token, for example :=, is, isnot
 		switch node.Type {
 		case ast.ColonEquals:
+			return false
+		case ast.ColonArrow:
+			return false
+		case ast.Operator:
+			return true
+		case ast.Is:
+			return false
+		case ast.Extends:
+			return false
+		case ast.As:
+			return false
+		default:
+			return false
+		}
+	default:
+		return false
+	}
+}
+
+func isSpecialOperator(node ast.NodeType) bool {
+	switch node := node.(type) {
+	case ast.PrefixOperatorCallExpression:
+		// prefix operators
+		return false
+	case ast.PostfixOperatorCallExpression:
+		// postfix operators
+		return false
+	case ast.InfixOperatorCallExpression:
+		// infix operators
+		return false
+	case ast.EnclosedNonCommandOperatorTarget:
+		// for example [x]
+		return false
+	case ast.NonEnclosedNonCommandOperatorTarget:
+		// for example + or **
+		return false
+	case ast.CommandOperatorTarget:
+		// for example \f/
+		return false
+	case ast.PseudoTokenNode:
+		// a token, for example :=, is, isnot
+		switch node.Type {
+		case ast.ColonEquals:
 			return true
 		case ast.ColonArrow:
 			return true
 		case ast.Operator:
-			return true
+			return false
 		case ast.Is:
 			return true
 		case ast.Extends:
@@ -264,9 +315,10 @@ func isOperator(node ast.NodeType) bool {
 type generalItemType string
 
 const (
-	operand  generalItemType = "operand"
-	operator generalItemType = "operator"
-	none     generalItemType = "none"
+	operand         generalItemType = "operand"
+	operator        generalItemType = "operator"
+	specialOperator generalItemType = "specialOperator"
+	none            generalItemType = "none"
 )
 
 func getGeneralOperatorType(prevType generalItemType, curType generalItemType, nextType generalItemType) ItemType {
@@ -275,6 +327,9 @@ func getGeneralOperatorType(prevType generalItemType, curType generalItemType, n
 		panic("Cannot get the operator type of 'none'")
 	case curType == operand:
 		return OperandType
+		//	case curType == specialOperator:
+		// treat all special operators as infix operators
+		//		return InfixOperatorType
 	// for all of these cases, the curType is operator
 	case prevType == operator && nextType == operator:
 		return InfixOperatorType
@@ -292,6 +347,14 @@ func getGeneralOperatorType(prevType generalItemType, curType generalItemType, n
 		return PrefixOperatorType
 	case prevType == operand && nextType == operator:
 		return PostfixOperatorType
+	case prevType == operand && nextType == specialOperator:
+		return PostfixOperatorType
+	case prevType == specialOperator && nextType == operand:
+		return PrefixOperatorType
+	case prevType == specialOperator && nextType == specialOperator:
+		// users could write `:=> ! :=>` and we want to surface parse errors
+		// and not crash in this case
+		return InfixOperatorType
 	default:
 		panic(fmt.Sprintf("Cannot determine the operator type if the previous type "+
 			"is %s the current type is %s and the next type is %s", prevType, curType, nextType))

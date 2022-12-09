@@ -367,7 +367,7 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 		}
 		section2 := sections[i]
 		i++
-		if section2.Name != ast.LowerElseName {
+		if section2.Name != ast.LowerThenName {
 			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' but found '%s'", ast.LowerThenName, section2.Name), section2.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
@@ -521,24 +521,18 @@ func (p *parser) toSpecifySection(section phase4.Section) *ast.SpecifySection {
 
 ////////////////////// codified documented items /////////////////////////////////
 
-func (p *parser) toExpressedGroup(group phase4.Group) (ast.ExpressedGroup, bool) {
-	if !startsWithSections(group, ast.LowerExpressedName) {
-		return ast.ExpressedGroup{}, false
+func (p *parser) toWrittenGroup(group phase4.Group) (ast.WrittenGroup, bool) {
+	if !startsWithSections(group, ast.LowerWrittenName) {
+		return ast.WrittenGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ExpressedSections...)
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.WrittenSections...)
 	if !ok {
-		return ast.ExpressedGroup{}, false
+		return ast.WrittenGroup{}, false
 	}
-	return ast.ExpressedGroup{
-		Expressed: *p.toExpressedSection(sections[ast.LowerExpressedName]),
+	return ast.WrittenGroup{
+		Written: *p.toWrittenSection(sections[ast.LowerWrittenName]),
 	}, true
-}
-
-func (p *parser) toExpressedSection(section phase4.Section) *ast.ExpressedSection {
-	return &ast.ExpressedSection{
-		Expressed: p.oneOrMoreTextItems(section),
-	}
 }
 
 func (p *parser) toCalledGroup(group phase4.Group) (ast.CalledGroup, bool) {
@@ -561,31 +555,31 @@ func (p *parser) toCalledSection(section phase4.Section) *ast.CalledSection {
 	}
 }
 
-func (p *parser) toExpressingGroup(group phase4.Group) (ast.ExpressingGroup, bool) {
-	if !startsWithSections(group, ast.LowerExpressingName) {
-		return ast.ExpressingGroup{}, false
+func (p *parser) toWritingGroup(group phase4.Group) (ast.WritingGroup, bool) {
+	if !startsWithSections(group, ast.LowerWritingName) {
+		return ast.WritingGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ExpressingSections...)
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.WritingSections...)
 	if !ok {
-		return ast.ExpressingGroup{}, false
+		return ast.WritingGroup{}, false
 	}
-	expressing := *p.toExpressingSection(sections[ast.LowerExpressingName])
-	as := *p.toExpressingAsSection(sections[ast.LowerAsName])
-	return ast.ExpressingGroup{
-		Expressing: expressing,
-		As:         as,
+	writing := *p.toWritingSection(sections[ast.LowerWritingName])
+	as := *p.toWritingAsSection(sections[ast.LowerAsName])
+	return ast.WritingGroup{
+		Writing: writing,
+		As:      as,
 	}, true
 }
 
-func (p *parser) toExpressingSection(section phase4.Section) *ast.ExpressingSection {
-	return &ast.ExpressingSection{
-		Expressing: p.oneOrMoreTargets(section),
+func (p *parser) toWritingSection(section phase4.Section) *ast.WritingSection {
+	return &ast.WritingSection{
+		Writing: p.exactlyOneTarget(section),
 	}
 }
 
-func (p *parser) toExpressingAsSection(section phase4.Section) *ast.ExpressingAsSection {
-	return &ast.ExpressingAsSection{
+func (p *parser) toWritingAsSection(section phase4.Section) *ast.WritingAsSection {
+	return &ast.WritingAsSection{
 		As: p.oneOrMoreTextItems(section),
 	}
 }
@@ -617,9 +611,9 @@ func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool
 			return grp, true
 		} else if grp, ok := p.toNotesGroup(group); ok {
 			return grp, true
-		} else if grp, ok := p.toExpressedGroup(group); ok {
+		} else if grp, ok := p.toWrittenGroup(group); ok {
 			return grp, true
-		} else if grp, ok := p.toExpressingGroup(group); ok {
+		} else if grp, ok := p.toWritingGroup(group); ok {
 			return grp, true
 		} else if grp, ok := p.toCalledGroup(group); ok {
 			return grp, true
@@ -1758,7 +1752,7 @@ func (p *parser) toDocumentedTypes(args []phase4.Argument) []ast.DocumentedType 
 				"Expected a %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, or %s: item",
 				ast.LowerDetailsName, ast.LowerOverviewName, ast.LowerMotivationName, ast.LowerHistoryName,
 				ast.LowerExamplesName, ast.LowerRelatedName, ast.LowerDiscoveredName, ast.LowerNotesName,
-				ast.LowerExpressedName, ast.LowerExpressingName, ast.LowerCalledName), arg.MetaData.Start))
+				ast.LowerWrittenName, ast.LowerWritingName, ast.LowerCalledName), arg.MetaData.Start))
 		}
 	}
 	return result

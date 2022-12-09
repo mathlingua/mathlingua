@@ -466,6 +466,14 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 
 		if op, ok := fp.operatorType(); ok {
 			children = append(children, op)
+		} else if tup, ok := fp.tupleExpression(); ok {
+			// process a tuple expression before a chain expression
+			// because tuple expressions with more than one element
+			// are not allowed as elements in a chain expression and
+			// so if a chain expression is processed first, then
+			// a tuple with more than one element is incorectly
+			// reported as an error
+			children = append(children, tup)
 		} else if chain, ok := fp.chainExpression(false); ok {
 			children = append(children, chain)
 		} else if lit, ok := fp.literalExpressionType(); ok {
@@ -483,8 +491,6 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 		} else if fun, ok := fp.functionCallExpression(); ok {
 			children = append(children, fun)
 		} else if tup, ok := fp.tupleForm(); ok {
-			children = append(children, tup)
-		} else if tup, ok := fp.tupleExpression(); ok {
 			children = append(children, tup)
 		} else if set, ok := fp.fixedSetForm(); ok {
 			children = append(children, set)

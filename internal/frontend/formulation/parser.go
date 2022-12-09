@@ -2156,10 +2156,23 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 		fp.lexer.Next()
 	}
 	fp.expect(ast.RSquare)
+	var innerLabel *string
+	if fp.hasHas(ast.Colon, ast.Colon) {
+		innerLabelText := ""
+		fp.expect(ast.Colon)
+		fp.expect(ast.Colon)
+		fp.expect(ast.LSquare)
+		for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
+			innerLabelText += fp.lexer.Next().Text
+		}
+		innerLabel = &innerLabelText
+		fp.expect(ast.RSquare)
+	}
 	return ast.Signature{
 		MainNames:       mainNames,
 		NamedGroupNames: namedGroupNames,
 		HasAtSymbol:     hasAtSymbol,
+		InnerLabel:      innerLabel,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
 		},

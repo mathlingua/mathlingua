@@ -367,11 +367,12 @@ type ChainExpression struct {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// \[a.b.c:x:y]
+// \[a.b.c:x:y]::[inner label]
 type Signature struct {
 	MainNames       []string
 	NamedGroupNames []string
 	HasAtSymbol     bool
+	InnerLabel      *string
 	MetaData        MetaData
 }
 

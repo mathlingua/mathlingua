@@ -2133,6 +2133,11 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 			break
 		}
 		mainNames = append(mainNames, name.Text)
+		if fp.has(ast.Dot) {
+			fp.lexer.Next() // skip the dot
+		} else {
+			break
+		}
 	}
 	if fp.has(ast.At) {
 		fp.expect(ast.At)

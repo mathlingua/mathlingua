@@ -466,14 +466,6 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 
 		if op, ok := fp.operatorType(); ok {
 			children = append(children, op)
-		} else if tup, ok := fp.tupleExpression(); ok {
-			// process a tuple expression before a chain expression
-			// because tuple expressions with more than one element
-			// are not allowed as elements in a chain expression and
-			// so if a chain expression is processed first, then
-			// a tuple with more than one element is incorectly
-			// reported as an error
-			children = append(children, tup)
 		} else if chain, ok := fp.chainExpression(false); ok {
 			children = append(children, chain)
 		} else if lit, ok := fp.literalExpressionType(); ok {
@@ -619,6 +611,17 @@ func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpressio
 			Start: fp.getShiftedPosition(start),
 		},
 	}, true
+}
+
+func (fp *formulationParser) singleItemTupleExpression() (ast.TupleExpression, bool) {
+	id := fp.lexer.Snapshot()
+	tup, ok := fp.tupleExpression()
+	if !ok || len(tup.Args) != 1 {
+		fp.lexer.RollBack(id)
+		return ast.TupleExpression{}, false
+	}
+	fp.lexer.Commit(id)
+	return tup, true
 }
 
 func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
@@ -813,7 +816,7 @@ func (fp *formulationParser) chainExpressionPart() (ast.ExpressionType, bool) {
 
 	// We want to allow expressions such as (x + y).inv
 	id := fp.lexer.Snapshot()
-	if tuple, ok := fp.tupleExpression(); ok {
+	if tuple, ok := fp.singleItemTupleExpression(); ok {
 		if len(tuple.Args) == 1 {
 			fp.lexer.Commit(id)
 			return tuple, ok

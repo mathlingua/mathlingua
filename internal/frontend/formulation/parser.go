@@ -498,6 +498,8 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 			children = append(children, set)
 		} else if set, ok := fp.conditionalSetForm(); ok {
 			children = append(children, set)
+		} else if sig, ok := fp.signature(); ok {
+			children = append(children, sig)
 		} else if cmd, ok := fp.commandOperatorTarget(); ok {
 			children = append(children, cmd)
 		} else if cmd, ok := fp.commandAtExpression(); ok {
@@ -2118,11 +2120,11 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 	mainNames := make([]string, 0)
 	namedGroupNames := make([]string, 0)
 	hasAtSymbol := false
-	for fp.lexer.HasNext() && !fp.has(ast.LSquare) {
+	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
 		if fp.has(ast.At) || fp.has(ast.Colon) {
 			break
 		}
-		name, ok := fp.nameForm()
+		name, ok := fp.chainName()
 		if !ok {
 			fp.error("Expected a name")
 			break
@@ -2134,7 +2136,7 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 		hasAtSymbol = true
 	}
 	if !hasAtSymbol {
-		for fp.lexer.HasNext() && !fp.has(ast.LSquare) {
+		for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
 			_, ok := fp.expect(ast.Colon)
 			if !ok {
 				break
@@ -2146,11 +2148,11 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 			namedGroupNames = append(namedGroupNames, name.Text)
 		}
 	}
-	for fp.lexer.HasNext() && !fp.has(ast.LSquare) {
+	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
 		fp.error("Unexpected text")
 		fp.lexer.Next()
 	}
-	fp.expect(ast.LSquare)
+	fp.expect(ast.RSquare)
 	return ast.Signature{
 		MainNames:       mainNames,
 		NamedGroupNames: namedGroupNames,

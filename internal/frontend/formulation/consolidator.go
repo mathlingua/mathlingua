@@ -157,8 +157,8 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]], tracker frontend
 				Rhs: []ast.KindType{rhs},
 			}
 		case top.Type == ast.As:
-			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 			rhs := checkType(toNode(items, tracker), default_signature, "Signature", tracker, top.Start())
+			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 			return ast.AsExpression{
 				Lhs: lhs,
 				Rhs: rhs,

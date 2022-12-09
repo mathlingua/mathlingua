@@ -248,6 +248,7 @@ func (ExtendsExpression) ExpressionType()                      {}
 func (MultiplexedInfixOperatorCallExpression) ExpressionType() {}
 func (ExpressionColonEqualsItem) ExpressionType()              {}
 func (ExpressionColonArrowItem) ExpressionType()               {}
+func (Signature) ExpressionType()                              {}
 
 // f(x + y, z) or (f + g)(x)
 type FunctionCallExpression struct {

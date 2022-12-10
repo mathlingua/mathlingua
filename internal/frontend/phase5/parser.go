@@ -991,7 +991,7 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		documented = p.toDocumentedSection(sec)
 	}
 	var references *ast.ReferencesSection
-	if sec, ok := sections[ast.UpperJustifiedName]; ok {
+	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
 	}
 	var aliases *ast.AliasesSection
@@ -1083,7 +1083,7 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 		documented = p.toDocumentedSection(sec)
 	}
 	var references *ast.ReferencesSection
-	if sec, ok := sections[ast.UpperJustifiedName]; ok {
+	if sec, ok := sections[ast.UpperReferencesName]; ok {
 		references = p.toReferencesSection(sec)
 	}
 	var aliases *ast.AliasesSection

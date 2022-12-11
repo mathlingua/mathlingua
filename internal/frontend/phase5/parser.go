@@ -1431,7 +1431,142 @@ func (p *parser) toSpecifyGroup(group phase4.Group) (ast.SpecifyGroup, bool) {
 		return ast.SpecifyGroup{}, false
 	}
 
-	return ast.SpecifyGroup{}, false
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.SpecifySections...)
+	if !ok {
+		return ast.SpecifyGroup{}, false
+	}
+
+	return ast.SpecifyGroup{
+		Specify: *p.toTopLevelSpecifySection(sections[ast.UpperSpecifyName]),
+	}, true
+}
+
+func (p *parser) toTopLevelSpecifySection(section phase4.Section) *ast.TopLevelSpecifySection {
+	return &ast.TopLevelSpecifySection{
+		Specify: p.oneOrMoreSpecifyTypes(section),
+	}
+}
+
+func (p *parser) toSpecifyType(arg phase4.Argument) (ast.SpecifyType, bool) {
+	switch group := arg.Arg.(type) {
+	case phase4.Group:
+		if grp, ok := p.toZeroGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toPositiveIntGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toNegativeIntGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toPositiveFloatGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toNegativeFloatGroup(group); ok {
+			return grp, true
+		}
+	}
+	return nil, false
+}
+
+func (p *parser) toZeroGroup(group phase4.Group) (ast.ZeroGroup, bool) {
+	if !startsWithSections(group, ast.LowerZeroName) {
+		return ast.ZeroGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ZeroSections...)
+	if !ok {
+		return ast.ZeroGroup{}, false
+	}
+	return ast.ZeroGroup{
+		Zero:  *p.toZeroSection(sections[ast.LowerZeroName]),
+		Means: *p.toMeansSection(sections[ast.LowerMeansName]),
+	}, true
+}
+
+func (p *parser) toZeroSection(section phase4.Section) *ast.ZeroSection {
+	p.verifyNoArgs(section)
+	return &ast.ZeroSection{}
+}
+
+func (p *parser) toPositiveIntGroup(group phase4.Group) (ast.PositiveIntGroup, bool) {
+	if !startsWithSections(group, ast.LowerPositiveIntName) {
+		return ast.PositiveIntGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.PositiveIntSections...)
+	if !ok {
+		return ast.PositiveIntGroup{}, false
+	}
+	return ast.PositiveIntGroup{
+		PositiveInt: *p.toPositiveIntSection(sections[ast.LowerPositiveIntName]),
+		Means:       *p.toMeansSection(sections[ast.LowerMeansName]),
+	}, true
+}
+
+func (p *parser) toPositiveIntSection(section phase4.Section) *ast.PositiveIntSection {
+	return &ast.PositiveIntSection{
+		PositiveInt: p.exactlyOneTarget(section),
+	}
+}
+
+func (p *parser) toNegativeIntGroup(group phase4.Group) (ast.NegativeIntGroup, bool) {
+	if !startsWithSections(group, ast.LowerNegativeIntName) {
+		return ast.NegativeIntGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.NegativeIntSections...)
+	if !ok {
+		return ast.NegativeIntGroup{}, false
+	}
+	return ast.NegativeIntGroup{
+		NegativeInt: *p.toNegativeIntSection(sections[ast.LowerNegativeIntName]),
+		Means:       *p.toMeansSection(sections[ast.LowerMeansName]),
+	}, true
+}
+
+func (p *parser) toNegativeIntSection(section phase4.Section) *ast.NegativeIntSection {
+	return &ast.NegativeIntSection{
+		NegativeInt: p.exactlyOneTarget(section),
+	}
+}
+
+func (p *parser) toPositiveFloatGroup(group phase4.Group) (ast.PositiveFloatGroup, bool) {
+	if !startsWithSections(group, ast.LowerPositiveFloatName) {
+		return ast.PositiveFloatGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.PositiveFloatSections...)
+	if !ok {
+		return ast.PositiveFloatGroup{}, false
+	}
+	return ast.PositiveFloatGroup{
+		PositiveFloat: *p.toPositiveFloatSection(sections[ast.LowerPositiveFloatName]),
+		Means:         *p.toMeansSection(sections[ast.LowerMeansName]),
+	}, true
+}
+
+func (p *parser) toPositiveFloatSection(section phase4.Section) *ast.PositiveFloatSection {
+	return &ast.PositiveFloatSection{
+		PositiveFloat: p.exactlyOneTarget(section),
+	}
+}
+
+func (p *parser) toNegativeFloatGroup(group phase4.Group) (ast.NegativeFloatGroup, bool) {
+	if !startsWithSections(group, ast.LowerNegativeFloatName) {
+		return ast.NegativeFloatGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.NegativeFloatSections...)
+	if !ok {
+		return ast.NegativeFloatGroup{}, false
+	}
+	return ast.NegativeFloatGroup{
+		NegativeFloat: *p.toNegativeFloatSection(sections[ast.LowerNegativeFloatName]),
+		Means:         *p.toMeansSection(sections[ast.LowerMeansName]),
+	}, true
+}
+
+func (p *parser) toNegativeFloatSection(section phase4.Section) *ast.NegativeFloatSection {
+	return &ast.NegativeFloatSection{
+		NegativeFloat: p.exactlyOneTarget(section),
+	}
 }
 
 ///////////////////////////////// topic ////////////////////////////////////
@@ -1758,6 +1893,24 @@ func (p *parser) toDocumentedTypes(args []phase4.Argument) []ast.DocumentedType 
 	return result
 }
 
+func (p *parser) toSpecifyTypes(args []phase4.Argument) []ast.SpecifyType {
+	result := make([]ast.SpecifyType, 0)
+	for _, arg := range args {
+		if spec, ok := p.toSpecifyType(arg); ok {
+			result = append(result, spec)
+		} else {
+			p.tracker.Append(newError(fmt.Sprintf(
+				"Expected a %s:, %s:, %s:, %s:, or %s: item",
+				ast.LowerZeroName,
+				ast.LowerPositiveIntName,
+				ast.LowerNegativeIntName,
+				ast.LowerPositiveFloatName,
+				ast.LowerNegativeFloatName), arg.MetaData.Start))
+		}
+	}
+	return result
+}
+
 /////////////////////////////////////////////////////////////////////////
 
 func (p *parser) verifyNoArgs(section phase4.Section) {
@@ -1830,6 +1983,10 @@ func (p *parser) exactlyOneTextItem(section phase4.Section) ast.TextItem {
 
 func (p *parser) oneOrMoreDocumentedTypes(section phase4.Section) []ast.DocumentedType {
 	return oneOrMore(p.toDocumentedTypes(section.Args), section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) oneOrMoreSpecifyTypes(section phase4.Section) []ast.SpecifyType {
+	return oneOrMore(p.toSpecifyTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
 ////////////////////////// support functions ////////////////////////////

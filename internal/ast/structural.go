@@ -980,52 +980,58 @@ func (NegativeIntGroup) SpecifyType()   {}
 func (PositiveFloatGroup) SpecifyType() {}
 func (NegativeFloatGroup) SpecifyType() {}
 
-var ZeroSections = []string{LowerZeroName, LowerIsName}
+var ZeroSections = []string{LowerZeroName, LowerMeansName}
 
 type ZeroGroup struct {
+	Zero  ZeroSection
+	Means MeansSection
 }
 
 type ZeroSection struct {
 }
 
-type IsSection struct {
-	Is Formulation[Signature]
-}
-
-type ZeroDefinesSection struct {
-	Defines Clause
-}
-
-var PositiveIntSections = []string{LowerPositiveIntName, LowerIsName}
+var PositiveIntSections = []string{LowerPositiveIntName, LowerMeansName}
 
 type PositiveIntGroup struct {
+	PositiveInt PositiveIntSection
+	Means       MeansSection
 }
 
 type PositiveIntSection struct {
+	PositiveInt Target
 }
 
-var NegativeIntSections = []string{LowerNegativeIntName, LowerIsName}
+var NegativeIntSections = []string{LowerNegativeIntName, LowerMeansName}
 
 type NegativeIntGroup struct {
+	NegativeInt NegativeIntSection
+	Means       MeansSection
 }
 
 type NegativeIntSection struct {
+	NegativeInt Target
 }
 
-var PositiveFloatSections = []string{LowerPositiveFloatName, LowerIsName}
+var PositiveFloatSections = []string{LowerPositiveFloatName, LowerMeansName}
 
 type PositiveFloatGroup struct {
+	PositiveFloat PositiveFloatSection
+	Means         MeansSection
 }
 
 type PositiveFloatSection struct {
+	PositiveFloat Target
 }
 
-var NegativeFloatSections = []string{LowerNegativeFloatName, LowerIsName}
+var NegativeFloatSections = []string{LowerNegativeFloatName, LowerMeansName}
 
 type NegativeFloatGroup struct {
+	NegativeFloat NegativeFloatSection
+	Means         MeansSection
 }
 
 type NegativeFloatSection struct {
+	NegativeFloat Target
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1033,6 +1039,10 @@ type NegativeFloatSection struct {
 var SpecifySections = []string{UpperSpecifyName}
 
 type SpecifyGroup struct {
+	Specify TopLevelSpecifySection
+}
+
+type TopLevelSpecifySection struct {
 	Specify []SpecifyType
 }
 

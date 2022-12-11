@@ -302,35 +302,35 @@ var all_group_test_cases = []testCase{
 		actual: ast.PositiveIntSections,
 		expected: []string{
 			"positiveInt",
-			"is",
+			"means",
 		},
 	},
 	{
 		actual: ast.NegativeIntSections,
 		expected: []string{
 			"negativeInt",
-			"is",
+			"means",
 		},
 	},
 	{
 		actual: ast.ZeroSections,
 		expected: []string{
 			"zero",
-			"is",
+			"means",
 		},
 	},
 	{
 		actual: ast.PositiveFloatSections,
 		expected: []string{
 			"positiveFloat",
-			"is",
+			"means",
 		},
 	},
 	{
 		actual: ast.NegativeFloatSections,
 		expected: []string{
 			"negativeFloat",
-			"is",
+			"means",
 		},
 	},
 	{

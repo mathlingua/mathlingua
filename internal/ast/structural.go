@@ -27,10 +27,10 @@ const LowerCalledName = "called"
 const LowerContentName = "content"
 const LowerSpecifiesName = "specifies"
 const LowerSpecifiesQuestionName = LowerSpecifiesName + "?"
-const LowerDiscoveredName = "discovered"
+const LowerDiscovererName = "discoverer"
 const LowerElseName = "else"
 const LowerElseQuestionName = LowerElseName + "?"
-const LowerExamplesName = "examples"
+const LowerExampleName = "example"
 const LowerExistsName = "exists"
 const LowerExistsUniqueName = "existsUnique"
 const LowerExtendsName = "extends"
@@ -55,7 +55,7 @@ const LowerMotivationName = "motivation"
 const LowerNegativeFloatName = "negativeFloat"
 const LowerNegativeIntName = "negativeInt"
 const LowerNotName = "not"
-const LowerNotesName = "notes"
+const LowerNoteName = "note"
 const LowerOfName = "of"
 const LowerOneOfName = "oneOf"
 const LowerOverviewName = "overview"
@@ -537,27 +537,18 @@ type DocumentedType interface {
 	DocumentedType()
 }
 
-func (DetailsGroup) DocumentedType()    {}
 func (OverviewGroup) DocumentedType()   {}
 func (MotivationGroup) DocumentedType() {}
 func (HistoryGroup) DocumentedType()    {}
-func (ExamplesGroup) DocumentedType()   {}
+func (ExampleGroup) DocumentedType()    {}
 func (RelatedGroup) DocumentedType()    {}
-func (DiscoveredGroup) DocumentedType() {}
-func (NotesGroup) DocumentedType()      {}
+func (DiscovererGroup) DocumentedType() {}
+func (NoteGroup) DocumentedType()       {}
 func (WrittenGroup) DocumentedType()    {}
 func (WritingGroup) DocumentedType()    {}
 func (CalledGroup) DocumentedType()     {}
 
 var DetailsSections = []string{LowerDetailsName}
-
-type DetailsGroup struct {
-	Details DetailsSection
-}
-
-type DetailsSection struct {
-	Details TextItem
-}
 
 var OverviewSections = []string{LowerOverviewName}
 
@@ -589,13 +580,13 @@ type HistorySection struct {
 	History TextItem
 }
 
-var ExamplesSections = []string{LowerExamplesName}
+var ExampleSections = []string{LowerExampleName}
 
-type ExamplesGroup struct {
-	Examples ExamplesSection
+type ExampleGroup struct {
+	Examples ExampleSection
 }
 
-type ExamplesSection struct {
+type ExampleSection struct {
 	Examples []TextItem
 }
 
@@ -609,24 +600,24 @@ type RelatedSection struct {
 	Related []Formulation[Signature]
 }
 
-var DiscoveredSections = []string{LowerDiscoveredName}
+var DiscovererSections = []string{LowerDiscovererName}
 
-type DiscoveredGroup struct {
-	Discovered DiscoveredSection
+type DiscovererGroup struct {
+	Discoverer DiscovererSection
 }
 
-type DiscoveredSection struct {
-	Discovered []TextItem
+type DiscovererSection struct {
+	Discoverer []TextItem
 }
 
-var NotesSections = []string{LowerNotesName}
+var NoteSections = []string{LowerNoteName}
 
-type NotesGroup struct {
-	Notes NotesSection
+type NoteGroup struct {
+	Note NoteSection
 }
 
-type NotesSection struct {
-	Notes []TextItem
+type NoteSection struct {
+	Note []TextItem
 }
 
 //////////////////////////////////////////////////////////////////////////////

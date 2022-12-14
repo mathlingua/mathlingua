@@ -153,9 +153,9 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.ExamplesSections,
+		actual: ast.ExampleSections,
 		expected: []string{
-			"examples",
+			"example",
 		},
 	},
 	{
@@ -165,15 +165,15 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.DiscoveredSections,
+		actual: ast.DiscovererSections,
 		expected: []string{
-			"discovered",
+			"discoverer",
 		},
 	},
 	{
-		actual: ast.NotesSections,
+		actual: ast.NoteSections,
 		expected: []string{
-			"notes",
+			"note",
 		},
 	},
 	{

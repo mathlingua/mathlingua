@@ -757,13 +757,9 @@ func (p *parser) toNoteGroup(group phase4.Group) (ast.NoteGroup, bool) {
 
 func (p *parser) toNoteSection(section phase4.Section) *ast.NoteSection {
 	return &ast.NoteSection{
-		Note: p.oneOrMoreTextItems(section),
+		Note: p.oneOrMoreNoteTypes(section),
 	}
 }
-
-/////////////////////////// viewable /////////////////////////////////////
-
-// TODO: finish this
 
 ////////////////////////// provides //////////////////////////////////////
 
@@ -1584,6 +1580,394 @@ func (p *parser) toContentSection(section phase4.Section) *ast.ContentSection {
 	}
 }
 
+///////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toResourceGroup(group phase4.Group) (ast.ResourceGroup, bool) {
+	if !startsWithSections(group, ast.UpperResourceName) {
+		return ast.ResourceGroup{}, false
+	}
+
+	id := p.getStringId(group, true)
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ResourceSections...)
+	if !ok || id == nil {
+		return ast.ResourceGroup{}, false
+	}
+
+	return ast.ResourceGroup{
+		Id:       *id,
+		Resource: *p.toResourceSection(sections[ast.UpperResourceName]),
+	}, true
+}
+
+func (p *parser) toResourceSection(section phase4.Section) *ast.ResourceSection {
+	return &ast.ResourceSection{
+		Items: p.oneOrMoreResourceTypes(section),
+	}
+}
+
+func (p *parser) toResourceType(arg phase4.Argument) (ast.ResourceType, bool) {
+	switch group := arg.Arg.(type) {
+	case phase4.Group:
+		if grp, ok := p.toTitleGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toAuthorGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toOffsetGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toUrlGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toHomepageGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toTypeGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toEditionGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toEditorGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toInstitutionGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toJournalGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toPublisherGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toVolumeGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toMonthGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toYearGroup(group); ok {
+			return grp, ok
+		} else if grp, ok := p.toDescriptionGroup(group); ok {
+			return grp, ok
+		}
+	}
+	return nil, false
+}
+
+func (p *parser) toPersonGroup(group phase4.Group) (ast.PersonGroup, bool) {
+	if !startsWithSections(group, ast.UpperPersonName) {
+		return ast.PersonGroup{}, false
+	}
+
+	id := p.getStringId(group, true)
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.PersonSections...)
+	if !ok || id == nil {
+		return ast.PersonGroup{}, false
+	}
+
+	return ast.PersonGroup{
+		Id:     *id,
+		Person: *p.toPersonSection(sections[ast.UpperPersonName]),
+	}, true
+}
+
+func (p *parser) toPersonSection(section phase4.Section) *ast.PersonSection {
+	return &ast.PersonSection{
+		Items: p.oneOrMorePersonTypes(section),
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toTitleGroup(group phase4.Group) (ast.TitleGroup, bool) {
+	if !startsWithSections(group, ast.LowerTitleName) {
+		return ast.TitleGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerTitleName)
+	if !ok {
+		return ast.TitleGroup{}, false
+	}
+	return ast.TitleGroup{
+		Title: *p.toTitleSection(sections[ast.LowerTitleName]),
+	}, true
+}
+
+func (p *parser) toTitleSection(section phase4.Section) *ast.TitleSection {
+	return &ast.TitleSection{
+		Title: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toAuthorGroup(group phase4.Group) (ast.AuthorGroup, bool) {
+	if !startsWithSections(group, ast.LowerAuthorName) {
+		return ast.AuthorGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerAuthorName)
+	if !ok {
+		return ast.AuthorGroup{}, false
+	}
+	return ast.AuthorGroup{
+		Author: *p.toAuthorSection(sections[ast.LowerAuthorName]),
+	}, true
+}
+
+func (p *parser) toAuthorSection(section phase4.Section) *ast.AuthorSection {
+	return &ast.AuthorSection{
+		Author: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toOffsetGroup(group phase4.Group) (ast.OffsetGroup, bool) {
+	if !startsWithSections(group, ast.LowerOffsetName) {
+		return ast.OffsetGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerOffsetName)
+	if !ok {
+		return ast.OffsetGroup{}, false
+	}
+	return ast.OffsetGroup{
+		Offset: *p.toOffsetSection(sections[ast.LowerOffsetName]),
+	}, true
+}
+
+func (p *parser) toOffsetSection(section phase4.Section) *ast.OffsetSection {
+	return &ast.OffsetSection{
+		Offset: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toUrlGroup(group phase4.Group) (ast.UrlGroup, bool) {
+	if !startsWithSections(group, ast.LowerUrlName) {
+		return ast.UrlGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerUrlName)
+	if !ok {
+		return ast.UrlGroup{}, false
+	}
+	return ast.UrlGroup{
+		Url: *p.toUlrSection(sections[ast.LowerUrlName]),
+	}, true
+}
+
+func (p *parser) toUlrSection(section phase4.Section) *ast.UrlSection {
+	return &ast.UrlSection{
+		Url: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toHomepageGroup(group phase4.Group) (ast.HomepageGroup, bool) {
+	if !startsWithSections(group, ast.LowerHomepageName) {
+		return ast.HomepageGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerHomepageName)
+	if !ok {
+		return ast.HomepageGroup{}, false
+	}
+	return ast.HomepageGroup{
+		Homepage: *p.toHomepageSection(sections[ast.LowerHomepageName]),
+	}, true
+}
+
+func (p *parser) toHomepageSection(section phase4.Section) *ast.HomepageSection {
+	return &ast.HomepageSection{
+		Homepage: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toTypeGroup(group phase4.Group) (ast.TypeGroup, bool) {
+	if !startsWithSections(group, ast.LowerTypeName) {
+		return ast.TypeGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerTypeName)
+	if !ok {
+		return ast.TypeGroup{}, false
+	}
+	return ast.TypeGroup{
+		Type: *p.toTypeSection(sections[ast.LowerTypeName]),
+	}, true
+}
+
+func (p *parser) toTypeSection(section phase4.Section) *ast.TypeSection {
+	return &ast.TypeSection{
+		Type: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toEditionGroup(group phase4.Group) (ast.EditionGroup, bool) {
+	if !startsWithSections(group, ast.LowerEditionName) {
+		return ast.EditionGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerEditionName)
+	if !ok {
+		return ast.EditionGroup{}, false
+	}
+	return ast.EditionGroup{
+		Edition: *p.toEditionSection(sections[ast.LowerEditionName]),
+	}, true
+}
+
+func (p *parser) toEditionSection(section phase4.Section) *ast.EditionSection {
+	return &ast.EditionSection{
+		Edition: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toEditorGroup(group phase4.Group) (ast.EditorGroup, bool) {
+	if !startsWithSections(group, ast.LowerEditorName) {
+		return ast.EditorGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerEditorName)
+	if !ok {
+		return ast.EditorGroup{}, false
+	}
+	return ast.EditorGroup{
+		Editor: *p.toEditorSection(sections[ast.LowerEditorName]),
+	}, true
+}
+
+func (p *parser) toEditorSection(section phase4.Section) *ast.EditorSection {
+	return &ast.EditorSection{
+		Editor: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toInstitutionGroup(group phase4.Group) (ast.InstitutionGroup, bool) {
+	if !startsWithSections(group, ast.LowerInstitutionName) {
+		return ast.InstitutionGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerInstitutionName)
+	if !ok {
+		return ast.InstitutionGroup{}, false
+	}
+	return ast.InstitutionGroup{
+		Institution: *p.toInstitutionSection(sections[ast.LowerInstitutionName]),
+	}, true
+}
+
+func (p *parser) toInstitutionSection(section phase4.Section) *ast.InstitutionSection {
+	return &ast.InstitutionSection{
+		Institution: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toJournalGroup(group phase4.Group) (ast.JournalGroup, bool) {
+	if !startsWithSections(group, ast.LowerJournalName) {
+		return ast.JournalGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerJournalName)
+	if !ok {
+		return ast.JournalGroup{}, false
+	}
+	return ast.JournalGroup{
+		Journal: *p.toJournalSection(sections[ast.LowerJournalName]),
+	}, true
+}
+
+func (p *parser) toJournalSection(section phase4.Section) *ast.JournalSection {
+	return &ast.JournalSection{
+		Journal: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toPublisherGroup(group phase4.Group) (ast.PublisherGroup, bool) {
+	if !startsWithSections(group, ast.LowerPublisherName) {
+		return ast.PublisherGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerPublisherName)
+	if !ok {
+		return ast.PublisherGroup{}, false
+	}
+	return ast.PublisherGroup{
+		Publisher: *p.toPublisherSection(sections[ast.LowerPublisherName]),
+	}, true
+}
+
+func (p *parser) toPublisherSection(section phase4.Section) *ast.PublisherSection {
+	return &ast.PublisherSection{
+		Publisher: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toVolumeGroup(group phase4.Group) (ast.VolumeGroup, bool) {
+	if !startsWithSections(group, ast.LowerVolumeName) {
+		return ast.VolumeGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerVolumeName)
+	if !ok {
+		return ast.VolumeGroup{}, false
+	}
+	return ast.VolumeGroup{
+		Volume: *p.toVolumeSection(sections[ast.LowerVolumeName]),
+	}, true
+}
+
+func (p *parser) toVolumeSection(section phase4.Section) *ast.VolumeSection {
+	return &ast.VolumeSection{
+		Volume: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toMonthGroup(group phase4.Group) (ast.MonthGroup, bool) {
+	if !startsWithSections(group, ast.LowerMonthName) {
+		return ast.MonthGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerMonthName)
+	if !ok {
+		return ast.MonthGroup{}, false
+	}
+	return ast.MonthGroup{
+		Month: *p.toMonthSection(sections[ast.LowerMonthName]),
+	}, true
+}
+
+func (p *parser) toMonthSection(section phase4.Section) *ast.MonthSection {
+	return &ast.MonthSection{
+		Month: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toYearGroup(group phase4.Group) (ast.YearGroup, bool) {
+	if !startsWithSections(group, ast.LowerYearName) {
+		return ast.YearGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerYearName)
+	if !ok {
+		return ast.YearGroup{}, false
+	}
+	return ast.YearGroup{
+		Year: *p.toYearSection(sections[ast.LowerYearName]),
+	}, true
+}
+
+func (p *parser) toYearSection(section phase4.Section) *ast.YearSection {
+	return &ast.YearSection{
+		Year: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toDescriptionGroup(group phase4.Group) (ast.DescriptionGroup, bool) {
+	if !startsWithSections(group, ast.LowerDescriptionName) {
+		return ast.DescriptionGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerDescriptionName)
+	if !ok {
+		return ast.DescriptionGroup{}, false
+	}
+	return ast.DescriptionGroup{
+		Description: *p.toDescriptionSection(sections[ast.LowerDescriptionName]),
+	}, true
+}
+
+func (p *parser) toDescriptionSection(section phase4.Section) *ast.DescriptionSection {
+	return &ast.DescriptionSection{
+		Description: p.exactlyOneTextItem(section),
+	}
+}
+
 //////////////////////////////// top level items //////////////////////////
 
 func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelItemType, bool) {
@@ -1606,6 +1990,10 @@ func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelI
 		} else if grp, ok := p.toSpecifyGroup(item); ok {
 			return grp, true
 		} else if grp, ok := p.toTopicGroup(item); ok {
+			return grp, ok
+		} else if grp, ok := p.toPersonGroup(item); ok {
+			return grp, ok
+		} else if grp, ok := p.toResourceGroup(item); ok {
 			return grp, ok
 		}
 	}
@@ -1650,6 +2038,16 @@ func (p *parser) getId(group phase4.Group, required bool) *ast.IdItem {
 		return nil
 	}
 	return p.toIdItem(*group.Id, group.MetaData.Start)
+}
+
+func (p *parser) getStringId(group phase4.Group, required bool) *string {
+	if required && group.Id == nil {
+		p.tracker.Append(newError("Expected a [...] item", group.MetaData.Start))
+		return nil
+	} else if group.Id == nil {
+		return nil
+	}
+	return group.Id
 }
 
 ////////////////////////// arguments ////////////////////////////////////
@@ -1779,6 +2177,91 @@ func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
 	}
 }
 
+func (p *parser) toNoteType(arg phase4.Argument) (ast.NoteType, bool) {
+	switch group := arg.Arg.(type) {
+	case phase4.Group:
+		return p.toDescribingGroup(group)
+	default:
+		return p.toTextItem(arg), true
+	}
+}
+
+func (p *parser) toDescribingGroup(group phase4.Group) (ast.DescribingGroup, bool) {
+	if !startsWithSections(group, ast.LowerDescribingName) {
+		return ast.DescribingGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.DescribingSections...)
+	if !ok {
+		return ast.DescribingGroup{}, false
+	}
+
+	return ast.DescribingGroup{
+		Describing: *p.toDescribingSection(sections[ast.LowerDescribingName]),
+		Content:    *p.toContentSection(sections[ast.LowerContentName]),
+	}, true
+}
+
+func (p *parser) toDescribingSection(section phase4.Section) *ast.DescribingSection {
+	return &ast.DescribingSection{
+		Describing: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toPersonType(arg phase4.Argument) (ast.PersonType, bool) {
+	switch group := arg.Arg.(type) {
+	case phase4.Group:
+		if grp, ok := p.toNameGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toBiographyGroup(group); ok {
+			return grp, true
+		}
+	}
+	return nil, false
+}
+
+func (p *parser) toNameGroup(group phase4.Group) (ast.NameGroup, bool) {
+	if !startsWithSections(group, ast.LowerNameName) {
+		return ast.NameGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.NameSections...)
+	if !ok {
+		return ast.NameGroup{}, false
+	}
+
+	return ast.NameGroup{
+		Name: *p.toNameSection(sections[ast.LowerNameName]),
+	}, true
+}
+
+func (p *parser) toNameSection(section phase4.Section) *ast.NameSection {
+	return &ast.NameSection{
+		Name: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toBiographyGroup(group phase4.Group) (ast.BiographyGroup, bool) {
+	if !startsWithSections(group, ast.LowerBiographyName) {
+		return ast.BiographyGroup{}, false
+	}
+
+	sections, ok := IdentifySections(group.Sections, p.tracker, ast.BiographySections...)
+	if !ok {
+		return ast.BiographyGroup{}, false
+	}
+
+	return ast.BiographyGroup{
+		Biography: *p.toBiographySection(sections[ast.LowerBiographyName]),
+	}, true
+}
+
+func (p *parser) toBiographySection(section phase4.Section) *ast.BiographySection {
+	return &ast.BiographySection{
+		Biography: p.exactlyOneTextItem(section),
+	}
+}
+
 func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[ast.Signature] {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
@@ -1843,6 +2326,36 @@ func (p *parser) toTextItems(args []phase4.Argument) []ast.TextItem {
 	result := make([]ast.TextItem, 0)
 	for _, arg := range args {
 		result = append(result, p.toTextItem(arg))
+	}
+	return result
+}
+
+func (p *parser) toNoteTypes(args []phase4.Argument) []ast.NoteType {
+	result := make([]ast.NoteType, 0)
+	for _, arg := range args {
+		if note, ok := p.toNoteType(arg); ok {
+			result = append(result, note)
+		}
+	}
+	return result
+}
+
+func (p *parser) toPersonTypes(args []phase4.Argument) []ast.PersonType {
+	result := make([]ast.PersonType, 0)
+	for _, arg := range args {
+		if note, ok := p.toPersonType(arg); ok {
+			result = append(result, note)
+		}
+	}
+	return result
+}
+
+func (p *parser) toResourceTypes(args []phase4.Argument) []ast.ResourceType {
+	result := make([]ast.ResourceType, 0)
+	for _, arg := range args {
+		if note, ok := p.toResourceType(arg); ok {
+			result = append(result, note)
+		}
 	}
 	return result
 }
@@ -1939,6 +2452,18 @@ func (p *parser) oneOrMoreTextItems(section phase4.Section) []ast.TextItem {
 
 func (p *parser) zeroOrMoreTextItems(section phase4.Section) []ast.TextItem {
 	return p.toTextItems(section.Args)
+}
+
+func (p *parser) oneOrMoreNoteTypes(section phase4.Section) []ast.NoteType {
+	return oneOrMore(p.toNoteTypes(section.Args), section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) oneOrMorePersonTypes(section phase4.Section) []ast.PersonType {
+	return oneOrMore(p.toPersonTypes(section.Args), section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) oneOrMoreResourceTypes(section phase4.Section) []ast.ResourceType {
+	return oneOrMore(p.toResourceTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneTarget(section phase4.Section) ast.Target {

@@ -121,6 +121,7 @@ const LowerUrlName = "url"
 const LowerHomepageName = "homepage"
 const LowerTypeName = "type"
 const LowerEditionName = "edition"
+const LowerEditorName = "editor"
 const LowerInstitutionName = "institution"
 const LowerJournalName = "journal"
 const LowerPublisherName = "publisher"
@@ -139,6 +140,11 @@ const LowerSignifiesQuestionName = LowerSignifiesName + "?"
 const LowerViewableName = "viewable"
 const LowerViewableQuestionName = LowerViewableName + "?"
 const LowerThroughQuestionName = LowerThroughName + "?"
+const LowerDescribingName = "describing"
+const LowerNameName = "name"
+const LowerBiographyName = "biography"
+const UpperPersonName = "Person"
+const UpperResourceName = "Resource"
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -617,7 +623,25 @@ type NoteGroup struct {
 }
 
 type NoteSection struct {
-	Note []TextItem
+	Note []NoteType
+}
+
+type NoteType interface {
+	NoteType()
+}
+
+func (TextItem) NoteType()        {}
+func (DescribingGroup) NoteType() {}
+
+var DescribingSections = []string{LowerDescribingName, LowerContentName}
+
+type DescribingGroup struct {
+	Describing DescribingSection
+	Content    ContentSection
+}
+
+type DescribingSection struct {
+	Describing TextItem
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1039,6 +1063,199 @@ type TopLevelSpecifySection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
+var PersonSections = []string{UpperPersonName}
+
+type PersonGroup struct {
+	Id     string
+	Person PersonSection
+}
+
+type PersonSection struct {
+	Items []PersonType
+}
+
+type PersonType interface {
+	PersonType()
+}
+
+func (NameGroup) PersonType()      {}
+func (BiographyGroup) PersonType() {}
+
+var NameSections = []string{LowerNameName}
+
+type NameGroup struct {
+	Name NameSection
+}
+
+type NameSection struct {
+	Name []TextItem
+}
+
+var BiographySections = []string{LowerBiographyName}
+
+type BiographyGroup struct {
+	Biography BiographySection
+}
+
+type BiographySection struct {
+	Biography TextItem
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+var ResourceSections = []string{UpperResourceName}
+
+type ResourceGroup struct {
+	Id       string
+	Resource ResourceSection
+}
+
+type ResourceSection struct {
+	Items []ResourceType
+}
+
+func (TitleGroup) ResourceType()       {}
+func (AuthorGroup) ResourceType()      {}
+func (OffsetGroup) ResourceType()      {}
+func (UrlGroup) ResourceType()         {}
+func (HomepageGroup) ResourceType()    {}
+func (TypeGroup) ResourceType()        {}
+func (EditorGroup) ResourceType()      {}
+func (EditionGroup) ResourceType()     {}
+func (InstitutionGroup) ResourceType() {}
+func (JournalGroup) ResourceType()     {}
+func (PublisherGroup) ResourceType()   {}
+func (VolumeGroup) ResourceType()      {}
+func (MonthGroup) ResourceType()       {}
+func (YearGroup) ResourceType()        {}
+func (DescriptionGroup) ResourceType() {}
+
+type ResourceType interface {
+	ResourceType()
+}
+
+type TitleGroup struct {
+	Title TitleSection
+}
+
+type TitleSection struct {
+	Title TextItem
+}
+
+type AuthorGroup struct {
+	Author AuthorSection
+}
+
+type AuthorSection struct {
+	Author []TextItem
+}
+
+type OffsetGroup struct {
+	Offset OffsetSection
+}
+
+type OffsetSection struct {
+	Offset TextItem
+}
+
+type UrlGroup struct {
+	Url UrlSection
+}
+
+type UrlSection struct {
+	Url TextItem
+}
+
+type HomepageGroup struct {
+	Homepage HomepageSection
+}
+
+type HomepageSection struct {
+	Homepage TextItem
+}
+
+type TypeGroup struct {
+	Type TypeSection
+}
+
+type TypeSection struct {
+	Type TextItem
+}
+
+type EditorGroup struct {
+	Editor EditorSection
+}
+
+type EditorSection struct {
+	Editor []TextItem
+}
+
+type EditionGroup struct {
+	Edition EditionSection
+}
+
+type EditionSection struct {
+	Edition TextItem
+}
+
+type InstitutionGroup struct {
+	Institution InstitutionSection
+}
+
+type InstitutionSection struct {
+	Institution []TextItem
+}
+
+type JournalGroup struct {
+	Journal JournalSection
+}
+
+type JournalSection struct {
+	Journal []TextItem
+}
+
+type PublisherGroup struct {
+	Publisher PublisherSection
+}
+
+type PublisherSection struct {
+	Publisher []TextItem
+}
+
+type VolumeGroup struct {
+	Volume VolumeSection
+}
+
+type VolumeSection struct {
+	Volume TextItem
+}
+
+type MonthGroup struct {
+	Month MonthSection
+}
+
+type MonthSection struct {
+	Month TextItem
+}
+
+type YearGroup struct {
+	Year YearSection
+}
+
+type YearSection struct {
+	Year TextItem
+}
+
+type DescriptionGroup struct {
+	Description DescriptionSection
+}
+
+type DescriptionSection struct {
+	Description TextItem
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
 type TextBlockItem struct {
 	Text string
 }
@@ -1056,6 +1273,8 @@ func (ConjectureGroup) TopLevelItemType() {}
 func (TheoremGroup) TopLevelItemType()    {}
 func (SpecifyGroup) TopLevelItemType()    {}
 func (TopicGroup) TopLevelItemType()      {}
+func (PersonGroup) TopLevelItemType()     {}
+func (ResourceGroup) TopLevelItemType()   {}
 
 type Document struct {
 	Items []TopLevelItemType

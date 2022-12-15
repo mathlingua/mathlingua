@@ -1443,6 +1443,18 @@ func (fp *formulationParser) curlyParams() ([]ast.StructuralFormType, bool) {
 }
 
 func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool) {
+	if op, ok := fp.infixOperatorForm(); ok {
+		return op, ok
+	}
+
+	if op, ok := fp.prefixOperatorForm(); ok {
+		return op, ok
+	}
+
+	if op, ok := fp.postfixOperatorForm(); ok {
+		return op, ok
+	}
+
 	if fun, ok := fp.functionForm(); ok {
 		return fun, true
 	}
@@ -1472,6 +1484,65 @@ func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool)
 	}
 
 	return nil, false
+}
+
+func (fp *formulationParser) infixOperatorForm() (ast.InfixOperatorForm, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	lhs, lhsOk := fp.nameForm()
+	op, opOk := fp.operatorAsNameForm()
+	rhs, rhsOk := fp.nameForm()
+	if !lhsOk || !opOk || !rhsOk {
+		fp.lexer.RollBack(id)
+		return ast.InfixOperatorForm{}, false
+	}
+	fp.lexer.Commit(id)
+	return ast.InfixOperatorForm{
+		Operator: op,
+		Lhs:      lhs,
+		Rhs:      rhs,
+		MetaData: ast.MetaData{
+			Start: fp.getShiftedPosition(start),
+		},
+	}, true
+}
+
+func (fp *formulationParser) prefixOperatorForm() (ast.PrefixOperatorForm, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	op, opOk := fp.operatorAsNameForm()
+	param, paramOk := fp.nameForm()
+	if !opOk || !paramOk {
+		fp.lexer.RollBack(id)
+		return ast.PrefixOperatorForm{}, false
+	}
+	fp.lexer.Commit(id)
+	return ast.PrefixOperatorForm{
+		Operator: op,
+		Param:    param,
+		MetaData: ast.MetaData{
+			Start: fp.getShiftedPosition(start),
+		},
+	}, true
+}
+
+func (fp *formulationParser) postfixOperatorForm() (ast.PostfixOperatorForm, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	param, paramOk := fp.nameForm()
+	op, opOk := fp.operatorAsNameForm()
+	if !paramOk || !opOk {
+		fp.lexer.RollBack(id)
+		return ast.PostfixOperatorForm{}, false
+	}
+	fp.lexer.Commit(id)
+	return ast.PostfixOperatorForm{
+		Operator: op,
+		Param:    param,
+		MetaData: ast.MetaData{
+			Start: fp.getShiftedPosition(start),
+		},
+	}, true
 }
 
 func (fp *formulationParser) operatorAsNameForm() (ast.NameForm, bool) {

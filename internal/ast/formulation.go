@@ -66,6 +66,9 @@ func (InfixCommandOperatorId) NodeType()                 {}
 func (PseudoTokenNode) NodeType()                        {}
 func (PseudoExpression) NodeType()                       {}
 func (MultiplexedInfixOperatorCallExpression) NodeType() {}
+func (InfixOperatorForm) NodeType()                      {}
+func (PrefixOperatorForm) NodeType()                     {}
+func (PostfixOperatorForm) NodeType()                    {}
 
 func (n NameForm) Start() Position                               { return n.MetaData.Start }
 func (n FunctionForm) Start() Position                           { return n.MetaData.Start }
@@ -105,6 +108,9 @@ func (n InfixCommandOperatorId) Start() Position                 { return n.Meta
 func (n PseudoTokenNode) Start() Position                        { return n.MetaData.Start }
 func (n PseudoExpression) Start() Position                       { return n.MetaData.Start }
 func (n MultiplexedInfixOperatorCallExpression) Start() Position { return n.MetaData.Start }
+func (n InfixOperatorForm) Start() Position                      { return n.MetaData.Start }
+func (n PrefixOperatorForm) Start() Position                     { return n.MetaData.Start }
+func (n PostfixOperatorForm) Start() Position                    { return n.MetaData.Start }
 
 ///////////////////////// Structural Forms ///////////////////////////////////////////
 
@@ -119,6 +125,9 @@ func (FunctionExpressionForm) StructuralForm() {}
 func (TupleForm) StructuralForm()              {}
 func (FixedSetForm) StructuralForm()           {}
 func (ConditionalSetForm) StructuralForm()     {}
+func (InfixOperatorForm) StructuralForm()      {}
+func (PrefixOperatorForm) StructuralForm()     {}
+func (PostfixOperatorForm) StructuralForm()    {}
 
 // x
 type NameForm struct {
@@ -135,6 +144,28 @@ type FunctionForm struct {
 	Target   NameForm
 	Params   []NameForm
 	VarArg   VarArgData
+	MetaData MetaData
+}
+
+// x * y
+type InfixOperatorForm struct {
+	Operator NameForm
+	Lhs      NameForm
+	Rhs      NameForm
+	MetaData MetaData
+}
+
+// +y
+type PrefixOperatorForm struct {
+	Operator NameForm
+	Param    NameForm
+	MetaData MetaData
+}
+
+// x!
+type PostfixOperatorForm struct {
+	Operator NameForm
+	Param    NameForm
 	MetaData MetaData
 }
 

@@ -145,6 +145,8 @@ const LowerNameName = "name"
 const LowerBiographyName = "biography"
 const UpperPersonName = "Person"
 const UpperResourceName = "Resource"
+const UpperIdName = "Id"
+const UpperIdQuestionName = UpperIdName + "?"
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -719,6 +721,7 @@ var DescribesSections = []string{
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
+	UpperIdQuestionName,
 }
 
 type DescribesGroup struct {
@@ -735,6 +738,7 @@ type DescribesGroup struct {
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
+	MetaId     *MetaIdSection
 }
 
 type DescribesSection struct {
@@ -763,6 +767,12 @@ type SatisfiesSection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
+type MetaIdSection struct {
+	Id TextItem
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
 var DefinesSections = []string{
 	UpperDefinesName,
 	LowerWithQuestionName,
@@ -776,6 +786,7 @@ var DefinesSections = []string{
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
+	UpperIdQuestionName,
 }
 
 type DefinesGroup struct {
@@ -792,6 +803,7 @@ type DefinesGroup struct {
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
+	MetaId     *MetaIdSection
 }
 
 type DefinesSection struct {
@@ -819,6 +831,7 @@ var StatesSections = []string{
 	UpperJustifiedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
+	UpperIdQuestionName,
 }
 
 type StatesGroup struct {
@@ -833,6 +846,7 @@ type StatesGroup struct {
 	Justified  *JustifiedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
+	MetaId     *MetaIdSection
 }
 
 type StatesSection struct {
@@ -849,6 +863,7 @@ var ProofSections = []string{
 	LowerOfName,
 	LowerContentName,
 	UpperReferencesQuestionName,
+	UpperIdQuestionName,
 }
 
 type ProofGroup struct {
@@ -856,6 +871,7 @@ type ProofGroup struct {
 	Of         OfSection
 	Content    ContentSection
 	References *ReferencesSection
+	MetaId     *MetaIdSection
 }
 
 type ProofSection struct {
@@ -882,6 +898,7 @@ var AxiomSections = []string{
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
+	UpperIdQuestionName,
 }
 
 type AxiomGroup struct {
@@ -895,6 +912,7 @@ type AxiomGroup struct {
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
+	MetaId     *MetaIdSection
 }
 
 type AxiomSection struct {
@@ -913,6 +931,7 @@ var ConjectureSections = []string{
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
+	UpperIdQuestionName,
 }
 
 type ConjectureGroup struct {
@@ -926,6 +945,7 @@ type ConjectureGroup struct {
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
+	MetaId     *MetaIdSection
 }
 
 type ConjectureSection struct {
@@ -945,6 +965,7 @@ var TheoremSections = []string{
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
+	UpperIdQuestionName,
 }
 
 type TheoremGroup struct {
@@ -959,6 +980,7 @@ type TheoremGroup struct {
 	Documented *DocumentedSection
 	References *ReferencesSection
 	Aliases    *AliasesSection
+	MetaId     *MetaIdSection
 }
 
 type TheoremSection struct {
@@ -971,6 +993,7 @@ var TopicSections = []string{
 	UpperTopicName,
 	LowerContentName,
 	UpperReferencesQuestionName,
+	UpperIdQuestionName,
 }
 
 type TopicGroup struct {
@@ -978,6 +1001,7 @@ type TopicGroup struct {
 	Topic      TopicSection
 	Content    ContentSection
 	References *ReferencesSection
+	MetaId     *MetaIdSection
 }
 
 type TopicSection struct {
@@ -1051,10 +1075,11 @@ type NegativeFloatSection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
-var SpecifySections = []string{UpperSpecifyName}
+var SpecifySections = []string{UpperSpecifyName, UpperIdQuestionName}
 
 type SpecifyGroup struct {
 	Specify TopLevelSpecifySection
+	MetaId  *MetaIdSection
 }
 
 type TopLevelSpecifySection struct {
@@ -1063,11 +1088,12 @@ type TopLevelSpecifySection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
-var PersonSections = []string{UpperPersonName}
+var PersonSections = []string{UpperPersonName, UpperIdQuestionName}
 
 type PersonGroup struct {
 	Id     string
 	Person PersonSection
+	MetaId *MetaIdSection
 }
 
 type PersonSection struct {
@@ -1103,11 +1129,12 @@ type BiographySection struct {
 
 //////////////////////////////////////////////////////////////////////////////
 
-var ResourceSections = []string{UpperResourceName}
+var ResourceSections = []string{UpperResourceName, UpperIdQuestionName}
 
 type ResourceGroup struct {
 	Id       string
 	Resource ResourceSection
+	MetaId   *MetaIdSection
 }
 
 type ResourceSection struct {
@@ -1275,6 +1302,7 @@ func (SpecifyGroup) TopLevelItemType()    {}
 func (TopicGroup) TopLevelItemType()      {}
 func (PersonGroup) TopLevelItemType()     {}
 func (ResourceGroup) TopLevelItemType()   {}
+func (ProofGroup) TopLevelItemType()      {}
 
 type Document struct {
 	Items []TopLevelItemType

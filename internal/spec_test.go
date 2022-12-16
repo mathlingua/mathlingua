@@ -204,6 +204,7 @@ var all_group_test_cases = []testCase{
 			"Documented?",
 			"References?",
 			"Aliases?",
+			"Id?",
 		},
 	},
 	{
@@ -221,6 +222,7 @@ var all_group_test_cases = []testCase{
 			"Documented?",
 			"References?",
 			"Aliases?",
+			"Id?",
 		},
 	},
 	{
@@ -236,6 +238,7 @@ var all_group_test_cases = []testCase{
 			"Justified?",
 			"References?",
 			"Aliases?",
+			"Id?",
 		},
 	},
 	{
@@ -245,6 +248,7 @@ var all_group_test_cases = []testCase{
 			"of",
 			"content",
 			"References?",
+			"Id?",
 		},
 	},
 	{
@@ -259,6 +263,7 @@ var all_group_test_cases = []testCase{
 			"Documented?",
 			"References?",
 			"Aliases?",
+			"Id?",
 		},
 	},
 	{
@@ -273,6 +278,7 @@ var all_group_test_cases = []testCase{
 			"Documented?",
 			"References?",
 			"Aliases?",
+			"Id?",
 		},
 	},
 	{
@@ -288,6 +294,7 @@ var all_group_test_cases = []testCase{
 			"Documented?",
 			"References?",
 			"Aliases?",
+			"Id?",
 		},
 	},
 	{
@@ -296,6 +303,7 @@ var all_group_test_cases = []testCase{
 			"Topic",
 			"content",
 			"References?",
+			"Id?",
 		},
 	},
 	{
@@ -337,6 +345,7 @@ var all_group_test_cases = []testCase{
 		actual: ast.SpecifySections,
 		expected: []string{
 			"Specify",
+			"Id?",
 		},
 	},
 }

@@ -75,6 +75,23 @@ func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 		return result
 	}
 
+	absorbComments := func() {
+		// treat the comment as if it doesn't exist
+		// where the comment continues until the end of the line
+		for i+1 < len(chars) && chars[i].Symbol == '-' && chars[i+1].Symbol == '-' {
+			for i < len(chars) && chars[i].Symbol != '\n' {
+				i++
+			}
+
+			// if the comment ends with a newline also absorb that
+			if i < len(chars) && chars[i].Symbol == '\n' {
+				i++
+			} else {
+				break
+			}
+		}
+	}
+
 	absorbNewlines := func() {
 		for i < len(chars) && chars[i].Symbol == '\n' {
 			c := chars[i]
@@ -287,6 +304,11 @@ func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 
 	for i < len(chars) {
 		absorbNewlines()
+		if i >= len(chars) {
+			break
+		}
+
+		absorbComments()
 		if i >= len(chars) {
 			break
 		}

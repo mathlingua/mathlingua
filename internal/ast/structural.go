@@ -605,7 +605,7 @@ type RelatedGroup struct {
 }
 
 type RelatedSection struct {
-	Related []Formulation[Signature]
+	Related []TextItem
 }
 
 var DiscovererSections = []string{LowerDiscovererName}

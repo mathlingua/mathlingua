@@ -717,7 +717,7 @@ func (p *parser) toRelatedGroup(group phase4.Group) (ast.RelatedGroup, bool) {
 
 func (p *parser) toRelatedSection(section phase4.Section) *ast.RelatedSection {
 	return &ast.RelatedSection{
-		Related: p.oneOrMoreSignatureItems(section),
+		Related: p.oneOrMoreTextItems(section),
 	}
 }
 

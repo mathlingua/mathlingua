@@ -30,6 +30,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 type Mlg interface {
@@ -135,7 +137,7 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 				return nil
 			}
 
-			bytes, err := os.ReadFile(p)
+			text, err := appendMetaIds(p)
 			if err != nil {
 				numErrors++
 				result.GeneralErrors = append(result.GeneralErrors, err.Error())
@@ -143,7 +145,7 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 			}
 
 			numFilesProcessed++
-			_, diagnostics := parseDocument(string(bytes))
+			_, diagnostics := parseDocument(text)
 			for _, diag := range diagnostics {
 				debugInfo := ""
 				if debug {
@@ -216,6 +218,95 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 	} else {
 		m.logger.Success(fmt.Sprintf("Processed %d %s and found 0 errors", numFilesProcessed, filesText))
 	}
+}
+
+func appendMetaIds(path string) (string, error) {
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	startText := string(bytes)
+	endText := ""
+	lines := strings.Split(startText, "\n")
+	i := 0
+	isInTopLevel := false
+	hasComment := false
+	hasMetaId := false
+	for i < len(lines) {
+		cur := lines[i]
+		i++
+
+		trimmedCur := strings.TrimSpace(cur)
+		if strings.HasPrefix(trimmedCur, "::") {
+			endText += cur
+			endText += "\n"
+
+			isInTopLevel = false
+			hasComment = false
+			hasMetaId = false
+
+			if trimmedCur == "::" || !strings.HasSuffix(trimmedCur, "::") {
+				// it is a textblock
+				for i < len(lines) {
+					next := lines[i]
+					i++
+					endText += next
+					endText += "\n"
+					if strings.HasSuffix(strings.TrimSpace(next), "::") {
+						break
+					}
+				}
+			}
+		} else if isInTopLevel && strings.HasPrefix(cur, "--") {
+			hasComment = true
+			endText += cur
+			endText += "\n"
+		} else if isInTopLevel && strings.HasPrefix(cur, "Id:") {
+			hasMetaId = true
+			endText += cur
+			endText += "\n"
+		} else if strings.HasPrefix(cur, "Defines:") ||
+			strings.HasPrefix(cur, "Describes:") ||
+			strings.HasPrefix(cur, "States:") ||
+			strings.HasPrefix(cur, "Axiom:") ||
+			strings.HasPrefix(cur, "Conjecture:") ||
+			strings.HasPrefix(cur, "Theorem:") ||
+			strings.HasPrefix(cur, "Topic:") ||
+			strings.HasPrefix(cur, "Resource:") ||
+			strings.HasPrefix(cur, "Person:") ||
+			strings.HasPrefix(cur, "Specify:") ||
+			strings.HasPrefix(cur, "Proof:") {
+			isInTopLevel = true
+			endText += cur
+			endText += "\n"
+		} else if cur == "" {
+			if isInTopLevel {
+				if !hasComment {
+					endText += "------------------------------------------\n"
+				}
+				if !hasMetaId {
+					newId, _ := uuid.NewRandom()
+					endText += fmt.Sprintf("Id: \"%s\"\n", newId)
+				}
+			}
+			isInTopLevel = false
+			hasComment = false
+			hasMetaId = false
+
+			endText += cur
+			endText += "\n"
+		} else {
+			endText += cur
+			endText += "\n"
+		}
+	}
+
+	if err := os.WriteFile(path, []byte(endText), 0644); err != nil {
+		return "", err
+	}
+
+	return endText, nil
 }
 
 func (m *mlg) View() {

@@ -868,14 +868,14 @@ var ProofSections = []string{
 
 type ProofGroup struct {
 	Id         IdItem
+	Proof      TopLevelProofSection
 	Of         OfSection
 	Content    ContentSection
 	References *ReferencesSection
 	MetaId     *MetaIdSection
 }
 
-type ProofSection struct {
-	Proof TextItem
+type TopLevelProofSection struct {
 }
 
 type OfSection struct {
@@ -985,6 +985,10 @@ type TheoremGroup struct {
 
 type TheoremSection struct {
 	Theorem []TextItem
+}
+
+type ProofSection struct {
+	Proof TextItem
 }
 
 //////////////////////////////////////////////////////////////////////////////

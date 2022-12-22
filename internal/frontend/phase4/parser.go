@@ -21,12 +21,14 @@ import (
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/shared"
+	"mathlingua/internal/mlglib"
 )
 
 func Parse(lexer3 shared.Lexer, tracker frontend.DiagnosticTracker) Root {
 	parser := phase4Parser{
 		lexer:   lexer3,
 		tracker: tracker,
+		keyGen:  mlglib.NewKeyGenerator(),
 	}
 	root := parser.root()
 	return root
@@ -37,6 +39,7 @@ func Parse(lexer3 shared.Lexer, tracker frontend.DiagnosticTracker) Root {
 type phase4Parser struct {
 	lexer   shared.Lexer
 	tracker frontend.DiagnosticTracker
+	keyGen  mlglib.KeyGenerator
 }
 
 func (p *phase4Parser) appendDiagnostic(message string, position ast.Position) {
@@ -90,6 +93,7 @@ func (p *phase4Parser) root() Root {
 				Text: textBlock.Text,
 				MetaData: MetaData{
 					Start: textBlock.Position,
+					Key:   p.keyGen.Next(),
 				},
 			})
 		} else {
@@ -103,6 +107,7 @@ func (p *phase4Parser) root() Root {
 		Nodes: nodes,
 		MetaData: MetaData{
 			Start: start,
+			Key:   p.keyGen.Next(),
 		},
 	}
 }
@@ -131,6 +136,7 @@ func (p *phase4Parser) group(id *string) (Group, bool) {
 		Sections: sections,
 		MetaData: MetaData{
 			Start: begin.Position,
+			Key:   p.keyGen.Next(),
 		},
 	}, true
 }
@@ -165,6 +171,7 @@ func (p *phase4Parser) section() (Section, bool) {
 		Args: args,
 		MetaData: MetaData{
 			Start: begin.Position,
+			Key:   p.keyGen.Next(),
 		},
 	}, true
 }
@@ -183,6 +190,7 @@ func (p *phase4Parser) argument() (Argument, bool) {
 				Arg:      data,
 				MetaData: MetaData{
 					Start: start,
+					Key:   p.keyGen.Next(),
 				},
 			}
 		} else {
@@ -205,6 +213,7 @@ func (p *phase4Parser) argument() (Argument, bool) {
 				Arg:      data,
 				MetaData: MetaData{
 					Start: start,
+					Key:   p.keyGen.Next(),
 				},
 			}
 		} else {
@@ -225,6 +234,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 			Text: arg.Text,
 			MetaData: MetaData{
 				Start: arg.Position,
+				Key:   p.keyGen.Next(),
 			},
 		}, true
 	}
@@ -236,6 +246,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 			Text: arg.Text,
 			MetaData: MetaData{
 				Start: arg.Position,
+				Key:   p.keyGen.Next(),
 			},
 		}, true
 	}
@@ -247,6 +258,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 			Text: arg.Text,
 			MetaData: MetaData{
 				Start: arg.Position,
+				Key:   p.keyGen.Next(),
 			},
 		}, true
 	}

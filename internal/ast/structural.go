@@ -152,6 +152,7 @@ const UpperIdQuestionName = UpperIdName + "?"
 
 type MetaData struct {
 	Start Position
+	Key   int
 }
 
 type IdItem struct {

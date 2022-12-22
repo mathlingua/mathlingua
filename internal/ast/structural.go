@@ -150,44 +150,50 @@ const UpperIdQuestionName = UpperIdName + "?"
 
 ///////////////////////////////////////////////////////////////////////
 
+type MetaData struct {
+	Start Position
+}
+
 type IdItem struct {
-	RawText string
-	Root    NodeType
-	Label   *string
+	RawText  string
+	Root     NodeType
+	Label    *string
+	MetaData MetaData
 }
 
 type Target struct {
-	RawText string
-	Root    NodeType
-	Label   *string
+	RawText  string
+	Root     NodeType
+	Label    *string
+	MetaData MetaData
 }
 
 type Spec struct {
-	RawText string
-	Root    NodeType
-	Label   *string
+	RawText  string
+	Root     NodeType
+	Label    *string
+	MetaData MetaData
 }
 
 type Alias struct {
-	RawText string
-	Root    NodeType
-	Label   *string
+	RawText  string
+	Root     NodeType
+	Label    *string
+	MetaData MetaData
 }
 
 func (Alias) ProvidesType() {}
 
 type Formulation[T NodeType] struct {
-	RawText string
-	Root    T
-	Label   *string
-}
-
-type MetaData struct {
-	Start Position
+	RawText  string
+	Root     T
+	Label    *string
+	MetaData MetaData
 }
 
 type TextItem struct {
-	RawText string
+	RawText  string
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -224,6 +230,7 @@ type GivenGroup struct {
 	Where    *WhereSection
 	SuchThat *SuchThatSection
 	Then     ThenSection
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -231,11 +238,13 @@ type GivenGroup struct {
 var AllOfSections = []string{LowerAllOfName}
 
 type AllOfGroup struct {
-	AllOf AllOfSection
+	AllOf    AllOfSection
+	MetaData MetaData
 }
 
 type AllOfSection struct {
-	Clauses []Clause
+	Clauses  []Clause
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -243,11 +252,13 @@ type AllOfSection struct {
 var NotSections = []string{LowerNotName}
 
 type NotGroup struct {
-	Not NotSection
+	Not      NotSection
+	MetaData MetaData
 }
 
 type NotSection struct {
-	Clause Clause
+	Clause   Clause
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -255,11 +266,13 @@ type NotSection struct {
 var AnyOfSections = []string{LowerAnyOfName}
 
 type AnyOfGroup struct {
-	AnyOf AnyOfSection
+	AnyOf    AnyOfSection
+	MetaData MetaData
 }
 
 type AnyOfSection struct {
-	Clauses []Clause
+	Clauses  []Clause
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -267,11 +280,13 @@ type AnyOfSection struct {
 var OneOfSections = []string{LowerOneOfName}
 
 type OneOfGroup struct {
-	OneOf OneOfSection
+	OneOf    OneOfSection
+	MetaData MetaData
 }
 
 type OneOfSection struct {
-	Clauses []Clause
+	Clauses  []Clause
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -286,18 +301,22 @@ type ExistsGroup struct {
 	Exists   ExistsSection
 	Where    *WhereSection
 	SuchThat *SuchThatSection
+	MetaData MetaData
 }
 
 type ExistsSection struct {
-	Targets []Target
+	Targets  []Target
+	MetaData MetaData
 }
 
 type WhereSection struct {
-	Specs []Spec
+	Specs    []Spec
+	MetaData MetaData
 }
 
 type SuchThatSection struct {
-	Clauses []Clause
+	Clauses  []Clause
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -312,10 +331,12 @@ type ExistsUniqueGroup struct {
 	ExistsUnique ExistsUniqueSection
 	Where        *WhereSection
 	SuchThat     SuchThatSection
+	MetaData     MetaData
 }
 
 type ExistsUniqueSection struct {
-	Targets []Target
+	Targets  []Target
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -332,14 +353,17 @@ type ForAllGroup struct {
 	Where    *WhereSection
 	SuchThat *SuchThatSection
 	Then     ThenSection
+	MetaData MetaData
 }
 
 type ForAllSection struct {
-	Targets []Target
+	Targets  []Target
+	MetaData MetaData
 }
 
 type ThenSection struct {
-	Clauses []Clause
+	Clauses  []Clause
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -350,12 +374,14 @@ var IfSections = []string{
 }
 
 type IfGroup struct {
-	If   IfSection
-	Then ThenSection
+	If       IfSection
+	Then     ThenSection
+	MetaData MetaData
 }
 
 type IfSection struct {
-	Clauses []Clause
+	Clauses  []Clause
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -366,25 +392,29 @@ var IffSections = []string{
 }
 
 type IffGroup struct {
-	Iff  IffSection
-	Then ThenSection
+	Iff      IffSection
+	Then     ThenSection
+	MetaData MetaData
 }
 
 type IffSection struct {
-	Clauses []Clause
+	Clauses  []Clause
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 type WhenSection struct {
-	When []Clause
+	When     []Clause
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 type IfThen struct {
-	If   IfSection
-	Then ThenSection
+	If       IfSection
+	Then     ThenSection
+	MetaData MetaData
 }
 
 var PiecewiseSections = []string{
@@ -398,13 +428,16 @@ type PiecewiseGroup struct {
 	Piecewise PiecewiseSection
 	IfThen    []IfThen
 	Else      *ElseSection
+	MetaData  MetaData
 }
 
 type PiecewiseSection struct {
+	MetaData MetaData
 }
 
 type ElseSection struct {
-	Items []Clause
+	Items    []Clause
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -415,8 +448,9 @@ var WhenSections = []string{
 }
 
 type WhenGroup struct {
-	When WhenSection
-	Then ThenSection
+	When     WhenSection
+	Then     ThenSection
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -434,16 +468,19 @@ var SymbolSections = []string{
 }
 
 type SymbolSection struct {
-	Symbol Alias
+	Symbol   Alias
+	MetaData MetaData
 }
 
 type WrittenSection struct {
-	Written []TextItem
+	Written  []TextItem
+	MetaData MetaData
 }
 
 type SymbolWrittenGroup struct {
-	Symbol  SymbolSection
-	Written *WrittenSection
+	Symbol   SymbolSection
+	Written  *WrittenSection
+	MetaData MetaData
 }
 
 var ConnectionSections = []string{
@@ -457,21 +494,26 @@ var ConnectionSections = []string{
 }
 
 type ConnectionSection struct {
+	MetaData MetaData
 }
 
 type ToSection struct {
-	To Target
+	To       Target
+	MetaData MetaData
 }
 
 type SignifiesSection struct {
 	Signifies Spec
+	MetaData  MetaData
 }
 
 type ConnectionViewableSection struct {
+	MetaData MetaData
 }
 
 type ConnectionThroughSection struct {
-	Through Formulation[NodeType]
+	Through  Formulation[NodeType]
+	MetaData MetaData
 }
 
 type ConnectionGroup struct {
@@ -481,29 +523,36 @@ type ConnectionGroup struct {
 	Signfies   *SignifiesSection
 	Viewable   *ConnectionViewableSection
 	Through    *ConnectionThroughSection
+	MetaData   MetaData
 }
 
 type SimpleOperationsSection struct {
 	Operations []Alias
+	MetaData   MetaData
 }
 
 type SingleAliasesSection struct {
-	Aliases Alias
+	Aliases  Alias
+	MetaData MetaData
 }
 
 type OperationSection struct {
 	Operation Alias
+	MetaData  MetaData
 }
 
 type OperationsSection struct {
+	MetaData MetaData
 }
 
 type OnSection struct {
-	On []Target
+	On       []Target
+	MetaData MetaData
 }
 
 type SpecifySection struct {
-	Specify []Clause
+	Specify  []Clause
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -511,32 +560,38 @@ type SpecifySection struct {
 var WrittenSections = []string{LowerWrittenName}
 
 type WrittenGroup struct {
-	Written WrittenSection
+	Written  WrittenSection
+	MetaData MetaData
 }
 
 var CalledSections = []string{LowerCalledName}
 
 type CalledGroup struct {
-	Called CalledSection
+	Called   CalledSection
+	MetaData MetaData
 }
 
 type CalledSection struct {
-	Called []TextItem
+	Called   []TextItem
+	MetaData MetaData
 }
 
 var WritingSections = []string{LowerWritingName, LowerAsName}
 
 type WritingGroup struct {
-	Writing WritingSection
-	As      WritingAsSection
+	Writing  WritingSection
+	As       WritingAsSection
+	MetaData MetaData
 }
 
 type WritingSection struct {
-	Writing Target
+	Writing  Target
+	MetaData MetaData
 }
 
 type WritingAsSection struct {
-	As []TextItem
+	As       []TextItem
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -562,70 +617,84 @@ var OverviewSections = []string{LowerOverviewName}
 
 type OverviewGroup struct {
 	Overview OverviewSection
+	MetaData MetaData
 }
 
 type OverviewSection struct {
 	Overview TextItem
+	MetaData MetaData
 }
 
 var MotivationSections = []string{LowerMotivationName}
 
 type MotivationGroup struct {
 	Motivation MotivationSection
+	MetaData   MetaData
 }
 
 type MotivationSection struct {
 	Motivation TextItem
+	MetaData   MetaData
 }
 
 var HistorySections = []string{LowerHistoryName}
 
 type HistoryGroup struct {
-	History HistorySection
+	History  HistorySection
+	MetaData MetaData
 }
 
 type HistorySection struct {
-	History TextItem
+	History  TextItem
+	MetaData MetaData
 }
 
 var ExampleSections = []string{LowerExampleName}
 
 type ExampleGroup struct {
 	Examples ExampleSection
+	MetaData MetaData
 }
 
 type ExampleSection struct {
 	Examples []TextItem
+	MetaData MetaData
 }
 
 var RelatedSections = []string{LowerRelatedName}
 
 type RelatedGroup struct {
-	Related RelatedSection
+	Related  RelatedSection
+	MetaData MetaData
 }
 
 type RelatedSection struct {
-	Related []TextItem
+	Related  []TextItem
+	MetaData MetaData
 }
 
 var DiscovererSections = []string{LowerDiscovererName}
 
 type DiscovererGroup struct {
 	Discoverer DiscovererSection
+	MetaData   MetaData
 }
 
 type DiscovererSection struct {
 	Discoverer []TextItem
+	MetaData   MetaData
 }
 
 var NoteSections = []string{LowerNoteName}
 
 type NoteGroup struct {
-	Note NoteSection
+	Note     NoteSection
+	MetaData MetaData
 }
 
 type NoteSection struct {
-	Note []NoteType
+	Note     []NoteType
+	MetaData MetaData
 }
 
 type NoteType interface {
@@ -640,34 +709,40 @@ var DescribingSections = []string{LowerDescribingName, LowerContentName}
 type DescribingGroup struct {
 	Describing DescribingSection
 	Content    ContentSection
+	MetaData   MetaData
 }
 
 type DescribingSection struct {
 	Describing TextItem
+	MetaData   MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 type ProvidesSection struct {
 	Provides []ProvidesType
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 type AliasesSection struct {
-	Aliases []Alias
+	Aliases  []Alias
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 type DocumentedSection struct {
 	Documented []DocumentedType
+	MetaData   MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 type JustifiedSection struct {
 	Justified []JustifiedType
+	MetaData  MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -682,28 +757,33 @@ func (ByGroup) JustifiedType()    {}
 var LabelSections = []string{LowerLabelName, LowerByName}
 
 type LabelGroup struct {
-	Label LabelSection
-	By    BySection
+	Label    LabelSection
+	By       BySection
+	MetaData MetaData
 }
 
 type LabelSection struct {
-	Label TextItem
+	Label    TextItem
+	MetaData MetaData
 }
 
 var BySections = []string{LowerByName}
 
 type ByGroup struct {
-	By BySection
+	By       BySection
+	MetaData MetaData
 }
 
 type BySection struct {
-	By []TextItem
+	By       []TextItem
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 type ReferencesSection struct {
 	References []TextItem
+	MetaData   MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -739,36 +819,44 @@ type DescribesGroup struct {
 	References *ReferencesSection
 	Aliases    *AliasesSection
 	MetaId     *MetaIdSection
+	MetaData   MetaData
 }
 
 type DescribesSection struct {
 	Describes Target
+	MetaData  MetaData
 }
 
 type WithSection struct {
-	With []Target
+	With     []Target
+	MetaData MetaData
 }
 
 type GivenSection struct {
-	Given []Target
+	Given    []Target
+	MetaData MetaData
 }
 
 type UsingSection struct {
-	Using []Target
+	Using    []Target
+	MetaData MetaData
 }
 
 type ExtendsSection struct {
-	Extends []Clause
+	Extends  []Clause
+	MetaData MetaData
 }
 
 type SatisfiesSection struct {
 	Satisfies []Clause
+	MetaData  MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 type MetaIdSection struct {
-	Id TextItem
+	Id       TextItem
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -804,18 +892,22 @@ type DefinesGroup struct {
 	References *ReferencesSection
 	Aliases    *AliasesSection
 	MetaId     *MetaIdSection
+	MetaData   MetaData
 }
 
 type DefinesSection struct {
-	Defines Target
+	Defines  Target
+	MetaData MetaData
 }
 
 type MeansSection struct {
-	Means Clause
+	Means    Clause
+	MetaData MetaData
 }
 
 type SpecifiesSection struct {
 	Specifies []Clause
+	MetaData  MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -847,13 +939,16 @@ type StatesGroup struct {
 	References *ReferencesSection
 	Aliases    *AliasesSection
 	MetaId     *MetaIdSection
+	MetaData   MetaData
 }
 
 type StatesSection struct {
+	MetaData MetaData
 }
 
 type ThatSection struct {
-	That []Clause
+	That     []Clause
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -873,17 +968,21 @@ type ProofGroup struct {
 	Content    ContentSection
 	References *ReferencesSection
 	MetaId     *MetaIdSection
+	MetaData   MetaData
 }
 
 type TopLevelProofSection struct {
+	MetaData MetaData
 }
 
 type OfSection struct {
-	Of TextItem
+	Of       TextItem
+	MetaData MetaData
 }
 
 type ContentSection struct {
-	Content TextItem
+	Content  TextItem
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -913,10 +1012,12 @@ type AxiomGroup struct {
 	References *ReferencesSection
 	Aliases    *AliasesSection
 	MetaId     *MetaIdSection
+	MetaData   MetaData
 }
 
 type AxiomSection struct {
-	Axiom []TextItem
+	Axiom    []TextItem
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -946,10 +1047,12 @@ type ConjectureGroup struct {
 	References *ReferencesSection
 	Aliases    *AliasesSection
 	MetaId     *MetaIdSection
+	MetaData   MetaData
 }
 
 type ConjectureSection struct {
 	Conjecture []TextItem
+	MetaData   MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -981,14 +1084,17 @@ type TheoremGroup struct {
 	References *ReferencesSection
 	Aliases    *AliasesSection
 	MetaId     *MetaIdSection
+	MetaData   MetaData
 }
 
 type TheoremSection struct {
-	Theorem []TextItem
+	Theorem  []TextItem
+	MetaData MetaData
 }
 
 type ProofSection struct {
-	Proof TextItem
+	Proof    TextItem
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1006,9 +1112,11 @@ type TopicGroup struct {
 	Content    ContentSection
 	References *ReferencesSection
 	MetaId     *MetaIdSection
+	MetaData   MetaData
 }
 
 type TopicSection struct {
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1026,11 +1134,13 @@ func (NegativeFloatGroup) SpecifyType() {}
 var ZeroSections = []string{LowerZeroName, LowerMeansName}
 
 type ZeroGroup struct {
-	Zero  ZeroSection
-	Means MeansSection
+	Zero     ZeroSection
+	Means    MeansSection
+	MetaData MetaData
 }
 
 type ZeroSection struct {
+	MetaData MetaData
 }
 
 var PositiveIntSections = []string{LowerPositiveIntName, LowerMeansName}
@@ -1038,10 +1148,12 @@ var PositiveIntSections = []string{LowerPositiveIntName, LowerMeansName}
 type PositiveIntGroup struct {
 	PositiveInt PositiveIntSection
 	Means       MeansSection
+	MetaData    MetaData
 }
 
 type PositiveIntSection struct {
 	PositiveInt Target
+	MetaData    MetaData
 }
 
 var NegativeIntSections = []string{LowerNegativeIntName, LowerMeansName}
@@ -1049,10 +1161,12 @@ var NegativeIntSections = []string{LowerNegativeIntName, LowerMeansName}
 type NegativeIntGroup struct {
 	NegativeInt NegativeIntSection
 	Means       MeansSection
+	MetaData    MetaData
 }
 
 type NegativeIntSection struct {
 	NegativeInt Target
+	MetaData    MetaData
 }
 
 var PositiveFloatSections = []string{LowerPositiveFloatName, LowerMeansName}
@@ -1060,10 +1174,12 @@ var PositiveFloatSections = []string{LowerPositiveFloatName, LowerMeansName}
 type PositiveFloatGroup struct {
 	PositiveFloat PositiveFloatSection
 	Means         MeansSection
+	MetaData      MetaData
 }
 
 type PositiveFloatSection struct {
 	PositiveFloat Target
+	MetaData      MetaData
 }
 
 var NegativeFloatSections = []string{LowerNegativeFloatName, LowerMeansName}
@@ -1071,10 +1187,12 @@ var NegativeFloatSections = []string{LowerNegativeFloatName, LowerMeansName}
 type NegativeFloatGroup struct {
 	NegativeFloat NegativeFloatSection
 	Means         MeansSection
+	MetaData      MetaData
 }
 
 type NegativeFloatSection struct {
 	NegativeFloat Target
+	MetaData      MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1082,12 +1200,14 @@ type NegativeFloatSection struct {
 var SpecifySections = []string{UpperSpecifyName, UpperIdQuestionName}
 
 type SpecifyGroup struct {
-	Specify TopLevelSpecifySection
-	MetaId  *MetaIdSection
+	Specify  TopLevelSpecifySection
+	MetaId   *MetaIdSection
+	MetaData MetaData
 }
 
 type TopLevelSpecifySection struct {
-	Specify []SpecifyType
+	Specify  []SpecifyType
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1095,13 +1215,15 @@ type TopLevelSpecifySection struct {
 var PersonSections = []string{UpperPersonName, UpperIdQuestionName}
 
 type PersonGroup struct {
-	Id     string
-	Person PersonSection
-	MetaId *MetaIdSection
+	Id       string
+	Person   PersonSection
+	MetaId   *MetaIdSection
+	MetaData MetaData
 }
 
 type PersonSection struct {
-	Items []PersonType
+	Items    []PersonType
+	MetaData MetaData
 }
 
 type PersonType interface {
@@ -1114,21 +1236,25 @@ func (BiographyGroup) PersonType() {}
 var NameSections = []string{LowerNameName}
 
 type NameGroup struct {
-	Name NameSection
+	Name     NameSection
+	MetaData MetaData
 }
 
 type NameSection struct {
-	Name []TextItem
+	Name     []TextItem
+	MetaData MetaData
 }
 
 var BiographySections = []string{LowerBiographyName}
 
 type BiographyGroup struct {
 	Biography BiographySection
+	MetaData  MetaData
 }
 
 type BiographySection struct {
 	Biography TextItem
+	MetaData  MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1139,10 +1265,12 @@ type ResourceGroup struct {
 	Id       string
 	Resource ResourceSection
 	MetaId   *MetaIdSection
+	MetaData MetaData
 }
 
 type ResourceSection struct {
-	Items []ResourceType
+	Items    []ResourceType
+	MetaData MetaData
 }
 
 func (TitleGroup) ResourceType()       {}
@@ -1166,129 +1294,160 @@ type ResourceType interface {
 }
 
 type TitleGroup struct {
-	Title TitleSection
+	Title    TitleSection
+	MetaData MetaData
 }
 
 type TitleSection struct {
-	Title TextItem
+	Title    TextItem
+	MetaData MetaData
 }
 
 type AuthorGroup struct {
-	Author AuthorSection
+	Author   AuthorSection
+	MetaData MetaData
 }
 
 type AuthorSection struct {
-	Author []TextItem
+	Author   []TextItem
+	MetaData MetaData
 }
 
 type OffsetGroup struct {
-	Offset OffsetSection
+	Offset   OffsetSection
+	MetaData MetaData
 }
 
 type OffsetSection struct {
-	Offset TextItem
+	Offset   TextItem
+	MetaData MetaData
 }
 
 type UrlGroup struct {
-	Url UrlSection
+	Url      UrlSection
+	MetaData MetaData
 }
 
 type UrlSection struct {
-	Url TextItem
+	Url      TextItem
+	MetaData MetaData
 }
 
 type HomepageGroup struct {
 	Homepage HomepageSection
+	MetaData MetaData
 }
 
 type HomepageSection struct {
 	Homepage TextItem
+	MetaData MetaData
 }
 
 type TypeGroup struct {
-	Type TypeSection
+	Type     TypeSection
+	MetaData MetaData
 }
 
 type TypeSection struct {
-	Type TextItem
+	Type     TextItem
+	MetaData MetaData
 }
 
 type EditorGroup struct {
-	Editor EditorSection
+	Editor   EditorSection
+	MetaData MetaData
 }
 
 type EditorSection struct {
-	Editor []TextItem
+	Editor   []TextItem
+	MetaData MetaData
 }
 
 type EditionGroup struct {
-	Edition EditionSection
+	Edition  EditionSection
+	MetaData MetaData
 }
 
 type EditionSection struct {
-	Edition TextItem
+	Edition  TextItem
+	MetaData MetaData
 }
 
 type InstitutionGroup struct {
 	Institution InstitutionSection
+	MetaData    MetaData
 }
 
 type InstitutionSection struct {
 	Institution []TextItem
+	MetaData    MetaData
 }
 
 type JournalGroup struct {
-	Journal JournalSection
+	Journal  JournalSection
+	MetaData MetaData
 }
 
 type JournalSection struct {
-	Journal []TextItem
+	Journal  []TextItem
+	MetaData MetaData
 }
 
 type PublisherGroup struct {
 	Publisher PublisherSection
+	MetaData  MetaData
 }
 
 type PublisherSection struct {
 	Publisher []TextItem
+	MetaData  MetaData
 }
 
 type VolumeGroup struct {
-	Volume VolumeSection
+	Volume   VolumeSection
+	MetaData MetaData
 }
 
 type VolumeSection struct {
-	Volume TextItem
+	Volume   TextItem
+	MetaData MetaData
 }
 
 type MonthGroup struct {
-	Month MonthSection
+	Month    MonthSection
+	MetaData MetaData
 }
 
 type MonthSection struct {
-	Month TextItem
+	Month    TextItem
+	MetaData MetaData
 }
 
 type YearGroup struct {
-	Year YearSection
+	Year     YearSection
+	MetaData MetaData
 }
 
 type YearSection struct {
-	Year TextItem
+	Year     TextItem
+	MetaData MetaData
 }
 
 type DescriptionGroup struct {
 	Description DescriptionSection
+	MetaData    MetaData
 }
 
 type DescriptionSection struct {
 	Description TextItem
+	MetaData    MetaData
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 type TextBlockItem struct {
-	Text string
+	Text     string
+	MetaData MetaData
 }
 
 type TopLevelItemType interface {

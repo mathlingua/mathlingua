@@ -26,6 +26,7 @@ import (
 	"mathlingua/internal/frontend/phase3"
 	"mathlingua/internal/frontend/phase4"
 	"mathlingua/internal/frontend/phase5"
+	"mathlingua/internal/mlglib"
 	"mathlingua/internal/server"
 	"os"
 	"path/filepath"
@@ -92,7 +93,7 @@ func parseDocument(text string) (ast.Document, []frontend.Diagnostic) {
 	lexer3 := phase3.NewLexer(lexer2, tracker)
 
 	root := phase4.Parse(lexer3, tracker)
-	doc, _ := phase5.Parse(root, tracker)
+	doc, _ := phase5.Parse(root, tracker, mlglib.NewKeyGenerator())
 
 	return doc, tracker.Diagnostics()
 }

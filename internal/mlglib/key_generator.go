@@ -21,7 +21,7 @@ type KeyGenerator interface {
 }
 
 func NewKeyGenerator() KeyGenerator {
-	return &keyGenerator{next: 0}
+	return &keyGenerator{next: 1}
 }
 
 ////////////////////////////////////////////////////////////////////////////

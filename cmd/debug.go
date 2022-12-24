@@ -272,7 +272,7 @@ func parseForStructural(text string) (ast.Document, frontend.DiagnosticTracker) 
 	lexer3 := phase3.NewLexer(lexer2, tracker)
 
 	root := phase4.Parse(lexer3, tracker)
-	doc, _ := phase5.Parse(root, tracker)
+	doc, _ := phase5.Parse(root, tracker, mlglib.NewKeyGenerator())
 
 	return doc, tracker
 }
@@ -301,7 +301,7 @@ func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
 
 func parseForFormulation(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
-	node, _ := formulation.ParseExpression(text, ast.Position{}, tracker)
+	node, _ := formulation.ParseExpression(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return node, tracker
 }
 
@@ -322,7 +322,7 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 
 func parseForForm(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
-	node, _ := formulation.ParseForm(text, ast.Position{}, tracker)
+	node, _ := formulation.ParseForm(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return node, tracker
 }
 
@@ -343,7 +343,7 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 
 func parseForId(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
-	node, _ := formulation.ParseId(text, ast.Position{}, tracker)
+	node, _ := formulation.ParseId(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return node, tracker
 }
 

@@ -24,7 +24,7 @@ import (
 
 func TestKeyGenerator(t *testing.T) {
 	gen := NewKeyGenerator()
-	assert.Equal(t, 0, gen.Next())
 	assert.Equal(t, 1, gen.Next())
 	assert.Equal(t, 2, gen.Next())
+	assert.Equal(t, 3, gen.Next())
 }

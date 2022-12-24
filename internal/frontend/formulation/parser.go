@@ -22,55 +22,60 @@ import (
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/shared"
+	"mathlingua/internal/mlglib"
 	"strings"
 )
 
-func ParseExpression(text string, start ast.Position, tracker frontend.DiagnosticTracker) (ast.NodeType, bool) {
+func ParseExpression(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.NodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
 		lexer:   lexer,
 		tracker: tracker,
 		start:   start,
+		keyGen:  keyGen,
 	}
 	node, _ := parser.multiplexedExpressionType()
 	parser.finalize()
 	return node, tracker.Length() == numDiagBefore
 }
 
-func ParseForm(text string, start ast.Position, tracker frontend.DiagnosticTracker) (ast.NodeType, bool) {
+func ParseForm(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.NodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
 		lexer:   lexer,
 		tracker: tracker,
 		start:   start,
+		keyGen:  keyGen,
 	}
 	node, _ := parser.form()
 	parser.finalize()
 	return node, tracker.Length() == numDiagBefore
 }
 
-func ParseId(text string, start ast.Position, tracker frontend.DiagnosticTracker) (ast.IdType, bool) {
+func ParseId(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.IdType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
 		lexer:   lexer,
 		tracker: tracker,
 		start:   start,
+		keyGen:  keyGen,
 	}
 	node, _ := parser.idType()
 	parser.finalize()
 	return node, tracker.Length() == numDiagBefore
 }
 
-func ParseSignature(text string, start ast.Position, tracker frontend.DiagnosticTracker) (ast.Signature, bool) {
+func ParseSignature(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.Signature, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
 		lexer:   lexer,
 		tracker: tracker,
 		start:   start,
+		keyGen:  keyGen,
 	}
 	node, _ := parser.signature()
 	parser.finalize()
@@ -83,6 +88,7 @@ type formulationParser struct {
 	lexer   shared.Lexer
 	tracker frontend.DiagnosticTracker
 	start   ast.Position
+	keyGen  mlglib.KeyGenerator
 }
 
 func (fp *formulationParser) token(tokenType ast.TokenType) (ast.Token, bool) {
@@ -220,6 +226,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 		VarArgCount: varArgCount,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -333,6 +340,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 				Rhs:    rhs,
 				MetaData: ast.MetaData{
 					Start: fp.getShiftedPosition(start),
+					Key:   fp.keyGen.Next(),
 				},
 			}, true
 		}
@@ -365,6 +373,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 			Rhs: rhs,
 			MetaData: ast.MetaData{
 				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
 			},
 		}, true
 	} else if extendsIndex >= 0 {
@@ -388,6 +397,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 			Rhs: rhs,
 			MetaData: ast.MetaData{
 				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
 			},
 		}, true
 	} else {
@@ -515,6 +525,7 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 		Children: children,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -556,6 +567,7 @@ func (fp *formulationParser) metaKinds() (ast.MetaKinds, bool) {
 		Kinds: kinds,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -609,6 +621,7 @@ func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpressio
 		Args:   args,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -655,6 +668,7 @@ func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
 		Args: args,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -696,6 +710,7 @@ func (fp *formulationParser) fixedSetExpression() (ast.FixedSetExpression, bool)
 		Args: args,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -756,6 +771,7 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 		Conditions: conditions,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -868,6 +884,7 @@ func (fp *formulationParser) chainExpression(allowTrailingOperator bool) (ast.Ch
 		HasTrailingOperator: hasTrailingOperator,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -905,6 +922,7 @@ func (fp *formulationParser) nameOrdinalCallExpression() (ast.NameOrdinalCallExp
 		Arg:    exp,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -920,6 +938,7 @@ func (fp *formulationParser) pseudoToken(expectedType ast.TokenType) (ast.Pseudo
 		Type: tok.Type,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1032,6 +1051,7 @@ func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (ast.NonEnclo
 			HasRightColon: hasRightColon,
 			MetaData: ast.MetaData{
 				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
 			},
 		}, true
 	}
@@ -1098,6 +1118,7 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNon
 		HasRightColon: hasRightColon,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1122,6 +1143,7 @@ func (fp *formulationParser) commandOperatorTarget() (ast.CommandOperatorTarget,
 		Command: cmd,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1148,6 +1170,7 @@ func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
 		Args: args,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1216,6 +1239,7 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 		ParenArgs:  &parenArgs,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1265,6 +1289,7 @@ func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, boo
 		Expression: exp,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1301,6 +1326,7 @@ func (fp *formulationParser) form() (ast.NodeType, bool) {
 			Rhs: rhs,
 			MetaData: ast.MetaData{
 				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
 			},
 		}, true
 	case ast.FunctionForm:
@@ -1318,6 +1344,7 @@ func (fp *formulationParser) form() (ast.NodeType, bool) {
 			Rhs: rhs,
 			MetaData: ast.MetaData{
 				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
 			},
 		}, true
 	default:
@@ -1503,6 +1530,7 @@ func (fp *formulationParser) infixOperatorForm() (ast.InfixOperatorForm, bool) {
 		Rhs:      rhs,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1522,6 +1550,7 @@ func (fp *formulationParser) prefixOperatorForm() (ast.PrefixOperatorForm, bool)
 		Param:    param,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1541,6 +1570,7 @@ func (fp *formulationParser) postfixOperatorForm() (ast.PostfixOperatorForm, boo
 		Param:    param,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1560,6 +1590,7 @@ func (fp *formulationParser) operatorAsNameForm() (ast.NameForm, bool) {
 		},
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(next.Position),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1606,6 +1637,7 @@ func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 		},
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1650,6 +1682,7 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 		VarArg: varArgData,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1694,6 +1727,7 @@ func (fp *formulationParser) functionExpressionForm() (ast.FunctionExpressionFor
 		VarArg: varArgData,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1731,6 +1765,7 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 		VarArg: varArg,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1774,6 +1809,7 @@ func (fp *formulationParser) fixedSetForm() (ast.FixedSetForm, bool) {
 		VarArg: varArg,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -1811,6 +1847,7 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 		VarArg: varArg,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -2011,6 +2048,7 @@ func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, b
 		Condition: condition,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -2037,6 +2075,7 @@ func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
 		Params: params,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -2129,6 +2168,7 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 		ParenParams:  &parenParams,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -2178,6 +2218,7 @@ func (fp *formulationParser) commandAtId() (ast.CommandAtId, bool) {
 		Param: literal,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }
@@ -2251,6 +2292,7 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 		InnerLabel:      innerLabel,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
 		},
 	}, true
 }

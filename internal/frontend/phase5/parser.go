@@ -22,11 +22,13 @@ import (
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/formulation"
 	"mathlingua/internal/frontend/phase4"
+	"mathlingua/internal/mlglib"
 )
 
-func Parse(root phase4.Root, tracker frontend.DiagnosticTracker) (ast.Document, bool) {
+func Parse(root phase4.Root, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.Document, bool) {
 	p := parser{
 		tracker: tracker,
+		keyGen:  keyGen,
 	}
 	return p.toDocument(root)
 }
@@ -35,6 +37,7 @@ func Parse(root phase4.Root, tracker frontend.DiagnosticTracker) (ast.Document, 
 
 type parser struct {
 	tracker frontend.DiagnosticTracker
+	keyGen  mlglib.KeyGenerator
 }
 
 //////////////////////////// given ///////////////////////////////////////
@@ -2269,7 +2272,7 @@ func (p *parser) toDocument(root phase4.Root) (ast.Document, bool) {
 ///////////////////////////// id ////////////////////////////////////////
 
 func (p *parser) toIdItem(text string, position ast.Position) *ast.IdItem {
-	if node, ok := formulation.ParseId(text, position, p.tracker); ok {
+	if node, ok := formulation.ParseId(text, position, p.tracker, p.keyGen); ok {
 		return &ast.IdItem{
 			RawText: text,
 			Root:    node,
@@ -2305,7 +2308,7 @@ func (p *parser) getStringId(group phase4.Group, required bool) *string {
 func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.NodeType] {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker); ok {
+		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Formulation[ast.NodeType]{
 				RawText:  data.Text,
 				Root:     node,
@@ -2322,7 +2325,7 @@ func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.NodeType
 func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker); ok {
+		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Formulation[ast.NodeType]{
 				RawText:  data.Text,
 				Root:     node,
@@ -2369,7 +2372,7 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker); ok {
+		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Spec{
 				RawText:  data.Text,
 				Root:     node,
@@ -2388,7 +2391,7 @@ func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker); ok {
+		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Alias{
 				RawText:  data.Text,
 				Root:     node,
@@ -2404,7 +2407,7 @@ func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 	switch data := arg.Arg.(type) {
 	case phase4.ArgumentTextArgumentData:
-		if node, ok := formulation.ParseForm(data.Text, arg.MetaData.Start, p.tracker); ok {
+		if node, ok := formulation.ParseForm(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Target{
 				RawText:  data.Text,
 				Root:     node,
@@ -2524,7 +2527,7 @@ func (p *parser) toBiographySection(section phase4.Section) *ast.BiographySectio
 func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[ast.Signature] {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseSignature(data.Text, arg.MetaData.Start, p.tracker); ok {
+		if node, ok := formulation.ParseSignature(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Formulation[ast.Signature]{
 				RawText:  data.Text,
 				Root:     node,

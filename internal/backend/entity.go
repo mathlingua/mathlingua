@@ -16,37 +16,19 @@
 
 package backend
 
-type OperationCall interface {
-	OperationCall()
+type Entity interface {
+	Entity()
 }
 
-func (fc FunctionCall) OperationCall()         {}
-func (cc CommandCall) OperationCall()          {}
-func (poc PrefixOperatorCall) OperationCall()  {}
-func (poc PostfixOperatorCall) OperationCall() {}
-func (ioc InfixOperatorCall) OperationCall()   {}
-
-type FunctionCall struct {
+type DescribesEntity struct {
 }
 
-type CommandCall struct {
+type DefinesEntity struct {
 }
 
-type PrefixOperatorCall struct {
+type StatesEntity struct {
 }
 
-type PostfixOperatorCall struct {
-}
-
-type InfixOperatorCall struct {
-}
-
-type Operation struct {
-	Lhs OperationCall
-	Rhs OperationCall
-}
-
-//////////////////////////////////////////////////////////////////////
-
-type EntityCollection interface {
+// for Axiom, Conjecture, or Theorem
+type ResultEntity struct {
 }

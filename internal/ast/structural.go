@@ -150,6 +150,82 @@ const UpperIdQuestionName = UpperIdName + "?"
 
 ///////////////////////////////////////////////////////////////////////
 
+type StructuralNodeType interface {
+	StructuralNodeType()
+	Debug() []string
+}
+
+func (IdItem) StructuralNodeType()             {}
+func (Target) StructuralNodeType()             {}
+func (Spec) StructuralNodeType()               {}
+func (Alias) StructuralNodeType()              {}
+func (Formulation[T]) StructuralNodeType()     {}
+func (TextItem) StructuralNodeType()           {}
+func (GivenGroup) StructuralNodeType()         {}
+func (AllOfGroup) StructuralNodeType()         {}
+func (NotGroup) StructuralNodeType()           {}
+func (AnyOfGroup) StructuralNodeType()         {}
+func (OneOfGroup) StructuralNodeType()         {}
+func (ExistsGroup) StructuralNodeType()        {}
+func (ExistsUniqueGroup) StructuralNodeType()  {}
+func (ForAllGroup) StructuralNodeType()        {}
+func (IfGroup) StructuralNodeType()            {}
+func (IffGroup) StructuralNodeType()           {}
+func (PiecewiseGroup) StructuralNodeType()     {}
+func (WhenGroup) StructuralNodeType()          {}
+func (SymbolWrittenGroup) StructuralNodeType() {}
+func (ConnectionGroup) StructuralNodeType()    {}
+func (WrittenGroup) StructuralNodeType()       {}
+func (CalledGroup) StructuralNodeType()        {}
+func (WritingGroup) StructuralNodeType()       {}
+func (OverviewGroup) StructuralNodeType()      {}
+func (MotivationGroup) StructuralNodeType()    {}
+func (HistoryGroup) StructuralNodeType()       {}
+func (ExampleGroup) StructuralNodeType()       {}
+func (RelatedGroup) StructuralNodeType()       {}
+func (DiscovererGroup) StructuralNodeType()    {}
+func (NoteGroup) StructuralNodeType()          {}
+func (DescribingGroup) StructuralNodeType()    {}
+func (LabelGroup) StructuralNodeType()         {}
+func (ByGroup) StructuralNodeType()            {}
+func (DescribesGroup) StructuralNodeType()     {}
+func (DefinesGroup) StructuralNodeType()       {}
+func (StatesGroup) StructuralNodeType()        {}
+func (ProofGroup) StructuralNodeType()         {}
+func (AxiomGroup) StructuralNodeType()         {}
+func (ConjectureGroup) StructuralNodeType()    {}
+func (TheoremGroup) StructuralNodeType()       {}
+func (TopicGroup) StructuralNodeType()         {}
+func (ZeroGroup) StructuralNodeType()          {}
+func (PositiveIntGroup) StructuralNodeType()   {}
+func (NegativeIntGroup) StructuralNodeType()   {}
+func (PositiveFloatGroup) StructuralNodeType() {}
+func (NegativeFloatGroup) StructuralNodeType() {}
+func (SpecifyGroup) StructuralNodeType()       {}
+func (PersonGroup) StructuralNodeType()        {}
+func (NameGroup) StructuralNodeType()          {}
+func (BiographyGroup) StructuralNodeType()     {}
+func (ResourceGroup) StructuralNodeType()      {}
+func (TitleGroup) StructuralNodeType()         {}
+func (AuthorGroup) StructuralNodeType()        {}
+func (OffsetGroup) StructuralNodeType()        {}
+func (UrlGroup) StructuralNodeType()           {}
+func (HomepageGroup) StructuralNodeType()      {}
+func (TypeGroup) StructuralNodeType()          {}
+func (EditorGroup) StructuralNodeType()        {}
+func (EditionGroup) StructuralNodeType()       {}
+func (InstitutionGroup) StructuralNodeType()   {}
+func (JournalGroup) StructuralNodeType()       {}
+func (PublisherGroup) StructuralNodeType()     {}
+func (VolumeGroup) StructuralNodeType()        {}
+func (MonthGroup) StructuralNodeType()         {}
+func (YearGroup) StructuralNodeType()          {}
+func (DescriptionGroup) StructuralNodeType()   {}
+func (Document) StructuralNodeType()           {}
+func (TextBlockItem) StructuralNodeType()      {}
+
+///////////////////////////////////////////////////////////////////////
+
 type MetaData struct {
 	Start Position
 	Key   int
@@ -200,6 +276,7 @@ type TextItem struct {
 //////////////////////////////////////////////////////////////////////////////
 
 type Clause interface {
+	StructuralNodeType
 	Clause()
 }
 
@@ -457,6 +534,7 @@ type WhenGroup struct {
 //////////////////////////////////////////////////////////////////////////////
 
 type ProvidesType interface {
+	StructuralNodeType
 	ProvidesType()
 }
 
@@ -598,6 +676,7 @@ type WritingAsSection struct {
 //////////////////////////////////////////////////////////////////////////////
 
 type DocumentedType interface {
+	StructuralNodeType
 	DocumentedType()
 }
 
@@ -699,6 +778,7 @@ type NoteSection struct {
 }
 
 type NoteType interface {
+	StructuralNodeType
 	NoteType()
 }
 
@@ -749,6 +829,7 @@ type JustifiedSection struct {
 //////////////////////////////////////////////////////////////////////////////
 
 type JustifiedType interface {
+	StructuralNodeType
 	JustifiedType()
 }
 
@@ -1123,6 +1204,7 @@ type TopicSection struct {
 //////////////////////////////////////////////////////////////////////////////
 
 type SpecifyType interface {
+	StructuralNodeType
 	SpecifyType()
 }
 
@@ -1228,6 +1310,7 @@ type PersonSection struct {
 }
 
 type PersonType interface {
+	StructuralNodeType
 	PersonType()
 }
 
@@ -1291,6 +1374,7 @@ func (YearGroup) ResourceType()        {}
 func (DescriptionGroup) ResourceType() {}
 
 type ResourceType interface {
+	StructuralNodeType
 	ResourceType()
 }
 
@@ -1452,6 +1536,7 @@ type TextBlockItem struct {
 }
 
 type TopLevelItemType interface {
+	StructuralNodeType
 	TopLevelItemType()
 }
 

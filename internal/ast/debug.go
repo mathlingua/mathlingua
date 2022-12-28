@@ -16,7 +16,9 @@
 
 package ast
 
-import "strings"
+import (
+	"strings"
+)
 
 func (n IdItem) Debug() []string {
 	return []string{
@@ -32,13 +34,13 @@ func (n Target) Debug() []string {
 
 func (n Spec) Debug() []string {
 	return []string{
-		n.RawText,
+		"'" + n.RawText + "'",
 	}
 }
 
 func (n Alias) Debug() []string {
 	return []string{
-		n.RawText,
+		"'" + n.RawText + "'",
 	}
 }
 
@@ -56,99 +58,75 @@ func (n TextItem) Debug() []string {
 
 func (n GivenGroup) Debug() []string {
 	result := make([]string, 0)
-	result = appendSection(result, LowerGivenName)
-	for _, target := range n.Given.Given {
-		result = append(result, appendDotSpaceToNode(target)...)
-	}
-	if n.Where != nil {
-		result = appendSection(result, LowerWhereName)
-		result = appendSpecs(result, n.Where.Specs)
-	}
-	if n.SuchThat != nil {
-		result = appendSection(result, LowerSuchThatName)
-		result = appendClauses(result, n.SuchThat.Clauses)
-	}
-	result = appendSection(result, LowerThenName)
-	result = appendClauses(result, n.Then.Clauses)
+	result = appendSectionName(result, LowerGivenName)
+	result = appendTargets(result, n.Given.Given)
+	result = maybeAppendWhereSection(result, n.Where)
+	result = maybeAppendSuchThatSection(result, n.SuchThat)
+	result = maybeAppendThenSection(result, &n.Then)
 	return result
+}
+
+func maybeAppendSuchThatSection(lines []string, suchThat *SuchThatSection) []string {
+	if suchThat != nil {
+		lines = appendSectionName(lines, LowerSuchThatName)
+		lines = appendClauses(lines, suchThat.Clauses)
+	}
+	return lines
 }
 
 func (n AllOfGroup) Debug() []string {
 	result := make([]string, 0)
-	result = appendSection(result, LowerAllOfName)
+	result = appendSectionName(result, LowerAllOfName)
 	result = appendClauses(result, n.AllOf.Clauses)
 	return result
 }
 
 func (n NotGroup) Debug() []string {
 	result := make([]string, 0)
-	result = appendSection(result, LowerNotName)
+	result = appendSectionName(result, LowerNotName)
 	result = append(result, n.Not.Clause.Debug()...)
 	return result
 }
 
 func (n AnyOfGroup) Debug() []string {
 	result := make([]string, 0)
-	result = appendSection(result, LowerAllOfName)
+	result = appendSectionName(result, LowerAllOfName)
 	result = appendClauses(result, n.AnyOf.Clauses)
 	return result
 }
 
 func (n OneOfGroup) Debug() []string {
 	result := make([]string, 0)
-	result = appendSection(result, LowerAllOfName)
+	result = appendSectionName(result, LowerAllOfName)
 	result = appendClauses(result, n.OneOf.Clauses)
 	return result
 }
 
 func (n ExistsGroup) Debug() []string {
 	result := make([]string, 0)
-	result = appendSection(result, LowerExistsName)
-	for _, target := range n.Exists.Targets {
-		result = append(result, appendDotSpaceToNode(target)...)
-	}
-	if n.Where != nil {
-		result = appendSection(result, LowerWhereName)
-		result = appendSpecs(result, n.Where.Specs)
-	}
-	if n.SuchThat != nil {
-		result = appendSection(result, LowerSuchThatName)
-		result = appendClauses(result, n.SuchThat.Clauses)
-	}
+	result = appendSectionName(result, LowerExistsName)
+	result = appendTargets(result, n.Exists.Targets)
+	result = maybeAppendWhereSection(result, n.Where)
+	result = maybeAppendSuchThatSection(result, n.SuchThat)
 	return result
 }
 
 func (n ExistsUniqueGroup) Debug() []string {
 	result := make([]string, 0)
-	result = appendSection(result, LowerExistsUniqueName)
-	for _, target := range n.ExistsUnique.Targets {
-		result = append(result, appendDotSpaceToNode(target)...)
-	}
-	if n.Where != nil {
-		result = appendSection(result, LowerWhereName)
-		result = appendSpecs(result, n.Where.Specs)
-	}
-	result = appendSection(result, LowerSuchThatName)
-	result = appendClauses(result, n.SuchThat.Clauses)
+	result = appendSectionName(result, LowerExistsUniqueName)
+	result = appendTargets(result, n.ExistsUnique.Targets)
+	result = maybeAppendWhereSection(result, n.Where)
+	result = maybeAppendSuchThatSection(result, &n.SuchThat)
 	return result
 }
 
 func (n ForAllGroup) Debug() []string {
 	result := make([]string, 0)
-	result = appendSection(result, LowerForAllName)
-	for _, target := range n.ForAll.Targets {
-		result = append(result, appendDotSpaceToNode(target)...)
-	}
-	if n.Where != nil {
-		result = appendSection(result, LowerWhereName)
-		result = appendSpecs(result, n.Where.Specs)
-	}
-	if n.SuchThat != nil {
-		result = appendSection(result, LowerSuchThatName)
-		result = appendClauses(result, n.SuchThat.Clauses)
-	}
-	result = appendSection(result, LowerThenName)
-	result = appendClauses(result, n.Then.Clauses)
+	result = appendSectionName(result, LowerForAllName)
+	result = appendTargets(result, n.ForAll.Targets)
+	result = maybeAppendWhereSection(result, n.Where)
+	result = maybeAppendSuchThatSection(result, n.SuchThat)
+	result = maybeAppendThenSection(result, &n.Then)
 	return result
 }
 
@@ -198,11 +176,92 @@ func (n StatesGroup) Debug() []string { return []string{} }
 
 func (n ProofGroup) Debug() []string { return []string{} }
 
-func (n AxiomGroup) Debug() []string { return []string{} }
+func (n AxiomGroup) Debug() []string {
+	result := make([]string, 0)
+	result = maybeAppendIdItem(result, n.Id)
+	result = appendSectionName(result, UpperTheoremName)
+	result = maybeAppendGivenSection(result, n.Given)
+	result = maybeAppendWhereSection(result, n.Where)
+	result = maybeAppendIfSection(result, n.If)
+	result = maybeAppendIffSection(result, n.Iff)
+	result = maybeAppendThenSection(result, &n.Then)
+	result = maybeAppendDocumentedSection(result, n.Documented)
+	result = maybeAppendReferencesSection(result, n.References)
+	result = maybeAppendAliasesSection(result, n.Aliases)
+	return result
+}
 
-func (n ConjectureGroup) Debug() []string { return []string{} }
+func (n ConjectureGroup) Debug() []string {
+	result := make([]string, 0)
+	result = maybeAppendIdItem(result, n.Id)
+	result = appendSectionName(result, UpperTheoremName)
+	result = maybeAppendGivenSection(result, n.Given)
+	result = maybeAppendWhereSection(result, n.Where)
+	result = maybeAppendIfSection(result, n.If)
+	result = maybeAppendIffSection(result, n.Iff)
+	result = maybeAppendThenSection(result, &n.Then)
+	result = maybeAppendDocumentedSection(result, n.Documented)
+	result = maybeAppendReferencesSection(result, n.References)
+	result = maybeAppendAliasesSection(result, n.Aliases)
+	return result
+}
 
-func (n TheoremGroup) Debug() []string { return []string{} }
+func (n TheoremGroup) Debug() []string {
+	result := make([]string, 0)
+	result = maybeAppendIdItem(result, n.Id)
+	result = appendSectionName(result, UpperTheoremName)
+	result = maybeAppendGivenSection(result, n.Given)
+	result = maybeAppendWhereSection(result, n.Where)
+	result = maybeAppendIfSection(result, n.If)
+	result = maybeAppendIffSection(result, n.Iff)
+	result = maybeAppendThenSection(result, &n.Then)
+	if n.Proof != nil {
+	}
+	result = maybeAppendDocumentedSection(result, n.Documented)
+	result = maybeAppendReferencesSection(result, n.References)
+	result = maybeAppendAliasesSection(result, n.Aliases)
+	return result
+}
+
+func maybeAppendGivenSection(lines []string, given *GivenSection) []string {
+	if given != nil {
+		lines = appendSectionName(lines, LowerGivenName)
+		lines = appendTargets(lines, given.Given)
+	}
+	return lines
+}
+
+func maybeAppendWhereSection(lines []string, where *WhereSection) []string {
+	if where != nil {
+		lines = appendSectionName(lines, LowerWhereName)
+		lines = appendSpecs(lines, where.Specs)
+	}
+	return lines
+}
+
+func maybeAppendIfSection(lines []string, ifSec *IfSection) []string {
+	if ifSec != nil {
+		lines = appendSectionName(lines, LowerIfName)
+		lines = appendClauses(lines, ifSec.Clauses)
+	}
+	return lines
+}
+
+func maybeAppendIffSection(lines []string, iffSec *IffSection) []string {
+	if iffSec != nil {
+		lines = appendSectionName(lines, LowerIffName)
+		lines = appendClauses(lines, iffSec.Clauses)
+	}
+	return lines
+}
+
+func maybeAppendThenSection(lines []string, then *ThenSection) []string {
+	if then != nil {
+		lines = appendSectionName(lines, LowerThenName)
+		lines = appendClauses(lines, then.Clauses)
+	}
+	return lines
+}
 
 func (n TopicGroup) Debug() []string { return []string{} }
 
@@ -256,7 +315,13 @@ func (n YearGroup) Debug() []string { return []string{} }
 
 func (n DescriptionGroup) Debug() []string { return []string{} }
 
-func (n Document) Debug() []string { return []string{} }
+func (n Document) Debug() []string {
+	result := make([]string, 0)
+	for _, item := range n.Items {
+		result = append(result, item.Debug()...)
+	}
+	return result
+}
 
 func (n TextBlockItem) Debug() []string { return []string{} }
 
@@ -264,34 +329,80 @@ func Debug(node StructuralNodeType) string {
 	return strings.Join(indent(node.Debug(), 0, false), "\n")
 }
 
-func appendSpecs(lines []string, specs []Spec) []string {
-	for _, spec := range specs {
-		lines = append(lines, appendDotSpaceToNode(spec)...)
+func maybeAppendDocumentedSection(lines []string, sec *DocumentedSection) []string {
+	if sec != nil {
+		lines = appendSectionName(lines, UpperDocumentedName)
+		for _, item := range sec.Documented {
+			lines = append(lines, appendDotSpaceToNode(item)...)
+		}
 	}
 	return lines
+}
+
+func maybeAppendReferencesSection(lines []string, sec *ReferencesSection) []string {
+	if sec != nil {
+		lines = appendSectionName(lines, UpperReferencesName)
+		for _, item := range sec.References {
+			lines = append(lines, appendDotSpaceToNode(item)...)
+		}
+	}
+	return lines
+}
+
+func maybeAppendAliasesSection(lines []string, sec *AliasesSection) []string {
+	if sec != nil {
+		lines = appendSectionName(lines, UpperAliasesName)
+		for _, item := range sec.Aliases {
+			lines = append(lines, appendDotSpaceToNode(item)...)
+		}
+	}
+	return lines
+}
+
+func maybeAppendMetadataIdSection(lines []string, sec *MetaIdSection) []string {
+	if sec != nil {
+		lines = appendSectionName(lines, UpperIdName)
+		lines = append(lines, appendDotSpaceToNode(sec.Id)...)
+	}
+	return lines
+}
+
+func maybeAppendIdItem(lines []string, id *IdItem) []string {
+	if id != nil {
+		lines = append(lines, id.Debug()...)
+	}
+	return lines
+}
+
+func appendNode[T StructuralNodeType](lines []string, node T) []string {
+	return append(lines, node.Debug()...)
+}
+
+func appendDotSpaceNodes[T StructuralNodeType](lines []string, nodes []T) []string {
+	for _, n := range nodes {
+		lines = append(lines, appendDotSpaceToNode(n)...)
+	}
+	return lines
+}
+
+func appendTargets(lines []string, targets []Target) []string {
+	return appendDotSpaceNodes(lines, targets)
+}
+
+func appendSpecs(lines []string, specs []Spec) []string {
+	return appendDotSpaceNodes(lines, specs)
 }
 
 func appendClauses(lines []string, clauses []Clause) []string {
-	for _, clause := range clauses {
-		lines = append(lines, appendDotSpaceToNode(clause)...)
-	}
-	return lines
+	return appendDotSpaceNodes(lines, clauses)
 }
 
-func appendSection(lines []string, name string) []string {
+func appendSectionName(lines []string, name string) []string {
 	return append(lines, name+":")
 }
 
 func appendDotSpaceToNode(node StructuralNodeType) []string {
-	return appendDotSpaceToLines(node.Debug())
-}
-
-func appendDotSpaceToLines(lines []string) []string {
-	result := make([]string, 0)
-	for _, line := range lines {
-		result = append(result, ". "+line)
-	}
-	return result
+	return indent(node.Debug(), 2, true)
 }
 
 func indent(lines []string, indent int, dot bool) []string {

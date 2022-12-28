@@ -1056,7 +1056,7 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		aliases = p.toAliasesSection(sec)
 	}
 	var metaId *ast.MetaIdSection
-	if sec, ok := sections[ast.UpperIdQuestionName]; ok {
+	if sec, ok := sections[ast.UpperIdName]; ok {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.DescribesGroup{
@@ -1157,7 +1157,7 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 		aliases = p.toAliasesSection(sec)
 	}
 	var metaId *ast.MetaIdSection
-	if sec, ok := sections[ast.UpperIdQuestionName]; ok {
+	if sec, ok := sections[ast.UpperIdName]; ok {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.DefinesGroup{
@@ -1254,7 +1254,7 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		aliases = p.toAliasesSection(sec)
 	}
 	var metaId *ast.MetaIdSection
-	if sec, ok := sections[ast.UpperIdQuestionName]; ok {
+	if sec, ok := sections[ast.UpperIdName]; ok {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.StatesGroup{
@@ -1331,7 +1331,7 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 		aliases = p.toAliasesSection(sec)
 	}
 	var metaId *ast.MetaIdSection
-	if sec, ok := sections[ast.UpperIdQuestionName]; ok {
+	if sec, ok := sections[ast.UpperIdName]; ok {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.AxiomGroup{
@@ -1414,7 +1414,7 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 		aliases = p.toAliasesSection(sec)
 	}
 	var metaId *ast.MetaIdSection
-	if sec, ok := sections[ast.UpperIdQuestionName]; ok {
+	if sec, ok := sections[ast.UpperIdName]; ok {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.ConjectureGroup{
@@ -1487,7 +1487,7 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 		aliases = p.toAliasesSection(sec)
 	}
 	var metaId *ast.MetaIdSection
-	if sec, ok := sections[ast.UpperIdQuestionName]; ok {
+	if sec, ok := sections[ast.UpperIdName]; ok {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.TheoremGroup{
@@ -1588,7 +1588,7 @@ func (p *parser) toSpecifyGroup(group phase4.Group) (ast.SpecifyGroup, bool) {
 	}
 
 	var metaId *ast.MetaIdSection
-	if sec, ok := sections[ast.UpperIdQuestionName]; ok {
+	if sec, ok := sections[ast.UpperIdName]; ok {
 		metaId = p.toMetaIdSection(sec)
 	}
 
@@ -1758,7 +1758,7 @@ func (p *parser) toTopicGroup(group phase4.Group) (ast.TopicGroup, bool) {
 		references = p.toReferencesSection(sec)
 	}
 	var metaId *ast.MetaIdSection
-	if sec, ok := sections[ast.UpperIdQuestionName]; ok {
+	if sec, ok := sections[ast.UpperIdName]; ok {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.TopicGroup{
@@ -1799,7 +1799,7 @@ func (p *parser) toResourceGroup(group phase4.Group) (ast.ResourceGroup, bool) {
 	}
 
 	var metaId *ast.MetaIdSection
-	if sec, ok := sections[ast.UpperIdQuestionName]; ok {
+	if sec, ok := sections[ast.UpperIdName]; ok {
 		metaId = p.toMetaIdSection(sec)
 	}
 
@@ -1868,7 +1868,7 @@ func (p *parser) toPersonGroup(group phase4.Group) (ast.PersonGroup, bool) {
 	}
 
 	var metaId *ast.MetaIdSection
-	if sec, ok := sections[ast.UpperIdQuestionName]; ok {
+	if sec, ok := sections[ast.UpperIdName]; ok {
 		metaId = p.toMetaIdSection(sec)
 	}
 

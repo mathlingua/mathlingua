@@ -151,6 +151,7 @@ const UpperIdQuestionName = UpperIdName + "?"
 ///////////////////////////////////////////////////////////////////////
 
 type StructuralNodeType interface {
+	MlgNodeType
 	StructuralDebuggable
 	StructuralNodeType()
 }
@@ -225,11 +226,6 @@ func (Document) StructuralNodeType()           {}
 func (TextBlockItem) StructuralNodeType()      {}
 
 ///////////////////////////////////////////////////////////////////////
-
-type MetaData struct {
-	Start Position
-	Key   int
-}
 
 type IdItem struct {
 	RawText  string

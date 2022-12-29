@@ -16,13 +16,8 @@
 
 package ast
 
-type Position struct {
-	Offset int
-	Row    int
-	Column int
-}
-
 type FormulationNodeType interface {
+	MlgNodeType
 	FormulationDebuggable
 	FormulationNodeType()
 	Start() Position

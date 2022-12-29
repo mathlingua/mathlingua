@@ -16,7 +16,7 @@ test:
 	go test ./...
 
 .PHONY: setupgo
-setup:
+setupgo:
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/go/bin v1.49.0
 
 .PHONY: vet

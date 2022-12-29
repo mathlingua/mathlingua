@@ -149,12 +149,12 @@ func (fp *formulationParser) expect(tokenType ast.TokenType) (ast.Token, bool) {
 
 ////////////////////// expressions //////////////////////////////////////////
 
-func (fp *formulationParser) parenArgs() ([]ast.ExpressionType, bool) {
+func (fp *formulationParser) parenArgs() (*[]ast.ExpressionType, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LParen)
 	if !ok {
 		fp.lexer.RollBack(id)
-		return []ast.ExpressionType{}, false
+		return nil, false
 	}
 	args := make([]ast.ExpressionType, 0)
 	for fp.lexer.HasNext() {
@@ -169,21 +169,21 @@ func (fp *formulationParser) parenArgs() ([]ast.ExpressionType, bool) {
 		arg, ok := fp.expressionType()
 		if !ok {
 			fp.lexer.RollBack(id)
-			return []ast.ExpressionType{}, false
+			return nil, false
 		}
 		args = append(args, arg)
 	}
 	fp.expect(ast.RParen)
 	fp.lexer.Commit(id)
-	return args, true
+	return &args, true
 }
 
-func (fp *formulationParser) curlyArgs() ([]ast.ExpressionType, bool) {
+func (fp *formulationParser) curlyArgs() (*[]ast.ExpressionType, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LCurly)
 	if !ok {
 		fp.lexer.RollBack(id)
-		return []ast.ExpressionType{}, false
+		return nil, false
 	}
 	args := make([]ast.ExpressionType, 0)
 	for fp.lexer.HasNext() {
@@ -198,13 +198,13 @@ func (fp *formulationParser) curlyArgs() ([]ast.ExpressionType, bool) {
 		arg, ok := fp.expressionType()
 		if !ok {
 			fp.lexer.RollBack(id)
-			return []ast.ExpressionType{}, false
+			return nil, false
 		}
 		args = append(args, arg)
 	}
 	fp.expect(ast.RCurly)
 	fp.lexer.Commit(id)
-	return args, true
+	return &args, true
 }
 
 func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
@@ -719,7 +719,7 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	symbols, ok := fp.squareParams()
-	if !ok {
+	if !ok || symbols == nil {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetExpression{}, false
 	}
@@ -766,7 +766,7 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 	fp.expect(ast.RCurly)
 	fp.lexer.Commit(id)
 	return ast.ConditionalSetExpression{
-		Symbols:    symbols,
+		Symbols:    *symbols,
 		Target:     target,
 		Conditions: conditions,
 		MetaData: ast.MetaData{
@@ -1162,7 +1162,7 @@ func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
 	}
 	var args *[]ast.ExpressionType = nil
 	if curlyArgs, ok := fp.curlyArgs(); ok {
-		args = &curlyArgs
+		args = curlyArgs
 	}
 	fp.lexer.Commit(id)
 	return ast.NamedArg{
@@ -1233,10 +1233,10 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 	fp.lexer.Commit(id)
 	return ast.CommandExpression{
 		Names:      names,
-		SquareArgs: &squareArgs,
-		CurlyArgs:  &curlyArgs,
+		SquareArgs: squareArgs,
+		CurlyArgs:  curlyArgs,
 		NamedArgs:  &namedArgs,
-		ParenArgs:  &parenArgs,
+		ParenArgs:  parenArgs,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
@@ -1353,12 +1353,12 @@ func (fp *formulationParser) form() (ast.NodeType, bool) {
 	}
 }
 
-func (fp *formulationParser) parenParams() ([]ast.StructuralFormType, bool) {
+func (fp *formulationParser) parenParams() (*[]ast.StructuralFormType, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LParen)
 	if !ok {
 		fp.lexer.RollBack(id)
-		return []ast.StructuralFormType{}, false
+		return nil, false
 	}
 	args := make([]ast.StructuralFormType, 0)
 	for fp.lexer.HasNext() {
@@ -1373,13 +1373,13 @@ func (fp *formulationParser) parenParams() ([]ast.StructuralFormType, bool) {
 		arg, ok := fp.structuralFormType()
 		if !ok {
 			fp.lexer.RollBack(id)
-			return []ast.StructuralFormType{}, false
+			return nil, false
 		}
 		args = append(args, arg)
 	}
 	fp.expect(ast.RParen)
 	fp.lexer.Commit(id)
-	return args, true
+	return &args, true
 }
 
 func (fp *formulationParser) nameParams() ([]ast.NameForm, bool) {
@@ -1411,12 +1411,12 @@ func (fp *formulationParser) nameParams() ([]ast.NameForm, bool) {
 	return names, true
 }
 
-func (fp *formulationParser) squareParams() ([]ast.StructuralFormType, bool) {
+func (fp *formulationParser) squareParams() (*[]ast.StructuralFormType, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LSquare)
 	if !ok {
 		fp.lexer.RollBack(id)
-		return []ast.StructuralFormType{}, false
+		return nil, false
 	}
 	args := make([]ast.StructuralFormType, 0)
 	for fp.lexer.HasNext() {
@@ -1431,21 +1431,21 @@ func (fp *formulationParser) squareParams() ([]ast.StructuralFormType, bool) {
 		arg, ok := fp.structuralFormType()
 		if !ok {
 			fp.lexer.RollBack(id)
-			return []ast.StructuralFormType{}, false
+			return nil, false
 		}
 		args = append(args, arg)
 	}
 	fp.expect(ast.RSquare)
 	fp.lexer.Commit(id)
-	return args, true
+	return &args, true
 }
 
-func (fp *formulationParser) curlyParams() ([]ast.StructuralFormType, bool) {
+func (fp *formulationParser) curlyParams() (*[]ast.StructuralFormType, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LCurly)
 	if !ok {
 		fp.lexer.RollBack(id)
-		return []ast.StructuralFormType{}, false
+		return nil, false
 	}
 	args := make([]ast.StructuralFormType, 0)
 	for fp.lexer.HasNext() {
@@ -1460,13 +1460,13 @@ func (fp *formulationParser) curlyParams() ([]ast.StructuralFormType, bool) {
 		arg, ok := fp.structuralFormType()
 		if !ok {
 			fp.lexer.RollBack(id)
-			return []ast.StructuralFormType{}, false
+			return nil, false
 		}
 		args = append(args, arg)
 	}
 	fp.expect(ast.RCurly)
 	fp.lexer.Commit(id)
-	return args, true
+	return &args, true
 }
 
 func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool) {
@@ -2006,7 +2006,7 @@ func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, b
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	symbols, ok := fp.squareParams()
-	if !ok {
+	if !ok || symbols == nil {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetIdForm{}, false
 	}
@@ -2043,7 +2043,7 @@ func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, b
 	fp.expect(ast.RCurly)
 	fp.lexer.Commit(id)
 	return ast.ConditionalSetIdForm{
-		Symbols:   symbols,
+		Symbols:   *symbols,
 		Target:    target,
 		Condition: condition,
 		MetaData: ast.MetaData{
@@ -2067,7 +2067,7 @@ func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
 	}
 	var params *[]ast.StructuralFormType = nil
 	if curlyParams, ok := fp.curlyParams(); ok {
-		params = &curlyParams
+		params = curlyParams
 	}
 	fp.lexer.Commit(id)
 	return ast.NamedParam{
@@ -2162,8 +2162,8 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 	fp.lexer.Commit(id)
 	return ast.CommandId{
 		Names:        names,
-		SquareParams: &squareParams,
-		CurlyParams:  &curlyParams,
+		SquareParams: squareParams,
+		CurlyParams:  curlyParams,
 		NamedParams:  &namedParams,
 		ParenParams:  &parenParams,
 		MetaData: ast.MetaData{

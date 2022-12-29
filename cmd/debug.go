@@ -85,8 +85,8 @@ func setupScreen() {
 
 		node, tracker := parse(string(bytes))
 
-		fmt.Println("AST:")
-		fmt.Println(mlglib.PrettyPrint(node))
+		fmt.Println("Output:")
+		fmt.Println(node)
 
 		fmt.Println("Diagnostics:")
 		diagnostics := tracker.Diagnostics()
@@ -107,7 +107,7 @@ func setupScreen() {
 
 	app := tview.NewApplication()
 
-	outputArea := tview.NewTextView().SetDynamicColors(true)
+	outputArea := tview.NewTextView().SetDynamicColors(false)
 	outputArea.SetTitle("Output").SetBorder(true)
 
 	helpInfo := tview.NewTextView().SetDynamicColors(true)
@@ -115,10 +115,10 @@ func setupScreen() {
 		helpInfo.SetText(" Ctrl-R: check, Ctrl-T: write test case, Ctrl-C: exit, Ctrl-K: clear")
 	}
 	setHelpInfoError := func(message string) {
-		helpInfo.SetText(fmt.Sprintf(" [red]%s[white]", message))
+		helpInfo.SetText(fmt.Sprintf(" %s", message))
 	}
 	setHelpInfoSuccess := func(message string) {
-		helpInfo.SetText(fmt.Sprintf(" [green]%s[white]", message))
+		helpInfo.SetText(fmt.Sprintf(" %s", message))
 	}
 	resetHelpInfo()
 
@@ -196,7 +196,7 @@ func setupScreen() {
 			if len(diagnostics) > 0 {
 				output := ""
 				for _, diag := range diagnostics {
-					output += fmt.Sprintf("[red]%s[white] (%d, %d) {%s}: %s\n",
+					output += fmt.Sprintf("%s (%d, %d) {%s}: %s\n",
 						diag.Type,
 						(diag.Position.Row + 1),
 						(diag.Position.Column + 1),
@@ -274,7 +274,7 @@ func parseForStructural(text string) (string, frontend.DiagnosticTracker) {
 	root := phase4.Parse(lexer3, tracker)
 	doc, _ := phase5.Parse(root, tracker, mlglib.NewKeyGenerator())
 
-	return ast.Debug(doc), tracker
+	return ast.DebugStructuralNode(doc), tracker
 }
 
 func createTestCaseForStructural(input string) (string, string, bool) {
@@ -302,7 +302,7 @@ func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
 func parseForFormulation(text string) (string, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseExpression(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
-	return mlglib.PrettyPrint(node), tracker
+	return ast.DebugFormulationNode(node), tracker
 }
 
 func createTestCaseForFormulation(input string) (string, string, bool) {
@@ -323,7 +323,7 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 func parseForForm(text string) (string, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseForm(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
-	return mlglib.PrettyPrint(node), tracker
+	return ast.DebugFormulationNode(node), tracker
 }
 
 func createTestCaseForForm(input string) (string, string, bool) {
@@ -344,7 +344,7 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 func parseForId(text string) (string, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseId(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
-	return mlglib.PrettyPrint(node), tracker
+	return ast.DebugFormulationNode(node), tracker
 }
 
 func createTestCaseForId(input string) (string, string, bool) {

@@ -151,8 +151,8 @@ const UpperIdQuestionName = UpperIdName + "?"
 ///////////////////////////////////////////////////////////////////////
 
 type StructuralNodeType interface {
+	StructuralDebuggable
 	StructuralNodeType()
-	Debug(indent int, hasDot bool) []string
 }
 
 func (IdItem) StructuralNodeType()             {}

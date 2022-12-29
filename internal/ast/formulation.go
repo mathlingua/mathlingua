@@ -24,6 +24,7 @@ type Position struct {
 
 // all AST nodes are MlgNodes
 type NodeType interface {
+	FormulationDebuggable
 	NodeType()
 	Start() Position
 }

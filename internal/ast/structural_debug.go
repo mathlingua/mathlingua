@@ -20,8 +20,12 @@ import (
 	"strings"
 )
 
-func Debug(node StructuralNodeType) string {
-	return strings.Join(node.Debug(0, false), "\n")
+type StructuralDebuggable interface {
+	Debug(indent int, hasDot bool) []string
+}
+
+func DebugStructuralNode(item StructuralDebuggable) string {
+	return strings.Join(item.Debug(0, false), "\n")
 }
 
 func (n IdItem) Debug(indent int, hasDot bool) []string {

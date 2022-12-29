@@ -22,54 +22,53 @@ type Position struct {
 	Column int
 }
 
-// all AST nodes are MlgNodes
-type NodeType interface {
+type FormulationNodeType interface {
 	FormulationDebuggable
-	NodeType()
+	FormulationNodeType()
 	Start() Position
 }
 
-func (NameForm) NodeType()                               {}
-func (FunctionForm) NodeType()                           {}
-func (FunctionExpressionForm) NodeType()                 {}
-func (TupleForm) NodeType()                              {}
-func (FixedSetForm) NodeType()                           {}
-func (ConditionalSetForm) NodeType()                     {}
-func (ConditionalSetIdForm) NodeType()                   {}
-func (FunctionCallExpression) NodeType()                 {}
-func (TupleExpression) NodeType()                        {}
-func (FixedSetExpression) NodeType()                     {}
-func (ConditionalSetExpression) NodeType()               {}
-func (CommandExpression) NodeType()                      {}
-func (CommandAtExpression) NodeType()                    {}
-func (PrefixOperatorCallExpression) NodeType()           {}
-func (PostfixOperatorCallExpression) NodeType()          {}
-func (InfixOperatorCallExpression) NodeType()            {}
-func (IsExpression) NodeType()                           {}
-func (ExtendsExpression) NodeType()                      {}
-func (AsExpression) NodeType()                           {}
-func (NameOrdinalCallExpression) NodeType()              {}
-func (ChainExpression) NodeType()                        {}
-func (Signature) NodeType()                              {}
-func (MetaKinds) NodeType()                              {}
-func (StructuralColonEqualsForm) NodeType()              {}
-func (ExpressionColonEqualsItem) NodeType()              {}
-func (ExpressionColonArrowItem) NodeType()               {}
-func (EnclosedNonCommandOperatorTarget) NodeType()       {}
-func (NonEnclosedNonCommandOperatorTarget) NodeType()    {}
-func (CommandOperatorTarget) NodeType()                  {}
-func (CommandId) NodeType()                              {}
-func (CommandAtId) NodeType()                            {}
-func (PrefixOperatorId) NodeType()                       {}
-func (PostfixOperatorId) NodeType()                      {}
-func (InfixOperatorId) NodeType()                        {}
-func (InfixCommandOperatorId) NodeType()                 {}
-func (PseudoTokenNode) NodeType()                        {}
-func (PseudoExpression) NodeType()                       {}
-func (MultiplexedInfixOperatorCallExpression) NodeType() {}
-func (InfixOperatorForm) NodeType()                      {}
-func (PrefixOperatorForm) NodeType()                     {}
-func (PostfixOperatorForm) NodeType()                    {}
+func (NameForm) FormulationNodeType()                               {}
+func (FunctionForm) FormulationNodeType()                           {}
+func (FunctionExpressionForm) FormulationNodeType()                 {}
+func (TupleForm) FormulationNodeType()                              {}
+func (FixedSetForm) FormulationNodeType()                           {}
+func (ConditionalSetForm) FormulationNodeType()                     {}
+func (ConditionalSetIdForm) FormulationNodeType()                   {}
+func (FunctionCallExpression) FormulationNodeType()                 {}
+func (TupleExpression) FormulationNodeType()                        {}
+func (FixedSetExpression) FormulationNodeType()                     {}
+func (ConditionalSetExpression) FormulationNodeType()               {}
+func (CommandExpression) FormulationNodeType()                      {}
+func (CommandAtExpression) FormulationNodeType()                    {}
+func (PrefixOperatorCallExpression) FormulationNodeType()           {}
+func (PostfixOperatorCallExpression) FormulationNodeType()          {}
+func (InfixOperatorCallExpression) FormulationNodeType()            {}
+func (IsExpression) FormulationNodeType()                           {}
+func (ExtendsExpression) FormulationNodeType()                      {}
+func (AsExpression) FormulationNodeType()                           {}
+func (NameOrdinalCallExpression) FormulationNodeType()              {}
+func (ChainExpression) FormulationNodeType()                        {}
+func (Signature) FormulationNodeType()                              {}
+func (MetaKinds) FormulationNodeType()                              {}
+func (StructuralColonEqualsForm) FormulationNodeType()              {}
+func (ExpressionColonEqualsItem) FormulationNodeType()              {}
+func (ExpressionColonArrowItem) FormulationNodeType()               {}
+func (EnclosedNonCommandOperatorTarget) FormulationNodeType()       {}
+func (NonEnclosedNonCommandOperatorTarget) FormulationNodeType()    {}
+func (CommandOperatorTarget) FormulationNodeType()                  {}
+func (CommandId) FormulationNodeType()                              {}
+func (CommandAtId) FormulationNodeType()                            {}
+func (PrefixOperatorId) FormulationNodeType()                       {}
+func (PostfixOperatorId) FormulationNodeType()                      {}
+func (InfixOperatorId) FormulationNodeType()                        {}
+func (InfixCommandOperatorId) FormulationNodeType()                 {}
+func (PseudoTokenNode) FormulationNodeType()                        {}
+func (PseudoExpression) FormulationNodeType()                       {}
+func (MultiplexedInfixOperatorCallExpression) FormulationNodeType() {}
+func (InfixOperatorForm) FormulationNodeType()                      {}
+func (PrefixOperatorForm) FormulationNodeType()                     {}
+func (PostfixOperatorForm) FormulationNodeType()                    {}
 
 func (n NameForm) Start() Position                               { return n.MetaData.Start }
 func (n FunctionForm) Start() Position                           { return n.MetaData.Start }
@@ -116,7 +115,7 @@ func (n PostfixOperatorForm) Start() Position                    { return n.Meta
 ///////////////////////// Structural Forms ///////////////////////////////////////////
 
 type StructuralFormType interface {
-	NodeType // any StructuralFormType is a NodeType
+	FormulationNodeType // any StructuralFormType is a NodeType
 	StructuralForm()
 }
 
@@ -202,7 +201,7 @@ type ConditionalSetForm struct {
 //////////////////////////////////////////////////////////////////////
 
 type LiteralFormType interface {
-	NodeType
+	FormulationNodeType
 	LiteralFormType()
 }
 
@@ -223,7 +222,7 @@ func (ConditionalSetIdForm) LiteralFormType() {}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 type LiteralExpressionType interface {
-	NodeType
+	FormulationNodeType
 	LiteralExpressionType()
 }
 
@@ -249,14 +248,14 @@ type PseudoTokenNode struct {
 }
 
 type PseudoExpression struct {
-	Children []NodeType
+	Children []FormulationNodeType
 	MetaData MetaData
 }
 
 ///////////////////////////////////// Expressions /////////////////////////////
 
 type ExpressionType interface {
-	NodeType // any ExpressionType is a NodeType
+	FormulationNodeType // any ExpressionType is a NodeType
 	ExpressionType()
 }
 
@@ -411,7 +410,7 @@ type Signature struct {
 /////////////////////////////// Kinds /////////////////////////////////////////
 
 type KindType interface {
-	NodeType
+	FormulationNodeType
 	KindType()
 }
 
@@ -433,7 +432,7 @@ func (MetaKinds) KindType()                     {} // [: specification, states :
 ////////////////////////////// Colon Equals ///////////////////////////////////
 
 type ColonEqualsType interface {
-	NodeType
+	FormulationNodeType
 	ColonEqualsType()
 }
 
@@ -466,7 +465,7 @@ type ExpressionColonArrowItem struct {
 ///////////////////////////// Operators ///////////////////////////////////////
 
 type OperatorType interface {
-	NodeType // any OperatorType is a NodeType
+	FormulationNodeType // any OperatorType is a NodeType
 	OperatorType()
 }
 
@@ -498,7 +497,7 @@ type CommandOperatorTarget struct {
 ///////////////////////////////////////// Ids ///////////////////////////////////
 
 type IdType interface {
-	NodeType
+	FormulationNodeType
 	IdType()
 }
 
@@ -569,14 +568,6 @@ type InfixCommandOperatorId struct {
 	Operator InfixCommandId
 	Rhs      StructuralFormType
 	MetaData MetaData
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-type FormulationType interface {
-	ExpressionType
-	ColonEqualsType
-	FormulationType()
 }
 
 /////////////////////////// Support structures ////////////////////////////////

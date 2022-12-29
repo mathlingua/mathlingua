@@ -24,13 +24,13 @@ import (
 	"strings"
 )
 
-func Consolidate(nodes []ast.NodeType, tracker frontend.DiagnosticTracker) (ast.NodeType, bool) {
-	items := mlglib.NewStack[ShuntingYardItem[ast.NodeType]]()
+func Consolidate(nodes []ast.FormulationNodeType, tracker frontend.DiagnosticTracker) (ast.FormulationNodeType, bool) {
+	items := mlglib.NewStack[ShuntingYardItem[ast.FormulationNodeType]]()
 	for _, item := range ShuntingYard(toShuntingYardItems(nodes)) {
 		items.Push(item)
 	}
 
-	stack := mlglib.NewStack[ast.NodeType]()
+	stack := mlglib.NewStack[ast.FormulationNodeType]()
 	for !items.IsEmpty() {
 		stack.Push(toNode(items, tracker))
 	}
@@ -58,7 +58,7 @@ var default_structural_form ast.StructuralFormType = ast.NameForm{}
 var default_kind_type ast.KindType = ast.NameForm{}
 var default_signature ast.Signature = ast.Signature{}
 
-func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]], tracker frontend.DiagnosticTracker) ast.NodeType {
+func toNode(items mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]], tracker frontend.DiagnosticTracker) ast.FormulationNodeType {
 	if items.IsEmpty() {
 		return nil
 	}
@@ -171,8 +171,8 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]], tracker frontend
 	}
 }
 
-func toShuntingYardItems(nodes []ast.NodeType) []ShuntingYardItem[ast.NodeType] {
-	result := make([]ShuntingYardItem[ast.NodeType], 0)
+func toShuntingYardItems(nodes []ast.FormulationNodeType) []ShuntingYardItem[ast.FormulationNodeType] {
+	result := make([]ShuntingYardItem[ast.FormulationNodeType], 0)
 	isOperators := make([]bool, len(nodes))
 	isSpecialOperators := make([]bool, len(nodes))
 	for i, node := range nodes {
@@ -205,7 +205,7 @@ func toShuntingYardItems(nodes []ast.NodeType) []ShuntingYardItem[ast.NodeType] 
 
 	for i, node := range nodes {
 		prec, assoc := getPrecedenceAssociativity(node, itemTypes[i])
-		result = append(result, ShuntingYardItem[ast.NodeType]{
+		result = append(result, ShuntingYardItem[ast.FormulationNodeType]{
 			Item:          node,
 			ItemType:      itemTypes[i],
 			Precedence:    prec,
@@ -226,7 +226,7 @@ func toIsOperatorToGeneralItemType(isOperator bool, isSpecialOperator bool) gene
 	}
 }
 
-func isOperator(node ast.NodeType) bool {
+func isOperator(node ast.FormulationNodeType) bool {
 	switch node := node.(type) {
 	case ast.PrefixOperatorCallExpression:
 		// prefix operators
@@ -269,7 +269,7 @@ func isOperator(node ast.NodeType) bool {
 	}
 }
 
-func isSpecialOperator(node ast.NodeType) bool {
+func isSpecialOperator(node ast.FormulationNodeType) bool {
 	switch node := node.(type) {
 	case ast.PrefixOperatorCallExpression:
 		// prefix operators
@@ -430,7 +430,7 @@ func getOperatorPrecedenceAssociativityByText(text string, itemType ItemType) (i
 	}
 }
 
-func getPrecedenceAssociativity(node ast.NodeType, itemType ItemType) (int, Associativity) {
+func getPrecedenceAssociativity(node ast.FormulationNodeType, itemType ItemType) (int, Associativity) {
 	switch node := node.(type) {
 	case ast.PrefixOperatorCallExpression:
 		// prefix operators
@@ -458,7 +458,7 @@ func getPrecedenceAssociativity(node ast.NodeType, itemType ItemType) (int, Asso
 	}
 }
 
-func checkType[T any](node ast.NodeType, def T, typeName string, tracker frontend.DiagnosticTracker, fallbackPosition ast.Position) T {
+func checkType[T any](node ast.FormulationNodeType, def T, typeName string, tracker frontend.DiagnosticTracker, fallbackPosition ast.Position) T {
 	cast, ok := node.(T)
 	if ok {
 		return cast

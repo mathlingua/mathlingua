@@ -26,7 +26,7 @@ import (
 	"strings"
 )
 
-func ParseExpression(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.NodeType, bool) {
+func ParseExpression(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.FormulationNodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
@@ -40,7 +40,7 @@ func ParseExpression(text string, start ast.Position, tracker frontend.Diagnosti
 	return node, tracker.Length() == numDiagBefore
 }
 
-func ParseForm(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.NodeType, bool) {
+func ParseForm(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.FormulationNodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
@@ -456,7 +456,7 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 	}
 
 	start := fp.lexer.Position()
-	children := make([]ast.NodeType, 0)
+	children := make([]ast.FormulationNodeType, 0)
 	prevOffset := -1
 	for fp.lexer.HasNext() {
 		if fp.lexer.HasNext() && fp.lexer.Peek().Position.Offset == prevOffset {
@@ -1296,7 +1296,7 @@ func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, boo
 
 /////////////////////////// forms ///////////////////////////////////////
 
-func (fp *formulationParser) form() (ast.NodeType, bool) {
+func (fp *formulationParser) form() (ast.FormulationNodeType, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	lhs, ok := fp.structuralFormType()

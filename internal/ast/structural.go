@@ -233,35 +233,35 @@ type MetaData struct {
 
 type IdItem struct {
 	RawText  string
-	Root     NodeType
+	Root     FormulationNodeType
 	Label    *string
 	MetaData MetaData
 }
 
 type Target struct {
 	RawText  string
-	Root     NodeType
+	Root     FormulationNodeType
 	Label    *string
 	MetaData MetaData
 }
 
 type Spec struct {
 	RawText  string
-	Root     NodeType
+	Root     FormulationNodeType
 	Label    *string
 	MetaData MetaData
 }
 
 type Alias struct {
 	RawText  string
-	Root     NodeType
+	Root     FormulationNodeType
 	Label    *string
 	MetaData MetaData
 }
 
 func (Alias) ProvidesType() {}
 
-type Formulation[T NodeType] struct {
+type Formulation[T FormulationNodeType] struct {
 	RawText  string
 	Root     T
 	Label    *string
@@ -591,7 +591,7 @@ type ConnectionViewableSection struct {
 }
 
 type ConnectionThroughSection struct {
-	Through  Formulation[NodeType]
+	Through  Formulation[FormulationNodeType]
 	MetaData MetaData
 }
 

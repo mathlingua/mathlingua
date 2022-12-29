@@ -2305,11 +2305,11 @@ func (p *parser) getStringId(group phase4.Group, required bool) *string {
 
 ////////////////////////// arguments ////////////////////////////////////
 
-func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.NodeType] {
+func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.FormulationNodeType] {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
-			return ast.Formulation[ast.NodeType]{
+			return ast.Formulation[ast.FormulationNodeType]{
 				RawText:  data.Text,
 				Root:     node,
 				Label:    nil,
@@ -2319,21 +2319,21 @@ func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.NodeType
 	}
 
 	p.tracker.Append(newError("Expected a formulation", arg.MetaData.Start))
-	return ast.Formulation[ast.NodeType]{}
+	return ast.Formulation[ast.FormulationNodeType]{}
 }
 
 func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
-			return ast.Formulation[ast.NodeType]{
+			return ast.Formulation[ast.FormulationNodeType]{
 				RawText:  data.Text,
 				Root:     node,
 				Label:    nil,
 				MetaData: ast.MetaData(arg.MetaData),
 			}
 		} else {
-			return ast.Formulation[ast.NodeType]{}
+			return ast.Formulation[ast.FormulationNodeType]{}
 		}
 	case phase4.Group:
 		if grp, ok := p.toAllOfGroup(data); ok {
@@ -2366,7 +2366,7 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 	p.tracker.Append(newError(fmt.Sprintf("Expected a '...', `...`, %s:, %s:, %s:, %s:, or %s: item",
 		ast.LowerExistsName, ast.LowerExistsUniqueName, ast.LowerForAllName, ast.LowerIfName, ast.LowerIffName),
 		arg.MetaData.Start))
-	return ast.Formulation[ast.NodeType]{}
+	return ast.Formulation[ast.FormulationNodeType]{}
 }
 
 func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
@@ -2545,8 +2545,8 @@ func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[ast.Signat
 
 //////////////////////// argument lists /////////////////////////////////
 
-func (p *parser) toFormulations(args []phase4.Argument) []ast.Formulation[ast.NodeType] {
-	result := make([]ast.Formulation[ast.NodeType], 0)
+func (p *parser) toFormulations(args []phase4.Argument) []ast.Formulation[ast.FormulationNodeType] {
+	result := make([]ast.Formulation[ast.FormulationNodeType], 0)
 	for _, arg := range args {
 		result = append(result, p.toFormulation(arg))
 	}
@@ -2678,12 +2678,12 @@ func (p *parser) oneOrMoreClauses(section phase4.Section) []ast.Clause {
 }
 
 func (p *parser) exactlyOneClause(section phase4.Section) ast.Clause {
-	var def ast.Clause = ast.Formulation[ast.NodeType]{}
+	var def ast.Clause = ast.Formulation[ast.FormulationNodeType]{}
 	return exactlyOne(p.toClauses(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) exactlyOneFormulation(section phase4.Section) ast.Formulation[ast.NodeType] {
-	var def ast.Formulation[ast.NodeType] = ast.Formulation[ast.NodeType]{}
+func (p *parser) exactlyOneFormulation(section phase4.Section) ast.Formulation[ast.FormulationNodeType] {
+	var def ast.Formulation[ast.FormulationNodeType] = ast.Formulation[ast.FormulationNodeType]{}
 	return exactlyOne(p.toFormulations(section.Args), def, section.MetaData.Start, p.tracker)
 }
 

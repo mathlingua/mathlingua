@@ -16,7 +16,7 @@
 
 package ast
 
-func DebugFormulationNode(node NodeType) string {
+func DebugFormulationNode(node FormulationNodeType) string {
 	if node == nil {
 		return ""
 	}
@@ -392,15 +392,15 @@ func (n VarArgData) Debug() string {
 	return result
 }
 
-func commaSeparatedString[T NodeType](forms []T) string {
+func commaSeparatedString[T FormulationNodeType](forms []T) string {
 	return separatedString(forms, ", ")
 }
 
-func semicolonSeparatedString[T NodeType](forms []T) string {
+func semicolonSeparatedString[T FormulationNodeType](forms []T) string {
 	return separatedString(forms, "; ")
 }
 
-func separatedString[T NodeType](forms []T, separator string) string {
+func separatedString[T FormulationNodeType](forms []T, separator string) string {
 	result := ""
 	for i, f := range forms {
 		if i > 0 {

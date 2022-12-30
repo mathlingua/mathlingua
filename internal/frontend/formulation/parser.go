@@ -233,19 +233,19 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 
 func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionType, bool) {
 	if set, ok := fp.conditionalSetExpression(); ok {
-		return set, ok
+		return &set, ok
 	}
 
 	if fun, ok := fp.functionCallExpression(); ok {
-		return fun, ok
+		return &fun, ok
 	}
 
 	if tup, ok := fp.tupleExpression(); ok {
-		return tup, ok
+		return &tup, ok
 	}
 
 	if set, ok := fp.fixedSetExpression(); ok {
-		return set, ok
+		return &set, ok
 	}
 
 	return nil, false
@@ -286,7 +286,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 	minPrec := math.MinInt
 
 	for i, item := range items {
-		_, isOk := item.(ast.IsExpression)
+		_, isOk := item.(*ast.IsExpression)
 		if isOk {
 			if isIndex >= 0 {
 				fp.error("'is' statements cannot be nested")
@@ -294,7 +294,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 			isIndex = i
 		}
 
-		_, extendsOk := item.(ast.ExtendsExpression)
+		_, extendsOk := item.(*ast.ExtendsExpression)
 		if extendsOk {
 			if extendsIndex >= 0 {
 				fp.error("'extends' statements cannot be nested")
@@ -326,7 +326,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 				lhs = append(lhs, items[i])
 				i++
 			}
-			opExp := items[minPrecIndexMinIndex].(ast.InfixOperatorCallExpression)
+			opExp := items[minPrecIndexMinIndex].(*ast.InfixOperatorCallExpression)
 			lhs = append(lhs, opExp.Lhs)
 			rhs = append(rhs, opExp.Rhs)
 			i = minPrecIndexMinIndex + 1
@@ -334,7 +334,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 				rhs = append(rhs, items[i])
 				i++
 			}
-			return ast.MultiplexedInfixOperatorCallExpression{
+			return &ast.MultiplexedInfixOperatorCallExpression{
 				Target: opExp.Target,
 				Lhs:    lhs,
 				Rhs:    rhs,
@@ -360,7 +360,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 			lhs = append(lhs, items[i])
 			i++
 		}
-		isExp := items[isIndex].(ast.IsExpression)
+		isExp := items[isIndex].(*ast.IsExpression)
 		lhs = append(lhs, isExp.Lhs...)
 		rhs = append(rhs, isExp.Rhs...)
 		i = isIndex + 1
@@ -368,7 +368,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 			rhs = append(rhs, items[i].(ast.KindType))
 			i++
 		}
-		return ast.IsExpression{
+		return &ast.IsExpression{
 			Lhs: lhs,
 			Rhs: rhs,
 			MetaData: ast.MetaData{
@@ -384,7 +384,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 			lhs = append(lhs, items[i])
 			i++
 		}
-		isExp := items[extendsIndex].(ast.ExtendsExpression)
+		isExp := items[extendsIndex].(*ast.ExtendsExpression)
 		lhs = append(lhs, isExp.Lhs...)
 		rhs = append(rhs, isExp.Rhs...)
 		i = extendsIndex + 1
@@ -392,7 +392,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 			rhs = append(rhs, items[i].(ast.KindType))
 			i++
 		}
-		return ast.ExtendsExpression{
+		return &ast.ExtendsExpression{
 			Lhs: lhs,
 			Rhs: rhs,
 			MetaData: ast.MetaData{
@@ -477,39 +477,39 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 		if op, ok := fp.operatorType(); ok {
 			children = append(children, op)
 		} else if chain, ok := fp.chainExpression(false); ok {
-			children = append(children, chain)
+			children = append(children, &chain)
 		} else if lit, ok := fp.literalExpressionType(); ok {
 			children = append(children, lit)
 		} else if pseudoToken, ok := fp.pseudoTokenNode(); ok {
-			children = append(children, pseudoToken)
+			children = append(children, &pseudoToken)
 		} else if ord, ok := fp.nameOrdinalCallExpression(); ok {
-			children = append(children, ord)
+			children = append(children, &ord)
 		} else if fun, ok := fp.functionForm(); ok {
-			children = append(children, fun)
+			children = append(children, &fun)
 		} else if name, ok := fp.nameForm(); ok {
-			children = append(children, name)
+			children = append(children, &name)
 		} else if fun, ok := fp.functionExpressionForm(); ok {
-			children = append(children, fun)
+			children = append(children, &fun)
 		} else if fun, ok := fp.functionCallExpression(); ok {
-			children = append(children, fun)
+			children = append(children, &fun)
 		} else if tup, ok := fp.tupleForm(); ok {
-			children = append(children, tup)
+			children = append(children, &tup)
 		} else if set, ok := fp.fixedSetForm(); ok {
-			children = append(children, set)
+			children = append(children, &set)
 		} else if set, ok := fp.fixedSetExpression(); ok {
-			children = append(children, set)
+			children = append(children, &set)
 		} else if set, ok := fp.conditionalSetForm(); ok {
-			children = append(children, set)
+			children = append(children, &set)
 		} else if sig, ok := fp.signature(); ok {
-			children = append(children, sig)
+			children = append(children, &sig)
 		} else if cmd, ok := fp.commandOperatorTarget(); ok {
-			children = append(children, cmd)
+			children = append(children, &cmd)
 		} else if cmd, ok := fp.commandAtExpression(); ok {
-			children = append(children, cmd)
+			children = append(children, &cmd)
 		} else if cmd, ok := fp.commandExpression(false); ok {
-			children = append(children, cmd)
+			children = append(children, &cmd)
 		} else if kind, ok := fp.metaKinds(); ok {
-			children = append(children, kind)
+			children = append(children, &kind)
 		} else {
 			if fp.lexer.HasNext() {
 				next := fp.lexer.Next()
@@ -574,11 +574,11 @@ func (fp *formulationParser) metaKinds() (ast.MetaKinds, bool) {
 
 func (fp *formulationParser) functionCallExpressionTarget() (ast.ExpressionType, bool) {
 	if name, ok := fp.nameForm(); ok {
-		return name, ok
+		return &name, ok
 	}
 
 	if tup, ok := fp.tupleExpression(); ok {
-		return tup, ok
+		return &tup, ok
 	}
 
 	return nil, false
@@ -811,11 +811,11 @@ func (fp *formulationParser) chainName() (ast.NameForm, bool) {
 
 func (fp *formulationParser) chainExpressionPart() (ast.ExpressionType, bool) {
 	if fun, ok := fp.functionCallExpression(); ok {
-		return fun, ok
+		return &fun, ok
 	}
 
 	if name, ok := fp.chainName(); ok {
-		return name, ok
+		return &name, ok
 	}
 
 	//if tuple, ok := fp.tupleExpression(); ok {
@@ -835,7 +835,7 @@ func (fp *formulationParser) chainExpressionPart() (ast.ExpressionType, bool) {
 	if tuple, ok := fp.singleItemTupleExpression(); ok {
 		if len(tuple.Args) == 1 {
 			fp.lexer.Commit(id)
-			return tuple, ok
+			return &tuple, ok
 		} else {
 			fp.lexer.RollBack(id)
 			fp.error("A tuple cannot be part of a chain expression")
@@ -858,7 +858,7 @@ func (fp *formulationParser) chainExpression(allowTrailingOperator bool) (ast.Ch
 			opName, ok := fp.operatorAsNameForm()
 			if ok {
 				hasTrailingOperator = true
-				parts = append(parts, opName)
+				parts = append(parts, &opName)
 				break
 			}
 		}
@@ -1018,15 +1018,15 @@ func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 
 func (fp *formulationParser) operatorType() (ast.OperatorType, bool) {
 	if enclosed, ok := fp.enclosedNonCommandOperatorTarget(); ok {
-		return enclosed, ok
+		return &enclosed, ok
 	}
 
 	if nonEnclosed, ok := fp.nonEnclosedNonCommandOperatorTarget(); ok {
-		return nonEnclosed, ok
+		return &nonEnclosed, ok
 	}
 
 	if cmd, ok := fp.commandOperatorTarget(); ok {
-		return cmd, ok
+		return &cmd, ok
 	}
 
 	return nil, false
@@ -1073,18 +1073,18 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNon
 
 	var target ast.ExpressionType
 	if opName, ok := fp.operatorAsNameForm(); ok {
-		target = opName
+		target = &opName
 	}
 
 	if target == nil {
 		if chain, ok := fp.chainExpression(true); ok {
-			target = chain
+			target = &chain
 		}
 	}
 
 	if target == nil {
 		if name, ok := fp.nameForm(); ok {
-			target = name
+			target = &name
 		}
 	}
 
@@ -1311,7 +1311,7 @@ func (fp *formulationParser) form() (ast.FormulationNodeType, bool) {
 	}
 
 	switch lhs.(type) {
-	case ast.NameForm:
+	case *ast.NameForm:
 		fp.expect(ast.ColonEquals)
 		rhs, ok := fp.structuralFormType()
 		if !ok {
@@ -1321,7 +1321,7 @@ func (fp *formulationParser) form() (ast.FormulationNodeType, bool) {
 		}
 
 		fp.lexer.Commit(id)
-		return ast.StructuralColonEqualsForm{
+		return &ast.StructuralColonEqualsForm{
 			Lhs: lhs,
 			Rhs: rhs,
 			MetaData: ast.MetaData{
@@ -1329,7 +1329,7 @@ func (fp *formulationParser) form() (ast.FormulationNodeType, bool) {
 				Key:   fp.keyGen.Next(),
 			},
 		}, true
-	case ast.FunctionForm:
+	case *ast.FunctionForm:
 		fp.expect(ast.ColonEquals)
 		rhs, ok := fp.structuralFormType()
 		if !ok {
@@ -1339,7 +1339,7 @@ func (fp *formulationParser) form() (ast.FormulationNodeType, bool) {
 		}
 
 		fp.lexer.Commit(id)
-		return ast.StructuralColonEqualsForm{
+		return &ast.StructuralColonEqualsForm{
 			Lhs: lhs,
 			Rhs: rhs,
 			MetaData: ast.MetaData{
@@ -1471,43 +1471,43 @@ func (fp *formulationParser) curlyParams() (*[]ast.StructuralFormType, bool) {
 
 func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool) {
 	if op, ok := fp.infixOperatorForm(); ok {
-		return op, ok
+		return &op, ok
 	}
 
 	if op, ok := fp.prefixOperatorForm(); ok {
-		return op, ok
+		return &op, ok
 	}
 
 	if op, ok := fp.postfixOperatorForm(); ok {
-		return op, ok
+		return &op, ok
 	}
 
 	if fun, ok := fp.functionForm(); ok {
-		return fun, true
+		return &fun, true
 	}
 
 	if funExp, ok := fp.functionExpressionForm(); ok {
-		return funExp, true
+		return &funExp, true
 	}
 
 	if name, ok := fp.operatorAsNameForm(); ok {
-		return name, true
+		return &name, true
 	}
 
 	if name, ok := fp.nameForm(); ok {
-		return name, true
+		return &name, true
 	}
 
 	if tuple, ok := fp.tupleForm(); ok {
-		return tuple, true
+		return &tuple, true
 	}
 
 	if fixedSet, ok := fp.fixedSetForm(); ok {
-		return fixedSet, true
+		return &fixedSet, true
 	}
 
 	if conditionalSet, ok := fp.conditionalSetForm(); ok {
-		return conditionalSet, true
+		return &conditionalSet, true
 	}
 
 	return nil, false
@@ -1854,23 +1854,23 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 
 func (fp *formulationParser) literalFormType() (ast.LiteralFormType, bool) {
 	if name, ok := fp.nameForm(); ok {
-		return name, ok
+		return &name, ok
 	}
 
 	if fun, ok := fp.functionForm(); ok {
-		return fun, ok
+		return &fun, ok
 	}
 
 	if tup, ok := fp.tupleForm(); ok {
-		return tup, ok
+		return &tup, ok
 	}
 
 	if set, ok := fp.fixedSetForm(); ok {
-		return set, ok
+		return &set, ok
 	}
 
 	if set, ok := fp.conditionalSetIdForm(); ok {
-		return set, ok
+		return &set, ok
 	}
 
 	return nil, false
@@ -1880,17 +1880,17 @@ func (fp *formulationParser) literalFormType() (ast.LiteralFormType, bool) {
 
 func (fp *formulationParser) idType() (ast.IdType, bool) {
 	if op, ok := fp.infixCommandOperatorId(); ok {
-		return op, ok
+		return &op, ok
 	} else if op, ok := fp.infixOperatorId(); ok {
-		return op, ok
+		return &op, ok
 	} else if op, ok := fp.prefixOperatorId(); ok {
-		return op, ok
+		return &op, ok
 	} else if op, ok := fp.postfixOperatorId(); ok {
-		return op, ok
+		return &op, ok
 	} else if cmd, ok := fp.commandAtId(); ok {
-		return cmd, ok
+		return &cmd, ok
 	} else if cmd, ok := fp.commandId(false); ok {
-		return cmd, ok
+		return &cmd, ok
 	} else {
 		return nil, false
 	}

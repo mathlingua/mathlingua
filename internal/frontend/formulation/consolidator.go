@@ -44,7 +44,7 @@ func Consolidate(nodes []ast.FormulationNodeType, tracker frontend.DiagnosticTra
 }
 
 func GetPrecedenceAndIfInfix(node ast.ExpressionType) (int, bool) {
-	if _, infixOk := node.(ast.InfixOperatorCallExpression); !infixOk {
+	if _, infixOk := node.(*ast.InfixOperatorCallExpression); !infixOk {
 		return -1, false
 	}
 	precedence, _ := getPrecedenceAssociativity(node, InfixOperatorType)
@@ -53,9 +53,9 @@ func GetPrecedenceAndIfInfix(node ast.ExpressionType) (int, bool) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-var default_expression ast.ExpressionType = ast.NameForm{}
-var default_structural_form ast.StructuralFormType = ast.NameForm{}
-var default_kind_type ast.KindType = ast.NameForm{}
+var default_expression ast.ExpressionType = &ast.NameForm{}
+var default_structural_form ast.StructuralFormType = &ast.NameForm{}
+var default_kind_type ast.KindType = &ast.NameForm{}
 var default_signature ast.Signature = ast.Signature{}
 
 func toNode(items mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]], tracker frontend.DiagnosticTracker) ast.FormulationNodeType {
@@ -66,41 +66,41 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]], track
 	rawTop := items.Pop()
 	top := rawTop.Item
 	switch top := top.(type) {
-	case ast.PrefixOperatorCallExpression:
+	case *ast.PrefixOperatorCallExpression:
 		// prefix operators
 		top.Arg = checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 		return top
-	case ast.PostfixOperatorCallExpression:
+	case *ast.PostfixOperatorCallExpression:
 		// postfix operators
 		top.Arg = checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 		return top
-	case ast.InfixOperatorCallExpression:
+	case *ast.InfixOperatorCallExpression:
 		// infix operators
 		top.Lhs = checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 		top.Rhs = checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 		return top
-	case ast.EnclosedNonCommandOperatorTarget:
+	case *ast.EnclosedNonCommandOperatorTarget:
 		// for example [x]
 		target := top
 		lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 		rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
-		return ast.InfixOperatorCallExpression{
+		return &ast.InfixOperatorCallExpression{
 			Target: target,
 			Lhs:    rhs,
 			Rhs:    lhs,
 		}
-	case ast.NonEnclosedNonCommandOperatorTarget:
+	case *ast.NonEnclosedNonCommandOperatorTarget:
 		// for example + or **
 		target := top
 		if rawTop.ItemType == PrefixOperatorType {
 			arg := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
-			return ast.PrefixOperatorCallExpression{
+			return &ast.PrefixOperatorCallExpression{
 				Target: target,
 				Arg:    arg,
 			}
 		} else if rawTop.ItemType == PostfixOperatorType {
 			arg := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
-			return ast.PostfixOperatorCallExpression{
+			return &ast.PostfixOperatorCallExpression{
 				Target: target,
 				Arg:    arg,
 			}
@@ -108,58 +108,58 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]], track
 			// it is an infix
 			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
-			return ast.InfixOperatorCallExpression{
+			return &ast.InfixOperatorCallExpression{
 				Target: target,
 				Lhs:    rhs,
 				Rhs:    lhs,
 			}
 		}
-	case ast.CommandOperatorTarget:
+	case *ast.CommandOperatorTarget:
 		// for example \f/
 		target := top
 		lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 		rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
-		return ast.InfixOperatorCallExpression{
+		return &ast.InfixOperatorCallExpression{
 			Target: target,
 			Lhs:    rhs,
 			Rhs:    lhs,
 		}
-	case ast.PseudoTokenNode:
+	case *ast.PseudoTokenNode:
 		// a token, for example :=, :=>, is, isnot
 		switch {
 		case top.Type == ast.ColonArrow:
 			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 			tmp := toNode(items, tracker)
 			lhs := checkType(tmp, default_expression, "Expression", tracker, top.Start())
-			return ast.ExpressionColonArrowItem{
+			return &ast.ExpressionColonArrowItem{
 				Lhs: lhs,
 				Rhs: rhs,
 			}
 		case top.Type == ast.ColonEquals:
 			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
-			return ast.ExpressionColonEqualsItem{
+			return &ast.ExpressionColonEqualsItem{
 				Lhs: lhs,
 				Rhs: rhs,
 			}
 		case top.Type == ast.Is:
 			rhs := checkType(toNode(items, tracker), default_kind_type, "Kind Type", tracker, top.Start())
 			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
-			return ast.IsExpression{
+			return &ast.IsExpression{
 				Lhs: []ast.ExpressionType{lhs},
 				Rhs: []ast.KindType{rhs},
 			}
 		case top.Type == ast.Extends:
 			rhs := checkType(toNode(items, tracker), default_kind_type, "Kind Type", tracker, top.Start())
 			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
-			return ast.ExtendsExpression{
+			return &ast.ExtendsExpression{
 				Lhs: []ast.ExpressionType{lhs},
 				Rhs: []ast.KindType{rhs},
 			}
 		case top.Type == ast.As:
 			rhs := checkType(toNode(items, tracker), default_signature, "Signature", tracker, top.Start())
 			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
-			return ast.AsExpression{
+			return &ast.AsExpression{
 				Lhs: lhs,
 				Rhs: rhs,
 			}
@@ -228,25 +228,25 @@ func toIsOperatorToGeneralItemType(isOperator bool, isSpecialOperator bool) gene
 
 func isOperator(node ast.FormulationNodeType) bool {
 	switch node := node.(type) {
-	case ast.PrefixOperatorCallExpression:
+	case *ast.PrefixOperatorCallExpression:
 		// prefix operators
 		return true
-	case ast.PostfixOperatorCallExpression:
+	case *ast.PostfixOperatorCallExpression:
 		// postfix operators
 		return true
-	case ast.InfixOperatorCallExpression:
+	case *ast.InfixOperatorCallExpression:
 		// infix operators
 		return true
-	case ast.EnclosedNonCommandOperatorTarget:
+	case *ast.EnclosedNonCommandOperatorTarget:
 		// for example [x]
 		return true
-	case ast.NonEnclosedNonCommandOperatorTarget:
+	case *ast.NonEnclosedNonCommandOperatorTarget:
 		// for example + or **
 		return true
-	case ast.CommandOperatorTarget:
+	case *ast.CommandOperatorTarget:
 		// for example \f/
 		return true
-	case ast.PseudoTokenNode:
+	case *ast.PseudoTokenNode:
 		// a token, for example :=, is, isnot
 		switch node.Type {
 		case ast.ColonEquals:
@@ -271,25 +271,25 @@ func isOperator(node ast.FormulationNodeType) bool {
 
 func isSpecialOperator(node ast.FormulationNodeType) bool {
 	switch node := node.(type) {
-	case ast.PrefixOperatorCallExpression:
+	case *ast.PrefixOperatorCallExpression:
 		// prefix operators
 		return false
-	case ast.PostfixOperatorCallExpression:
+	case *ast.PostfixOperatorCallExpression:
 		// postfix operators
 		return false
-	case ast.InfixOperatorCallExpression:
+	case *ast.InfixOperatorCallExpression:
 		// infix operators
 		return false
-	case ast.EnclosedNonCommandOperatorTarget:
+	case *ast.EnclosedNonCommandOperatorTarget:
 		// for example [x]
 		return false
-	case ast.NonEnclosedNonCommandOperatorTarget:
+	case *ast.NonEnclosedNonCommandOperatorTarget:
 		// for example + or **
 		return false
-	case ast.CommandOperatorTarget:
+	case *ast.CommandOperatorTarget:
 		// for example \f/
 		return false
-	case ast.PseudoTokenNode:
+	case *ast.PseudoTokenNode:
 		// a token, for example :=, is, isnot
 		switch node.Type {
 		case ast.ColonEquals:
@@ -432,25 +432,25 @@ func getOperatorPrecedenceAssociativityByText(text string, itemType ItemType) (i
 
 func getPrecedenceAssociativity(node ast.FormulationNodeType, itemType ItemType) (int, Associativity) {
 	switch node := node.(type) {
-	case ast.PrefixOperatorCallExpression:
+	case *ast.PrefixOperatorCallExpression:
 		// prefix operators
 		return getPrecedenceAssociativity(node.Target, itemType)
-	case ast.PostfixOperatorCallExpression:
+	case *ast.PostfixOperatorCallExpression:
 		// postfix operators
 		return getPrecedenceAssociativity(node.Target, itemType)
-	case ast.InfixOperatorCallExpression:
+	case *ast.InfixOperatorCallExpression:
 		// infix operators
 		return getPrecedenceAssociativity(node.Target, itemType)
-	case ast.EnclosedNonCommandOperatorTarget:
+	case *ast.EnclosedNonCommandOperatorTarget:
 		// for example [x]
 		return enclosed_infix_precedence, enclosed_infix_associativity
-	case ast.NonEnclosedNonCommandOperatorTarget:
+	case *ast.NonEnclosedNonCommandOperatorTarget:
 		// for example + or **
 		return getOperatorPrecedenceAssociativityByText(node.Text, itemType)
-	case ast.CommandOperatorTarget:
+	case *ast.CommandOperatorTarget:
 		// for example \f/
 		return command_infix_precedence, command_infix_associativity
-	case ast.PseudoTokenNode:
+	case *ast.PseudoTokenNode:
 		// a token, for example :=, :=>, is
 		return getOperatorPrecedenceAssociativityByText(node.Text, itemType)
 	default:

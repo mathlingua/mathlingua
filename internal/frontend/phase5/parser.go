@@ -648,25 +648,25 @@ func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool
 	switch group := arg.Arg.(type) {
 	case phase4.Group:
 		if grp, ok := p.toOverviewGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toMotivationGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toHistoryGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toExampleGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toRelatedGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toDiscovererGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toNoteGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toWrittenGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toWritingGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toCalledGroup(group); ok {
-			return grp, true
+			return &grp, true
 		}
 	}
 
@@ -851,7 +851,8 @@ func (p *parser) toProvidesTypes(args []phase4.Argument) []ast.ProvidesType {
 
 func (p *parser) toProvidesTypeFromArg(arg phase4.Argument) (ast.ProvidesType, bool) {
 	if _, ok := arg.Arg.(phase4.FormulationArgumentData); ok {
-		return p.toAlias(arg), true
+		alias := p.toAlias(arg)
+		return &alias, true
 	}
 
 	group, ok := arg.Arg.(phase4.Group)
@@ -863,9 +864,9 @@ func (p *parser) toProvidesTypeFromArg(arg phase4.Argument) (ast.ProvidesType, b
 
 func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, bool) {
 	if grp, ok := p.toSymbolWrittenGroup(group); ok {
-		return grp, true
+		return &grp, true
 	} else if grp, ok := p.toConnectionGroup(group); ok {
-		return grp, ok
+		return &grp, ok
 	} else {
 		p.tracker.Append(newError(fmt.Sprintf("Unrecognized argument for %s:\n"+
 			"Expected one of:\n\n%s:\n\n%s:\n",
@@ -925,9 +926,9 @@ func (p *parser) toJustifiedTypeFromArg(arg phase4.Argument) (ast.JustifiedType,
 
 func (p *parser) toJustifiedTypeFromGroup(group phase4.Group) (ast.JustifiedType, bool) {
 	if grp, ok := p.toLabelGroup(group); ok {
-		return grp, true
+		return &grp, true
 	} else if grp, ok := p.toByGroup(group); ok {
-		return grp, true
+		return &grp, true
 	} else {
 		return nil, false
 	}
@@ -1610,15 +1611,15 @@ func (p *parser) toSpecifyType(arg phase4.Argument) (ast.SpecifyType, bool) {
 	switch group := arg.Arg.(type) {
 	case phase4.Group:
 		if grp, ok := p.toZeroGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toPositiveIntGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toNegativeIntGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toPositiveFloatGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toNegativeFloatGroup(group); ok {
-			return grp, true
+			return &grp, true
 		}
 	}
 	return nil, false
@@ -1822,35 +1823,35 @@ func (p *parser) toResourceType(arg phase4.Argument) (ast.ResourceType, bool) {
 	switch group := arg.Arg.(type) {
 	case phase4.Group:
 		if grp, ok := p.toTitleGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toAuthorGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toOffsetGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toUrlGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toHomepageGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toTypeGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toEditionGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toEditorGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toInstitutionGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toJournalGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toPublisherGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toVolumeGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toMonthGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toYearGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toDescriptionGroup(group); ok {
-			return grp, ok
+			return &grp, ok
 		}
 	}
 	return nil, false
@@ -2227,27 +2228,27 @@ func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelI
 		return p.toTextBlockItem(item), true
 	case phase4.Group:
 		if grp, ok := p.toDefinesGroup(item); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toDescribesGroup(item); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toStatesGroup(item); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toAxiomGroup(item); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toConjectureGroup(item); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toTheoremGroup(item); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toSpecifyGroup(item); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toTopicGroup(item); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toPersonGroup(item); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toResourceGroup(item); ok {
-			return grp, ok
+			return &grp, ok
 		} else if grp, ok := p.toProofGroup(item); ok {
-			return grp, ok
+			return &grp, ok
 		}
 	}
 	p.tracker.Append(newError("Invalid top level item", item.Start()))
@@ -2326,47 +2327,47 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
-			return ast.Formulation[ast.FormulationNodeType]{
+			return &ast.Formulation[ast.FormulationNodeType]{
 				RawText:  data.Text,
 				Root:     node,
 				Label:    nil,
 				MetaData: ast.MetaData(arg.MetaData),
 			}
 		} else {
-			return ast.Formulation[ast.FormulationNodeType]{}
+			return &ast.Formulation[ast.FormulationNodeType]{}
 		}
 	case phase4.Group:
 		if grp, ok := p.toAllOfGroup(data); ok {
-			return grp
+			return &grp
 		} else if grp, ok := p.toNotGroup(data); ok {
-			return grp
+			return &grp
 		} else if grp, ok := p.toAnyOfGroup(data); ok {
-			return grp
+			return &grp
 		} else if grp, ok := p.toOneOfGroup(data); ok {
-			return grp
+			return &grp
 		} else if grp, ok := p.toForAllGroup(data); ok {
-			return grp
+			return &grp
 		} else if grp, ok := p.toExistsGroup(data); ok {
-			return grp
+			return &grp
 		} else if grp, ok := p.toExistsUniqueGroup(data); ok {
-			return grp
+			return &grp
 		} else if grp, ok := p.toIfGroup(data); ok {
-			return grp
+			return &grp
 		} else if grp, ok := p.toIffGroup(data); ok {
-			return grp
+			return &grp
 		} else if grp, ok := p.toWhenGroup(data); ok {
-			return grp
+			return &grp
 		} else if grp, ok := p.toPiecewiseGroup(data); ok {
-			return grp
+			return &grp
 		} else if grp, ok := p.toGivenGroup(data); ok {
-			return grp
+			return &grp
 		}
 	}
 
 	p.tracker.Append(newError(fmt.Sprintf("Expected a '...', `...`, %s:, %s:, %s:, %s:, or %s: item",
 		ast.LowerExistsName, ast.LowerExistsUniqueName, ast.LowerForAllName, ast.LowerIfName, ast.LowerIffName),
 		arg.MetaData.Start))
-	return ast.Formulation[ast.FormulationNodeType]{}
+	return &ast.Formulation[ast.FormulationNodeType]{}
 }
 
 func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
@@ -2439,9 +2440,11 @@ func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
 func (p *parser) toNoteType(arg phase4.Argument) (ast.NoteType, bool) {
 	switch group := arg.Arg.(type) {
 	case phase4.Group:
-		return p.toDescribingGroup(group)
+		grp, _ := p.toDescribingGroup(group)
+		return &grp, true
 	default:
-		return p.toTextItem(arg), true
+		textItem := p.toTextItem(arg)
+		return &textItem, true
 	}
 }
 
@@ -2472,9 +2475,9 @@ func (p *parser) toPersonType(arg phase4.Argument) (ast.PersonType, bool) {
 	switch group := arg.Arg.(type) {
 	case phase4.Group:
 		if grp, ok := p.toNameGroup(group); ok {
-			return grp, true
+			return &grp, true
 		} else if grp, ok := p.toBiographyGroup(group); ok {
-			return grp, true
+			return &grp, true
 		}
 	}
 	return nil, false
@@ -2678,7 +2681,7 @@ func (p *parser) oneOrMoreClauses(section phase4.Section) []ast.Clause {
 }
 
 func (p *parser) exactlyOneClause(section phase4.Section) ast.Clause {
-	var def ast.Clause = ast.Formulation[ast.FormulationNodeType]{}
+	var def ast.Clause = &ast.Formulation[ast.FormulationNodeType]{}
 	return exactlyOne(p.toClauses(section.Args), def, section.MetaData.Start, p.tracker)
 }
 

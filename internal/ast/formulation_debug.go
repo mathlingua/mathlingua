@@ -32,11 +32,11 @@ func (n NameForm) Debug() string {
 }
 
 func (n FunctionForm) Debug() string {
-	return n.Target.Debug() + "(" + commaSeparatedString(n.Params) + ")" + n.VarArg.Debug()
+	return n.Target.Debug() + "(" + commaSeparatedStringOfNameForms(n.Params) + ")" + n.VarArg.Debug()
 }
 
 func (n FunctionExpressionForm) Debug() string {
-	return n.Target.Debug() + "(" + commaSeparatedString(n.Params) + ")" + n.VarArg.Debug()
+	return n.Target.Debug() + "(" + commaSeparatedStringOfNameForms(n.Params) + ")" + n.VarArg.Debug()
 }
 
 func (n TupleForm) Debug() string {
@@ -274,7 +274,7 @@ func (n CommandId) Debug() string {
 	}
 	if n.ParenParams != nil {
 		result += "("
-		result += commaSeparatedString(*n.ParenParams)
+		result += commaSeparatedStringOfNameForms(*n.ParenParams)
 		result += ")"
 	}
 	return result
@@ -333,7 +333,7 @@ func (n InfixCommandId) Debug() string {
 	}
 	if n.ParenParams != nil {
 		result += "("
-		result += commaSeparatedString(*n.ParenParams)
+		result += commaSeparatedStringOfNameForms(*n.ParenParams)
 		result += ")"
 	}
 	result += "/"
@@ -396,17 +396,28 @@ func commaSeparatedString[T FormulationNodeType](forms []T) string {
 	return separatedString(forms, ", ")
 }
 
+func commaSeparatedStringOfNameForms(forms []NameForm) string {
+	result := ""
+	for i, _ := range forms {
+		if i > 0 {
+			result += ", "
+		}
+		result += forms[i].Debug()
+	}
+	return result
+}
+
 func semicolonSeparatedString[T FormulationNodeType](forms []T) string {
 	return separatedString(forms, "; ")
 }
 
 func separatedString[T FormulationNodeType](forms []T, separator string) string {
 	result := ""
-	for i, f := range forms {
+	for i, _ := range forms {
 		if i > 0 {
 			result += separator
 		}
-		result += f.Debug()
+		result += forms[i].Debug()
 	}
 	return result
 }

@@ -29,23 +29,23 @@ func DebugStructuralNode(item StructuralDebuggable) string {
 }
 
 func (n IdItem) Debug(indent int, hasDot bool) []string {
-	return buildIndentedLineSlice(indent, hasDot, "["+n.RawText+"]")
+	return buildIndentedLineSlice(indent, hasDot, "["+n.Root.Debug()+"]")
 }
 
 func (n Target) Debug(indent int, hasDot bool) []string {
-	return buildIndentedLineSlice(indent, hasDot, n.RawText)
+	return buildIndentedLineSlice(indent, hasDot, n.Root.Debug())
 }
 
 func (n Spec) Debug(indent int, hasDot bool) []string {
-	return buildIndentedLineSlice(indent, hasDot, "'"+n.RawText+"'")
+	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.Debug()+"'")
 }
 
 func (n Alias) Debug(indent int, hasDot bool) []string {
-	return buildIndentedLineSlice(indent, hasDot, "'"+n.RawText+"'")
+	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.Debug()+"'")
 }
 
 func (n Formulation[T]) Debug(indent int, hasDot bool) []string {
-	return buildIndentedLineSlice(indent, hasDot, "'"+n.RawText+"'")
+	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.Debug()+"'")
 }
 
 func (n TextItem) Debug(indent int, hasDot bool) []string {
@@ -148,7 +148,7 @@ func (n WhenGroup) Debug(indent int, hasDot bool) []string {
 func (n SymbolWrittenGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerSymbolName, indent, hasDot)
-	db.Append(n.Symbol.Symbol, indent+2, true)
+	db.Append(&n.Symbol.Symbol, indent+2, true)
 	if n.Written != nil {
 		db.AppendTextItemsSection(LowerWrittenName, n.Written.Written, indent, true)
 	}
@@ -177,7 +177,7 @@ func (n CalledGroup) Debug(indent int, hasDot bool) []string {
 func (n WritingGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerWritingName, indent, hasDot)
-	db.Append(n.Writing.Writing, indent, false)
+	db.Append(&n.Writing.Writing, indent, false)
 	db.AppendTextItemsSection(LowerAsName, n.As.As, indent, false)
 	return db.Lines()
 }
@@ -250,7 +250,7 @@ func (n DescribesGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
 	db.AppendSection(UpperDescribesName, indent, false)
-	db.Append(n.Describes.Describes, indent+2, true)
+	db.Append(&n.Describes.Describes, indent+2, true)
 	db.MaybeAppendWithSection(n.With, indent, false)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhenSection(n.When, indent, false)
@@ -284,7 +284,7 @@ func (n DefinesGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
 	db.AppendSection(UpperDefinesName, indent, false)
-	db.Append(n.Defines.Defines, indent+2, true)
+	db.Append(&n.Defines.Defines, indent+2, true)
 	db.MaybeAppendWithSection(n.With, indent, false)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhenSection(n.When, indent, false)
@@ -391,7 +391,7 @@ func (n TheoremGroup) Debug(indent int, hasDot bool) []string {
 	db.MaybeAppendThenSection(&n.Then, indent, false)
 	if n.Proof != nil {
 		db.AppendSection(UpperProofName, indent, false)
-		db.Append(n.Proof.Proof, indent+2, true)
+		db.Append(&n.Proof.Proof, indent+2, true)
 	}
 	db.MaybeAppendDocumentedSection(n.Documented, indent, false)
 	db.MaybeAppendReferencesSection(n.References, indent, false)
@@ -475,7 +475,7 @@ func (n NameGroup) Debug(indent int, hasDot bool) []string {
 func (n BiographyGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerBiographyName, indent, hasDot)
-	db.Append(n.Biography.Biography, indent+2, true)
+	db.Append(&n.Biography.Biography, indent+2, true)
 	return db.Lines()
 }
 
@@ -493,7 +493,7 @@ func (n ResourceGroup) Debug(indent int, hasDot bool) []string {
 func (n TitleGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerTitleName, indent, hasDot)
-	db.Append(n.Title.Title, indent+2, true)
+	db.Append(&n.Title.Title, indent+2, true)
 	return db.Lines()
 }
 
@@ -506,28 +506,28 @@ func (n AuthorGroup) Debug(indent int, hasDot bool) []string {
 func (n OffsetGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerOffsetName, indent, hasDot)
-	db.Append(n.Offset.Offset, indent+2, true)
+	db.Append(&n.Offset.Offset, indent+2, true)
 	return db.Lines()
 }
 
 func (n UrlGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerUrlName, indent, hasDot)
-	db.Append(n.Url.Url, indent+2, true)
+	db.Append(&n.Url.Url, indent+2, true)
 	return db.Lines()
 }
 
 func (n HomepageGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerHomepageName, indent, hasDot)
-	db.Append(n.Homepage.Homepage, indent+2, true)
+	db.Append(&n.Homepage.Homepage, indent+2, true)
 	return db.Lines()
 }
 
 func (n TypeGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerTypeName, indent, hasDot)
-	db.Append(n.Type.Type, indent+2, true)
+	db.Append(&n.Type.Type, indent+2, true)
 	return db.Lines()
 }
 
@@ -540,7 +540,7 @@ func (n EditorGroup) Debug(indent int, hasDot bool) []string {
 func (n EditionGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerEditionName, indent, hasDot)
-	db.Append(n.Edition.Edition, indent+2, true)
+	db.Append(&n.Edition.Edition, indent+2, true)
 	return db.Lines()
 }
 
@@ -565,28 +565,28 @@ func (n PublisherGroup) Debug(indent int, hasDot bool) []string {
 func (n VolumeGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerVolumeName, indent, hasDot)
-	db.Append(n.Volume.Volume, indent+2, true)
+	db.Append(&n.Volume.Volume, indent+2, true)
 	return db.Lines()
 }
 
 func (n MonthGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerMonthName, indent, hasDot)
-	db.Append(n.Month.Month, indent+2, true)
+	db.Append(&n.Month.Month, indent+2, true)
 	return db.Lines()
 }
 
 func (n YearGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerYearName, indent, hasDot)
-	db.Append(n.Year.Year, indent+2, true)
+	db.Append(&n.Year.Year, indent+2, true)
 	return db.Lines()
 }
 
 func (n DescriptionGroup) Debug(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerDescriptionName, indent, hasDot)
-	db.Append(n.Description.Description, indent+2, true)
+	db.Append(&n.Description.Description, indent+2, true)
 	return db.Lines()
 }
 
@@ -639,13 +639,13 @@ func (db *debugBuilder) AppendSection(name string, indent int, hasDot bool) {
 
 func (db *debugBuilder) AppendTargets(targets []Target, indent int, hasDot bool) {
 	for _, target := range targets {
-		db.Append(target, indent, hasDot)
+		db.Append(&target, indent, hasDot)
 	}
 }
 
 func (db *debugBuilder) AppendSpecs(specs []Spec, indent int, hasDot bool) {
 	for _, spec := range specs {
-		db.Append(spec, indent, hasDot)
+		db.Append(&spec, indent, hasDot)
 	}
 }
 
@@ -657,7 +657,7 @@ func (db *debugBuilder) AppendClauses(clauses []Clause, indent int, hasDot bool)
 
 func (db *debugBuilder) AppendTextItems(items []TextItem, indent int, hasDot bool) {
 	for _, item := range items {
-		db.Append(item, indent, hasDot)
+		db.Append(&item, indent, hasDot)
 	}
 }
 
@@ -678,7 +678,7 @@ func (db *debugBuilder) AppendTargetsSection(name string, targets []Target, inde
 
 func (db *debugBuilder) AppendSingleTextItemSection(name string, item TextItem, indent int, hasDot bool) {
 	db.AppendSection(name, indent, hasDot)
-	db.Append(item, indent+2, true)
+	db.Append(&item, indent+2, true)
 }
 
 func (db *debugBuilder) AppendTextItemsSection(name string, items []TextItem, indent int, hasDot bool) {
@@ -688,14 +688,14 @@ func (db *debugBuilder) AppendTextItemsSection(name string, items []TextItem, in
 
 func (db *debugBuilder) MaybeAppendIdItem(item *IdItem, indent int, hasDot bool) {
 	if item != nil {
-		db.Append(*item, indent, hasDot)
+		db.Append(item, indent, hasDot)
 	}
 }
 
 func (db *debugBuilder) MaybeAppendMetaIdSection(sec *MetaIdSection, indent int, hasDot bool) {
 	if sec != nil {
 		db.AppendSection(UpperIdName, indent, hasDot)
-		db.Append(sec.Id, indent+2, true)
+		db.Append(&sec.Id, indent+2, true)
 	}
 }
 
@@ -712,7 +712,7 @@ func (db *debugBuilder) MaybeAppendReferencesSection(sec *ReferencesSection, ind
 	if sec != nil {
 		db.AppendSection(UpperReferencesName, indent, hasDot)
 		for _, item := range sec.References {
-			db.Append(item, indent+2, true)
+			db.Append(&item, indent+2, true)
 		}
 	}
 }
@@ -721,7 +721,7 @@ func (db *debugBuilder) MaybeAppendAliasesSection(sec *AliasesSection, indent in
 	if sec != nil {
 		db.AppendSection(UpperAliasesName, indent, hasDot)
 		for _, item := range sec.Aliases {
-			db.Append(item, indent+2, true)
+			db.Append(&item, indent+2, true)
 		}
 	}
 }
@@ -730,7 +730,7 @@ func (db *debugBuilder) MaybeAppendGivenSection(sec *GivenSection, indent int, h
 	if sec != nil {
 		db.AppendSection(LowerGivenName, indent, hasDot)
 		for _, item := range sec.Given {
-			db.Append(item, indent+2, true)
+			db.Append(&item, indent+2, true)
 		}
 	}
 }
@@ -739,7 +739,7 @@ func (db *debugBuilder) MaybeAppendWhereSection(sec *WhereSection, indent int, h
 	if sec != nil {
 		db.AppendSection(LowerWhereName, indent, hasDot)
 		for _, item := range sec.Specs {
-			db.Append(item, indent+2, true)
+			db.Append(&item, indent+2, true)
 		}
 	}
 }
@@ -775,7 +775,7 @@ func (db *debugBuilder) MaybeAppendUsingSection(sec *UsingSection, indent int, h
 	if sec != nil {
 		db.AppendSection(LowerUsingName, indent, hasDot)
 		for _, item := range sec.Using {
-			db.Append(item, indent+2, true)
+			db.Append(&item, indent+2, true)
 		}
 	}
 }
@@ -784,7 +784,7 @@ func (db *debugBuilder) MaybeAppendWithSection(sec *WithSection, indent int, has
 	if sec != nil {
 		db.AppendSection(LowerWithName, indent, hasDot)
 		for _, item := range sec.With {
-			db.Append(item, indent+2, true)
+			db.Append(&item, indent+2, true)
 		}
 	}
 }

@@ -24,11 +24,7 @@ import (
 type Context interface {
 	HasIdentifier(name string) bool
 	GetTypeInfo(name string) (TypeInfo, error)
-	GetAllIdentifiers() []string
-}
-
-type WriteableContext interface {
-	Context
+	GetLocalIdentifiers() []string
 	AddIdentifier(name string, info TypeInfo) error
 	AddIdentifierConstraint(name string, command ast.CommandExpression) error
 	AddIdentifierAtConstraint(name string, command ast.CommandAtExpression) error
@@ -49,22 +45,42 @@ func GetIdentifier(node ast.MlgNodeType) string {
 	}
 }
 
-func NewWritableContext() WriteableContext {
-	return &writableContext{}
+func NewWritableContext(parent Context) Context {
+	return &context{
+		writable:  true,
+		parent:    parent,
+		classes:   make(map[string]IdentifierClass),
+		typeInfos: make(map[string]TypeInfo),
+	}
 }
 
-func NewReadableContext() Context {
-	return &writableContext{}
+func NewReadableContext(parent Context) Context {
+	return &context{
+		writable:  false,
+		parent:    parent,
+		classes:   make(map[string]IdentifierClass),
+		typeInfos: make(map[string]TypeInfo),
+	}
 }
 
 /////////////////////////////////////////////////////////////
 
-type writableContext struct {
+type context struct {
+	writable  bool
+	parent    Context
 	classes   map[string]IdentifierClass
 	typeInfos map[string]TypeInfo
 }
 
-func (r *writableContext) AddIdentifier(name string, info TypeInfo) error {
+func (r *context) AddIdentifier(name string, info TypeInfo) error {
+	if !r.writable {
+		if r.parent != nil {
+			return r.parent.AddIdentifier(name, info)
+		} else {
+			return fmt.Errorf("cannot add name %s to a readonly context", name)
+		}
+	}
+
 	_, ok := r.classes[name]
 	if ok {
 		return fmt.Errorf("the name %s already exists in this context", name)
@@ -76,50 +92,90 @@ func (r *writableContext) AddIdentifier(name string, info TypeInfo) error {
 	return nil
 }
 
-func (r *writableContext) AddIdentifierConstraint(name string, command ast.CommandExpression) error {
+func (r *context) AddIdentifierConstraint(name string, command ast.CommandExpression) error {
+	if !r.writable {
+		if r.parent != nil {
+			return r.parent.AddIdentifierConstraint(name, command)
+		} else {
+			return fmt.Errorf("cannot constraint to name %s in a readonly context", name)
+		}
+	}
+
 	info, err := r.GetTypeInfo(name)
 	if err != nil {
+		// GetTypeInfo already tries to get the TypeInfo from the parent
+		// if it doesn't exist in the current context
 		return err
 	}
 	info.AddConstraint(command)
 	return nil
 }
 
-func (r *writableContext) AddIdentifierAtConstraint(name string, command ast.CommandAtExpression) error {
+func (r *context) AddIdentifierAtConstraint(name string, command ast.CommandAtExpression) error {
+	if !r.writable {
+		if r.parent != nil {
+			return r.parent.AddIdentifierAtConstraint(name, command)
+		} else {
+			return fmt.Errorf("cannot constraint to name %s in a readonly context", name)
+		}
+	}
+
 	info, err := r.GetTypeInfo(name)
 	if err != nil {
+		// GetTypeInfo already tries to get the TypeInfo from the parent
+		// if it doesn't exist in the current context
 		return err
 	}
 	info.AddAtConstraint(command)
 	return nil
 }
 
-func (r *writableContext) MarkEquivalent(name1 string, name2 string) error {
+func (r *context) MarkEquivalent(name1 string, name2 string) error {
+	if !r.writable {
+		if r.parent != nil {
+			return r.parent.MarkEquivalent(name1, name2)
+		} else {
+			return fmt.Errorf("cannot mark %s := %s in a readonly context", name1, name2)
+		}
+	}
+
 	cls, ok := r.classes[name1]
 	if !ok {
-		return fmt.Errorf("the name %s does not exist in this context", name1)
+		if r.parent != nil {
+			return r.parent.MarkEquivalent(name1, name2)
+		} else {
+			return fmt.Errorf("the name %s does not exist in this context", name1)
+		}
 	}
 	cls.AddIdentifier(name2)
 	return nil
 }
 
-func (r *writableContext) HasIdentifier(name string) bool {
+func (r *context) HasIdentifier(name string) bool {
 	for i := range r.classes {
 		if r.classes[i].HasIdentifier(name) {
 			return true
 		}
 	}
-	return false
+	if r.parent != nil {
+		return r.parent.HasIdentifier(name)
+	} else {
+		return false
+	}
 }
 
-func (r *writableContext) GetTypeInfo(name string) (TypeInfo, error) {
+func (r *context) GetTypeInfo(name string) (TypeInfo, error) {
 	if info, ok := r.typeInfos[name]; ok {
 		return info, nil
 	}
-	return nil, fmt.Errorf("unknown name %s", name)
+	if r.parent != nil {
+		return r.GetTypeInfo(name)
+	} else {
+		return nil, fmt.Errorf("unknown name %s", name)
+	}
 }
 
-func (r *writableContext) GetAllIdentifiers() []string {
+func (r *context) GetLocalIdentifiers() []string {
 	result := make([]string, 0)
 	for i := range r.classes {
 		cls := r.classes[i]

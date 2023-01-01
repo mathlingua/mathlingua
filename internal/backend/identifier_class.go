@@ -20,6 +20,7 @@ type IdentifierClass interface {
 	GetRepresentative() (string, bool)
 	AddIdentifier(name string)
 	HasIdentifier(name string) bool
+	GetAllIdentifiers() []string
 }
 
 func NewIdentifierClass() IdentifierClass {
@@ -53,4 +54,12 @@ func (ic *identifierClass) AddIdentifier(name string) {
 func (ic *identifierClass) HasIdentifier(name string) bool {
 	_, ok := ic.names[name]
 	return ok
+}
+
+func (ic *identifierClass) GetAllIdentifiers() []string {
+	keys := make([]string, 0, len(ic.names))
+	for k := range ic.names {
+		keys = append(keys, k)
+	}
+	return keys
 }

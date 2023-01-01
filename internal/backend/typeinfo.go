@@ -16,6 +16,8 @@
 
 package backend
 
+import "mathlingua/internal/ast"
+
 // Describes the set of one or more signatures that describe a name.
 // For example, this interface describes what it means for a name,
 // `x`, to be `x is \a` and `x is \b`.
@@ -43,6 +45,10 @@ type TypeInfo interface {
 	GetMember(name string) (TypeInfo, bool)
 
 	GetOperation(name string) (Operation, bool)
+
+	////////////////////////////////////////////////////////////////
+	AddConstraint(command ast.CommandExpression)
+	AddAtConstraint(command ast.CommandAtExpression)
 }
 
 type NameTypeInfo struct {

@@ -59,3 +59,17 @@ func TestClassHasIdentifiers(t *testing.T) {
 	assert.Equal(t, false, cls.HasIdentifier("abc1"))
 	assert.Equal(t, false, cls.HasIdentifier("someInvalidName"))
 }
+
+func TestClassGetAllIdentifiers(t *testing.T) {
+	cls := NewIdentifierClass()
+	cls.AddIdentifier("abc")
+	cls.AddIdentifier("xyz")
+	cls.AddIdentifier("f()")
+	cls.AddIdentifier("")
+	assert.Equal(t, []string{
+		"abc",
+		"xyz",
+		"f()",
+		"",
+	}, cls.GetAllIdentifiers())
+}

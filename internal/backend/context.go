@@ -21,14 +21,14 @@ import (
 	"mathlingua/internal/ast"
 )
 
-type ReadableContext interface {
+type Context interface {
 	HasIdentifier(name string) bool
 	GetTypeInfo(name string) (TypeInfo, error)
 	GetAllIdentifiers() []string
 }
 
 type WriteableContext interface {
-	ReadableContext
+	Context
 	AddIdentifier(name string, info TypeInfo) error
 	AddIdentifierConstraint(name string, command ast.CommandExpression) error
 	AddIdentifierAtConstraint(name string, command ast.CommandAtExpression) error
@@ -53,7 +53,7 @@ func NewWritableContext() WriteableContext {
 	return &writableContext{}
 }
 
-func NewReadableContext() ReadableContext {
+func NewReadableContext() Context {
 	return &writableContext{}
 }
 

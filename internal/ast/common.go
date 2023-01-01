@@ -16,6 +16,11 @@
 
 package ast
 
+import (
+	"fmt"
+	"mathlingua/internal/mlglib"
+)
+
 type MlgNodeType interface {
 	MlgNodeType()
 	ForEach(fn func(subNode MlgNodeType))
@@ -30,6 +35,17 @@ type Position struct {
 type MetaData struct {
 	Start Position
 	Key   int
+}
+
+func Debug(node MlgNodeType) string {
+	switch node := node.(type) {
+	case StructuralNodeType:
+		return DebugStructuralNode(node)
+	case FormulationNodeType:
+		return DebugFormulationNode(node)
+	default:
+		panic(fmt.Sprintf("Cannot debug a node: %s", mlglib.PrettyPrint(node)))
+	}
 }
 
 func (IdItem) MlgNodeType()             {}

@@ -27,7 +27,6 @@ type Context interface {
 	GetLocalIdentifiers() []string
 	AddIdentifier(name string, info TypeInfo) error
 	AddIdentifierConstraint(name string, command ast.CommandExpression) error
-	AddIdentifierAtConstraint(name string, command ast.CommandAtExpression) error
 	// specifies `name1 := name2`
 	MarkEquivalent(name1 string, name2 string) error
 }
@@ -108,25 +107,6 @@ func (r *context) AddIdentifierConstraint(name string, command ast.CommandExpres
 		return err
 	}
 	info.AddConstraint(command)
-	return nil
-}
-
-func (r *context) AddIdentifierAtConstraint(name string, command ast.CommandAtExpression) error {
-	if !r.writable {
-		if r.parent != nil {
-			return r.parent.AddIdentifierAtConstraint(name, command)
-		} else {
-			return fmt.Errorf("cannot constraint to name %s in a readonly context", name)
-		}
-	}
-
-	info, err := r.GetTypeInfo(name)
-	if err != nil {
-		// GetTypeInfo already tries to get the TypeInfo from the parent
-		// if it doesn't exist in the current context
-		return err
-	}
-	info.AddAtConstraint(command)
 	return nil
 }
 

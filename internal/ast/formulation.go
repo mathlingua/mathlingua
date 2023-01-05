@@ -35,7 +35,6 @@ func (TupleExpression) FormulationNodeType()                        {}
 func (FixedSetExpression) FormulationNodeType()                     {}
 func (ConditionalSetExpression) FormulationNodeType()               {}
 func (CommandExpression) FormulationNodeType()                      {}
-func (CommandAtExpression) FormulationNodeType()                    {}
 func (PrefixOperatorCallExpression) FormulationNodeType()           {}
 func (PostfixOperatorCallExpression) FormulationNodeType()          {}
 func (InfixOperatorCallExpression) FormulationNodeType()            {}
@@ -53,7 +52,6 @@ func (EnclosedNonCommandOperatorTarget) FormulationNodeType()       {}
 func (NonEnclosedNonCommandOperatorTarget) FormulationNodeType()    {}
 func (CommandOperatorTarget) FormulationNodeType()                  {}
 func (CommandId) FormulationNodeType()                              {}
-func (CommandAtId) FormulationNodeType()                            {}
 func (PrefixOperatorId) FormulationNodeType()                       {}
 func (PostfixOperatorId) FormulationNodeType()                      {}
 func (InfixOperatorId) FormulationNodeType()                        {}
@@ -77,7 +75,6 @@ func (n TupleExpression) Start() Position                        { return n.Meta
 func (n FixedSetExpression) Start() Position                     { return n.MetaData.Start }
 func (n ConditionalSetExpression) Start() Position               { return n.MetaData.Start }
 func (n CommandExpression) Start() Position                      { return n.MetaData.Start }
-func (n CommandAtExpression) Start() Position                    { return n.MetaData.Start }
 func (n PrefixOperatorCallExpression) Start() Position           { return n.MetaData.Start }
 func (n PostfixOperatorCallExpression) Start() Position          { return n.MetaData.Start }
 func (n InfixOperatorCallExpression) Start() Position            { return n.MetaData.Start }
@@ -95,7 +92,6 @@ func (n EnclosedNonCommandOperatorTarget) Start() Position       { return n.Meta
 func (n NonEnclosedNonCommandOperatorTarget) Start() Position    { return n.MetaData.Start }
 func (n CommandOperatorTarget) Start() Position                  { return n.MetaData.Start }
 func (n CommandId) Start() Position                              { return n.MetaData.Start }
-func (n CommandAtId) Start() Position                            { return n.MetaData.Start }
 func (n PrefixOperatorId) Start() Position                       { return n.MetaData.Start }
 func (n PostfixOperatorId) Start() Position                      { return n.MetaData.Start }
 func (n InfixOperatorId) Start() Position                        { return n.MetaData.Start }
@@ -260,7 +256,6 @@ func (TupleExpression) ExpressionType()                        {}
 func (FixedSetExpression) ExpressionType()                     {}
 func (ConditionalSetExpression) ExpressionType()               {}
 func (CommandExpression) ExpressionType()                      {}
-func (CommandAtExpression) ExpressionType()                    {}
 func (PrefixOperatorCallExpression) ExpressionType()           {}
 func (PostfixOperatorCallExpression) ExpressionType()          {}
 func (InfixOperatorCallExpression) ExpressionType()            {}
@@ -316,13 +311,6 @@ type CommandExpression struct {
 	CurlyArgs  *[]ExpressionType
 	NamedArgs  *[]NamedArg
 	ParenArgs  *[]ExpressionType
-	MetaData   MetaData
-}
-
-// \set@[x]{x | x is \real ; x > 0}
-type CommandAtExpression struct {
-	Names      []NameForm
-	Expression ExpressionType
 	MetaData   MetaData
 }
 
@@ -397,7 +385,6 @@ type ChainExpression struct {
 type Signature struct {
 	MainNames       []string
 	NamedGroupNames []string
-	HasAtSymbol     bool
 	InnerLabel      *string
 	MetaData        MetaData
 }
@@ -497,7 +484,6 @@ type IdType interface {
 }
 
 func (CommandId) IdType()              {}
-func (CommandAtId) IdType()            {}
 func (PrefixOperatorId) IdType()       {}
 func (PostfixOperatorId) IdType()      {}
 func (InfixOperatorId) IdType()        {}
@@ -527,13 +513,6 @@ type InfixCommandId struct {
 	NamedParams  *[]NamedParam
 	ParenParams  *[]NameForm
 	MetaData     MetaData
-}
-
-// \set@[x]{f[x] | g[x]}
-type CommandAtId struct {
-	Names    []NameForm
-	Param    LiteralFormType
-	MetaData MetaData
 }
 
 // +x

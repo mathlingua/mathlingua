@@ -35,15 +35,3 @@ func GetSignature(cmd ast.CommandExpression) string {
 	result += "]"
 	return result
 }
-
-func GetAtSignature(cmd ast.CommandAtExpression) string {
-	result := "\\["
-	for i, name := range cmd.Names {
-		if i > 0 {
-			result += "."
-		}
-		result += name.Text
-	}
-	result += "]@"
-	return result
-}

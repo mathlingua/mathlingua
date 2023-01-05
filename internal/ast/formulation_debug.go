@@ -108,19 +108,6 @@ func (n CommandExpression) Debug() string {
 	return result
 }
 
-func (n CommandAtExpression) Debug() string {
-	result := "\\"
-	for i, n := range n.Names {
-		if i > 0 {
-			result += "."
-		}
-		result += n.Debug()
-	}
-	result += "@"
-	result += n.Expression.Debug()
-	return result
-}
-
 func (n PrefixOperatorCallExpression) Debug() string {
 	return n.Target.Debug() + n.Arg.Debug()
 }
@@ -181,9 +168,6 @@ func (n Signature) Debug() string {
 			result += ":"
 		}
 		result += item
-	}
-	if n.HasAtSymbol {
-		result += "@"
 	}
 	result += "]"
 	if n.InnerLabel != nil {
@@ -277,19 +261,6 @@ func (n CommandId) Debug() string {
 		result += commaSeparatedStringOfNameForms(*n.ParenParams)
 		result += ")"
 	}
-	return result
-}
-
-func (n CommandAtId) Debug() string {
-	result := "\\"
-	for i, n := range n.Names {
-		if i > 0 {
-			result += "."
-		}
-		result += n.Debug()
-	}
-	result += "@"
-	result += n.Param.Debug()
 	return result
 }
 

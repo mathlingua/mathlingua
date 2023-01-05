@@ -504,8 +504,6 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 			children = append(children, &sig)
 		} else if cmd, ok := fp.commandOperatorTarget(); ok {
 			children = append(children, &cmd)
-		} else if cmd, ok := fp.commandAtExpression(); ok {
-			children = append(children, &cmd)
 		} else if cmd, ok := fp.commandExpression(false); ok {
 			children = append(children, &cmd)
 		} else if kind, ok := fp.metaKinds(); ok {
@@ -1244,56 +1242,6 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 	}, true
 }
 
-func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, bool) {
-	start := fp.lexer.Position()
-	if !fp.has(ast.BackSlash) {
-		return ast.CommandAtExpression{}, false
-	}
-
-	id := fp.lexer.Snapshot()
-	fp.expect(ast.BackSlash)
-	names := make([]ast.NameForm, 0)
-	for fp.lexer.HasNext() {
-		if name, ok := fp.nameForm(); ok {
-			names = append(names, name)
-		} else {
-			break
-		}
-		if fp.has(ast.Dot) {
-			fp.expect(ast.Dot)
-		} else {
-			break
-		}
-	}
-
-	if len(names) == 0 {
-		fp.lexer.RollBack(id)
-		return ast.CommandAtExpression{}, false
-	}
-
-	if !fp.has(ast.At) {
-		fp.lexer.RollBack(id)
-		return ast.CommandAtExpression{}, false
-	}
-
-	fp.expect(ast.At)
-	exp, ok := fp.expressionType()
-	if !ok {
-		fp.lexer.RollBack(id)
-		return ast.CommandAtExpression{}, false
-	}
-
-	fp.lexer.Commit(id)
-	return ast.CommandAtExpression{
-		Names:      names,
-		Expression: exp,
-		MetaData: ast.MetaData{
-			Start: fp.getShiftedPosition(start),
-			Key:   fp.keyGen.Next(),
-		},
-	}, true
-}
-
 /////////////////////////// forms ///////////////////////////////////////
 
 func (fp *formulationParser) form() (ast.FormulationNodeType, bool) {
@@ -1887,8 +1835,6 @@ func (fp *formulationParser) idType() (ast.IdType, bool) {
 		return &op, ok
 	} else if op, ok := fp.postfixOperatorId(); ok {
 		return &op, ok
-	} else if cmd, ok := fp.commandAtId(); ok {
-		return &cmd, ok
 	} else if cmd, ok := fp.commandId(false); ok {
 		return &cmd, ok
 	} else {
@@ -2173,56 +2119,6 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 	}, true
 }
 
-func (fp *formulationParser) commandAtId() (ast.CommandAtId, bool) {
-	start := fp.lexer.Position()
-	if !fp.has(ast.BackSlash) {
-		return ast.CommandAtId{}, false
-	}
-
-	id := fp.lexer.Snapshot()
-	fp.expect(ast.BackSlash)
-	names := make([]ast.NameForm, 0)
-	for fp.lexer.HasNext() {
-		if name, ok := fp.chainName(); ok {
-			names = append(names, name)
-		} else {
-			break
-		}
-		if fp.has(ast.Dot) {
-			fp.expect(ast.Dot)
-		} else {
-			break
-		}
-	}
-
-	if len(names) == 0 {
-		fp.lexer.RollBack(id)
-		return ast.CommandAtId{}, false
-	}
-
-	if !fp.has(ast.At) {
-		fp.lexer.RollBack(id)
-		return ast.CommandAtId{}, false
-	}
-
-	fp.expect(ast.At)
-	literal, ok := fp.literalFormType()
-	if !ok {
-		fp.lexer.RollBack(id)
-		return ast.CommandAtId{}, false
-	}
-
-	fp.lexer.Commit(id)
-	return ast.CommandAtId{
-		Names: names,
-		Param: literal,
-		MetaData: ast.MetaData{
-			Start: fp.getShiftedPosition(start),
-			Key:   fp.keyGen.Next(),
-		},
-	}, true
-}
-
 //////////////////////////////// signature ////////////////////////////////////////////
 
 func (fp *formulationParser) signature() (ast.Signature, bool) {
@@ -2234,7 +2130,6 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 	fp.expect(ast.LSquare)
 	mainNames := make([]string, 0)
 	namedGroupNames := make([]string, 0)
-	hasAtSymbol := false
 	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
 		if fp.has(ast.At) || fp.has(ast.Colon) {
 			break
@@ -2249,23 +2144,6 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 			fp.lexer.Next() // skip the dot
 		} else {
 			break
-		}
-	}
-	if fp.has(ast.At) {
-		fp.expect(ast.At)
-		hasAtSymbol = true
-	}
-	if !hasAtSymbol {
-		for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
-			_, ok := fp.expect(ast.Colon)
-			if !ok {
-				break
-			}
-			name, ok := fp.nameForm()
-			if !ok {
-				break
-			}
-			namedGroupNames = append(namedGroupNames, name.Text)
 		}
 	}
 	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
@@ -2288,7 +2166,6 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 	return ast.Signature{
 		MainNames:       mainNames,
 		NamedGroupNames: namedGroupNames,
-		HasAtSymbol:     hasAtSymbol,
 		InnerLabel:      innerLabel,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),

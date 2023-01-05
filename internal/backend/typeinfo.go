@@ -48,7 +48,6 @@ type TypeInfo interface {
 
 	////////////////////////////////////////////////////////////////
 	AddConstraint(command ast.CommandExpression)
-	AddAtConstraint(command ast.CommandAtExpression)
 }
 
 type NameTypeInfo struct {

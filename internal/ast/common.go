@@ -129,7 +129,6 @@ func (TupleExpression) MlgNodeType()                        {}
 func (FixedSetExpression) MlgNodeType()                     {}
 func (ConditionalSetExpression) MlgNodeType()               {}
 func (CommandExpression) MlgNodeType()                      {}
-func (CommandAtExpression) MlgNodeType()                    {}
 func (PrefixOperatorCallExpression) MlgNodeType()           {}
 func (PostfixOperatorCallExpression) MlgNodeType()          {}
 func (InfixOperatorCallExpression) MlgNodeType()            {}
@@ -147,7 +146,6 @@ func (EnclosedNonCommandOperatorTarget) MlgNodeType()       {}
 func (NonEnclosedNonCommandOperatorTarget) MlgNodeType()    {}
 func (CommandOperatorTarget) MlgNodeType()                  {}
 func (CommandId) MlgNodeType()                              {}
-func (CommandAtId) MlgNodeType()                            {}
 func (PrefixOperatorId) MlgNodeType()                       {}
 func (PostfixOperatorId) MlgNodeType()                      {}
 func (InfixOperatorId) MlgNodeType()                        {}
@@ -855,11 +853,6 @@ func (n *NamedParam) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *CommandAtId) ForEach(fn func(subNode MlgNodeType)) {
-	forEachNameForm(n.Names, fn)
-	fn(n.Param)
-}
-
 func (n *PrefixOperatorId) ForEach(fn func(subNode MlgNodeType)) {
 	fn(&n.Operator)
 	fn(n.Param)
@@ -926,11 +919,6 @@ func (n *PrefixOperatorForm) ForEach(fn func(subNode MlgNodeType)) {
 func (n *PostfixOperatorForm) ForEach(fn func(subNode MlgNodeType)) {
 	fn(&n.Param)
 	fn(&n.Operator)
-}
-
-func (n *CommandAtExpression) ForEach(fn func(subNode MlgNodeType)) {
-	forEachNameForm(n.Names, fn)
-	fn(n.Expression)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

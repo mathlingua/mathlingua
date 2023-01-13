@@ -119,7 +119,6 @@ func (TextBlockItem) MlgNodeType()      {}
 
 func (NameForm) MlgNodeType()                               {}
 func (FunctionForm) MlgNodeType()                           {}
-func (FunctionExpressionForm) MlgNodeType()                 {}
 func (TupleForm) MlgNodeType()                              {}
 func (FixedSetForm) MlgNodeType()                           {}
 func (ConditionalSetForm) MlgNodeType()                     {}
@@ -686,11 +685,6 @@ func (n *NameForm) ForEach(fn func(subNode MlgNodeType)) {
 }
 
 func (n *FunctionForm) ForEach(fn func(subNode MlgNodeType)) {
-	fn(&n.Target)
-	forEachNameForm(n.Params, fn)
-}
-
-func (n *FunctionExpressionForm) ForEach(fn func(subNode MlgNodeType)) {
 	fn(&n.Target)
 	forEachNameForm(n.Params, fn)
 }

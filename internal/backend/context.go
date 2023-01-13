@@ -35,8 +35,6 @@ func GetIdentifier(node ast.MlgNodeType) string {
 	switch node := node.(type) {
 	case *ast.FunctionCallExpression:
 		return node.Target.Debug() + "()"
-	case *ast.FunctionExpressionForm:
-		return node.Target.Debug() + "()"
 	case *ast.FunctionForm:
 		return node.Target.Debug() + "()"
 	default:

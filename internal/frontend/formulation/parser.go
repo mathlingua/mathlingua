@@ -488,8 +488,6 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 			children = append(children, &fun)
 		} else if name, ok := fp.nameForm(); ok {
 			children = append(children, &name)
-		} else if fun, ok := fp.functionExpressionForm(); ok {
-			children = append(children, &fun)
 		} else if fun, ok := fp.functionCallExpression(); ok {
 			children = append(children, &fun)
 		} else if tup, ok := fp.tupleForm(); ok {
@@ -1434,10 +1432,6 @@ func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool)
 		return &fun, true
 	}
 
-	if funExp, ok := fp.functionExpressionForm(); ok {
-		return &funExp, true
-	}
-
 	if name, ok := fp.operatorAsNameForm(); ok {
 		return &name, true
 	}
@@ -1625,51 +1619,6 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 
 	varArgData, _ := fp.varArgData()
 	return ast.FunctionForm{
-		Target: target,
-		Params: params,
-		VarArg: varArgData,
-		MetaData: ast.MetaData{
-			Start: fp.getShiftedPosition(start),
-			Key:   fp.keyGen.Next(),
-		},
-	}, true
-}
-
-func (fp *formulationParser) functionExpressionForm() (ast.FunctionExpressionForm, bool) {
-	start := fp.lexer.Position()
-	if !fp.hasHas(ast.Name, ast.LSquare) {
-		return ast.FunctionExpressionForm{}, false
-	}
-
-	target, ok := fp.nameForm()
-	if !ok {
-		return ast.FunctionExpressionForm{}, false
-	}
-
-	params := make([]ast.NameForm, 0)
-	fp.expect(ast.LSquare)
-	for fp.lexer.HasNext() {
-		if fp.has(ast.RSquare) {
-			break
-		}
-
-		if len(params) > 0 {
-			fp.expect(ast.Comma)
-		}
-
-		param, ok := fp.nameForm()
-		if !ok {
-			fp.error("Expected a name")
-			// move past the unexpected token
-			fp.lexer.Next()
-		} else {
-			params = append(params, param)
-		}
-	}
-	fp.expect(ast.RSquare)
-
-	varArgData, _ := fp.varArgData()
-	return ast.FunctionExpressionForm{
 		Target: target,
 		Params: params,
 		VarArg: varArgData,
@@ -1975,7 +1924,7 @@ func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, b
 	}
 
 	fp.expect(ast.Bar)
-	condition, ok := fp.functionExpressionForm()
+	condition, ok := fp.functionForm()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetIdForm{}, false

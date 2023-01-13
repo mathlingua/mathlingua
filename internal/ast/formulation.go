@@ -25,7 +25,6 @@ type FormulationNodeType interface {
 
 func (NameForm) FormulationNodeType()                               {}
 func (FunctionForm) FormulationNodeType()                           {}
-func (FunctionExpressionForm) FormulationNodeType()                 {}
 func (TupleForm) FormulationNodeType()                              {}
 func (FixedSetForm) FormulationNodeType()                           {}
 func (ConditionalSetForm) FormulationNodeType()                     {}
@@ -65,7 +64,6 @@ func (PostfixOperatorForm) FormulationNodeType()                    {}
 
 func (n NameForm) Start() Position                               { return n.MetaData.Start }
 func (n FunctionForm) Start() Position                           { return n.MetaData.Start }
-func (n FunctionExpressionForm) Start() Position                 { return n.MetaData.Start }
 func (n TupleForm) Start() Position                              { return n.MetaData.Start }
 func (n FixedSetForm) Start() Position                           { return n.MetaData.Start }
 func (n ConditionalSetForm) Start() Position                     { return n.MetaData.Start }
@@ -110,15 +108,14 @@ type StructuralFormType interface {
 	StructuralForm()
 }
 
-func (NameForm) StructuralForm()               {}
-func (FunctionForm) StructuralForm()           {}
-func (FunctionExpressionForm) StructuralForm() {}
-func (TupleForm) StructuralForm()              {}
-func (FixedSetForm) StructuralForm()           {}
-func (ConditionalSetForm) StructuralForm()     {}
-func (InfixOperatorForm) StructuralForm()      {}
-func (PrefixOperatorForm) StructuralForm()     {}
-func (PostfixOperatorForm) StructuralForm()    {}
+func (NameForm) StructuralForm()            {}
+func (FunctionForm) StructuralForm()        {}
+func (TupleForm) StructuralForm()           {}
+func (FixedSetForm) StructuralForm()        {}
+func (ConditionalSetForm) StructuralForm()  {}
+func (InfixOperatorForm) StructuralForm()   {}
+func (PrefixOperatorForm) StructuralForm()  {}
+func (PostfixOperatorForm) StructuralForm() {}
 
 // x
 type NameForm struct {
@@ -160,14 +157,6 @@ type PostfixOperatorForm struct {
 	MetaData MetaData
 }
 
-// f[x, y]
-type FunctionExpressionForm struct {
-	Target   NameForm
-	Params   []NameForm
-	VarArg   VarArgData
-	MetaData MetaData
-}
-
 // (x, y)
 type TupleForm struct {
 	Params   []StructuralFormType
@@ -196,11 +185,11 @@ type LiteralFormType interface {
 	LiteralFormType()
 }
 
-// [x]{x | f[x]...}
+// [x]{x | f(x)...}
 type ConditionalSetIdForm struct {
 	Symbols   []StructuralFormType
 	Target    StructuralFormType
-	Condition FunctionExpressionForm
+	Condition FunctionForm
 	MetaData  MetaData
 }
 

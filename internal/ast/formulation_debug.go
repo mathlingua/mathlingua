@@ -35,10 +35,6 @@ func (n FunctionForm) Debug() string {
 	return n.Target.Debug() + "(" + commaSeparatedStringOfNameForms(n.Params) + ")" + n.VarArg.Debug()
 }
 
-func (n FunctionExpressionForm) Debug() string {
-	return n.Target.Debug() + "(" + commaSeparatedStringOfNameForms(n.Params) + ")" + n.VarArg.Debug()
-}
-
 func (n TupleForm) Debug() string {
 	return "(" + commaSeparatedString(n.Params) + ")" + n.VarArg.Debug()
 }

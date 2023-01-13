@@ -159,6 +159,7 @@ func (NamedArg) MlgNodeType()                               {}
 func (NamedParam) MlgNodeType()                             {}
 func (InfixCommandId) MlgNodeType()                         {}
 func (FunctionLiteralExpression) MlgNodeType()              {}
+func (CurlyParam) MlgNodeType()                             {}
 
 /////////////////////////////////////////// for each /////////////////////////////////////////////////
 
@@ -827,11 +828,8 @@ func (n *CommandOperatorTarget) ForEach(fn func(subNode MlgNodeType)) {
 
 func (n *CommandId) ForEach(fn func(subNode MlgNodeType)) {
 	forEachNameForm(n.Names, fn)
-	if n.SquareParams != nil {
-		forEach(*n.SquareParams, fn)
-	}
-	if n.CurlyParams != nil {
-		forEach(*n.CurlyParams, fn)
+	if n.CurlyParam != nil {
+		fn(n.CurlyParam)
 	}
 	if n.NamedParams != nil {
 		forEachNamedParam(*n.NamedParams, fn)
@@ -872,11 +870,8 @@ func (n *InfixCommandOperatorId) ForEach(fn func(subNode MlgNodeType)) {
 
 func (n *InfixCommandId) ForEach(fn func(subNode MlgNodeType)) {
 	forEachNameForm(n.Names, fn)
-	if n.SquareParams != nil {
-		forEach(*n.SquareParams, fn)
-	}
-	if n.CurlyParams != nil {
-		forEach(*n.CurlyParams, fn)
+	if n.CurlyParam != nil {
+		fn(n.CurlyParam)
 	}
 	if n.NamedParams != nil {
 		forEachNamedParam(*n.NamedParams, fn)
@@ -919,6 +914,13 @@ func (n *PostfixOperatorForm) ForEach(fn func(subNode MlgNodeType)) {
 func (n *FunctionLiteralExpression) ForEach(fn func(subNode MlgNodeType)) {
 	fn(&n.Lhs)
 	fn(n.Rhs)
+}
+
+func (n *CurlyParam) ForEach(fn func(subNode MlgNodeType)) {
+	if n.SquareParams != nil {
+		forEach(*n.SquareParams, fn)
+	}
+	forEach(n.CurlyParams, fn)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

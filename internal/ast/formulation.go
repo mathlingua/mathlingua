@@ -497,22 +497,26 @@ type NamedParam struct {
 
 // \function:on{A}:to{B}
 type CommandId struct {
-	Names        []NameForm
+	Names       []NameForm
+	CurlyParam  *CurlyParam
+	NamedParams *[]NamedParam
+	ParenParams *[]NameForm
+	MetaData    MetaData
+}
+
+// []{} or {}
+type CurlyParam struct {
 	SquareParams *[]StructuralFormType
-	CurlyParams  *[]StructuralFormType
-	NamedParams  *[]NamedParam
-	ParenParams  *[]NameForm
-	MetaData     MetaData
+	CurlyParams  []StructuralFormType
 }
 
 // \function:on{A}:to{B}/
 type InfixCommandId struct {
-	Names        []NameForm
-	SquareParams *[]StructuralFormType
-	CurlyParams  *[]StructuralFormType
-	NamedParams  *[]NamedParam
-	ParenParams  *[]NameForm
-	MetaData     MetaData
+	Names       []NameForm
+	CurlyParam  *CurlyParam
+	NamedParams *[]NamedParam
+	ParenParams *[]NameForm
+	MetaData    MetaData
 }
 
 // +x

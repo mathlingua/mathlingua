@@ -234,15 +234,8 @@ func (n CommandId) Debug() string {
 		}
 		result += n.Debug()
 	}
-	if n.SquareParams != nil {
-		result += "["
-		result += commaSeparatedString(*n.SquareParams)
-		result += "]"
-	}
-	if n.CurlyParams != nil {
-		result += "{"
-		result += commaSeparatedString(*n.CurlyParams)
-		result += "}"
+	if n.CurlyParam != nil {
+		result += n.CurlyParam.Debug()
 	}
 	if n.NamedParams != nil {
 		for _, item := range *n.NamedParams {
@@ -280,15 +273,8 @@ func (n InfixCommandId) Debug() string {
 		}
 		result += n.Debug()
 	}
-	if n.SquareParams != nil {
-		result += "["
-		result += commaSeparatedString(*n.SquareParams)
-		result += "]"
-	}
-	if n.CurlyParams != nil {
-		result += "{"
-		result += commaSeparatedString(*n.CurlyParams)
-		result += "}"
+	if n.CurlyParam != nil {
+		result += n.CurlyParam.Debug()
 	}
 	if n.NamedParams != nil {
 		for _, item := range *n.NamedParams {
@@ -361,6 +347,19 @@ func (n VarArgData) Debug() string {
 
 func (n FunctionLiteralExpression) Debug() string {
 	return n.Lhs.Debug() + " => " + n.Rhs.Debug()
+}
+
+func (n CurlyParam) Debug() string {
+	result := ""
+	if n.SquareParams != nil {
+		result += "["
+		result += commaSeparatedString(*n.SquareParams)
+		result += "]"
+	}
+	result += "{"
+	result += commaSeparatedString(n.CurlyParams)
+	result += "}"
+	return result
 }
 
 func commaSeparatedString[T FormulationNodeType](forms []T) string {

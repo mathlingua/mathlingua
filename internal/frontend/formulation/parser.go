@@ -1968,14 +1968,14 @@ func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
 		fp.lexer.RollBack(id)
 		return ast.NamedParam{}, false
 	}
-	var params *[]ast.StructuralFormType = nil
-	if curlyParams, ok := fp.curlyParams(); ok {
-		params = curlyParams
+	var curlyParam *ast.CurlyParam
+	if param, ok := fp.curlyParam(); ok {
+		curlyParam = &param
 	}
 	fp.lexer.Commit(id)
 	return ast.NamedParam{
-		Name:   name,
-		Params: params,
+		Name:       name,
+		CurlyParam: curlyParam,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

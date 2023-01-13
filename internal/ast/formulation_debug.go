@@ -240,8 +240,8 @@ func (n CommandId) Debug() string {
 	if n.NamedParams != nil {
 		for _, item := range *n.NamedParams {
 			result += ":" + item.Name.Debug()
-			if item.Params != nil {
-				result += "{" + commaSeparatedString(*item.Params) + "}"
+			if item.CurlyParam != nil {
+				result += item.CurlyParam.Debug()
 			}
 		}
 	}
@@ -279,8 +279,8 @@ func (n InfixCommandId) Debug() string {
 	if n.NamedParams != nil {
 		for _, item := range *n.NamedParams {
 			result += ":" + item.Name.Debug()
-			if item.Params != nil {
-				result += "{" + commaSeparatedString(*item.Params) + "}"
+			if item.CurlyParam != nil {
+				result += item.CurlyParam.Debug()
 			}
 		}
 	}

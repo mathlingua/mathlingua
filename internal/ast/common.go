@@ -841,8 +841,8 @@ func (n *CommandId) ForEach(fn func(subNode MlgNodeType)) {
 
 func (n *NamedParam) ForEach(fn func(subNode MlgNodeType)) {
 	fn(&n.Name)
-	if n.Params != nil {
-		forEach(*n.Params, fn)
+	if n.CurlyParam != nil {
+		fn(n.CurlyParam)
 	}
 }
 

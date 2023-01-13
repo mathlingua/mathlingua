@@ -490,9 +490,9 @@ func (InfixOperatorId) IdType()        {}
 func (InfixCommandOperatorId) IdType() {}
 
 type NamedParam struct {
-	Name     NameForm
-	Params   *[]StructuralFormType
-	MetaData MetaData
+	Name       NameForm
+	CurlyParam *CurlyParam
+	MetaData   MetaData
 }
 
 // \function:on{A}:to{B}

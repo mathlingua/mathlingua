@@ -300,18 +300,23 @@ type ConditionalSetExpression struct {
 
 type NamedArg struct {
 	Name     NameForm
-	Args     *[]ExpressionType
+	CurlyArg *CurlyArg
 	MetaData MetaData
 }
 
 // \function:on{A}:to{B}
 type CommandExpression struct {
-	Names      []NameForm
+	Names     []NameForm
+	CurlyArg  *CurlyArg
+	NamedArgs *[]NamedArg
+	ParenArgs *[]ExpressionType
+	MetaData  MetaData
+}
+
+// []{} or {}
+type CurlyArg struct {
 	SquareArgs *[]StructuralFormType
 	CurlyArgs  *[]ExpressionType
-	NamedArgs  *[]NamedArg
-	ParenArgs  *[]ExpressionType
-	MetaData   MetaData
 }
 
 // -x

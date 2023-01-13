@@ -1164,14 +1164,14 @@ func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
 		fp.lexer.RollBack(id)
 		return ast.NamedArg{}, false
 	}
-	var args *[]ast.ExpressionType = nil
-	if curlyArgs, ok := fp.curlyArgs(); ok {
-		args = curlyArgs
+	var curlyArg *ast.CurlyArg
+	if arg, ok := fp.curlyArg(); ok {
+		curlyArg = &arg
 	}
 	fp.lexer.Commit(id)
 	return ast.NamedArg{
-		Name: name,
-		Args: args,
+		Name:     name,
+		CurlyArg: curlyArg,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
@@ -1220,8 +1220,10 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 		return ast.CommandExpression{}, false
 	}
 
-	squareArgs, _ := fp.squareParams()
-	curlyArgs, _ := fp.curlyArgs()
+	var curlyArg *ast.CurlyArg
+	if arg, ok := fp.curlyArg(); ok {
+		curlyArg = &arg
+	}
 
 	namedArgs := make([]ast.NamedArg, 0)
 	for fp.lexer.HasNext() {
@@ -1236,11 +1238,10 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 
 	fp.lexer.Commit(id)
 	return ast.CommandExpression{
-		Names:      names,
-		SquareArgs: squareArgs,
-		CurlyArgs:  curlyArgs,
-		NamedArgs:  &namedArgs,
-		ParenArgs:  parenArgs,
+		Names:     names,
+		CurlyArg:  curlyArg,
+		NamedArgs: &namedArgs,
+		ParenArgs: parenArgs,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
@@ -1998,6 +1999,24 @@ func (fp *formulationParser) curlyParam() (ast.CurlyParam, bool) {
 	return ast.CurlyParam{
 		SquareParams: squareParams,
 		CurlyParams:  *curlyParams,
+	}, true
+}
+
+func (fp *formulationParser) curlyArg() (ast.CurlyArg, bool) {
+	id := fp.lexer.Snapshot()
+	var squareArgs *[]ast.StructuralFormType
+	if square, squareOk := fp.squareParams(); squareOk {
+		squareArgs = square
+	}
+	curlyArgs, curlyOk := fp.curlyArgs()
+	if !curlyOk {
+		fp.lexer.RollBack(id)
+		return ast.CurlyArg{}, false
+	}
+	fp.lexer.Commit(id)
+	return ast.CurlyArg{
+		SquareArgs: squareArgs,
+		CurlyArgs:  curlyArgs,
 	}, true
 }
 

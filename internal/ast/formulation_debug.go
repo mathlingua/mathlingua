@@ -78,21 +78,14 @@ func (n CommandExpression) Debug() string {
 		}
 		result += n.Debug()
 	}
-	if n.SquareArgs != nil {
-		result += "["
-		result += commaSeparatedString(*n.SquareArgs)
-		result += "]"
-	}
-	if n.CurlyArgs != nil {
-		result += "{"
-		result += commaSeparatedString(*n.CurlyArgs)
-		result += "}"
+	if n.CurlyArg != nil {
+		result += n.CurlyArg.Debug()
 	}
 	if n.NamedArgs != nil {
 		for _, item := range *n.NamedArgs {
 			result += ":" + item.Name.Debug()
-			if item.Args != nil {
-				result += "{" + commaSeparatedString(*item.Args) + "}"
+			if item.CurlyArg != nil {
+				result += item.CurlyArg.Debug()
 			}
 		}
 	}
@@ -358,6 +351,19 @@ func (n CurlyParam) Debug() string {
 	}
 	result += "{"
 	result += commaSeparatedString(n.CurlyParams)
+	result += "}"
+	return result
+}
+
+func (n CurlyArg) Debug() string {
+	result := ""
+	if n.SquareArgs != nil {
+		result += "["
+		result += commaSeparatedString(*n.SquareArgs)
+		result += "]"
+	}
+	result += "{"
+	result += commaSeparatedString(*n.CurlyArgs)
 	result += "}"
 	return result
 }

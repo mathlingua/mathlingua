@@ -125,8 +125,28 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]], track
 			Rhs:    lhs,
 		}
 	case *ast.PseudoTokenNode:
-		// a token, for example :=, :=>, is, isnot
+		// a token, for example :=, :=>, =>, is, isnot
 		switch {
+		case top.Type == ast.RightArrow:
+			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
+			tmp := toNode(items, tracker)
+			lhs := checkType(tmp, default_expression, "Expression", tracker, top.Start())
+			switch tuple := lhs.(type) {
+			case *ast.TupleExpression:
+				return &ast.FunctionLiteralExpression{
+					Lhs: *tuple,
+					Rhs: rhs,
+				}
+			default:
+				return &ast.FunctionLiteralExpression{
+					Lhs: ast.TupleExpression{
+						Args: []ast.ExpressionType{
+							lhs,
+						},
+					},
+					Rhs: rhs,
+				}
+			}
 		case top.Type == ast.ColonArrow:
 			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 			tmp := toNode(items, tracker)
@@ -247,8 +267,10 @@ func isOperator(node ast.FormulationNodeType) bool {
 		// for example \f/
 		return true
 	case *ast.PseudoTokenNode:
-		// a token, for example :=, is, isnot
+		// a token, for example :=, =>, is, isnot
 		switch node.Type {
+		case ast.RightArrow:
+			return false
 		case ast.ColonEquals:
 			return false
 		case ast.ColonArrow:
@@ -290,8 +312,10 @@ func isSpecialOperator(node ast.FormulationNodeType) bool {
 		// for example \f/
 		return false
 	case *ast.PseudoTokenNode:
-		// a token, for example :=, is, isnot
+		// a token, for example :=, =>, is, isnot
 		switch node.Type {
+		case ast.RightArrow:
+			return true
 		case ast.ColonEquals:
 			return true
 		case ast.ColonArrow:
@@ -365,6 +389,7 @@ const is_not_is_precedence = 1
 const as_precedence = 2
 const colon_equal_precedence = 3
 const colon_arrow_precedence = 3
+const right_arrow_precedence = 3
 const equal_like_precedence = 4
 const enclosed_infix_precedence = 5
 const command_infix_precedence = 6
@@ -379,6 +404,7 @@ const is_not_is_associativity = LeftAssociative
 const as_associativity = LeftAssociative
 const colon_equal_associativity = RightAssociative
 const colon_arrow_associativity = RightAssociative
+const right_arrow_associativity = RightAssociative
 const equal_like_associativity = RightAssociative
 const enclosed_infix_associativity = LeftAssociative
 const command_infix_associativity = LeftAssociative
@@ -395,6 +421,8 @@ func getOperatorPrecedenceAssociativityByText(text string, itemType ItemType) (i
 		return other_special_prefix_precedence, other_special_prefix_associativity
 	case itemType == PostfixOperatorType:
 		return other_special_postfix_precedence, other_special_postfix_associativity
+	case text == "=>":
+		return right_arrow_precedence, right_arrow_associativity
 	case text == ":=":
 		return colon_equal_precedence, colon_equal_associativity
 	case text == ":=>":

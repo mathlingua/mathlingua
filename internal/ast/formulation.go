@@ -61,6 +61,7 @@ func (MultiplexedInfixOperatorCallExpression) FormulationNodeType() {}
 func (InfixOperatorForm) FormulationNodeType()                      {}
 func (PrefixOperatorForm) FormulationNodeType()                     {}
 func (PostfixOperatorForm) FormulationNodeType()                    {}
+func (FunctionLiteralExpression) FormulationNodeType()              {}
 
 func (n NameForm) Start() Position                               { return n.MetaData.Start }
 func (n FunctionForm) Start() Position                           { return n.MetaData.Start }
@@ -100,6 +101,7 @@ func (n MultiplexedInfixOperatorCallExpression) Start() Position { return n.Meta
 func (n InfixOperatorForm) Start() Position                      { return n.MetaData.Start }
 func (n PrefixOperatorForm) Start() Position                     { return n.MetaData.Start }
 func (n PostfixOperatorForm) Start() Position                    { return n.MetaData.Start }
+func (n FunctionLiteralExpression) Start() Position              { return n.MetaData.Start }
 
 ///////////////////////// Structural Forms ///////////////////////////////////////////
 
@@ -206,10 +208,11 @@ type LiteralExpressionType interface {
 	LiteralExpressionType()
 }
 
-func (FunctionCallExpression) LiteralExpressionType()   {}
-func (TupleExpression) LiteralExpressionType()          {}
-func (FixedSetExpression) LiteralExpressionType()       {}
-func (ConditionalSetExpression) LiteralExpressionType() {}
+func (FunctionCallExpression) LiteralExpressionType()    {}
+func (TupleExpression) LiteralExpressionType()           {}
+func (FixedSetExpression) LiteralExpressionType()        {}
+func (ConditionalSetExpression) LiteralExpressionType()  {}
+func (FunctionLiteralExpression) LiteralExpressionType() {}
 
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -259,11 +262,19 @@ func (MultiplexedInfixOperatorCallExpression) ExpressionType() {}
 func (ExpressionColonEqualsItem) ExpressionType()              {}
 func (ExpressionColonArrowItem) ExpressionType()               {}
 func (Signature) ExpressionType()                              {}
+func (FunctionLiteralExpression) ExpressionType()              {}
 
 // f(x + y, z) or (f + g)(x)
 type FunctionCallExpression struct {
 	Target   ExpressionType
 	Args     []ExpressionType
+	MetaData MetaData
+}
+
+// x => x + 1 or (x, y) => x + y
+type FunctionLiteralExpression struct {
+	Lhs      TupleExpression
+	Rhs      ExpressionType
 	MetaData MetaData
 }
 

@@ -359,6 +359,10 @@ func (n VarArgData) Debug() string {
 	return result
 }
 
+func (n FunctionLiteralExpression) Debug() string {
+	return n.Lhs.Debug() + " => " + n.Rhs.Debug()
+}
+
 func commaSeparatedString[T FormulationNodeType](forms []T) string {
 	return separatedString(forms, ", ")
 }

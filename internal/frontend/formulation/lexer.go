@@ -216,6 +216,17 @@ func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 					Position: cur.Position,
 				})
 			}
+		case cur.Symbol == '=':
+			if i < len(chars) && chars[i].Symbol == '>' {
+				i++ // move past the >
+				appendToken(ast.Token{
+					Type:     ast.RightArrow,
+					Text:     "=>",
+					Position: cur.Position,
+				})
+			} else {
+				continue
+			}
 		case cur.Symbol == ':':
 			if i < len(chars) && chars[i].Symbol == '=' {
 				i++ // move past the =

@@ -65,6 +65,7 @@ const (
 	At                    TokenType = "At"
 	LSquareColon          TokenType = "LSquareColon"
 	ColonRSquare          TokenType = "ColonRSquare"
+	RightArrow            TokenType = "RArrow"
 )
 
 type Token struct {

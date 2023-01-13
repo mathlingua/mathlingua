@@ -158,6 +158,7 @@ func (PostfixOperatorForm) MlgNodeType()                    {}
 func (NamedArg) MlgNodeType()                               {}
 func (NamedParam) MlgNodeType()                             {}
 func (InfixCommandId) MlgNodeType()                         {}
+func (FunctionLiteralExpression) MlgNodeType()              {}
 
 /////////////////////////////////////////// for each /////////////////////////////////////////////////
 
@@ -913,6 +914,11 @@ func (n *PrefixOperatorForm) ForEach(fn func(subNode MlgNodeType)) {
 func (n *PostfixOperatorForm) ForEach(fn func(subNode MlgNodeType)) {
 	fn(&n.Param)
 	fn(&n.Operator)
+}
+
+func (n *FunctionLiteralExpression) ForEach(fn func(subNode MlgNodeType)) {
+	fn(&n.Lhs)
+	fn(n.Rhs)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

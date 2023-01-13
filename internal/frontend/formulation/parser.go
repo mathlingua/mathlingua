@@ -972,6 +972,10 @@ func (fp *formulationParser) operatorToken() (ast.PseudoTokenNode, bool) {
 	return ast.PseudoTokenNode{}, false
 }
 
+func (fp *formulationParser) rightArrow() (ast.PseudoTokenNode, bool) {
+	return fp.pseudoToken(ast.RightArrow)
+}
+
 func (fp *formulationParser) colonEqualsToken() (ast.PseudoTokenNode, bool) {
 	return fp.pseudoToken(ast.ColonEquals)
 }
@@ -1007,6 +1011,10 @@ func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 
 	if colonArrow, ok := fp.colonArrowToken(); ok {
 		return colonArrow, ok
+	}
+
+	if rightArrow, ok := fp.rightArrow(); ok {
+		return rightArrow, ok
 	}
 
 	return ast.PseudoTokenNode{}, false

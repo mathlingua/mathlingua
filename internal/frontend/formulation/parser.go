@@ -577,7 +577,7 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 			children = append(children, lit)
 		} else if pseudoToken, ok := fp.pseudoTokenNode(); ok {
 			children = append(children, &pseudoToken)
-		} else if ord, ok := fp.nameOrdinalCallExpression(); ok {
+		} else if ord, ok := fp.ordinalCallExpression(); ok {
 			children = append(children, &ord)
 		} else if fun, ok := fp.functionForm(); ok {
 			children = append(children, &fun)
@@ -979,36 +979,36 @@ func (fp *formulationParser) chainExpression(allowTrailingOperator bool) (ast.Ch
 	}, true
 }
 
-func (fp *formulationParser) nameOrdinalCallExpression() (ast.NameOrdinalCallExpression, bool) {
+func (fp *formulationParser) ordinalCallExpression() (ast.OrdinalCallExpression, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-	name, ok := fp.nameForm()
+	literal, ok := fp.literalFormType()
 	if !ok {
 		fp.lexer.RollBack(id)
-		return ast.NameOrdinalCallExpression{}, false
+		return ast.OrdinalCallExpression{}, false
 	}
 
 	_, ok = fp.token(ast.LCurly)
 	if !ok {
 		fp.lexer.RollBack(id)
-		return ast.NameOrdinalCallExpression{}, false
+		return ast.OrdinalCallExpression{}, false
 	}
 
 	exp, ok := fp.expressionType()
 	if !ok {
 		fp.lexer.RollBack(id)
-		return ast.NameOrdinalCallExpression{}, false
+		return ast.OrdinalCallExpression{}, false
 	}
 
 	_, ok = fp.token(ast.RCurly)
 	if !ok {
 		fp.lexer.RollBack(id)
-		return ast.NameOrdinalCallExpression{}, false
+		return ast.OrdinalCallExpression{}, false
 	}
 
 	fp.lexer.Commit(id)
-	return ast.NameOrdinalCallExpression{
-		Target: name,
+	return ast.OrdinalCallExpression{
+		Target: literal,
 		Arg:    exp,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),

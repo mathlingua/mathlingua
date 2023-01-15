@@ -40,7 +40,7 @@ func (InfixOperatorCallExpression) FormulationNodeType()            {}
 func (IsExpression) FormulationNodeType()                           {}
 func (ExtendsExpression) FormulationNodeType()                      {}
 func (AsExpression) FormulationNodeType()                           {}
-func (NameOrdinalCallExpression) FormulationNodeType()              {}
+func (OrdinalCallExpression) FormulationNodeType()                  {}
 func (ChainExpression) FormulationNodeType()                        {}
 func (Signature) FormulationNodeType()                              {}
 func (MetaKinds) FormulationNodeType()                              {}
@@ -80,7 +80,7 @@ func (n InfixOperatorCallExpression) Start() Position            { return n.Meta
 func (n IsExpression) Start() Position                           { return n.MetaData.Start }
 func (n ExtendsExpression) Start() Position                      { return n.MetaData.Start }
 func (n AsExpression) Start() Position                           { return n.MetaData.Start }
-func (n NameOrdinalCallExpression) Start() Position              { return n.MetaData.Start }
+func (n OrdinalCallExpression) Start() Position                  { return n.MetaData.Start }
 func (n ChainExpression) Start() Position                        { return n.MetaData.Start }
 func (n Signature) Start() Position                              { return n.MetaData.Start }
 func (n MetaKinds) Start() Position                              { return n.MetaData.Start }
@@ -252,7 +252,7 @@ func (PrefixOperatorCallExpression) ExpressionType()           {}
 func (PostfixOperatorCallExpression) ExpressionType()          {}
 func (InfixOperatorCallExpression) ExpressionType()            {}
 func (AsExpression) ExpressionType()                           {}
-func (NameOrdinalCallExpression) ExpressionType()              {}
+func (OrdinalCallExpression) ExpressionType()                  {}
 func (ChainExpression) ExpressionType()                        {}
 func (PseudoTokenNode) ExpressionType()                        {}
 func (PseudoExpression) ExpressionType()                       {}
@@ -370,10 +370,9 @@ type AsExpression struct {
 	MetaData MetaData
 }
 
-// NONE
 // x{1}
-type NameOrdinalCallExpression struct {
-	Target   NameForm
+type OrdinalCallExpression struct {
+	Target   LiteralFormType
 	Arg      ExpressionType
 	MetaData MetaData
 }

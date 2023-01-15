@@ -129,7 +129,7 @@ func (n AsExpression) Debug() string {
 	return n.Lhs.Debug() + " as " + n.Rhs.Debug()
 }
 
-func (n NameOrdinalCallExpression) Debug() string {
+func (n OrdinalCallExpression) Debug() string {
 	return n.Target.Debug() + "{" + n.Arg.Debug() + "}"
 }
 

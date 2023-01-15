@@ -134,7 +134,7 @@ func (InfixOperatorCallExpression) MlgNodeType()            {}
 func (IsExpression) MlgNodeType()                           {}
 func (ExtendsExpression) MlgNodeType()                      {}
 func (AsExpression) MlgNodeType()                           {}
-func (NameOrdinalCallExpression) MlgNodeType()              {}
+func (OrdinalCallExpression) MlgNodeType()                  {}
 func (ChainExpression) MlgNodeType()                        {}
 func (Signature) MlgNodeType()                              {}
 func (MetaKinds) MlgNodeType()                              {}
@@ -781,8 +781,8 @@ func (n *AsExpression) ForEach(fn func(subNode MlgNodeType)) {
 	fn(&n.Rhs)
 }
 
-func (n *NameOrdinalCallExpression) ForEach(fn func(subNode MlgNodeType)) {
-	fn(&n.Target)
+func (n *OrdinalCallExpression) ForEach(fn func(subNode MlgNodeType)) {
+	fn(n.Target)
 	fn(n.Arg)
 }
 

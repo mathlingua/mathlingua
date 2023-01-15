@@ -209,26 +209,121 @@ func (fp *formulationParser) curlyArgs() (*[]ast.ExpressionType, bool) {
 
 func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 	start := fp.lexer.Position()
-	if !fp.has(ast.DotDotDot) {
+	if fp.has(ast.DotDotDot) {
+		fp.next() // absorb the ...
 		return ast.VarArgData{
-			IsVarArg:    false,
-			VarArgCount: nil,
+			IsVarArg:     true,
+			VarArgNames:  nil,
+			VarArgBounds: nil,
+		}, true
+	}
+	if !fp.hasHas(ast.LCurly, ast.Name) && !fp.hasHas(ast.LCurly, ast.LParen) {
+		return ast.VarArgData{
+			IsVarArg: false,
 		}, false
 	}
-	fp.expect(ast.DotDotDot)
-	var varArgCount *string = nil
-	if fp.hasHas(ast.Operator, ast.Name) && fp.lexer.Peek().Text == "#" {
-		text := fp.next().Text
-		varArgCount = &text
+	id := fp.lexer.Snapshot()
+	fp.expect(ast.LCurly)
+	if fp.has(ast.Name) {
+		// its of the form 'name...bound'
+		varName, ok := fp.token(ast.Name)
+		if !ok {
+			fp.lexer.RollBack(id)
+			return ast.VarArgData{
+				IsVarArg: false,
+			}, false
+		}
+		if !fp.has(ast.DotDotDot) {
+			fp.lexer.RollBack(id)
+			return ast.VarArgData{
+				IsVarArg: false,
+			}, false
+		}
+		fp.next() // absorb the ...
+		bound, ok := fp.token(ast.Name)
+		if !ok {
+			fp.lexer.RollBack(id)
+			return ast.VarArgData{
+				IsVarArg: false,
+			}, false
+		}
+		fp.expect(ast.RCurly)
+		fp.lexer.Commit(id)
+		return ast.VarArgData{
+			IsVarArg:     true,
+			VarArgNames:  []string{varName.Text},
+			VarArgBounds: []string{bound.Text},
+			MetaData: ast.MetaData{
+				Start: start,
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	} else if fp.has(ast.LParen) {
+		// its of the form '(name1,name2)...(bound1,bound2)'
+		fp.next() // move past the (
+		varNames := make([]string, 0)
+		for fp.lexer.HasNext() {
+			if fp.has(ast.RParen) {
+				break
+			}
+
+			if len(varNames) > 0 {
+				fp.expect(ast.Comma)
+			}
+
+			name, ok := fp.token(ast.Name)
+			if !ok {
+				fp.lexer.RollBack(id)
+				return ast.VarArgData{}, false
+			}
+			varNames = append(varNames, name.Text)
+		}
+		fp.expect(ast.RParen)
+		_, ok := fp.token(ast.DotDotDot)
+		if !ok {
+			fp.lexer.RollBack(id)
+			return ast.VarArgData{
+				IsVarArg: false,
+			}, false
+		}
+		fp.expect(ast.LParen)
+		bounds := make([]string, 0)
+		for fp.lexer.HasNext() {
+			if fp.has(ast.RParen) {
+				break
+			}
+
+			if len(bounds) > 0 {
+				fp.expect(ast.Comma)
+			}
+
+			name, ok := fp.token(ast.Name)
+			if !ok {
+				fp.lexer.RollBack(id)
+				return ast.VarArgData{
+					IsVarArg: false,
+				}, false
+			}
+			bounds = append(bounds, name.Text)
+		}
+		fp.expect(ast.RParen)
+		fp.expect(ast.RCurly)
+		fp.lexer.Commit(id)
+		return ast.VarArgData{
+			IsVarArg:     true,
+			VarArgNames:  varNames,
+			VarArgBounds: bounds,
+			MetaData: ast.MetaData{
+				Start: start,
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	} else {
+		fp.lexer.RollBack(id)
+		return ast.VarArgData{
+			IsVarArg: false,
+		}, false
 	}
-	return ast.VarArgData{
-		IsVarArg:    true,
-		VarArgCount: varArgCount,
-		MetaData: ast.MetaData{
-			Start: fp.getShiftedPosition(start),
-			Key:   fp.keyGen.Next(),
-		},
-	}, true
 }
 
 func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionType, bool) {
@@ -778,8 +873,7 @@ func toNameForm(tok ast.PseudoTokenNode) ast.NameForm {
 		IsStropped:      false,
 		HasQuestionMark: false,
 		VarArg: ast.VarArgData{
-			IsVarArg:    false,
-			VarArgCount: nil,
+			IsVarArg: false,
 		},
 		MetaData: tok.MetaData,
 	}
@@ -1558,8 +1652,7 @@ func (fp *formulationParser) operatorAsNameForm() (ast.NameForm, bool) {
 		IsStropped:      false,
 		HasQuestionMark: false,
 		VarArg: ast.VarArgData{
-			IsVarArg:    false,
-			VarArgCount: nil,
+			IsVarArg: false,
 		},
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(next.Position),
@@ -1581,18 +1674,10 @@ func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 		name = strings.TrimPrefix(strings.TrimSuffix(name, "\""), "\"")
 	}
 
-	isVarArg := false
-	var varArgCount *string = nil
 	hasQuestionMark := false
-	if fp.has(ast.DotDotDot) {
-		fp.next() // skip the ...
-		isVarArg = true
-
-		if fp.hasHas(ast.Operator, ast.Name) && fp.lexer.Peek().Text == "#" {
-			fp.next() // skip the #
-			text := fp.next().Text
-			varArgCount = &text
-		}
+	var varArgData ast.VarArgData
+	if data, ok := fp.varArgData(); ok {
+		varArgData = data
 	}
 
 	if fp.has(ast.QuestionMark) {
@@ -1604,10 +1689,7 @@ func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 		Text:            name,
 		IsStropped:      isStropped,
 		HasQuestionMark: hasQuestionMark,
-		VarArg: ast.VarArgData{
-			IsVarArg:    isVarArg,
-			VarArgCount: varArgCount,
-		},
+		VarArg:          varArgData,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

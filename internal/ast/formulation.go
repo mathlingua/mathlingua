@@ -563,7 +563,8 @@ type InfixCommandOperatorId struct {
 /////////////////////////// Support structures ////////////////////////////////
 
 type VarArgData struct {
-	IsVarArg    bool
-	VarArgCount *string
-	MetaData    MetaData
+	IsVarArg     bool
+	VarArgNames  []string
+	VarArgBounds []string
+	MetaData     MetaData
 }

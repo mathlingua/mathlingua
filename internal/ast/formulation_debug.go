@@ -28,7 +28,7 @@ type FormulationDebuggable interface {
 }
 
 func (n NameForm) Debug() string {
-	return n.Text
+	return n.Text + n.VarArg.Debug()
 }
 
 func (n FunctionForm) Debug() string {
@@ -328,14 +328,31 @@ func (n PostfixOperatorForm) Debug() string {
 }
 
 func (n VarArgData) Debug() string {
-	result := ""
 	if n.IsVarArg {
-		result += "..."
-		if n.VarArgCount != nil {
-			result += "#" + *n.VarArgCount
+		if len(n.VarArgNames) == 0 && len(n.VarArgBounds) == 0 {
+			return "..."
+		} else if len(n.VarArgNames) == 1 && len(n.VarArgBounds) == 1 {
+			return "{" + n.VarArgNames[0] + "..." + n.VarArgBounds[0] + "}"
+		} else {
+			result := "{("
+			for i, name := range n.VarArgNames {
+				if i > 0 {
+					result += ","
+				}
+				result += name
+			}
+			result += ")...("
+			for i, bound := range n.VarArgBounds {
+				if i > 0 {
+					result += ","
+				}
+				result += bound
+			}
+			result += ")}"
+			return result
 		}
 	}
-	return result
+	return ""
 }
 
 func (n FunctionLiteralExpression) Debug() string {

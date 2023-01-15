@@ -225,7 +225,11 @@ func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 					Position: cur.Position,
 				})
 			} else {
-				continue
+				appendToken(ast.Token{
+					Type:     ast.Operator,
+					Text:     "=",
+					Position: cur.Position,
+				})
 			}
 		case cur.Symbol == ':':
 			if i < len(chars) && chars[i].Symbol == '=' {

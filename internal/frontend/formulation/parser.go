@@ -982,7 +982,7 @@ func (fp *formulationParser) chainExpression(allowTrailingOperator bool) (ast.Ch
 func (fp *formulationParser) ordinalCallExpression() (ast.OrdinalCallExpression, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-	literal, ok := fp.literalFormType()
+	name, ok := fp.nameForm()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.OrdinalCallExpression{}, false
@@ -1008,7 +1008,7 @@ func (fp *formulationParser) ordinalCallExpression() (ast.OrdinalCallExpression,
 
 	fp.lexer.Commit(id)
 	return ast.OrdinalCallExpression{
-		Target: literal,
+		Target: &name,
 		Arg:    exp,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
@@ -1460,6 +1460,51 @@ func (fp *formulationParser) nameParams() ([]ast.NameForm, bool) {
 	return names, true
 }
 
+func (fp *formulationParser) directionParamParamType() (ast.DirectionParamParamType, bool) {
+	if call, ok := fp.ordinalCallExpression(); ok {
+		return &call, true
+	}
+
+	if function, ok := fp.functionForm(); ok {
+		return &function, true
+	}
+
+	if name, ok := fp.nameForm(); ok {
+		return &name, true
+	}
+
+	return nil, false
+}
+
+func (fp *formulationParser) squareDirectionalParams() (*[]ast.DirectionParamParamType, bool) {
+	id := fp.lexer.Snapshot()
+	_, ok := fp.token(ast.LSquare)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return nil, false
+	}
+	args := make([]ast.DirectionParamParamType, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(ast.RSquare) {
+			break
+		}
+
+		if len(args) > 0 {
+			fp.expect(ast.Comma)
+		}
+
+		arg, ok := fp.directionParamParamType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return nil, false
+		}
+		args = append(args, arg)
+	}
+	fp.expect(ast.RSquare)
+	fp.lexer.Commit(id)
+	return &args, true
+}
+
 func (fp *formulationParser) directionParam() (*ast.DirectionalParam, bool) {
 	_, atOk := fp.token(ast.At)
 	if !atOk {
@@ -1470,7 +1515,7 @@ func (fp *formulationParser) directionParam() (*ast.DirectionalParam, bool) {
 	if n, ok := fp.nameForm(); ok {
 		name = &n
 	}
-	square, ok := fp.squareParams()
+	square, ok := fp.squareDirectionalParams()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return &ast.DirectionalParam{}, false
@@ -1675,10 +1720,7 @@ func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 	}
 
 	hasQuestionMark := false
-	var varArgData ast.VarArgData
-	if data, ok := fp.varArgData(); ok {
-		varArgData = data
-	}
+	varArgData, _ := fp.varArgData()
 
 	if fp.has(ast.QuestionMark) {
 		fp.next() // skip the ?

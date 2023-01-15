@@ -516,9 +516,18 @@ type CurlyParam struct {
 	Direction    *DirectionalParam
 }
 
+type DirectionParamParamType interface {
+	FormulationNodeType
+	DirectionParamParamType()
+}
+
+func (NameForm) DirectionParamParamType()              {}
+func (FunctionForm) DirectionParamParamType()          {}
+func (OrdinalCallExpression) DirectionParamParamType() {}
+
 type DirectionalParam struct {
 	Name         *NameForm
-	SquareParams []StructuralFormType
+	SquareParams []DirectionParamParamType
 }
 
 // \function:on{A}:to{B}/

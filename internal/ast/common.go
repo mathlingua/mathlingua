@@ -161,6 +161,7 @@ func (InfixCommandId) MlgNodeType()                         {}
 func (FunctionLiteralExpression) MlgNodeType()              {}
 func (CurlyParam) MlgNodeType()                             {}
 func (CurlyArg) MlgNodeType()                               {}
+func (DirectionalParam) MlgNodeType()                       {}
 
 /////////////////////////////////////////// for each /////////////////////////////////////////////////
 
@@ -926,6 +927,13 @@ func (n *CurlyArg) ForEach(fn func(subNode MlgNodeType)) {
 		forEach(*n.SquareArgs, fn)
 	}
 	forEach(*n.CurlyArgs, fn)
+}
+
+func (n *DirectionalParam) ForEach(fn func(subNode MlgNodeType)) {
+	if n.Name != nil {
+		fn(n.Name)
+	}
+	forEach(n.SquareParams, fn)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////

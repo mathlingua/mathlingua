@@ -1366,6 +1366,28 @@ func (fp *formulationParser) nameParams() ([]ast.NameForm, bool) {
 	return names, true
 }
 
+func (fp *formulationParser) directionParam() (*ast.DirectionalParam, bool) {
+	_, atOk := fp.token(ast.At)
+	if !atOk {
+		return &ast.DirectionalParam{}, false
+	}
+	id := fp.lexer.Snapshot()
+	var name *ast.NameForm
+	if n, ok := fp.nameForm(); ok {
+		name = &n
+	}
+	square, ok := fp.squareParams()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return &ast.DirectionalParam{}, false
+	}
+	fp.lexer.Commit(id)
+	return &ast.DirectionalParam{
+		Name:         name,
+		SquareParams: *square,
+	}, true
+}
+
 func (fp *formulationParser) squareParams() (*[]ast.StructuralFormType, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LSquare)
@@ -1995,10 +2017,15 @@ func (fp *formulationParser) curlyParam() (ast.CurlyParam, bool) {
 		fp.lexer.RollBack(id)
 		return ast.CurlyParam{}, false
 	}
+	var directionParam *ast.DirectionalParam
+	if param, ok := fp.directionParam(); ok {
+		directionParam = param
+	}
 	fp.lexer.Commit(id)
 	return ast.CurlyParam{
 		SquareParams: squareParams,
 		CurlyParams:  *curlyParams,
+		Direction:    directionParam,
 	}, true
 }
 
@@ -2013,10 +2040,15 @@ func (fp *formulationParser) curlyArg() (ast.CurlyArg, bool) {
 		fp.lexer.RollBack(id)
 		return ast.CurlyArg{}, false
 	}
+	var directionParam *ast.DirectionalParam
+	if param, ok := fp.directionParam(); ok {
+		directionParam = param
+	}
 	fp.lexer.Commit(id)
 	return ast.CurlyArg{
 		SquareArgs: squareArgs,
 		CurlyArgs:  curlyArgs,
+		Direction:  directionParam,
 	}, true
 }
 
@@ -2098,14 +2130,17 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 		}
 	}
 
-	parenParams, _ := fp.nameParams()
+	var parenParams *[]ast.NameForm
+	if form, ok := fp.nameParams(); ok {
+		parenParams = &form
+	}
 
 	fp.lexer.Commit(id)
 	return ast.CommandId{
 		Names:       names,
 		CurlyParam:  curlyParam,
 		NamedParams: &namedParams,
-		ParenParams: &parenParams,
+		ParenParams: parenParams,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

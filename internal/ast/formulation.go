@@ -317,6 +317,7 @@ type CommandExpression struct {
 type CurlyArg struct {
 	SquareArgs *[]StructuralFormType
 	CurlyArgs  *[]ExpressionType
+	Direction  *DirectionalParam
 }
 
 // -x
@@ -513,6 +514,12 @@ type CommandId struct {
 type CurlyParam struct {
 	SquareParams *[]StructuralFormType
 	CurlyParams  []StructuralFormType
+	Direction    *DirectionalParam
+}
+
+type DirectionalParam struct {
+	Name         *NameForm
+	SquareParams []StructuralFormType
 }
 
 // \function:on{A}:to{B}/

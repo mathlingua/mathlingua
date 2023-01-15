@@ -352,6 +352,9 @@ func (n CurlyParam) Debug() string {
 	result += "{"
 	result += commaSeparatedString(n.CurlyParams)
 	result += "}"
+	if n.Direction != nil {
+		result += n.Direction.Debug()
+	}
 	return result
 }
 
@@ -365,6 +368,20 @@ func (n CurlyArg) Debug() string {
 	result += "{"
 	result += commaSeparatedString(*n.CurlyArgs)
 	result += "}"
+	if n.Direction != nil {
+		result += n.Direction.Debug()
+	}
+	return result
+}
+
+func (n DirectionalParam) Debug() string {
+	result := "@"
+	if n.Name != nil {
+		result += n.Name.Debug()
+	}
+	result += "["
+	result += commaSeparatedString(n.SquareParams)
+	result += "]"
 	return result
 }
 

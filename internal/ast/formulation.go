@@ -373,7 +373,7 @@ type AsExpression struct {
 // x{1}
 type OrdinalCallExpression struct {
 	Target   LiteralFormType
-	Arg      ExpressionType
+	Args     []ExpressionType
 	MetaData MetaData
 }
 

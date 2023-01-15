@@ -130,7 +130,7 @@ func (n AsExpression) Debug() string {
 }
 
 func (n OrdinalCallExpression) Debug() string {
-	return n.Target.Debug() + "{" + n.Arg.Debug() + "}"
+	return n.Target.Debug() + "{" + commaSeparatedString(n.Args) + "}"
 }
 
 func (n ChainExpression) Debug() string {

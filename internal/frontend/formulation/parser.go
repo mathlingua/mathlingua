@@ -994,8 +994,25 @@ func (fp *formulationParser) ordinalCallExpression() (ast.OrdinalCallExpression,
 		return ast.OrdinalCallExpression{}, false
 	}
 
-	exp, ok := fp.expressionType()
-	if !ok {
+	args := make([]ast.ExpressionType, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(ast.RCurly) {
+			break
+		}
+
+		if len(args) > 0 {
+			fp.expect(ast.Comma)
+		}
+
+		arg, ok := fp.expressionType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return ast.OrdinalCallExpression{}, false
+		}
+		args = append(args, arg)
+	}
+
+	if len(args) == 0 {
 		fp.lexer.RollBack(id)
 		return ast.OrdinalCallExpression{}, false
 	}
@@ -1009,7 +1026,7 @@ func (fp *formulationParser) ordinalCallExpression() (ast.OrdinalCallExpression,
 	fp.lexer.Commit(id)
 	return ast.OrdinalCallExpression{
 		Target: &name,
-		Arg:    exp,
+		Args:   args,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

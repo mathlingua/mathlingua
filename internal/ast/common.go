@@ -783,7 +783,7 @@ func (n *AsExpression) ForEach(fn func(subNode MlgNodeType)) {
 
 func (n *OrdinalCallExpression) ForEach(fn func(subNode MlgNodeType)) {
 	fn(n.Target)
-	fn(n.Arg)
+	forEach(n.Args, fn)
 }
 
 func (n *ChainExpression) ForEach(fn func(subNode MlgNodeType)) {

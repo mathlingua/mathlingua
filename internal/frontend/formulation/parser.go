@@ -2298,10 +2298,10 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 	}
 	fp.expect(ast.BackSlash)
 	fp.expect(ast.LSquare)
+
 	mainNames := make([]string, 0)
-	namedGroupNames := make([]string, 0)
 	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
-		if fp.has(ast.At) || fp.has(ast.Colon) {
+		if fp.has(ast.Colon) {
 			break
 		}
 		name, ok := fp.chainName()
@@ -2316,11 +2316,28 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 			break
 		}
 	}
+
+	namedGroupNames := make([]string, 0)
+	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
+		if fp.has(ast.Colon) {
+			fp.lexer.Next() // skip the colon
+		} else {
+			break
+		}
+		name, ok := fp.chainName()
+		if !ok {
+			fp.error("Excpected a name")
+			break
+		}
+		namedGroupNames = append(namedGroupNames, name.Text)
+	}
+
 	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
 		fp.error("Unexpected text")
 		fp.lexer.Next()
 	}
 	fp.expect(ast.RSquare)
+
 	var innerLabel *string
 	if fp.hasHas(ast.Colon, ast.Colon) {
 		innerLabelText := ""
@@ -2333,6 +2350,7 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 		innerLabel = &innerLabelText
 		fp.expect(ast.RSquare)
 	}
+
 	return ast.Signature{
 		MainNames:       mainNames,
 		NamedGroupNames: namedGroupNames,

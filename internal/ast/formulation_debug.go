@@ -152,10 +152,8 @@ func (n Signature) Debug() string {
 		}
 		result += item
 	}
-	for i, item := range n.NamedGroupNames {
-		if i > 0 {
-			result += ":"
-		}
+	for _, item := range n.NamedGroupNames {
+		result += ":"
 		result += item
 	}
 	result += "]"

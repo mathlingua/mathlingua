@@ -2,5 +2,6 @@
 .idea
 .gitpod.yml
 .vscode
+/bin
 /mlg
 /testbed

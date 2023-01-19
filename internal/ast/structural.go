@@ -147,6 +147,8 @@ const UpperPersonName = "Person"
 const UpperResourceName = "Resource"
 const UpperIdName = "Id"
 const UpperIdQuestionName = UpperIdName + "?"
+const LowerGeneralizesName = "generalizes"
+const LowerGeneralizesQuestionName = LowerGeneralizesName + "?"
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -945,6 +947,7 @@ var DefinesSections = []string{
 	LowerUsingQuestionName,
 	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
+	LowerGeneralizesQuestionName,
 	LowerMeansQuestionName,
 	LowerSpecifiesQuestionName,
 	UpperProvidesQuestionName,
@@ -956,26 +959,32 @@ var DefinesSections = []string{
 }
 
 type DefinesGroup struct {
-	Id         IdItem
-	Defines    DefinesSection
-	With       *WithSection
-	Using      *UsingSection
-	When       *WhenSection
-	SuchThat   *SuchThatSection
-	Means      *MeansSection
-	Specifies  *SpecifiesSection
-	Provides   *ProvidesSection
-	Justified  *JustifiedSection
-	Documented *DocumentedSection
-	References *ReferencesSection
-	Aliases    *AliasesSection
-	MetaId     *MetaIdSection
-	MetaData   MetaData
+	Id          IdItem
+	Defines     DefinesSection
+	With        *WithSection
+	Using       *UsingSection
+	When        *WhenSection
+	SuchThat    *SuchThatSection
+	Generalizes *GeneralizesSection
+	Means       *MeansSection
+	Specifies   *SpecifiesSection
+	Provides    *ProvidesSection
+	Justified   *JustifiedSection
+	Documented  *DocumentedSection
+	References  *ReferencesSection
+	Aliases     *AliasesSection
+	MetaId      *MetaIdSection
+	MetaData    MetaData
 }
 
 type DefinesSection struct {
 	Defines  Target
 	MetaData MetaData
+}
+
+type GeneralizesSection struct {
+	Generalizes []Formulation[FormulationNodeType]
+	MetaData    MetaData
 }
 
 type MeansSection struct {

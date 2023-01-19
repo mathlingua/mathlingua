@@ -289,6 +289,10 @@ func (n DefinesGroup) Debug(indent int, hasDot bool) []string {
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhenSection(n.When, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
+	if n.Generalizes != nil {
+		db.AppendSection(LowerGeneralizesName, indent, false)
+		db.AppendFormulations(n.Generalizes.Generalizes, indent+2, true)
+	}
 	if n.Means != nil {
 		db.AppendSection(LowerMeansName, indent, false)
 		db.Append(n.Means.Means, indent+2, true)
@@ -656,6 +660,12 @@ func (db *debugBuilder) AppendClauses(clauses []Clause, indent int, hasDot bool)
 }
 
 func (db *debugBuilder) AppendTextItems(items []TextItem, indent int, hasDot bool) {
+	for _, item := range items {
+		db.Append(&item, indent, hasDot)
+	}
+}
+
+func (db *debugBuilder) AppendFormulations(items []Formulation[FormulationNodeType], indent int, hasDot bool) {
 	for _, item := range items {
 		db.Append(&item, indent, hasDot)
 	}

@@ -215,6 +215,7 @@ var all_group_test_cases = []testCase{
 			"using?",
 			"when?",
 			"suchThat?",
+			"generalizes?",
 			"means?",
 			"specifies?",
 			"Provides?",

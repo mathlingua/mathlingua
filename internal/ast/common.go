@@ -401,6 +401,9 @@ func (n *DefinesGroup) ForEach(fn func(subNode MlgNodeType)) {
 	if n.SuchThat != nil {
 		forEach(n.SuchThat.Clauses, fn)
 	}
+	if n.Generalizes != nil {
+		forEachFormulation(n.Generalizes.Generalizes, fn)
+	}
 	if n.Means != nil {
 		fn(n.Means.Means)
 	}
@@ -957,6 +960,12 @@ func forEachNamedArg(items []NamedArg, fn func(n MlgNodeType)) {
 }
 
 func forEachNamedParam(items []NamedParam, fn func(n MlgNodeType)) {
+	for i, _ := range items {
+		fn(&items[i])
+	}
+}
+
+func forEachFormulation(items []Formulation[FormulationNodeType], fn func(n MlgNodeType)) {
 	for i, _ := range items {
 		fn(&items[i])
 	}

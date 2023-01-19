@@ -1129,6 +1129,10 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 	if sec, ok := sections[ast.LowerSuchThatName]; ok {
 		suchThat = p.toSuchThatSection(sec)
 	}
+	var generalizes *ast.GeneralizesSection
+	if sec, ok := sections[ast.LowerGeneralizesName]; ok {
+		generalizes = p.toGeneralizesSection(sec)
+	}
 	var means *ast.MeansSection
 	if sec, ok := sections[ast.LowerMeansName]; ok {
 		means = p.toMeansSection(sec)
@@ -1162,21 +1166,22 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.DefinesGroup{
-		Id:         *id,
-		Defines:    defines,
-		With:       with,
-		Using:      using,
-		When:       when,
-		SuchThat:   suchThat,
-		Means:      means,
-		Specifies:  specifies,
-		Provides:   provides,
-		Justified:  justified,
-		Documented: documented,
-		References: references,
-		Aliases:    aliases,
-		MetaId:     metaId,
-		MetaData:   ast.MetaData(group.MetaData),
+		Id:          *id,
+		Defines:     defines,
+		With:        with,
+		Using:       using,
+		When:        when,
+		SuchThat:    suchThat,
+		Generalizes: generalizes,
+		Means:       means,
+		Specifies:   specifies,
+		Provides:    provides,
+		Justified:   justified,
+		Documented:  documented,
+		References:  references,
+		Aliases:     aliases,
+		MetaId:      metaId,
+		MetaData:    ast.MetaData(group.MetaData),
 	}, true
 }
 
@@ -1191,6 +1196,13 @@ func (p *parser) toWithSection(section phase4.Section) *ast.WithSection {
 	return &ast.WithSection{
 		With:     p.oneOrMoreTargets(section),
 		MetaData: ast.MetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toGeneralizesSection(section phase4.Section) *ast.GeneralizesSection {
+	return &ast.GeneralizesSection{
+		Generalizes: p.oneOrMoreFormulation(section),
+		MetaData:    ast.MetaData(section.MetaData),
 	}
 }
 
@@ -2688,6 +2700,10 @@ func (p *parser) exactlyOneClause(section phase4.Section) ast.Clause {
 func (p *parser) exactlyOneFormulation(section phase4.Section) ast.Formulation[ast.FormulationNodeType] {
 	var def ast.Formulation[ast.FormulationNodeType] = ast.Formulation[ast.FormulationNodeType]{}
 	return exactlyOne(p.toFormulations(section.Args), def, section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) oneOrMoreFormulation(section phase4.Section) []ast.Formulation[ast.FormulationNodeType] {
+	return oneOrMore(p.toFormulations(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreSpecs(section phase4.Section) []ast.Spec {

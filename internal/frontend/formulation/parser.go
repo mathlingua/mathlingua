@@ -335,6 +335,10 @@ func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionType,
 		return &fun, ok
 	}
 
+	if fun, ok := fp.functionLiteralExpression(); ok {
+		return &fun, ok
+	}
+
 	if tup, ok := fp.tupleExpression(); ok {
 		return &tup, ok
 	}
@@ -344,6 +348,63 @@ func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionType,
 	}
 
 	return nil, false
+}
+
+func (fp *formulationParser) functionLiteralExpression() (ast.FunctionLiteralExpression, bool) {
+	id := fp.lexer.Snapshot()
+
+	if fp.hasHas(ast.Name, ast.RightArrow) {
+		name, nameOk := fp.nameForm()
+		if !nameOk {
+			fp.lexer.RollBack(id)
+			return ast.FunctionLiteralExpression{}, false
+		}
+		fp.expect(ast.RightArrow)
+		exp, expOk := fp.expressionType()
+		if !expOk {
+			fp.lexer.RollBack(id)
+			return ast.FunctionLiteralExpression{}, false
+		}
+		fp.lexer.Commit(id)
+		return ast.FunctionLiteralExpression{
+			Lhs: ast.TupleForm{
+				Params: []ast.StructuralFormType{
+					&name,
+				},
+				VarArg: ast.VarArgData{
+					IsVarArg: false,
+				},
+				MetaData: name.MetaData,
+			},
+			Rhs:      exp,
+			MetaData: name.MetaData,
+		}, true
+	}
+
+	tup, tupOk := fp.tupleForm()
+	if !tupOk {
+		fp.lexer.RollBack(id)
+		return ast.FunctionLiteralExpression{}, false
+	}
+
+	_, arrowOk := fp.token(ast.RightArrow)
+	if !arrowOk {
+		fp.lexer.RollBack(id)
+		return ast.FunctionLiteralExpression{}, false
+	}
+
+	exp, expOk := fp.expressionType()
+	if !expOk {
+		fp.lexer.RollBack(id)
+		return ast.FunctionLiteralExpression{}, false
+	}
+
+	fp.lexer.Commit(id)
+	return ast.FunctionLiteralExpression{
+		Lhs:      tup,
+		Rhs:      exp,
+		MetaData: tup.MetaData,
+	}, true
 }
 
 func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bool) {
@@ -518,7 +579,6 @@ func max(x, y int) int {
 
 func (fp *formulationParser) expressionType(additionalTerminators ...ast.TokenType) (ast.ExpressionType, bool) {
 	if exp, ok := fp.pseudoExpression(additionalTerminators...); ok {
-		fp.error(mlglib.PrettyPrint(exp))
 		res, consolidateOk := Consolidate(exp.Children, fp.tracker)
 		if resAsExp, resAsExpOk := res.(ast.ExpressionType); resAsExpOk {
 			return resAsExp, consolidateOk
@@ -572,8 +632,6 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 
 		if op, ok := fp.operatorType(); ok {
 			children = append(children, op)
-		} else if tup, ok := fp.tupleForm(); ok {
-			children = append(children, &tup)
 		} else if chain, ok := fp.chainExpression(false); ok {
 			children = append(children, &chain)
 		} else if lit, ok := fp.literalExpressionType(); ok {
@@ -588,6 +646,8 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 			children = append(children, &name)
 		} else if fun, ok := fp.functionCallExpression(); ok {
 			children = append(children, &fun)
+		} else if tup, ok := fp.tupleForm(); ok {
+			children = append(children, &tup)
 		} else if set, ok := fp.fixedSetForm(); ok {
 			children = append(children, &set)
 		} else if set, ok := fp.fixedSetExpression(); ok {
@@ -1817,7 +1877,11 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 		}
 
 		if len(params) > 0 {
-			fp.expect(ast.Comma)
+			_, commaOk := fp.token(ast.Comma)
+			if !commaOk {
+				fp.lexer.RollBack(id)
+				return ast.TupleForm{}, false
+			}
 		}
 
 		param, ok := fp.structuralFormType()

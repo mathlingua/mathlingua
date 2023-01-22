@@ -56,7 +56,6 @@ func GetPrecedenceAndIfInfix(node ast.ExpressionType) (int, bool) {
 var default_expression ast.ExpressionType = &ast.NameForm{}
 var default_kind_type ast.KindType = &ast.NameForm{}
 var default_signature *ast.Signature = &ast.Signature{}
-var default_structural_form ast.StructuralFormType = &ast.NameForm{}
 
 func toNode(items mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]], tracker frontend.DiagnosticTracker) ast.FormulationNodeType {
 	if items.IsEmpty() {
@@ -125,28 +124,8 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]], track
 			Rhs:    lhs,
 		}
 	case *ast.PseudoTokenNode:
-		// a token, for example :=, :=>, =>, is, isnot
+		// a token, for example :=, :=>, is, isnot
 		switch {
-		case top.Type == ast.RightArrow:
-			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
-			tmp := toNode(items, tracker)
-			lhs := checkType(tmp, default_structural_form, "Structural form", tracker, top.Start())
-			switch tuple := lhs.(type) {
-			case *ast.TupleForm:
-				return &ast.FunctionLiteralExpression{
-					Lhs: *tuple,
-					Rhs: rhs,
-				}
-			default:
-				return &ast.FunctionLiteralExpression{
-					Lhs: ast.TupleForm{
-						Params: []ast.StructuralFormType{
-							lhs,
-						},
-					},
-					Rhs: rhs,
-				}
-			}
 		case top.Type == ast.ColonArrow:
 			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 			tmp := toNode(items, tracker)
@@ -267,10 +246,8 @@ func isOperator(node ast.FormulationNodeType) bool {
 		// for example \f/
 		return true
 	case *ast.PseudoTokenNode:
-		// a token, for example :=, =>, is, isnot
+		// a token, for example :=, is, isnot
 		switch node.Type {
-		case ast.RightArrow:
-			return false
 		case ast.ColonEquals:
 			return false
 		case ast.ColonArrow:
@@ -312,10 +289,8 @@ func isSpecialOperator(node ast.FormulationNodeType) bool {
 		// for example \f/
 		return false
 	case *ast.PseudoTokenNode:
-		// a token, for example :=, =>, is, isnot
+		// a token, for example :=, is, isnot
 		switch node.Type {
-		case ast.RightArrow:
-			return true
 		case ast.ColonEquals:
 			return true
 		case ast.ColonArrow:
@@ -421,8 +396,6 @@ func getOperatorPrecedenceAssociativityByText(text string, itemType ItemType) (i
 		return other_special_prefix_precedence, other_special_prefix_associativity
 	case itemType == PostfixOperatorType:
 		return other_special_postfix_precedence, other_special_postfix_associativity
-	case text == "=>":
-		return right_arrow_precedence, right_arrow_associativity
 	case text == ":=":
 		return colon_equal_precedence, colon_equal_associativity
 	case text == ":=>":

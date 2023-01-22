@@ -273,7 +273,7 @@ type FunctionCallExpression struct {
 
 // x => x + 1 or (x, y) => x + y
 type FunctionLiteralExpression struct {
-	Lhs      TupleExpression
+	Lhs      TupleForm
 	Rhs      ExpressionType
 	MetaData MetaData
 }
@@ -315,9 +315,8 @@ type CommandExpression struct {
 
 // []{} or {}
 type CurlyArg struct {
-	SquareArgs *[]StructuralFormType
-	CurlyArgs  *[]ExpressionType
-	Direction  *DirectionalParam
+	CurlyArgs *[]ExpressionType
+	Direction *DirectionalParam
 }
 
 // -x

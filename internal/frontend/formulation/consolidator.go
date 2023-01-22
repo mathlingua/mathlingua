@@ -56,6 +56,7 @@ func GetPrecedenceAndIfInfix(node ast.ExpressionType) (int, bool) {
 var default_expression ast.ExpressionType = &ast.NameForm{}
 var default_kind_type ast.KindType = &ast.NameForm{}
 var default_signature *ast.Signature = &ast.Signature{}
+var default_structural_form ast.StructuralFormType = &ast.NameForm{}
 
 func toNode(items mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]], tracker frontend.DiagnosticTracker) ast.FormulationNodeType {
 	if items.IsEmpty() {
@@ -129,17 +130,17 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]], track
 		case top.Type == ast.RightArrow:
 			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 			tmp := toNode(items, tracker)
-			lhs := checkType(tmp, default_expression, "Expression", tracker, top.Start())
+			lhs := checkType(tmp, default_structural_form, "Structural form", tracker, top.Start())
 			switch tuple := lhs.(type) {
-			case *ast.TupleExpression:
+			case *ast.TupleForm:
 				return &ast.FunctionLiteralExpression{
 					Lhs: *tuple,
 					Rhs: rhs,
 				}
 			default:
 				return &ast.FunctionLiteralExpression{
-					Lhs: ast.TupleExpression{
-						Args: []ast.ExpressionType{
+					Lhs: ast.TupleForm{
+						Params: []ast.StructuralFormType{
 							lhs,
 						},
 					},

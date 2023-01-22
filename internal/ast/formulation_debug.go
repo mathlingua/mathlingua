@@ -374,14 +374,10 @@ func (n CurlyParam) Debug() string {
 }
 
 func (n CurlyArg) Debug() string {
-	result := ""
-	if n.SquareArgs != nil {
-		result += "["
-		result += commaSeparatedString(*n.SquareArgs)
-		result += "]"
+	result := "{"
+	if n.CurlyArgs != nil {
+		result += commaSeparatedString(*n.CurlyArgs)
 	}
-	result += "{"
-	result += commaSeparatedString(*n.CurlyArgs)
 	result += "}"
 	if n.Direction != nil {
 		result += n.Direction.Debug()

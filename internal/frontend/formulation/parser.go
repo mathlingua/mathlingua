@@ -518,6 +518,7 @@ func max(x, y int) int {
 
 func (fp *formulationParser) expressionType(additionalTerminators ...ast.TokenType) (ast.ExpressionType, bool) {
 	if exp, ok := fp.pseudoExpression(additionalTerminators...); ok {
+		fp.error(mlglib.PrettyPrint(exp))
 		res, consolidateOk := Consolidate(exp.Children, fp.tracker)
 		if resAsExp, resAsExpOk := res.(ast.ExpressionType); resAsExpOk {
 			return resAsExp, consolidateOk
@@ -571,6 +572,8 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 
 		if op, ok := fp.operatorType(); ok {
 			children = append(children, op)
+		} else if tup, ok := fp.tupleForm(); ok {
+			children = append(children, &tup)
 		} else if chain, ok := fp.chainExpression(false); ok {
 			children = append(children, &chain)
 		} else if lit, ok := fp.literalExpressionType(); ok {
@@ -585,8 +588,6 @@ func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.Token
 			children = append(children, &name)
 		} else if fun, ok := fp.functionCallExpression(); ok {
 			children = append(children, &fun)
-		} else if tup, ok := fp.tupleForm(); ok {
-			children = append(children, &tup)
 		} else if set, ok := fp.fixedSetForm(); ok {
 			children = append(children, &set)
 		} else if set, ok := fp.fixedSetExpression(); ok {
@@ -2172,14 +2173,48 @@ func (fp *formulationParser) curlyParam() (ast.CurlyParam, bool) {
 
 func (fp *formulationParser) curlyArg() (ast.CurlyArg, bool) {
 	id := fp.lexer.Snapshot()
-	var squareArgs *[]ast.StructuralFormType
-	if square, squareOk := fp.squareParams(); squareOk {
-		squareArgs = square
+	var curlyArgs *[]ast.ExpressionType
+	if condSet, ok := fp.conditionalSetExpression(); ok {
+		tmpCurly := make([]ast.ExpressionType, 0)
+		tmpCurly = append(tmpCurly, &condSet)
+		curlyArgs = &tmpCurly
 	}
-	curlyArgs, curlyOk := fp.curlyArgs()
-	if !curlyOk {
-		fp.lexer.RollBack(id)
-		return ast.CurlyArg{}, false
+	if curlyArgs == nil {
+		var squareArgs *[]ast.StructuralFormType
+		squarePosition := fp.lexer.Position()
+		if square, squareOk := fp.squareParams(); squareOk {
+			squareArgs = square
+		}
+		realCurlyArgs, curlyOk := fp.curlyArgs()
+		if !curlyOk {
+			fp.lexer.RollBack(id)
+			return ast.CurlyArg{}, false
+		}
+		if squareArgs != nil {
+			if realCurlyArgs == nil || len(*realCurlyArgs) != 1 {
+				fp.errorAt("If square args are used exactly one argument must be specified", squarePosition)
+			} else {
+				tmpCurlyArgs := make([]ast.ExpressionType, 0)
+				first := (*realCurlyArgs)[0]
+				tmpCurlyArgs = append(tmpCurlyArgs, &ast.FunctionLiteralExpression{
+					Lhs: ast.TupleForm{
+						Params: *squareArgs,
+						MetaData: ast.MetaData{
+							Start: squarePosition,
+							Key:   fp.keyGen.Next(),
+						},
+					},
+					Rhs: first,
+					MetaData: ast.MetaData{
+						Start: first.Start(),
+						Key:   fp.keyGen.Next(),
+					},
+				})
+				curlyArgs = &tmpCurlyArgs
+			}
+		} else {
+			curlyArgs = realCurlyArgs
+		}
 	}
 	var directionParam *ast.DirectionalParam
 	if param, ok := fp.directionParam(); ok {
@@ -2187,9 +2222,8 @@ func (fp *formulationParser) curlyArg() (ast.CurlyArg, bool) {
 	}
 	fp.lexer.Commit(id)
 	return ast.CurlyArg{
-		SquareArgs: squareArgs,
-		CurlyArgs:  curlyArgs,
-		Direction:  directionParam,
+		CurlyArgs: curlyArgs,
+		Direction: directionParam,
 	}, true
 }
 

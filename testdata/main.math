@@ -71,7 +71,7 @@ Id: "6214d07e-66f8-471d-a528-3c243ccf7fc7"
 [\natural.set]
 Defines: N
 means: 'N is \set'
-specifies: 'N := \set{[n]{n | n is \natural}}'
+specifies: 'N := \set[n]{n | n is \natural}'
 Documented:
 . written: "\mathbb{N}"
 . called: "the set of natural numbers"
@@ -200,7 +200,7 @@ Id: "141e40ca-34c6-42ad-ac53-2067f7c27933"
 [X \set.cross/ Y]
 Defines: Z
 means: 'Z is \set'
-specifies: 'Z := \set{[x,y]{(x,y) | x [in]: X ; y [in]: Y}}'
+specifies: 'Z := \set[x,y]{(x,y) | x [in]: X ; y [in]: Y}'
 Provides:
 . 'z [in]: Z :=> x [in]: X \and/ y [in]: Y'
 Documented:
@@ -695,3 +695,4 @@ content: "something"
 References: "$some.reference"
 ------------------------------------------
 Id: "b62c1951-23e7-4304-b5fc-f1e12341a953"
+

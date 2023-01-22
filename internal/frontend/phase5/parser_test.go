@@ -16,84 +16,32 @@
 
 package phase5
 
-/*
-func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
+import (
+	"mathlingua/internal/frontend"
+	"mathlingua/internal/frontend/phase1"
+	"mathlingua/internal/frontend/phase2"
+	"mathlingua/internal/frontend/phase3"
+	"mathlingua/internal/frontend/phase4"
+	"mathlingua/internal/mlglib"
+	"os"
+	"path"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestParserSmoke(t *testing.T) {
+	text, err := os.ReadFile(path.Join("..", "..", "..", "testdata", "main.math"))
+	assert.Nil(t, err)
+
 	tracker := frontend.NewDiagnosticTracker()
 
-	lexer1 := phase1.NewLexer(text, tracker)
+	lexer1 := phase1.NewLexer(string(text), tracker)
 	lexer2 := phase2.NewLexer(lexer1, tracker)
 	lexer3 := phase3.NewLexer(lexer2, tracker)
 
 	root := phase4.Parse(lexer3, tracker)
-	doc, _ := Parse(root, tracker)
-
-	return doc, tracker
-}
-
-func runTest(t *testing.T, input string, expected string) {
-	doc, tracker := parse(input)
-	actual := mlglib.PrettyPrint(doc)
-
-	assert.Equal(t, expected, actual)
+	_, ok := Parse(root, tracker, mlglib.NewKeyGenerator())
+	assert.True(t, ok)
 	assert.Equal(t, 0, len(tracker.Diagnostics()))
 }
-
-func TestBasicTheorem(t *testing.T) {
-	input := `Theorem:
-given: x
-then: 'x'`
-	expected := `ast.Document{
-  Items: []ast.TopLevelItemType{
-    ast.TheoremGroup{
-      Id: nil,
-      Theorem: ast.TheoremSection{
-        Theorem: []ast.TextItem{},
-      },
-      Given: &ast.GivenSection{
-        Given: []ast.Formulation[ast.NodeType]{
-          ast.Formulation[ast.NodeType]{
-            RawText: "x",
-            Root: ast.NameForm{
-              Text: "x",
-              IsStropped: false,
-              HasQuestionMark: false,
-              VarArg: ast.VarArgData{
-                IsVarArg: false,
-                VarArgCount: nil,
-              },
-            },
-            Label: nil,
-          },
-        },
-      },
-      Where: nil,
-      SuchThat: nil,
-      Then: ast.ThenSection{
-        Clauses: []ast.Clause{
-          ast.Formulation[ast.NodeType]{
-            RawText: "x",
-            Root: ast.NameForm{
-              Text: "x",
-              IsStropped: false,
-              HasQuestionMark: false,
-              VarArg: ast.VarArgData{
-                IsVarArg: false,
-                VarArgCount: nil,
-              },
-            },
-            Label: nil,
-          },
-        },
-      },
-      Iff: nil,
-      Using: nil,
-      Proof: nil,
-      Documented: nil,
-      References: nil,
-      Metadata: nil,
-    },
-  },
-}`
-	runTest(t, input, expected)
-}
-*/

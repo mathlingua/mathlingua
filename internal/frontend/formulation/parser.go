@@ -37,7 +37,7 @@ func ParseExpression(text string, start ast.Position, tracker frontend.Diagnosti
 	}
 	node, _ := parser.multiplexedExpressionType()
 	parser.finalize()
-	return node, tracker.Length() == numDiagBefore
+	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
 func ParseForm(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.FormulationNodeType, bool) {
@@ -51,7 +51,7 @@ func ParseForm(text string, start ast.Position, tracker frontend.DiagnosticTrack
 	}
 	node, _ := parser.form()
 	parser.finalize()
-	return node, tracker.Length() == numDiagBefore
+	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
 func ParseId(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.IdType, bool) {
@@ -65,7 +65,7 @@ func ParseId(text string, start ast.Position, tracker frontend.DiagnosticTracker
 	}
 	node, _ := parser.idType()
 	parser.finalize()
-	return node, tracker.Length() == numDiagBefore
+	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
 func ParseSignature(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.Signature, bool) {

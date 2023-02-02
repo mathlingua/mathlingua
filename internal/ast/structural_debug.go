@@ -29,18 +29,30 @@ func DebugStructuralNode(item StructuralDebuggable) string {
 }
 
 func (n IdItem) Debug(indent int, hasDot bool) []string {
+	if n.Root == nil {
+		return []string{n.RawText}
+	}
 	return buildIndentedLineSlice(indent, hasDot, "["+n.Root.Debug()+"]")
 }
 
 func (n Target) Debug(indent int, hasDot bool) []string {
+	if n.Root == nil {
+		return []string{n.RawText}
+	}
 	return buildIndentedLineSlice(indent, hasDot, n.Root.Debug())
 }
 
 func (n Spec) Debug(indent int, hasDot bool) []string {
+	if n.Root == nil {
+		return []string{n.RawText}
+	}
 	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.Debug()+"'")
 }
 
 func (n Alias) Debug(indent int, hasDot bool) []string {
+	if n.Root == nil {
+		return []string{n.RawText}
+	}
 	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.Debug()+"'")
 }
 

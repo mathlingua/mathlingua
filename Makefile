@@ -29,7 +29,7 @@ vet:
 
 .PHONY: lint
 lint:
-	golangci-lint run
+	golangci-lint run --skip-files='\.\./.*'
 
 .PHONY: clean
 clean:
@@ -53,7 +53,7 @@ debug:
 
 .PHONY: setupgo
 setupgo:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/go/bin v1.49.0
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/go/bin v1.50.1
 
 .PHONY: setupweb
 setupweb:

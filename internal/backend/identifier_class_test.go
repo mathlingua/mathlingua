@@ -17,6 +17,7 @@
 package backend
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -66,10 +67,10 @@ func TestClassGetAllIdentifiers(t *testing.T) {
 	cls.AddIdentifier("xyz")
 	cls.AddIdentifier("f()")
 	cls.AddIdentifier("")
-	assert.Equal(t, []string{
+	assert.Equal(t, sort.StringSlice([]string{
 		"abc",
 		"xyz",
 		"f()",
 		"",
-	}, cls.GetAllIdentifiers())
+	}), sort.StringSlice(cls.GetAllIdentifiers()))
 }

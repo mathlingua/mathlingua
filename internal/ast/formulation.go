@@ -47,6 +47,7 @@ func (MetaKinds) FormulationNodeType()                              {}
 func (StructuralColonEqualsForm) FormulationNodeType()              {}
 func (ExpressionColonEqualsItem) FormulationNodeType()              {}
 func (ExpressionColonArrowItem) FormulationNodeType()               {}
+func (ExpressionColonDashArrowItem) FormulationNodeType()           {}
 func (EnclosedNonCommandOperatorTarget) FormulationNodeType()       {}
 func (NonEnclosedNonCommandOperatorTarget) FormulationNodeType()    {}
 func (CommandOperatorTarget) FormulationNodeType()                  {}
@@ -87,6 +88,7 @@ func (n MetaKinds) Start() Position                              { return n.Meta
 func (n StructuralColonEqualsForm) Start() Position              { return n.MetaData.Start }
 func (n ExpressionColonEqualsItem) Start() Position              { return n.MetaData.Start }
 func (n ExpressionColonArrowItem) Start() Position               { return n.MetaData.Start }
+func (n ExpressionColonDashArrowItem) Start() Position           { return n.MetaData.Start }
 func (n EnclosedNonCommandOperatorTarget) Start() Position       { return n.MetaData.Start }
 func (n NonEnclosedNonCommandOperatorTarget) Start() Position    { return n.MetaData.Start }
 func (n CommandOperatorTarget) Start() Position                  { return n.MetaData.Start }
@@ -261,6 +263,7 @@ func (ExtendsExpression) ExpressionType()                      {}
 func (MultiplexedInfixOperatorCallExpression) ExpressionType() {}
 func (ExpressionColonEqualsItem) ExpressionType()              {}
 func (ExpressionColonArrowItem) ExpressionType()               {}
+func (ExpressionColonDashArrowItem) ExpressionType()           {}
 func (Signature) ExpressionType()                              {}
 func (FunctionLiteralExpression) ExpressionType()              {}
 
@@ -441,6 +444,13 @@ type ExpressionColonEqualsItem struct {
 
 // x + y :=> x
 type ExpressionColonArrowItem struct {
+	Lhs      ExpressionType
+	Rhs      ExpressionType
+	MetaData MetaData
+}
+
+// x + y :-> x
+type ExpressionColonDashArrowItem struct {
 	Lhs      ExpressionType
 	Rhs      ExpressionType
 	MetaData MetaData

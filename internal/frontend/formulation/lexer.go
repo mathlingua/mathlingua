@@ -248,6 +248,13 @@ func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 						Position: cur.Position,
 					})
 				}
+			} else if i+1 < len(chars) && chars[i].Symbol == '-' && chars[i+1].Symbol == '>' {
+				i += 2 // move past the ->
+				appendToken(ast.Token{
+					Type:     ast.ColonDashArrow,
+					Text:     ":->",
+					Position: cur.Position,
+				})
 			} else if i < len(chars) && chars[i].Symbol == ']' {
 				i++ // move past the ]
 				appendToken(ast.Token{

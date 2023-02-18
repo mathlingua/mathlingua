@@ -187,6 +187,10 @@ func (n ExpressionColonArrowItem) Debug() string {
 	return n.Lhs.Debug() + " :=> " + n.Rhs.Debug()
 }
 
+func (n ExpressionColonDashArrowItem) Debug() string {
+	return n.Lhs.Debug() + " :-> " + n.Rhs.Debug()
+}
+
 func (n EnclosedNonCommandOperatorTarget) Debug() string {
 	result := ""
 	if n.HasLeftColon {

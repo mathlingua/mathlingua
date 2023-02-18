@@ -17,6 +17,7 @@
 package phase5
 
 import (
+	"fmt"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/phase1"
 	"mathlingua/internal/frontend/phase2"
@@ -42,6 +43,13 @@ func TestParserSmoke(t *testing.T) {
 
 	root := phase4.Parse(lexer3, tracker)
 	_, ok := Parse(root, tracker, mlglib.NewKeyGenerator())
+
+	output := ""
+	for _, diag := range tracker.Diagnostics() {
+		output += fmt.Sprintf("%s (%d, %d): %s [%s]\n", diag.Type, diag.Position.Row, diag.Position.Column, diag.Message, diag.Origin)
+	}
+
+	assert.Equal(t, "", output)
 	assert.True(t, ok)
 	assert.Equal(t, 0, len(tracker.Diagnostics()))
 }

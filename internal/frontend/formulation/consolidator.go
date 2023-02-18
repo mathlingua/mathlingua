@@ -124,13 +124,21 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]], track
 			Rhs:    lhs,
 		}
 	case *ast.PseudoTokenNode:
-		// a token, for example :=, :=>, is, isnot
+		// a token, for example :=, :=>, :->, is, isnot
 		switch {
 		case top.Type == ast.ColonArrow:
 			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
 			tmp := toNode(items, tracker)
 			lhs := checkType(tmp, default_expression, "Expression", tracker, top.Start())
 			return &ast.ExpressionColonArrowItem{
+				Lhs: lhs,
+				Rhs: rhs,
+			}
+		case top.Type == ast.ColonDashArrow:
+			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker, top.Start())
+			tmp := toNode(items, tracker)
+			lhs := checkType(tmp, default_expression, "Expression", tracker, top.Start())
+			return &ast.ExpressionColonDashArrowItem{
 				Lhs: lhs,
 				Rhs: rhs,
 			}
@@ -252,6 +260,8 @@ func isOperator(node ast.FormulationNodeType) bool {
 			return false
 		case ast.ColonArrow:
 			return false
+		case ast.ColonDashArrow:
+			return false
 		case ast.Operator:
 			return true
 		case ast.Is:
@@ -294,6 +304,8 @@ func isSpecialOperator(node ast.FormulationNodeType) bool {
 		case ast.ColonEquals:
 			return true
 		case ast.ColonArrow:
+			return true
+		case ast.ColonDashArrow:
 			return true
 		case ast.Operator:
 			return false
@@ -364,6 +376,7 @@ const is_not_is_precedence = 1
 const as_precedence = 2
 const colon_equal_precedence = 3
 const colon_arrow_precedence = 3
+const colon_dash_arrow_precedence = 3
 const right_arrow_precedence = 3
 const equal_like_precedence = 4
 const enclosed_infix_precedence = 5
@@ -379,6 +392,7 @@ const is_not_is_associativity = LeftAssociative
 const as_associativity = LeftAssociative
 const colon_equal_associativity = RightAssociative
 const colon_arrow_associativity = RightAssociative
+const colon_dash_arrow_associativity = RightAssociative
 const right_arrow_associativity = RightAssociative
 const equal_like_associativity = RightAssociative
 const enclosed_infix_associativity = LeftAssociative
@@ -400,6 +414,8 @@ func getOperatorPrecedenceAssociativityByText(text string, itemType ItemType) (i
 		return colon_equal_precedence, colon_equal_associativity
 	case text == ":=>":
 		return colon_arrow_precedence, colon_arrow_associativity
+	case text == ":->":
+		return colon_dash_arrow_precedence, colon_dash_arrow_associativity
 	case strings.Contains(text, "!="):
 		return equal_like_precedence, equal_like_associativity
 	case strings.Contains(text, "="):

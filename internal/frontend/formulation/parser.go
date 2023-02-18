@@ -1156,6 +1156,10 @@ func (fp *formulationParser) colonArrowToken() (ast.PseudoTokenNode, bool) {
 	return fp.pseudoToken(ast.ColonArrow)
 }
 
+func (fp *formulationParser) colonDashArrowToken() (ast.PseudoTokenNode, bool) {
+	return fp.pseudoToken(ast.ColonDashArrow)
+}
+
 func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 	if as, ok := fp.asKeyword(); ok {
 		return as, ok
@@ -1183,6 +1187,10 @@ func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 
 	if colonArrow, ok := fp.colonArrowToken(); ok {
 		return colonArrow, ok
+	}
+
+	if colonDashArrow, ok := fp.colonDashArrowToken(); ok {
+		return colonDashArrow, ok
 	}
 
 	if rightArrow, ok := fp.rightArrow(); ok {

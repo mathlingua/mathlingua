@@ -2413,7 +2413,7 @@ func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 			}
 		}
 	}
-	p.tracker.Append(newError("Expected a '... :=> ...' item", arg.MetaData.Start))
+	p.tracker.Append(newError("Expected a '... :=> ...' or '... :-> ...' item", arg.MetaData.Start))
 	return ast.Alias{}
 }
 

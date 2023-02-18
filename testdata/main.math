@@ -86,7 +86,7 @@ specifies:
 . '0 := \natural.0'
 . 'succ := \natural.succ'
 Provides:
-. 'n [in]: N :=> n [in]: X'
+. 'n [in]: N :-> n [in]: X'
 ------------------------------------------
 Id: "be94a68c-ee2b-4509-85f4-4be04456b520"
 
@@ -202,7 +202,7 @@ Defines: Z
 means: 'Z is \set'
 specifies: 'Z := \set[x,y]{(x,y) | x [in]: X ; y [in]: Y}'
 Provides:
-. 'z [in]: Z :=> x [in]: X \and/ y [in]: Y'
+. '(x, y) [in]: Z :-> x [in]: X \and/ y [in]: Y'
 Documented:
 . called: "cross product of X? and Y?"
 . written: "X? \cross Y?"
@@ -253,7 +253,7 @@ Describes: M := (X, *)
 extends: 'X is \set'
 satisfies: '"*" is \binary.operation:on{M}'
 Provides:
-. symbol: 'x [in]: M :=> x is \magma.element:of{M}'
+. symbol: 'x [in]: M :-> x is \magma.element:of{M}'
   written: "x? \in M?"
 Documented:
 . called:
@@ -280,7 +280,7 @@ Describes: S := (X, *)
 extends: 'S is \magma'
 satisfies: '"*" is \associative.binary.operation:on{S}'
 Provides:
-. symbol: 'x [in]: S :=> x is \semigroup.operation:of{S}'
+. symbol: 'x [in]: S :-> x is \semigroup.operation:of{S}'
   written: "x? \in S?"
 Documented:
 . called: "semigroup"
@@ -309,7 +309,7 @@ satisfies:
   . 'x * e = x'
   . 'e * x = x'
 Provides:
-. symbol: 'x [in]: M :=> x is \monoid.element:of{M}'
+. symbol: 'x [in]: M :-> x is \monoid.element:of{M}'
   written: "x? \in M?"
 Documented:
 . called: "monoid"
@@ -355,7 +355,7 @@ satisfies:
     . 'x * y = e'
     . 'y * x = e'
 Provides:
-. symbol: 'x [in]: G :=> x is \group.element:of{G}'
+. symbol: 'x [in]: G :-> x is \group.element:of{G}'
   written: "x? \in G?"
 Documented:
 . called: "group"
@@ -412,7 +412,7 @@ satisfies:
   . 'x * (y + z) = (x * y) + (x * z)'
   . '(x + y) * z = (x * z) + (y * z)'
 Provides:
-. 'x [in]: R :=> x is \rng.element:of{G}'
+. 'x [in]: R :-> x is \rng.element:of{G}'
 Documented:
 . called: "rng"
 ------------------------------------------
@@ -437,7 +437,7 @@ extends:
 . 'R is \rng'
 . '(X, "*", 1) is \monoid'
 Provides:
-. 'x [in]: R :=> x is \ring.element:of{G}'
+. 'x [in]: R :-> x is \ring.element:of{G}'
 Documented:
 . called: "ring"
 ------------------------------------------
@@ -509,7 +509,7 @@ specifies:
     . 'x * y = 1'
     . 'y * x = 1'
 Provides:
-. symbol: 'x [in]: F :=> x is \field.element:of{F}'
+. symbol: 'x [in]: F :-> x is \field.element:of{F}'
 Documented:
 . called: "field"
 ------------------------------------------
@@ -695,4 +695,7 @@ content: "something"
 References: "$some.reference"
 ------------------------------------------
 Id: "b62c1951-23e7-4304-b5fc-f1e12341a953"
+
+
+
 

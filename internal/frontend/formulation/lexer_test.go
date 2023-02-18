@@ -27,7 +27,7 @@ import (
 func TestFormulationLexer(t *testing.T) {
 	tracker := frontend.NewDiagnosticTracker()
 	lexer := NewLexer(`
-xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is \something/ x as \[something] "*+" name' @ extends [: :]=>abc=
+xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is \something/ x as \[something] "*+" name' @ extends [: :]=>abc=:->
 `, tracker)
 
 	actual := "\n"
@@ -111,6 +111,7 @@ extends Extends
 => RArrow
 abc Name
 = Operator
+:-> ColonDashArrow
 `
 
 	assert.Equal(t, expected, actual)

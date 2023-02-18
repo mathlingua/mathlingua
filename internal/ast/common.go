@@ -141,6 +141,7 @@ func (MetaKinds) MlgNodeType()                              {}
 func (StructuralColonEqualsForm) MlgNodeType()              {}
 func (ExpressionColonEqualsItem) MlgNodeType()              {}
 func (ExpressionColonArrowItem) MlgNodeType()               {}
+func (ExpressionColonDashArrowItem) MlgNodeType()           {}
 func (EnclosedNonCommandOperatorTarget) MlgNodeType()       {}
 func (NonEnclosedNonCommandOperatorTarget) MlgNodeType()    {}
 func (CommandOperatorTarget) MlgNodeType()                  {}
@@ -812,6 +813,11 @@ func (n *ExpressionColonEqualsItem) ForEach(fn func(subNode MlgNodeType)) {
 }
 
 func (n *ExpressionColonArrowItem) ForEach(fn func(subNode MlgNodeType)) {
+	fn(n.Lhs)
+	fn(n.Rhs)
+}
+
+func (n *ExpressionColonDashArrowItem) ForEach(fn func(subNode MlgNodeType)) {
 	fn(n.Lhs)
 	fn(n.Rhs)
 }

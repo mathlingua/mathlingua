@@ -46,7 +46,8 @@ func TestParserSmoke(t *testing.T) {
 
 	output := ""
 	for _, diag := range tracker.Diagnostics() {
-		output += fmt.Sprintf("%s (%d, %d): %s [%s]\n", diag.Type, diag.Position.Row, diag.Position.Column, diag.Message, diag.Origin)
+		output += fmt.Sprintf("%s (%d, %d): %s [%s]\n", diag.Type, diag.Position.Row,
+			diag.Position.Column, diag.Message, diag.Origin)
 	}
 
 	assert.Equal(t, "", output)

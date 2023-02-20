@@ -236,7 +236,8 @@ func getTokens(lexer2 shared.Lexer, tracker frontend.DiagnosticTracker) []ast.To
 	for j < len(tokens) {
 		cur := tokens[j]
 		j++
-		if cur.Type == ast.BeginInlineArgument && j < len(tokens) && tokens[j].Type == ast.EndInlineArgument {
+		if cur.Type == ast.BeginInlineArgument && j < len(tokens) &&
+			tokens[j].Type == ast.EndInlineArgument {
 			j++
 			// skip the begin and end inline argument tokens because the argument is empty
 		} else {

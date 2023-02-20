@@ -42,7 +42,7 @@ func NewLexer(tokens []ast.Token) Lexer {
 	}
 }
 
-///////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type snapshot struct {
 	id         int
@@ -103,14 +103,16 @@ func (lex *lexer) Snapshot() int {
 
 func (lex *lexer) Commit(id int) {
 	if lex.snapshots.IsEmpty() || lex.snapshots.Peek().id != id {
-		panic(fmt.Sprintf("Lexer requested committing with id %d but expected %d", id, lex.snapshots.Peek().id))
+		panic(fmt.Sprintf("Lexer requested committing with id %d but expected %d",
+			id, lex.snapshots.Peek().id))
 	}
 	lex.snapshots.Pop()
 }
 
 func (lex *lexer) RollBack(id int) {
 	if lex.snapshots.IsEmpty() || lex.snapshots.Peek().id != id {
-		panic(fmt.Sprintf("Lexer requested rolling back with id %d but expected %d", id, lex.snapshots.Peek().id))
+		panic(fmt.Sprintf("Lexer requested rolling back with id %d but expected %d",
+			id, lex.snapshots.Peek().id))
 	}
 	top := lex.snapshots.Pop()
 	lex.index = top.startIndex

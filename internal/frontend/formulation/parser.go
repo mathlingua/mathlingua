@@ -26,7 +26,8 @@ import (
 	"strings"
 )
 
-func ParseExpression(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.FormulationNodeType, bool) {
+func ParseExpression(text string, start ast.Position, tracker frontend.DiagnosticTracker,
+	keyGen mlglib.KeyGenerator) (ast.FormulationNodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
@@ -40,7 +41,8 @@ func ParseExpression(text string, start ast.Position, tracker frontend.Diagnosti
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
-func ParseForm(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.FormulationNodeType, bool) {
+func ParseForm(text string, start ast.Position, tracker frontend.DiagnosticTracker,
+	keyGen mlglib.KeyGenerator) (ast.FormulationNodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
@@ -54,7 +56,8 @@ func ParseForm(text string, start ast.Position, tracker frontend.DiagnosticTrack
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
-func ParseId(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.IdType, bool) {
+func ParseId(text string, start ast.Position, tracker frontend.DiagnosticTracker,
+	keyGen mlglib.KeyGenerator) (ast.IdType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
@@ -68,7 +71,8 @@ func ParseId(text string, start ast.Position, tracker frontend.DiagnosticTracker
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
-func ParseSignature(text string, start ast.Position, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.Signature, bool) {
+func ParseSignature(text string, start ast.Position, tracker frontend.DiagnosticTracker,
+	keyGen mlglib.KeyGenerator) (ast.Signature, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
@@ -82,7 +86,7 @@ func ParseSignature(text string, start ast.Position, tracker frontend.Diagnostic
 	return node, tracker.Length() == numDiagBefore
 }
 
-////////////////////// utility functions ////////////////////////////////////
+//////////////////////////////// utility functions /////////////////////////////////////////////////
 
 type formulationParser struct {
 	lexer   shared.Lexer
@@ -103,7 +107,8 @@ func (fp *formulationParser) has(tokenType ast.TokenType) bool {
 }
 
 func (fp *formulationParser) hasHas(tokenType1 ast.TokenType, tokenType2 ast.TokenType) bool {
-	return fp.lexer.HasNextNext() && fp.lexer.Peek().Type == tokenType1 && fp.lexer.PeekPeek().Type == tokenType2
+	return fp.lexer.HasNextNext() && fp.lexer.Peek().Type == tokenType1 &&
+		fp.lexer.PeekPeek().Type == tokenType2
 }
 
 func (fp *formulationParser) next() ast.Token {
@@ -147,7 +152,7 @@ func (fp *formulationParser) expect(tokenType ast.TokenType) (ast.Token, bool) {
 	return fp.next(), true
 }
 
-////////////////////// expressions //////////////////////////////////////////
+///////////////////////////////////// expressions //////////////////////////////////////////////////
 
 func (fp *formulationParser) parenArgs() (*[]ast.ExpressionType, bool) {
 	id := fp.lexer.Snapshot()
@@ -472,7 +477,8 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 	// is at least one infix operator
 	if isIndex == -1 && extendsIndex == -1 && minPrecIndexMaxIndex >= 0 {
 		if minPrecIndexMinIndex != minPrecIndexMaxIndex {
-			fp.error("A multiplexed operator can only be used if exactly one operator has minimum precedence")
+			fp.error(
+				"A multiplexed operator can only be used if exactly one operator has minimum precedence")
 			return nil, false
 		} else {
 			lhs := make([]ast.ExpressionType, 0)
@@ -577,7 +583,8 @@ func max(x, y int) int {
 	}
 }
 
-func (fp *formulationParser) expressionType(additionalTerminators ...ast.TokenType) (ast.ExpressionType, bool) {
+func (fp *formulationParser) expressionType(
+	additionalTerminators ...ast.TokenType) (ast.ExpressionType, bool) {
 	if exp, ok := fp.pseudoExpression(additionalTerminators...); ok {
 		res, consolidateOk := Consolidate(exp.Children, fp.tracker)
 		if resAsExp, resAsExpOk := res.(ast.ExpressionType); resAsExpOk {
@@ -598,7 +605,8 @@ func (fp *formulationParser) isExpressionTerminator(tokenType ast.TokenType) boo
 		tokenType == ast.Semicolon
 }
 
-func (fp *formulationParser) pseudoExpression(additionalTerminators ...ast.TokenType) (ast.PseudoExpression, bool) {
+func (fp *formulationParser) pseudoExpression(
+	additionalTerminators ...ast.TokenType) (ast.PseudoExpression, bool) {
 	isTerminator := func(tokType ast.TokenType) bool {
 		if fp.isExpressionTerminator(tokType) {
 			return true
@@ -999,7 +1007,8 @@ func (fp *formulationParser) chainExpressionPart() (ast.ExpressionType, bool) {
 	return nil, false
 }
 
-func (fp *formulationParser) chainExpression(allowTrailingOperator bool) (ast.ChainExpression, bool) {
+func (fp *formulationParser) chainExpression(
+	allowTrailingOperator bool) (ast.ChainExpression, bool) {
 	hasTrailingOperator := false
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
@@ -1216,7 +1225,8 @@ func (fp *formulationParser) operatorType() (ast.OperatorType, bool) {
 	return nil, false
 }
 
-func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (ast.NonEnclosedNonCommandOperatorTarget, bool) {
+func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (
+	ast.NonEnclosedNonCommandOperatorTarget, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	hasLeftColon := false
@@ -1243,7 +1253,8 @@ func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (ast.NonEnclo
 	return ast.NonEnclosedNonCommandOperatorTarget{}, false
 }
 
-func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNonCommandOperatorTarget, bool) {
+func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
+	ast.EnclosedNonCommandOperatorTarget, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	hasLeftColon := false
@@ -2018,7 +2029,7 @@ func (fp *formulationParser) literalFormType() (ast.LiteralFormType, bool) {
 	return nil, false
 }
 
-////////////////////////////// id forms //////////////////////////////////
+////////////////////////////////////////// id forms ////////////////////////////////////////////////
 
 func (fp *formulationParser) idType() (ast.IdType, bool) {
 	if op, ok := fp.infixCommandOperatorId(); ok {
@@ -2395,7 +2406,7 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 	}, true
 }
 
-//////////////////////////////// signature ////////////////////////////////////////////
+///////////////////////////////////////// signature ////////////////////////////////////////////////
 
 func (fp *formulationParser) signature() (ast.Signature, bool) {
 	start := fp.lexer.Position()

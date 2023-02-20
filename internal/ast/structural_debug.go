@@ -620,12 +620,11 @@ func (n TextBlockItem) Debug(indent int, hasDot bool) []string {
 	return buildIndentedLineSlice(indent, hasDot, "::"+n.Text+"::")
 }
 
-////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Note: This file contains methods that look similar because a non-generic
-//       struct in Go cannot have a generic method and slices in Go do not
-//       support variances (in particular, they are not covariant).  Thus,
-//       a specialized version of each method is needed for each type.
+// Note: This file contains methods that look similar because a non-generic struct in Go cannot
+//       have a generic method and slices in Go do not support variances (in particular, they are
+//       not covariant).  Thus, a specialized version of each method is needed for each type.
 
 type debugBuilder struct {
 	lines []string
@@ -677,7 +676,8 @@ func (db *debugBuilder) AppendTextItems(items []TextItem, indent int, hasDot boo
 	}
 }
 
-func (db *debugBuilder) AppendFormulations(items []Formulation[FormulationNodeType], indent int, hasDot bool) {
+func (db *debugBuilder) AppendFormulations(
+	items []Formulation[FormulationNodeType], indent int, hasDot bool) {
 	for _, item := range items {
 		db.Append(&item, indent, hasDot)
 	}
@@ -688,22 +688,26 @@ func (db *debugBuilder) AppendSpecsSection(name string, specs []Spec, indent int
 	db.AppendSpecs(specs, indent+2, true)
 }
 
-func (db *debugBuilder) AppendClausesSection(name string, clauses []Clause, indent int, hasDot bool) {
+func (db *debugBuilder) AppendClausesSection(
+	name string, clauses []Clause, indent int, hasDot bool) {
 	db.AppendSection(name, indent, hasDot)
 	db.AppendClauses(clauses, indent+2, true)
 }
 
-func (db *debugBuilder) AppendTargetsSection(name string, targets []Target, indent int, hasDot bool) {
+func (db *debugBuilder) AppendTargetsSection(
+	name string, targets []Target, indent int, hasDot bool) {
 	db.AppendSection(name, indent, hasDot)
 	db.AppendTargets(targets, indent+2, true)
 }
 
-func (db *debugBuilder) AppendSingleTextItemSection(name string, item TextItem, indent int, hasDot bool) {
+func (db *debugBuilder) AppendSingleTextItemSection(
+	name string, item TextItem, indent int, hasDot bool) {
 	db.AppendSection(name, indent, hasDot)
 	db.Append(&item, indent+2, true)
 }
 
-func (db *debugBuilder) AppendTextItemsSection(name string, items []TextItem, indent int, hasDot bool) {
+func (db *debugBuilder) AppendTextItemsSection(
+	name string, items []TextItem, indent int, hasDot bool) {
 	db.AppendSection(name, indent, hasDot)
 	db.AppendTextItems(items, indent+2, true)
 }
@@ -721,7 +725,8 @@ func (db *debugBuilder) MaybeAppendMetaIdSection(sec *MetaIdSection, indent int,
 	}
 }
 
-func (db *debugBuilder) MaybeAppendDocumentedSection(sec *DocumentedSection, indent int, hasDot bool) {
+func (db *debugBuilder) MaybeAppendDocumentedSection(
+	sec *DocumentedSection, indent int, hasDot bool) {
 	if sec != nil {
 		db.AppendSection(UpperDocumentedName, indent, hasDot)
 		for _, item := range sec.Documented {
@@ -730,7 +735,8 @@ func (db *debugBuilder) MaybeAppendDocumentedSection(sec *DocumentedSection, ind
 	}
 }
 
-func (db *debugBuilder) MaybeAppendReferencesSection(sec *ReferencesSection, indent int, hasDot bool) {
+func (db *debugBuilder) MaybeAppendReferencesSection(
+	sec *ReferencesSection, indent int, hasDot bool) {
 	if sec != nil {
 		db.AppendSection(UpperReferencesName, indent, hasDot)
 		for _, item := range sec.References {
@@ -836,7 +842,7 @@ func (db *debugBuilder) MaybeAppendMeansSection(sec *MeansSection, indent int, h
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func buildIndent(indent int, hasDot bool) string {
 	if hasDot {

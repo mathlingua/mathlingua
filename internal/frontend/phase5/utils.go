@@ -75,11 +75,9 @@ func IdentifySections(
 			sectionQueue.Pop()
 			expectedQueue.Pop()
 		} else if isOptional {
-			// The Section found doesn't match the expected name
-			// but the expected name is optional.  So move past
-			// the expected name but don't move past the Section
-			// so it can be processed again in the next run of
-			// the loop.
+			// The Section found doesn't match the expected name but the expected name is optional.
+			// So move past the expected name but don't move past the Section so it can be processed
+			// again in the next run of the loop.
 			expectedQueue.Pop()
 		} else {
 			tracker.Append(frontend.Diagnostic{

@@ -215,9 +215,11 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 
 	if numErrors > 0 {
 		m.logger.Log("")
-		m.logger.Failure(fmt.Sprintf("Processed %d %s and found %d %s", numFilesProcessed, filesText, numErrors, errorText))
+		m.logger.Failure(fmt.Sprintf("Processed %d %s and found %d %s",
+			numFilesProcessed, filesText, numErrors, errorText))
 	} else {
-		m.logger.Success(fmt.Sprintf("Processed %d %s and found 0 errors", numFilesProcessed, filesText))
+		m.logger.Success(fmt.Sprintf("Processed %d %s and found 0 errors",
+			numFilesProcessed, filesText))
 	}
 }
 

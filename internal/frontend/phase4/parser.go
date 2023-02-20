@@ -34,7 +34,7 @@ func Parse(lexer3 shared.Lexer, tracker frontend.DiagnosticTracker) Root {
 	return root
 }
 
-///////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type phase4Parser struct {
 	lexer   shared.Lexer
@@ -160,7 +160,8 @@ func (p *phase4Parser) section() (Section, bool) {
 			args = append(args, arg)
 		} else {
 			next := p.lexer.Next()
-			p.appendDiagnostic(fmt.Sprintf("Expected an argument but found '%s'", next.Text), next.Position)
+			p.appendDiagnostic(
+				fmt.Sprintf("Expected an argument but found '%s'", next.Text), next.Position)
 		}
 	}
 

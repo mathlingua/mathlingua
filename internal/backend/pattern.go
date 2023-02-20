@@ -41,17 +41,20 @@ type CommandPattern struct {
 type PrefixOperatorPattern struct {
 }
 
-// func (pp PrefixOperatorPattern) Matches(command ast.PrefixOperatorCallExpression) PatternMatch[ast.ExpressionType]
+// func (pp PrefixOperatorPattern) Matches(command ast.PrefixOperatorCallExpression)
+//		PatternMatch[ast.ExpressionType]
 
 type PostfixOperatorPattern struct {
 }
 
-// func (pp PostfixOperatorPattern) Matches(command ast.PostfixOperatorCallExpression) PatternMatch[ast.ExpressionType]
+// func (pp PostfixOperatorPattern) Matches(command ast.PostfixOperatorCallExpression)
+//		PatternMatch[ast.ExpressionType]
 
 type InfixOperatorExpression struct {
 }
 
-// func (ip InfixOperatorExpression) Matches(command ast.InfixOperatorCallExpression) PatternMatch[ast.ExpressionType]
+// func (ip InfixOperatorExpression) Matches(command ast.InfixOperatorCallExpression)
+//		PatternMatch[ast.ExpressionType]
 
 type NamePattern struct {
 }

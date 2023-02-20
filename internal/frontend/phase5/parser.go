@@ -25,7 +25,8 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func Parse(root phase4.Root, tracker frontend.DiagnosticTracker, keyGen mlglib.KeyGenerator) (ast.Document, bool) {
+func Parse(root phase4.Root, tracker frontend.DiagnosticTracker,
+	keyGen mlglib.KeyGenerator) (ast.Document, bool) {
 	p := parser{
 		tracker: tracker,
 		keyGen:  keyGen,
@@ -33,14 +34,14 @@ func Parse(root phase4.Root, tracker frontend.DiagnosticTracker, keyGen mlglib.K
 	return p.toDocument(root)
 }
 
-//////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type parser struct {
 	tracker frontend.DiagnosticTracker
 	keyGen  mlglib.KeyGenerator
 }
 
-//////////////////////////// given ///////////////////////////////////////
+///////////////////////////////////////// given ////////////////////////////////////////////////////
 
 func (p *parser) toGivenGroup(group phase4.Group) (ast.GivenGroup, bool) {
 	if !startsWithSections(group, ast.LowerGivenName) {
@@ -70,7 +71,7 @@ func (p *parser) toGivenGroup(group phase4.Group) (ast.GivenGroup, bool) {
 	}, true
 }
 
-/////////////////////////// allOf ///////////////////////////////////////
+///////////////////////////////////////// allOf ////////////////////////////////////////////////////
 
 func (p *parser) toAllOfGroup(group phase4.Group) (ast.AllOfGroup, bool) {
 	if !startsWithSections(group, ast.LowerAllOfName) {
@@ -94,7 +95,7 @@ func (p *parser) toAllOfSection(section phase4.Section) *ast.AllOfSection {
 	}
 }
 
-/////////////////////////////// not //////////////////////////////////////
+///////////////////////////////////////// not //////////////////////////////////////////////////////
 
 func (p *parser) toNotGroup(group phase4.Group) (ast.NotGroup, bool) {
 	if !startsWithSections(group, ast.LowerNotName) {
@@ -118,7 +119,7 @@ func (p *parser) toNotSection(section phase4.Section) *ast.NotSection {
 	}
 }
 
-//////////////////////////////////// anyOf ////////////////////////////////
+////////////////////////////////////////// anyOf ///////////////////////////////////////////////////
 
 func (p *parser) toAnyOfGroup(group phase4.Group) (ast.AnyOfGroup, bool) {
 	if !startsWithSections(group, ast.LowerAnyOfName) {
@@ -142,7 +143,7 @@ func (p *parser) toAnyOfSection(section phase4.Section) *ast.AnyOfSection {
 	}
 }
 
-////////////////////////////////////// oneOf /////////////////////////////
+///////////////////////////////////////////// oneOf ////////////////////////////////////////////////
 
 func (p *parser) toOneOfGroup(group phase4.Group) (ast.OneOfGroup, bool) {
 	if !startsWithSections(group, ast.LowerOneOfName) {
@@ -166,7 +167,7 @@ func (p *parser) toOneOfSection(section phase4.Section) *ast.OneOfSection {
 	}
 }
 
-/////////////////////////////// exists //////////////////////////////////
+///////////////////////////////////// exists ///////////////////////////////////////////////////////
 
 func (p *parser) toExistsGroup(group phase4.Group) (ast.ExistsGroup, bool) {
 	if !startsWithSections(group, ast.LowerExistsName) {
@@ -215,7 +216,7 @@ func (p *parser) toSuchThatSection(section phase4.Section) *ast.SuchThatSection 
 	}
 }
 
-/////////////////////////////// existsUnique //////////////////////////////////
+/////////////////////////////////////// existsUnique ///////////////////////////////////////////////
 
 func (p *parser) toExistsUniqueGroup(group phase4.Group) (ast.ExistsUniqueGroup, bool) {
 	if !startsWithSections(group, ast.LowerExistsUniqueName) {
@@ -247,7 +248,7 @@ func (p *parser) toExistsUniqueSection(section phase4.Section) *ast.ExistsUnique
 	}
 }
 
-///////////////////////// forAll /////////////////////////////////////////
+///////////////////////////////////////// forAll ///////////////////////////////////////////////////
 
 func (p *parser) toForAllGroup(group phase4.Group) (ast.ForAllGroup, bool) {
 	if !startsWithSections(group, ast.LowerForAllName) {
@@ -291,7 +292,7 @@ func (p *parser) toThenSection(section phase4.Section) *ast.ThenSection {
 	}
 }
 
-/////////////////////////////// if ///////////////////////////////////////
+//////////////////////////////////////////// if ////////////////////////////////////////////////////
 
 func (p *parser) toIfGroup(group phase4.Group) (ast.IfGroup, bool) {
 	if !startsWithSections(group, ast.LowerIfName) {
@@ -316,7 +317,7 @@ func (p *parser) toIfSection(section phase4.Section) *ast.IfSection {
 	}
 }
 
-/////////////////////////////// iff ///////////////////////////////////////
+/////////////////////////////////////////// iff ////////////////////////////////////////////////////
 
 func (p *parser) toIffGroup(group phase4.Group) (ast.IffGroup, bool) {
 	if !startsWithSections(group, ast.LowerIffName) {
@@ -341,7 +342,7 @@ func (p *parser) toIffSection(section phase4.Section) *ast.IffSection {
 	}
 }
 
-//////////////////////////////// when ////////////////////////////////////
+////////////////////////////////////////// when ////////////////////////////////////////////////////
 
 func (p *parser) toWhenGroup(group phase4.Group) (ast.WhenGroup, bool) {
 	if !startsWithSections(group, ast.LowerWhenName) {
@@ -366,7 +367,7 @@ func (p *parser) toWhenSection(section phase4.Section) *ast.WhenSection {
 	}
 }
 
-///////////////////////////// piecewise /////////////////////////////////
+////////////////////////////////////// piecewise ///////////////////////////////////////////////////
 
 func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool) {
 	if !startsWithSections(group, ast.LowerPiecewiseName) {
@@ -387,17 +388,20 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 		}
 		i++
 		if section1.Name != ast.LowerIfName {
-			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' but found '%s'", ast.LowerIfName, section1.Name), section1.MetaData.Start))
+			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' but found '%s'",
+				ast.LowerIfName, section1.Name), section1.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
 		if i >= len(sections) {
-			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' to follow an '%s' section", ast.LowerThenName, ast.LowerIfName), section1.MetaData.Start))
+			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' to follow an '%s' section",
+				ast.LowerThenName, ast.LowerIfName), section1.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
 		section2 := sections[i]
 		i++
 		if section2.Name != ast.LowerThenName {
-			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' but found '%s'", ast.LowerThenName, section2.Name), section2.MetaData.Start))
+			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' but found '%s'",
+				ast.LowerThenName, section2.Name), section2.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
 		ifThens = append(ifThens, ast.IfThen{
@@ -414,7 +418,8 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 	for i < len(sections) {
 		sec := sections[i]
 		i++
-		p.tracker.Append(newError(fmt.Sprintf("Unexpected section '%s'", sec.Name), sec.MetaData.Start))
+		p.tracker.Append(newError(
+			fmt.Sprintf("Unexpected section '%s'", sec.Name), sec.MetaData.Start))
 	}
 	if invalid {
 		return ast.PiecewiseGroup{}, false
@@ -439,7 +444,7 @@ func (p *parser) toElseSection(section phase4.Section) *ast.ElseSection {
 	}
 }
 
-//////////////////////////////////// provides ///////////////////////////////
+//////////////////////////////////////// provides //////////////////////////////////////////////////
 
 func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGroup, bool) {
 	if !startsWithSections(group, ast.LowerSymbolName) {
@@ -529,7 +534,8 @@ func (p *parser) toSignifiesSection(section phase4.Section) *ast.SignifiesSectio
 	}
 }
 
-func (p *parser) toConnectionViewableSection(section phase4.Section) *ast.ConnectionViewableSection {
+func (p *parser) toConnectionViewableSection(
+	section phase4.Section) *ast.ConnectionViewableSection {
 	p.verifyNoArgs(section)
 	return &ast.ConnectionViewableSection{
 		MetaData: ast.MetaData(section.MetaData),
@@ -564,7 +570,7 @@ func (p *parser) toSpecifySection(section phase4.Section) *ast.SpecifySection {
 	}
 }
 
-////////////////////// codified documented items /////////////////////////////////
+/////////////////////////////// codified documented items //////////////////////////////////////////
 
 func (p *parser) toWrittenGroup(group phase4.Group) (ast.WrittenGroup, bool) {
 	if !startsWithSections(group, ast.LowerWrittenName) {
@@ -635,7 +641,7 @@ func (p *parser) toWritingAsSection(section phase4.Section) *ast.WritingAsSectio
 	}
 }
 
-////////////////////////// documented ////////////////////////////////////
+///////////////////////////////////////// documented ///////////////////////////////////////////////
 
 func (p *parser) toDocumentedSection(section phase4.Section) *ast.DocumentedSection {
 	return &ast.DocumentedSection{
@@ -826,7 +832,7 @@ func (p *parser) toNoteSection(section phase4.Section) *ast.NoteSection {
 	}
 }
 
-////////////////////////// provides //////////////////////////////////////
+////////////////////////////////////// provides ////////////////////////////////////////////////////
 
 func (p *parser) toProvidesSection(section phase4.Section) *ast.ProvidesSection {
 	return &ast.ProvidesSection{
@@ -877,7 +883,7 @@ func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, 
 	}
 }
 
-////////////////////////// aliases ////////////////////////////////////////
+///////////////////////////////////////// aliases //////////////////////////////////////////////////
 
 func (p *parser) toAliasesSection(section phase4.Section) *ast.AliasesSection {
 	return &ast.AliasesSection{
@@ -893,7 +899,7 @@ func (p *parser) toSingleAliasesSection(section phase4.Section) *ast.SingleAlias
 	}
 }
 
-////////////////////////// justified ////////////////////////////////////
+/////////////////////////////////////////// justified //////////////////////////////////////////////
 
 func (p *parser) toJustifiedSection(section phase4.Section) *ast.JustifiedSection {
 	return &ast.JustifiedSection{
@@ -981,7 +987,7 @@ func (p *parser) toBySection(section phase4.Section) *ast.BySection {
 	}
 }
 
-////////////////////////// references ///////////////////////////////////
+////////////////////////////////////// references //////////////////////////////////////////////////
 
 func (p *parser) toReferencesSection(section phase4.Section) *ast.ReferencesSection {
 	return &ast.ReferencesSection{
@@ -990,7 +996,7 @@ func (p *parser) toReferencesSection(section phase4.Section) *ast.ReferencesSect
 	}
 }
 
-///////////////////////// meta id ////////////////////////////////////////
+///////////////////////////////////////// meta id //////////////////////////////////////////////////
 
 func (p *parser) toMetaIdSection(section phase4.Section) *ast.MetaIdSection {
 	return &ast.MetaIdSection{
@@ -999,7 +1005,7 @@ func (p *parser) toMetaIdSection(section phase4.Section) *ast.MetaIdSection {
 	}
 }
 
-//////////////////////// describes //////////////////////////////////////
+////////////////////////////////////// describes ///////////////////////////////////////////////////
 
 func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool) {
 	if !startsWithSections(group, ast.UpperDescribesName) {
@@ -1100,7 +1106,7 @@ func (p *parser) toSatisfiesSection(section phase4.Section) *ast.SatisfiesSectio
 	}
 }
 
-/////////////////////// defines ////////////////////////////////////////
+///////////////////////////////////////////// defines //////////////////////////////////////////////
 
 func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 	if !startsWithSections(group, ast.UpperDefinesName) {
@@ -1220,7 +1226,7 @@ func (p *parser) toSpecifiesSection(section phase4.Section) *ast.SpecifiesSectio
 	}
 }
 
-/////////////////////// states //////////////////////////////////////////
+/////////////////////////////////////////// states /////////////////////////////////////////////////
 
 func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 	if !startsWithSections(group, ast.UpperStatesName) {
@@ -1301,7 +1307,7 @@ func (p *parser) toThatSection(section phase4.Section) *ast.ThatSection {
 	}
 }
 
-/////////////////////// axiom ///////////////////////////////////////////
+///////////////////////////////////////// axiom ////////////////////////////////////////////////////
 
 func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 	if !startsWithSections(group, ast.UpperAxiomName) {
@@ -1384,7 +1390,7 @@ func (p *parser) toUsingSection(section phase4.Section) *ast.UsingSection {
 	}
 }
 
-/////////////////////// conjecture //////////////////////////////////////
+///////////////////////////////////////// conjecture ///////////////////////////////////////////////
 
 func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, bool) {
 	if !startsWithSections(group, ast.UpperConjectureName) {
@@ -1453,7 +1459,7 @@ func (p *parser) toConjectureSection(section phase4.Section) *ast.ConjectureSect
 	}
 }
 
-/////////////////////// theorem /////////////////////////////////////////
+////////////////////////////////////////// theorem /////////////////////////////////////////////////
 
 func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 	if !startsWithSections(group, ast.UpperTheoremName) {
@@ -1534,7 +1540,7 @@ func (p *parser) toProofSection(section phase4.Section) *ast.ProofSection {
 	}
 }
 
-///////////////////////////////// text blocks /////////////////////////////
+////////////////////////////////////////// text blocks /////////////////////////////////////////////
 
 func (p *parser) toTextBlockItem(block phase4.TextBlock) *ast.TextBlockItem {
 	return &ast.TextBlockItem{
@@ -1543,7 +1549,7 @@ func (p *parser) toTextBlockItem(block phase4.TextBlock) *ast.TextBlockItem {
 	}
 }
 
-////////////////////////////////// proof //////////////////////////////////
+////////////////////////////////////////////// proof ///////////////////////////////////////////////
 
 func (p *parser) toProofGroup(group phase4.Group) (ast.ProofGroup, bool) {
 	if !startsWithSections(group, ast.UpperProofName) {
@@ -1588,7 +1594,7 @@ func (p *parser) toOfSection(section phase4.Section) *ast.OfSection {
 	}
 }
 
-///////////////////////////////// specify /////////////////////////////////
+////////////////////////////////////////// specify /////////////////////////////////////////////////
 
 func (p *parser) toSpecifyGroup(group phase4.Group) (ast.SpecifyGroup, bool) {
 	if !startsWithSections(group, ast.UpperSpecifyName) {
@@ -1752,7 +1758,7 @@ func (p *parser) toNegativeFloatSection(section phase4.Section) *ast.NegativeFlo
 	}
 }
 
-///////////////////////////////// topic ////////////////////////////////////
+//////////////////////////////////////////// topic /////////////////////////////////////////////////
 
 func (p *parser) toTopicGroup(group phase4.Group) (ast.TopicGroup, bool) {
 	if !startsWithSections(group, ast.UpperTopicName) {
@@ -1798,7 +1804,7 @@ func (p *parser) toContentSection(section phase4.Section) *ast.ContentSection {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (p *parser) toResourceGroup(group phase4.Group) (ast.ResourceGroup, bool) {
 	if !startsWithSections(group, ast.UpperResourceName) {
@@ -1900,7 +1906,7 @@ func (p *parser) toPersonSection(section phase4.Section) *ast.PersonSection {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (p *parser) toTitleGroup(group phase4.Group) (ast.TitleGroup, bool) {
 	if !startsWithSections(group, ast.LowerTitleName) {
@@ -2232,7 +2238,7 @@ func (p *parser) toDescriptionSection(section phase4.Section) *ast.DescriptionSe
 	}
 }
 
-//////////////////////////////// top level items //////////////////////////
+///////////////////////////////////////// top level items //////////////////////////////////////////
 
 func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelItemType, bool) {
 	switch item := item.(type) {
@@ -2267,7 +2273,7 @@ func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelI
 	return nil, false
 }
 
-///////////////////////////// document ///////////////////////////////////
+/////////////////////////////////////// document ///////////////////////////////////////////////////
 
 func (p *parser) toDocument(root phase4.Root) (ast.Document, bool) {
 	countBefore := p.tracker.Length()
@@ -2282,7 +2288,7 @@ func (p *parser) toDocument(root phase4.Root) (ast.Document, bool) {
 	}, p.tracker.Length() == countBefore
 }
 
-///////////////////////////// id ////////////////////////////////////////
+///////////////////////////////////////////// id ///////////////////////////////////////////////////
 
 func (p *parser) toIdItem(text string, position ast.Position) *ast.IdItem {
 	if node, ok := formulation.ParseId(text, position, p.tracker, p.keyGen); ok {
@@ -2316,12 +2322,13 @@ func (p *parser) getStringId(group phase4.Group, required bool) *string {
 	return group.Id
 }
 
-////////////////////////// arguments ////////////////////////////////////
+//////////////////////////////////////// arguments /////////////////////////////////////////////////
 
 func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.FormulationNodeType] {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
+		if node, ok := formulation.ParseExpression(
+			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Formulation[ast.FormulationNodeType]{
 				RawText:  data.Text,
 				Root:     node,
@@ -2338,7 +2345,8 @@ func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.Formulat
 func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
+		if node, ok := formulation.ParseExpression(
+			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return &ast.Formulation[ast.FormulationNodeType]{
 				RawText:  data.Text,
 				Root:     node,
@@ -2377,15 +2385,16 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 	}
 
 	p.tracker.Append(newError(fmt.Sprintf("Expected a '...', `...`, %s:, %s:, %s:, %s:, or %s: item",
-		ast.LowerExistsName, ast.LowerExistsUniqueName, ast.LowerForAllName, ast.LowerIfName, ast.LowerIffName),
-		arg.MetaData.Start))
+		ast.LowerExistsName, ast.LowerExistsUniqueName, ast.LowerForAllName, ast.LowerIfName,
+		ast.LowerIffName), arg.MetaData.Start))
 	return &ast.Formulation[ast.FormulationNodeType]{}
 }
 
 func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
+		if node, ok := formulation.ParseExpression(
+			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Spec{
 				RawText:  data.Text,
 				Root:     node,
@@ -2396,7 +2405,8 @@ func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 			return ast.Spec{}
 		}
 	default:
-		p.tracker.Append(newError("Expected a '... is ...' or a '... <op> ...' item", arg.MetaData.Start))
+		p.tracker.Append(newError(
+			"Expected a '... is ...' or a '... <op> ...' item", arg.MetaData.Start))
 		return ast.Spec{}
 	}
 }
@@ -2404,7 +2414,8 @@ func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
+		if node, ok := formulation.ParseExpression(
+			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Alias{
 				RawText:  data.Text,
 				Root:     node,
@@ -2431,7 +2442,8 @@ func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 			return ast.Target{}
 		}
 	default:
-		p.tracker.Append(newError("Expected a name, function, set, tuple, or ':=' declaration", arg.MetaData.Start))
+		p.tracker.Append(newError(
+			"Expected a name, function, set, tuple, or ':=' declaration", arg.MetaData.Start))
 		return ast.Target{}
 	}
 }
@@ -2542,7 +2554,8 @@ func (p *parser) toBiographySection(section phase4.Section) *ast.BiographySectio
 func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[ast.Signature] {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseSignature(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
+		if node, ok := formulation.ParseSignature(
+			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Formulation[ast.Signature]{
 				RawText:  data.Text,
 				Root:     node,
@@ -2558,7 +2571,7 @@ func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[ast.Signat
 	return ast.Formulation[ast.Signature]{}
 }
 
-//////////////////////// argument lists /////////////////////////////////
+///////////////////////////////////// argument lists ///////////////////////////////////////////////
 
 func (p *parser) toFormulations(args []phase4.Argument) []ast.Formulation[ast.FormulationNodeType] {
 	result := make([]ast.Formulation[ast.FormulationNodeType], 0)
@@ -2680,7 +2693,7 @@ func (p *parser) toSpecifyTypes(args []phase4.Argument) []ast.SpecifyType {
 	return result
 }
 
-/////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (p *parser) verifyNoArgs(section phase4.Section) {
 	if len(section.Args) > 0 {
@@ -2697,12 +2710,14 @@ func (p *parser) exactlyOneClause(section phase4.Section) ast.Clause {
 	return exactlyOne(p.toClauses(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) exactlyOneFormulation(section phase4.Section) ast.Formulation[ast.FormulationNodeType] {
+func (p *parser) exactlyOneFormulation(
+	section phase4.Section) ast.Formulation[ast.FormulationNodeType] {
 	var def ast.Formulation[ast.FormulationNodeType] = ast.Formulation[ast.FormulationNodeType]{}
 	return exactlyOne(p.toFormulations(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) oneOrMoreFormulation(section phase4.Section) []ast.Formulation[ast.FormulationNodeType] {
+func (p *parser) oneOrMoreFormulation(
+	section phase4.Section) []ast.Formulation[ast.FormulationNodeType] {
 	return oneOrMore(p.toFormulations(section.Args), section.MetaData.Start, p.tracker)
 }
 
@@ -2774,7 +2789,7 @@ func (p *parser) oneOrMoreSpecifyTypes(section phase4.Section) []ast.SpecifyType
 	return oneOrMore(p.toSpecifyTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
-////////////////////////// support functions ////////////////////////////
+///////////////////////////////////// support functions ////////////////////////////////////////////
 
 func oneOrMore[T any](items []T, position ast.Position, tracker frontend.DiagnosticTracker) []T {
 	if len(items) == 0 {
@@ -2784,7 +2799,8 @@ func oneOrMore[T any](items []T, position ast.Position, tracker frontend.Diagnos
 	return items
 }
 
-func exactlyOne[T any](items []T, defaultItem T, position ast.Position, tracker frontend.DiagnosticTracker) T {
+func exactlyOne[T any](items []T, defaultItem T, position ast.Position,
+	tracker frontend.DiagnosticTracker) T {
 	if len(items) != 1 {
 		tracker.Append(newError("Expected at exactly one item", position))
 	}

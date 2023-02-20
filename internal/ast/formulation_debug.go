@@ -145,7 +145,7 @@ func (n ChainExpression) Debug() string {
 }
 
 func (n Signature) Debug() string {
-	result := "\\["
+	result := "\\("
 	for i, item := range n.MainNames {
 		if i > 0 {
 			result += "."
@@ -156,7 +156,7 @@ func (n Signature) Debug() string {
 		result += ":"
 		result += item
 	}
-	result += "]"
+	result += ")"
 	if n.InnerLabel != nil {
 		result += "::[" + *n.InnerLabel + "]"
 	}

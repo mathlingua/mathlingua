@@ -538,7 +538,7 @@ extends: 'x is \ring.element:of{R}'
 Provides:
 . symbol: 'x.inv :=> \field.multiplicative.inverse:of{x}:in{F}'
   written: "{x+}?^{-1}"
-. '-x :=> (F as \[abelian.group]).inv(x)'
+. '-x :=> (F as \(abelian.group)).inv(x)'
 . 'x + y :=> x [F.+] y'
 . 'x * y :=> x [F.*] y'
 . 'x - y :=> x + (-y)'

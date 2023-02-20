@@ -37,6 +37,8 @@ type MetaData struct {
 	Key   int
 }
 
+// The lint checker incorrectly reports that this function needs a return statement.
+// nolint:typecheck
 func Debug(node MlgNodeType) string {
 	switch node := node.(type) {
 	case StructuralNodeType:

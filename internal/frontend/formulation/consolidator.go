@@ -358,6 +358,8 @@ const (
 	none            generalItemType = "none"
 )
 
+// The lint checker incorrectly reports that this function needs a return statement.
+// nolint:typecheck
 func getGeneralOperatorType(prevType generalItemType, curType generalItemType,
 	nextType generalItemType) ItemType {
 	switch {

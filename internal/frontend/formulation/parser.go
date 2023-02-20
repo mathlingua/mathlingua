@@ -1443,6 +1443,8 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 /////////////////////////// forms ///////////////////////////////////////
 
 func (fp *formulationParser) form() (ast.FormulationNodeType, bool) {
+	// The lint checker incorrectly reports `start` is not used even though it is.
+	// nolint:typecheck
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	lhs, ok := fp.structuralFormType()

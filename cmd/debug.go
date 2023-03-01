@@ -32,6 +32,7 @@ import (
 	"path"
 
 	tcell "github.com/gdamore/tcell/v2"
+	"github.com/muesli/termenv"
 	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
 )
@@ -68,6 +69,7 @@ func setupScreen() {
 		useStructuralParser = true
 	}
 
+	isDarkMode := termenv.HasDarkBackground()
 	inputFile := path.Join("testbed", "input.txt")
 
 	if direct {
@@ -110,10 +112,21 @@ func setupScreen() {
 
 	app := tview.NewApplication()
 
-	outputArea := tview.NewTextView().SetDynamicColors(false)
+	outputArea := tview.NewTextView()
 	outputArea.SetTitle("Output").SetBorder(true)
+	outputArea.SetDynamicColors(false)
+	if !isDarkMode {
+		outputArea.SetTitleColor(tcell.ColorBlack)
+		outputArea.SetBorderColor(tcell.ColorBlack)
+		outputArea.SetTextColor(tcell.ColorBlack)
+		outputArea.SetBackgroundColor(tcell.ColorWhite)
+	}
 
 	helpInfo := tview.NewTextView().SetDynamicColors(true)
+	if !isDarkMode {
+		helpInfo.SetBackgroundColor(tcell.ColorWhite)
+		helpInfo.SetTextColor(tcell.ColorBlack)
+	}
 	resetHelpInfo := func() {
 		helpInfo.SetText(" Ctrl-R: check, Ctrl-T: write test case, Ctrl-C: exit, Ctrl-K: clear")
 	}
@@ -125,9 +138,13 @@ func setupScreen() {
 	}
 	resetHelpInfo()
 
-	position := tview.NewTextView().
-		SetDynamicColors(true).
-		SetTextAlign(tview.AlignRight)
+	position := tview.NewTextView()
+	position.SetDynamicColors(true)
+	position.SetTextAlign(tview.AlignRight)
+	if !isDarkMode {
+		position.SetBackgroundColor(tcell.ColorWhite)
+		position.SetTextColor(tcell.ColorBlack)
+	}
 
 	startText := ""
 	if _, err := os.Stat(inputFile); !errors.Is(err, os.ErrNotExist) {
@@ -142,6 +159,12 @@ func setupScreen() {
 	inputArea := tview.NewTextArea()
 	inputArea.SetBorder(true)
 	inputArea.SetText(startText, false)
+	if !isDarkMode {
+		inputArea.SetTitleColor(tcell.ColorBlack)
+		inputArea.SetBorderColor(tcell.ColorBlack)
+		inputArea.SetBackgroundColor(tcell.ColorWhite)
+		inputArea.SetTextStyle(tcell.StyleDefault.Attributes(tcell.AttrMask(tcell.ColorBlack)))
+	}
 
 	if useStructuralParser {
 		inputArea.SetTitle("Input (structural)")

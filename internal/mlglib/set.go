@@ -14,9 +14,38 @@
  * limitations under the License.
  */
 
-package backend
+package mlglib
 
-type Context interface {
-	IsSubTypeOf(from string, to string) bool
-	IsViewableAs(from string, to string) bool
+type Set[T comparable] interface {
+	Size() int
+	Add(value T)
+	Remove(value T)
+	Has(value T) bool
+}
+
+func NewSet[T comparable]() Set[T] {
+	return &set[T]{}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type set[T comparable] struct {
+	values map[T]interface{}
+}
+
+func (s *set[T]) Size() int {
+	return len(s.values)
+}
+
+func (s *set[T]) Add(value T) {
+	s.values[value] = nil
+}
+
+func (s *set[T]) Remove(value T) {
+	delete(s.values, value)
+}
+
+func (s *set[T]) Has(value T) bool {
+	_, ok := s.values[value]
+	return ok
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Dominic Kramer
+ * Copyright 2023 Dominic Kramer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,48 @@
 
 package backend
 
-import "mathlingua/internal/ast"
+type Scope interface {
+	GetName() (NameInfo, bool)
+}
 
-func GetSignature(cmd ast.CommandExpression) string {
-	result := "\\["
-	for i, name := range cmd.Names {
-		if i > 0 {
-			result += "."
-		}
-		result += name.Text
-	}
-	for i, name := range *cmd.NamedArgs {
-		if i > 0 {
-			result += ":"
-		}
-		result += name.Name.Text
-	}
-	result += "]"
-	return result
+type NameInfo struct {
+	IsPlaceholder   bool
+	IsNumberLiteral bool
+	Type            ResolvedType
+}
+
+type GlobalScope struct {
+}
+
+type SpecifyScope struct {
+}
+
+type ForAllScope struct {
+}
+
+type ExistsScope struct {
+}
+
+type ExistsUniqueScope struct {
+}
+
+type GivenScope struct {
+}
+
+type DefinesScope struct {
+}
+
+type DescribesScope struct {
+}
+
+type StatesScope struct {
+}
+
+type TheoremScope struct {
+}
+
+type AxiomScope struct {
+}
+
+type ConjectureScope struct {
 }

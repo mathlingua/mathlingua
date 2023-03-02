@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Dominic Kramer
+ * Copyright 2023 Dominic Kramer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,57 +16,65 @@
 
 package backend
 
-type PatternMatch[T any] struct {
+type FormPattern interface {
+	FormPattern()
 }
 
-func (pm PatternMatch[T]) Matches() bool {
-	return false
+func (NameFormPattern) FormPattern()     {}
+func (FunctionFormPattern) FormPattern() {}
+func (TupleFormPattern) FormPattern()    {}
+func (SetFormPattern) FormPattern()      {}
+
+type NameFormPattern struct {
+	Name string
 }
 
-// func (pm PatternMatch[T]) GetMatch(name string) (T, bool) {
-// 	return nil, false
-// }
-
-type Pattern interface {
-	Pattern()
-
-	Vars() []string
+type FunctionFormPattern struct {
+	TargetName string
+	Inputs     []FormPattern
+	Output     FormPattern
 }
 
-type CommandPattern struct {
+type TupleFormPattern struct {
+	Items []FormPattern
 }
 
-// func (cp CommandPattern) Matches(command ast.CommandExpression) PatternMatch[ast.ExpressionType]
-
-type PrefixOperatorPattern struct {
+type SetFormPattern struct {
+	Target    FormPattern
+	Condition FormPattern
 }
 
-// func (pp PrefixOperatorPattern) Matches(command ast.PrefixOperatorCallExpression)
-//		PatternMatch[ast.ExpressionType]
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type PostfixOperatorPattern struct {
+type InputPattern interface {
+	InputPattern()
 }
 
-// func (pp PostfixOperatorPattern) Matches(command ast.PostfixOperatorCallExpression)
-//		PatternMatch[ast.ExpressionType]
+func (InfixInputPattern) InputPattern()   {}
+func (PrefixInputPattern) InputPattern()  {}
+func (PostfixInputPattern) InputPattern() {}
+func (CommandInputPattern) InputPattern() {}
 
-type InfixOperatorExpression struct {
+type InfixInputPattern struct {
+	Lhs FormPattern
+	Rhs FormPattern
 }
 
-// func (ip InfixOperatorExpression) Matches(command ast.InfixOperatorCallExpression)
-//		PatternMatch[ast.ExpressionType]
-
-type NamePattern struct {
+type PrefixInputPattern struct {
+	Arg FormPattern
 }
 
-type FunctionPattern struct {
+type PostfixInputPattern struct {
+	Arg FormPattern
 }
 
-type TuplePattern struct {
+type CommandInputPattern struct {
+	CurlyArgs   []FormPattern
+	ParenArgs   []FormPattern
+	NamedGroups []NamedGroupInput
 }
 
-type FixedSetPattern struct {
-}
-
-type ConditionalSetPattern struct {
+type NamedGroupInput struct {
+	Name string
+	Args []FormPattern
 }

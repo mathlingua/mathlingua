@@ -24,7 +24,9 @@ type Set[T comparable] interface {
 }
 
 func NewSet[T comparable]() Set[T] {
-	return &set[T]{}
+	return &set[T]{
+		values: make(map[T]interface{}),
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -24,14 +24,14 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func Parse(lexer3 shared.Lexer, tracker frontend.DiagnosticTracker) Root {
+func Parse(lexer3 shared.Lexer, tracker frontend.DiagnosticTracker) Document {
 	parser := phase4Parser{
 		lexer:   lexer3,
 		tracker: tracker,
 		keyGen:  mlglib.NewKeyGenerator(),
 	}
-	root := parser.root()
-	return root
+	doc := parser.document()
+	return doc
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -68,7 +68,7 @@ func (p *phase4Parser) skipAheadPast(end ast.TokenType, unterminatedMessage stri
 	}
 }
 
-func (p *phase4Parser) root() Root {
+func (p *phase4Parser) document() Document {
 	start := p.lexer.Position()
 	nodes := make([]TopLevelNodeType, 0)
 	for p.lexer.HasNext() {
@@ -102,8 +102,8 @@ func (p *phase4Parser) root() Root {
 			p.appendDiagnostic("Unexpected text", next.Position)
 		}
 	}
-	return Root{
-		Type:  RootType,
+	return Document{
+		Type:  DocumentType,
 		Nodes: nodes,
 		MetaData: MetaData{
 			Start: start,

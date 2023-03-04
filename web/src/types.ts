@@ -1,6 +1,6 @@
 
 export type TextBlockType = "TextBlockType";
-export type RootType = "RootType";
+export type DocumentType = "DocumentType";
 export type GroupType = "GroupType";
 export type SectionType = "SectionType";
 export type ArgumentType = "ArgumentType";
@@ -32,7 +32,7 @@ export interface PathsResponse {
 export interface PageResponse {
 	Error: string;
 	Diagnostics: Diagnostic[] | null;
-	Root: Root;
+	Document: Document;
 }
 
 export interface MetaData {
@@ -47,8 +47,8 @@ export interface TextBlock {
 
 export type TopLevelNodeType = TextBlock | Group | null;
 
-export interface Root {
-	Type: RootType;
+export interface Document {
+	Type: DocumentType;
 	Nodes: TopLevelNodeType[] | null;
 	MetaData: MetaData;
 }

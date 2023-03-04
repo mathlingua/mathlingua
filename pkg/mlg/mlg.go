@@ -73,16 +73,16 @@ type checkResult struct {
 	Diagnostics     []diagnosticInfo `json:"diagnostics"`
 }
 
-func parse(text string) (phase4.Root, []frontend.Diagnostic) {
+func parse(text string) (phase4.Document, []frontend.Diagnostic) {
 	tracker := frontend.NewDiagnosticTracker()
 
 	lexer1 := phase1.NewLexer(text, tracker)
 	lexer2 := phase2.NewLexer(lexer1, tracker)
 	lexer3 := phase3.NewLexer(lexer2, tracker)
 
-	root := phase4.Parse(lexer3, tracker)
+	doc := phase4.Parse(lexer3, tracker)
 
-	return root, tracker.Diagnostics()
+	return doc, tracker.Diagnostics()
 }
 
 func parseDocument(text string) (ast.Document, []frontend.Diagnostic) {

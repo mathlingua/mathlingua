@@ -1,13 +1,13 @@
 import React from 'react';
-import { Root } from '../../types';
+import { Document } from '../../types';
 import { TopLevelNodeTypeView } from './TopLevelNodeTypeView';
 
-export interface RootViewProps {
-  node: Root;
+export interface DocumentViewProps {
+  node: Document;
   isOnSmallScreen: boolean;
 }
 
-export const RootView = (props: RootViewProps) => {
+export const DocumentView = (props: DocumentViewProps) => {
   return (
     <>
       {

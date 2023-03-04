@@ -25,7 +25,7 @@ type NodeType string
 
 const (
 	TextBlockType                NodeType = "TextBlockType"
-	RootType                     NodeType = "RootType"
+	DocumentType                 NodeType = "DocumentType"
 	GroupType                    NodeType = "GroupType"
 	SectionType                  NodeType = "SectionType"
 	ArgumentType                 NodeType = "ArgumentType"
@@ -262,13 +262,13 @@ func (t TextBlock) Start() ast.Position {
 	return t.MetaData.Start
 }
 
-type Root struct {
+type Document struct {
 	Type     NodeType
 	Nodes    []TopLevelNodeType
 	MetaData MetaData
 }
 
-func (r Root) write(indent int, writer CodeWriter) {
+func (r Document) write(indent int, writer CodeWriter) {
 	for _, node := range r.Nodes {
 		node.ToCode(writer)
 		writer.WriteNewline()
@@ -277,15 +277,15 @@ func (r Root) write(indent int, writer CodeWriter) {
 	}
 }
 
-func (r Root) ToCode(writer CodeWriter) {
+func (r Document) ToCode(writer CodeWriter) {
 	r.write(0, writer)
 }
 
-func (r Root) Size() int {
+func (r Document) Size() int {
 	return len(r.Nodes)
 }
 
-func (r Root) ChildAt(index int) Node {
+func (r Document) ChildAt(index int) Node {
 	return r.Nodes[index]
 }
 

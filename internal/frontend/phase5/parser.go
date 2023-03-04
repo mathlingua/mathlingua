@@ -25,13 +25,13 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func Parse(root phase4.Root, tracker frontend.DiagnosticTracker,
+func Parse(doc phase4.Document, tracker frontend.DiagnosticTracker,
 	keyGen mlglib.KeyGenerator) (ast.Document, bool) {
 	p := parser{
 		tracker: tracker,
 		keyGen:  keyGen,
 	}
-	return p.toDocument(root)
+	return p.toDocument(doc)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2275,7 +2275,7 @@ func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelI
 
 /////////////////////////////////////// document ///////////////////////////////////////////////////
 
-func (p *parser) toDocument(root phase4.Root) (ast.Document, bool) {
+func (p *parser) toDocument(root phase4.Document) (ast.Document, bool) {
 	countBefore := p.tracker.Length()
 	items := make([]ast.TopLevelItemType, 0)
 	for _, node := range root.Nodes {

@@ -7,7 +7,7 @@ import { Theme, useTheme } from './hooks/theme';
 import { Shell } from './components/Shell';
 import { Sidebar } from './components/Sidebar';
 import { PageResponse } from './types';
-import { RootView } from './components/ast/RootView';
+import { DocumentView } from './components/ast/DocumentView';
 
 export function App() {
   const theme = useTheme();
@@ -47,9 +47,9 @@ export function App() {
 
   const mainContent = (
     <div style={styles.content}>
-      {data?.Root && (
+      {data?.Document && (
         <div style={styles.page}>
-          <RootView node={data?.Root} isOnSmallScreen={isOnSmallScreen} />
+          <DocumentView node={data?.Document} isOnSmallScreen={isOnSmallScreen} />
         </div>
       )}
     </div>

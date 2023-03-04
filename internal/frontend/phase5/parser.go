@@ -63,11 +63,11 @@ func (p *parser) toGivenGroup(group phase4.Group) (ast.GivenGroup, bool) {
 	}
 	then := *p.toThenSection(sections[ast.LowerThenName])
 	return ast.GivenGroup{
-		Given:    given,
-		Where:    where,
-		SuchThat: suchThat,
-		Then:     then,
-		MetaData: ast.MetaData(group.MetaData),
+		Given:          given,
+		Where:          where,
+		SuchThat:       suchThat,
+		Then:           then,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
@@ -83,15 +83,15 @@ func (p *parser) toAllOfGroup(group phase4.Group) (ast.AllOfGroup, bool) {
 		return ast.AllOfGroup{}, false
 	}
 	return ast.AllOfGroup{
-		AllOf:    *p.toAllOfSection(sections[ast.LowerAllOfName]),
-		MetaData: ast.MetaData(group.MetaData),
+		AllOf:          *p.toAllOfSection(sections[ast.LowerAllOfName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toAllOfSection(section phase4.Section) *ast.AllOfSection {
 	return &ast.AllOfSection{
-		Clauses:  p.oneOrMoreClauses(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Clauses:        p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -107,15 +107,15 @@ func (p *parser) toNotGroup(group phase4.Group) (ast.NotGroup, bool) {
 		return ast.NotGroup{}, false
 	}
 	return ast.NotGroup{
-		Not:      *p.toNotSection(sections[ast.LowerNotName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Not:            *p.toNotSection(sections[ast.LowerNotName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toNotSection(section phase4.Section) *ast.NotSection {
 	return &ast.NotSection{
-		Clause:   p.exactlyOneClause(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Clause:         p.exactlyOneClause(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -131,15 +131,15 @@ func (p *parser) toAnyOfGroup(group phase4.Group) (ast.AnyOfGroup, bool) {
 		return ast.AnyOfGroup{}, false
 	}
 	return ast.AnyOfGroup{
-		AnyOf:    *p.toAnyOfSection(sections[ast.LowerAnyOfName]),
-		MetaData: ast.MetaData(group.MetaData),
+		AnyOf:          *p.toAnyOfSection(sections[ast.LowerAnyOfName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toAnyOfSection(section phase4.Section) *ast.AnyOfSection {
 	return &ast.AnyOfSection{
-		Clauses:  p.oneOrMoreClauses(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Clauses:        p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -155,15 +155,15 @@ func (p *parser) toOneOfGroup(group phase4.Group) (ast.OneOfGroup, bool) {
 		return ast.OneOfGroup{}, false
 	}
 	return ast.OneOfGroup{
-		OneOf:    *p.toOneOfSection(sections[ast.LowerOneOfName]),
-		MetaData: ast.MetaData(group.MetaData),
+		OneOf:          *p.toOneOfSection(sections[ast.LowerOneOfName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toOneOfSection(section phase4.Section) *ast.OneOfSection {
 	return &ast.OneOfSection{
-		Clauses:  p.oneOrMoreClauses(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Clauses:        p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -188,31 +188,31 @@ func (p *parser) toExistsGroup(group phase4.Group) (ast.ExistsGroup, bool) {
 		suchThat = p.toSuchThatSection(sect)
 	}
 	return ast.ExistsGroup{
-		Exists:   exists,
-		Where:    where,
-		SuchThat: suchThat,
-		MetaData: ast.MetaData(group.MetaData),
+		Exists:         exists,
+		Where:          where,
+		SuchThat:       suchThat,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toExistsSection(section phase4.Section) *ast.ExistsSection {
 	return &ast.ExistsSection{
-		Targets:  p.oneOrMoreTargets(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Targets:        p.oneOrMoreTargets(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toWhereSection(section phase4.Section) *ast.WhereSection {
 	return &ast.WhereSection{
-		Specs:    p.oneOrMoreSpecs(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Specs:          p.oneOrMoreSpecs(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toSuchThatSection(section phase4.Section) *ast.SuchThatSection {
 	return &ast.SuchThatSection{
-		Clauses:  p.oneOrMoreClauses(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Clauses:        p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -234,17 +234,17 @@ func (p *parser) toExistsUniqueGroup(group phase4.Group) (ast.ExistsUniqueGroup,
 	}
 	suchThat := *p.toSuchThatSection(sections[ast.LowerSuchThatName])
 	return ast.ExistsUniqueGroup{
-		ExistsUnique: existsUnique,
-		Where:        where,
-		SuchThat:     suchThat,
-		MetaData:     ast.MetaData(group.MetaData),
+		ExistsUnique:   existsUnique,
+		Where:          where,
+		SuchThat:       suchThat,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toExistsUniqueSection(section phase4.Section) *ast.ExistsUniqueSection {
 	return &ast.ExistsUniqueSection{
-		Targets:  p.oneOrMoreTargets(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Targets:        p.oneOrMoreTargets(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -270,25 +270,25 @@ func (p *parser) toForAllGroup(group phase4.Group) (ast.ForAllGroup, bool) {
 	}
 	then := *p.toThenSection(sections[ast.LowerThenName])
 	return ast.ForAllGroup{
-		ForAll:   forAll,
-		Where:    where,
-		SuchThat: suchThat,
-		Then:     then,
-		MetaData: ast.MetaData(group.MetaData),
+		ForAll:         forAll,
+		Where:          where,
+		SuchThat:       suchThat,
+		Then:           then,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toForAllSection(section phase4.Section) *ast.ForAllSection {
 	return &ast.ForAllSection{
-		Targets:  p.oneOrMoreTargets(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Targets:        p.oneOrMoreTargets(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toThenSection(section phase4.Section) *ast.ThenSection {
 	return &ast.ThenSection{
-		Clauses:  p.oneOrMoreClauses(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Clauses:        p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -304,16 +304,16 @@ func (p *parser) toIfGroup(group phase4.Group) (ast.IfGroup, bool) {
 		return ast.IfGroup{}, false
 	}
 	return ast.IfGroup{
-		If:       *p.toIfSection(sections[ast.LowerIfName]),
-		Then:     *p.toThenSection(sections[ast.LowerThenName]),
-		MetaData: ast.MetaData(group.MetaData),
+		If:             *p.toIfSection(sections[ast.LowerIfName]),
+		Then:           *p.toThenSection(sections[ast.LowerThenName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toIfSection(section phase4.Section) *ast.IfSection {
 	return &ast.IfSection{
-		Clauses:  p.oneOrMoreClauses(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Clauses:        p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -329,16 +329,16 @@ func (p *parser) toIffGroup(group phase4.Group) (ast.IffGroup, bool) {
 		return ast.IffGroup{}, false
 	}
 	return ast.IffGroup{
-		Iff:      *p.toIffSection(sections[ast.LowerIffName]),
-		Then:     *p.toThenSection(sections[ast.LowerThenName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Iff:            *p.toIffSection(sections[ast.LowerIffName]),
+		Then:           *p.toThenSection(sections[ast.LowerThenName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toIffSection(section phase4.Section) *ast.IffSection {
 	return &ast.IffSection{
-		Clauses:  p.oneOrMoreClauses(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Clauses:        p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -354,16 +354,16 @@ func (p *parser) toWhenGroup(group phase4.Group) (ast.WhenGroup, bool) {
 		return ast.WhenGroup{}, false
 	}
 	return ast.WhenGroup{
-		When:     *p.toWhenSection(sections[ast.LowerWhenName]),
-		Then:     *p.toThenSection(sections[ast.LowerThenName]),
-		MetaData: ast.MetaData(group.MetaData),
+		When:           *p.toWhenSection(sections[ast.LowerWhenName]),
+		Then:           *p.toThenSection(sections[ast.LowerThenName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toWhenSection(section phase4.Section) *ast.WhenSection {
 	return &ast.WhenSection{
-		When:     p.oneOrMoreClauses(section),
-		MetaData: ast.MetaData(section.MetaData),
+		When:           p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -425,22 +425,22 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 		return ast.PiecewiseGroup{}, false
 	}
 	return ast.PiecewiseGroup{
-		Piecewise: piecewise,
-		IfThen:    ifThens,
-		Else:      elseSec,
-		MetaData:  ast.MetaData(group.MetaData),
+		Piecewise:      piecewise,
+		IfThen:         ifThens,
+		Else:           elseSec,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toPiecewiseSection(section phase4.Section) *ast.PiecewiseSection {
 	p.verifyNoArgs(section)
-	return &ast.PiecewiseSection{MetaData: ast.MetaData(section.MetaData)}
+	return &ast.PiecewiseSection{CommonMetaData: ast.CommonMetaData(section.MetaData)}
 }
 
 func (p *parser) toElseSection(section phase4.Section) *ast.ElseSection {
 	return &ast.ElseSection{
-		Items:    p.oneOrMoreClauses(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Items:          p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -461,23 +461,23 @@ func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGrou
 		written = p.toWrittenSection(sect)
 	}
 	return ast.SymbolWrittenGroup{
-		Symbol:   symbol,
-		Written:  written,
-		MetaData: ast.MetaData(group.MetaData),
+		Symbol:         symbol,
+		Written:        written,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toSymbolSection(section phase4.Section) *ast.SymbolSection {
 	return &ast.SymbolSection{
-		Symbol:   p.exactlyOneAlias(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Symbol:         p.exactlyOneAlias(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toWrittenSection(section phase4.Section) *ast.WrittenSection {
 	return &ast.WrittenSection{
-		Written:  p.oneOrMoreTextItems(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Written:        p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -510,27 +510,27 @@ func (p *parser) toConnectionGroup(group phase4.Group) (ast.ConnectionGroup, boo
 		through = p.toConnectionThroughSection(sect)
 	}
 	return ast.ConnectionGroup{
-		Connection: connection,
-		Using:      using,
-		Means:      means,
-		Signfies:   signifies,
-		Viewable:   viewable,
-		Through:    through,
-		MetaData:   ast.MetaData(group.MetaData),
+		Connection:     connection,
+		Using:          using,
+		Means:          means,
+		Signfies:       signifies,
+		Viewable:       viewable,
+		Through:        through,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toConnectionSection(section phase4.Section) *ast.ConnectionSection {
 	p.verifyNoArgs(section)
 	return &ast.ConnectionSection{
-		MetaData: ast.MetaData(section.MetaData),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toSignifiesSection(section phase4.Section) *ast.SignifiesSection {
 	return &ast.SignifiesSection{
-		Signifies: p.exactlyOneSpec(section),
-		MetaData:  ast.MetaData(section.MetaData),
+		Signifies:      p.exactlyOneSpec(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -538,35 +538,35 @@ func (p *parser) toConnectionViewableSection(
 	section phase4.Section) *ast.ConnectionViewableSection {
 	p.verifyNoArgs(section)
 	return &ast.ConnectionViewableSection{
-		MetaData: ast.MetaData(section.MetaData),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toConnectionThroughSection(section phase4.Section) *ast.ConnectionThroughSection {
 	return &ast.ConnectionThroughSection{
-		Through:  p.exactlyOneFormulation(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Through:        p.exactlyOneFormulation(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toOperationsSection(section phase4.Section) *ast.OperationsSection {
 	p.verifyNoArgs(section)
 	return &ast.OperationsSection{
-		MetaData: ast.MetaData(section.MetaData),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toOnSection(section phase4.Section) *ast.OnSection {
 	return &ast.OnSection{
-		On:       p.oneOrMoreTargets(section),
-		MetaData: ast.MetaData(section.MetaData),
+		On:             p.oneOrMoreTargets(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toSpecifySection(section phase4.Section) *ast.SpecifySection {
 	return &ast.SpecifySection{
-		Specify:  p.oneOrMoreClauses(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Specify:        p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -582,8 +582,8 @@ func (p *parser) toWrittenGroup(group phase4.Group) (ast.WrittenGroup, bool) {
 		return ast.WrittenGroup{}, false
 	}
 	return ast.WrittenGroup{
-		Written:  *p.toWrittenSection(sections[ast.LowerWrittenName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Written:        *p.toWrittenSection(sections[ast.LowerWrittenName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
@@ -597,15 +597,15 @@ func (p *parser) toCalledGroup(group phase4.Group) (ast.CalledGroup, bool) {
 		return ast.CalledGroup{}, false
 	}
 	return ast.CalledGroup{
-		Called:   *p.toCalledSection(sections[ast.LowerCalledName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Called:         *p.toCalledSection(sections[ast.LowerCalledName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toCalledSection(section phase4.Section) *ast.CalledSection {
 	return &ast.CalledSection{
-		Called:   p.oneOrMoreTextItems(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Called:         p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -621,23 +621,23 @@ func (p *parser) toWritingGroup(group phase4.Group) (ast.WritingGroup, bool) {
 	writing := *p.toWritingSection(sections[ast.LowerWritingName])
 	as := *p.toWritingAsSection(sections[ast.LowerAsName])
 	return ast.WritingGroup{
-		Writing:  writing,
-		As:       as,
-		MetaData: ast.MetaData(group.MetaData),
+		Writing:        writing,
+		As:             as,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toWritingSection(section phase4.Section) *ast.WritingSection {
 	return &ast.WritingSection{
-		Writing:  p.exactlyOneTarget(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Writing:        p.exactlyOneTarget(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toWritingAsSection(section phase4.Section) *ast.WritingAsSection {
 	return &ast.WritingAsSection{
-		As:       p.oneOrMoreTextItems(section),
-		MetaData: ast.MetaData(section.MetaData),
+		As:             p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -645,8 +645,8 @@ func (p *parser) toWritingAsSection(section phase4.Section) *ast.WritingAsSectio
 
 func (p *parser) toDocumentedSection(section phase4.Section) *ast.DocumentedSection {
 	return &ast.DocumentedSection{
-		Documented: p.oneOrMoreDocumentedTypes(section),
-		MetaData:   ast.MetaData(section.MetaData),
+		Documented:     p.oneOrMoreDocumentedTypes(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -689,15 +689,15 @@ func (p *parser) toOverviewGroup(group phase4.Group) (ast.OverviewGroup, bool) {
 		return ast.OverviewGroup{}, false
 	}
 	return ast.OverviewGroup{
-		Overview: *p.toOverviewSection(sections[ast.LowerOverviewName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Overview:       *p.toOverviewSection(sections[ast.LowerOverviewName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toOverviewSection(section phase4.Section) *ast.OverviewSection {
 	return &ast.OverviewSection{
-		Overview: p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Overview:       p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -711,15 +711,15 @@ func (p *parser) toMotivationGroup(group phase4.Group) (ast.MotivationGroup, boo
 		return ast.MotivationGroup{}, false
 	}
 	return ast.MotivationGroup{
-		Motivation: *p.toMotivationSection(sections[ast.LowerMotivationName]),
-		MetaData:   ast.MetaData(group.MetaData),
+		Motivation:     *p.toMotivationSection(sections[ast.LowerMotivationName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toMotivationSection(section phase4.Section) *ast.MotivationSection {
 	return &ast.MotivationSection{
-		Motivation: p.exactlyOneTextItem(section),
-		MetaData:   ast.MetaData(section.MetaData),
+		Motivation:     p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -733,15 +733,15 @@ func (p *parser) toHistoryGroup(group phase4.Group) (ast.HistoryGroup, bool) {
 		return ast.HistoryGroup{}, false
 	}
 	return ast.HistoryGroup{
-		History:  *p.toHistorySection(sections[ast.LowerHistoryName]),
-		MetaData: ast.MetaData(group.MetaData),
+		History:        *p.toHistorySection(sections[ast.LowerHistoryName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toHistorySection(section phase4.Section) *ast.HistorySection {
 	return &ast.HistorySection{
-		History:  p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		History:        p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -755,15 +755,15 @@ func (p *parser) toExampleGroup(group phase4.Group) (ast.ExampleGroup, bool) {
 		return ast.ExampleGroup{}, false
 	}
 	return ast.ExampleGroup{
-		Examples: *p.toExampleSection(sections[ast.LowerExampleName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Examples:       *p.toExampleSection(sections[ast.LowerExampleName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toExampleSection(section phase4.Section) *ast.ExampleSection {
 	return &ast.ExampleSection{
-		Examples: p.oneOrMoreTextItems(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Examples:       p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -777,15 +777,15 @@ func (p *parser) toRelatedGroup(group phase4.Group) (ast.RelatedGroup, bool) {
 		return ast.RelatedGroup{}, false
 	}
 	return ast.RelatedGroup{
-		Related:  *p.toRelatedSection(sections[ast.LowerRelatedName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Related:        *p.toRelatedSection(sections[ast.LowerRelatedName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toRelatedSection(section phase4.Section) *ast.RelatedSection {
 	return &ast.RelatedSection{
-		Related:  p.oneOrMoreTextItems(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Related:        p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -799,15 +799,15 @@ func (p *parser) toDiscovererGroup(group phase4.Group) (ast.DiscovererGroup, boo
 		return ast.DiscovererGroup{}, false
 	}
 	return ast.DiscovererGroup{
-		Discoverer: *p.toDiscovererSection(sections[ast.LowerDiscovererName]),
-		MetaData:   ast.MetaData(group.MetaData),
+		Discoverer:     *p.toDiscovererSection(sections[ast.LowerDiscovererName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toDiscovererSection(section phase4.Section) *ast.DiscovererSection {
 	return &ast.DiscovererSection{
-		Discoverer: p.oneOrMoreTextItems(section),
-		MetaData:   ast.MetaData(section.MetaData),
+		Discoverer:     p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -827,8 +827,8 @@ func (p *parser) toNoteGroup(group phase4.Group) (ast.NoteGroup, bool) {
 
 func (p *parser) toNoteSection(section phase4.Section) *ast.NoteSection {
 	return &ast.NoteSection{
-		Note:     p.oneOrMoreNoteTypes(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Note:           p.oneOrMoreNoteTypes(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -836,8 +836,8 @@ func (p *parser) toNoteSection(section phase4.Section) *ast.NoteSection {
 
 func (p *parser) toProvidesSection(section phase4.Section) *ast.ProvidesSection {
 	return &ast.ProvidesSection{
-		Provides: p.oneOrMoreProvidesType(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Provides:       p.oneOrMoreProvidesType(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -887,15 +887,15 @@ func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, 
 
 func (p *parser) toAliasesSection(section phase4.Section) *ast.AliasesSection {
 	return &ast.AliasesSection{
-		Aliases:  p.oneOrMoreAliases(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Aliases:        p.oneOrMoreAliases(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toSingleAliasesSection(section phase4.Section) *ast.SingleAliasesSection {
 	return &ast.SingleAliasesSection{
-		Aliases:  p.exactlyOneAlias(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Aliases:        p.exactlyOneAlias(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -903,8 +903,8 @@ func (p *parser) toSingleAliasesSection(section phase4.Section) *ast.SingleAlias
 
 func (p *parser) toJustifiedSection(section phase4.Section) *ast.JustifiedSection {
 	return &ast.JustifiedSection{
-		Justified: p.oneOrMoreJustifiedType(section),
-		MetaData:  ast.MetaData(section.MetaData),
+		Justified:      p.oneOrMoreJustifiedType(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -942,8 +942,8 @@ func (p *parser) toJustifiedTypeFromGroup(group phase4.Group) (ast.JustifiedType
 
 func (p *parser) toLabelSection(section phase4.Section) *ast.LabelSection {
 	return &ast.LabelSection{
-		Label:    p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Label:          p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -959,9 +959,9 @@ func (p *parser) toLabelGroup(group phase4.Group) (ast.LabelGroup, bool) {
 		return ast.LabelGroup{}, false
 	}
 	return ast.LabelGroup{
-		Label:    *p.toLabelSection(sections[ast.LowerLabelName]),
-		By:       *p.toBySection(sections[ast.LowerByName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Label:          *p.toLabelSection(sections[ast.LowerLabelName]),
+		By:             *p.toBySection(sections[ast.LowerByName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
@@ -975,15 +975,15 @@ func (p *parser) toByGroup(group phase4.Group) (ast.ByGroup, bool) {
 		return ast.ByGroup{}, false
 	}
 	return ast.ByGroup{
-		By:       *p.toBySection(sections[ast.LowerByName]),
-		MetaData: ast.MetaData(group.MetaData),
+		By:             *p.toBySection(sections[ast.LowerByName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toBySection(section phase4.Section) *ast.BySection {
 	return &ast.BySection{
-		By:       p.oneOrMoreTextItems(section),
-		MetaData: ast.MetaData(section.MetaData),
+		By:             p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -991,8 +991,8 @@ func (p *parser) toBySection(section phase4.Section) *ast.BySection {
 
 func (p *parser) toReferencesSection(section phase4.Section) *ast.ReferencesSection {
 	return &ast.ReferencesSection{
-		References: p.oneOrMoreTextItems(section),
-		MetaData:   ast.MetaData(section.MetaData),
+		References:     p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1000,8 +1000,8 @@ func (p *parser) toReferencesSection(section phase4.Section) *ast.ReferencesSect
 
 func (p *parser) toMetaIdSection(section phase4.Section) *ast.MetaIdSection {
 	return &ast.MetaIdSection{
-		Id:       p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Id:             p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1067,42 +1067,42 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.DescribesGroup{
-		Id:         *id,
-		Describes:  describes,
-		With:       with,
-		Using:      using,
-		When:       when,
-		SuchThat:   suchThat,
-		Extends:    extends,
-		Satisfies:  satisfies,
-		Provides:   provides,
-		Justified:  justified,
-		Documented: documented,
-		References: references,
-		Aliases:    aliases,
-		MetaId:     metaId,
-		MetaData:   ast.MetaData(group.MetaData),
+		Id:             *id,
+		Describes:      describes,
+		With:           with,
+		Using:          using,
+		When:           when,
+		SuchThat:       suchThat,
+		Extends:        extends,
+		Satisfies:      satisfies,
+		Provides:       provides,
+		Justified:      justified,
+		Documented:     documented,
+		References:     references,
+		Aliases:        aliases,
+		MetaId:         metaId,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toDescribesSection(section phase4.Section) *ast.DescribesSection {
 	return &ast.DescribesSection{
-		Describes: p.exactlyOneTarget(section),
-		MetaData:  ast.MetaData(section.MetaData),
+		Describes:      p.exactlyOneTarget(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toExtendsSection(section phase4.Section) *ast.ExtendsSection {
 	return &ast.ExtendsSection{
-		Extends:  p.oneOrMoreClauses(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Extends:        p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toSatisfiesSection(section phase4.Section) *ast.SatisfiesSection {
 	return &ast.SatisfiesSection{
-		Satisfies: p.oneOrMoreClauses(section),
-		MetaData:  ast.MetaData(section.MetaData),
+		Satisfies:      p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1172,57 +1172,57 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.DefinesGroup{
-		Id:          *id,
-		Defines:     defines,
-		With:        with,
-		Using:       using,
-		When:        when,
-		SuchThat:    suchThat,
-		Generalizes: generalizes,
-		Means:       means,
-		Specifies:   specifies,
-		Provides:    provides,
-		Justified:   justified,
-		Documented:  documented,
-		References:  references,
-		Aliases:     aliases,
-		MetaId:      metaId,
-		MetaData:    ast.MetaData(group.MetaData),
+		Id:             *id,
+		Defines:        defines,
+		With:           with,
+		Using:          using,
+		When:           when,
+		SuchThat:       suchThat,
+		Generalizes:    generalizes,
+		Means:          means,
+		Specifies:      specifies,
+		Provides:       provides,
+		Justified:      justified,
+		Documented:     documented,
+		References:     references,
+		Aliases:        aliases,
+		MetaId:         metaId,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toDefinesSection(section phase4.Section) *ast.DefinesSection {
 	return &ast.DefinesSection{
-		Defines:  p.exactlyOneTarget(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Defines:        p.exactlyOneTarget(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toWithSection(section phase4.Section) *ast.WithSection {
 	return &ast.WithSection{
-		With:     p.oneOrMoreTargets(section),
-		MetaData: ast.MetaData(section.MetaData),
+		With:           p.oneOrMoreTargets(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toGeneralizesSection(section phase4.Section) *ast.GeneralizesSection {
 	return &ast.GeneralizesSection{
-		Generalizes: p.oneOrMoreFormulation(section),
-		MetaData:    ast.MetaData(section.MetaData),
+		Generalizes:    p.oneOrMoreFormulation(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toMeansSection(section phase4.Section) *ast.MeansSection {
 	return &ast.MeansSection{
-		Means:    p.exactlyOneClause(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Means:          p.exactlyOneClause(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toSpecifiesSection(section phase4.Section) *ast.SpecifiesSection {
 	return &ast.SpecifiesSection{
-		Specifies: p.oneOrMoreClauses(section),
-		MetaData:  ast.MetaData(section.MetaData),
+		Specifies:      p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1277,33 +1277,33 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.StatesGroup{
-		Id:         *id,
-		States:     states,
-		With:       with,
-		Using:      using,
-		When:       when,
-		SuchThat:   suchThat,
-		That:       that,
-		Documented: documented,
-		Justified:  justified,
-		References: references,
-		Aliases:    aliases,
-		MetaId:     metaId,
-		MetaData:   ast.MetaData(group.MetaData),
+		Id:             *id,
+		States:         states,
+		With:           with,
+		Using:          using,
+		When:           when,
+		SuchThat:       suchThat,
+		That:           that,
+		Documented:     documented,
+		Justified:      justified,
+		References:     references,
+		Aliases:        aliases,
+		MetaId:         metaId,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toStatesSection(section phase4.Section) *ast.StatesSection {
 	p.verifyNoArgs(section)
 	return &ast.StatesSection{
-		MetaData: ast.MetaData(section.MetaData),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toThatSection(section phase4.Section) *ast.ThatSection {
 	return &ast.ThatSection{
-		That:     p.oneOrMoreClauses(section),
-		MetaData: ast.MetaData(section.MetaData),
+		That:           p.oneOrMoreClauses(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1354,39 +1354,39 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.AxiomGroup{
-		Id:         id,
-		Axiom:      axiom,
-		Given:      given,
-		Where:      where,
-		If:         ifSec,
-		Iff:        iff,
-		Then:       then,
-		Documented: documented,
-		References: references,
-		Aliases:    aliases,
-		MetaId:     metaId,
-		MetaData:   ast.MetaData(group.MetaData),
+		Id:             id,
+		Axiom:          axiom,
+		Given:          given,
+		Where:          where,
+		If:             ifSec,
+		Iff:            iff,
+		Then:           then,
+		Documented:     documented,
+		References:     references,
+		Aliases:        aliases,
+		MetaId:         metaId,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toAxiomSection(section phase4.Section) *ast.AxiomSection {
 	return &ast.AxiomSection{
-		Axiom:    p.zeroOrMoreTextItems(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Axiom:          p.zeroOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toGivenSection(section phase4.Section) *ast.GivenSection {
 	return &ast.GivenSection{
-		Given:    p.oneOrMoreTargets(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Given:          p.oneOrMoreTargets(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toUsingSection(section phase4.Section) *ast.UsingSection {
 	return &ast.UsingSection{
-		Using:    p.oneOrMoreTargets(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Using:          p.oneOrMoreTargets(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1437,25 +1437,25 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.ConjectureGroup{
-		Id:         id,
-		Conjecture: conjecture,
-		Given:      given,
-		Where:      where,
-		If:         ifSec,
-		Iff:        iff,
-		Then:       then,
-		Documented: documented,
-		References: references,
-		Aliases:    aliases,
-		MetaId:     metaId,
-		MetaData:   ast.MetaData(group.MetaData),
+		Id:             id,
+		Conjecture:     conjecture,
+		Given:          given,
+		Where:          where,
+		If:             ifSec,
+		Iff:            iff,
+		Then:           then,
+		Documented:     documented,
+		References:     references,
+		Aliases:        aliases,
+		MetaId:         metaId,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toConjectureSection(section phase4.Section) *ast.ConjectureSection {
 	return &ast.ConjectureSection{
-		Conjecture: p.zeroOrMoreTextItems(section),
-		MetaData:   ast.MetaData(section.MetaData),
+		Conjecture:     p.zeroOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1510,33 +1510,33 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.TheoremGroup{
-		Id:         id,
-		Theorem:    theorem,
-		Given:      given,
-		Where:      where,
-		If:         ifSec,
-		Iff:        iff,
-		Then:       then,
-		Proof:      proof,
-		Documented: documented,
-		References: references,
-		Aliases:    aliases,
-		MetaId:     metaId,
-		MetaData:   ast.MetaData(group.MetaData),
+		Id:             id,
+		Theorem:        theorem,
+		Given:          given,
+		Where:          where,
+		If:             ifSec,
+		Iff:            iff,
+		Then:           then,
+		Proof:          proof,
+		Documented:     documented,
+		References:     references,
+		Aliases:        aliases,
+		MetaId:         metaId,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toTheoremSection(section phase4.Section) *ast.TheoremSection {
 	return &ast.TheoremSection{
-		Theorem:  p.zeroOrMoreTextItems(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Theorem:        p.zeroOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toProofSection(section phase4.Section) *ast.ProofSection {
 	return &ast.ProofSection{
-		Proof:    p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Proof:          p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1544,8 +1544,8 @@ func (p *parser) toProofSection(section phase4.Section) *ast.ProofSection {
 
 func (p *parser) toTextBlockItem(block phase4.TextBlock) *ast.TextBlockItem {
 	return &ast.TextBlockItem{
-		Text:     block.Text,
-		MetaData: ast.MetaData(block.MetaData),
+		Text:           block.Text,
+		CommonMetaData: ast.CommonMetaData(block.MetaData),
 	}
 }
 
@@ -1570,27 +1570,27 @@ func (p *parser) toProofGroup(group phase4.Group) (ast.ProofGroup, bool) {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.ProofGroup{
-		Id:         *id,
-		Proof:      *p.toTopLevelProofSection(sections[ast.UpperProofName]),
-		Of:         *p.toOfSection(sections[ast.LowerOfName]),
-		Content:    *p.toContentSection(sections[ast.LowerContentName]),
-		References: references,
-		MetaId:     metaId,
-		MetaData:   ast.MetaData(group.MetaData),
+		Id:             *id,
+		Proof:          *p.toTopLevelProofSection(sections[ast.UpperProofName]),
+		Of:             *p.toOfSection(sections[ast.LowerOfName]),
+		Content:        *p.toContentSection(sections[ast.LowerContentName]),
+		References:     references,
+		MetaId:         metaId,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toTopLevelProofSection(section phase4.Section) *ast.TopLevelProofSection {
 	p.verifyNoArgs(section)
 	return &ast.TopLevelProofSection{
-		MetaData: ast.MetaData(section.MetaData),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toOfSection(section phase4.Section) *ast.OfSection {
 	return &ast.OfSection{
-		Of:       p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Of:             p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1612,16 +1612,16 @@ func (p *parser) toSpecifyGroup(group phase4.Group) (ast.SpecifyGroup, bool) {
 	}
 
 	return ast.SpecifyGroup{
-		Specify:  *p.toTopLevelSpecifySection(sections[ast.UpperSpecifyName]),
-		MetaId:   metaId,
-		MetaData: ast.MetaData(group.MetaData),
+		Specify:        *p.toTopLevelSpecifySection(sections[ast.UpperSpecifyName]),
+		MetaId:         metaId,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toTopLevelSpecifySection(section phase4.Section) *ast.TopLevelSpecifySection {
 	return &ast.TopLevelSpecifySection{
-		Specify:  p.oneOrMoreSpecifyTypes(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Specify:        p.oneOrMoreSpecifyTypes(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1653,16 +1653,16 @@ func (p *parser) toZeroGroup(group phase4.Group) (ast.ZeroGroup, bool) {
 		return ast.ZeroGroup{}, false
 	}
 	return ast.ZeroGroup{
-		Zero:     *p.toZeroSection(sections[ast.LowerZeroName]),
-		Means:    *p.toMeansSection(sections[ast.LowerMeansName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Zero:           *p.toZeroSection(sections[ast.LowerZeroName]),
+		Means:          *p.toMeansSection(sections[ast.LowerMeansName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toZeroSection(section phase4.Section) *ast.ZeroSection {
 	p.verifyNoArgs(section)
 	return &ast.ZeroSection{
-		MetaData: ast.MetaData(section.MetaData),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1676,16 +1676,16 @@ func (p *parser) toPositiveIntGroup(group phase4.Group) (ast.PositiveIntGroup, b
 		return ast.PositiveIntGroup{}, false
 	}
 	return ast.PositiveIntGroup{
-		PositiveInt: *p.toPositiveIntSection(sections[ast.LowerPositiveIntName]),
-		Means:       *p.toMeansSection(sections[ast.LowerMeansName]),
-		MetaData:    ast.MetaData(group.MetaData),
+		PositiveInt:    *p.toPositiveIntSection(sections[ast.LowerPositiveIntName]),
+		Means:          *p.toMeansSection(sections[ast.LowerMeansName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toPositiveIntSection(section phase4.Section) *ast.PositiveIntSection {
 	return &ast.PositiveIntSection{
-		PositiveInt: p.exactlyOneTarget(section),
-		MetaData:    ast.MetaData(section.MetaData),
+		PositiveInt:    p.exactlyOneTarget(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1699,16 +1699,16 @@ func (p *parser) toNegativeIntGroup(group phase4.Group) (ast.NegativeIntGroup, b
 		return ast.NegativeIntGroup{}, false
 	}
 	return ast.NegativeIntGroup{
-		NegativeInt: *p.toNegativeIntSection(sections[ast.LowerNegativeIntName]),
-		Means:       *p.toMeansSection(sections[ast.LowerMeansName]),
-		MetaData:    ast.MetaData(group.MetaData),
+		NegativeInt:    *p.toNegativeIntSection(sections[ast.LowerNegativeIntName]),
+		Means:          *p.toMeansSection(sections[ast.LowerMeansName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toNegativeIntSection(section phase4.Section) *ast.NegativeIntSection {
 	return &ast.NegativeIntSection{
-		NegativeInt: p.exactlyOneTarget(section),
-		MetaData:    ast.MetaData(section.MetaData),
+		NegativeInt:    p.exactlyOneTarget(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1722,16 +1722,16 @@ func (p *parser) toPositiveFloatGroup(group phase4.Group) (ast.PositiveFloatGrou
 		return ast.PositiveFloatGroup{}, false
 	}
 	return ast.PositiveFloatGroup{
-		PositiveFloat: *p.toPositiveFloatSection(sections[ast.LowerPositiveFloatName]),
-		Means:         *p.toMeansSection(sections[ast.LowerMeansName]),
-		MetaData:      ast.MetaData(group.MetaData),
+		PositiveFloat:  *p.toPositiveFloatSection(sections[ast.LowerPositiveFloatName]),
+		Means:          *p.toMeansSection(sections[ast.LowerMeansName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toPositiveFloatSection(section phase4.Section) *ast.PositiveFloatSection {
 	return &ast.PositiveFloatSection{
-		PositiveFloat: p.exactlyOneTarget(section),
-		MetaData:      ast.MetaData(section.MetaData),
+		PositiveFloat:  p.exactlyOneTarget(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1745,16 +1745,16 @@ func (p *parser) toNegativeFloatGroup(group phase4.Group) (ast.NegativeFloatGrou
 		return ast.NegativeFloatGroup{}, false
 	}
 	return ast.NegativeFloatGroup{
-		NegativeFloat: *p.toNegativeFloatSection(sections[ast.LowerNegativeFloatName]),
-		Means:         *p.toMeansSection(sections[ast.LowerMeansName]),
-		MetaData:      ast.MetaData(group.MetaData),
+		NegativeFloat:  *p.toNegativeFloatSection(sections[ast.LowerNegativeFloatName]),
+		Means:          *p.toMeansSection(sections[ast.LowerMeansName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toNegativeFloatSection(section phase4.Section) *ast.NegativeFloatSection {
 	return &ast.NegativeFloatSection{
-		NegativeFloat: p.exactlyOneTarget(section),
-		MetaData:      ast.MetaData(section.MetaData),
+		NegativeFloat:  p.exactlyOneTarget(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1781,26 +1781,26 @@ func (p *parser) toTopicGroup(group phase4.Group) (ast.TopicGroup, bool) {
 		metaId = p.toMetaIdSection(sec)
 	}
 	return ast.TopicGroup{
-		Id:         *id,
-		Topic:      topic,
-		Content:    content,
-		References: references,
-		MetaId:     metaId,
-		MetaData:   ast.MetaData(group.MetaData),
+		Id:             *id,
+		Topic:          topic,
+		Content:        content,
+		References:     references,
+		MetaId:         metaId,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toTopicSection(section phase4.Section) *ast.TopicSection {
 	p.verifyNoArgs(section)
 	return &ast.TopicSection{
-		MetaData: ast.MetaData(section.MetaData),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toContentSection(section phase4.Section) *ast.ContentSection {
 	return &ast.ContentSection{
-		Content:  p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Content:        p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1823,17 +1823,17 @@ func (p *parser) toResourceGroup(group phase4.Group) (ast.ResourceGroup, bool) {
 	}
 
 	return ast.ResourceGroup{
-		Id:       *id,
-		Resource: *p.toResourceSection(sections[ast.UpperResourceName]),
-		MetaId:   metaId,
-		MetaData: ast.MetaData(group.MetaData),
+		Id:             *id,
+		Resource:       *p.toResourceSection(sections[ast.UpperResourceName]),
+		MetaId:         metaId,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toResourceSection(section phase4.Section) *ast.ResourceSection {
 	return &ast.ResourceSection{
-		Items:    p.oneOrMoreResourceTypes(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Items:          p.oneOrMoreResourceTypes(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1892,17 +1892,17 @@ func (p *parser) toPersonGroup(group phase4.Group) (ast.PersonGroup, bool) {
 	}
 
 	return ast.PersonGroup{
-		Id:       *id,
-		Person:   *p.toPersonSection(sections[ast.UpperPersonName]),
-		MetaId:   metaId,
-		MetaData: ast.MetaData(group.MetaData),
+		Id:             *id,
+		Person:         *p.toPersonSection(sections[ast.UpperPersonName]),
+		MetaId:         metaId,
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toPersonSection(section phase4.Section) *ast.PersonSection {
 	return &ast.PersonSection{
-		Items:    p.oneOrMorePersonTypes(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Items:          p.oneOrMorePersonTypes(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1918,15 +1918,15 @@ func (p *parser) toTitleGroup(group phase4.Group) (ast.TitleGroup, bool) {
 		return ast.TitleGroup{}, false
 	}
 	return ast.TitleGroup{
-		Title:    *p.toTitleSection(sections[ast.LowerTitleName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Title:          *p.toTitleSection(sections[ast.LowerTitleName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toTitleSection(section phase4.Section) *ast.TitleSection {
 	return &ast.TitleSection{
-		Title:    p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Title:          p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1940,15 +1940,15 @@ func (p *parser) toAuthorGroup(group phase4.Group) (ast.AuthorGroup, bool) {
 		return ast.AuthorGroup{}, false
 	}
 	return ast.AuthorGroup{
-		Author:   *p.toAuthorSection(sections[ast.LowerAuthorName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Author:         *p.toAuthorSection(sections[ast.LowerAuthorName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toAuthorSection(section phase4.Section) *ast.AuthorSection {
 	return &ast.AuthorSection{
-		Author:   p.oneOrMoreTextItems(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Author:         p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1962,15 +1962,15 @@ func (p *parser) toOffsetGroup(group phase4.Group) (ast.OffsetGroup, bool) {
 		return ast.OffsetGroup{}, false
 	}
 	return ast.OffsetGroup{
-		Offset:   *p.toOffsetSection(sections[ast.LowerOffsetName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Offset:         *p.toOffsetSection(sections[ast.LowerOffsetName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toOffsetSection(section phase4.Section) *ast.OffsetSection {
 	return &ast.OffsetSection{
-		Offset:   p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Offset:         p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -1984,15 +1984,15 @@ func (p *parser) toUrlGroup(group phase4.Group) (ast.UrlGroup, bool) {
 		return ast.UrlGroup{}, false
 	}
 	return ast.UrlGroup{
-		Url:      *p.toUlrSection(sections[ast.LowerUrlName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Url:            *p.toUlrSection(sections[ast.LowerUrlName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toUlrSection(section phase4.Section) *ast.UrlSection {
 	return &ast.UrlSection{
-		Url:      p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Url:            p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2006,15 +2006,15 @@ func (p *parser) toHomepageGroup(group phase4.Group) (ast.HomepageGroup, bool) {
 		return ast.HomepageGroup{}, false
 	}
 	return ast.HomepageGroup{
-		Homepage: *p.toHomepageSection(sections[ast.LowerHomepageName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Homepage:       *p.toHomepageSection(sections[ast.LowerHomepageName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toHomepageSection(section phase4.Section) *ast.HomepageSection {
 	return &ast.HomepageSection{
-		Homepage: p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Homepage:       p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2028,15 +2028,15 @@ func (p *parser) toTypeGroup(group phase4.Group) (ast.TypeGroup, bool) {
 		return ast.TypeGroup{}, false
 	}
 	return ast.TypeGroup{
-		Type:     *p.toTypeSection(sections[ast.LowerTypeName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Type:           *p.toTypeSection(sections[ast.LowerTypeName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toTypeSection(section phase4.Section) *ast.TypeSection {
 	return &ast.TypeSection{
-		Type:     p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Type:           p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2050,15 +2050,15 @@ func (p *parser) toEditionGroup(group phase4.Group) (ast.EditionGroup, bool) {
 		return ast.EditionGroup{}, false
 	}
 	return ast.EditionGroup{
-		Edition:  *p.toEditionSection(sections[ast.LowerEditionName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Edition:        *p.toEditionSection(sections[ast.LowerEditionName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toEditionSection(section phase4.Section) *ast.EditionSection {
 	return &ast.EditionSection{
-		Edition:  p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Edition:        p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2072,15 +2072,15 @@ func (p *parser) toEditorGroup(group phase4.Group) (ast.EditorGroup, bool) {
 		return ast.EditorGroup{}, false
 	}
 	return ast.EditorGroup{
-		Editor:   *p.toEditorSection(sections[ast.LowerEditorName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Editor:         *p.toEditorSection(sections[ast.LowerEditorName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toEditorSection(section phase4.Section) *ast.EditorSection {
 	return &ast.EditorSection{
-		Editor:   p.oneOrMoreTextItems(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Editor:         p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2094,15 +2094,15 @@ func (p *parser) toInstitutionGroup(group phase4.Group) (ast.InstitutionGroup, b
 		return ast.InstitutionGroup{}, false
 	}
 	return ast.InstitutionGroup{
-		Institution: *p.toInstitutionSection(sections[ast.LowerInstitutionName]),
-		MetaData:    ast.MetaData(group.MetaData),
+		Institution:    *p.toInstitutionSection(sections[ast.LowerInstitutionName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toInstitutionSection(section phase4.Section) *ast.InstitutionSection {
 	return &ast.InstitutionSection{
-		Institution: p.oneOrMoreTextItems(section),
-		MetaData:    ast.MetaData(section.MetaData),
+		Institution:    p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2116,15 +2116,15 @@ func (p *parser) toJournalGroup(group phase4.Group) (ast.JournalGroup, bool) {
 		return ast.JournalGroup{}, false
 	}
 	return ast.JournalGroup{
-		Journal:  *p.toJournalSection(sections[ast.LowerJournalName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Journal:        *p.toJournalSection(sections[ast.LowerJournalName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toJournalSection(section phase4.Section) *ast.JournalSection {
 	return &ast.JournalSection{
-		Journal:  p.oneOrMoreTextItems(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Journal:        p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2138,15 +2138,15 @@ func (p *parser) toPublisherGroup(group phase4.Group) (ast.PublisherGroup, bool)
 		return ast.PublisherGroup{}, false
 	}
 	return ast.PublisherGroup{
-		Publisher: *p.toPublisherSection(sections[ast.LowerPublisherName]),
-		MetaData:  ast.MetaData(group.MetaData),
+		Publisher:      *p.toPublisherSection(sections[ast.LowerPublisherName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toPublisherSection(section phase4.Section) *ast.PublisherSection {
 	return &ast.PublisherSection{
-		Publisher: p.oneOrMoreTextItems(section),
-		MetaData:  ast.MetaData(section.MetaData),
+		Publisher:      p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2160,15 +2160,15 @@ func (p *parser) toVolumeGroup(group phase4.Group) (ast.VolumeGroup, bool) {
 		return ast.VolumeGroup{}, false
 	}
 	return ast.VolumeGroup{
-		Volume:   *p.toVolumeSection(sections[ast.LowerVolumeName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Volume:         *p.toVolumeSection(sections[ast.LowerVolumeName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toVolumeSection(section phase4.Section) *ast.VolumeSection {
 	return &ast.VolumeSection{
-		Volume:   p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Volume:         p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2182,15 +2182,15 @@ func (p *parser) toMonthGroup(group phase4.Group) (ast.MonthGroup, bool) {
 		return ast.MonthGroup{}, false
 	}
 	return ast.MonthGroup{
-		Month:    *p.toMonthSection(sections[ast.LowerMonthName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Month:          *p.toMonthSection(sections[ast.LowerMonthName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toMonthSection(section phase4.Section) *ast.MonthSection {
 	return &ast.MonthSection{
-		Month:    p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Month:          p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2204,15 +2204,15 @@ func (p *parser) toYearGroup(group phase4.Group) (ast.YearGroup, bool) {
 		return ast.YearGroup{}, false
 	}
 	return ast.YearGroup{
-		Year:     *p.toYearSection(sections[ast.LowerYearName]),
-		MetaData: ast.MetaData(group.MetaData),
+		Year:           *p.toYearSection(sections[ast.LowerYearName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toYearSection(section phase4.Section) *ast.YearSection {
 	return &ast.YearSection{
-		Year:     p.exactlyOneTextItem(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Year:           p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2226,15 +2226,15 @@ func (p *parser) toDescriptionGroup(group phase4.Group) (ast.DescriptionGroup, b
 		return ast.DescriptionGroup{}, false
 	}
 	return ast.DescriptionGroup{
-		Description: *p.toDescriptionSection(sections[ast.LowerDescriptionName]),
-		MetaData:    ast.MetaData(group.MetaData),
+		Description:    *p.toDescriptionSection(sections[ast.LowerDescriptionName]),
+		CommonMetaData: ast.CommonMetaData(group.MetaData),
 	}, true
 }
 
 func (p *parser) toDescriptionSection(section phase4.Section) *ast.DescriptionSection {
 	return &ast.DescriptionSection{
-		Description: p.exactlyOneTextItem(section),
-		MetaData:    ast.MetaData(section.MetaData),
+		Description:    p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2283,8 +2283,20 @@ func (p *parser) toDocument(root phase4.Document) (ast.Document, bool) {
 			items = append(items, item)
 		}
 	}
+	start := ast.Position{
+		Row:    0,
+		Column: 0,
+		Offset: 0,
+	}
+	if len(items) > 0 {
+		start = items[0].GetCommonMetaData().Start
+	}
 	return ast.Document{
 		Items: items,
+		CommonMetaData: ast.CommonMetaData{
+			Start: start,
+			Key:   p.keyGen.Next(),
+		},
 	}, p.tracker.Length() == countBefore
 }
 
@@ -2330,10 +2342,10 @@ func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.Formulat
 		if node, ok := formulation.ParseExpression(
 			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Formulation[ast.FormulationNodeType]{
-				RawText:  data.Text,
-				Root:     node,
-				Label:    nil,
-				MetaData: ast.MetaData(arg.MetaData),
+				RawText:        data.Text,
+				Root:           node,
+				Label:          nil,
+				CommonMetaData: ast.CommonMetaData(arg.MetaData),
 			}
 		}
 	}
@@ -2348,10 +2360,10 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 		if node, ok := formulation.ParseExpression(
 			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return &ast.Formulation[ast.FormulationNodeType]{
-				RawText:  data.Text,
-				Root:     node,
-				Label:    nil,
-				MetaData: ast.MetaData(arg.MetaData),
+				RawText:        data.Text,
+				Root:           node,
+				Label:          nil,
+				CommonMetaData: ast.CommonMetaData(arg.MetaData),
 			}
 		} else {
 			return &ast.Formulation[ast.FormulationNodeType]{}
@@ -2396,10 +2408,10 @@ func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 		if node, ok := formulation.ParseExpression(
 			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Spec{
-				RawText:  data.Text,
-				Root:     node,
-				Label:    nil,
-				MetaData: ast.MetaData(arg.MetaData),
+				RawText:        data.Text,
+				Root:           node,
+				Label:          nil,
+				CommonMetaData: ast.CommonMetaData(arg.MetaData),
 			}
 		} else {
 			return ast.Spec{}
@@ -2417,10 +2429,10 @@ func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 		if node, ok := formulation.ParseExpression(
 			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Alias{
-				RawText:  data.Text,
-				Root:     node,
-				Label:    nil,
-				MetaData: ast.MetaData(arg.MetaData),
+				RawText:        data.Text,
+				Root:           node,
+				Label:          nil,
+				CommonMetaData: ast.CommonMetaData(arg.MetaData),
 			}
 		}
 	}
@@ -2433,10 +2445,10 @@ func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 	case phase4.ArgumentTextArgumentData:
 		if node, ok := formulation.ParseForm(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Target{
-				RawText:  data.Text,
-				Root:     node,
-				Label:    nil,
-				MetaData: ast.MetaData(arg.MetaData),
+				RawText:        data.Text,
+				Root:           node,
+				Label:          nil,
+				CommonMetaData: ast.CommonMetaData(arg.MetaData),
 			}
 		} else {
 			return ast.Target{}
@@ -2452,8 +2464,8 @@ func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
 	switch data := arg.Arg.(type) {
 	case phase4.TextArgumentData:
 		return ast.TextItem{
-			RawText:  data.Text,
-			MetaData: ast.MetaData(arg.MetaData),
+			RawText:        data.Text,
+			CommonMetaData: ast.CommonMetaData(arg.MetaData),
 		}
 	default:
 		p.tracker.Append(newError("Expected a \"...\" item", arg.MetaData.Start))
@@ -2490,8 +2502,8 @@ func (p *parser) toDescribingGroup(group phase4.Group) (ast.DescribingGroup, boo
 
 func (p *parser) toDescribingSection(section phase4.Section) *ast.DescribingSection {
 	return &ast.DescribingSection{
-		Describing: p.exactlyOneTextItem(section),
-		MetaData:   ast.MetaData(section.MetaData),
+		Describing:     p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2524,8 +2536,8 @@ func (p *parser) toNameGroup(group phase4.Group) (ast.NameGroup, bool) {
 
 func (p *parser) toNameSection(section phase4.Section) *ast.NameSection {
 	return &ast.NameSection{
-		Name:     p.oneOrMoreTextItems(section),
-		MetaData: ast.MetaData(section.MetaData),
+		Name:           p.oneOrMoreTextItems(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
@@ -2546,29 +2558,29 @@ func (p *parser) toBiographyGroup(group phase4.Group) (ast.BiographyGroup, bool)
 
 func (p *parser) toBiographySection(section phase4.Section) *ast.BiographySection {
 	return &ast.BiographySection{
-		Biography: p.exactlyOneTextItem(section),
-		MetaData:  ast.MetaData(section.MetaData),
+		Biography:      p.exactlyOneTextItem(section),
+		CommonMetaData: ast.CommonMetaData(section.MetaData),
 	}
 }
 
-func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[ast.Signature] {
+func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[*ast.Signature] {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseSignature(
 			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
-			return ast.Formulation[ast.Signature]{
-				RawText:  data.Text,
-				Root:     node,
-				Label:    nil,
-				MetaData: ast.MetaData(arg.MetaData),
+			return ast.Formulation[*ast.Signature]{
+				RawText:        data.Text,
+				Root:           &node,
+				Label:          nil,
+				CommonMetaData: ast.CommonMetaData(arg.MetaData),
 			}
 		} else {
-			return ast.Formulation[ast.Signature]{}
+			return ast.Formulation[*ast.Signature]{}
 		}
 	}
 
 	p.tracker.Append(newError("Expected a signature", arg.MetaData.Start))
-	return ast.Formulation[ast.Signature]{}
+	return ast.Formulation[*ast.Signature]{}
 }
 
 ///////////////////////////////////// argument lists ///////////////////////////////////////////////
@@ -2651,8 +2663,8 @@ func (p *parser) toResourceTypes(args []phase4.Argument) []ast.ResourceType {
 	return result
 }
 
-func (p *parser) toSignaturesItems(args []phase4.Argument) []ast.Formulation[ast.Signature] {
-	result := make([]ast.Formulation[ast.Signature], 0)
+func (p *parser) toSignaturesItems(args []phase4.Argument) []ast.Formulation[*ast.Signature] {
+	result := make([]ast.Formulation[*ast.Signature], 0)
 	for _, arg := range args {
 		result = append(result, p.toSignatureItem(arg))
 	}
@@ -2768,12 +2780,12 @@ func (p *parser) exactlyOneTarget(section phase4.Section) ast.Target {
 	return exactlyOne(p.toTargets(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) exactlyOneSignatureItem(section phase4.Section) ast.Formulation[ast.Signature] {
-	var def ast.Formulation[ast.Signature] = ast.Formulation[ast.Signature]{}
+func (p *parser) exactlyOneSignatureItem(section phase4.Section) ast.Formulation[*ast.Signature] {
+	var def ast.Formulation[*ast.Signature] = ast.Formulation[*ast.Signature]{}
 	return exactlyOne(p.toSignaturesItems(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) oneOrMoreSignatureItems(section phase4.Section) []ast.Formulation[ast.Signature] {
+func (p *parser) oneOrMoreSignatureItems(section phase4.Section) []ast.Formulation[*ast.Signature] {
 	return oneOrMore(p.toSignaturesItems(section.Args), section.MetaData.Start, p.tracker)
 }
 

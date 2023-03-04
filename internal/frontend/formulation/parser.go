@@ -258,7 +258,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 			IsVarArg:     true,
 			VarArgNames:  []string{varName.Text},
 			VarArgBounds: []string{bound.Text},
-			MetaData: ast.MetaData{
+			CommonMetaData: ast.CommonMetaData{
 				Start: start,
 				Key:   fp.keyGen.Next(),
 			},
@@ -318,7 +318,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 			IsVarArg:     true,
 			VarArgNames:  varNames,
 			VarArgBounds: bounds,
-			MetaData: ast.MetaData{
+			CommonMetaData: ast.CommonMetaData{
 				Start: start,
 				Key:   fp.keyGen.Next(),
 			},
@@ -375,10 +375,10 @@ func (fp *formulationParser) functionLiteralExpression() (ast.FunctionLiteralExp
 				VarArg: ast.VarArgData{
 					IsVarArg: false,
 				},
-				MetaData: name.MetaData,
+				CommonMetaData: name.CommonMetaData,
 			},
-			Rhs:      exp,
-			MetaData: name.MetaData,
+			Rhs:            exp,
+			CommonMetaData: name.CommonMetaData,
 		}, true
 	}
 
@@ -402,9 +402,9 @@ func (fp *formulationParser) functionLiteralExpression() (ast.FunctionLiteralExp
 
 	fp.lexer.Commit(id)
 	return ast.FunctionLiteralExpression{
-		Lhs:      tup,
-		Rhs:      exp,
-		MetaData: tup.MetaData,
+		Lhs:            tup,
+		Rhs:            exp,
+		CommonMetaData: tup.CommonMetaData,
 	}, true
 }
 
@@ -496,7 +496,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 				Target: opExp.Target,
 				Lhs:    lhs,
 				Rhs:    rhs,
-				MetaData: ast.MetaData{
+				CommonMetaData: ast.CommonMetaData{
 					Start: fp.getShiftedPosition(start),
 					Key:   fp.keyGen.Next(),
 				},
@@ -529,7 +529,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 		return &ast.IsExpression{
 			Lhs: lhs,
 			Rhs: rhs,
-			MetaData: ast.MetaData{
+			CommonMetaData: ast.CommonMetaData{
 				Start: fp.getShiftedPosition(start),
 				Key:   fp.keyGen.Next(),
 			},
@@ -553,7 +553,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 		return &ast.ExtendsExpression{
 			Lhs: lhs,
 			Rhs: rhs,
-			MetaData: ast.MetaData{
+			CommonMetaData: ast.CommonMetaData{
 				Start: fp.getShiftedPosition(start),
 				Key:   fp.keyGen.Next(),
 			},
@@ -675,7 +675,7 @@ func (fp *formulationParser) pseudoExpression(
 	}
 	return ast.PseudoExpression{
 		Children: children,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -717,7 +717,7 @@ func (fp *formulationParser) metaKinds() (ast.MetaKinds, bool) {
 	fp.expect(ast.ColonRSquare)
 	return ast.MetaKinds{
 		Kinds: kinds,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -771,7 +771,7 @@ func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpressio
 	return ast.FunctionCallExpression{
 		Target: target,
 		Args:   args,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -818,7 +818,7 @@ func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
 	fp.lexer.Commit(id)
 	return ast.TupleExpression{
 		Args: args,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -879,7 +879,7 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 		Symbols:    *symbols,
 		Target:     target,
 		Conditions: conditions,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -894,7 +894,7 @@ func toNameForm(tok ast.PseudoTokenNode) ast.NameForm {
 		VarArg: ast.VarArgData{
 			IsVarArg: false,
 		},
-		MetaData: tok.MetaData,
+		CommonMetaData: tok.CommonMetaData,
 	}
 }
 
@@ -992,7 +992,7 @@ func (fp *formulationParser) chainExpression(
 	return ast.ChainExpression{
 		Parts:               parts,
 		HasTrailingOperator: hasTrailingOperator,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1047,7 +1047,7 @@ func (fp *formulationParser) ordinalCallExpression() (ast.OrdinalCallExpression,
 	return ast.OrdinalCallExpression{
 		Target: &name,
 		Args:   args,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1063,7 +1063,7 @@ func (fp *formulationParser) pseudoToken(expectedType ast.TokenType) (ast.Pseudo
 	return ast.PseudoTokenNode{
 		Text: tok.Text,
 		Type: tok.Type,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1094,9 +1094,9 @@ func (fp *formulationParser) operatorToken() (ast.PseudoTokenNode, bool) {
 	// a slash can also be an operator but has its own lexer token type
 	if tok, ok := fp.pseudoToken(ast.Slash); ok {
 		return ast.PseudoTokenNode{
-			Text:     tok.Text,
-			Type:     ast.Operator,
-			MetaData: tok.MetaData,
+			Text:           tok.Text,
+			Type:           ast.Operator,
+			CommonMetaData: tok.CommonMetaData,
 		}, true
 	}
 
@@ -1193,7 +1193,7 @@ func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (
 			Text:          tok.Text,
 			HasLeftColon:  hasLeftColon,
 			HasRightColon: hasRightColon,
-			MetaData: ast.MetaData{
+			CommonMetaData: ast.CommonMetaData{
 				Start: fp.getShiftedPosition(start),
 				Key:   fp.keyGen.Next(),
 			},
@@ -1261,7 +1261,7 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 		Target:        target,
 		HasLeftColon:  hasLeftColon,
 		HasRightColon: hasRightColon,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1286,7 +1286,7 @@ func (fp *formulationParser) commandOperatorTarget() (ast.CommandOperatorTarget,
 	fp.lexer.Commit(id)
 	return ast.CommandOperatorTarget{
 		Command: cmd,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1313,7 +1313,7 @@ func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
 	return ast.NamedArg{
 		Name:     name,
 		CurlyArg: curlyArg,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1343,7 +1343,7 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 					IsStropped:      false,
 					HasQuestionMark: false,
 					VarArg:          ast.VarArgData{},
-					MetaData:        op.MetaData,
+					CommonMetaData:  op.CommonMetaData,
 				})
 			} else {
 				break
@@ -1383,7 +1383,7 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 		CurlyArg:  curlyArg,
 		NamedArgs: &namedArgs,
 		ParenArgs: parenArgs,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1422,7 +1422,7 @@ func (fp *formulationParser) form() (ast.FormulationNodeType, bool) {
 		return &ast.StructuralColonEqualsForm{
 			Lhs: lhs,
 			Rhs: rhs,
-			MetaData: ast.MetaData{
+			CommonMetaData: ast.CommonMetaData{
 				Start: fp.getShiftedPosition(start),
 				Key:   fp.keyGen.Next(),
 			},
@@ -1440,7 +1440,7 @@ func (fp *formulationParser) form() (ast.FormulationNodeType, bool) {
 		return &ast.StructuralColonEqualsForm{
 			Lhs: lhs,
 			Rhs: rhs,
-			MetaData: ast.MetaData{
+			CommonMetaData: ast.CommonMetaData{
 				Start: fp.getShiftedPosition(start),
 				Key:   fp.keyGen.Next(),
 			},
@@ -1555,6 +1555,7 @@ func (fp *formulationParser) squareDirectionalParams() (*[]ast.DirectionParamPar
 }
 
 func (fp *formulationParser) directionParam() (*ast.DirectionalParam, bool) {
+	start := fp.lexer.Position()
 	_, atOk := fp.token(ast.At)
 	if !atOk {
 		return &ast.DirectionalParam{}, false
@@ -1573,6 +1574,10 @@ func (fp *formulationParser) directionParam() (*ast.DirectionalParam, bool) {
 	return &ast.DirectionalParam{
 		Name:         name,
 		SquareParams: *square,
+		CommonMetaData: ast.CommonMetaData{
+			Key:   fp.keyGen.Next(),
+			Start: start,
+		},
 	}, true
 }
 
@@ -1685,7 +1690,7 @@ func (fp *formulationParser) infixOperatorForm() (ast.InfixOperatorForm, bool) {
 		Operator: op,
 		Lhs:      lhs,
 		Rhs:      rhs,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1705,7 +1710,7 @@ func (fp *formulationParser) prefixOperatorForm() (ast.PrefixOperatorForm, bool)
 	return ast.PrefixOperatorForm{
 		Operator: op,
 		Param:    param,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1725,7 +1730,7 @@ func (fp *formulationParser) postfixOperatorForm() (ast.PostfixOperatorForm, boo
 	return ast.PostfixOperatorForm{
 		Operator: op,
 		Param:    param,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1744,7 +1749,7 @@ func (fp *formulationParser) operatorAsNameForm() (ast.NameForm, bool) {
 		VarArg: ast.VarArgData{
 			IsVarArg: false,
 		},
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(next.Position),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1777,7 +1782,7 @@ func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 		IsStropped:      isStropped,
 		HasQuestionMark: hasQuestionMark,
 		VarArg:          varArgData,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1822,7 +1827,7 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 		Target: target,
 		Params: params,
 		VarArg: varArgData,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1864,7 +1869,7 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 	return ast.TupleForm{
 		Params: params,
 		VarArg: varArg,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1902,7 +1907,7 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 	return ast.ConditionalSetForm{
 		Target: target,
 		VarArg: varArg,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -1970,10 +1975,10 @@ func (fp *formulationParser) infixCommandOperatorId() (ast.InfixCommandOperatorI
 
 	fp.lexer.Commit(id)
 	return ast.InfixCommandOperatorId{
-		Lhs:      lhs,
-		Operator: op,
-		Rhs:      rhs,
-		MetaData: op.MetaData,
+		Lhs:            lhs,
+		Operator:       op,
+		Rhs:            rhs,
+		CommonMetaData: op.CommonMetaData,
 	}, true
 }
 
@@ -2000,10 +2005,10 @@ func (fp *formulationParser) infixOperatorId() (ast.InfixOperatorId, bool) {
 
 	fp.lexer.Commit(id)
 	return ast.InfixOperatorId{
-		Lhs:      lhs,
-		Operator: op,
-		Rhs:      rhs,
-		MetaData: op.MetaData,
+		Lhs:            lhs,
+		Operator:       op,
+		Rhs:            rhs,
+		CommonMetaData: op.CommonMetaData,
 	}, true
 }
 
@@ -2024,9 +2029,9 @@ func (fp *formulationParser) postfixOperatorId() (ast.PostfixOperatorId, bool) {
 
 	fp.lexer.Commit(id)
 	return ast.PostfixOperatorId{
-		Operator: op,
-		Param:    param,
-		MetaData: op.MetaData,
+		Operator:       op,
+		Param:          param,
+		CommonMetaData: op.CommonMetaData,
 	}, true
 }
 
@@ -2047,9 +2052,9 @@ func (fp *formulationParser) prefixOperatorId() (ast.PrefixOperatorId, bool) {
 
 	fp.lexer.Commit(id)
 	return ast.PrefixOperatorId{
-		Operator: op,
-		Param:    param,
-		MetaData: op.MetaData,
+		Operator:       op,
+		Param:          param,
+		CommonMetaData: op.CommonMetaData,
 	}, true
 }
 
@@ -2097,7 +2102,7 @@ func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, b
 		Symbols:   *symbols,
 		Target:    target,
 		Condition: condition,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -2124,7 +2129,7 @@ func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
 	return ast.NamedParam{
 		Name:       name,
 		CurlyParam: curlyParam,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -2132,6 +2137,7 @@ func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
 }
 
 func (fp *formulationParser) curlyParam() (ast.CurlyParam, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	var squareParams *[]ast.StructuralFormType
 	if square, squareOk := fp.squareParams(); squareOk {
@@ -2151,10 +2157,15 @@ func (fp *formulationParser) curlyParam() (ast.CurlyParam, bool) {
 		SquareParams: squareParams,
 		CurlyParams:  *curlyParams,
 		Direction:    directionParam,
+		CommonMetaData: ast.CommonMetaData{
+			Key:   fp.keyGen.Next(),
+			Start: start,
+		},
 	}, true
 }
 
 func (fp *formulationParser) curlyArg() (ast.CurlyArg, bool) {
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	var curlyArgs *[]ast.ExpressionType
 	if condSet, ok := fp.conditionalSetExpression(); ok {
@@ -2182,13 +2193,13 @@ func (fp *formulationParser) curlyArg() (ast.CurlyArg, bool) {
 				tmpCurlyArgs = append(tmpCurlyArgs, &ast.FunctionLiteralExpression{
 					Lhs: ast.TupleForm{
 						Params: *squareArgs,
-						MetaData: ast.MetaData{
+						CommonMetaData: ast.CommonMetaData{
 							Start: squarePosition,
 							Key:   fp.keyGen.Next(),
 						},
 					},
 					Rhs: first,
-					MetaData: ast.MetaData{
+					CommonMetaData: ast.CommonMetaData{
 						Start: first.Start(),
 						Key:   fp.keyGen.Next(),
 					},
@@ -2207,6 +2218,10 @@ func (fp *formulationParser) curlyArg() (ast.CurlyArg, bool) {
 	return ast.CurlyArg{
 		CurlyArgs: curlyArgs,
 		Direction: directionParam,
+		CommonMetaData: ast.CommonMetaData{
+			Key:   fp.keyGen.Next(),
+			Start: start,
+		},
 	}, true
 }
 
@@ -2226,11 +2241,11 @@ func (fp *formulationParser) infixCommandId() (ast.InfixCommandId, bool) {
 
 	fp.lexer.Commit(id)
 	return ast.InfixCommandId{
-		Names:       cmd.Names,
-		CurlyParam:  cmd.CurlyParam,
-		NamedParams: cmd.NamedParams,
-		ParenParams: cmd.ParenParams,
-		MetaData:    cmd.MetaData,
+		Names:          cmd.Names,
+		CurlyParam:     cmd.CurlyParam,
+		NamedParams:    cmd.NamedParams,
+		ParenParams:    cmd.ParenParams,
+		CommonMetaData: cmd.CommonMetaData,
 	}, true
 }
 
@@ -2256,7 +2271,7 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 					IsStropped:      false,
 					HasQuestionMark: false,
 					VarArg:          ast.VarArgData{},
-					MetaData:        op.MetaData,
+					CommonMetaData:  op.CommonMetaData,
 				})
 			} else {
 				break
@@ -2299,7 +2314,7 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 		CurlyParam:  curlyParam,
 		NamedParams: &namedParams,
 		ParenParams: parenParams,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
@@ -2372,7 +2387,7 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 		MainNames:       mainNames,
 		NamedGroupNames: namedGroupNames,
 		InnerLabel:      innerLabel,
-		MetaData: ast.MetaData{
+		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},

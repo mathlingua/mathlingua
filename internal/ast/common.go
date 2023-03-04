@@ -23,6 +23,7 @@ import (
 
 type MlgNodeType interface {
 	MlgNodeType()
+	GetCommonMetaData() *CommonMetaData
 	ForEach(fn func(subNode MlgNodeType))
 }
 
@@ -32,7 +33,7 @@ type Position struct {
 	Column int
 }
 
-type MetaData struct {
+type CommonMetaData struct {
 	Start Position
 	Key   int
 }

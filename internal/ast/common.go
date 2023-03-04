@@ -122,12 +122,10 @@ func (TextBlockItem) MlgNodeType()      {}
 func (NameForm) MlgNodeType()                               {}
 func (FunctionForm) MlgNodeType()                           {}
 func (TupleForm) MlgNodeType()                              {}
-func (FixedSetForm) MlgNodeType()                           {}
 func (ConditionalSetForm) MlgNodeType()                     {}
 func (ConditionalSetIdForm) MlgNodeType()                   {}
 func (FunctionCallExpression) MlgNodeType()                 {}
 func (TupleExpression) MlgNodeType()                        {}
-func (FixedSetExpression) MlgNodeType()                     {}
 func (ConditionalSetExpression) MlgNodeType()               {}
 func (CommandExpression) MlgNodeType()                      {}
 func (PrefixOperatorCallExpression) MlgNodeType()           {}
@@ -703,10 +701,6 @@ func (n *TupleForm) ForEach(fn func(subNode MlgNodeType)) {
 	forEach(n.Params, fn)
 }
 
-func (n *FixedSetForm) ForEach(fn func(subNode MlgNodeType)) {
-	forEach(n.Params, fn)
-}
-
 func (n *ConditionalSetForm) ForEach(fn func(subNode MlgNodeType)) {
 	fn(n.Target)
 }
@@ -723,10 +717,6 @@ func (n *FunctionCallExpression) ForEach(fn func(subNode MlgNodeType)) {
 }
 
 func (n *TupleExpression) ForEach(fn func(subNode MlgNodeType)) {
-	forEach(n.Args, fn)
-}
-
-func (n *FixedSetExpression) ForEach(fn func(subNode MlgNodeType)) {
 	forEach(n.Args, fn)
 }
 

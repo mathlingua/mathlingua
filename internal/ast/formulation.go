@@ -26,12 +26,10 @@ type FormulationNodeType interface {
 func (NameForm) FormulationNodeType()                               {}
 func (FunctionForm) FormulationNodeType()                           {}
 func (TupleForm) FormulationNodeType()                              {}
-func (FixedSetForm) FormulationNodeType()                           {}
 func (ConditionalSetForm) FormulationNodeType()                     {}
 func (ConditionalSetIdForm) FormulationNodeType()                   {}
 func (FunctionCallExpression) FormulationNodeType()                 {}
 func (TupleExpression) FormulationNodeType()                        {}
-func (FixedSetExpression) FormulationNodeType()                     {}
 func (ConditionalSetExpression) FormulationNodeType()               {}
 func (CommandExpression) FormulationNodeType()                      {}
 func (PrefixOperatorCallExpression) FormulationNodeType()           {}
@@ -67,12 +65,10 @@ func (FunctionLiteralExpression) FormulationNodeType()              {}
 func (n NameForm) Start() Position                               { return n.MetaData.Start }
 func (n FunctionForm) Start() Position                           { return n.MetaData.Start }
 func (n TupleForm) Start() Position                              { return n.MetaData.Start }
-func (n FixedSetForm) Start() Position                           { return n.MetaData.Start }
 func (n ConditionalSetForm) Start() Position                     { return n.MetaData.Start }
 func (n ConditionalSetIdForm) Start() Position                   { return n.MetaData.Start }
 func (n FunctionCallExpression) Start() Position                 { return n.MetaData.Start }
 func (n TupleExpression) Start() Position                        { return n.MetaData.Start }
-func (n FixedSetExpression) Start() Position                     { return n.MetaData.Start }
 func (n ConditionalSetExpression) Start() Position               { return n.MetaData.Start }
 func (n CommandExpression) Start() Position                      { return n.MetaData.Start }
 func (n PrefixOperatorCallExpression) Start() Position           { return n.MetaData.Start }
@@ -115,7 +111,6 @@ type StructuralFormType interface {
 func (NameForm) StructuralForm()            {}
 func (FunctionForm) StructuralForm()        {}
 func (TupleForm) StructuralForm()           {}
-func (FixedSetForm) StructuralForm()        {}
 func (ConditionalSetForm) StructuralForm()  {}
 func (InfixOperatorForm) StructuralForm()   {}
 func (PrefixOperatorForm) StructuralForm()  {}
@@ -168,13 +163,6 @@ type TupleForm struct {
 	MetaData MetaData
 }
 
-// {x, y}
-type FixedSetForm struct {
-	Params   []StructuralFormType
-	VarArg   VarArgData
-	MetaData MetaData
-}
-
 // {x | ...}
 type ConditionalSetForm struct {
 	Target   StructuralFormType
@@ -200,7 +188,6 @@ type ConditionalSetIdForm struct {
 func (NameForm) LiteralFormType()             {}
 func (FunctionForm) LiteralFormType()         {}
 func (TupleForm) LiteralFormType()            {}
-func (FixedSetForm) LiteralFormType()         {}
 func (ConditionalSetIdForm) LiteralFormType() {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -212,7 +199,6 @@ type LiteralExpressionType interface {
 
 func (FunctionCallExpression) LiteralExpressionType()    {}
 func (TupleExpression) LiteralExpressionType()           {}
-func (FixedSetExpression) LiteralExpressionType()        {}
 func (ConditionalSetExpression) LiteralExpressionType()  {}
 func (FunctionLiteralExpression) LiteralExpressionType() {}
 
@@ -247,7 +233,6 @@ type ExpressionType interface {
 func (NameForm) ExpressionType()                               {}
 func (FunctionCallExpression) ExpressionType()                 {}
 func (TupleExpression) ExpressionType()                        {}
-func (FixedSetExpression) ExpressionType()                     {}
 func (ConditionalSetExpression) ExpressionType()               {}
 func (CommandExpression) ExpressionType()                      {}
 func (PrefixOperatorCallExpression) ExpressionType()           {}
@@ -283,12 +268,6 @@ type FunctionLiteralExpression struct {
 
 // (x + y, z)
 type TupleExpression struct {
-	Args     []ExpressionType
-	MetaData MetaData
-}
-
-// {x + y, z}
-type FixedSetExpression struct {
 	Args     []ExpressionType
 	MetaData MetaData
 }

@@ -39,10 +39,6 @@ func (n TupleForm) Debug() string {
 	return "(" + commaSeparatedString(n.Params) + ")" + n.VarArg.Debug()
 }
 
-func (n FixedSetForm) Debug() string {
-	return "{" + commaSeparatedString(n.Params) + "}" + n.VarArg.Debug()
-}
-
 func (n ConditionalSetForm) Debug() string {
 	return "{" + n.Target.Debug() + " | ...}" + n.VarArg.Debug()
 }
@@ -59,10 +55,6 @@ func (n FunctionCallExpression) Debug() string {
 
 func (n TupleExpression) Debug() string {
 	return "(" + commaSeparatedString(n.Args) + ")"
-}
-
-func (n FixedSetExpression) Debug() string {
-	return "{" + commaSeparatedString(n.Args) + "}"
 }
 
 func (n ConditionalSetExpression) Debug() string {

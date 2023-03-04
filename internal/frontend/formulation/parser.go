@@ -348,10 +348,6 @@ func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionType,
 		return &tup, ok
 	}
 
-	if set, ok := fp.fixedSetExpression(); ok {
-		return &set, ok
-	}
-
 	return nil, false
 }
 
@@ -656,10 +652,6 @@ func (fp *formulationParser) pseudoExpression(
 			children = append(children, &fun)
 		} else if tup, ok := fp.tupleForm(); ok {
 			children = append(children, &tup)
-		} else if set, ok := fp.fixedSetForm(); ok {
-			children = append(children, &set)
-		} else if set, ok := fp.fixedSetExpression(); ok {
-			children = append(children, &set)
 		} else if set, ok := fp.conditionalSetForm(); ok {
 			children = append(children, &set)
 		} else if sig, ok := fp.signature(); ok {
@@ -825,48 +817,6 @@ func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
 	fp.expect(ast.RParen)
 	fp.lexer.Commit(id)
 	return ast.TupleExpression{
-		Args: args,
-		MetaData: ast.MetaData{
-			Start: fp.getShiftedPosition(start),
-			Key:   fp.keyGen.Next(),
-		},
-	}, true
-}
-
-func (fp *formulationParser) fixedSetExpression() (ast.FixedSetExpression, bool) {
-	start := fp.lexer.Position()
-	id := fp.lexer.Snapshot()
-	_, ok := fp.token(ast.LCurly)
-	if !ok {
-		fp.lexer.RollBack(id)
-		return ast.FixedSetExpression{}, false
-	}
-	args := make([]ast.ExpressionType, 0)
-	for fp.lexer.HasNext() {
-		if fp.has(ast.RCurly) {
-			break
-		}
-
-		if len(args) > 0 {
-			// if the input is of the form `{x |` then it is a
-			// conditional set and not a fixed set
-			if fp.has(ast.Bar) {
-				fp.lexer.RollBack(id)
-				return ast.FixedSetExpression{}, false
-			}
-			fp.expect(ast.Comma)
-		}
-
-		arg, ok := fp.expressionType()
-		if !ok {
-			fp.lexer.RollBack(id)
-			return ast.FixedSetExpression{}, false
-		}
-		args = append(args, arg)
-	}
-	fp.expect(ast.RCurly)
-	fp.lexer.Commit(id)
-	return ast.FixedSetExpression{
 		Args: args,
 		MetaData: ast.MetaData{
 			Start: fp.getShiftedPosition(start),
@@ -1713,10 +1663,6 @@ func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool)
 		return &tuple, true
 	}
 
-	if fixedSet, ok := fp.fixedSetForm(); ok {
-		return &fixedSet, true
-	}
-
 	if conditionalSet, ok := fp.conditionalSetForm(); ok {
 		return &conditionalSet, true
 	}
@@ -1925,50 +1871,6 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 	}, true
 }
 
-func (fp *formulationParser) fixedSetForm() (ast.FixedSetForm, bool) {
-	start := fp.lexer.Position()
-	id := fp.lexer.Snapshot()
-	_, ok := fp.token(ast.LCurly)
-	if !ok {
-		fp.lexer.RollBack(id)
-		return ast.FixedSetForm{}, false
-	}
-	params := make([]ast.StructuralFormType, 0)
-	for fp.lexer.HasNext() {
-		if fp.has(ast.RCurly) {
-			break
-		}
-
-		if len(params) > 0 {
-			// if the input is of the form `{x |` then it is a
-			// conditional set and not a fixed set
-			if fp.has(ast.Bar) {
-				fp.lexer.RollBack(id)
-				return ast.FixedSetForm{}, false
-			}
-			fp.expect(ast.Comma)
-		}
-
-		param, ok := fp.structuralFormType()
-		if !ok {
-			fp.lexer.RollBack(id)
-			return ast.FixedSetForm{}, false
-		}
-		params = append(params, param)
-	}
-	fp.expect(ast.RCurly)
-	varArg, _ := fp.varArgData()
-	fp.lexer.Commit(id)
-	return ast.FixedSetForm{
-		Params: params,
-		VarArg: varArg,
-		MetaData: ast.MetaData{
-			Start: fp.getShiftedPosition(start),
-			Key:   fp.keyGen.Next(),
-		},
-	}, true
-}
-
 func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
@@ -2018,10 +1920,6 @@ func (fp *formulationParser) literalFormType() (ast.LiteralFormType, bool) {
 
 	if tup, ok := fp.tupleForm(); ok {
 		return &tup, ok
-	}
-
-	if set, ok := fp.fixedSetForm(); ok {
-		return &set, ok
 	}
 
 	if set, ok := fp.conditionalSetIdForm(); ok {

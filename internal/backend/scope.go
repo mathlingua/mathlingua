@@ -27,6 +27,7 @@ type Scope interface {
 }
 
 type NameInfo struct {
+	IsInfereble     bool
 	IsPlaceholder   bool
 	IsNumberLiteral bool
 	Type            ResolvedType

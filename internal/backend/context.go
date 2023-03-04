@@ -23,9 +23,11 @@ type Context interface {
 	SetParent(parent *Context)
 	IsSubTypeOf(from string, to string) bool
 	IsViewableAs(from string, to string) bool
-	FollowSpecAlias(nameType ResolvedType,
+	PopulateFromSpecAlias(nameType ResolvedType,
 		specName string, target ast.ExpressionType,
 		scope *Scope)
+	PopulateFromIs(is *ast.IsExpression, scope *Scope)
+	GetWrittenAs(exp *ast.ExpressionType, scope *Scope)
 	AddDefines(defines *ast.DefinesGroup)
 	AddDescribes(describes *ast.DescribesGroup)
 	AddStates(states *ast.StatesSection)

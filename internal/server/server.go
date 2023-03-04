@@ -41,6 +41,7 @@ func Start() {
 	router.HandleFunc("/api/page", page).Methods("GET")
 	router.PathPrefix("/").Handler(web.AssetHandler{})
 
+	fmt.Println("Visit http://localhost:8080 to view your documents")
 	if err := http.ListenAndServe(":8080", router); err != nil {
 		fmt.Println(err.Error())
 	}

@@ -16,48 +16,18 @@
 
 package backend
 
+import "mathlingua/internal/ast"
+
 type Scope interface {
-	GetName() (NameInfo, bool)
+	GetParent() (*Scope, bool)
+	SetParent(parent *Scope)
+	GetNameInfo() (NameInfo, bool)
+	SetNameInfo(name string, info NameInfo)
+	AddSpecify(specifies *ast.SpecifyGroup)
 }
 
 type NameInfo struct {
 	IsPlaceholder   bool
 	IsNumberLiteral bool
 	Type            ResolvedType
-}
-
-type GlobalScope struct {
-}
-
-type SpecifyScope struct {
-}
-
-type ForAllScope struct {
-}
-
-type ExistsScope struct {
-}
-
-type ExistsUniqueScope struct {
-}
-
-type GivenScope struct {
-}
-
-type DefinesScope struct {
-}
-
-type DescribesScope struct {
-}
-
-type StatesScope struct {
-}
-
-type TheoremScope struct {
-}
-
-type AxiomScope struct {
-}
-
-type ConjectureScope struct {
 }

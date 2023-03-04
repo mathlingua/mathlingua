@@ -26,6 +26,7 @@ import "mathlingua/internal/mlglib"
  *       describe variable types and variables themselves.
  */
 type ResolvedType struct {
+	Form       TypeForm
 	Signatures mlglib.Set[string]
 }
 

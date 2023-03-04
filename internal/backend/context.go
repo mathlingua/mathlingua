@@ -16,7 +16,17 @@
 
 package backend
 
+import "mathlingua/internal/ast"
+
 type Context interface {
+	GetParent() (*Context, bool)
+	SetParent(parent *Context)
 	IsSubTypeOf(from string, to string) bool
 	IsViewableAs(from string, to string) bool
+	FollowSpecAlias(nameType ResolvedType,
+		specName string, target ast.ExpressionType,
+		scope *Scope)
+	AddDefines(defines *ast.DefinesGroup)
+	AddDescribes(describes *ast.DescribesGroup)
+	AddStates(states *ast.StatesSection)
 }

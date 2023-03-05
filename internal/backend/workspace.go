@@ -19,6 +19,12 @@ package backend
 import (
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
+	"mathlingua/internal/frontend/phase1"
+	"mathlingua/internal/frontend/phase2"
+	"mathlingua/internal/frontend/phase3"
+	"mathlingua/internal/frontend/phase4"
+	"mathlingua/internal/frontend/phase5"
+	"mathlingua/internal/mlglib"
 	"mathlingua/internal/server"
 	"path/filepath"
 )
@@ -34,9 +40,9 @@ type PathDiagnostic struct {
 	Diagnostic frontend.Diagnostic
 }
 
-type WorkspaceResponse struct {
-	Error string
-	Pages []WorkspacePageResponse
+type ViewResult struct {
+	Diagnostics []PathDiagnostic
+	Pages       []WorkspacePageResponse
 }
 
 type WorkspacePageResponse struct {
@@ -44,31 +50,89 @@ type WorkspacePageResponse struct {
 	Page server.PageResponse
 }
 
+type CheckResult struct {
+	Diagnostics []PathDiagnostic
+}
+
 type Workspace interface {
 	AddDocument(path Path, content string)
-	Check() []PathDiagnostic
-	View() WorkspaceResponse
+	DocumentCount() int
+	Check() CheckResult
+	View() ViewResult
 }
 
 func NewWorkspace() Workspace {
-	return &workspace{}
+	return &workspace{
+		diagnosticsAtAdd: make(map[Path][]frontend.Diagnostic),
+		documents:        make(map[Path]*ast.Document),
+		context:          nil,
+		scope:            nil,
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type workspace struct {
-	documents map[string]*ast.Document
-	context   *ast.Context
-	scope     *ast.Scope
+	diagnosticsAtAdd map[Path][]frontend.Diagnostic
+	documents        map[Path]*ast.Document
+	context          *ast.Context
+	scope            *ast.Scope
 }
 
 func (w *workspace) AddDocument(path Path, content string) {
+	doc, diagnostics := parseDocument(content)
+	w.documents[path] = &doc
+	w.diagnosticsAtAdd[path] = diagnostics
 }
 
-func (w *workspace) Check() []PathDiagnostic {
-	return []PathDiagnostic{}
+func (w *workspace) DocumentCount() int {
+	return len(w.documents)
 }
 
-func (w *workspace) View() WorkspaceResponse {
-	return WorkspaceResponse{}
+func (w *workspace) Check() CheckResult {
+	diagnostics := make([]PathDiagnostic, 0)
+
+	for p, diags := range w.diagnosticsAtAdd {
+		for _, diag := range diags {
+			diagnostics = append(diagnostics, PathDiagnostic{
+				Path:       p,
+				Diagnostic: diag,
+			})
+		}
+	}
+
+	return CheckResult{
+		Diagnostics: diagnostics,
+	}
+}
+
+func (w *workspace) View() ViewResult {
+	return ViewResult{}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func parse(text string) (phase4.Document, []frontend.Diagnostic) {
+	tracker := frontend.NewDiagnosticTracker()
+
+	lexer1 := phase1.NewLexer(text, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := phase3.NewLexer(lexer2, tracker)
+
+	doc := phase4.Parse(lexer3, tracker)
+
+	return doc, tracker.Diagnostics()
+}
+
+func parseDocument(text string) (ast.Document, []frontend.Diagnostic) {
+	tracker := frontend.NewDiagnosticTracker()
+
+	lexer1 := phase1.NewLexer(text, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := phase3.NewLexer(lexer2, tracker)
+
+	root := phase4.Parse(lexer3, tracker)
+	doc, _ := phase5.Parse(root, tracker, mlglib.NewKeyGenerator())
+
+	return doc, tracker.Diagnostics()
 }

@@ -19,14 +19,7 @@ package mlg
 import (
 	"encoding/json"
 	"fmt"
-	"mathlingua/internal/ast"
-	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/phase1"
-	"mathlingua/internal/frontend/phase2"
-	"mathlingua/internal/frontend/phase3"
-	"mathlingua/internal/frontend/phase4"
-	"mathlingua/internal/frontend/phase5"
-	"mathlingua/internal/mlglib"
+	"mathlingua/internal/backend"
 	"mathlingua/internal/server"
 	"os"
 	"path/filepath"
@@ -73,37 +66,11 @@ type checkResult struct {
 	Diagnostics     []diagnosticInfo `json:"diagnostics"`
 }
 
-func parse(text string) (phase4.Document, []frontend.Diagnostic) {
-	tracker := frontend.NewDiagnosticTracker()
-
-	lexer1 := phase1.NewLexer(text, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := phase3.NewLexer(lexer2, tracker)
-
-	doc := phase4.Parse(lexer3, tracker)
-
-	return doc, tracker.Diagnostics()
-}
-
-func parseDocument(text string) (ast.Document, []frontend.Diagnostic) {
-	tracker := frontend.NewDiagnosticTracker()
-
-	lexer1 := phase1.NewLexer(text, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := phase3.NewLexer(lexer2, tracker)
-
-	root := phase4.Parse(lexer3, tracker)
-	doc, _ := phase5.Parse(root, tracker, mlglib.NewKeyGenerator())
-
-	return doc, tracker.Diagnostics()
-}
-
 func (m *mlg) Check(paths []string, showJson bool, debug bool) {
-	result := checkResult{
-		GeneralWarnings: make([]string, 0),
-		GeneralErrors:   make([]string, 0),
-		Diagnostics:     make([]diagnosticInfo, 0),
-	}
+	workspace := backend.NewWorkspace()
+
+	pathWarnings := make([]string, 0)
+	pathErrors := make([]string, 0)
 
 	if len(paths) == 0 {
 		paths = append(paths, ".")
@@ -112,25 +79,22 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 			stat, _ := os.Stat(p)
 			isDir := stat != nil && stat.IsDir()
 			if !isDir && !strings.HasSuffix(p, ".math") {
-				result.GeneralWarnings = append(result.GeneralWarnings,
+				pathWarnings = append(pathWarnings,
 					fmt.Sprintf("File %s is not a MathLingua (.math) file and will be ignored", p))
 			}
 		}
 	}
-	numErrors := 0
-	numFilesProcessed := 0
+
 	for _, p := range paths {
 		err := filepath.Walk(p, func(p string, info os.FileInfo, err error) error {
 			if err != nil {
-				numErrors++
-				result.GeneralErrors = append(result.GeneralErrors, err.Error())
+				pathErrors = append(pathErrors, err.Error())
 				return err
 			}
 
 			stat, err := os.Stat(p)
 			if err != nil {
-				numErrors++
-				result.GeneralErrors = append(result.GeneralErrors, err.Error())
+				pathErrors = append(pathErrors, err.Error())
 				return err
 			}
 
@@ -140,41 +104,26 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 
 			text, err := appendMetaIds(p)
 			if err != nil {
-				numErrors++
-				result.GeneralErrors = append(result.GeneralErrors, err.Error())
+				pathErrors = append(pathErrors, err.Error())
 				return err
 			}
 
-			numFilesProcessed++
-			_, diagnostics := parseDocument(text)
-			for _, diag := range diagnostics {
-				debugInfo := ""
-				if debug {
-					debugInfo = fmt.Sprintf(" [%s]", diag.Origin)
-				}
-
-				result.Diagnostics = append(result.Diagnostics, diagnosticInfo{
-					Type:      string(diag.Type),
-					Path:      p,
-					Message:   diag.Message,
-					DebugInfo: debugInfo,
-					Row:       diag.Position.Row,
-					Column:    diag.Position.Column,
-				})
-			}
-			numErrors += len(diagnostics)
-
+			workspace.AddDocument(backend.ToPath(p), text)
 			return nil
 		})
 
 		if err != nil {
-			result.GeneralErrors = append(result.GeneralErrors, err.Error())
+			pathErrors = append(pathErrors, err.Error())
 			continue
 		}
 	}
 
+	checkResult := workspace.Check()
+	numErrors := len(pathErrors) + len(checkResult.Diagnostics)
+	numFilesProcessed := workspace.DocumentCount()
+
 	if showJson {
-		if data, err := json.MarshalIndent(result, "", "  "); err != nil {
+		if data, err := json.MarshalIndent(checkResult, "", "  "); err != nil {
 			m.logger.Error(fmt.Sprintf("{\"generalErrors\": [\"%s\"]}", err))
 		} else {
 			m.logger.Log(string(data))
@@ -196,21 +145,26 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 		filesText = "files"
 	}
 
-	for _, warning := range result.GeneralWarnings {
+	for _, warning := range pathWarnings {
 		m.logger.Warning(warning)
 	}
 
-	for _, err := range result.GeneralErrors {
+	for _, err := range pathErrors {
 		m.logger.Error(err)
 	}
 
-	for index, info := range result.Diagnostics {
+	for index, info := range checkResult.Diagnostics {
 		if index > 0 {
 			// print a line between each error
 			m.logger.Log("")
 		}
+		debugInfo := ""
+		if debug {
+			debugInfo = fmt.Sprintf(" [%s]", info.Diagnostic.Origin)
+		}
 		m.logger.Error(fmt.Sprintf("%s (%d, %d)%s\n%s",
-			info.Path, info.Row+1, info.Column+1, info.DebugInfo, info.Message))
+			info.Path, info.Diagnostic.Position.Row+1, info.Diagnostic.Position.Column+1,
+			debugInfo, info.Diagnostic.Message))
 	}
 
 	if numErrors > 0 {

@@ -259,6 +259,10 @@ func appendMetaIds(path string) (string, error) {
 		}
 	}
 
+	if strings.HasSuffix(endText, "\n") {
+		endText = string(endText[0 : len(endText)-1])
+	}
+
 	if err := os.WriteFile(path, []byte(endText), 0644); err != nil {
 		return "", err
 	}

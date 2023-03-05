@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package backend
-
-import "mathlingua/internal/ast"
+package ast
 
 type Context interface {
 	GetParent() (*Context, bool)
@@ -24,11 +22,11 @@ type Context interface {
 	IsSubTypeOf(from string, to string) bool
 	IsViewableAs(from string, to string) bool
 	PopulateFromSpecAlias(nameType ResolvedType,
-		specName string, target ast.ExpressionType,
+		specName string, target ExpressionType,
 		scope *Scope)
-	PopulateFromIs(is *ast.IsExpression, scope *Scope)
-	GetWrittenAs(exp *ast.ExpressionType, scope *Scope)
-	AddDefines(defines *ast.DefinesGroup)
-	AddDescribes(describes *ast.DescribesGroup)
-	AddStates(states *ast.StatesSection)
+	PopulateFromIs(is *IsExpression, scope *Scope)
+	GetWrittenAs(exp *ExpressionType, scope *Scope)
+	AddDefines(defines *DefinesGroup)
+	AddDescribes(describes *DescribesGroup)
+	AddStates(states *StatesSection)
 }

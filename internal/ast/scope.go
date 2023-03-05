@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package backend
-
-import "mathlingua/internal/ast"
+package ast
 
 type Scope interface {
 	GetParent() (*Scope, bool)
 	SetParent(parent *Scope)
 	GetNameInfo() (NameInfo, bool)
 	SetNameInfo(name string, info NameInfo)
-	AddSpecify(specifies *ast.SpecifyGroup)
+	AddSpecify(specifies *SpecifyGroup)
 }
 
 type NameInfo struct {

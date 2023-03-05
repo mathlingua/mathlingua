@@ -58,8 +58,8 @@ func NewWorkspace() Workspace {
 
 type workspace struct {
 	documents map[string]*ast.Document
-	context   *Context
-	scope     *Scope
+	context   *ast.Context
+	scope     *ast.Scope
 }
 
 func (w *workspace) AddDocument(path Path, doc *ast.Document) {

@@ -21,11 +21,20 @@ type FormulationNodeType interface {
 	FormulationDebuggable
 	FormulationNodeType()
 	Start() Position
-	// GetFormulationMetadata() *FormulationMetaData
+	GetFormulationMetadata() *FormulationMetaData
 }
 
-// type FormulationMetaData struct {
-// }
+type FormulationMetaData struct {
+	Context    Context
+	Scope      Scope
+	Resolution Resolution
+	Type       ResolvedType
+}
+
+type Resolution struct {
+	From string
+	To   string
+}
 
 func (NameForm) FormulationNodeType()                               {}
 func (FunctionForm) FormulationNodeType()                           {}
@@ -124,54 +133,61 @@ func (PostfixOperatorForm) StructuralForm() {}
 type NameForm struct {
 	Text string
 	// specifies "x" vs x but Text will never contain the quotes
-	IsStropped      bool
-	HasQuestionMark bool
-	VarArg          VarArgData
-	CommonMetaData  CommonMetaData
+	IsStropped          bool
+	HasQuestionMark     bool
+	VarArg              VarArgData
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // f(x, y)
 type FunctionForm struct {
-	Target         NameForm
-	Params         []NameForm
-	VarArg         VarArgData
-	CommonMetaData CommonMetaData
+	Target              NameForm
+	Params              []NameForm
+	VarArg              VarArgData
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // x * y
 type InfixOperatorForm struct {
-	Operator       NameForm
-	Lhs            NameForm
-	Rhs            NameForm
-	CommonMetaData CommonMetaData
+	Operator            NameForm
+	Lhs                 NameForm
+	Rhs                 NameForm
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // +y
 type PrefixOperatorForm struct {
-	Operator       NameForm
-	Param          NameForm
-	CommonMetaData CommonMetaData
+	Operator            NameForm
+	Param               NameForm
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // x!
 type PostfixOperatorForm struct {
-	Operator       NameForm
-	Param          NameForm
-	CommonMetaData CommonMetaData
+	Operator            NameForm
+	Param               NameForm
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // (x, y)
 type TupleForm struct {
-	Params         []StructuralFormType
-	VarArg         VarArgData
-	CommonMetaData CommonMetaData
+	Params              []StructuralFormType
+	VarArg              VarArgData
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // {x | ...}
 type ConditionalSetForm struct {
-	Target         StructuralFormType
-	VarArg         VarArgData
-	CommonMetaData CommonMetaData
+	Target              StructuralFormType
+	VarArg              VarArgData
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -183,10 +199,11 @@ type LiteralFormType interface {
 
 // [x]{x | f(x)...}
 type ConditionalSetIdForm struct {
-	Symbols        []StructuralFormType
-	Target         StructuralFormType
-	Condition      FunctionForm
-	CommonMetaData CommonMetaData
+	Symbols             []StructuralFormType
+	Target              StructuralFormType
+	Condition           FunctionForm
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 func (NameForm) LiteralFormType()             {}
@@ -217,14 +234,16 @@ type LiteralType interface {
 ////////////////////////////////////// Pseudo Nodes ////////////////////////////////////////////////
 
 type PseudoTokenNode struct {
-	Text           string
-	Type           TokenType
-	CommonMetaData CommonMetaData
+	Text                string
+	Type                TokenType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 type PseudoExpression struct {
-	Children       []FormulationNodeType
-	CommonMetaData CommonMetaData
+	Children            []FormulationNodeType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 ///////////////////////////////////// Expressions //////////////////////////////////////////////////
@@ -258,109 +277,124 @@ func (FunctionLiteralExpression) ExpressionType()              {}
 
 // f(x + y, z) or (f + g)(x)
 type FunctionCallExpression struct {
-	Target         ExpressionType
-	Args           []ExpressionType
-	CommonMetaData CommonMetaData
+	Target              ExpressionType
+	Args                []ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // x => x + 1 or (x, y) => x + y
 type FunctionLiteralExpression struct {
-	Lhs            TupleForm
-	Rhs            ExpressionType
-	CommonMetaData CommonMetaData
+	Lhs                 TupleForm
+	Rhs                 ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // (x + y, z)
 type TupleExpression struct {
-	Args           []ExpressionType
-	CommonMetaData CommonMetaData
+	Args                []ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // [x]{(x, x+1) | x is \real ; x > 0}
 type ConditionalSetExpression struct {
-	Symbols        []StructuralFormType
-	Target         ExpressionType
-	Conditions     []ExpressionType
-	CommonMetaData CommonMetaData
+	Symbols             []StructuralFormType
+	Target              ExpressionType
+	Conditions          []ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 type NamedArg struct {
-	Name           NameForm
-	CurlyArg       *CurlyArg
-	CommonMetaData CommonMetaData
+	Name                NameForm
+	CurlyArg            *CurlyArg
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // \function:on{A}:to{B}
 type CommandExpression struct {
-	Names          []NameForm
-	CurlyArg       *CurlyArg
-	NamedArgs      *[]NamedArg
-	ParenArgs      *[]ExpressionType
-	CommonMetaData CommonMetaData
+	Names               []NameForm
+	CurlyArg            *CurlyArg
+	NamedArgs           *[]NamedArg
+	ParenArgs           *[]ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // []{} or {}
 type CurlyArg struct {
-	CurlyArgs      *[]ExpressionType
-	Direction      *DirectionalParam
-	CommonMetaData CommonMetaData
+	CurlyArgs           *[]ExpressionType
+	Direction           *DirectionalParam
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // -x
 type PrefixOperatorCallExpression struct {
-	Target         OperatorType
-	Arg            ExpressionType
-	CommonMetaData CommonMetaData
+	Target              OperatorType
+	Arg                 ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // x!
 type PostfixOperatorCallExpression struct {
-	Target         OperatorType
-	Arg            ExpressionType
-	CommonMetaData CommonMetaData
+	Target              OperatorType
+	Arg                 ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // x + y
 type InfixOperatorCallExpression struct {
-	Target         OperatorType
-	Lhs            ExpressionType
-	Rhs            ExpressionType
-	CommonMetaData CommonMetaData
+	Target              OperatorType
+	Lhs                 ExpressionType
+	Rhs                 ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 type MultiplexedInfixOperatorCallExpression struct {
-	Target         OperatorType
-	Lhs            []ExpressionType
-	Rhs            []ExpressionType
-	CommonMetaData CommonMetaData
+	Target              OperatorType
+	Lhs                 []ExpressionType
+	Rhs                 []ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // x is \y
 type IsExpression struct {
-	Lhs            []ExpressionType
-	Rhs            []KindType
-	CommonMetaData CommonMetaData
+	Lhs                 []ExpressionType
+	Rhs                 []KindType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // x extends \y
 type ExtendsExpression struct {
-	Lhs            []ExpressionType
-	Rhs            []KindType
-	CommonMetaData CommonMetaData
+	Lhs                 []ExpressionType
+	Rhs                 []KindType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // x as \[y]
 type AsExpression struct {
-	Lhs            ExpressionType
-	Rhs            Signature
-	CommonMetaData CommonMetaData
+	Lhs                 ExpressionType
+	Rhs                 Signature
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // x{1}
 type OrdinalCallExpression struct {
-	Target         LiteralFormType
-	Args           []ExpressionType
-	CommonMetaData CommonMetaData
+	Target              LiteralFormType
+	Args                []ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // (x + y).z.a.b
@@ -368,16 +402,18 @@ type ChainExpression struct {
 	Parts               []ExpressionType
 	HasTrailingOperator bool
 	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // \(a.b.c:x:y)::[inner label]
 type Signature struct {
-	MainNames       []string
-	NamedGroupNames []string
-	InnerLabel      *string
-	CommonMetaData  CommonMetaData
+	MainNames           []string
+	NamedGroupNames     []string
+	InnerLabel          *string
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 /////////////////////////////// Kinds //////////////////////////////////////////////////////////////
@@ -389,8 +425,9 @@ type KindType interface {
 
 // [: specification, states :]
 type MetaKinds struct {
-	Kinds          []string
-	CommonMetaData CommonMetaData
+	Kinds               []string
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 func (NameForm) KindType()                      {} // x could refer to a type
@@ -414,30 +451,34 @@ func (ExpressionColonEqualsItem) ColonEqualsType() {}
 
 // X := (a, b) or f(x) := y
 type StructuralColonEqualsForm struct {
-	Lhs            StructuralFormType
-	Rhs            StructuralFormType
-	CommonMetaData CommonMetaData
+	Lhs                 StructuralFormType
+	Rhs                 StructuralFormType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // f(x) := x + 1
 type ExpressionColonEqualsItem struct {
-	Lhs            ExpressionType
-	Rhs            ExpressionType
-	CommonMetaData CommonMetaData
+	Lhs                 ExpressionType
+	Rhs                 ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // x + y :=> x
 type ExpressionColonArrowItem struct {
-	Lhs            ExpressionType
-	Rhs            ExpressionType
-	CommonMetaData CommonMetaData
+	Lhs                 ExpressionType
+	Rhs                 ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // x + y :-> x
 type ExpressionColonDashArrowItem struct {
-	Lhs            ExpressionType
-	Rhs            ExpressionType
-	CommonMetaData CommonMetaData
+	Lhs                 ExpressionType
+	Rhs                 ExpressionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -455,23 +496,26 @@ func (CommandOperatorTarget) OperatorType()               {}
 
 // [x] or [x + y]
 type EnclosedNonCommandOperatorTarget struct {
-	Target         ExpressionType
-	HasLeftColon   bool
-	HasRightColon  bool
-	CommonMetaData CommonMetaData
+	Target              ExpressionType
+	HasLeftColon        bool
+	HasRightColon       bool
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // *, ++, :+, or +:
 type NonEnclosedNonCommandOperatorTarget struct {
-	Text           string
-	HasLeftColon   bool
-	HasRightColon  bool
-	CommonMetaData CommonMetaData
+	Text                string
+	HasLeftColon        bool
+	HasRightColon       bool
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 type CommandOperatorTarget struct {
-	Command        CommandExpression
-	CommonMetaData CommonMetaData
+	Command             CommandExpression
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 ////////////////////////////////////////////// Ids /////////////////////////////////////////////////
@@ -488,26 +532,29 @@ func (InfixOperatorId) IdType()        {}
 func (InfixCommandOperatorId) IdType() {}
 
 type NamedParam struct {
-	Name           NameForm
-	CurlyParam     *CurlyParam
-	CommonMetaData CommonMetaData
+	Name                NameForm
+	CurlyParam          *CurlyParam
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // \function:on{A}:to{B}
 type CommandId struct {
-	Names          []NameForm
-	CurlyParam     *CurlyParam
-	NamedParams    *[]NamedParam
-	ParenParams    *[]NameForm
-	CommonMetaData CommonMetaData
+	Names               []NameForm
+	CurlyParam          *CurlyParam
+	NamedParams         *[]NamedParam
+	ParenParams         *[]NameForm
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // []{} or {}
 type CurlyParam struct {
-	SquareParams   *[]StructuralFormType
-	CurlyParams    []StructuralFormType
-	Direction      *DirectionalParam
-	CommonMetaData CommonMetaData
+	SquareParams        *[]StructuralFormType
+	CurlyParams         []StructuralFormType
+	Direction           *DirectionalParam
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 type DirectionParamParamType interface {
@@ -520,54 +567,61 @@ func (FunctionForm) DirectionParamParamType()          {}
 func (OrdinalCallExpression) DirectionParamParamType() {}
 
 type DirectionalParam struct {
-	Name           *NameForm
-	SquareParams   []DirectionParamParamType
-	CommonMetaData CommonMetaData
+	Name                *NameForm
+	SquareParams        []DirectionParamParamType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // \function:on{A}:to{B}/
 type InfixCommandId struct {
-	Names          []NameForm
-	CurlyParam     *CurlyParam
-	NamedParams    *[]NamedParam
-	ParenParams    *[]NameForm
-	CommonMetaData CommonMetaData
+	Names               []NameForm
+	CurlyParam          *CurlyParam
+	NamedParams         *[]NamedParam
+	ParenParams         *[]NameForm
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // +x
 type PrefixOperatorId struct {
-	Operator       NonEnclosedNonCommandOperatorTarget
-	Param          StructuralFormType
-	CommonMetaData CommonMetaData
+	Operator            NonEnclosedNonCommandOperatorTarget
+	Param               StructuralFormType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // -x
 type PostfixOperatorId struct {
-	Operator       NonEnclosedNonCommandOperatorTarget
-	Param          StructuralFormType
-	CommonMetaData CommonMetaData
+	Operator            NonEnclosedNonCommandOperatorTarget
+	Param               StructuralFormType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 type InfixOperatorId struct {
-	Lhs            StructuralFormType
-	Operator       NonEnclosedNonCommandOperatorTarget
-	Rhs            StructuralFormType
-	CommonMetaData CommonMetaData
+	Lhs                 StructuralFormType
+	Operator            NonEnclosedNonCommandOperatorTarget
+	Rhs                 StructuralFormType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 // A \subset/ B
 type InfixCommandOperatorId struct {
-	Lhs            StructuralFormType
-	Operator       InfixCommandId
-	Rhs            StructuralFormType
-	CommonMetaData CommonMetaData
+	Lhs                 StructuralFormType
+	Operator            InfixCommandId
+	Rhs                 StructuralFormType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
 
 //////////////////////////////////// Support structures ////////////////////////////////////////////
 
 type VarArgData struct {
-	IsVarArg       bool
-	VarArgNames    []string
-	VarArgBounds   []string
-	CommonMetaData CommonMetaData
+	IsVarArg            bool
+	VarArgNames         []string
+	VarArgBounds        []string
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }

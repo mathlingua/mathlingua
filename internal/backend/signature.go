@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-package ast
+package backend
 
-type Scope interface {
-	GetParent() (*Scope, bool)
-	SetParent(parent *Scope)
-	GetNameInfo(name string) (NameInfo, bool)
-	SetNameInfo(name string, info NameInfo)
-	AddSpecify(specifies *SpecifyGroup)
-}
+import "mathlingua/internal/ast"
 
-type NameInfo struct {
-	IsInfereble     bool
-	IsPlaceholder   bool
-	IsNumberLiteral bool
-	Type            ResolvedType
+func GetSignatureString(cmd ast.CommandExpression) string {
+	names := make([]string, 0)
+	namedGroups := make([]string, 0)
+
+	for _, n := range cmd.Names {
+		names = append(names, n.Text)
+	}
+
+	for _, ng := range *cmd.NamedArgs {
+		namedGroups = append(namedGroups, ng.Name.Text)
+	}
+
+	return ast.Signature{
+		MainNames:       names,
+		NamedGroupNames: namedGroups,
+	}.Debug()
 }

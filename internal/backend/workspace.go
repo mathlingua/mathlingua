@@ -45,7 +45,7 @@ type WorkspacePageResponse struct {
 }
 
 type Workspace interface {
-	AddDocument(path Path, doc *ast.Document)
+	AddDocument(path Path, content string)
 	Check() []PathDiagnostic
 	View() WorkspaceResponse
 }
@@ -62,7 +62,7 @@ type workspace struct {
 	scope     *ast.Scope
 }
 
-func (w *workspace) AddDocument(path Path, doc *ast.Document) {
+func (w *workspace) AddDocument(path Path, content string) {
 }
 
 func (w *workspace) Check() []PathDiagnostic {

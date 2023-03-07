@@ -26,7 +26,4 @@ type Context interface {
 		scope *Scope)
 	PopulateFromIs(is *IsExpression, scope *Scope)
 	GetWrittenAs(exp *ExpressionType, scope *Scope)
-	AddDefines(defines *DefinesGroup)
-	AddDescribes(describes *DescribesGroup)
-	AddStates(states *StatesSection)
 }

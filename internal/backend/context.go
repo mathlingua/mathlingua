@@ -56,12 +56,3 @@ func (c *context) PopulateFromIs(is *ast.IsExpression, scope *ast.Scope) {
 
 func (c *context) GetWrittenAs(exp *ast.ExpressionType, scope *ast.Scope) {
 }
-
-func (c *context) AddDefines(defines *ast.DefinesGroup) {
-}
-
-func (c *context) AddDescribes(describes *ast.DescribesGroup) {
-}
-
-func (c *context) AddStates(states *ast.StatesSection) {
-}

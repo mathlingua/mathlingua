@@ -21,7 +21,7 @@ type FormulationNodeType interface {
 	FormulationDebuggable
 	FormulationNodeType()
 	Start() Position
-	GetFormulationMetadata() *FormulationMetaData
+	GetFormulationMetaData() *FormulationMetaData
 }
 
 type FormulationMetaData struct {

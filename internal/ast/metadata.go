@@ -137,101 +137,101 @@ func (n *CurlyArg) GetCommonMetaData() *CommonMetaData                  { return
 func (n *DirectionalParam) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
 
 // //////////////////////////////// formulation /////////////////////////////////////////////////////
-func (n *NameForm) GetFormulationMetadata() *FormulationMetaData     { return &n.FormulationMetaData }
-func (n *FunctionForm) GetFormulationMetadata() *FormulationMetaData { return &n.FormulationMetaData }
-func (n *TupleForm) GetFormulationMetadata() *FormulationMetaData    { return &n.FormulationMetaData }
-func (n *ConditionalSetForm) GetFormulationMetadata() *FormulationMetaData {
+func (n *NameForm) GetFormulationMetaData() *FormulationMetaData     { return &n.FormulationMetaData }
+func (n *FunctionForm) GetFormulationMetaData() *FormulationMetaData { return &n.FormulationMetaData }
+func (n *TupleForm) GetFormulationMetaData() *FormulationMetaData    { return &n.FormulationMetaData }
+func (n *ConditionalSetForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *ConditionalSetIdForm) GetFormulationMetadata() *FormulationMetaData {
+func (n *ConditionalSetIdForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *FunctionCallExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *FunctionCallExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *TupleExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *TupleExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *ConditionalSetExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *ConditionalSetExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *CommandExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *CommandExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *PrefixOperatorCallExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *PrefixOperatorCallExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *PostfixOperatorCallExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *PostfixOperatorCallExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *InfixOperatorCallExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *InfixOperatorCallExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *IsExpression) GetFormulationMetadata() *FormulationMetaData { return &n.FormulationMetaData }
-func (n *ExtendsExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *IsExpression) GetFormulationMetaData() *FormulationMetaData { return &n.FormulationMetaData }
+func (n *ExtendsExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *AsExpression) GetFormulationMetadata() *FormulationMetaData { return &n.FormulationMetaData }
-func (n *OrdinalCallExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *AsExpression) GetFormulationMetaData() *FormulationMetaData { return &n.FormulationMetaData }
+func (n *OrdinalCallExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *ChainExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *ChainExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *Signature) GetFormulationMetadata() *FormulationMetaData { return &n.FormulationMetaData }
-func (n *MetaKinds) GetFormulationMetadata() *FormulationMetaData { return &n.FormulationMetaData }
-func (n *StructuralColonEqualsForm) GetFormulationMetadata() *FormulationMetaData {
+func (n *Signature) GetFormulationMetaData() *FormulationMetaData { return &n.FormulationMetaData }
+func (n *MetaKinds) GetFormulationMetaData() *FormulationMetaData { return &n.FormulationMetaData }
+func (n *StructuralColonEqualsForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *ExpressionColonEqualsItem) GetFormulationMetadata() *FormulationMetaData {
+func (n *ExpressionColonEqualsItem) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *ExpressionColonArrowItem) GetFormulationMetadata() *FormulationMetaData {
+func (n *ExpressionColonArrowItem) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *ExpressionColonDashArrowItem) GetFormulationMetadata() *FormulationMetaData {
+func (n *ExpressionColonDashArrowItem) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *EnclosedNonCommandOperatorTarget) GetFormulationMetadata() *FormulationMetaData {
+func (n *EnclosedNonCommandOperatorTarget) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *NonEnclosedNonCommandOperatorTarget) GetFormulationMetadata() *FormulationMetaData {
+func (n *NonEnclosedNonCommandOperatorTarget) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *CommandOperatorTarget) GetFormulationMetadata() *FormulationMetaData {
+func (n *CommandOperatorTarget) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *CommandId) GetFormulationMetadata() *FormulationMetaData { return &n.FormulationMetaData }
-func (n *PrefixOperatorId) GetFormulationMetadata() *FormulationMetaData {
+func (n *CommandId) GetFormulationMetaData() *FormulationMetaData { return &n.FormulationMetaData }
+func (n *PrefixOperatorId) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *PostfixOperatorId) GetFormulationMetadata() *FormulationMetaData {
+func (n *PostfixOperatorId) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *InfixOperatorId) GetFormulationMetadata() *FormulationMetaData {
+func (n *InfixOperatorId) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *InfixCommandOperatorId) GetFormulationMetadata() *FormulationMetaData {
+func (n *InfixCommandOperatorId) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *PseudoTokenNode) GetFormulationMetadata() *FormulationMetaData {
+func (n *PseudoTokenNode) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *PseudoExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *PseudoExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *MultiplexedInfixOperatorCallExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *MultiplexedInfixOperatorCallExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *InfixOperatorForm) GetFormulationMetadata() *FormulationMetaData {
+func (n *InfixOperatorForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *PrefixOperatorForm) GetFormulationMetadata() *FormulationMetaData {
+func (n *PrefixOperatorForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *PostfixOperatorForm) GetFormulationMetadata() *FormulationMetaData {
+func (n *PostfixOperatorForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
-func (n *FunctionLiteralExpression) GetFormulationMetadata() *FormulationMetaData {
+func (n *FunctionLiteralExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }

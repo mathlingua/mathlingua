@@ -18,7 +18,6 @@ package backend
 
 import (
 	"mathlingua/internal/ast"
-	"mathlingua/internal/mlglib"
 )
 
 func NewScope() ast.Scope {
@@ -49,6 +48,7 @@ func (s *scope) SetNameInfo(name string, info ast.NameInfo) {
 	s.names[name] = &info
 }
 
+/*
 func (s *scope) AddSpecify(specifies *ast.SpecifyGroup) {
 	for _, spec := range specifies.Specify.Specify {
 		switch grp := spec.(type) {
@@ -86,3 +86,4 @@ func (s *scope) AddSpecify(specifies *ast.SpecifyGroup) {
 		}
 	}
 }
+*/

@@ -21,7 +21,6 @@ type Scope interface {
 	SetParent(parent *Scope)
 	GetNameInfo(name string) (NameInfo, bool)
 	SetNameInfo(name string, info NameInfo)
-	AddSpecify(specifies *SpecifyGroup)
 }
 
 type NameInfo struct {

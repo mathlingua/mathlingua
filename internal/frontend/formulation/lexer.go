@@ -20,12 +20,11 @@ import (
 	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/shared"
 	"unicode"
 )
 
-func NewLexer(text string, tracker frontend.DiagnosticTracker) shared.Lexer {
-	return shared.NewLexer(getTokens(text, tracker))
+func NewLexer(text string, tracker frontend.DiagnosticTracker) frontend.Lexer {
+	return frontend.NewLexer(getTokens(text, tracker))
 }
 
 //////////////////////////////////////////////////////////////

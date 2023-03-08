@@ -20,11 +20,10 @@ import (
 	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/shared"
 	"mathlingua/internal/mlglib"
 )
 
-func Parse(lexer3 shared.Lexer, tracker frontend.DiagnosticTracker) Document {
+func Parse(lexer3 frontend.Lexer, tracker frontend.DiagnosticTracker) Document {
 	parser := phase4Parser{
 		lexer:   lexer3,
 		tracker: tracker,
@@ -37,7 +36,7 @@ func Parse(lexer3 shared.Lexer, tracker frontend.DiagnosticTracker) Document {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type phase4Parser struct {
-	lexer   shared.Lexer
+	lexer   frontend.Lexer
 	tracker frontend.DiagnosticTracker
 	keyGen  mlglib.KeyGenerator
 }

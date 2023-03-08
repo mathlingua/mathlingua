@@ -20,16 +20,15 @@ import (
 	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/shared"
 )
 
-func NewLexer(phase1Lexer shared.Lexer, tracker frontend.DiagnosticTracker) shared.Lexer {
-	return shared.NewLexer(getTokens(phase1Lexer, tracker))
+func NewLexer(phase1Lexer frontend.Lexer, tracker frontend.DiagnosticTracker) frontend.Lexer {
+	return frontend.NewLexer(getTokens(phase1Lexer, tracker))
 }
 
 //////////////////////////////////////////////////////////////////
 
-func getTokens(lexer1 shared.Lexer, tracker frontend.DiagnosticTracker) []ast.Token {
+func getTokens(lexer1 frontend.Lexer, tracker frontend.DiagnosticTracker) []ast.Token {
 	tokens := make([]ast.Token, 0)
 	prevIndent := 0
 

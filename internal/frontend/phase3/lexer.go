@@ -20,17 +20,16 @@ import (
 	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/shared"
 	"mathlingua/internal/mlglib"
 )
 
-func NewLexer(phase2Lexer shared.Lexer, tracker frontend.DiagnosticTracker) shared.Lexer {
-	return shared.NewLexer(getTokens(phase2Lexer, tracker))
+func NewLexer(phase2Lexer frontend.Lexer, tracker frontend.DiagnosticTracker) frontend.Lexer {
+	return frontend.NewLexer(getTokens(phase2Lexer, tracker))
 }
 
 ////////////////////////////////////////////////////////////
 
-func getTokens(lexer2 shared.Lexer, tracker frontend.DiagnosticTracker) []ast.Token {
+func getTokens(lexer2 frontend.Lexer, tracker frontend.DiagnosticTracker) []ast.Token {
 	tokens := make([]ast.Token, 0)
 	stack := mlglib.NewStack[ast.TokenType]()
 

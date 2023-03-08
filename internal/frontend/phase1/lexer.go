@@ -20,16 +20,15 @@ import (
 	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/shared"
 	"mathlingua/internal/mlglib"
 	"unicode"
 )
 
-func NewLexer(text string, tracker frontend.DiagnosticTracker) shared.Lexer {
+func NewLexer(text string, tracker frontend.DiagnosticTracker) frontend.Lexer {
 	// ensure the text ends with enough newlines so that it
 	// terminates any sections and groups.  This makes parsing
 	// easier to implement.
-	return shared.NewLexer(getTokens(text+"\n\n\n", tracker))
+	return frontend.NewLexer(getTokens(text+"\n\n\n", tracker))
 }
 
 ////////////////////////////////////////////////////

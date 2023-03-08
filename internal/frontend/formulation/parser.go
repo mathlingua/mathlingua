@@ -21,7 +21,6 @@ import (
 	"math"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/shared"
 	"mathlingua/internal/mlglib"
 	"strings"
 )
@@ -89,7 +88,7 @@ func ParseSignature(text string, start ast.Position, tracker frontend.Diagnostic
 //////////////////////////////// utility functions /////////////////////////////////////////////////
 
 type formulationParser struct {
-	lexer   shared.Lexer
+	lexer   frontend.Lexer
 	tracker frontend.DiagnosticTracker
 	start   ast.Position
 	keyGen  mlglib.KeyGenerator

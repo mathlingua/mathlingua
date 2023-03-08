@@ -154,18 +154,20 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 		m.logger.Error(err)
 	}
 
-	for index, info := range checkResult.Diagnostics {
-		if index > 0 {
-			// print a line between each error
-			m.logger.Log("")
+	for path, diags := range checkResult.Diagnostics {
+		for index, diag := range diags {
+			if index > 0 {
+				// print a line between each error
+				m.logger.Log("")
+			}
+			debugInfo := ""
+			if debug {
+				debugInfo = fmt.Sprintf(" [%s]", diag.Origin)
+			}
+			m.logger.Error(fmt.Sprintf("%s (%d, %d)%s\n%s",
+				path, diag.Position.Row+1, diag.Position.Column+1,
+				debugInfo, diag.Message))
 		}
-		debugInfo := ""
-		if debug {
-			debugInfo = fmt.Sprintf(" [%s]", info.Diagnostic.Origin)
-		}
-		m.logger.Error(fmt.Sprintf("%s (%d, %d)%s\n%s",
-			info.Path, info.Diagnostic.Position.Row+1, info.Diagnostic.Position.Column+1,
-			debugInfo, info.Diagnostic.Message))
 	}
 
 	if numErrors > 0 {

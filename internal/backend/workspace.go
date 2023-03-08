@@ -19,22 +19,11 @@ package backend
 import (
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/phase1"
-	"mathlingua/internal/frontend/phase2"
-	"mathlingua/internal/frontend/phase3"
-	"mathlingua/internal/frontend/phase4"
-	"mathlingua/internal/frontend/phase5"
-	"mathlingua/internal/mlglib"
 	"mathlingua/internal/server"
 )
 
-type PathDiagnostic struct {
-	Path       ast.Path
-	Diagnostic frontend.Diagnostic
-}
-
 type ViewResult struct {
-	Diagnostics []PathDiagnostic
+	Diagnostics map[ast.Path][]frontend.Diagnostic
 	Pages       []WorkspacePageResponse
 }
 
@@ -44,7 +33,7 @@ type WorkspacePageResponse struct {
 }
 
 type CheckResult struct {
-	Diagnostics []PathDiagnostic
+	Diagnostics map[ast.Path][]frontend.Diagnostic
 }
 
 type Workspace interface {
@@ -73,7 +62,7 @@ type workspace struct {
 }
 
 func (w *workspace) AddDocument(path ast.Path, content string) {
-	doc, diagnostics := parseDocument(content)
+	doc, diagnostics := ParseDocument(content)
 	w.documents[path] = &doc
 	w.diagnosticsAtAdd[path] = diagnostics
 }
@@ -83,15 +72,10 @@ func (w *workspace) DocumentCount() int {
 }
 
 func (w *workspace) Check() CheckResult {
-	diagnostics := make([]PathDiagnostic, 0)
+	diagnostics := make(map[ast.Path][]frontend.Diagnostic, 0)
 
 	for p, diags := range w.diagnosticsAtAdd {
-		for _, diag := range diags {
-			diagnostics = append(diagnostics, PathDiagnostic{
-				Path:       p,
-				Diagnostic: diag,
-			})
-		}
+		diagnostics[p] = diags
 	}
 
 	return CheckResult{
@@ -101,19 +85,4 @@ func (w *workspace) Check() CheckResult {
 
 func (w *workspace) View() ViewResult {
 	return ViewResult{}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func parseDocument(text string) (ast.Document, []frontend.Diagnostic) {
-	tracker := frontend.NewDiagnosticTracker()
-
-	lexer1 := phase1.NewLexer(text, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := phase3.NewLexer(lexer2, tracker)
-
-	root := phase4.Parse(lexer3, tracker)
-	doc, _ := phase5.Parse(root, tracker, mlglib.NewKeyGenerator())
-
-	return doc, tracker.Diagnostics()
 }

@@ -120,7 +120,10 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 	}
 
 	checkResult := workspace.Check()
-	numErrors := len(pathErrors) + len(checkResult.Diagnostics)
+	numErrors := len(pathErrors)
+	for _, diags := range checkResult.Diagnostics {
+		numErrors += len(diags)
+	}
 	numFilesProcessed := workspace.DocumentCount()
 
 	if showJson {

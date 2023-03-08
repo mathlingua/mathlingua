@@ -105,18 +105,6 @@ func (w *workspace) View() ViewResult {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func parse(text string) (phase4.Document, []frontend.Diagnostic) {
-	tracker := frontend.NewDiagnosticTracker()
-
-	lexer1 := phase1.NewLexer(text, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := phase3.NewLexer(lexer2, tracker)
-
-	doc := phase4.Parse(lexer3, tracker)
-
-	return doc, tracker.Diagnostics()
-}
-
 func parseDocument(text string) (ast.Document, []frontend.Diagnostic) {
 	tracker := frontend.NewDiagnosticTracker()
 

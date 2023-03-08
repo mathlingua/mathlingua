@@ -19,6 +19,7 @@ package mlg
 import (
 	"encoding/json"
 	"fmt"
+	"mathlingua/internal/ast"
 	"mathlingua/internal/backend"
 	"mathlingua/internal/server"
 	"os"
@@ -108,7 +109,7 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 				return err
 			}
 
-			workspace.AddDocument(backend.ToPath(p), text)
+			workspace.AddDocument(ast.ToPath(p), text)
 			return nil
 		})
 

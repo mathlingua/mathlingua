@@ -16,6 +16,12 @@
 
 package ast
 
+func (n *Root) ForEach(fn func(subNode MlgNodeType)) {
+	for _, doc := range n.Documents {
+		fn(&doc)
+	}
+}
+
 func (n *IdItem) ForEach(fn func(subNode MlgNodeType)) {
 	fn(n.Root)
 }

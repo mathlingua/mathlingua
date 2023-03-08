@@ -32,6 +32,7 @@ type CommonMetaData struct {
 	Key   int
 }
 
+func (Root) MlgNodeType()               {}
 func (IdItem) MlgNodeType()             {}
 func (Target) MlgNodeType()             {}
 func (Spec) MlgNodeType()               {}

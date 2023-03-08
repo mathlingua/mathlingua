@@ -16,6 +16,7 @@
 
 package ast
 
+func (n *Root) GetCommonMetaData() *CommonMetaData               { return &n.CommonMetaData }
 func (n *IdItem) GetCommonMetaData() *CommonMetaData             { return &n.CommonMetaData }
 func (n *Target) GetCommonMetaData() *CommonMetaData             { return &n.CommonMetaData }
 func (n *Spec) GetCommonMetaData() *CommonMetaData               { return &n.CommonMetaData }

@@ -26,17 +26,10 @@ import (
 	"mathlingua/internal/frontend/phase5"
 	"mathlingua/internal/mlglib"
 	"mathlingua/internal/server"
-	"path/filepath"
 )
 
-type Path string
-
-func ToPath(str string) Path {
-	return Path(filepath.ToSlash(str))
-}
-
 type PathDiagnostic struct {
-	Path       Path
+	Path       ast.Path
 	Diagnostic frontend.Diagnostic
 }
 
@@ -46,7 +39,7 @@ type ViewResult struct {
 }
 
 type WorkspacePageResponse struct {
-	Path Path
+	Path ast.Path
 	Page server.PageResponse
 }
 
@@ -55,7 +48,7 @@ type CheckResult struct {
 }
 
 type Workspace interface {
-	AddDocument(path Path, content string)
+	AddDocument(path ast.Path, content string)
 	DocumentCount() int
 	Check() CheckResult
 	View() ViewResult
@@ -63,8 +56,8 @@ type Workspace interface {
 
 func NewWorkspace() Workspace {
 	return &workspace{
-		diagnosticsAtAdd: make(map[Path][]frontend.Diagnostic),
-		documents:        make(map[Path]*ast.Document),
+		diagnosticsAtAdd: make(map[ast.Path][]frontend.Diagnostic),
+		documents:        make(map[ast.Path]*ast.Document),
 		context:          nil,
 		scope:            nil,
 	}
@@ -73,13 +66,13 @@ func NewWorkspace() Workspace {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type workspace struct {
-	diagnosticsAtAdd map[Path][]frontend.Diagnostic
-	documents        map[Path]*ast.Document
+	diagnosticsAtAdd map[ast.Path][]frontend.Diagnostic
+	documents        map[ast.Path]*ast.Document
 	context          *ast.Context
 	scope            *ast.Scope
 }
 
-func (w *workspace) AddDocument(path Path, content string) {
+func (w *workspace) AddDocument(path ast.Path, content string) {
 	doc, diagnostics := parseDocument(content)
 	w.documents[path] = &doc
 	w.diagnosticsAtAdd[path] = diagnostics

@@ -63,3 +63,13 @@ func (s *scope) GetNameInfo(name string) (ast.NameInfo, bool) {
 func (s *scope) SetNameInfo(name string, info ast.NameInfo) {
 	s.names[name] = &info
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func PopulateScopes(node ast.MlgNodeType) {
+	if node == nil {
+		return
+	}
+	node.GetCommonMetaData().Scope = NewScope()
+	node.ForEach(PopulateScopes)
+}

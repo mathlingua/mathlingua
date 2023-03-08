@@ -25,8 +25,6 @@ type FormulationNodeType interface {
 }
 
 type FormulationMetaData struct {
-	Context    Context
-	Scope      Scope
 	Resolution Resolution
 	Type       ResolvedType
 }

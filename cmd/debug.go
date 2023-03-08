@@ -70,7 +70,13 @@ func setupScreen() {
 	}
 
 	isDarkMode := termenv.HasDarkBackground()
-	inputFile := path.Join("testbed", "input.txt")
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+	inputFile := path.Join(home, ".mlg_debug_backup.math")
 
 	if direct {
 		_, err := os.Stat(inputFile)

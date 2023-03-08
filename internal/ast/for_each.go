@@ -777,12 +777,16 @@ func (n *CurlyParam) ForEach(fn func(subNode MlgNodeType)) {
 		forEach(*n.SquareParams, fn)
 	}
 	forEach(n.CurlyParams, fn)
-	fn(n.Direction)
+	if n.Direction != nil {
+		fn(n.Direction)
+	}
 }
 
 func (n *CurlyArg) ForEach(fn func(subNode MlgNodeType)) {
 	forEach(*n.CurlyArgs, fn)
-	fn(n.Direction)
+	if n.Direction != nil {
+		fn(n.Direction)
+	}
 }
 
 func (n *DirectionalParam) ForEach(fn func(subNode MlgNodeType)) {

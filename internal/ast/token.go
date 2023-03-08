@@ -69,6 +69,12 @@ const (
 	RightArrow            TokenType = "RArrow"
 )
 
+type Position struct {
+	Offset int
+	Row    int
+	Column int
+}
+
 type Token struct {
 	Type     TokenType
 	Text     string

@@ -16,103 +16,13 @@
 
 package ast
 
-type FormulationNodeType interface {
-	MlgNodeType
-	FormulationDebuggable
-	FormulationNodeType()
-	Start() Position
-	GetFormulationMetaData() *FormulationMetaData
+type VarArgData struct {
+	IsVarArg            bool
+	VarArgNames         []string
+	VarArgBounds        []string
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
 }
-
-type FormulationMetaData struct {
-	Context    Context
-	Scope      Scope
-	Resolution Resolution
-	Type       ResolvedType
-}
-
-type Resolution struct {
-	From string
-	To   string
-}
-
-func (NameForm) FormulationNodeType()                               {}
-func (FunctionForm) FormulationNodeType()                           {}
-func (TupleForm) FormulationNodeType()                              {}
-func (ConditionalSetForm) FormulationNodeType()                     {}
-func (ConditionalSetIdForm) FormulationNodeType()                   {}
-func (FunctionCallExpression) FormulationNodeType()                 {}
-func (TupleExpression) FormulationNodeType()                        {}
-func (ConditionalSetExpression) FormulationNodeType()               {}
-func (CommandExpression) FormulationNodeType()                      {}
-func (PrefixOperatorCallExpression) FormulationNodeType()           {}
-func (PostfixOperatorCallExpression) FormulationNodeType()          {}
-func (InfixOperatorCallExpression) FormulationNodeType()            {}
-func (IsExpression) FormulationNodeType()                           {}
-func (ExtendsExpression) FormulationNodeType()                      {}
-func (AsExpression) FormulationNodeType()                           {}
-func (OrdinalCallExpression) FormulationNodeType()                  {}
-func (ChainExpression) FormulationNodeType()                        {}
-func (Signature) FormulationNodeType()                              {}
-func (MetaKinds) FormulationNodeType()                              {}
-func (StructuralColonEqualsForm) FormulationNodeType()              {}
-func (ExpressionColonEqualsItem) FormulationNodeType()              {}
-func (ExpressionColonArrowItem) FormulationNodeType()               {}
-func (ExpressionColonDashArrowItem) FormulationNodeType()           {}
-func (EnclosedNonCommandOperatorTarget) FormulationNodeType()       {}
-func (NonEnclosedNonCommandOperatorTarget) FormulationNodeType()    {}
-func (CommandOperatorTarget) FormulationNodeType()                  {}
-func (CommandId) FormulationNodeType()                              {}
-func (PrefixOperatorId) FormulationNodeType()                       {}
-func (PostfixOperatorId) FormulationNodeType()                      {}
-func (InfixOperatorId) FormulationNodeType()                        {}
-func (InfixCommandOperatorId) FormulationNodeType()                 {}
-func (PseudoTokenNode) FormulationNodeType()                        {}
-func (PseudoExpression) FormulationNodeType()                       {}
-func (MultiplexedInfixOperatorCallExpression) FormulationNodeType() {}
-func (InfixOperatorForm) FormulationNodeType()                      {}
-func (PrefixOperatorForm) FormulationNodeType()                     {}
-func (PostfixOperatorForm) FormulationNodeType()                    {}
-func (FunctionLiteralExpression) FormulationNodeType()              {}
-
-func (n NameForm) Start() Position                               { return n.CommonMetaData.Start }
-func (n FunctionForm) Start() Position                           { return n.CommonMetaData.Start }
-func (n TupleForm) Start() Position                              { return n.CommonMetaData.Start }
-func (n ConditionalSetForm) Start() Position                     { return n.CommonMetaData.Start }
-func (n ConditionalSetIdForm) Start() Position                   { return n.CommonMetaData.Start }
-func (n FunctionCallExpression) Start() Position                 { return n.CommonMetaData.Start }
-func (n TupleExpression) Start() Position                        { return n.CommonMetaData.Start }
-func (n ConditionalSetExpression) Start() Position               { return n.CommonMetaData.Start }
-func (n CommandExpression) Start() Position                      { return n.CommonMetaData.Start }
-func (n PrefixOperatorCallExpression) Start() Position           { return n.CommonMetaData.Start }
-func (n PostfixOperatorCallExpression) Start() Position          { return n.CommonMetaData.Start }
-func (n InfixOperatorCallExpression) Start() Position            { return n.CommonMetaData.Start }
-func (n IsExpression) Start() Position                           { return n.CommonMetaData.Start }
-func (n ExtendsExpression) Start() Position                      { return n.CommonMetaData.Start }
-func (n AsExpression) Start() Position                           { return n.CommonMetaData.Start }
-func (n OrdinalCallExpression) Start() Position                  { return n.CommonMetaData.Start }
-func (n ChainExpression) Start() Position                        { return n.CommonMetaData.Start }
-func (n Signature) Start() Position                              { return n.CommonMetaData.Start }
-func (n MetaKinds) Start() Position                              { return n.CommonMetaData.Start }
-func (n StructuralColonEqualsForm) Start() Position              { return n.CommonMetaData.Start }
-func (n ExpressionColonEqualsItem) Start() Position              { return n.CommonMetaData.Start }
-func (n ExpressionColonArrowItem) Start() Position               { return n.CommonMetaData.Start }
-func (n ExpressionColonDashArrowItem) Start() Position           { return n.CommonMetaData.Start }
-func (n EnclosedNonCommandOperatorTarget) Start() Position       { return n.CommonMetaData.Start }
-func (n NonEnclosedNonCommandOperatorTarget) Start() Position    { return n.CommonMetaData.Start }
-func (n CommandOperatorTarget) Start() Position                  { return n.CommonMetaData.Start }
-func (n CommandId) Start() Position                              { return n.CommonMetaData.Start }
-func (n PrefixOperatorId) Start() Position                       { return n.CommonMetaData.Start }
-func (n PostfixOperatorId) Start() Position                      { return n.CommonMetaData.Start }
-func (n InfixOperatorId) Start() Position                        { return n.CommonMetaData.Start }
-func (n InfixCommandOperatorId) Start() Position                 { return n.CommonMetaData.Start }
-func (n PseudoTokenNode) Start() Position                        { return n.CommonMetaData.Start }
-func (n PseudoExpression) Start() Position                       { return n.CommonMetaData.Start }
-func (n MultiplexedInfixOperatorCallExpression) Start() Position { return n.CommonMetaData.Start }
-func (n InfixOperatorForm) Start() Position                      { return n.CommonMetaData.Start }
-func (n PrefixOperatorForm) Start() Position                     { return n.CommonMetaData.Start }
-func (n PostfixOperatorForm) Start() Position                    { return n.CommonMetaData.Start }
-func (n FunctionLiteralExpression) Start() Position              { return n.CommonMetaData.Start }
 
 ////////////////////////////////// Structural Forms ////////////////////////////////////////////////
 
@@ -612,16 +522,6 @@ type InfixCommandOperatorId struct {
 	Lhs                 StructuralFormType
 	Operator            InfixCommandId
 	Rhs                 StructuralFormType
-	CommonMetaData      CommonMetaData
-	FormulationMetaData FormulationMetaData
-}
-
-//////////////////////////////////// Support structures ////////////////////////////////////////////
-
-type VarArgData struct {
-	IsVarArg            bool
-	VarArgNames         []string
-	VarArgBounds        []string
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

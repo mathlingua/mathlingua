@@ -19,6 +19,9 @@ package ast
 type Scope interface {
 	GetParent() (*Scope, bool)
 	SetParent(parent *Scope)
+	GetChildScopeCount() int
+	GetChildScopeAt(index int) (*Scope, bool)
+	SetChildScopeAt(index int, scope *Scope)
 	GetNameInfo(name string) (NameInfo, bool)
 	SetNameInfo(name string, info NameInfo)
 }

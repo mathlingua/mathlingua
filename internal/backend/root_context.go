@@ -16,18 +16,58 @@
 
 package backend
 
-import "mathlingua/internal/ast"
+import (
+	"fmt"
+	"mathlingua/internal/ast"
+)
 
 func NewRootContext(root *ast.Root) ast.Context {
-	return &rootContext{
-		root: root,
+	ctx := rootContext{
+		root:            root,
+		signatureToNode: make(map[string]ast.MlgNodeType, 0),
 	}
+	ctx.initialize()
+	return &ctx
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type rootContext struct {
-	root *ast.Root
+	root            *ast.Root
+	signatureToNode map[string]ast.MlgNodeType
+}
+
+func (c *rootContext) initialize() {
+	for _, doc := range c.root.Documents {
+		for _, item := range doc.Items {
+			switch n := item.(type) {
+			case *ast.DescribesGroup:
+				// TODO: properly handle error conditions
+				if sig, ok := GetSignatureStringFromId(n.Id); ok {
+					c.signatureToNode[sig] = n
+				} else {
+					fmt.Println("Could not determine the signature for:")
+					fmt.Println(ast.DebugStructuralNode(n))
+				}
+			case *ast.DefinesGroup:
+				// TODO: properly handle error conditions
+				if sig, ok := GetSignatureStringFromId(n.Id); ok {
+					c.signatureToNode[sig] = n
+				} else {
+					fmt.Println("Could not determine the signature for:")
+					fmt.Println(ast.DebugStructuralNode(n))
+				}
+			case *ast.StatesGroup:
+				// TODO: properly handle error conditions
+				if sig, ok := GetSignatureStringFromId(n.Id); ok {
+					c.signatureToNode[sig] = n
+				} else {
+					fmt.Println("Could not determine the signature for:")
+					fmt.Println(ast.DebugStructuralNode(n))
+				}
+			}
+		}
+	}
 }
 
 func (c *rootContext) GetParent() (*ast.Context, bool) {

@@ -16,9 +16,28 @@
 
 package backend
 
-import "mathlingua/internal/ast"
+import (
+	"mathlingua/internal/ast"
+)
 
-func GetSignatureString(cmd ast.CommandExpression) string {
+func GetSignatureStringFromId(id ast.IdItem) (string, bool) {
+	root := id.Root
+	if root == nil {
+		return "", false
+	}
+	switch n := root.(type) {
+	case *ast.CommandId:
+		// \a.b.c{x, y}:a{x}:b{y}
+		return GetSignatureStringFromCommandId(*n), true
+	case *ast.InfixCommandOperatorId:
+		// x \in/ y
+		return GetSignatureStringFromInfixCommandId(*&n.Operator), true
+	default:
+		return "", false
+	}
+}
+
+func GetSignatureStringFromCommand(cmd ast.CommandExpression) string {
 	names := make([]string, 0)
 	namedGroups := make([]string, 0)
 
@@ -27,6 +46,42 @@ func GetSignatureString(cmd ast.CommandExpression) string {
 	}
 
 	for _, ng := range *cmd.NamedArgs {
+		namedGroups = append(namedGroups, ng.Name.Text)
+	}
+
+	return ast.Signature{
+		MainNames:       names,
+		NamedGroupNames: namedGroups,
+	}.Debug()
+}
+
+func GetSignatureStringFromCommandId(cmd ast.CommandId) string {
+	names := make([]string, 0)
+	namedGroups := make([]string, 0)
+
+	for _, n := range cmd.Names {
+		names = append(names, n.Text)
+	}
+
+	for _, ng := range *cmd.NamedParams {
+		namedGroups = append(namedGroups, ng.Name.Text)
+	}
+
+	return ast.Signature{
+		MainNames:       names,
+		NamedGroupNames: namedGroups,
+	}.Debug()
+}
+
+func GetSignatureStringFromInfixCommandId(cmd ast.InfixCommandId) string {
+	names := make([]string, 0)
+	namedGroups := make([]string, 0)
+
+	for _, n := range cmd.Names {
+		names = append(names, n.Text)
+	}
+
+	for _, ng := range *cmd.NamedParams {
 		namedGroups = append(namedGroups, ng.Name.Text)
 	}
 

@@ -68,7 +68,7 @@ type checkResult struct {
 }
 
 func (m *mlg) Check(paths []string, showJson bool, debug bool) {
-	workspace := backend.NewWorkspace()
+	contents := make(map[ast.Path]string, 0)
 
 	pathWarnings := make([]string, 0)
 	pathErrors := make([]string, 0)
@@ -109,7 +109,7 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 				return err
 			}
 
-			workspace.AddDocument(ast.ToPath(p), text)
+			contents[ast.ToPath(p)] = text
 			return nil
 		})
 
@@ -119,6 +119,7 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 		}
 	}
 
+	workspace := backend.NewWorkspace(contents)
 	checkResult := workspace.Check()
 	numErrors := len(pathErrors)
 	for _, diags := range checkResult.Diagnostics {

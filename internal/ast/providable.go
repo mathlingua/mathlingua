@@ -16,16 +16,15 @@
 
 package ast
 
-type Scope interface {
-	GetParent() (Scope, bool)
-	SetParent(parent Scope)
-	GetNameInfo(name string) (NameInfo, bool)
-	SetNameInfo(name string, info NameInfo)
+type ProvidableNodeType interface {
+	MlgNodeType
+	GetProvidesSection() *ProvidesSection
 }
 
-type NameInfo struct {
-	IsInfereble     bool
-	IsPlaceholder   bool
-	IsNumberLiteral bool
-	Type            ResolvedType
+func (n *DescribesGroup) GetProvidesSection() *ProvidesSection {
+	return n.Provides
+}
+
+func (n *DefinesGroup) GetProvidesSection() *ProvidesSection {
+	return n.Provides
 }

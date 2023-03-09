@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package ast
+package backend
 
-type Scope interface {
-	GetParent() (Scope, bool)
-	SetParent(parent Scope)
-	GetNameInfo(name string) (NameInfo, bool)
-	SetNameInfo(name string, info NameInfo)
+import "mathlingua/internal/ast"
+
+func PopulateScopes(node ast.MlgNodeType) {
+	populateScopesImpl(node, nil)
 }
 
-type NameInfo struct {
-	IsInfereble     bool
-	IsPlaceholder   bool
-	IsNumberLiteral bool
-	Type            ResolvedType
+func populateScopesImpl(node ast.MlgNodeType, parent ast.Scope) {
+	scope := NewScope(parent)
+	node.GetCommonMetaData().Scope = scope
+	node.ForEach(func(subNode ast.MlgNodeType) {
+		populateScopesImpl(subNode, scope)
+	})
 }

@@ -20,39 +20,26 @@ import (
 	"mathlingua/internal/ast"
 )
 
-func NewScope() ast.Scope {
-	return &scope{}
+func NewScope(parent ast.Scope) ast.Scope {
+	return &scope{
+		parent: parent,
+		names:  make(map[string]*ast.NameInfo, 0),
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type scope struct {
-	parent   *ast.Scope
-	children []*ast.Scope
-	names    map[string]*ast.NameInfo
+	parent ast.Scope
+	names  map[string]*ast.NameInfo
 }
 
-func (s *scope) GetParent() (*ast.Scope, bool) {
+func (s *scope) GetParent() (ast.Scope, bool) {
 	return s.parent, s.parent != nil
 }
 
-func (s *scope) SetParent(parent *ast.Scope) {
+func (s *scope) SetParent(parent ast.Scope) {
 	s.parent = parent
-}
-
-func (s *scope) GetChildScopeCount() int {
-	return len(s.children)
-}
-
-func (s *scope) GetChildScopeAt(index int) (*ast.Scope, bool) {
-	if index < 0 || index >= s.GetChildScopeCount() {
-		return nil, false
-	}
-	return s.children[index], true
-}
-
-func (s *scope) SetChildScopeAt(index int, scope *ast.Scope) {
-	s.children[index] = scope
 }
 
 func (s *scope) GetNameInfo(name string) (ast.NameInfo, bool) {
@@ -62,14 +49,4 @@ func (s *scope) GetNameInfo(name string) (ast.NameInfo, bool) {
 
 func (s *scope) SetNameInfo(name string, info ast.NameInfo) {
 	s.names[name] = &info
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func PopulateScopes(node ast.MlgNodeType) {
-	if node == nil {
-		return
-	}
-	node.GetCommonMetaData().Scope = NewScope()
-	node.ForEach(PopulateScopes)
 }

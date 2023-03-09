@@ -61,5 +61,9 @@ func ParseRoot(texts map[ast.Path]string) (ast.Root, map[ast.Path][]frontend.Dia
 			Key: -1,
 		},
 	}
+
+	PopulateContexts(&root)
+	PopulateScopes(&root)
+
 	return root, pathDiags
 }

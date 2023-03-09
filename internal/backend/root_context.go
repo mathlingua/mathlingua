@@ -18,41 +18,40 @@ package backend
 
 import "mathlingua/internal/ast"
 
-func NewContext() ast.Context {
-	return &context{}
+func NewRootContext(root *ast.Root) ast.Context {
+	return &providesContext{}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type context struct {
-	parent *ast.Context
+type rootContext struct {
+	root *ast.Root
 }
 
-func (c *context) GetParent() (*ast.Context, bool) {
-	return c.parent, c.parent != nil
+func (c *rootContext) GetParent() (*ast.Context, bool) {
+	return nil, false
 }
 
-func (c *context) SetParent(parent *ast.Context) {
-	c.parent = parent
+func (c *rootContext) SetParent(parent *ast.Context) {
 }
 
-func (c *context) IsSubTypeOf(from string, to string) bool {
+func (c *rootContext) IsSubTypeOf(from string, to string) bool {
 	// TODO: implement this
 	return false
 }
 
-func (c *context) IsViewableAs(from string, to string) bool {
+func (c *rootContext) IsViewableAs(from string, to string) bool {
 	// TODO: implement this
 	return false
 }
 
-func (c *context) PopulateFromSpecAlias(nameType ast.ResolvedType,
+func (c *rootContext) PopulateFromSpecAlias(nameType ast.ResolvedType,
 	specName string, target ast.ExpressionType,
 	scope *ast.Scope) {
 }
 
-func (c *context) PopulateFromIs(is *ast.IsExpression, scope *ast.Scope) {
+func (c *rootContext) PopulateFromIs(is *ast.IsExpression, scope *ast.Scope) {
 }
 
-func (c *context) GetWrittenAs(exp *ast.ExpressionType, scope *ast.Scope) {
+func (c *rootContext) GetWrittenAs(exp *ast.ExpressionType, scope *ast.Scope) {
 }

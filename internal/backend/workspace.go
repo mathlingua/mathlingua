@@ -37,47 +37,29 @@ type CheckResult struct {
 }
 
 type Workspace interface {
-	AddDocument(path ast.Path, content string)
 	DocumentCount() int
 	Check() CheckResult
 	View() ViewResult
 }
 
-func NewWorkspace() Workspace {
+func NewWorkspace(contents map[ast.Path]string) Workspace {
 	return &workspace{
-		diagnosticsAtAdd: make(map[ast.Path][]frontend.Diagnostic),
-		documents:        make(map[ast.Path]*ast.Document),
-		context:          nil,
-		scope:            nil,
+		contents: contents,
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type workspace struct {
-	diagnosticsAtAdd map[ast.Path][]frontend.Diagnostic
-	documents        map[ast.Path]*ast.Document
-	context          *ast.Context
-	scope            *ast.Scope
-}
-
-func (w *workspace) AddDocument(path ast.Path, content string) {
-	doc, diagnostics := ParseDocument(content)
-	w.documents[path] = &doc
-	w.diagnosticsAtAdd[path] = diagnostics
+	contents map[ast.Path]string
 }
 
 func (w *workspace) DocumentCount() int {
-	return len(w.documents)
+	return len(w.contents)
 }
 
 func (w *workspace) Check() CheckResult {
-	diagnostics := make(map[ast.Path][]frontend.Diagnostic, 0)
-
-	for p, diags := range w.diagnosticsAtAdd {
-		diagnostics[p] = diags
-	}
-
+	_, diagnostics := ParseRoot(w.contents)
 	return CheckResult{
 		Diagnostics: diagnostics,
 	}

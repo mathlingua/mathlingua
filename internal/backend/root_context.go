@@ -19,7 +19,9 @@ package backend
 import "mathlingua/internal/ast"
 
 func NewRootContext(root *ast.Root) ast.Context {
-	return &providesContext{}
+	return &rootContext{
+		root: root,
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

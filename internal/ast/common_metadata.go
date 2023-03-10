@@ -86,35 +86,106 @@ func (n *DescriptionGroup) GetCommonMetaData() *CommonMetaData   { return &n.Com
 func (n *Document) GetCommonMetaData() *CommonMetaData           { return &n.CommonMetaData }
 func (n *TextBlockItem) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
 
-func (n *NameForm) GetCommonMetaData() *CommonMetaData                      { return &n.CommonMetaData }
-func (n *FunctionForm) GetCommonMetaData() *CommonMetaData                  { return &n.CommonMetaData }
-func (n *TupleForm) GetCommonMetaData() *CommonMetaData                     { return &n.CommonMetaData }
-func (n *ConditionalSetForm) GetCommonMetaData() *CommonMetaData            { return &n.CommonMetaData }
-func (n *ConditionalSetIdForm) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
-func (n *FunctionCallExpression) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
-func (n *TupleExpression) GetCommonMetaData() *CommonMetaData               { return &n.CommonMetaData }
-func (n *ConditionalSetExpression) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
-func (n *CommandExpression) GetCommonMetaData() *CommonMetaData             { return &n.CommonMetaData }
-func (n *PrefixOperatorCallExpression) GetCommonMetaData() *CommonMetaData  { return &n.CommonMetaData }
-func (n *PostfixOperatorCallExpression) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-func (n *InfixOperatorCallExpression) GetCommonMetaData() *CommonMetaData   { return &n.CommonMetaData }
-func (n *IsExpression) GetCommonMetaData() *CommonMetaData                  { return &n.CommonMetaData }
-func (n *ExtendsExpression) GetCommonMetaData() *CommonMetaData             { return &n.CommonMetaData }
-func (n *AsExpression) GetCommonMetaData() *CommonMetaData                  { return &n.CommonMetaData }
-func (n *OrdinalCallExpression) GetCommonMetaData() *CommonMetaData         { return &n.CommonMetaData }
-func (n *ChainExpression) GetCommonMetaData() *CommonMetaData               { return &n.CommonMetaData }
-func (n *Signature) GetCommonMetaData() *CommonMetaData                     { return &n.CommonMetaData }
-func (n *MetaKinds) GetCommonMetaData() *CommonMetaData                     { return &n.CommonMetaData }
-func (n *StructuralColonEqualsForm) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
-func (n *ExpressionColonEqualsItem) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
-func (n *ExpressionColonArrowItem) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
-func (n *ExpressionColonDashArrowItem) GetCommonMetaData() *CommonMetaData  { return &n.CommonMetaData }
+func (n *NameForm) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *FunctionForm) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *TupleForm) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ConditionalSetForm) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ConditionalSetIdForm) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *FunctionCallExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *TupleExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ConditionalSetExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *CommandExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *PrefixOperatorCallExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *PostfixOperatorCallExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *InfixOperatorCallExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *IsExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ExtendsExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *AsExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *OrdinalCallExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ChainExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *Signature) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *MetaKinds) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *StructuralColonEqualsForm) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ExpressionColonEqualsItem) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ExpressionColonArrowItem) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ExpressionColonDashArrowItem) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
 func (n *EnclosedNonCommandOperatorTarget) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
+
 func (n *NonEnclosedNonCommandOperatorTarget) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
+
 func (n *CommandOperatorTarget) GetCommonMetaData() *CommonMetaData  { return &n.CommonMetaData }
 func (n *CommandId) GetCommonMetaData() *CommonMetaData              { return &n.CommonMetaData }
 func (n *PrefixOperatorId) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
@@ -123,9 +194,11 @@ func (n *InfixOperatorId) GetCommonMetaData() *CommonMetaData        { return &n
 func (n *InfixCommandOperatorId) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 func (n *PseudoTokenNode) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
 func (n *PseudoExpression) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
+
 func (n *MultiplexedInfixOperatorCallExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
+
 func (n *InfixOperatorForm) GetCommonMetaData() *CommonMetaData         { return &n.CommonMetaData }
 func (n *PrefixOperatorForm) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
 func (n *PostfixOperatorForm) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }

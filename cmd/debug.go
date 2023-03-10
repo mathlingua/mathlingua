@@ -262,7 +262,7 @@ func setupScreen() {
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func parse(text string) (string, string, frontend.DiagnosticTracker) {
 	if useStructuralParser {
@@ -294,7 +294,7 @@ func createTestCase(input string) (string, string, bool) {
 	}
 }
 
-/////////////////////////////// structural parser ///////////////////////////////
+////////////////////////////////////// structural parser ///////////////////////////////////////////
 
 func parseForStructural(text string) (string, string, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
@@ -330,7 +330,7 @@ func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
 	}, parseCode)
 }
 
-/////////////////////////// formulation ///////////////////////////////////////////
+////////////////////////////////////// formulation /////////////////////////////////////////////////
 
 func parseForFormulation(text string) (string, string, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
@@ -352,7 +352,7 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 	}, parseCode)
 }
 
-/////////////////////////// form ///////////////////////////////////////////
+///////////////////////////////////////// form /////////////////////////////////////////////////////
 
 func parseForForm(text string) (string, string, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
@@ -374,7 +374,7 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 	}, parseCode)
 }
 
-/////////////////////////// id ///////////////////////////////////////////
+/////////////////////////////////////////// id /////////////////////////////////////////////////////
 
 func parseForId(text string) (string, string, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
@@ -396,9 +396,10 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 	}, parseCode)
 }
 
-//////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func createGeneralTestCase(input string, parseFn func(input string) (any, frontend.DiagnosticTracker), parseCode string) (string, string, bool) {
+func createGeneralTestCase(input string, parseFn func(input string) (
+	any, frontend.DiagnosticTracker), parseCode string) (string, string, bool) {
 	data, tracker := parseFn(input)
 	diagnostics := tracker.Diagnostics()
 	if len(diagnostics) > 0 {

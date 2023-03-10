@@ -37,12 +37,12 @@ func TestParserSmoke(t *testing.T) {
 
 	tracker := frontend.NewDiagnosticTracker()
 
-	lexer1 := phase1.NewLexer(string(text), tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := phase3.NewLexer(lexer2, tracker)
+	lexer1 := phase1.NewLexer(string(text), "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := phase3.NewLexer(lexer2, "", tracker)
 
-	root := phase4.Parse(lexer3, tracker)
-	_, ok := Parse(root, tracker, mlglib.NewKeyGenerator())
+	root := phase4.Parse(lexer3, "", tracker)
+	_, ok := Parse(root, "", tracker, mlglib.NewKeyGenerator())
 
 	output := ""
 	for _, diag := range tracker.Diagnostics() {

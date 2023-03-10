@@ -31,8 +31,8 @@ a:
 . b:
   . c:
 d:
-`, tracker)
-	lexer2 := NewLexer(lexer1, tracker)
+`, "", tracker)
+	lexer2 := NewLexer(lexer1, "", tracker)
 
 	actual := "\n"
 	for lexer2.HasNext() {

@@ -25,9 +25,10 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func Parse(doc phase4.Document, tracker frontend.DiagnosticTracker,
+func Parse(doc phase4.Document, path ast.Path, tracker frontend.DiagnosticTracker,
 	keyGen mlglib.KeyGenerator) (ast.Document, bool) {
 	p := parser{
+		path:    path,
 		tracker: tracker,
 		keyGen:  keyGen,
 	}
@@ -37,6 +38,7 @@ func Parse(doc phase4.Document, tracker frontend.DiagnosticTracker,
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type parser struct {
+	path    ast.Path
 	tracker frontend.DiagnosticTracker
 	keyGen  mlglib.KeyGenerator
 }
@@ -388,19 +390,19 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 		}
 		i++
 		if section1.Name != ast.LowerIfName {
-			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' but found '%s'",
+			p.tracker.Append(p.newError(fmt.Sprintf("Expected section '%s' but found '%s'",
 				ast.LowerIfName, section1.Name), section1.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
 		if i >= len(sections) {
-			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' to follow an '%s' section",
+			p.tracker.Append(p.newError(fmt.Sprintf("Expected section '%s' to follow an '%s' section",
 				ast.LowerThenName, ast.LowerIfName), section1.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
 		section2 := sections[i]
 		i++
 		if section2.Name != ast.LowerThenName {
-			p.tracker.Append(newError(fmt.Sprintf("Expected section '%s' but found '%s'",
+			p.tracker.Append(p.newError(fmt.Sprintf("Expected section '%s' but found '%s'",
 				ast.LowerThenName, section2.Name), section2.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
@@ -418,7 +420,7 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 	for i < len(sections) {
 		sec := sections[i]
 		i++
-		p.tracker.Append(newError(
+		p.tracker.Append(p.newError(
 			fmt.Sprintf("Unexpected section '%s'", sec.Name), sec.MetaData.Start))
 	}
 	if invalid {
@@ -842,7 +844,7 @@ func (p *parser) toProvidesSection(section phase4.Section) *ast.ProvidesSection 
 }
 
 func (p *parser) oneOrMoreProvidesType(section phase4.Section) []ast.ProvidesType {
-	return oneOrMore(p.toProvidesTypes(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toProvidesTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) toProvidesTypes(args []phase4.Argument) []ast.ProvidesType {
@@ -874,7 +876,7 @@ func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, 
 	} else if grp, ok := p.toConnectionGroup(group); ok {
 		return &grp, ok
 	} else {
-		p.tracker.Append(newError(fmt.Sprintf("Unrecognized argument for %s:\n"+
+		p.tracker.Append(p.newError(fmt.Sprintf("Unrecognized argument for %s:\n"+
 			"Expected one of:\n\n%s:\n\n%s:\n",
 			ast.UpperProvidesName,
 			ast.LowerOperationsName,
@@ -909,7 +911,7 @@ func (p *parser) toJustifiedSection(section phase4.Section) *ast.JustifiedSectio
 }
 
 func (p *parser) oneOrMoreJustifiedType(section phase4.Section) []ast.JustifiedType {
-	return oneOrMore(p.toJustifiedTypes(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toJustifiedTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) toJustifiedTypes(args []phase4.Argument) []ast.JustifiedType {
@@ -2269,7 +2271,7 @@ func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelI
 			return &grp, ok
 		}
 	}
-	p.tracker.Append(newError("Invalid top level item", item.Start()))
+	p.tracker.Append(p.newError("Invalid top level item", item.Start()))
 	return nil, false
 }
 
@@ -2316,7 +2318,7 @@ func (p *parser) toIdItem(text string, position ast.Position) *ast.IdItem {
 
 func (p *parser) getId(group phase4.Group, required bool) *ast.IdItem {
 	if required && group.Id == nil {
-		p.tracker.Append(newError("Expected a [...] item", group.MetaData.Start))
+		p.tracker.Append(p.newError("Expected a [...] item", group.MetaData.Start))
 		return nil
 	} else if group.Id == nil {
 		return nil
@@ -2326,7 +2328,7 @@ func (p *parser) getId(group phase4.Group, required bool) *ast.IdItem {
 
 func (p *parser) getStringId(group phase4.Group, required bool) *string {
 	if required && group.Id == nil {
-		p.tracker.Append(newError("Expected a [...] item", group.MetaData.Start))
+		p.tracker.Append(p.newError("Expected a [...] item", group.MetaData.Start))
 		return nil
 	} else if group.Id == nil {
 		return nil
@@ -2350,7 +2352,7 @@ func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.Formulat
 		}
 	}
 
-	p.tracker.Append(newError("Expected a formulation", arg.MetaData.Start))
+	p.tracker.Append(p.newError("Expected a formulation", arg.MetaData.Start))
 	return ast.Formulation[ast.FormulationNodeType]{}
 }
 
@@ -2396,7 +2398,7 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 		}
 	}
 
-	p.tracker.Append(newError(fmt.Sprintf("Expected a '...', `...`, %s:, %s:, %s:, %s:, or %s: item",
+	p.tracker.Append(p.newError(fmt.Sprintf("Expected a '...', `...`, %s:, %s:, %s:, %s:, or %s: item",
 		ast.LowerExistsName, ast.LowerExistsUniqueName, ast.LowerForAllName, ast.LowerIfName,
 		ast.LowerIffName), arg.MetaData.Start))
 	return &ast.Formulation[ast.FormulationNodeType]{}
@@ -2417,7 +2419,7 @@ func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 			return ast.Spec{}
 		}
 	default:
-		p.tracker.Append(newError(
+		p.tracker.Append(p.newError(
 			"Expected a '... is ...' or a '... <op> ...' item", arg.MetaData.Start))
 		return ast.Spec{}
 	}
@@ -2436,7 +2438,7 @@ func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 			}
 		}
 	}
-	p.tracker.Append(newError("Expected a '... :=> ...' or '... :-> ...' item", arg.MetaData.Start))
+	p.tracker.Append(p.newError("Expected a '... :=> ...' or '... :-> ...' item", arg.MetaData.Start))
 	return ast.Alias{}
 }
 
@@ -2454,7 +2456,7 @@ func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 			return ast.Target{}
 		}
 	default:
-		p.tracker.Append(newError(
+		p.tracker.Append(p.newError(
 			"Expected a name, function, set, tuple, or ':=' declaration", arg.MetaData.Start))
 		return ast.Target{}
 	}
@@ -2468,7 +2470,7 @@ func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
 			CommonMetaData: toCommonMetaData(arg.MetaData),
 		}
 	default:
-		p.tracker.Append(newError("Expected a \"...\" item", arg.MetaData.Start))
+		p.tracker.Append(p.newError("Expected a \"...\" item", arg.MetaData.Start))
 		return ast.TextItem{}
 	}
 }
@@ -2579,7 +2581,7 @@ func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[*ast.Signa
 		}
 	}
 
-	p.tracker.Append(newError("Expected a signature", arg.MetaData.Start))
+	p.tracker.Append(p.newError("Expected a signature", arg.MetaData.Start))
 	return ast.Formulation[*ast.Signature]{}
 }
 
@@ -2677,7 +2679,7 @@ func (p *parser) toDocumentedTypes(args []phase4.Argument) []ast.DocumentedType 
 		if doc, ok := p.toDocumentedType(arg); ok {
 			result = append(result, doc)
 		} else {
-			p.tracker.Append(newError(fmt.Sprintf(
+			p.tracker.Append(p.newError(fmt.Sprintf(
 				"Expected a %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, or %s: item",
 				ast.LowerDetailsName, ast.LowerOverviewName, ast.LowerMotivationName, ast.LowerHistoryName,
 				ast.LowerExampleName, ast.LowerRelatedName, ast.LowerDiscovererName, ast.LowerNoteName,
@@ -2693,7 +2695,7 @@ func (p *parser) toSpecifyTypes(args []phase4.Argument) []ast.SpecifyType {
 		if spec, ok := p.toSpecifyType(arg); ok {
 			result = append(result, spec)
 		} else {
-			p.tracker.Append(newError(fmt.Sprintf(
+			p.tracker.Append(p.newError(fmt.Sprintf(
 				"Expected a %s:, %s:, %s:, %s:, or %s: item",
 				ast.LowerZeroName,
 				ast.LowerPositiveIntName,
@@ -2709,54 +2711,54 @@ func (p *parser) toSpecifyTypes(args []phase4.Argument) []ast.SpecifyType {
 
 func (p *parser) verifyNoArgs(section phase4.Section) {
 	if len(section.Args) > 0 {
-		p.tracker.Append(newError("Expected no arguments", section.MetaData.Start))
+		p.tracker.Append(p.newError("Expected no arguments", section.MetaData.Start))
 	}
 }
 
 func (p *parser) oneOrMoreClauses(section phase4.Section) []ast.Clause {
-	return oneOrMore(p.toClauses(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toClauses(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneClause(section phase4.Section) ast.Clause {
 	var def ast.Clause = &ast.Formulation[ast.FormulationNodeType]{}
-	return exactlyOne(p.toClauses(section.Args), def, section.MetaData.Start, p.tracker)
+	return exactlyOne(p, p.toClauses(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneFormulation(
 	section phase4.Section) ast.Formulation[ast.FormulationNodeType] {
 	var def ast.Formulation[ast.FormulationNodeType] = ast.Formulation[ast.FormulationNodeType]{}
-	return exactlyOne(p.toFormulations(section.Args), def, section.MetaData.Start, p.tracker)
+	return exactlyOne(p, p.toFormulations(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreFormulation(
 	section phase4.Section) []ast.Formulation[ast.FormulationNodeType] {
-	return oneOrMore(p.toFormulations(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toFormulations(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreSpecs(section phase4.Section) []ast.Spec {
-	return oneOrMore(p.toSpecs(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toSpecs(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreAliases(section phase4.Section) []ast.Alias {
-	return oneOrMore(p.toAliases(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toAliases(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneAlias(section phase4.Section) ast.Alias {
 	var def ast.Alias = ast.Alias{}
-	return exactlyOne(p.toAliases(section.Args), def, section.MetaData.Start, p.tracker)
+	return exactlyOne(p, p.toAliases(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneSpec(section phase4.Section) ast.Spec {
 	var def ast.Spec = ast.Spec{}
-	return exactlyOne(p.toSpecs(section.Args), def, section.MetaData.Start, p.tracker)
+	return exactlyOne(p, p.toSpecs(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreTargets(section phase4.Section) []ast.Target {
-	return oneOrMore(p.toTargets(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toTargets(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreTextItems(section phase4.Section) []ast.TextItem {
-	return oneOrMore(p.toTextItems(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toTextItems(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) zeroOrMoreTextItems(section phase4.Section) []ast.TextItem {
@@ -2764,57 +2766,58 @@ func (p *parser) zeroOrMoreTextItems(section phase4.Section) []ast.TextItem {
 }
 
 func (p *parser) oneOrMoreNoteTypes(section phase4.Section) []ast.NoteType {
-	return oneOrMore(p.toNoteTypes(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toNoteTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMorePersonTypes(section phase4.Section) []ast.PersonType {
-	return oneOrMore(p.toPersonTypes(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toPersonTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreResourceTypes(section phase4.Section) []ast.ResourceType {
-	return oneOrMore(p.toResourceTypes(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toResourceTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneTarget(section phase4.Section) ast.Target {
 	var def ast.Target = ast.Target{}
-	return exactlyOne(p.toTargets(section.Args), def, section.MetaData.Start, p.tracker)
+	return exactlyOne(p, p.toTargets(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneSignatureItem(section phase4.Section) ast.Formulation[*ast.Signature] {
 	var def ast.Formulation[*ast.Signature] = ast.Formulation[*ast.Signature]{}
-	return exactlyOne(p.toSignaturesItems(section.Args), def, section.MetaData.Start, p.tracker)
+	return exactlyOne(p, p.toSignaturesItems(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreSignatureItems(section phase4.Section) []ast.Formulation[*ast.Signature] {
-	return oneOrMore(p.toSignaturesItems(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toSignaturesItems(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneTextItem(section phase4.Section) ast.TextItem {
-	return exactlyOne(p.toTextItems(section.Args), ast.TextItem{}, section.MetaData.Start, p.tracker)
+	return exactlyOne(p, p.toTextItems(section.Args), ast.TextItem{}, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreDocumentedTypes(section phase4.Section) []ast.DocumentedType {
-	return oneOrMore(p.toDocumentedTypes(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toDocumentedTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreSpecifyTypes(section phase4.Section) []ast.SpecifyType {
-	return oneOrMore(p.toSpecifyTypes(section.Args), section.MetaData.Start, p.tracker)
+	return oneOrMore(p, p.toSpecifyTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
 ///////////////////////////////////// support functions ////////////////////////////////////////////
 
-func oneOrMore[T any](items []T, position ast.Position, tracker frontend.DiagnosticTracker) []T {
+func oneOrMore[T any](p *parser, items []T, position ast.Position,
+	tracker frontend.DiagnosticTracker) []T {
 	if len(items) == 0 {
-		tracker.Append(newError("Expected at least one item", position))
+		tracker.Append(p.newError("Expected at least one item", position))
 		return []T{}
 	}
 	return items
 }
 
-func exactlyOne[T any](items []T, defaultItem T, position ast.Position,
+func exactlyOne[T any](p *parser, items []T, defaultItem T, position ast.Position,
 	tracker frontend.DiagnosticTracker) T {
 	if len(items) != 1 {
-		tracker.Append(newError("Expected at exactly one item", position))
+		tracker.Append(p.newError("Expected at exactly one item", position))
 	}
 	if len(items) == 0 {
 		return defaultItem
@@ -2845,8 +2848,9 @@ func endsWithSection(group phase4.Group, name string) bool {
 	}
 }
 
-func newError(message string, position ast.Position) frontend.Diagnostic {
+func (p *parser) newError(message string, position ast.Position) frontend.Diagnostic {
 	return frontend.Diagnostic{
+		Path:     p.path,
 		Type:     frontend.Error,
 		Origin:   frontend.Phase5ParserOrigin,
 		Message:  message,

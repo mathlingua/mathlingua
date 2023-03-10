@@ -30,7 +30,7 @@ a: x, y
 . b: 123
   . c:
 xyz: "abc",'123'
-`, tracker)
+`, "", tracker)
 
 	actual := "\n"
 	for lexer1.HasNext() {
@@ -73,7 +73,7 @@ abc
 
 func TestPhase1LexerParsesId(t *testing.T) {
 	tracker := frontend.NewDiagnosticTracker()
-	lexer1 := NewLexer("[some[id[x]]]", tracker)
+	lexer1 := NewLexer("[some[id[x]]]", "", tracker)
 
 	actual := "\n"
 	for lexer1.HasNext() {

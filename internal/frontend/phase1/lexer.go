@@ -24,16 +24,16 @@ import (
 	"unicode"
 )
 
-func NewLexer(text string, tracker frontend.DiagnosticTracker) frontend.Lexer {
+func NewLexer(text string, path ast.Path, tracker frontend.DiagnosticTracker) frontend.Lexer {
 	// ensure the text ends with enough newlines so that it
 	// terminates any sections and groups.  This makes parsing
 	// easier to implement.
-	return frontend.NewLexer(getTokens(text+"\n\n\n", tracker))
+	return frontend.NewLexer(getTokens(text+"\n\n\n", path, tracker))
 }
 
 ////////////////////////////////////////////////////
 
-func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
+func getTokens(text string, path ast.Path, tracker frontend.DiagnosticTracker) []ast.Token {
 	chars := ast.GetChars(text)
 	i := 0
 
@@ -45,6 +45,7 @@ func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 
 	appendDiagnostic := func(message string, position ast.Position) {
 		tracker.Append(frontend.Diagnostic{
+			Path:     path,
 			Type:     frontend.Error,
 			Origin:   frontend.Phase1LexerOrigin,
 			Message:  message,

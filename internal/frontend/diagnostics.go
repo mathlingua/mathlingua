@@ -41,6 +41,7 @@ type Diagnostic struct {
 	Type     DiagnosticType
 	Origin   DiagnosticOrigin
 	Message  string
+	Path     ast.Path
 	Position ast.Position
 }
 

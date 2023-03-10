@@ -299,12 +299,12 @@ func createTestCase(input string) (string, string, bool) {
 func parseForStructural(text string) (string, string, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 
-	lexer1 := phase1.NewLexer(text, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := phase3.NewLexer(lexer2, tracker)
+	lexer1 := phase1.NewLexer(text, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := phase3.NewLexer(lexer2, "", tracker)
 
-	root := phase4.Parse(lexer3, tracker)
-	doc, _ := phase5.Parse(root, tracker, mlglib.NewKeyGenerator())
+	root := phase4.Parse(lexer3, "", tracker)
+	doc, _ := phase5.Parse(root, "", tracker, mlglib.NewKeyGenerator())
 
 	return ast.DebugStructuralNode(doc), mlglib.PrettyPrint(doc), tracker
 }
@@ -314,12 +314,12 @@ func createTestCaseForStructural(input string) (string, string, bool) {
 func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 
-	lexer1 := phase1.NewLexer(text, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := phase3.NewLexer(lexer2, tracker)
+	lexer1 := phase1.NewLexer(text, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := phase3.NewLexer(lexer2, "", tracker)
 
-	root := phase4.Parse(lexer3, tracker)
-	doc, _ := phase5.Parse(root, tracker)
+	root := phase4.Parse(lexer3, "", tracker)
+	doc, _ := phase5.Parse(root, "", tracker)
 
 	return doc, tracker
 }

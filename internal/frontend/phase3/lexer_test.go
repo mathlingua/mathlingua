@@ -30,9 +30,9 @@ func TestPhase3LexerSingleSection(t *testing.T) {
 	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
-`, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := NewLexer(lexer2, tracker)
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -55,9 +55,9 @@ func TestPhase3LexerSingleSectionWithSingleArg(t *testing.T) {
 	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a: xyz
-`, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := NewLexer(lexer2, tracker)
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -83,9 +83,9 @@ func TestPhase3LexerSingleSectionWithMultiArgs(t *testing.T) {
 	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a: xyz, abc
-`, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := NewLexer(lexer2, tracker)
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -117,9 +117,9 @@ a:
 . b:
   . c:
 d:
-`, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := NewLexer(lexer2, tracker)
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -163,9 +163,9 @@ a:
   . c:
 d:
 e:
-`, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := NewLexer(lexer2, tracker)
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -210,9 +210,9 @@ func TestPhase3LexerMultiIndent(t *testing.T) {
 a:
 . b:
   . c:
-`, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := NewLexer(lexer2, tracker)
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -251,9 +251,9 @@ func TestPhase3LexerSingleSectionWithMultiLineNonGroupArgs(t *testing.T) {
 a:
 . b
 . c
-`, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := NewLexer(lexer2, tracker)
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -284,9 +284,9 @@ func TestPhase3LexerSingleSectionWithMultiGroupArgs(t *testing.T) {
 a:
 . b:
 . c:
-`, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := NewLexer(lexer2, tracker)
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -325,9 +325,9 @@ func TestPhase3LexerMultiSections(t *testing.T) {
 a:
 b:
 c:
-`, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := NewLexer(lexer2, tracker)
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -364,9 +364,9 @@ c:
 . P:
   Q:
   R:
-`, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := NewLexer(lexer2, tracker)
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -433,9 +433,9 @@ c:
 . P:
   Q:Q1
   R:
-`, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := NewLexer(lexer2, tracker)
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {

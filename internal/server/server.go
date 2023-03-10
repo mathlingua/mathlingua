@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/phase1"
 	"mathlingua/internal/frontend/phase2"
@@ -104,7 +105,7 @@ func page(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	input := string(bytes)
-	doc, diagnostics := parse(input)
+	doc, diagnostics := parse(input, ast.ToPath(path))
 
 	resp := PageResponse{
 		Diagnostics: diagnostics,
@@ -139,14 +140,14 @@ func handleCors(next http.Handler) http.Handler {
 	})
 }
 
-func parse(text string) (phase4.Document, []frontend.Diagnostic) {
+func parse(text string, path ast.Path) (phase4.Document, []frontend.Diagnostic) {
 	tracker := frontend.NewDiagnosticTracker()
 
-	lexer1 := phase1.NewLexer(text, tracker)
-	lexer2 := phase2.NewLexer(lexer1, tracker)
-	lexer3 := phase3.NewLexer(lexer2, tracker)
+	lexer1 := phase1.NewLexer(text, path, tracker)
+	lexer2 := phase2.NewLexer(lexer1, path, tracker)
+	lexer3 := phase3.NewLexer(lexer2, path, tracker)
 
-	doc := phase4.Parse(lexer3, tracker)
+	doc := phase4.Parse(lexer3, path, tracker)
 
 	return doc, tracker.Diagnostics()
 }

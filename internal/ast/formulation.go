@@ -321,6 +321,7 @@ type ChainExpression struct {
 type Signature struct {
 	MainNames           []string
 	NamedGroupNames     []string
+	IsInfix             bool
 	InnerLabel          *string
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData

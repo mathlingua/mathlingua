@@ -149,6 +149,9 @@ func (n Signature) Debug() string {
 		result += item
 	}
 	result += ")"
+	if n.IsInfix {
+		result += "/"
+	}
 	if n.InnerLabel != nil {
 		result += "::[" + *n.InnerLabel + "]"
 	}

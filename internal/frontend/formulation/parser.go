@@ -2369,6 +2369,12 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 	}
 	fp.expect(ast.RParen)
 
+	isInfix := false
+	if fp.has(ast.Slash) {
+		fp.expect(ast.Slash)
+		isInfix = true
+	}
+
 	var innerLabel *string
 	if fp.hasHas(ast.Colon, ast.Colon) {
 		innerLabelText := ""
@@ -2386,6 +2392,7 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 		MainNames:       mainNames,
 		NamedGroupNames: namedGroupNames,
 		InnerLabel:      innerLabel,
+		IsInfix:         isInfix,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

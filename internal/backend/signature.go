@@ -52,6 +52,7 @@ func GetSignatureStringFromCommand(cmd ast.CommandExpression) string {
 	return ast.Signature{
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
+		IsInfix:         false,
 	}.Debug()
 }
 
@@ -70,6 +71,7 @@ func GetSignatureStringFromCommandId(cmd ast.CommandId) string {
 	return ast.Signature{
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
+		IsInfix:         false,
 	}.Debug()
 }
 
@@ -88,5 +90,6 @@ func GetSignatureStringFromInfixCommandId(cmd ast.InfixCommandId) string {
 	return ast.Signature{
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
+		IsInfix:         true,
 	}.Debug()
 }

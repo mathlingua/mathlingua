@@ -59,9 +59,10 @@ func (w *workspace) DocumentCount() int {
 }
 
 func (w *workspace) Check() CheckResult {
-	_, diagnostics := ParseRoot(w.contents)
+	tracker := frontend.NewDiagnosticTracker()
+	ParseRoot(w.contents, tracker)
 	return CheckResult{
-		Diagnostics: diagnostics,
+		Diagnostics: tracker.Diagnostics(),
 	}
 }
 

@@ -16,10 +16,13 @@
 
 package backend
 
-import "mathlingua/internal/ast"
+import (
+	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend"
+)
 
-func PopulateContexts(root *ast.Root) {
-	rootContext := NewRootContext(root)
+func PopulateContexts(root *ast.Root, tracker frontend.DiagnosticTracker) {
+	rootContext := NewRootContext(root, tracker)
 	root.CommonMetaData.Context = rootContext
 
 	root.ForEach(func(subNode ast.MlgNodeType) {

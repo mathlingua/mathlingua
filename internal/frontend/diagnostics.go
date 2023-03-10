@@ -35,6 +35,7 @@ const (
 	FormulationLexerOrigin        DiagnosticOrigin = "FormulationLexerOrigin"
 	FormulationParserOrigin       DiagnosticOrigin = "FormulationParserOrigin"
 	FormulationConsolidatorOrigin DiagnosticOrigin = "FormulationConsolidatorOrigin"
+	BackendOrigin                 DiagnosticOrigin = "BackendOrigin"
 )
 
 type Diagnostic struct {

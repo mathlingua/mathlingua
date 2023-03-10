@@ -19,14 +19,15 @@ package backend
 import (
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend"
 )
 
-func NewRootContext(root *ast.Root) ast.Context {
+func NewRootContext(root *ast.Root, tracker frontend.DiagnosticTracker) ast.Context {
 	ctx := rootContext{
 		root:            root,
 		signatureToNode: make(map[string]ast.MlgNodeType, 0),
 	}
-	ctx.initialize()
+	ctx.initialize(tracker)
 	return &ctx
 }
 
@@ -37,37 +38,45 @@ type rootContext struct {
 	signatureToNode map[string]ast.MlgNodeType
 }
 
-func (c *rootContext) initialize() {
-	for _, doc := range c.root.Documents {
+func (c *rootContext) initialize(tracker frontend.DiagnosticTracker) {
+	for path, doc := range c.root.Documents {
 		for _, item := range doc.Items {
 			switch n := item.(type) {
 			case *ast.DescribesGroup:
-				// TODO: properly handle error conditions
-				if sig, ok := GetSignatureStringFromId(n.Id); ok {
-					c.signatureToNode[sig] = n
-				} else {
-					fmt.Println("Could not determine the signature for:")
-					fmt.Println(ast.DebugStructuralNode(n))
-				}
+				c.storeSignature(n.Id, n, path, tracker)
 			case *ast.DefinesGroup:
-				// TODO: properly handle error conditions
-				if sig, ok := GetSignatureStringFromId(n.Id); ok {
-					c.signatureToNode[sig] = n
-				} else {
-					fmt.Println("Could not determine the signature for:")
-					fmt.Println(ast.DebugStructuralNode(n))
-				}
+				c.storeSignature(n.Id, n, path, tracker)
 			case *ast.StatesGroup:
-				// TODO: properly handle error conditions
-				if sig, ok := GetSignatureStringFromId(n.Id); ok {
-					c.signatureToNode[sig] = n
-				} else {
-					fmt.Println("Could not determine the signature for:")
-					fmt.Println(ast.DebugStructuralNode(n))
-				}
+				c.storeSignature(n.Id, n, path, tracker)
 			}
 		}
 	}
+}
+
+func (c *rootContext) storeSignature(id ast.IdItem, n ast.MlgNodeType, path ast.Path,
+	tracker frontend.DiagnosticTracker) {
+	if sig, ok := GetSignatureStringFromId(id); ok {
+		if _, ok := c.signatureToNode[sig]; ok {
+			tracker.Append(frontend.Diagnostic{
+				Path:     path,
+				Type:     frontend.Error,
+				Origin:   frontend.BackendOrigin,
+				Message:  fmt.Sprintf("Duplicate defined signature: %s", sig),
+				Position: n.GetCommonMetaData().Start,
+			})
+			return
+		}
+		c.signatureToNode[sig] = n
+		return
+	}
+
+	tracker.Append(frontend.Diagnostic{
+		Path:     path,
+		Type:     frontend.Error,
+		Origin:   frontend.BackendOrigin,
+		Message:  fmt.Sprintf("Could not determine signature"),
+		Position: n.GetCommonMetaData().Start,
+	})
 }
 
 func (c *rootContext) GetParent() (*ast.Context, bool) {

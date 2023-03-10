@@ -27,8 +27,7 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func ParseDocument(text string, path ast.Path) (ast.Document, []frontend.Diagnostic) {
-	tracker := frontend.NewDiagnosticTracker()
+func ParseDocument(text string, path ast.Path, tracker frontend.DiagnosticTracker) ast.Document {
 
 	lexer1 := phase1.NewLexer(text, path, tracker)
 	lexer2 := phase2.NewLexer(lexer1, path, tracker)
@@ -37,17 +36,15 @@ func ParseDocument(text string, path ast.Path) (ast.Document, []frontend.Diagnos
 	root := phase4.Parse(lexer3, path, tracker)
 	doc, _ := phase5.Parse(root, path, tracker, mlglib.NewKeyGenerator())
 
-	return doc, tracker.Diagnostics()
+	return doc
 }
 
-func ParseRoot(texts map[ast.Path]string) (ast.Root, []frontend.Diagnostic) {
+func ParseRoot(texts map[ast.Path]string, tracker frontend.DiagnosticTracker) ast.Root {
 	docs := make(map[ast.Path]ast.Document, 0)
-	pathDiags := make([]frontend.Diagnostic, 0)
 
 	for path, content := range texts {
-		doc, diags := ParseDocument(content, path)
+		doc := ParseDocument(content, path, tracker)
 		docs[path] = doc
-		pathDiags = append(pathDiags, diags...)
 	}
 
 	root := ast.Root{
@@ -62,8 +59,8 @@ func ParseRoot(texts map[ast.Path]string) (ast.Root, []frontend.Diagnostic) {
 		},
 	}
 
-	PopulateContexts(&root)
+	PopulateContexts(&root, tracker)
 	PopulateScopes(&root)
 
-	return root, pathDiags
+	return root
 }

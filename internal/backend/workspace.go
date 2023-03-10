@@ -33,7 +33,7 @@ type WorkspacePageResponse struct {
 }
 
 type CheckResult struct {
-	Diagnostics map[ast.Path][]frontend.Diagnostic
+	Diagnostics []frontend.Diagnostic
 }
 
 type Workspace interface {

@@ -40,14 +40,14 @@ func ParseDocument(text string, path ast.Path) (ast.Document, []frontend.Diagnos
 	return doc, tracker.Diagnostics()
 }
 
-func ParseRoot(texts map[ast.Path]string) (ast.Root, map[ast.Path][]frontend.Diagnostic) {
+func ParseRoot(texts map[ast.Path]string) (ast.Root, []frontend.Diagnostic) {
 	docs := make(map[ast.Path]ast.Document, 0)
-	pathDiags := make(map[ast.Path][]frontend.Diagnostic, 0)
+	pathDiags := make([]frontend.Diagnostic, 0)
 
 	for path, content := range texts {
 		doc, diags := ParseDocument(content, path)
 		docs[path] = doc
-		pathDiags[path] = diags
+		pathDiags = append(pathDiags, diags...)
 	}
 
 	root := ast.Root{

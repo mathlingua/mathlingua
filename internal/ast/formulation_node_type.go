@@ -25,13 +25,8 @@ type FormulationNodeType interface {
 }
 
 type FormulationMetaData struct {
-	Resolution Resolution
-	Type       ResolvedType
-}
-
-type Resolution struct {
-	From string
-	To   string
+	Type     ResolvedType
+	Original FormulationNodeType
 }
 
 func (NameForm) FormulationNodeType()                               {}

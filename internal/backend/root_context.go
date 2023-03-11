@@ -79,11 +79,11 @@ func (c *rootContext) storeSignature(id ast.IdItem, n ast.MlgNodeType, path ast.
 	})
 }
 
-func (c *rootContext) GetParent() (*ast.Context, bool) {
-	return nil, false
+func (c *rootContext) GetParent() ast.Context {
+	return nil
 }
 
-func (c *rootContext) SetParent(parent *ast.Context) {
+func (c *rootContext) SetParent(parent ast.Context) {
 }
 
 func (c *rootContext) IsSubTypeOf(from string, to string) bool {

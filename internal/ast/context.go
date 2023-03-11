@@ -41,8 +41,8 @@ type ResolveExpressionArg struct {
 }
 
 type Context interface {
-	GetParent() (*Context, bool)
-	SetParent(parent *Context)
+	GetParent() Context
+	SetParent(parent Context)
 	IsSubTypeOf(from string, to string) bool
 	IsViewableAs(from string, to string) bool
 	ResolveType(arg ResolveTypeArg) ResolvedType

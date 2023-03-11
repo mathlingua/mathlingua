@@ -34,8 +34,8 @@ type scope struct {
 	names  map[string]*ast.NameInfo
 }
 
-func (s *scope) GetParent() (ast.Scope, bool) {
-	return s.parent, s.parent != nil
+func (s *scope) GetParent() ast.Scope {
+	return s.parent
 }
 
 func (s *scope) SetParent(parent ast.Scope) {

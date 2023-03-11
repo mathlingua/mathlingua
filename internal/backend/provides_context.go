@@ -32,12 +32,12 @@ type providesContext struct {
 	providable ast.ProvidableNodeType
 }
 
-func (c *providesContext) GetParent() (*ast.Context, bool) {
-	return &c.parent, c.parent != nil
+func (c *providesContext) GetParent() ast.Context {
+	return c.parent
 }
 
-func (c *providesContext) SetParent(parent *ast.Context) {
-	c.parent = *parent
+func (c *providesContext) SetParent(parent ast.Context) {
+	c.parent = parent
 }
 
 func (c *providesContext) IsSubTypeOf(from string, to string) bool {

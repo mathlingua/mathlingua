@@ -96,12 +96,14 @@ func (c *rootContext) IsViewableAs(from string, to string) bool {
 	return false
 }
 
-func (c *rootContext) PopulateFromSpecAlias(nameType ast.ResolvedType,
-	specName string, target ast.ExpressionType,
-	scope *ast.Scope) {
+func (c *rootContext) ResolveType(arg ast.ResolveTypeArg) ast.ResolvedType {
+	// TODO: implement this
+	return ast.ResolvedType{}
 }
 
-func (c *rootContext) PopulateFromIs(is *ast.IsExpression, scope *ast.Scope) {
+func (c *rootContext) ResolveTypeForm(arg ast.ResolvedTypeFormArg) ast.ResolvedTypeForm {
+	// TODO: implement this
+	return ast.ResolvedFunctionTypeForm{}
 }
 
 func (c *rootContext) GetWrittenAs(exp *ast.ExpressionType, scope *ast.Scope) {

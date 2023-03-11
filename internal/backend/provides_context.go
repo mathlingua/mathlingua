@@ -58,5 +58,15 @@ func (c *providesContext) PopulateFromSpecAlias(nameType ast.ResolvedType,
 func (c *providesContext) PopulateFromIs(is *ast.IsExpression, scope *ast.Scope) {
 }
 
+func (c *providesContext) ResolveType(arg ast.ResolveTypeArg) ast.ResolvedType {
+	// TODO: implement this
+	return ast.ResolvedType{}
+}
+
+func (c *providesContext) ResolveTypeForm(arg ast.ResolvedTypeFormArg) ast.ResolvedTypeForm {
+	// TODO: implement this
+	return ast.ResolvedFunctionTypeForm{}
+}
+
 func (c *providesContext) GetWrittenAs(exp *ast.ExpressionType, scope *ast.Scope) {
 }

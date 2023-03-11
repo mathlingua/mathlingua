@@ -16,14 +16,28 @@
 
 package ast
 
+type ResolveTypeArg struct {
+	Type            UnResolvedType
+	NameMapping     NameMapping
+	CallSiteScope   *Scope
+	CallSiteContext *Context
+	DefSiteScope    *Scope
+}
+
+type ResolvedTypeFormArg struct {
+	TypeForm        UnResolvedTypeForm
+	NameMapping     NameMapping
+	CallSiteScope   *Scope
+	CallSiteContext *Context
+	DefSiteScope    *Scope
+}
+
 type Context interface {
 	GetParent() (*Context, bool)
 	SetParent(parent *Context)
 	IsSubTypeOf(from string, to string) bool
 	IsViewableAs(from string, to string) bool
-	PopulateFromSpecAlias(nameType ResolvedType,
-		specName string, target ExpressionType,
-		scope *Scope)
-	PopulateFromIs(is *IsExpression, scope *Scope)
+	ResolveType(arg ResolveTypeArg) ResolvedType
+	ResolveTypeForm(arg ResolvedTypeFormArg) ResolvedTypeForm
 	GetWrittenAs(exp *ExpressionType, scope *Scope)
 }

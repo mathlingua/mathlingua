@@ -21,6 +21,7 @@ type Set[T comparable] interface {
 	Add(value T)
 	Remove(value T)
 	Has(value T) bool
+	Clone() Set[T]
 }
 
 func NewSet[T comparable]() Set[T] {
@@ -50,4 +51,14 @@ func (s *set[T]) Remove(value T) {
 func (s *set[T]) Has(value T) bool {
 	_, ok := s.values[value]
 	return ok
+}
+
+func (s *set[T]) Clone() Set[T] {
+	valuesCopy := make(map[T]interface{}, 0)
+	for key, value := range s.values {
+		valuesCopy[key] = value
+	}
+	return &set[T]{
+		values: valuesCopy,
+	}
 }

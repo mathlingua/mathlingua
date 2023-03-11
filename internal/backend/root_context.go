@@ -101,9 +101,14 @@ func (c *rootContext) ResolveType(arg ast.ResolveTypeArg) ast.ResolvedType {
 	return ast.ResolvedType{}
 }
 
-func (c *rootContext) ResolveTypeForm(arg ast.ResolvedTypeFormArg) ast.ResolvedTypeForm {
+func (c *rootContext) ResolveTypeForm(arg ast.ResolveTypeFormArg) ast.ResolvedTypeForm {
 	// TODO: implement this
 	return ast.ResolvedFunctionTypeForm{}
+}
+
+func (c *rootContext) ResolveExpression(arg ast.ResolveExpressionArg) ast.ExpressionType {
+	// TODO: implement this
+	return nil
 }
 
 func (c *rootContext) GetWrittenAs(exp *ast.ExpressionType, scope *ast.Scope) {

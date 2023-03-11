@@ -24,8 +24,16 @@ type ResolveTypeArg struct {
 	DefSiteScope    *Scope
 }
 
-type ResolvedTypeFormArg struct {
+type ResolveTypeFormArg struct {
 	TypeForm        UnResolvedTypeForm
+	NameMapping     NameMapping
+	CallSiteScope   *Scope
+	CallSiteContext *Context
+	DefSiteScope    *Scope
+}
+
+type ResolveExpressionArg struct {
+	Exp             *ExpressionType
 	NameMapping     NameMapping
 	CallSiteScope   *Scope
 	CallSiteContext *Context
@@ -38,6 +46,7 @@ type Context interface {
 	IsSubTypeOf(from string, to string) bool
 	IsViewableAs(from string, to string) bool
 	ResolveType(arg ResolveTypeArg) ResolvedType
-	ResolveTypeForm(arg ResolvedTypeFormArg) ResolvedTypeForm
+	ResolveTypeForm(arg ResolveTypeFormArg) ResolvedTypeForm
+	ResolveExpression(arg ResolveExpressionArg) ExpressionType
 	GetWrittenAs(exp *ExpressionType, scope *Scope)
 }

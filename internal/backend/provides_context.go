@@ -63,9 +63,14 @@ func (c *providesContext) ResolveType(arg ast.ResolveTypeArg) ast.ResolvedType {
 	return ast.ResolvedType{}
 }
 
-func (c *providesContext) ResolveTypeForm(arg ast.ResolvedTypeFormArg) ast.ResolvedTypeForm {
+func (c *providesContext) ResolveTypeForm(arg ast.ResolveTypeFormArg) ast.ResolvedTypeForm {
 	// TODO: implement this
 	return ast.ResolvedFunctionTypeForm{}
+}
+
+func (c *providesContext) ResolveExpression(arg ast.ResolveExpressionArg) ast.ExpressionType {
+	// TODO: implement this
+	return nil
 }
 
 func (c *providesContext) GetWrittenAs(exp *ast.ExpressionType, scope *ast.Scope) {

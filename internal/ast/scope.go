@@ -27,5 +27,6 @@ type NameInfo struct {
 	IsInfereble     bool
 	IsPlaceholder   bool
 	IsNumberLiteral bool
-	Type            ResolvedType
+	ResolvedType    ResolvedType
+	UnResolvedType  UnResolvedType
 }

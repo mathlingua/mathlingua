@@ -52,6 +52,7 @@ var useFormulationParser bool
 var useIdParser bool
 var useFormParser bool
 var direct bool
+var showAst bool
 
 func init() {
 	flags := debugCommand.Flags()
@@ -60,6 +61,7 @@ func init() {
 	flags.BoolVar(&useIdParser, "id", false, "Use the id parser")
 	flags.BoolVar(&useFormParser, "form", false, "Use the form parser")
 	flags.BoolVar(&direct, "direct", false, "Directly check the input.txt text and don't open the ux")
+	flags.BoolVar(&showAst, "ast", false, "Show the AST in the output pane")
 	debugCommand.MarkFlagsMutuallyExclusive("structural", "formulation", "id", "form")
 	rootCmd.AddCommand(debugCommand)
 }
@@ -223,7 +225,7 @@ func setupScreen() {
 		if event.Key() == tcell.KeyCtrlR || event.Key() == tcell.KeyCtrlT {
 			outputArea.SetText("")
 
-			text, _, tracker := parse(inputArea.GetText())
+			srcText, astText, tracker := parse(inputArea.GetText())
 			diagnostics := tracker.Diagnostics()
 			if len(diagnostics) > 0 {
 				output := ""
@@ -237,7 +239,11 @@ func setupScreen() {
 				}
 				outputArea.SetText(output)
 			} else {
-				outputArea.SetText(text)
+				if showAst {
+					outputArea.SetText(astText)
+				} else {
+					outputArea.SetText(srcText)
+				}
 			}
 		}
 

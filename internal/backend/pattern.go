@@ -16,65 +16,91 @@
 
 package backend
 
-type FormPattern interface {
-	FormPattern()
+type StaticPattern interface {
+	StaticPattern()
 }
 
-func (NameFormPattern) FormPattern()     {}
-func (FunctionFormPattern) FormPattern() {}
-func (TupleFormPattern) FormPattern()    {}
-func (SetFormPattern) FormPattern()      {}
+func (NameStaticPattern) StaticPattern()           {}
+func (FunctionStaticPattern) StaticPattern()       {}
+func (TupleStaticPattern) StaticPattern()          {}
+func (SetStaticPattern) StaticPattern()            {}
+func (InfixStaticPattern) StaticPattern()          {}
+func (PrefixStaticPattern) StaticPattern()         {}
+func (PostfixStaticPattern) StaticPattern()        {}
+func (CommandStaticPattern) StaticPattern()        {}
+func (MemberNameStaticPattern) StaticPattern()     {}
+func (MemberFunctionStaticPattern) StaticPattern() {}
+func (MemberInfixStaticPattern) StaticPattern()    {}
+func (MemberPrefixStaticPattern) StaticPattern()   {}
+func (MemberPostfixStaticPattern) StaticPattern()  {}
 
-type NameFormPattern struct {
+type NameStaticPattern struct {
 	Name string
 }
 
-type FunctionFormPattern struct {
-	TargetName string
-	Inputs     []FormPattern
-	Output     FormPattern
+type FunctionStaticPattern struct {
+	Name   string
+	Inputs []StaticPattern
+	Output StaticPattern
 }
 
-type TupleFormPattern struct {
-	Items []FormPattern
+type TupleStaticPattern struct {
+	Items []StaticPattern
 }
 
-type SetFormPattern struct {
-	Target    FormPattern
-	Condition FormPattern
+type SetStaticPattern struct {
+	Target    StaticPattern
+	Condition StaticPattern
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type InputPattern interface {
-	InputPattern()
-}
-
-func (InfixInputPattern) InputPattern()   {}
-func (PrefixInputPattern) InputPattern()  {}
-func (PostfixInputPattern) InputPattern() {}
-func (CommandInputPattern) InputPattern() {}
-
-type InfixInputPattern struct {
-	Lhs FormPattern
-	Rhs FormPattern
-}
-
-type PrefixInputPattern struct {
-	Arg FormPattern
-}
-
-type PostfixInputPattern struct {
-	Arg FormPattern
-}
-
-type CommandInputPattern struct {
-	CurlyArgs   []FormPattern
-	ParenArgs   []FormPattern
-	NamedGroups []NamedGroupInput
-}
-
-type NamedGroupInput struct {
+type InfixStaticPattern struct {
 	Name string
-	Args []FormPattern
+	Lhs  StaticPattern
+	Rhs  StaticPattern
+}
+
+type PrefixStaticPattern struct {
+	Name string
+	Arg  StaticPattern
+}
+
+type PostfixStaticPattern struct {
+	Name string
+	Arg  StaticPattern
+}
+
+type CommandStaticPattern struct {
+	CurlyArgs   []StaticPattern
+	ParenArgs   []StaticPattern
+	NamedGroups []NamedGroupStaticPattern
+}
+
+type NamedGroupStaticPattern struct {
+	Name string
+	Args []StaticPattern
+}
+
+type MemberNameStaticPattern struct {
+	Target string
+	Member NameStaticPattern
+}
+
+type MemberFunctionStaticPattern struct {
+	Target string
+	Member FunctionStaticPattern
+}
+
+type MemberInfixStaticPattern struct {
+	Target string
+	Member InfixStaticPattern
+}
+
+type MemberPrefixStaticPattern struct {
+	Target string
+	Member PrefixStaticPattern
+}
+
+type MemberPostfixStaticPattern struct {
+	Target string
+	Member PostfixStaticPattern
 }

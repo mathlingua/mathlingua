@@ -17,31 +17,35 @@
 package backend
 
 type DescribesInfo struct {
-	InputPattern  StaticPattern
-	UsingsPattern []StaticPattern
-	OutputPattern StaticPattern
-	ExpAliases    []ExpAliasInfo
-	SpecAliases   []SpecAliasInfo
-	Written       []WrittenInfo
-	Called        []CalledInfo
+	Input       StaticPattern
+	Output      StaticPattern
+	Usings      []StaticPattern
+	When        []Constraint
+	Extends     []Constraint
+	ExpAliases  []ExpAliasInfo
+	SpecAliases []SpecAliasInfo
+	Written     []WrittenInfo
+	Called      []CalledInfo
 }
 
 type DefinesInfo struct {
-	InputPattern  StaticPattern
-	UsingsPattern []StaticPattern
-	OutputPattern StaticPattern
-	ExpAliases    []ExpAliasInfo
-	SpecAliases   []SpecAliasInfo
-	Written       []WrittenInfo
-	Called        []CalledInfo
+	Input       StaticPattern
+	Output      StaticPattern
+	Usings      []StaticPattern
+	When        []Constraint
+	Means       []Constraint
+	ExpAliases  []ExpAliasInfo
+	SpecAliases []SpecAliasInfo
+	Written     []WrittenInfo
+	Called      []CalledInfo
 }
 
 type StatesInfo struct {
-	InputPattern  StaticPattern
-	UsingsPattern []StaticPattern
-	OutputPattern StaticPattern
-	ExpAliases    []ExpAliasInfo
-	SpecAliases   []SpecAliasInfo
-	Written       []WrittenInfo
-	Called        []CalledInfo
+	Input       StaticPattern
+	Output      StaticPattern
+	Usings      []StaticPattern
+	ExpAliases  []ExpAliasInfo
+	SpecAliases []SpecAliasInfo
+	Written     []WrittenInfo
+	Called      []CalledInfo
 }

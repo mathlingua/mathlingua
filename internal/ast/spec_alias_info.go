@@ -20,19 +20,10 @@ type SpecAliasInfoRhs interface {
 	SpecAliasInfoRhs()
 }
 
-func (SpecAliasInfo) SpecAliasInfoRhs()         {}
-func (SpecAliasSignatureRhs) SpecAliasInfoRhs() {}
+func (IsConstraint) SpecAliasInfoRhs()   {}
+func (SpecConstraint) SpecAliasInfoRhs() {}
 
 type SpecAliasInfo struct {
-	Lhs []string
+	Lhs SpecStaticPattern
 	Rhs SpecAliasInfoRhs
-}
-
-type SpecAliasSignatureRhs struct {
-	Pairs []PatternSignaturePair
-}
-
-type PatternSignaturePair struct {
-	Pattern   StaticPattern
-	Signature []string
 }

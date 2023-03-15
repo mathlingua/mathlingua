@@ -33,6 +33,7 @@ func (MemberFunctionStaticPattern) StaticPattern() {}
 func (MemberInfixStaticPattern) StaticPattern()    {}
 func (MemberPrefixStaticPattern) StaticPattern()   {}
 func (MemberPostfixStaticPattern) StaticPattern()  {}
+func (SpecStaticPattern) StaticPattern()           {}
 
 type NameStaticPattern struct {
 	Name string
@@ -103,4 +104,10 @@ type MemberPrefixStaticPattern struct {
 type MemberPostfixStaticPattern struct {
 	Target string
 	Member PostfixStaticPattern
+}
+
+type SpecStaticPattern struct {
+	Lhs  StaticPattern
+	Name string
+	Rhs  StaticPattern
 }

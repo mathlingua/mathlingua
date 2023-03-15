@@ -14,25 +14,29 @@
  * limitations under the License.
  */
 
-package backend
+package ast
 
-type SpecAliasInfoRhs interface {
-	SpecAliasInfoRhs()
+type Constraint interface {
+	Constraint()
 }
 
-func (SpecAliasInfo) SpecAliasInfoRhs()         {}
-func (SpecAliasSignatureRhs) SpecAliasInfoRhs() {}
+func (IsConstraint) Constraint()      {}
+func (ExtendsConstraint) Constraint() {}
+func (SpecConstraint) Constraint()    {}
 
-type SpecAliasInfo struct {
-	Lhs []string
-	Rhs SpecAliasInfoRhs
+type IsConstraint struct {
+	Targets    []StaticPattern
+	Signatures []string
 }
 
-type SpecAliasSignatureRhs struct {
-	Pairs []PatternSignaturePair
+type ExtendsConstraint struct {
+	Targets       []StaticPattern
+	ConditionType string
+	Signatures    []string
 }
 
-type PatternSignaturePair struct {
-	Pattern   StaticPattern
-	Signature []string
+type SpecConstraint struct {
+	Targets []StaticPattern
+	Name    string
+	Exp     *ExpressionType
 }

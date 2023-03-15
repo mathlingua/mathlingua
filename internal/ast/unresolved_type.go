@@ -18,7 +18,7 @@ package ast
 
 import "mathlingua/internal/mlglib"
 
-type SpecAliasInfo struct {
+type SpecAliasInfo2 struct {
 	SpecAlias string
 	Exp       *ExpressionType
 	Scope     *Scope

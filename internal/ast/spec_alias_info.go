@@ -14,31 +14,25 @@
  * limitations under the License.
  */
 
-package backend
+package ast
 
-import "mathlingua/internal/ast"
-
-type Constraint interface {
-	Constraint()
+type SpecAliasInfoRhs interface {
+	SpecAliasInfoRhs()
 }
 
-func (IsConstraint) Constraint()      {}
-func (ExtendsConstraint) Constraint() {}
-func (SpecConstraint) Constraint()    {}
+func (SpecAliasInfo) SpecAliasInfoRhs()         {}
+func (SpecAliasSignatureRhs) SpecAliasInfoRhs() {}
 
-type IsConstraint struct {
-	Targets    []StaticPattern
-	Signatures []string
+type SpecAliasInfo struct {
+	Lhs []string
+	Rhs SpecAliasInfoRhs
 }
 
-type ExtendsConstraint struct {
-	Targets       []StaticPattern
-	ConditionType string
-	Signatures    []string
+type SpecAliasSignatureRhs struct {
+	Pairs []PatternSignaturePair
 }
 
-type SpecConstraint struct {
-	Targets []StaticPattern
-	Name    string
-	Exp     *ast.ExpressionType
+type PatternSignaturePair struct {
+	Pattern   StaticPattern
+	Signature []string
 }

@@ -14,9 +14,21 @@
  * limitations under the License.
  */
 
-package backend
+package ast
 
-type CalledInfo struct {
-	From   StaticPattern
-	Called string
+type AliasInfo interface {
+	AliasInfo()
 }
+
+func (SpecAliasInfo) AliasInfo() {}
+
+func (InfixExpAliasInfo) AliasInfo()          {}
+func (PrefixExpAliasInfo) AliasInfo()         {}
+func (PostfixExpAliasInfo) AliasInfo()        {}
+func (FunctionExpAliasInfo) AliasInfo()       {}
+func (CommandExpAliasInfo) AliasInfo()        {}
+func (MemberNameExpAliasInfo) AliasInfo()     {}
+func (MemberFunctionExpAliasInfo) AliasInfo() {}
+func (MemberInfixExpAliasInfo) AliasInfo()    {}
+func (MemberPrefixExpAliasInfo) AliasInfo()   {}
+func (MemberPostfixExpAliasInfo) AliasInfo()  {}

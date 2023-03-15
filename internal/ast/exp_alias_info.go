@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package backend
-
-import "mathlingua/internal/ast"
+package ast
 
 type ExpAliasInfo interface {
 	ExpAliasInfo()
@@ -37,50 +35,50 @@ func (MemberPostfixExpAliasInfo) ExpAliasInfo()  {}
 
 type InfixExpAliasInfo struct {
 	Lhs InfixStaticPattern
-	Rhs *ast.ExpressionType
+	Rhs *ExpressionType
 }
 
 type PrefixExpAliasInfo struct {
 	Lhs PrefixStaticPattern
-	Rhs *ast.ExpressionType
+	Rhs *ExpressionType
 }
 
 type PostfixExpAliasInfo struct {
 	Lhs PostfixStaticPattern
-	Rhs *ast.ExpressionType
+	Rhs *ExpressionType
 }
 
 type FunctionExpAliasInfo struct {
 	Lhs FunctionStaticPattern
-	Rhs *ast.ExpressionType
+	Rhs *ExpressionType
 }
 
 type CommandExpAliasInfo struct {
 	Lsh CommandStaticPattern
-	Rhs *ast.ExpressionType
+	Rhs *ExpressionType
 }
 
 type MemberNameExpAliasInfo struct {
 	Lsh MemberNameStaticPattern
-	Rhs *ast.ExpressionType
+	Rhs *ExpressionType
 }
 
 type MemberFunctionExpAliasInfo struct {
 	Lsh MemberFunctionStaticPattern
-	Rhs *ast.ExpressionType
+	Rhs *ExpressionType
 }
 
 type MemberInfixExpAliasInfo struct {
 	Lsh MemberInfixStaticPattern
-	Rhs *ast.ExpressionType
+	Rhs *ExpressionType
 }
 
 type MemberPrefixExpAliasInfo struct {
 	Lhs MemberPrefixStaticPattern
-	Rhs *ast.ExpressionType
+	Rhs *ExpressionType
 }
 
 type MemberPostfixExpAliasInfo struct {
 	Lsh MemberPostfixStaticPattern
-	Rhs *ast.ExpressionType
+	Rhs *ExpressionType
 }

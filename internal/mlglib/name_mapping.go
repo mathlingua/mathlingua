@@ -14,37 +14,37 @@
  * limitations under the License.
  */
 
-package ast
+package mlglib
 
 type NameMapping interface {
-	AddMapping(callSiteName string, defSiteName string)
-	GetCallSiteName(defSiteName string) string
-	GetDefSiteName(callSiteName string) string
+	AddMapping(fromName string, toName string)
+	GetFromName(toName string) string
+	GetToName(fromName string) string
 }
 
 func NewNameMapping() NameMapping {
 	return &nameMapping{
-		callSiteToDefSiteNames: make(map[string]string, 0),
-		defSiteToCallSiteNames: make(map[string]string, 0),
+		fromToToNames: make(map[string]string, 0),
+		toToFromNames: make(map[string]string, 0),
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type nameMapping struct {
-	callSiteToDefSiteNames map[string]string
-	defSiteToCallSiteNames map[string]string
+	fromToToNames map[string]string
+	toToFromNames map[string]string
 }
 
-func (nm *nameMapping) AddMapping(callSiteName string, defSiteName string) {
-	nm.callSiteToDefSiteNames[callSiteName] = defSiteName
-	nm.defSiteToCallSiteNames[defSiteName] = callSiteName
+func (nm *nameMapping) AddMapping(fromName string, toName string) {
+	nm.fromToToNames[fromName] = toName
+	nm.toToFromNames[toName] = fromName
 }
 
-func (nm *nameMapping) GetCallSiteName(defSiteName string) string {
-	return nm.defSiteToCallSiteNames[defSiteName]
+func (nm *nameMapping) GetFromName(toName string) string {
+	return nm.toToFromNames[toName]
 }
 
-func (nm *nameMapping) GetDefSiteName(callSiteName string) string {
-	return nm.callSiteToDefSiteNames[callSiteName]
+func (nm *nameMapping) GetToName(fromName string) string {
+	return nm.fromToToNames[fromName]
 }

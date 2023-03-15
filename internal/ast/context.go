@@ -16,28 +16,30 @@
 
 package ast
 
+import "mathlingua/internal/mlglib"
+
 type ResolveTypeArg struct {
-	Type            UnResolvedType
-	NameMapping     NameMapping
-	CallSiteScope   *Scope
-	CallSiteContext *Context
-	DefSiteScope    *Scope
+	Type               UnResolvedType
+	CallToDefSiteNames mlglib.NameMapping
+	CallSiteScope      *Scope
+	CallSiteContext    *Context
+	DefSiteScope       *Scope
 }
 
 type ResolveTypeFormArg struct {
-	TypeForm        UnResolvedTypeForm
-	NameMapping     NameMapping
-	CallSiteScope   *Scope
-	CallSiteContext *Context
-	DefSiteScope    *Scope
+	TypeForm           UnResolvedTypeForm
+	CallToDefSiteNames mlglib.NameMapping
+	CallSiteScope      *Scope
+	CallSiteContext    *Context
+	DefSiteScope       *Scope
 }
 
 type ResolveExpressionArg struct {
-	Exp             *ExpressionType
-	NameMapping     NameMapping
-	CallSiteScope   *Scope
-	CallSiteContext *Context
-	DefSiteScope    *Scope
+	Exp                *ExpressionType
+	CallToDefSiteNames mlglib.NameMapping
+	CallSiteScope      *Scope
+	CallSiteContext    *Context
+	DefSiteScope       *Scope
 }
 
 type Context interface {

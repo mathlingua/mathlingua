@@ -16,7 +16,7 @@
 
 package ast
 
-type DescribesInfo struct {
+type DescribesMetaData struct {
 	Input       StaticPattern
 	Output      StaticPattern
 	Usings      []StaticPattern
@@ -28,7 +28,7 @@ type DescribesInfo struct {
 	Called      []CalledInfo
 }
 
-type DefinesInfo struct {
+type DefinesMetaData struct {
 	Input       StaticPattern
 	Output      StaticPattern
 	Usings      []StaticPattern
@@ -40,7 +40,7 @@ type DefinesInfo struct {
 	Called      []CalledInfo
 }
 
-type StatesInfo struct {
+type StatesMetaData struct {
 	Input       StaticPattern
 	Output      StaticPattern
 	Usings      []StaticPattern

@@ -672,21 +672,22 @@ var DescribesSections = []string{
 }
 
 type DescribesGroup struct {
-	Id             IdItem
-	Describes      DescribesSection
-	With           *WithSection
-	Using          *UsingSection
-	When           *WhenSection
-	SuchThat       *SuchThatSection
-	Extends        *ExtendsSection
-	Satisfies      *SatisfiesSection
-	Provides       *ProvidesSection
-	Justified      *JustifiedSection
-	Documented     *DocumentedSection
-	References     *ReferencesSection
-	Aliases        *AliasesSection
-	MetaId         *MetaIdSection
-	CommonMetaData CommonMetaData
+	Id                IdItem
+	Describes         DescribesSection
+	With              *WithSection
+	Using             *UsingSection
+	When              *WhenSection
+	SuchThat          *SuchThatSection
+	Extends           *ExtendsSection
+	Satisfies         *SatisfiesSection
+	Provides          *ProvidesSection
+	Justified         *JustifiedSection
+	Documented        *DocumentedSection
+	References        *ReferencesSection
+	Aliases           *AliasesSection
+	MetaId            *MetaIdSection
+	CommonMetaData    CommonMetaData
+	DescribesMetaData DescribesMetaData
 }
 
 type DescribesSection struct {
@@ -746,22 +747,23 @@ var DefinesSections = []string{
 }
 
 type DefinesGroup struct {
-	Id             IdItem
-	Defines        DefinesSection
-	With           *WithSection
-	Using          *UsingSection
-	When           *WhenSection
-	SuchThat       *SuchThatSection
-	Generalizes    *GeneralizesSection
-	Means          *MeansSection
-	Specifies      *SpecifiesSection
-	Provides       *ProvidesSection
-	Justified      *JustifiedSection
-	Documented     *DocumentedSection
-	References     *ReferencesSection
-	Aliases        *AliasesSection
-	MetaId         *MetaIdSection
-	CommonMetaData CommonMetaData
+	Id              IdItem
+	Defines         DefinesSection
+	With            *WithSection
+	Using           *UsingSection
+	When            *WhenSection
+	SuchThat        *SuchThatSection
+	Generalizes     *GeneralizesSection
+	Means           *MeansSection
+	Specifies       *SpecifiesSection
+	Provides        *ProvidesSection
+	Justified       *JustifiedSection
+	Documented      *DocumentedSection
+	References      *ReferencesSection
+	Aliases         *AliasesSection
+	MetaId          *MetaIdSection
+	CommonMetaData  CommonMetaData
+	DefinesMetaData DefinesMetaData
 }
 
 type DefinesSection struct {
@@ -814,6 +816,7 @@ type StatesGroup struct {
 	Aliases        *AliasesSection
 	MetaId         *MetaIdSection
 	CommonMetaData CommonMetaData
+	StatesMetaData StatesMetaData
 }
 
 type StatesSection struct {

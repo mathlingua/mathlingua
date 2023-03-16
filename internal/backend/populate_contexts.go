@@ -30,7 +30,7 @@ func PopulateContexts(root *ast.Root, tracker frontend.DiagnosticTracker) {
 	})
 }
 
-func populateContextsImpl(node ast.MlgNodeType, parentContext ast.Context) {
+func populateContextsImpl(node ast.MlgNodeType, parentContext ast.ContextType) {
 	switch n := node.(type) {
 	case ast.ProvidableNodeType:
 		providesContext := NewProvidesContext(parentContext, n)

@@ -26,17 +26,17 @@ import "mathlingua/internal/mlglib"
  *       describe variable types and variables themselves.
  */
 type ResolvedType struct {
-	Form       ResolvedTypeForm
+	Form       ResolvedTypeFormType
 	Signatures mlglib.Set[string]
 }
 
-type ResolvedTypeForm interface {
-	ResolvedTypeForm()
+type ResolvedTypeFormType interface {
+	ResolvedTypeFormType()
 }
 
-func (ResolvedFunctionTypeForm) ResolvedTypeForm() {}
-func (ResolvedTupleTypeForm) ResolvedTypeForm()    {}
-func (ResolvedSetTypeForm) ResolvedTypeForm()      {}
+func (ResolvedFunctionTypeForm) ResolvedTypeFormType() {}
+func (ResolvedTupleTypeForm) ResolvedTypeFormType()    {}
+func (ResolvedSetTypeForm) ResolvedTypeFormType()      {}
 
 type ResolvedFunctionTypeForm struct {
 	Inputs []ResolvedType

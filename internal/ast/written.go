@@ -17,6 +17,6 @@
 package ast
 
 type WrittenInfo struct {
-	From    StaticPattern
+	From    StaticPatternType
 	Written string
 }

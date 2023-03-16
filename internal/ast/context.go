@@ -21,34 +21,34 @@ import "mathlingua/internal/mlglib"
 type ResolveTypeArg struct {
 	Type               UnResolvedType
 	CallToDefSiteNames mlglib.NameMapping
-	CallSiteScope      *Scope
-	CallSiteContext    *Context
-	DefSiteScope       *Scope
+	CallSiteScope      ScopeType
+	CallSiteContext    ContextType
+	DefSiteScope       ScopeType
 }
 
 type ResolveTypeFormArg struct {
-	TypeForm           UnResolvedTypeForm
+	TypeForm           UnResolvedTypeFormType
 	CallToDefSiteNames mlglib.NameMapping
-	CallSiteScope      *Scope
-	CallSiteContext    *Context
-	DefSiteScope       *Scope
+	CallSiteScope      ScopeType
+	CallSiteContext    ContextType
+	DefSiteScope       ScopeType
 }
 
 type ResolveExpressionArg struct {
 	Exp                *ExpressionType
 	CallToDefSiteNames mlglib.NameMapping
-	CallSiteScope      *Scope
-	CallSiteContext    *Context
-	DefSiteScope       *Scope
+	CallSiteScope      ScopeType
+	CallSiteContext    ContextType
+	DefSiteScope       ScopeType
 }
 
-type Context interface {
-	GetParent() Context
-	SetParent(parent Context)
+type ContextType interface {
+	GetParent() ContextType
+	SetParent(parent ContextType)
 	IsSubTypeOf(from string, to string) bool
 	IsViewableAs(from string, to string) bool
 	ResolveType(arg ResolveTypeArg) ResolvedType
-	ResolveTypeForm(arg ResolveTypeFormArg) ResolvedTypeForm
+	ResolveTypeForm(arg ResolveTypeFormArg) ResolvedTypeFormType
 	ResolveExpression(arg ResolveExpressionArg) ExpressionType
-	GetWrittenAs(exp *ExpressionType, scope *Scope)
+	GetWrittenAs(exp *ExpressionType, scope ScopeType)
 }

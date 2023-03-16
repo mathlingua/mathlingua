@@ -16,19 +16,19 @@
 
 package ast
 
-type AliasInfo interface {
-	AliasInfo()
+type AliasInfoType interface {
+	AliasInfoType()
 }
 
-func (SpecAliasInfo) AliasInfo() {}
+func (SpecAliasInfo) AliasInfoType() {}
 
-func (InfixExpAliasInfo) AliasInfo()          {}
-func (PrefixExpAliasInfo) AliasInfo()         {}
-func (PostfixExpAliasInfo) AliasInfo()        {}
-func (FunctionExpAliasInfo) AliasInfo()       {}
-func (CommandExpAliasInfo) AliasInfo()        {}
-func (MemberNameExpAliasInfo) AliasInfo()     {}
-func (MemberFunctionExpAliasInfo) AliasInfo() {}
-func (MemberInfixExpAliasInfo) AliasInfo()    {}
-func (MemberPrefixExpAliasInfo) AliasInfo()   {}
-func (MemberPostfixExpAliasInfo) AliasInfo()  {}
+func (InfixExpAliasInfo) AliasInfoType()          {}
+func (PrefixExpAliasInfo) AliasInfoType()         {}
+func (PostfixExpAliasInfo) AliasInfoType()        {}
+func (FunctionExpAliasInfo) AliasInfoType()       {}
+func (CommandExpAliasInfo) AliasInfoType()        {}
+func (MemberNameExpAliasInfo) AliasInfoType()     {}
+func (MemberFunctionExpAliasInfo) AliasInfoType() {}
+func (MemberInfixExpAliasInfo) AliasInfoType()    {}
+func (MemberPrefixExpAliasInfo) AliasInfoType()   {}
+func (MemberPostfixExpAliasInfo) AliasInfoType()  {}

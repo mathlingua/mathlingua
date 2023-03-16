@@ -36,13 +36,13 @@ type CheckResult struct {
 	Diagnostics []frontend.Diagnostic
 }
 
-type Workspace interface {
+type WorkspaceType interface {
 	DocumentCount() int
 	Check() CheckResult
 	View() ViewResult
 }
 
-func NewWorkspace(contents map[ast.Path]string) Workspace {
+func NewWorkspace(contents map[ast.Path]string) WorkspaceType {
 	return &workspace{
 		contents: contents,
 	}

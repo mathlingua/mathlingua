@@ -22,7 +22,7 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func NewRootContext(root *ast.Root, tracker frontend.DiagnosticTracker) ast.Context {
+func NewRootContext(root *ast.Root, tracker frontend.DiagnosticTracker) ast.ContextType {
 	ctx := rootContext{
 		root:            root,
 		signatureToNode: make(map[string]ast.MlgNodeType, 0),
@@ -79,11 +79,11 @@ func (c *rootContext) storeSignature(id ast.IdItem, n ast.MlgNodeType, path ast.
 	})
 }
 
-func (c *rootContext) GetParent() ast.Context {
+func (c *rootContext) GetParent() ast.ContextType {
 	return nil
 }
 
-func (c *rootContext) SetParent(parent ast.Context) {
+func (c *rootContext) SetParent(parent ast.ContextType) {
 }
 
 func (c *rootContext) IsSubTypeOf(from string, to string) bool {
@@ -101,7 +101,7 @@ func (c *rootContext) ResolveType(arg ast.ResolveTypeArg) ast.ResolvedType {
 	return ast.ResolvedType{}
 }
 
-func (c *rootContext) ResolveTypeForm(arg ast.ResolveTypeFormArg) ast.ResolvedTypeForm {
+func (c *rootContext) ResolveTypeForm(arg ast.ResolveTypeFormArg) ast.ResolvedTypeFormType {
 	// TODO: implement this
 	return ast.ResolvedFunctionTypeForm{}
 }
@@ -111,5 +111,5 @@ func (c *rootContext) ResolveExpression(arg ast.ResolveExpressionArg) ast.Expres
 	return nil
 }
 
-func (c *rootContext) GetWrittenAs(exp *ast.ExpressionType, scope *ast.Scope) {
+func (c *rootContext) GetWrittenAs(exp *ast.ExpressionType, scope ast.ScopeType) {
 }

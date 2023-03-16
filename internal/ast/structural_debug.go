@@ -20,11 +20,11 @@ import (
 	"strings"
 )
 
-type StructuralDebuggable interface {
+type StructuralDebuggableType interface {
 	Debug(indent int, hasDot bool) []string
 }
 
-func DebugStructuralNode(item StructuralDebuggable) string {
+func DebugStructuralNode(item StructuralDebuggableType) string {
 	return strings.Join(item.Debug(0, false), "\n")
 }
 
@@ -664,7 +664,7 @@ func (db *debugBuilder) AppendSpecs(specs []Spec, indent int, hasDot bool) {
 	}
 }
 
-func (db *debugBuilder) AppendClauses(clauses []Clause, indent int, hasDot bool) {
+func (db *debugBuilder) AppendClauses(clauses []ClauseType, indent int, hasDot bool) {
 	for _, clause := range clauses {
 		db.Append(clause, indent, hasDot)
 	}
@@ -689,7 +689,7 @@ func (db *debugBuilder) AppendSpecsSection(name string, specs []Spec, indent int
 }
 
 func (db *debugBuilder) AppendClausesSection(
-	name string, clauses []Clause, indent int, hasDot bool) {
+	name string, clauses []ClauseType, indent int, hasDot bool) {
 	db.AppendSection(name, indent, hasDot)
 	db.AppendClauses(clauses, indent+2, true)
 }

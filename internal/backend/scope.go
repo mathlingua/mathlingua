@@ -20,7 +20,7 @@ import (
 	"mathlingua/internal/ast"
 )
 
-func NewScope(parent ast.Scope) ast.Scope {
+func NewScope(parent ast.ScopeType) ast.ScopeType {
 	return &scope{
 		parent: parent,
 		names:  make(map[string]*ast.NameInfo, 0),
@@ -30,15 +30,15 @@ func NewScope(parent ast.Scope) ast.Scope {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type scope struct {
-	parent ast.Scope
+	parent ast.ScopeType
 	names  map[string]*ast.NameInfo
 }
 
-func (s *scope) GetParent() ast.Scope {
+func (s *scope) GetParent() ast.ScopeType {
 	return s.parent
 }
 
-func (s *scope) SetParent(parent ast.Scope) {
+func (s *scope) SetParent(parent ast.ScopeType) {
 	s.parent = parent
 }
 

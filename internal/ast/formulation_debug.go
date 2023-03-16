@@ -23,7 +23,7 @@ func DebugFormulationNode(node FormulationNodeType) string {
 	return node.Debug()
 }
 
-type FormulationDebuggable interface {
+type FormulationDebuggableType interface {
 	Debug() string
 }
 

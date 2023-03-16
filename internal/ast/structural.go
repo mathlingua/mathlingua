@@ -60,24 +60,24 @@ type TextItem struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type Clause interface {
+type ClauseType interface {
 	StructuralNodeType
-	Clause()
+	ClauseType()
 }
 
-func (Formulation[NodeType]) Clause() {}
-func (AllOfGroup) Clause()            {}
-func (NotGroup) Clause()              {}
-func (AnyOfGroup) Clause()            {}
-func (OneOfGroup) Clause()            {}
-func (ExistsGroup) Clause()           {}
-func (ExistsUniqueGroup) Clause()     {}
-func (ForAllGroup) Clause()           {}
-func (IfGroup) Clause()               {}
-func (IffGroup) Clause()              {}
-func (WhenGroup) Clause()             {}
-func (PiecewiseGroup) Clause()        {}
-func (GivenGroup) Clause()            {}
+func (Formulation[NodeType]) ClauseType() {}
+func (AllOfGroup) ClauseType()            {}
+func (NotGroup) ClauseType()              {}
+func (AnyOfGroup) ClauseType()            {}
+func (OneOfGroup) ClauseType()            {}
+func (ExistsGroup) ClauseType()           {}
+func (ExistsUniqueGroup) ClauseType()     {}
+func (ForAllGroup) ClauseType()           {}
+func (IfGroup) ClauseType()               {}
+func (IffGroup) ClauseType()              {}
+func (WhenGroup) ClauseType()             {}
+func (PiecewiseGroup) ClauseType()        {}
+func (GivenGroup) ClauseType()            {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -106,7 +106,7 @@ type AllOfGroup struct {
 }
 
 type AllOfSection struct {
-	Clauses        []Clause
+	Clauses        []ClauseType
 	CommonMetaData CommonMetaData
 }
 
@@ -120,7 +120,7 @@ type NotGroup struct {
 }
 
 type NotSection struct {
-	Clause         Clause
+	Clause         ClauseType
 	CommonMetaData CommonMetaData
 }
 
@@ -134,7 +134,7 @@ type AnyOfGroup struct {
 }
 
 type AnyOfSection struct {
-	Clauses        []Clause
+	Clauses        []ClauseType
 	CommonMetaData CommonMetaData
 }
 
@@ -148,7 +148,7 @@ type OneOfGroup struct {
 }
 
 type OneOfSection struct {
-	Clauses        []Clause
+	Clauses        []ClauseType
 	CommonMetaData CommonMetaData
 }
 
@@ -178,7 +178,7 @@ type WhereSection struct {
 }
 
 type SuchThatSection struct {
-	Clauses        []Clause
+	Clauses        []ClauseType
 	CommonMetaData CommonMetaData
 }
 
@@ -225,7 +225,7 @@ type ForAllSection struct {
 }
 
 type ThenSection struct {
-	Clauses        []Clause
+	Clauses        []ClauseType
 	CommonMetaData CommonMetaData
 }
 
@@ -243,7 +243,7 @@ type IfGroup struct {
 }
 
 type IfSection struct {
-	Clauses        []Clause
+	Clauses        []ClauseType
 	CommonMetaData CommonMetaData
 }
 
@@ -261,14 +261,14 @@ type IffGroup struct {
 }
 
 type IffSection struct {
-	Clauses        []Clause
+	Clauses        []ClauseType
 	CommonMetaData CommonMetaData
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type WhenSection struct {
-	When           []Clause
+	When           []ClauseType
 	CommonMetaData CommonMetaData
 }
 
@@ -299,7 +299,7 @@ type PiecewiseSection struct {
 }
 
 type ElseSection struct {
-	Items          []Clause
+	Items          []ClauseType
 	CommonMetaData CommonMetaData
 }
 
@@ -415,7 +415,7 @@ type OnSection struct {
 }
 
 type SpecifySection struct {
-	Specify        []Clause
+	Specify        []ClauseType
 	CommonMetaData CommonMetaData
 }
 
@@ -711,12 +711,12 @@ type UsingSection struct {
 }
 
 type ExtendsSection struct {
-	Extends        []Clause
+	Extends        []ClauseType
 	CommonMetaData CommonMetaData
 }
 
 type SatisfiesSection struct {
-	Satisfies      []Clause
+	Satisfies      []ClauseType
 	CommonMetaData CommonMetaData
 }
 
@@ -777,12 +777,12 @@ type GeneralizesSection struct {
 }
 
 type MeansSection struct {
-	Means          Clause
+	Means          ClauseType
 	CommonMetaData CommonMetaData
 }
 
 type SpecifiesSection struct {
-	Specifies      []Clause
+	Specifies      []ClauseType
 	CommonMetaData CommonMetaData
 }
 
@@ -824,7 +824,7 @@ type StatesSection struct {
 }
 
 type ThatSection struct {
-	That           []Clause
+	That           []ClauseType
 	CommonMetaData CommonMetaData
 }
 

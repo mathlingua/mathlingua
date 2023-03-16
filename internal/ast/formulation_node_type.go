@@ -18,7 +18,7 @@ package ast
 
 type FormulationNodeType interface {
 	MlgNodeType
-	FormulationDebuggable
+	FormulationDebuggableType
 	FormulationNodeType()
 	Start() Position
 	GetFormulationMetaData() *FormulationMetaData

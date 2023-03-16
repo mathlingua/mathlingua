@@ -16,24 +16,24 @@
 
 package ast
 
-type StaticPattern interface {
-	StaticPattern()
+type StaticPatternType interface {
+	StaticPatternType()
 }
 
-func (NameStaticPattern) StaticPattern()           {}
-func (FunctionStaticPattern) StaticPattern()       {}
-func (TupleStaticPattern) StaticPattern()          {}
-func (SetStaticPattern) StaticPattern()            {}
-func (InfixStaticPattern) StaticPattern()          {}
-func (PrefixStaticPattern) StaticPattern()         {}
-func (PostfixStaticPattern) StaticPattern()        {}
-func (CommandStaticPattern) StaticPattern()        {}
-func (MemberNameStaticPattern) StaticPattern()     {}
-func (MemberFunctionStaticPattern) StaticPattern() {}
-func (MemberInfixStaticPattern) StaticPattern()    {}
-func (MemberPrefixStaticPattern) StaticPattern()   {}
-func (MemberPostfixStaticPattern) StaticPattern()  {}
-func (SpecStaticPattern) StaticPattern()           {}
+func (NameStaticPattern) StaticPatternType()           {}
+func (FunctionStaticPattern) StaticPatternType()       {}
+func (TupleStaticPattern) StaticPatternType()          {}
+func (SetStaticPattern) StaticPatternType()            {}
+func (InfixStaticPattern) StaticPatternType()          {}
+func (PrefixStaticPattern) StaticPatternType()         {}
+func (PostfixStaticPattern) StaticPatternType()        {}
+func (CommandStaticPattern) StaticPatternType()        {}
+func (MemberNameStaticPattern) StaticPatternType()     {}
+func (MemberFunctionStaticPattern) StaticPatternType() {}
+func (MemberInfixStaticPattern) StaticPatternType()    {}
+func (MemberPrefixStaticPattern) StaticPatternType()   {}
+func (MemberPostfixStaticPattern) StaticPatternType()  {}
+func (SpecStaticPattern) StaticPatternType()           {}
 
 type NameStaticPattern struct {
 	Name string
@@ -41,44 +41,44 @@ type NameStaticPattern struct {
 
 type FunctionStaticPattern struct {
 	Name   string
-	Inputs []StaticPattern
-	Output StaticPattern
+	Inputs []StaticPatternType
+	Output StaticPatternType
 }
 
 type TupleStaticPattern struct {
-	Items []StaticPattern
+	Items []StaticPatternType
 }
 
 type SetStaticPattern struct {
-	Target    StaticPattern
-	Condition StaticPattern
+	Target    StaticPatternType
+	Condition StaticPatternType
 }
 
 type InfixStaticPattern struct {
 	Name string
-	Lhs  StaticPattern
-	Rhs  StaticPattern
+	Lhs  StaticPatternType
+	Rhs  StaticPatternType
 }
 
 type PrefixStaticPattern struct {
 	Name string
-	Arg  StaticPattern
+	Arg  StaticPatternType
 }
 
 type PostfixStaticPattern struct {
 	Name string
-	Arg  StaticPattern
+	Arg  StaticPatternType
 }
 
 type CommandStaticPattern struct {
-	CurlyArgs   []StaticPattern
-	ParenArgs   []StaticPattern
+	CurlyArgs   []StaticPatternType
+	ParenArgs   []StaticPatternType
 	NamedGroups []NamedGroupStaticPattern
 }
 
 type NamedGroupStaticPattern struct {
 	Name string
-	Args []StaticPattern
+	Args []StaticPatternType
 }
 
 type MemberNameStaticPattern struct {
@@ -107,7 +107,7 @@ type MemberPostfixStaticPattern struct {
 }
 
 type SpecStaticPattern struct {
-	Lhs  StaticPattern
+	Lhs  StaticPatternType
 	Name string
-	Rhs  StaticPattern
+	Rhs  StaticPatternType
 }

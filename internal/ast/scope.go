@@ -16,9 +16,9 @@
 
 package ast
 
-type Scope interface {
-	GetParent() Scope
-	SetParent(parent Scope)
+type ScopeType interface {
+	GetParent() ScopeType
+	SetParent(parent ScopeType)
 	GetNameInfo(name string) (NameInfo, bool)
 	SetNameInfo(name string, info NameInfo)
 }

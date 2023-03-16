@@ -2356,7 +2356,7 @@ func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.Formulat
 	return ast.Formulation[ast.FormulationNodeType]{}
 }
 
-func (p *parser) toClause(arg phase4.Argument) ast.Clause {
+func (p *parser) toClause(arg phase4.Argument) ast.ClauseType {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
@@ -2595,8 +2595,8 @@ func (p *parser) toFormulations(args []phase4.Argument) []ast.Formulation[ast.Fo
 	return result
 }
 
-func (p *parser) toClauses(args []phase4.Argument) []ast.Clause {
-	result := make([]ast.Clause, 0)
+func (p *parser) toClauses(args []phase4.Argument) []ast.ClauseType {
+	result := make([]ast.ClauseType, 0)
 	for _, arg := range args {
 		result = append(result, p.toClause(arg))
 	}
@@ -2715,12 +2715,12 @@ func (p *parser) verifyNoArgs(section phase4.Section) {
 	}
 }
 
-func (p *parser) oneOrMoreClauses(section phase4.Section) []ast.Clause {
+func (p *parser) oneOrMoreClauses(section phase4.Section) []ast.ClauseType {
 	return oneOrMore(p, p.toClauses(section.Args), section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) exactlyOneClause(section phase4.Section) ast.Clause {
-	var def ast.Clause = &ast.Formulation[ast.FormulationNodeType]{}
+func (p *parser) exactlyOneClause(section phase4.Section) ast.ClauseType {
+	var def ast.ClauseType = &ast.Formulation[ast.FormulationNodeType]{}
 	return exactlyOne(p, p.toClauses(section.Args), def, section.MetaData.Start, p.tracker)
 }
 

@@ -17,6 +17,6 @@
 package ast
 
 type CalledInfo struct {
-	From   StaticPattern
+	From   StaticPatternType
 	Called string
 }

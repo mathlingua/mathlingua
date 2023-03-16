@@ -16,27 +16,27 @@
 
 package ast
 
-type Constraint interface {
-	Constraint()
+type ConstraintType interface {
+	ConstraintType()
 }
 
-func (IsConstraint) Constraint()      {}
-func (ExtendsConstraint) Constraint() {}
-func (SpecConstraint) Constraint()    {}
+func (IsConstraint) ConstraintType()      {}
+func (ExtendsConstraint) ConstraintType() {}
+func (SpecConstraint) ConstraintType()    {}
 
 type IsConstraint struct {
-	Targets    []StaticPattern
+	Targets    []StaticPatternType
 	Signatures []string
 }
 
 type ExtendsConstraint struct {
-	Targets       []StaticPattern
+	Targets       []StaticPatternType
 	ConditionType string
 	Signatures    []string
 }
 
 type SpecConstraint struct {
-	Targets []StaticPattern
+	Targets []StaticPatternType
 	Name    string
 	Exp     *ExpressionType
 }

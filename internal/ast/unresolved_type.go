@@ -21,23 +21,23 @@ import "mathlingua/internal/mlglib"
 type SpecAliasInfo2 struct {
 	SpecAlias string
 	Exp       *ExpressionType
-	Scope     *Scope
-	Context   *Context
+	Scope     ScopeType
+	Context   ContextType
 }
 
 type UnResolvedType struct {
-	Form               UnResolvedTypeForm
+	Form               UnResolvedTypeFormType
 	Signatures         mlglib.Set[string]
 	DefSiteSpecAliases []SpecAliasInfo
 }
 
-type UnResolvedTypeForm interface {
-	UnResolvedTypeForm()
+type UnResolvedTypeFormType interface {
+	UnResolvedTypeFormType()
 }
 
-func (UnResolvedFunctionTypeForm) UnResolvedTypeForm() {}
-func (UnResolvedTupleTypeForm) UnResolvedTypeForm()    {}
-func (UnResolvedSetTypeForm) UnResolvedTypeForm()      {}
+func (UnResolvedFunctionTypeForm) UnResolvedTypeFormType() {}
+func (UnResolvedTupleTypeForm) UnResolvedTypeFormType()    {}
+func (UnResolvedSetTypeForm) UnResolvedTypeFormType()      {}
 
 type UnResolvedFunctionTypeForm struct {
 	Inputs []UnResolvedType

@@ -18,7 +18,7 @@ package backend
 
 import "mathlingua/internal/ast"
 
-func NewProvidesContext(parent ast.Context, providable ast.ProvidableNodeType) ast.Context {
+func NewProvidesContext(parent ast.ContextType, providable ast.ProvidableNodeType) ast.ContextType {
 	return &providesContext{
 		parent:     parent,
 		providable: providable,
@@ -28,15 +28,15 @@ func NewProvidesContext(parent ast.Context, providable ast.ProvidableNodeType) a
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type providesContext struct {
-	parent     ast.Context
+	parent     ast.ContextType
 	providable ast.ProvidableNodeType
 }
 
-func (c *providesContext) GetParent() ast.Context {
+func (c *providesContext) GetParent() ast.ContextType {
 	return c.parent
 }
 
-func (c *providesContext) SetParent(parent ast.Context) {
+func (c *providesContext) SetParent(parent ast.ContextType) {
 	c.parent = parent
 }
 
@@ -52,10 +52,10 @@ func (c *providesContext) IsViewableAs(from string, to string) bool {
 
 func (c *providesContext) PopulateFromSpecAlias(nameType ast.ResolvedType,
 	specName string, target ast.ExpressionType,
-	scope *ast.Scope) {
+	scope ast.ScopeType) {
 }
 
-func (c *providesContext) PopulateFromIs(is *ast.IsExpression, scope *ast.Scope) {
+func (c *providesContext) PopulateFromIs(is *ast.IsExpression, scope ast.ScopeType) {
 }
 
 func (c *providesContext) ResolveType(arg ast.ResolveTypeArg) ast.ResolvedType {
@@ -63,7 +63,7 @@ func (c *providesContext) ResolveType(arg ast.ResolveTypeArg) ast.ResolvedType {
 	return ast.ResolvedType{}
 }
 
-func (c *providesContext) ResolveTypeForm(arg ast.ResolveTypeFormArg) ast.ResolvedTypeForm {
+func (c *providesContext) ResolveTypeForm(arg ast.ResolveTypeFormArg) ast.ResolvedTypeFormType {
 	// TODO: implement this
 	return ast.ResolvedFunctionTypeForm{}
 }
@@ -73,5 +73,5 @@ func (c *providesContext) ResolveExpression(arg ast.ResolveExpressionArg) ast.Ex
 	return nil
 }
 
-func (c *providesContext) GetWrittenAs(exp *ast.ExpressionType, scope *ast.Scope) {
+func (c *providesContext) GetWrittenAs(exp *ast.ExpressionType, scope ast.ScopeType) {
 }

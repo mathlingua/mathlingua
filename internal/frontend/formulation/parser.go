@@ -1508,7 +1508,7 @@ func (fp *formulationParser) nameParams() ([]ast.NameForm, bool) {
 	return names, true
 }
 
-func (fp *formulationParser) directionParamParamType() (ast.IDirectionParamParam, bool) {
+func (fp *formulationParser) directionParamParamType() (ast.DirectionParamParamType, bool) {
 	if call, ok := fp.ordinalCallExpression(); ok {
 		return &call, true
 	}
@@ -1524,14 +1524,14 @@ func (fp *formulationParser) directionParamParamType() (ast.IDirectionParamParam
 	return nil, false
 }
 
-func (fp *formulationParser) squareDirectionalParams() (*[]ast.IDirectionParamParam, bool) {
+func (fp *formulationParser) squareDirectionalParams() (*[]ast.DirectionParamParamType, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LSquare)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return nil, false
 	}
-	args := make([]ast.IDirectionParamParam, 0)
+	args := make([]ast.DirectionParamParamType, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RSquare) {
 			break

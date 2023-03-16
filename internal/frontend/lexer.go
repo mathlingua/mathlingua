@@ -22,7 +22,7 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-type LexerType interface {
+type ILexer interface {
 	HasNext() bool
 	HasNextNext() bool
 	Next() ast.Token
@@ -34,7 +34,7 @@ type LexerType interface {
 	RollBack(id int)
 }
 
-func NewLexer(tokens []ast.Token) LexerType {
+func NewLexer(tokens []ast.Token) ILexer {
 	return &lexer{
 		index:     0,
 		tokens:    tokens,
@@ -52,7 +52,7 @@ type snapshot struct {
 type lexer struct {
 	index     int
 	tokens    []ast.Token
-	snapshots mlglib.StackType[snapshot]
+	snapshots mlglib.IStack[snapshot]
 }
 
 func (lex *lexer) HasNext() bool {

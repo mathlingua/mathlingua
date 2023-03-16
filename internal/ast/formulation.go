@@ -468,18 +468,18 @@ type CurlyParam struct {
 	FormulationMetaData FormulationMetaData
 }
 
-type DirectionParamParamType interface {
+type IDirectionParamParam interface {
 	FormulationNodeType
-	DirectionParamParamType()
+	IDirectionParamParam()
 }
 
-func (NameForm) DirectionParamParamType()              {}
-func (FunctionForm) DirectionParamParamType()          {}
-func (OrdinalCallExpression) DirectionParamParamType() {}
+func (NameForm) IDirectionParamParam()              {}
+func (FunctionForm) IDirectionParamParam()          {}
+func (OrdinalCallExpression) IDirectionParamParam() {}
 
 type DirectionalParam struct {
 	Name                *NameForm
-	SquareParams        []DirectionParamParamType
+	SquareParams        []IDirectionParamParam
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

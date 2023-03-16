@@ -270,7 +270,7 @@ func setupScreen() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func parse(text string) (string, string, frontend.DiagnosticTrackerType) {
+func parse(text string) (string, string, frontend.IDiagnosticTracker) {
 	if useStructuralParser {
 		return parseForStructural(text)
 	} else if useFormulationParser {
@@ -302,7 +302,7 @@ func createTestCase(input string) (string, string, bool) {
 
 ////////////////////////////////////// structural parser ///////////////////////////////////////////
 
-func parseForStructural(text string) (string, string, frontend.DiagnosticTrackerType) {
+func parseForStructural(text string) (string, string, frontend.IDiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 
 	lexer1 := phase1.NewLexer(text, "", tracker)
@@ -317,7 +317,7 @@ func parseForStructural(text string) (string, string, frontend.DiagnosticTracker
 
 func createTestCaseForStructural(input string) (string, string, bool) {
 	parseCode := `
-func parse(text string) (ast.Document, frontend.DiagnosticTrackerType) {
+func parse(text string) (ast.Document, frontend.IDiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 
 	lexer1 := phase1.NewLexer(text, "", tracker)
@@ -330,7 +330,7 @@ func parse(text string) (ast.Document, frontend.DiagnosticTrackerType) {
 	return doc, tracker
 }
 `
-	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTrackerType) {
+	return createGeneralTestCase(input, func(input string) (any, frontend.IDiagnosticTracker) {
 		text, _, tracker := parseForStructural(input)
 		return text, tracker
 	}, parseCode)
@@ -338,7 +338,7 @@ func parse(text string) (ast.Document, frontend.DiagnosticTrackerType) {
 
 ////////////////////////////////////// formulation /////////////////////////////////////////////////
 
-func parseForFormulation(text string) (string, string, frontend.DiagnosticTrackerType) {
+func parseForFormulation(text string) (string, string, frontend.IDiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseExpression(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return ast.DebugFormulationNode(node), mlglib.PrettyPrint(node), tracker
@@ -346,13 +346,13 @@ func parseForFormulation(text string) (string, string, frontend.DiagnosticTracke
 
 func createTestCaseForFormulation(input string) (string, string, bool) {
 	parseCode := `
-func parse(text string) (ast.NodeType, frontend.DiagnosticTrackerType) {
+func parse(text string) (ast.NodeType, frontend.IDiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseExpression(text, ast.Position{}, tracker)
 	return node, tracker
 }
 `
-	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTrackerType) {
+	return createGeneralTestCase(input, func(input string) (any, frontend.IDiagnosticTracker) {
 		text, _, tracker := parseForFormulation(input)
 		return text, tracker
 	}, parseCode)
@@ -360,7 +360,7 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTrackerType) {
 
 ///////////////////////////////////////// form /////////////////////////////////////////////////////
 
-func parseForForm(text string) (string, string, frontend.DiagnosticTrackerType) {
+func parseForForm(text string) (string, string, frontend.IDiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseForm(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return ast.DebugFormulationNode(node), mlglib.PrettyPrint(node), tracker
@@ -368,13 +368,13 @@ func parseForForm(text string) (string, string, frontend.DiagnosticTrackerType) 
 
 func createTestCaseForForm(input string) (string, string, bool) {
 	parseCode := `
-func parse(text string) (ast.NodeType, frontend.DiagnosticTrackerType) {
+func parse(text string) (ast.NodeType, frontend.IDiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseForm(text, ast.Position{}, tracker)
 	return node, tracker
 }
 `
-	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTrackerType) {
+	return createGeneralTestCase(input, func(input string) (any, frontend.IDiagnosticTracker) {
 		text, _, tracker := parseForForm(input)
 		return text, tracker
 	}, parseCode)
@@ -382,7 +382,7 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTrackerType) {
 
 /////////////////////////////////////////// id /////////////////////////////////////////////////////
 
-func parseForId(text string) (string, string, frontend.DiagnosticTrackerType) {
+func parseForId(text string) (string, string, frontend.IDiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseId(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return ast.DebugFormulationNode(node), mlglib.PrettyPrint(node), tracker
@@ -390,13 +390,13 @@ func parseForId(text string) (string, string, frontend.DiagnosticTrackerType) {
 
 func createTestCaseForId(input string) (string, string, bool) {
 	parseCode := `
-func parse(text string) (ast.NodeType, frontend.DiagnosticTrackerType) {
+func parse(text string) (ast.NodeType, frontend.IDiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseId(text, ast.Position{}, tracker)
 	return node, tracker
 }
 `
-	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTrackerType) {
+	return createGeneralTestCase(input, func(input string) (any, frontend.IDiagnosticTracker) {
 		text, _, tracker := parseForId(input)
 		return text, tracker
 	}, parseCode)
@@ -405,7 +405,7 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTrackerType) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func createGeneralTestCase(input string, parseFn func(input string) (
-	any, frontend.DiagnosticTrackerType), parseCode string) (string, string, bool) {
+	any, frontend.IDiagnosticTracker), parseCode string) (string, string, bool) {
 	data, tracker := parseFn(input)
 	diagnostics := tracker.Diagnostics()
 	if len(diagnostics) > 0 {

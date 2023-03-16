@@ -22,7 +22,7 @@ func PopulateScopes(node ast.MlgNodeType) {
 	populateScopesImpl(node, nil)
 }
 
-func populateScopesImpl(node ast.MlgNodeType, parent ast.ScopeType) {
+func populateScopesImpl(node ast.MlgNodeType, parent ast.IScope) {
 	scope := NewScope(parent)
 	node.GetCommonMetaData().Scope = scope
 	node.ForEach(func(subNode ast.MlgNodeType) {

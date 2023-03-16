@@ -21,7 +21,7 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func PopulateContexts(root *ast.Root, tracker frontend.DiagnosticTrackerType) {
+func PopulateContexts(root *ast.Root, tracker frontend.IDiagnosticTracker) {
 	rootContext := NewRootContext(root, tracker)
 	root.CommonMetaData.Context = rootContext
 
@@ -30,7 +30,7 @@ func PopulateContexts(root *ast.Root, tracker frontend.DiagnosticTrackerType) {
 	})
 }
 
-func populateContextsImpl(node ast.MlgNodeType, parentContext ast.ContextType) {
+func populateContextsImpl(node ast.MlgNodeType, parentContext ast.IContext) {
 	switch n := node.(type) {
 	case ast.ProvidableNodeType:
 		providesContext := NewProvidesContext(parentContext, n)

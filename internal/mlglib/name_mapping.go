@@ -16,13 +16,13 @@
 
 package mlglib
 
-type NameMappingType interface {
+type INameMapping interface {
 	AddMapping(fromName string, toName string)
 	GetFromName(toName string) string
 	GetToName(fromName string) string
 }
 
-func NewNameMapping() NameMappingType {
+func NewNameMapping() INameMapping {
 	return &nameMapping{
 		fromToToNames: make(map[string]string, 0),
 		toToFromNames: make(map[string]string, 0),

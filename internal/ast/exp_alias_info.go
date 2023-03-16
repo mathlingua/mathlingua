@@ -16,20 +16,20 @@
 
 package ast
 
-type ExpAliasInfoType interface {
-	ExpAliasInfoType()
+type IExpAliasInfo interface {
+	IExpAliasInfo()
 }
 
-func (InfixExpAliasInfo) ExpAliasInfoType()          {}
-func (PrefixExpAliasInfo) ExpAliasInfoType()         {}
-func (PostfixExpAliasInfo) ExpAliasInfoType()        {}
-func (FunctionExpAliasInfo) ExpAliasInfoType()       {}
-func (CommandExpAliasInfo) ExpAliasInfoType()        {}
-func (MemberNameExpAliasInfo) ExpAliasInfoType()     {}
-func (MemberFunctionExpAliasInfo) ExpAliasInfoType() {}
-func (MemberInfixExpAliasInfo) ExpAliasInfoType()    {}
-func (MemberPrefixExpAliasInfo) ExpAliasInfoType()   {}
-func (MemberPostfixExpAliasInfo) ExpAliasInfoType()  {}
+func (InfixExpAliasInfo) IExpAliasInfo()          {}
+func (PrefixExpAliasInfo) IExpAliasInfo()         {}
+func (PostfixExpAliasInfo) IExpAliasInfo()        {}
+func (FunctionExpAliasInfo) IExpAliasInfo()       {}
+func (CommandExpAliasInfo) IExpAliasInfo()        {}
+func (MemberNameExpAliasInfo) IExpAliasInfo()     {}
+func (MemberFunctionExpAliasInfo) IExpAliasInfo() {}
+func (MemberInfixExpAliasInfo) IExpAliasInfo()    {}
+func (MemberPrefixExpAliasInfo) IExpAliasInfo()   {}
+func (MemberPostfixExpAliasInfo) IExpAliasInfo()  {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

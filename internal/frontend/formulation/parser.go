@@ -25,8 +25,8 @@ import (
 	"strings"
 )
 
-func ParseExpression(text string, start ast.Position, tracker frontend.DiagnosticTrackerType,
-	keyGen mlglib.KeyGeneratorType) (ast.FormulationNodeType, bool) {
+func ParseExpression(text string, start ast.Position, tracker frontend.IDiagnosticTracker,
+	keyGen mlglib.IKeyGenerator) (ast.FormulationNodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
@@ -40,8 +40,8 @@ func ParseExpression(text string, start ast.Position, tracker frontend.Diagnosti
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
-func ParseForm(text string, start ast.Position, tracker frontend.DiagnosticTrackerType,
-	keyGen mlglib.KeyGeneratorType) (ast.FormulationNodeType, bool) {
+func ParseForm(text string, start ast.Position, tracker frontend.IDiagnosticTracker,
+	keyGen mlglib.IKeyGenerator) (ast.FormulationNodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
@@ -55,8 +55,8 @@ func ParseForm(text string, start ast.Position, tracker frontend.DiagnosticTrack
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
-func ParseId(text string, start ast.Position, tracker frontend.DiagnosticTrackerType,
-	keyGen mlglib.KeyGeneratorType) (ast.IdType, bool) {
+func ParseId(text string, start ast.Position, tracker frontend.IDiagnosticTracker,
+	keyGen mlglib.IKeyGenerator) (ast.IdType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
@@ -70,8 +70,8 @@ func ParseId(text string, start ast.Position, tracker frontend.DiagnosticTracker
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
-func ParseSignature(text string, start ast.Position, tracker frontend.DiagnosticTrackerType,
-	keyGen mlglib.KeyGeneratorType) (ast.Signature, bool) {
+func ParseSignature(text string, start ast.Position, tracker frontend.IDiagnosticTracker,
+	keyGen mlglib.IKeyGenerator) (ast.Signature, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
@@ -88,10 +88,10 @@ func ParseSignature(text string, start ast.Position, tracker frontend.Diagnostic
 //////////////////////////////// utility functions /////////////////////////////////////////////////
 
 type formulationParser struct {
-	lexer   frontend.LexerType
-	tracker frontend.DiagnosticTrackerType
+	lexer   frontend.ILexer
+	tracker frontend.IDiagnosticTracker
 	start   ast.Position
-	keyGen  mlglib.KeyGeneratorType
+	keyGen  mlglib.IKeyGenerator
 }
 
 func (fp *formulationParser) token(tokenType ast.TokenType) (ast.Token, bool) {
@@ -1508,7 +1508,7 @@ func (fp *formulationParser) nameParams() ([]ast.NameForm, bool) {
 	return names, true
 }
 
-func (fp *formulationParser) directionParamParamType() (ast.DirectionParamParamType, bool) {
+func (fp *formulationParser) directionParamParamType() (ast.IDirectionParamParam, bool) {
 	if call, ok := fp.ordinalCallExpression(); ok {
 		return &call, true
 	}
@@ -1524,14 +1524,14 @@ func (fp *formulationParser) directionParamParamType() (ast.DirectionParamParamT
 	return nil, false
 }
 
-func (fp *formulationParser) squareDirectionalParams() (*[]ast.DirectionParamParamType, bool) {
+func (fp *formulationParser) squareDirectionalParams() (*[]ast.IDirectionParamParam, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LSquare)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return nil, false
 	}
-	args := make([]ast.DirectionParamParamType, 0)
+	args := make([]ast.IDirectionParamParam, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RSquare) {
 			break

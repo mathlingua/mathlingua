@@ -16,14 +16,14 @@
 
 package ast
 
-type SpecAliasInfoRhsType interface {
-	SpecAliasInfoRhsType()
+type ISpecAliasInfoRhs interface {
+	ISpecAliasInfoRhs()
 }
 
-func (IsConstraint) SpecAliasInfoRhsType()   {}
-func (SpecConstraint) SpecAliasInfoRhsType() {}
+func (IsConstraint) ISpecAliasInfoRhs()   {}
+func (SpecConstraint) ISpecAliasInfoRhs() {}
 
 type SpecAliasInfo struct {
 	Lhs SpecStaticPattern
-	Rhs SpecAliasInfoRhsType
+	Rhs ISpecAliasInfoRhs
 }

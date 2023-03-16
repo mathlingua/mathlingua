@@ -24,7 +24,7 @@ import (
 	"strings"
 )
 
-func Consolidate(nodes []ast.FormulationNodeType, tracker frontend.DiagnosticTrackerType) (
+func Consolidate(nodes []ast.FormulationNodeType, tracker frontend.IDiagnosticTracker) (
 	ast.FormulationNodeType, bool) {
 	items := mlglib.NewStack[ShuntingYardItem[ast.FormulationNodeType]]()
 	for _, item := range ShuntingYard(toShuntingYardItems(nodes)) {
@@ -58,8 +58,8 @@ var default_expression ast.ExpressionType = &ast.NameForm{}
 var default_kind_type ast.KindType = &ast.NameForm{}
 var default_signature *ast.Signature = &ast.Signature{}
 
-func toNode(items mlglib.StackType[ShuntingYardItem[ast.FormulationNodeType]],
-	tracker frontend.DiagnosticTrackerType) ast.FormulationNodeType {
+func toNode(items mlglib.IStack[ShuntingYardItem[ast.FormulationNodeType]],
+	tracker frontend.IDiagnosticTracker) ast.FormulationNodeType {
 	if items.IsEmpty() {
 		return nil
 	}
@@ -506,7 +506,7 @@ func getPrecedenceAssociativity(node ast.FormulationNodeType,
 }
 
 func checkType[T any](node ast.FormulationNodeType, def T, typeName string,
-	tracker frontend.DiagnosticTrackerType, fallbackPosition ast.Position) T {
+	tracker frontend.IDiagnosticTracker, fallbackPosition ast.Position) T {
 	cast, ok := node.(T)
 	if ok {
 		return cast

@@ -46,13 +46,13 @@ type Diagnostic struct {
 	Position ast.Position
 }
 
-type DiagnosticTrackerType interface {
+type IDiagnosticTracker interface {
 	Append(diagnostic Diagnostic)
 	Length() int
 	Diagnostics() []Diagnostic
 }
 
-func NewDiagnosticTracker() DiagnosticTrackerType {
+func NewDiagnosticTracker() IDiagnosticTracker {
 	return &diagnosticTracker{
 		diagnostics: make([]Diagnostic, 0),
 	}

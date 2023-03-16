@@ -20,35 +20,35 @@ import "mathlingua/internal/mlglib"
 
 type ResolveTypeArg struct {
 	Type               UnResolvedType
-	CallToDefSiteNames mlglib.NameMappingType
-	CallSiteScope      ScopeType
-	CallSiteContext    ContextType
-	DefSiteScope       ScopeType
+	CallToDefSiteNames mlglib.INameMapping
+	CallSiteScope      IScope
+	CallSiteContext    IContext
+	DefSiteScope       IScope
 }
 
 type ResolveTypeFormArg struct {
-	TypeForm           UnResolvedTypeFormType
-	CallToDefSiteNames mlglib.NameMappingType
-	CallSiteScope      ScopeType
-	CallSiteContext    ContextType
-	DefSiteScope       ScopeType
+	TypeForm           IUnResolvedFormType
+	CallToDefSiteNames mlglib.INameMapping
+	CallSiteScope      IScope
+	CallSiteContext    IContext
+	DefSiteScope       IScope
 }
 
 type ResolveExpressionArg struct {
 	Exp                *ExpressionType
-	CallToDefSiteNames mlglib.NameMappingType
-	CallSiteScope      ScopeType
-	CallSiteContext    ContextType
-	DefSiteScope       ScopeType
+	CallToDefSiteNames mlglib.INameMapping
+	CallSiteScope      IScope
+	CallSiteContext    IContext
+	DefSiteScope       IScope
 }
 
-type ContextType interface {
-	GetParent() ContextType
-	SetParent(parent ContextType)
+type IContext interface {
+	GetParent() IContext
+	SetParent(parent IContext)
 	IsSubTypeOf(from string, to string) bool
 	IsViewableAs(from string, to string) bool
 	ResolveType(arg ResolveTypeArg) ResolvedType
-	ResolveTypeForm(arg ResolveTypeFormArg) ResolvedTypeFormType
+	ResolveTypeForm(arg ResolveTypeFormArg) IResolvedTypeForm
 	ResolveExpression(arg ResolveExpressionArg) ExpressionType
-	GetWrittenAs(exp *ExpressionType, scope ScopeType)
+	GetWrittenAs(exp *ExpressionType, scope IScope)
 }

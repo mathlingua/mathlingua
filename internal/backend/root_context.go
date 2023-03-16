@@ -22,7 +22,7 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func NewRootContext(root *ast.Root, tracker frontend.DiagnosticTrackerType) ast.ContextType {
+func NewRootContext(root *ast.Root, tracker frontend.IDiagnosticTracker) ast.IContext {
 	ctx := rootContext{
 		root:            root,
 		signatureToNode: make(map[string]ast.MlgNodeType, 0),
@@ -38,7 +38,7 @@ type rootContext struct {
 	signatureToNode map[string]ast.MlgNodeType
 }
 
-func (c *rootContext) initialize(tracker frontend.DiagnosticTrackerType) {
+func (c *rootContext) initialize(tracker frontend.IDiagnosticTracker) {
 	for path, doc := range c.root.Documents {
 		for _, item := range doc.Items {
 			switch n := item.(type) {
@@ -54,7 +54,7 @@ func (c *rootContext) initialize(tracker frontend.DiagnosticTrackerType) {
 }
 
 func (c *rootContext) storeSignature(id ast.IdItem, n ast.MlgNodeType, path ast.Path,
-	tracker frontend.DiagnosticTrackerType) {
+	tracker frontend.IDiagnosticTracker) {
 	if sig, ok := GetSignatureStringFromId(id); ok {
 		if _, ok := c.signatureToNode[sig]; ok {
 			tracker.Append(frontend.Diagnostic{
@@ -79,11 +79,11 @@ func (c *rootContext) storeSignature(id ast.IdItem, n ast.MlgNodeType, path ast.
 	})
 }
 
-func (c *rootContext) GetParent() ast.ContextType {
+func (c *rootContext) GetParent() ast.IContext {
 	return nil
 }
 
-func (c *rootContext) SetParent(parent ast.ContextType) {
+func (c *rootContext) SetParent(parent ast.IContext) {
 }
 
 func (c *rootContext) IsSubTypeOf(from string, to string) bool {
@@ -101,7 +101,7 @@ func (c *rootContext) ResolveType(arg ast.ResolveTypeArg) ast.ResolvedType {
 	return ast.ResolvedType{}
 }
 
-func (c *rootContext) ResolveTypeForm(arg ast.ResolveTypeFormArg) ast.ResolvedTypeFormType {
+func (c *rootContext) ResolveTypeForm(arg ast.ResolveTypeFormArg) ast.IResolvedTypeForm {
 	// TODO: implement this
 	return ast.ResolvedFunctionTypeForm{}
 }
@@ -111,5 +111,5 @@ func (c *rootContext) ResolveExpression(arg ast.ResolveExpressionArg) ast.Expres
 	return nil
 }
 
-func (c *rootContext) GetWrittenAs(exp *ast.ExpressionType, scope ast.ScopeType) {
+func (c *rootContext) GetWrittenAs(exp *ast.ExpressionType, scope ast.IScope) {
 }

@@ -17,34 +17,34 @@
 package ast
 
 type DescribesMetaData struct {
-	Input       StaticPatternType
-	Output      StaticPatternType
-	Usings      []StaticPatternType
-	When        []ConstraintType
-	Extends     []ConstraintType
-	ExpAliases  []ExpAliasInfoType
+	Input       IStaticPattern
+	Output      IStaticPattern
+	Usings      []IStaticPattern
+	When        []IConstraint
+	Extends     []IConstraint
+	ExpAliases  []IExpAliasInfo
 	SpecAliases []SpecAliasInfo
 	Written     []WrittenInfo
 	Called      []CalledInfo
 }
 
 type DefinesMetaData struct {
-	Input       StaticPatternType
-	Output      StaticPatternType
-	Usings      []StaticPatternType
-	When        []ConstraintType
-	Means       []ConstraintType
-	ExpAliases  []ExpAliasInfoType
+	Input       IStaticPattern
+	Output      IStaticPattern
+	Usings      []IStaticPattern
+	When        []IConstraint
+	Means       []IConstraint
+	ExpAliases  []IExpAliasInfo
 	SpecAliases []SpecAliasInfo
 	Written     []WrittenInfo
 	Called      []CalledInfo
 }
 
 type StatesMetaData struct {
-	Input       StaticPatternType
-	Output      StaticPatternType
-	Usings      []StaticPatternType
-	ExpAliases  []ExpAliasInfoType
+	Input       IStaticPattern
+	Output      IStaticPattern
+	Usings      []IStaticPattern
+	ExpAliases  []IExpAliasInfo
 	SpecAliases []SpecAliasInfo
 	Written     []WrittenInfo
 	Called      []CalledInfo

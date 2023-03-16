@@ -18,14 +18,14 @@ package mlglib
 
 import "fmt"
 
-type StackType[T any] interface {
+type IStack[T any] interface {
 	IsEmpty() bool
 	Peek() T
 	Pop() T
 	Push(value T)
 }
 
-func NewStack[T any]() StackType[T] {
+func NewStack[T any]() IStack[T] {
 	return &stack[T]{}
 }
 

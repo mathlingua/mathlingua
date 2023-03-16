@@ -27,7 +27,7 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func ParseDocument(text string, path ast.Path, tracker frontend.DiagnosticTrackerType) ast.Document {
+func ParseDocument(text string, path ast.Path, tracker frontend.IDiagnosticTracker) ast.Document {
 
 	lexer1 := phase1.NewLexer(text, path, tracker)
 	lexer2 := phase2.NewLexer(lexer1, path, tracker)
@@ -39,7 +39,7 @@ func ParseDocument(text string, path ast.Path, tracker frontend.DiagnosticTracke
 	return doc
 }
 
-func ParseRoot(texts map[ast.Path]string, tracker frontend.DiagnosticTrackerType) ast.Root {
+func ParseRoot(texts map[ast.Path]string, tracker frontend.IDiagnosticTracker) ast.Root {
 	docs := make(map[ast.Path]ast.Document, 0)
 
 	for path, content := range texts {

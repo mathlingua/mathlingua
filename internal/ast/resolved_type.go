@@ -27,7 +27,7 @@ import "mathlingua/internal/mlglib"
  */
 type ResolvedType struct {
 	Form       ResolvedTypeFormType
-	Signatures mlglib.Set[string]
+	Signatures mlglib.SetType[string]
 }
 
 type ResolvedTypeFormType interface {

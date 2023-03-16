@@ -23,7 +23,7 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func Parse(lexer3 frontend.Lexer, path ast.Path, tracker frontend.DiagnosticTracker) Document {
+func Parse(lexer3 frontend.LexerType, path ast.Path, tracker frontend.DiagnosticTrackerType) Document {
 	parser := phase4Parser{
 		path:    path,
 		lexer:   lexer3,
@@ -38,9 +38,9 @@ func Parse(lexer3 frontend.Lexer, path ast.Path, tracker frontend.DiagnosticTrac
 
 type phase4Parser struct {
 	path    ast.Path
-	lexer   frontend.Lexer
-	tracker frontend.DiagnosticTracker
-	keyGen  mlglib.KeyGenerator
+	lexer   frontend.LexerType
+	tracker frontend.DiagnosticTrackerType
+	keyGen  mlglib.KeyGeneratorType
 }
 
 func (p *phase4Parser) appendDiagnostic(message string, position ast.Position) {

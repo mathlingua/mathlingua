@@ -18,14 +18,14 @@ package mlglib
 
 import "fmt"
 
-type Queue[T any] interface {
+type QueueType[T any] interface {
 	IsEmpty() bool
 	Peek() T
 	Pop() T
 	Push(value T)
 }
 
-func NewQueue[T any]() Stack[T] {
+func NewQueue[T any]() StackType[T] {
 	return &queue[T]{}
 }
 

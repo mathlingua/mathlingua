@@ -270,7 +270,7 @@ func setupScreen() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func parse(text string) (string, string, frontend.DiagnosticTracker) {
+func parse(text string) (string, string, frontend.DiagnosticTrackerType) {
 	if useStructuralParser {
 		return parseForStructural(text)
 	} else if useFormulationParser {
@@ -302,7 +302,7 @@ func createTestCase(input string) (string, string, bool) {
 
 ////////////////////////////////////// structural parser ///////////////////////////////////////////
 
-func parseForStructural(text string) (string, string, frontend.DiagnosticTracker) {
+func parseForStructural(text string) (string, string, frontend.DiagnosticTrackerType) {
 	tracker := frontend.NewDiagnosticTracker()
 
 	lexer1 := phase1.NewLexer(text, "", tracker)
@@ -317,7 +317,7 @@ func parseForStructural(text string) (string, string, frontend.DiagnosticTracker
 
 func createTestCaseForStructural(input string) (string, string, bool) {
 	parseCode := `
-func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
+func parse(text string) (ast.Document, frontend.DiagnosticTrackerType) {
 	tracker := frontend.NewDiagnosticTracker()
 
 	lexer1 := phase1.NewLexer(text, "", tracker)
@@ -330,7 +330,7 @@ func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
 	return doc, tracker
 }
 `
-	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTracker) {
+	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTrackerType) {
 		text, _, tracker := parseForStructural(input)
 		return text, tracker
 	}, parseCode)
@@ -338,7 +338,7 @@ func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
 
 ////////////////////////////////////// formulation /////////////////////////////////////////////////
 
-func parseForFormulation(text string) (string, string, frontend.DiagnosticTracker) {
+func parseForFormulation(text string) (string, string, frontend.DiagnosticTrackerType) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseExpression(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return ast.DebugFormulationNode(node), mlglib.PrettyPrint(node), tracker
@@ -346,13 +346,13 @@ func parseForFormulation(text string) (string, string, frontend.DiagnosticTracke
 
 func createTestCaseForFormulation(input string) (string, string, bool) {
 	parseCode := `
-func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
+func parse(text string) (ast.NodeType, frontend.DiagnosticTrackerType) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseExpression(text, ast.Position{}, tracker)
 	return node, tracker
 }
 `
-	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTracker) {
+	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTrackerType) {
 		text, _, tracker := parseForFormulation(input)
 		return text, tracker
 	}, parseCode)
@@ -360,7 +360,7 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 
 ///////////////////////////////////////// form /////////////////////////////////////////////////////
 
-func parseForForm(text string) (string, string, frontend.DiagnosticTracker) {
+func parseForForm(text string) (string, string, frontend.DiagnosticTrackerType) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseForm(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return ast.DebugFormulationNode(node), mlglib.PrettyPrint(node), tracker
@@ -368,13 +368,13 @@ func parseForForm(text string) (string, string, frontend.DiagnosticTracker) {
 
 func createTestCaseForForm(input string) (string, string, bool) {
 	parseCode := `
-func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
+func parse(text string) (ast.NodeType, frontend.DiagnosticTrackerType) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseForm(text, ast.Position{}, tracker)
 	return node, tracker
 }
 `
-	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTracker) {
+	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTrackerType) {
 		text, _, tracker := parseForForm(input)
 		return text, tracker
 	}, parseCode)
@@ -382,7 +382,7 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 
 /////////////////////////////////////////// id /////////////////////////////////////////////////////
 
-func parseForId(text string) (string, string, frontend.DiagnosticTracker) {
+func parseForId(text string) (string, string, frontend.DiagnosticTrackerType) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseId(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return ast.DebugFormulationNode(node), mlglib.PrettyPrint(node), tracker
@@ -390,13 +390,13 @@ func parseForId(text string) (string, string, frontend.DiagnosticTracker) {
 
 func createTestCaseForId(input string) (string, string, bool) {
 	parseCode := `
-func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
+func parse(text string) (ast.NodeType, frontend.DiagnosticTrackerType) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseId(text, ast.Position{}, tracker)
 	return node, tracker
 }
 `
-	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTracker) {
+	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTrackerType) {
 		text, _, tracker := parseForId(input)
 		return text, tracker
 	}, parseCode)
@@ -405,7 +405,7 @@ func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func createGeneralTestCase(input string, parseFn func(input string) (
-	any, frontend.DiagnosticTracker), parseCode string) (string, string, bool) {
+	any, frontend.DiagnosticTrackerType), parseCode string) (string, string, bool) {
 	data, tracker := parseFn(input)
 	diagnostics := tracker.Diagnostics()
 	if len(diagnostics) > 0 {

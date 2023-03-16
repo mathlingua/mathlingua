@@ -16,7 +16,7 @@
 
 package phase4
 
-type CodeWriter interface {
+type CodeWriterType interface {
 	WriteIndent(indent int)
 	WriteHeader(header string)
 	WriteId(id string)
@@ -30,7 +30,7 @@ type CodeWriter interface {
 	String() string
 }
 
-func NewTextCodeWriter() CodeWriter {
+func NewTextCodeWriter() CodeWriterType {
 	return &textCodeWriter{
 		text: "",
 	}

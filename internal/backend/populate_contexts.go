@@ -21,7 +21,7 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func PopulateContexts(root *ast.Root, tracker frontend.DiagnosticTracker) {
+func PopulateContexts(root *ast.Root, tracker frontend.DiagnosticTrackerType) {
 	rootContext := NewRootContext(root, tracker)
 	root.CommonMetaData.Context = rootContext
 

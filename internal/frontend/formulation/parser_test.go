@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func parse(text string) (ast.FormulationNodeType, frontend.DiagnosticTracker) {
+func parse(text string) (ast.FormulationNodeType, frontend.DiagnosticTrackerType) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := ParseExpression(text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return node, tracker

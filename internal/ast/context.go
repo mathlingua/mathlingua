@@ -20,7 +20,7 @@ import "mathlingua/internal/mlglib"
 
 type ResolveTypeArg struct {
 	Type               UnResolvedType
-	CallToDefSiteNames mlglib.NameMapping
+	CallToDefSiteNames mlglib.NameMappingType
 	CallSiteScope      ScopeType
 	CallSiteContext    ContextType
 	DefSiteScope       ScopeType
@@ -28,7 +28,7 @@ type ResolveTypeArg struct {
 
 type ResolveTypeFormArg struct {
 	TypeForm           UnResolvedTypeFormType
-	CallToDefSiteNames mlglib.NameMapping
+	CallToDefSiteNames mlglib.NameMappingType
 	CallSiteScope      ScopeType
 	CallSiteContext    ContextType
 	DefSiteScope       ScopeType
@@ -36,7 +36,7 @@ type ResolveTypeFormArg struct {
 
 type ResolveExpressionArg struct {
 	Exp                *ExpressionType
-	CallToDefSiteNames mlglib.NameMapping
+	CallToDefSiteNames mlglib.NameMappingType
 	CallSiteScope      ScopeType
 	CallSiteContext    ContextType
 	DefSiteScope       ScopeType

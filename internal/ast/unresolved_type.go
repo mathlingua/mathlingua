@@ -27,7 +27,7 @@ type SpecAliasInfo2 struct {
 
 type UnResolvedType struct {
 	Form               UnResolvedTypeFormType
-	Signatures         mlglib.Set[string]
+	Signatures         mlglib.SetType[string]
 	DefSiteSpecAliases []SpecAliasInfo
 }
 

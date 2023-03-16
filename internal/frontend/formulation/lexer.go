@@ -23,13 +23,13 @@ import (
 	"unicode"
 )
 
-func NewLexer(text string, tracker frontend.DiagnosticTracker) frontend.Lexer {
+func NewLexer(text string, tracker frontend.DiagnosticTrackerType) frontend.LexerType {
 	return frontend.NewLexer(getTokens(text, tracker))
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
+func getTokens(text string, tracker frontend.DiagnosticTrackerType) []ast.Token {
 	tokens := make([]ast.Token, 0)
 	chars := ast.GetChars(text)
 	i := 0

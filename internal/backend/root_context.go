@@ -22,7 +22,7 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func NewRootContext(root *ast.Root, tracker frontend.DiagnosticTracker) ast.ContextType {
+func NewRootContext(root *ast.Root, tracker frontend.DiagnosticTrackerType) ast.ContextType {
 	ctx := rootContext{
 		root:            root,
 		signatureToNode: make(map[string]ast.MlgNodeType, 0),
@@ -38,7 +38,7 @@ type rootContext struct {
 	signatureToNode map[string]ast.MlgNodeType
 }
 
-func (c *rootContext) initialize(tracker frontend.DiagnosticTracker) {
+func (c *rootContext) initialize(tracker frontend.DiagnosticTrackerType) {
 	for path, doc := range c.root.Documents {
 		for _, item := range doc.Items {
 			switch n := item.(type) {
@@ -54,7 +54,7 @@ func (c *rootContext) initialize(tracker frontend.DiagnosticTracker) {
 }
 
 func (c *rootContext) storeSignature(id ast.IdItem, n ast.MlgNodeType, path ast.Path,
-	tracker frontend.DiagnosticTracker) {
+	tracker frontend.DiagnosticTrackerType) {
 	if sig, ok := GetSignatureStringFromId(id); ok {
 		if _, ok := c.signatureToNode[sig]; ok {
 			tracker.Append(frontend.Diagnostic{

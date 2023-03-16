@@ -22,7 +22,7 @@ import (
 	"github.com/fatih/color"
 )
 
-type Logger interface {
+type LoggerType interface {
 	Error(text string)
 	Warning(text string)
 	Failure(text string)
@@ -30,7 +30,7 @@ type Logger interface {
 	Log(text string)
 }
 
-func NewLogger() Logger {
+func NewLogger() LoggerType {
 	return &logger{}
 }
 

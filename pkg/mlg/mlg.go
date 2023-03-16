@@ -29,7 +29,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Mlg interface {
+type MlgType interface {
 	/**
 	 * The paths specified are files or directories.  Only `.math` files
 	 * will be processed and for any directory, all `.math` files recursively
@@ -40,7 +40,7 @@ type Mlg interface {
 	Version() string
 }
 
-func NewMlg(logger Logger) Mlg {
+func NewMlg(logger LoggerType) MlgType {
 	return &mlg{
 		logger: logger,
 	}
@@ -49,7 +49,7 @@ func NewMlg(logger Logger) Mlg {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type mlg struct {
-	logger Logger
+	logger LoggerType
 }
 
 type diagnosticInfo struct {

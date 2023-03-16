@@ -16,15 +16,15 @@
 
 package mlglib
 
-type Set[T comparable] interface {
+type SetType[T comparable] interface {
 	Size() int
 	Add(value T)
 	Remove(value T)
 	Has(value T) bool
-	Clone() Set[T]
+	Clone() SetType[T]
 }
 
-func NewSet[T comparable]() Set[T] {
+func NewSet[T comparable]() SetType[T] {
 	return &set[T]{
 		values: make(map[T]interface{}),
 	}
@@ -53,7 +53,7 @@ func (s *set[T]) Has(value T) bool {
 	return ok
 }
 
-func (s *set[T]) Clone() Set[T] {
+func (s *set[T]) Clone() SetType[T] {
 	valuesCopy := make(map[T]interface{}, 0)
 	for key, value := range s.values {
 		valuesCopy[key] = value

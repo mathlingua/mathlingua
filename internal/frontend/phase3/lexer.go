@@ -23,15 +23,15 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func NewLexer(phase2Lexer frontend.Lexer, path ast.Path,
-	tracker frontend.DiagnosticTracker) frontend.Lexer {
+func NewLexer(phase2Lexer frontend.LexerType, path ast.Path,
+	tracker frontend.DiagnosticTrackerType) frontend.LexerType {
 	return frontend.NewLexer(getTokens(phase2Lexer, path, tracker))
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func getTokens(lexer2 frontend.Lexer, path ast.Path,
-	tracker frontend.DiagnosticTracker) []ast.Token {
+func getTokens(lexer2 frontend.LexerType, path ast.Path,
+	tracker frontend.DiagnosticTrackerType) []ast.Token {
 	tokens := make([]ast.Token, 0)
 	stack := mlglib.NewStack[ast.TokenType]()
 

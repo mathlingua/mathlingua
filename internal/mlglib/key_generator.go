@@ -16,11 +16,11 @@
 
 package mlglib
 
-type KeyGenerator interface {
+type KeyGeneratorType interface {
 	Next() int
 }
 
-func NewKeyGenerator() KeyGenerator {
+func NewKeyGenerator() KeyGeneratorType {
 	return &keyGenerator{next: 1}
 }
 

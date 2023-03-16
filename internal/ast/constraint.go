@@ -38,5 +38,5 @@ type ExtendsConstraint struct {
 type SpecConstraint struct {
 	Targets []IStaticPattern
 	Name    string
-	Exp     *ExpressionType
+	Exp     ExpressionType
 }

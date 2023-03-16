@@ -20,7 +20,7 @@ import "mathlingua/internal/mlglib"
 
 type SpecAliasInfo2 struct {
 	SpecAlias string
-	Exp       *ExpressionType
+	Exp       ExpressionType
 	Scope     IScope
 	Context   IContext
 }

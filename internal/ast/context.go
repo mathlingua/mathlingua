@@ -35,7 +35,7 @@ type ResolveTypeFormArg struct {
 }
 
 type ResolveExpressionArg struct {
-	Exp                *ExpressionType
+	Exp                ExpressionType
 	CallToDefSiteNames mlglib.INameMapping
 	CallSiteScope      IScope
 	CallSiteContext    IContext
@@ -50,5 +50,5 @@ type IContext interface {
 	ResolveType(arg ResolveTypeArg) ResolvedType
 	ResolveTypeForm(arg ResolveTypeFormArg) IResolvedTypeForm
 	ResolveExpression(arg ResolveExpressionArg) ExpressionType
-	GetWrittenAs(exp *ExpressionType, scope IScope)
+	GetWrittenAs(exp ExpressionType, scope IScope)
 }

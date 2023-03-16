@@ -73,5 +73,5 @@ func (c *providesContext) ResolveExpression(arg ast.ResolveExpressionArg) ast.Ex
 	return nil
 }
 
-func (c *providesContext) GetWrittenAs(exp *ast.ExpressionType, scope ast.IScope) {
+func (c *providesContext) GetWrittenAs(exp ast.ExpressionType, scope ast.IScope) {
 }

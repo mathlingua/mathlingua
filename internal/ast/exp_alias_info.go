@@ -35,50 +35,50 @@ func (MemberPostfixExpAliasInfo) IExpAliasInfo()  {}
 
 type InfixExpAliasInfo struct {
 	Lhs InfixStaticPattern
-	Rhs *ExpressionType
+	Rhs ExpressionType
 }
 
 type PrefixExpAliasInfo struct {
 	Lhs PrefixStaticPattern
-	Rhs *ExpressionType
+	Rhs ExpressionType
 }
 
 type PostfixExpAliasInfo struct {
 	Lhs PostfixStaticPattern
-	Rhs *ExpressionType
+	Rhs ExpressionType
 }
 
 type FunctionExpAliasInfo struct {
 	Lhs FunctionStaticPattern
-	Rhs *ExpressionType
+	Rhs ExpressionType
 }
 
 type CommandExpAliasInfo struct {
 	Lsh CommandStaticPattern
-	Rhs *ExpressionType
+	Rhs ExpressionType
 }
 
 type MemberNameExpAliasInfo struct {
 	Lsh MemberNameStaticPattern
-	Rhs *ExpressionType
+	Rhs ExpressionType
 }
 
 type MemberFunctionExpAliasInfo struct {
 	Lsh MemberFunctionStaticPattern
-	Rhs *ExpressionType
+	Rhs ExpressionType
 }
 
 type MemberInfixExpAliasInfo struct {
 	Lsh MemberInfixStaticPattern
-	Rhs *ExpressionType
+	Rhs ExpressionType
 }
 
 type MemberPrefixExpAliasInfo struct {
 	Lhs MemberPrefixStaticPattern
-	Rhs *ExpressionType
+	Rhs ExpressionType
 }
 
 type MemberPostfixExpAliasInfo struct {
 	Lsh MemberPostfixStaticPattern
-	Rhs *ExpressionType
+	Rhs ExpressionType
 }

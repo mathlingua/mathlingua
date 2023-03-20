@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package internal
+package ast
 
 import (
 	"fmt"
-	"mathlingua/internal/ast"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,31 +30,31 @@ type testCase struct {
 
 var all_group_test_cases = []testCase{
 	{
-		actual: ast.AllOfSections,
+		actual: AllOfSections,
 		expected: []string{
 			"allOf",
 		},
 	},
 	{
-		actual: ast.NotSections,
+		actual: NotSections,
 		expected: []string{
 			"not",
 		},
 	},
 	{
-		actual: ast.AnyOfSections,
+		actual: AnyOfSections,
 		expected: []string{
 			"anyOf",
 		},
 	},
 	{
-		actual: ast.OneOfSections,
+		actual: OneOfSections,
 		expected: []string{
 			"oneOf",
 		},
 	},
 	{
-		actual: ast.ExistsSections,
+		actual: ExistsSections,
 		expected: []string{
 			"exists",
 			"where?",
@@ -63,7 +62,7 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.ExistsUniqueSections,
+		actual: ExistsUniqueSections,
 		expected: []string{
 			"existsUnique",
 			"where?",
@@ -71,7 +70,7 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.ForAllSections,
+		actual: ForAllSections,
 		expected: []string{
 			"forAll",
 			"where?",
@@ -80,21 +79,21 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.IfSections,
+		actual: IfSections,
 		expected: []string{
 			"if",
 			"then",
 		},
 	},
 	{
-		actual: ast.IffSections,
+		actual: IffSections,
 		expected: []string{
 			"iff",
 			"then",
 		},
 	},
 	{
-		actual: ast.PiecewiseSections,
+		actual: PiecewiseSections,
 		expected: []string{
 			"piecewise",
 			"if",
@@ -103,94 +102,94 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.WhenSections,
+		actual: WhenSections,
 		expected: []string{
 			"when",
 			"then",
 		},
 	},
 	{
-		actual: ast.WrittenSections,
+		actual: WrittenSections,
 		expected: []string{
 			"written",
 		},
 	},
 	{
-		actual: ast.CalledSections,
+		actual: CalledSections,
 		expected: []string{
 			"called",
 		},
 	},
 	{
-		actual: ast.WritingSections,
+		actual: WritingSections,
 		expected: []string{
 			"writing",
 			"as",
 		},
 	},
 	{
-		actual: ast.DetailsSections,
+		actual: DetailsSections,
 		expected: []string{
 			"details",
 		},
 	},
 	{
-		actual: ast.OverviewSections,
+		actual: OverviewSections,
 		expected: []string{
 			"overview",
 		},
 	},
 	{
-		actual: ast.MotivationSections,
+		actual: MotivationSections,
 		expected: []string{
 			"motivation",
 		},
 	},
 	{
-		actual: ast.HistorySections,
+		actual: HistorySections,
 		expected: []string{
 			"history",
 		},
 	},
 	{
-		actual: ast.ExampleSections,
+		actual: ExampleSections,
 		expected: []string{
 			"example",
 		},
 	},
 	{
-		actual: ast.RelatedSections,
+		actual: RelatedSections,
 		expected: []string{
 			"related",
 		},
 	},
 	{
-		actual: ast.DiscovererSections,
+		actual: DiscovererSections,
 		expected: []string{
 			"discoverer",
 		},
 	},
 	{
-		actual: ast.NoteSections,
+		actual: NoteSections,
 		expected: []string{
 			"note",
 		},
 	},
 	{
-		actual: ast.LabelSections,
+		actual: LabelSections,
 		expected: []string{
 			"label",
 			"by",
 		},
 	},
 	{
-		actual: ast.BySections,
+		actual: BySections,
 		expected: []string{
 			"by",
 		},
 	},
 	{
-		actual: ast.DescribesSections,
+		actual: DescribesSections,
 		expected: []string{
 			"Describes",
 			"with?",
@@ -208,7 +207,7 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.DefinesSections,
+		actual: DefinesSections,
 		expected: []string{
 			"Defines",
 			"with?",
@@ -227,7 +226,7 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.StatesSections,
+		actual: StatesSections,
 		expected: []string{
 			"States",
 			"with?",
@@ -243,7 +242,7 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.ProofSections,
+		actual: ProofSections,
 		expected: []string{
 			"Proof",
 			"of",
@@ -253,7 +252,7 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.AxiomSections,
+		actual: AxiomSections,
 		expected: []string{
 			"Axiom",
 			"given?",
@@ -268,7 +267,7 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.ConjectureSections,
+		actual: ConjectureSections,
 		expected: []string{
 			"Conjecture",
 			"given?",
@@ -283,7 +282,7 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.TheoremSections,
+		actual: TheoremSections,
 		expected: []string{
 			"Theorem",
 			"given?",
@@ -299,7 +298,7 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.TopicSections,
+		actual: TopicSections,
 		expected: []string{
 			"Topic",
 			"content",
@@ -308,42 +307,42 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ast.PositiveIntSections,
+		actual: PositiveIntSections,
 		expected: []string{
 			"positiveInt",
 			"means",
 		},
 	},
 	{
-		actual: ast.NegativeIntSections,
+		actual: NegativeIntSections,
 		expected: []string{
 			"negativeInt",
 			"means",
 		},
 	},
 	{
-		actual: ast.ZeroSections,
+		actual: ZeroSections,
 		expected: []string{
 			"zero",
 			"means",
 		},
 	},
 	{
-		actual: ast.PositiveFloatSections,
+		actual: PositiveFloatSections,
 		expected: []string{
 			"positiveFloat",
 			"means",
 		},
 	},
 	{
-		actual: ast.NegativeFloatSections,
+		actual: NegativeFloatSections,
 		expected: []string{
 			"negativeFloat",
 			"means",
 		},
 	},
 	{
-		actual: ast.SpecifySections,
+		actual: SpecifySections,
 		expected: []string{
 			"Specify",
 			"Id?",

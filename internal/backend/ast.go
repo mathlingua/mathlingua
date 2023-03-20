@@ -19,5 +19,13 @@ package backend
 import "mathlingua/internal/ast"
 
 func CloneNode(node ast.MlgNodeType) ast.MlgNodeType {
-	return node
+	copy := node
+	copy.ForEach(cloneScopes)
+	return copy
+}
+
+func cloneScopes(n ast.MlgNodeType) {
+	metaData := n.GetCommonMetaData()
+	metaData.Scope = metaData.Scope.Clone()
+	n.ForEach(cloneScopes)
 }

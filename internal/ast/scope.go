@@ -19,8 +19,21 @@ package ast
 type IScope interface {
 	SetIdentifierInfo(identifier string, info IdentifierInfo)
 	GetMutableIdentifierInfo(identifier string) (*IdentifierInfo, bool)
-	Clone() IScope
+	Clone() *Scope
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 type Scope struct {
+}
+
+func (s *Scope) SetIdentifierInfo(identifier string, info IdentifierInfo) {
+}
+
+func (s *Scope) GetMutableIdentifierInfo(identifier string) (*IdentifierInfo, bool) {
+	return nil, false
+}
+
+func (s *Scope) Clone() *Scope {
+	return nil
 }

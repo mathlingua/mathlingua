@@ -24,7 +24,7 @@ import (
 )
 
 func NewLexer(phase2Lexer frontend.ILexer, path ast.Path,
-	tracker frontend.IDiagnosticTracker) frontend.ILexer {
+	tracker frontend.IDiagnosticTracker) *frontend.Lexer {
 	return frontend.NewLexer(getTokens(phase2Lexer, path, tracker))
 }
 

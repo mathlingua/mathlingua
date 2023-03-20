@@ -23,7 +23,7 @@ import (
 	"unicode"
 )
 
-func NewLexer(text string, tracker frontend.IDiagnosticTracker) frontend.ILexer {
+func NewLexer(text string, tracker frontend.IDiagnosticTracker) *frontend.Lexer {
 	return frontend.NewLexer(getTokens(text, tracker))
 }
 

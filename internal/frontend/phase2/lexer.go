@@ -23,7 +23,7 @@ import (
 )
 
 func NewLexer(phase1Lexer frontend.ILexer, path ast.Path,
-	tracker frontend.IDiagnosticTracker) frontend.ILexer {
+	tracker frontend.IDiagnosticTracker) *frontend.Lexer {
 	return frontend.NewLexer(getTokens(phase1Lexer, path, tracker))
 }
 

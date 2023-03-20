@@ -52,26 +52,26 @@ type IDiagnosticTracker interface {
 	Diagnostics() []Diagnostic
 }
 
-func NewDiagnosticTracker() IDiagnosticTracker {
-	return &diagnosticTracker{
+func NewDiagnosticTracker() *DiagnosticTracker {
+	return &DiagnosticTracker{
 		diagnostics: make([]Diagnostic, 0),
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type diagnosticTracker struct {
+type DiagnosticTracker struct {
 	diagnostics []Diagnostic
 }
 
-func (dt *diagnosticTracker) Append(diagnostic Diagnostic) {
+func (dt *DiagnosticTracker) Append(diagnostic Diagnostic) {
 	dt.diagnostics = append(dt.diagnostics, diagnostic)
 }
 
-func (dt *diagnosticTracker) Diagnostics() []Diagnostic {
+func (dt *DiagnosticTracker) Diagnostics() []Diagnostic {
 	return dt.diagnostics
 }
 
-func (dt *diagnosticTracker) Length() int {
+func (dt *DiagnosticTracker) Length() int {
 	return len(dt.diagnostics)
 }

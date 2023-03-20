@@ -25,34 +25,36 @@ type IQueue[T any] interface {
 	Push(value T)
 }
 
-func NewQueue[T any]() IStack[T] {
-	return &queue[T]{}
+func NewQueue[T any]() *Queue[T] {
+	return &Queue[T]{
+		data: make([]T, 0),
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type queue[T any] struct {
+type Queue[T any] struct {
 	data []T
 }
 
-func (s *queue[T]) IsEmpty() bool {
+func (s *Queue[T]) IsEmpty() bool {
 	return len(s.data) == 0
 }
 
-func (s *queue[T]) Peek() T {
+func (s *Queue[T]) Peek() T {
 	return s.data[0]
 }
 
-func (s *queue[T]) Push(value T) {
+func (s *Queue[T]) Push(value T) {
 	s.data = append(s.data, value)
 }
 
-func (s *queue[T]) Pop() T {
+func (s *Queue[T]) Pop() T {
 	top := s.Peek()
 	s.data = s.data[1:]
 	return top
 }
 
-func (s *queue[T]) String() string {
+func (s *Queue[T]) String() string {
 	return fmt.Sprintf("%v", s.data)
 }

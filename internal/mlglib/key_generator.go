@@ -20,17 +20,17 @@ type IKeyGenerator interface {
 	Next() int
 }
 
-func NewKeyGenerator() IKeyGenerator {
-	return &keyGenerator{next: 1}
+func NewKeyGenerator() *KeyGenerator {
+	return &KeyGenerator{next: 1}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type keyGenerator struct {
+type KeyGenerator struct {
 	next int
 }
 
-func (kg *keyGenerator) Next() int {
+func (kg *KeyGenerator) Next() int {
 	result := kg.next
 	kg.next++
 	return result

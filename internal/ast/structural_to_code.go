@@ -20,11 +20,11 @@ import (
 	"strings"
 )
 
-type StructuralDebuggableType interface {
+type IStructuralToCode interface {
 	Debug(indent int, hasDot bool) []string
 }
 
-func DebugStructuralNode(item StructuralDebuggableType) string {
+func StructuralNodeToCode(item IStructuralToCode) string {
 	return strings.Join(item.Debug(0, false), "\n")
 }
 
@@ -32,32 +32,32 @@ func (n IdItem) Debug(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
-	return buildIndentedLineSlice(indent, hasDot, "["+n.Root.Debug()+"]")
+	return buildIndentedLineSlice(indent, hasDot, "["+n.Root.ToCode()+"]")
 }
 
 func (n Target) Debug(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
-	return buildIndentedLineSlice(indent, hasDot, n.Root.Debug())
+	return buildIndentedLineSlice(indent, hasDot, n.Root.ToCode())
 }
 
 func (n Spec) Debug(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
-	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.Debug()+"'")
+	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode()+"'")
 }
 
 func (n Alias) Debug(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
-	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.Debug()+"'")
+	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode()+"'")
 }
 
 func (n Formulation[T]) Debug(indent int, hasDot bool) []string {
-	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.Debug()+"'")
+	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode()+"'")
 }
 
 func (n TextItem) Debug(indent int, hasDot bool) []string {

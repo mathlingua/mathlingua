@@ -16,68 +16,68 @@
 
 package ast
 
-func DebugFormulationNode(node FormulationNodeType) string {
+func FormulationNodeToCode(node FormulationNodeType) string {
 	if node == nil {
 		return ""
 	}
-	return node.Debug()
+	return node.ToCode()
 }
 
-type IFormulationDebuggable interface {
-	Debug() string
+type IFormulationToCode interface {
+	ToCode() string
 }
 
-func (n NameForm) Debug() string {
-	return n.Text + n.VarArg.Debug()
+func (n NameForm) ToCode() string {
+	return n.Text + n.VarArg.ToCode()
 }
 
-func (n FunctionForm) Debug() string {
-	return n.Target.Debug() + "(" + commaSeparatedStringOfNameForms(n.Params) + ")" + n.VarArg.Debug()
+func (n FunctionForm) ToCode() string {
+	return n.Target.ToCode() + "(" + commaSeparatedStringOfNameForms(n.Params) + ")" + n.VarArg.ToCode()
 }
 
-func (n TupleForm) Debug() string {
-	return "(" + commaSeparatedString(n.Params) + ")" + n.VarArg.Debug()
+func (n TupleForm) ToCode() string {
+	return "(" + commaSeparatedString(n.Params) + ")" + n.VarArg.ToCode()
 }
 
-func (n ConditionalSetForm) Debug() string {
-	return "{" + n.Target.Debug() + " | ...}" + n.VarArg.Debug()
+func (n ConditionalSetForm) ToCode() string {
+	return "{" + n.Target.ToCode() + " | ...}" + n.VarArg.ToCode()
 }
 
-func (n ConditionalSetIdForm) Debug() string {
+func (n ConditionalSetIdForm) ToCode() string {
 	return "[" + commaSeparatedString(n.Symbols) +
-		"]{" + n.Target.Debug() + " | " + n.Condition.Debug() +
-		"}" + n.Condition.VarArg.Debug()
+		"]{" + n.Target.ToCode() + " | " + n.Condition.ToCode() +
+		"}" + n.Condition.VarArg.ToCode()
 }
 
-func (n FunctionCallExpression) Debug() string {
-	return n.Target.Debug() + "(" + commaSeparatedString(n.Args) + ")"
+func (n FunctionCallExpression) ToCode() string {
+	return n.Target.ToCode() + "(" + commaSeparatedString(n.Args) + ")"
 }
 
-func (n TupleExpression) Debug() string {
+func (n TupleExpression) ToCode() string {
 	return "(" + commaSeparatedString(n.Args) + ")"
 }
 
-func (n ConditionalSetExpression) Debug() string {
+func (n ConditionalSetExpression) ToCode() string {
 	return "[" + commaSeparatedString(n.Symbols) + "]{" +
-		n.Target.Debug() + " | " + semicolonSeparatedString(n.Conditions) + "}"
+		n.Target.ToCode() + " | " + semicolonSeparatedString(n.Conditions) + "}"
 }
 
-func (n CommandExpression) Debug() string {
+func (n CommandExpression) ToCode() string {
 	result := "\\"
 	for i, n := range n.Names {
 		if i > 0 {
 			result += "."
 		}
-		result += n.Debug()
+		result += n.ToCode()
 	}
 	if n.CurlyArg != nil {
-		result += n.CurlyArg.Debug()
+		result += n.CurlyArg.ToCode()
 	}
 	if n.NamedArgs != nil {
 		for _, item := range *n.NamedArgs {
-			result += ":" + item.Name.Debug()
+			result += ":" + item.Name.ToCode()
 			if item.CurlyArg != nil {
-				result += item.CurlyArg.Debug()
+				result += item.CurlyArg.ToCode()
 			}
 		}
 	}
@@ -89,19 +89,19 @@ func (n CommandExpression) Debug() string {
 	return result
 }
 
-func (n PrefixOperatorCallExpression) Debug() string {
-	return n.Target.Debug() + n.Arg.Debug()
+func (n PrefixOperatorCallExpression) ToCode() string {
+	return n.Target.ToCode() + n.Arg.ToCode()
 }
 
-func (n PostfixOperatorCallExpression) Debug() string {
-	return n.Arg.Debug() + n.Target.Debug()
+func (n PostfixOperatorCallExpression) ToCode() string {
+	return n.Arg.ToCode() + n.Target.ToCode()
 }
 
-func (n InfixOperatorCallExpression) Debug() string {
-	return n.Lhs.Debug() + " " + n.Target.Debug() + " " + n.Rhs.Debug()
+func (n InfixOperatorCallExpression) ToCode() string {
+	return n.Lhs.ToCode() + " " + n.Target.ToCode() + " " + n.Rhs.ToCode()
 }
 
-func (n IsExpression) Debug() string {
+func (n IsExpression) ToCode() string {
 	result := ""
 	result += commaSeparatedString(n.Lhs)
 	result += " is "
@@ -109,7 +109,7 @@ func (n IsExpression) Debug() string {
 	return result
 }
 
-func (n ExtendsExpression) Debug() string {
+func (n ExtendsExpression) ToCode() string {
 	result := ""
 	result += commaSeparatedString(n.Lhs)
 	result += " extends "
@@ -117,26 +117,26 @@ func (n ExtendsExpression) Debug() string {
 	return result
 }
 
-func (n AsExpression) Debug() string {
-	return n.Lhs.Debug() + " as " + n.Rhs.Debug()
+func (n AsExpression) ToCode() string {
+	return n.Lhs.ToCode() + " as " + n.Rhs.ToCode()
 }
 
-func (n OrdinalCallExpression) Debug() string {
-	return n.Target.Debug() + "{" + commaSeparatedString(n.Args) + "}"
+func (n OrdinalCallExpression) ToCode() string {
+	return n.Target.ToCode() + "{" + commaSeparatedString(n.Args) + "}"
 }
 
-func (n ChainExpression) Debug() string {
+func (n ChainExpression) ToCode() string {
 	result := ""
 	for i, item := range n.Parts {
 		if i > 0 {
 			result += "."
 		}
-		result += item.Debug()
+		result += item.ToCode()
 	}
 	return result
 }
 
-func (n Signature) Debug() string {
+func (n Signature) ToCode() string {
 	result := "\\("
 	for i, item := range n.MainNames {
 		if i > 0 {
@@ -158,7 +158,7 @@ func (n Signature) Debug() string {
 	return result
 }
 
-func (n MetaKinds) Debug() string {
+func (n MetaKinds) ToCode() string {
 	result := "[:"
 	for i, name := range n.Kinds {
 		if i > 0 {
@@ -170,29 +170,29 @@ func (n MetaKinds) Debug() string {
 	return result
 }
 
-func (n StructuralColonEqualsForm) Debug() string {
-	return n.Lhs.Debug() + " is " + n.Rhs.Debug()
+func (n StructuralColonEqualsForm) ToCode() string {
+	return n.Lhs.ToCode() + " is " + n.Rhs.ToCode()
 }
 
-func (n ExpressionColonEqualsItem) Debug() string {
-	return n.Lhs.Debug() + " := " + n.Rhs.Debug()
+func (n ExpressionColonEqualsItem) ToCode() string {
+	return n.Lhs.ToCode() + " := " + n.Rhs.ToCode()
 }
 
-func (n ExpressionColonArrowItem) Debug() string {
-	return n.Lhs.Debug() + " :=> " + n.Rhs.Debug()
+func (n ExpressionColonArrowItem) ToCode() string {
+	return n.Lhs.ToCode() + " :=> " + n.Rhs.ToCode()
 }
 
-func (n ExpressionColonDashArrowItem) Debug() string {
-	return n.Lhs.Debug() + " :-> " + n.Rhs.Debug()
+func (n ExpressionColonDashArrowItem) ToCode() string {
+	return n.Lhs.ToCode() + " :-> " + n.Rhs.ToCode()
 }
 
-func (n EnclosedNonCommandOperatorTarget) Debug() string {
+func (n EnclosedNonCommandOperatorTarget) ToCode() string {
 	result := ""
 	if n.HasLeftColon {
 		result += ":"
 	}
 	result += "["
-	result += n.Target.Debug()
+	result += n.Target.ToCode()
 	result += "]"
 	if n.HasRightColon {
 		result += ":"
@@ -200,7 +200,7 @@ func (n EnclosedNonCommandOperatorTarget) Debug() string {
 	return result
 }
 
-func (n NonEnclosedNonCommandOperatorTarget) Debug() string {
+func (n NonEnclosedNonCommandOperatorTarget) ToCode() string {
 	result := ""
 	if n.HasLeftColon {
 		result += ":"
@@ -212,26 +212,26 @@ func (n NonEnclosedNonCommandOperatorTarget) Debug() string {
 	return result
 }
 
-func (n CommandOperatorTarget) Debug() string {
-	return n.Command.Debug() + "/"
+func (n CommandOperatorTarget) ToCode() string {
+	return n.Command.ToCode() + "/"
 }
 
-func (n CommandId) Debug() string {
+func (n CommandId) ToCode() string {
 	result := "\\"
 	for i, n := range n.Names {
 		if i > 0 {
 			result += "."
 		}
-		result += n.Debug()
+		result += n.ToCode()
 	}
 	if n.CurlyParam != nil {
-		result += n.CurlyParam.Debug()
+		result += n.CurlyParam.ToCode()
 	}
 	if n.NamedParams != nil {
 		for _, item := range *n.NamedParams {
-			result += ":" + item.Name.Debug()
+			result += ":" + item.Name.ToCode()
 			if item.CurlyParam != nil {
-				result += item.CurlyParam.Debug()
+				result += item.CurlyParam.ToCode()
 			}
 		}
 	}
@@ -243,34 +243,34 @@ func (n CommandId) Debug() string {
 	return result
 }
 
-func (n PrefixOperatorId) Debug() string {
-	return n.Operator.Debug() + n.Param.Debug()
+func (n PrefixOperatorId) ToCode() string {
+	return n.Operator.ToCode() + n.Param.ToCode()
 }
 
-func (n PostfixOperatorId) Debug() string {
-	return n.Param.Debug() + n.Operator.Debug()
+func (n PostfixOperatorId) ToCode() string {
+	return n.Param.ToCode() + n.Operator.ToCode()
 }
 
-func (n InfixOperatorId) Debug() string {
-	return n.Lhs.Debug() + " " + n.Operator.Debug() + " " + n.Rhs.Debug()
+func (n InfixOperatorId) ToCode() string {
+	return n.Lhs.ToCode() + " " + n.Operator.ToCode() + " " + n.Rhs.ToCode()
 }
 
-func (n InfixCommandId) Debug() string {
+func (n InfixCommandId) ToCode() string {
 	result := "\\"
 	for i, n := range n.Names {
 		if i > 0 {
 			result += "."
 		}
-		result += n.Debug()
+		result += n.ToCode()
 	}
 	if n.CurlyParam != nil {
-		result += n.CurlyParam.Debug()
+		result += n.CurlyParam.ToCode()
 	}
 	if n.NamedParams != nil {
 		for _, item := range *n.NamedParams {
-			result += ":" + item.Name.Debug()
+			result += ":" + item.Name.ToCode()
 			if item.CurlyParam != nil {
-				result += item.CurlyParam.Debug()
+				result += item.CurlyParam.ToCode()
 			}
 		}
 	}
@@ -283,48 +283,48 @@ func (n InfixCommandId) Debug() string {
 	return result
 }
 
-func (n InfixCommandOperatorId) Debug() string {
-	return n.Lhs.Debug() + " " + n.Operator.Debug() + " " + n.Rhs.Debug()
+func (n InfixCommandOperatorId) ToCode() string {
+	return n.Lhs.ToCode() + " " + n.Operator.ToCode() + " " + n.Rhs.ToCode()
 }
 
-func (n PseudoTokenNode) Debug() string {
+func (n PseudoTokenNode) ToCode() string {
 	return n.Text
 }
 
-func (n PseudoExpression) Debug() string {
+func (n PseudoExpression) ToCode() string {
 	result := ""
 	for i, item := range n.Children {
 		if i > 0 {
 			result += " "
 		}
-		result += item.Debug()
+		result += item.ToCode()
 	}
 	return result
 }
 
-func (n MultiplexedInfixOperatorCallExpression) Debug() string {
+func (n MultiplexedInfixOperatorCallExpression) ToCode() string {
 	result := ""
 	result += commaSeparatedString(n.Lhs)
 	result += " "
-	result += n.Target.Debug()
+	result += n.Target.ToCode()
 	result += " "
 	result += commaSeparatedString(n.Rhs)
 	return result
 }
 
-func (n InfixOperatorForm) Debug() string {
-	return n.Lhs.Debug() + " " + n.Operator.Debug() + " " + n.Rhs.Debug()
+func (n InfixOperatorForm) ToCode() string {
+	return n.Lhs.ToCode() + " " + n.Operator.ToCode() + " " + n.Rhs.ToCode()
 }
 
-func (n PrefixOperatorForm) Debug() string {
-	return n.Operator.Debug() + n.Param.Debug()
+func (n PrefixOperatorForm) ToCode() string {
+	return n.Operator.ToCode() + n.Param.ToCode()
 }
 
-func (n PostfixOperatorForm) Debug() string {
-	return n.Param.Debug() + n.Operator.Debug()
+func (n PostfixOperatorForm) ToCode() string {
+	return n.Param.ToCode() + n.Operator.ToCode()
 }
 
-func (n VarArgData) Debug() string {
+func (n VarArgData) ToCode() string {
 	if n.IsVarArg {
 		if len(n.VarArgNames) == 0 && len(n.VarArgBounds) == 0 {
 			return "..."
@@ -352,11 +352,11 @@ func (n VarArgData) Debug() string {
 	return ""
 }
 
-func (n FunctionLiteralExpression) Debug() string {
-	return n.Lhs.Debug() + " => " + n.Rhs.Debug()
+func (n FunctionLiteralExpression) ToCode() string {
+	return n.Lhs.ToCode() + " => " + n.Rhs.ToCode()
 }
 
-func (n CurlyParam) Debug() string {
+func (n CurlyParam) ToCode() string {
 	result := ""
 	if n.SquareParams != nil {
 		result += "["
@@ -367,27 +367,27 @@ func (n CurlyParam) Debug() string {
 	result += commaSeparatedString(n.CurlyParams)
 	result += "}"
 	if n.Direction != nil {
-		result += n.Direction.Debug()
+		result += n.Direction.ToCode()
 	}
 	return result
 }
 
-func (n CurlyArg) Debug() string {
+func (n CurlyArg) ToCode() string {
 	result := "{"
 	if n.CurlyArgs != nil {
 		result += commaSeparatedString(*n.CurlyArgs)
 	}
 	result += "}"
 	if n.Direction != nil {
-		result += n.Direction.Debug()
+		result += n.Direction.ToCode()
 	}
 	return result
 }
 
-func (n DirectionalParam) Debug() string {
+func (n DirectionalParam) ToCode() string {
 	result := "@"
 	if n.Name != nil {
-		result += n.Name.Debug()
+		result += n.Name.ToCode()
 	}
 	result += "["
 	result += commaSeparatedString(n.SquareParams)
@@ -405,7 +405,7 @@ func commaSeparatedStringOfNameForms(forms []NameForm) string {
 		if i > 0 {
 			result += ", "
 		}
-		result += forms[i].Debug()
+		result += forms[i].ToCode()
 	}
 	return result
 }
@@ -420,7 +420,7 @@ func separatedString[T FormulationNodeType](forms []T, separator string) string 
 		if i > 0 {
 			result += separator
 		}
-		result += forms[i].Debug()
+		result += forms[i].ToCode()
 	}
 	return result
 }

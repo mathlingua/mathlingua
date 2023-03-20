@@ -153,9 +153,9 @@ func (DirectionalParam) MlgNodeType()                       {}
 func Debug(node MlgNodeType) string {
 	switch node := node.(type) {
 	case StructuralNodeType:
-		return DebugStructuralNode(node)
+		return StructuralNodeToCode(node)
 	case FormulationNodeType:
-		return DebugFormulationNode(node)
+		return FormulationNodeToCode(node)
 	default:
 		panic(fmt.Sprintf("Cannot debug a node: %s", mlglib.PrettyPrint(node)))
 	}

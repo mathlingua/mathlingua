@@ -18,7 +18,7 @@ package ast
 
 type StructuralNodeType interface {
 	MlgNodeType
-	StructuralDebuggableType
+	IStructuralToCode
 	StructuralNodeType()
 }
 

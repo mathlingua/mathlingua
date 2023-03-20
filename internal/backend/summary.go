@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package backend2
+package backend
 
 import "mathlingua/internal/ast"
 
 type DescribesSummary struct {
-	DefScope    IScopeView
+	DefScope    *ast.Scope
 	Input       IStaticPattern
 	Output      IStaticPattern
 	Usings      []IStaticPattern
@@ -32,7 +32,7 @@ type DescribesSummary struct {
 }
 
 type DefinesSummary struct {
-	DefScope    IScopeView
+	DefScope    *ast.Scope
 	Input       IStaticPattern
 	Output      IStaticPattern
 	Usings      []IStaticPattern
@@ -45,7 +45,7 @@ type DefinesSummary struct {
 }
 
 type StatesSummary struct {
-	DefScope    IScopeView
+	DefScope    *ast.Scope
 	Input       IStaticPattern
 	Output      IStaticPattern
 	Usings      []IStaticPattern

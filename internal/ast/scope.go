@@ -17,16 +17,10 @@
 package ast
 
 type IScope interface {
-	GetParent() IScope
-	SetParent(parent IScope)
-	GetNameInfo(name string) (NameInfo, bool)
-	SetNameInfo(name string, info NameInfo)
+	SetIdentifierInfo(identifier string, info IdentifierInfo)
+	GetMutableIdentifierInfo(identifier string) (*IdentifierInfo, bool)
+	Clone() IScope
 }
 
-type NameInfo struct {
-	IsInfereble     bool
-	IsPlaceholder   bool
-	IsNumberLiteral bool
-	ResolvedType    ResolvedType
-	UnResolvedType  UnResolvedType
+type Scope struct {
 }

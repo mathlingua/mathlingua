@@ -2871,9 +2871,8 @@ func sectionNamesToString(names []string) string {
 
 func toCommonMetaData(metaData phase4.MetaData) ast.CommonMetaData {
 	return ast.CommonMetaData{
-		Start:   metaData.Start,
-		Key:     metaData.Key,
-		Context: nil,
-		Scope:   nil,
+		Start: metaData.Start,
+		Key:   metaData.Key,
+		Scope: nil,
 	}
 }

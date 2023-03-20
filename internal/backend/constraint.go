@@ -14,16 +14,31 @@
  * limitations under the License.
  */
 
-package backend2
+package backend
 
-type IScope interface {
-	IScopeView
-	ImmutableView() IScopeView
-	SetIdentifierInfo(identifier string, info IdentifierInfo)
-	GetMutableIdentifierInfo(identifier string) (*IdentifierInfo, bool)
-	Clone() IScope
+import "mathlingua/internal/ast"
+
+type IConstraint interface {
+	IConstraint()
 }
 
-type IScopeView interface {
-	GetIdentifierInfo(identifier string) (IdentifierInfo, bool)
+func (IsConstraint) IConstraint()      {}
+func (ExtendsConstraint) IConstraint() {}
+func (SpecConstraint) IConstraint()    {}
+
+type IsConstraint struct {
+	Targets    []IStaticPattern
+	Signatures []string
+}
+
+type ExtendsConstraint struct {
+	Targets       []IStaticPattern
+	ConditionType string
+	Signatures    []string
+}
+
+type SpecConstraint struct {
+	Targets []IStaticPattern
+	Name    string
+	Exp     ast.ExpressionType
 }

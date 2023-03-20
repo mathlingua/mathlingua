@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package ast
+package backend
 
+// A pattern describes the shape of inputs to a Defines, Describes, States
+// provides, expression alias, or spec alias.
 type IStaticPattern interface {
 	IStaticPattern()
 }

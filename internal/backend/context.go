@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package ast
+package backend
 
-type ISpecAliasInfoRhs interface {
-	ISpecAliasInfoRhs()
+import "mathlingua/internal/ast"
+
+type Context struct {
+	Mapping       *IdentifierMapping
+	CallSiteScope *ast.Scope
 }
 
-func (IsConstraint) ISpecAliasInfoRhs()   {}
-func (SpecConstraint) ISpecAliasInfoRhs() {}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type SpecAliasInfo struct {
-	Lhs SpecStaticPattern
-	Rhs ISpecAliasInfoRhs
+type IIdentifierMapping interface {
+	GetCallSiteName(defSiteName string) (string, bool)
+	GetDefSiteName(callSiteName string) (string, bool)
+}
+
+type IdentifierMapping struct {
 }

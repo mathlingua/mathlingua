@@ -14,31 +14,17 @@
  * limitations under the License.
  */
 
-package backend2
+package backend
 
 import "mathlingua/internal/ast"
 
-type IConstraint interface {
-	IConstraint()
-}
-
-func (IsConstraint) IConstraint()      {}
-func (ExtendsConstraint) IConstraint() {}
-func (SpecConstraint) IConstraint()    {}
-
-type IsConstraint struct {
-	Targets    []IStaticPattern
-	Signatures []string
-}
-
-type ExtendsConstraint struct {
-	Targets       []IStaticPattern
-	ConditionType string
-	Signatures    []string
-}
-
-type SpecConstraint struct {
-	Targets []IStaticPattern
-	Name    string
-	Exp     ast.ExpressionType
+type IFoundation interface {
+	ResolveDefinesSummary(context Context, summary DefinesSummary) DefinesSummary
+	ResolveDescribesSummary(context Context, summary DescribesSummary) DescribesSummary
+	ResolveStatesSummary(context Context, summary StatesSummary) StatesSummary
+	// Resolve all of the identifiers in all scopes so that no identifier infos
+	// contain spec aliases.  From this, all operators are resolved to be absolute
+	// and written information is stored in each sub-node of the node to be used
+	// to render the node.
+	ResolveForRender(node ast.MlgNodeType)
 }

@@ -16,27 +16,21 @@
 
 package ast
 
-type IConstraint interface {
-	IConstraint()
+import (
+	"mathlingua/internal/mlglib"
+)
+
+// An IdentifierInfo describes information about an identifier such as its type
+// information, whether it is a number literal, or a placeholder etc.
+type IdentifierInfo struct {
+	IsInfereble     bool
+	IsPlaceholder   bool
+	IsNumberLiteral bool
+	Signatures      *mlglib.Set[string]
+	Specs           []SpecInfo
 }
 
-func (IsConstraint) IConstraint()      {}
-func (ExtendsConstraint) IConstraint() {}
-func (SpecConstraint) IConstraint()    {}
-
-type IsConstraint struct {
-	Targets    []IStaticPattern
-	Signatures []string
-}
-
-type ExtendsConstraint struct {
-	Targets       []IStaticPattern
-	ConditionType string
-	Signatures    []string
-}
-
-type SpecConstraint struct {
-	Targets []IStaticPattern
-	Name    string
-	Exp     ExpressionType
+type SpecInfo struct {
+	Name   string
+	Target ExpressionType
 }

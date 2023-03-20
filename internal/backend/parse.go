@@ -59,8 +59,8 @@ func ParseRoot(texts map[ast.Path]string, tracker frontend.IDiagnosticTracker) a
 		},
 	}
 
-	PopulateContexts(&root, tracker)
-	PopulateScopes(&root)
+	//	PopulateContexts(&root, tracker)
+	//	PopulateScopes(&root)
 
 	return root
 }

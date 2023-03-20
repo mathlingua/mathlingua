@@ -25,7 +25,6 @@ type FormulationNodeType interface {
 }
 
 type FormulationMetaData struct {
-	Type     ResolvedType
 	Original FormulationNodeType
 }
 

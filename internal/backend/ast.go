@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-package backend2
+package backend
 
-type Context struct {
-	Mapping       IIdentifierMapping
-	CallSiteScope IScope
-}
+import "mathlingua/internal/ast"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type IIdentifierMapping interface {
-	GetCallSiteName(defSiteName string) (string, bool)
-	GetDefSiteName(callSiteName string) (string, bool)
+func CloneNode(node ast.MlgNodeType) ast.MlgNodeType {
+	return node
 }

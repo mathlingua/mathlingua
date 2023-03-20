@@ -18,27 +18,27 @@ package backend
 
 import "mathlingua/internal/ast"
 
-type IConstraint interface {
-	IConstraint()
+type ConstraintType interface {
+	ConstraintType()
 }
 
-func (IsConstraint) IConstraint()      {}
-func (ExtendsConstraint) IConstraint() {}
-func (SpecConstraint) IConstraint()    {}
+func (IsConstraint) ConstraintType()      {}
+func (ExtendsConstraint) ConstraintType() {}
+func (SpecConstraint) ConstraintType()    {}
 
 type IsConstraint struct {
-	Targets    []IStaticPattern
+	Targets    []StaticPatternType
 	Signatures []string
 }
 
 type ExtendsConstraint struct {
-	Targets       []IStaticPattern
+	Targets       []StaticPatternType
 	ConditionType string
 	Signatures    []string
 }
 
 type SpecConstraint struct {
-	Targets []IStaticPattern
+	Targets []StaticPatternType
 	Name    string
 	Exp     ast.ExpressionType
 }

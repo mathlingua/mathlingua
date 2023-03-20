@@ -20,12 +20,12 @@ import "mathlingua/internal/ast"
 
 type DescribesSummary struct {
 	DefScope    *ast.Scope
-	Input       IStaticPattern
-	Output      IStaticPattern
-	Usings      []IStaticPattern
-	When        []IConstraint
-	Extends     []IConstraint
-	ExpAliases  []IExpAliasSummary
+	Input       StaticPatternType
+	Output      StaticPatternType
+	Usings      []StaticPatternType
+	When        []ConstraintType
+	Extends     []ConstraintType
+	ExpAliases  []ExpAliasSummaryType
 	SpecAliases []SpecAliasSummary
 	Written     []WrittenSummary
 	Called      []CalledSummary
@@ -33,12 +33,12 @@ type DescribesSummary struct {
 
 type DefinesSummary struct {
 	DefScope    *ast.Scope
-	Input       IStaticPattern
-	Output      IStaticPattern
-	Usings      []IStaticPattern
-	When        []IConstraint
-	Means       []IConstraint
-	ExpAliases  []IExpAliasSummary
+	Input       StaticPatternType
+	Output      StaticPatternType
+	Usings      []StaticPatternType
+	When        []ConstraintType
+	Means       []ConstraintType
+	ExpAliases  []ExpAliasSummaryType
 	SpecAliases []SpecAliasSummary
 	Written     []WrittenSummary
 	Called      []CalledSummary
@@ -46,10 +46,10 @@ type DefinesSummary struct {
 
 type StatesSummary struct {
 	DefScope    *ast.Scope
-	Input       IStaticPattern
-	Output      IStaticPattern
-	Usings      []IStaticPattern
-	ExpAliases  []IExpAliasSummary
+	Input       StaticPatternType
+	Output      StaticPatternType
+	Usings      []StaticPatternType
+	ExpAliases  []ExpAliasSummaryType
 	SpecAliases []SpecAliasSummary
 	Written     []WrittenSummary
 	Called      []CalledSummary
@@ -57,34 +57,34 @@ type StatesSummary struct {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type ISpecAliasSummaryRhs interface {
-	ISpecAliasSummaryRhs()
+type SpecAliasSummaryRhsType interface {
+	SpecAliasSummaryRhsType()
 }
 
-func (IsConstraint) ISpecAliasSummaryRhs()   {}
-func (SpecConstraint) ISpecAliasSummaryRhs() {}
+func (IsConstraint) SpecAliasSummaryRhsType()   {}
+func (SpecConstraint) SpecAliasSummaryRhsType() {}
 
 type SpecAliasSummary struct {
 	Lhs SpecStaticPattern
-	Rhs ISpecAliasSummaryRhs
+	Rhs SpecAliasSummaryRhsType
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type IExpAliasSummary interface {
-	IExpAliasSummary()
+type ExpAliasSummaryType interface {
+	ExpAliasSummaryType()
 }
 
-func (InfixExpAliasSummary) IExpAliasSummary()          {}
-func (PrefixExpAliasSummary) IExpAliasSummary()         {}
-func (PostfixExpAliasSummary) IExpAliasSummary()        {}
-func (FunctionExpAliasSummary) IExpAliasSummary()       {}
-func (CommandExpAliasSummary) IExpAliasSummary()        {}
-func (MemberNameExpAliasSummary) IExpAliasSummary()     {}
-func (MemberFunctionExpAliasSummary) IExpAliasSummary() {}
-func (MemberInfixExpAliasSummary) IExpAliasSummary()    {}
-func (MemberPrefixExpAliasSummary) IExpAliasSummary()   {}
-func (MemberPostfixExpAliasSummary) IExpAliasSummary()  {}
+func (InfixExpAliasSummary) ExpAliasSummaryType()          {}
+func (PrefixExpAliasSummary) ExpAliasSummaryType()         {}
+func (PostfixExpAliasSummary) ExpAliasSummaryType()        {}
+func (FunctionExpAliasSummary) ExpAliasSummaryType()       {}
+func (CommandExpAliasSummary) ExpAliasSummaryType()        {}
+func (MemberNameExpAliasSummary) ExpAliasSummaryType()     {}
+func (MemberFunctionExpAliasSummary) ExpAliasSummaryType() {}
+func (MemberInfixExpAliasSummary) ExpAliasSummaryType()    {}
+func (MemberPrefixExpAliasSummary) ExpAliasSummaryType()   {}
+func (MemberPostfixExpAliasSummary) ExpAliasSummaryType()  {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -141,13 +141,13 @@ type MemberPostfixExpAliasSummary struct {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type CalledSummary struct {
-	From   IStaticPattern
+	From   StaticPatternType
 	Called string
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type WrittenSummary struct {
-	From    IStaticPattern
+	From    StaticPatternType
 	Written string
 }

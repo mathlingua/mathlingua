@@ -30,8 +30,8 @@ type ILogger interface {
 	Log(text string)
 }
 
-func NewLogger() ILogger {
-	return &logger{}
+func NewLogger() *Logger {
+	return &Logger{}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -40,7 +40,7 @@ var boldGreenColor = color.New(color.FgGreen, color.Bold)
 var boldRedColor = color.New(color.FgRed, color.Bold)
 var boldYellowColor = color.New(color.FgYellow, color.Bold)
 
-type logger struct{}
+type Logger struct{}
 
 func boldRed(text string) string {
 	return boldRedColor.Sprint(text)
@@ -54,22 +54,22 @@ func boldYellow(text string) string {
 	return boldYellowColor.Sprint(text)
 }
 
-func (lg *logger) Error(text string) {
+func (lg *Logger) Error(text string) {
 	fmt.Printf("%s %s\n", boldRed("ERROR:"), text)
 }
 
-func (lg *logger) Warning(text string) {
+func (lg *Logger) Warning(text string) {
 	fmt.Printf("%s %s\n", boldYellow("WARNING:"), text)
 }
 
-func (lg *logger) Failure(text string) {
+func (lg *Logger) Failure(text string) {
 	fmt.Printf("%s %s\n", boldRed("FAILURE:"), text)
 }
 
-func (lg *logger) Success(text string) {
+func (lg *Logger) Success(text string) {
 	fmt.Printf("%s %s\n", boldGreen("SUCCESS:"), text)
 }
 
-func (lg *logger) Log(text string) {
+func (lg *Logger) Log(text string) {
 	fmt.Println(text)
 }

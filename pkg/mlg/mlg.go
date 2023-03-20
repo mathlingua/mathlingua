@@ -40,15 +40,15 @@ type IMlg interface {
 	Version() string
 }
 
-func NewMlg(logger ILogger) IMlg {
-	return &mlg{
+func NewMlg(logger ILogger) *Mlg {
+	return &Mlg{
 		logger: logger,
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type mlg struct {
+type Mlg struct {
 	logger ILogger
 }
 
@@ -67,7 +67,7 @@ type checkResult struct {
 	Diagnostics     []diagnosticInfo `json:"diagnostics"`
 }
 
-func (m *mlg) Check(paths []string, showJson bool, debug bool) {
+func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 	contents := make(map[ast.Path]string, 0)
 
 	pathWarnings := make([]string, 0)
@@ -272,10 +272,10 @@ func appendMetaIds(path string) (string, error) {
 	return endText, nil
 }
 
-func (m *mlg) View() {
+func (m *Mlg) View() {
 	server.Start()
 }
 
-func (m *mlg) Version() string {
+func (m *Mlg) Version() string {
 	return "v0.2"
 }

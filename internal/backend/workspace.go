@@ -42,23 +42,23 @@ type IWorkspace interface {
 	View() ViewResult
 }
 
-func NewWorkspace(contents map[ast.Path]string) IWorkspace {
-	return &workspace{
+func NewWorkspace(contents map[ast.Path]string) *Workspace {
+	return &Workspace{
 		contents: contents,
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type workspace struct {
+type Workspace struct {
 	contents map[ast.Path]string
 }
 
-func (w *workspace) DocumentCount() int {
+func (w *Workspace) DocumentCount() int {
 	return len(w.contents)
 }
 
-func (w *workspace) Check() CheckResult {
+func (w *Workspace) Check() CheckResult {
 	tracker := frontend.NewDiagnosticTracker()
 	ParseRoot(w.contents, tracker)
 	return CheckResult{
@@ -66,6 +66,6 @@ func (w *workspace) Check() CheckResult {
 	}
 }
 
-func (w *workspace) View() ViewResult {
+func (w *Workspace) View() ViewResult {
 	return ViewResult{}
 }

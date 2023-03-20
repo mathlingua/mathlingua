@@ -26,7 +26,7 @@ type IdentifierInfo struct {
 	IsInfereble     bool
 	IsPlaceholder   bool
 	IsNumberLiteral bool
-	Signatures      *mlglib.Set[string]
+	Signatures      mlglib.Set[string]
 	Specs           []SpecInfo
 }
 

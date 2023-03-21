@@ -19,16 +19,35 @@ package backend
 import "mathlingua/internal/ast"
 
 type Context struct {
-	Mapping       *IdentifierMapping
+	Mapping       IdentifierMapping
 	CallSiteScope *ast.Scope
+}
+
+type IIdentifierMapping interface {
+	GetCallSiteIdentifier(defSiteIden string) (string, bool)
+	GetDefSiteIdentifier(callSiteIden string) (string, bool)
+}
+
+func NewIdentifierMapping() *IdentifierMapping {
+	return &IdentifierMapping{
+		callIdenToDefIden: make(map[string]string, 0),
+		defIdenToCallIden: make(map[string]string, 0),
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type IIdentifierMapping interface {
-	GetCallSiteName(defSiteName string) (string, bool)
-	GetDefSiteName(callSiteName string) (string, bool)
+type IdentifierMapping struct {
+	callIdenToDefIden map[string]string
+	defIdenToCallIden map[string]string
 }
 
-type IdentifierMapping struct {
+func (im IdentifierMapping) GetCallSiteIdentifier(defSiteIden string) (string, bool) {
+	iden, ok := im.defIdenToCallIden[defSiteIden]
+	return iden, ok
+}
+
+func (im IdentifierMapping) GetDefSiteIdentifier(callSiteIden string) (string, bool) {
+	iden, ok := im.callIdenToDefIden[callSiteIden]
+	return iden, ok
 }

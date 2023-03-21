@@ -19,6 +19,7 @@ package backend
 import (
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend"
 	"strings"
 
 	"github.com/google/uuid"
@@ -114,5 +115,5 @@ func AppendMetaIds(startText string) (string, error) {
 //     is introduced, then it replaced with something like `X := (a, b, c)` where an
 //     identifier `X` for the tuple itself is introduced.
 //   - Any alias in formulations are expanded so that aliases are not needed anymore.
-func Normalize[T ast.MlgNodeType](node T) {
+func Normalize[T ast.MlgNodeType](node T, tracker frontend.IDiagnosticTracker) {
 }

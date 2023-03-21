@@ -18,6 +18,16 @@ package backend
 
 import "mathlingua/internal/ast"
 
+type ISummaryType interface {
+	ISummaryType()
+}
+
+func (DescribesSummary) ISummaryType() {}
+func (DefinesSummary) ISummaryType()   {}
+func (StatesSummary) ISummaryType()    {}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 type DescribesSummary struct {
 	DefScope    *ast.Scope
 	Input       StaticPatternType

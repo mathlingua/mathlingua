@@ -19,6 +19,7 @@ package backend
 import (
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
+	"mathlingua/internal/frontend/phase4"
 	"mathlingua/internal/server"
 )
 
@@ -114,10 +115,15 @@ func (w *Workspace) Check() CheckResult {
 	//
 	//     Last, any semantic checks that don't need to be verified are also checked.
 	//
-	//     The 'view' operation follows the same procedure except it doesn't do the last semantic
+	//     The 'view' operatio n follows the same procedure except it doesn't do the last semantic
 	//     checks.
 	tracker := frontend.NewDiagnosticTracker()
-	ParseRoot(w.contents, tracker)
+	root := ParseRoot(w.contents, tracker)
+	Normalize(&root, tracker)
+	PopulateScopes(&root, tracker)
+	idsToTopLevels := IdsToTopLevelItems(&root)
+	summaries := ExtractSummaries(&root, tracker)
+	ResolveForViews(summaries, idsToTopLevels, &root, tracker)
 	return CheckResult{
 		Diagnostics: tracker.Diagnostics(),
 	}
@@ -125,4 +131,8 @@ func (w *Workspace) Check() CheckResult {
 
 func (w *Workspace) View() ViewResult {
 	return ViewResult{}
+}
+
+func IdsToTopLevelItems(root *ast.Root) map[string]phase4.TopLevelNodeType {
+	return nil
 }

@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package backend
+package ast
 
-import "mathlingua/internal/ast"
-
-func CloneNode(node ast.MlgNodeType) ast.MlgNodeType {
+func CloneNode[T MlgNodeType](node T) T {
 	copy := node
 	copy.ForEach(cloneScopes)
 	return copy
 }
 
-func cloneScopes(n ast.MlgNodeType) {
+func cloneScopes(n MlgNodeType) {
 	metaData := n.GetCommonMetaData()
 	metaData.Scope = metaData.Scope.Clone()
 	n.ForEach(cloneScopes)

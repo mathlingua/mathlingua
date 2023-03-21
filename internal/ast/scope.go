@@ -22,18 +22,33 @@ type IScope interface {
 	Clone() *Scope
 }
 
+func NewScope() *Scope {
+	return &Scope{
+		idenInfos: make(map[string]*IdentifierInfo, 0),
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type Scope struct {
+	idenInfos map[string]*IdentifierInfo
 }
 
 func (s *Scope) SetIdentifierInfo(identifier string, info IdentifierInfo) {
+	s.idenInfos[identifier] = &info
 }
 
 func (s *Scope) GetMutableIdentifierInfo(identifier string) (*IdentifierInfo, bool) {
-	return nil, false
+	info, ok := s.idenInfos[identifier]
+	return info, ok
 }
 
 func (s *Scope) Clone() *Scope {
-	return nil
+	idensCopy := make(map[string]*IdentifierInfo, 0)
+	for iden, info := range s.idenInfos {
+		idensCopy[iden] = info.Clone()
+	}
+	return &Scope{
+		idenInfos: idensCopy,
+	}
 }

@@ -30,7 +30,28 @@ type IdentifierInfo struct {
 	Specs           []SpecInfo
 }
 
+func (ii *IdentifierInfo) Clone() *IdentifierInfo {
+	specsCopy := make([]SpecInfo, 0)
+	for _, info := range ii.Specs {
+		specsCopy = append(specsCopy, *info.Clone())
+	}
+	return &IdentifierInfo{
+		IsInfereble:     ii.IsInfereble,
+		IsPlaceholder:   ii.IsPlaceholder,
+		IsNumberLiteral: ii.IsNumberLiteral,
+		Signatures:      *ii.Signatures.Clone(),
+		Specs:           specsCopy,
+	}
+}
+
 type SpecInfo struct {
 	Name   string
 	Target ExpressionType
+}
+
+func (si *SpecInfo) Clone() *SpecInfo {
+	return &SpecInfo{
+		Name:   si.Name,
+		Target: CloneNode(si.Target),
+	}
 }

@@ -21,12 +21,11 @@ import (
 	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/backend"
+	"mathlingua/internal/frontend"
 	"mathlingua/internal/server"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 type IMlg interface {
@@ -68,10 +67,38 @@ type checkResult struct {
 }
 
 func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
-	contents := make(map[ast.Path]string, 0)
+	findFiles, errors, warnings := getMathlinguaFiles(paths)
 
-	pathWarnings := make([]string, 0)
-	pathErrors := make([]string, 0)
+	contents, contentErrors := getFileContents(findFiles)
+	errors = append(errors, contentErrors...)
+
+	workspace := backend.NewWorkspace(contents)
+
+	checkResult := workspace.Check()
+	numErrors := len(errors) + len(checkResult.Diagnostics)
+	numFilesProcessed := workspace.DocumentCount()
+
+	if showJson {
+		m.printAsJson(checkResult)
+		return
+	}
+
+	m.printCheckStats(numErrors, numFilesProcessed, debug, warnings, errors, checkResult.Diagnostics)
+}
+
+func (m *Mlg) View() {
+	server.Start()
+}
+
+func (m *Mlg) Version() string {
+	return "v0.2"
+}
+
+func getMathlinguaFiles(paths []string) (files []ast.Path, errors []string, warnings []string) {
+	files = make([]ast.Path, 0)
+
+	warnings = make([]string, 0)
+	errors = make([]string, 0)
 
 	if len(paths) == 0 {
 		paths = append(paths, ".")
@@ -80,7 +107,7 @@ func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 			stat, _ := os.Stat(p)
 			isDir := stat != nil && stat.IsDir()
 			if !isDir && !strings.HasSuffix(p, ".math") {
-				pathWarnings = append(pathWarnings,
+				warnings = append(warnings,
 					fmt.Sprintf("File %s is not a MathLingua (.math) file and will be ignored", p))
 			}
 		}
@@ -89,13 +116,13 @@ func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 	for _, p := range paths {
 		err := filepath.Walk(p, func(p string, info os.FileInfo, err error) error {
 			if err != nil {
-				pathErrors = append(pathErrors, err.Error())
+				errors = append(errors, err.Error())
 				return err
 			}
 
 			stat, err := os.Stat(p)
 			if err != nil {
-				pathErrors = append(pathErrors, err.Error())
+				errors = append(errors, err.Error())
 				return err
 			}
 
@@ -103,36 +130,64 @@ func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 				return nil
 			}
 
-			text, err := appendMetaIds(p)
-			if err != nil {
-				pathErrors = append(pathErrors, err.Error())
-				return err
-			}
+			files = append(files, ast.ToPath(p))
 
-			contents[ast.ToPath(p)] = text
 			return nil
 		})
 
 		if err != nil {
-			pathErrors = append(pathErrors, err.Error())
+			errors = append(errors, err.Error())
 			continue
 		}
 	}
 
-	workspace := backend.NewWorkspace(contents)
-	checkResult := workspace.Check()
-	numErrors := len(pathErrors) + len(checkResult.Diagnostics)
-	numFilesProcessed := workspace.DocumentCount()
+	return files, errors, warnings
+}
 
-	if showJson {
-		if data, err := json.MarshalIndent(checkResult, "", "  "); err != nil {
-			m.logger.Error(fmt.Sprintf("{\"generalErrors\": [\"%s\"]}", err))
+func getFileContents(filePaths []ast.Path) (contents map[ast.Path]string, errors []string) {
+	contents = make(map[ast.Path]string, 0)
+	errors = make([]string, 0)
+
+	for _, p := range filePaths {
+		text, err := appendMetaIds(string(p))
+		if err != nil {
+			errors = append(errors, err.Error())
 		} else {
-			m.logger.Log(string(data))
+			contents[p] = text
 		}
-		return
 	}
 
+	return contents, errors
+}
+
+func appendMetaIds(path string) (string, error) {
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	endText, err := backend.AppendMetaIds(string(bytes))
+	if err != nil {
+		return "", err
+	}
+
+	if err := os.WriteFile(path, []byte(endText), 0644); err != nil {
+		return "", err
+	}
+
+	return endText, nil
+}
+
+func (m *Mlg) printAsJson(checkResult backend.CheckResult) {
+	if data, err := json.MarshalIndent(checkResult, "", "  "); err != nil {
+		m.logger.Error(fmt.Sprintf("{\"generalErrors\": [\"%s\"]}", err))
+	} else {
+		m.logger.Log(string(data))
+	}
+}
+
+func (m *Mlg) printCheckStats(numErrors int, numFilesProcessed int, debug bool,
+	warnings []string, errors []string, diagnostics []frontend.Diagnostic) {
 	var errorText string
 	if numErrors == 1 {
 		errorText = "error"
@@ -147,15 +202,15 @@ func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 		filesText = "files"
 	}
 
-	for _, warning := range pathWarnings {
+	for _, warning := range warnings {
 		m.logger.Warning(warning)
 	}
 
-	for _, err := range pathErrors {
+	for _, err := range errors {
 		m.logger.Error(err)
 	}
 
-	for index, diag := range checkResult.Diagnostics {
+	for index, diag := range diagnostics {
 		if index > 0 {
 			// print a line between each error
 			m.logger.Log("")
@@ -177,105 +232,4 @@ func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 		m.logger.Success(fmt.Sprintf("Processed %d %s and found 0 errors",
 			numFilesProcessed, filesText))
 	}
-}
-
-func appendMetaIds(path string) (string, error) {
-	bytes, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-
-	startText := string(bytes)
-	endText := ""
-	lines := strings.Split(startText, "\n")
-	i := 0
-	isInTopLevel := false
-	hasComment := false
-	hasMetaId := false
-	for i < len(lines) {
-		cur := lines[i]
-		i++
-
-		trimmedCur := strings.TrimSpace(cur)
-		if strings.HasPrefix(trimmedCur, "::") {
-			endText += cur
-			endText += "\n"
-
-			isInTopLevel = false
-			hasComment = false
-			hasMetaId = false
-
-			if trimmedCur == "::" || !strings.HasSuffix(trimmedCur, "::") {
-				// it is a textblock
-				for i < len(lines) {
-					next := lines[i]
-					i++
-					endText += next
-					endText += "\n"
-					if strings.HasSuffix(strings.TrimSpace(next), "::") {
-						break
-					}
-				}
-			}
-		} else if isInTopLevel && strings.HasPrefix(cur, "--") {
-			hasComment = true
-			endText += cur
-			endText += "\n"
-		} else if isInTopLevel && strings.HasPrefix(cur, "Id:") {
-			hasMetaId = true
-			endText += cur
-			endText += "\n"
-		} else if strings.HasPrefix(cur, "Defines:") ||
-			strings.HasPrefix(cur, "Describes:") ||
-			strings.HasPrefix(cur, "States:") ||
-			strings.HasPrefix(cur, "Axiom:") ||
-			strings.HasPrefix(cur, "Conjecture:") ||
-			strings.HasPrefix(cur, "Theorem:") ||
-			strings.HasPrefix(cur, "Topic:") ||
-			strings.HasPrefix(cur, "Resource:") ||
-			strings.HasPrefix(cur, "Person:") ||
-			strings.HasPrefix(cur, "Specify:") ||
-			strings.HasPrefix(cur, "Proof:") {
-			isInTopLevel = true
-			endText += cur
-			endText += "\n"
-		} else if cur == "" {
-			if isInTopLevel {
-				if !hasComment {
-					endText += "------------------------------------------\n"
-				}
-				if !hasMetaId {
-					newId, _ := uuid.NewRandom()
-					endText += fmt.Sprintf("Id: \"%s\"\n", newId)
-				}
-			}
-			isInTopLevel = false
-			hasComment = false
-			hasMetaId = false
-
-			endText += cur
-			endText += "\n"
-		} else {
-			endText += cur
-			endText += "\n"
-		}
-	}
-
-	if strings.HasSuffix(endText, "\n") {
-		endText = string(endText[0 : len(endText)-1])
-	}
-
-	if err := os.WriteFile(path, []byte(endText), 0644); err != nil {
-		return "", err
-	}
-
-	return endText, nil
-}
-
-func (m *Mlg) View() {
-	server.Start()
-}
-
-func (m *Mlg) Version() string {
-	return "v0.2"
 }

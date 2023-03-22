@@ -27,7 +27,8 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func ParseDocument(text string, path ast.Path, tracker *frontend.DiagnosticTracker) (phase4.Document, ast.Document) {
+func ParseDocument(text string, path ast.Path,
+	tracker *frontend.DiagnosticTracker) (*phase4.Document, *ast.Document) {
 
 	lexer1 := phase1.NewLexer(text, path, tracker)
 	lexer2 := phase2.NewLexer(lexer1, path, tracker)
@@ -36,21 +37,34 @@ func ParseDocument(text string, path ast.Path, tracker *frontend.DiagnosticTrack
 	phase4Doc := phase4.Parse(lexer3, path, tracker)
 	astDoc, _ := phase5.Parse(phase4Doc, path, tracker, mlglib.NewKeyGenerator())
 
-	return phase4Doc, astDoc
+	return &phase4Doc, &astDoc
 }
 
 func ParseRoot(texts map[ast.Path]string,
-	tracker *frontend.DiagnosticTracker) (map[ast.Path]phase4.Document, ast.Root) {
+	tracker *frontend.DiagnosticTracker) (*phase4.Root, *ast.Root) {
 	phase4Docs := make(map[ast.Path]phase4.Document, 0)
 	astDocs := make(map[ast.Path]ast.Document, 0)
 
 	for path, content := range texts {
 		phase4Doc, astDoc := ParseDocument(content, path, tracker)
-		astDocs[path] = astDoc
-		phase4Docs[path] = phase4Doc
+		astDocs[path] = *astDoc
+		phase4Docs[path] = *phase4Doc
 	}
 
-	root := ast.Root{
+	phase4Root := phase4.Root{
+		Type:      phase4.RootType,
+		Documents: phase4Docs,
+		MetaData: phase4.MetaData{
+			Start: ast.Position{
+				Offset: -1,
+				Row:    -1,
+				Column: -1,
+			},
+			Key: -1,
+		},
+	}
+
+	astRoot := ast.Root{
 		Documents: astDocs,
 		CommonMetaData: ast.CommonMetaData{
 			Start: ast.Position{
@@ -62,5 +76,5 @@ func ParseRoot(texts map[ast.Path]string,
 		},
 	}
 
-	return phase4Docs, root
+	return &phase4Root, &astRoot
 }

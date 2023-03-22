@@ -24,6 +24,7 @@ import (
 type NodeType string
 
 const (
+	RootType                     NodeType = "RootType"
 	TextBlockType                NodeType = "TextBlockType"
 	DocumentType                 NodeType = "DocumentType"
 	GroupType                    NodeType = "GroupType"
@@ -297,3 +298,9 @@ type TopLevelNodeType interface {
 
 func (TextBlock) TopLevelNodeType() {}
 func (Group) TopLevelNodeType()     {}
+
+type Root struct {
+	Type      NodeType
+	Documents map[ast.Path]Document
+	MetaData  MetaData
+}

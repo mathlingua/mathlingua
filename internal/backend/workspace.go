@@ -101,9 +101,9 @@ type Workspace struct {
 	// the tracker used to record diagnostics
 	tracker *frontend.DiagnosticTracker
 	// mapping of paths to phase4 documents
-	phase4Docs map[ast.Path]phase4.Document
+	phase4Root *phase4.Root
 	// the root of the phase5 parse tree generated
-	root ast.Root
+	astRoot *ast.Root
 	// map signatures to ids
 	signaturesToIds map[string]string
 	// map ids to summaries
@@ -129,7 +129,7 @@ func NewWorkspace(contents map[ast.Path]string) *Workspace {
 func (w *Workspace) initialize(contents map[ast.Path]string) {
 	w.contents = contents
 	w.tracker = frontend.NewDiagnosticTracker()
-	w.phase4Docs, w.root = ParseRoot(w.contents, w.tracker)
+	w.phase4Root, w.astRoot = ParseRoot(w.contents, w.tracker)
 	w.normalizeAst()
 	w.populateScopes()
 	w.initializeSignaturesToIds()
@@ -165,9 +165,9 @@ func (w *Workspace) initializeTopLevelEntries() {
 }
 
 func (w *Workspace) normalizeAst() {
-	Normalize(&w.root, w.tracker)
+	Normalize(w.astRoot, w.tracker)
 }
 
 func (w *Workspace) populateScopes() {
-	PopulateScopes(&w.root, w.tracker)
+	PopulateScopes(w.astRoot, w.tracker)
 }

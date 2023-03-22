@@ -18,8 +18,8 @@ package ast
 
 type StructuralNodeType interface {
 	MlgNodeType
-	IStructuralToCode
 	StructuralNodeType()
+	ToCode(indent int, hasDot bool) []string
 }
 
 func (IdItem) StructuralNodeType()             {}

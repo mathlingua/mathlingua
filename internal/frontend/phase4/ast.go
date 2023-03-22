@@ -40,7 +40,7 @@ type MetaData struct {
 }
 
 type Node interface {
-	ToCode(writer ICodeWriter)
+	ToCode(writer *TextCodeWriter)
 	Size() int
 	ChildAt(index int) Node
 }
@@ -52,7 +52,7 @@ type Group struct {
 	MetaData MetaData
 }
 
-func (g Group) write(indent int, writer ICodeWriter) {
+func (g Group) write(indent int, writer *TextCodeWriter) {
 	if g.Id != nil {
 		writer.WriteId(fmt.Sprintf("[%s]", *g.Id))
 		writer.WriteNewline()
@@ -67,7 +67,7 @@ func (g Group) write(indent int, writer ICodeWriter) {
 	}
 }
 
-func (g Group) ToCode(writer ICodeWriter) {
+func (g Group) ToCode(writer *TextCodeWriter) {
 	g.write(0, writer)
 }
 
@@ -90,7 +90,7 @@ type Section struct {
 	MetaData MetaData
 }
 
-func (s Section) write(indent int, writer ICodeWriter) {
+func (s Section) write(indent int, writer *TextCodeWriter) {
 	writer.WriteHeader(fmt.Sprintf("%s:", s.Name))
 
 	isFirstInline := true
@@ -114,7 +114,7 @@ func (s Section) write(indent int, writer ICodeWriter) {
 	}
 }
 
-func (s Section) ToCode(writer ICodeWriter) {
+func (s Section) ToCode(writer *TextCodeWriter) {
 	s.write(0, writer)
 }
 
@@ -133,7 +133,7 @@ type Argument struct {
 	MetaData MetaData
 }
 
-func (a Argument) write(indent int, writer ICodeWriter) {
+func (a Argument) write(indent int, writer *TextCodeWriter) {
 	switch t := a.Arg.(type) {
 	case TextArgumentData:
 		t.write(indent, writer)
@@ -148,7 +148,7 @@ func (a Argument) write(indent int, writer ICodeWriter) {
 	}
 }
 
-func (a Argument) ToCode(writer ICodeWriter) {
+func (a Argument) ToCode(writer *TextCodeWriter) {
 	a.write(0, writer)
 }
 
@@ -166,11 +166,11 @@ type TextArgumentData struct {
 	MetaData MetaData
 }
 
-func (t TextArgumentData) write(indent int, writer ICodeWriter) {
+func (t TextArgumentData) write(indent int, writer *TextCodeWriter) {
 	writer.WriteText(fmt.Sprintf("\"%s\"", t.Text))
 }
 
-func (t TextArgumentData) ToCode(writer ICodeWriter) {
+func (t TextArgumentData) ToCode(writer *TextCodeWriter) {
 	t.write(0, writer)
 }
 
@@ -188,11 +188,11 @@ type FormulationArgumentData struct {
 	MetaData MetaData
 }
 
-func (f FormulationArgumentData) write(indent int, writer ICodeWriter) {
+func (f FormulationArgumentData) write(indent int, writer *TextCodeWriter) {
 	writer.WriteFormulation(fmt.Sprintf("'%s'", f.Text))
 }
 
-func (f FormulationArgumentData) ToCode(writer ICodeWriter) {
+func (f FormulationArgumentData) ToCode(writer *TextCodeWriter) {
 	f.write(0, writer)
 }
 
@@ -210,11 +210,11 @@ type ArgumentTextArgumentData struct {
 	MetaData MetaData
 }
 
-func (a ArgumentTextArgumentData) write(indent int, writer ICodeWriter) {
+func (a ArgumentTextArgumentData) write(indent int, writer *TextCodeWriter) {
 	writer.WriteDirect(a.Text)
 }
 
-func (a ArgumentTextArgumentData) ToCode(writer ICodeWriter) {
+func (a ArgumentTextArgumentData) ToCode(writer *TextCodeWriter) {
 	a.write(0, writer)
 }
 
@@ -241,12 +241,12 @@ type TextBlock struct {
 	MetaData MetaData
 }
 
-func (t TextBlock) write(indent int, writer ICodeWriter) {
+func (t TextBlock) write(indent int, writer *TextCodeWriter) {
 	writer.WriteTextBlock(fmt.Sprintf("::%s::", t.Text))
 	writer.WriteNewline()
 }
 
-func (t TextBlock) ToCode(writer ICodeWriter) {
+func (t TextBlock) ToCode(writer *TextCodeWriter) {
 	t.write(0, writer)
 }
 
@@ -268,7 +268,7 @@ type Document struct {
 	MetaData MetaData
 }
 
-func (r Document) write(indent int, writer ICodeWriter) {
+func (r Document) write(indent int, writer *TextCodeWriter) {
 	for _, node := range r.Nodes {
 		node.ToCode(writer)
 		writer.WriteNewline()
@@ -277,7 +277,7 @@ func (r Document) write(indent int, writer ICodeWriter) {
 	}
 }
 
-func (r Document) ToCode(writer ICodeWriter) {
+func (r Document) ToCode(writer *TextCodeWriter) {
 	r.write(0, writer)
 }
 

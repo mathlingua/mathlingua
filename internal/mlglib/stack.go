@@ -18,23 +18,14 @@ package mlglib
 
 import "fmt"
 
-type IStack[T any] interface {
-	IsEmpty() bool
-	Peek() T
-	Pop() T
-	Push(value T)
+type Stack[T any] struct {
+	data []T
 }
 
 func NewStack[T any]() *Stack[T] {
 	return &Stack[T]{
 		data: make([]T, 0),
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type Stack[T any] struct {
-	data []T
 }
 
 func (s *Stack[T]) IsEmpty() bool {

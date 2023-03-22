@@ -16,30 +16,14 @@
 
 package phase4
 
-type ICodeWriter interface {
-	WriteIndent(indent int)
-	WriteHeader(header string)
-	WriteId(id string)
-	WriteSpace()
-	WriteDotSpace()
-	WriteNewline()
-	WriteText(text string)
-	WriteFormulation(text string)
-	WriteDirect(text string)
-	WriteTextBlock(text string)
-	String() string
+type TextCodeWriter struct {
+	text string
 }
 
 func NewTextCodeWriter() *TextCodeWriter {
 	return &TextCodeWriter{
 		text: "",
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type TextCodeWriter struct {
-	text string
 }
 
 func (w *TextCodeWriter) WriteIndent(indent int) {

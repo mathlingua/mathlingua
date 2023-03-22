@@ -16,10 +16,9 @@
 
 package mlglib
 
-type INameMapping interface {
-	AddMapping(fromName string, toName string)
-	GetFromName(toName string) string
-	GetToName(fromName string) string
+type NameMapping struct {
+	fromToToNames map[string]string
+	toToFromNames map[string]string
 }
 
 func NewNameMapping() *NameMapping {
@@ -27,13 +26,6 @@ func NewNameMapping() *NameMapping {
 		fromToToNames: make(map[string]string, 0),
 		toToFromNames: make(map[string]string, 0),
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type NameMapping struct {
-	fromToToNames map[string]string
-	toToFromNames map[string]string
 }
 
 func (nm *NameMapping) AddMapping(fromName string, toName string) {

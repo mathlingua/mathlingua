@@ -16,22 +16,14 @@
 
 package ast
 
-type IScope interface {
-	SetIdentifierInfo(identifier string, info IdentifierInfo)
-	GetMutableIdentifierInfo(identifier string) (*IdentifierInfo, bool)
-	Clone() *Scope
+type Scope struct {
+	idenInfos map[string]*IdentifierInfo
 }
 
 func NewScope() *Scope {
 	return &Scope{
 		idenInfos: make(map[string]*IdentifierInfo, 0),
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type Scope struct {
-	idenInfos map[string]*IdentifierInfo
 }
 
 func (s *Scope) SetIdentifierInfo(identifier string, info IdentifierInfo) {

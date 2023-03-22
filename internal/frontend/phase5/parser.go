@@ -25,8 +25,8 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func Parse(doc phase4.Document, path ast.Path, tracker frontend.IDiagnosticTracker,
-	keyGen mlglib.IKeyGenerator) (ast.Document, bool) {
+func Parse(doc phase4.Document, path ast.Path, tracker *frontend.DiagnosticTracker,
+	keyGen *mlglib.KeyGenerator) (ast.Document, bool) {
 	p := parser{
 		path:    path,
 		tracker: tracker,
@@ -39,8 +39,8 @@ func Parse(doc phase4.Document, path ast.Path, tracker frontend.IDiagnosticTrack
 
 type parser struct {
 	path    ast.Path
-	tracker frontend.IDiagnosticTracker
-	keyGen  mlglib.IKeyGenerator
+	tracker *frontend.DiagnosticTracker
+	keyGen  *mlglib.KeyGenerator
 }
 
 ///////////////////////////////////////// given ////////////////////////////////////////////////////
@@ -2806,7 +2806,7 @@ func (p *parser) oneOrMoreSpecifyTypes(section phase4.Section) []ast.SpecifyType
 ///////////////////////////////////// support functions ////////////////////////////////////////////
 
 func oneOrMore[T any](p *parser, items []T, position ast.Position,
-	tracker frontend.IDiagnosticTracker) []T {
+	tracker *frontend.DiagnosticTracker) []T {
 	if len(items) == 0 {
 		tracker.Append(p.newError("Expected at least one item", position))
 		return []T{}
@@ -2815,7 +2815,7 @@ func oneOrMore[T any](p *parser, items []T, position ast.Position,
 }
 
 func exactlyOne[T any](p *parser, items []T, defaultItem T, position ast.Position,
-	tracker frontend.IDiagnosticTracker) T {
+	tracker *frontend.DiagnosticTracker) T {
 	if len(items) != 1 {
 		tracker.Append(p.newError("Expected at exactly one item", position))
 	}

@@ -23,10 +23,6 @@ func FormulationNodeToCode(node FormulationNodeType) string {
 	return node.ToCode()
 }
 
-type IFormulationToCode interface {
-	ToCode() string
-}
-
 func (n NameForm) ToCode() string {
 	return n.Text + n.VarArg.ToCode()
 }

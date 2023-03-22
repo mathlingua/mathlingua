@@ -18,10 +18,10 @@ package ast
 
 type FormulationNodeType interface {
 	MlgNodeType
-	IFormulationToCode
 	FormulationNodeType()
 	Start() Position
 	GetFormulationMetaData() *FormulationMetaData
+	ToCode() string
 }
 
 type FormulationMetaData struct {

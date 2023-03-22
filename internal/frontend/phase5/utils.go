@@ -27,7 +27,7 @@ import (
 
 func IdentifySections(
 	sections []phase4.Section,
-	tracker frontend.IDiagnosticTracker,
+	tracker *frontend.DiagnosticTracker,
 	expected ...string) (map[string]phase4.Section, bool) {
 	// the pattern message to use in diagnostic messages
 	pattern := ""

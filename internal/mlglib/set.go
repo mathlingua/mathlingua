@@ -16,24 +16,14 @@
 
 package mlglib
 
-type ISet[T comparable] interface {
-	Size() int
-	Add(value T)
-	Remove(value T)
-	Has(value T) bool
-	Clone() Set[T]
+type Set[T comparable] struct {
+	values map[T]interface{}
 }
 
 func NewSet[T comparable]() *Set[T] {
 	return &Set[T]{
 		values: make(map[T]interface{}),
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type Set[T comparable] struct {
-	values map[T]interface{}
 }
 
 func (s *Set[T]) Size() int {

@@ -95,26 +95,6 @@ type CheckResult struct {
 	Diagnostics []frontend.Diagnostic
 }
 
-type IWorkspace interface {
-	DocumentCount() int
-	Check() CheckResult
-	View() ViewResult
-}
-
-func NewWorkspace(contents map[ast.Path]string) *Workspace {
-	w := Workspace{
-		contents:        contents,
-		signaturesToIds: make(map[string]string, 0),
-		summaries:       make(map[string]ISummaryType, 0),
-		phase4Entries:   make(map[string]phase4.Group, 0),
-		topLevelEntries: make(map[string]ast.TopLevelItemType, 0),
-	}
-	w.initialize()
-	return &w
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 type Workspace struct {
 	// the tracker used to record diagnostics
 	tracker *frontend.DiagnosticTracker
@@ -125,11 +105,23 @@ type Workspace struct {
 	// map signatures to ids
 	signaturesToIds map[string]string
 	// map ids to summaries
-	summaries map[string]ISummaryType
+	summaries map[string]SummaryType
 	// map ids to phase4 parses of top-level entries
 	phase4Entries map[string]phase4.Group
 	// map ids to phase5 top-level types
 	topLevelEntries map[string]ast.TopLevelItemType
+}
+
+func NewWorkspace(contents map[ast.Path]string) *Workspace {
+	w := Workspace{
+		contents:        contents,
+		signaturesToIds: make(map[string]string, 0),
+		summaries:       make(map[string]SummaryType, 0),
+		phase4Entries:   make(map[string]phase4.Group, 0),
+		topLevelEntries: make(map[string]ast.TopLevelItemType, 0),
+	}
+	w.initialize()
+	return &w
 }
 
 func (w *Workspace) initialize() {

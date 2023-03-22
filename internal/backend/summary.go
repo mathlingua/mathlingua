@@ -18,13 +18,13 @@ package backend
 
 import "mathlingua/internal/ast"
 
-type ISummaryType interface {
-	ISummaryType()
+type SummaryType interface {
+	SummaryType()
 }
 
-func (DescribesSummary) ISummaryType() {}
-func (DefinesSummary) ISummaryType()   {}
-func (StatesSummary) ISummaryType()    {}
+func (DescribesSummary) SummaryType() {}
+func (DefinesSummary) SummaryType()   {}
+func (StatesSummary) SummaryType()    {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

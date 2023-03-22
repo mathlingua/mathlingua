@@ -21,6 +21,6 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func ExtractSummaries(root *ast.Root, tracker frontend.IDiagnosticTracker) map[string]ISummaryType {
+func ExtractSummaries(root *ast.Root, tracker *frontend.DiagnosticTracker) map[string]SummaryType {
 	return nil
 }

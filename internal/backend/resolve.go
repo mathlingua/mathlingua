@@ -22,8 +22,8 @@ import (
 	"mathlingua/internal/frontend/phase4"
 )
 
-func ResolveForViews(summaries map[string]ISummaryType,
+func ResolveForViews(summaries map[string]SummaryType,
 	idsToTopLevels map[string]phase4.TopLevelNodeType,
-	root *ast.Root, tracker frontend.IDiagnosticTracker) map[string]ast.TopLevelItemType {
+	root *ast.Root, tracker *frontend.DiagnosticTracker) map[string]ast.TopLevelItemType {
 	return nil
 }

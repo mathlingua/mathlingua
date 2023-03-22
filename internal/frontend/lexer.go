@@ -22,16 +22,10 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-type ILexer interface {
-	HasNext() bool
-	HasNextNext() bool
-	Next() ast.Token
-	Peek() ast.Token
-	PeekPeek() ast.Token
-	Position() ast.Position
-	Snapshot() int
-	Commit(id int)
-	RollBack(id int)
+type Lexer struct {
+	index     int
+	tokens    []ast.Token
+	snapshots *mlglib.Stack[snapshot]
 }
 
 func NewLexer(tokens []ast.Token) *Lexer {
@@ -42,17 +36,9 @@ func NewLexer(tokens []ast.Token) *Lexer {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 type snapshot struct {
 	id         int
 	startIndex int
-}
-
-type Lexer struct {
-	index     int
-	tokens    []ast.Token
-	snapshots mlglib.IStack[snapshot]
 }
 
 func (lex *Lexer) HasNext() bool {

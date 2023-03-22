@@ -28,27 +28,14 @@ import (
 	"strings"
 )
 
-type IMlg interface {
-	/**
-	 * The paths specified are files or directories.  Only `.math` files
-	 * will be processed and for any directory, all `.math` files recursively
-	 * in the directory will be processed.
-	 */
-	Check(paths []string, json bool, dedug bool)
-	View()
-	Version() string
+type Mlg struct {
+	logger *Logger
 }
 
-func NewMlg(logger ILogger) *Mlg {
+func NewMlg(logger *Logger) *Mlg {
 	return &Mlg{
 		logger: logger,
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type Mlg struct {
-	logger ILogger
 }
 
 type diagnosticInfo struct {

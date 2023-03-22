@@ -16,18 +16,12 @@
 
 package mlglib
 
-type IKeyGenerator interface {
-	Next() int
+type KeyGenerator struct {
+	next int
 }
 
 func NewKeyGenerator() *KeyGenerator {
 	return &KeyGenerator{next: 1}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type KeyGenerator struct {
-	next int
 }
 
 func (kg *KeyGenerator) Next() int {

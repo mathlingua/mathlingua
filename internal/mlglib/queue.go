@@ -18,23 +18,14 @@ package mlglib
 
 import "fmt"
 
-type IQueue[T any] interface {
-	IsEmpty() bool
-	Peek() T
-	Pop() T
-	Push(value T)
+type Queue[T any] struct {
+	data []T
 }
 
 func NewQueue[T any]() *Queue[T] {
 	return &Queue[T]{
 		data: make([]T, 0),
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type Queue[T any] struct {
-	data []T
 }
 
 func (s *Queue[T]) IsEmpty() bool {

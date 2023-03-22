@@ -22,25 +22,15 @@ import (
 	"github.com/fatih/color"
 )
 
-type ILogger interface {
-	Error(text string)
-	Warning(text string)
-	Failure(text string)
-	Success(text string)
-	Log(text string)
-}
+type Logger struct{}
 
 func NewLogger() *Logger {
 	return &Logger{}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 var boldGreenColor = color.New(color.FgGreen, color.Bold)
 var boldRedColor = color.New(color.FgRed, color.Bold)
 var boldYellowColor = color.New(color.FgYellow, color.Bold)
-
-type Logger struct{}
 
 func boldRed(text string) string {
 	return boldRedColor.Sprint(text)

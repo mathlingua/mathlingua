@@ -21,6 +21,6 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func ExtractSummaries(root *ast.Root, tracker *frontend.DiagnosticTracker) map[string]SummaryType {
+func Summarize(node ast.TopLevelItemType, tracker *frontend.DiagnosticTracker) SummaryType {
 	return nil
 }

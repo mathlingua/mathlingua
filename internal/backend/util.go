@@ -16,9 +16,36 @@
 
 package backend
 
-import "mathlingua/internal/ast"
+import (
+	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend/phase4"
+)
 
-func GetId(node ast.TopLevelItemType) (string, bool) {
+func GetPhase4MetaId(node phase4.TopLevelNodeType) (string, bool) {
+	switch tl := node.(type) {
+	case phase4.Group:
+		found := false
+		metaId := ""
+		for _, sec := range tl.Sections {
+			if sec.Name == ast.UpperIdName {
+				args := sec.Args
+				if len(args) > 0 {
+					text, ok := args[0].Arg.(phase4.TextArgumentData)
+					if ok {
+						found = true
+						metaId = text.Text
+						break
+					}
+				}
+			}
+		}
+		return metaId, found
+	default:
+		return "", false
+	}
+}
+
+func GetAstMetaId(node ast.TopLevelItemType) (string, bool) {
 	switch tl := node.(type) {
 	case *ast.DefinesGroup:
 		metaId := tl.MetaId

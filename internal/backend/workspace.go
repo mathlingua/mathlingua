@@ -109,7 +109,7 @@ type Workspace struct {
 	// map ids to summaries
 	summaries map[string]SummaryType
 	// map ids to phase4 parses of top-level entries
-	phase4Entries map[string]phase4.Group
+	phase4Entries map[string]phase4.TopLevelNodeType
 	// map ids to phase5 top-level types
 	topLevelEntries map[string]ast.TopLevelItemType
 }
@@ -119,7 +119,7 @@ func NewWorkspace(contents map[ast.Path]string) *Workspace {
 		contents:        make(map[ast.Path]string, 0),
 		signaturesToIds: make(map[string]string, 0),
 		summaries:       make(map[string]SummaryType, 0),
-		phase4Entries:   make(map[string]phase4.Group, 0),
+		phase4Entries:   make(map[string]phase4.TopLevelNodeType, 0),
 		topLevelEntries: make(map[string]ast.TopLevelItemType, 0),
 	}
 	w.initialize(contents)
@@ -156,7 +156,7 @@ func (w *Workspace) initializeSignaturesToIds() {
 	for _, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
 			sig, sigOk := GetSignatureStringFromTopLevel(item)
-			id, idOk := GetId(item)
+			id, idOk := GetAstMetaId(item)
 			if sigOk && idOk {
 				w.signaturesToIds[sig] = id
 			}
@@ -165,12 +165,37 @@ func (w *Workspace) initializeSignaturesToIds() {
 }
 
 func (w *Workspace) initializeSummaries() {
+	for _, doc := range w.astRoot.Documents {
+		for _, item := range doc.Items {
+			id, idOk := GetAstMetaId(item)
+			summary := Summarize(item, w.tracker)
+			if idOk {
+				w.summaries[id] = summary
+			}
+		}
+	}
 }
 
 func (w *Workspace) initializePhase4Entries() {
+	for _, doc := range w.phase4Root.Documents {
+		for _, item := range doc.Nodes {
+			id, idOk := GetPhase4MetaId(item)
+			if idOk {
+				w.phase4Entries[id] = item
+			}
+		}
+	}
 }
 
 func (w *Workspace) initializeTopLevelEntries() {
+	for _, doc := range w.astRoot.Documents {
+		for _, item := range doc.Items {
+			id, idOk := GetAstMetaId(item)
+			if idOk {
+				w.topLevelEntries[id] = item
+			}
+		}
+	}
 }
 
 func (w *Workspace) normalizeAst() {

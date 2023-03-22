@@ -20,6 +20,34 @@ import (
 	"mathlingua/internal/ast"
 )
 
+func GetSignatureStringFromTopLevel(topLevel ast.TopLevelItemType) (string, bool) {
+	switch tl := topLevel.(type) {
+	case *ast.DefinesGroup:
+		return GetSignatureStringFromId(tl.Id)
+	case *ast.DescribesGroup:
+		return GetSignatureStringFromId(tl.Id)
+	case *ast.StatesGroup:
+		return GetSignatureStringFromId(tl.Id)
+	case *ast.AxiomGroup:
+		if tl.Id == nil {
+			return "", false
+		}
+		return GetSignatureStringFromId(*tl.Id)
+	case *ast.ConjectureGroup:
+		if tl.Id == nil {
+			return "", false
+		}
+		return GetSignatureStringFromId(*tl.Id)
+	case *ast.TheoremGroup:
+		if tl.Id == nil {
+			return "", false
+		}
+		return GetSignatureStringFromId(*tl.Id)
+	default:
+		return "", false
+	}
+}
+
 func GetSignatureStringFromId(id ast.IdItem) (string, bool) {
 	root := id.Root
 	if root == nil {

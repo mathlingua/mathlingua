@@ -153,6 +153,15 @@ func (w *Workspace) View() ViewResult {
 }
 
 func (w *Workspace) initializeSignaturesToIds() {
+	for _, doc := range w.astRoot.Documents {
+		for _, item := range doc.Items {
+			sig, sigOk := GetSignatureStringFromTopLevel(item)
+			id, idOk := GetId(item)
+			if sigOk && idOk {
+				w.signaturesToIds[sig] = id
+			}
+		}
+	}
 }
 
 func (w *Workspace) initializeSummaries() {

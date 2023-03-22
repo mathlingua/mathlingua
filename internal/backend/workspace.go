@@ -96,12 +96,12 @@ type CheckResult struct {
 }
 
 type Workspace struct {
+	// map paths to path contents
+	contents map[ast.Path]string
 	// the tracker used to record diagnostics
 	tracker *frontend.DiagnosticTracker
 	// the root of the phase5 parse tree generated
 	root ast.Root
-	// map paths to path contents
-	contents map[ast.Path]string
 	// map signatures to ids
 	signaturesToIds map[string]string
 	// map ids to summaries
@@ -114,21 +114,26 @@ type Workspace struct {
 
 func NewWorkspace(contents map[ast.Path]string) *Workspace {
 	w := Workspace{
-		contents:        contents,
+		contents:        make(map[ast.Path]string, 0),
 		signaturesToIds: make(map[string]string, 0),
 		summaries:       make(map[string]SummaryType, 0),
 		phase4Entries:   make(map[string]phase4.Group, 0),
 		topLevelEntries: make(map[string]ast.TopLevelItemType, 0),
 	}
-	w.initialize()
+	w.initialize(contents)
 	return &w
 }
 
-func (w *Workspace) initialize() {
+func (w *Workspace) initialize(contents map[ast.Path]string) {
+	w.contents = contents
 	w.tracker = frontend.NewDiagnosticTracker()
 	w.root = ParseRoot(w.contents, w.tracker)
-	Normalize(&w.root, w.tracker)
-	PopulateScopes(&w.root, w.tracker)
+	w.normalizeAst()
+	w.populateScopes()
+	w.initializeSignaturesToIds()
+	w.initializeSummaries()
+	w.initializePhase4Entries()
+	w.initializeTopLevelEntries()
 }
 
 func (w *Workspace) DocumentCount() int {
@@ -136,15 +141,6 @@ func (w *Workspace) DocumentCount() int {
 }
 
 func (w *Workspace) Check() CheckResult {
-	/*
-		tracker := frontend.NewDiagnosticTracker()
-		root := ParseRoot(w.contents, tracker)
-		Normalize(&root, tracker)
-		PopulateScopes(&root, tracker)
-		idsToTopLevels := IdsToTopLevelItems(&root)
-		summaries := ExtractSummaries(&root, tracker)
-		ResolveForViews(summaries, idsToTopLevels, &root, tracker)
-	*/
 	return CheckResult{
 		Diagnostics: w.tracker.Diagnostics(),
 	}
@@ -154,6 +150,22 @@ func (w *Workspace) View() ViewResult {
 	return ViewResult{}
 }
 
-func IdsToTopLevelItems(root *ast.Root) map[string]phase4.TopLevelNodeType {
-	return nil
+func (w *Workspace) initializeSignaturesToIds() {
+}
+
+func (w *Workspace) initializeSummaries() {
+}
+
+func (w *Workspace) initializePhase4Entries() {
+}
+
+func (w *Workspace) initializeTopLevelEntries() {
+}
+
+func (w *Workspace) normalizeAst() {
+	Normalize(&w.root, w.tracker)
+}
+
+func (w *Workspace) populateScopes() {
+	PopulateScopes(&w.root, w.tracker)
 }

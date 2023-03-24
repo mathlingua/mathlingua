@@ -21,6 +21,27 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func Summarize(node ast.TopLevelItemType, tracker *frontend.DiagnosticTracker) SummaryType {
+func Summarize(node ast.TopLevelItemType, tracker *frontend.DiagnosticTracker) (SummaryType, bool) {
+	switch entry := node.(type) {
+	case *ast.DescribesGroup:
+		return SummarizeDescribes(entry), true
+	case *ast.DefinesGroup:
+		return SummarizeDefines(entry), true
+	case *ast.StatesGroup:
+		return SummarizeStates(entry), true
+	default:
+		return nil, false
+	}
+}
+
+func SummarizeDescribes(describes *ast.DescribesGroup) *DescribesSummary {
+	return nil
+}
+
+func SummarizeDefines(defines *ast.DefinesGroup) *DefinesSummary {
+	return nil
+}
+
+func SummarizeStates(states *ast.StatesGroup) *StatesSummary {
 	return nil
 }

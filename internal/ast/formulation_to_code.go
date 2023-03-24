@@ -167,7 +167,7 @@ func (n MetaKinds) ToCode() string {
 }
 
 func (n StructuralColonEqualsForm) ToCode() string {
-	return n.Lhs.ToCode() + " is " + n.Rhs.ToCode()
+	return n.Lhs.ToCode() + " := " + n.Rhs.ToCode()
 }
 
 func (n ExpressionColonEqualsItem) ToCode() string {

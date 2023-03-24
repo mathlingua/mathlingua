@@ -73,6 +73,7 @@ type PostfixStaticPattern struct {
 }
 
 type CommandStaticPattern struct {
+	Signatures  string
 	CurlyArgs   []StaticPatternType
 	ParenArgs   []StaticPatternType
 	NamedGroups []NamedGroupStaticPattern

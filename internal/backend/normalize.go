@@ -18,8 +18,6 @@ package backend
 
 import (
 	"fmt"
-	"mathlingua/internal/ast"
-	"mathlingua/internal/frontend"
 	"strings"
 
 	"github.com/google/uuid"
@@ -106,14 +104,4 @@ func AppendMetaIds(startText string) (string, error) {
 	}
 
 	return endText, nil
-}
-
-// Normalizes the given AST node in-place, which includes:
-//   - update any place where an identifier is introduced to ensure it has any input and
-//     output identifiers specified.  That is if `f(x)` is introduced, it is replaced with
-//     something like `f(x) := y` where the output has an identifier.  Also, if `(a, b, c)`
-//     is introduced, then it replaced with something like `X := (a, b, c)` where an
-//     identifier `X` for the tuple itself is introduced.
-//   - Any alias in formulations are expanded so that aliases are not needed anymore.
-func Normalize[T ast.MlgNodeType](node T, tracker *frontend.DiagnosticTracker) {
 }

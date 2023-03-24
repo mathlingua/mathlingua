@@ -20,11 +20,24 @@ import "mathlingua/internal/ast"
 
 type SummaryType interface {
 	SummaryType()
+	GetExpAliasSummaries() []ExpAliasSummaryType
 }
 
 func (DescribesSummary) SummaryType() {}
 func (DefinesSummary) SummaryType()   {}
 func (StatesSummary) SummaryType()    {}
+
+func (s *DescribesSummary) GetExpAliasSummaries() []ExpAliasSummaryType {
+	return s.ExpAliases
+}
+
+func (s *DefinesSummary) GetExpAliasSummaries() []ExpAliasSummaryType {
+	return s.ExpAliases
+}
+
+func (s *StatesSummary) GetExpAliasSummaries() []ExpAliasSummaryType {
+	return s.ExpAliases
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -65,7 +78,26 @@ type StatesSummary struct {
 	Called      []CalledSummary
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type AliasSummaryType interface {
+	AliasSummaryType()
+}
+
+func (SpecAliasSummary) AliasSummaryType() {}
+
+func (InfixExpAliasSummary) AliasSummaryType()          {}
+func (PrefixExpAliasSummary) AliasSummaryType()         {}
+func (PostfixExpAliasSummary) AliasSummaryType()        {}
+func (FunctionExpAliasSummary) AliasSummaryType()       {}
+func (CommandExpAliasSummary) AliasSummaryType()        {}
+func (MemberNameExpAliasSummary) AliasSummaryType()     {}
+func (MemberFunctionExpAliasSummary) AliasSummaryType() {}
+func (MemberInfixExpAliasSummary) AliasSummaryType()    {}
+func (MemberPrefixExpAliasSummary) AliasSummaryType()   {}
+func (MemberPostfixExpAliasSummary) AliasSummaryType()  {}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type SpecAliasSummaryRhsType interface {
 	SpecAliasSummaryRhsType()
@@ -82,6 +114,7 @@ type SpecAliasSummary struct {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type ExpAliasSummaryType interface {
+	AliasSummaryType
 	ExpAliasSummaryType()
 }
 

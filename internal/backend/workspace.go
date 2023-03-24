@@ -17,9 +17,11 @@
 package backend
 
 import (
+	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/phase4"
+	"mathlingua/internal/mlglib"
 	"mathlingua/internal/server"
 )
 
@@ -168,8 +170,8 @@ func (w *Workspace) initializeSummaries() {
 	for _, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
 			id, idOk := GetAstMetaId(item)
-			summary := Summarize(item, w.tracker)
-			if idOk {
+			summary, summaryOk := Summarize(item, w.tracker)
+			if idOk && summaryOk {
 				w.summaries[id] = summary
 			}
 		}
@@ -198,10 +200,140 @@ func (w *Workspace) initializeTopLevelEntries() {
 	}
 }
 
+// Normalizes the given AST node in-place, which includes:
+//   - update any place where an identifier is introduced to ensure it has any input and
+//     output identifiers specified.  That is if `f(x)` is introduced, it is replaced with
+//     something like `f(x) := y` where the output has an identifier.  Also, if `(a, b, c)`
+//     is introduced, then it replaced with something like `X := (a, b, c)` where an
+//     identifier `X` for the tuple itself is introduced.
+//   - Any alias in formulations are expanded so that aliases are not needed anymore.
 func (w *Workspace) normalizeAst() {
-	Normalize(w.astRoot, w.tracker)
+	w.includeMissingIdentifiers()
+	w.expandAliases()
 }
 
 func (w *Workspace) populateScopes() {
 	PopulateScopes(w.astRoot, w.tracker)
+}
+
+// Replace `f(x)` with `f(x) := var'#'` but do not change `f(x) := y`
+// Replace `(a, b)` with `var'#' := (a, b)` but do not change `X := (a, b)`
+func replaceMissingIdentifier(target ast.Target, keyGen *mlglib.KeyGenerator) ast.Target {
+	switch f := target.Root.(type) {
+	case *ast.FunctionForm:
+		return ast.Target{
+			Root: &ast.StructuralColonEqualsForm{
+				Lhs: f,
+				Rhs: &ast.NameForm{
+					Text:            fmt.Sprintf("var'%d'", keyGen.Next()),
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg: ast.VarArgData{
+						IsVarArg: false,
+					},
+				},
+			},
+		}
+	case *ast.TupleForm:
+		return ast.Target{
+			Root: &ast.StructuralColonEqualsForm{
+				Lhs: &ast.NameForm{
+					Text:            fmt.Sprintf("var'%d'", keyGen.Next()),
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg: ast.VarArgData{
+						IsVarArg: false,
+					},
+				},
+				Rhs: f,
+			},
+		}
+	}
+	return target
+}
+
+func includeMissingIdentifiersInTargets(targets []ast.Target, keyGen *mlglib.KeyGenerator) {
+	for i := range targets {
+		targets[i] = replaceMissingIdentifier(targets[i], keyGen)
+	}
+}
+
+func includeMissingIdentifiersAt(node ast.MlgNodeType, keyGen *mlglib.KeyGenerator) {
+	switch n := node.(type) {
+	case *ast.DefinesGroup:
+		defines := &n.Defines
+		defines.Defines = replaceMissingIdentifier(defines.Defines, keyGen)
+		if n.With != nil {
+			includeMissingIdentifiersInTargets(n.With.With, keyGen)
+		}
+		if n.Using != nil {
+			includeMissingIdentifiersInTargets(n.Using.Using, keyGen)
+		}
+	case *ast.DescribesGroup:
+		describes := &n.Describes
+		describes.Describes = replaceMissingIdentifier(describes.Describes, keyGen)
+		if n.With != nil {
+			includeMissingIdentifiersInTargets(n.With.With, keyGen)
+		}
+		if n.Using != nil {
+			includeMissingIdentifiersInTargets(n.Using.Using, keyGen)
+		}
+	case *ast.AxiomGroup:
+		if n.Given != nil {
+			includeMissingIdentifiersInTargets(n.Given.Given, keyGen)
+		}
+	case *ast.ConjectureGroup:
+		if n.Given != nil {
+			includeMissingIdentifiersInTargets(n.Given.Given, keyGen)
+		}
+	case *ast.TheoremGroup:
+		if n.Given != nil {
+			includeMissingIdentifiersInTargets(n.Given.Given, keyGen)
+		}
+	case *ast.ForAllGroup:
+		includeMissingIdentifiersInTargets(n.ForAll.Targets, keyGen)
+	case *ast.ExistsGroup:
+		includeMissingIdentifiersInTargets(n.Exists.Targets, keyGen)
+	case *ast.ExistsUniqueGroup:
+		includeMissingIdentifiersInTargets(n.ExistsUnique.Targets, keyGen)
+	case *ast.ConnectionGroup:
+		if n.Using != nil {
+			includeMissingIdentifiersInTargets(n.Using.Using, keyGen)
+		}
+	}
+	node.ForEach(func(subNode ast.MlgNodeType) {
+		includeMissingIdentifiersAt(subNode, keyGen)
+	})
+}
+
+func (w *Workspace) includeMissingIdentifiers() {
+	includeMissingIdentifiersAt(w.astRoot, mlglib.NewKeyGenerator())
+}
+
+func expandAliasesAtWithAliases(node ast.MlgNodeType, aliases []ExpAliasSummaryType) {
+	node.ForEach(func(subNode ast.MlgNodeType) {
+		for _, alias := range aliases {
+			ExpandAliasInline(subNode, alias)
+		}
+	})
+}
+
+func expandAliasesAt(node ast.MlgNodeType, summaries map[string]SummaryType) {
+	switch entry := node.(type) {
+	case *ast.DefinesGroup:
+		metaId, ok := GetAstMetaId(entry)
+		if ok {
+			summary, ok := summaries[metaId]
+			if ok {
+				expandAliasesAtWithAliases(node, summary.GetExpAliasSummaries())
+			}
+		}
+	}
+	node.ForEach(func(n ast.MlgNodeType) {
+		expandAliasesAt(n, summaries)
+	})
+}
+
+func (w *Workspace) expandAliases() {
+	expandAliasesAt(w.astRoot, w.summaries)
 }

@@ -22,19 +22,12 @@ type ConstraintType interface {
 	ConstraintType()
 }
 
-func (IsConstraint) ConstraintType()      {}
-func (ExtendsConstraint) ConstraintType() {}
-func (SpecConstraint) ConstraintType()    {}
+func (IsConstraint) ConstraintType()   {}
+func (SpecConstraint) ConstraintType() {}
 
 type IsConstraint struct {
 	Targets    []StaticPatternType
 	Signatures []string
-}
-
-type ExtendsConstraint struct {
-	Targets       []StaticPatternType
-	ConditionType string
-	Signatures    []string
 }
 
 type SpecConstraint struct {

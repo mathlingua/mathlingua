@@ -22,22 +22,22 @@ type StaticPatternType interface {
 	StaticPatternType()
 }
 
-func (NameColonEqualsPattern) StaticPatternType()      {}
-func (FunctionColonEqualsPattern) StaticPatternType()  {}
-func (NameStaticPattern) StaticPatternType()           {}
-func (FunctionStaticPattern) StaticPatternType()       {}
-func (TupleStaticPattern) StaticPatternType()          {}
-func (SetStaticPattern) StaticPatternType()            {}
-func (InfixStaticPattern) StaticPatternType()          {}
-func (PrefixStaticPattern) StaticPatternType()         {}
-func (PostfixStaticPattern) StaticPatternType()        {}
-func (CommandStaticPattern) StaticPatternType()        {}
-func (MemberNameStaticPattern) StaticPatternType()     {}
-func (MemberFunctionStaticPattern) StaticPatternType() {}
-func (MemberInfixStaticPattern) StaticPatternType()    {}
-func (MemberPrefixStaticPattern) StaticPatternType()   {}
-func (MemberPostfixStaticPattern) StaticPatternType()  {}
-func (SpecStaticPattern) StaticPatternType()           {}
+func (NameColonEqualsPatternPattern) StaticPatternType()  {}
+func (FunctionColonEqualsNamePattern) StaticPatternType() {}
+func (NameStaticPattern) StaticPatternType()              {}
+func (FunctionStaticPattern) StaticPatternType()          {}
+func (TupleStaticPattern) StaticPatternType()             {}
+func (SetStaticPattern) StaticPatternType()               {}
+func (InfixStaticPattern) StaticPatternType()             {}
+func (PrefixStaticPattern) StaticPatternType()            {}
+func (PostfixStaticPattern) StaticPatternType()           {}
+func (CommandStaticPattern) StaticPatternType()           {}
+func (MemberNameStaticPattern) StaticPatternType()        {}
+func (MemberFunctionStaticPattern) StaticPatternType()    {}
+func (MemberInfixStaticPattern) StaticPatternType()       {}
+func (MemberPrefixStaticPattern) StaticPatternType()      {}
+func (MemberPostfixStaticPattern) StaticPatternType()     {}
+func (SpecStaticPattern) StaticPatternType()              {}
 
 type NameColonEqualsPatternPattern struct {
 	Lhs string

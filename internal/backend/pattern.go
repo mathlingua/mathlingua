@@ -22,6 +22,8 @@ type StaticPatternType interface {
 	StaticPatternType()
 }
 
+func (NameColonEqualsPattern) StaticPatternType()      {}
+func (FunctionColonEqualsPattern) StaticPatternType()  {}
 func (NameStaticPattern) StaticPatternType()           {}
 func (FunctionStaticPattern) StaticPatternType()       {}
 func (TupleStaticPattern) StaticPatternType()          {}
@@ -36,6 +38,16 @@ func (MemberInfixStaticPattern) StaticPatternType()    {}
 func (MemberPrefixStaticPattern) StaticPatternType()   {}
 func (MemberPostfixStaticPattern) StaticPatternType()  {}
 func (SpecStaticPattern) StaticPatternType()           {}
+
+type NameColonEqualsPatternPattern struct {
+	Lhs string
+	Rhs StaticPatternType
+}
+
+type FunctionColonEqualsNamePattern struct {
+	Lhs FunctionStaticPattern
+	Rhs string
+}
 
 type NameStaticPattern struct {
 	Name string

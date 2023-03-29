@@ -43,9 +43,9 @@ func (s *StatesSummary) GetExpAliasSummaries() []ExpAliasSummaryType {
 
 type DescribesSummary struct {
 	DefScope    *ast.Scope
-	Input       StaticPatternType
-	Output      StaticPatternType
-	Usings      []StaticPatternType
+	Input       PatternType
+	Output      PatternType
+	Usings      []PatternType
 	When        []ConstraintType
 	Extends     []ConstraintType
 	ExpAliases  []ExpAliasSummaryType
@@ -56,9 +56,9 @@ type DescribesSummary struct {
 
 type DefinesSummary struct {
 	DefScope    *ast.Scope
-	Input       StaticPatternType
-	Output      StaticPatternType
-	Usings      []StaticPatternType
+	Input       PatternType
+	Output      PatternType
+	Usings      []PatternType
 	When        []ConstraintType
 	Means       []ConstraintType
 	ExpAliases  []ExpAliasSummaryType
@@ -69,9 +69,9 @@ type DefinesSummary struct {
 
 type StatesSummary struct {
 	DefScope    *ast.Scope
-	Input       StaticPatternType
-	Output      StaticPatternType
-	Usings      []StaticPatternType
+	Input       PatternType
+	Output      PatternType
+	Usings      []PatternType
 	ExpAliases  []ExpAliasSummaryType
 	SpecAliases []SpecAliasSummary
 	Written     []WrittenSummary
@@ -107,7 +107,7 @@ func (IsConstraint) SpecAliasSummaryRhsType()   {}
 func (SpecConstraint) SpecAliasSummaryRhsType() {}
 
 type SpecAliasSummary struct {
-	Lhs SpecStaticPattern
+	Lhs SpecAliasPattern
 	Rhs SpecAliasSummaryRhsType
 }
 
@@ -132,65 +132,65 @@ func (MemberPostfixExpAliasSummary) ExpAliasSummaryType()  {}
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type InfixExpAliasSummary struct {
-	Lhs InfixStaticPattern
+	Lhs InfixOperatorFormPattern
 	Rhs ast.ExpressionType
 }
 
 type PrefixExpAliasSummary struct {
-	Lhs PrefixStaticPattern
+	Lhs PrefixOperatorFormPattern
 	Rhs ast.ExpressionType
 }
 
 type PostfixExpAliasSummary struct {
-	Lhs PostfixStaticPattern
+	Lhs PostfixOperatorFormPattern
 	Rhs ast.ExpressionType
 }
 
 type FunctionExpAliasSummary struct {
-	Lhs FunctionStaticPattern
+	Lhs FunctionFormPattern
 	Rhs ast.ExpressionType
 }
 
 type CommandExpAliasSummary struct {
-	Lsh CommandStaticPattern
+	Lsh CommandPattern
 	Rhs ast.ExpressionType
 }
 
 type MemberNameExpAliasSummary struct {
-	Lsh MemberNameStaticPattern
+	Lsh MemberNamePattern
 	Rhs ast.ExpressionType
 }
 
 type MemberFunctionExpAliasSummary struct {
-	Lsh MemberFunctionStaticPattern
+	Lsh MemberFunctionPattern
 	Rhs ast.ExpressionType
 }
 
 type MemberInfixExpAliasSummary struct {
-	Lsh MemberInfixStaticPattern
+	Lsh MemberInfixPattern
 	Rhs ast.ExpressionType
 }
 
 type MemberPrefixExpAliasSummary struct {
-	Lhs MemberPrefixStaticPattern
+	Lhs MemberPrefixPattern
 	Rhs ast.ExpressionType
 }
 
 type MemberPostfixExpAliasSummary struct {
-	Lsh MemberPostfixStaticPattern
+	Lsh MemberPostfixPattern
 	Rhs ast.ExpressionType
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type CalledSummary struct {
-	From   StaticPatternType
+	From   PatternType
 	Called string
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type WrittenSummary struct {
-	From    StaticPatternType
+	From    PatternType
 	Written string
 }

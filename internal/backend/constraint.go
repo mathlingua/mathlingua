@@ -26,12 +26,12 @@ func (IsConstraint) ConstraintType()   {}
 func (SpecConstraint) ConstraintType() {}
 
 type IsConstraint struct {
-	Target       StaticPatternType
+	Target       PatternType
 	SignatureExp ast.ExpressionType
 }
 
 type SpecConstraint struct {
-	Target StaticPatternType
+	Target PatternType
 	Name   string
 	Exp    ast.ExpressionType
 }

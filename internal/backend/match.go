@@ -28,9 +28,9 @@ import (
 //    (This will be used for performing resolution of summaries to match their exact usage.)
 // 2. Given an expression alias or a spec alias and an expression (assuming it has already been
 //    determined, using type information, that the alias is what  should be used for the expression)
-//    determine if the alias's static input pattern matches the expression, and map parts
+//    determine if the alias's  input pattern matches the expression, and map parts
 //    of the expression to the names in the input pattern.
-// 3. Given the left-hand-side, input static pattern, of an expression or spec alias, map the
+// 3. Given the left-hand-side, input  pattern, of an expression or spec alias, map the
 //    names in the pattern to expression in the right-hand-side of the alias.
 // Note: 2 and 3 will be used together to expand aliases inline in expressions.
 
@@ -40,7 +40,7 @@ type MatchResult struct {
 	MatchMakesSense bool
 }
 
-func MatchExpToNames(pattern StaticPatternType, exp ast.ExpressionType) (MatchResult, bool) {
+func MatchExpToNames(pattern PatternType, exp ast.ExpressionType) (MatchResult, bool) {
 	return MatchResult{}, false
 }
 

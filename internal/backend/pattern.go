@@ -16,113 +16,268 @@
 
 package backend
 
+import "mathlingua/internal/ast"
+
 // A pattern describes the shape of inputs to a Defines, Describes, States
 // provides, expression alias, or spec alias.
-type StaticPatternType interface {
-	StaticPatternType()
+type PatternType interface {
+	PatternType()
 }
 
-func (NameColonEqualsPatternPattern) StaticPatternType()  {}
-func (FunctionColonEqualsNamePattern) StaticPatternType() {}
-func (NameStaticPattern) StaticPatternType()              {}
-func (FunctionStaticPattern) StaticPatternType()          {}
-func (TupleStaticPattern) StaticPatternType()             {}
-func (SetStaticPattern) StaticPatternType()               {}
-func (InfixStaticPattern) StaticPatternType()             {}
-func (PrefixStaticPattern) StaticPatternType()            {}
-func (PostfixStaticPattern) StaticPatternType()           {}
-func (CommandStaticPattern) StaticPatternType()           {}
-func (MemberNameStaticPattern) StaticPatternType()        {}
-func (MemberFunctionStaticPattern) StaticPatternType()    {}
-func (MemberInfixStaticPattern) StaticPatternType()       {}
-func (MemberPrefixStaticPattern) StaticPatternType()      {}
-func (MemberPostfixStaticPattern) StaticPatternType()     {}
-func (SpecStaticPattern) StaticPatternType()              {}
+func (NameColonEqualsPatternPattern) PatternType()  {}
+func (FunctionColonEqualsNamePattern) PatternType() {}
+func (NameFormPattern) PatternType()                {}
+func (FunctionFormPattern) PatternType()            {}
+func (TupleFormPattern) PatternType()               {}
+func (ConditionalSetFormPattern) PatternType()      {}
+func (InfixOperatorFormPattern) PatternType()       {}
+func (PrefixOperatorFormPattern) PatternType()      {}
+func (PostfixOperatorFormPattern) PatternType()     {}
+func (CommandPattern) PatternType()                 {}
+func (MemberNamePattern) PatternType()              {}
+func (MemberFunctionPattern) PatternType()          {}
+func (MemberInfixPattern) PatternType()             {}
+func (MemberPrefixPattern) PatternType()            {}
+func (MemberPostfixPattern) PatternType()           {}
+func (SpecAliasPattern) PatternType()               {}
 
 type NameColonEqualsPatternPattern struct {
 	Lhs string
-	Rhs StaticPatternType
+	Rhs PatternType
 }
 
 type FunctionColonEqualsNamePattern struct {
-	Lhs FunctionStaticPattern
+	Lhs FunctionFormPattern
 	Rhs string
 }
 
-type NameStaticPattern struct {
-	Name string
+type FormPatternType interface {
+	PatternType
+	FormPatternType()
 }
 
-type FunctionStaticPattern struct {
-	Name   string
-	Inputs []StaticPatternType
-	Output StaticPatternType
+func (NameFormPattern) FormPatternType()            {}
+func (FunctionFormPattern) FormPatternType()        {}
+func (TupleFormPattern) FormPatternType()           {}
+func (ConditionalSetFormPattern) FormPatternType()  {}
+func (InfixOperatorFormPattern) FormPatternType()   {}
+func (PrefixOperatorFormPattern) FormPatternType()  {}
+func (PostfixOperatorFormPattern) FormPatternType() {}
+
+type NameFormPattern struct {
+	Text            string
+	IsStropped      bool
+	HasQuestionMark bool
+	VarArg          VarArgPatternData
 }
 
-type TupleStaticPattern struct {
-	Items []StaticPatternType
+type FunctionFormPattern struct {
+	Target NameFormPattern
+	Params []NameFormPattern
+	VarArg VarArgPatternData
 }
 
-type SetStaticPattern struct {
-	Target    StaticPatternType
-	Condition StaticPatternType
+type InfixOperatorFormPattern struct {
+	Operator NameFormPattern
+	Lhs      FormPatternType
+	Rhs      FormPatternType
 }
 
-type InfixStaticPattern struct {
-	Name string
-	Lhs  StaticPatternType
-	Rhs  StaticPatternType
+type PrefixOperatorFormPattern struct {
+	Operator NameFormPattern
+	Param    FormPatternType
 }
 
-type PrefixStaticPattern struct {
-	Name string
-	Arg  StaticPatternType
+type PostfixOperatorFormPattern struct {
+	Operator NameFormPattern
+	Param    FormPatternType
 }
 
-type PostfixStaticPattern struct {
-	Name string
-	Arg  StaticPatternType
+type TupleFormPattern struct {
+	Params []FormPatternType
+	VarArg VarArgPatternData
 }
 
-type CommandStaticPattern struct {
+type ConditionalSetFormPattern struct {
+	Target FormPatternType
+	VarArg VarArgPatternData
+}
+
+type VarArgPatternData struct {
+	IsVarArg     bool
+	VarArgNames  []string
+	VarArgBounds []string
+}
+
+type CommandPattern struct {
 	Signatures  string
-	CurlyArgs   []StaticPatternType
-	ParenArgs   []StaticPatternType
-	NamedGroups []NamedGroupStaticPattern
+	CurlyArgs   []PatternType
+	ParenArgs   []PatternType
+	NamedGroups []NamedGroupPattern
 }
 
-type NamedGroupStaticPattern struct {
+type NamedGroupPattern struct {
 	Name string
-	Args []StaticPatternType
+	Args []PatternType
 }
 
-type MemberNameStaticPattern struct {
+type MemberNamePattern struct {
 	Target string
-	Member NameStaticPattern
+	Member NameFormPattern
 }
 
-type MemberFunctionStaticPattern struct {
+type MemberFunctionPattern struct {
 	Target string
-	Member FunctionStaticPattern
+	Member FunctionFormPattern
 }
 
-type MemberInfixStaticPattern struct {
+type MemberInfixPattern struct {
 	Target string
-	Member InfixStaticPattern
+	Member InfixOperatorFormPattern
 }
 
-type MemberPrefixStaticPattern struct {
+type MemberPrefixPattern struct {
 	Target string
-	Member PrefixStaticPattern
+	Member PrefixOperatorFormPattern
 }
 
-type MemberPostfixStaticPattern struct {
+type MemberPostfixPattern struct {
 	Target string
-	Member PostfixStaticPattern
+	Member PostfixOperatorFormPattern
 }
 
-type SpecStaticPattern struct {
-	Lhs  StaticPatternType
+type SpecAliasPattern struct {
+	Lhs  PatternType
 	Name string
-	Rhs  StaticPatternType
+	Rhs  PatternType
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func ToFormPattern(item ast.StructuralFormType) FormPatternType {
+	return nil
+}
+
+func toFormPatterns(items []ast.StructuralFormType) []FormPatternType {
+	patterns := make([]FormPatternType, 0)
+	for _, item := range items {
+		patterns = append(patterns, ToFormPattern(item))
+	}
+	return patterns
+}
+
+func ToVarArgPatternData(data ast.VarArgData) VarArgPatternData {
+	varArgNames := make([]string, 0)
+	varArgNames = append(varArgNames, data.VarArgNames...)
+
+	varArgBounds := make([]string, 0)
+	varArgBounds = append(varArgBounds, data.VarArgBounds...)
+
+	return VarArgPatternData{
+		IsVarArg:     data.IsVarArg,
+		VarArgNames:  varArgNames,
+		VarArgBounds: varArgBounds,
+	}
+}
+
+func ToNameFormPattern(form ast.NameForm) NameFormPattern {
+	return NameFormPattern{
+		Text:            form.Text,
+		IsStropped:      form.IsStropped,
+		HasQuestionMark: form.HasQuestionMark,
+		VarArg:          ToVarArgPatternData(form.VarArg),
+	}
+}
+
+func toNameFormPatterns(params []ast.NameForm) []NameFormPattern {
+	result := make([]NameFormPattern, 0)
+	for _, p := range params {
+		result = append(result, ToNameFormPattern(p))
+	}
+	return result
+}
+
+func ToFunctionFormPattern(form ast.FunctionForm) FunctionFormPattern {
+	return FunctionFormPattern{
+		Target: ToNameFormPattern(form.Target),
+		Params: toNameFormPatterns(form.Params),
+		VarArg: ToVarArgPatternData(form.VarArg),
+	}
+}
+
+func ToTupleFormPattern(form ast.TupleForm) TupleFormPattern {
+	return TupleFormPattern{
+		Params: toFormPatterns(form.Params),
+		VarArg: ToVarArgPatternData(form.VarArg),
+	}
+}
+
+func ToConditionalSetFormPattern(form ast.ConditionalSetForm) ConditionalSetFormPattern {
+	return ConditionalSetFormPattern{
+		Target: ToFormPattern(form.Target),
+		VarArg: ToVarArgPatternData(form.VarArg),
+	}
+}
+
+func ToConditionalSetFormPatternFromId(form ast.ConditionalSetIdForm) ConditionalSetFormPattern {
+	return ConditionalSetFormPattern{
+		Target: ToFormPattern(form.Target),
+		VarArg: ToVarArgPatternData(form.Condition.VarArg),
+	}
+}
+
+func ToInfixOperatorFormPattern(form ast.InfixOperatorForm) InfixOperatorFormPattern {
+	return InfixOperatorFormPattern{
+		Operator: ToNameFormPattern(form.Operator),
+		Lhs:      ToNameFormPattern(form.Lhs),
+		Rhs:      ToNameFormPattern(form.Rhs),
+	}
+}
+
+func toNameFormPatternFromText(text string) NameFormPattern {
+	return NameFormPattern{
+		Text:            text,
+		IsStropped:      false,
+		HasQuestionMark: false,
+		VarArg: VarArgPatternData{
+			IsVarArg:     false,
+			VarArgNames:  make([]string, 0),
+			VarArgBounds: make([]string, 0),
+		},
+	}
+}
+
+func ToInfixOperatorFormPatternFromId(form ast.InfixOperatorId) InfixOperatorFormPattern {
+	return InfixOperatorFormPattern{
+		Operator: toNameFormPatternFromText(form.Operator.Text),
+		Lhs:      ToFormPattern(form.Lhs),
+	}
+}
+
+func ToPrefixOperatorFormPattern(form ast.PrefixOperatorForm) PrefixOperatorFormPattern {
+	return PrefixOperatorFormPattern{
+		Operator: ToNameFormPattern(form.Operator),
+		Param:    ToNameFormPattern(form.Param),
+	}
+}
+
+func ToPrefixOperatorFormPatternFromId(form ast.PrefixOperatorId) PrefixOperatorFormPattern {
+	return PrefixOperatorFormPattern{
+		Operator: toNameFormPatternFromText(form.Operator.Text),
+		Param:    ToFormPattern(form.Param),
+	}
+}
+
+func ToPostfixOperatorFormPattern(form ast.PostfixOperatorForm) PostfixOperatorFormPattern {
+	return PostfixOperatorFormPattern{
+		Operator: ToNameFormPattern(form.Operator),
+		Param:    ToNameFormPattern(form.Param),
+	}
+}
+
+func ToPostfixOperatorFormPatternFromId(form ast.PostfixOperatorId) PostfixOperatorFormPattern {
+	return PostfixOperatorFormPattern{
+		Operator: toNameFormPatternFromText(form.Operator.Text),
+		Param:    ToFormPattern(form.Param),
+	}
 }

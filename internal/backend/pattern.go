@@ -154,8 +154,34 @@ type SpecAliasPattern struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+func ToPattern(exp ast.ExpressionType) PatternType {
+	switch n := exp.(type) {
+	case ast.StructuralFormType:
+		return ToFormPattern(n)
+	default:
+		return nil
+	}
+}
+
 func ToFormPattern(item ast.StructuralFormType) FormPatternType {
-	return nil
+	switch n := item.(type) {
+	case *ast.NameForm:
+		return ToNameFormPattern(*n)
+	case *ast.FunctionForm:
+		return ToFunctionFormPattern(*n)
+	case *ast.TupleForm:
+		return ToTupleFormPattern(*n)
+	case *ast.ConditionalSetForm:
+		return ToConditionalSetFormPattern(*n)
+	case *ast.InfixOperatorForm:
+		return ToInfixOperatorFormPattern(*n)
+	case *ast.PostfixOperatorForm:
+		return ToPostfixOperatorFormPattern(*n)
+	case *ast.PrefixOperatorForm:
+		return ToPrefixOperatorFormPattern(*n)
+	default:
+		return nil
+	}
 }
 
 func toFormPatterns(items []ast.StructuralFormType) []FormPatternType {

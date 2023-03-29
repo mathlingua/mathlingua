@@ -259,6 +259,10 @@ func includeMissingIdentifiersInTargets(targets []ast.Target, keyGen *mlglib.Key
 }
 
 func includeMissingIdentifiersAt(node ast.MlgNodeType, keyGen *mlglib.KeyGenerator) {
+	if node == nil {
+		return
+	}
+
 	switch n := node.(type) {
 	case *ast.DefinesGroup:
 		defines := &n.Defines
@@ -311,6 +315,10 @@ func (w *Workspace) includeMissingIdentifiers() {
 }
 
 func expandAliasesAtWithAliases(node ast.MlgNodeType, aliases []ExpAliasSummaryType) {
+	if node == nil {
+		return
+	}
+
 	node.ForEach(func(subNode ast.MlgNodeType) {
 		for _, alias := range aliases {
 			ExpandAliasInline(subNode, alias)
@@ -319,6 +327,10 @@ func expandAliasesAtWithAliases(node ast.MlgNodeType, aliases []ExpAliasSummaryT
 }
 
 func expandAliasesAt(node ast.MlgNodeType, summaries map[string]SummaryType) {
+	if node == nil {
+		return
+	}
+
 	switch entry := node.(type) {
 	case *ast.DefinesGroup:
 		metaId, ok := GetAstMetaId(entry)

@@ -22,16 +22,37 @@ type ConstraintType interface {
 	ConstraintType()
 }
 
-func (IsConstraint) ConstraintType()   {}
-func (SpecConstraint) ConstraintType() {}
+func (IsConstraint) ConstraintType()      {}
+func (SpecConstraint) ConstraintType()    {}
+func (ExtendsConstraint) ConstraintType() {}
 
 type IsConstraint struct {
 	Target       PatternType
 	SignatureExp ast.ExpressionType
+	Scope        *ast.Scope
+}
+
+type ExtendsConstraint struct {
+	Target       PatternType
+	SignatureExp ast.ExpressionType
+	Scope        *ast.Scope
 }
 
 type SpecConstraint struct {
 	Target PatternType
 	Name   string
 	Exp    ast.ExpressionType
+	Scope  *ast.Scope
+}
+
+func ToIsConstraint(node ast.IsExpression) []IsConstraint {
+	return []IsConstraint{}
+}
+
+func ToExtendsConstraint(node ast.ExtendsExpression) ExtendsConstraint {
+	return ExtendsConstraint{}
+}
+
+func ToSpecConstraint(node ast.InfixOperatorCallExpression) (SpecConstraint, string) {
+	return SpecConstraint{}, ""
 }

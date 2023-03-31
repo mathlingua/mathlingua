@@ -154,6 +154,10 @@ type SpecAliasPattern struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+func ToPatternFromTarget(item ast.Target) PatternType {
+	return nil
+}
+
 func ToPattern(exp ast.ExpressionType) PatternType {
 	switch n := exp.(type) {
 	case ast.StructuralFormType:

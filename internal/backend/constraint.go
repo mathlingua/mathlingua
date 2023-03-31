@@ -38,7 +38,7 @@ type IsConstraint struct {
 
 type ExtendsConstraint struct {
 	Target       PatternType
-	SignatureExp ast.ExpressionType
+	SignatureExp ast.KindType
 	Scope        *ast.Scope
 }
 
@@ -63,12 +63,42 @@ func ToIsConstraint(node ast.IsExpression) ([]IsConstraint, error) {
 	return result, nil
 }
 
-func ToExtendsConstraint(node ast.ExtendsExpression) ExtendsConstraint {
-	return ExtendsConstraint{}
+func ToExtendsConstraint(node ast.ExtendsExpression) ([]ExtendsConstraint, error) {
+	result := make([]ExtendsConstraint, 0)
+	for _, lhsExp := range node.Lhs {
+		for _, rhsExp := range node.Rhs {
+			result = append(result, ExtendsConstraint{
+				Target:       ToPattern(lhsExp),
+				SignatureExp: rhsExp,
+				Scope:        node.CommonMetaData.Scope,
+			})
+		}
+	}
+	return result, nil
 }
 
-func ToSpecConstraint(node ast.InfixOperatorCallExpression) (SpecConstraint, string) {
-	return SpecConstraint{}, ""
+func ToSpecConstraint(node ast.InfixOperatorCallExpression) (SpecConstraint, error) {
+	return SpecConstraint{
+		Target: ToPattern(node.Lhs),
+		Name:   node.Target.ToCode(),
+		Exp:    node.Rhs,
+		Scope:  node.CommonMetaData.Scope,
+	}, nil
+}
+
+func ToSpecConstraints(node ast.MultiplexedInfixOperatorCallExpression) ([]SpecConstraint, error) {
+	result := make([]SpecConstraint, 0)
+	for _, lhsExp := range node.Lhs {
+		for _, rhsExp := range node.Rhs {
+			result = append(result, SpecConstraint{
+				Target: ToPattern(lhsExp),
+				Name:   node.Target.ToCode(),
+				Exp:    rhsExp,
+				Scope:  node.CommonMetaData.Scope,
+			})
+		}
+	}
+	return result, nil
 }
 
 func toSingleStructuralForm(exp ast.ExpressionType) (ast.StructuralFormType, error) {

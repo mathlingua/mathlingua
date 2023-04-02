@@ -128,3 +128,9 @@ type MemberPostfixExpAliasSummary struct {
 	Rhs   ast.ExpressionType
 	Scope *ast.Scope
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func ToInfixExpAliasSummary(node ast.ExpressionColonArrowItem) InfixExpAliasSummary {
+	return InfixExpAliasSummary{}
+}

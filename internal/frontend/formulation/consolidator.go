@@ -24,7 +24,8 @@ import (
 	"strings"
 )
 
-func Consolidate(nodes []ast.FormulationNodeType, tracker *frontend.DiagnosticTracker) (
+func Consolidate(path ast.Path, nodes []ast.FormulationNodeType,
+	tracker *frontend.DiagnosticTracker) (
 	ast.FormulationNodeType, bool) {
 	items := mlglib.NewStack[ShuntingYardItem[ast.FormulationNodeType]]()
 	for _, item := range ShuntingYard(toShuntingYardItems(nodes)) {
@@ -33,7 +34,7 @@ func Consolidate(nodes []ast.FormulationNodeType, tracker *frontend.DiagnosticTr
 
 	stack := mlglib.NewStack[ast.FormulationNodeType]()
 	for !items.IsEmpty() {
-		stack.Push(toNode(items, tracker))
+		stack.Push(toNode(path, items, tracker))
 	}
 
 	if stack.IsEmpty() {
@@ -58,7 +59,7 @@ var default_expression ast.ExpressionType = &ast.NameForm{}
 var default_kind_type ast.KindType = &ast.NameForm{}
 var default_signature *ast.Signature = &ast.Signature{}
 
-func toNode(items *mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]],
+func toNode(path ast.Path, items *mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]],
 	tracker *frontend.DiagnosticTracker) ast.FormulationNodeType {
 	if items.IsEmpty() {
 		return nil
@@ -69,27 +70,27 @@ func toNode(items *mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]],
 	switch top := top.(type) {
 	case *ast.PrefixOperatorCallExpression:
 		// prefix operators
-		top.Arg = checkType(toNode(items, tracker), default_expression, "Expression",
+		top.Arg = checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 			tracker, top.Start())
 		return top
 	case *ast.PostfixOperatorCallExpression:
 		// postfix operators
-		top.Arg = checkType(toNode(items, tracker), default_expression, "Expression",
+		top.Arg = checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 			tracker, top.Start())
 		return top
 	case *ast.InfixOperatorCallExpression:
 		// infix operators
-		top.Lhs = checkType(toNode(items, tracker), default_expression, "Expression",
+		top.Lhs = checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 			tracker, top.Start())
-		top.Rhs = checkType(toNode(items, tracker), default_expression, "Expression",
+		top.Rhs = checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 			tracker, top.Start())
 		return top
 	case *ast.EnclosedNonCommandOperatorTarget:
 		// for example [x]
 		target := top
-		lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker,
+		lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression", tracker,
 			top.Start())
-		rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker,
+		rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression", tracker,
 			top.Start())
 		return &ast.InfixOperatorCallExpression{
 			Target: target,
@@ -100,14 +101,14 @@ func toNode(items *mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]],
 		// for example + or **
 		target := top
 		if rawTop.ItemType == PrefixOperatorType {
-			arg := checkType(toNode(items, tracker), default_expression, "Expression",
+			arg := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
 			return &ast.PrefixOperatorCallExpression{
 				Target: target,
 				Arg:    arg,
 			}
 		} else if rawTop.ItemType == PostfixOperatorType {
-			arg := checkType(toNode(items, tracker), default_expression, "Expression",
+			arg := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
 			return &ast.PostfixOperatorCallExpression{
 				Target: target,
@@ -115,9 +116,9 @@ func toNode(items *mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]],
 			}
 		} else {
 			// it is an infix
-			lhs := checkType(toNode(items, tracker), default_expression, "Expression",
+			lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
-			rhs := checkType(toNode(items, tracker), default_expression, "Expression",
+			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
 			return &ast.InfixOperatorCallExpression{
 				Target: target,
@@ -128,9 +129,9 @@ func toNode(items *mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]],
 	case *ast.CommandOperatorTarget:
 		// for example \f/
 		target := top
-		lhs := checkType(toNode(items, tracker), default_expression, "Expression",
+		lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 			tracker, top.Start())
-		rhs := checkType(toNode(items, tracker), default_expression, "Expression",
+		rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 			tracker, top.Start())
 		return &ast.InfixOperatorCallExpression{
 			Target: target,
@@ -141,55 +142,55 @@ func toNode(items *mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]],
 		// a token, for example :=, :=>, :->, is, isnot
 		switch {
 		case top.Type == ast.ColonArrow:
-			rhs := checkType(toNode(items, tracker), default_expression, "Expression",
+			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
-			tmp := toNode(items, tracker)
-			lhs := checkType(tmp, default_expression, "Expression",
+			tmp := toNode(path, items, tracker)
+			lhs := checkType(path, tmp, default_expression, "Expression",
 				tracker, top.Start())
 			return &ast.ExpressionColonArrowItem{
 				Lhs: lhs,
 				Rhs: rhs,
 			}
 		case top.Type == ast.ColonDashArrow:
-			rhs := checkType(toNode(items, tracker), default_expression, "Expression",
+			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
-			tmp := toNode(items, tracker)
-			lhs := checkType(tmp, default_expression, "Expression", tracker, top.Start())
+			tmp := toNode(path, items, tracker)
+			lhs := checkType(path, tmp, default_expression, "Expression", tracker, top.Start())
 			return &ast.ExpressionColonDashArrowItem{
 				Lhs: lhs,
 				Rhs: rhs,
 			}
 		case top.Type == ast.ColonEquals:
-			rhs := checkType(toNode(items, tracker), default_expression, "Expression",
+			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
-			lhs := checkType(toNode(items, tracker), default_expression, "Expression",
+			lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
 			return &ast.ExpressionColonEqualsItem{
 				Lhs: lhs,
 				Rhs: rhs,
 			}
 		case top.Type == ast.Is:
-			rhs := checkType(toNode(items, tracker), default_kind_type, "Kind Type",
+			rhs := checkType(path, toNode(path, items, tracker), default_kind_type, "Kind Type",
 				tracker, top.Start())
-			lhs := checkType(toNode(items, tracker), default_expression, "Expression",
+			lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
 			return &ast.IsExpression{
 				Lhs: []ast.ExpressionType{lhs},
 				Rhs: []ast.KindType{rhs},
 			}
 		case top.Type == ast.Extends:
-			rhs := checkType(toNode(items, tracker), default_kind_type, "Kind Type",
+			rhs := checkType(path, toNode(path, items, tracker), default_kind_type, "Kind Type",
 				tracker, top.Start())
-			lhs := checkType(toNode(items, tracker), default_expression, "Expression",
+			lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
 			return &ast.ExtendsExpression{
 				Lhs: []ast.ExpressionType{lhs},
 				Rhs: []ast.KindType{rhs},
 			}
 		case top.Type == ast.As:
-			rhs := checkType(toNode(items, tracker), default_signature, "Signature",
+			rhs := checkType(path, toNode(path, items, tracker), default_signature, "Signature",
 				tracker, top.Start())
-			lhs := checkType(toNode(items, tracker), default_expression, "Expression",
+			lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
 			return &ast.AsExpression{
 				Lhs: lhs,
@@ -505,7 +506,7 @@ func getPrecedenceAssociativity(node ast.FormulationNodeType,
 	}
 }
 
-func checkType[T any](node ast.FormulationNodeType, def T, typeName string,
+func checkType[T any](path ast.Path, node ast.FormulationNodeType, def T, typeName string,
 	tracker *frontend.DiagnosticTracker, fallbackPosition ast.Position) T {
 	cast, ok := node.(T)
 	if ok {
@@ -517,6 +518,7 @@ func checkType[T any](node ast.FormulationNodeType, def T, typeName string,
 		}
 		tracker.Append(frontend.Diagnostic{
 			Type:     frontend.Error,
+			Path:     path,
 			Origin:   frontend.FormulationConsolidatorOrigin,
 			Message:  fmt.Sprintf("Expected a %s", typeName),
 			Position: position,

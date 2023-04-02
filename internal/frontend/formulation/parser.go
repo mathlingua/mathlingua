@@ -25,11 +25,12 @@ import (
 	"strings"
 )
 
-func ParseExpression(text string, start ast.Position, tracker *frontend.DiagnosticTracker,
+func ParseExpression(path ast.Path, text string, start ast.Position, tracker *frontend.DiagnosticTracker,
 	keyGen *mlglib.KeyGenerator) (ast.FormulationNodeType, bool) {
 	numDiagBefore := tracker.Length()
-	lexer := NewLexer(text, tracker)
+	lexer := NewLexer(path, text, tracker)
 	parser := formulationParser{
+		path:    path,
 		lexer:   lexer,
 		tracker: tracker,
 		start:   start,
@@ -40,11 +41,12 @@ func ParseExpression(text string, start ast.Position, tracker *frontend.Diagnost
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
-func ParseForm(text string, start ast.Position, tracker *frontend.DiagnosticTracker,
+func ParseForm(path ast.Path, text string, start ast.Position, tracker *frontend.DiagnosticTracker,
 	keyGen *mlglib.KeyGenerator) (ast.FormulationNodeType, bool) {
 	numDiagBefore := tracker.Length()
-	lexer := NewLexer(text, tracker)
+	lexer := NewLexer(path, text, tracker)
 	parser := formulationParser{
+		path:    path,
 		lexer:   lexer,
 		tracker: tracker,
 		start:   start,
@@ -55,11 +57,12 @@ func ParseForm(text string, start ast.Position, tracker *frontend.DiagnosticTrac
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
-func ParseId(text string, start ast.Position, tracker *frontend.DiagnosticTracker,
+func ParseId(path ast.Path, text string, start ast.Position, tracker *frontend.DiagnosticTracker,
 	keyGen *mlglib.KeyGenerator) (ast.IdType, bool) {
 	numDiagBefore := tracker.Length()
-	lexer := NewLexer(text, tracker)
+	lexer := NewLexer(path, text, tracker)
 	parser := formulationParser{
+		path:    path,
 		lexer:   lexer,
 		tracker: tracker,
 		start:   start,
@@ -70,11 +73,12 @@ func ParseId(text string, start ast.Position, tracker *frontend.DiagnosticTracke
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
-func ParseSignature(text string, start ast.Position, tracker *frontend.DiagnosticTracker,
+func ParseSignature(path ast.Path, text string, start ast.Position, tracker *frontend.DiagnosticTracker,
 	keyGen *mlglib.KeyGenerator) (ast.Signature, bool) {
 	numDiagBefore := tracker.Length()
-	lexer := NewLexer(text, tracker)
+	lexer := NewLexer(path, text, tracker)
 	parser := formulationParser{
+		path:    path,
 		lexer:   lexer,
 		tracker: tracker,
 		start:   start,
@@ -88,6 +92,7 @@ func ParseSignature(text string, start ast.Position, tracker *frontend.Diagnosti
 //////////////////////////////// utility functions /////////////////////////////////////////////////
 
 type formulationParser struct {
+	path    ast.Path
 	lexer   *frontend.Lexer
 	tracker *frontend.DiagnosticTracker
 	start   ast.Position
@@ -125,6 +130,7 @@ func (fp *formulationParser) getShiftedPosition(position ast.Position) ast.Posit
 func (fp *formulationParser) errorAt(message string, position ast.Position) {
 	fp.tracker.Append(frontend.Diagnostic{
 		Type:     frontend.Error,
+		Path:     fp.path,
 		Origin:   frontend.FormulationParserOrigin,
 		Message:  message,
 		Position: fp.getShiftedPosition(position),
@@ -581,7 +587,7 @@ func max(x, y int) int {
 func (fp *formulationParser) expressionType(
 	additionalTerminators ...ast.TokenType) (ast.ExpressionType, bool) {
 	if exp, ok := fp.pseudoExpression(additionalTerminators...); ok {
-		res, consolidateOk := Consolidate(exp.Children, fp.tracker)
+		res, consolidateOk := Consolidate(fp.path, exp.Children, fp.tracker)
 		if resAsExp, resAsExpOk := res.(ast.ExpressionType); resAsExpOk {
 			return resAsExp, consolidateOk
 		} else {

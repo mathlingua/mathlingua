@@ -21,12 +21,14 @@ import "mathlingua/internal/ast"
 type DiagnosticType string
 
 const (
-	Error DiagnosticType = "Error"
+	Error   DiagnosticType = "Error"
+	Warning DiagnosticType = "Warning"
 )
 
 type DiagnosticOrigin string
 
 const (
+	MlgCheckOrigin                DiagnosticOrigin = "MlgCheckOrigin"
 	Phase1LexerOrigin             DiagnosticOrigin = "Phase1LexerOrigin"
 	Phase2LexerOrigin             DiagnosticOrigin = "Phase2LexerOrigin"
 	Phase3LexerOrigin             DiagnosticOrigin = "Phase3LexerOrigin"

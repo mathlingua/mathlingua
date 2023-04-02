@@ -50,7 +50,7 @@ func (p *parser) toGivenGroup(group phase4.Group) (ast.GivenGroup, bool) {
 		return ast.GivenGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.GivenSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.GivenSections...)
 	if !ok {
 		return ast.GivenGroup{}, false
 	}
@@ -80,7 +80,7 @@ func (p *parser) toAllOfGroup(group phase4.Group) (ast.AllOfGroup, bool) {
 		return ast.AllOfGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.AllOfSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.AllOfSections...)
 	if !ok {
 		return ast.AllOfGroup{}, false
 	}
@@ -104,7 +104,7 @@ func (p *parser) toNotGroup(group phase4.Group) (ast.NotGroup, bool) {
 		return ast.NotGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.NotSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.NotSections...)
 	if !ok {
 		return ast.NotGroup{}, false
 	}
@@ -128,7 +128,7 @@ func (p *parser) toAnyOfGroup(group phase4.Group) (ast.AnyOfGroup, bool) {
 		return ast.AnyOfGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.AnyOfSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.AnyOfSections...)
 	if !ok {
 		return ast.AnyOfGroup{}, false
 	}
@@ -152,7 +152,7 @@ func (p *parser) toOneOfGroup(group phase4.Group) (ast.OneOfGroup, bool) {
 		return ast.OneOfGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.OneOfSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.OneOfSections...)
 	if !ok {
 		return ast.OneOfGroup{}, false
 	}
@@ -176,7 +176,7 @@ func (p *parser) toExistsGroup(group phase4.Group) (ast.ExistsGroup, bool) {
 		return ast.ExistsGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ExistsSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ExistsSections...)
 	if !ok {
 		return ast.ExistsGroup{}, false
 	}
@@ -225,7 +225,7 @@ func (p *parser) toExistsUniqueGroup(group phase4.Group) (ast.ExistsUniqueGroup,
 		return ast.ExistsUniqueGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ExistsUniqueSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ExistsUniqueSections...)
 	if !ok {
 		return ast.ExistsUniqueGroup{}, false
 	}
@@ -257,7 +257,7 @@ func (p *parser) toForAllGroup(group phase4.Group) (ast.ForAllGroup, bool) {
 		return ast.ForAllGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ForAllSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ForAllSections...)
 	if !ok {
 		return ast.ForAllGroup{}, false
 	}
@@ -301,7 +301,7 @@ func (p *parser) toIfGroup(group phase4.Group) (ast.IfGroup, bool) {
 		return ast.IfGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.IfSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.IfSections...)
 	if !ok {
 		return ast.IfGroup{}, false
 	}
@@ -326,7 +326,7 @@ func (p *parser) toIffGroup(group phase4.Group) (ast.IffGroup, bool) {
 		return ast.IffGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.IffSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.IffSections...)
 	if !ok {
 		return ast.IffGroup{}, false
 	}
@@ -351,7 +351,7 @@ func (p *parser) toWhenGroup(group phase4.Group) (ast.WhenGroup, bool) {
 		return ast.WhenGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.WhenSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.WhenSections...)
 	if !ok {
 		return ast.WhenGroup{}, false
 	}
@@ -453,7 +453,7 @@ func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGrou
 		return ast.SymbolWrittenGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.SymbolSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.SymbolSections...)
 	if !ok {
 		return ast.SymbolWrittenGroup{}, false
 	}
@@ -488,7 +488,7 @@ func (p *parser) toConnectionGroup(group phase4.Group) (ast.ConnectionGroup, boo
 		return ast.ConnectionGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ConnectionSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ConnectionSections...)
 	if !ok {
 		return ast.ConnectionGroup{}, false
 	}
@@ -579,7 +579,7 @@ func (p *parser) toWrittenGroup(group phase4.Group) (ast.WrittenGroup, bool) {
 		return ast.WrittenGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.WrittenSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.WrittenSections...)
 	if !ok {
 		return ast.WrittenGroup{}, false
 	}
@@ -594,7 +594,7 @@ func (p *parser) toCalledGroup(group phase4.Group) (ast.CalledGroup, bool) {
 		return ast.CalledGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.CalledSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.CalledSections...)
 	if !ok {
 		return ast.CalledGroup{}, false
 	}
@@ -616,7 +616,7 @@ func (p *parser) toWritingGroup(group phase4.Group) (ast.WritingGroup, bool) {
 		return ast.WritingGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.WritingSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.WritingSections...)
 	if !ok {
 		return ast.WritingGroup{}, false
 	}
@@ -686,7 +686,7 @@ func (p *parser) toOverviewGroup(group phase4.Group) (ast.OverviewGroup, bool) {
 		return ast.OverviewGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.OverviewSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.OverviewSections...)
 	if !ok {
 		return ast.OverviewGroup{}, false
 	}
@@ -708,7 +708,7 @@ func (p *parser) toMotivationGroup(group phase4.Group) (ast.MotivationGroup, boo
 		return ast.MotivationGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.MotivationSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.MotivationSections...)
 	if !ok {
 		return ast.MotivationGroup{}, false
 	}
@@ -730,7 +730,7 @@ func (p *parser) toHistoryGroup(group phase4.Group) (ast.HistoryGroup, bool) {
 		return ast.HistoryGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.HistorySections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.HistorySections...)
 	if !ok {
 		return ast.HistoryGroup{}, false
 	}
@@ -752,7 +752,7 @@ func (p *parser) toExampleGroup(group phase4.Group) (ast.ExampleGroup, bool) {
 		return ast.ExampleGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ExampleSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ExampleSections...)
 	if !ok {
 		return ast.ExampleGroup{}, false
 	}
@@ -774,7 +774,7 @@ func (p *parser) toRelatedGroup(group phase4.Group) (ast.RelatedGroup, bool) {
 		return ast.RelatedGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.RelatedSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.RelatedSections...)
 	if !ok {
 		return ast.RelatedGroup{}, false
 	}
@@ -796,7 +796,7 @@ func (p *parser) toDiscovererGroup(group phase4.Group) (ast.DiscovererGroup, boo
 		return ast.DiscovererGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.DiscovererSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.DiscovererSections...)
 	if !ok {
 		return ast.DiscovererGroup{}, false
 	}
@@ -818,7 +818,7 @@ func (p *parser) toNoteGroup(group phase4.Group) (ast.NoteGroup, bool) {
 		return ast.NoteGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.NoteSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.NoteSections...)
 	if !ok {
 		return ast.NoteGroup{}, false
 	}
@@ -954,7 +954,7 @@ func (p *parser) toLabelGroup(group phase4.Group) (ast.LabelGroup, bool) {
 		return ast.LabelGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker,
 		ast.LowerLabelName,
 		ast.LowerByName)
 	if !ok {
@@ -972,7 +972,7 @@ func (p *parser) toByGroup(group phase4.Group) (ast.ByGroup, bool) {
 		return ast.ByGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerByName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerByName)
 	if !ok {
 		return ast.ByGroup{}, false
 	}
@@ -1015,7 +1015,7 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	}
 
 	id := p.getId(group, true)
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.DescribesSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.DescribesSections...)
 	if !ok || id == nil {
 		return ast.DescribesGroup{}, false
 	}
@@ -1116,7 +1116,7 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 	}
 
 	id := p.getId(group, true)
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.DefinesSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.DefinesSections...)
 	if !ok || id == nil {
 		return ast.DefinesGroup{}, false
 	}
@@ -1236,7 +1236,7 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 	}
 
 	id := p.getId(group, true)
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.StatesSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.StatesSections...)
 	if !ok || id == nil {
 		return ast.StatesGroup{}, false
 	}
@@ -1317,7 +1317,7 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 	}
 
 	id := p.getId(group, false)
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.AxiomSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.AxiomSections...)
 	if !ok {
 		return ast.AxiomGroup{}, false
 	}
@@ -1400,7 +1400,7 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 	}
 
 	id := p.getId(group, false)
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ConjectureSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ConjectureSections...)
 	if !ok {
 		return ast.ConjectureGroup{}, false
 	}
@@ -1469,7 +1469,7 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 	}
 
 	id := p.getId(group, false)
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.TheoremSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.TheoremSections...)
 	if !ok {
 		return ast.TheoremGroup{}, false
 	}
@@ -1559,7 +1559,7 @@ func (p *parser) toProofGroup(group phase4.Group) (ast.ProofGroup, bool) {
 	}
 
 	id := p.getId(group, true)
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ProofSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofSections...)
 	if !ok || id == nil {
 		return ast.ProofGroup{}, false
 	}
@@ -1603,7 +1603,7 @@ func (p *parser) toSpecifyGroup(group phase4.Group) (ast.SpecifyGroup, bool) {
 		return ast.SpecifyGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.SpecifySections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.SpecifySections...)
 	if !ok {
 		return ast.SpecifyGroup{}, false
 	}
@@ -1650,7 +1650,7 @@ func (p *parser) toZeroGroup(group phase4.Group) (ast.ZeroGroup, bool) {
 		return ast.ZeroGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ZeroSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ZeroSections...)
 	if !ok {
 		return ast.ZeroGroup{}, false
 	}
@@ -1673,7 +1673,7 @@ func (p *parser) toPositiveIntGroup(group phase4.Group) (ast.PositiveIntGroup, b
 		return ast.PositiveIntGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.PositiveIntSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.PositiveIntSections...)
 	if !ok {
 		return ast.PositiveIntGroup{}, false
 	}
@@ -1696,7 +1696,7 @@ func (p *parser) toNegativeIntGroup(group phase4.Group) (ast.NegativeIntGroup, b
 		return ast.NegativeIntGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.NegativeIntSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.NegativeIntSections...)
 	if !ok {
 		return ast.NegativeIntGroup{}, false
 	}
@@ -1719,7 +1719,7 @@ func (p *parser) toPositiveFloatGroup(group phase4.Group) (ast.PositiveFloatGrou
 		return ast.PositiveFloatGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.PositiveFloatSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.PositiveFloatSections...)
 	if !ok {
 		return ast.PositiveFloatGroup{}, false
 	}
@@ -1742,7 +1742,7 @@ func (p *parser) toNegativeFloatGroup(group phase4.Group) (ast.NegativeFloatGrou
 		return ast.NegativeFloatGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.NegativeFloatSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.NegativeFloatSections...)
 	if !ok {
 		return ast.NegativeFloatGroup{}, false
 	}
@@ -1768,7 +1768,7 @@ func (p *parser) toTopicGroup(group phase4.Group) (ast.TopicGroup, bool) {
 	}
 
 	id := p.getId(group, true)
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.TopicSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.TopicSections...)
 	if !ok || id == nil {
 		return ast.TopicGroup{}, false
 	}
@@ -1814,7 +1814,7 @@ func (p *parser) toResourceGroup(group phase4.Group) (ast.ResourceGroup, bool) {
 	}
 
 	id := p.getStringId(group, true)
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.ResourceSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ResourceSections...)
 	if !ok || id == nil {
 		return ast.ResourceGroup{}, false
 	}
@@ -1883,7 +1883,7 @@ func (p *parser) toPersonGroup(group phase4.Group) (ast.PersonGroup, bool) {
 	}
 
 	id := p.getStringId(group, true)
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.PersonSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.PersonSections...)
 	if !ok || id == nil {
 		return ast.PersonGroup{}, false
 	}
@@ -1915,7 +1915,7 @@ func (p *parser) toTitleGroup(group phase4.Group) (ast.TitleGroup, bool) {
 		return ast.TitleGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerTitleName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerTitleName)
 	if !ok {
 		return ast.TitleGroup{}, false
 	}
@@ -1937,7 +1937,7 @@ func (p *parser) toAuthorGroup(group phase4.Group) (ast.AuthorGroup, bool) {
 		return ast.AuthorGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerAuthorName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerAuthorName)
 	if !ok {
 		return ast.AuthorGroup{}, false
 	}
@@ -1959,7 +1959,7 @@ func (p *parser) toOffsetGroup(group phase4.Group) (ast.OffsetGroup, bool) {
 		return ast.OffsetGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerOffsetName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerOffsetName)
 	if !ok {
 		return ast.OffsetGroup{}, false
 	}
@@ -1981,7 +1981,7 @@ func (p *parser) toUrlGroup(group phase4.Group) (ast.UrlGroup, bool) {
 		return ast.UrlGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerUrlName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerUrlName)
 	if !ok {
 		return ast.UrlGroup{}, false
 	}
@@ -2003,7 +2003,7 @@ func (p *parser) toHomepageGroup(group phase4.Group) (ast.HomepageGroup, bool) {
 		return ast.HomepageGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerHomepageName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerHomepageName)
 	if !ok {
 		return ast.HomepageGroup{}, false
 	}
@@ -2025,7 +2025,7 @@ func (p *parser) toTypeGroup(group phase4.Group) (ast.TypeGroup, bool) {
 		return ast.TypeGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerTypeName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerTypeName)
 	if !ok {
 		return ast.TypeGroup{}, false
 	}
@@ -2047,7 +2047,7 @@ func (p *parser) toEditionGroup(group phase4.Group) (ast.EditionGroup, bool) {
 		return ast.EditionGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerEditionName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerEditionName)
 	if !ok {
 		return ast.EditionGroup{}, false
 	}
@@ -2069,7 +2069,7 @@ func (p *parser) toEditorGroup(group phase4.Group) (ast.EditorGroup, bool) {
 		return ast.EditorGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerEditorName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerEditorName)
 	if !ok {
 		return ast.EditorGroup{}, false
 	}
@@ -2091,7 +2091,7 @@ func (p *parser) toInstitutionGroup(group phase4.Group) (ast.InstitutionGroup, b
 		return ast.InstitutionGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerInstitutionName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerInstitutionName)
 	if !ok {
 		return ast.InstitutionGroup{}, false
 	}
@@ -2113,7 +2113,7 @@ func (p *parser) toJournalGroup(group phase4.Group) (ast.JournalGroup, bool) {
 		return ast.JournalGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerJournalName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerJournalName)
 	if !ok {
 		return ast.JournalGroup{}, false
 	}
@@ -2135,7 +2135,7 @@ func (p *parser) toPublisherGroup(group phase4.Group) (ast.PublisherGroup, bool)
 		return ast.PublisherGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerPublisherName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerPublisherName)
 	if !ok {
 		return ast.PublisherGroup{}, false
 	}
@@ -2157,7 +2157,7 @@ func (p *parser) toVolumeGroup(group phase4.Group) (ast.VolumeGroup, bool) {
 		return ast.VolumeGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerVolumeName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerVolumeName)
 	if !ok {
 		return ast.VolumeGroup{}, false
 	}
@@ -2179,7 +2179,7 @@ func (p *parser) toMonthGroup(group phase4.Group) (ast.MonthGroup, bool) {
 		return ast.MonthGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerMonthName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerMonthName)
 	if !ok {
 		return ast.MonthGroup{}, false
 	}
@@ -2201,7 +2201,7 @@ func (p *parser) toYearGroup(group phase4.Group) (ast.YearGroup, bool) {
 		return ast.YearGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerYearName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerYearName)
 	if !ok {
 		return ast.YearGroup{}, false
 	}
@@ -2223,7 +2223,7 @@ func (p *parser) toDescriptionGroup(group phase4.Group) (ast.DescriptionGroup, b
 		return ast.DescriptionGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.LowerDescriptionName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerDescriptionName)
 	if !ok {
 		return ast.DescriptionGroup{}, false
 	}
@@ -2305,7 +2305,7 @@ func (p *parser) toDocument(root phase4.Document) (ast.Document, bool) {
 ///////////////////////////////////////////// id ///////////////////////////////////////////////////
 
 func (p *parser) toIdItem(text string, position ast.Position) *ast.IdItem {
-	if node, ok := formulation.ParseId(text, position, p.tracker, p.keyGen); ok {
+	if node, ok := formulation.ParseId(p.path, text, position, p.tracker, p.keyGen); ok {
 		return &ast.IdItem{
 			RawText: text,
 			Root:    node,
@@ -2342,7 +2342,7 @@ func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.Formulat
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
-			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
+			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Formulation[ast.FormulationNodeType]{
 				RawText:        data.Text,
 				Root:           node,
@@ -2360,7 +2360,7 @@ func (p *parser) toClause(arg phase4.Argument) ast.ClauseType {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
-			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
+			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return &ast.Formulation[ast.FormulationNodeType]{
 				RawText:        data.Text,
 				Root:           node,
@@ -2408,7 +2408,7 @@ func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
-			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
+			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Spec{
 				RawText:        data.Text,
 				Root:           node,
@@ -2429,7 +2429,7 @@ func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
-			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
+			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Alias{
 				RawText:        data.Text,
 				Root:           node,
@@ -2445,7 +2445,8 @@ func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 	switch data := arg.Arg.(type) {
 	case phase4.ArgumentTextArgumentData:
-		if node, ok := formulation.ParseForm(data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
+		if node, ok := formulation.ParseForm(p.path, data.Text, arg.MetaData.Start,
+			p.tracker, p.keyGen); ok {
 			return ast.Target{
 				RawText:        data.Text,
 				Root:           node,
@@ -2491,7 +2492,7 @@ func (p *parser) toDescribingGroup(group phase4.Group) (ast.DescribingGroup, boo
 		return ast.DescribingGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.DescribingSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.DescribingSections...)
 	if !ok {
 		return ast.DescribingGroup{}, false
 	}
@@ -2526,7 +2527,7 @@ func (p *parser) toNameGroup(group phase4.Group) (ast.NameGroup, bool) {
 		return ast.NameGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.NameSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.NameSections...)
 	if !ok {
 		return ast.NameGroup{}, false
 	}
@@ -2548,7 +2549,7 @@ func (p *parser) toBiographyGroup(group phase4.Group) (ast.BiographyGroup, bool)
 		return ast.BiographyGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker, ast.BiographySections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.BiographySections...)
 	if !ok {
 		return ast.BiographyGroup{}, false
 	}
@@ -2569,7 +2570,7 @@ func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[*ast.Signa
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseSignature(
-			data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
+			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Formulation[*ast.Signature]{
 				RawText:        data.Text,
 				Root:           &node,

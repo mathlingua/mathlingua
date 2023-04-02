@@ -23,13 +23,13 @@ import (
 	"unicode"
 )
 
-func NewLexer(text string, tracker *frontend.DiagnosticTracker) *frontend.Lexer {
-	return frontend.NewLexer(getTokens(text, tracker))
+func NewLexer(path ast.Path, text string, tracker *frontend.DiagnosticTracker) *frontend.Lexer {
+	return frontend.NewLexer(getTokens(path, text, tracker))
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func getTokens(text string, tracker *frontend.DiagnosticTracker) []ast.Token {
+func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) []ast.Token {
 	tokens := make([]ast.Token, 0)
 	chars := ast.GetChars(text)
 	i := 0
@@ -41,6 +41,7 @@ func getTokens(text string, tracker *frontend.DiagnosticTracker) []ast.Token {
 	appendDiagnostic := func(message string, position ast.Position) {
 		tracker.Append(frontend.Diagnostic{
 			Type:     frontend.Error,
+			Path:     path,
 			Origin:   frontend.FormulationLexerOrigin,
 			Message:  message,
 			Position: position,

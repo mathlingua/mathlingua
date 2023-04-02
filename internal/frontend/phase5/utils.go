@@ -26,6 +26,7 @@ import (
 )
 
 func IdentifySections(
+	path ast.Path,
 	sections []phase4.Section,
 	tracker *frontend.DiagnosticTracker,
 	expected ...string) (map[string]phase4.Section, bool) {
@@ -82,6 +83,7 @@ func IdentifySections(
 		} else {
 			tracker.Append(frontend.Diagnostic{
 				Type:   frontend.Error,
+				Path:   path,
 				Origin: frontend.Phase5ParserOrigin,
 				Message: "For pattern:\n\n" +
 					pattern +
@@ -100,6 +102,7 @@ func IdentifySections(
 		peek := sectionQueue.Peek()
 		tracker.Append(frontend.Diagnostic{
 			Type:   frontend.Error,
+			Path:   path,
 			Origin: frontend.Phase5ParserOrigin,
 			Message: "For pattern:\n\n" + pattern +
 				"\n\nUnexpected section '" + peek.Name + "'",
@@ -126,6 +129,7 @@ func IdentifySections(
 	if len(nextExpected) > 0 {
 		tracker.Append(frontend.Diagnostic{
 			Type:   frontend.Error,
+			Path:   path,
 			Origin: frontend.Phase5ParserOrigin,
 			Message: "For pattern:\n\n" + pattern +
 				"\n\nExpected a section '" + nextExpected + "'",

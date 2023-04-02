@@ -48,29 +48,39 @@ type diagnosticInfo struct {
 }
 
 type checkResult struct {
-	GeneralWarnings []string         `json:"generalWarnings"`
-	GeneralErrors   []string         `json:"generalErrors"`
-	Diagnostics     []diagnosticInfo `json:"diagnostics"`
+	Diagnostics []diagnosticInfo `json:"diagnostics"`
 }
 
 func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
-	findFiles, errors, warnings := getMathlinguaFiles(paths)
+	diagnostics := make([]frontend.Diagnostic, 0)
 
-	contents, contentErrors := getFileContents(findFiles)
-	errors = append(errors, contentErrors...)
+	findFiles, findDiagnostics := getMathlinguaFiles(paths)
+	diagnostics = append(diagnostics, findDiagnostics...)
+
+	contents, contentDiagnostics := getFileContents(findFiles)
+	diagnostics = append(diagnostics, contentDiagnostics...)
 
 	workspace := backend.NewWorkspace(contents)
-
 	checkResult := workspace.Check()
-	numErrors := len(errors) + len(checkResult.Diagnostics)
+	diagnostics = append(diagnostics, checkResult.Diagnostics...)
+
+	numErrors := 0
+	for _, diag := range diagnostics {
+		if diag.Type == frontend.Error {
+			numErrors++
+		}
+	}
+
 	numFilesProcessed := workspace.DocumentCount()
 
 	if showJson {
-		m.printAsJson(checkResult)
+		m.printAsJson(backend.CheckResult{
+			Diagnostics: diagnostics,
+		})
 		return
 	}
 
-	m.printCheckStats(numErrors, numFilesProcessed, debug, warnings, errors, checkResult.Diagnostics)
+	m.printCheckStats(numErrors, numFilesProcessed, debug, diagnostics)
 }
 
 func (m *Mlg) View() {
@@ -81,11 +91,10 @@ func (m *Mlg) Version() string {
 	return "v0.2"
 }
 
-func getMathlinguaFiles(paths []string) (files []ast.Path, errors []string, warnings []string) {
+func getMathlinguaFiles(paths []string) (files []ast.Path, diagnostics []frontend.Diagnostic) {
 	files = make([]ast.Path, 0)
 
-	warnings = make([]string, 0)
-	errors = make([]string, 0)
+	diagnostics = make([]frontend.Diagnostic, 0)
 
 	if len(paths) == 0 {
 		paths = append(paths, ".")
@@ -94,8 +103,12 @@ func getMathlinguaFiles(paths []string) (files []ast.Path, errors []string, warn
 			stat, _ := os.Stat(p)
 			isDir := stat != nil && stat.IsDir()
 			if !isDir && !strings.HasSuffix(p, ".math") {
-				warnings = append(warnings,
-					fmt.Sprintf("File %s is not a MathLingua (.math) file and will be ignored", p))
+				diagnostics = append(diagnostics, frontend.Diagnostic{
+					Type:    frontend.Warning,
+					Origin:  frontend.MlgCheckOrigin,
+					Path:    ast.Path(p),
+					Message: fmt.Sprintf("File %s is not a MathLingua (.math) file and will be ignored", p),
+				})
 			}
 		}
 	}
@@ -103,13 +116,23 @@ func getMathlinguaFiles(paths []string) (files []ast.Path, errors []string, warn
 	for _, p := range paths {
 		err := filepath.Walk(p, func(p string, info os.FileInfo, err error) error {
 			if err != nil {
-				errors = append(errors, err.Error())
+				diagnostics = append(diagnostics, frontend.Diagnostic{
+					Type:    frontend.Error,
+					Origin:  frontend.MlgCheckOrigin,
+					Path:    ast.Path(p),
+					Message: err.Error(),
+				})
 				return err
 			}
 
 			stat, err := os.Stat(p)
 			if err != nil {
-				errors = append(errors, err.Error())
+				diagnostics = append(diagnostics, frontend.Diagnostic{
+					Type:    frontend.Error,
+					Origin:  frontend.MlgCheckOrigin,
+					Path:    ast.Path(p),
+					Message: err.Error(),
+				})
 				return err
 			}
 
@@ -123,28 +146,39 @@ func getMathlinguaFiles(paths []string) (files []ast.Path, errors []string, warn
 		})
 
 		if err != nil {
-			errors = append(errors, err.Error())
+			diagnostics = append(diagnostics, frontend.Diagnostic{
+				Type:    frontend.Error,
+				Origin:  frontend.MlgCheckOrigin,
+				Path:    ast.Path(p),
+				Message: err.Error(),
+			})
 			continue
 		}
 	}
 
-	return files, errors, warnings
+	return files, diagnostics
 }
 
-func getFileContents(filePaths []ast.Path) (contents map[ast.Path]string, errors []string) {
+func getFileContents(filePaths []ast.Path) (contents map[ast.Path]string,
+	diagnostics []frontend.Diagnostic) {
 	contents = make(map[ast.Path]string, 0)
-	errors = make([]string, 0)
+	diagnostics = make([]frontend.Diagnostic, 0)
 
 	for _, p := range filePaths {
 		text, err := appendMetaIds(string(p))
 		if err != nil {
-			errors = append(errors, err.Error())
+			diagnostics = append(diagnostics, frontend.Diagnostic{
+				Type:    frontend.Error,
+				Origin:  frontend.MlgCheckOrigin,
+				Path:    ast.Path(p),
+				Message: err.Error(),
+			})
 		} else {
 			contents[p] = text
 		}
 	}
 
-	return contents, errors
+	return contents, diagnostics
 }
 
 func appendMetaIds(path string) (string, error) {
@@ -167,14 +201,35 @@ func appendMetaIds(path string) (string, error) {
 
 func (m *Mlg) printAsJson(checkResult backend.CheckResult) {
 	if data, err := json.MarshalIndent(checkResult, "", "  "); err != nil {
-		m.logger.Error(fmt.Sprintf("{\"generalErrors\": [\"%s\"]}", err))
+		m.logger.Error(fmt.Sprintf(
+			"{\"Diagnostics\": [{\"Type\": \"Error\", \"Message\": \"%s\"}]}", err))
 	} else {
 		m.logger.Log(string(data))
 	}
 }
 
-func (m *Mlg) printCheckStats(numErrors int, numFilesProcessed int, debug bool,
-	warnings []string, errors []string, diagnostics []frontend.Diagnostic) {
+func (m *Mlg) printCheckStats(numErrors int, numFilesProcessed int,
+	debug bool, diagnostics []frontend.Diagnostic) {
+	for index, diag := range diagnostics {
+		if index > 0 {
+			// print a line between each error
+			m.logger.Log("")
+		}
+		debugInfo := ""
+		if debug {
+			debugInfo = fmt.Sprintf(" [%s]", diag.Origin)
+		}
+		if diag.Type == frontend.Error {
+			m.logger.Error(fmt.Sprintf("%s (%d, %d)%s\n%s",
+				diag.Path, diag.Position.Row+1, diag.Position.Column+1,
+				debugInfo, diag.Message))
+		} else {
+			m.logger.Warning(fmt.Sprintf("%s (%d, %d)%s\n%s",
+				diag.Path, diag.Position.Row+1, diag.Position.Column+1,
+				debugInfo, diag.Message))
+		}
+	}
+
 	var errorText string
 	if numErrors == 1 {
 		errorText = "error"
@@ -187,28 +242,6 @@ func (m *Mlg) printCheckStats(numErrors int, numFilesProcessed int, debug bool,
 		filesText = "file"
 	} else {
 		filesText = "files"
-	}
-
-	for _, warning := range warnings {
-		m.logger.Warning(warning)
-	}
-
-	for _, err := range errors {
-		m.logger.Error(err)
-	}
-
-	for index, diag := range diagnostics {
-		if index > 0 {
-			// print a line between each error
-			m.logger.Log("")
-		}
-		debugInfo := ""
-		if debug {
-			debugInfo = fmt.Sprintf(" [%s]", diag.Origin)
-		}
-		m.logger.Error(fmt.Sprintf("%s (%d, %d)%s\n%s",
-			diag.Path, diag.Position.Row+1, diag.Position.Column+1,
-			debugInfo, diag.Message))
 	}
 
 	if numErrors > 0 {

@@ -4,5 +4,6 @@
 .vscode
 /bin
 /mlg
+/release
 /temp
 /testbed

@@ -23,6 +23,10 @@ run:
 test:
 	go test ./...
 
+.PHONY: release
+release:
+	./scripts/build-releases.sh
+
 .PHONY: vet
 vet:
 	go vet ./...

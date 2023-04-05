@@ -19,6 +19,12 @@ fi
 
 RELEASE_DIR=release
 
+echo "Cleaning previous builds"
+make clean
+
+echo "Building the web code"
+make web
+
 echo "Initializing release directory"
 rm -Rf ${RELEASE_DIR}
 mkdir -p ${RELEASE_DIR}

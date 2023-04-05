@@ -3,6 +3,20 @@
 # stop on first error
 set -e
 
+VERSION=$(cat pkg/mlg/mlg.go | \
+          grep -A1 'func (m \*Mlg) Version() string' | \
+          grep 'return' | \
+          sed 's|\treturn "v||' | \
+          sed 's|"||')
+
+if [ -z "$VERSION" ]
+then
+  echo "ERROR: Could not determine the version"
+  exit
+else
+  echo "Using version $VERSION"
+fi
+
 RELEASE_DIR=release
 
 echo "Initializing release directory"

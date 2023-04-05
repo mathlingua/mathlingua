@@ -36,7 +36,7 @@ do
       fi
 
       echo "Building for ${OS} ${ARCH}"
-      env GOOS="${OS}" GOARCH="${ARCH}" go build -o ${RELEASE_DIR}/mlg-${MLG_VERSION}-${OS}-${ARCH}${EXT}
+      env GOOS="${OS}" GOARCH="${ARCH}" go build -o ${RELEASE_DIR}/mlg-${VERSION}-${OS}-${ARCH}${EXT}
     fi
   done
 done

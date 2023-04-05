@@ -107,7 +107,7 @@ func getMathlinguaFiles(paths []string) (files []ast.Path, diagnostics []fronten
 					Type:    frontend.Warning,
 					Origin:  frontend.MlgCheckOrigin,
 					Path:    ast.Path(p),
-					Message: fmt.Sprintf("File %s is not a MathLingua (.math) file and will be ignored", p),
+					Message: fmt.Sprintf("File %s is not a Mathlingua (.math) file and will be ignored", p),
 				})
 			}
 		}

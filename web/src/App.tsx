@@ -15,6 +15,7 @@ export function App() {
   const [screenWidth, setScreenWidth] = useState(window.screen.availWidth);
   const isOnSmallScreen = determineIsOnSmallScreen(screenWidth, theme);
   const [showSidebar, setShowSidebar] = React.useState(!isOnSmallScreen);
+  const [selectedPath, setSelectedPath] = React.useState(undefined as string | undefined);
 
   window.addEventListener('resize', () => {
     setScreenWidth(window.screen.availWidth);
@@ -37,14 +38,17 @@ export function App() {
       <div style={styles.outline}>
         Outline
       </div>
-      <Sidebar onSelect={(path, isInit) => {
-        if (path.endsWith('.math')) {
-          setActivePath(path);
-          if (!isInit && isOnSmallScreen) {
-            setShowSidebar(false);
+      <Sidebar
+        selectedPath={selectedPath}
+        onSelect={(path, isInit) => {
+          setSelectedPath(path);
+          if (path.endsWith('.math')) {
+            setActivePath(path);
+            if (!isInit && isOnSmallScreen) {
+              setShowSidebar(false);
+            }
           }
-        }
-      }}/>
+        }}/>
     </div>
   );
 

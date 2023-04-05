@@ -8,10 +8,11 @@ import { Theme, useTheme } from '../hooks/theme';
 import { PathsResponse } from '../types';
 
 export interface SidebarProps {
+  selectedPath: string | undefined;
   onSelect: (path: string, isInit: boolean) => void;
 }
 
-export function Sidebar({ onSelect }: SidebarProps) {
+export function Sidebar({ onSelect, selectedPath }: SidebarProps) {
   const theme = useTheme();
   const styles = getStyles(theme);
 
@@ -19,14 +20,18 @@ export function Sidebar({ onSelect }: SidebarProps) {
   const paths = data?.Paths
   const { tree: treeData, allPaths } = buildTreeNode(paths ?? []);
 
-  const firstPath = allPaths[0];
+  const sortedPaths = allPaths.filter(path => path?.endsWith('.math'))
+                              .map(path => path.split('/'))
+                              .sort((a, b) => a.length - b.length)
+                              .map(parts => parts.join('/'));
+  const firstPath = sortedPaths[0];
   const [expandedValues, setExpandedValues] = React.useState([] as string[]);
   useEffect(() => {
-    if (firstPath !== undefined) {
+    if (selectedPath === undefined && firstPath !== undefined) {
       onSelect(firstPath, true);
       setExpandedValues(decomposePath(firstPath));
     }
-  }, [firstPath, onSelect]);
+  }, [firstPath, onSelect, selectedPath]);
 
   if (data === undefined) {
     return <div style={styles.loading}>Loading...</div>;

@@ -88,7 +88,7 @@ func (m *Mlg) View() {
 }
 
 func (m *Mlg) Version() string {
-	return "v0.2"
+	return "v0.20.0"
 }
 
 func getMathlinguaFiles(paths []string) (files []ast.Path, diagnostics []frontend.Diagnostic) {

@@ -34,10 +34,13 @@ export function App() {
 
   const sidebar = (
     <div style={styles.sidebar}>
-      <Sidebar onSelect={(path) => {
+      <div style={styles.outline}>
+        Outline
+      </div>
+      <Sidebar onSelect={(path, isInit) => {
         if (path.endsWith('.math')) {
           setActivePath(path);
-          if (isOnSmallScreen) {
+          if (!isInit && isOnSmallScreen) {
             setShowSidebar(false);
           }
         }
@@ -85,13 +88,17 @@ function getStyles(theme: Theme, isOnSmallScreen: boolean) {
     },
     page: {
       background: 'white',
-      boxShadow: '0 1px 5px rgba(0,0,0,.2)',
       paddingLeft: isOnSmallScreen ? '2em' : '4em',
       paddingRight: isOnSmallScreen ? '2em' : '4em',
       paddingTop: isOnSmallScreen ? '2em' : '2em',
       paddingBottom: isOnSmallScreen ? '2em' : '2em',
       margin: '1ex',
-      borderRadius: 2,
+    },
+    outline: {
+      fontWeight: 'bold',
+      paddingTop: theme.sizeXSmall,
+      paddingLeft: theme.sizeSmall,
+      fontSize: '110%',
     },
   };
 }

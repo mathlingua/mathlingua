@@ -23,8 +23,8 @@ export function useTheme(): Theme {
     sizeLarge: 32,
     sizeXLarge: 48,
     sizeXXLarge: 56,
-    border: '#cccccc',
-    background: '#eeeeef',
+    border: '#e0e0e0',
+    background: '#ffffff',
     mainWidth: 800,
   };
 }

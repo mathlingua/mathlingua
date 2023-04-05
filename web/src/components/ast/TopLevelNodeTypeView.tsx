@@ -1,4 +1,5 @@
 import React from 'react';
+import { Theme, useTheme } from '../../hooks/theme';
 import { TopLevelNodeType } from '../../types';
 import { GroupView } from './GroupView';
 import { TextBlockView } from './TextBlockView';
@@ -9,8 +10,9 @@ export interface TopLevelNodeTypeViewProps {
 }
 
 export const TopLevelNodeTypeView = (props: TopLevelNodeTypeViewProps) => {
+  const theme = useTheme();
   const isGroup = (props.node as any).Sections;
-  const styles = getTopLevelNodeTypeViewStyles(props.isOnSmallScreen);
+  const styles = getTopLevelNodeTypeViewStyles(props.isOnSmallScreen, theme);
   if (isGroup) {
     return (
       <div style={styles.mathlinguaTopLevelEntity}>
@@ -26,11 +28,10 @@ export const TopLevelNodeTypeView = (props: TopLevelNodeTypeViewProps) => {
   }
 };
 
-function getTopLevelNodeTypeViewStyles(isOnSmallScreen: boolean) {
+function getTopLevelNodeTypeViewStyles(isOnSmallScreen: boolean, theme: Theme) {
   return {
     mathlinguaTopLevelEntity: {
       fontFamily: 'monospace',
-      boxShadow: '0 1px 5px rgba(0,0,0,.2)',
       padding: '2ex',
       margin: '1ex',
       width: 'max-content',
@@ -39,6 +40,9 @@ function getTopLevelNodeTypeViewStyles(isOnSmallScreen: boolean) {
       overflow: 'auto',
       marginLeft: 'auto',
       marginRight: 'auto',
+      border: 'solid',
+      borderColor: theme.border,
+      borderWidth: 1,
       borderRadius: 2,
     },
     mathlinguaTopLevelTextBlock: {

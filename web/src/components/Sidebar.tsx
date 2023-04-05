@@ -8,7 +8,7 @@ import { Theme, useTheme } from '../hooks/theme';
 import { PathsResponse } from '../types';
 
 export interface SidebarProps {
-  onSelect: (path: string) => void;
+  onSelect: (path: string, isInit: boolean) => void;
 }
 
 export function Sidebar({ onSelect }: SidebarProps) {
@@ -23,7 +23,7 @@ export function Sidebar({ onSelect }: SidebarProps) {
   const [expandedValues, setExpandedValues] = React.useState([] as string[]);
   useEffect(() => {
     if (firstPath !== undefined) {
-      onSelect(firstPath);
+      onSelect(firstPath, true);
       setExpandedValues(decomposePath(firstPath));
     }
   }, [firstPath, onSelect]);
@@ -39,7 +39,7 @@ export function Sidebar({ onSelect }: SidebarProps) {
         data={treeData.children ?? []}
         onSelect={(val) => {
           const value = val.value as string;
-          onSelect(value);
+          onSelect(value, false);
           const newExpandedValues = new Set(Array.from(expandedValues));
           if (expandedValues.indexOf(value) >= 0) {
             newExpandedValues.delete(value);

@@ -23,13 +23,40 @@ code {
 
 .rs-tree-node-active .rs-tree-node-label-content {
   background: none !important;
+  color: #05b !important;
 }
 
 .rs-tree > *:hover {
   background: none !important;
 }
 
-.rs-tree-node-active .rs-tree-node-label-content {
+.rs-tree-node-label :hover {
   background: none !important;
-  color: #05b !important;
+}
+
+.rs-tree-node {
+  margin-left: 0 !important;
+  margin-top: 1px !important;
+  padding-top: 1px !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.rs-tree-node-label {
+  margin-left: -3px !important;
+  margin-top: 1px !important;
+  padding-top: 1px !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.rs-tree-node-label-content {
+  margin-top: 1px !important;
+  padding-top: 1px !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.rs-tree-node-expand-icon-wrapper {
+  margin-top: 0px;
 }

@@ -12,7 +12,7 @@ export interface TopLevelNodeTypeViewProps {
 export const TopLevelNodeTypeView = (props: TopLevelNodeTypeViewProps) => {
   const theme = useTheme();
   const isGroup = (props.node as any).Sections;
-  const styles = getTopLevelNodeTypeViewStyles(props.isOnSmallScreen, theme);
+  const styles = getTopLevelNodeTypeViewStyles(theme);
   if (isGroup) {
     return (
       <div style={styles.mathlinguaTopLevelEntity}>
@@ -28,15 +28,15 @@ export const TopLevelNodeTypeView = (props: TopLevelNodeTypeViewProps) => {
   }
 };
 
-function getTopLevelNodeTypeViewStyles(isOnSmallScreen: boolean, theme: Theme) {
+function getTopLevelNodeTypeViewStyles(theme: Theme) {
   return {
     mathlinguaTopLevelEntity: {
       fontFamily: 'monospace',
       padding: '2ex',
       margin: '1ex',
-      width: 'max-content',
+      minWidth: '50%',
+      width: 'fit-content',
       height: 'max-content',
-      maxWidth: isOnSmallScreen ? '100%' : '50%',
       overflow: 'auto',
       marginLeft: 'auto',
       marginRight: 'auto',

@@ -72,9 +72,9 @@ function getStyles(theme: Theme) {
     },
     tree: {
       maxHeight: 'fit-content',
-      maxWidth: 'fit-content',
-      minWidth: theme.sidebarWidth,
       minHeight: `calc(100vh - ${theme.sizeXLarge}px)`,
+      minWidth: theme.sidebarWidth,
+      width: theme.sidebarWidth,
     },
     bold: {
       fontWeight: 'bold',

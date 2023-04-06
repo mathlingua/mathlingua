@@ -15,7 +15,7 @@ export interface Theme {
 
 export function useTheme(): Theme {
   return {
-    sidebarWidth: 250,
+    sidebarWidth: 350,
     sizeXXSmall: 4,
     sizeXSmall: 8,
     sizeSmall: 16,

@@ -23,7 +23,9 @@ export function Shell(props: ShellProps) {
         {props.sidebarContent}
       </div>
       <div style={styles.content}>
-        {props.mainContent}
+        <div style={styles.contentWrapper}>
+          {props.mainContent}
+        </div>
       </div>
       <div style={styles.rightSidebar}>
       </div>
@@ -64,6 +66,8 @@ function getSmallScreenStyles(theme: Theme, showSidebar: boolean) {
     rightSidebar: {
       display: 'none',
     },
+    contentWrapper: {
+    },
     content: {
       position: 'relative',
       overflow: 'scroll',
@@ -91,10 +95,10 @@ function getLargeScreenStyles(theme: Theme, showSidebar: boolean) {
   return {
     wrapper: {
       display: 'grid',
-      gridTemplateColumns: `${theme.sidebarWidth}px auto auto ${theme.sidebarWidth}px`,
+      gridTemplateColumns: `auto auto auto`,
       gridTemplateAreas: `
-        'topbar      topbar  topbar  topbar'
-        'leftSidebar content content rightSidebar'
+        'topbar      topbar  topbar'
+        'leftSidebar content rightSidebar '
       `,
       overflow: 'scroll',
       background: theme.background,
@@ -112,9 +116,15 @@ function getLargeScreenStyles(theme: Theme, showSidebar: boolean) {
       borderRight: 'solid',
       borderColor: theme.border,
       borderWidth: 1,
+      zIndex: 2,
     },
     rightSidebar: {
       gridArea: 'rightSidebar',
+    },
+    contentWrapper: {
+      marginLeft: 'auto',
+      marginRight: 'auto',
+      width: 'fit-content',
     },
     content: {
       gridArea: 'content',

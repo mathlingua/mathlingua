@@ -12,13 +12,18 @@ import { DocumentView } from './components/ast/DocumentView';
 export function App() {
   const theme = useTheme();
 
-  const [screenWidth, setScreenWidth] = useState(window.screen.availWidth);
-  const isOnSmallScreen = determineIsOnSmallScreen(screenWidth, theme);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const isOnSmallScreen = determineIsOnSmallScreen(windowWidth, theme);
   const [showSidebar, setShowSidebar] = React.useState(!isOnSmallScreen);
   const [selectedPath, setSelectedPath] = React.useState(undefined as string | undefined);
 
   window.addEventListener('resize', () => {
-    setScreenWidth(window.screen.availWidth);
+    const newWidth = window.innerWidth;
+    setWindowWidth(newWidth);
+    const isOnSmallScreen = determineIsOnSmallScreen(newWidth, theme);
+    if (showSidebar && isOnSmallScreen) {
+      setShowSidebar(false);
+    }
   });
 
   const styles = getStyles(theme, isOnSmallScreen);
@@ -92,10 +97,10 @@ function getStyles(theme: Theme, isOnSmallScreen: boolean) {
     },
     page: {
       background: 'white',
-      paddingLeft: isOnSmallScreen ? '2em' : '4em',
-      paddingRight: isOnSmallScreen ? '2em' : '4em',
-      paddingTop: isOnSmallScreen ? '2em' : '2em',
-      paddingBottom: isOnSmallScreen ? '2em' : '2em',
+      paddingLeft: isOnSmallScreen ? '1ex' : '4em',
+      paddingRight: isOnSmallScreen ? '1ex' : '4em',
+      paddingTop: isOnSmallScreen ? '1ex' : '1em',
+      paddingBottom: isOnSmallScreen ? '1ex' : '1em',
       margin: '1ex',
     },
     outline: {
@@ -107,7 +112,7 @@ function getStyles(theme: Theme, isOnSmallScreen: boolean) {
   };
 }
 
-export function determineIsOnSmallScreen(screenWidth: number, theme: Theme) {
-  const maxWidth = theme.sidebarWidth*2 + theme.mainWidth;
-  return screenWidth <= maxWidth;
+export function determineIsOnSmallScreen(windowWidth: number, theme: Theme) {
+  const maxWidth = theme.sidebarWidth *1.25;
+  return windowWidth <= maxWidth;
 }

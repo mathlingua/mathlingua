@@ -25,7 +25,7 @@ test:
 
 .PHONY: release
 release:
-	./scripts/build-releases.sh
+	./scripts/build-releases.sh --notarize
 
 .PHONY: vet
 vet:

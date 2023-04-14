@@ -35,13 +35,40 @@ func Summarize(node ast.TopLevelItemType, tracker *frontend.DiagnosticTracker) (
 }
 
 func SummarizeDescribes(describes *ast.DescribesGroup) *DescribesSummary {
-	return nil
+	if describes == nil {
+		return nil
+	}
+	input, _ := toCommandPatternFromId(describes.Id)
+	return &DescribesSummary{
+		Input: input,
+	}
 }
 
 func SummarizeDefines(defines *ast.DefinesGroup) *DefinesSummary {
-	return nil
+	if defines == nil {
+		return nil
+	}
+	input, _ := toCommandPatternFromId(defines.Id)
+	return &DefinesSummary{
+		Input: input,
+	}
 }
 
 func SummarizeStates(states *ast.StatesGroup) *StatesSummary {
-	return nil
+	if states == nil {
+		return nil
+	}
+	input, _ := toCommandPatternFromId(states.Id)
+	return &StatesSummary{
+		Input: input,
+	}
+}
+
+func toCommandPatternFromId(id ast.IdItem) (CommandPattern, bool) {
+	switch root := id.Root.(type) {
+	case *ast.CommandId:
+		return ToCommandPattern(*root), true
+	default:
+		return CommandPattern{}, false
+	}
 }

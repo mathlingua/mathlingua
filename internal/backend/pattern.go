@@ -16,7 +16,11 @@
 
 package backend
 
-import "mathlingua/internal/ast"
+import (
+	"fmt"
+	"mathlingua/internal/ast"
+	"mathlingua/internal/mlglib"
+)
 
 // A pattern describes the shape of inputs to a Defines, Describes, States
 // provides, expression alias, or spec alias.
@@ -110,15 +114,27 @@ type VarArgPatternData struct {
 }
 
 type CommandPattern struct {
-	Signatures  string
-	CurlyArgs   []PatternType
-	ParenArgs   []PatternType
-	NamedGroups []NamedGroupPattern
+	Signature   string
+	Names       []string
+	CurlyArg    *CurlyPattern
+	NamedGroups *[]NamedGroupPattern
+	ParenArgs   *[]string
+}
+
+type CurlyPattern struct {
+	SquareArgs *[]FormPatternType
+	CurlyArgs  []FormPatternType
+	Direction  *DirectionPattern
+}
+
+type DirectionPattern struct {
+	Name       string
+	SquareArgs []FormPatternType
 }
 
 type NamedGroupPattern struct {
 	Name string
-	Args []PatternType
+	Args []FormPatternType
 }
 
 type MemberNamePattern struct {
@@ -155,7 +171,12 @@ type SpecAliasPattern struct {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func ToPatternFromTarget(item ast.Target) PatternType {
-	return nil
+	switch n := item.Root.(type) {
+	case ast.StructuralFormType:
+		return ToFormPattern(n)
+	default:
+		return nil
+	}
 }
 
 func ToPattern(exp ast.ExpressionType) PatternType {
@@ -309,5 +330,47 @@ func ToPostfixOperatorFormPatternFromId(form ast.PostfixOperatorId) PostfixOpera
 	return PostfixOperatorFormPattern{
 		Operator: toNameFormPatternFromText(form.Operator.Text),
 		Param:    ToFormPattern(form.Param),
+	}
+}
+
+func ToCommandPattern(id ast.CommandId) CommandPattern {
+	names := make([]string, 0)
+	for _, n := range id.Names {
+		names = append(names, n.Text)
+	}
+	var curly *CurlyPattern
+	if id.CurlyParam != nil {
+		curlyParam := id.CurlyParam
+		var squareArgs *[]FormPatternType
+		if curlyParam.SquareParams != nil {
+			patterns := toFormPatterns(*curlyParam.SquareParams)
+			squareArgs = &patterns
+		}
+		var direction *DirectionPattern
+		if curlyParam.Direction != nil {
+			squareArgs := make([]FormPatternType, 0)
+			for _, param := range curlyParam.Direction.SquareParams {
+				if form, ok := param.(ast.StructuralFormType); ok {
+					squareArgs = append(squareArgs, ToFormPattern(form))
+				} else {
+					panic(fmt.Sprintf("Cannot convert direction square param to a pattern: %s",
+						mlglib.PrettyPrint(param)))
+				}
+			}
+			direction = &DirectionPattern{
+				Name:       curly.Direction.Name,
+				SquareArgs: squareArgs,
+			}
+		}
+		curly = &CurlyPattern{
+			SquareArgs: squareArgs,
+			CurlyArgs:  toFormPatterns(*&curlyParam.CurlyParams),
+			Direction:  direction,
+		}
+	}
+	return CommandPattern{
+		Signature: GetSignatureStringFromCommandId(id),
+		Names:     names,
+		CurlyArg:  curly,
 	}
 }

@@ -145,6 +145,7 @@ func (w *Workspace) DocumentCount() int {
 }
 
 func (w *Workspace) Check() CheckResult {
+	w.findUsedUnknownSignatures()
 	return CheckResult{
 		Diagnostics: w.tracker.Diagnostics(),
 	}
@@ -348,4 +349,32 @@ func expandAliasesAt(node ast.MlgNodeType, summaries map[string]SummaryType) {
 
 func (w *Workspace) expandAliases() {
 	expandAliasesAt(w.astRoot, w.summaries)
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (w *Workspace) findUsedUnknownSignatures() {
+	for path, doc := range w.astRoot.Documents {
+		for _, item := range doc.Items {
+			findUsedUnknownSignaturesImpl(item, path, w)
+		}
+	}
+}
+
+func findUsedUnknownSignaturesImpl(node ast.MlgNodeType, path ast.Path, w *Workspace) {
+	if cmd, ok := node.(*ast.CommandExpression); ok {
+		sig := GetSignatureStringFromCommand(*cmd)
+		if _, ok := w.signaturesToIds[sig]; !ok {
+			w.tracker.Append(frontend.Diagnostic{
+				Type:     frontend.Error,
+				Origin:   frontend.BackendOrigin,
+				Message:  fmt.Sprintf("Unrecognized signature %s", sig),
+				Path:     path,
+				Position: node.GetCommonMetaData().Start,
+			})
+		}
+	}
+	node.ForEach(func(subNode ast.MlgNodeType) {
+		findUsedUnknownSignaturesImpl(subNode, path, w)
+	})
 }

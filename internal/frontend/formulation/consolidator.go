@@ -88,14 +88,31 @@ func toNode(path ast.Path, items *mlglib.Stack[ShuntingYardItem[ast.FormulationN
 	case *ast.EnclosedNonCommandOperatorTarget:
 		// for example [x]
 		target := top
-		lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression", tracker,
-			top.Start())
-		rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression", tracker,
-			top.Start())
-		return &ast.InfixOperatorCallExpression{
-			Target: target,
-			Lhs:    rhs,
-			Rhs:    lhs,
+		if rawTop.ItemType == PrefixOperatorType {
+			arg := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
+				tracker, top.Start())
+			return &ast.PrefixOperatorCallExpression{
+				Target: target,
+				Arg:    arg,
+			}
+		} else if rawTop.ItemType == PostfixOperatorType {
+			arg := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
+				tracker, top.Start())
+			return &ast.PostfixOperatorCallExpression{
+				Target: target,
+				Arg:    arg,
+			}
+		} else {
+			// it is an infix
+			lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression", tracker,
+				top.Start())
+			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression", tracker,
+				top.Start())
+			return &ast.InfixOperatorCallExpression{
+				Target: target,
+				Lhs:    rhs,
+				Rhs:    lhs,
+			}
 		}
 	case *ast.NonEnclosedNonCommandOperatorTarget:
 		// for example + or **
@@ -520,7 +537,7 @@ func checkType[T any](path ast.Path, node ast.FormulationNodeType, def T, typeNa
 			Type:     frontend.Error,
 			Path:     path,
 			Origin:   frontend.FormulationConsolidatorOrigin,
-			Message:  fmt.Sprintf("Expected a %s", typeName),
+			Message:  fmt.Sprintf("Expected a %s but found %s", typeName, mlglib.PrettyPrint(node)),
 			Position: position,
 		})
 		return def

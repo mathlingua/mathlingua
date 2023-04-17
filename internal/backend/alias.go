@@ -94,37 +94,37 @@ type FunctionExpAliasSummary struct {
 }
 
 type CommandExpAliasSummary struct {
-	Lsh   CommandPattern
+	Lhs   CommandPattern
 	Rhs   ast.ExpressionType
 	Scope *ast.Scope
 }
 
 type MemberNameExpAliasSummary struct {
-	Lsh   MemberNamePattern
+	Lhs   ChainExpressionPattern
 	Rhs   ast.ExpressionType
 	Scope *ast.Scope
 }
 
 type MemberFunctionExpAliasSummary struct {
-	Lsh   MemberFunctionPattern
+	Lhs   ChainExpressionPattern
 	Rhs   ast.ExpressionType
 	Scope *ast.Scope
 }
 
 type MemberInfixExpAliasSummary struct {
-	Lsh   MemberInfixPattern
+	Lhs   InfixOperatorFormPattern
 	Rhs   ast.ExpressionType
 	Scope *ast.Scope
 }
 
 type MemberPrefixExpAliasSummary struct {
-	Lhs   MemberPrefixPattern
+	Lhs   PrefixOperatorFormPattern
 	Rhs   ast.ExpressionType
 	Scope *ast.Scope
 }
 
 type MemberPostfixExpAliasSummary struct {
-	Lsh   MemberPostfixPattern
+	Lhs   PostfixOperatorFormPattern
 	Rhs   ast.ExpressionType
 	Scope *ast.Scope
 }
@@ -133,4 +133,10 @@ type MemberPostfixExpAliasSummary struct {
 
 func ToInfixExpAliasSummary(node ast.ExpressionColonArrowItem) InfixExpAliasSummary {
 	return InfixExpAliasSummary{}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func ExpandAliasInline(node ast.MlgNodeType, aliasSummary AliasSummaryType) bool {
+	return false
 }

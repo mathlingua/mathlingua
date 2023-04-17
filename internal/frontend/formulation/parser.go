@@ -260,9 +260,35 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 		fp.expect(ast.RCurly)
 		fp.lexer.Commit(id)
 		return ast.VarArgData{
-			IsVarArg:     true,
-			VarArgNames:  []string{varName.Text},
-			VarArgBounds: []string{bound.Text},
+			IsVarArg: true,
+			VarArgNames: []ast.NameForm{
+				ast.NameForm{
+					Text:            varName.Text,
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg: ast.VarArgData{
+						IsVarArg:            false,
+						VarArgNames:         nil,
+						VarArgBounds:        nil,
+						CommonMetaData:      ast.CommonMetaData{},
+						FormulationMetaData: ast.FormulationMetaData{},
+					},
+				},
+			},
+			VarArgBounds: []ast.NameForm{
+				ast.NameForm{
+					Text:            bound.Text,
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg: ast.VarArgData{
+						IsVarArg:            false,
+						VarArgNames:         nil,
+						VarArgBounds:        nil,
+						CommonMetaData:      ast.CommonMetaData{},
+						FormulationMetaData: ast.FormulationMetaData{},
+					},
+				},
+			},
 			CommonMetaData: ast.CommonMetaData{
 				Start: start,
 				Key:   fp.keyGen.Next(),
@@ -271,7 +297,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 	} else if fp.has(ast.LParen) {
 		// its of the form '(name1,name2)...(bound1,bound2)'
 		fp.next() // move past the (
-		varNames := make([]string, 0)
+		varNames := make([]ast.NameForm, 0)
 		for fp.lexer.HasNext() {
 			if fp.has(ast.RParen) {
 				break
@@ -286,7 +312,19 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 				fp.lexer.RollBack(id)
 				return ast.VarArgData{}, false
 			}
-			varNames = append(varNames, name.Text)
+			varNames = append(varNames,
+				ast.NameForm{
+					Text:            name.Text,
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg: ast.VarArgData{
+						IsVarArg:            false,
+						VarArgNames:         nil,
+						VarArgBounds:        nil,
+						CommonMetaData:      ast.CommonMetaData{},
+						FormulationMetaData: ast.FormulationMetaData{},
+					},
+				})
 		}
 		fp.expect(ast.RParen)
 		_, ok := fp.token(ast.DotDotDot)
@@ -297,7 +335,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 			}, false
 		}
 		fp.expect(ast.LParen)
-		bounds := make([]string, 0)
+		bounds := make([]ast.NameForm, 0)
 		for fp.lexer.HasNext() {
 			if fp.has(ast.RParen) {
 				break
@@ -314,7 +352,19 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 					IsVarArg: false,
 				}, false
 			}
-			bounds = append(bounds, name.Text)
+			bounds = append(bounds,
+				ast.NameForm{
+					Text:            name.Text,
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg: ast.VarArgData{
+						IsVarArg:            false,
+						VarArgNames:         nil,
+						VarArgBounds:        nil,
+						CommonMetaData:      ast.CommonMetaData{},
+						FormulationMetaData: ast.FormulationMetaData{},
+					},
+				})
 		}
 		fp.expect(ast.RParen)
 		fp.expect(ast.RCurly)

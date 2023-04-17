@@ -325,21 +325,21 @@ func (n VarArgData) ToCode() string {
 		if len(n.VarArgNames) == 0 && len(n.VarArgBounds) == 0 {
 			return "..."
 		} else if len(n.VarArgNames) == 1 && len(n.VarArgBounds) == 1 {
-			return "{" + n.VarArgNames[0] + "..." + n.VarArgBounds[0] + "}"
+			return "{" + n.VarArgNames[0].Text + "..." + n.VarArgBounds[0].Text + "}"
 		} else {
 			result := "{("
 			for i, name := range n.VarArgNames {
 				if i > 0 {
 					result += ","
 				}
-				result += name
+				result += name.Text
 			}
 			result += ")...("
 			for i, bound := range n.VarArgBounds {
 				if i > 0 {
 					result += ","
 				}
-				result += bound
+				result += bound.Text
 			}
 			result += ")}"
 			return result

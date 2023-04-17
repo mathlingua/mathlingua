@@ -18,8 +18,8 @@ package ast
 
 type VarArgData struct {
 	IsVarArg            bool
-	VarArgNames         []string
-	VarArgBounds        []string
+	VarArgNames         []NameForm
+	VarArgBounds        []NameForm
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

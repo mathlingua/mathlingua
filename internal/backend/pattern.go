@@ -28,31 +28,35 @@ type PatternType interface {
 	PatternType()
 }
 
+func (NameFormPattern) PatternType()                 {}
+func (FunctionFormPattern) PatternType()             {}
+func (TupleFormPattern) PatternType()                {}
+func (ConditionalSetExpressionPattern) PatternType() {}
+func (ConditionalSetFormPattern) PatternType()       {}
+func (InfixOperatorFormPattern) PatternType()        {}
+func (PrefixOperatorFormPattern) PatternType()       {}
+func (PostfixOperatorFormPattern) PatternType()      {}
+func (OrdinalPattern) PatternType()                  {}
+
 func (NameColonEqualsPatternPattern) PatternType()  {}
 func (FunctionColonEqualsNamePattern) PatternType() {}
-func (NameFormPattern) PatternType()                {}
-func (FunctionFormPattern) PatternType()            {}
-func (TupleFormPattern) PatternType()               {}
-func (ConditionalSetFormPattern) PatternType()      {}
-func (InfixOperatorFormPattern) PatternType()       {}
-func (PrefixOperatorFormPattern) PatternType()      {}
-func (PostfixOperatorFormPattern) PatternType()     {}
+func (InfixCommandOperatorPattern) PatternType()    {}
+func (InfixCommandTargetPattern) PatternType()      {}
 func (CommandPattern) PatternType()                 {}
-func (MemberNamePattern) PatternType()              {}
-func (MemberFunctionPattern) PatternType()          {}
-func (MemberInfixPattern) PatternType()             {}
-func (MemberPrefixPattern) PatternType()            {}
-func (MemberPostfixPattern) PatternType()           {}
-func (SpecAliasPattern) PatternType()               {}
+func (NamedGroupPattern) PatternType()              {}
+func (ChainExpressionPattern) PatternType()         {}
+
+func (SpecAliasPattern) PatternType() {}
+func (AliasPattern) PatternType()     {}
 
 type NameColonEqualsPatternPattern struct {
-	Lhs string
+	Lhs NameFormPattern
 	Rhs PatternType
 }
 
 type FunctionColonEqualsNamePattern struct {
 	Lhs FunctionFormPattern
-	Rhs string
+	Rhs NameFormPattern
 }
 
 type FormPatternType interface {
@@ -81,6 +85,28 @@ type FunctionFormPattern struct {
 	VarArg VarArgPatternData
 }
 
+type LiteralFormPatternType interface {
+	LiteralFormPatternType()
+}
+
+func (NameFormPattern) LiteralFormPatternType()           {}
+func (FunctionFormPattern) LiteralFormPatternType()       {}
+func (TupleFormPattern) LiteralFormPatternType()          {}
+func (ConditionalSetFormPattern) LiteralFormPatternType() {}
+
+type OrdinalPattern struct {
+	Target LiteralFormPatternType
+	Params []NameFormPattern
+}
+
+type DirectionParamParamPatternType interface {
+	DirectionParamParamPatternType()
+}
+
+func (NameFormPattern) DirectionParamParamPatternType()     {}
+func (FunctionFormPattern) DirectionParamParamPatternType() {}
+func (OrdinalPattern) DirectionParamParamPatternType()      {}
+
 type InfixOperatorFormPattern struct {
 	Operator NameFormPattern
 	Lhs      FormPatternType
@@ -103,69 +129,70 @@ type TupleFormPattern struct {
 }
 
 type ConditionalSetFormPattern struct {
-	Target FormPatternType
-	VarArg VarArgPatternData
+	Target    FormPatternType
+	Condition FunctionFormPattern
+	VarArg    VarArgPatternData
+}
+
+type ConditionalSetExpressionPattern struct {
+	Target     FormPatternType
+	Conditions []FormPatternType
+	VarArg     VarArgPatternData
 }
 
 type VarArgPatternData struct {
 	IsVarArg     bool
-	VarArgNames  []string
-	VarArgBounds []string
+	VarArgNames  []NameFormPattern
+	VarArgBounds []NameFormPattern
+}
+
+type InfixCommandOperatorPattern struct {
+	Lhs      FormPatternType
+	Operator CommandPattern
+	Rhs      FormPatternType
+}
+
+type InfixCommandTargetPattern struct {
+	Command CommandPattern
 }
 
 type CommandPattern struct {
 	Signature   string
-	Names       []string
+	Names       []NameFormPattern
 	CurlyArg    *CurlyPattern
 	NamedGroups *[]NamedGroupPattern
-	ParenArgs   *[]string
+	ParenArgs   *[]NameFormPattern
 }
 
 type CurlyPattern struct {
 	SquareArgs *[]FormPatternType
-	CurlyArgs  []FormPatternType
+	CurlyArgs  *[]FormPatternType
 	Direction  *DirectionPattern
 }
 
 type DirectionPattern struct {
-	Name       string
-	SquareArgs []FormPatternType
+	Name       *NameFormPattern
+	SquareArgs []DirectionParamParamPatternType
+}
+
+type ChainExpressionPattern struct {
+	Parts []FormPatternType
 }
 
 type NamedGroupPattern struct {
-	Name string
-	Args []FormPatternType
-}
-
-type MemberNamePattern struct {
-	Target string
-	Member NameFormPattern
-}
-
-type MemberFunctionPattern struct {
-	Target string
-	Member FunctionFormPattern
-}
-
-type MemberInfixPattern struct {
-	Target string
-	Member InfixOperatorFormPattern
-}
-
-type MemberPrefixPattern struct {
-	Target string
-	Member PrefixOperatorFormPattern
-}
-
-type MemberPostfixPattern struct {
-	Target string
-	Member PostfixOperatorFormPattern
+	Name  NameFormPattern
+	Curly CurlyPattern
 }
 
 type SpecAliasPattern struct {
 	Lhs  PatternType
-	Name string
+	Name NameFormPattern
 	Rhs  PatternType
+}
+
+type AliasPattern struct {
+	Lhs PatternType
+	Rhs PatternType
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -209,6 +236,17 @@ func ToFormPattern(item ast.StructuralFormType) FormPatternType {
 	}
 }
 
+func ToDirectionParamParamPatternType(item ast.StructuralFormType) DirectionParamParamPatternType {
+	switch n := item.(type) {
+	case *ast.NameForm:
+		return ToNameFormPattern(*n)
+	case *ast.FunctionForm:
+		return ToFunctionFormPattern(*n)
+	default:
+		return nil
+	}
+}
+
 func toFormPatterns(items []ast.StructuralFormType) []FormPatternType {
 	patterns := make([]FormPatternType, 0)
 	for _, item := range items {
@@ -218,11 +256,34 @@ func toFormPatterns(items []ast.StructuralFormType) []FormPatternType {
 }
 
 func ToVarArgPatternData(data ast.VarArgData) VarArgPatternData {
-	varArgNames := make([]string, 0)
-	varArgNames = append(varArgNames, data.VarArgNames...)
+	varArgNames := make([]NameFormPattern, 0)
+	varArgNames = append(varArgNames,
+		mlglib.Map(data.VarArgNames, func(name ast.NameForm) NameFormPattern {
+			return NameFormPattern{
+				Text:            name.Text,
+				IsStropped:      false,
+				HasQuestionMark: false,
+				VarArg: VarArgPatternData{
+					IsVarArg:     false,
+					VarArgNames:  nil,
+					VarArgBounds: nil,
+				},
+			}
+		})...)
 
-	varArgBounds := make([]string, 0)
-	varArgBounds = append(varArgBounds, data.VarArgBounds...)
+	varArgBounds := make([]NameFormPattern, 0)
+	varArgBounds = append(varArgBounds, mlglib.Map(data.VarArgBounds, func(name ast.NameForm) NameFormPattern {
+		return NameFormPattern{
+			Text:            name.Text,
+			IsStropped:      false,
+			HasQuestionMark: false,
+			VarArg: VarArgPatternData{
+				IsVarArg:     false,
+				VarArgNames:  nil,
+				VarArgBounds: nil,
+			},
+		}
+	})...)
 
 	return VarArgPatternData{
 		IsVarArg:     data.IsVarArg,
@@ -292,8 +353,8 @@ func toNameFormPatternFromText(text string) NameFormPattern {
 		HasQuestionMark: false,
 		VarArg: VarArgPatternData{
 			IsVarArg:     false,
-			VarArgNames:  make([]string, 0),
-			VarArgBounds: make([]string, 0),
+			VarArgNames:  nil,
+			VarArgBounds: nil,
 		},
 	}
 }
@@ -334,9 +395,18 @@ func ToPostfixOperatorFormPatternFromId(form ast.PostfixOperatorId) PostfixOpera
 }
 
 func ToCommandPattern(id ast.CommandId) CommandPattern {
-	names := make([]string, 0)
+	names := make([]NameFormPattern, 0)
 	for _, n := range id.Names {
-		names = append(names, n.Text)
+		names = append(names, NameFormPattern{
+			Text:            n.Text,
+			IsStropped:      false,
+			HasQuestionMark: false,
+			VarArg: VarArgPatternData{
+				IsVarArg:     false,
+				VarArgNames:  nil,
+				VarArgBounds: nil,
+			},
+		})
 	}
 	var curly *CurlyPattern
 	if id.CurlyParam != nil {
@@ -348,10 +418,10 @@ func ToCommandPattern(id ast.CommandId) CommandPattern {
 		}
 		var direction *DirectionPattern
 		if curlyParam.Direction != nil {
-			squareArgs := make([]FormPatternType, 0)
+			squareArgs := make([]DirectionParamParamPatternType, 0)
 			for _, param := range curlyParam.Direction.SquareParams {
 				if form, ok := param.(ast.StructuralFormType); ok {
-					squareArgs = append(squareArgs, ToFormPattern(form))
+					squareArgs = append(squareArgs, ToDirectionParamParamPatternType(form))
 				} else {
 					panic(fmt.Sprintf("Cannot convert direction square param to a pattern: %s",
 						mlglib.PrettyPrint(param)))
@@ -362,9 +432,10 @@ func ToCommandPattern(id ast.CommandId) CommandPattern {
 				SquareArgs: squareArgs,
 			}
 		}
+		curlyArgs := toFormPatterns(*&curlyParam.CurlyParams)
 		curly = &CurlyPattern{
 			SquareArgs: squareArgs,
-			CurlyArgs:  toFormPatterns(*&curlyParam.CurlyParams),
+			CurlyArgs:  &curlyArgs,
 			Direction:  direction,
 		}
 	}

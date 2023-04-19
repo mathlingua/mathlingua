@@ -279,7 +279,8 @@ func matchConditionalSetForm(node ast.MlgNodeType, pattern ConditionalSetFormPat
 	}
 }
 
-func matchConditionalSetExpression(node ast.MlgNodeType, pattern ConditionalSetExpressionPattern) MatchResult {
+func matchConditionalSetExpression(node ast.MlgNodeType,
+	pattern ConditionalSetExpressionPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.ConditionalSetExpression:
 		targetMatch := Match(n.Target, pattern.Target)
@@ -370,7 +371,8 @@ func matchPostfixOperator(node ast.MlgNodeType, pattern PostfixOperatorFormPatte
 	}
 }
 
-func matchInfixOperatorCommand(node ast.MlgNodeType, pattern InfixCommandOperatorPattern) MatchResult {
+func matchInfixOperatorCommand(node ast.MlgNodeType,
+	pattern InfixCommandOperatorPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.InfixCommandOperatorId:
 		lhsMatch := Match(n.Lhs, pattern.Lhs)
@@ -494,7 +496,8 @@ func matchOrdinal(node ast.MlgNodeType, pattern OrdinalPattern) MatchResult {
 	}
 }
 
-func matchAllDirectionParamParamType(nodes []ast.DirectionParamParamType, patterns []DirectionParamParamPatternType) MatchResult {
+func matchAllDirectionParamParamType(nodes []ast.DirectionParamParamType,
+	patterns []DirectionParamParamPatternType) MatchResult {
 	if len(nodes) != len(patterns) {
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
@@ -518,7 +521,8 @@ func matchAllDirectionParamParamType(nodes []ast.DirectionParamParamType, patter
 	return result
 }
 
-func matchDirectionParamParamType(node ast.DirectionParamParamType, pattern DirectionParamParamPatternType) MatchResult {
+func matchDirectionParamParamType(node ast.DirectionParamParamType,
+	pattern DirectionParamParamPatternType) MatchResult {
 	switch p := pattern.(type) {
 	case NameFormPattern:
 		return matchName(node, p)
@@ -738,7 +742,8 @@ func matchAllNames(nodes []ast.NameForm, patterns []NameFormPattern) MatchResult
 	return result
 }
 
-func matchAllExpressionsAsNames(nodes []ast.ExpressionType, patterns []NameFormPattern) MatchResult {
+func matchAllExpressionsAsNames(nodes []ast.ExpressionType,
+	patterns []NameFormPattern) MatchResult {
 	if len(nodes) != len(patterns) {
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
@@ -762,7 +767,8 @@ func matchAllExpressionsAsNames(nodes []ast.ExpressionType, patterns []NameFormP
 	return result
 }
 
-func matchAllOptionalExpressionsToNames(nodes *[]ast.ExpressionType, patterns *[]NameFormPattern) MatchResult {
+func matchAllOptionalExpressionsToNames(nodes *[]ast.ExpressionType,
+	patterns *[]NameFormPattern) MatchResult {
 	if nodes == nil {
 		zeroNodes := make([]ast.ExpressionType, 0)
 		nodes = &zeroNodes
@@ -798,7 +804,8 @@ func matchAllOptionalExpressionsToNames(nodes *[]ast.ExpressionType, patterns *[
 	return result
 }
 
-func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionType, patterns *[]FormPatternType) MatchResult {
+func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionType,
+	patterns *[]FormPatternType) MatchResult {
 	if nodes == nil {
 		zeroNodes := make([]ast.ExpressionType, 0)
 		nodes = &zeroNodes
@@ -852,7 +859,8 @@ func matchAllExpressions(nodes []ast.ExpressionType, patterns []FormPatternType)
 	return result
 }
 
-func matchAllOptionalStructuralForms(nodes *[]ast.StructuralFormType, patterns *[]FormPatternType) MatchResult {
+func matchAllOptionalStructuralForms(nodes *[]ast.StructuralFormType,
+	patterns *[]FormPatternType) MatchResult {
 	if nodes == nil {
 		zeroNodes := make([]ast.StructuralFormType, 0)
 		nodes = &zeroNodes
@@ -866,7 +874,8 @@ func matchAllOptionalStructuralForms(nodes *[]ast.StructuralFormType, patterns *
 	return matchAllStructuralForms(*nodes, *patterns)
 }
 
-func matchAllStructuralForms(nodes []ast.StructuralFormType, patterns []FormPatternType) MatchResult {
+func matchAllStructuralForms(nodes []ast.StructuralFormType,
+	patterns []FormPatternType) MatchResult {
 	if len(nodes) != len(patterns) {
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
@@ -962,7 +971,8 @@ func matchAllNamedParams(nodes *[]ast.NamedParam, patterns *[]NamedGroupPattern)
 	return result
 }
 
-func matchDirectionParams(nodes *[]ast.DirectionParamParamType, patterns *[]FormPatternType) MatchResult {
+func matchDirectionParams(nodes *[]ast.DirectionParamParamType,
+	patterns *[]FormPatternType) MatchResult {
 	if nodes == nil {
 		zeroNodes := make([]ast.DirectionParamParamType, 0)
 		nodes = &zeroNodes

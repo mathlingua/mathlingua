@@ -28,7 +28,8 @@ func (n NameForm) ToCode() string {
 }
 
 func (n FunctionForm) ToCode() string {
-	return n.Target.ToCode() + "(" + commaSeparatedStringOfNameForms(n.Params) + ")" + n.VarArg.ToCode()
+	return n.Target.ToCode() + "(" + commaSeparatedStringOfNameForms(n.Params) +
+		")" + n.VarArg.ToCode()
 }
 
 func (n TupleForm) ToCode() string {

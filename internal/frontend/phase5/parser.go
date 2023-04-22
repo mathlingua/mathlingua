@@ -654,26 +654,26 @@ func (p *parser) toDocumentedSection(section phase4.Section) *ast.DocumentedSect
 
 func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool) {
 	switch group := arg.Arg.(type) {
-	case phase4.Group:
-		if grp, ok := p.toOverviewGroup(group); ok {
+	case *phase4.Group:
+		if grp, ok := p.toOverviewGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toMotivationGroup(group); ok {
+		} else if grp, ok := p.toMotivationGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toHistoryGroup(group); ok {
+		} else if grp, ok := p.toHistoryGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toExampleGroup(group); ok {
+		} else if grp, ok := p.toExampleGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toRelatedGroup(group); ok {
+		} else if grp, ok := p.toRelatedGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toDiscovererGroup(group); ok {
+		} else if grp, ok := p.toDiscovererGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toNoteGroup(group); ok {
+		} else if grp, ok := p.toNoteGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toWrittenGroup(group); ok {
+		} else if grp, ok := p.toWrittenGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toWritingGroup(group); ok {
+		} else if grp, ok := p.toWritingGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toCalledGroup(group); ok {
+		} else if grp, ok := p.toCalledGroup(*group); ok {
 			return &grp, true
 		}
 	}
@@ -858,16 +858,16 @@ func (p *parser) toProvidesTypes(args []phase4.Argument) []ast.ProvidesType {
 }
 
 func (p *parser) toProvidesTypeFromArg(arg phase4.Argument) (ast.ProvidesType, bool) {
-	if _, ok := arg.Arg.(phase4.FormulationArgumentData); ok {
+	if _, ok := arg.Arg.(*phase4.FormulationArgumentData); ok {
 		alias := p.toAlias(arg)
 		return &alias, true
 	}
 
-	group, ok := arg.Arg.(phase4.Group)
+	group, ok := arg.Arg.(*phase4.Group)
 	if !ok {
 		return nil, false
 	}
-	return p.toProvidesTypeFromGroup(group)
+	return p.toProvidesTypeFromGroup(*group)
 }
 
 func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, bool) {
@@ -925,11 +925,11 @@ func (p *parser) toJustifiedTypes(args []phase4.Argument) []ast.JustifiedType {
 }
 
 func (p *parser) toJustifiedTypeFromArg(arg phase4.Argument) (ast.JustifiedType, bool) {
-	group, ok := arg.Arg.(phase4.Group)
+	group, ok := arg.Arg.(*phase4.Group)
 	if !ok {
 		return nil, false
 	}
-	return p.toJustifiedTypeFromGroup(group)
+	return p.toJustifiedTypeFromGroup(*group)
 }
 
 func (p *parser) toJustifiedTypeFromGroup(group phase4.Group) (ast.JustifiedType, bool) {
@@ -1629,16 +1629,16 @@ func (p *parser) toTopLevelSpecifySection(section phase4.Section) *ast.TopLevelS
 
 func (p *parser) toSpecifyType(arg phase4.Argument) (ast.SpecifyType, bool) {
 	switch group := arg.Arg.(type) {
-	case phase4.Group:
-		if grp, ok := p.toZeroGroup(group); ok {
+	case *phase4.Group:
+		if grp, ok := p.toZeroGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toPositiveIntGroup(group); ok {
+		} else if grp, ok := p.toPositiveIntGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toNegativeIntGroup(group); ok {
+		} else if grp, ok := p.toNegativeIntGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toPositiveFloatGroup(group); ok {
+		} else if grp, ok := p.toPositiveFloatGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toNegativeFloatGroup(group); ok {
+		} else if grp, ok := p.toNegativeFloatGroup(*group); ok {
 			return &grp, true
 		}
 	}
@@ -1841,36 +1841,36 @@ func (p *parser) toResourceSection(section phase4.Section) *ast.ResourceSection 
 
 func (p *parser) toResourceType(arg phase4.Argument) (ast.ResourceType, bool) {
 	switch group := arg.Arg.(type) {
-	case phase4.Group:
-		if grp, ok := p.toTitleGroup(group); ok {
+	case *phase4.Group:
+		if grp, ok := p.toTitleGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toAuthorGroup(group); ok {
+		} else if grp, ok := p.toAuthorGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toOffsetGroup(group); ok {
+		} else if grp, ok := p.toOffsetGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toUrlGroup(group); ok {
+		} else if grp, ok := p.toUrlGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toHomepageGroup(group); ok {
+		} else if grp, ok := p.toHomepageGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toTypeGroup(group); ok {
+		} else if grp, ok := p.toTypeGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toEditionGroup(group); ok {
+		} else if grp, ok := p.toEditionGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toEditorGroup(group); ok {
+		} else if grp, ok := p.toEditorGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toInstitutionGroup(group); ok {
+		} else if grp, ok := p.toInstitutionGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toJournalGroup(group); ok {
+		} else if grp, ok := p.toJournalGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toPublisherGroup(group); ok {
+		} else if grp, ok := p.toPublisherGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toVolumeGroup(group); ok {
+		} else if grp, ok := p.toVolumeGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toMonthGroup(group); ok {
+		} else if grp, ok := p.toMonthGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toYearGroup(group); ok {
+		} else if grp, ok := p.toYearGroup(*group); ok {
 			return &grp, ok
-		} else if grp, ok := p.toDescriptionGroup(group); ok {
+		} else if grp, ok := p.toDescriptionGroup(*group); ok {
 			return &grp, ok
 		}
 	}
@@ -2244,30 +2244,30 @@ func (p *parser) toDescriptionSection(section phase4.Section) *ast.DescriptionSe
 
 func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelItemType, bool) {
 	switch item := item.(type) {
-	case phase4.TextBlock:
-		return p.toTextBlockItem(item), true
-	case phase4.Group:
-		if grp, ok := p.toDefinesGroup(item); ok {
+	case *phase4.TextBlock:
+		return p.toTextBlockItem(*item), true
+	case *phase4.Group:
+		if grp, ok := p.toDefinesGroup(*item); ok {
 			return &grp, true
-		} else if grp, ok := p.toDescribesGroup(item); ok {
+		} else if grp, ok := p.toDescribesGroup(*item); ok {
 			return &grp, true
-		} else if grp, ok := p.toStatesGroup(item); ok {
+		} else if grp, ok := p.toStatesGroup(*item); ok {
 			return &grp, true
-		} else if grp, ok := p.toAxiomGroup(item); ok {
+		} else if grp, ok := p.toAxiomGroup(*item); ok {
 			return &grp, true
-		} else if grp, ok := p.toConjectureGroup(item); ok {
+		} else if grp, ok := p.toConjectureGroup(*item); ok {
 			return &grp, true
-		} else if grp, ok := p.toTheoremGroup(item); ok {
+		} else if grp, ok := p.toTheoremGroup(*item); ok {
 			return &grp, true
-		} else if grp, ok := p.toSpecifyGroup(item); ok {
+		} else if grp, ok := p.toSpecifyGroup(*item); ok {
 			return &grp, true
-		} else if grp, ok := p.toTopicGroup(item); ok {
+		} else if grp, ok := p.toTopicGroup(*item); ok {
 			return &grp, ok
-		} else if grp, ok := p.toPersonGroup(item); ok {
+		} else if grp, ok := p.toPersonGroup(*item); ok {
 			return &grp, ok
-		} else if grp, ok := p.toResourceGroup(item); ok {
+		} else if grp, ok := p.toResourceGroup(*item); ok {
 			return &grp, ok
-		} else if grp, ok := p.toProofGroup(item); ok {
+		} else if grp, ok := p.toProofGroup(*item); ok {
 			return &grp, ok
 		}
 	}
@@ -2340,14 +2340,14 @@ func (p *parser) getStringId(group phase4.Group, required bool) *string {
 
 func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.FormulationNodeType] {
 	switch data := arg.Arg.(type) {
-	case phase4.FormulationArgumentData:
+	case *phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
 			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Formulation[ast.FormulationNodeType]{
 				RawText:        data.Text,
 				Root:           node,
 				Label:          nil,
-				CommonMetaData: toCommonMetaData(arg.MetaData),
+				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		}
 	}
@@ -2358,42 +2358,42 @@ func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.Formulat
 
 func (p *parser) toClause(arg phase4.Argument) ast.ClauseType {
 	switch data := arg.Arg.(type) {
-	case phase4.FormulationArgumentData:
+	case *phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
 			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return &ast.Formulation[ast.FormulationNodeType]{
 				RawText:        data.Text,
 				Root:           node,
 				Label:          nil,
-				CommonMetaData: toCommonMetaData(arg.MetaData),
+				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		} else {
 			return &ast.Formulation[ast.FormulationNodeType]{}
 		}
-	case phase4.Group:
-		if grp, ok := p.toAllOfGroup(data); ok {
+	case *phase4.Group:
+		if grp, ok := p.toAllOfGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toNotGroup(data); ok {
+		} else if grp, ok := p.toNotGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toAnyOfGroup(data); ok {
+		} else if grp, ok := p.toAnyOfGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toOneOfGroup(data); ok {
+		} else if grp, ok := p.toOneOfGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toForAllGroup(data); ok {
+		} else if grp, ok := p.toForAllGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toExistsGroup(data); ok {
+		} else if grp, ok := p.toExistsGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toExistsUniqueGroup(data); ok {
+		} else if grp, ok := p.toExistsUniqueGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toIfGroup(data); ok {
+		} else if grp, ok := p.toIfGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toIffGroup(data); ok {
+		} else if grp, ok := p.toIffGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toWhenGroup(data); ok {
+		} else if grp, ok := p.toWhenGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toPiecewiseGroup(data); ok {
+		} else if grp, ok := p.toPiecewiseGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toGivenGroup(data); ok {
+		} else if grp, ok := p.toGivenGroup(*data); ok {
 			return &grp
 		}
 	}
@@ -2406,14 +2406,14 @@ func (p *parser) toClause(arg phase4.Argument) ast.ClauseType {
 
 func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 	switch data := arg.Arg.(type) {
-	case phase4.FormulationArgumentData:
+	case *phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
 			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Spec{
 				RawText:        data.Text,
 				Root:           node,
 				Label:          nil,
-				CommonMetaData: toCommonMetaData(arg.MetaData),
+				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		} else {
 			return ast.Spec{}
@@ -2427,14 +2427,14 @@ func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 
 func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 	switch data := arg.Arg.(type) {
-	case phase4.FormulationArgumentData:
+	case *phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
 			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Alias{
 				RawText:        data.Text,
 				Root:           node,
 				Label:          nil,
-				CommonMetaData: toCommonMetaData(arg.MetaData),
+				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		}
 	}
@@ -2444,14 +2444,14 @@ func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 
 func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 	switch data := arg.Arg.(type) {
-	case phase4.ArgumentTextArgumentData:
+	case *phase4.ArgumentTextArgumentData:
 		if node, ok := formulation.ParseForm(p.path, data.Text, arg.MetaData.Start,
 			p.tracker, p.keyGen); ok {
 			return ast.Target{
 				RawText:        data.Text,
 				Root:           node,
 				Label:          nil,
-				CommonMetaData: toCommonMetaData(arg.MetaData),
+				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		} else {
 			return ast.Target{}
@@ -2465,10 +2465,10 @@ func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 
 func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
 	switch data := arg.Arg.(type) {
-	case phase4.TextArgumentData:
+	case *phase4.TextArgumentData:
 		return ast.TextItem{
 			RawText:        data.Text,
-			CommonMetaData: toCommonMetaData(arg.MetaData),
+			CommonMetaData: toCommonMetaData(data.MetaData),
 		}
 	default:
 		p.tracker.Append(p.newError("Expected a \"...\" item", arg.MetaData.Start))
@@ -2478,8 +2478,8 @@ func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
 
 func (p *parser) toNoteType(arg phase4.Argument) (ast.NoteType, bool) {
 	switch group := arg.Arg.(type) {
-	case phase4.Group:
-		grp, _ := p.toDescribingGroup(group)
+	case *phase4.Group:
+		grp, _ := p.toDescribingGroup(*group)
 		return &grp, true
 	default:
 		textItem := p.toTextItem(arg)
@@ -2512,10 +2512,10 @@ func (p *parser) toDescribingSection(section phase4.Section) *ast.DescribingSect
 
 func (p *parser) toPersonType(arg phase4.Argument) (ast.PersonType, bool) {
 	switch group := arg.Arg.(type) {
-	case phase4.Group:
-		if grp, ok := p.toNameGroup(group); ok {
+	case *phase4.Group:
+		if grp, ok := p.toNameGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toBiographyGroup(group); ok {
+		} else if grp, ok := p.toBiographyGroup(*group); ok {
 			return &grp, true
 		}
 	}
@@ -2568,14 +2568,14 @@ func (p *parser) toBiographySection(section phase4.Section) *ast.BiographySectio
 
 func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[*ast.Signature] {
 	switch data := arg.Arg.(type) {
-	case phase4.FormulationArgumentData:
+	case *phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseSignature(
 			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
 			return ast.Formulation[*ast.Signature]{
 				RawText:        data.Text,
 				Root:           &node,
 				Label:          nil,
-				CommonMetaData: toCommonMetaData(arg.MetaData),
+				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		} else {
 			return ast.Formulation[*ast.Signature]{}

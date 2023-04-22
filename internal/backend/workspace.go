@@ -82,11 +82,6 @@ import (
 //     The 'view' operatio n follows the same procedure except it doesn't do the last semantic
 //     checks.
 
-type ViewResult struct {
-	Diagnostics map[ast.Path][]frontend.Diagnostic
-	Pages       []WorkspacePageResponse
-}
-
 type WorkspacePageResponse struct {
 	Path ast.Path
 	Page PageResponse
@@ -163,7 +158,69 @@ func (w *Workspace) Paths() []ast.Path {
 }
 
 func (w *Workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Diagnostic) {
-	return w.phase4Root.Documents[path], w.getDiagnosticsForPath(path)
+	doc := w.astRoot.Documents[path]
+	keyToFormulationStr := make(map[int]string, 0)
+	for i := range doc.Items {
+		w.formulationLikeToString(doc.Items[i], keyToFormulationStr)
+	}
+	phase4Doc := w.phase4Root.Documents[path]
+	w.updateFormulationStrings(path, &phase4Doc, keyToFormulationStr)
+	return phase4Doc, w.getDiagnosticsForPath(path)
+}
+
+func (w *Workspace) formulationLikeToString(node ast.MlgNodeType, keyToFormulationStr map[int]string) {
+	if formulation, ok := node.(*ast.Formulation[ast.FormulationNodeType]); ok {
+		key := formulation.GetCommonMetaData().Key
+		newText := w.formulationToWritten(*formulation)
+		keyToFormulationStr[key] = newText
+	} else if spec, ok := node.(*ast.Spec); ok {
+		key := spec.GetCommonMetaData().Key
+		newText := w.specToWritten(*spec)
+		keyToFormulationStr[key] = newText
+	} else if alias, ok := node.(*ast.Alias); ok {
+		key := alias.GetCommonMetaData().Key
+		newText := w.aliasToWritten(*alias)
+		keyToFormulationStr[key] = newText
+	} else {
+		node.ForEach(func(subNode ast.MlgNodeType) {
+			w.formulationLikeToString(subNode, keyToFormulationStr)
+		})
+	}
+}
+
+func (w *Workspace) formulationToWritten(node ast.Formulation[ast.FormulationNodeType]) string {
+	return node.Root.ToCode()
+}
+
+func (w *Workspace) specToWritten(node ast.Spec) string {
+	return node.Root.ToCode()
+}
+
+func (w *Workspace) aliasToWritten(node ast.Alias) string {
+	return node.Root.ToCode()
+}
+
+func (w *Workspace) updateFormulationStrings(path ast.Path, node phase4.Node, keyToFormulationStr map[int]string) {
+	if arg, ok := node.(*phase4.Argument); ok {
+		if argData, ok := arg.Arg.(*phase4.FormulationArgumentData); ok {
+			key := argData.MetaData.Key
+			if newText, ok := keyToFormulationStr[key]; ok {
+				argData.Text = newText
+			} else {
+				w.tracker.Append(frontend.Diagnostic{
+					Type:     frontend.Warning,
+					Origin:   frontend.BackendOrigin,
+					Message:  fmt.Sprintf("Could not process: %s", argData.Text),
+					Path:     path,
+					Position: arg.MetaData.Start,
+				})
+			}
+		}
+	}
+	size := node.Size()
+	for i := 0; i < size; i++ {
+		w.updateFormulationStrings(path, node.ChildAt(i), keyToFormulationStr)
+	}
 }
 
 func (w *Workspace) getDiagnosticsForPath(path ast.Path) []frontend.Diagnostic {
@@ -181,10 +238,6 @@ func (w *Workspace) Check() CheckResult {
 	return CheckResult{
 		Diagnostics: w.tracker.Diagnostics(),
 	}
-}
-
-func (w *Workspace) View() ViewResult {
-	return ViewResult{}
 }
 
 func (w *Workspace) initializeSignaturesToIds() {

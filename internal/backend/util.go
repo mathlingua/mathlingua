@@ -23,14 +23,14 @@ import (
 
 func GetPhase4MetaId(node phase4.TopLevelNodeType) (string, bool) {
 	switch tl := node.(type) {
-	case phase4.Group:
+	case *phase4.Group:
 		found := false
 		metaId := ""
 		for _, sec := range tl.Sections {
 			if sec.Name == ast.UpperIdName {
 				args := sec.Args
 				if len(args) > 0 {
-					text, ok := args[0].Arg.(phase4.TextArgumentData)
+					text, ok := args[0].Arg.(*phase4.TextArgumentData)
 					if ok {
 						found = true
 						metaId = text.Text

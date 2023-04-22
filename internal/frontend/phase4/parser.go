@@ -78,19 +78,19 @@ func (p *phase4Parser) document() Document {
 		if peek.Type == ast.Id {
 			id := p.lexer.Next()
 			if group, ok := p.group(&id.Text); ok {
-				nodes = append(nodes, group)
+				nodes = append(nodes, &group)
 			} else {
 				p.appendDiagnostic("Expected a group to follow", id.Position)
 			}
 		} else if peek.Type == ast.BeginGroup {
 			if group, ok := p.group(nil); ok {
-				nodes = append(nodes, group)
+				nodes = append(nodes, &group)
 			} else {
 				p.appendDiagnostic("Expected a group", peek.Position)
 			}
 		} else if peek.Type == ast.TextBlock {
 			textBlock := p.lexer.Next()
-			nodes = append(nodes, TextBlock{
+			nodes = append(nodes, &TextBlock{
 				Type: TextBlockType,
 				Text: textBlock.Text,
 				MetaData: MetaData{
@@ -232,7 +232,7 @@ func (p *phase4Parser) argument() (Argument, bool) {
 func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 	if p.has(ast.ArgumentText) {
 		arg := p.lexer.Next()
-		return ArgumentTextArgumentData{
+		return &ArgumentTextArgumentData{
 			Type: ArgumentTextArgumentDataType,
 			Text: arg.Text,
 			MetaData: MetaData{
@@ -244,7 +244,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 
 	if p.has(ast.FormulationTokenType) {
 		arg := p.lexer.Next()
-		return FormulationArgumentData{
+		return &FormulationArgumentData{
 			Type: FormulationArgumentDataType,
 			Text: arg.Text,
 			MetaData: MetaData{
@@ -256,7 +256,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 
 	if p.has(ast.Text) {
 		arg := p.lexer.Next()
-		return TextArgumentData{
+		return &TextArgumentData{
 			Type: TextArgumentDataType,
 			Text: arg.Text,
 			MetaData: MetaData{
@@ -269,8 +269,10 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 	if p.has(ast.Id) {
 		id := p.lexer.Next()
 		idText := id.Text
-		return p.group(&idText)
+		grp, ok := p.group(&idText)
+		return &grp, ok
 	}
 
-	return p.group(nil)
+	grp, ok := p.group(nil)
+	return &grp, ok
 }

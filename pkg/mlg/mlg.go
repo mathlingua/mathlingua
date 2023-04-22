@@ -19,13 +19,8 @@ package mlg
 import (
 	"encoding/json"
 	"fmt"
-	"mathlingua/internal/ast"
 	"mathlingua/internal/backend"
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/server"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 type Mlg struct {
@@ -52,15 +47,8 @@ type checkResult struct {
 }
 
 func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
-	diagnostics := make([]frontend.Diagnostic, 0)
+	workspace, diagnostics := backend.NewWorkspaceFromPaths(paths)
 
-	findFiles, findDiagnostics := getMathlinguaFiles(paths)
-	diagnostics = append(diagnostics, findDiagnostics...)
-
-	contents, contentDiagnostics := getFileContents(findFiles)
-	diagnostics = append(diagnostics, contentDiagnostics...)
-
-	workspace := backend.NewWorkspace(contents)
 	checkResult := workspace.Check()
 	diagnostics = append(diagnostics, checkResult.Diagnostics...)
 
@@ -84,120 +72,14 @@ func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 }
 
 func (m *Mlg) View() {
-	server.Start()
+	backend.StartServer()
 }
 
 func (m *Mlg) Version() string {
 	return "v0.20.0"
 }
 
-func getMathlinguaFiles(paths []string) (files []ast.Path, diagnostics []frontend.Diagnostic) {
-	files = make([]ast.Path, 0)
-
-	diagnostics = make([]frontend.Diagnostic, 0)
-
-	if len(paths) == 0 {
-		paths = append(paths, ".")
-	} else {
-		for _, p := range paths {
-			stat, _ := os.Stat(p)
-			isDir := stat != nil && stat.IsDir()
-			if !isDir && !strings.HasSuffix(p, ".math") {
-				diagnostics = append(diagnostics, frontend.Diagnostic{
-					Type:    frontend.Warning,
-					Origin:  frontend.MlgCheckOrigin,
-					Path:    ast.Path(p),
-					Message: fmt.Sprintf("File %s is not a Mathlingua (.math) file and will be ignored", p),
-				})
-			}
-		}
-	}
-
-	for _, p := range paths {
-		err := filepath.Walk(p, func(p string, info os.FileInfo, err error) error {
-			if err != nil {
-				diagnostics = append(diagnostics, frontend.Diagnostic{
-					Type:    frontend.Error,
-					Origin:  frontend.MlgCheckOrigin,
-					Path:    ast.Path(p),
-					Message: err.Error(),
-				})
-				return err
-			}
-
-			stat, err := os.Stat(p)
-			if err != nil {
-				diagnostics = append(diagnostics, frontend.Diagnostic{
-					Type:    frontend.Error,
-					Origin:  frontend.MlgCheckOrigin,
-					Path:    ast.Path(p),
-					Message: err.Error(),
-				})
-				return err
-			}
-
-			if stat.IsDir() || !strings.HasSuffix(p, ".math") {
-				return nil
-			}
-
-			files = append(files, ast.ToPath(p))
-
-			return nil
-		})
-
-		if err != nil {
-			diagnostics = append(diagnostics, frontend.Diagnostic{
-				Type:    frontend.Error,
-				Origin:  frontend.MlgCheckOrigin,
-				Path:    ast.Path(p),
-				Message: err.Error(),
-			})
-			continue
-		}
-	}
-
-	return files, diagnostics
-}
-
-func getFileContents(filePaths []ast.Path) (contents map[ast.Path]string,
-	diagnostics []frontend.Diagnostic) {
-	contents = make(map[ast.Path]string, 0)
-	diagnostics = make([]frontend.Diagnostic, 0)
-
-	for _, p := range filePaths {
-		text, err := appendMetaIds(string(p))
-		if err != nil {
-			diagnostics = append(diagnostics, frontend.Diagnostic{
-				Type:    frontend.Error,
-				Origin:  frontend.MlgCheckOrigin,
-				Path:    ast.Path(p),
-				Message: err.Error(),
-			})
-		} else {
-			contents[p] = text
-		}
-	}
-
-	return contents, diagnostics
-}
-
-func appendMetaIds(path string) (string, error) {
-	bytes, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-
-	endText, err := backend.AppendMetaIds(string(bytes))
-	if err != nil {
-		return "", err
-	}
-
-	if err := os.WriteFile(path, []byte(endText), 0644); err != nil {
-		return "", err
-	}
-
-	return endText, nil
-}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (m *Mlg) printAsJson(checkResult backend.CheckResult) {
 	if data, err := json.MarshalIndent(checkResult, "", "  "); err != nil {

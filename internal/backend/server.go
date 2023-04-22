@@ -14,32 +14,41 @@
  * limitations under the License.
  */
 
-package server
+package backend
 
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/phase1"
-	"mathlingua/internal/frontend/phase2"
-	"mathlingua/internal/frontend/phase3"
-	"mathlingua/internal/frontend/phase4"
 	"mathlingua/web"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/gorilla/mux"
 )
 
-func Start() {
+func StartServer() {
+	workspace, diagnostics := NewWorkspaceFromPaths([]string{"."})
+	for _, diag := range diagnostics {
+		if diag.Type == frontend.Error {
+			fmt.Printf("%s (%d, %d)\n%s",
+				diag.Path, diag.Position.Row+1, diag.Position.Column+1,
+				diag.Message)
+		} else {
+			fmt.Printf("%s (%d, %d)\n%s",
+				diag.Path, diag.Position.Row+1, diag.Position.Column+1,
+				diag.Message)
+		}
+	}
+
 	router := mux.NewRouter()
 	router.Use(handleCors)
-	router.HandleFunc("/api/paths", paths).Methods("GET")
-	router.HandleFunc("/api/page", page).Methods("GET")
+	router.HandleFunc("/api/paths", func(w http.ResponseWriter, r *http.Request) {
+		paths(workspace, w, r)
+	}).Methods("GET")
+	router.HandleFunc("/api/page", func(w http.ResponseWriter, r *http.Request) {
+		page(workspace, w, r)
+	}).Methods("GET")
 	router.PathPrefix("/").Handler(web.AssetHandler{})
 
 	fmt.Println("Visit http://localhost:8080 to view your documents")
@@ -48,64 +57,20 @@ func Start() {
 	}
 }
 
-type PathsResponse struct {
-	Error string
-	Paths []string
-}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func paths(writer http.ResponseWriter, request *http.Request) {
+func paths(workspace *Workspace, writer http.ResponseWriter, request *http.Request) {
 	setJsonContentType(writer)
 	resp := PathsResponse{
-		Paths: findAllMathlinguaFiles("."),
+		Paths: workspace.Paths(),
 	}
 	writeResponse(writer, &resp)
 }
 
-type PageResponse struct {
-	Error       string
-	Diagnostics []frontend.Diagnostic
-	Document    phase4.Document
-}
-
-func findAllMathlinguaFiles(dir string) []string {
-	children, err := ioutil.ReadDir(dir)
-	if err != nil {
-		return nil
-	}
-
-	result := make([]string, 0)
-	for _, child := range children {
-		name := child.Name()
-		if strings.HasPrefix(name, ".") {
-			// skip hidden dirs
-			continue
-		}
-		fullpath := filepath.Join(dir, name)
-		if child.IsDir() {
-			result = append(result, findAllMathlinguaFiles(fullpath)...)
-		} else if strings.HasSuffix(child.Name(), ".math") {
-			result = append(result, fullpath)
-		}
-	}
-
-	return result
-}
-
-func page(writer http.ResponseWriter, request *http.Request) {
+func page(workspace *Workspace, writer http.ResponseWriter, request *http.Request) {
 	setJsonContentType(writer)
 	path := request.URL.Query().Get("path")
-
-	bytes, err := os.ReadFile(path)
-	if err != nil {
-		resp := PageResponse{
-			Error: err.Error(),
-		}
-		writeResponse(writer, &resp)
-		return
-	}
-
-	input := string(bytes)
-	doc, diagnostics := parse(input, ast.ToPath(path))
+	doc, diagnostics := workspace.GetDocumentAt(ast.ToPath(path))
 
 	resp := PageResponse{
 		Diagnostics: diagnostics,
@@ -114,6 +79,8 @@ func page(writer http.ResponseWriter, request *http.Request) {
 
 	writeResponse(writer, &resp)
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func setJsonContentType(writer http.ResponseWriter) {
 	writer.Header().Set("Content-Type", "application/json")
@@ -138,16 +105,4 @@ func handleCors(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-func parse(text string, path ast.Path) (phase4.Document, []frontend.Diagnostic) {
-	tracker := frontend.NewDiagnosticTracker()
-
-	lexer1 := phase1.NewLexer(text, path, tracker)
-	lexer2 := phase2.NewLexer(lexer1, path, tracker)
-	lexer3 := phase3.NewLexer(lexer2, path, tracker)
-
-	doc := phase4.Parse(lexer3, path, tracker)
-
-	return doc, tracker.Diagnostics()
 }

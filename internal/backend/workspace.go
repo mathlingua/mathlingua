@@ -22,7 +22,6 @@ import (
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/phase4"
 	"mathlingua/internal/mlglib"
-	"mathlingua/internal/server"
 )
 
 // The general approach for checking is the following:
@@ -90,7 +89,18 @@ type ViewResult struct {
 
 type WorkspacePageResponse struct {
 	Path ast.Path
-	Page server.PageResponse
+	Page PageResponse
+}
+
+type PathsResponse struct {
+	Error string
+	Paths []ast.Path
+}
+
+type PageResponse struct {
+	Error       string
+	Diagnostics []frontend.Diagnostic
+	Document    phase4.Document
 }
 
 type CheckResult struct {
@@ -142,6 +152,28 @@ func (w *Workspace) initialize(contents map[ast.Path]string) {
 
 func (w *Workspace) DocumentCount() int {
 	return len(w.contents)
+}
+
+func (w *Workspace) Paths() []ast.Path {
+	paths := make([]ast.Path, 0)
+	for k := range w.contents {
+		paths = append(paths, k)
+	}
+	return paths
+}
+
+func (w *Workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Diagnostic) {
+	return w.phase4Root.Documents[path], w.getDiagnosticsForPath(path)
+}
+
+func (w *Workspace) getDiagnosticsForPath(path ast.Path) []frontend.Diagnostic {
+	result := make([]frontend.Diagnostic, 0)
+	for _, diag := range w.tracker.Diagnostics() {
+		if diag.Path == path {
+			result = append(result, diag)
+		}
+	}
+	return result
 }
 
 func (w *Workspace) Check() CheckResult {

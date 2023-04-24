@@ -20,6 +20,10 @@ import (
 	"strings"
 )
 
+func noOp(node MlgNodeType) (string, bool) {
+	return "", false
+}
+
 func StructuralNodeToCode(item StructuralNodeType) string {
 	return strings.Join(item.ToCode(0, false), "\n")
 }
@@ -28,32 +32,32 @@ func (n IdItem) ToCode(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
-	return buildIndentedLineSlice(indent, hasDot, "["+n.Root.ToCode()+"]")
+	return buildIndentedLineSlice(indent, hasDot, "["+n.Root.ToCode(noOp)+"]")
 }
 
 func (n Target) ToCode(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
-	return buildIndentedLineSlice(indent, hasDot, n.Root.ToCode())
+	return buildIndentedLineSlice(indent, hasDot, n.Root.ToCode(noOp))
 }
 
 func (n Spec) ToCode(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
-	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode()+"'")
+	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode(noOp)+"'")
 }
 
 func (n Alias) ToCode(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
-	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode()+"'")
+	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode(noOp)+"'")
 }
 
 func (n Formulation[T]) ToCode(indent int, hasDot bool) []string {
-	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode()+"'")
+	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode(noOp)+"'")
 }
 
 func (n TextItem) ToCode(indent int, hasDot bool) []string {

@@ -49,6 +49,10 @@ type SpecConstraint struct {
 	Scope  *ast.Scope
 }
 
+func noOp(node ast.MlgNodeType) (string, bool) {
+	return "", false
+}
+
 func ToIsConstraint(node ast.IsExpression) ([]IsConstraint, error) {
 	result := make([]IsConstraint, 0)
 	for _, lhsExp := range node.Lhs {
@@ -80,7 +84,7 @@ func ToExtendsConstraint(node ast.ExtendsExpression) ([]ExtendsConstraint, error
 func ToSpecConstraint(node ast.InfixOperatorCallExpression) (SpecConstraint, error) {
 	return SpecConstraint{
 		Target: ToPattern(node.Lhs),
-		Name:   node.Target.ToCode(),
+		Name:   node.Target.ToCode(noOp),
 		Exp:    node.Rhs,
 		Scope:  node.CommonMetaData.Scope,
 	}, nil
@@ -92,7 +96,7 @@ func ToSpecConstraints(node ast.MultiplexedInfixOperatorCallExpression) ([]SpecC
 		for _, rhsExp := range node.Rhs {
 			result = append(result, SpecConstraint{
 				Target: ToPattern(lhsExp),
-				Name:   node.Target.ToCode(),
+				Name:   node.Target.ToCode(noOp),
 				Exp:    rhsExp,
 				Scope:  node.CommonMetaData.Scope,
 			})
@@ -164,7 +168,7 @@ func toStructuralForms(exp ast.ExpressionType) ([]ast.StructuralFormType, error)
 			},
 		}, nil
 	default:
-		return nil, errors.New(fmt.Sprintf("Expected a structural form but found %s", exp.ToCode()))
+		return nil, errors.New(fmt.Sprintf("Expected a structural form but found %s", exp.ToCode(noOp)))
 	}
 }
 
@@ -185,7 +189,7 @@ func toNameForm(form ast.StructuralFormType) (ast.NameForm, error) {
 	if ok {
 		return *name, nil
 	}
-	return ast.NameForm{}, errors.New(fmt.Sprintf("Expected a name but found %s", form.ToCode()))
+	return ast.NameForm{}, errors.New(fmt.Sprintf("Expected a name but found %s", form.ToCode(noOp)))
 }
 
 func toSingleStructuralFormSlice(args []ast.ExpressionType) ([]ast.StructuralFormType, error) {

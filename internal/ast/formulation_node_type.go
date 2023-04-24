@@ -21,7 +21,7 @@ type FormulationNodeType interface {
 	FormulationNodeType()
 	Start() Position
 	GetFormulationMetaData() *FormulationMetaData
-	ToCode() string
+	ToCode(fn func(node MlgNodeType) (string, bool)) string
 }
 
 type FormulationMetaData struct {

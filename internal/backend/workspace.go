@@ -22,6 +22,7 @@ import (
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/phase4"
 	"mathlingua/internal/mlglib"
+	"unicode"
 )
 
 // The general approach for checking is the following:
@@ -189,15 +190,59 @@ func (w *Workspace) formulationLikeToString(node ast.MlgNodeType, keyToFormulati
 }
 
 func (w *Workspace) formulationToWritten(node ast.Formulation[ast.FormulationNodeType]) string {
-	return node.Root.ToCode()
+	return w.formulationNodeToWritten(node.Root)
 }
 
 func (w *Workspace) specToWritten(node ast.Spec) string {
-	return node.Root.ToCode()
+	return w.formulationNodeToWritten(node.Root)
 }
 
 func (w *Workspace) aliasToWritten(node ast.Alias) string {
-	return node.Root.ToCode()
+	return w.formulationNodeToWritten(node.Root)
+}
+
+func (w *Workspace) formulationNodeToWritten(mlgNode ast.MlgNodeType) string {
+	customToCode := func(node ast.MlgNodeType) (string, bool) {
+		switch n := node.(type) {
+		case *ast.IsExpression:
+			result := ""
+			for _, exp := range n.Lhs {
+				result += w.formulationNodeToWritten(exp)
+				result += " "
+			}
+			result += " \\textrm{ is } "
+			for _, exp := range n.Rhs {
+				result += w.formulationNodeToWritten(exp)
+				result += " "
+			}
+			return result, true
+		case *ast.ExtendsExpression:
+			result := ""
+			for _, exp := range n.Lhs {
+				result += w.formulationNodeToWritten(exp)
+				result += " "
+			}
+			result += " \\textrm{ extends } "
+			for _, exp := range n.Rhs {
+				result += w.formulationNodeToWritten(exp)
+				result += " "
+			}
+			return result, true
+		case *ast.NonEnclosedNonCommandOperatorTarget:
+			return n.Text, true
+		case *ast.EnclosedNonCommandOperatorTarget:
+			text := w.formulationNodeToWritten(n.Target)
+			if len(text) > 0 && unicode.IsLetter(rune(text[0])) {
+				return "\\" + text, true
+			} else {
+				return text, true
+			}
+		default:
+			return "", false
+		}
+	}
+
+	return ast.Debug(mlgNode, customToCode)
 }
 
 func (w *Workspace) updateFormulationStrings(path ast.Path, node phase4.Node, keyToFormulationStr map[int]string) {

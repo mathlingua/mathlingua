@@ -81,7 +81,7 @@ func GetSignatureStringFromCommand(cmd ast.CommandExpression) string {
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
 		IsInfix:         false,
-	}.ToCode()
+	}.ToCode(noOp)
 }
 
 func GetSignatureStringFromCommandId(cmd ast.CommandId) string {
@@ -100,7 +100,7 @@ func GetSignatureStringFromCommandId(cmd ast.CommandId) string {
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
 		IsInfix:         false,
-	}.ToCode()
+	}.ToCode(noOp)
 }
 
 func GetSignatureStringFromInfixCommandId(cmd ast.InfixCommandId) string {
@@ -119,5 +119,5 @@ func GetSignatureStringFromInfixCommandId(cmd ast.InfixCommandId) string {
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
 		IsInfix:         true,
-	}.ToCode()
+	}.ToCode(noOp)
 }

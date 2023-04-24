@@ -150,12 +150,12 @@ func (DirectionalParam) MlgNodeType()                       {}
 
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck
-func Debug(node MlgNodeType) string {
+func Debug(node MlgNodeType, fn func(node MlgNodeType) (string, bool)) string {
 	switch node := node.(type) {
 	case StructuralNodeType:
 		return StructuralNodeToCode(node)
 	case FormulationNodeType:
-		return FormulationNodeToCode(node)
+		return FormulationNodeToCode(node, fn)
 	default:
 		panic(fmt.Sprintf("Cannot debug a node: %s", mlglib.PrettyPrint(node)))
 	}

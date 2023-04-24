@@ -16,124 +16,182 @@
 
 package ast
 
-func FormulationNodeToCode(node FormulationNodeType) string {
+func FormulationNodeToCode(node FormulationNodeType,
+	fn func(node MlgNodeType) (string, bool)) string {
 	if node == nil {
 		return ""
 	}
-	return node.ToCode()
+	return node.ToCode(fn)
 }
 
-func (n NameForm) ToCode() string {
-	return n.Text + n.VarArg.ToCode()
+func (n NameForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Text + n.VarArg.ToCode(fn)
 }
 
-func (n FunctionForm) ToCode() string {
-	return n.Target.ToCode() + "(" + commaSeparatedStringOfNameForms(n.Params) +
-		")" + n.VarArg.ToCode()
+func (n FunctionForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Target.ToCode(fn) + "(" + commaSeparatedStringOfNameForms(n.Params, fn) +
+		")" + n.VarArg.ToCode(fn)
 }
 
-func (n TupleForm) ToCode() string {
-	return "(" + commaSeparatedString(n.Params) + ")" + n.VarArg.ToCode()
+func (n TupleForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return "(" + commaSeparatedString(n.Params, fn) + ")" + n.VarArg.ToCode(fn)
 }
 
-func (n ConditionalSetForm) ToCode() string {
-	return "{" + n.Target.ToCode() + " | ...}" + n.VarArg.ToCode()
+func (n ConditionalSetForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return "{" + n.Target.ToCode(fn) + " | ...}" + n.VarArg.ToCode(fn)
 }
 
-func (n ConditionalSetIdForm) ToCode() string {
-	return "[" + commaSeparatedString(n.Symbols) +
-		"]{" + n.Target.ToCode() + " | " + n.Condition.ToCode() +
-		"}" + n.Condition.VarArg.ToCode()
+func (n ConditionalSetIdForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return "[" + commaSeparatedString(n.Symbols, fn) +
+		"]{" + n.Target.ToCode(fn) + " | " + n.Condition.ToCode(fn) +
+		"}" + n.Condition.VarArg.ToCode(fn)
 }
 
-func (n FunctionCallExpression) ToCode() string {
-	return n.Target.ToCode() + "(" + commaSeparatedString(n.Args) + ")"
+func (n FunctionCallExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Target.ToCode(fn) + "(" + commaSeparatedString(n.Args, fn) + ")"
 }
 
-func (n TupleExpression) ToCode() string {
-	return "(" + commaSeparatedString(n.Args) + ")"
+func (n TupleExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return "(" + commaSeparatedString(n.Args, fn) + ")"
 }
 
-func (n ConditionalSetExpression) ToCode() string {
-	return "[" + commaSeparatedString(n.Symbols) + "]{" +
-		n.Target.ToCode() + " | " + semicolonSeparatedString(n.Conditions) + "}"
+func (n ConditionalSetExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return "[" + commaSeparatedString(n.Symbols, fn) + "]{" +
+		n.Target.ToCode(fn) + " | " + semicolonSeparatedString(n.Conditions, fn) + "}"
 }
 
-func (n CommandExpression) ToCode() string {
+func (n CommandExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := "\\"
 	for i, n := range n.Names {
 		if i > 0 {
 			result += "."
 		}
-		result += n.ToCode()
+		result += n.ToCode(fn)
 	}
 	if n.CurlyArg != nil {
-		result += n.CurlyArg.ToCode()
+		result += n.CurlyArg.ToCode(fn)
 	}
 	if n.NamedArgs != nil {
 		for _, item := range *n.NamedArgs {
-			result += ":" + item.Name.ToCode()
+			result += ":" + item.Name.ToCode(fn)
 			if item.CurlyArg != nil {
-				result += item.CurlyArg.ToCode()
+				result += item.CurlyArg.ToCode(fn)
 			}
 		}
 	}
 	if n.ParenArgs != nil {
 		result += "("
-		result += commaSeparatedString(*n.ParenArgs)
+		result += commaSeparatedString(*n.ParenArgs, fn)
 		result += ")"
 	}
 	return result
 }
 
-func (n PrefixOperatorCallExpression) ToCode() string {
-	return n.Target.ToCode() + n.Arg.ToCode()
+func (n PrefixOperatorCallExpression) ToCode(
+	fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Target.ToCode(fn) + n.Arg.ToCode(fn)
 }
 
-func (n PostfixOperatorCallExpression) ToCode() string {
-	return n.Arg.ToCode() + n.Target.ToCode()
+func (n PostfixOperatorCallExpression) ToCode(
+	fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Arg.ToCode(fn) + n.Target.ToCode(fn)
 }
 
-func (n InfixOperatorCallExpression) ToCode() string {
-	return n.Lhs.ToCode() + " " + n.Target.ToCode() + " " + n.Rhs.ToCode()
+func (n InfixOperatorCallExpression) ToCode(
+	fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Lhs.ToCode(fn) + " " + n.Target.ToCode(fn) + " " + n.Rhs.ToCode(fn)
 }
 
-func (n IsExpression) ToCode() string {
+func (n IsExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := ""
-	result += commaSeparatedString(n.Lhs)
+	result += commaSeparatedString(n.Lhs, fn)
 	result += " is "
-	result += commaSeparatedString(n.Rhs)
+	result += commaSeparatedString(n.Rhs, fn)
 	return result
 }
 
-func (n ExtendsExpression) ToCode() string {
+func (n ExtendsExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := ""
-	result += commaSeparatedString(n.Lhs)
+	result += commaSeparatedString(n.Lhs, fn)
 	result += " extends "
-	result += commaSeparatedString(n.Rhs)
+	result += commaSeparatedString(n.Rhs, fn)
 	return result
 }
 
-func (n AsExpression) ToCode() string {
-	return n.Lhs.ToCode() + " as " + n.Rhs.ToCode()
+func (n AsExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Lhs.ToCode(fn) + " as " + n.Rhs.ToCode(fn)
 }
 
-func (n OrdinalCallExpression) ToCode() string {
-	return n.Target.ToCode() + "{" + commaSeparatedString(n.Args) + "}"
+func (n OrdinalCallExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Target.ToCode(fn) + "{" + commaSeparatedString(n.Args, fn) + "}"
 }
 
-func (n ChainExpression) ToCode() string {
+func (n ChainExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := ""
 	for i, item := range n.Parts {
 		if i > 0 {
 			result += "."
 		}
-		result += item.ToCode()
+		result += item.ToCode(fn)
 	}
 	return result
 }
 
-func (n Signature) ToCode() string {
+func (n Signature) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := "\\("
 	for i, item := range n.MainNames {
 		if i > 0 {
@@ -155,7 +213,10 @@ func (n Signature) ToCode() string {
 	return result
 }
 
-func (n MetaKinds) ToCode() string {
+func (n MetaKinds) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := "[:"
 	for i, name := range n.Kinds {
 		if i > 0 {
@@ -167,29 +228,46 @@ func (n MetaKinds) ToCode() string {
 	return result
 }
 
-func (n StructuralColonEqualsForm) ToCode() string {
-	return n.Lhs.ToCode() + " := " + n.Rhs.ToCode()
+func (n StructuralColonEqualsForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Lhs.ToCode(fn) + " := " + n.Rhs.ToCode(fn)
 }
 
-func (n ExpressionColonEqualsItem) ToCode() string {
-	return n.Lhs.ToCode() + " := " + n.Rhs.ToCode()
+func (n ExpressionColonEqualsItem) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Lhs.ToCode(fn) + " := " + n.Rhs.ToCode(fn)
 }
 
-func (n ExpressionColonArrowItem) ToCode() string {
-	return n.Lhs.ToCode() + " :=> " + n.Rhs.ToCode()
+func (n ExpressionColonArrowItem) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Lhs.ToCode(fn) + " :=> " + n.Rhs.ToCode(fn)
 }
 
-func (n ExpressionColonDashArrowItem) ToCode() string {
-	return n.Lhs.ToCode() + " :-> " + n.Rhs.ToCode()
+func (n ExpressionColonDashArrowItem) ToCode(
+	fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Lhs.ToCode(fn) + " :-> " + n.Rhs.ToCode(fn)
 }
 
-func (n EnclosedNonCommandOperatorTarget) ToCode() string {
+func (n EnclosedNonCommandOperatorTarget) ToCode(
+	fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := ""
 	if n.HasLeftColon {
 		result += ":"
 	}
 	result += "["
-	result += n.Target.ToCode()
+	result += n.Target.ToCode(fn)
 	result += "]"
 	if n.HasRightColon {
 		result += ":"
@@ -197,7 +275,11 @@ func (n EnclosedNonCommandOperatorTarget) ToCode() string {
 	return result
 }
 
-func (n NonEnclosedNonCommandOperatorTarget) ToCode() string {
+func (n NonEnclosedNonCommandOperatorTarget) ToCode(
+	fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := ""
 	if n.HasLeftColon {
 		result += ":"
@@ -209,119 +291,159 @@ func (n NonEnclosedNonCommandOperatorTarget) ToCode() string {
 	return result
 }
 
-func (n CommandOperatorTarget) ToCode() string {
-	return n.Command.ToCode() + "/"
+func (n CommandOperatorTarget) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Command.ToCode(fn) + "/"
 }
 
-func (n CommandId) ToCode() string {
+func (n CommandId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := "\\"
 	for i, n := range n.Names {
 		if i > 0 {
 			result += "."
 		}
-		result += n.ToCode()
+		result += n.ToCode(fn)
 	}
 	if n.CurlyParam != nil {
-		result += n.CurlyParam.ToCode()
+		result += n.CurlyParam.ToCode(fn)
 	}
 	if n.NamedParams != nil {
 		for _, item := range *n.NamedParams {
-			result += ":" + item.Name.ToCode()
+			result += ":" + item.Name.ToCode(fn)
 			if item.CurlyParam != nil {
-				result += item.CurlyParam.ToCode()
+				result += item.CurlyParam.ToCode(fn)
 			}
 		}
 	}
 	if n.ParenParams != nil {
 		result += "("
-		result += commaSeparatedStringOfNameForms(*n.ParenParams)
+		result += commaSeparatedStringOfNameForms(*n.ParenParams, fn)
 		result += ")"
 	}
 	return result
 }
 
-func (n PrefixOperatorId) ToCode() string {
-	return n.Operator.ToCode() + n.Param.ToCode()
+func (n PrefixOperatorId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Operator.ToCode(fn) + n.Param.ToCode(fn)
 }
 
-func (n PostfixOperatorId) ToCode() string {
-	return n.Param.ToCode() + n.Operator.ToCode()
+func (n PostfixOperatorId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Param.ToCode(fn) + n.Operator.ToCode(fn)
 }
 
-func (n InfixOperatorId) ToCode() string {
-	return n.Lhs.ToCode() + " " + n.Operator.ToCode() + " " + n.Rhs.ToCode()
+func (n InfixOperatorId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Lhs.ToCode(fn) + " " + n.Operator.ToCode(fn) + " " + n.Rhs.ToCode(fn)
 }
 
-func (n InfixCommandId) ToCode() string {
+func (n InfixCommandId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := "\\"
 	for i, n := range n.Names {
 		if i > 0 {
 			result += "."
 		}
-		result += n.ToCode()
+		result += n.ToCode(fn)
 	}
 	if n.CurlyParam != nil {
-		result += n.CurlyParam.ToCode()
+		result += n.CurlyParam.ToCode(fn)
 	}
 	if n.NamedParams != nil {
 		for _, item := range *n.NamedParams {
-			result += ":" + item.Name.ToCode()
+			result += ":" + item.Name.ToCode(fn)
 			if item.CurlyParam != nil {
-				result += item.CurlyParam.ToCode()
+				result += item.CurlyParam.ToCode(fn)
 			}
 		}
 	}
 	if n.ParenParams != nil {
 		result += "("
-		result += commaSeparatedStringOfNameForms(*n.ParenParams)
+		result += commaSeparatedStringOfNameForms(*n.ParenParams, fn)
 		result += ")"
 	}
 	result += "/"
 	return result
 }
 
-func (n InfixCommandOperatorId) ToCode() string {
-	return n.Lhs.ToCode() + " " + n.Operator.ToCode() + " " + n.Rhs.ToCode()
+func (n InfixCommandOperatorId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Lhs.ToCode(fn) + " " + n.Operator.ToCode(fn) + " " + n.Rhs.ToCode(fn)
 }
 
-func (n PseudoTokenNode) ToCode() string {
+func (n PseudoTokenNode) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	return n.Text
 }
 
-func (n PseudoExpression) ToCode() string {
+func (n PseudoExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := ""
 	for i, item := range n.Children {
 		if i > 0 {
 			result += " "
 		}
-		result += item.ToCode()
+		result += item.ToCode(fn)
 	}
 	return result
 }
 
-func (n MultiplexedInfixOperatorCallExpression) ToCode() string {
+func (n MultiplexedInfixOperatorCallExpression) ToCode(
+	fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := ""
-	result += commaSeparatedString(n.Lhs)
+	result += commaSeparatedString(n.Lhs, fn)
 	result += " "
-	result += n.Target.ToCode()
+	result += n.Target.ToCode(fn)
 	result += " "
-	result += commaSeparatedString(n.Rhs)
+	result += commaSeparatedString(n.Rhs, fn)
 	return result
 }
 
-func (n InfixOperatorForm) ToCode() string {
-	return n.Lhs.ToCode() + " " + n.Operator.ToCode() + " " + n.Rhs.ToCode()
+func (n InfixOperatorForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Lhs.ToCode(fn) + " " + n.Operator.ToCode(fn) + " " + n.Rhs.ToCode(fn)
 }
 
-func (n PrefixOperatorForm) ToCode() string {
-	return n.Operator.ToCode() + n.Param.ToCode()
+func (n PrefixOperatorForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Operator.ToCode(fn) + n.Param.ToCode(fn)
 }
 
-func (n PostfixOperatorForm) ToCode() string {
-	return n.Param.ToCode() + n.Operator.ToCode()
+func (n PostfixOperatorForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Param.ToCode(fn) + n.Operator.ToCode(fn)
 }
 
-func (n VarArgData) ToCode() string {
+func (n VarArgData) ToCode(fn func(node MlgNodeType) (string, bool)) string {
 	if n.IsVarArg {
 		if len(n.VarArgNames) == 0 && len(n.VarArgBounds) == 0 {
 			return "..."
@@ -349,75 +471,91 @@ func (n VarArgData) ToCode() string {
 	return ""
 }
 
-func (n FunctionLiteralExpression) ToCode() string {
-	return n.Lhs.ToCode() + " => " + n.Rhs.ToCode()
+func (n FunctionLiteralExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
+	return n.Lhs.ToCode(fn) + " => " + n.Rhs.ToCode(fn)
 }
 
-func (n CurlyParam) ToCode() string {
+func (n CurlyParam) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := ""
 	if n.SquareParams != nil {
 		result += "["
-		result += commaSeparatedString(*n.SquareParams)
+		result += commaSeparatedString(*n.SquareParams, fn)
 		result += "]"
 	}
 	result += "{"
-	result += commaSeparatedString(n.CurlyParams)
+	result += commaSeparatedString(n.CurlyParams, fn)
 	result += "}"
 	if n.Direction != nil {
-		result += n.Direction.ToCode()
+		result += n.Direction.ToCode(fn)
 	}
 	return result
 }
 
-func (n CurlyArg) ToCode() string {
+func (n CurlyArg) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := "{"
 	if n.CurlyArgs != nil {
-		result += commaSeparatedString(*n.CurlyArgs)
+		result += commaSeparatedString(*n.CurlyArgs, fn)
 	}
 	result += "}"
 	if n.Direction != nil {
-		result += n.Direction.ToCode()
+		result += n.Direction.ToCode(fn)
 	}
 	return result
 }
 
-func (n DirectionalParam) ToCode() string {
+func (n DirectionalParam) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(&n); ok {
+		return res
+	}
 	result := "@"
 	if n.Name != nil {
-		result += n.Name.ToCode()
+		result += n.Name.ToCode(fn)
 	}
 	result += "["
-	result += commaSeparatedString(n.SquareParams)
+	result += commaSeparatedString(n.SquareParams, fn)
 	result += "]"
 	return result
 }
 
-func commaSeparatedString[T FormulationNodeType](forms []T) string {
-	return separatedString(forms, ", ")
+func commaSeparatedString[T FormulationNodeType](forms []T,
+	fn func(node MlgNodeType) (string, bool)) string {
+	return separatedString(forms, ", ", fn)
 }
 
-func commaSeparatedStringOfNameForms(forms []NameForm) string {
+func commaSeparatedStringOfNameForms(forms []NameForm,
+	fn func(node MlgNodeType) (string, bool)) string {
 	result := ""
 	for i, _ := range forms {
 		if i > 0 {
 			result += ", "
 		}
-		result += forms[i].ToCode()
+		result += forms[i].ToCode(fn)
 	}
 	return result
 }
 
-func semicolonSeparatedString[T FormulationNodeType](forms []T) string {
-	return separatedString(forms, "; ")
+func semicolonSeparatedString[T FormulationNodeType](forms []T,
+	fn func(node MlgNodeType) (string, bool)) string {
+	return separatedString(forms, "; ", fn)
 }
 
-func separatedString[T FormulationNodeType](forms []T, separator string) string {
+func separatedString[T FormulationNodeType](forms []T, separator string,
+	fn func(node MlgNodeType) (string, bool)) string {
 	result := ""
 	for i, _ := range forms {
 		if i > 0 {
 			result += separator
 		}
-		result += forms[i].ToCode()
+		result += forms[i].ToCode(fn)
 	}
 	return result
 }

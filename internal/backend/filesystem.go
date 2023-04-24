@@ -25,7 +25,8 @@ import (
 	"strings"
 )
 
-func NewWorkspaceFromPaths(paths []string) (*Workspace, []frontend.Diagnostic) {
+func NewWorkspaceFromPaths(paths []string,
+	tracker *frontend.DiagnosticTracker) (*Workspace, []frontend.Diagnostic) {
 	diagnostics := make([]frontend.Diagnostic, 0)
 
 	findFiles, findDiagnostics := getMathlinguaFiles(paths)
@@ -34,7 +35,7 @@ func NewWorkspaceFromPaths(paths []string) (*Workspace, []frontend.Diagnostic) {
 	contents, contentDiagnostics := getFileContents(findFiles)
 	diagnostics = append(diagnostics, contentDiagnostics...)
 
-	return NewWorkspace(contents), diagnostics
+	return NewWorkspace(contents, tracker), diagnostics
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -25,7 +25,7 @@ import (
 )
 
 func TestPhase2LexerIndent(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker()
+	tracker := frontend.NewDiagnosticTracker(false)
 	lexer1 := phase1.NewLexer(`
 a:
 . b:

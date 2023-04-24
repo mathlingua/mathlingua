@@ -306,7 +306,7 @@ func createTestCase(input string) (string, string, bool) {
 ////////////////////////////////////// structural parser ///////////////////////////////////////////
 
 func parseForStructural(text string) (string, string, *frontend.DiagnosticTracker) {
-	tracker := frontend.NewDiagnosticTracker()
+	tracker := frontend.NewDiagnosticTracker(false)
 
 	lexer1 := phase1.NewLexer(text, "", tracker)
 	lexer2 := phase2.NewLexer(lexer1, "", tracker)
@@ -342,7 +342,7 @@ func parse(text string) (ast.Document, frontend.IDiagnosticTracker) {
 ////////////////////////////////////// formulation /////////////////////////////////////////////////
 
 func parseForFormulation(text string) (string, string, *frontend.DiagnosticTracker) {
-	tracker := frontend.NewDiagnosticTracker()
+	tracker := frontend.NewDiagnosticTracker(false)
 	node, _ := formulation.ParseExpression(
 		"", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return ast.FormulationNodeToCode(node, noOp), mlglib.PrettyPrint(node), tracker
@@ -365,7 +365,7 @@ func parse(text string) (ast.NodeType, frontend.IDiagnosticTracker) {
 ///////////////////////////////////////// form /////////////////////////////////////////////////////
 
 func parseForForm(text string) (string, string, *frontend.DiagnosticTracker) {
-	tracker := frontend.NewDiagnosticTracker()
+	tracker := frontend.NewDiagnosticTracker(false)
 	node, _ := formulation.ParseForm("", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return ast.FormulationNodeToCode(node, noOp), mlglib.PrettyPrint(node), tracker
 }
@@ -387,7 +387,7 @@ func parse(text string) (ast.NodeType, frontend.IDiagnosticTracker) {
 /////////////////////////////////////////// id /////////////////////////////////////////////////////
 
 func parseForId(text string) (string, string, *frontend.DiagnosticTracker) {
-	tracker := frontend.NewDiagnosticTracker()
+	tracker := frontend.NewDiagnosticTracker(false)
 	node, _ := formulation.ParseId("", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return ast.FormulationNodeToCode(node, noOp), mlglib.PrettyPrint(node), tracker
 }

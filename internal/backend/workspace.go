@@ -22,6 +22,7 @@ import (
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/phase4"
 	"mathlingua/internal/mlglib"
+	"strings"
 	"unicode"
 )
 
@@ -122,8 +123,9 @@ type Workspace struct {
 	topLevelEntries map[string]ast.TopLevelItemType
 }
 
-func NewWorkspace(contents map[ast.Path]string) *Workspace {
+func NewWorkspace(contents map[ast.Path]string, tracker *frontend.DiagnosticTracker) *Workspace {
 	w := Workspace{
+		tracker:         tracker,
 		contents:        make(map[ast.Path]string, 0),
 		signaturesToIds: make(map[string]string, 0),
 		summaries:       make(map[string]SummaryType, 0),
@@ -136,7 +138,6 @@ func NewWorkspace(contents map[ast.Path]string) *Workspace {
 
 func (w *Workspace) initialize(contents map[ast.Path]string) {
 	w.contents = contents
-	w.tracker = frontend.NewDiagnosticTracker()
 	w.phase4Root, w.astRoot = ParseRoot(w.contents, w.tracker)
 	w.normalizeAst()
 	w.populateScopes()
@@ -162,81 +163,144 @@ func (w *Workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Di
 	doc := w.astRoot.Documents[path]
 	keyToFormulationStr := make(map[int]string, 0)
 	for i := range doc.Items {
-		w.formulationLikeToString(doc.Items[i], keyToFormulationStr)
+		w.formulationLikeToString(path, doc.Items[i], keyToFormulationStr)
 	}
 	phase4Doc := w.phase4Root.Documents[path]
 	w.updateFormulationStrings(path, &phase4Doc, keyToFormulationStr)
 	return phase4Doc, w.getDiagnosticsForPath(path)
 }
 
-func (w *Workspace) formulationLikeToString(node ast.MlgNodeType, keyToFormulationStr map[int]string) {
+func (w *Workspace) formulationLikeToString(path ast.Path,
+	node ast.MlgNodeType, keyToFormulationStr map[int]string) {
 	if formulation, ok := node.(*ast.Formulation[ast.FormulationNodeType]); ok {
 		key := formulation.GetCommonMetaData().Key
-		newText := w.formulationToWritten(*formulation)
+		newText := w.formulationToWritten(path, *formulation)
 		keyToFormulationStr[key] = newText
 	} else if spec, ok := node.(*ast.Spec); ok {
 		key := spec.GetCommonMetaData().Key
-		newText := w.specToWritten(*spec)
+		newText := w.specToWritten(path, *spec)
 		keyToFormulationStr[key] = newText
 	} else if alias, ok := node.(*ast.Alias); ok {
 		key := alias.GetCommonMetaData().Key
-		newText := w.aliasToWritten(*alias)
+		newText := w.aliasToWritten(path, *alias)
 		keyToFormulationStr[key] = newText
 	} else {
 		node.ForEach(func(subNode ast.MlgNodeType) {
-			w.formulationLikeToString(subNode, keyToFormulationStr)
+			w.formulationLikeToString(path, subNode, keyToFormulationStr)
 		})
 	}
 }
 
-func (w *Workspace) formulationToWritten(node ast.Formulation[ast.FormulationNodeType]) string {
-	return w.formulationNodeToWritten(node.Root)
+func (w *Workspace) formulationToWritten(path ast.Path,
+	node ast.Formulation[ast.FormulationNodeType]) string {
+	return w.formulationNodeToWritten(path, node.Root)
 }
 
-func (w *Workspace) specToWritten(node ast.Spec) string {
-	return w.formulationNodeToWritten(node.Root)
+func (w *Workspace) specToWritten(path ast.Path, node ast.Spec) string {
+	return w.formulationNodeToWritten(path, node.Root)
 }
 
-func (w *Workspace) aliasToWritten(node ast.Alias) string {
-	return w.formulationNodeToWritten(node.Root)
+func (w *Workspace) aliasToWritten(path ast.Path, node ast.Alias) string {
+	return w.formulationNodeToWritten(path, node.Root)
 }
 
-func (w *Workspace) formulationNodeToWritten(mlgNode ast.MlgNodeType) string {
+func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeType) string {
 	customToCode := func(node ast.MlgNodeType) (string, bool) {
 		switch n := node.(type) {
 		case *ast.IsExpression:
 			result := ""
-			for _, exp := range n.Lhs {
-				result += w.formulationNodeToWritten(exp)
-				result += " "
+			for i, exp := range n.Lhs {
+				if i > 0 {
+					result += ", "
+				}
+				result += w.formulationNodeToWritten(path, exp)
 			}
 			result += " \\textrm{ is } "
-			for _, exp := range n.Rhs {
-				result += w.formulationNodeToWritten(exp)
-				result += " "
+			for i, exp := range n.Rhs {
+				if i > 0 {
+					result += ", "
+				}
+				result += w.formulationNodeToWritten(path, exp)
 			}
 			return result, true
 		case *ast.ExtendsExpression:
 			result := ""
-			for _, exp := range n.Lhs {
-				result += w.formulationNodeToWritten(exp)
-				result += " "
+			for i, exp := range n.Lhs {
+				if i > 0 {
+					result += ", "
+				}
+				result += w.formulationNodeToWritten(path, exp)
 			}
 			result += " \\textrm{ extends } "
-			for _, exp := range n.Rhs {
-				result += w.formulationNodeToWritten(exp)
-				result += " "
+			for i, exp := range n.Rhs {
+				if i > 0 {
+					result += ", "
+				}
+				result += w.formulationNodeToWritten(path, exp)
 			}
 			return result, true
 		case *ast.NonEnclosedNonCommandOperatorTarget:
 			return n.Text, true
 		case *ast.EnclosedNonCommandOperatorTarget:
-			text := w.formulationNodeToWritten(n.Target)
+			text := w.formulationNodeToWritten(path, n.Target)
 			if len(text) > 0 && unicode.IsLetter(rune(text[0])) {
 				return "\\" + text, true
 			} else {
 				return text, true
 			}
+		case *ast.CommandExpression:
+			sig := GetSignatureStringFromCommand(*n)
+			found := false
+			if id, ok := w.signaturesToIds[sig]; ok {
+				if summary, ok := w.summaries[id]; ok {
+					if written, ok := GetResolvedWritten(summary); ok {
+						if summaryInput, ok := GetResolvedInput(summary); ok {
+							matchResult := Match(node, summaryInput)
+							if matchResult.MatchMakesSense && len(matchResult.Messages) == 0 {
+								found = true
+								nameKeysToWritten := make(map[string]string)
+								for name, exp := range matchResult.Mapping {
+									text := w.formulationNodeToWritten(path, exp)
+									textWithoutParen := strings.TrimSuffix(strings.TrimPrefix(text, "("), ")")
+									textWithParen := "(" + textWithoutParen + ")"
+									nameKeysToWritten[name+"?"] = text
+									nameKeysToWritten[name+"=?"] = text
+									nameKeysToWritten[name+"-?"] = textWithoutParen
+									nameKeysToWritten[name+"+?"] = textWithParen
+								}
+								result := written
+								for nameKey, text := range nameKeysToWritten {
+									result = strings.Replace(result, nameKey, text, -1)
+								}
+								return result, true
+							} else {
+								if matchResult.MatchMakesSense {
+									for _, message := range matchResult.Messages {
+										w.tracker.Append(frontend.Diagnostic{
+											Type:     frontend.Error,
+											Origin:   frontend.BackendOrigin,
+											Message:  message,
+											Path:     path,
+											Position: node.GetCommonMetaData().Start,
+										})
+									}
+								}
+								return "", false
+							}
+						}
+					}
+				}
+			}
+			if !found {
+				w.tracker.Append(frontend.Diagnostic{
+					Type:     frontend.Error,
+					Origin:   frontend.BackendOrigin,
+					Message:  fmt.Sprintf("Unrecognized signature %s", sig),
+					Path:     path,
+					Position: node.GetCommonMetaData().Start,
+				})
+			}
+			return "", false
 		default:
 			return "", false
 		}

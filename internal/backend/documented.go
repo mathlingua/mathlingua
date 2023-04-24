@@ -61,3 +61,58 @@ func ToWritingSummaries(node ast.WritingGroup) []WritingSummary {
 	}
 	return result
 }
+
+func GetWrittenSummaries(documented *ast.DocumentedSection) []WrittenSummary {
+	summaries := make([]WrittenSummary, 0)
+	if documented == nil {
+		return summaries
+	}
+	for _, docItem := range documented.Documented {
+		switch item := docItem.(type) {
+		case *ast.WrittenGroup:
+			for _, text := range item.Written.Written {
+				summaries = append(summaries, WrittenSummary{
+					Written: text.RawText,
+				})
+			}
+		}
+	}
+	return summaries
+}
+
+func GetWritingSummaries(documented *ast.DocumentedSection) []WritingSummary {
+	summaries := make([]WritingSummary, 0)
+	if documented == nil {
+		return summaries
+	}
+	for _, docItem := range documented.Documented {
+		switch item := docItem.(type) {
+		case *ast.WritingGroup:
+			for _, as := range item.As.As {
+				summaries = append(summaries, WritingSummary{
+					Form:    ToPatternFromTarget(item.Writing.Writing),
+					Written: as.RawText,
+				})
+			}
+		}
+	}
+	return summaries
+}
+
+func GetCalledSummaries(documented *ast.DocumentedSection) []CalledSummary {
+	summaries := make([]CalledSummary, 0)
+	if documented == nil {
+		return summaries
+	}
+	for _, docItem := range documented.Documented {
+		switch item := docItem.(type) {
+		case *ast.CalledGroup:
+			for _, text := range item.Called.Called {
+				summaries = append(summaries, CalledSummary{
+					Called: text.RawText,
+				})
+			}
+		}
+	}
+	return summaries
+}

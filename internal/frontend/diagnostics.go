@@ -16,7 +16,10 @@
 
 package frontend
 
-import "mathlingua/internal/ast"
+import (
+	"fmt"
+	"mathlingua/internal/ast"
+)
 
 type DiagnosticType string
 
@@ -48,18 +51,34 @@ type Diagnostic struct {
 	Position ast.Position
 }
 
-type DiagnosticTracker struct {
-	diagnostics []Diagnostic
+func (diag *Diagnostic) ToString() string {
+	prefix := ""
+	if diag.Type == Error {
+		prefix = "ERROR"
+	} else {
+		prefix = "WARNING"
+	}
+	return fmt.Sprintf("%s: %s (%d, %d)\n%s",
+		prefix, diag.Path, diag.Position.Row+1, diag.Position.Column+1, diag.Message)
 }
 
-func NewDiagnosticTracker() *DiagnosticTracker {
+type DiagnosticTracker struct {
+	diagnostics []Diagnostic
+	live        bool
+}
+
+func NewDiagnosticTracker(live bool) *DiagnosticTracker {
 	return &DiagnosticTracker{
 		diagnostics: make([]Diagnostic, 0),
+		live:        live,
 	}
 }
 
 func (dt *DiagnosticTracker) Append(diagnostic Diagnostic) {
 	dt.diagnostics = append(dt.diagnostics, diagnostic)
+	if dt.live {
+		fmt.Println(diagnostic.ToString())
+	}
 }
 
 func (dt *DiagnosticTracker) Diagnostics() []Diagnostic {

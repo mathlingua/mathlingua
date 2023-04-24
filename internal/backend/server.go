@@ -28,17 +28,10 @@ import (
 )
 
 func StartServer() {
-	workspace, diagnostics := NewWorkspaceFromPaths([]string{"."})
+	tracker := frontend.NewDiagnosticTracker(true)
+	workspace, diagnostics := NewWorkspaceFromPaths([]string{"."}, tracker)
 	for _, diag := range diagnostics {
-		if diag.Type == frontend.Error {
-			fmt.Printf("%s (%d, %d)\n%s",
-				diag.Path, diag.Position.Row+1, diag.Position.Column+1,
-				diag.Message)
-		} else {
-			fmt.Printf("%s (%d, %d)\n%s",
-				diag.Path, diag.Position.Row+1, diag.Position.Column+1,
-				diag.Message)
-		}
+		tracker.Append(diag)
 	}
 
 	router := mux.NewRouter()

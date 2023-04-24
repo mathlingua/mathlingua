@@ -16,7 +16,10 @@
 
 package backend
 
-import "mathlingua/internal/ast"
+import (
+	"fmt"
+	"mathlingua/internal/ast"
+)
 
 type SummaryType interface {
 	SummaryType()
@@ -79,4 +82,61 @@ type StatesSummary struct {
 	Written     []WrittenSummary
 	Writing     []WritingSummary
 	Called      []CalledSummary
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func GetResolvedInput(summary SummaryType) (PatternType, bool) {
+	switch s := summary.(type) {
+	case *DescribesSummary:
+		return s.Input, true
+	case *DefinesSummary:
+		return s.Input, true
+	case *StatesSummary:
+		return s.Input, true
+	default:
+		return nil, false
+	}
+}
+
+func GetResolvedWritten(summary SummaryType) (string, bool) {
+	var called *string
+	var written *string
+	switch s := summary.(type) {
+	case *DescribesSummary:
+		called = getSingleCalled(s.Called)
+		written = getSingleWritten(s.Written)
+	case *DefinesSummary:
+		called = getSingleCalled(s.Called)
+		written = getSingleWritten(s.Written)
+	case *StatesSummary:
+		called = getSingleCalled(s.Called)
+		written = getSingleWritten(s.Written)
+	}
+
+	if written != nil {
+		return *written, true
+	}
+
+	if called != nil {
+		return fmt.Sprintf("\\textrm{%s}", *called), true
+	}
+
+	return "", false
+}
+
+func getSingleCalled(called []CalledSummary) *string {
+	if len(called) == 0 || len(called[0].Called) == 0 {
+		return nil
+	}
+	text := called[0].Called
+	return &text
+}
+
+func getSingleWritten(written []WrittenSummary) *string {
+	if len(written) == 0 || len(written[0].Written) == 0 {
+		return nil
+	}
+	text := written[0].Written
+	return &text
 }

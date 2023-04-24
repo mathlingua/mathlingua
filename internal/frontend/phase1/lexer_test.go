@@ -24,7 +24,7 @@ import (
 )
 
 func TestPhase1Lexer(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker()
+	tracker := frontend.NewDiagnosticTracker(false)
 	lexer1 := NewLexer(`
 a: x, y
 . b: 123
@@ -72,7 +72,7 @@ abc
 }
 
 func TestPhase1LexerParsesId(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker()
+	tracker := frontend.NewDiagnosticTracker(false)
 	lexer1 := NewLexer("[some[id[x]]]", "", tracker)
 
 	actual := "\n"

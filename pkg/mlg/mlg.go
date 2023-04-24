@@ -47,7 +47,8 @@ type checkResult struct {
 }
 
 func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
-	workspace, diagnostics := backend.NewWorkspaceFromPaths(paths)
+	workspace, diagnostics := backend.NewWorkspaceFromPaths(paths,
+		frontend.NewDiagnosticTracker(false))
 
 	checkResult := workspace.Check()
 	diagnostics = append(diagnostics, checkResult.Diagnostics...)

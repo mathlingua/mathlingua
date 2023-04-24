@@ -26,7 +26,7 @@ import (
 )
 
 func parse(text string) (ast.FormulationNodeType, *frontend.DiagnosticTracker) {
-	tracker := frontend.NewDiagnosticTracker()
+	tracker := frontend.NewDiagnosticTracker(false)
 	node, _ := ParseExpression("/some/path", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return node, tracker
 }

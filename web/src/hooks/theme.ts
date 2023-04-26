@@ -23,7 +23,7 @@ export function useTheme(): Theme {
     sizeLarge: 32,
     sizeXLarge: 48,
     sizeXXLarge: 56,
-    border: '#e0e0e0',
+    border: '#e5e5e5',
     background: '#ffffff',
     mainWidth: 800,
   };

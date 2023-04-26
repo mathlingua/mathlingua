@@ -60,8 +60,9 @@ function getSmallScreenStyles(theme: Theme, showSidebar: boolean) {
       borderRight: 'solid',
       borderColor: theme.border,
       borderWidth: 1,
-      zIndex: 2,
+      zIndex: 1,
       transition: '0.25s',
+      boxShadow: 'rgba(50, 50, 105, 0.15) 0px 2px 5px 0px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px',
     },
     rightSidebar: {
       display: 'none',
@@ -84,6 +85,7 @@ function getSmallScreenStyles(theme: Theme, showSidebar: boolean) {
       borderWidth: 1,
       borderColor: theme.border,
       zIndex: 2,
+      boxShadow: 'rgba(50, 50, 105, 0.15) 0px 2px 5px 0px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px',
     },
     hidden: {
       display: 'none',
@@ -116,7 +118,8 @@ function getLargeScreenStyles(theme: Theme, showSidebar: boolean) {
       borderRight: 'solid',
       borderColor: theme.border,
       borderWidth: 1,
-      zIndex: 2,
+      zIndex: 1,
+      boxShadow: 'rgba(50, 50, 105, 0.15) 0px 2px 5px 0px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px',
     },
     rightSidebar: {
       gridArea: 'rightSidebar',
@@ -144,6 +147,7 @@ function getLargeScreenStyles(theme: Theme, showSidebar: boolean) {
       borderWidth: 1,
       borderColor: theme.border,
       zIndex: 2,
+      boxShadow: 'rgba(50, 50, 105, 0.15) 0px 2px 5px 0px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px',
     },
     hidden: {
       display: 'none',

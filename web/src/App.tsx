@@ -113,6 +113,5 @@ function getStyles(theme: Theme, isOnSmallScreen: boolean) {
 }
 
 export function determineIsOnSmallScreen(windowWidth: number, theme: Theme) {
-  const maxWidth = theme.sidebarWidth *1.25;
-  return windowWidth <= maxWidth;
+  return windowWidth <= 1080;
 }

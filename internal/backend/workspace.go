@@ -207,6 +207,24 @@ func (w *Workspace) aliasToWritten(path ast.Path, node ast.Alias) string {
 func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeType) string {
 	customToCode := func(node ast.MlgNodeType) (string, bool) {
 		switch n := node.(type) {
+		case *ast.ExpressionColonArrowItem:
+			result := ""
+			result += w.formulationNodeToWritten(path, n.Lhs)
+			result += " \\coloneqq\\!> "
+			result += w.formulationNodeToWritten(path, n.Rhs)
+			return result, true
+		case *ast.ExpressionColonDashArrowItem:
+			result := ""
+			result += w.formulationNodeToWritten(path, n.Lhs)
+			result += " \\coloneq\\!> "
+			result += w.formulationNodeToWritten(path, n.Rhs)
+			return result, true
+		case *ast.ExpressionColonEqualsItem:
+			result := ""
+			result += w.formulationNodeToWritten(path, n.Lhs)
+			result += " \\coloneqq "
+			result += w.formulationNodeToWritten(path, n.Rhs)
+			return result, true
 		case *ast.IsExpression:
 			result := ""
 			for i, exp := range n.Lhs {
@@ -344,6 +362,11 @@ func (w *Workspace) getDiagnosticsForPath(path ast.Path) []frontend.Diagnostic {
 
 func (w *Workspace) Check() CheckResult {
 	w.findUsedUnknownSignatures()
+	for _, path := range w.Paths() {
+		// get all of the documents to populate the tracker
+		// with any rendering errors
+		w.GetDocumentAt(path)
+	}
 	return CheckResult{
 		Diagnostics: w.tracker.Diagnostics(),
 	}

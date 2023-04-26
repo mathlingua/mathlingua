@@ -60,3 +60,8 @@ code {
 .rs-tree-node-expand-icon-wrapper {
   margin-top: 0px;
 }
+
+.katex {
+  font-size: 120% !important;
+  color: black !important;
+}

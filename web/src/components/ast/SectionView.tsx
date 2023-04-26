@@ -5,6 +5,7 @@ import { ArgumentView } from './ArgumentView';
 import { Comma } from './Comma';
 import { Newline } from './Newline';
 import { Space } from './Space';
+import { LatexView } from '../LatexView';
 
 export interface SectionViewProps {
   node: Section;
@@ -21,7 +22,10 @@ export const SectionView = (props: SectionViewProps) => {
             {!arg.IsInline && <Newline />}
             {(arg.IsInline && props.node.Args?.[index-1]?.IsInline) &&
               <><Comma /></>}
-            <ArgumentView node={arg} indent={props.indent} />
+            <ArgumentView
+              node={arg}
+              indent={props.indent}
+              forceRenderAsLatex={props.node.Name === 'written'} />
           </span>
         ))
       }

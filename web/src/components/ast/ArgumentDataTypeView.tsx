@@ -8,13 +8,16 @@ import { TextArgumentDataView } from './TextArgumentDataView';
 export interface ArgumentDataTypeViewProps {
   node: ArgumentDataType;
   indent: number;
+  forceRenderAsLatex: boolean;
 }
 
 export const ArgumentDataTypeView = (props: ArgumentDataTypeViewProps) => {
   if (props.node?.Type === 'GroupType') {
     return <GroupView node={props.node as any} indent={props.indent} />;
   } else if (props.node?.Type === 'TextArgumentDataType') {
-    return <TextArgumentDataView node={props.node as any} />;
+    return <TextArgumentDataView
+      node={props.node as any}
+      forceRenderAsLatex={props.forceRenderAsLatex} />;
   } else if (props.node?.Type === 'FormulationArgumentDataType') {
     return <FormulationArgumentDataView node={props.node as any} />;
   } else if (props.node?.Type === 'ArgumentTextArgumentDataType') {

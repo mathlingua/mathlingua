@@ -19,7 +19,7 @@ export const GroupView = (props: GroupViewProps) => {
           <span key={index}>
             {index > 0 && <Newline />}
             {index > 0 && <Indent size={props.indent} />}
-            <SectionView node={sec} indent={props.indent} />
+            {sec.Name === 'Id' ? null : <SectionView node={sec} indent={props.indent} />}
           </span>
         ))
       }

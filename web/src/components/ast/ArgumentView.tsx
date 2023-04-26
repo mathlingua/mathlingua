@@ -8,17 +8,24 @@ import { Space } from './Space';
 export interface ArgumentViewProps {
   node: Argument;
   indent: number;
+  forceRenderAsLatex: boolean;
 }
 
 export const ArgumentView = (props: ArgumentViewProps) => {
   let component: React.ReactNode;
   if (props.node.IsInline) {
-    component = <ArgumentDataTypeView node={props.node.Arg} indent={props.indent+2} />;
+    component = <ArgumentDataTypeView
+      node={props.node.Arg}
+      indent={props.indent+2}
+      forceRenderAsLatex={props.forceRenderAsLatex} />;
   } else {
     component = (
       <>
         <Indent size={props.indent}/><Dot /><Space />
-        <ArgumentDataTypeView node={props.node.Arg} indent={props.indent+2} />
+        <ArgumentDataTypeView
+          node={props.node.Arg}
+          indent={props.indent+2}
+          forceRenderAsLatex={props.forceRenderAsLatex} />
       </>
     );
   }

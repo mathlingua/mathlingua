@@ -502,7 +502,7 @@ func matchAllDirectionParamParamType(nodes []ast.DirectionParamParamType,
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d", len(patterns), len(nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(patterns), len(nodes), sliceToString(nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -723,7 +723,7 @@ func matchAllNames(nodes []ast.NameForm, patterns []NameFormPattern) MatchResult
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d", len(patterns), len(nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(patterns), len(nodes), nameFormSliceToString(nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -748,7 +748,7 @@ func matchAllExpressionsAsNames(nodes []ast.ExpressionType,
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d", len(patterns), len(nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(patterns), len(nodes), sliceToString(nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -783,7 +783,7 @@ func matchAllOptionalExpressionsToNames(nodes *[]ast.ExpressionType,
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d", len(*patterns), len(*nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(*patterns), len(*nodes), sliceToString(*nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -820,7 +820,7 @@ func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionType,
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d", len(*patterns), len(*nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(*patterns), len(*nodes), sliceToString(*nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -840,7 +840,7 @@ func matchAllExpressions(nodes []ast.ExpressionType, patterns []FormPatternType)
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d", len(patterns), len(nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(patterns), len(nodes), sliceToString(nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -880,7 +880,7 @@ func matchAllStructuralForms(nodes []ast.StructuralFormType,
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d", len(patterns), len(nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(patterns), len(nodes), sliceToString(nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -914,7 +914,7 @@ func matchAllNamedArgs(nodes *[]ast.NamedArg, patterns *[]NamedGroupPattern) Mat
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d", len(*patterns), len(*nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(*patterns), len(*nodes), namedArgSliceToString(*nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -950,7 +950,7 @@ func matchAllNamedParams(nodes *[]ast.NamedParam, patterns *[]NamedGroupPattern)
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d", len(*patterns), len(*nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(*patterns), len(*nodes), namedParamSliceToString(*nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -987,7 +987,7 @@ func matchDirectionParams(nodes *[]ast.DirectionParamParamType,
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d", len(*patterns), len(*nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(*patterns), len(*nodes), sliceToString(*nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -1004,6 +1004,50 @@ func matchDirectionParams(nodes *[]ast.DirectionParamParamType,
 	result := Match(nodesValue[0], patternsValue[0])
 	for i := 1; i < len(*nodes); i++ {
 		result = unionMatches(result, Match(nodesValue[i], patternsValue[i]))
+	}
+	return result
+}
+
+func sliceToString[T ast.FormulationNodeType](nodes []T) string {
+	result := ""
+	for i, n := range nodes {
+		if i > 0 {
+			result += ", "
+		}
+		result += n.ToCode(noOp)
+	}
+	return result
+}
+
+func namedParamSliceToString(nodes []ast.NamedParam) string {
+	result := ""
+	for i, n := range nodes {
+		if i > 0 {
+			result += ", "
+		}
+		result += n.Name.Text
+	}
+	return result
+}
+
+func namedArgSliceToString(nodes []ast.NamedArg) string {
+	result := ""
+	for i, n := range nodes {
+		if i > 0 {
+			result += ", "
+		}
+		result += n.Name.Text
+	}
+	return result
+}
+
+func nameFormSliceToString(nodes []ast.NameForm) string {
+	result := ""
+	for i, n := range nodes {
+		if i > 0 {
+			result += ", "
+		}
+		result += n.Text
 	}
 	return result
 }

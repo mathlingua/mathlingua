@@ -394,6 +394,74 @@ func ToPostfixOperatorFormPatternFromId(form ast.PostfixOperatorId) PostfixOpera
 	}
 }
 
+func toCurlyArg(curlyParam *ast.CurlyParam) *CurlyPattern {
+	if curlyParam == nil {
+		return nil
+	}
+
+	var squareArgs *[]FormPatternType
+	if curlyParam.SquareParams != nil {
+		patterns := toFormPatterns(*curlyParam.SquareParams)
+		squareArgs = &patterns
+	}
+	var direction *DirectionPattern
+	if curlyParam.Direction != nil {
+		squareArgs := make([]DirectionParamParamPatternType, 0)
+		for _, param := range curlyParam.Direction.SquareParams {
+			if form, ok := param.(ast.StructuralFormType); ok {
+				squareArgs = append(squareArgs, ToDirectionParamParamPatternType(form))
+			} else {
+				panic(fmt.Sprintf("Cannot convert direction square param to a pattern: %s",
+					mlglib.PrettyPrint(param)))
+			}
+		}
+		var name *NameFormPattern
+		if curlyParam.Direction.Name != nil {
+			tmpPattern := ToNameFormPattern(*curlyParam.Direction.Name)
+			name = &tmpPattern
+		}
+		direction = &DirectionPattern{
+			Name:       name,
+			SquareArgs: squareArgs,
+		}
+	}
+	curlyArgs := toFormPatterns(*&curlyParam.CurlyParams)
+	return &CurlyPattern{
+		SquareArgs: squareArgs,
+		CurlyArgs:  &curlyArgs,
+		Direction:  direction,
+	}
+}
+
+func toNamedGroupPatterns(nameParams *[]ast.NamedParam) *[]NamedGroupPattern {
+	if nameParams == nil {
+		return nil
+	}
+	result := make([]NamedGroupPattern, 0)
+	for _, param := range *nameParams {
+		var curlyParam CurlyPattern
+		if param.CurlyParam != nil {
+			curlyParam = *toCurlyArg(param.CurlyParam)
+		}
+		result = append(result, NamedGroupPattern{
+			Name:  ToNameFormPattern(param.Name),
+			Curly: curlyParam,
+		})
+	}
+	return &result
+}
+
+func toParenArgs(names *[]ast.NameForm) *[]NameFormPattern {
+	if names == nil {
+		return nil
+	}
+	result := make([]NameFormPattern, 0)
+	for _, name := range *names {
+		result = append(result, ToNameFormPattern(name))
+	}
+	return &result
+}
+
 func ToCommandPattern(id ast.CommandId) CommandPattern {
 	names := make([]NameFormPattern, 0)
 	for _, n := range id.Names {
@@ -408,40 +476,11 @@ func ToCommandPattern(id ast.CommandId) CommandPattern {
 			},
 		})
 	}
-	var curly *CurlyPattern
-	if id.CurlyParam != nil {
-		curlyParam := id.CurlyParam
-		var squareArgs *[]FormPatternType
-		if curlyParam.SquareParams != nil {
-			patterns := toFormPatterns(*curlyParam.SquareParams)
-			squareArgs = &patterns
-		}
-		var direction *DirectionPattern
-		if curlyParam.Direction != nil {
-			squareArgs := make([]DirectionParamParamPatternType, 0)
-			for _, param := range curlyParam.Direction.SquareParams {
-				if form, ok := param.(ast.StructuralFormType); ok {
-					squareArgs = append(squareArgs, ToDirectionParamParamPatternType(form))
-				} else {
-					panic(fmt.Sprintf("Cannot convert direction square param to a pattern: %s",
-						mlglib.PrettyPrint(param)))
-				}
-			}
-			direction = &DirectionPattern{
-				Name:       curly.Direction.Name,
-				SquareArgs: squareArgs,
-			}
-		}
-		curlyArgs := toFormPatterns(*&curlyParam.CurlyParams)
-		curly = &CurlyPattern{
-			SquareArgs: squareArgs,
-			CurlyArgs:  &curlyArgs,
-			Direction:  direction,
-		}
-	}
 	return CommandPattern{
-		Signature: GetSignatureStringFromCommandId(id),
-		Names:     names,
-		CurlyArg:  curly,
+		Signature:   GetSignatureStringFromCommandId(id),
+		Names:       names,
+		NamedGroups: toNamedGroupPatterns(id.NamedParams),
+		CurlyArg:    toCurlyArg(id.CurlyParam),
+		ParenArgs:   toParenArgs(id.ParenParams),
 	}
 }

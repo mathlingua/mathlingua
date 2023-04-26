@@ -1,20 +1,11 @@
 import React from 'react';
 import { ArgumentTextArgumentData } from '../../types';
+import { LatexView } from '../LatexView';
 
 export interface ArgumentTextArgumentDataViewProps {
   node: ArgumentTextArgumentData;
 }
 
 export const ArgumentTextArgumentDataView = (props: ArgumentTextArgumentDataViewProps) => {
-  return (
-    <span style={styles.argumentText}>
-      {props.node.Text}
-    </span>
-  );
-};
-
-const styles = {
-  argumentText: {
-    color: '#585858',
-  },
+  return <LatexView latex={props.node.Text} color={'black'} />;
 };

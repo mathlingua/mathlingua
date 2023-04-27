@@ -23,6 +23,10 @@ run:
 test:
 	go test ./...
 
+.PHONY: testv
+testv:
+	go test ./... -v
+
 .PHONY: release
 release:
 	./scripts/build-releases.sh --notarize

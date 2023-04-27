@@ -176,19 +176,21 @@ func matchFunctionColonEquals(node ast.MlgNodeType,
 
 func matchName(node ast.MlgNodeType, pattern NameFormPattern) MatchResult {
 	switch n := node.(type) {
-	case *ast.NameForm:
+	case *ast.ExpressionColonEqualsItem:
 		mapping := make(map[string]ast.MlgNodeType)
-		mapping[pattern.Text] = n
+		// if the node is `X := ...` then the mapping maps to `X`
+		mapping[pattern.Text] = n.Lhs
 		return MatchResult{
 			Mapping:         mapping,
 			Messages:        []string{},
 			MatchMakesSense: true,
 		}
 	default:
+		mapping := make(map[string]ast.MlgNodeType)
+		mapping[pattern.Text] = n
 		return MatchResult{
-			Messages: []string{
-				"Expected a name",
-			},
+			Mapping:         mapping,
+			Messages:        []string{},
 			MatchMakesSense: true,
 		}
 	}

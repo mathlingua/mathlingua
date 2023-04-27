@@ -34,6 +34,12 @@ func TestName(t *testing.T) {
 	})
 }
 
+func TestNameAdvanced(t *testing.T) {
+	runTest(t, "\\x", "X", map[string]string{
+		"X": "\\x",
+	})
+}
+
 func TestFunction(t *testing.T) {
 	runTest(t, "f(x)", "g(y)", map[string]string{
 		"f": "g",
@@ -112,7 +118,7 @@ func parseNode(t *testing.T, exp string) ast.MlgNodeType {
 	return parseImpl(t, exp, func(text string) (ast.MlgNodeType, *frontend.DiagnosticTracker, bool) {
 		tracker := frontend.NewDiagnosticTracker(false)
 		keyGen := mlglib.NewKeyGenerator()
-		root, ok := formulation.ParseForm(ast.ToPath("/"), exp, ast.Position{
+		root, ok := formulation.ParseExpression(ast.ToPath("/"), exp, ast.Position{
 			Offset: 0,
 			Row:    0,
 			Column: 0,

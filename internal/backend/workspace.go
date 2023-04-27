@@ -274,16 +274,15 @@ func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeT
 			result += w.formulationNodeToWritten(path, n.Rhs)
 			return result, true
 		case *ast.ConditionalSetExpression:
-			result := ""
-			result += "\\left \\{"
+			result := "\\left \\{"
 			result += w.formulationNodeToWritten(path, n.Target)
+			result += "\\: | \\:"
 			for i, cond := range n.Conditions {
 				if i > 0 {
-					result += "; "
+					result += " ;\\: "
 				}
 				result += w.formulationNodeToWritten(path, cond)
 			}
-			result += "\\: | \\:"
 			result += "\\right \\}"
 			return result, true
 		case *ast.OrdinalCallExpression:
@@ -349,6 +348,9 @@ func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeT
 			}
 			return result, true
 		case *ast.NonEnclosedNonCommandOperatorTarget:
+			if n.Text == "!=" {
+				return "\\neq", true
+			}
 			return n.Text, true
 		case *ast.EnclosedNonCommandOperatorTarget:
 			text := w.formulationNodeToWritten(path, n.Target)

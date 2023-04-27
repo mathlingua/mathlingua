@@ -125,7 +125,7 @@ function getLargeScreenStyles(theme: Theme, showSidebar: boolean) {
       gridArea: 'rightSidebar',
     },
     contentWrapper: {
-      marginLeft: 'auto',
+      marginLeft: showSidebar ? '0' : 'auto',
       marginRight: 'auto',
       width: 'fit-content',
     },
@@ -134,6 +134,7 @@ function getLargeScreenStyles(theme: Theme, showSidebar: boolean) {
       position: 'relative',
       overflow: 'scroll',
       marginTop: theme.sizeXLarge,
+      paddingLeft: showSidebar ? theme.sidebarWidth : 0,
     },
     topbar: {
       gridArea: 'topbar',

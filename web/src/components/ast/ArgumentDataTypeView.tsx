@@ -9,6 +9,7 @@ export interface ArgumentDataTypeViewProps {
   node: ArgumentDataType;
   indent: number;
   forceRenderAsLatex: boolean;
+  preProcess?: (text: string) => string;
 }
 
 export const ArgumentDataTypeView = (props: ArgumentDataTypeViewProps) => {
@@ -17,11 +18,16 @@ export const ArgumentDataTypeView = (props: ArgumentDataTypeViewProps) => {
   } else if (props.node?.Type === 'TextArgumentDataType') {
     return <TextArgumentDataView
       node={props.node as any}
-      forceRenderAsLatex={props.forceRenderAsLatex} />;
+      forceRenderAsLatex={props.forceRenderAsLatex}
+      preProcess={props.preProcess} />;
   } else if (props.node?.Type === 'FormulationArgumentDataType') {
-    return <FormulationArgumentDataView node={props.node as any} />;
+    return <FormulationArgumentDataView
+      node={props.node as any}
+      preProcess={props.preProcess} />;
   } else if (props.node?.Type === 'ArgumentTextArgumentDataType') {
-    return <ArgumentTextArgumentDataView node={props.node as any} />;
+    return <ArgumentTextArgumentDataView
+      node={props.node as any}
+      preProcess={props.preProcess} />;
   } else {
     return null;
   }

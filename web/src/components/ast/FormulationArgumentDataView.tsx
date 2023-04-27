@@ -4,8 +4,10 @@ import { LatexView } from '../LatexView';
 
 export interface FormulationArgumentDataViewProps {
   node: FormulationArgumentData;
+  preProcess?: (text: string) => string;
 }
 
 export const FormulationArgumentDataView = (props: FormulationArgumentDataViewProps) => {
-  return <LatexView latex={props.node.Text} color='black' />
+  const fn = props.preProcess ? props.preProcess : (text: string) => text;
+  return <LatexView latex={fn(props.node.Text)} color='black' />
 };

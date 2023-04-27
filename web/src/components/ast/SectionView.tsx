@@ -25,7 +25,9 @@ export const SectionView = (props: SectionViewProps) => {
             <ArgumentView
               node={arg}
               indent={props.indent}
-              forceRenderAsLatex={props.node.Name === 'written'} />
+              forceRenderAsLatex={props.node.Name === 'written' || props.node.Name == 'called'}
+              preProcess={props.node.Name === 'called' ?
+                (text: string) => `\\textrm\{${text}\}` : undefined} />
           </span>
         ))
       }

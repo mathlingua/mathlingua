@@ -9,6 +9,7 @@ export interface ArgumentViewProps {
   node: Argument;
   indent: number;
   forceRenderAsLatex: boolean;
+  preProcess?: (text: string) => string;
 }
 
 export const ArgumentView = (props: ArgumentViewProps) => {
@@ -17,7 +18,8 @@ export const ArgumentView = (props: ArgumentViewProps) => {
     component = <ArgumentDataTypeView
       node={props.node.Arg}
       indent={props.indent+2}
-      forceRenderAsLatex={props.forceRenderAsLatex} />;
+      forceRenderAsLatex={props.forceRenderAsLatex}
+      preProcess={props.preProcess} />;
   } else {
     component = (
       <>
@@ -25,7 +27,8 @@ export const ArgumentView = (props: ArgumentViewProps) => {
         <ArgumentDataTypeView
           node={props.node.Arg}
           indent={props.indent+2}
-          forceRenderAsLatex={props.forceRenderAsLatex} />
+          forceRenderAsLatex={props.forceRenderAsLatex} 
+          preProcess={props.preProcess} />
       </>
     );
   }

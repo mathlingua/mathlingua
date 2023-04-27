@@ -204,9 +204,100 @@ func (w *Workspace) aliasToWritten(path ast.Path, node ast.Alias) string {
 	return w.formulationNodeToWritten(path, node.Root)
 }
 
+func (w *Workspace) commandInfixToWritten(path ast.Path,
+	node *ast.CommandOperatorTarget) (string, bool) {
+	return w.commandToWritten(path, &node.Command)
+}
+
+func (w *Workspace) commandToWritten(path ast.Path, node *ast.CommandExpression) (string, bool) {
+	sig := GetSignatureStringFromCommand(*node)
+	found := false
+	if id, ok := w.signaturesToIds[sig]; ok {
+		if summary, ok := w.summaries[id]; ok {
+			if written, ok := GetResolvedWritten(summary); ok {
+				if summaryInput, ok := GetResolvedInput(summary); ok {
+					matchResult := Match(node, summaryInput)
+					if matchResult.MatchMakesSense && len(matchResult.Messages) == 0 {
+						found = true
+						nameKeysToWritten := make(map[string]string)
+						for name, exp := range matchResult.Mapping {
+							text := w.formulationNodeToWritten(path, exp)
+							textWithoutParen := strings.TrimSuffix(strings.TrimPrefix(text, "("), ")")
+							textWithParen := "(" + textWithoutParen + ")"
+							nameKeysToWritten[name+"?"] = text
+							nameKeysToWritten[name+"=?"] = text
+							nameKeysToWritten[name+"-?"] = textWithoutParen
+							nameKeysToWritten[name+"+?"] = textWithParen
+						}
+						result := written
+						for nameKey, text := range nameKeysToWritten {
+							result = strings.Replace(result, nameKey, text, -1)
+						}
+						return result, true
+					} else {
+						if matchResult.MatchMakesSense {
+							for _, message := range matchResult.Messages {
+								w.tracker.Append(frontend.Diagnostic{
+									Type:     frontend.Error,
+									Origin:   frontend.BackendOrigin,
+									Message:  message,
+									Path:     path,
+									Position: node.GetCommonMetaData().Start,
+								})
+							}
+						}
+						return "", false
+					}
+				}
+			}
+		}
+	}
+	if !found {
+		w.tracker.Append(frontend.Diagnostic{
+			Type:     frontend.Error,
+			Origin:   frontend.BackendOrigin,
+			Message:  fmt.Sprintf("Unrecognized signature %s", sig),
+			Path:     path,
+			Position: node.GetCommonMetaData().Start,
+		})
+	}
+	return "", false
+}
+
 func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeType) string {
 	customToCode := func(node ast.MlgNodeType) (string, bool) {
 		switch n := node.(type) {
+		case *ast.FunctionLiteralExpression:
+			result := ""
+			result += w.formulationNodeToWritten(path, &n.Lhs)
+			result += " \\rArr "
+			result += w.formulationNodeToWritten(path, n.Rhs)
+			return result, true
+		case *ast.ConditionalSetExpression:
+			result := ""
+			result += "\\left \\{"
+			result += w.formulationNodeToWritten(path, n.Target)
+			for i, cond := range n.Conditions {
+				if i > 0 {
+					result += "; "
+				}
+				result += w.formulationNodeToWritten(path, cond)
+			}
+			result += "\\: | \\:"
+			result += "\\right \\}"
+			return result, true
+		case *ast.OrdinalCallExpression:
+			result := ""
+			result += w.formulationNodeToWritten(path, n.Target)
+			result += "_{"
+			for i, arg := range n.Args {
+				if i > 0 {
+					result += ", "
+				}
+				result += w.formulationNodeToWritten(path, arg)
+			}
+			result += "}"
+			return result, true
 		case *ast.ExpressionColonArrowItem:
 			result := ""
 			result += w.formulationNodeToWritten(path, n.Lhs)
@@ -267,58 +358,9 @@ func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeT
 				return text, true
 			}
 		case *ast.CommandExpression:
-			sig := GetSignatureStringFromCommand(*n)
-			found := false
-			if id, ok := w.signaturesToIds[sig]; ok {
-				if summary, ok := w.summaries[id]; ok {
-					if written, ok := GetResolvedWritten(summary); ok {
-						if summaryInput, ok := GetResolvedInput(summary); ok {
-							matchResult := Match(node, summaryInput)
-							if matchResult.MatchMakesSense && len(matchResult.Messages) == 0 {
-								found = true
-								nameKeysToWritten := make(map[string]string)
-								for name, exp := range matchResult.Mapping {
-									text := w.formulationNodeToWritten(path, exp)
-									textWithoutParen := strings.TrimSuffix(strings.TrimPrefix(text, "("), ")")
-									textWithParen := "(" + textWithoutParen + ")"
-									nameKeysToWritten[name+"?"] = text
-									nameKeysToWritten[name+"=?"] = text
-									nameKeysToWritten[name+"-?"] = textWithoutParen
-									nameKeysToWritten[name+"+?"] = textWithParen
-								}
-								result := written
-								for nameKey, text := range nameKeysToWritten {
-									result = strings.Replace(result, nameKey, text, -1)
-								}
-								return result, true
-							} else {
-								if matchResult.MatchMakesSense {
-									for _, message := range matchResult.Messages {
-										w.tracker.Append(frontend.Diagnostic{
-											Type:     frontend.Error,
-											Origin:   frontend.BackendOrigin,
-											Message:  message,
-											Path:     path,
-											Position: node.GetCommonMetaData().Start,
-										})
-									}
-								}
-								return "", false
-							}
-						}
-					}
-				}
-			}
-			if !found {
-				w.tracker.Append(frontend.Diagnostic{
-					Type:     frontend.Error,
-					Origin:   frontend.BackendOrigin,
-					Message:  fmt.Sprintf("Unrecognized signature %s", sig),
-					Path:     path,
-					Position: node.GetCommonMetaData().Start,
-				})
-			}
-			return "", false
+			return w.commandToWritten(path, n)
+		case *ast.CommandOperatorTarget:
+			return w.commandInfixToWritten(path, n)
 		default:
 			return "", false
 		}

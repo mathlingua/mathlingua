@@ -36,6 +36,7 @@ import (
 
 type MatchResult struct {
 	Mapping         map[string]ast.MlgNodeType
+	VarArgMapping   map[string][]ast.MlgNodeType
 	Messages        []string
 	MatchMakesSense bool
 }
@@ -721,6 +722,48 @@ func matchAllOptionalNames(nodes *[]ast.NameForm, patterns *[]NameFormPattern) M
 }
 
 func matchAllNames(nodes []ast.NameForm, patterns []NameFormPattern) MatchResult {
+	numWithVarArg := 0
+	for _, pattern := range patterns {
+		if pattern.VarArg.IsVarArg {
+			numWithVarArg += 1
+		}
+	}
+
+	if numWithVarArg > 1 {
+		return MatchResult{
+			Mapping: make(map[string]ast.MlgNodeType),
+			Messages: []string{
+				"At most one variadic parameter can be specified",
+			},
+			MatchMakesSense: true,
+		}
+	}
+
+	if numWithVarArg > 0 && len(patterns) != 1 {
+		return MatchResult{
+			Mapping: make(map[string]ast.MlgNodeType),
+			Messages: []string{
+				"If a variadic parameter is specified, it must be the only parameter specified",
+			},
+			MatchMakesSense: true,
+		}
+	}
+
+	if numWithVarArg == 1 {
+		varArgMapping := make(map[string][]ast.MlgNodeType)
+		values := make([]ast.MlgNodeType, 0)
+		for _, name := range nodes {
+			values = append(values, &name)
+		}
+		varArgMapping[patterns[0].Text] = values
+		return MatchResult{
+			Mapping:         make(map[string]ast.MlgNodeType),
+			VarArgMapping:   varArgMapping,
+			Messages:        []string{},
+			MatchMakesSense: true,
+		}
+	}
+
 	if len(nodes) != len(patterns) {
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),

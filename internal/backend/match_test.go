@@ -31,25 +31,39 @@ import (
 func TestName(t *testing.T) {
 	runTest(t, "x", "y", map[string]string{
 		"x": "y",
-	})
+	}, map[string][]string{})
 }
 
 func TestNameAdvanced(t *testing.T) {
 	runTest(t, "\\x", "X", map[string]string{
 		"X": "\\x",
-	})
+	}, map[string][]string{})
+}
+
+func TestNameVarArg(t *testing.T) {
+	runTest(t, "x", "X...", map[string]string{
+		"x": "X",
+	}, map[string][]string{})
 }
 
 func TestFunction(t *testing.T) {
 	runTest(t, "f(x)", "g(y)", map[string]string{
 		"f": "g",
 		"x": "y",
-	})
+	}, map[string][]string{})
 	runTest(t, "f(a, b, c)", "g(x, y, z)", map[string]string{
 		"f": "g",
 		"a": "x",
 		"b": "y",
 		"c": "z",
+	}, map[string][]string{})
+}
+
+func TestFunctionVarArg(t *testing.T) {
+	runTest(t, "f(x, y, z)", "F(X...)", map[string]string{
+		"f": "F",
+	}, map[string][]string{
+		"X": {"x", "y", "z"},
 	})
 }
 
@@ -70,10 +84,12 @@ func TestTuple(t *testing.T) {
 		"x": "X",
 		"y": "Y",
 		"z": "Z",
-	})
+	}, map[string][]string{})
 }
 
-func runTest(t *testing.T, expText string, patternText string, expected map[string]string) {
+func runTest(t *testing.T, expText string, patternText string,
+	expectedSingle map[string]string,
+	expectedVarArg map[string][]string) {
 	expNode := parseNode(t, expText)
 	patternNode := parseForm(t, patternText)
 	pattern := ToFormPattern(patternNode)
@@ -89,7 +105,8 @@ func runTest(t *testing.T, expText string, patternText string, expected map[stri
 		messages += "\n"
 	}
 	assert.Equal(t, "", messages)
-	assert.Equal(t, stringMapToString(expected), nodeMapToString(match.Mapping))
+	assert.Equal(t, stringMapToString(expectedSingle), nodeMapToString(match.Mapping))
+	assert.Equal(t, stringMapToStringSlice(expectedVarArg), nodeMapToStringSlice(match.VarArgMapping))
 }
 
 func nodeMapToString(mapping map[string]ast.MlgNodeType) string {
@@ -103,6 +120,24 @@ func nodeMapToString(mapping map[string]ast.MlgNodeType) string {
 	return result
 }
 
+func nodeMapToStringSlice(mapping map[string][]ast.MlgNodeType) string {
+	keys := make([]string, 0)
+	sort.Strings(keys)
+
+	result := ""
+	for _, key := range keys {
+		values := ""
+		for i, v := range mapping[key] {
+			if i > 0 {
+				values += ","
+			}
+			values += ast.Debug(v, noOp)
+		}
+		result += key + " -> " + values + "\n"
+	}
+	return result
+}
+
 func stringMapToString(mapping map[string]string) string {
 	keys := make([]string, 0)
 	sort.Strings(keys)
@@ -110,6 +145,24 @@ func stringMapToString(mapping map[string]string) string {
 	result := ""
 	for _, key := range keys {
 		result += key + " -> " + mapping[key] + "\n"
+	}
+	return result
+}
+
+func stringMapToStringSlice(mapping map[string][]string) string {
+	keys := make([]string, 0)
+	sort.Strings(keys)
+
+	result := ""
+	for _, key := range keys {
+		values := ""
+		for i, v := range mapping[key] {
+			if i > 0 {
+				values += ","
+			}
+			values += v
+		}
+		result += key + " -> " + values + "\n"
 	}
 	return result
 }

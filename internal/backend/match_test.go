@@ -61,7 +61,7 @@ func TestFunction(t *testing.T) {
 
 func TestFunctionVarArg(t *testing.T) {
 	runTest(t, "f(x, y, z)", "F(X...)", map[string]string{
-		"f": "F",
+		"F": "f",
 	}, map[string][]string{
 		"X": {"x", "y", "z"},
 	})

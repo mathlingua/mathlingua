@@ -16,7 +16,33 @@
 
 package backend
 
-import "mathlingua/internal/ast"
+import (
+	"fmt"
+	"mathlingua/internal/ast"
+	"mathlingua/internal/mlglib"
+	"regexp"
+	"strings"
+)
+
+type TextItemType interface {
+	TextItemType()
+}
+
+func (StringItem) TextItemType()       {}
+func (SubstitutionItem) TextItemType() {}
+
+type StringItem struct {
+	Text string
+}
+
+type SubstitutionItem struct {
+	Name       string
+	NameSuffix string
+	IsVarArg   bool
+	Prefix     string
+	Suffix     string
+	Infix      string
+}
 
 type CalledSummary struct {
 	Called string
@@ -115,4 +141,164 @@ func GetCalledSummaries(documented *ast.DocumentedSection) []CalledSummary {
 		}
 	}
 	return summaries
+}
+
+func ParseCalledWritten(text string) ([]TextItemType, error) {
+	nameMatch := regexp.MustCompile(`[a-zA-Z0-9]+(\+|-|=)?\?`)
+	result := make([]TextItemType, 0)
+	for len(text) > 0 {
+		indices := nameMatch.FindStringIndex(text)
+		if indices == nil {
+			break
+		}
+		prefix := text[0:indices[0]]
+
+		if len(prefix) > 0 {
+			result = append(result, StringItem{
+				Text: prefix,
+			})
+		}
+
+		// use indices[1]-1 to ignore the trailing ?
+		match := text[indices[0] : indices[1]-1]
+		name := ""
+		nameSuffix := ""
+		if strings.HasSuffix(match, "+") || strings.HasSuffix(match, "-") ||
+			strings.HasSuffix(match, "=") {
+			name = match[0 : len(match)-1]
+			nameSuffix = match[len(match)-1:]
+		} else {
+			name = match
+		}
+
+		suffix := text[indices[1]:]
+
+		text = suffix
+
+		inner := ""
+		if len(text) > 0 && text[0] == '{' {
+			inner += "{"
+			stack := mlglib.NewStack[byte]()
+			stack.Push('{')
+			i := 1
+			for i < len(text) {
+				c := text[i]
+				i += 1
+				if c == '{' {
+					stack.Push(c)
+				} else if c == '}' {
+					if !stack.IsEmpty() && stack.Peek() == '{' {
+						stack.Pop()
+					}
+					if stack.IsEmpty() {
+						inner += string(c)
+						break
+					}
+				}
+				inner += string(c)
+			}
+			text = text[len(inner):]
+
+			// inner is of the form {...}, so remove the leading { and trailing }
+			inner = inner[1 : len(inner)-1]
+
+			innerPrefix := ""
+			hasDotDotDot1 := false
+			innerInfix := ""
+			hasDotDotDot2 := false
+			innerSuffix := ""
+
+			j := 0
+			for j < len(inner) && inner[j] != '.' {
+				innerPrefix += string(inner[j])
+				j += 1
+			}
+
+			if j+2 < len(inner) && inner[j] == '.' && inner[j+1] == '.' && inner[j+2] == '.' {
+				hasDotDotDot1 = true
+				j += 3
+			}
+
+			for j < len(inner) && inner[j] != '.' {
+				innerInfix += string(inner[j])
+				j += 1
+			}
+
+			if j+2 < len(inner) && inner[j] == '.' && inner[j+1] == '.' && inner[j+2] == '.' {
+				hasDotDotDot2 = true
+				j += 3
+			}
+
+			for j < len(inner) {
+				innerSuffix += string(inner[j])
+				j += 1
+			}
+
+			if !hasDotDotDot1 && !hasDotDotDot2 {
+				return nil, fmt.Errorf("At least one .... expected")
+			}
+
+			if innerPrefix != "" && hasDotDotDot1 && innerInfix != "" &&
+				hasDotDotDot2 && innerSuffix != "" {
+				// x...x...x
+				result = append(result, SubstitutionItem{
+					Name:       name,
+					NameSuffix: nameSuffix,
+					IsVarArg:   true,
+					Prefix:     innerPrefix,
+					Infix:      innerInfix,
+					Suffix:     innerSuffix,
+				})
+			} else if innerPrefix == "" && hasDotDotDot1 &&
+				innerInfix != "" && hasDotDotDot2 && innerSuffix == "" {
+				// ...x...
+				result = append(result, SubstitutionItem{
+					Name:       name,
+					NameSuffix: nameSuffix,
+					IsVarArg:   true,
+					Prefix:     innerPrefix,
+					Infix:      innerInfix,
+					Suffix:     innerSuffix,
+				})
+			} else if innerPrefix == "" && hasDotDotDot1 && innerInfix != "" &&
+				!hasDotDotDot2 && innerSuffix == "" {
+				// ...x
+				result = append(result, SubstitutionItem{
+					Name:       name,
+					NameSuffix: nameSuffix,
+					IsVarArg:   true,
+					Prefix:     innerPrefix,
+					Infix:      innerInfix,
+					Suffix:     innerSuffix,
+				})
+			} else if innerPrefix != "" && hasDotDotDot1 && innerInfix == "" &&
+				!hasDotDotDot2 && innerSuffix == "" {
+				// x...
+				result = append(result, SubstitutionItem{
+					Name:       name,
+					NameSuffix: nameSuffix,
+					IsVarArg:   true,
+					Prefix:     innerPrefix,
+					Infix:      innerInfix,
+					Suffix:     innerSuffix,
+				})
+			} else {
+				result = append(result, SubstitutionItem{
+					Name:       name,
+					NameSuffix: nameSuffix,
+					IsVarArg:   true,
+					Prefix:     innerPrefix,
+					Infix:      innerInfix,
+					Suffix:     innerSuffix,
+				})
+			}
+		} else {
+			result = append(result, SubstitutionItem{
+				Name:       name,
+				NameSuffix: nameSuffix,
+				IsVarArg:   false,
+			})
+		}
+	}
+	return result, nil
 }

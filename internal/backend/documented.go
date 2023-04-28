@@ -238,60 +238,14 @@ func ParseCalledWritten(text string) ([]TextItemType, error) {
 				return nil, fmt.Errorf("At least one .... expected")
 			}
 
-			if innerPrefix != "" && hasDotDotDot1 && innerInfix != "" &&
-				hasDotDotDot2 && innerSuffix != "" {
-				// x...x...x
-				result = append(result, SubstitutionItem{
-					Name:       name,
-					NameSuffix: nameSuffix,
-					IsVarArg:   true,
-					Prefix:     innerPrefix,
-					Infix:      innerInfix,
-					Suffix:     innerSuffix,
-				})
-			} else if innerPrefix == "" && hasDotDotDot1 &&
-				innerInfix != "" && hasDotDotDot2 && innerSuffix == "" {
-				// ...x...
-				result = append(result, SubstitutionItem{
-					Name:       name,
-					NameSuffix: nameSuffix,
-					IsVarArg:   true,
-					Prefix:     innerPrefix,
-					Infix:      innerInfix,
-					Suffix:     innerSuffix,
-				})
-			} else if innerPrefix == "" && hasDotDotDot1 && innerInfix != "" &&
-				!hasDotDotDot2 && innerSuffix == "" {
-				// ...x
-				result = append(result, SubstitutionItem{
-					Name:       name,
-					NameSuffix: nameSuffix,
-					IsVarArg:   true,
-					Prefix:     innerPrefix,
-					Infix:      innerInfix,
-					Suffix:     innerSuffix,
-				})
-			} else if innerPrefix != "" && hasDotDotDot1 && innerInfix == "" &&
-				!hasDotDotDot2 && innerSuffix == "" {
-				// x...
-				result = append(result, SubstitutionItem{
-					Name:       name,
-					NameSuffix: nameSuffix,
-					IsVarArg:   true,
-					Prefix:     innerPrefix,
-					Infix:      innerInfix,
-					Suffix:     innerSuffix,
-				})
-			} else {
-				result = append(result, SubstitutionItem{
-					Name:       name,
-					NameSuffix: nameSuffix,
-					IsVarArg:   true,
-					Prefix:     innerPrefix,
-					Infix:      innerInfix,
-					Suffix:     innerSuffix,
-				})
-			}
+			result = append(result, SubstitutionItem{
+				Name:       name,
+				NameSuffix: nameSuffix,
+				IsVarArg:   true,
+				Prefix:     innerPrefix,
+				Infix:      innerInfix,
+				Suffix:     innerSuffix,
+			})
 		} else {
 			result = append(result, SubstitutionItem{
 				Name:       name,

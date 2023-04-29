@@ -28,11 +28,7 @@ import (
 )
 
 func StartServer() {
-	tracker := frontend.NewDiagnosticTracker(true)
-	workspace, diagnostics := NewWorkspaceFromPaths([]string{"."}, tracker)
-	for _, diag := range diagnostics {
-		tracker.Append(diag)
-	}
+	workspace := initWorkspace()
 
 	router := mux.NewRouter()
 	router.Use(handleCors)
@@ -42,12 +38,24 @@ func StartServer() {
 	router.HandleFunc("/api/page", func(w http.ResponseWriter, r *http.Request) {
 		page(workspace, w, r)
 	}).Methods("GET")
-	router.PathPrefix("/").Handler(web.AssetHandler{})
+	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		workspace = initWorkspace()
+		web.AssetHandler{}.ServeHTTP(w, r)
+	})
 
 	fmt.Println("Visit http://localhost:8080 to view your documents")
 	if err := http.ListenAndServe(":8080", router); err != nil {
 		fmt.Println(err.Error())
 	}
+}
+
+func initWorkspace() *Workspace {
+	tracker := frontend.NewDiagnosticTracker(true)
+	workspace, diagnostics := NewWorkspaceFromPaths([]string{"."}, tracker)
+	for _, diag := range diagnostics {
+		tracker.Append(diag)
+	}
+	return workspace
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

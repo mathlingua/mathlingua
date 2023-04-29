@@ -716,6 +716,47 @@ func matchAlias(node ast.MlgNodeType, pattern AliasPattern) MatchResult {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// if the `error != nil` then the variadic pattern description is invalid
+// otherwise if `error == nil` then the bool return value is true if and
+// only if the patterns slice has one pattern and it is variadic
+func checkPatternsForVarArg(patterns []PatternType) (error, bool) {
+	numWithVarArg := 0
+	for _, pattern := range patterns {
+		if pattern.GetVarArgData().IsVarArg {
+			numWithVarArg += 1
+		}
+	}
+
+	if numWithVarArg > 1 {
+		return fmt.Errorf("At most one variadic parameter can be specified"), false
+	}
+
+	if numWithVarArg > 0 && len(patterns) != 1 {
+		return fmt.Errorf(
+			"If a variadic parameter is specified, it must be the only parameter specified"), false
+	}
+
+	return nil, numWithVarArg == 1
+}
+
+func checkNameFormPatternsForVarArg(patterns []NameFormPattern) (error, bool) {
+	generalPatterns := make([]PatternType, 0)
+	for _, pattern := range patterns {
+		generalPatterns = append(generalPatterns, pattern)
+	}
+	return checkPatternsForVarArg(generalPatterns)
+}
+
+func checkFormPatternsForVarArg(patterns []FormPatternType) (error, bool) {
+	generalPatterns := make([]PatternType, 0)
+	for _, pattern := range patterns {
+		generalPatterns = append(generalPatterns, pattern)
+	}
+	return checkPatternsForVarArg(generalPatterns)
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 func matchAllOptionalNames(nodes *[]ast.NameForm, patterns *[]NameFormPattern) MatchResult {
 	if nodes == nil {
 		zeroNodes := make([]ast.NameForm, 0)
@@ -799,34 +840,15 @@ func matchAllNames(nodes []ast.NameForm, patterns []NameFormPattern) MatchResult
 func matchAllExpressionsAsNames(nodes []ast.ExpressionType,
 	patterns []NameFormPattern) MatchResult {
 
-	numWithVarArg := 0
-	for _, pattern := range patterns {
-		if pattern.VarArg.IsVarArg {
-			numWithVarArg += 1
-		}
-	}
-
-	if numWithVarArg > 1 {
+	err, ok := checkNameFormPatternsForVarArg(patterns)
+	if err != nil {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
-			Messages: []string{
-				"At most one variadic parameter can be specified",
-			},
+			Messages:        []string{err.Error()},
 			MatchMakesSense: true,
 		}
 	}
 
-	if numWithVarArg > 0 && len(patterns) != 1 {
-		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
-			Messages: []string{
-				"If a variadic parameter is specified, it must be the only parameter specified",
-			},
-			MatchMakesSense: true,
-		}
-	}
-
-	if numWithVarArg == 1 {
+	if ok {
 		varArgMapping := make(map[string][]ast.MlgNodeType)
 		values := make([]ast.MlgNodeType, 0)
 		for _, name := range nodes {
@@ -913,34 +935,15 @@ func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionType,
 		patterns = &zeroPatterns
 	}
 
-	numWithVarArg := 0
-	for _, pattern := range *patterns {
-		if pattern.GetVarArgData().IsVarArg {
-			numWithVarArg += 1
-		}
-	}
-
-	if numWithVarArg > 1 {
+	err, ok := checkFormPatternsForVarArg(*patterns)
+	if err != nil {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
-			Messages: []string{
-				"At most one variadic parameter can be specified",
-			},
+			Messages:        []string{err.Error()},
 			MatchMakesSense: true,
 		}
 	}
 
-	if numWithVarArg > 0 && len(*patterns) != 1 {
-		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
-			Messages: []string{
-				"If a variadic parameter is specified, it must be the only parameter specified",
-			},
-			MatchMakesSense: true,
-		}
-	}
-
-	if numWithVarArg == 1 {
+	if ok {
 		first := (*patterns)[0]
 		if f, ok := first.(NameFormPattern); ok {
 			varArgMapping := make(map[string][]ast.MlgNodeType)

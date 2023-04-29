@@ -26,6 +26,7 @@ import (
 // provides, expression alias, or spec alias.
 type PatternType interface {
 	PatternType()
+	GetVarArgData() VarArgPatternData
 }
 
 func (NameFormPattern) PatternType()                 {}
@@ -49,13 +50,26 @@ func (ChainExpressionPattern) PatternType()         {}
 func (SpecAliasPattern) PatternType() {}
 func (AliasPattern) PatternType()     {}
 
-func (n NameFormPattern) GetVarArgData() VarArgPatternData            { return n.VarArg }
-func (n FunctionFormPattern) GetVarArgData() VarArgPatternData        { return n.VarArg }
-func (n TupleFormPattern) GetVarArgData() VarArgPatternData           { return n.VarArg }
-func (n ConditionalSetFormPattern) GetVarArgData() VarArgPatternData  { return n.VarArg }
-func (n InfixOperatorFormPattern) GetVarArgData() VarArgPatternData   { return VarArgPatternData{} }
-func (n PostfixOperatorFormPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
-func (n PrefixOperatorFormPattern) GetVarArgData() VarArgPatternData  { return VarArgPatternData{} }
+func (p NameFormPattern) GetVarArgData() VarArgPatternData                 { return p.VarArg }
+func (p FunctionFormPattern) GetVarArgData() VarArgPatternData             { return p.VarArg }
+func (p TupleFormPattern) GetVarArgData() VarArgPatternData                { return p.VarArg }
+func (p ConditionalSetExpressionPattern) GetVarArgData() VarArgPatternData { return p.VarArg }
+func (p ConditionalSetFormPattern) GetVarArgData() VarArgPatternData       { return p.VarArg }
+func (p InfixOperatorFormPattern) GetVarArgData() VarArgPatternData        { return VarArgPatternData{} }
+func (p PrefixOperatorFormPattern) GetVarArgData() VarArgPatternData       { return VarArgPatternData{} }
+func (p PostfixOperatorFormPattern) GetVarArgData() VarArgPatternData      { return VarArgPatternData{} }
+func (p OrdinalPattern) GetVarArgData() VarArgPatternData                  { return VarArgPatternData{} }
+
+func (p NameColonEqualsPatternPattern) GetVarArgData() VarArgPatternData  { return VarArgPatternData{} }
+func (p FunctionColonEqualsNamePattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
+func (p InfixCommandOperatorPattern) GetVarArgData() VarArgPatternData    { return VarArgPatternData{} }
+func (p InfixCommandTargetPattern) GetVarArgData() VarArgPatternData      { return VarArgPatternData{} }
+func (p CommandPattern) GetVarArgData() VarArgPatternData                 { return VarArgPatternData{} }
+func (p NamedGroupPattern) GetVarArgData() VarArgPatternData              { return VarArgPatternData{} }
+func (p ChainExpressionPattern) GetVarArgData() VarArgPatternData         { return VarArgPatternData{} }
+
+func (p SpecAliasPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
+func (p AliasPattern) GetVarArgData() VarArgPatternData     { return VarArgPatternData{} }
 
 type NameColonEqualsPatternPattern struct {
 	Lhs NameFormPattern
@@ -70,7 +84,6 @@ type FunctionColonEqualsNamePattern struct {
 type FormPatternType interface {
 	PatternType
 	FormPatternType()
-	GetVarArgData() VarArgPatternData
 }
 
 func (NameFormPattern) FormPatternType()            {}

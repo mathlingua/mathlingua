@@ -739,20 +739,83 @@ func checkPatternsForVarArg(patterns []PatternType) (error, bool) {
 	return nil, numWithVarArg == 1
 }
 
-func checkNameFormPatternsForVarArg(patterns []NameFormPattern) (error, bool) {
+func checkNameFormPatternsForVarArg(nodes []ast.ExpressionType, patterns []NameFormPattern) *MatchResult {
 	generalPatterns := make([]PatternType, 0)
 	for _, pattern := range patterns {
 		generalPatterns = append(generalPatterns, pattern)
 	}
-	return checkPatternsForVarArg(generalPatterns)
+	err, ok := checkPatternsForVarArg(generalPatterns)
+	if err != nil {
+		return &MatchResult{
+			Messages:        []string{err.Error()},
+			MatchMakesSense: true,
+		}
+	}
+
+	if ok {
+		varArgMapping := make(map[string][]ast.MlgNodeType)
+		values := make([]ast.MlgNodeType, 0)
+		for _, name := range nodes {
+			values = append(values, name)
+		}
+		varArgMapping[patterns[0].Text] = values
+		return &MatchResult{
+			Mapping:         make(map[string]ast.MlgNodeType),
+			VarArgMapping:   varArgMapping,
+			Messages:        []string{},
+			MatchMakesSense: true,
+		}
+	}
+
+	return nil
 }
 
-func checkFormPatternsForVarArg(patterns []FormPatternType) (error, bool) {
+func checkFormPatternsForVarArg(nodes []ast.ExpressionType, patterns []FormPatternType) *MatchResult {
 	generalPatterns := make([]PatternType, 0)
 	for _, pattern := range patterns {
 		generalPatterns = append(generalPatterns, pattern)
 	}
-	return checkPatternsForVarArg(generalPatterns)
+
+	err, ok := checkPatternsForVarArg(generalPatterns)
+	if err != nil {
+		return &MatchResult{
+			Messages:        []string{err.Error()},
+			MatchMakesSense: true,
+		}
+	}
+
+	if ok {
+		first := patterns[0]
+		varArgMapping := make(map[string][]ast.MlgNodeType)
+		values := make([]ast.MlgNodeType, 0)
+		for _, n := range nodes {
+			values = append(values, n)
+		}
+		if f, ok := first.(NameFormPattern); ok {
+			varArgMapping[f.Text] = values
+			return &MatchResult{
+				Mapping:         make(map[string]ast.MlgNodeType),
+				VarArgMapping:   varArgMapping,
+				Messages:        []string{},
+				MatchMakesSense: true,
+			}
+		} else if f, ok := first.(FunctionFormPattern); ok {
+			varArgMapping[f.Target.Text] = values
+			return &MatchResult{
+				Mapping:         make(map[string]ast.MlgNodeType),
+				VarArgMapping:   varArgMapping,
+				Messages:        []string{},
+				MatchMakesSense: true,
+			}
+		} else {
+			return &MatchResult{
+				Messages:        []string{"Only a name or function can be variadic"},
+				MatchMakesSense: true,
+			}
+		}
+	}
+
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -840,27 +903,9 @@ func matchAllNames(nodes []ast.NameForm, patterns []NameFormPattern) MatchResult
 func matchAllExpressionsAsNames(nodes []ast.ExpressionType,
 	patterns []NameFormPattern) MatchResult {
 
-	err, ok := checkNameFormPatternsForVarArg(patterns)
-	if err != nil {
-		return MatchResult{
-			Messages:        []string{err.Error()},
-			MatchMakesSense: true,
-		}
-	}
-
-	if ok {
-		varArgMapping := make(map[string][]ast.MlgNodeType)
-		values := make([]ast.MlgNodeType, 0)
-		for _, name := range nodes {
-			values = append(values, name)
-		}
-		varArgMapping[patterns[0].Text] = values
-		return MatchResult{
-			Mapping:         make(map[string]ast.MlgNodeType),
-			VarArgMapping:   varArgMapping,
-			Messages:        []string{},
-			MatchMakesSense: true,
-		}
+	res := checkNameFormPatternsForVarArg(nodes, patterns)
+	if res != nil {
+		return *res
 	}
 
 	if len(nodes) != len(patterns) {
@@ -935,30 +980,9 @@ func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionType,
 		patterns = &zeroPatterns
 	}
 
-	err, ok := checkFormPatternsForVarArg(*patterns)
-	if err != nil {
-		return MatchResult{
-			Messages:        []string{err.Error()},
-			MatchMakesSense: true,
-		}
-	}
-
-	if ok {
-		first := (*patterns)[0]
-		if f, ok := first.(NameFormPattern); ok {
-			varArgMapping := make(map[string][]ast.MlgNodeType)
-			values := make([]ast.MlgNodeType, 0)
-			for _, n := range *nodes {
-				values = append(values, n)
-			}
-			varArgMapping[f.Text] = values
-			return MatchResult{
-				Mapping:         make(map[string]ast.MlgNodeType),
-				VarArgMapping:   varArgMapping,
-				Messages:        []string{},
-				MatchMakesSense: true,
-			}
-		}
+	res := checkFormPatternsForVarArg(*nodes, *patterns)
+	if res != nil {
+		return *res
 	}
 
 	if len(*nodes) != len(*patterns) {

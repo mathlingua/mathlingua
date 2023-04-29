@@ -71,6 +71,9 @@ func TestXxx(t *testing.T) {
 			Suffix:     "",
 			Infix:      "xyz",
 		},
+		StringItem{
+			Text: " text5",
+		},
 	}
 	assert.Equal(t, expected, actual)
 }

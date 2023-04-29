@@ -186,6 +186,9 @@ func ParseCalledWritten(text string) ([]TextItemType, error) {
 	for len(text) > 0 {
 		indices := nameMatch.FindStringIndex(text)
 		if indices == nil {
+			result = append(result, StringItem{
+				Text: text,
+			})
 			break
 		}
 		prefix := text[0:indices[0]]

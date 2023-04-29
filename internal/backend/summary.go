@@ -17,7 +17,6 @@
 package backend
 
 import (
-	"fmt"
 	"mathlingua/internal/ast"
 )
 
@@ -99,9 +98,9 @@ func GetResolvedInput(summary SummaryType) (PatternType, bool) {
 	}
 }
 
-func GetResolvedWritten(summary SummaryType) (string, bool) {
-	var called *string
-	var written *string
+func GetResolvedWritten(summary SummaryType) ([]TextItemType, bool) {
+	var called *[]TextItemType
+	var written *[]TextItemType
 	switch s := summary.(type) {
 	case *DescribesSummary:
 		called = getSingleCalled(s.Called)
@@ -119,24 +118,32 @@ func GetResolvedWritten(summary SummaryType) (string, bool) {
 	}
 
 	if called != nil {
-		return fmt.Sprintf("\\textrm{%s}", *called), true
+		result := make([]TextItemType, 0)
+		result = append(result, StringItem{
+			Text: "\\textrm{",
+		})
+		result = append(result, *called...)
+		result = append(result, StringItem{
+			Text: "}",
+		})
+		return result, true
 	}
 
-	return "", false
+	return nil, false
 }
 
-func getSingleCalled(called []CalledSummary) *string {
-	if len(called) == 0 || len(called[0].Called) == 0 {
+func getSingleCalled(called []CalledSummary) *[]TextItemType {
+	if len(called) == 0 {
 		return nil
 	}
-	text := called[0].Called
+	text := called[0].ParsedCalled
 	return &text
 }
 
-func getSingleWritten(written []WrittenSummary) *string {
-	if len(written) == 0 || len(written[0].Written) == 0 {
+func getSingleWritten(written []WrittenSummary) *[]TextItemType {
+	if len(written) == 0 {
 		return nil
 	}
-	text := written[0].Written
+	text := written[0].ParsedWritten
 	return &text
 }

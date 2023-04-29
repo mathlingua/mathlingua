@@ -23,7 +23,7 @@ import (
 )
 
 func TestXxx(t *testing.T) {
-	text := "text1 A? text2 x+? text3 X?{abc...} text4 X+?{abc...xyz...123} text5"
+	text := "text1 A? text2 x+? text3 X?{abc...} text4 X+?{...xyz...} text5"
 	actual, err := ParseCalledWritten(text)
 	assert.Nil(t, err)
 	expected := []TextItemType{
@@ -67,8 +67,8 @@ func TestXxx(t *testing.T) {
 			Name:       "X",
 			NameSuffix: "+",
 			IsVarArg:   true,
-			Prefix:     "abc",
-			Suffix:     "123",
+			Prefix:     "",
+			Suffix:     "",
 			Infix:      "xyz",
 		},
 	}

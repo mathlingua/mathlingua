@@ -209,29 +209,107 @@ func (w *Workspace) commandInfixToWritten(path ast.Path,
 	return w.commandToWritten(path, &node.Command)
 }
 
+func valuesToString(values []string, prefix string, infix string, suffix string) string {
+	// this function assumes exactly one of prefix, infix, and suffix is non-empty
+	if prefix != "" {
+		result := ""
+		for _, v := range values {
+			result += prefix
+			result += v
+		}
+		return result
+	} else if suffix != "" {
+		result := ""
+		for _, v := range values {
+			result += v
+			result += suffix
+		}
+		return result
+	} else {
+		result := ""
+		for i, v := range values {
+			if i > 0 {
+				result += infix
+			}
+			result += v
+		}
+		return result
+	}
+}
+
 func (w *Workspace) commandToWritten(path ast.Path, node *ast.CommandExpression) (string, bool) {
 	sig := GetSignatureStringFromCommand(*node)
 	found := false
 	if id, ok := w.signaturesToIds[sig]; ok {
 		if summary, ok := w.summaries[id]; ok {
-			if written, ok := GetResolvedWritten(summary); ok {
+			if writtenItems, ok := GetResolvedWritten(summary); ok {
 				if summaryInput, ok := GetResolvedInput(summary); ok {
 					matchResult := Match(node, summaryInput)
 					if matchResult.MatchMakesSense && len(matchResult.Messages) == 0 {
 						found = true
-						nameKeysToWritten := make(map[string]string)
+						nameToWritten := make(map[string]string)
+						nameNoParenToWritten := make(map[string]string)
+						nameWithParenToWritten := make(map[string]string)
 						for name, exp := range matchResult.Mapping {
 							text := w.formulationNodeToWritten(path, exp)
 							textWithoutParen := strings.TrimSuffix(strings.TrimPrefix(text, "("), ")")
 							textWithParen := "(" + textWithoutParen + ")"
-							nameKeysToWritten[name+"?"] = text
-							nameKeysToWritten[name+"=?"] = text
-							nameKeysToWritten[name+"-?"] = textWithoutParen
-							nameKeysToWritten[name+"+?"] = textWithParen
+							nameToWritten[name] = text
+							nameNoParenToWritten[name] = textWithoutParen
+							nameWithParenToWritten[name] = textWithParen
 						}
-						result := written
-						for nameKey, text := range nameKeysToWritten {
-							result = strings.Replace(result, nameKey, text, -1)
+
+						varArgNameToWritten := make(map[string][]string)
+						varArgNameNoParenToWritten := make(map[string][]string)
+						varArgNameWithParenToWritten := make(map[string][]string)
+						for name, exps := range matchResult.VarArgMapping {
+							values := make([]string, 0)
+							valuesWithoutParen := make([]string, 0)
+							valuesWithParen := make([]string, 0)
+							for _, exp := range exps {
+								value := w.formulationNodeToWritten(path, exp)
+								valueWithoutParen := value
+								valueWithParen := value
+
+								values = append(values, value)
+								valuesWithoutParen = append(valuesWithoutParen, valueWithoutParen)
+								valuesWithParen = append(valuesWithParen, valueWithParen)
+							}
+
+							varArgNameToWritten[name] = values
+							varArgNameNoParenToWritten[name] = valuesWithoutParen
+							varArgNameWithParenToWritten[name] = valuesWithParen
+						}
+
+						result := ""
+						for _, item := range writtenItems {
+							switch it := item.(type) {
+							case StringItem:
+								result += it.Text
+							case SubstitutionItem:
+								if it.IsVarArg {
+									if it.NameSuffix == "+" {
+										result += valuesToString(
+											varArgNameWithParenToWritten[it.Name], it.Prefix, it.Infix, it.Suffix)
+									} else if it.NameSuffix == "=" {
+										result += valuesToString(
+											varArgNameToWritten[it.Name], it.Prefix, it.Infix, it.Suffix)
+									} else {
+										// default to - if the suffix is blank
+										result += valuesToString(
+											varArgNameNoParenToWritten[it.Name], it.Prefix, it.Infix, it.Suffix)
+									}
+								} else {
+									if it.NameSuffix == "+" {
+										result += nameWithParenToWritten[it.Name]
+									} else if it.NameSuffix == "=" {
+										result += nameToWritten[it.Name]
+									} else {
+										// default to - if the suffix is blank
+										result += nameNoParenToWritten[it.Name]
+									}
+								}
+							}
 						}
 						return result, true
 					} else {

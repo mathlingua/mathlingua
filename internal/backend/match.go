@@ -96,6 +96,14 @@ func unionMatches(result1 MatchResult, result2 MatchResult) MatchResult {
 		mapping[name] = node
 	}
 
+	varArgMapping := make(map[string][]ast.MlgNodeType)
+	for name, nodes := range result1.VarArgMapping {
+		varArgMapping[name] = nodes
+	}
+	for name, nodes := range result2.VarArgMapping {
+		varArgMapping[name] = nodes
+	}
+
 	messages := make([]string, 0)
 	messages = append(messages, result1.Messages...)
 	messages = append(messages, result2.Messages...)
@@ -104,6 +112,7 @@ func unionMatches(result1 MatchResult, result2 MatchResult) MatchResult {
 
 	return MatchResult{
 		Mapping:         mapping,
+		VarArgMapping:   varArgMapping,
 		Messages:        messages,
 		MatchMakesSense: matchMakesSense,
 	}
@@ -902,6 +911,51 @@ func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionType,
 	if patterns == nil {
 		zeroPatterns := make([]FormPatternType, 0)
 		patterns = &zeroPatterns
+	}
+
+	numWithVarArg := 0
+	for _, pattern := range *patterns {
+		if pattern.GetVarArgData().IsVarArg {
+			numWithVarArg += 1
+		}
+	}
+
+	if numWithVarArg > 1 {
+		return MatchResult{
+			Mapping: make(map[string]ast.MlgNodeType),
+			Messages: []string{
+				"At most one variadic parameter can be specified",
+			},
+			MatchMakesSense: true,
+		}
+	}
+
+	if numWithVarArg > 0 && len(*patterns) != 1 {
+		return MatchResult{
+			Mapping: make(map[string]ast.MlgNodeType),
+			Messages: []string{
+				"If a variadic parameter is specified, it must be the only parameter specified",
+			},
+			MatchMakesSense: true,
+		}
+	}
+
+	if numWithVarArg == 1 {
+		first := (*patterns)[0]
+		if f, ok := first.(NameFormPattern); ok {
+			varArgMapping := make(map[string][]ast.MlgNodeType)
+			values := make([]ast.MlgNodeType, 0)
+			for _, n := range *nodes {
+				values = append(values, n)
+			}
+			varArgMapping[f.Text] = values
+			return MatchResult{
+				Mapping:         make(map[string]ast.MlgNodeType),
+				VarArgMapping:   varArgMapping,
+				Messages:        []string{},
+				MatchMakesSense: true,
+			}
+		}
 	}
 
 	if len(*nodes) != len(*patterns) {

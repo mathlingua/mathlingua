@@ -45,23 +45,40 @@ type SubstitutionItem struct {
 }
 
 type CalledSummary struct {
-	Called string
+	RawCalled    string
+	ParsedCalled []TextItemType
+	Errors       []string
 }
 
 type WrittenSummary struct {
-	Written string
+	RawWritten    string
+	ParsedWritten []TextItemType
+	Errors        []string
 }
 
 type WritingSummary struct {
-	Form    PatternType
-	Written string
+	Form          PatternType
+	RawWritten    string
+	ParsedWritten []TextItemType
+	Errors        []string
+}
+
+func errorToString(err error) []string {
+	if err == nil {
+		return []string{}
+	}
+	return []string{err.Error()}
 }
 
 func ToCalledSummaries(node ast.CalledGroup) []CalledSummary {
 	result := make([]CalledSummary, 0)
 	for _, item := range node.Called.Called {
+		raw := item.RawText
+		parsed, err := ParseCalledWritten(raw)
 		result = append(result, CalledSummary{
-			Called: item.RawText,
+			RawCalled:    raw,
+			ParsedCalled: parsed,
+			Errors:       errorToString(err),
 		})
 	}
 	return result
@@ -70,8 +87,12 @@ func ToCalledSummaries(node ast.CalledGroup) []CalledSummary {
 func ToWrittenSummaries(node ast.WrittenGroup) []WrittenSummary {
 	result := make([]WrittenSummary, 0)
 	for _, item := range node.Written.Written {
+		raw := item.RawText
+		parsed, err := ParseCalledWritten(raw)
 		result = append(result, WrittenSummary{
-			Written: item.RawText,
+			RawWritten:    raw,
+			ParsedWritten: parsed,
+			Errors:        errorToString(err),
 		})
 	}
 	return result
@@ -80,9 +101,13 @@ func ToWrittenSummaries(node ast.WrittenGroup) []WrittenSummary {
 func ToWritingSummaries(node ast.WritingGroup) []WritingSummary {
 	result := make([]WritingSummary, 0)
 	for _, item := range node.As.As {
+		raw := item.RawText
+		parsed, err := ParseCalledWritten(raw)
 		result = append(result, WritingSummary{
-			Form:    ToPatternFromTarget(node.Writing.Writing),
-			Written: item.RawText,
+			Form:          ToPatternFromTarget(node.Writing.Writing),
+			RawWritten:    raw,
+			ParsedWritten: parsed,
+			Errors:        errorToString(err),
 		})
 	}
 	return result
@@ -97,8 +122,12 @@ func GetWrittenSummaries(documented *ast.DocumentedSection) []WrittenSummary {
 		switch item := docItem.(type) {
 		case *ast.WrittenGroup:
 			for _, text := range item.Written.Written {
+				raw := text.RawText
+				parsed, err := ParseCalledWritten(raw)
 				summaries = append(summaries, WrittenSummary{
-					Written: text.RawText,
+					RawWritten:    raw,
+					ParsedWritten: parsed,
+					Errors:        errorToString(err),
 				})
 			}
 		}
@@ -115,9 +144,13 @@ func GetWritingSummaries(documented *ast.DocumentedSection) []WritingSummary {
 		switch item := docItem.(type) {
 		case *ast.WritingGroup:
 			for _, as := range item.As.As {
+				raw := as.RawText
+				parsed, err := ParseCalledWritten(raw)
 				summaries = append(summaries, WritingSummary{
-					Form:    ToPatternFromTarget(item.Writing.Writing),
-					Written: as.RawText,
+					Form:          ToPatternFromTarget(item.Writing.Writing),
+					RawWritten:    raw,
+					ParsedWritten: parsed,
+					Errors:        errorToString(err),
 				})
 			}
 		}
@@ -134,8 +167,12 @@ func GetCalledSummaries(documented *ast.DocumentedSection) []CalledSummary {
 		switch item := docItem.(type) {
 		case *ast.CalledGroup:
 			for _, text := range item.Called.Called {
+				raw := text.RawText
+				parsed, err := ParseCalledWritten(raw)
 				summaries = append(summaries, CalledSummary{
-					Called: text.RawText,
+					RawCalled:    raw,
+					ParsedCalled: parsed,
+					Errors:       errorToString(err),
 				})
 			}
 		}
@@ -236,6 +273,23 @@ func ParseCalledWritten(text string) ([]TextItemType, error) {
 
 			if !hasDotDotDot1 && !hasDotDotDot2 {
 				return nil, fmt.Errorf("At least one .... expected")
+			}
+
+			numNonEmpty := 0
+			if innerPrefix != "" {
+				numNonEmpty++
+			}
+
+			if innerInfix != "" {
+				numNonEmpty++
+			}
+
+			if innerSuffix != "" {
+				numNonEmpty++
+			}
+
+			if numNonEmpty != 1 {
+				return nil, fmt.Errorf("Expected one of the forms x..., ...x, or ...x...")
 			}
 
 			result = append(result, SubstitutionItem{

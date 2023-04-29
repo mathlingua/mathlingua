@@ -49,6 +49,14 @@ func (ChainExpressionPattern) PatternType()         {}
 func (SpecAliasPattern) PatternType() {}
 func (AliasPattern) PatternType()     {}
 
+func (n NameFormPattern) GetVarArgData() VarArgPatternData            { return n.VarArg }
+func (n FunctionFormPattern) GetVarArgData() VarArgPatternData        { return n.VarArg }
+func (n TupleFormPattern) GetVarArgData() VarArgPatternData           { return n.VarArg }
+func (n ConditionalSetFormPattern) GetVarArgData() VarArgPatternData  { return n.VarArg }
+func (n InfixOperatorFormPattern) GetVarArgData() VarArgPatternData   { return VarArgPatternData{} }
+func (n PostfixOperatorFormPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
+func (n PrefixOperatorFormPattern) GetVarArgData() VarArgPatternData  { return VarArgPatternData{} }
+
 type NameColonEqualsPatternPattern struct {
 	Lhs NameFormPattern
 	Rhs PatternType
@@ -62,6 +70,7 @@ type FunctionColonEqualsNamePattern struct {
 type FormPatternType interface {
 	PatternType
 	FormPatternType()
+	GetVarArgData() VarArgPatternData
 }
 
 func (NameFormPattern) FormPatternType()            {}

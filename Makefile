@@ -39,6 +39,10 @@ vet:
 lint:
 	golangci-lint run --skip-files='\.\./.*'
 
+.PHONY: longlines
+longlines:
+	grep -l -E '.{101}' `find . -iname '*.go'`
+
 .PHONY: clean
 clean:
 	go clean

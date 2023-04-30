@@ -64,13 +64,17 @@ func (n *InfixOperatorCallExpression) GetFormulationMetaData() *FormulationMetaD
 	return &n.FormulationMetaData
 }
 
-func (n *IsExpression) GetFormulationMetaData() *FormulationMetaData { return &n.FormulationMetaData }
+func (n *IsExpression) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}
 
 func (n *ExtendsExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 
-func (n *AsExpression) GetFormulationMetaData() *FormulationMetaData { return &n.FormulationMetaData }
+func (n *AsExpression) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}
 
 func (n *OrdinalCallExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData

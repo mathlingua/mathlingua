@@ -514,7 +514,8 @@ func matchAllDirectionParamParamType(nodes []ast.DirectionParamParamType,
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(patterns), len(nodes), sliceToString(nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s",
+					len(patterns), len(nodes), sliceToString(nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -739,7 +740,8 @@ func checkPatternsForVarArg(patterns []PatternType) (error, bool) {
 	return nil, numWithVarArg == 1
 }
 
-func checkNameFormPatternsForVarArg(nodes []ast.ExpressionType, patterns []NameFormPattern) *MatchResult {
+func checkNameFormPatternsForVarArg(nodes []ast.ExpressionType,
+	patterns []NameFormPattern) *MatchResult {
 	generalPatterns := make([]PatternType, 0)
 	for _, pattern := range patterns {
 		generalPatterns = append(generalPatterns, &pattern)
@@ -770,7 +772,8 @@ func checkNameFormPatternsForVarArg(nodes []ast.ExpressionType, patterns []NameF
 	return nil
 }
 
-func checkFormPatternsForVarArg(nodes []ast.ExpressionType, patterns []FormPatternType) *MatchResult {
+func checkFormPatternsForVarArg(nodes []ast.ExpressionType,
+	patterns []FormPatternType) *MatchResult {
 	generalPatterns := make([]PatternType, 0)
 	for _, pattern := range patterns {
 		generalPatterns = append(generalPatterns, pattern)
@@ -881,7 +884,8 @@ func matchAllNames(nodes []ast.NameForm, patterns []NameFormPattern) MatchResult
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(patterns), len(nodes), nameFormSliceToString(nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s",
+					len(patterns), len(nodes), nameFormSliceToString(nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -912,7 +916,8 @@ func matchAllExpressionsAsNames(nodes []ast.ExpressionType,
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(patterns), len(nodes), sliceToString(nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s",
+					len(patterns), len(nodes), sliceToString(nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -947,7 +952,8 @@ func matchAllOptionalExpressionsToNames(nodes *[]ast.ExpressionType,
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(*patterns), len(*nodes), sliceToString(*nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s",
+					len(*patterns), len(*nodes), sliceToString(*nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -989,7 +995,8 @@ func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionType,
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(*patterns), len(*nodes), sliceToString(*nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s",
+					len(*patterns), len(*nodes), sliceToString(*nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -1009,7 +1016,8 @@ func matchAllExpressions(nodes []ast.ExpressionType, patterns []FormPatternType)
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(patterns), len(nodes), sliceToString(nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s",
+					len(patterns), len(nodes), sliceToString(nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -1049,7 +1057,8 @@ func matchAllStructuralForms(nodes []ast.StructuralFormType,
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(patterns), len(nodes), sliceToString(nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s",
+					len(patterns), len(nodes), sliceToString(nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -1083,7 +1092,8 @@ func matchAllNamedArgs(nodes *[]ast.NamedArg, patterns *[]NamedGroupPattern) Mat
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(*patterns), len(*nodes), namedArgSliceToString(*nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s",
+					len(*patterns), len(*nodes), namedArgSliceToString(*nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -1119,7 +1129,8 @@ func matchAllNamedParams(nodes *[]ast.NamedParam, patterns *[]NamedGroupPattern)
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(*patterns), len(*nodes), namedParamSliceToString(*nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s",
+					len(*patterns), len(*nodes), namedParamSliceToString(*nodes)),
 			},
 			MatchMakesSense: true,
 		}
@@ -1156,7 +1167,8 @@ func matchDirectionParams(nodes *[]ast.DirectionParamParamType,
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),
 			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d: Received: %s", len(*patterns), len(*nodes), sliceToString(*nodes)),
+				fmt.Sprintf("Expected %d values but found %d: Received: %s",
+					len(*patterns), len(*nodes), sliceToString(*nodes)),
 			},
 			MatchMakesSense: true,
 		}

@@ -55,20 +55,39 @@ func (p *FunctionFormPattern) GetVarArgData() VarArgPatternData             { re
 func (p *TupleFormPattern) GetVarArgData() VarArgPatternData                { return p.VarArg }
 func (p *ConditionalSetExpressionPattern) GetVarArgData() VarArgPatternData { return p.VarArg }
 func (p *ConditionalSetFormPattern) GetVarArgData() VarArgPatternData       { return p.VarArg }
-func (p *InfixOperatorFormPattern) GetVarArgData() VarArgPatternData        { return VarArgPatternData{} }
-func (p *PrefixOperatorFormPattern) GetVarArgData() VarArgPatternData       { return VarArgPatternData{} }
-func (p *PostfixOperatorFormPattern) GetVarArgData() VarArgPatternData      { return VarArgPatternData{} }
-func (p *OrdinalPattern) GetVarArgData() VarArgPatternData                  { return VarArgPatternData{} }
 
-func (p *NameColonEqualsPatternPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
+func (p *InfixOperatorFormPattern) GetVarArgData() VarArgPatternData {
+	return VarArgPatternData{}
+}
+func (p *PrefixOperatorFormPattern) GetVarArgData() VarArgPatternData {
+	return VarArgPatternData{}
+}
+func (p *PostfixOperatorFormPattern) GetVarArgData() VarArgPatternData {
+	return VarArgPatternData{}
+}
+func (p *OrdinalPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
+
+func (p *NameColonEqualsPatternPattern) GetVarArgData() VarArgPatternData {
+	return VarArgPatternData{}
+}
 func (p *FunctionColonEqualsNamePattern) GetVarArgData() VarArgPatternData {
 	return VarArgPatternData{}
 }
-func (p *InfixCommandOperatorPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
-func (p *InfixCommandTargetPattern) GetVarArgData() VarArgPatternData   { return VarArgPatternData{} }
-func (p *CommandPattern) GetVarArgData() VarArgPatternData              { return VarArgPatternData{} }
-func (p *NamedGroupPattern) GetVarArgData() VarArgPatternData           { return VarArgPatternData{} }
-func (p *ChainExpressionPattern) GetVarArgData() VarArgPatternData      { return VarArgPatternData{} }
+func (p *InfixCommandOperatorPattern) GetVarArgData() VarArgPatternData {
+	return VarArgPatternData{}
+}
+func (p *InfixCommandTargetPattern) GetVarArgData() VarArgPatternData {
+	return VarArgPatternData{}
+}
+func (p *CommandPattern) GetVarArgData() VarArgPatternData {
+	return VarArgPatternData{}
+}
+func (p *NamedGroupPattern) GetVarArgData() VarArgPatternData {
+	return VarArgPatternData{}
+}
+func (p *ChainExpressionPattern) GetVarArgData() VarArgPatternData {
+	return VarArgPatternData{}
+}
 
 func (p *SpecAliasPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
 func (p *AliasPattern) GetVarArgData() VarArgPatternData     { return VarArgPatternData{} }
@@ -296,18 +315,19 @@ func ToVarArgPatternData(data ast.VarArgData) VarArgPatternData {
 		})...)
 
 	varArgBounds := make([]NameFormPattern, 0)
-	varArgBounds = append(varArgBounds, mlglib.Map(data.VarArgBounds, func(name ast.NameForm) NameFormPattern {
-		return NameFormPattern{
-			Text:            name.Text,
-			IsStropped:      false,
-			HasQuestionMark: false,
-			VarArg: VarArgPatternData{
-				IsVarArg:     false,
-				VarArgNames:  nil,
-				VarArgBounds: nil,
-			},
-		}
-	})...)
+	varArgBounds = append(varArgBounds,
+		mlglib.Map(data.VarArgBounds, func(name ast.NameForm) NameFormPattern {
+			return NameFormPattern{
+				Text:            name.Text,
+				IsStropped:      false,
+				HasQuestionMark: false,
+				VarArg: VarArgPatternData{
+					IsVarArg:     false,
+					VarArgNames:  nil,
+					VarArgBounds: nil,
+				},
+			}
+		})...)
 
 	return VarArgPatternData{
 		IsVarArg:     data.IsVarArg,

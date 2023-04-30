@@ -25,7 +25,8 @@ import (
 	"strings"
 )
 
-func ParseExpression(path ast.Path, text string, start ast.Position, tracker *frontend.DiagnosticTracker,
+func ParseExpression(path ast.Path, text string, start ast.Position,
+	tracker *frontend.DiagnosticTracker,
 	keyGen *mlglib.KeyGenerator) (ast.FormulationNodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(path, text, tracker)
@@ -73,7 +74,8 @@ func ParseId(path ast.Path, text string, start ast.Position, tracker *frontend.D
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
-func ParseSignature(path ast.Path, text string, start ast.Position, tracker *frontend.DiagnosticTracker,
+func ParseSignature(path ast.Path, text string, start ast.Position,
+	tracker *frontend.DiagnosticTracker,
 	keyGen *mlglib.KeyGenerator) (ast.Signature, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(path, text, tracker)

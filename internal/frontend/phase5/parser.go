@@ -2398,9 +2398,10 @@ func (p *parser) toClause(arg phase4.Argument) ast.ClauseType {
 		}
 	}
 
-	p.tracker.Append(p.newError(fmt.Sprintf("Expected a '...', `...`, %s:, %s:, %s:, %s:, or %s: item",
-		ast.LowerExistsName, ast.LowerExistsUniqueName, ast.LowerForAllName, ast.LowerIfName,
-		ast.LowerIffName), arg.MetaData.Start))
+	p.tracker.Append(p.newError(
+		fmt.Sprintf("Expected a '...', `...`, %s:, %s:, %s:, %s:, or %s: item",
+			ast.LowerExistsName, ast.LowerExistsUniqueName, ast.LowerForAllName, ast.LowerIfName,
+			ast.LowerIffName), arg.MetaData.Start))
 	return &ast.Formulation[ast.FormulationNodeType]{}
 }
 
@@ -2793,7 +2794,8 @@ func (p *parser) oneOrMoreSignatureItems(section phase4.Section) []ast.Formulati
 }
 
 func (p *parser) exactlyOneTextItem(section phase4.Section) ast.TextItem {
-	return exactlyOne(p, p.toTextItems(section.Args), ast.TextItem{}, section.MetaData.Start, p.tracker)
+	return exactlyOne(p, p.toTextItems(section.Args),
+		ast.TextItem{}, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreDocumentedTypes(section phase4.Section) []ast.DocumentedType {

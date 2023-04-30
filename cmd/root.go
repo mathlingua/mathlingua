@@ -26,7 +26,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use: "mlg",
 	Long: "The Mathlingua command line tool.\n\n" +
-		"Note: This is a beta version that supports parsing but does not support type checking or LaTeX rendering.",
+		"Note: This is a beta version that supports parsing but does not support type checking.",
 	Run: func(cmd *cobra.Command, args []string) {
 		err := cmd.Help()
 		if err != nil {

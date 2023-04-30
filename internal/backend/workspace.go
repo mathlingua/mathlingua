@@ -452,7 +452,8 @@ func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeT
 	return ast.Debug(mlgNode, customToCode)
 }
 
-func (w *Workspace) updateFormulationStrings(path ast.Path, node phase4.Node, keyToFormulationStr map[int]string) {
+func (w *Workspace) updateFormulationStrings(path ast.Path, node phase4.Node,
+	keyToFormulationStr map[int]string) {
 	if arg, ok := node.(*phase4.Argument); ok {
 		if argData, ok := arg.Arg.(*phase4.FormulationArgumentData); ok {
 			key := argData.MetaData.Key

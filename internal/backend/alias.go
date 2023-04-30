@@ -22,18 +22,18 @@ type AliasSummaryType interface {
 	AliasSummaryType()
 }
 
-func (SpecAliasSummary) AliasSummaryType() {}
+func (*SpecAliasSummary) AliasSummaryType() {}
 
-func (InfixExpAliasSummary) AliasSummaryType()          {}
-func (PrefixExpAliasSummary) AliasSummaryType()         {}
-func (PostfixExpAliasSummary) AliasSummaryType()        {}
-func (FunctionExpAliasSummary) AliasSummaryType()       {}
-func (CommandExpAliasSummary) AliasSummaryType()        {}
-func (MemberNameExpAliasSummary) AliasSummaryType()     {}
-func (MemberFunctionExpAliasSummary) AliasSummaryType() {}
-func (MemberInfixExpAliasSummary) AliasSummaryType()    {}
-func (MemberPrefixExpAliasSummary) AliasSummaryType()   {}
-func (MemberPostfixExpAliasSummary) AliasSummaryType()  {}
+func (*InfixExpAliasSummary) AliasSummaryType()          {}
+func (*PrefixExpAliasSummary) AliasSummaryType()         {}
+func (*PostfixExpAliasSummary) AliasSummaryType()        {}
+func (*FunctionExpAliasSummary) AliasSummaryType()       {}
+func (*CommandExpAliasSummary) AliasSummaryType()        {}
+func (*MemberNameExpAliasSummary) AliasSummaryType()     {}
+func (*MemberFunctionExpAliasSummary) AliasSummaryType() {}
+func (*MemberInfixExpAliasSummary) AliasSummaryType()    {}
+func (*MemberPrefixExpAliasSummary) AliasSummaryType()   {}
+func (*MemberPostfixExpAliasSummary) AliasSummaryType()  {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -41,8 +41,8 @@ type SpecAliasSummaryRhsType interface {
 	SpecAliasSummaryRhsType()
 }
 
-func (IsConstraint) SpecAliasSummaryRhsType()   {}
-func (SpecConstraint) SpecAliasSummaryRhsType() {}
+func (*IsConstraint) SpecAliasSummaryRhsType()   {}
+func (*SpecConstraint) SpecAliasSummaryRhsType() {}
 
 type SpecAliasSummary struct {
 	Lhs SpecAliasPattern
@@ -56,16 +56,16 @@ type ExpAliasSummaryType interface {
 	ExpAliasSummaryType()
 }
 
-func (InfixExpAliasSummary) ExpAliasSummaryType()          {}
-func (PrefixExpAliasSummary) ExpAliasSummaryType()         {}
-func (PostfixExpAliasSummary) ExpAliasSummaryType()        {}
-func (FunctionExpAliasSummary) ExpAliasSummaryType()       {}
-func (CommandExpAliasSummary) ExpAliasSummaryType()        {}
-func (MemberNameExpAliasSummary) ExpAliasSummaryType()     {}
-func (MemberFunctionExpAliasSummary) ExpAliasSummaryType() {}
-func (MemberInfixExpAliasSummary) ExpAliasSummaryType()    {}
-func (MemberPrefixExpAliasSummary) ExpAliasSummaryType()   {}
-func (MemberPostfixExpAliasSummary) ExpAliasSummaryType()  {}
+func (*InfixExpAliasSummary) ExpAliasSummaryType()          {}
+func (*PrefixExpAliasSummary) ExpAliasSummaryType()         {}
+func (*PostfixExpAliasSummary) ExpAliasSummaryType()        {}
+func (*FunctionExpAliasSummary) ExpAliasSummaryType()       {}
+func (*CommandExpAliasSummary) ExpAliasSummaryType()        {}
+func (*MemberNameExpAliasSummary) ExpAliasSummaryType()     {}
+func (*MemberFunctionExpAliasSummary) ExpAliasSummaryType() {}
+func (*MemberInfixExpAliasSummary) ExpAliasSummaryType()    {}
+func (*MemberPrefixExpAliasSummary) ExpAliasSummaryType()   {}
+func (*MemberPostfixExpAliasSummary) ExpAliasSummaryType()  {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

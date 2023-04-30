@@ -27,10 +27,10 @@ func TestXxx(t *testing.T) {
 	actual, err := ParseCalledWritten(text)
 	assert.Nil(t, err)
 	expected := []TextItemType{
-		StringItem{
+		&StringItem{
 			Text: "text1 ",
 		},
-		SubstitutionItem{
+		&SubstitutionItem{
 			Name:       "A",
 			NameSuffix: "",
 			IsVarArg:   false,
@@ -38,10 +38,10 @@ func TestXxx(t *testing.T) {
 			Suffix:     "",
 			Infix:      "",
 		},
-		StringItem{
+		&StringItem{
 			Text: " text2 ",
 		},
-		SubstitutionItem{
+		&SubstitutionItem{
 			Name:       "x",
 			NameSuffix: "+",
 			IsVarArg:   false,
@@ -49,10 +49,10 @@ func TestXxx(t *testing.T) {
 			Suffix:     "",
 			Infix:      "",
 		},
-		StringItem{
+		&StringItem{
 			Text: " text3 ",
 		},
-		SubstitutionItem{
+		&SubstitutionItem{
 			Name:       "X",
 			NameSuffix: "",
 			IsVarArg:   true,
@@ -60,10 +60,10 @@ func TestXxx(t *testing.T) {
 			Suffix:     "",
 			Infix:      "",
 		},
-		StringItem{
+		&StringItem{
 			Text: " text4 ",
 		},
-		SubstitutionItem{
+		&SubstitutionItem{
 			Name:       "X",
 			NameSuffix: "+",
 			IsVarArg:   true,
@@ -71,7 +71,7 @@ func TestXxx(t *testing.T) {
 			Suffix:     "",
 			Infix:      "xyz",
 		},
-		StringItem{
+		&StringItem{
 			Text: " text5",
 		},
 	}

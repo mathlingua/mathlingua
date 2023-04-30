@@ -28,8 +28,8 @@ type TextItemType interface {
 	TextItemType()
 }
 
-func (StringItem) TextItemType()       {}
-func (SubstitutionItem) TextItemType() {}
+func (*StringItem) TextItemType()       {}
+func (*SubstitutionItem) TextItemType() {}
 
 type StringItem struct {
 	Text string
@@ -186,7 +186,7 @@ func ParseCalledWritten(text string) ([]TextItemType, error) {
 	for len(text) > 0 {
 		indices := nameMatch.FindStringIndex(text)
 		if indices == nil {
-			result = append(result, StringItem{
+			result = append(result, &StringItem{
 				Text: text,
 			})
 			break
@@ -194,7 +194,7 @@ func ParseCalledWritten(text string) ([]TextItemType, error) {
 		prefix := text[0:indices[0]]
 
 		if len(prefix) > 0 {
-			result = append(result, StringItem{
+			result = append(result, &StringItem{
 				Text: prefix,
 			})
 		}
@@ -295,7 +295,7 @@ func ParseCalledWritten(text string) ([]TextItemType, error) {
 				return nil, fmt.Errorf("Expected one of the forms x..., ...x, or ...x...")
 			}
 
-			result = append(result, SubstitutionItem{
+			result = append(result, &SubstitutionItem{
 				Name:       name,
 				NameSuffix: nameSuffix,
 				IsVarArg:   true,
@@ -304,7 +304,7 @@ func ParseCalledWritten(text string) ([]TextItemType, error) {
 				Suffix:     innerSuffix,
 			})
 		} else {
-			result = append(result, SubstitutionItem{
+			result = append(result, &SubstitutionItem{
 				Name:       name,
 				NameSuffix: nameSuffix,
 				IsVarArg:   false,

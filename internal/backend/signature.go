@@ -77,11 +77,12 @@ func GetSignatureStringFromCommand(cmd ast.CommandExpression) string {
 		namedGroups = append(namedGroups, ng.Name.Text)
 	}
 
-	return ast.Signature{
+	sig := ast.Signature{
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
 		IsInfix:         false,
-	}.ToCode(noOp)
+	}
+	return sig.ToCode(noOp)
 }
 
 func GetSignatureStringFromCommandId(cmd ast.CommandId) string {
@@ -96,11 +97,12 @@ func GetSignatureStringFromCommandId(cmd ast.CommandId) string {
 		namedGroups = append(namedGroups, ng.Name.Text)
 	}
 
-	return ast.Signature{
+	sig := ast.Signature{
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
 		IsInfix:         false,
-	}.ToCode(noOp)
+	}
+	return sig.ToCode(noOp)
 }
 
 func GetSignatureStringFromInfixCommandId(cmd ast.InfixCommandId) string {
@@ -115,9 +117,10 @@ func GetSignatureStringFromInfixCommandId(cmd ast.InfixCommandId) string {
 		namedGroups = append(namedGroups, ng.Name.Text)
 	}
 
-	return ast.Signature{
+	sig := ast.Signature{
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
 		IsInfix:         true,
-	}.ToCode(noOp)
+	}
+	return sig.ToCode(noOp)
 }

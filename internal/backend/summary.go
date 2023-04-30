@@ -25,9 +25,9 @@ type SummaryType interface {
 	GetExpAliasSummaries() []ExpAliasSummaryType
 }
 
-func (DescribesSummary) SummaryType() {}
-func (DefinesSummary) SummaryType()   {}
-func (StatesSummary) SummaryType()    {}
+func (*DescribesSummary) SummaryType() {}
+func (*DefinesSummary) SummaryType()   {}
+func (*StatesSummary) SummaryType()    {}
 
 func (s *DescribesSummary) GetExpAliasSummaries() []ExpAliasSummaryType {
 	return s.ExpAliases
@@ -119,11 +119,11 @@ func GetResolvedWritten(summary SummaryType) ([]TextItemType, bool) {
 
 	if called != nil {
 		result := make([]TextItemType, 0)
-		result = append(result, StringItem{
+		result = append(result, &StringItem{
 			Text: "\\textrm{",
 		})
 		result = append(result, *called...)
-		result = append(result, StringItem{
+		result = append(result, &StringItem{
 			Text: "}",
 		})
 		return result, true

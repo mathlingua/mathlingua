@@ -40,7 +40,7 @@ func SummarizeDescribes(describes *ast.DescribesGroup) *DescribesSummary {
 	}
 	input, _ := toCommandPatternFromId(describes.Id)
 	return &DescribesSummary{
-		Input:   input,
+		Input:   &input,
 		Written: GetWrittenSummaries(describes.Documented),
 		Writing: GetWritingSummaries(describes.Documented),
 		Called:  GetCalledSummaries(describes.Documented),
@@ -53,7 +53,7 @@ func SummarizeDefines(defines *ast.DefinesGroup) *DefinesSummary {
 	}
 	input, _ := toCommandPatternFromId(defines.Id)
 	return &DefinesSummary{
-		Input:   input,
+		Input:   &input,
 		Written: GetWrittenSummaries(defines.Documented),
 		Writing: GetWritingSummaries(defines.Documented),
 		Called:  GetCalledSummaries(defines.Documented),
@@ -66,7 +66,7 @@ func SummarizeStates(states *ast.StatesGroup) *StatesSummary {
 	}
 	input, _ := toCommandPatternFromId(states.Id)
 	return &StatesSummary{
-		Input:   input,
+		Input:   &input,
 		Written: GetWrittenSummaries(states.Documented),
 		Writing: GetWritingSummaries(states.Documented),
 		Called:  GetCalledSummaries(states.Documented),

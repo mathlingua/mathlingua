@@ -29,47 +29,49 @@ type PatternType interface {
 	GetVarArgData() VarArgPatternData
 }
 
-func (NameFormPattern) PatternType()                 {}
-func (FunctionFormPattern) PatternType()             {}
-func (TupleFormPattern) PatternType()                {}
-func (ConditionalSetExpressionPattern) PatternType() {}
-func (ConditionalSetFormPattern) PatternType()       {}
-func (InfixOperatorFormPattern) PatternType()        {}
-func (PrefixOperatorFormPattern) PatternType()       {}
-func (PostfixOperatorFormPattern) PatternType()      {}
-func (OrdinalPattern) PatternType()                  {}
+func (*NameFormPattern) PatternType()                 {}
+func (*FunctionFormPattern) PatternType()             {}
+func (*TupleFormPattern) PatternType()                {}
+func (*ConditionalSetExpressionPattern) PatternType() {}
+func (*ConditionalSetFormPattern) PatternType()       {}
+func (*InfixOperatorFormPattern) PatternType()        {}
+func (*PrefixOperatorFormPattern) PatternType()       {}
+func (*PostfixOperatorFormPattern) PatternType()      {}
+func (*OrdinalPattern) PatternType()                  {}
 
-func (NameColonEqualsPatternPattern) PatternType()  {}
-func (FunctionColonEqualsNamePattern) PatternType() {}
-func (InfixCommandOperatorPattern) PatternType()    {}
-func (InfixCommandTargetPattern) PatternType()      {}
-func (CommandPattern) PatternType()                 {}
-func (NamedGroupPattern) PatternType()              {}
-func (ChainExpressionPattern) PatternType()         {}
+func (*NameColonEqualsPatternPattern) PatternType()  {}
+func (*FunctionColonEqualsNamePattern) PatternType() {}
+func (*InfixCommandOperatorPattern) PatternType()    {}
+func (*InfixCommandTargetPattern) PatternType()      {}
+func (*CommandPattern) PatternType()                 {}
+func (*NamedGroupPattern) PatternType()              {}
+func (*ChainExpressionPattern) PatternType()         {}
 
-func (SpecAliasPattern) PatternType() {}
-func (AliasPattern) PatternType()     {}
+func (*SpecAliasPattern) PatternType() {}
+func (*AliasPattern) PatternType()     {}
 
-func (p NameFormPattern) GetVarArgData() VarArgPatternData                 { return p.VarArg }
-func (p FunctionFormPattern) GetVarArgData() VarArgPatternData             { return p.VarArg }
-func (p TupleFormPattern) GetVarArgData() VarArgPatternData                { return p.VarArg }
-func (p ConditionalSetExpressionPattern) GetVarArgData() VarArgPatternData { return p.VarArg }
-func (p ConditionalSetFormPattern) GetVarArgData() VarArgPatternData       { return p.VarArg }
-func (p InfixOperatorFormPattern) GetVarArgData() VarArgPatternData        { return VarArgPatternData{} }
-func (p PrefixOperatorFormPattern) GetVarArgData() VarArgPatternData       { return VarArgPatternData{} }
-func (p PostfixOperatorFormPattern) GetVarArgData() VarArgPatternData      { return VarArgPatternData{} }
-func (p OrdinalPattern) GetVarArgData() VarArgPatternData                  { return VarArgPatternData{} }
+func (p *NameFormPattern) GetVarArgData() VarArgPatternData                 { return p.VarArg }
+func (p *FunctionFormPattern) GetVarArgData() VarArgPatternData             { return p.VarArg }
+func (p *TupleFormPattern) GetVarArgData() VarArgPatternData                { return p.VarArg }
+func (p *ConditionalSetExpressionPattern) GetVarArgData() VarArgPatternData { return p.VarArg }
+func (p *ConditionalSetFormPattern) GetVarArgData() VarArgPatternData       { return p.VarArg }
+func (p *InfixOperatorFormPattern) GetVarArgData() VarArgPatternData        { return VarArgPatternData{} }
+func (p *PrefixOperatorFormPattern) GetVarArgData() VarArgPatternData       { return VarArgPatternData{} }
+func (p *PostfixOperatorFormPattern) GetVarArgData() VarArgPatternData      { return VarArgPatternData{} }
+func (p *OrdinalPattern) GetVarArgData() VarArgPatternData                  { return VarArgPatternData{} }
 
-func (p NameColonEqualsPatternPattern) GetVarArgData() VarArgPatternData  { return VarArgPatternData{} }
-func (p FunctionColonEqualsNamePattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
-func (p InfixCommandOperatorPattern) GetVarArgData() VarArgPatternData    { return VarArgPatternData{} }
-func (p InfixCommandTargetPattern) GetVarArgData() VarArgPatternData      { return VarArgPatternData{} }
-func (p CommandPattern) GetVarArgData() VarArgPatternData                 { return VarArgPatternData{} }
-func (p NamedGroupPattern) GetVarArgData() VarArgPatternData              { return VarArgPatternData{} }
-func (p ChainExpressionPattern) GetVarArgData() VarArgPatternData         { return VarArgPatternData{} }
+func (p *NameColonEqualsPatternPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
+func (p *FunctionColonEqualsNamePattern) GetVarArgData() VarArgPatternData {
+	return VarArgPatternData{}
+}
+func (p *InfixCommandOperatorPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
+func (p *InfixCommandTargetPattern) GetVarArgData() VarArgPatternData   { return VarArgPatternData{} }
+func (p *CommandPattern) GetVarArgData() VarArgPatternData              { return VarArgPatternData{} }
+func (p *NamedGroupPattern) GetVarArgData() VarArgPatternData           { return VarArgPatternData{} }
+func (p *ChainExpressionPattern) GetVarArgData() VarArgPatternData      { return VarArgPatternData{} }
 
-func (p SpecAliasPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
-func (p AliasPattern) GetVarArgData() VarArgPatternData     { return VarArgPatternData{} }
+func (p *SpecAliasPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
+func (p *AliasPattern) GetVarArgData() VarArgPatternData     { return VarArgPatternData{} }
 
 type NameColonEqualsPatternPattern struct {
 	Lhs NameFormPattern
@@ -86,13 +88,13 @@ type FormPatternType interface {
 	FormPatternType()
 }
 
-func (NameFormPattern) FormPatternType()            {}
-func (FunctionFormPattern) FormPatternType()        {}
-func (TupleFormPattern) FormPatternType()           {}
-func (ConditionalSetFormPattern) FormPatternType()  {}
-func (InfixOperatorFormPattern) FormPatternType()   {}
-func (PrefixOperatorFormPattern) FormPatternType()  {}
-func (PostfixOperatorFormPattern) FormPatternType() {}
+func (*NameFormPattern) FormPatternType()            {}
+func (*FunctionFormPattern) FormPatternType()        {}
+func (*TupleFormPattern) FormPatternType()           {}
+func (*ConditionalSetFormPattern) FormPatternType()  {}
+func (*InfixOperatorFormPattern) FormPatternType()   {}
+func (*PrefixOperatorFormPattern) FormPatternType()  {}
+func (*PostfixOperatorFormPattern) FormPatternType() {}
 
 type NameFormPattern struct {
 	Text            string
@@ -111,10 +113,10 @@ type LiteralFormPatternType interface {
 	LiteralFormPatternType()
 }
 
-func (NameFormPattern) LiteralFormPatternType()           {}
-func (FunctionFormPattern) LiteralFormPatternType()       {}
-func (TupleFormPattern) LiteralFormPatternType()          {}
-func (ConditionalSetFormPattern) LiteralFormPatternType() {}
+func (*NameFormPattern) LiteralFormPatternType()           {}
+func (*FunctionFormPattern) LiteralFormPatternType()       {}
+func (*TupleFormPattern) LiteralFormPatternType()          {}
+func (*ConditionalSetFormPattern) LiteralFormPatternType() {}
 
 type OrdinalPattern struct {
 	Target LiteralFormPatternType
@@ -125,9 +127,9 @@ type DirectionParamParamPatternType interface {
 	DirectionParamParamPatternType()
 }
 
-func (NameFormPattern) DirectionParamParamPatternType()     {}
-func (FunctionFormPattern) DirectionParamParamPatternType() {}
-func (OrdinalPattern) DirectionParamParamPatternType()      {}
+func (*NameFormPattern) DirectionParamParamPatternType()     {}
+func (*FunctionFormPattern) DirectionParamParamPatternType() {}
+func (*OrdinalPattern) DirectionParamParamPatternType()      {}
 
 type InfixOperatorFormPattern struct {
 	Operator NameFormPattern
@@ -314,8 +316,8 @@ func ToVarArgPatternData(data ast.VarArgData) VarArgPatternData {
 	}
 }
 
-func ToNameFormPattern(form ast.NameForm) NameFormPattern {
-	return NameFormPattern{
+func ToNameFormPattern(form ast.NameForm) *NameFormPattern {
+	return &NameFormPattern{
 		Text:            form.Text,
 		IsStropped:      form.IsStropped,
 		HasQuestionMark: form.HasQuestionMark,
@@ -326,28 +328,28 @@ func ToNameFormPattern(form ast.NameForm) NameFormPattern {
 func toNameFormPatterns(params []ast.NameForm) []NameFormPattern {
 	result := make([]NameFormPattern, 0)
 	for _, p := range params {
-		result = append(result, ToNameFormPattern(p))
+		result = append(result, *ToNameFormPattern(p))
 	}
 	return result
 }
 
-func ToFunctionFormPattern(form ast.FunctionForm) FunctionFormPattern {
-	return FunctionFormPattern{
-		Target: ToNameFormPattern(form.Target),
+func ToFunctionFormPattern(form ast.FunctionForm) *FunctionFormPattern {
+	return &FunctionFormPattern{
+		Target: *ToNameFormPattern(form.Target),
 		Params: toNameFormPatterns(form.Params),
 		VarArg: ToVarArgPatternData(form.VarArg),
 	}
 }
 
-func ToTupleFormPattern(form ast.TupleForm) TupleFormPattern {
-	return TupleFormPattern{
+func ToTupleFormPattern(form ast.TupleForm) *TupleFormPattern {
+	return &TupleFormPattern{
 		Params: toFormPatterns(form.Params),
 		VarArg: ToVarArgPatternData(form.VarArg),
 	}
 }
 
-func ToConditionalSetFormPattern(form ast.ConditionalSetForm) ConditionalSetFormPattern {
-	return ConditionalSetFormPattern{
+func ToConditionalSetFormPattern(form ast.ConditionalSetForm) *ConditionalSetFormPattern {
+	return &ConditionalSetFormPattern{
 		Target: ToFormPattern(form.Target),
 		VarArg: ToVarArgPatternData(form.VarArg),
 	}
@@ -360,9 +362,9 @@ func ToConditionalSetFormPatternFromId(form ast.ConditionalSetIdForm) Conditiona
 	}
 }
 
-func ToInfixOperatorFormPattern(form ast.InfixOperatorForm) InfixOperatorFormPattern {
-	return InfixOperatorFormPattern{
-		Operator: ToNameFormPattern(form.Operator),
+func ToInfixOperatorFormPattern(form ast.InfixOperatorForm) *InfixOperatorFormPattern {
+	return &InfixOperatorFormPattern{
+		Operator: *ToNameFormPattern(form.Operator),
 		Lhs:      ToNameFormPattern(form.Lhs),
 		Rhs:      ToNameFormPattern(form.Rhs),
 	}
@@ -388,9 +390,9 @@ func ToInfixOperatorFormPatternFromId(form ast.InfixOperatorId) InfixOperatorFor
 	}
 }
 
-func ToPrefixOperatorFormPattern(form ast.PrefixOperatorForm) PrefixOperatorFormPattern {
-	return PrefixOperatorFormPattern{
-		Operator: ToNameFormPattern(form.Operator),
+func ToPrefixOperatorFormPattern(form ast.PrefixOperatorForm) *PrefixOperatorFormPattern {
+	return &PrefixOperatorFormPattern{
+		Operator: *ToNameFormPattern(form.Operator),
 		Param:    ToNameFormPattern(form.Param),
 	}
 }
@@ -402,9 +404,9 @@ func ToPrefixOperatorFormPatternFromId(form ast.PrefixOperatorId) PrefixOperator
 	}
 }
 
-func ToPostfixOperatorFormPattern(form ast.PostfixOperatorForm) PostfixOperatorFormPattern {
-	return PostfixOperatorFormPattern{
-		Operator: ToNameFormPattern(form.Operator),
+func ToPostfixOperatorFormPattern(form ast.PostfixOperatorForm) *PostfixOperatorFormPattern {
+	return &PostfixOperatorFormPattern{
+		Operator: *ToNameFormPattern(form.Operator),
 		Param:    ToNameFormPattern(form.Param),
 	}
 }
@@ -440,7 +442,7 @@ func toCurlyArg(curlyParam *ast.CurlyParam) *CurlyPattern {
 		var name *NameFormPattern
 		if curlyParam.Direction.Name != nil {
 			tmpPattern := ToNameFormPattern(*curlyParam.Direction.Name)
-			name = &tmpPattern
+			name = tmpPattern
 		}
 		direction = &DirectionPattern{
 			Name:       name,
@@ -466,7 +468,7 @@ func toNamedGroupPatterns(nameParams *[]ast.NamedParam) *[]NamedGroupPattern {
 			curlyParam = *toCurlyArg(param.CurlyParam)
 		}
 		result = append(result, NamedGroupPattern{
-			Name:  ToNameFormPattern(param.Name),
+			Name:  *ToNameFormPattern(param.Name),
 			Curly: curlyParam,
 		})
 	}
@@ -479,7 +481,7 @@ func toParenArgs(names *[]ast.NameForm) *[]NameFormPattern {
 	}
 	result := make([]NameFormPattern, 0)
 	for _, name := range *names {
-		result = append(result, ToNameFormPattern(name))
+		result = append(result, *ToNameFormPattern(name))
 	}
 	return &result
 }

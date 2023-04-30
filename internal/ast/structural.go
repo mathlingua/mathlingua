@@ -44,7 +44,7 @@ type Alias struct {
 	CommonMetaData CommonMetaData
 }
 
-func (Alias) ProvidesType() {}
+func (*Alias) ProvidesType() {}
 
 type Formulation[T FormulationNodeType] struct {
 	RawText        string
@@ -65,19 +65,19 @@ type ClauseType interface {
 	ClauseType()
 }
 
-func (Formulation[NodeType]) ClauseType() {}
-func (AllOfGroup) ClauseType()            {}
-func (NotGroup) ClauseType()              {}
-func (AnyOfGroup) ClauseType()            {}
-func (OneOfGroup) ClauseType()            {}
-func (ExistsGroup) ClauseType()           {}
-func (ExistsUniqueGroup) ClauseType()     {}
-func (ForAllGroup) ClauseType()           {}
-func (IfGroup) ClauseType()               {}
-func (IffGroup) ClauseType()              {}
-func (WhenGroup) ClauseType()             {}
-func (PiecewiseGroup) ClauseType()        {}
-func (GivenGroup) ClauseType()            {}
+func (*Formulation[NodeType]) ClauseType() {}
+func (*AllOfGroup) ClauseType()            {}
+func (*NotGroup) ClauseType()              {}
+func (*AnyOfGroup) ClauseType()            {}
+func (*OneOfGroup) ClauseType()            {}
+func (*ExistsGroup) ClauseType()           {}
+func (*ExistsUniqueGroup) ClauseType()     {}
+func (*ForAllGroup) ClauseType()           {}
+func (*IfGroup) ClauseType()               {}
+func (*IffGroup) ClauseType()              {}
+func (*WhenGroup) ClauseType()             {}
+func (*PiecewiseGroup) ClauseType()        {}
+func (*GivenGroup) ClauseType()            {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -323,8 +323,8 @@ type ProvidesType interface {
 	ProvidesType()
 }
 
-func (SymbolWrittenGroup) ProvidesType() {}
-func (ConnectionGroup) ProvidesType()    {}
+func (*SymbolWrittenGroup) ProvidesType() {}
+func (*ConnectionGroup) ProvidesType()    {}
 
 var SymbolSections = []string{
 	LowerSymbolName,
@@ -465,16 +465,16 @@ type DocumentedType interface {
 	DocumentedType()
 }
 
-func (OverviewGroup) DocumentedType()   {}
-func (MotivationGroup) DocumentedType() {}
-func (HistoryGroup) DocumentedType()    {}
-func (ExampleGroup) DocumentedType()    {}
-func (RelatedGroup) DocumentedType()    {}
-func (DiscovererGroup) DocumentedType() {}
-func (NoteGroup) DocumentedType()       {}
-func (WrittenGroup) DocumentedType()    {}
-func (WritingGroup) DocumentedType()    {}
-func (CalledGroup) DocumentedType()     {}
+func (*OverviewGroup) DocumentedType()   {}
+func (*MotivationGroup) DocumentedType() {}
+func (*HistoryGroup) DocumentedType()    {}
+func (*ExampleGroup) DocumentedType()    {}
+func (*RelatedGroup) DocumentedType()    {}
+func (*DiscovererGroup) DocumentedType() {}
+func (*NoteGroup) DocumentedType()       {}
+func (*WrittenGroup) DocumentedType()    {}
+func (*WritingGroup) DocumentedType()    {}
+func (*CalledGroup) DocumentedType()     {}
 
 var DetailsSections = []string{LowerDetailsName}
 
@@ -567,8 +567,8 @@ type NoteType interface {
 	NoteType()
 }
 
-func (TextItem) NoteType()        {}
-func (DescribingGroup) NoteType() {}
+func (*TextItem) NoteType()        {}
+func (*DescribingGroup) NoteType() {}
 
 var DescribingSections = []string{LowerDescribingName, LowerContentName}
 
@@ -618,8 +618,8 @@ type JustifiedType interface {
 	JustifiedType()
 }
 
-func (LabelGroup) JustifiedType() {}
-func (ByGroup) JustifiedType()    {}
+func (*LabelGroup) JustifiedType() {}
+func (*ByGroup) JustifiedType()    {}
 
 var LabelSections = []string{LowerLabelName, LowerByName}
 
@@ -1000,11 +1000,11 @@ type SpecifyType interface {
 	SpecifyType()
 }
 
-func (ZeroGroup) SpecifyType()          {}
-func (PositiveIntGroup) SpecifyType()   {}
-func (NegativeIntGroup) SpecifyType()   {}
-func (PositiveFloatGroup) SpecifyType() {}
-func (NegativeFloatGroup) SpecifyType() {}
+func (*ZeroGroup) SpecifyType()          {}
+func (*PositiveIntGroup) SpecifyType()   {}
+func (*NegativeIntGroup) SpecifyType()   {}
+func (*PositiveFloatGroup) SpecifyType() {}
+func (*NegativeFloatGroup) SpecifyType() {}
 
 var ZeroSections = []string{LowerZeroName, LowerMeansName}
 
@@ -1106,8 +1106,8 @@ type PersonType interface {
 	PersonType()
 }
 
-func (NameGroup) PersonType()      {}
-func (BiographyGroup) PersonType() {}
+func (*NameGroup) PersonType()      {}
+func (*BiographyGroup) PersonType() {}
 
 var NameSections = []string{LowerNameName}
 
@@ -1149,21 +1149,21 @@ type ResourceSection struct {
 	CommonMetaData CommonMetaData
 }
 
-func (TitleGroup) ResourceType()       {}
-func (AuthorGroup) ResourceType()      {}
-func (OffsetGroup) ResourceType()      {}
-func (UrlGroup) ResourceType()         {}
-func (HomepageGroup) ResourceType()    {}
-func (TypeGroup) ResourceType()        {}
-func (EditorGroup) ResourceType()      {}
-func (EditionGroup) ResourceType()     {}
-func (InstitutionGroup) ResourceType() {}
-func (JournalGroup) ResourceType()     {}
-func (PublisherGroup) ResourceType()   {}
-func (VolumeGroup) ResourceType()      {}
-func (MonthGroup) ResourceType()       {}
-func (YearGroup) ResourceType()        {}
-func (DescriptionGroup) ResourceType() {}
+func (*TitleGroup) ResourceType()       {}
+func (*AuthorGroup) ResourceType()      {}
+func (*OffsetGroup) ResourceType()      {}
+func (*UrlGroup) ResourceType()         {}
+func (*HomepageGroup) ResourceType()    {}
+func (*TypeGroup) ResourceType()        {}
+func (*EditorGroup) ResourceType()      {}
+func (*EditionGroup) ResourceType()     {}
+func (*InstitutionGroup) ResourceType() {}
+func (*JournalGroup) ResourceType()     {}
+func (*PublisherGroup) ResourceType()   {}
+func (*VolumeGroup) ResourceType()      {}
+func (*MonthGroup) ResourceType()       {}
+func (*YearGroup) ResourceType()        {}
+func (*DescriptionGroup) ResourceType() {}
 
 type ResourceType interface {
 	StructuralNodeType
@@ -1332,18 +1332,18 @@ type TopLevelItemType interface {
 	TopLevelItemType()
 }
 
-func (TextBlockItem) TopLevelItemType()   {}
-func (DefinesGroup) TopLevelItemType()    {}
-func (DescribesGroup) TopLevelItemType()  {}
-func (StatesGroup) TopLevelItemType()     {}
-func (AxiomGroup) TopLevelItemType()      {}
-func (ConjectureGroup) TopLevelItemType() {}
-func (TheoremGroup) TopLevelItemType()    {}
-func (SpecifyGroup) TopLevelItemType()    {}
-func (TopicGroup) TopLevelItemType()      {}
-func (PersonGroup) TopLevelItemType()     {}
-func (ResourceGroup) TopLevelItemType()   {}
-func (ProofGroup) TopLevelItemType()      {}
+func (*TextBlockItem) TopLevelItemType()   {}
+func (*DefinesGroup) TopLevelItemType()    {}
+func (*DescribesGroup) TopLevelItemType()  {}
+func (*StatesGroup) TopLevelItemType()     {}
+func (*AxiomGroup) TopLevelItemType()      {}
+func (*ConjectureGroup) TopLevelItemType() {}
+func (*TheoremGroup) TopLevelItemType()    {}
+func (*SpecifyGroup) TopLevelItemType()    {}
+func (*TopicGroup) TopLevelItemType()      {}
+func (*PersonGroup) TopLevelItemType()     {}
+func (*ResourceGroup) TopLevelItemType()   {}
+func (*ProofGroup) TopLevelItemType()      {}
 
 type Document struct {
 	Items          []TopLevelItemType

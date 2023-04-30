@@ -284,9 +284,9 @@ func (w *Workspace) commandToWritten(path ast.Path, node *ast.CommandExpression)
 						result := ""
 						for _, item := range writtenItems {
 							switch it := item.(type) {
-							case StringItem:
+							case *StringItem:
 								result += it.Text
-							case SubstitutionItem:
+							case *SubstitutionItem:
 								if it.IsVarArg {
 									if it.NameSuffix == "+" {
 										result += valuesToString(

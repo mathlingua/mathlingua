@@ -24,37 +24,37 @@ func FormulationNodeToCode(node FormulationNodeType,
 	return node.ToCode(fn)
 }
 
-func (n NameForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *NameForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Text + n.VarArg.ToCode(fn)
 }
 
-func (n FunctionForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *FunctionForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Target.ToCode(fn) + "(" + commaSeparatedStringOfNameForms(n.Params, fn) +
 		")" + n.VarArg.ToCode(fn)
 }
 
-func (n TupleForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *TupleForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return "(" + commaSeparatedString(n.Params, fn) + ")" + n.VarArg.ToCode(fn)
 }
 
-func (n ConditionalSetForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *ConditionalSetForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return "{" + n.Target.ToCode(fn) + " | ...}" + n.VarArg.ToCode(fn)
 }
 
-func (n ConditionalSetIdForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *ConditionalSetIdForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return "[" + commaSeparatedString(n.Symbols, fn) +
@@ -62,30 +62,30 @@ func (n ConditionalSetIdForm) ToCode(fn func(node MlgNodeType) (string, bool)) s
 		"}" + n.Condition.VarArg.ToCode(fn)
 }
 
-func (n FunctionCallExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *FunctionCallExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Target.ToCode(fn) + "(" + commaSeparatedString(n.Args, fn) + ")"
 }
 
-func (n TupleExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *TupleExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return "(" + commaSeparatedString(n.Args, fn) + ")"
 }
 
-func (n ConditionalSetExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *ConditionalSetExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return "[" + commaSeparatedString(n.Symbols, fn) + "]{" +
 		n.Target.ToCode(fn) + " | " + semicolonSeparatedString(n.Conditions, fn) + "}"
 }
 
-func (n CommandExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *CommandExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := "\\"
@@ -114,32 +114,32 @@ func (n CommandExpression) ToCode(fn func(node MlgNodeType) (string, bool)) stri
 	return result
 }
 
-func (n PrefixOperatorCallExpression) ToCode(
+func (n *PrefixOperatorCallExpression) ToCode(
 	fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Target.ToCode(fn) + n.Arg.ToCode(fn)
 }
 
-func (n PostfixOperatorCallExpression) ToCode(
+func (n *PostfixOperatorCallExpression) ToCode(
 	fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Arg.ToCode(fn) + n.Target.ToCode(fn)
 }
 
-func (n InfixOperatorCallExpression) ToCode(
+func (n *InfixOperatorCallExpression) ToCode(
 	fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Lhs.ToCode(fn) + " " + n.Target.ToCode(fn) + " " + n.Rhs.ToCode(fn)
 }
 
-func (n IsExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *IsExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := ""
@@ -149,8 +149,8 @@ func (n IsExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
 	return result
 }
 
-func (n ExtendsExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *ExtendsExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := ""
@@ -160,22 +160,22 @@ func (n ExtendsExpression) ToCode(fn func(node MlgNodeType) (string, bool)) stri
 	return result
 }
 
-func (n AsExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *AsExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Lhs.ToCode(fn) + " as " + n.Rhs.ToCode(fn)
 }
 
-func (n OrdinalCallExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *OrdinalCallExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Target.ToCode(fn) + "{" + commaSeparatedString(n.Args, fn) + "}"
 }
 
-func (n ChainExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *ChainExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := ""
@@ -188,8 +188,8 @@ func (n ChainExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string
 	return result
 }
 
-func (n Signature) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *Signature) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := "\\("
@@ -213,8 +213,8 @@ func (n Signature) ToCode(fn func(node MlgNodeType) (string, bool)) string {
 	return result
 }
 
-func (n MetaKinds) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *MetaKinds) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := "[:"
@@ -228,38 +228,38 @@ func (n MetaKinds) ToCode(fn func(node MlgNodeType) (string, bool)) string {
 	return result
 }
 
-func (n StructuralColonEqualsForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *StructuralColonEqualsForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Lhs.ToCode(fn) + " := " + n.Rhs.ToCode(fn)
 }
 
-func (n ExpressionColonEqualsItem) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *ExpressionColonEqualsItem) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Lhs.ToCode(fn) + " := " + n.Rhs.ToCode(fn)
 }
 
-func (n ExpressionColonArrowItem) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *ExpressionColonArrowItem) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Lhs.ToCode(fn) + " :=> " + n.Rhs.ToCode(fn)
 }
 
-func (n ExpressionColonDashArrowItem) ToCode(
+func (n *ExpressionColonDashArrowItem) ToCode(
 	fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Lhs.ToCode(fn) + " :-> " + n.Rhs.ToCode(fn)
 }
 
-func (n EnclosedNonCommandOperatorTarget) ToCode(
+func (n *EnclosedNonCommandOperatorTarget) ToCode(
 	fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := ""
@@ -275,9 +275,9 @@ func (n EnclosedNonCommandOperatorTarget) ToCode(
 	return result
 }
 
-func (n NonEnclosedNonCommandOperatorTarget) ToCode(
+func (n *NonEnclosedNonCommandOperatorTarget) ToCode(
 	fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := ""
@@ -291,15 +291,15 @@ func (n NonEnclosedNonCommandOperatorTarget) ToCode(
 	return result
 }
 
-func (n CommandOperatorTarget) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *CommandOperatorTarget) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Command.ToCode(fn) + "/"
 }
 
-func (n CommandId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *CommandId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := "\\"
@@ -328,29 +328,29 @@ func (n CommandId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
 	return result
 }
 
-func (n PrefixOperatorId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *PrefixOperatorId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Operator.ToCode(fn) + n.Param.ToCode(fn)
 }
 
-func (n PostfixOperatorId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *PostfixOperatorId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Param.ToCode(fn) + n.Operator.ToCode(fn)
 }
 
-func (n InfixOperatorId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *InfixOperatorId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Lhs.ToCode(fn) + " " + n.Operator.ToCode(fn) + " " + n.Rhs.ToCode(fn)
 }
 
-func (n InfixCommandId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *InfixCommandId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := "\\"
@@ -380,22 +380,22 @@ func (n InfixCommandId) ToCode(fn func(node MlgNodeType) (string, bool)) string 
 	return result
 }
 
-func (n InfixCommandOperatorId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *InfixCommandOperatorId) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Lhs.ToCode(fn) + " " + n.Operator.ToCode(fn) + " " + n.Rhs.ToCode(fn)
 }
 
-func (n PseudoTokenNode) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *PseudoTokenNode) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Text
 }
 
-func (n PseudoExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *PseudoExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := ""
@@ -408,9 +408,9 @@ func (n PseudoExpression) ToCode(fn func(node MlgNodeType) (string, bool)) strin
 	return result
 }
 
-func (n MultiplexedInfixOperatorCallExpression) ToCode(
+func (n *MultiplexedInfixOperatorCallExpression) ToCode(
 	fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := ""
@@ -422,28 +422,28 @@ func (n MultiplexedInfixOperatorCallExpression) ToCode(
 	return result
 }
 
-func (n InfixOperatorForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *InfixOperatorForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Lhs.ToCode(fn) + " " + n.Operator.ToCode(fn) + " " + n.Rhs.ToCode(fn)
 }
 
-func (n PrefixOperatorForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *PrefixOperatorForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Operator.ToCode(fn) + n.Param.ToCode(fn)
 }
 
-func (n PostfixOperatorForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *PostfixOperatorForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Param.ToCode(fn) + n.Operator.ToCode(fn)
 }
 
-func (n VarArgData) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+func (n *VarArgData) ToCode(fn func(node MlgNodeType) (string, bool)) string {
 	if n.IsVarArg {
 		if len(n.VarArgNames) == 0 && len(n.VarArgBounds) == 0 {
 			return "..."
@@ -471,15 +471,15 @@ func (n VarArgData) ToCode(fn func(node MlgNodeType) (string, bool)) string {
 	return ""
 }
 
-func (n FunctionLiteralExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *FunctionLiteralExpression) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	return n.Lhs.ToCode(fn) + " => " + n.Rhs.ToCode(fn)
 }
 
-func (n CurlyParam) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *CurlyParam) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := ""
@@ -497,8 +497,8 @@ func (n CurlyParam) ToCode(fn func(node MlgNodeType) (string, bool)) string {
 	return result
 }
 
-func (n CurlyArg) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *CurlyArg) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := "{"
@@ -512,8 +512,8 @@ func (n CurlyArg) ToCode(fn func(node MlgNodeType) (string, bool)) string {
 	return result
 }
 
-func (n DirectionalParam) ToCode(fn func(node MlgNodeType) (string, bool)) string {
-	if res, ok := fn(&n); ok {
+func (n *DirectionalParam) ToCode(fn func(node MlgNodeType) (string, bool)) string {
+	if res, ok := fn(n); ok {
 		return res
 	}
 	result := "@"

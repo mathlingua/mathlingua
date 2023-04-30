@@ -28,43 +28,43 @@ func StructuralNodeToCode(item StructuralNodeType) string {
 	return strings.Join(item.ToCode(0, false), "\n")
 }
 
-func (n IdItem) ToCode(indent int, hasDot bool) []string {
+func (n *IdItem) ToCode(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
 	return buildIndentedLineSlice(indent, hasDot, "["+n.Root.ToCode(noOp)+"]")
 }
 
-func (n Target) ToCode(indent int, hasDot bool) []string {
+func (n *Target) ToCode(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
 	return buildIndentedLineSlice(indent, hasDot, n.Root.ToCode(noOp))
 }
 
-func (n Spec) ToCode(indent int, hasDot bool) []string {
+func (n *Spec) ToCode(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
 	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode(noOp)+"'")
 }
 
-func (n Alias) ToCode(indent int, hasDot bool) []string {
+func (n *Alias) ToCode(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
 	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode(noOp)+"'")
 }
 
-func (n Formulation[T]) ToCode(indent int, hasDot bool) []string {
+func (n *Formulation[T]) ToCode(indent int, hasDot bool) []string {
 	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode(noOp)+"'")
 }
 
-func (n TextItem) ToCode(indent int, hasDot bool) []string {
+func (n *TextItem) ToCode(indent int, hasDot bool) []string {
 	return buildIndentedLineSlice(indent, hasDot, "\""+n.RawText+"\"")
 }
 
-func (n GivenGroup) ToCode(indent int, hasDot bool) []string {
+func (n *GivenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGivenSection(&n.Given, indent, hasDot)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
@@ -73,32 +73,32 @@ func (n GivenGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n AllOfGroup) ToCode(indent int, hasDot bool) []string {
+func (n *AllOfGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendClausesSection(LowerAllOfName, n.AllOf.Clauses, indent, hasDot)
 	return db.Lines()
 }
 
-func (n NotGroup) ToCode(indent int, hasDot bool) []string {
+func (n *NotGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerNotName, indent, hasDot)
 	db.Append(n.Not.Clause, indent+2, true)
 	return db.Lines()
 }
 
-func (n AnyOfGroup) ToCode(indent int, hasDot bool) []string {
+func (n *AnyOfGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendClausesSection(LowerAnyOfName, n.AnyOf.Clauses, indent, hasDot)
 	return db.Lines()
 }
 
-func (n OneOfGroup) ToCode(indent int, hasDot bool) []string {
+func (n *OneOfGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendClausesSection(LowerOneOfName, n.OneOf.Clauses, indent, hasDot)
 	return db.Lines()
 }
 
-func (n ExistsGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ExistsGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTargetsSection(LowerExistsName, n.Exists.Targets, indent, hasDot)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
@@ -106,7 +106,7 @@ func (n ExistsGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n ExistsUniqueGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ExistsUniqueGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTargetsSection(LowerExistsName, n.ExistsUnique.Targets, indent, hasDot)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
@@ -114,7 +114,7 @@ func (n ExistsUniqueGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n ForAllGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ForAllGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTargetsSection(LowerForAllName, n.ForAll.Targets, indent, hasDot)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
@@ -123,21 +123,21 @@ func (n ForAllGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n IfGroup) ToCode(indent int, hasDot bool) []string {
+func (n *IfGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIfSection(&n.If, indent, hasDot)
 	db.MaybeAppendThenSection(&n.Then, indent, false)
 	return db.Lines()
 }
 
-func (n IffGroup) ToCode(indent int, hasDot bool) []string {
+func (n *IffGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIffSection(&n.Iff, indent, hasDot)
 	db.MaybeAppendThenSection(&n.Then, indent, false)
 	return db.Lines()
 }
 
-func (n PiecewiseGroup) ToCode(indent int, hasDot bool) []string {
+func (n *PiecewiseGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerPiecewiseName, indent, hasDot)
 	for _, ifThen := range n.IfThen {
@@ -150,14 +150,14 @@ func (n PiecewiseGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n WhenGroup) ToCode(indent int, hasDot bool) []string {
+func (n *WhenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendWhenSection(&n.When, indent, hasDot)
 	db.MaybeAppendThenSection(&n.Then, indent, false)
 	return db.Lines()
 }
 
-func (n SymbolWrittenGroup) ToCode(indent int, hasDot bool) []string {
+func (n *SymbolWrittenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerSymbolName, indent, hasDot)
 	db.Append(&n.Symbol.Symbol, indent+2, true)
@@ -167,26 +167,26 @@ func (n SymbolWrittenGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n ConnectionGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ConnectionGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerConnectionName, indent, hasDot)
 	db.MaybeAppendUsingSection(n.Using, indent, true)
 	return db.Lines()
 }
 
-func (n WrittenGroup) ToCode(indent int, hasDot bool) []string {
+func (n *WrittenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerWrittenName, n.Written.Written, indent, hasDot)
 	return db.Lines()
 }
 
-func (n CalledGroup) ToCode(indent int, hasDot bool) []string {
+func (n *CalledGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerCalledName, n.Called.Called, indent, hasDot)
 	return db.Lines()
 }
 
-func (n WritingGroup) ToCode(indent int, hasDot bool) []string {
+func (n *WritingGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerWritingName, indent, hasDot)
 	db.Append(&n.Writing.Writing, indent, false)
@@ -194,43 +194,43 @@ func (n WritingGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n OverviewGroup) ToCode(indent int, hasDot bool) []string {
+func (n *OverviewGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSingleTextItemSection(LowerOverviewName, n.Overview.Overview, indent, hasDot)
 	return db.Lines()
 }
 
-func (n MotivationGroup) ToCode(indent int, hasDot bool) []string {
+func (n *MotivationGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSingleTextItemSection(LowerMotivationName, n.Motivation.Motivation, indent, hasDot)
 	return db.Lines()
 }
 
-func (n HistoryGroup) ToCode(indent int, hasDot bool) []string {
+func (n *HistoryGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSingleTextItemSection(LowerHistoryName, n.History.History, indent, hasDot)
 	return db.Lines()
 }
 
-func (n ExampleGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ExampleGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerExampleName, n.Examples.Examples, indent, hasDot)
 	return db.Lines()
 }
 
-func (n RelatedGroup) ToCode(indent int, hasDot bool) []string {
+func (n *RelatedGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerRelatedName, n.Related.Related, indent, hasDot)
 	return db.Lines()
 }
 
-func (n DiscovererGroup) ToCode(indent int, hasDot bool) []string {
+func (n *DiscovererGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerDiscovererName, n.Discoverer.Discoverer, indent, hasDot)
 	return db.Lines()
 }
 
-func (n NoteGroup) ToCode(indent int, hasDot bool) []string {
+func (n *NoteGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerNoteName, indent, hasDot)
 	for _, item := range n.Note.Note {
@@ -239,26 +239,26 @@ func (n NoteGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n DescribingGroup) ToCode(indent int, hasDot bool) []string {
+func (n *DescribingGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSingleTextItemSection(LowerDescribingName, n.Describing.Describing, indent, hasDot)
 	db.AppendSingleTextItemSection(LowerContentName, n.Content.Content, indent, hasDot)
 	return db.Lines()
 }
 
-func (n LabelGroup) ToCode(indent int, hasDot bool) []string {
+func (n *LabelGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSingleTextItemSection(LowerLabelName, n.Label.Label, indent, hasDot)
 	return db.Lines()
 }
 
-func (n ByGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ByGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerByName, n.By.By, indent, hasDot)
 	return db.Lines()
 }
 
-func (n DescribesGroup) ToCode(indent int, hasDot bool) []string {
+func (n *DescribesGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
 	db.AppendSection(UpperDescribesName, indent, false)
@@ -292,7 +292,7 @@ func (n DescribesGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n DefinesGroup) ToCode(indent int, hasDot bool) []string {
+func (n *DefinesGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
 	db.AppendSection(UpperDefinesName, indent, false)
@@ -331,7 +331,7 @@ func (n DefinesGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n StatesGroup) ToCode(indent int, hasDot bool) []string {
+func (n *StatesGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
 	db.AppendSection(UpperStatesName, indent, false)
@@ -353,7 +353,7 @@ func (n StatesGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n ProofGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ProofGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
 	db.AppendSection(UpperProofName, indent, false)
@@ -364,7 +364,7 @@ func (n ProofGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n AxiomGroup) ToCode(indent int, hasDot bool) []string {
+func (n *AxiomGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(n.Id, indent, hasDot)
 	db.AppendSection(UpperAxiomName, indent, hasDot && n.Id == nil)
@@ -380,7 +380,7 @@ func (n AxiomGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n ConjectureGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ConjectureGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(n.Id, indent, hasDot)
 	db.AppendSection(UpperConjectureName, indent, hasDot && n.Id == nil)
@@ -396,7 +396,7 @@ func (n ConjectureGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n TheoremGroup) ToCode(indent int, hasDot bool) []string {
+func (n *TheoremGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(n.Id, indent, hasDot)
 	db.AppendSection(UpperTheoremName, indent, hasDot && n.Id == nil)
@@ -416,7 +416,7 @@ func (n TheoremGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n TopicGroup) ToCode(indent int, hasDot bool) []string {
+func (n *TopicGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
 	db.AppendSection(UpperTopicName, indent, false)
@@ -426,42 +426,42 @@ func (n TopicGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n ZeroGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ZeroGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerZeroName, indent, hasDot)
 	db.MaybeAppendMeansSection(&n.Means, indent, false)
 	return db.Lines()
 }
 
-func (n PositiveIntGroup) ToCode(indent int, hasDot bool) []string {
+func (n *PositiveIntGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerPositiveIntName, indent, hasDot)
 	db.MaybeAppendMeansSection(&n.Means, indent, false)
 	return db.Lines()
 }
 
-func (n NegativeIntGroup) ToCode(indent int, hasDot bool) []string {
+func (n *NegativeIntGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerNegativeIntName, indent, hasDot)
 	db.MaybeAppendMeansSection(&n.Means, indent, false)
 	return db.Lines()
 }
 
-func (n PositiveFloatGroup) ToCode(indent int, hasDot bool) []string {
+func (n *PositiveFloatGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerPositiveFloatName, indent, hasDot)
 	db.MaybeAppendMeansSection(&n.Means, indent, false)
 	return db.Lines()
 }
 
-func (n NegativeFloatGroup) ToCode(indent int, hasDot bool) []string {
+func (n *NegativeFloatGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerNegativeFloatName, indent, hasDot)
 	db.MaybeAppendMeansSection(&n.Means, indent, false)
 	return db.Lines()
 }
 
-func (n SpecifyGroup) ToCode(indent int, hasDot bool) []string {
+func (n *SpecifyGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(UpperSpecifyName, indent, hasDot)
 	for _, item := range n.Specify.Specify {
@@ -471,7 +471,7 @@ func (n SpecifyGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n PersonGroup) ToCode(indent int, hasDot bool) []string {
+func (n *PersonGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendString(n.Id, indent, hasDot)
 	db.AppendSection(UpperPersonName, indent, false)
@@ -482,20 +482,20 @@ func (n PersonGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n NameGroup) ToCode(indent int, hasDot bool) []string {
+func (n *NameGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerNameName, n.Name.Name, indent, hasDot)
 	return db.Lines()
 }
 
-func (n BiographyGroup) ToCode(indent int, hasDot bool) []string {
+func (n *BiographyGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerBiographyName, indent, hasDot)
 	db.Append(&n.Biography.Biography, indent+2, true)
 	return db.Lines()
 }
 
-func (n ResourceGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ResourceGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendString(n.Id, indent, hasDot)
 	db.AppendSection(UpperResourceName, indent, false)
@@ -506,107 +506,107 @@ func (n ResourceGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n TitleGroup) ToCode(indent int, hasDot bool) []string {
+func (n *TitleGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerTitleName, indent, hasDot)
 	db.Append(&n.Title.Title, indent+2, true)
 	return db.Lines()
 }
 
-func (n AuthorGroup) ToCode(indent int, hasDot bool) []string {
+func (n *AuthorGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerAuthorName, n.Author.Author, indent, hasDot)
 	return db.Lines()
 }
 
-func (n OffsetGroup) ToCode(indent int, hasDot bool) []string {
+func (n *OffsetGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerOffsetName, indent, hasDot)
 	db.Append(&n.Offset.Offset, indent+2, true)
 	return db.Lines()
 }
 
-func (n UrlGroup) ToCode(indent int, hasDot bool) []string {
+func (n *UrlGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerUrlName, indent, hasDot)
 	db.Append(&n.Url.Url, indent+2, true)
 	return db.Lines()
 }
 
-func (n HomepageGroup) ToCode(indent int, hasDot bool) []string {
+func (n *HomepageGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerHomepageName, indent, hasDot)
 	db.Append(&n.Homepage.Homepage, indent+2, true)
 	return db.Lines()
 }
 
-func (n TypeGroup) ToCode(indent int, hasDot bool) []string {
+func (n *TypeGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerTypeName, indent, hasDot)
 	db.Append(&n.Type.Type, indent+2, true)
 	return db.Lines()
 }
 
-func (n EditorGroup) ToCode(indent int, hasDot bool) []string {
+func (n *EditorGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerEditorName, n.Editor.Editor, indent, hasDot)
 	return db.Lines()
 }
 
-func (n EditionGroup) ToCode(indent int, hasDot bool) []string {
+func (n *EditionGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerEditionName, indent, hasDot)
 	db.Append(&n.Edition.Edition, indent+2, true)
 	return db.Lines()
 }
 
-func (n InstitutionGroup) ToCode(indent int, hasDot bool) []string {
+func (n *InstitutionGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerInstitutionName, n.Institution.Institution, indent, hasDot)
 	return db.Lines()
 }
 
-func (n JournalGroup) ToCode(indent int, hasDot bool) []string {
+func (n *JournalGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerJournalName, n.Journal.Journal, indent, hasDot)
 	return db.Lines()
 }
 
-func (n PublisherGroup) ToCode(indent int, hasDot bool) []string {
+func (n *PublisherGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerPublisherName, n.Publisher.Publisher, indent, hasDot)
 	return db.Lines()
 }
 
-func (n VolumeGroup) ToCode(indent int, hasDot bool) []string {
+func (n *VolumeGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerVolumeName, indent, hasDot)
 	db.Append(&n.Volume.Volume, indent+2, true)
 	return db.Lines()
 }
 
-func (n MonthGroup) ToCode(indent int, hasDot bool) []string {
+func (n *MonthGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerMonthName, indent, hasDot)
 	db.Append(&n.Month.Month, indent+2, true)
 	return db.Lines()
 }
 
-func (n YearGroup) ToCode(indent int, hasDot bool) []string {
+func (n *YearGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerYearName, indent, hasDot)
 	db.Append(&n.Year.Year, indent+2, true)
 	return db.Lines()
 }
 
-func (n DescriptionGroup) ToCode(indent int, hasDot bool) []string {
+func (n *DescriptionGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerDescriptionName, indent, hasDot)
 	db.Append(&n.Description.Description, indent+2, true)
 	return db.Lines()
 }
 
-func (n Document) ToCode(indent int, hasDot bool) []string {
+func (n *Document) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	for _, item := range n.Items {
 		db.Append(item, indent, hasDot)
@@ -616,7 +616,7 @@ func (n Document) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n TextBlockItem) ToCode(indent int, hasDot bool) []string {
+func (n *TextBlockItem) ToCode(indent int, hasDot bool) []string {
 	return buildIndentedLineSlice(indent, hasDot, "::"+n.Text+"::")
 }
 

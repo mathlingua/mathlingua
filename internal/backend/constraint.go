@@ -26,9 +26,9 @@ type ConstraintType interface {
 	ConstraintType()
 }
 
-func (IsConstraint) ConstraintType()      {}
-func (SpecConstraint) ConstraintType()    {}
-func (ExtendsConstraint) ConstraintType() {}
+func (*IsConstraint) ConstraintType()      {}
+func (*SpecConstraint) ConstraintType()    {}
+func (*ExtendsConstraint) ConstraintType() {}
 
 type IsConstraint struct {
 	Target       PatternType

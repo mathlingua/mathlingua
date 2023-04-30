@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 func NewWorkspaceFromPaths(paths []string,
@@ -136,12 +137,22 @@ func appendMetaIds(path string) (string, error) {
 		return "", err
 	}
 
-	endText, err := AppendMetaIds(string(bytes))
+	startText := string(bytes)
+	endText, err := AppendMetaIds(startText)
 	if err != nil {
 		return "", err
 	}
 
-	if err := os.WriteFile(path, []byte(endText), 0644); err != nil {
+	if startText == endText {
+		return startText, nil
+	}
+
+	lockPath := fmt.Sprintf("%s.%d.lock", path, time.Now().UnixNano())
+	if err := os.WriteFile(lockPath, []byte(endText), 0644); err != nil {
+		return "", err
+	}
+
+	if err := os.Rename(lockPath, path); err != nil {
 		return "", err
 	}
 

@@ -54,9 +54,12 @@ func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 	diagnostics = append(diagnostics, checkResult.Diagnostics...)
 
 	numErrors := 0
+	numWarnings := 0
 	for _, diag := range diagnostics {
 		if diag.Type == frontend.Error {
 			numErrors++
+		} else if diag.Type == frontend.Warning {
+			numWarnings++
 		}
 	}
 
@@ -69,7 +72,7 @@ func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 		return
 	}
 
-	m.printCheckStats(numErrors, numFilesProcessed, debug, diagnostics)
+	m.printCheckStats(numErrors, numWarnings, numFilesProcessed, debug, diagnostics)
 }
 
 func (m *Mlg) View() {
@@ -91,7 +94,7 @@ func (m *Mlg) printAsJson(checkResult backend.CheckResult) {
 	}
 }
 
-func (m *Mlg) printCheckStats(numErrors int, numFilesProcessed int,
+func (m *Mlg) printCheckStats(numErrors int, numWarnings int, numFilesProcessed int,
 	debug bool, diagnostics []frontend.Diagnostic) {
 	for index, diag := range diagnostics {
 		if index > 0 {
@@ -120,6 +123,13 @@ func (m *Mlg) printCheckStats(numErrors int, numFilesProcessed int,
 		errorText = "errors"
 	}
 
+	var warningText string
+	if numWarnings == 1 {
+		warningText = "warning"
+	} else {
+		warningText = "warnings"
+	}
+
 	var filesText string
 	if numFilesProcessed == 1 {
 		filesText = "file"
@@ -127,12 +137,7 @@ func (m *Mlg) printCheckStats(numErrors int, numFilesProcessed int,
 		filesText = "files"
 	}
 
-	if numErrors > 0 {
-		m.logger.Log("")
-		m.logger.Failure(fmt.Sprintf("Processed %d %s and found %d %s",
-			numFilesProcessed, filesText, numErrors, errorText))
-	} else {
-		m.logger.Success(fmt.Sprintf("Processed %d %s and found 0 errors",
-			numFilesProcessed, filesText))
-	}
+	m.logger.Log("")
+	m.logger.Failure(fmt.Sprintf("Processed %d %s and found %d %s and %d %s",
+		numFilesProcessed, filesText, numErrors, errorText, numWarnings, warningText))
 }

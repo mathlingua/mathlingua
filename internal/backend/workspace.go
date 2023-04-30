@@ -343,6 +343,9 @@ func (w *Workspace) commandToWritten(path ast.Path, node *ast.CommandExpression)
 }
 
 func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeType) string {
+	if mlgNode == nil {
+		return ""
+	}
 	customToCode := func(node ast.MlgNodeType) (string, bool) {
 		switch n := node.(type) {
 		case *ast.FunctionLiteralExpression:
@@ -701,6 +704,9 @@ func (w *Workspace) findUsedUnknownSignatures() {
 }
 
 func findUsedUnknownSignaturesImpl(node ast.MlgNodeType, path ast.Path, w *Workspace) {
+	if node == nil {
+		return
+	}
 	if cmd, ok := node.(*ast.CommandExpression); ok {
 		sig := GetSignatureStringFromCommand(*cmd)
 		if _, ok := w.signaturesToIds[sig]; !ok {

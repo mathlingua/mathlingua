@@ -27,7 +27,7 @@ import (
 )
 
 func TestPhase3LexerSingleSection(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 `, "", tracker)
@@ -52,7 +52,7 @@ a:
 }
 
 func TestPhase3LexerSingleSectionWithSingleArg(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a: xyz
 `, "", tracker)
@@ -80,7 +80,7 @@ a: xyz
 }
 
 func TestPhase3LexerSingleSectionWithMultiArgs(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a: xyz, abc
 `, "", tracker)
@@ -111,7 +111,7 @@ a: xyz, abc
 }
 
 func TestPhase3LexerIndentWithDoubleUnindent(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . b:
@@ -156,7 +156,7 @@ d:
 }
 
 func TestPhase3LexerIndentWithDoubleUnindentMultiSections(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . b:
@@ -205,7 +205,7 @@ e:
 }
 
 func TestPhase3LexerMultiIndent(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . b:
@@ -246,7 +246,7 @@ a:
 }
 
 func TestPhase3LexerSingleSectionWithMultiLineNonGroupArgs(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . b
@@ -279,7 +279,7 @@ a:
 }
 
 func TestPhase3LexerSingleSectionWithMultiGroupArgs(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . b:
@@ -320,7 +320,7 @@ a:
 }
 
 func TestPhase3LexerMultiSections(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 b:
@@ -353,7 +353,7 @@ c:
 }
 
 func TestPhase3LexerMultiSectionsWithGroupArgs(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . x:
@@ -422,7 +422,7 @@ c:
 }
 
 func TestPhase3LexerMultiSectionsWithGroupArgsAndNonGroupArgs(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . x:x1,x2,x3

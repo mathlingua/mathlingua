@@ -25,7 +25,7 @@ import (
 )
 
 func TestFormulationLexer(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer := NewLexer("/some/path", `
 xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is `+
 		`\something/ x as \[something] "*+" name' @ extends [: :]=>abc=:->
@@ -120,7 +120,7 @@ abc Name
 }
 
 func TestFormulationLexerMultiNames(t *testing.T) {
-	tracker := frontend.NewDiagnosticTracker(false)
+	tracker := frontend.NewDiagnosticTracker()
 	lexer := NewLexer("/some/path", "a b c", tracker)
 
 	actual := "\n"

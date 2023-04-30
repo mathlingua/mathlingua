@@ -64,20 +64,23 @@ func (diag *Diagnostic) ToString() string {
 
 type DiagnosticTracker struct {
 	diagnostics []Diagnostic
-	live        bool
+	listeners   []func(diag Diagnostic)
 }
 
-func NewDiagnosticTracker(live bool) *DiagnosticTracker {
+func NewDiagnosticTracker() *DiagnosticTracker {
 	return &DiagnosticTracker{
 		diagnostics: make([]Diagnostic, 0),
-		live:        live,
 	}
+}
+
+func (dt *DiagnosticTracker) AddListener(listener func(diag Diagnostic)) {
+	dt.listeners = append(dt.listeners, listener)
 }
 
 func (dt *DiagnosticTracker) Append(diagnostic Diagnostic) {
 	dt.diagnostics = append(dt.diagnostics, diagnostic)
-	if dt.live {
-		fmt.Println(diagnostic.ToString())
+	for _, listener := range dt.listeners {
+		listener(diagnostic)
 	}
 }
 

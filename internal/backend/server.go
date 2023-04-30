@@ -50,7 +50,11 @@ func StartServer() {
 }
 
 func initWorkspace() *Workspace {
-	tracker := frontend.NewDiagnosticTracker(true)
+	tracker := frontend.NewDiagnosticTracker()
+	tracker.AddListener(func(diag frontend.Diagnostic) {
+		fmt.Println(diag.ToString())
+	})
+
 	workspace, diagnostics := NewWorkspaceFromPaths([]string{"."}, tracker)
 	for _, diag := range diagnostics {
 		tracker.Append(diag)

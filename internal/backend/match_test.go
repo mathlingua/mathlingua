@@ -169,7 +169,7 @@ func stringMapToStringSlice(mapping map[string][]string) string {
 
 func parseNode(t *testing.T, exp string) ast.MlgNodeType {
 	return parseImpl(t, exp, func(text string) (ast.MlgNodeType, *frontend.DiagnosticTracker, bool) {
-		tracker := frontend.NewDiagnosticTracker(false)
+		tracker := frontend.NewDiagnosticTracker()
 		keyGen := mlglib.NewKeyGenerator()
 		root, ok := formulation.ParseExpression(ast.ToPath("/"), exp, ast.Position{
 			Offset: 0,
@@ -182,7 +182,7 @@ func parseNode(t *testing.T, exp string) ast.MlgNodeType {
 
 func parseForm(t *testing.T, exp string) ast.StructuralFormType {
 	node := parseImpl(t, exp, func(text string) (ast.MlgNodeType, *frontend.DiagnosticTracker, bool) {
-		tracker := frontend.NewDiagnosticTracker(false)
+		tracker := frontend.NewDiagnosticTracker()
 		keyGen := mlglib.NewKeyGenerator()
 		root, ok := formulation.ParseForm(ast.ToPath("/"), exp, ast.Position{
 			Offset: 0,

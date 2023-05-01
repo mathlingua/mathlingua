@@ -49,10 +49,6 @@ type SpecConstraint struct {
 	Scope  *ast.Scope
 }
 
-func noOp(node ast.MlgNodeType) (string, bool) {
-	return "", false
-}
-
 func ToIsConstraint(node ast.IsExpression) ([]IsConstraint, error) {
 	result := make([]IsConstraint, 0)
 	for _, lhsExp := range node.Lhs {
@@ -103,6 +99,12 @@ func ToSpecConstraints(node ast.MultiplexedInfixOperatorCallExpression) ([]SpecC
 		}
 	}
 	return result, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func noOp(node ast.MlgNodeType) (string, bool) {
+	return "", false
 }
 
 func toSingleStructuralForm(exp ast.ExpressionType) (ast.StructuralFormType, error) {

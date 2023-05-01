@@ -63,13 +63,6 @@ type WritingSummary struct {
 	Errors        []string
 }
 
-func errorToString(err error) []string {
-	if err == nil {
-		return []string{}
-	}
-	return []string{err.Error()}
-}
-
 func ToCalledSummaries(node ast.CalledGroup) []CalledSummary {
 	result := make([]CalledSummary, 0)
 	for _, item := range node.Called.Called {
@@ -312,4 +305,13 @@ func ParseCalledWritten(text string) ([]TextItemType, error) {
 		}
 	}
 	return result, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func errorToString(err error) []string {
+	if err == nil {
+		return []string{}
+	}
+	return []string{err.Error()}
 }

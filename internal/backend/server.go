@@ -49,6 +49,8 @@ func StartServer() {
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 func initWorkspace() *Workspace {
 	tracker := frontend.NewDiagnosticTracker()
 	tracker.AddListener(func(diag frontend.Diagnostic) {
@@ -61,8 +63,6 @@ func initWorkspace() *Workspace {
 	}
 	return workspace
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func paths(workspace *Workspace, writer http.ResponseWriter, request *http.Request) {
 	setJsonContentType(writer)

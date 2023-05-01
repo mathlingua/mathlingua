@@ -28,22 +28,6 @@ func NewLogger() *Logger {
 	return &Logger{}
 }
 
-var boldGreenColor = color.New(color.FgGreen, color.Bold)
-var boldRedColor = color.New(color.FgRed, color.Bold)
-var boldYellowColor = color.New(color.FgYellow, color.Bold)
-
-func boldRed(text string) string {
-	return boldRedColor.Sprint(text)
-}
-
-func boldGreen(text string) string {
-	return boldGreenColor.Sprint(text)
-}
-
-func boldYellow(text string) string {
-	return boldYellowColor.Sprint(text)
-}
-
 func (lg *Logger) Error(text string) {
 	fmt.Printf("%s %s\n", boldRed("ERROR:"), text)
 }
@@ -62,4 +46,22 @@ func (lg *Logger) Success(text string) {
 
 func (lg *Logger) Log(text string) {
 	fmt.Println(text)
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var boldGreenColor = color.New(color.FgGreen, color.Bold)
+var boldRedColor = color.New(color.FgRed, color.Bold)
+var boldYellowColor = color.New(color.FgYellow, color.Bold)
+
+func boldRed(text string) string {
+	return boldRedColor.Sprint(text)
+}
+
+func boldGreen(text string) string {
+	return boldGreenColor.Sprint(text)
+}
+
+func boldYellow(text string) string {
+	return boldYellowColor.Sprint(text)
 }

@@ -132,6 +132,8 @@ func GetResolvedWritten(summary SummaryType) ([]TextItemType, bool) {
 	return nil, false
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 func getSingleCalled(called []CalledSummary) *[]TextItemType {
 	if len(called) == 0 {
 		return nil

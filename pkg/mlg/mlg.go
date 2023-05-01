@@ -33,19 +33,6 @@ func NewMlg(logger *Logger) *Mlg {
 	}
 }
 
-type diagnosticInfo struct {
-	Type      string `json:"type"`
-	Path      string `json:"path"`
-	Message   string `json:"message"`
-	DebugInfo string `json:"debugInfo"`
-	Row       int    `json:"row"`
-	Column    int    `json:"column"`
-}
-
-type checkResult struct {
-	Diagnostics []diagnosticInfo `json:"diagnostics"`
-}
-
 func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 	workspace, diagnostics := backend.NewWorkspaceFromPaths(paths,
 		frontend.NewDiagnosticTracker())
@@ -84,6 +71,19 @@ func (m *Mlg) Version() string {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type diagnosticInfo struct {
+	Type      string `json:"type"`
+	Path      string `json:"path"`
+	Message   string `json:"message"`
+	DebugInfo string `json:"debugInfo"`
+	Row       int    `json:"row"`
+	Column    int    `json:"column"`
+}
+
+type checkResult struct {
+	Diagnostics []diagnosticInfo `json:"diagnostics"`
+}
 
 func (m *Mlg) printAsJson(checkResult backend.CheckResult) {
 	if data, err := json.MarshalIndent(checkResult, "", "  "); err != nil {

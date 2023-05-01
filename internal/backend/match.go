@@ -87,6 +87,8 @@ func Match(node ast.MlgNodeType, pattern PatternType) MatchResult {
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 func unionMatches(result1 MatchResult, result2 MatchResult) MatchResult {
 	mapping := make(map[string]ast.MlgNodeType)
 	for name, node := range result1.Mapping {

@@ -136,17 +136,6 @@ func NewWorkspace(contents map[ast.Path]string, tracker *frontend.DiagnosticTrac
 	return &w
 }
 
-func (w *Workspace) initialize(contents map[ast.Path]string) {
-	w.contents = contents
-	w.phase4Root, w.astRoot = ParseRoot(w.contents, w.tracker)
-	w.normalizeAst()
-	w.populateScopes()
-	w.initializeSignaturesToIds()
-	w.initializeSummaries()
-	w.initializePhase4Entries()
-	w.initializeTopLevelEntries()
-}
-
 func (w *Workspace) DocumentCount() int {
 	return len(w.contents)
 }
@@ -168,6 +157,31 @@ func (w *Workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Di
 	phase4Doc := w.phase4Root.Documents[path]
 	w.updateFormulationStrings(path, &phase4Doc, keyToFormulationStr)
 	return phase4Doc, w.getDiagnosticsForPath(path)
+}
+
+func (w *Workspace) Check() CheckResult {
+	w.findUsedUnknownSignatures()
+	for _, path := range w.Paths() {
+		// get all of the documents to populate the tracker
+		// with any rendering errors
+		w.GetDocumentAt(path)
+	}
+	return CheckResult{
+		Diagnostics: w.tracker.Diagnostics(),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (w *Workspace) initialize(contents map[ast.Path]string) {
+	w.contents = contents
+	w.phase4Root, w.astRoot = ParseRoot(w.contents, w.tracker)
+	w.normalizeAst()
+	w.populateScopes()
+	w.initializeSignaturesToIds()
+	w.initializeSummaries()
+	w.initializePhase4Entries()
+	w.initializeTopLevelEntries()
 }
 
 func (w *Workspace) formulationLikeToString(path ast.Path,
@@ -207,34 +221,6 @@ func (w *Workspace) aliasToWritten(path ast.Path, node ast.Alias) string {
 func (w *Workspace) commandInfixToWritten(path ast.Path,
 	node *ast.CommandOperatorTarget) (string, bool) {
 	return w.commandToWritten(path, &node.Command)
-}
-
-func valuesToString(values []string, prefix string, infix string, suffix string) string {
-	// this function assumes exactly one of prefix, infix, and suffix is non-empty
-	if prefix != "" {
-		result := ""
-		for _, v := range values {
-			result += prefix
-			result += v
-		}
-		return result
-	} else if suffix != "" {
-		result := ""
-		for _, v := range values {
-			result += v
-			result += suffix
-		}
-		return result
-	} else {
-		result := ""
-		for i, v := range values {
-			if i > 0 {
-				result += infix
-			}
-			result += v
-		}
-		return result
-	}
 }
 
 func (w *Workspace) commandToWritten(path ast.Path, node *ast.CommandExpression) (string, bool) {
@@ -486,18 +472,6 @@ func (w *Workspace) getDiagnosticsForPath(path ast.Path) []frontend.Diagnostic {
 	return result
 }
 
-func (w *Workspace) Check() CheckResult {
-	w.findUsedUnknownSignatures()
-	for _, path := range w.Paths() {
-		// get all of the documents to populate the tracker
-		// with any rendering errors
-		w.GetDocumentAt(path)
-	}
-	return CheckResult{
-		Diagnostics: w.tracker.Diagnostics(),
-	}
-}
-
 func (w *Workspace) initializeSignaturesToIds() {
 	for _, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
@@ -558,6 +532,52 @@ func (w *Workspace) normalizeAst() {
 
 func (w *Workspace) populateScopes() {
 	PopulateScopes(w.astRoot, w.tracker)
+}
+
+func (w *Workspace) includeMissingIdentifiers() {
+	includeMissingIdentifiersAt(w.astRoot, mlglib.NewKeyGenerator())
+}
+
+func (w *Workspace) expandAliases() {
+	expandAliasesAt(w.astRoot, w.summaries)
+}
+
+func (w *Workspace) findUsedUnknownSignatures() {
+	for path, doc := range w.astRoot.Documents {
+		for _, item := range doc.Items {
+			findUsedUnknownSignaturesImpl(item, path, w)
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func valuesToString(values []string, prefix string, infix string, suffix string) string {
+	// this function assumes exactly one of prefix, infix, and suffix is non-empty
+	if prefix != "" {
+		result := ""
+		for _, v := range values {
+			result += prefix
+			result += v
+		}
+		return result
+	} else if suffix != "" {
+		result := ""
+		for _, v := range values {
+			result += v
+			result += suffix
+		}
+		return result
+	} else {
+		result := ""
+		for i, v := range values {
+			if i > 0 {
+				result += infix
+			}
+			result += v
+		}
+		return result
+	}
 }
 
 // Replace `f(x)` with `f(x) := var'#'` but do not change `f(x) := y`
@@ -654,10 +674,6 @@ func includeMissingIdentifiersAt(node ast.MlgNodeType, keyGen *mlglib.KeyGenerat
 	})
 }
 
-func (w *Workspace) includeMissingIdentifiers() {
-	includeMissingIdentifiersAt(w.astRoot, mlglib.NewKeyGenerator())
-}
-
 func expandAliasesAtWithAliases(node ast.MlgNodeType, aliases []ExpAliasSummaryType) {
 	if node == nil {
 		return
@@ -688,20 +704,6 @@ func expandAliasesAt(node ast.MlgNodeType, summaries map[string]SummaryType) {
 	node.ForEach(func(n ast.MlgNodeType) {
 		expandAliasesAt(n, summaries)
 	})
-}
-
-func (w *Workspace) expandAliases() {
-	expandAliasesAt(w.astRoot, w.summaries)
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func (w *Workspace) findUsedUnknownSignatures() {
-	for path, doc := range w.astRoot.Documents {
-		for _, item := range doc.Items {
-			findUsedUnknownSignaturesImpl(item, path, w)
-		}
-	}
 }
 
 func findUsedUnknownSignaturesImpl(node ast.MlgNodeType, path ast.Path, w *Workspace) {

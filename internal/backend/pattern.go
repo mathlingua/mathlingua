@@ -50,48 +50,6 @@ func (*ChainExpressionPattern) PatternType()         {}
 func (*SpecAliasPattern) PatternType() {}
 func (*AliasPattern) PatternType()     {}
 
-func (p *NameFormPattern) GetVarArgData() VarArgPatternData                 { return p.VarArg }
-func (p *FunctionFormPattern) GetVarArgData() VarArgPatternData             { return p.VarArg }
-func (p *TupleFormPattern) GetVarArgData() VarArgPatternData                { return p.VarArg }
-func (p *ConditionalSetExpressionPattern) GetVarArgData() VarArgPatternData { return p.VarArg }
-func (p *ConditionalSetFormPattern) GetVarArgData() VarArgPatternData       { return p.VarArg }
-
-func (p *InfixOperatorFormPattern) GetVarArgData() VarArgPatternData {
-	return VarArgPatternData{}
-}
-func (p *PrefixOperatorFormPattern) GetVarArgData() VarArgPatternData {
-	return VarArgPatternData{}
-}
-func (p *PostfixOperatorFormPattern) GetVarArgData() VarArgPatternData {
-	return VarArgPatternData{}
-}
-func (p *OrdinalPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
-
-func (p *NameColonEqualsPatternPattern) GetVarArgData() VarArgPatternData {
-	return VarArgPatternData{}
-}
-func (p *FunctionColonEqualsNamePattern) GetVarArgData() VarArgPatternData {
-	return VarArgPatternData{}
-}
-func (p *InfixCommandOperatorPattern) GetVarArgData() VarArgPatternData {
-	return VarArgPatternData{}
-}
-func (p *InfixCommandTargetPattern) GetVarArgData() VarArgPatternData {
-	return VarArgPatternData{}
-}
-func (p *CommandPattern) GetVarArgData() VarArgPatternData {
-	return VarArgPatternData{}
-}
-func (p *NamedGroupPattern) GetVarArgData() VarArgPatternData {
-	return VarArgPatternData{}
-}
-func (p *ChainExpressionPattern) GetVarArgData() VarArgPatternData {
-	return VarArgPatternData{}
-}
-
-func (p *SpecAliasPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
-func (p *AliasPattern) GetVarArgData() VarArgPatternData     { return VarArgPatternData{} }
-
 type NameColonEqualsPatternPattern struct {
 	Lhs NameFormPattern
 	Rhs PatternType
@@ -238,8 +196,6 @@ type AliasPattern struct {
 	Rhs PatternType
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 func ToPatternFromTarget(item ast.Target) PatternType {
 	switch n := item.Root.(type) {
 	case ast.StructuralFormType:
@@ -290,14 +246,6 @@ func ToDirectionParamParamPatternType(item ast.StructuralFormType) DirectionPara
 	}
 }
 
-func toFormPatterns(items []ast.StructuralFormType) []FormPatternType {
-	patterns := make([]FormPatternType, 0)
-	for _, item := range items {
-		patterns = append(patterns, ToFormPattern(item))
-	}
-	return patterns
-}
-
 func ToVarArgPatternData(data ast.VarArgData) VarArgPatternData {
 	varArgNames := make([]NameFormPattern, 0)
 	varArgNames = append(varArgNames,
@@ -345,14 +293,6 @@ func ToNameFormPattern(form ast.NameForm) *NameFormPattern {
 	}
 }
 
-func toNameFormPatterns(params []ast.NameForm) []NameFormPattern {
-	result := make([]NameFormPattern, 0)
-	for _, p := range params {
-		result = append(result, *ToNameFormPattern(p))
-	}
-	return result
-}
-
 func ToFunctionFormPattern(form ast.FunctionForm) *FunctionFormPattern {
 	return &FunctionFormPattern{
 		Target: *ToNameFormPattern(form.Target),
@@ -390,19 +330,6 @@ func ToInfixOperatorFormPattern(form ast.InfixOperatorForm) *InfixOperatorFormPa
 	}
 }
 
-func toNameFormPatternFromText(text string) NameFormPattern {
-	return NameFormPattern{
-		Text:            text,
-		IsStropped:      false,
-		HasQuestionMark: false,
-		VarArg: VarArgPatternData{
-			IsVarArg:     false,
-			VarArgNames:  nil,
-			VarArgBounds: nil,
-		},
-	}
-}
-
 func ToInfixOperatorFormPatternFromId(form ast.InfixOperatorId) InfixOperatorFormPattern {
 	return InfixOperatorFormPattern{
 		Operator: toNameFormPatternFromText(form.Operator.Text),
@@ -435,6 +362,60 @@ func ToPostfixOperatorFormPatternFromId(form ast.PostfixOperatorId) PostfixOpera
 	return PostfixOperatorFormPattern{
 		Operator: toNameFormPatternFromText(form.Operator.Text),
 		Param:    ToFormPattern(form.Param),
+	}
+}
+
+func ToCommandPattern(id ast.CommandId) CommandPattern {
+	names := make([]NameFormPattern, 0)
+	for _, n := range id.Names {
+		names = append(names, NameFormPattern{
+			Text:            n.Text,
+			IsStropped:      false,
+			HasQuestionMark: false,
+			VarArg: VarArgPatternData{
+				IsVarArg:     false,
+				VarArgNames:  nil,
+				VarArgBounds: nil,
+			},
+		})
+	}
+	return CommandPattern{
+		Signature:   GetSignatureStringFromCommandId(id),
+		Names:       names,
+		NamedGroups: toNamedGroupPatterns(id.NamedParams),
+		CurlyArg:    toCurlyArg(id.CurlyParam),
+		ParenArgs:   toParenArgs(id.ParenParams),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func toFormPatterns(items []ast.StructuralFormType) []FormPatternType {
+	patterns := make([]FormPatternType, 0)
+	for _, item := range items {
+		patterns = append(patterns, ToFormPattern(item))
+	}
+	return patterns
+}
+
+func toNameFormPatterns(params []ast.NameForm) []NameFormPattern {
+	result := make([]NameFormPattern, 0)
+	for _, p := range params {
+		result = append(result, *ToNameFormPattern(p))
+	}
+	return result
+}
+
+func toNameFormPatternFromText(text string) NameFormPattern {
+	return NameFormPattern{
+		Text:            text,
+		IsStropped:      false,
+		HasQuestionMark: false,
+		VarArg: VarArgPatternData{
+			IsVarArg:     false,
+			VarArgNames:  nil,
+			VarArgBounds: nil,
+		},
 	}
 }
 
@@ -504,27 +485,4 @@ func toParenArgs(names *[]ast.NameForm) *[]NameFormPattern {
 		result = append(result, *ToNameFormPattern(name))
 	}
 	return &result
-}
-
-func ToCommandPattern(id ast.CommandId) CommandPattern {
-	names := make([]NameFormPattern, 0)
-	for _, n := range id.Names {
-		names = append(names, NameFormPattern{
-			Text:            n.Text,
-			IsStropped:      false,
-			HasQuestionMark: false,
-			VarArg: VarArgPatternData{
-				IsVarArg:     false,
-				VarArgNames:  nil,
-				VarArgBounds: nil,
-			},
-		})
-	}
-	return CommandPattern{
-		Signature:   GetSignatureStringFromCommandId(id),
-		Names:       names,
-		NamedGroups: toNamedGroupPatterns(id.NamedParams),
-		CurlyArg:    toCurlyArg(id.CurlyParam),
-		ParenArgs:   toParenArgs(id.ParenParams),
-	}
 }

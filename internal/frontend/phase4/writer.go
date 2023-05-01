@@ -34,10 +34,6 @@ func (w *TextCodeWriter) WriteIndent(indent int) {
 	}
 }
 
-func (w *TextCodeWriter) write(text string) {
-	w.text += text
-}
-
 func (w *TextCodeWriter) WriteHeader(header string) {
 	w.write(header)
 }
@@ -76,4 +72,10 @@ func (w *TextCodeWriter) WriteTextBlock(text string) {
 
 func (w *TextCodeWriter) String() string {
 	return w.text
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (w *TextCodeWriter) write(text string) {
+	w.text += text
 }

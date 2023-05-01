@@ -36,11 +36,6 @@ func NewLexer(tokens []ast.Token) *Lexer {
 	}
 }
 
-type snapshot struct {
-	id         int
-	startIndex int
-}
-
 func (lex *Lexer) HasNext() bool {
 	return lex.index < len(lex.tokens)
 }
@@ -102,4 +97,11 @@ func (lex *Lexer) RollBack(id int) {
 	}
 	top := lex.snapshots.Pop()
 	lex.index = top.startIndex
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type snapshot struct {
+	id         int
+	startIndex int
 }

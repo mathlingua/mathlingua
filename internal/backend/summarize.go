@@ -73,6 +73,8 @@ func SummarizeStates(states *ast.StatesGroup) *StatesSummary {
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 func toCommandPatternFromId(id ast.IdItem) (CommandPattern, bool) {
 	switch root := id.Root.(type) {
 	case *ast.CommandId:

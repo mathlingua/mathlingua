@@ -22,15 +22,21 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func NewLexer(phase1Lexer frontend.ILexer, path ast.Path,
-	tracker frontend.IDiagnosticTracker) frontend.ILexer {
+func NewLexer(
+	phase1Lexer frontend.ILexer,
+	path ast.Path,
+	tracker frontend.IDiagnosticTracker,
+) frontend.ILexer {
 	return frontend.NewLexer(getTokens(phase1Lexer, path, tracker))
 }
 
 //////////////////////////////////////////////////////////////////
 
-func getTokens(phase1Lexer frontend.ILexer, path ast.Path,
-	tracker frontend.IDiagnosticTracker) []ast.Token {
+func getTokens(
+	phase1Lexer frontend.ILexer,
+	path ast.Path,
+	tracker frontend.IDiagnosticTracker,
+) []ast.Token {
 	tokens := make([]ast.Token, 0)
 	prevIndent := 0
 

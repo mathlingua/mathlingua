@@ -24,8 +24,11 @@ import (
 	"strings"
 )
 
-func Consolidate(path ast.Path, nodes []ast.FormulationNodeKind,
-	tracker frontend.IDiagnosticTracker) (
+func Consolidate(
+	path ast.Path,
+	nodes []ast.FormulationNodeKind,
+	tracker frontend.IDiagnosticTracker,
+) (
 	ast.FormulationNodeKind, bool) {
 	items := mlglib.NewStack[ShuntingYardItem[ast.FormulationNodeKind]]()
 	for _, item := range ShuntingYard(toShuntingYardItems(nodes)) {
@@ -59,8 +62,11 @@ var default_expression ast.ExpressionKind = &ast.NameForm{}
 var default_kind_type ast.KindKind = &ast.NameForm{}
 var default_signature *ast.Signature = &ast.Signature{}
 
-func toNode(path ast.Path, items mlglib.IStack[ShuntingYardItem[ast.FormulationNodeKind]],
-	tracker frontend.IDiagnosticTracker) ast.FormulationNodeKind {
+func toNode(
+	path ast.Path,
+	items mlglib.IStack[ShuntingYardItem[ast.FormulationNodeKind]],
+	tracker frontend.IDiagnosticTracker,
+) ast.FormulationNodeKind {
 	if items.IsEmpty() {
 		return nil
 	}
@@ -222,7 +228,8 @@ func toNode(path ast.Path, items mlglib.IStack[ShuntingYardItem[ast.FormulationN
 }
 
 func toShuntingYardItems(
-	nodes []ast.FormulationNodeKind) []ShuntingYardItem[ast.FormulationNodeKind] {
+	nodes []ast.FormulationNodeKind,
+) []ShuntingYardItem[ast.FormulationNodeKind] {
 	result := make([]ShuntingYardItem[ast.FormulationNodeKind], 0)
 	isOperators := make([]bool, len(nodes))
 	isSpecialOperators := make([]bool, len(nodes))
@@ -378,8 +385,11 @@ const (
 
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck
-func getGeneralOperatorType(prevType generalItemType, curType generalItemType,
-	nextType generalItemType) ItemType {
+func getGeneralOperatorType(
+	prevType generalItemType,
+	curType generalItemType,
+	nextType generalItemType,
+) ItemType {
 	switch {
 	case curType == none:
 		panic("Cannot get the operator type of 'none'")
@@ -451,7 +461,10 @@ const plus_minus_associativity = LeftAssociative
 const times_divides_associativity = LeftAssociative
 const caret_associativity = RightAssociative
 
-func getOperatorPrecedenceAssociativityByText(text string, itemType ItemType) (int, Associativity) {
+func getOperatorPrecedenceAssociativityByText(
+	text string,
+	itemType ItemType,
+) (int, Associativity) {
 	switch {
 	case itemType == PrefixOperatorType:
 		return other_special_prefix_precedence, other_special_prefix_associativity
@@ -494,8 +507,10 @@ func getOperatorPrecedenceAssociativityByText(text string, itemType ItemType) (i
 	}
 }
 
-func getPrecedenceAssociativity(node ast.FormulationNodeKind,
-	itemType ItemType) (int, Associativity) {
+func getPrecedenceAssociativity(
+	node ast.FormulationNodeKind,
+	itemType ItemType,
+) (int, Associativity) {
 	switch node := node.(type) {
 	case *ast.PrefixOperatorCallExpression:
 		// prefix operators
@@ -523,8 +538,14 @@ func getPrecedenceAssociativity(node ast.FormulationNodeKind,
 	}
 }
 
-func checkType[T any](path ast.Path, node ast.FormulationNodeKind, def T, typeName string,
-	tracker frontend.IDiagnosticTracker, fallbackPosition ast.Position) T {
+func checkType[T any](
+	path ast.Path,
+	node ast.FormulationNodeKind,
+	def T,
+	typeName string,
+	tracker frontend.IDiagnosticTracker,
+	fallbackPosition ast.Position,
+) T {
 	cast, ok := node.(T)
 	if ok {
 		return cast

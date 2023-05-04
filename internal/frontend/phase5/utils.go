@@ -29,7 +29,8 @@ func IdentifySections(
 	path ast.Path,
 	sections []phase4.Section,
 	tracker frontend.IDiagnosticTracker,
-	expected ...string) (map[string]phase4.Section, bool) {
+	expected ...string,
+) (map[string]phase4.Section, bool) {
 	// the pattern message to use in diagnostic messages
 	pattern := ""
 	for i, name := range expected {

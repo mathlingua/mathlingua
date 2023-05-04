@@ -184,8 +184,11 @@ func (w *Workspace) initialize(contents map[ast.Path]string) {
 	w.initializeTopLevelEntries()
 }
 
-func (w *Workspace) formulationLikeToString(path ast.Path,
-	node ast.MlgNodeKind, keyToFormulationStr map[int]string) {
+func (w *Workspace) formulationLikeToString(
+	path ast.Path,
+	node ast.MlgNodeKind,
+	keyToFormulationStr map[int]string,
+) {
 	if formulation, ok := node.(*ast.Formulation[ast.FormulationNodeKind]); ok {
 		key := formulation.GetCommonMetaData().Key
 		newText := w.formulationToWritten(path, *formulation)
@@ -205,8 +208,10 @@ func (w *Workspace) formulationLikeToString(path ast.Path,
 	}
 }
 
-func (w *Workspace) formulationToWritten(path ast.Path,
-	node ast.Formulation[ast.FormulationNodeKind]) string {
+func (w *Workspace) formulationToWritten(
+	path ast.Path,
+	node ast.Formulation[ast.FormulationNodeKind],
+) string {
 	return w.formulationNodeToWritten(path, node.Root)
 }
 
@@ -218,8 +223,10 @@ func (w *Workspace) aliasToWritten(path ast.Path, node ast.Alias) string {
 	return w.formulationNodeToWritten(path, node.Root)
 }
 
-func (w *Workspace) commandInfixToWritten(path ast.Path,
-	node *ast.CommandOperatorTarget) (string, bool) {
+func (w *Workspace) commandInfixToWritten(
+	path ast.Path,
+	node *ast.CommandOperatorTarget,
+) (string, bool) {
 	return w.commandToWritten(path, &node.Command)
 }
 
@@ -438,8 +445,11 @@ func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 	return ast.Debug(mlgNode, customToCode)
 }
 
-func (w *Workspace) updateFormulationStrings(path ast.Path, node phase4.Node,
-	keyToFormulationStr map[int]string) {
+func (w *Workspace) updateFormulationStrings(
+	path ast.Path,
+	node phase4.Node,
+	keyToFormulationStr map[int]string,
+) {
 	if arg, ok := node.(*phase4.Argument); ok {
 		if argData, ok := arg.Arg.(*phase4.FormulationArgumentData); ok {
 			key := argData.MetaData.Key

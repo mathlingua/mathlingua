@@ -23,8 +23,11 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func Parse(phase3Lexer frontend.ILexer, path ast.Path,
-	tracker frontend.IDiagnosticTracker) Document {
+func Parse(
+	phase3Lexer frontend.ILexer,
+	path ast.Path,
+	tracker frontend.IDiagnosticTracker,
+) Document {
 	parser := phase4Parser{
 		path:    path,
 		lexer:   phase3Lexer,

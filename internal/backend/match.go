@@ -293,8 +293,10 @@ func matchConditionalSetForm(node ast.MlgNodeKind, pattern ConditionalSetFormPat
 	}
 }
 
-func matchConditionalSetExpression(node ast.MlgNodeKind,
-	pattern ConditionalSetExpressionPattern) MatchResult {
+func matchConditionalSetExpression(
+	node ast.MlgNodeKind,
+	pattern ConditionalSetExpressionPattern,
+) MatchResult {
 	switch n := node.(type) {
 	case *ast.ConditionalSetExpression:
 		targetMatch := Match(n.Target, pattern.Target)
@@ -385,8 +387,10 @@ func matchPostfixOperator(node ast.MlgNodeKind, pattern PostfixOperatorFormPatte
 	}
 }
 
-func matchInfixOperatorCommand(node ast.MlgNodeKind,
-	pattern InfixCommandOperatorPattern) MatchResult {
+func matchInfixOperatorCommand(
+	node ast.MlgNodeKind,
+	pattern InfixCommandOperatorPattern,
+) MatchResult {
 	switch n := node.(type) {
 	case *ast.InfixCommandOperatorId:
 		lhsMatch := Match(n.Lhs, pattern.Lhs)
@@ -510,8 +514,10 @@ func matchOrdinal(node ast.MlgNodeKind, pattern OrdinalPattern) MatchResult {
 	}
 }
 
-func matchAllDirectionParamParamType(nodes []ast.DirectionParamParamKind,
-	patterns []DirectionParamParamPatternKind) MatchResult {
+func matchAllDirectionParamParamType(
+	nodes []ast.DirectionParamParamKind,
+	patterns []DirectionParamParamPatternKind,
+) MatchResult {
 	if len(nodes) != len(patterns) {
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeKind),
@@ -536,8 +542,10 @@ func matchAllDirectionParamParamType(nodes []ast.DirectionParamParamKind,
 	return result
 }
 
-func matchDirectionParamParamType(node ast.DirectionParamParamKind,
-	pattern DirectionParamParamPatternKind) MatchResult {
+func matchDirectionParamParamType(
+	node ast.DirectionParamParamKind,
+	pattern DirectionParamParamPatternKind,
+) MatchResult {
 	switch p := pattern.(type) {
 	case *NameFormPattern:
 		return matchName(node, *p)
@@ -742,8 +750,10 @@ func checkPatternsForVarArg(patterns []PatternKind) (error, bool) {
 	return nil, numWithVarArg == 1
 }
 
-func checkNameFormPatternsForVarArg(nodes []ast.ExpressionKind,
-	patterns []NameFormPattern) *MatchResult {
+func checkNameFormPatternsForVarArg(
+	nodes []ast.ExpressionKind,
+	patterns []NameFormPattern,
+) *MatchResult {
 	generalPatterns := make([]PatternKind, 0)
 	for _, pattern := range patterns {
 		generalPatterns = append(generalPatterns, &pattern)
@@ -774,8 +784,10 @@ func checkNameFormPatternsForVarArg(nodes []ast.ExpressionKind,
 	return nil
 }
 
-func checkExpressionFormPatternsForVarArg(nodes []ast.ExpressionKind,
-	patterns []FormPatternKind) *MatchResult {
+func checkExpressionFormPatternsForVarArg(
+	nodes []ast.ExpressionKind,
+	patterns []FormPatternKind,
+) *MatchResult {
 	generalPatterns := make([]PatternKind, 0)
 	for _, pattern := range patterns {
 		generalPatterns = append(generalPatterns, pattern)
@@ -906,9 +918,10 @@ func matchAllNames(nodes []ast.NameForm, patterns []NameFormPattern) MatchResult
 	return result
 }
 
-func matchAllExpressionsAsNames(nodes []ast.ExpressionKind,
-	patterns []NameFormPattern) MatchResult {
-
+func matchAllExpressionsAsNames(
+	nodes []ast.ExpressionKind,
+	patterns []NameFormPattern,
+) MatchResult {
 	res := checkNameFormPatternsForVarArg(nodes, patterns)
 	if res != nil {
 		return *res
@@ -938,8 +951,10 @@ func matchAllExpressionsAsNames(nodes []ast.ExpressionKind,
 	return result
 }
 
-func matchAllOptionalExpressionsToNames(nodes *[]ast.ExpressionKind,
-	patterns *[]NameFormPattern) MatchResult {
+func matchAllOptionalExpressionsToNames(
+	nodes *[]ast.ExpressionKind,
+	patterns *[]NameFormPattern,
+) MatchResult {
 	if nodes == nil {
 		zeroNodes := make([]ast.ExpressionKind, 0)
 		nodes = &zeroNodes
@@ -976,8 +991,10 @@ func matchAllOptionalExpressionsToNames(nodes *[]ast.ExpressionKind,
 	return result
 }
 
-func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionKind,
-	patterns *[]FormPatternKind) MatchResult {
+func matchAllOptionalExpressionsToForms(
+	nodes *[]ast.ExpressionKind,
+	patterns *[]FormPatternKind,
+) MatchResult {
 	if nodes == nil {
 		zeroNodes := make([]ast.ExpressionKind, 0)
 		nodes = &zeroNodes
@@ -1043,8 +1060,10 @@ func matchAllExpressions(nodes []ast.ExpressionKind, patterns []FormPatternKind)
 	return result
 }
 
-func matchAllOptionalStructuralForms(nodes *[]ast.StructuralFormKind,
-	patterns *[]FormPatternKind) MatchResult {
+func matchAllOptionalStructuralForms(
+	nodes *[]ast.StructuralFormKind,
+	patterns *[]FormPatternKind,
+) MatchResult {
 	if nodes == nil {
 		zeroNodes := make([]ast.StructuralFormKind, 0)
 		nodes = &zeroNodes
@@ -1058,8 +1077,10 @@ func matchAllOptionalStructuralForms(nodes *[]ast.StructuralFormKind,
 	return matchAllStructuralForms(*nodes, *patterns)
 }
 
-func matchAllStructuralForms(nodes []ast.StructuralFormKind,
-	patterns []FormPatternKind) MatchResult {
+func matchAllStructuralForms(
+	nodes []ast.StructuralFormKind,
+	patterns []FormPatternKind,
+) MatchResult {
 	if len(nodes) != len(patterns) {
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeKind),
@@ -1158,8 +1179,10 @@ func matchAllNamedParams(nodes *[]ast.NamedParam, patterns *[]NamedGroupPattern)
 	return result
 }
 
-func matchDirectionParams(nodes *[]ast.DirectionParamParamKind,
-	patterns *[]FormPatternKind) MatchResult {
+func matchDirectionParams(
+	nodes *[]ast.DirectionParamParamKind,
+	patterns *[]FormPatternKind,
+) MatchResult {
 	if nodes == nil {
 		zeroNodes := make([]ast.DirectionParamParamKind, 0)
 		nodes = &zeroNodes

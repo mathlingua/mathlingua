@@ -25,8 +25,12 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func Parse(doc phase4.Document, path ast.Path, tracker frontend.IDiagnosticTracker,
-	keyGen mlglib.IKeyGenerator) (ast.Document, bool) {
+func Parse(
+	doc phase4.Document,
+	path ast.Path,
+	tracker frontend.IDiagnosticTracker,
+	keyGen mlglib.IKeyGenerator,
+) (ast.Document, bool) {
 	p := parser{
 		path:    path,
 		tracker: tracker,

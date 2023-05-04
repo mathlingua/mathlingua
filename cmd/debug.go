@@ -54,7 +54,7 @@ var useFormParser bool
 var direct bool
 var showAst bool
 
-func noOp(node ast.MlgNodeType) (string, bool) {
+func noOp(node ast.MlgNodeKind) (string, bool) {
 	return "", false
 }
 

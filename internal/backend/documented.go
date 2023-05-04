@@ -24,7 +24,7 @@ import (
 	"strings"
 )
 
-type TextItemType interface {
+type TextItemKind interface {
 	TextItemType()
 }
 
@@ -46,20 +46,20 @@ type SubstitutionItem struct {
 
 type CalledSummary struct {
 	RawCalled    string
-	ParsedCalled []TextItemType
+	ParsedCalled []TextItemKind
 	Errors       []string
 }
 
 type WrittenSummary struct {
 	RawWritten    string
-	ParsedWritten []TextItemType
+	ParsedWritten []TextItemKind
 	Errors        []string
 }
 
 type WritingSummary struct {
-	Form          PatternType
+	Form          PatternKind
 	RawWritten    string
-	ParsedWritten []TextItemType
+	ParsedWritten []TextItemKind
 	Errors        []string
 }
 
@@ -173,9 +173,9 @@ func GetCalledSummaries(documented *ast.DocumentedSection) []CalledSummary {
 	return summaries
 }
 
-func ParseCalledWritten(text string) ([]TextItemType, error) {
+func ParseCalledWritten(text string) ([]TextItemKind, error) {
 	nameMatch := regexp.MustCompile(`[a-zA-Z0-9]+(\+|-|=)?\?`)
-	result := make([]TextItemType, 0)
+	result := make([]TextItemKind, 0)
 	for len(text) > 0 {
 		indices := nameMatch.FindStringIndex(text)
 		if indices == nil {

@@ -20,11 +20,11 @@ import (
 	"strings"
 )
 
-func noOp(node MlgNodeType) (string, bool) {
+func noOp(node MlgNodeKind) (string, bool) {
 	return "", false
 }
 
-func StructuralNodeToCode(item StructuralNodeType) string {
+func StructuralNodeToCode(item StructuralNodeKind) string {
 	return strings.Join(item.ToCode(0, false), "\n")
 }
 
@@ -644,7 +644,7 @@ func (db *debugBuilder) AppendString(str string, indent int, hasDot bool) {
 	db.lines = append(db.lines, buildIndent(indent, hasDot)+str)
 }
 
-func (db *debugBuilder) Append(node StructuralNodeType, indent int, hasDot bool) {
+func (db *debugBuilder) Append(node StructuralNodeKind, indent int, hasDot bool) {
 	db.lines = append(db.lines, node.ToCode(indent, hasDot)...)
 }
 
@@ -664,7 +664,7 @@ func (db *debugBuilder) AppendSpecs(specs []Spec, indent int, hasDot bool) {
 	}
 }
 
-func (db *debugBuilder) AppendClauses(clauses []ClauseType, indent int, hasDot bool) {
+func (db *debugBuilder) AppendClauses(clauses []ClauseKind, indent int, hasDot bool) {
 	for _, clause := range clauses {
 		db.Append(clause, indent, hasDot)
 	}
@@ -677,7 +677,7 @@ func (db *debugBuilder) AppendTextItems(items []TextItem, indent int, hasDot boo
 }
 
 func (db *debugBuilder) AppendFormulations(
-	items []Formulation[FormulationNodeType], indent int, hasDot bool) {
+	items []Formulation[FormulationNodeKind], indent int, hasDot bool) {
 	for _, item := range items {
 		db.Append(&item, indent, hasDot)
 	}
@@ -689,7 +689,7 @@ func (db *debugBuilder) AppendSpecsSection(name string, specs []Spec, indent int
 }
 
 func (db *debugBuilder) AppendClausesSection(
-	name string, clauses []ClauseType, indent int, hasDot bool) {
+	name string, clauses []ClauseKind, indent int, hasDot bool) {
 	db.AppendSection(name, indent, hasDot)
 	db.AppendClauses(clauses, indent+2, true)
 }

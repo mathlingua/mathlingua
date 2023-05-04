@@ -21,13 +21,13 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func PopulateScopes(node ast.MlgNodeType, tracker *frontend.DiagnosticTracker) {
+func PopulateScopes(node ast.MlgNodeKind, tracker *frontend.DiagnosticTracker) {
 	switch n := node.(type) {
 	case *ast.Document:
 		populateDocumentScopes(n)
 	}
 
-	node.ForEach(func(subNode ast.MlgNodeType) {
+	node.ForEach(func(subNode ast.MlgNodeKind) {
 		PopulateScopes(subNode, tracker)
 	})
 }
@@ -47,6 +47,6 @@ func populateDocumentScopes(doc *ast.Document) {
 	}
 }
 
-func getIdentifierInfos(clause ast.ClauseType) []ast.IdentifierInfo {
+func getIdentifierInfos(clause ast.ClauseKind) []ast.IdentifierInfo {
 	return []ast.IdentifierInfo{}
 }

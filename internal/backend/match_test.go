@@ -107,7 +107,7 @@ func runTest(t *testing.T, expText string, patternText string,
 	assert.Equal(t, stringMapToStringSlice(expectedVarArg), nodeMapToStringSlice(match.VarArgMapping))
 }
 
-func nodeMapToString(mapping map[string]ast.MlgNodeType) string {
+func nodeMapToString(mapping map[string]ast.MlgNodeKind) string {
 	keys := make([]string, 0)
 	sort.Strings(keys)
 
@@ -118,7 +118,7 @@ func nodeMapToString(mapping map[string]ast.MlgNodeType) string {
 	return result
 }
 
-func nodeMapToStringSlice(mapping map[string][]ast.MlgNodeType) string {
+func nodeMapToStringSlice(mapping map[string][]ast.MlgNodeKind) string {
 	keys := make([]string, 0)
 	sort.Strings(keys)
 
@@ -165,8 +165,8 @@ func stringMapToStringSlice(mapping map[string][]string) string {
 	return result
 }
 
-func parseNode(t *testing.T, exp string) ast.MlgNodeType {
-	return parseImpl(t, exp, func(text string) (ast.MlgNodeType, *frontend.DiagnosticTracker, bool) {
+func parseNode(t *testing.T, exp string) ast.MlgNodeKind {
+	return parseImpl(t, exp, func(text string) (ast.MlgNodeKind, *frontend.DiagnosticTracker, bool) {
 		tracker := frontend.NewDiagnosticTracker()
 		keyGen := mlglib.NewKeyGenerator()
 		root, ok := formulation.ParseExpression(ast.ToPath("/"), exp, ast.Position{
@@ -178,8 +178,8 @@ func parseNode(t *testing.T, exp string) ast.MlgNodeType {
 	})
 }
 
-func parseForm(t *testing.T, exp string) ast.StructuralFormType {
-	node := parseImpl(t, exp, func(text string) (ast.MlgNodeType, *frontend.DiagnosticTracker, bool) {
+func parseForm(t *testing.T, exp string) ast.StructuralFormKind {
+	node := parseImpl(t, exp, func(text string) (ast.MlgNodeKind, *frontend.DiagnosticTracker, bool) {
 		tracker := frontend.NewDiagnosticTracker()
 		keyGen := mlglib.NewKeyGenerator()
 		root, ok := formulation.ParseForm(ast.ToPath("/"), exp, ast.Position{
@@ -190,7 +190,7 @@ func parseForm(t *testing.T, exp string) ast.StructuralFormType {
 		return root, tracker, ok
 	})
 	switch n := node.(type) {
-	case ast.StructuralFormType:
+	case ast.StructuralFormKind:
 		return n
 	default:
 		t.Fatalf("Expected a StructuralFormType but found: %s", mlglib.PrettyPrint(n))
@@ -199,7 +199,7 @@ func parseForm(t *testing.T, exp string) ast.StructuralFormType {
 }
 
 func parseImpl(t *testing.T, exp string,
-	parse func(text string) (ast.MlgNodeType, *frontend.DiagnosticTracker, bool)) ast.MlgNodeType {
+	parse func(text string) (ast.MlgNodeKind, *frontend.DiagnosticTracker, bool)) ast.MlgNodeKind {
 	root, tracker, ok := parse(exp)
 	messages := ""
 	for _, diag := range tracker.Diagnostics() {

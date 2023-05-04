@@ -18,35 +18,35 @@ package ast
 
 type IdItem struct {
 	RawText        string
-	Root           FormulationNodeType
+	Root           FormulationNodeKind
 	Label          *string
 	CommonMetaData CommonMetaData
 }
 
 type Target struct {
 	RawText        string
-	Root           FormulationNodeType
+	Root           FormulationNodeKind
 	Label          *string
 	CommonMetaData CommonMetaData
 }
 
 type Spec struct {
 	RawText        string
-	Root           FormulationNodeType
+	Root           FormulationNodeKind
 	Label          *string
 	CommonMetaData CommonMetaData
 }
 
 type Alias struct {
 	RawText        string
-	Root           FormulationNodeType
+	Root           FormulationNodeKind
 	Label          *string
 	CommonMetaData CommonMetaData
 }
 
 func (*Alias) ProvidesType() {}
 
-type Formulation[T FormulationNodeType] struct {
+type Formulation[T FormulationNodeKind] struct {
 	RawText        string
 	Root           T
 	Label          *string
@@ -60,8 +60,8 @@ type TextItem struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type ClauseType interface {
-	StructuralNodeType
+type ClauseKind interface {
+	StructuralNodeKind
 	ClauseType()
 }
 
@@ -106,7 +106,7 @@ type AllOfGroup struct {
 }
 
 type AllOfSection struct {
-	Clauses        []ClauseType
+	Clauses        []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -120,7 +120,7 @@ type NotGroup struct {
 }
 
 type NotSection struct {
-	Clause         ClauseType
+	Clause         ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -134,7 +134,7 @@ type AnyOfGroup struct {
 }
 
 type AnyOfSection struct {
-	Clauses        []ClauseType
+	Clauses        []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -148,7 +148,7 @@ type OneOfGroup struct {
 }
 
 type OneOfSection struct {
-	Clauses        []ClauseType
+	Clauses        []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -178,7 +178,7 @@ type WhereSection struct {
 }
 
 type SuchThatSection struct {
-	Clauses        []ClauseType
+	Clauses        []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -225,7 +225,7 @@ type ForAllSection struct {
 }
 
 type ThenSection struct {
-	Clauses        []ClauseType
+	Clauses        []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -243,7 +243,7 @@ type IfGroup struct {
 }
 
 type IfSection struct {
-	Clauses        []ClauseType
+	Clauses        []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -261,14 +261,14 @@ type IffGroup struct {
 }
 
 type IffSection struct {
-	Clauses        []ClauseType
+	Clauses        []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type WhenSection struct {
-	When           []ClauseType
+	When           []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -299,7 +299,7 @@ type PiecewiseSection struct {
 }
 
 type ElseSection struct {
-	Items          []ClauseType
+	Items          []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -318,8 +318,8 @@ type WhenGroup struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type ProvidesType interface {
-	StructuralNodeType
+type ProvidesKind interface {
+	StructuralNodeKind
 	ProvidesType()
 }
 
@@ -376,7 +376,7 @@ type ConnectionViewableSection struct {
 }
 
 type ConnectionThroughSection struct {
-	Through        Formulation[FormulationNodeType]
+	Through        Formulation[FormulationNodeKind]
 	CommonMetaData CommonMetaData
 }
 
@@ -415,7 +415,7 @@ type OnSection struct {
 }
 
 type SpecifySection struct {
-	Specify        []ClauseType
+	Specify        []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -460,8 +460,8 @@ type WritingAsSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type DocumentedType interface {
-	StructuralNodeType
+type DocumentedKind interface {
+	StructuralNodeKind
 	DocumentedType()
 }
 
@@ -558,12 +558,12 @@ type NoteGroup struct {
 }
 
 type NoteSection struct {
-	Note           []NoteType
+	Note           []NoteKind
 	CommonMetaData CommonMetaData
 }
 
-type NoteType interface {
-	StructuralNodeType
+type NoteKind interface {
+	StructuralNodeKind
 	NoteType()
 }
 
@@ -586,7 +586,7 @@ type DescribingSection struct {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type ProvidesSection struct {
-	Provides       []ProvidesType
+	Provides       []ProvidesKind
 	CommonMetaData CommonMetaData
 }
 
@@ -600,21 +600,21 @@ type AliasesSection struct {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type DocumentedSection struct {
-	Documented     []DocumentedType
+	Documented     []DocumentedKind
 	CommonMetaData CommonMetaData
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type JustifiedSection struct {
-	Justified      []JustifiedType
+	Justified      []JustifiedKind
 	CommonMetaData CommonMetaData
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type JustifiedType interface {
-	StructuralNodeType
+type JustifiedKind interface {
+	StructuralNodeKind
 	JustifiedType()
 }
 
@@ -710,12 +710,12 @@ type UsingSection struct {
 }
 
 type ExtendsSection struct {
-	Extends        []ClauseType
+	Extends        []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
 type SatisfiesSection struct {
-	Satisfies      []ClauseType
+	Satisfies      []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -770,17 +770,17 @@ type DefinesSection struct {
 }
 
 type GeneralizesSection struct {
-	Generalizes    []Formulation[FormulationNodeType]
+	Generalizes    []Formulation[FormulationNodeKind]
 	CommonMetaData CommonMetaData
 }
 
 type MeansSection struct {
-	Means          ClauseType
+	Means          ClauseKind
 	CommonMetaData CommonMetaData
 }
 
 type SpecifiesSection struct {
-	Specifies      []ClauseType
+	Specifies      []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -821,7 +821,7 @@ type StatesSection struct {
 }
 
 type ThatSection struct {
-	That           []ClauseType
+	That           []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -995,8 +995,8 @@ type TopicSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type SpecifyType interface {
-	StructuralNodeType
+type SpecifyKind interface {
+	StructuralNodeKind
 	SpecifyType()
 }
 
@@ -1081,7 +1081,7 @@ type SpecifyGroup struct {
 }
 
 type TopLevelSpecifySection struct {
-	Specify        []SpecifyType
+	Specify        []SpecifyKind
 	CommonMetaData CommonMetaData
 }
 
@@ -1097,12 +1097,12 @@ type PersonGroup struct {
 }
 
 type PersonSection struct {
-	Items          []PersonType
+	Items          []PersonKind
 	CommonMetaData CommonMetaData
 }
 
-type PersonType interface {
-	StructuralNodeType
+type PersonKind interface {
+	StructuralNodeKind
 	PersonType()
 }
 
@@ -1145,7 +1145,7 @@ type ResourceGroup struct {
 }
 
 type ResourceSection struct {
-	Items          []ResourceType
+	Items          []ResourceKind
 	CommonMetaData CommonMetaData
 }
 
@@ -1165,8 +1165,8 @@ func (*MonthGroup) ResourceType()       {}
 func (*YearGroup) ResourceType()        {}
 func (*DescriptionGroup) ResourceType() {}
 
-type ResourceType interface {
-	StructuralNodeType
+type ResourceKind interface {
+	StructuralNodeKind
 	ResourceType()
 }
 
@@ -1327,8 +1327,8 @@ type TextBlockItem struct {
 	CommonMetaData CommonMetaData
 }
 
-type TopLevelItemType interface {
-	StructuralNodeType
+type TopLevelItemKind interface {
+	StructuralNodeKind
 	TopLevelItemType()
 }
 
@@ -1346,6 +1346,6 @@ func (*ResourceGroup) TopLevelItemType()   {}
 func (*ProofGroup) TopLevelItemType()      {}
 
 type Document struct {
-	Items          []TopLevelItemType
+	Items          []TopLevelItemKind
 	CommonMetaData CommonMetaData
 }

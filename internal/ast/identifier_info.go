@@ -46,7 +46,7 @@ func (ii *IdentifierInfo) Clone() *IdentifierInfo {
 
 type SpecInfo struct {
 	Name   string
-	Target ExpressionType
+	Target ExpressionKind
 }
 
 func (si *SpecInfo) Clone() *SpecInfo {

@@ -16,8 +16,8 @@
 
 package ast
 
-type StructuralNodeType interface {
-	MlgNodeType
+type StructuralNodeKind interface {
+	MlgNodeKind
 	StructuralNodeType()
 	ToCode(indent int, hasDot bool) []string
 }

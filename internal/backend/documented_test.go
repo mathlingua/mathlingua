@@ -26,7 +26,7 @@ func TestXxx(t *testing.T) {
 	text := "text1 A? text2 x+? text3 X?{abc...} text4 X+?{...xyz...} text5"
 	actual, err := ParseCalledWritten(text)
 	assert.Nil(t, err)
-	expected := []TextItemType{
+	expected := []TextItemKind{
 		&StringItem{
 			Text: "text1 ",
 		},

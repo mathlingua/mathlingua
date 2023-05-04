@@ -24,7 +24,7 @@ import (
 
 // A pattern describes the shape of inputs to a Defines, Describes, States
 // provides, expression alias, or spec alias.
-type PatternType interface {
+type PatternKind interface {
 	PatternType()
 	GetVarArgData() VarArgPatternData
 }
@@ -52,7 +52,7 @@ func (*AliasPattern) PatternType()     {}
 
 type NameColonEqualsPatternPattern struct {
 	Lhs NameFormPattern
-	Rhs PatternType
+	Rhs PatternKind
 }
 
 type FunctionColonEqualsNamePattern struct {
@@ -60,8 +60,8 @@ type FunctionColonEqualsNamePattern struct {
 	Rhs NameFormPattern
 }
 
-type FormPatternType interface {
-	PatternType
+type FormPatternKind interface {
+	PatternKind
 	FormPatternType()
 }
 
@@ -82,11 +82,11 @@ type NameFormPattern struct {
 
 type FunctionFormPattern struct {
 	Target NameFormPattern
-	Params []FormPatternType
+	Params []FormPatternKind
 	VarArg VarArgPatternData
 }
 
-type LiteralFormPatternType interface {
+type LiteralFormPatternKind interface {
 	LiteralFormPatternType()
 }
 
@@ -96,11 +96,11 @@ func (*TupleFormPattern) LiteralFormPatternType()          {}
 func (*ConditionalSetFormPattern) LiteralFormPatternType() {}
 
 type OrdinalPattern struct {
-	Target LiteralFormPatternType
+	Target LiteralFormPatternKind
 	Params []NameFormPattern
 }
 
-type DirectionParamParamPatternType interface {
+type DirectionParamParamPatternKind interface {
 	DirectionParamParamPatternType()
 }
 
@@ -110,34 +110,34 @@ func (*OrdinalPattern) DirectionParamParamPatternType()      {}
 
 type InfixOperatorFormPattern struct {
 	Operator NameFormPattern
-	Lhs      FormPatternType
-	Rhs      FormPatternType
+	Lhs      FormPatternKind
+	Rhs      FormPatternKind
 }
 
 type PrefixOperatorFormPattern struct {
 	Operator NameFormPattern
-	Param    FormPatternType
+	Param    FormPatternKind
 }
 
 type PostfixOperatorFormPattern struct {
 	Operator NameFormPattern
-	Param    FormPatternType
+	Param    FormPatternKind
 }
 
 type TupleFormPattern struct {
-	Params []FormPatternType
+	Params []FormPatternKind
 	VarArg VarArgPatternData
 }
 
 type ConditionalSetFormPattern struct {
-	Target    FormPatternType
+	Target    FormPatternKind
 	Condition FunctionFormPattern
 	VarArg    VarArgPatternData
 }
 
 type ConditionalSetExpressionPattern struct {
-	Target     FormPatternType
-	Conditions []FormPatternType
+	Target     FormPatternKind
+	Conditions []FormPatternKind
 	VarArg     VarArgPatternData
 }
 
@@ -148,9 +148,9 @@ type VarArgPatternData struct {
 }
 
 type InfixCommandOperatorPattern struct {
-	Lhs      FormPatternType
+	Lhs      FormPatternKind
 	Operator CommandPattern
-	Rhs      FormPatternType
+	Rhs      FormPatternKind
 }
 
 type InfixCommandTargetPattern struct {
@@ -166,18 +166,18 @@ type CommandPattern struct {
 }
 
 type CurlyPattern struct {
-	SquareArgs *[]FormPatternType
-	CurlyArgs  *[]FormPatternType
+	SquareArgs *[]FormPatternKind
+	CurlyArgs  *[]FormPatternKind
 	Direction  *DirectionPattern
 }
 
 type DirectionPattern struct {
 	Name       *NameFormPattern
-	SquareArgs []DirectionParamParamPatternType
+	SquareArgs []DirectionParamParamPatternKind
 }
 
 type ChainExpressionPattern struct {
-	Parts []FormPatternType
+	Parts []FormPatternKind
 }
 
 type NamedGroupPattern struct {
@@ -186,35 +186,35 @@ type NamedGroupPattern struct {
 }
 
 type SpecAliasPattern struct {
-	Lhs  PatternType
+	Lhs  PatternKind
 	Name NameFormPattern
-	Rhs  PatternType
+	Rhs  PatternKind
 }
 
 type AliasPattern struct {
-	Lhs PatternType
-	Rhs PatternType
+	Lhs PatternKind
+	Rhs PatternKind
 }
 
-func ToPatternFromTarget(item ast.Target) PatternType {
+func ToPatternFromTarget(item ast.Target) PatternKind {
 	switch n := item.Root.(type) {
-	case ast.StructuralFormType:
+	case ast.StructuralFormKind:
 		return ToFormPattern(n)
 	default:
 		return nil
 	}
 }
 
-func ToPattern(exp ast.ExpressionType) PatternType {
+func ToPattern(exp ast.ExpressionKind) PatternKind {
 	switch n := exp.(type) {
-	case ast.StructuralFormType:
+	case ast.StructuralFormKind:
 		return ToFormPattern(n)
 	default:
 		return nil
 	}
 }
 
-func ToFormPattern(item ast.StructuralFormType) FormPatternType {
+func ToFormPattern(item ast.StructuralFormKind) FormPatternKind {
 	switch n := item.(type) {
 	case *ast.NameForm:
 		return ToNameFormPattern(*n)
@@ -235,7 +235,7 @@ func ToFormPattern(item ast.StructuralFormType) FormPatternType {
 	}
 }
 
-func ToDirectionParamParamPatternType(item ast.StructuralFormType) DirectionParamParamPatternType {
+func ToDirectionParamParamPatternType(item ast.StructuralFormKind) DirectionParamParamPatternKind {
 	switch n := item.(type) {
 	case *ast.NameForm:
 		return ToNameFormPattern(*n)
@@ -390,8 +390,8 @@ func ToCommandPattern(id ast.CommandId) CommandPattern {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func toFormPatterns(items []ast.StructuralFormType) []FormPatternType {
-	patterns := make([]FormPatternType, 0)
+func toFormPatterns(items []ast.StructuralFormKind) []FormPatternKind {
+	patterns := make([]FormPatternKind, 0)
 	for _, item := range items {
 		patterns = append(patterns, ToFormPattern(item))
 	}
@@ -424,16 +424,16 @@ func toCurlyArg(curlyParam *ast.CurlyParam) *CurlyPattern {
 		return nil
 	}
 
-	var squareArgs *[]FormPatternType
+	var squareArgs *[]FormPatternKind
 	if curlyParam.SquareParams != nil {
 		patterns := toFormPatterns(*curlyParam.SquareParams)
 		squareArgs = &patterns
 	}
 	var direction *DirectionPattern
 	if curlyParam.Direction != nil {
-		squareArgs := make([]DirectionParamParamPatternType, 0)
+		squareArgs := make([]DirectionParamParamPatternKind, 0)
 		for _, param := range curlyParam.Direction.SquareParams {
-			if form, ok := param.(ast.StructuralFormType); ok {
+			if form, ok := param.(ast.StructuralFormKind); ok {
 				squareArgs = append(squareArgs, ToDirectionParamParamPatternType(form))
 			} else {
 				panic(fmt.Sprintf("Cannot convert direction square param to a pattern: %s",

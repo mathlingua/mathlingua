@@ -72,7 +72,7 @@ func (p *phase4Parser) skipAheadPast(end ast.TokenType, unterminatedMessage stri
 
 func (p *phase4Parser) document() Document {
 	start := p.lexer.Position()
-	nodes := make([]TopLevelNodeType, 0)
+	nodes := make([]TopLevelNodeKind, 0)
 	for p.lexer.HasNext() {
 		peek := p.lexer.Peek()
 		if peek.Type == ast.Id {
@@ -229,7 +229,7 @@ func (p *phase4Parser) argument() (Argument, bool) {
 	return Argument{}, false
 }
 
-func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
+func (p *phase4Parser) argumentData() (ArgumentDataKind, bool) {
 	if p.has(ast.ArgumentText) {
 		arg := p.lexer.Next()
 		return &ArgumentTextArgumentData{

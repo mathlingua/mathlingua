@@ -21,7 +21,7 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func Summarize(node ast.TopLevelItemType, tracker *frontend.DiagnosticTracker) (SummaryType, bool) {
+func Summarize(node ast.TopLevelItemKind, tracker *frontend.DiagnosticTracker) (SummaryKind, bool) {
 	switch entry := node.(type) {
 	case *ast.DescribesGroup:
 		return SummarizeDescribes(entry), true

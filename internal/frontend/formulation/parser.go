@@ -27,7 +27,7 @@ import (
 
 func ParseExpression(path ast.Path, text string, start ast.Position,
 	tracker *frontend.DiagnosticTracker,
-	keyGen *mlglib.KeyGenerator) (ast.FormulationNodeType, bool) {
+	keyGen *mlglib.KeyGenerator) (ast.FormulationNodeKind, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(path, text, tracker)
 	parser := formulationParser{
@@ -43,7 +43,7 @@ func ParseExpression(path ast.Path, text string, start ast.Position,
 }
 
 func ParseForm(path ast.Path, text string, start ast.Position, tracker *frontend.DiagnosticTracker,
-	keyGen *mlglib.KeyGenerator) (ast.FormulationNodeType, bool) {
+	keyGen *mlglib.KeyGenerator) (ast.FormulationNodeKind, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(path, text, tracker)
 	parser := formulationParser{
@@ -59,7 +59,7 @@ func ParseForm(path ast.Path, text string, start ast.Position, tracker *frontend
 }
 
 func ParseId(path ast.Path, text string, start ast.Position, tracker *frontend.DiagnosticTracker,
-	keyGen *mlglib.KeyGenerator) (ast.IdType, bool) {
+	keyGen *mlglib.KeyGenerator) (ast.IdKind, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(path, text, tracker)
 	parser := formulationParser{
@@ -161,14 +161,14 @@ func (fp *formulationParser) expect(tokenType ast.TokenType) (ast.Token, bool) {
 
 ///////////////////////////////////// expressions //////////////////////////////////////////////////
 
-func (fp *formulationParser) parenArgs() (*[]ast.ExpressionType, bool) {
+func (fp *formulationParser) parenArgs() (*[]ast.ExpressionKind, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LParen)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return nil, false
 	}
-	args := make([]ast.ExpressionType, 0)
+	args := make([]ast.ExpressionKind, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RParen) {
 			break
@@ -190,14 +190,14 @@ func (fp *formulationParser) parenArgs() (*[]ast.ExpressionType, bool) {
 	return &args, true
 }
 
-func (fp *formulationParser) curlyArgs() (*[]ast.ExpressionType, bool) {
+func (fp *formulationParser) curlyArgs() (*[]ast.ExpressionKind, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LCurly)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return nil, false
 	}
-	args := make([]ast.ExpressionType, 0)
+	args := make([]ast.ExpressionKind, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RCurly) {
 			break
@@ -388,7 +388,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 	}
 }
 
-func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionType, bool) {
+func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionKind, bool) {
 	if set, ok := fp.conditionalSetExpression(); ok {
 		return &set, ok
 	}
@@ -426,7 +426,7 @@ func (fp *formulationParser) functionLiteralExpression() (ast.FunctionLiteralExp
 		fp.lexer.Commit(id)
 		return ast.FunctionLiteralExpression{
 			Lhs: ast.TupleForm{
-				Params: []ast.StructuralFormType{
+				Params: []ast.StructuralFormKind{
 					&name,
 				},
 				VarArg: ast.VarArgData{
@@ -465,9 +465,9 @@ func (fp *formulationParser) functionLiteralExpression() (ast.FunctionLiteralExp
 	}, true
 }
 
-func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bool) {
+func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionKind, bool) {
 	start := fp.lexer.Position()
-	items := make([]ast.ExpressionType, 0)
+	items := make([]ast.ExpressionKind, 0)
 	for fp.lexer.HasNext() {
 		if len(items) > 0 {
 			if fp.has(ast.Comma) {
@@ -534,8 +534,8 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 				"A multiplexed operator can only be used if exactly one operator has minimum precedence")
 			return nil, false
 		} else {
-			lhs := make([]ast.ExpressionType, 0)
-			rhs := make([]ast.ExpressionType, 0)
+			lhs := make([]ast.ExpressionKind, 0)
+			rhs := make([]ast.ExpressionKind, 0)
 			i := 0
 			for i < minPrecIndexMinIndex {
 				lhs = append(lhs, items[i])
@@ -568,8 +568,8 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 		fp.error("multiple comma separated expressions is not supported in this context")
 		return nil, false
 	} else if isIndex >= 0 {
-		lhs := make([]ast.ExpressionType, 0)
-		rhs := make([]ast.KindType, 0)
+		lhs := make([]ast.ExpressionKind, 0)
+		rhs := make([]ast.KindKind, 0)
 		i := 0
 		for i < isIndex {
 			lhs = append(lhs, items[i])
@@ -580,7 +580,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 		rhs = append(rhs, isExp.Rhs...)
 		i = isIndex + 1
 		for i < len(items) {
-			rhs = append(rhs, items[i].(ast.KindType))
+			rhs = append(rhs, items[i].(ast.KindKind))
 			i++
 		}
 		return &ast.IsExpression{
@@ -592,8 +592,8 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 			},
 		}, true
 	} else if extendsIndex >= 0 {
-		lhs := make([]ast.ExpressionType, 0)
-		rhs := make([]ast.KindType, 0)
+		lhs := make([]ast.ExpressionKind, 0)
+		rhs := make([]ast.KindKind, 0)
 		i := 0
 		for i < extendsIndex {
 			lhs = append(lhs, items[i])
@@ -604,7 +604,7 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 		rhs = append(rhs, isExp.Rhs...)
 		i = extendsIndex + 1
 		for i < len(items) {
-			rhs = append(rhs, items[i].(ast.KindType))
+			rhs = append(rhs, items[i].(ast.KindKind))
 			i++
 		}
 		return &ast.ExtendsExpression{
@@ -637,10 +637,10 @@ func max(x, y int) int {
 }
 
 func (fp *formulationParser) expressionType(
-	additionalTerminators ...ast.TokenType) (ast.ExpressionType, bool) {
+	additionalTerminators ...ast.TokenType) (ast.ExpressionKind, bool) {
 	if exp, ok := fp.pseudoExpression(additionalTerminators...); ok {
 		res, consolidateOk := Consolidate(fp.path, exp.Children, fp.tracker)
-		if resAsExp, resAsExpOk := res.(ast.ExpressionType); resAsExpOk {
+		if resAsExp, resAsExpOk := res.(ast.ExpressionKind); resAsExpOk {
 			return resAsExp, consolidateOk
 		} else {
 			fp.error("Expected an Expression")
@@ -673,7 +673,7 @@ func (fp *formulationParser) pseudoExpression(
 	}
 
 	start := fp.lexer.Position()
-	children := make([]ast.FormulationNodeType, 0)
+	children := make([]ast.FormulationNodeKind, 0)
 	prevOffset := -1
 	for fp.lexer.HasNext() {
 		if fp.lexer.HasNext() && fp.lexer.Peek().Position.Offset == prevOffset {
@@ -781,7 +781,7 @@ func (fp *formulationParser) metaKinds() (ast.MetaKinds, bool) {
 	}, true
 }
 
-func (fp *formulationParser) functionCallExpressionTarget() (ast.ExpressionType, bool) {
+func (fp *formulationParser) functionCallExpressionTarget() (ast.ExpressionKind, bool) {
 	if name, ok := fp.nameForm(); ok {
 		return &name, ok
 	}
@@ -804,7 +804,7 @@ func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpressio
 		return ast.FunctionCallExpression{}, false
 	}
 
-	args := make([]ast.ExpressionType, 0)
+	args := make([]ast.ExpressionKind, 0)
 	fp.expect(ast.LParen)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RParen) {
@@ -854,7 +854,7 @@ func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
 		fp.lexer.RollBack(id)
 		return ast.TupleExpression{}, false
 	}
-	args := make([]ast.ExpressionType, 0)
+	args := make([]ast.ExpressionKind, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RParen) {
 			break
@@ -909,7 +909,7 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 	}
 
 	fp.expect(ast.Bar)
-	conditions := make([]ast.ExpressionType, 0)
+	conditions := make([]ast.ExpressionKind, 0)
 	for fp.lexer.HasNext() {
 		condition, ok := fp.expressionType()
 		if ok {
@@ -975,7 +975,7 @@ func (fp *formulationParser) chainName() (ast.NameForm, bool) {
 	return ast.NameForm{}, false
 }
 
-func (fp *formulationParser) chainExpressionPart() (ast.ExpressionType, bool) {
+func (fp *formulationParser) chainExpressionPart() (ast.ExpressionKind, bool) {
 	if fun, ok := fp.functionCallExpression(); ok {
 		return &fun, ok
 	}
@@ -1019,7 +1019,7 @@ func (fp *formulationParser) chainExpression(
 	hasTrailingOperator := false
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-	parts := make([]ast.ExpressionType, 0)
+	parts := make([]ast.ExpressionKind, 0)
 	for fp.lexer.HasNext() {
 		if allowTrailingOperator && len(parts) > 0 {
 			opName, ok := fp.operatorAsNameForm()
@@ -1071,7 +1071,7 @@ func (fp *formulationParser) ordinalCallExpression() (ast.OrdinalCallExpression,
 		return ast.OrdinalCallExpression{}, false
 	}
 
-	args := make([]ast.ExpressionType, 0)
+	args := make([]ast.ExpressionKind, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RCurly) {
 			break
@@ -1216,7 +1216,7 @@ func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 	return ast.PseudoTokenNode{}, false
 }
 
-func (fp *formulationParser) operatorType() (ast.OperatorType, bool) {
+func (fp *formulationParser) operatorType() (ast.OperatorKind, bool) {
 	if enclosed, ok := fp.enclosedNonCommandOperatorTarget(); ok {
 		return &enclosed, ok
 	}
@@ -1273,7 +1273,7 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 
-	var target ast.ExpressionType
+	var target ast.ExpressionKind
 	if opName, ok := fp.operatorAsNameForm(); ok {
 		target = &opName
 	}
@@ -1449,7 +1449,7 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 
 /////////////////////////// forms ///////////////////////////////////////
 
-func (fp *formulationParser) form() (ast.FormulationNodeType, bool) {
+func (fp *formulationParser) form() (ast.FormulationNodeKind, bool) {
 	// The lint checker incorrectly reports `start` is not used even though it is.
 	// nolint:typecheck
 	start := fp.lexer.Position()
@@ -1508,14 +1508,14 @@ func (fp *formulationParser) form() (ast.FormulationNodeType, bool) {
 	}
 }
 
-func (fp *formulationParser) parenParams() (*[]ast.StructuralFormType, bool) {
+func (fp *formulationParser) parenParams() (*[]ast.StructuralFormKind, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LParen)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return nil, false
 	}
-	args := make([]ast.StructuralFormType, 0)
+	args := make([]ast.StructuralFormKind, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RParen) {
 			break
@@ -1566,7 +1566,7 @@ func (fp *formulationParser) nameParams() ([]ast.NameForm, bool) {
 	return names, true
 }
 
-func (fp *formulationParser) directionParamParamType() (ast.DirectionParamParamType, bool) {
+func (fp *formulationParser) directionParamParamType() (ast.DirectionParamParamKind, bool) {
 	if call, ok := fp.ordinalCallExpression(); ok {
 		return &call, true
 	}
@@ -1582,14 +1582,14 @@ func (fp *formulationParser) directionParamParamType() (ast.DirectionParamParamT
 	return nil, false
 }
 
-func (fp *formulationParser) squareDirectionalParams() (*[]ast.DirectionParamParamType, bool) {
+func (fp *formulationParser) squareDirectionalParams() (*[]ast.DirectionParamParamKind, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LSquare)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return nil, false
 	}
-	args := make([]ast.DirectionParamParamType, 0)
+	args := make([]ast.DirectionParamParamKind, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RSquare) {
 			break
@@ -1638,14 +1638,14 @@ func (fp *formulationParser) directionParam() (*ast.DirectionalParam, bool) {
 	}, true
 }
 
-func (fp *formulationParser) squareParams() (*[]ast.StructuralFormType, bool) {
+func (fp *formulationParser) squareParams() (*[]ast.StructuralFormKind, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LSquare)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return nil, false
 	}
-	args := make([]ast.StructuralFormType, 0)
+	args := make([]ast.StructuralFormKind, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RSquare) {
 			break
@@ -1667,14 +1667,14 @@ func (fp *formulationParser) squareParams() (*[]ast.StructuralFormType, bool) {
 	return &args, true
 }
 
-func (fp *formulationParser) curlyParams() (*[]ast.StructuralFormType, bool) {
+func (fp *formulationParser) curlyParams() (*[]ast.StructuralFormKind, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LCurly)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return nil, false
 	}
-	args := make([]ast.StructuralFormType, 0)
+	args := make([]ast.StructuralFormKind, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RCurly) {
 			break
@@ -1696,7 +1696,7 @@ func (fp *formulationParser) curlyParams() (*[]ast.StructuralFormType, bool) {
 	return &args, true
 }
 
-func (fp *formulationParser) nameFunctionTupleOrSet() (ast.StructuralFormType, bool) {
+func (fp *formulationParser) nameFunctionTupleOrSet() (ast.StructuralFormKind, bool) {
 	if fun, ok := fp.functionForm(); ok {
 		return &fun, true
 	}
@@ -1720,7 +1720,7 @@ func (fp *formulationParser) nameFunctionTupleOrSet() (ast.StructuralFormType, b
 	return nil, false
 }
 
-func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool) {
+func (fp *formulationParser) structuralFormType() (ast.StructuralFormKind, bool) {
 	if op, ok := fp.infixOperatorForm(); ok {
 		return &op, ok
 	}
@@ -1865,7 +1865,7 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 		return ast.FunctionForm{}, false
 	}
 
-	params := make([]ast.StructuralFormType, 0)
+	params := make([]ast.StructuralFormKind, 0)
 	fp.expect(ast.LParen)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RParen) {
@@ -1907,7 +1907,7 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 		fp.lexer.RollBack(id)
 		return ast.TupleForm{}, false
 	}
-	params := make([]ast.StructuralFormType, 0)
+	params := make([]ast.StructuralFormKind, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RParen) {
 			break
@@ -1979,7 +1979,7 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 	}, true
 }
 
-func (fp *formulationParser) literalFormType() (ast.LiteralFormType, bool) {
+func (fp *formulationParser) literalFormType() (ast.LiteralFormKind, bool) {
 	if name, ok := fp.nameForm(); ok {
 		return &name, ok
 	}
@@ -2001,7 +2001,7 @@ func (fp *formulationParser) literalFormType() (ast.LiteralFormType, bool) {
 
 ////////////////////////////////////////// id forms ////////////////////////////////////////////////
 
-func (fp *formulationParser) idType() (ast.IdType, bool) {
+func (fp *formulationParser) idType() (ast.IdKind, bool) {
 	if op, ok := fp.infixCommandOperatorId(); ok {
 		return &op, ok
 	} else if op, ok := fp.infixOperatorId(); ok {
@@ -2204,7 +2204,7 @@ func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
 func (fp *formulationParser) curlyParam() (ast.CurlyParam, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-	var squareParams *[]ast.StructuralFormType
+	var squareParams *[]ast.StructuralFormKind
 	if square, squareOk := fp.squareParams(); squareOk {
 		squareParams = square
 	}
@@ -2232,14 +2232,14 @@ func (fp *formulationParser) curlyParam() (ast.CurlyParam, bool) {
 func (fp *formulationParser) curlyArg() (ast.CurlyArg, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-	var curlyArgs *[]ast.ExpressionType
+	var curlyArgs *[]ast.ExpressionKind
 	if condSet, ok := fp.conditionalSetExpression(); ok {
-		tmpCurly := make([]ast.ExpressionType, 0)
+		tmpCurly := make([]ast.ExpressionKind, 0)
 		tmpCurly = append(tmpCurly, &condSet)
 		curlyArgs = &tmpCurly
 	}
 	if curlyArgs == nil {
-		var squareArgs *[]ast.StructuralFormType
+		var squareArgs *[]ast.StructuralFormKind
 		squarePosition := fp.lexer.Position()
 		if square, squareOk := fp.squareParams(); squareOk {
 			squareArgs = square
@@ -2253,7 +2253,7 @@ func (fp *formulationParser) curlyArg() (ast.CurlyArg, bool) {
 			if realCurlyArgs == nil || len(*realCurlyArgs) != 1 {
 				fp.errorAt("If square args are used exactly one argument must be specified", squarePosition)
 			} else {
-				tmpCurlyArgs := make([]ast.ExpressionType, 0)
+				tmpCurlyArgs := make([]ast.ExpressionKind, 0)
 				first := (*realCurlyArgs)[0]
 				tmpCurlyArgs = append(tmpCurlyArgs, &ast.FunctionLiteralExpression{
 					Lhs: ast.TupleForm{

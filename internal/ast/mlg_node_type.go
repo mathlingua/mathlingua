@@ -21,10 +21,10 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-type MlgNodeType interface {
+type MlgNodeKind interface {
 	MlgNodeType()
 	GetCommonMetaData() *CommonMetaData
-	ForEach(fn func(subNode MlgNodeType))
+	ForEach(fn func(subNode MlgNodeKind))
 }
 
 type CommonMetaData struct {
@@ -150,11 +150,11 @@ func (*DirectionalParam) MlgNodeType()                       {}
 
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck
-func Debug(node MlgNodeType, fn func(node MlgNodeType) (string, bool)) string {
+func Debug(node MlgNodeKind, fn func(node MlgNodeKind) (string, bool)) string {
 	switch node := node.(type) {
-	case StructuralNodeType:
+	case StructuralNodeKind:
 		return StructuralNodeToCode(node)
-	case FormulationNodeType:
+	case FormulationNodeKind:
 		return FormulationNodeToCode(node, fn)
 	default:
 		panic(fmt.Sprintf("Cannot debug a node: %s", mlglib.PrettyPrint(node)))

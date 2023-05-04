@@ -35,13 +35,13 @@ import (
 // Note: 2 and 3 will be used together to expand aliases inline in expressions.
 
 type MatchResult struct {
-	Mapping         map[string]ast.MlgNodeType
-	VarArgMapping   map[string][]ast.MlgNodeType
+	Mapping         map[string]ast.MlgNodeKind
+	VarArgMapping   map[string][]ast.MlgNodeKind
 	Messages        []string
 	MatchMakesSense bool
 }
 
-func Match(node ast.MlgNodeType, pattern PatternType) MatchResult {
+func Match(node ast.MlgNodeKind, pattern PatternKind) MatchResult {
 	switch p := pattern.(type) {
 	case *FunctionFormPattern:
 		return matchFunction(node, *p)
@@ -90,7 +90,7 @@ func Match(node ast.MlgNodeType, pattern PatternType) MatchResult {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func unionMatches(result1 MatchResult, result2 MatchResult) MatchResult {
-	mapping := make(map[string]ast.MlgNodeType)
+	mapping := make(map[string]ast.MlgNodeKind)
 	for name, node := range result1.Mapping {
 		mapping[name] = node
 	}
@@ -98,7 +98,7 @@ func unionMatches(result1 MatchResult, result2 MatchResult) MatchResult {
 		mapping[name] = node
 	}
 
-	varArgMapping := make(map[string][]ast.MlgNodeType)
+	varArgMapping := make(map[string][]ast.MlgNodeKind)
 	for name, nodes := range result1.VarArgMapping {
 		varArgMapping[name] = nodes
 	}
@@ -120,7 +120,7 @@ func unionMatches(result1 MatchResult, result2 MatchResult) MatchResult {
 	}
 }
 
-func matchNameColonEquals(node ast.MlgNodeType,
+func matchNameColonEquals(node ast.MlgNodeKind,
 	pattern NameColonEqualsPatternPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.StructuralColonEqualsForm:
@@ -153,7 +153,7 @@ func matchNameColonEquals(node ast.MlgNodeType,
 	}
 }
 
-func matchFunctionColonEquals(node ast.MlgNodeType,
+func matchFunctionColonEquals(node ast.MlgNodeKind,
 	pattern FunctionColonEqualsNamePattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.StructuralColonEqualsForm:
@@ -186,10 +186,10 @@ func matchFunctionColonEquals(node ast.MlgNodeType,
 	}
 }
 
-func matchName(node ast.MlgNodeType, pattern NameFormPattern) MatchResult {
+func matchName(node ast.MlgNodeKind, pattern NameFormPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.ExpressionColonEqualsItem:
-		mapping := make(map[string]ast.MlgNodeType)
+		mapping := make(map[string]ast.MlgNodeKind)
 		// if the node is `X := ...` then the mapping maps to `X`
 		mapping[pattern.Text] = n.Lhs
 		return MatchResult{
@@ -198,7 +198,7 @@ func matchName(node ast.MlgNodeType, pattern NameFormPattern) MatchResult {
 			MatchMakesSense: true,
 		}
 	default:
-		mapping := make(map[string]ast.MlgNodeType)
+		mapping := make(map[string]ast.MlgNodeKind)
 		mapping[pattern.Text] = n
 		return MatchResult{
 			Mapping:         mapping,
@@ -211,7 +211,7 @@ func matchName(node ast.MlgNodeType, pattern NameFormPattern) MatchResult {
 func matchVarArg(node ast.VarArgData, pattern VarArgPatternData) MatchResult {
 	if node.IsVarArg && !pattern.IsVarArg {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				"Received a variadic node but did not expect one",
 			},
@@ -221,7 +221,7 @@ func matchVarArg(node ast.VarArgData, pattern VarArgPatternData) MatchResult {
 
 	if !node.IsVarArg && pattern.IsVarArg {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				"Did not receive a variadic node but expected one",
 			},
@@ -234,7 +234,7 @@ func matchVarArg(node ast.VarArgData, pattern VarArgPatternData) MatchResult {
 	return unionMatches(namesMatch, boundsMatch)
 }
 
-func matchFunction(node ast.MlgNodeType, pattern FunctionFormPattern) MatchResult {
+func matchFunction(node ast.MlgNodeKind, pattern FunctionFormPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.FunctionForm:
 		targetMatch := matchName(&n.Target, pattern.Target)
@@ -255,7 +255,7 @@ func matchFunction(node ast.MlgNodeType, pattern FunctionFormPattern) MatchResul
 	}
 }
 
-func matchTuple(node ast.MlgNodeType, pattern TupleFormPattern) MatchResult {
+func matchTuple(node ast.MlgNodeKind, pattern TupleFormPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.TupleForm:
 		paramsMatch := matchAllStructuralForms(n.Params, pattern.Params)
@@ -273,7 +273,7 @@ func matchTuple(node ast.MlgNodeType, pattern TupleFormPattern) MatchResult {
 	}
 }
 
-func matchConditionalSetForm(node ast.MlgNodeType, pattern ConditionalSetFormPattern) MatchResult {
+func matchConditionalSetForm(node ast.MlgNodeKind, pattern ConditionalSetFormPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.ConditionalSetForm:
 		targetMatch := Match(n.Target, pattern.Target)
@@ -293,7 +293,7 @@ func matchConditionalSetForm(node ast.MlgNodeType, pattern ConditionalSetFormPat
 	}
 }
 
-func matchConditionalSetExpression(node ast.MlgNodeType,
+func matchConditionalSetExpression(node ast.MlgNodeKind,
 	pattern ConditionalSetExpressionPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.ConditionalSetExpression:
@@ -310,7 +310,7 @@ func matchConditionalSetExpression(node ast.MlgNodeType,
 	}
 }
 
-func matchInfixOperator(node ast.MlgNodeType, pattern InfixOperatorFormPattern) MatchResult {
+func matchInfixOperator(node ast.MlgNodeKind, pattern InfixOperatorFormPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.InfixOperatorCallExpression:
 		lhsMatch := Match(n.Lhs, pattern.Lhs)
@@ -337,7 +337,7 @@ func matchInfixOperator(node ast.MlgNodeType, pattern InfixOperatorFormPattern) 
 	}
 }
 
-func matchPrefixOperator(node ast.MlgNodeType, pattern PrefixOperatorFormPattern) MatchResult {
+func matchPrefixOperator(node ast.MlgNodeKind, pattern PrefixOperatorFormPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.PrefixOperatorCallExpression:
 		opMatch := Match(n.Target, &pattern.Operator)
@@ -361,7 +361,7 @@ func matchPrefixOperator(node ast.MlgNodeType, pattern PrefixOperatorFormPattern
 	}
 }
 
-func matchPostfixOperator(node ast.MlgNodeType, pattern PostfixOperatorFormPattern) MatchResult {
+func matchPostfixOperator(node ast.MlgNodeKind, pattern PostfixOperatorFormPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.PostfixOperatorCallExpression:
 		opMatch := Match(n.Target, &pattern.Operator)
@@ -385,7 +385,7 @@ func matchPostfixOperator(node ast.MlgNodeType, pattern PostfixOperatorFormPatte
 	}
 }
 
-func matchInfixOperatorCommand(node ast.MlgNodeType,
+func matchInfixOperatorCommand(node ast.MlgNodeKind,
 	pattern InfixCommandOperatorPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.InfixCommandOperatorId:
@@ -405,7 +405,7 @@ func matchInfixOperatorCommand(node ast.MlgNodeType,
 	}
 }
 
-func matchInfixCommandTarget(node ast.MlgNodeType, pattern InfixCommandTargetPattern) MatchResult {
+func matchInfixCommandTarget(node ast.MlgNodeKind, pattern InfixCommandTargetPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.CommandOperatorTarget:
 		return matchCommand(&n.Command, pattern.Command)
@@ -427,7 +427,7 @@ func matchInfixCommandTarget(node ast.MlgNodeType, pattern InfixCommandTargetPat
 	}
 }
 
-func matchCommand(node ast.MlgNodeType, pattern CommandPattern) MatchResult {
+func matchCommand(node ast.MlgNodeKind, pattern CommandPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.CommandExpression:
 		nodeSig := GetSignatureStringFromCommand(*n)
@@ -465,13 +465,13 @@ func matchCurlyArg(node *ast.CurlyArg, pattern *CurlyPattern) MatchResult {
 	if node == nil || pattern == nil {
 		if node == nil && pattern == nil {
 			return MatchResult{
-				Mapping:         make(map[string]ast.MlgNodeType),
+				Mapping:         make(map[string]ast.MlgNodeKind),
 				Messages:        make([]string, 0),
 				MatchMakesSense: true,
 			}
 		} else if node == nil && pattern != nil {
 			return MatchResult{
-				Mapping: make(map[string]ast.MlgNodeType),
+				Mapping: make(map[string]ast.MlgNodeKind),
 				Messages: []string{
 					"Expected a {} argument but found none",
 				},
@@ -479,7 +479,7 @@ func matchCurlyArg(node *ast.CurlyArg, pattern *CurlyPattern) MatchResult {
 			}
 		} else if node != nil && pattern == nil {
 			return MatchResult{
-				Mapping: make(map[string]ast.MlgNodeType),
+				Mapping: make(map[string]ast.MlgNodeKind),
 				Messages: []string{
 					"Did not expect to find a {} but found one",
 				},
@@ -494,7 +494,7 @@ func matchCurlyArg(node *ast.CurlyArg, pattern *CurlyPattern) MatchResult {
 	return unionMatches(argsMatch, directionMatch)
 }
 
-func matchOrdinal(node ast.MlgNodeType, pattern OrdinalPattern) MatchResult {
+func matchOrdinal(node ast.MlgNodeKind, pattern OrdinalPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.OrdinalCallExpression:
 		targetMatch := Match(n.Target, &pattern)
@@ -510,11 +510,11 @@ func matchOrdinal(node ast.MlgNodeType, pattern OrdinalPattern) MatchResult {
 	}
 }
 
-func matchAllDirectionParamParamType(nodes []ast.DirectionParamParamType,
-	patterns []DirectionParamParamPatternType) MatchResult {
+func matchAllDirectionParamParamType(nodes []ast.DirectionParamParamKind,
+	patterns []DirectionParamParamPatternKind) MatchResult {
 	if len(nodes) != len(patterns) {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				fmt.Sprintf("Expected %d values but found %d: Received: %s",
 					len(patterns), len(nodes), sliceToString(nodes)),
@@ -536,8 +536,8 @@ func matchAllDirectionParamParamType(nodes []ast.DirectionParamParamType,
 	return result
 }
 
-func matchDirectionParamParamType(node ast.DirectionParamParamType,
-	pattern DirectionParamParamPatternType) MatchResult {
+func matchDirectionParamParamType(node ast.DirectionParamParamKind,
+	pattern DirectionParamParamPatternKind) MatchResult {
 	switch p := pattern.(type) {
 	case *NameFormPattern:
 		return matchName(node, *p)
@@ -559,7 +559,7 @@ func matchDirection(node *ast.DirectionalParam, pattern *DirectionPattern) Match
 	if node == nil || pattern == nil {
 		if node == nil && pattern != nil {
 			return MatchResult{
-				Mapping: make(map[string]ast.MlgNodeType),
+				Mapping: make(map[string]ast.MlgNodeKind),
 				Messages: []string{
 					"Expected a direction but didn't receive one",
 				},
@@ -569,7 +569,7 @@ func matchDirection(node *ast.DirectionalParam, pattern *DirectionPattern) Match
 
 		if node != nil && pattern == nil {
 			return MatchResult{
-				Mapping: make(map[string]ast.MlgNodeType),
+				Mapping: make(map[string]ast.MlgNodeKind),
 				Messages: []string{
 					"Did not expect a direction but received one",
 				},
@@ -579,7 +579,7 @@ func matchDirection(node *ast.DirectionalParam, pattern *DirectionPattern) Match
 
 		if node == nil && pattern == nil {
 			return MatchResult{
-				Mapping:         make(map[string]ast.MlgNodeType),
+				Mapping:         make(map[string]ast.MlgNodeKind),
 				Messages:        []string{},
 				MatchMakesSense: true,
 			}
@@ -592,7 +592,7 @@ func matchDirection(node *ast.DirectionalParam, pattern *DirectionPattern) Match
 	if nodeName == nil || patternName == nil {
 		if nodeName == nil && patternName != nil {
 			return MatchResult{
-				Mapping: make(map[string]ast.MlgNodeType),
+				Mapping: make(map[string]ast.MlgNodeKind),
 				Messages: []string{
 					"Expected a direction name but didn't receive one",
 				},
@@ -602,7 +602,7 @@ func matchDirection(node *ast.DirectionalParam, pattern *DirectionPattern) Match
 
 		if nodeName != nil && patternName == nil {
 			return MatchResult{
-				Mapping: make(map[string]ast.MlgNodeType),
+				Mapping: make(map[string]ast.MlgNodeKind),
 				Messages: []string{
 					"Did not expect a direction name but received one",
 				},
@@ -612,7 +612,7 @@ func matchDirection(node *ast.DirectionalParam, pattern *DirectionPattern) Match
 
 		if node == nil && pattern == nil {
 			return MatchResult{
-				Mapping:         make(map[string]ast.MlgNodeType),
+				Mapping:         make(map[string]ast.MlgNodeKind),
 				Messages:        []string{},
 				MatchMakesSense: true,
 			}
@@ -629,13 +629,13 @@ func matchCurlyParam(node *ast.CurlyParam, pattern *CurlyPattern) MatchResult {
 	if node == nil || pattern == nil {
 		if node == nil && pattern == nil {
 			return MatchResult{
-				Mapping:         make(map[string]ast.MlgNodeType),
+				Mapping:         make(map[string]ast.MlgNodeKind),
 				Messages:        make([]string, 0),
 				MatchMakesSense: true,
 			}
 		} else if node == nil && pattern != nil {
 			return MatchResult{
-				Mapping: make(map[string]ast.MlgNodeType),
+				Mapping: make(map[string]ast.MlgNodeKind),
 				Messages: []string{
 					"Expected a {} argument but found none",
 				},
@@ -643,7 +643,7 @@ func matchCurlyParam(node *ast.CurlyParam, pattern *CurlyPattern) MatchResult {
 			}
 		} else if node != nil && pattern == nil {
 			return MatchResult{
-				Mapping: make(map[string]ast.MlgNodeType),
+				Mapping: make(map[string]ast.MlgNodeKind),
 				Messages: []string{
 					"Did not expect to find a {} but found one",
 				},
@@ -659,7 +659,7 @@ func matchCurlyParam(node *ast.CurlyParam, pattern *CurlyPattern) MatchResult {
 	return unionMatches(curlyMatch, unionMatches(squareMatch, directionMatch))
 }
 
-func matchNamedGroup(node ast.MlgNodeType, pattern NamedGroupPattern) MatchResult {
+func matchNamedGroup(node ast.MlgNodeKind, pattern NamedGroupPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.NamedArg:
 		nameMatch := matchName(&n.Name, pattern.Name)
@@ -679,7 +679,7 @@ func matchNamedGroup(node ast.MlgNodeType, pattern NamedGroupPattern) MatchResul
 	}
 }
 
-func matchChainExpression(node ast.MlgNodeType, pattern ChainExpressionPattern) MatchResult {
+func matchChainExpression(node ast.MlgNodeKind, pattern ChainExpressionPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.ChainExpression:
 		return matchAllExpressions(n.Parts, pattern.Parts)
@@ -693,7 +693,7 @@ func matchChainExpression(node ast.MlgNodeType, pattern ChainExpressionPattern) 
 	}
 }
 
-func matchSpecAlias(node ast.MlgNodeType, pattern SpecAliasPattern) MatchResult {
+func matchSpecAlias(node ast.MlgNodeKind, pattern SpecAliasPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.ExpressionColonDashArrowItem:
 		n = n
@@ -705,7 +705,7 @@ func matchSpecAlias(node ast.MlgNodeType, pattern SpecAliasPattern) MatchResult 
 	}
 }
 
-func matchAlias(node ast.MlgNodeType, pattern AliasPattern) MatchResult {
+func matchAlias(node ast.MlgNodeKind, pattern AliasPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.ExpressionColonArrowItem:
 		n = n
@@ -722,7 +722,7 @@ func matchAlias(node ast.MlgNodeType, pattern AliasPattern) MatchResult {
 // if the `error != nil` then the variadic pattern description is invalid
 // otherwise if `error == nil` then the bool return value is true if and
 // only if the patterns slice has one pattern and it is variadic
-func checkPatternsForVarArg(patterns []PatternType) (error, bool) {
+func checkPatternsForVarArg(patterns []PatternKind) (error, bool) {
 	numWithVarArg := 0
 	for _, pattern := range patterns {
 		if pattern.GetVarArgData().IsVarArg {
@@ -742,9 +742,9 @@ func checkPatternsForVarArg(patterns []PatternType) (error, bool) {
 	return nil, numWithVarArg == 1
 }
 
-func checkNameFormPatternsForVarArg(nodes []ast.ExpressionType,
+func checkNameFormPatternsForVarArg(nodes []ast.ExpressionKind,
 	patterns []NameFormPattern) *MatchResult {
-	generalPatterns := make([]PatternType, 0)
+	generalPatterns := make([]PatternKind, 0)
 	for _, pattern := range patterns {
 		generalPatterns = append(generalPatterns, &pattern)
 	}
@@ -757,14 +757,14 @@ func checkNameFormPatternsForVarArg(nodes []ast.ExpressionType,
 	}
 
 	if ok {
-		varArgMapping := make(map[string][]ast.MlgNodeType)
-		values := make([]ast.MlgNodeType, 0)
+		varArgMapping := make(map[string][]ast.MlgNodeKind)
+		values := make([]ast.MlgNodeKind, 0)
 		for _, name := range nodes {
 			values = append(values, name)
 		}
 		varArgMapping[patterns[0].Text] = values
 		return &MatchResult{
-			Mapping:         make(map[string]ast.MlgNodeType),
+			Mapping:         make(map[string]ast.MlgNodeKind),
 			VarArgMapping:   varArgMapping,
 			Messages:        []string{},
 			MatchMakesSense: true,
@@ -774,9 +774,9 @@ func checkNameFormPatternsForVarArg(nodes []ast.ExpressionType,
 	return nil
 }
 
-func checkExpressionFormPatternsForVarArg(nodes []ast.ExpressionType,
-	patterns []FormPatternType) *MatchResult {
-	generalPatterns := make([]PatternType, 0)
+func checkExpressionFormPatternsForVarArg(nodes []ast.ExpressionKind,
+	patterns []FormPatternKind) *MatchResult {
+	generalPatterns := make([]PatternKind, 0)
 	for _, pattern := range patterns {
 		generalPatterns = append(generalPatterns, pattern)
 	}
@@ -791,15 +791,15 @@ func checkExpressionFormPatternsForVarArg(nodes []ast.ExpressionType,
 
 	if ok {
 		first := patterns[0]
-		varArgMapping := make(map[string][]ast.MlgNodeType)
-		values := make([]ast.MlgNodeType, 0)
+		varArgMapping := make(map[string][]ast.MlgNodeKind)
+		values := make([]ast.MlgNodeKind, 0)
 		for _, n := range nodes {
 			values = append(values, n)
 		}
 		if f, ok := first.(*NameFormPattern); ok {
 			varArgMapping[f.Text] = values
 			return &MatchResult{
-				Mapping:         make(map[string]ast.MlgNodeType),
+				Mapping:         make(map[string]ast.MlgNodeKind),
 				VarArgMapping:   varArgMapping,
 				Messages:        []string{},
 				MatchMakesSense: true,
@@ -807,7 +807,7 @@ func checkExpressionFormPatternsForVarArg(nodes []ast.ExpressionType,
 		} else if f, ok := first.(*FunctionFormPattern); ok {
 			varArgMapping[f.Target.Text] = values
 			return &MatchResult{
-				Mapping:         make(map[string]ast.MlgNodeType),
+				Mapping:         make(map[string]ast.MlgNodeKind),
 				VarArgMapping:   varArgMapping,
 				Messages:        []string{},
 				MatchMakesSense: true,
@@ -849,7 +849,7 @@ func matchAllNames(nodes []ast.NameForm, patterns []NameFormPattern) MatchResult
 
 	if numWithVarArg > 1 {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				"At most one variadic parameter can be specified",
 			},
@@ -859,7 +859,7 @@ func matchAllNames(nodes []ast.NameForm, patterns []NameFormPattern) MatchResult
 
 	if numWithVarArg > 0 && len(patterns) != 1 {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				"If a variadic parameter is specified, it must be the only parameter specified",
 			},
@@ -868,14 +868,14 @@ func matchAllNames(nodes []ast.NameForm, patterns []NameFormPattern) MatchResult
 	}
 
 	if numWithVarArg == 1 {
-		varArgMapping := make(map[string][]ast.MlgNodeType)
-		values := make([]ast.MlgNodeType, 0)
+		varArgMapping := make(map[string][]ast.MlgNodeKind)
+		values := make([]ast.MlgNodeKind, 0)
 		for _, name := range nodes {
 			values = append(values, &name)
 		}
 		varArgMapping[patterns[0].Text] = values
 		return MatchResult{
-			Mapping:         make(map[string]ast.MlgNodeType),
+			Mapping:         make(map[string]ast.MlgNodeKind),
 			VarArgMapping:   varArgMapping,
 			Messages:        []string{},
 			MatchMakesSense: true,
@@ -884,7 +884,7 @@ func matchAllNames(nodes []ast.NameForm, patterns []NameFormPattern) MatchResult
 
 	if len(nodes) != len(patterns) {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				fmt.Sprintf("Expected %d values but found %d: Received: %s",
 					len(patterns), len(nodes), nameFormSliceToString(nodes)),
@@ -906,7 +906,7 @@ func matchAllNames(nodes []ast.NameForm, patterns []NameFormPattern) MatchResult
 	return result
 }
 
-func matchAllExpressionsAsNames(nodes []ast.ExpressionType,
+func matchAllExpressionsAsNames(nodes []ast.ExpressionKind,
 	patterns []NameFormPattern) MatchResult {
 
 	res := checkNameFormPatternsForVarArg(nodes, patterns)
@@ -916,7 +916,7 @@ func matchAllExpressionsAsNames(nodes []ast.ExpressionType,
 
 	if len(nodes) != len(patterns) {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				fmt.Sprintf("Expected %d values but found %d: Received: %s",
 					len(patterns), len(nodes), sliceToString(nodes)),
@@ -938,10 +938,10 @@ func matchAllExpressionsAsNames(nodes []ast.ExpressionType,
 	return result
 }
 
-func matchAllOptionalExpressionsToNames(nodes *[]ast.ExpressionType,
+func matchAllOptionalExpressionsToNames(nodes *[]ast.ExpressionKind,
 	patterns *[]NameFormPattern) MatchResult {
 	if nodes == nil {
-		zeroNodes := make([]ast.ExpressionType, 0)
+		zeroNodes := make([]ast.ExpressionKind, 0)
 		nodes = &zeroNodes
 	}
 
@@ -952,7 +952,7 @@ func matchAllOptionalExpressionsToNames(nodes *[]ast.ExpressionType,
 
 	if len(*nodes) != len(*patterns) {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				fmt.Sprintf("Expected %d values but found %d: Received: %s",
 					len(*patterns), len(*nodes), sliceToString(*nodes)),
@@ -976,15 +976,15 @@ func matchAllOptionalExpressionsToNames(nodes *[]ast.ExpressionType,
 	return result
 }
 
-func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionType,
-	patterns *[]FormPatternType) MatchResult {
+func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionKind,
+	patterns *[]FormPatternKind) MatchResult {
 	if nodes == nil {
-		zeroNodes := make([]ast.ExpressionType, 0)
+		zeroNodes := make([]ast.ExpressionKind, 0)
 		nodes = &zeroNodes
 	}
 
 	if patterns == nil {
-		zeroPatterns := make([]FormPatternType, 0)
+		zeroPatterns := make([]FormPatternKind, 0)
 		patterns = &zeroPatterns
 	}
 
@@ -995,7 +995,7 @@ func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionType,
 
 	if len(*nodes) != len(*patterns) {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				fmt.Sprintf("Expected %d values but found %d: Received: %s",
 					len(*patterns), len(*nodes), sliceToString(*nodes)),
@@ -1013,7 +1013,7 @@ func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionType,
 	return matchAllExpressions(*nodes, *patterns)
 }
 
-func matchAllExpressions(nodes []ast.ExpressionType, patterns []FormPatternType) MatchResult {
+func matchAllExpressions(nodes []ast.ExpressionKind, patterns []FormPatternKind) MatchResult {
 	res := checkExpressionFormPatternsForVarArg(nodes, patterns)
 	if res != nil {
 		return *res
@@ -1021,7 +1021,7 @@ func matchAllExpressions(nodes []ast.ExpressionType, patterns []FormPatternType)
 
 	if len(nodes) != len(patterns) {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				fmt.Sprintf("Expected %d values but found %d: Received: %s",
 					len(patterns), len(nodes), sliceToString(nodes)),
@@ -1043,26 +1043,26 @@ func matchAllExpressions(nodes []ast.ExpressionType, patterns []FormPatternType)
 	return result
 }
 
-func matchAllOptionalStructuralForms(nodes *[]ast.StructuralFormType,
-	patterns *[]FormPatternType) MatchResult {
+func matchAllOptionalStructuralForms(nodes *[]ast.StructuralFormKind,
+	patterns *[]FormPatternKind) MatchResult {
 	if nodes == nil {
-		zeroNodes := make([]ast.StructuralFormType, 0)
+		zeroNodes := make([]ast.StructuralFormKind, 0)
 		nodes = &zeroNodes
 	}
 
 	if patterns == nil {
-		zeroPatterns := make([]FormPatternType, 0)
+		zeroPatterns := make([]FormPatternKind, 0)
 		patterns = &zeroPatterns
 	}
 
 	return matchAllStructuralForms(*nodes, *patterns)
 }
 
-func matchAllStructuralForms(nodes []ast.StructuralFormType,
-	patterns []FormPatternType) MatchResult {
+func matchAllStructuralForms(nodes []ast.StructuralFormKind,
+	patterns []FormPatternKind) MatchResult {
 	if len(nodes) != len(patterns) {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				fmt.Sprintf("Expected %d values but found %d: Received: %s",
 					len(patterns), len(nodes), sliceToString(nodes)),
@@ -1097,7 +1097,7 @@ func matchAllNamedArgs(nodes *[]ast.NamedArg, patterns *[]NamedGroupPattern) Mat
 
 	if len(*nodes) != len(*patterns) {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				fmt.Sprintf("Expected %d values but found %d: Received: %s",
 					len(*patterns), len(*nodes), namedArgSliceToString(*nodes)),
@@ -1134,7 +1134,7 @@ func matchAllNamedParams(nodes *[]ast.NamedParam, patterns *[]NamedGroupPattern)
 
 	if len(*nodes) != len(*patterns) {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				fmt.Sprintf("Expected %d values but found %d: Received: %s",
 					len(*patterns), len(*nodes), namedParamSliceToString(*nodes)),
@@ -1158,21 +1158,21 @@ func matchAllNamedParams(nodes *[]ast.NamedParam, patterns *[]NamedGroupPattern)
 	return result
 }
 
-func matchDirectionParams(nodes *[]ast.DirectionParamParamType,
-	patterns *[]FormPatternType) MatchResult {
+func matchDirectionParams(nodes *[]ast.DirectionParamParamKind,
+	patterns *[]FormPatternKind) MatchResult {
 	if nodes == nil {
-		zeroNodes := make([]ast.DirectionParamParamType, 0)
+		zeroNodes := make([]ast.DirectionParamParamKind, 0)
 		nodes = &zeroNodes
 	}
 
 	if patterns == nil {
-		zeroPatterns := make([]FormPatternType, 0)
+		zeroPatterns := make([]FormPatternKind, 0)
 		patterns = &zeroPatterns
 	}
 
 	if len(*nodes) != len(*patterns) {
 		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeType),
+			Mapping: make(map[string]ast.MlgNodeKind),
 			Messages: []string{
 				fmt.Sprintf("Expected %d values but found %d: Received: %s",
 					len(*patterns), len(*nodes), sliceToString(*nodes)),
@@ -1196,7 +1196,7 @@ func matchDirectionParams(nodes *[]ast.DirectionParamParamType,
 	return result
 }
 
-func sliceToString[T ast.FormulationNodeType](nodes []T) string {
+func sliceToString[T ast.FormulationNodeKind](nodes []T) string {
 	result := ""
 	for i, n := range nodes {
 		if i > 0 {

@@ -652,7 +652,7 @@ func (p *parser) toDocumentedSection(section phase4.Section) *ast.DocumentedSect
 	}
 }
 
-func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool) {
+func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedKind, bool) {
 	switch group := arg.Arg.(type) {
 	case *phase4.Group:
 		if grp, ok := p.toOverviewGroup(*group); ok {
@@ -843,12 +843,12 @@ func (p *parser) toProvidesSection(section phase4.Section) *ast.ProvidesSection 
 	}
 }
 
-func (p *parser) oneOrMoreProvidesType(section phase4.Section) []ast.ProvidesType {
+func (p *parser) oneOrMoreProvidesType(section phase4.Section) []ast.ProvidesKind {
 	return oneOrMore(p, p.toProvidesTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) toProvidesTypes(args []phase4.Argument) []ast.ProvidesType {
-	result := make([]ast.ProvidesType, 0)
+func (p *parser) toProvidesTypes(args []phase4.Argument) []ast.ProvidesKind {
+	result := make([]ast.ProvidesKind, 0)
 	for _, arg := range args {
 		if providesType, ok := p.toProvidesTypeFromArg(arg); ok {
 			result = append(result, providesType)
@@ -857,7 +857,7 @@ func (p *parser) toProvidesTypes(args []phase4.Argument) []ast.ProvidesType {
 	return result
 }
 
-func (p *parser) toProvidesTypeFromArg(arg phase4.Argument) (ast.ProvidesType, bool) {
+func (p *parser) toProvidesTypeFromArg(arg phase4.Argument) (ast.ProvidesKind, bool) {
 	if _, ok := arg.Arg.(*phase4.FormulationArgumentData); ok {
 		alias := p.toAlias(arg)
 		return &alias, true
@@ -870,7 +870,7 @@ func (p *parser) toProvidesTypeFromArg(arg phase4.Argument) (ast.ProvidesType, b
 	return p.toProvidesTypeFromGroup(*group)
 }
 
-func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, bool) {
+func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesKind, bool) {
 	if grp, ok := p.toSymbolWrittenGroup(group); ok {
 		return &grp, true
 	} else if grp, ok := p.toConnectionGroup(group); ok {
@@ -910,12 +910,12 @@ func (p *parser) toJustifiedSection(section phase4.Section) *ast.JustifiedSectio
 	}
 }
 
-func (p *parser) oneOrMoreJustifiedType(section phase4.Section) []ast.JustifiedType {
+func (p *parser) oneOrMoreJustifiedType(section phase4.Section) []ast.JustifiedKind {
 	return oneOrMore(p, p.toJustifiedTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) toJustifiedTypes(args []phase4.Argument) []ast.JustifiedType {
-	result := make([]ast.JustifiedType, 0)
+func (p *parser) toJustifiedTypes(args []phase4.Argument) []ast.JustifiedKind {
+	result := make([]ast.JustifiedKind, 0)
 	for _, arg := range args {
 		if justifiedType, ok := p.toJustifiedTypeFromArg(arg); ok {
 			result = append(result, justifiedType)
@@ -924,7 +924,7 @@ func (p *parser) toJustifiedTypes(args []phase4.Argument) []ast.JustifiedType {
 	return result
 }
 
-func (p *parser) toJustifiedTypeFromArg(arg phase4.Argument) (ast.JustifiedType, bool) {
+func (p *parser) toJustifiedTypeFromArg(arg phase4.Argument) (ast.JustifiedKind, bool) {
 	group, ok := arg.Arg.(*phase4.Group)
 	if !ok {
 		return nil, false
@@ -932,7 +932,7 @@ func (p *parser) toJustifiedTypeFromArg(arg phase4.Argument) (ast.JustifiedType,
 	return p.toJustifiedTypeFromGroup(*group)
 }
 
-func (p *parser) toJustifiedTypeFromGroup(group phase4.Group) (ast.JustifiedType, bool) {
+func (p *parser) toJustifiedTypeFromGroup(group phase4.Group) (ast.JustifiedKind, bool) {
 	if grp, ok := p.toLabelGroup(group); ok {
 		return &grp, true
 	} else if grp, ok := p.toByGroup(group); ok {
@@ -1627,7 +1627,7 @@ func (p *parser) toTopLevelSpecifySection(section phase4.Section) *ast.TopLevelS
 	}
 }
 
-func (p *parser) toSpecifyType(arg phase4.Argument) (ast.SpecifyType, bool) {
+func (p *parser) toSpecifyType(arg phase4.Argument) (ast.SpecifyKind, bool) {
 	switch group := arg.Arg.(type) {
 	case *phase4.Group:
 		if grp, ok := p.toZeroGroup(*group); ok {
@@ -1839,7 +1839,7 @@ func (p *parser) toResourceSection(section phase4.Section) *ast.ResourceSection 
 	}
 }
 
-func (p *parser) toResourceType(arg phase4.Argument) (ast.ResourceType, bool) {
+func (p *parser) toResourceType(arg phase4.Argument) (ast.ResourceKind, bool) {
 	switch group := arg.Arg.(type) {
 	case *phase4.Group:
 		if grp, ok := p.toTitleGroup(*group); ok {
@@ -2242,7 +2242,7 @@ func (p *parser) toDescriptionSection(section phase4.Section) *ast.DescriptionSe
 
 ///////////////////////////////////////// top level items //////////////////////////////////////////
 
-func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelItemType, bool) {
+func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeKind) (ast.TopLevelItemKind, bool) {
 	switch item := item.(type) {
 	case *phase4.TextBlock:
 		return p.toTextBlockItem(*item), true
@@ -2279,7 +2279,7 @@ func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelI
 
 func (p *parser) toDocument(root phase4.Document) (ast.Document, bool) {
 	countBefore := p.tracker.Length()
-	items := make([]ast.TopLevelItemType, 0)
+	items := make([]ast.TopLevelItemKind, 0)
 	for _, node := range root.Nodes {
 		if item, ok := p.toTopLevelItemType(node); ok {
 			items = append(items, item)
@@ -2338,12 +2338,12 @@ func (p *parser) getStringId(group phase4.Group, required bool) *string {
 
 //////////////////////////////////////// arguments /////////////////////////////////////////////////
 
-func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.FormulationNodeType] {
+func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.FormulationNodeKind] {
 	switch data := arg.Arg.(type) {
 	case *phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
 			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
-			return ast.Formulation[ast.FormulationNodeType]{
+			return ast.Formulation[ast.FormulationNodeKind]{
 				RawText:        data.Text,
 				Root:           node,
 				Label:          nil,
@@ -2353,22 +2353,22 @@ func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.Formulat
 	}
 
 	p.tracker.Append(p.newError("Expected a formulation", arg.MetaData.Start))
-	return ast.Formulation[ast.FormulationNodeType]{}
+	return ast.Formulation[ast.FormulationNodeKind]{}
 }
 
-func (p *parser) toClause(arg phase4.Argument) ast.ClauseType {
+func (p *parser) toClause(arg phase4.Argument) ast.ClauseKind {
 	switch data := arg.Arg.(type) {
 	case *phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
 			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
-			return &ast.Formulation[ast.FormulationNodeType]{
+			return &ast.Formulation[ast.FormulationNodeKind]{
 				RawText:        data.Text,
 				Root:           node,
 				Label:          nil,
 				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		} else {
-			return &ast.Formulation[ast.FormulationNodeType]{}
+			return &ast.Formulation[ast.FormulationNodeKind]{}
 		}
 	case *phase4.Group:
 		if grp, ok := p.toAllOfGroup(*data); ok {
@@ -2402,7 +2402,7 @@ func (p *parser) toClause(arg phase4.Argument) ast.ClauseType {
 		fmt.Sprintf("Expected a '...', `...`, %s:, %s:, %s:, %s:, or %s: item",
 			ast.LowerExistsName, ast.LowerExistsUniqueName, ast.LowerForAllName, ast.LowerIfName,
 			ast.LowerIffName), arg.MetaData.Start))
-	return &ast.Formulation[ast.FormulationNodeType]{}
+	return &ast.Formulation[ast.FormulationNodeKind]{}
 }
 
 func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
@@ -2477,7 +2477,7 @@ func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
 	}
 }
 
-func (p *parser) toNoteType(arg phase4.Argument) (ast.NoteType, bool) {
+func (p *parser) toNoteType(arg phase4.Argument) (ast.NoteKind, bool) {
 	switch group := arg.Arg.(type) {
 	case *phase4.Group:
 		grp, _ := p.toDescribingGroup(*group)
@@ -2511,7 +2511,7 @@ func (p *parser) toDescribingSection(section phase4.Section) *ast.DescribingSect
 	}
 }
 
-func (p *parser) toPersonType(arg phase4.Argument) (ast.PersonType, bool) {
+func (p *parser) toPersonType(arg phase4.Argument) (ast.PersonKind, bool) {
 	switch group := arg.Arg.(type) {
 	case *phase4.Group:
 		if grp, ok := p.toNameGroup(*group); ok {
@@ -2589,16 +2589,16 @@ func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[*ast.Signa
 
 ///////////////////////////////////// argument lists ///////////////////////////////////////////////
 
-func (p *parser) toFormulations(args []phase4.Argument) []ast.Formulation[ast.FormulationNodeType] {
-	result := make([]ast.Formulation[ast.FormulationNodeType], 0)
+func (p *parser) toFormulations(args []phase4.Argument) []ast.Formulation[ast.FormulationNodeKind] {
+	result := make([]ast.Formulation[ast.FormulationNodeKind], 0)
 	for _, arg := range args {
 		result = append(result, p.toFormulation(arg))
 	}
 	return result
 }
 
-func (p *parser) toClauses(args []phase4.Argument) []ast.ClauseType {
-	result := make([]ast.ClauseType, 0)
+func (p *parser) toClauses(args []phase4.Argument) []ast.ClauseKind {
+	result := make([]ast.ClauseKind, 0)
 	for _, arg := range args {
 		result = append(result, p.toClause(arg))
 	}
@@ -2637,8 +2637,8 @@ func (p *parser) toTextItems(args []phase4.Argument) []ast.TextItem {
 	return result
 }
 
-func (p *parser) toNoteTypes(args []phase4.Argument) []ast.NoteType {
-	result := make([]ast.NoteType, 0)
+func (p *parser) toNoteTypes(args []phase4.Argument) []ast.NoteKind {
+	result := make([]ast.NoteKind, 0)
 	for _, arg := range args {
 		if note, ok := p.toNoteType(arg); ok {
 			result = append(result, note)
@@ -2647,8 +2647,8 @@ func (p *parser) toNoteTypes(args []phase4.Argument) []ast.NoteType {
 	return result
 }
 
-func (p *parser) toPersonTypes(args []phase4.Argument) []ast.PersonType {
-	result := make([]ast.PersonType, 0)
+func (p *parser) toPersonTypes(args []phase4.Argument) []ast.PersonKind {
+	result := make([]ast.PersonKind, 0)
 	for _, arg := range args {
 		if note, ok := p.toPersonType(arg); ok {
 			result = append(result, note)
@@ -2657,8 +2657,8 @@ func (p *parser) toPersonTypes(args []phase4.Argument) []ast.PersonType {
 	return result
 }
 
-func (p *parser) toResourceTypes(args []phase4.Argument) []ast.ResourceType {
-	result := make([]ast.ResourceType, 0)
+func (p *parser) toResourceTypes(args []phase4.Argument) []ast.ResourceKind {
+	result := make([]ast.ResourceKind, 0)
 	for _, arg := range args {
 		if note, ok := p.toResourceType(arg); ok {
 			result = append(result, note)
@@ -2675,8 +2675,8 @@ func (p *parser) toSignaturesItems(args []phase4.Argument) []ast.Formulation[*as
 	return result
 }
 
-func (p *parser) toDocumentedTypes(args []phase4.Argument) []ast.DocumentedType {
-	result := make([]ast.DocumentedType, 0)
+func (p *parser) toDocumentedTypes(args []phase4.Argument) []ast.DocumentedKind {
+	result := make([]ast.DocumentedKind, 0)
 	for _, arg := range args {
 		if doc, ok := p.toDocumentedType(arg); ok {
 			result = append(result, doc)
@@ -2691,8 +2691,8 @@ func (p *parser) toDocumentedTypes(args []phase4.Argument) []ast.DocumentedType 
 	return result
 }
 
-func (p *parser) toSpecifyTypes(args []phase4.Argument) []ast.SpecifyType {
-	result := make([]ast.SpecifyType, 0)
+func (p *parser) toSpecifyTypes(args []phase4.Argument) []ast.SpecifyKind {
+	result := make([]ast.SpecifyKind, 0)
 	for _, arg := range args {
 		if spec, ok := p.toSpecifyType(arg); ok {
 			result = append(result, spec)
@@ -2717,23 +2717,23 @@ func (p *parser) verifyNoArgs(section phase4.Section) {
 	}
 }
 
-func (p *parser) oneOrMoreClauses(section phase4.Section) []ast.ClauseType {
+func (p *parser) oneOrMoreClauses(section phase4.Section) []ast.ClauseKind {
 	return oneOrMore(p, p.toClauses(section.Args), section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) exactlyOneClause(section phase4.Section) ast.ClauseType {
-	var def ast.ClauseType = &ast.Formulation[ast.FormulationNodeType]{}
+func (p *parser) exactlyOneClause(section phase4.Section) ast.ClauseKind {
+	var def ast.ClauseKind = &ast.Formulation[ast.FormulationNodeKind]{}
 	return exactlyOne(p, p.toClauses(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneFormulation(
-	section phase4.Section) ast.Formulation[ast.FormulationNodeType] {
-	var def ast.Formulation[ast.FormulationNodeType] = ast.Formulation[ast.FormulationNodeType]{}
+	section phase4.Section) ast.Formulation[ast.FormulationNodeKind] {
+	var def ast.Formulation[ast.FormulationNodeKind] = ast.Formulation[ast.FormulationNodeKind]{}
 	return exactlyOne(p, p.toFormulations(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreFormulation(
-	section phase4.Section) []ast.Formulation[ast.FormulationNodeType] {
+	section phase4.Section) []ast.Formulation[ast.FormulationNodeKind] {
 	return oneOrMore(p, p.toFormulations(section.Args), section.MetaData.Start, p.tracker)
 }
 
@@ -2767,15 +2767,15 @@ func (p *parser) zeroOrMoreTextItems(section phase4.Section) []ast.TextItem {
 	return p.toTextItems(section.Args)
 }
 
-func (p *parser) oneOrMoreNoteTypes(section phase4.Section) []ast.NoteType {
+func (p *parser) oneOrMoreNoteTypes(section phase4.Section) []ast.NoteKind {
 	return oneOrMore(p, p.toNoteTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) oneOrMorePersonTypes(section phase4.Section) []ast.PersonType {
+func (p *parser) oneOrMorePersonTypes(section phase4.Section) []ast.PersonKind {
 	return oneOrMore(p, p.toPersonTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) oneOrMoreResourceTypes(section phase4.Section) []ast.ResourceType {
+func (p *parser) oneOrMoreResourceTypes(section phase4.Section) []ast.ResourceKind {
 	return oneOrMore(p, p.toResourceTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
@@ -2798,11 +2798,11 @@ func (p *parser) exactlyOneTextItem(section phase4.Section) ast.TextItem {
 		ast.TextItem{}, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) oneOrMoreDocumentedTypes(section phase4.Section) []ast.DocumentedType {
+func (p *parser) oneOrMoreDocumentedTypes(section phase4.Section) []ast.DocumentedKind {
 	return oneOrMore(p, p.toDocumentedTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) oneOrMoreSpecifyTypes(section phase4.Section) []ast.SpecifyType {
+func (p *parser) oneOrMoreSpecifyTypes(section phase4.Section) []ast.SpecifyKind {
 	return oneOrMore(p, p.toSpecifyTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 

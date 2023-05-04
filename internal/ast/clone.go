@@ -16,13 +16,13 @@
 
 package ast
 
-func CloneNode[T MlgNodeType](node T) T {
+func CloneNode[T MlgNodeKind](node T) T {
 	copy := node
 	copy.ForEach(cloneScopes)
 	return copy
 }
 
-func cloneScopes(n MlgNodeType) {
+func cloneScopes(n MlgNodeKind) {
 	metaData := n.GetCommonMetaData()
 	metaData.Scope = metaData.Scope.Clone()
 	n.ForEach(cloneScopes)

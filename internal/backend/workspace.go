@@ -116,11 +116,11 @@ type Workspace struct {
 	// map signatures to ids
 	signaturesToIds map[string]string
 	// map ids to summaries
-	summaries map[string]SummaryType
+	summaries map[string]SummaryKind
 	// map ids to phase4 parses of top-level entries
-	phase4Entries map[string]phase4.TopLevelNodeType
+	phase4Entries map[string]phase4.TopLevelNodeKind
 	// map ids to phase5 top-level types
-	topLevelEntries map[string]ast.TopLevelItemType
+	topLevelEntries map[string]ast.TopLevelItemKind
 }
 
 func NewWorkspace(contents map[ast.Path]string, tracker *frontend.DiagnosticTracker) *Workspace {
@@ -128,9 +128,9 @@ func NewWorkspace(contents map[ast.Path]string, tracker *frontend.DiagnosticTrac
 		tracker:         tracker,
 		contents:        make(map[ast.Path]string, 0),
 		signaturesToIds: make(map[string]string, 0),
-		summaries:       make(map[string]SummaryType, 0),
-		phase4Entries:   make(map[string]phase4.TopLevelNodeType, 0),
-		topLevelEntries: make(map[string]ast.TopLevelItemType, 0),
+		summaries:       make(map[string]SummaryKind, 0),
+		phase4Entries:   make(map[string]phase4.TopLevelNodeKind, 0),
+		topLevelEntries: make(map[string]ast.TopLevelItemKind, 0),
 	}
 	w.initialize(contents)
 	return &w
@@ -185,8 +185,8 @@ func (w *Workspace) initialize(contents map[ast.Path]string) {
 }
 
 func (w *Workspace) formulationLikeToString(path ast.Path,
-	node ast.MlgNodeType, keyToFormulationStr map[int]string) {
-	if formulation, ok := node.(*ast.Formulation[ast.FormulationNodeType]); ok {
+	node ast.MlgNodeKind, keyToFormulationStr map[int]string) {
+	if formulation, ok := node.(*ast.Formulation[ast.FormulationNodeKind]); ok {
 		key := formulation.GetCommonMetaData().Key
 		newText := w.formulationToWritten(path, *formulation)
 		keyToFormulationStr[key] = newText
@@ -199,14 +199,14 @@ func (w *Workspace) formulationLikeToString(path ast.Path,
 		newText := w.aliasToWritten(path, *alias)
 		keyToFormulationStr[key] = newText
 	} else {
-		node.ForEach(func(subNode ast.MlgNodeType) {
+		node.ForEach(func(subNode ast.MlgNodeKind) {
 			w.formulationLikeToString(path, subNode, keyToFormulationStr)
 		})
 	}
 }
 
 func (w *Workspace) formulationToWritten(path ast.Path,
-	node ast.Formulation[ast.FormulationNodeType]) string {
+	node ast.Formulation[ast.FormulationNodeKind]) string {
 	return w.formulationNodeToWritten(path, node.Root)
 }
 
@@ -328,11 +328,11 @@ func (w *Workspace) commandToWritten(path ast.Path, node *ast.CommandExpression)
 	return "", false
 }
 
-func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeType) string {
+func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeKind) string {
 	if mlgNode == nil {
 		return ""
 	}
-	customToCode := func(node ast.MlgNodeType) (string, bool) {
+	customToCode := func(node ast.MlgNodeKind) (string, bool) {
 		switch n := node.(type) {
 		case *ast.FunctionLiteralExpression:
 			result := ""
@@ -622,7 +622,7 @@ func includeMissingIdentifiersInTargets(targets []ast.Target, keyGen *mlglib.Key
 	}
 }
 
-func includeMissingIdentifiersAt(node ast.MlgNodeType, keyGen *mlglib.KeyGenerator) {
+func includeMissingIdentifiersAt(node ast.MlgNodeKind, keyGen *mlglib.KeyGenerator) {
 	if node == nil {
 		return
 	}
@@ -669,24 +669,24 @@ func includeMissingIdentifiersAt(node ast.MlgNodeType, keyGen *mlglib.KeyGenerat
 			includeMissingIdentifiersInTargets(n.Using.Using, keyGen)
 		}
 	}
-	node.ForEach(func(subNode ast.MlgNodeType) {
+	node.ForEach(func(subNode ast.MlgNodeKind) {
 		includeMissingIdentifiersAt(subNode, keyGen)
 	})
 }
 
-func expandAliasesAtWithAliases(node ast.MlgNodeType, aliases []ExpAliasSummaryType) {
+func expandAliasesAtWithAliases(node ast.MlgNodeKind, aliases []ExpAliasSummaryKind) {
 	if node == nil {
 		return
 	}
 
-	node.ForEach(func(subNode ast.MlgNodeType) {
+	node.ForEach(func(subNode ast.MlgNodeKind) {
 		for _, alias := range aliases {
 			ExpandAliasInline(subNode, alias)
 		}
 	})
 }
 
-func expandAliasesAt(node ast.MlgNodeType, summaries map[string]SummaryType) {
+func expandAliasesAt(node ast.MlgNodeKind, summaries map[string]SummaryKind) {
 	if node == nil {
 		return
 	}
@@ -701,12 +701,12 @@ func expandAliasesAt(node ast.MlgNodeType, summaries map[string]SummaryType) {
 			}
 		}
 	}
-	node.ForEach(func(n ast.MlgNodeType) {
+	node.ForEach(func(n ast.MlgNodeKind) {
 		expandAliasesAt(n, summaries)
 	})
 }
 
-func findUsedUnknownSignaturesImpl(node ast.MlgNodeType, path ast.Path, w *Workspace) {
+func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *Workspace) {
 	if node == nil {
 		return
 	}
@@ -722,7 +722,7 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeType, path ast.Path, w *Works
 			})
 		}
 	}
-	node.ForEach(func(subNode ast.MlgNodeType) {
+	node.ForEach(func(subNode ast.MlgNodeKind) {
 		findUsedUnknownSignaturesImpl(subNode, path, w)
 	})
 }

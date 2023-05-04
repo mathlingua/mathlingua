@@ -16,16 +16,16 @@
 
 package ast
 
-type FormulationNodeType interface {
-	MlgNodeType
+type FormulationNodeKind interface {
+	MlgNodeKind
 	FormulationNodeType()
 	Start() Position
 	GetFormulationMetaData() *FormulationMetaData
-	ToCode(fn func(node MlgNodeType) (string, bool)) string
+	ToCode(fn func(node MlgNodeKind) (string, bool)) string
 }
 
 type FormulationMetaData struct {
-	Original FormulationNodeType
+	Original FormulationNodeKind
 }
 
 func (*NameForm) FormulationNodeType()                               {}

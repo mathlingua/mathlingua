@@ -16,37 +16,37 @@
 
 package ast
 
-func (n *Root) ForEach(fn func(subNode MlgNodeType)) {
+func (n *Root) ForEach(fn func(subNode MlgNodeKind)) {
 	for _, doc := range n.Documents {
 		fn(&doc)
 	}
 }
 
-func (n *IdItem) ForEach(fn func(subNode MlgNodeType)) {
+func (n *IdItem) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Root)
 }
 
-func (n *Target) ForEach(fn func(subNode MlgNodeType)) {
+func (n *Target) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Root)
 }
 
-func (n *Spec) ForEach(fn func(subNode MlgNodeType)) {
+func (n *Spec) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Root)
 }
 
-func (n *Alias) ForEach(fn func(subNode MlgNodeType)) {
+func (n *Alias) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Root)
 }
 
-func (n *Formulation[T]) ForEach(fn func(subNode MlgNodeType)) {
+func (n *Formulation[T]) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Root)
 }
 
-func (n *TextItem) ForEach(fn func(subNode MlgNodeType)) {
+func (n *TextItem) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
-func (n *GivenGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *GivenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTarget(n.Given.Given, fn)
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
@@ -57,23 +57,23 @@ func (n *GivenGroup) ForEach(fn func(subNode MlgNodeType)) {
 	forEach(n.Then.Clauses, fn)
 }
 
-func (n *AllOfGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *AllOfGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.AllOf.Clauses, fn)
 }
 
-func (n *NotGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *NotGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Not.Clause)
 }
 
-func (n *AnyOfGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *AnyOfGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.AnyOf.Clauses, fn)
 }
 
-func (n *OneOfGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *OneOfGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.OneOf.Clauses, fn)
 }
 
-func (n *ExistsGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ExistsGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTarget(n.Exists.Targets, fn)
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
@@ -83,7 +83,7 @@ func (n *ExistsGroup) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *ExistsUniqueGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ExistsUniqueGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTarget(n.ExistsUnique.Targets, fn)
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
@@ -91,7 +91,7 @@ func (n *ExistsUniqueGroup) ForEach(fn func(subNode MlgNodeType)) {
 	forEach(n.SuchThat.Clauses, fn)
 }
 
-func (n *ForAllGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ForAllGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTarget(n.ForAll.Targets, fn)
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
@@ -102,17 +102,17 @@ func (n *ForAllGroup) ForEach(fn func(subNode MlgNodeType)) {
 	forEach(n.Then.Clauses, fn)
 }
 
-func (n *IfGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *IfGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.If.Clauses, fn)
 	forEach(n.Then.Clauses, fn)
 }
 
-func (n *IffGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *IffGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Iff.Clauses, fn)
 	forEach(n.Then.Clauses, fn)
 }
 
-func (n *PiecewiseGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PiecewiseGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	for i, _ := range n.IfThen {
 		forEach(n.IfThen[i].If.Clauses, fn)
 		forEach(n.IfThen[i].Then.Clauses, fn)
@@ -122,19 +122,19 @@ func (n *PiecewiseGroup) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *WhenGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *WhenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.When.When, fn)
 	forEach(n.Then.Clauses, fn)
 }
 
-func (n *SymbolWrittenGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *SymbolWrittenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Symbol.Symbol)
 	if n.Written != nil {
 		forEachTextItem(n.Written.Written, fn)
 	}
 }
 
-func (n *ConnectionGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ConnectionGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}
@@ -147,62 +147,62 @@ func (n *ConnectionGroup) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *WrittenGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *WrittenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Written.Written, fn)
 }
 
-func (n *CalledGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *CalledGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Called.Called, fn)
 }
 
-func (n *WritingGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *WritingGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.As.As, fn)
 	fn(&n.Writing.Writing)
 }
 
-func (n *OverviewGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *OverviewGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Overview.Overview)
 }
 
-func (n *MotivationGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *MotivationGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Motivation.Motivation)
 }
 
-func (n *HistoryGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *HistoryGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.History.History)
 }
 
-func (n *ExampleGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ExampleGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Examples.Examples, fn)
 }
 
-func (n *RelatedGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *RelatedGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Related.Related, fn)
 }
 
-func (n *DiscovererGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *DiscovererGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Discoverer.Discoverer, fn)
 }
 
-func (n *NoteGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *NoteGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Note.Note, fn)
 }
 
-func (n *DescribingGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *DescribingGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Describing.Describing)
 	fn(&n.Content.Content)
 }
 
-func (n *LabelGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *LabelGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Label.Label)
 	forEachTextItem(n.By.By, fn)
 }
 
-func (n *ByGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ByGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.By.By, fn)
 }
 
-func (n *DescribesGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *DescribesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Id)
 	fn(&n.Describes.Describes)
 	if n.With != nil {
@@ -243,7 +243,7 @@ func (n *DescribesGroup) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *DefinesGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *DefinesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Id)
 	fn(&n.Defines.Defines)
 	if n.With != nil {
@@ -287,7 +287,7 @@ func (n *DefinesGroup) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *StatesGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *StatesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Id)
 	if n.With != nil {
 		forEachTarget(n.With.With, fn)
@@ -319,13 +319,13 @@ func (n *StatesGroup) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *ProofGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ProofGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Id)
 	fn(&n.Of.Of)
 	fn(&n.Content.Content)
 }
 
-func (n *AxiomGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *AxiomGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Id != nil {
 		fn(n.Id)
 	}
@@ -356,7 +356,7 @@ func (n *AxiomGroup) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *ConjectureGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ConjectureGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Id != nil {
 		fn(n.Id)
 	}
@@ -387,7 +387,7 @@ func (n *ConjectureGroup) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *TheoremGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *TheoremGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Id != nil {
 		fn(n.Id)
 	}
@@ -421,7 +421,7 @@ func (n *TheoremGroup) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *TopicGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *TopicGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Id)
 	fn(&n.Content.Content)
 	if n.References != nil {
@@ -432,157 +432,157 @@ func (n *TopicGroup) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *ZeroGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ZeroGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Means.Means)
 }
 
-func (n *PositiveIntGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PositiveIntGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Means.Means)
 }
 
-func (n *NegativeIntGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *NegativeIntGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Means.Means)
 }
 
-func (n *PositiveFloatGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PositiveFloatGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Means.Means)
 }
 
-func (n *NegativeFloatGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *NegativeFloatGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Means.Means)
 }
 
-func (n *SpecifyGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *SpecifyGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Specify.Specify, fn)
 	fn(&n.MetaId.Id)
 }
 
-func (n *PersonGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PersonGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Person.Items, fn)
 	fn(&n.MetaId.Id)
 }
 
-func (n *NameGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *NameGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Name.Name, fn)
 }
 
-func (n *BiographyGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *BiographyGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Biography.Biography)
 }
 
-func (n *ResourceGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ResourceGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Resource.Items, fn)
 }
 
-func (n *TitleGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *TitleGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Title.Title)
 }
 
-func (n *AuthorGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *AuthorGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Author.Author, fn)
 }
 
-func (n *OffsetGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *OffsetGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Offset.Offset)
 }
 
-func (n *UrlGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *UrlGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Url.Url)
 }
 
-func (n *HomepageGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *HomepageGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Homepage.Homepage)
 }
 
-func (n *TypeGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *TypeGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Type.Type)
 }
 
-func (n *EditorGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *EditorGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Editor.Editor, fn)
 }
 
-func (n *EditionGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *EditionGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Edition.Edition)
 }
 
-func (n *InstitutionGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *InstitutionGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Institution.Institution, fn)
 }
 
-func (n *JournalGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *JournalGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Journal.Journal, fn)
 }
 
-func (n *PublisherGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PublisherGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Publisher.Publisher, fn)
 }
 
-func (n *VolumeGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *VolumeGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Volume.Volume)
 }
 
-func (n *MonthGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *MonthGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Month.Month)
 }
 
-func (n *YearGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *YearGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Year.Year)
 }
 
-func (n *DescriptionGroup) ForEach(fn func(subNode MlgNodeType)) {
+func (n *DescriptionGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Description.Description)
 }
 
-func (n *Document) ForEach(fn func(subNode MlgNodeType)) {
+func (n *Document) ForEach(fn func(subNode MlgNodeKind)) {
 	for i, _ := range n.Items {
 		fn(n.Items[i])
 	}
 }
 
-func (n *TextBlockItem) ForEach(fn func(subNode MlgNodeType)) {
+func (n *TextBlockItem) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
-func (n *NameForm) ForEach(fn func(subNode MlgNodeType)) {
+func (n *NameForm) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
-func (n *FunctionForm) ForEach(fn func(subNode MlgNodeType)) {
+func (n *FunctionForm) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Target)
 	forEach(n.Params, fn)
 }
 
-func (n *TupleForm) ForEach(fn func(subNode MlgNodeType)) {
+func (n *TupleForm) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Params, fn)
 }
 
-func (n *ConditionalSetForm) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ConditionalSetForm) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Target)
 }
 
-func (n *ConditionalSetIdForm) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ConditionalSetIdForm) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Symbols, fn)
 	fn(n.Target)
 	fn(&n.Condition)
 }
 
-func (n *FunctionCallExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *FunctionCallExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Target)
 	forEach(n.Args, fn)
 }
 
-func (n *TupleExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *TupleExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Args, fn)
 }
 
-func (n *ConditionalSetExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ConditionalSetExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Symbols, fn)
 	fn(n.Target)
 	forEach(n.Conditions, fn)
 }
 
-func (n *CommandExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *CommandExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachNameForm(n.Names, fn)
 	if n.CurlyArg != nil {
 		fn(n.CurlyArg)
@@ -595,94 +595,94 @@ func (n *CommandExpression) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *NamedArg) ForEach(fn func(subNode MlgNodeType)) {
+func (n *NamedArg) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Name)
 	if n.CurlyArg != nil {
 		fn(n.CurlyArg)
 	}
 }
 
-func (n *PrefixOperatorCallExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PrefixOperatorCallExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Target)
 	fn(n.Arg)
 }
 
-func (n *PostfixOperatorCallExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PostfixOperatorCallExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Arg)
 	fn(n.Target)
 }
 
-func (n *InfixOperatorCallExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *InfixOperatorCallExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
 	fn(n.Target)
 	fn(n.Rhs)
 }
 
-func (n *IsExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *IsExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Lhs, fn)
 	forEach(n.Rhs, fn)
 }
 
-func (n *ExtendsExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ExtendsExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Lhs, fn)
 	forEach(n.Rhs, fn)
 }
 
-func (n *AsExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *AsExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
 	fn(&n.Rhs)
 }
 
-func (n *OrdinalCallExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *OrdinalCallExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Target)
 	forEach(n.Args, fn)
 }
 
-func (n *ChainExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ChainExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Parts, fn)
 }
 
-func (n Signature) ForEach(fn func(subNode MlgNodeType)) {
+func (n Signature) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
-func (n *MetaKinds) ForEach(fn func(subNode MlgNodeType)) {
+func (n *MetaKinds) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
-func (n *StructuralColonEqualsForm) ForEach(fn func(subNode MlgNodeType)) {
+func (n *StructuralColonEqualsForm) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
 	fn(n.Rhs)
 }
 
-func (n *ExpressionColonEqualsItem) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ExpressionColonEqualsItem) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
 	fn(n.Rhs)
 }
 
-func (n *ExpressionColonArrowItem) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ExpressionColonArrowItem) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
 	fn(n.Rhs)
 }
 
-func (n *ExpressionColonDashArrowItem) ForEach(fn func(subNode MlgNodeType)) {
+func (n *ExpressionColonDashArrowItem) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
 	fn(n.Rhs)
 }
 
-func (n *EnclosedNonCommandOperatorTarget) ForEach(fn func(subNode MlgNodeType)) {
+func (n *EnclosedNonCommandOperatorTarget) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Target)
 }
 
-func (n *NonEnclosedNonCommandOperatorTarget) ForEach(fn func(subNode MlgNodeType)) {
+func (n *NonEnclosedNonCommandOperatorTarget) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
-func (n *CommandOperatorTarget) ForEach(fn func(subNode MlgNodeType)) {
+func (n *CommandOperatorTarget) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Command)
 }
 
-func (n *CommandId) ForEach(fn func(subNode MlgNodeType)) {
+func (n *CommandId) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachNameForm(n.Names, fn)
 	if n.CurlyParam != nil {
 		fn(n.CurlyParam)
@@ -695,36 +695,36 @@ func (n *CommandId) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *NamedParam) ForEach(fn func(subNode MlgNodeType)) {
+func (n *NamedParam) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Name)
 	if n.CurlyParam != nil {
 		fn(n.CurlyParam)
 	}
 }
 
-func (n *PrefixOperatorId) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PrefixOperatorId) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Operator)
 	fn(n.Param)
 }
 
-func (n *PostfixOperatorId) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PostfixOperatorId) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Param)
 	fn(&n.Operator)
 }
 
-func (n *InfixOperatorId) ForEach(fn func(subNode MlgNodeType)) {
+func (n *InfixOperatorId) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
 	fn(&n.Operator)
 	fn(n.Rhs)
 }
 
-func (n *InfixCommandOperatorId) ForEach(fn func(subNode MlgNodeType)) {
+func (n *InfixCommandOperatorId) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
 	fn(&n.Operator)
 	fn(n.Rhs)
 }
 
-func (n *InfixCommandId) ForEach(fn func(subNode MlgNodeType)) {
+func (n *InfixCommandId) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachNameForm(n.Names, fn)
 	if n.CurlyParam != nil {
 		fn(n.CurlyParam)
@@ -737,42 +737,42 @@ func (n *InfixCommandId) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *PseudoTokenNode) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PseudoTokenNode) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
-func (n *PseudoExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PseudoExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Children, fn)
 }
 
-func (n *MultiplexedInfixOperatorCallExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *MultiplexedInfixOperatorCallExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Lhs, fn)
 	fn(n.Target)
 	forEach(n.Rhs, fn)
 }
 
-func (n *InfixOperatorForm) ForEach(fn func(subNode MlgNodeType)) {
+func (n *InfixOperatorForm) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
 	fn(&n.Operator)
 	fn(n.Rhs)
 }
 
-func (n *PrefixOperatorForm) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PrefixOperatorForm) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Operator)
 	fn(n.Param)
 }
 
-func (n *PostfixOperatorForm) ForEach(fn func(subNode MlgNodeType)) {
+func (n *PostfixOperatorForm) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Param)
 	fn(&n.Operator)
 }
 
-func (n *FunctionLiteralExpression) ForEach(fn func(subNode MlgNodeType)) {
+func (n *FunctionLiteralExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Lhs)
 	fn(n.Rhs)
 }
 
-func (n *CurlyParam) ForEach(fn func(subNode MlgNodeType)) {
+func (n *CurlyParam) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.SquareParams != nil {
 		forEach(*n.SquareParams, fn)
 	}
@@ -782,14 +782,14 @@ func (n *CurlyParam) ForEach(fn func(subNode MlgNodeType)) {
 	}
 }
 
-func (n *CurlyArg) ForEach(fn func(subNode MlgNodeType)) {
+func (n *CurlyArg) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(*n.CurlyArgs, fn)
 	if n.Direction != nil {
 		fn(n.Direction)
 	}
 }
 
-func (n *DirectionalParam) ForEach(fn func(subNode MlgNodeType)) {
+func (n *DirectionalParam) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Name != nil {
 		fn(n.Name)
 	}
@@ -798,55 +798,55 @@ func (n *DirectionalParam) ForEach(fn func(subNode MlgNodeType)) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func forEach[T MlgNodeType](items []T, fn func(n MlgNodeType)) {
+func forEach[T MlgNodeKind](items []T, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(items[i])
 	}
 }
 
-func forEachNameForm(items []NameForm, fn func(n MlgNodeType)) {
+func forEachNameForm(items []NameForm, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(&items[i])
 	}
 }
 
-func forEachNamedArg(items []NamedArg, fn func(n MlgNodeType)) {
+func forEachNamedArg(items []NamedArg, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(&items[i])
 	}
 }
 
-func forEachNamedParam(items []NamedParam, fn func(n MlgNodeType)) {
+func forEachNamedParam(items []NamedParam, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(&items[i])
 	}
 }
 
-func forEachFormulation(items []Formulation[FormulationNodeType], fn func(n MlgNodeType)) {
+func forEachFormulation(items []Formulation[FormulationNodeKind], fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(&items[i])
 	}
 }
 
-func forEachTarget(items []Target, fn func(n MlgNodeType)) {
+func forEachTarget(items []Target, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(&items[i])
 	}
 }
 
-func forEachSpec(items []Spec, fn func(n MlgNodeType)) {
+func forEachSpec(items []Spec, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(&items[i])
 	}
 }
 
-func forEachAlias(items []Alias, fn func(n MlgNodeType)) {
+func forEachAlias(items []Alias, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(&items[i])
 	}
 }
 
-func forEachTextItem(items []TextItem, fn func(n MlgNodeType)) {
+func forEachTextItem(items []TextItem, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(&items[i])
 	}

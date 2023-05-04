@@ -21,7 +21,7 @@ import (
 	"mathlingua/internal/frontend/phase4"
 )
 
-func GetPhase4MetaId(node phase4.TopLevelNodeType) (string, bool) {
+func GetPhase4MetaId(node phase4.TopLevelNodeKind) (string, bool) {
 	switch tl := node.(type) {
 	case *phase4.Group:
 		found := false
@@ -45,7 +45,7 @@ func GetPhase4MetaId(node phase4.TopLevelNodeType) (string, bool) {
 	}
 }
 
-func GetAstMetaId(node ast.TopLevelItemType) (string, bool) {
+func GetAstMetaId(node ast.TopLevelItemKind) (string, bool) {
 	switch tl := node.(type) {
 	case *ast.DefinesGroup:
 		metaId := tl.MetaId

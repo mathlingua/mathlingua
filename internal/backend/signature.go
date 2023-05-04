@@ -20,7 +20,7 @@ import (
 	"mathlingua/internal/ast"
 )
 
-func GetSignatureStringFromTopLevel(topLevel ast.TopLevelItemType) (string, bool) {
+func GetSignatureStringFromTopLevel(topLevel ast.TopLevelItemKind) (string, bool) {
 	switch tl := topLevel.(type) {
 	case *ast.DefinesGroup:
 		return GetSignatureStringFromId(tl.Id)

@@ -24,15 +24,15 @@ import (
 	"strings"
 )
 
-func Consolidate(path ast.Path, nodes []ast.FormulationNodeType,
+func Consolidate(path ast.Path, nodes []ast.FormulationNodeKind,
 	tracker *frontend.DiagnosticTracker) (
-	ast.FormulationNodeType, bool) {
-	items := mlglib.NewStack[ShuntingYardItem[ast.FormulationNodeType]]()
+	ast.FormulationNodeKind, bool) {
+	items := mlglib.NewStack[ShuntingYardItem[ast.FormulationNodeKind]]()
 	for _, item := range ShuntingYard(toShuntingYardItems(nodes)) {
 		items.Push(item)
 	}
 
-	stack := mlglib.NewStack[ast.FormulationNodeType]()
+	stack := mlglib.NewStack[ast.FormulationNodeKind]()
 	for !items.IsEmpty() {
 		stack.Push(toNode(path, items, tracker))
 	}
@@ -45,7 +45,7 @@ func Consolidate(path ast.Path, nodes []ast.FormulationNodeType,
 	return top, stack.IsEmpty()
 }
 
-func GetPrecedenceAndIfInfix(node ast.ExpressionType) (int, bool) {
+func GetPrecedenceAndIfInfix(node ast.ExpressionKind) (int, bool) {
 	if _, infixOk := node.(*ast.InfixOperatorCallExpression); !infixOk {
 		return -1, false
 	}
@@ -55,12 +55,12 @@ func GetPrecedenceAndIfInfix(node ast.ExpressionType) (int, bool) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var default_expression ast.ExpressionType = &ast.NameForm{}
-var default_kind_type ast.KindType = &ast.NameForm{}
+var default_expression ast.ExpressionKind = &ast.NameForm{}
+var default_kind_type ast.KindKind = &ast.NameForm{}
 var default_signature *ast.Signature = &ast.Signature{}
 
-func toNode(path ast.Path, items *mlglib.Stack[ShuntingYardItem[ast.FormulationNodeType]],
-	tracker *frontend.DiagnosticTracker) ast.FormulationNodeType {
+func toNode(path ast.Path, items *mlglib.Stack[ShuntingYardItem[ast.FormulationNodeKind]],
+	tracker *frontend.DiagnosticTracker) ast.FormulationNodeKind {
 	if items.IsEmpty() {
 		return nil
 	}
@@ -192,8 +192,8 @@ func toNode(path ast.Path, items *mlglib.Stack[ShuntingYardItem[ast.FormulationN
 			lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
 			return &ast.IsExpression{
-				Lhs: []ast.ExpressionType{lhs},
-				Rhs: []ast.KindType{rhs},
+				Lhs: []ast.ExpressionKind{lhs},
+				Rhs: []ast.KindKind{rhs},
 			}
 		case top.Type == ast.Extends:
 			rhs := checkType(path, toNode(path, items, tracker), default_kind_type, "Kind Type",
@@ -201,8 +201,8 @@ func toNode(path ast.Path, items *mlglib.Stack[ShuntingYardItem[ast.FormulationN
 			lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
 			return &ast.ExtendsExpression{
-				Lhs: []ast.ExpressionType{lhs},
-				Rhs: []ast.KindType{rhs},
+				Lhs: []ast.ExpressionKind{lhs},
+				Rhs: []ast.KindKind{rhs},
 			}
 		case top.Type == ast.As:
 			rhs := checkType(path, toNode(path, items, tracker), default_signature, "Signature",
@@ -222,8 +222,8 @@ func toNode(path ast.Path, items *mlglib.Stack[ShuntingYardItem[ast.FormulationN
 }
 
 func toShuntingYardItems(
-	nodes []ast.FormulationNodeType) []ShuntingYardItem[ast.FormulationNodeType] {
-	result := make([]ShuntingYardItem[ast.FormulationNodeType], 0)
+	nodes []ast.FormulationNodeKind) []ShuntingYardItem[ast.FormulationNodeKind] {
+	result := make([]ShuntingYardItem[ast.FormulationNodeKind], 0)
 	isOperators := make([]bool, len(nodes))
 	isSpecialOperators := make([]bool, len(nodes))
 	for i, node := range nodes {
@@ -256,7 +256,7 @@ func toShuntingYardItems(
 
 	for i, node := range nodes {
 		prec, assoc := getPrecedenceAssociativity(node, itemTypes[i])
-		result = append(result, ShuntingYardItem[ast.FormulationNodeType]{
+		result = append(result, ShuntingYardItem[ast.FormulationNodeKind]{
 			Item:          node,
 			ItemType:      itemTypes[i],
 			Precedence:    prec,
@@ -277,7 +277,7 @@ func toIsOperatorToGeneralItemType(isOperator bool, isSpecialOperator bool) gene
 	}
 }
 
-func isOperator(node ast.FormulationNodeType) bool {
+func isOperator(node ast.FormulationNodeKind) bool {
 	switch node := node.(type) {
 	case *ast.PrefixOperatorCallExpression:
 		// prefix operators
@@ -322,7 +322,7 @@ func isOperator(node ast.FormulationNodeType) bool {
 	}
 }
 
-func isSpecialOperator(node ast.FormulationNodeType) bool {
+func isSpecialOperator(node ast.FormulationNodeKind) bool {
 	switch node := node.(type) {
 	case *ast.PrefixOperatorCallExpression:
 		// prefix operators
@@ -494,7 +494,7 @@ func getOperatorPrecedenceAssociativityByText(text string, itemType ItemType) (i
 	}
 }
 
-func getPrecedenceAssociativity(node ast.FormulationNodeType,
+func getPrecedenceAssociativity(node ast.FormulationNodeKind,
 	itemType ItemType) (int, Associativity) {
 	switch node := node.(type) {
 	case *ast.PrefixOperatorCallExpression:
@@ -523,7 +523,7 @@ func getPrecedenceAssociativity(node ast.FormulationNodeType,
 	}
 }
 
-func checkType[T any](path ast.Path, node ast.FormulationNodeType, def T, typeName string,
+func checkType[T any](path ast.Path, node ast.FormulationNodeKind, def T, typeName string,
 	tracker *frontend.DiagnosticTracker, fallbackPosition ast.Position) T {
 	cast, ok := node.(T)
 	if ok {

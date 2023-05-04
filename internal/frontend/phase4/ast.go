@@ -130,7 +130,7 @@ func (s *Section) ChildAt(index int) Node {
 type Argument struct {
 	Type     NodeType
 	IsInline bool
-	Arg      ArgumentDataType
+	Arg      ArgumentDataKind
 	MetaData MetaData
 }
 
@@ -227,7 +227,7 @@ func (a *ArgumentTextArgumentData) ChildAt(index int) Node {
 	panic("Cannot get children of an ArgumentTextArgumentData")
 }
 
-type ArgumentDataType interface {
+type ArgumentDataKind interface {
 	Node
 	ArgumentDataType()
 }
@@ -266,7 +266,7 @@ func (t *TextBlock) Start() ast.Position {
 
 type Document struct {
 	Type     NodeType
-	Nodes    []TopLevelNodeType
+	Nodes    []TopLevelNodeKind
 	MetaData MetaData
 }
 
@@ -291,7 +291,7 @@ func (r *Document) ChildAt(index int) Node {
 	return r.Nodes[index]
 }
 
-type TopLevelNodeType interface {
+type TopLevelNodeKind interface {
 	Node
 	TopLevelNodeType()
 	Start() ast.Position

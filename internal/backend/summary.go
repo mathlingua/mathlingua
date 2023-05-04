@@ -20,24 +20,24 @@ import (
 	"mathlingua/internal/ast"
 )
 
-type SummaryType interface {
+type SummaryKind interface {
 	SummaryType()
-	GetExpAliasSummaries() []ExpAliasSummaryType
+	GetExpAliasSummaries() []ExpAliasSummaryKind
 }
 
 func (*DescribesSummary) SummaryType() {}
 func (*DefinesSummary) SummaryType()   {}
 func (*StatesSummary) SummaryType()    {}
 
-func (s *DescribesSummary) GetExpAliasSummaries() []ExpAliasSummaryType {
+func (s *DescribesSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 	return s.ExpAliases
 }
 
-func (s *DefinesSummary) GetExpAliasSummaries() []ExpAliasSummaryType {
+func (s *DefinesSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 	return s.ExpAliases
 }
 
-func (s *StatesSummary) GetExpAliasSummaries() []ExpAliasSummaryType {
+func (s *StatesSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 	return s.ExpAliases
 }
 
@@ -45,12 +45,12 @@ func (s *StatesSummary) GetExpAliasSummaries() []ExpAliasSummaryType {
 
 type DescribesSummary struct {
 	DefScope    *ast.Scope
-	Input       PatternType
-	Output      PatternType
-	Usings      []PatternType
-	When        []ConstraintType
-	Extends     []ConstraintType
-	ExpAliases  []ExpAliasSummaryType
+	Input       PatternKind
+	Output      PatternKind
+	Usings      []PatternKind
+	When        []ConstraintKind
+	Extends     []ConstraintKind
+	ExpAliases  []ExpAliasSummaryKind
 	SpecAliases []SpecAliasSummary
 	Written     []WrittenSummary
 	Writing     []WritingSummary
@@ -59,12 +59,12 @@ type DescribesSummary struct {
 
 type DefinesSummary struct {
 	DefScope    *ast.Scope
-	Input       PatternType
-	Output      PatternType
-	Usings      []PatternType
-	When        []ConstraintType
-	Means       []ConstraintType
-	ExpAliases  []ExpAliasSummaryType
+	Input       PatternKind
+	Output      PatternKind
+	Usings      []PatternKind
+	When        []ConstraintKind
+	Means       []ConstraintKind
+	ExpAliases  []ExpAliasSummaryKind
 	SpecAliases []SpecAliasSummary
 	Written     []WrittenSummary
 	Writing     []WritingSummary
@@ -73,10 +73,10 @@ type DefinesSummary struct {
 
 type StatesSummary struct {
 	DefScope    *ast.Scope
-	Input       PatternType
-	Output      PatternType
-	Usings      []PatternType
-	ExpAliases  []ExpAliasSummaryType
+	Input       PatternKind
+	Output      PatternKind
+	Usings      []PatternKind
+	ExpAliases  []ExpAliasSummaryKind
 	SpecAliases []SpecAliasSummary
 	Written     []WrittenSummary
 	Writing     []WritingSummary
@@ -85,7 +85,7 @@ type StatesSummary struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func GetResolvedInput(summary SummaryType) (PatternType, bool) {
+func GetResolvedInput(summary SummaryKind) (PatternKind, bool) {
 	switch s := summary.(type) {
 	case *DescribesSummary:
 		return s.Input, true
@@ -98,9 +98,9 @@ func GetResolvedInput(summary SummaryType) (PatternType, bool) {
 	}
 }
 
-func GetResolvedWritten(summary SummaryType) ([]TextItemType, bool) {
-	var called *[]TextItemType
-	var written *[]TextItemType
+func GetResolvedWritten(summary SummaryKind) ([]TextItemKind, bool) {
+	var called *[]TextItemKind
+	var written *[]TextItemKind
 	switch s := summary.(type) {
 	case *DescribesSummary:
 		called = getSingleCalled(s.Called)
@@ -118,7 +118,7 @@ func GetResolvedWritten(summary SummaryType) ([]TextItemType, bool) {
 	}
 
 	if called != nil {
-		result := make([]TextItemType, 0)
+		result := make([]TextItemKind, 0)
 		result = append(result, &StringItem{
 			Text: "\\textrm{",
 		})
@@ -134,7 +134,7 @@ func GetResolvedWritten(summary SummaryType) ([]TextItemType, bool) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func getSingleCalled(called []CalledSummary) *[]TextItemType {
+func getSingleCalled(called []CalledSummary) *[]TextItemKind {
 	if len(called) == 0 {
 		return nil
 	}
@@ -142,7 +142,7 @@ func getSingleCalled(called []CalledSummary) *[]TextItemType {
 	return &text
 }
 
-func getSingleWritten(written []WrittenSummary) *[]TextItemType {
+func getSingleWritten(written []WrittenSummary) *[]TextItemKind {
 	if len(written) == 0 {
 		return nil
 	}

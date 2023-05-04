@@ -22,7 +22,7 @@ import (
 	"mathlingua/internal/ast"
 )
 
-type ConstraintType interface {
+type ConstraintKind interface {
 	ConstraintType()
 }
 
@@ -31,21 +31,21 @@ func (*SpecConstraint) ConstraintType()    {}
 func (*ExtendsConstraint) ConstraintType() {}
 
 type IsConstraint struct {
-	Target       PatternType
-	SignatureExp ast.KindType
+	Target       PatternKind
+	SignatureExp ast.KindKind
 	Scope        *ast.Scope
 }
 
 type ExtendsConstraint struct {
-	Target       PatternType
-	SignatureExp ast.KindType
+	Target       PatternKind
+	SignatureExp ast.KindKind
 	Scope        *ast.Scope
 }
 
 type SpecConstraint struct {
-	Target PatternType
+	Target PatternKind
 	Name   string
-	Exp    ast.ExpressionType
+	Exp    ast.ExpressionKind
 	Scope  *ast.Scope
 }
 
@@ -103,11 +103,11 @@ func ToSpecConstraints(node ast.MultiplexedInfixOperatorCallExpression) ([]SpecC
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func noOp(node ast.MlgNodeType) (string, bool) {
+func noOp(node ast.MlgNodeKind) (string, bool) {
 	return "", false
 }
 
-func toSingleStructuralForm(exp ast.ExpressionType) (ast.StructuralFormType, error) {
+func toSingleStructuralForm(exp ast.ExpressionKind) (ast.StructuralFormKind, error) {
 	nodes, err := toStructuralForms(exp)
 	if err != nil {
 		return nil, err
@@ -119,10 +119,10 @@ func toSingleStructuralForm(exp ast.ExpressionType) (ast.StructuralFormType, err
 	return nodes[0], nil
 }
 
-func toStructuralForms(exp ast.ExpressionType) ([]ast.StructuralFormType, error) {
+func toStructuralForms(exp ast.ExpressionKind) ([]ast.StructuralFormKind, error) {
 	switch n := exp.(type) {
 	case *ast.NameForm:
-		return []ast.StructuralFormType{n}, nil
+		return []ast.StructuralFormKind{n}, nil
 	case *ast.FunctionCallExpression:
 		target, err := toSingleStructuralForm(n.Target)
 		if err != nil {
@@ -136,7 +136,7 @@ func toStructuralForms(exp ast.ExpressionType) ([]ast.StructuralFormType, error)
 		if err != nil {
 			return nil, err
 		}
-		return []ast.StructuralFormType{
+		return []ast.StructuralFormKind{
 			&ast.FunctionForm{
 				Target: name,
 				Params: args,
@@ -148,7 +148,7 @@ func toStructuralForms(exp ast.ExpressionType) ([]ast.StructuralFormType, error)
 		if err != nil {
 			return nil, err
 		}
-		return []ast.StructuralFormType{
+		return []ast.StructuralFormKind{
 			&ast.TupleForm{
 				Params: params,
 				// TODO: check vararg
@@ -159,7 +159,7 @@ func toStructuralForms(exp ast.ExpressionType) ([]ast.StructuralFormType, error)
 		if err != nil {
 			return nil, err
 		}
-		return []ast.StructuralFormType{
+		return []ast.StructuralFormKind{
 			&ast.ConditionalSetForm{
 				Target: target,
 				// TODO: check vararg
@@ -170,7 +170,7 @@ func toStructuralForms(exp ast.ExpressionType) ([]ast.StructuralFormType, error)
 	}
 }
 
-func toNameFormSlice(args []ast.StructuralFormType) ([]ast.NameForm, error) {
+func toNameFormSlice(args []ast.StructuralFormKind) ([]ast.NameForm, error) {
 	result := make([]ast.NameForm, 0)
 	for _, arg := range args {
 		name, err := toNameForm(arg)
@@ -182,7 +182,7 @@ func toNameFormSlice(args []ast.StructuralFormType) ([]ast.NameForm, error) {
 	return result, nil
 }
 
-func toNameForm(form ast.StructuralFormType) (ast.NameForm, error) {
+func toNameForm(form ast.StructuralFormKind) (ast.NameForm, error) {
 	name, ok := form.(*ast.NameForm)
 	if ok {
 		return *name, nil
@@ -190,8 +190,8 @@ func toNameForm(form ast.StructuralFormType) (ast.NameForm, error) {
 	return ast.NameForm{}, errors.New(fmt.Sprintf("Expected a name but found %s", form.ToCode(noOp)))
 }
 
-func toSingleStructuralFormSlice(args []ast.ExpressionType) ([]ast.StructuralFormType, error) {
-	result := make([]ast.StructuralFormType, 0)
+func toSingleStructuralFormSlice(args []ast.ExpressionKind) ([]ast.StructuralFormKind, error) {
+	result := make([]ast.StructuralFormKind, 0)
 	for _, arg := range args {
 		form, err := toSingleStructuralForm(arg)
 		if err != nil {

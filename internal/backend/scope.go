@@ -22,4 +22,31 @@ import (
 )
 
 func PopulateScopes(node ast.MlgNodeType, tracker *frontend.DiagnosticTracker) {
+	switch n := node.(type) {
+	case *ast.Document:
+		populateDocumentScopes(n)
+	}
+
+	node.ForEach(func(subNode ast.MlgNodeType) {
+		PopulateScopes(subNode, tracker)
+	})
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func populateDocumentScopes(doc *ast.Document) {
+	for _, item := range doc.Items {
+		if specify, ok := item.(*ast.SpecifyGroup); ok {
+			for _, specifyItem := range specify.Specify.Specify {
+				if si, siOk := specifyItem.(*ast.ZeroGroup); siOk {
+					//					si.Means.Means
+					si = si
+				}
+			}
+		}
+	}
+}
+
+func getIdentifierInfos(clause ast.ClauseType) []ast.IdentifierInfo {
+	return []ast.IdentifierInfo{}
 }

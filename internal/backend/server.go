@@ -51,7 +51,7 @@ func StartServer() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func initWorkspace() *Workspace {
+func initWorkspace() IWorkspace {
 	tracker := frontend.NewDiagnosticTracker()
 	tracker.AddListener(func(diag frontend.Diagnostic) {
 		fmt.Println(diag.ToString())
@@ -64,7 +64,7 @@ func initWorkspace() *Workspace {
 	return workspace
 }
 
-func paths(workspace *Workspace, writer http.ResponseWriter, request *http.Request) {
+func paths(workspace IWorkspace, writer http.ResponseWriter, request *http.Request) {
 	setJsonContentType(writer)
 	resp := PathsResponse{
 		Paths: workspace.Paths(),
@@ -72,7 +72,7 @@ func paths(workspace *Workspace, writer http.ResponseWriter, request *http.Reque
 	writeResponse(writer, &resp)
 }
 
-func page(workspace *Workspace, writer http.ResponseWriter, request *http.Request) {
+func page(workspace IWorkspace, writer http.ResponseWriter, request *http.Request) {
 	setJsonContentType(writer)
 	path := request.URL.Query().Get("path")
 	doc, diagnostics := workspace.GetDocumentAt(ast.ToPath(path))

@@ -26,8 +26,10 @@ import (
 	"time"
 )
 
-func NewWorkspaceFromPaths(paths []string,
-	tracker frontend.IDiagnosticTracker) (*Workspace, []frontend.Diagnostic) {
+func NewWorkspaceFromPaths(
+	paths []string,
+	tracker frontend.IDiagnosticTracker,
+) (IWorkspace, []frontend.Diagnostic) {
 	diagnostics := make([]frontend.Diagnostic, 0)
 
 	findFiles, findDiagnostics := getMathlinguaFiles(paths)

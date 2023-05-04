@@ -104,7 +104,29 @@ type CheckResult struct {
 	Diagnostics []frontend.Diagnostic
 }
 
-type Workspace struct {
+type IWorkspace interface {
+	DocumentCount() int
+	Paths() []ast.Path
+	GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Diagnostic)
+	Check() CheckResult
+}
+
+func NewWorkspace(contents map[ast.Path]string, tracker frontend.IDiagnosticTracker) IWorkspace {
+	w := workspace{
+		tracker:         tracker,
+		contents:        make(map[ast.Path]string, 0),
+		signaturesToIds: make(map[string]string, 0),
+		summaries:       make(map[string]SummaryKind, 0),
+		phase4Entries:   make(map[string]phase4.TopLevelNodeKind, 0),
+		topLevelEntries: make(map[string]ast.TopLevelItemKind, 0),
+	}
+	w.initialize(contents)
+	return &w
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type workspace struct {
 	// map paths to path contents
 	contents map[ast.Path]string
 	// the tracker used to record diagnostics
@@ -123,24 +145,11 @@ type Workspace struct {
 	topLevelEntries map[string]ast.TopLevelItemKind
 }
 
-func NewWorkspace(contents map[ast.Path]string, tracker frontend.IDiagnosticTracker) *Workspace {
-	w := Workspace{
-		tracker:         tracker,
-		contents:        make(map[ast.Path]string, 0),
-		signaturesToIds: make(map[string]string, 0),
-		summaries:       make(map[string]SummaryKind, 0),
-		phase4Entries:   make(map[string]phase4.TopLevelNodeKind, 0),
-		topLevelEntries: make(map[string]ast.TopLevelItemKind, 0),
-	}
-	w.initialize(contents)
-	return &w
-}
-
-func (w *Workspace) DocumentCount() int {
+func (w *workspace) DocumentCount() int {
 	return len(w.contents)
 }
 
-func (w *Workspace) Paths() []ast.Path {
+func (w *workspace) Paths() []ast.Path {
 	paths := make([]ast.Path, 0)
 	for k := range w.contents {
 		paths = append(paths, k)
@@ -148,7 +157,7 @@ func (w *Workspace) Paths() []ast.Path {
 	return paths
 }
 
-func (w *Workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Diagnostic) {
+func (w *workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Diagnostic) {
 	doc := w.astRoot.Documents[path]
 	keyToFormulationStr := make(map[int]string, 0)
 	for i := range doc.Items {
@@ -159,7 +168,7 @@ func (w *Workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Di
 	return phase4Doc, w.getDiagnosticsForPath(path)
 }
 
-func (w *Workspace) Check() CheckResult {
+func (w *workspace) Check() CheckResult {
 	w.findUsedUnknownSignatures()
 	for _, path := range w.Paths() {
 		// get all of the documents to populate the tracker
@@ -173,7 +182,7 @@ func (w *Workspace) Check() CheckResult {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (w *Workspace) initialize(contents map[ast.Path]string) {
+func (w *workspace) initialize(contents map[ast.Path]string) {
 	w.contents = contents
 	w.phase4Root, w.astRoot = ParseRoot(w.contents, w.tracker)
 	w.normalizeAst()
@@ -184,7 +193,7 @@ func (w *Workspace) initialize(contents map[ast.Path]string) {
 	w.initializeTopLevelEntries()
 }
 
-func (w *Workspace) formulationLikeToString(
+func (w *workspace) formulationLikeToString(
 	path ast.Path,
 	node ast.MlgNodeKind,
 	keyToFormulationStr map[int]string,
@@ -208,29 +217,29 @@ func (w *Workspace) formulationLikeToString(
 	}
 }
 
-func (w *Workspace) formulationToWritten(
+func (w *workspace) formulationToWritten(
 	path ast.Path,
 	node ast.Formulation[ast.FormulationNodeKind],
 ) string {
 	return w.formulationNodeToWritten(path, node.Root)
 }
 
-func (w *Workspace) specToWritten(path ast.Path, node ast.Spec) string {
+func (w *workspace) specToWritten(path ast.Path, node ast.Spec) string {
 	return w.formulationNodeToWritten(path, node.Root)
 }
 
-func (w *Workspace) aliasToWritten(path ast.Path, node ast.Alias) string {
+func (w *workspace) aliasToWritten(path ast.Path, node ast.Alias) string {
 	return w.formulationNodeToWritten(path, node.Root)
 }
 
-func (w *Workspace) commandInfixToWritten(
+func (w *workspace) commandInfixToWritten(
 	path ast.Path,
 	node *ast.CommandOperatorTarget,
 ) (string, bool) {
 	return w.commandToWritten(path, &node.Command)
 }
 
-func (w *Workspace) commandToWritten(path ast.Path, node *ast.CommandExpression) (string, bool) {
+func (w *workspace) commandToWritten(path ast.Path, node *ast.CommandExpression) (string, bool) {
 	sig := GetSignatureStringFromCommand(*node)
 	found := false
 	if id, ok := w.signaturesToIds[sig]; ok {
@@ -335,7 +344,7 @@ func (w *Workspace) commandToWritten(path ast.Path, node *ast.CommandExpression)
 	return "", false
 }
 
-func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeKind) string {
+func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeKind) string {
 	if mlgNode == nil {
 		return ""
 	}
@@ -445,7 +454,7 @@ func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 	return ast.Debug(mlgNode, customToCode)
 }
 
-func (w *Workspace) updateFormulationStrings(
+func (w *workspace) updateFormulationStrings(
 	path ast.Path,
 	node phase4.Node,
 	keyToFormulationStr map[int]string,
@@ -472,7 +481,7 @@ func (w *Workspace) updateFormulationStrings(
 	}
 }
 
-func (w *Workspace) getDiagnosticsForPath(path ast.Path) []frontend.Diagnostic {
+func (w *workspace) getDiagnosticsForPath(path ast.Path) []frontend.Diagnostic {
 	result := make([]frontend.Diagnostic, 0)
 	for _, diag := range w.tracker.Diagnostics() {
 		if diag.Path == path {
@@ -482,7 +491,7 @@ func (w *Workspace) getDiagnosticsForPath(path ast.Path) []frontend.Diagnostic {
 	return result
 }
 
-func (w *Workspace) initializeSignaturesToIds() {
+func (w *workspace) initializeSignaturesToIds() {
 	for _, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
 			sig, sigOk := GetSignatureStringFromTopLevel(item)
@@ -494,7 +503,7 @@ func (w *Workspace) initializeSignaturesToIds() {
 	}
 }
 
-func (w *Workspace) initializeSummaries() {
+func (w *workspace) initializeSummaries() {
 	for _, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
 			id, idOk := GetAstMetaId(item)
@@ -506,7 +515,7 @@ func (w *Workspace) initializeSummaries() {
 	}
 }
 
-func (w *Workspace) initializePhase4Entries() {
+func (w *workspace) initializePhase4Entries() {
 	for _, doc := range w.phase4Root.Documents {
 		for _, item := range doc.Nodes {
 			id, idOk := GetPhase4MetaId(item)
@@ -517,7 +526,7 @@ func (w *Workspace) initializePhase4Entries() {
 	}
 }
 
-func (w *Workspace) initializeTopLevelEntries() {
+func (w *workspace) initializeTopLevelEntries() {
 	for _, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
 			id, idOk := GetAstMetaId(item)
@@ -535,24 +544,24 @@ func (w *Workspace) initializeTopLevelEntries() {
 //     is introduced, then it replaced with something like `X := (a, b, c)` where an
 //     identifier `X` for the tuple itself is introduced.
 //   - Any alias in formulations are expanded so that aliases are not needed anymore.
-func (w *Workspace) normalizeAst() {
+func (w *workspace) normalizeAst() {
 	w.includeMissingIdentifiers()
 	w.expandAliases()
 }
 
-func (w *Workspace) populateScopes() {
+func (w *workspace) populateScopes() {
 	PopulateScopes(w.astRoot, w.tracker)
 }
 
-func (w *Workspace) includeMissingIdentifiers() {
+func (w *workspace) includeMissingIdentifiers() {
 	includeMissingIdentifiersAt(w.astRoot, mlglib.NewKeyGenerator())
 }
 
-func (w *Workspace) expandAliases() {
+func (w *workspace) expandAliases() {
 	expandAliasesAt(w.astRoot, w.summaries)
 }
 
-func (w *Workspace) findUsedUnknownSignatures() {
+func (w *workspace) findUsedUnknownSignatures() {
 	for path, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
 			findUsedUnknownSignaturesImpl(item, path, w)
@@ -716,7 +725,7 @@ func expandAliasesAt(node ast.MlgNodeKind, summaries map[string]SummaryKind) {
 	})
 }
 
-func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *Workspace) {
+func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *workspace) {
 	if node == nil {
 		return
 	}

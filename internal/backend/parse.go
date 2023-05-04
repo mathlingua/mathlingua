@@ -28,7 +28,7 @@ import (
 )
 
 func ParseDocument(text string, path ast.Path,
-	tracker *frontend.DiagnosticTracker) (*phase4.Document, *ast.Document) {
+	tracker frontend.IDiagnosticTracker) (*phase4.Document, *ast.Document) {
 
 	lexer1 := phase1.NewLexer(text, path, tracker)
 	lexer2 := phase2.NewLexer(lexer1, path, tracker)
@@ -41,7 +41,7 @@ func ParseDocument(text string, path ast.Path,
 }
 
 func ParseRoot(texts map[ast.Path]string,
-	tracker *frontend.DiagnosticTracker) (*phase4.Root, *ast.Root) {
+	tracker frontend.IDiagnosticTracker) (*phase4.Root, *ast.Root) {
 	phase4Docs := make(map[ast.Path]phase4.Document, 0)
 	astDocs := make(map[ast.Path]ast.Document, 0)
 

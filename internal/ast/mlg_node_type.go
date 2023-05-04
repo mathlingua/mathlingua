@@ -30,7 +30,7 @@ type MlgNodeKind interface {
 type CommonMetaData struct {
 	Start Position
 	Key   int
-	Scope *Scope
+	Scope IScope
 }
 
 func (*Root) MlgNodeType()               {}

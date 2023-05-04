@@ -108,7 +108,7 @@ type Workspace struct {
 	// map paths to path contents
 	contents map[ast.Path]string
 	// the tracker used to record diagnostics
-	tracker *frontend.DiagnosticTracker
+	tracker frontend.IDiagnosticTracker
 	// mapping of paths to phase4 documents
 	phase4Root *phase4.Root
 	// the root of the phase5 parse tree generated
@@ -123,7 +123,7 @@ type Workspace struct {
 	topLevelEntries map[string]ast.TopLevelItemKind
 }
 
-func NewWorkspace(contents map[ast.Path]string, tracker *frontend.DiagnosticTracker) *Workspace {
+func NewWorkspace(contents map[ast.Path]string, tracker frontend.IDiagnosticTracker) *Workspace {
 	w := Workspace{
 		tracker:         tracker,
 		contents:        make(map[ast.Path]string, 0),
@@ -582,7 +582,7 @@ func valuesToString(values []string, prefix string, infix string, suffix string)
 
 // Replace `f(x)` with `f(x) := var'#'` but do not change `f(x) := y`
 // Replace `(a, b)` with `var'#' := (a, b)` but do not change `X := (a, b)`
-func replaceMissingIdentifier(target ast.Target, keyGen *mlglib.KeyGenerator) ast.Target {
+func replaceMissingIdentifier(target ast.Target, keyGen mlglib.IKeyGenerator) ast.Target {
 	switch f := target.Root.(type) {
 	case *ast.FunctionForm:
 		return ast.Target{
@@ -616,13 +616,13 @@ func replaceMissingIdentifier(target ast.Target, keyGen *mlglib.KeyGenerator) as
 	return target
 }
 
-func includeMissingIdentifiersInTargets(targets []ast.Target, keyGen *mlglib.KeyGenerator) {
+func includeMissingIdentifiersInTargets(targets []ast.Target, keyGen mlglib.IKeyGenerator) {
 	for i := range targets {
 		targets[i] = replaceMissingIdentifier(targets[i], keyGen)
 	}
 }
 
-func includeMissingIdentifiersAt(node ast.MlgNodeKind, keyGen *mlglib.KeyGenerator) {
+func includeMissingIdentifiersAt(node ast.MlgNodeKind, keyGen mlglib.IKeyGenerator) {
 	if node == nil {
 		return
 	}

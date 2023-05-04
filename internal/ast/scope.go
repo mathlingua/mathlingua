@@ -16,31 +16,39 @@
 
 package ast
 
-type Scope struct {
-	idenInfos map[string]*IdentifierInfo
+type IScope interface {
+	SetIdentifierInfo(identifier string, info IdentifierInfo)
+	GetMutableIdentifierInfo(identifier string) (*IdentifierInfo, bool)
+	Clone() IScope
 }
 
-func NewScope() *Scope {
-	return &Scope{
+func NewScope() IScope {
+	return &scope{
 		idenInfos: make(map[string]*IdentifierInfo, 0),
 	}
 }
 
-func (s *Scope) SetIdentifierInfo(identifier string, info IdentifierInfo) {
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type scope struct {
+	idenInfos map[string]*IdentifierInfo
+}
+
+func (s *scope) SetIdentifierInfo(identifier string, info IdentifierInfo) {
 	s.idenInfos[identifier] = &info
 }
 
-func (s *Scope) GetMutableIdentifierInfo(identifier string) (*IdentifierInfo, bool) {
+func (s *scope) GetMutableIdentifierInfo(identifier string) (*IdentifierInfo, bool) {
 	info, ok := s.idenInfos[identifier]
 	return info, ok
 }
 
-func (s *Scope) Clone() *Scope {
+func (s *scope) Clone() IScope {
 	idensCopy := make(map[string]*IdentifierInfo, 0)
 	for iden, info := range s.idenInfos {
 		idensCopy[iden] = info.Clone()
 	}
-	return &Scope{
+	return &scope{
 		idenInfos: idensCopy,
 	}
 }

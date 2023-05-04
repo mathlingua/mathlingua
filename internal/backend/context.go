@@ -20,7 +20,7 @@ import "mathlingua/internal/ast"
 
 type Context struct {
 	Mapping       *IdentifierMapping
-	CallSiteScope *ast.Scope
+	CallSiteScope ast.IScope
 }
 
 type IdentifierMapping struct {

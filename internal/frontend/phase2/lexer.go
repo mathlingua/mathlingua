@@ -22,15 +22,15 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func NewLexer(phase1Lexer *frontend.Lexer, path ast.Path,
-	tracker *frontend.DiagnosticTracker) *frontend.Lexer {
+func NewLexer(phase1Lexer frontend.ILexer, path ast.Path,
+	tracker frontend.IDiagnosticTracker) frontend.ILexer {
 	return frontend.NewLexer(getTokens(phase1Lexer, path, tracker))
 }
 
 //////////////////////////////////////////////////////////////////
 
-func getTokens(lexer1 *frontend.Lexer, path ast.Path,
-	tracker *frontend.DiagnosticTracker) []ast.Token {
+func getTokens(phase1Lexer frontend.ILexer, path ast.Path,
+	tracker frontend.IDiagnosticTracker) []ast.Token {
 	tokens := make([]ast.Token, 0)
 	prevIndent := 0
 
@@ -58,16 +58,16 @@ func getTokens(lexer1 *frontend.Lexer, path ast.Path,
 		}
 	}
 
-	for lexer1.HasNext() {
-		cur := lexer1.Next()
+	for phase1Lexer.HasNext() {
+		cur := phase1Lexer.Next()
 
 		if cur.Type == ast.Newline {
 			appendToken(cur)
 			// if the ast.Newline is followed by at least one more ast.Newline
 			// also record a ast.LineBreak
-			if lexer1.HasNext() && lexer1.Peek().Type == ast.Newline {
-				for lexer1.HasNext() && lexer1.Peek().Type == ast.Newline {
-					lexer1.Next()
+			if phase1Lexer.HasNext() && phase1Lexer.Peek().Type == ast.Newline {
+				for phase1Lexer.HasNext() && phase1Lexer.Peek().Type == ast.Newline {
+					phase1Lexer.Next()
 				}
 				appendToken(ast.Token{
 					Type:     ast.LineBreak,
@@ -75,15 +75,15 @@ func getTokens(lexer1 *frontend.Lexer, path ast.Path,
 					Position: cur.Position,
 				})
 			}
-			if lexer1.HasNext() && lexer1.Peek().Type != ast.Space && lexer1.Peek().Type != ast.DotSpace {
+			if phase1Lexer.HasNext() && phase1Lexer.Peek().Type != ast.Space && phase1Lexer.Peek().Type != ast.DotSpace {
 				// since there isn't a space handle any unindents
 				handleIndentsOrUnIndents(0, cur.Position)
 				prevIndent = 0
 			}
 		} else if cur.Type == ast.Space {
 			numSpaces := 1
-			for lexer1.HasNext() && lexer1.Peek().Type == ast.Space {
-				lexer1.Next()
+			for phase1Lexer.HasNext() && phase1Lexer.Peek().Type == ast.Space {
+				phase1Lexer.Next()
 				numSpaces++
 			}
 			if numSpaces%2 == 1 {
@@ -96,12 +96,12 @@ func getTokens(lexer1 *frontend.Lexer, path ast.Path,
 				})
 			}
 			curIndent := numSpaces / 2
-			if lexer1.HasNext() && lexer1.Peek().Type == ast.DotSpace {
+			if phase1Lexer.HasNext() && phase1Lexer.Peek().Type == ast.DotSpace {
 				curIndent++
 			}
 			handleIndentsOrUnIndents(curIndent, cur.Position)
-			if lexer1.HasNext() && lexer1.Peek().Type == ast.DotSpace {
-				appendToken(lexer1.Next())
+			if phase1Lexer.HasNext() && phase1Lexer.Peek().Type == ast.DotSpace {
+				appendToken(phase1Lexer.Next())
 			}
 			prevIndent = curIndent
 		} else if cur.Type == ast.DotSpace {

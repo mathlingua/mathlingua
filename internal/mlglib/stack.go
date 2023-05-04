@@ -18,35 +18,45 @@ package mlglib
 
 import "fmt"
 
-type Stack[T any] struct {
-	data []T
+type IStack[T any] interface {
+	fmt.Stringer
+	IsEmpty() bool
+	Peek() T
+	Push(value T)
+	Pop() T
 }
 
-func NewStack[T any]() *Stack[T] {
-	return &Stack[T]{
+func NewStack[T any]() IStack[T] {
+	return &stack[T]{
 		data: make([]T, 0),
 	}
 }
 
-func (s *Stack[T]) IsEmpty() bool {
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type stack[T any] struct {
+	data []T
+}
+
+func (s *stack[T]) IsEmpty() bool {
 	return len(s.data) == 0
 }
 
-func (s *Stack[T]) Peek() T {
+func (s *stack[T]) Peek() T {
 	return s.data[len(s.data)-1]
 }
 
-func (s *Stack[T]) Push(value T) {
+func (s *stack[T]) Push(value T) {
 	s.data = append(s.data, value)
 }
 
-func (s *Stack[T]) Pop() T {
+func (s *stack[T]) Pop() T {
 	index := len(s.data) - 1
 	value := s.data[index]
 	s.data = s.data[:index]
 	return value
 }
 
-func (s *Stack[T]) String() string {
+func (s *stack[T]) String() string {
 	return fmt.Sprintf("%v", s.data)
 }

@@ -23,17 +23,25 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-type Mlg struct {
-	logger *Logger
+type IMlg interface {
+	Check(paths []string, showJson bool, debug bool)
+	View()
+	Version() string
 }
 
-func NewMlg(logger *Logger) *Mlg {
-	return &Mlg{
+func NewMlg(logger ILogger) IMlg {
+	return &mlg{
 		logger: logger,
 	}
 }
 
-func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type mlg struct {
+	logger ILogger
+}
+
+func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 	workspace, diagnostics := backend.NewWorkspaceFromPaths(paths,
 		frontend.NewDiagnosticTracker())
 
@@ -62,11 +70,11 @@ func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 	m.printCheckStats(numErrors, numWarnings, numFilesProcessed, debug, diagnostics)
 }
 
-func (m *Mlg) View() {
+func (m *mlg) View() {
 	backend.StartServer()
 }
 
-func (m *Mlg) Version() string {
+func (m *mlg) Version() string {
 	return "v0.21.0"
 }
 
@@ -85,7 +93,7 @@ type checkResult struct {
 	Diagnostics []diagnosticInfo `json:"diagnostics"`
 }
 
-func (m *Mlg) printAsJson(checkResult backend.CheckResult) {
+func (m *mlg) printAsJson(checkResult backend.CheckResult) {
 	if data, err := json.MarshalIndent(checkResult, "", "  "); err != nil {
 		m.logger.Error(fmt.Sprintf(
 			"{\"Diagnostics\": [{\"Type\": \"Error\", \"Message\": \"%s\"}]}", err))
@@ -94,7 +102,7 @@ func (m *Mlg) printAsJson(checkResult backend.CheckResult) {
 	}
 }
 
-func (m *Mlg) printCheckStats(numErrors int, numWarnings int, numFilesProcessed int,
+func (m *mlg) printCheckStats(numErrors int, numWarnings int, numFilesProcessed int,
 	debug bool, diagnostics []frontend.Diagnostic) {
 	for index, diag := range diagnostics {
 		if index > 0 {

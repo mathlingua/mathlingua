@@ -16,39 +16,49 @@
 
 package mlglib
 
-type Set[T comparable] struct {
-	values map[T]interface{}
+type ISet[T comparable] interface {
+	Size() int
+	Add(value T)
+	Remove(value T)
+	Has(value T) bool
+	Clone() ISet[T]
 }
 
-func NewSet[T comparable]() *Set[T] {
-	return &Set[T]{
+func NewSet[T comparable]() ISet[T] {
+	return &set[T]{
 		values: make(map[T]interface{}),
 	}
 }
 
-func (s *Set[T]) Size() int {
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type set[T comparable] struct {
+	values map[T]interface{}
+}
+
+func (s *set[T]) Size() int {
 	return len(s.values)
 }
 
-func (s *Set[T]) Add(value T) {
+func (s *set[T]) Add(value T) {
 	s.values[value] = nil
 }
 
-func (s *Set[T]) Remove(value T) {
+func (s *set[T]) Remove(value T) {
 	delete(s.values, value)
 }
 
-func (s *Set[T]) Has(value T) bool {
+func (s *set[T]) Has(value T) bool {
 	_, ok := s.values[value]
 	return ok
 }
 
-func (s *Set[T]) Clone() *Set[T] {
+func (s *set[T]) Clone() ISet[T] {
 	valuesCopy := make(map[T]interface{}, 0)
 	for key, value := range s.values {
 		valuesCopy[key] = value
 	}
-	return &Set[T]{
+	return &set[T]{
 		values: valuesCopy,
 	}
 }

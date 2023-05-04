@@ -21,7 +21,7 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func PopulateScopes(node ast.MlgNodeKind, tracker *frontend.DiagnosticTracker) {
+func PopulateScopes(node ast.MlgNodeKind, tracker frontend.IDiagnosticTracker) {
 	switch n := node.(type) {
 	case *ast.Document:
 		populateDocumentScopes(n)

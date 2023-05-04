@@ -16,15 +16,21 @@
 
 package mlglib
 
-type KeyGenerator struct {
+type IKeyGenerator interface {
+	Next() int
+}
+
+func NewKeyGenerator() IKeyGenerator {
+	return &keyGenerator{next: 1}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type keyGenerator struct {
 	next int
 }
 
-func NewKeyGenerator() *KeyGenerator {
-	return &KeyGenerator{next: 1}
-}
-
-func (kg *KeyGenerator) Next() int {
+func (kg *keyGenerator) Next() int {
 	result := kg.next
 	kg.next++
 	return result

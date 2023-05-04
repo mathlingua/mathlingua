@@ -22,29 +22,39 @@ import (
 	"github.com/fatih/color"
 )
 
-type Logger struct{}
-
-func NewLogger() *Logger {
-	return &Logger{}
+type ILogger interface {
+	Error(text string)
+	Warning(text string)
+	Failure(text string)
+	Success(text string)
+	Log(text string)
 }
 
-func (lg *Logger) Error(text string) {
+func NewLogger() ILogger {
+	return &logger{}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type logger struct{}
+
+func (lg *logger) Error(text string) {
 	fmt.Printf("%s %s\n", boldRed("ERROR:"), text)
 }
 
-func (lg *Logger) Warning(text string) {
+func (lg *logger) Warning(text string) {
 	fmt.Printf("%s %s\n", boldYellow("WARNING:"), text)
 }
 
-func (lg *Logger) Failure(text string) {
+func (lg *logger) Failure(text string) {
 	fmt.Printf("%s %s\n", boldRed("FAILURE:"), text)
 }
 
-func (lg *Logger) Success(text string) {
+func (lg *logger) Success(text string) {
 	fmt.Printf("%s %s\n", boldGreen("SUCCESS:"), text)
 }
 
-func (lg *Logger) Log(text string) {
+func (lg *logger) Log(text string) {
 	fmt.Println(text)
 }
 

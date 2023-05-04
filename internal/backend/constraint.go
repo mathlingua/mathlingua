@@ -33,20 +33,20 @@ func (*ExtendsConstraint) ConstraintType() {}
 type IsConstraint struct {
 	Target       PatternKind
 	SignatureExp ast.KindKind
-	Scope        *ast.Scope
+	Scope        ast.IScope
 }
 
 type ExtendsConstraint struct {
 	Target       PatternKind
 	SignatureExp ast.KindKind
-	Scope        *ast.Scope
+	Scope        ast.IScope
 }
 
 type SpecConstraint struct {
 	Target PatternKind
 	Name   string
 	Exp    ast.ExpressionKind
-	Scope  *ast.Scope
+	Scope  ast.IScope
 }
 
 func ToIsConstraint(node ast.IsExpression) ([]IsConstraint, error) {

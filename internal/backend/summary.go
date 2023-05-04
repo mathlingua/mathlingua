@@ -44,7 +44,7 @@ func (s *StatesSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type DescribesSummary struct {
-	DefScope    *ast.Scope
+	DefScope    ast.IScope
 	Input       PatternKind
 	Output      PatternKind
 	Usings      []PatternKind
@@ -58,7 +58,7 @@ type DescribesSummary struct {
 }
 
 type DefinesSummary struct {
-	DefScope    *ast.Scope
+	DefScope    ast.IScope
 	Input       PatternKind
 	Output      PatternKind
 	Usings      []PatternKind
@@ -72,7 +72,7 @@ type DefinesSummary struct {
 }
 
 type StatesSummary struct {
-	DefScope    *ast.Scope
+	DefScope    ast.IScope
 	Input       PatternKind
 	Output      PatternKind
 	Usings      []PatternKind

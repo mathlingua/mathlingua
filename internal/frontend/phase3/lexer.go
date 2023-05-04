@@ -23,15 +23,15 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func NewLexer(phase2Lexer *frontend.Lexer, path ast.Path,
-	tracker *frontend.DiagnosticTracker) *frontend.Lexer {
+func NewLexer(phase2Lexer frontend.ILexer, path ast.Path,
+	tracker frontend.IDiagnosticTracker) frontend.ILexer {
 	return frontend.NewLexer(getTokens(phase2Lexer, path, tracker))
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func getTokens(lexer2 *frontend.Lexer, path ast.Path,
-	tracker *frontend.DiagnosticTracker) []ast.Token {
+func getTokens(phase2Lexer frontend.ILexer, path ast.Path,
+	tracker frontend.IDiagnosticTracker) []ast.Token {
 	tokens := make([]ast.Token, 0)
 	stack := mlglib.NewStack[ast.TokenType]()
 
@@ -39,7 +39,7 @@ func getTokens(lexer2 *frontend.Lexer, path ast.Path,
 		tokens = append(tokens, ast.Token{
 			Type:     ast.EndSection,
 			Text:     "<EndSection>",
-			Position: lexer2.Position(),
+			Position: phase2Lexer.Position(),
 		})
 	}
 
@@ -47,7 +47,7 @@ func getTokens(lexer2 *frontend.Lexer, path ast.Path,
 		tokens = append(tokens, ast.Token{
 			Type:     ast.EndGroup,
 			Text:     "<EndGroup>",
-			Position: lexer2.Position(),
+			Position: phase2Lexer.Position(),
 		})
 	}
 
@@ -55,7 +55,7 @@ func getTokens(lexer2 *frontend.Lexer, path ast.Path,
 		tokens = append(tokens, ast.Token{
 			Type:     ast.EndDotSpaceArgument,
 			Text:     "<EndDotSpaceArgument>",
-			Position: lexer2.Position(),
+			Position: phase2Lexer.Position(),
 		})
 	}
 
@@ -63,7 +63,7 @@ func getTokens(lexer2 *frontend.Lexer, path ast.Path,
 		tokens = append(tokens, ast.Token{
 			Type:     ast.EndInlineArgument,
 			Text:     "<EndInlineArgument>",
-			Position: lexer2.Position(),
+			Position: phase2Lexer.Position(),
 		})
 	}
 
@@ -71,7 +71,7 @@ func getTokens(lexer2 *frontend.Lexer, path ast.Path,
 		tokens = append(tokens, ast.Token{
 			Type:     ast.BeginSection,
 			Text:     "<BeginSection>",
-			Position: lexer2.Position(),
+			Position: phase2Lexer.Position(),
 		})
 		stack.Push(ast.BeginSection)
 	}
@@ -80,7 +80,7 @@ func getTokens(lexer2 *frontend.Lexer, path ast.Path,
 		tokens = append(tokens, ast.Token{
 			Type:     ast.BeginGroup,
 			Text:     "<BeginGroup>",
-			Position: lexer2.Position(),
+			Position: phase2Lexer.Position(),
 		})
 		stack.Push(ast.BeginGroup)
 	}
@@ -89,7 +89,7 @@ func getTokens(lexer2 *frontend.Lexer, path ast.Path,
 		tokens = append(tokens, ast.Token{
 			Type:     ast.BeginDotSpaceArgument,
 			Text:     "<BeginDotSpaceArgument>",
-			Position: lexer2.Position(),
+			Position: phase2Lexer.Position(),
 		})
 		stack.Push(ast.BeginDotSpaceArgument)
 	}
@@ -98,7 +98,7 @@ func getTokens(lexer2 *frontend.Lexer, path ast.Path,
 		tokens = append(tokens, ast.Token{
 			Type:     ast.BeginInlineArgument,
 			Text:     "<BeginInlineArgument>",
-			Position: lexer2.Position(),
+			Position: phase2Lexer.Position(),
 		})
 		stack.Push(ast.BeginInlineArgument)
 	}
@@ -136,11 +136,11 @@ func getTokens(lexer2 *frontend.Lexer, path ast.Path,
 	}
 
 	appendNext := func() {
-		appendToken(lexer2.Next())
+		appendToken(phase2Lexer.Next())
 	}
 
 	skipNext := func() {
-		lexer2.Next()
+		phase2Lexer.Next()
 	}
 
 	appendDiagnostic := func(message string, position ast.Position) {
@@ -154,21 +154,21 @@ func getTokens(lexer2 *frontend.Lexer, path ast.Path,
 	}
 
 	hasNameColon := func() bool {
-		return lexer2.HasNextNext() &&
-			lexer2.Peek().Type == ast.Name && lexer2.PeekPeek().Type == ast.Colon
+		return phase2Lexer.HasNextNext() &&
+			phase2Lexer.Peek().Type == ast.Name && phase2Lexer.PeekPeek().Type == ast.Colon
 	}
 
 	has := func(tokenType ast.TokenType) bool {
-		return lexer2.HasNext() && lexer2.Peek().Type == tokenType
+		return phase2Lexer.HasNext() && phase2Lexer.Peek().Type == tokenType
 	}
 
 	hasHas := func(type1 ast.TokenType, type2 ast.TokenType) bool {
-		return lexer2.HasNextNext() &&
-			lexer2.Peek().Type == type1 &&
-			lexer2.PeekPeek().Type == type2
+		return phase2Lexer.HasNextNext() &&
+			phase2Lexer.Peek().Type == type1 &&
+			phase2Lexer.PeekPeek().Type == type2
 	}
 
-	for lexer2.HasNext() {
+	for phase2Lexer.HasNext() {
 		if hasNameColon() {
 			if stack.IsEmpty() {
 				beginGroup()
@@ -217,7 +217,7 @@ func getTokens(lexer2 *frontend.Lexer, path ast.Path,
 			skipNext()
 		} else if has(ast.Indent) {
 			if !has(ast.DotSpace) {
-				appendDiagnostic("Unexpected indent", lexer2.Position())
+				appendDiagnostic("Unexpected indent", phase2Lexer.Position())
 			}
 			skipNext()
 		} else if has(ast.Newline) {

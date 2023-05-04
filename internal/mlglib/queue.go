@@ -18,34 +18,44 @@ package mlglib
 
 import "fmt"
 
-type Queue[T any] struct {
-	data []T
+type IQueue[T any] interface {
+	fmt.Stringer
+	IsEmpty() bool
+	Peek() T
+	Push(value T)
+	Pop() T
 }
 
-func NewQueue[T any]() *Queue[T] {
-	return &Queue[T]{
+func NewQueue[T any]() IQueue[T] {
+	return &queue[T]{
 		data: make([]T, 0),
 	}
 }
 
-func (s *Queue[T]) IsEmpty() bool {
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type queue[T any] struct {
+	data []T
+}
+
+func (s *queue[T]) IsEmpty() bool {
 	return len(s.data) == 0
 }
 
-func (s *Queue[T]) Peek() T {
+func (s *queue[T]) Peek() T {
 	return s.data[0]
 }
 
-func (s *Queue[T]) Push(value T) {
+func (s *queue[T]) Push(value T) {
 	s.data = append(s.data, value)
 }
 
-func (s *Queue[T]) Pop() T {
+func (s *queue[T]) Pop() T {
 	top := s.Peek()
 	s.data = s.data[1:]
 	return top
 }
 
-func (s *Queue[T]) String() string {
+func (s *queue[T]) String() string {
 	return fmt.Sprintf("%v", s.data)
 }

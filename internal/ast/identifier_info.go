@@ -26,7 +26,7 @@ type IdentifierInfo struct {
 	IsInfereble     bool
 	IsPlaceholder   bool
 	IsNumberLiteral bool
-	Signatures      mlglib.Set[string]
+	Signatures      mlglib.ISet[string]
 	Specs           []SpecInfo
 }
 
@@ -39,7 +39,7 @@ func (ii *IdentifierInfo) Clone() *IdentifierInfo {
 		IsInfereble:     ii.IsInfereble,
 		IsPlaceholder:   ii.IsPlaceholder,
 		IsNumberLiteral: ii.IsNumberLiteral,
-		Signatures:      *ii.Signatures.Clone(),
+		Signatures:      ii.Signatures.Clone(),
 		Specs:           specsCopy,
 	}
 }

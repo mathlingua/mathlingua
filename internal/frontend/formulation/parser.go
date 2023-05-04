@@ -26,8 +26,8 @@ import (
 )
 
 func ParseExpression(path ast.Path, text string, start ast.Position,
-	tracker *frontend.DiagnosticTracker,
-	keyGen *mlglib.KeyGenerator) (ast.FormulationNodeKind, bool) {
+	tracker frontend.IDiagnosticTracker,
+	keyGen mlglib.IKeyGenerator) (ast.FormulationNodeKind, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(path, text, tracker)
 	parser := formulationParser{
@@ -42,8 +42,8 @@ func ParseExpression(path ast.Path, text string, start ast.Position,
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
-func ParseForm(path ast.Path, text string, start ast.Position, tracker *frontend.DiagnosticTracker,
-	keyGen *mlglib.KeyGenerator) (ast.FormulationNodeKind, bool) {
+func ParseForm(path ast.Path, text string, start ast.Position, tracker frontend.IDiagnosticTracker,
+	keyGen mlglib.IKeyGenerator) (ast.FormulationNodeKind, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(path, text, tracker)
 	parser := formulationParser{
@@ -58,8 +58,8 @@ func ParseForm(path ast.Path, text string, start ast.Position, tracker *frontend
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
 
-func ParseId(path ast.Path, text string, start ast.Position, tracker *frontend.DiagnosticTracker,
-	keyGen *mlglib.KeyGenerator) (ast.IdKind, bool) {
+func ParseId(path ast.Path, text string, start ast.Position, tracker frontend.IDiagnosticTracker,
+	keyGen mlglib.IKeyGenerator) (ast.IdKind, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(path, text, tracker)
 	parser := formulationParser{
@@ -75,8 +75,8 @@ func ParseId(path ast.Path, text string, start ast.Position, tracker *frontend.D
 }
 
 func ParseSignature(path ast.Path, text string, start ast.Position,
-	tracker *frontend.DiagnosticTracker,
-	keyGen *mlglib.KeyGenerator) (ast.Signature, bool) {
+	tracker frontend.IDiagnosticTracker,
+	keyGen mlglib.IKeyGenerator) (ast.Signature, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(path, text, tracker)
 	parser := formulationParser{
@@ -95,10 +95,10 @@ func ParseSignature(path ast.Path, text string, start ast.Position,
 
 type formulationParser struct {
 	path    ast.Path
-	lexer   *frontend.Lexer
-	tracker *frontend.DiagnosticTracker
+	lexer   frontend.ILexer
+	tracker frontend.IDiagnosticTracker
 	start   ast.Position
-	keyGen  *mlglib.KeyGenerator
+	keyGen  mlglib.IKeyGenerator
 }
 
 func (fp *formulationParser) token(tokenType ast.TokenType) (ast.Token, bool) {

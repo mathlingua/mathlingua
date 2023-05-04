@@ -35,7 +35,7 @@ func (n *FunctionForm) ToCode(fn func(node MlgNodeType) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return n.Target.ToCode(fn) + "(" + commaSeparatedStringOfNameForms(n.Params, fn) +
+	return n.Target.ToCode(fn) + "(" + commaSeparatedString(n.Params, fn) +
 		")" + n.VarArg.ToCode(fn)
 }
 

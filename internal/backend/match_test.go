@@ -67,7 +67,6 @@ func TestFunctionVarArg(t *testing.T) {
 	})
 }
 
-/*
 func TestNestedFunction(t *testing.T) {
 	runTest(t, "f(x, g(y, z))", "F(X, G(Y, Z))", map[string]string{
 		"f": "F",
@@ -75,9 +74,8 @@ func TestNestedFunction(t *testing.T) {
 		"g": "G",
 		"y": "Y",
 		"z": "Z",
-	})
+	}, map[string][]string{})
 }
-*/
 
 func TestTuple(t *testing.T) {
 	runTest(t, "(x, y, z)", "(X, Y, Z)", map[string]string{

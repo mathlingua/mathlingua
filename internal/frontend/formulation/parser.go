@@ -1696,19 +1696,7 @@ func (fp *formulationParser) curlyParams() (*[]ast.StructuralFormType, bool) {
 	return &args, true
 }
 
-func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool) {
-	if op, ok := fp.infixOperatorForm(); ok {
-		return &op, ok
-	}
-
-	if op, ok := fp.prefixOperatorForm(); ok {
-		return &op, ok
-	}
-
-	if op, ok := fp.postfixOperatorForm(); ok {
-		return &op, ok
-	}
-
+func (fp *formulationParser) nameFunctionTupleOrSet() (ast.StructuralFormType, bool) {
 	if fun, ok := fp.functionForm(); ok {
 		return &fun, true
 	}
@@ -1732,12 +1720,32 @@ func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool)
 	return nil, false
 }
 
+func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool) {
+	if op, ok := fp.infixOperatorForm(); ok {
+		return &op, ok
+	}
+
+	if op, ok := fp.prefixOperatorForm(); ok {
+		return &op, ok
+	}
+
+	if op, ok := fp.postfixOperatorForm(); ok {
+		return &op, ok
+	}
+
+	if op, ok := fp.nameFunctionTupleOrSet(); ok {
+		return op, ok
+	}
+
+	return nil, false
+}
+
 func (fp *formulationParser) infixOperatorForm() (ast.InfixOperatorForm, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-	lhs, lhsOk := fp.nameForm()
+	lhs, lhsOk := fp.nameFunctionTupleOrSet()
 	op, opOk := fp.operatorAsNameForm()
-	rhs, rhsOk := fp.nameForm()
+	rhs, rhsOk := fp.nameFunctionTupleOrSet()
 	if !lhsOk || !opOk || !rhsOk {
 		fp.lexer.RollBack(id)
 		return ast.InfixOperatorForm{}, false
@@ -1758,7 +1766,7 @@ func (fp *formulationParser) prefixOperatorForm() (ast.PrefixOperatorForm, bool)
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	op, opOk := fp.operatorAsNameForm()
-	param, paramOk := fp.nameForm()
+	param, paramOk := fp.nameFunctionTupleOrSet()
 	if !opOk || !paramOk {
 		fp.lexer.RollBack(id)
 		return ast.PrefixOperatorForm{}, false
@@ -1777,7 +1785,7 @@ func (fp *formulationParser) prefixOperatorForm() (ast.PrefixOperatorForm, bool)
 func (fp *formulationParser) postfixOperatorForm() (ast.PostfixOperatorForm, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-	param, paramOk := fp.nameForm()
+	param, paramOk := fp.nameFunctionTupleOrSet()
 	op, opOk := fp.operatorAsNameForm()
 	if !paramOk || !opOk {
 		fp.lexer.RollBack(id)
@@ -1857,7 +1865,7 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 		return ast.FunctionForm{}, false
 	}
 
-	params := make([]ast.NameForm, 0)
+	params := make([]ast.StructuralFormType, 0)
 	fp.expect(ast.LParen)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RParen) {
@@ -1868,9 +1876,9 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 			fp.expect(ast.Comma)
 		}
 
-		param, ok := fp.nameForm()
+		param, ok := fp.structuralFormType()
 		if !ok {
-			fp.error("Expected a name")
+			fp.error("Expected a structural form type")
 			// move past the unexpected token
 			fp.lexer.Next()
 		} else {
@@ -2012,7 +2020,7 @@ func (fp *formulationParser) idType() (ast.IdType, bool) {
 func (fp *formulationParser) infixCommandOperatorId() (ast.InfixCommandOperatorId, bool) {
 	id := fp.lexer.Snapshot()
 
-	lhs, ok := fp.structuralFormType()
+	lhs, ok := fp.nameFunctionTupleOrSet()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandOperatorId{}, false
@@ -2024,7 +2032,7 @@ func (fp *formulationParser) infixCommandOperatorId() (ast.InfixCommandOperatorI
 		return ast.InfixCommandOperatorId{}, false
 	}
 
-	rhs, ok := fp.structuralFormType()
+	rhs, ok := fp.nameFunctionTupleOrSet()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandOperatorId{}, false
@@ -2042,7 +2050,7 @@ func (fp *formulationParser) infixCommandOperatorId() (ast.InfixCommandOperatorI
 func (fp *formulationParser) infixOperatorId() (ast.InfixOperatorId, bool) {
 	id := fp.lexer.Snapshot()
 
-	lhs, ok := fp.structuralFormType()
+	lhs, ok := fp.nameFunctionTupleOrSet()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixOperatorId{}, false
@@ -2054,7 +2062,7 @@ func (fp *formulationParser) infixOperatorId() (ast.InfixOperatorId, bool) {
 		return ast.InfixOperatorId{}, false
 	}
 
-	rhs, ok := fp.structuralFormType()
+	rhs, ok := fp.nameFunctionTupleOrSet()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixOperatorId{}, false
@@ -2072,7 +2080,7 @@ func (fp *formulationParser) infixOperatorId() (ast.InfixOperatorId, bool) {
 func (fp *formulationParser) postfixOperatorId() (ast.PostfixOperatorId, bool) {
 	id := fp.lexer.Snapshot()
 
-	param, ok := fp.structuralFormType()
+	param, ok := fp.nameFunctionTupleOrSet()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.PostfixOperatorId{}, false
@@ -2101,7 +2109,7 @@ func (fp *formulationParser) prefixOperatorId() (ast.PrefixOperatorId, bool) {
 		return ast.PrefixOperatorId{}, false
 	}
 
-	param, ok := fp.structuralFormType()
+	param, ok := fp.nameFunctionTupleOrSet()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.PrefixOperatorId{}, false

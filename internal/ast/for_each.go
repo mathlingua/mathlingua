@@ -550,7 +550,7 @@ func (n *NameForm) ForEach(fn func(subNode MlgNodeType)) {
 
 func (n *FunctionForm) ForEach(fn func(subNode MlgNodeType)) {
 	fn(&n.Target)
-	forEachNameForm(n.Params, fn)
+	forEach(n.Params, fn)
 }
 
 func (n *TupleForm) ForEach(fn func(subNode MlgNodeType)) {
@@ -752,18 +752,18 @@ func (n *MultiplexedInfixOperatorCallExpression) ForEach(fn func(subNode MlgNode
 }
 
 func (n *InfixOperatorForm) ForEach(fn func(subNode MlgNodeType)) {
-	fn(&n.Lhs)
+	fn(n.Lhs)
 	fn(&n.Operator)
-	fn(&n.Rhs)
+	fn(n.Rhs)
 }
 
 func (n *PrefixOperatorForm) ForEach(fn func(subNode MlgNodeType)) {
 	fn(&n.Operator)
-	fn(&n.Param)
+	fn(n.Param)
 }
 
 func (n *PostfixOperatorForm) ForEach(fn func(subNode MlgNodeType)) {
-	fn(&n.Param)
+	fn(n.Param)
 	fn(&n.Operator)
 }
 

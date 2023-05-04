@@ -82,7 +82,7 @@ type NameFormPattern struct {
 
 type FunctionFormPattern struct {
 	Target NameFormPattern
-	Params []NameFormPattern
+	Params []FormPatternType
 	VarArg VarArgPatternData
 }
 
@@ -296,7 +296,7 @@ func ToNameFormPattern(form ast.NameForm) *NameFormPattern {
 func ToFunctionFormPattern(form ast.FunctionForm) *FunctionFormPattern {
 	return &FunctionFormPattern{
 		Target: *ToNameFormPattern(form.Target),
-		Params: toNameFormPatterns(form.Params),
+		Params: toFormPatterns(form.Params),
 		VarArg: ToVarArgPatternData(form.VarArg),
 	}
 }
@@ -325,8 +325,8 @@ func ToConditionalSetFormPatternFromId(form ast.ConditionalSetIdForm) Conditiona
 func ToInfixOperatorFormPattern(form ast.InfixOperatorForm) *InfixOperatorFormPattern {
 	return &InfixOperatorFormPattern{
 		Operator: *ToNameFormPattern(form.Operator),
-		Lhs:      ToNameFormPattern(form.Lhs),
-		Rhs:      ToNameFormPattern(form.Rhs),
+		Lhs:      ToFormPattern(form.Lhs),
+		Rhs:      ToFormPattern(form.Rhs),
 	}
 }
 
@@ -340,7 +340,7 @@ func ToInfixOperatorFormPatternFromId(form ast.InfixOperatorId) InfixOperatorFor
 func ToPrefixOperatorFormPattern(form ast.PrefixOperatorForm) *PrefixOperatorFormPattern {
 	return &PrefixOperatorFormPattern{
 		Operator: *ToNameFormPattern(form.Operator),
-		Param:    ToNameFormPattern(form.Param),
+		Param:    ToFormPattern(form.Param),
 	}
 }
 
@@ -354,7 +354,7 @@ func ToPrefixOperatorFormPatternFromId(form ast.PrefixOperatorId) PrefixOperator
 func ToPostfixOperatorFormPattern(form ast.PostfixOperatorForm) *PostfixOperatorFormPattern {
 	return &PostfixOperatorFormPattern{
 		Operator: *ToNameFormPattern(form.Operator),
-		Param:    ToNameFormPattern(form.Param),
+		Param:    ToFormPattern(form.Param),
 	}
 }
 

@@ -53,7 +53,7 @@ type NameForm struct {
 // f(x, y)
 type FunctionForm struct {
 	Target              NameForm
-	Params              []NameForm
+	Params              []StructuralFormType
 	VarArg              VarArgData
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
@@ -62,8 +62,8 @@ type FunctionForm struct {
 // x * y
 type InfixOperatorForm struct {
 	Operator            NameForm
-	Lhs                 NameForm
-	Rhs                 NameForm
+	Lhs                 StructuralFormType
+	Rhs                 StructuralFormType
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
@@ -71,7 +71,7 @@ type InfixOperatorForm struct {
 // +y
 type PrefixOperatorForm struct {
 	Operator            NameForm
-	Param               NameForm
+	Param               StructuralFormType
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
@@ -79,7 +79,7 @@ type PrefixOperatorForm struct {
 // x!
 type PostfixOperatorForm struct {
 	Operator            NameForm
-	Param               NameForm
+	Param               StructuralFormType
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

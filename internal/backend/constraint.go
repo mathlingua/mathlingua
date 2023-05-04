@@ -136,14 +136,10 @@ func toStructuralForms(exp ast.ExpressionType) ([]ast.StructuralFormType, error)
 		if err != nil {
 			return nil, err
 		}
-		names, err := toNameFormSlice(args)
-		if err != nil {
-			return nil, err
-		}
 		return []ast.StructuralFormType{
 			&ast.FunctionForm{
 				Target: name,
-				Params: names,
+				Params: args,
 				// TODO: check vararg
 			},
 		}, nil

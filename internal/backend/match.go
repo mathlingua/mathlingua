@@ -238,12 +238,12 @@ func matchFunction(node ast.MlgNodeType, pattern FunctionFormPattern) MatchResul
 	switch n := node.(type) {
 	case *ast.FunctionForm:
 		targetMatch := matchName(&n.Target, pattern.Target)
-		paramsMatch := matchAllNames(n.Params, pattern.Params)
+		paramsMatch := matchAllStructuralForms(n.Params, pattern.Params)
 		varArgMatch := matchVarArg(n.VarArg, pattern.VarArg)
 		return unionMatches(targetMatch, unionMatches(paramsMatch, varArgMatch))
 	case *ast.FunctionCallExpression:
 		targetMatch := Match(n.Target, &pattern.Target)
-		argsMatch := matchAllExpressionsAsNames(n.Args, pattern.Params)
+		argsMatch := matchAllExpressions(n.Args, pattern.Params)
 		return unionMatches(targetMatch, argsMatch)
 	default:
 		return MatchResult{
@@ -318,9 +318,9 @@ func matchInfixOperator(node ast.MlgNodeType, pattern InfixOperatorFormPattern) 
 		rhsMatch := Match(n.Rhs, pattern.Rhs)
 		return unionMatches(lhsMatch, unionMatches(opMatch, rhsMatch))
 	case *ast.InfixOperatorForm:
-		lhsMatch := Match(&n.Lhs, pattern.Lhs)
+		lhsMatch := Match(n.Lhs, pattern.Lhs)
 		opMatch := Match(&n.Operator, &pattern.Operator)
-		rhsMatch := Match(&n.Rhs, pattern.Rhs)
+		rhsMatch := Match(n.Rhs, pattern.Rhs)
 		return unionMatches(lhsMatch, unionMatches(opMatch, rhsMatch))
 	case *ast.InfixOperatorId:
 		lhsMatch := Match(n.Lhs, pattern.Lhs)
@@ -345,7 +345,7 @@ func matchPrefixOperator(node ast.MlgNodeType, pattern PrefixOperatorFormPattern
 		return unionMatches(opMatch, argMatch)
 	case *ast.PrefixOperatorForm:
 		opMatch := Match(&n.Operator, &pattern.Operator)
-		argMatch := Match(&n.Param, pattern.Param)
+		argMatch := Match(n.Param, pattern.Param)
 		return unionMatches(opMatch, argMatch)
 	case *ast.PrefixOperatorId:
 		opMatch := Match(&n.Operator, &pattern.Operator)
@@ -369,7 +369,7 @@ func matchPostfixOperator(node ast.MlgNodeType, pattern PostfixOperatorFormPatte
 		return unionMatches(opMatch, argMatch)
 	case *ast.PostfixOperatorForm:
 		opMatch := Match(&n.Operator, &pattern.Operator)
-		argMatch := Match(&n.Param, pattern.Param)
+		argMatch := Match(n.Param, pattern.Param)
 		return unionMatches(opMatch, argMatch)
 	case *ast.PostfixOperatorId:
 		opMatch := Match(&n.Operator, &pattern.Operator)
@@ -774,7 +774,7 @@ func checkNameFormPatternsForVarArg(nodes []ast.ExpressionType,
 	return nil
 }
 
-func checkFormPatternsForVarArg(nodes []ast.ExpressionType,
+func checkExpressionFormPatternsForVarArg(nodes []ast.ExpressionType,
 	patterns []FormPatternType) *MatchResult {
 	generalPatterns := make([]PatternType, 0)
 	for _, pattern := range patterns {
@@ -988,7 +988,7 @@ func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionType,
 		patterns = &zeroPatterns
 	}
 
-	res := checkFormPatternsForVarArg(*nodes, *patterns)
+	res := checkExpressionFormPatternsForVarArg(*nodes, *patterns)
 	if res != nil {
 		return *res
 	}
@@ -1014,6 +1014,11 @@ func matchAllOptionalExpressionsToForms(nodes *[]ast.ExpressionType,
 }
 
 func matchAllExpressions(nodes []ast.ExpressionType, patterns []FormPatternType) MatchResult {
+	res := checkExpressionFormPatternsForVarArg(nodes, patterns)
+	if res != nil {
+		return *res
+	}
+
 	if len(nodes) != len(patterns) {
 		return MatchResult{
 			Mapping: make(map[string]ast.MlgNodeType),

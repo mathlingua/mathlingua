@@ -28,8 +28,8 @@ function getStyles(theme: Theme) {
       color: 'black',
     },
     line: {
-      marginTop: theme.sizeXXSmall,
-      marginBottom: theme.sizeXXSmall,
+      marginTop: theme.sizes.sizeXXSmall,
+      marginBottom: theme.sizes.sizeXXSmall,
       marginLeft: 0,
       marginRight: 0,
       padding: 0,

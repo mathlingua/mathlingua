@@ -69,13 +69,13 @@ export function Sidebar({ onSelect, selectedPath }: SidebarProps) {
 function getStyles(theme: Theme) {
   return {
     loading: {
-      margin: theme.sizeXSmall,
+      margin: theme.sizes.sizeXSmall,
     },
     tree: {
       maxHeight: 'fit-content',
-      minHeight: `calc(100vh - ${theme.sizeXLarge}px)`,
-      minWidth: theme.sidebarWidth,
-      width: theme.sidebarWidth,
+      minHeight: `calc(100vh - ${theme.sizes.sizeXLarge}px)`,
+      minWidth: theme.sizes.sidebarWidth,
+      width: theme.sizes.sidebarWidth,
     },
     bold: {
       fontWeight: 'bold',

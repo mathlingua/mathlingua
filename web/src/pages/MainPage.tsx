@@ -89,12 +89,12 @@ function getStyles(theme: Theme, isOnSmallScreen: boolean) {
       overflow: 'scroll',
       marginLeft: 'auto',
       marginRight: 'auto',
-      width: isOnSmallScreen ? '100%' : theme.mainWidth,
+      width: isOnSmallScreen ? '100%' : theme.sizes.mainWidth,
     },
     menuButton: {
       background: 'none',
       border: 'none',
-      margin: theme.sizeXSmall,
+      margin: theme.sizes.sizeXSmall,
     },
     page: {
       background: 'white',
@@ -106,8 +106,8 @@ function getStyles(theme: Theme, isOnSmallScreen: boolean) {
     },
     outline: {
       fontWeight: 'bold',
-      paddingTop: theme.sizeXSmall,
-      paddingLeft: theme.sizeSmall,
+      paddingTop: theme.sizes.sizeXSmall,
+      paddingLeft: theme.sizes.sizeSmall,
       fontSize: '110%',
     },
   };

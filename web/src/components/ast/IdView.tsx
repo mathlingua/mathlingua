@@ -1,5 +1,6 @@
 import React from 'react';
-import { Theme, useTheme } from '../../hooks/theme';
+import { useTheme } from '../../hooks/theme';
+import { Theme } from '../../base/theme';
 
 export interface IdViewProps {
   id: string | null;

@@ -4,8 +4,9 @@ import { Tree } from 'rsuite';
 import 'rsuite/dist/rsuite.css';
 
 import { useFetch } from 'usehooks-ts';
-import { Theme, useTheme } from '../hooks/theme';
+import { useTheme } from '../hooks/theme';
 import { PathsResponse } from '../types';
+import { Theme } from '../base/theme';
 
 export interface SidebarProps {
   selectedPath: string | undefined;

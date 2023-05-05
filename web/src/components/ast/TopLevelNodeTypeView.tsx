@@ -1,8 +1,9 @@
 import React from 'react';
-import { Theme, useTheme } from '../../hooks/theme';
+import { useTheme } from '../../hooks/theme';
 import { TopLevelNodeType } from '../../types';
 import { GroupView } from './GroupView';
 import { TextBlockView } from './TextBlockView';
+import { Theme } from '../../base/theme';
 
 export interface TopLevelNodeTypeViewProps {
   node: TopLevelNodeType;

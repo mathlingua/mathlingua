@@ -1,30 +1,15 @@
-
-export interface Theme {
-  sidebarWidth: number;
-  sizeXXSmall: number;
-  sizeXSmall: number;
-  sizeSmall: number;
-  sizeMedium: number;
-  sizeLarge: number;
-  sizeXLarge: number;
-  sizeXXLarge: number;
-  border: string;
-  background: string;
-  mainWidth: number;
-}
+import React from "react";
+import { Theme } from "../base/theme";
+import { MathlinguaContext } from "../base/context";
 
 export function useTheme(): Theme {
-  return {
-    sidebarWidth: 250,
-    sizeXXSmall: 4,
-    sizeXSmall: 8,
-    sizeSmall: 16,
-    sizeMedium: 24,
-    sizeLarge: 32,
-    sizeXLarge: 48,
-    sizeXXLarge: 56,
-    border: '#e5e5e5',
-    background: '#ffffff',
-    mainWidth: 800,
-  };
+  const context = React.useContext(MathlinguaContext);
+  if (context === null || context === undefined) {
+    throw Error('useTheme must be used withing a MathlinguaContext.Provider');
+  }
+  const theme = context.theme;
+  if (theme === undefined) {
+    throw Error('the MathlinguaContext.Provider did not specify a theme');
+  }
+  return theme;
 }

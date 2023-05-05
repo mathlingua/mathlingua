@@ -14,6 +14,13 @@ export interface Theme {
   colors: {
     border: string;
     background: string;
+    innerShadow: string;
+    outerShadow: string;
+    textArgumentColor: string;
+    formulationArgumentColor: string;
+    idColor: string;
+    sectionHeaderColor: string;
+    textBlockColor: string;
   };
 }
 
@@ -32,5 +39,12 @@ export const LIGHT_THEME: Theme = {
   colors: {
     border: '#e5e5e5',
     background: '#ffffff',
+    innerShadow: 'rgba(50, 50, 105, 0.15)',
+    outerShadow: 'rgba(0, 0, 0, 0.05)',
+    textArgumentColor: 'black',
+    formulationArgumentColor: 'black',
+    idColor: 'black',
+    sectionHeaderColor: '#05b',
+    textBlockColor: 'black',
   },
 }

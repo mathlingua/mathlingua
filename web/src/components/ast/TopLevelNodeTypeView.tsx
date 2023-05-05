@@ -46,7 +46,7 @@ function getTopLevelNodeTypeViewStyles(theme: Theme) {
       borderColor: theme.colors.border,
       borderWidth: 1,
       borderRadius: 2,
-      boxShadow: 'rgba(50, 50, 105, 0.15) 0px 2px 5px 0px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px', // <-
+      boxShadow: `${theme.colors.innerShadow} 0px 2px 5px 0px, ${theme.colors.outerShadow} 0px 1px 1px 0px`,
     },
     mathlinguaTopLevelTextBlock: {
       color: '#555555',

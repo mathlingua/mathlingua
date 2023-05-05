@@ -25,7 +25,7 @@ export const IdView = (props: IdViewProps) => {
 function getStyles(theme: Theme) {
   return {
     mathlinguaId: {
-      color: 'black',
+      color: theme.colors.idColor,
     },
     line: {
       marginTop: theme.sizes.sizeXXSmall,

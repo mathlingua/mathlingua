@@ -1,6 +1,8 @@
 import React from 'react';
 import { TextArgumentData } from '../../types';
 import { LatexView } from '../LatexView';
+import { Theme } from '../../base/theme';
+import { useTheme } from '../../hooks/theme';
 
 export interface TextArgumentDataViewProps {
   node: TextArgumentData;
@@ -9,6 +11,9 @@ export interface TextArgumentDataViewProps {
 }
 
 export const TextArgumentDataView = (props: TextArgumentDataViewProps) => {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
   const fn = props.preProcess ? props.preProcess : (text: string) => text;
   if (props.forceRenderAsLatex) {
     return <LatexView latex={fn(props.node.Text)} color={styles.mathlinguaTextBlock.color} />
@@ -21,8 +26,10 @@ export const TextArgumentDataView = (props: TextArgumentDataViewProps) => {
   );
 };
 
-const styles = {
-  mathlinguaTextBlock: {
-    color: 'black',
-  }
-};
+function getStyles(theme: Theme) {
+  return {
+    mathlinguaTextBlock: {
+      color: theme.colors.textArgumentColor,
+    }
+  };
+}

@@ -51,7 +51,7 @@ type Diagnostic struct {
 	Position ast.Position
 }
 
-func (diag *Diagnostic) ToString() string {
+func (diag *Diagnostic) String() string {
 	prefix := ""
 	if diag.Type == Error {
 		prefix = "ERROR"

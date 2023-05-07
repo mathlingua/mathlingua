@@ -203,7 +203,7 @@ func parseImpl(t *testing.T, exp string,
 	root, tracker, ok := parse(exp)
 	messages := ""
 	for _, diag := range tracker.Diagnostics() {
-		messages += diag.ToString()
+		messages += diag.String()
 		messages += "\n"
 	}
 	assert.Equal(t, "", messages)

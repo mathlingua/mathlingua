@@ -34,6 +34,7 @@ func (*FunctionFormPattern) PatternType()             {}
 func (*TupleFormPattern) PatternType()                {}
 func (*ConditionalSetExpressionPattern) PatternType() {}
 func (*ConditionalSetFormPattern) PatternType()       {}
+func (*ConditionaSetIdFormPattern) PatternType()      {}
 func (*InfixOperatorFormPattern) PatternType()        {}
 func (*PrefixOperatorFormPattern) PatternType()       {}
 func (*PostfixOperatorFormPattern) PatternType()      {}
@@ -69,6 +70,7 @@ func (*NameFormPattern) FormPatternType()            {}
 func (*FunctionFormPattern) FormPatternType()        {}
 func (*TupleFormPattern) FormPatternType()           {}
 func (*ConditionalSetFormPattern) FormPatternType()  {}
+func (*ConditionaSetIdFormPattern) FormPatternType() {}
 func (*InfixOperatorFormPattern) FormPatternType()   {}
 func (*PrefixOperatorFormPattern) FormPatternType()  {}
 func (*PostfixOperatorFormPattern) FormPatternType() {}
@@ -90,10 +92,11 @@ type LiteralFormPatternKind interface {
 	LiteralFormPatternType()
 }
 
-func (*NameFormPattern) LiteralFormPatternType()           {}
-func (*FunctionFormPattern) LiteralFormPatternType()       {}
-func (*TupleFormPattern) LiteralFormPatternType()          {}
-func (*ConditionalSetFormPattern) LiteralFormPatternType() {}
+func (*NameFormPattern) LiteralFormPatternType()            {}
+func (*FunctionFormPattern) LiteralFormPatternType()        {}
+func (*TupleFormPattern) LiteralFormPatternType()           {}
+func (*ConditionalSetFormPattern) LiteralFormPatternType()  {}
+func (*ConditionaSetIdFormPattern) LiteralFormPatternKind() {}
 
 type OrdinalPattern struct {
 	Target LiteralFormPatternKind
@@ -133,6 +136,12 @@ type ConditionalSetFormPattern struct {
 	Target    FormPatternKind
 	Condition FunctionFormPattern
 	VarArg    VarArgPatternData
+}
+
+type ConditionaSetIdFormPattern struct {
+	Symbols   []FormPatternKind
+	Target    FormPatternKind
+	Condition FunctionFormPattern
 }
 
 type ConditionalSetExpressionPattern struct {
@@ -230,6 +239,8 @@ func ToFormPattern(item ast.StructuralFormKind) FormPatternKind {
 		return ToPostfixOperatorFormPattern(*n)
 	case *ast.PrefixOperatorForm:
 		return ToPrefixOperatorFormPattern(*n)
+	case *ast.ConditionalSetIdForm:
+		return ToConditionalSetIdFormPattern(*n)
 	default:
 		panic("Could not process a pattern for " +
 			item.ToCode(func(node ast.MlgNodeKind) (string, bool) { return "", false }))
@@ -335,6 +346,14 @@ func ToInfixOperatorFormPatternFromId(form ast.InfixOperatorId) InfixOperatorFor
 	return InfixOperatorFormPattern{
 		Operator: toNameFormPatternFromText(form.Operator.Text),
 		Lhs:      ToFormPattern(form.Lhs),
+	}
+}
+
+func ToConditionalSetIdFormPattern(form ast.ConditionalSetIdForm) *ConditionaSetIdFormPattern {
+	return &ConditionaSetIdFormPattern{
+		Symbols:   toFormPatterns(form.Symbols),
+		Target:    ToFormPattern(form.Target),
+		Condition: *ToFunctionFormPattern(form.Condition),
 	}
 }
 

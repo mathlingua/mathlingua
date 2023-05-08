@@ -53,6 +53,8 @@ func Match(node ast.MlgNodeKind, pattern PatternKind) MatchResult {
 		return matchConditionalSetExpression(node, *p)
 	case *ConditionalSetFormPattern:
 		return matchConditionalSetForm(node, *p)
+	case *ConditionaSetIdFormPattern:
+		return matchConditionalSetIdForm(node, *p)
 	case *InfixOperatorFormPattern:
 		return matchInfixOperator(node, *p)
 	case *PrefixOperatorFormPattern:
@@ -245,10 +247,20 @@ func matchFunction(node ast.MlgNodeKind, pattern FunctionFormPattern) MatchResul
 		targetMatch := Match(n.Target, &pattern.Target)
 		argsMatch := matchAllExpressions(n.Args, pattern.Params)
 		return unionMatches(targetMatch, argsMatch)
+	case ast.ExpressionKind:
+		mapping := make(map[string]ast.MlgNodeKind)
+		mapping[pattern.Target.Text] = node
+		return MatchResult{
+			Mapping:         mapping,
+			MatchMakesSense: true,
+		}
 	default:
 		return MatchResult{
 			Messages: []string{
-				"Expected a function call",
+				fmt.Sprintf("Expected a function call but found %s",
+					ast.Debug(node, func(node ast.MlgNodeKind) (string, bool) {
+						return "", false
+					})),
 			},
 			MatchMakesSense: true,
 		}
@@ -273,16 +285,40 @@ func matchTuple(node ast.MlgNodeKind, pattern TupleFormPattern) MatchResult {
 	}
 }
 
-func matchConditionalSetForm(node ast.MlgNodeKind, pattern ConditionalSetFormPattern) MatchResult {
+func matchConditionalSetForm(
+	node ast.MlgNodeKind,
+	pattern ConditionalSetFormPattern,
+) MatchResult {
 	switch n := node.(type) {
 	case *ast.ConditionalSetForm:
 		targetMatch := Match(n.Target, pattern.Target)
 		varArgMatch := matchVarArg(n.VarArg, pattern.VarArg)
 		return unionMatches(targetMatch, varArgMatch)
+	default:
+		return MatchResult{
+			Messages: []string{
+				"Expected a set",
+			},
+			MatchMakesSense: true,
+		}
+	}
+}
+
+func matchConditionalSetIdForm(
+	node ast.MlgNodeKind,
+	pattern ConditionaSetIdFormPattern,
+) MatchResult {
+	switch n := node.(type) {
 	case *ast.ConditionalSetIdForm:
 		targetMatch := Match(n.Target, pattern.Target)
 		conditionMatch := matchFunction(&n.Condition, pattern.Condition)
 		return unionMatches(targetMatch, conditionMatch)
+	case *ast.ConditionalSetExpression:
+		targetMatch := Match(n.Target, pattern.Target)
+		conditionsMatch := matchAllExpressions(n.Conditions, []FormPatternKind{
+			&pattern.Condition,
+		})
+		return unionMatches(targetMatch, conditionsMatch)
 	default:
 		return MatchResult{
 			Messages: []string{

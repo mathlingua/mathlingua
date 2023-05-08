@@ -22,6 +22,10 @@ import (
 )
 
 func PopulateScopes(node ast.MlgNodeKind, tracker frontend.IDiagnosticTracker) {
+	if node == nil {
+		return
+	}
+
 	switch n := node.(type) {
 	case *ast.Document:
 		populateDocumentScopes(n)

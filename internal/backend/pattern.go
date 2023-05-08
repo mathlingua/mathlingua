@@ -231,7 +231,8 @@ func ToFormPattern(item ast.StructuralFormKind) FormPatternKind {
 	case *ast.PrefixOperatorForm:
 		return ToPrefixOperatorFormPattern(*n)
 	default:
-		return nil
+		panic("Could not process a pattern for " +
+			item.ToCode(func(node ast.MlgNodeKind) (string, bool) { return "", false }))
 	}
 }
 

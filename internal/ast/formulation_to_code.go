@@ -483,14 +483,11 @@ func (n *CurlyParam) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 		return res
 	}
 	result := ""
-	if n.SquareParams != nil {
-		result += "["
-		result += commaSeparatedString(*n.SquareParams, fn)
-		result += "]"
+	if n.CurlyParams != nil {
+		result += "{"
+		result += commaSeparatedString(*n.CurlyParams, fn)
+		result += "}"
 	}
-	result += "{"
-	result += commaSeparatedString(n.CurlyParams, fn)
-	result += "}"
 	if n.Direction != nil {
 		result += n.Direction.ToCode(fn)
 	}
@@ -525,6 +522,19 @@ func (n *DirectionalParam) ToCode(fn func(node MlgNodeKind) (string, bool)) stri
 	result += "]"
 	return result
 }
+
+func (n *FunctionLiteralForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	result := ""
+	result += n.Lhs.ToCode(fn)
+	result += " => "
+	result += n.Rhs.ToCode(fn)
+	return result
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func commaSeparatedString[T FormulationNodeKind](forms []T,
 	fn func(node MlgNodeKind) (string, bool)) string {

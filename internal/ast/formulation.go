@@ -31,13 +31,15 @@ type StructuralFormKind interface {
 	StructuralForm()
 }
 
-func (*NameForm) StructuralForm()            {}
-func (*FunctionForm) StructuralForm()        {}
-func (*TupleForm) StructuralForm()           {}
-func (*ConditionalSetForm) StructuralForm()  {}
-func (*InfixOperatorForm) StructuralForm()   {}
-func (*PrefixOperatorForm) StructuralForm()  {}
-func (*PostfixOperatorForm) StructuralForm() {}
+func (*NameForm) StructuralForm()             {}
+func (*FunctionForm) StructuralForm()         {}
+func (*TupleForm) StructuralForm()            {}
+func (*ConditionalSetForm) StructuralForm()   {}
+func (*ConditionalSetIdForm) StructuralForm() {}
+func (*InfixOperatorForm) StructuralForm()    {}
+func (*PrefixOperatorForm) StructuralForm()   {}
+func (*PostfixOperatorForm) StructuralForm()  {}
+func (*FunctionLiteralForm) StructuralForm()  {}
 
 // x
 type NameForm struct {
@@ -96,6 +98,14 @@ type TupleForm struct {
 type ConditionalSetForm struct {
 	Target              StructuralFormKind
 	VarArg              VarArgData
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+// x => f(x) or (x, y) => f(x)
+type FunctionLiteralForm struct {
+	Lhs                 TupleForm
+	Rhs                 StructuralFormKind
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
@@ -459,8 +469,7 @@ type CommandId struct {
 
 // []{} or {}
 type CurlyParam struct {
-	SquareParams        *[]StructuralFormKind
-	CurlyParams         []StructuralFormKind
+	CurlyParams         *[]StructuralFormKind
 	Direction           *DirectionalParam
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData

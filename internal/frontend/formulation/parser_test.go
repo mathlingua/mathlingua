@@ -25,344 +25,123 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func parse(text string) (ast.FormulationNodeKind, frontend.IDiagnosticTracker) {
+func parseExpression(text string) (ast.FormulationNodeKind, frontend.IDiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := ParseExpression("/some/path", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return node, tracker
 }
 
-func runTest(t *testing.T, input string, expected string) {
-	doc, tracker := parse(input)
-	actual := mlglib.PrettyPrint(doc)
+func runExpressionTest(t *testing.T, input string, expected string) {
+	doc, tracker := parseExpression(input)
+	actual := doc.ToCode(func(node ast.MlgNodeKind) (string, bool) { return "", false })
 
-	assert.Equal(t, expected, actual)
+	messages := ""
+	for _, diag := range tracker.Diagnostics() {
+		messages += diag.String() + "\n"
+	}
+
+	assert.Equal(t, "", messages)
 	assert.Equal(t, 0, len(tracker.Diagnostics()))
+	assert.Equal(t, expected, actual)
+}
+
+func parseIdForm(text string) (ast.FormulationNodeKind, frontend.IDiagnosticTracker) {
+	tracker := frontend.NewDiagnosticTracker()
+	node, _ := ParseId("/some/path", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
+	return node, tracker
+}
+
+func runIdFormTest(t *testing.T, input string, expected string) {
+	doc, tracker := parseIdForm(input)
+	assert.NotNil(t, doc)
+	actual := doc.ToCode(func(node ast.MlgNodeKind) (string, bool) { return "", false })
+
+	messages := ""
+	for _, diag := range tracker.Diagnostics() {
+		messages += diag.String() + "\n"
+	}
+
+	assert.Equal(t, "", messages)
+	assert.Equal(t, 0, len(tracker.Diagnostics()))
+	assert.Equal(t, expected, actual)
+}
+
+func parseForm(text string) (ast.FormulationNodeKind, frontend.IDiagnosticTracker) {
+	tracker := frontend.NewDiagnosticTracker()
+	node, _ := ParseForm("/some/path", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
+	return node, tracker
+}
+
+func runFormTest(t *testing.T, input string, expected string) {
+	doc, tracker := parseForm(input)
+	actual := doc.ToCode(func(node ast.MlgNodeKind) (string, bool) { return "", false })
+
+	messages := ""
+	for _, diag := range tracker.Diagnostics() {
+		messages += diag.String() + "\n"
+	}
+
+	assert.Equal(t, "", messages)
+	assert.Equal(t, 0, len(tracker.Diagnostics()))
+	assert.Equal(t, expected, actual)
 }
 
 func TestIdentifier(t *testing.T) {
-	// skipped since this test doesn't take into account Key values
-	t.Skip()
-	input := `x`
-	expected := `ast.NameForm{
-  Text: "x",
-  IsStropped: false,
-  HasQuestionMark: false,
-  VarArg: ast.VarArgData{
-    IsVarArg: false,
-    VarArgCount: nil,
-    MetaData: ast.MetaData{
-      Start: ast.Position{
-        Offset: 0,
-        Row: 0,
-        Column: 0,
-      },
-    },
-  },
-  MetaData: ast.MetaData{
-    Start: ast.Position{
-      Offset: 0,
-      Row: 0,
-      Column: 0,
-    },
-  },
-}`
-	runTest(t, input, expected)
+	runExpressionTest(t, "x", "x")
 }
 
 func TestMultiCharIdentifier(t *testing.T) {
-	// skipped since this test doesn't take into account Key values
-	t.Skip()
-	input := `abc`
-	expected := `ast.NameForm{
-  Text: "abc",
-  IsStropped: false,
-  HasQuestionMark: false,
-  VarArg: ast.VarArgData{
-    IsVarArg: false,
-    VarArgCount: nil,
-    MetaData: ast.MetaData{
-      Start: ast.Position{
-        Offset: 0,
-        Row: 0,
-        Column: 0,
-      },
-    },
-  },
-  MetaData: ast.MetaData{
-    Start: ast.Position{
-      Offset: 0,
-      Row: 0,
-      Column: 0,
-    },
-  },
-}`
-	runTest(t, input, expected)
+	runExpressionTest(t, "abc", "abc")
 }
 
 func TestIdentifierQuestion(t *testing.T) {
-	// skipped since this test doesn't take into account Key values
-	t.Skip()
-	input := `x?`
-	expected := `ast.NameForm{
-  Text: "x",
-  IsStropped: false,
-  HasQuestionMark: true,
-  VarArg: ast.VarArgData{
-    IsVarArg: false,
-    VarArgCount: nil,
-    MetaData: ast.MetaData{
-      Start: ast.Position{
-        Offset: 0,
-        Row: 0,
-        Column: 0,
-      },
-    },
-  },
-  MetaData: ast.MetaData{
-    Start: ast.Position{
-      Offset: 0,
-      Row: 0,
-      Column: 0,
-    },
-  },
-}`
-	runTest(t, input, expected)
+	runExpressionTest(t, "x?", "x")
 }
 
 func TestStroppedIdentifier(t *testing.T) {
-	// skipped since this test doesn't take into account Key values
-	t.Skip()
-	input := `"ab c"`
-	expected := `ast.NameForm{
-  Text: "ab c",
-  IsStropped: true,
-  HasQuestionMark: false,
-  VarArg: ast.VarArgData{
-    IsVarArg: false,
-    VarArgCount: nil,
-    MetaData: ast.MetaData{
-      Start: ast.Position{
-        Offset: 0,
-        Row: 0,
-        Column: 0,
-      },
-    },
-  },
-  MetaData: ast.MetaData{
-    Start: ast.Position{
-      Offset: 0,
-      Row: 0,
-      Column: 0,
-    },
-  },
-}`
-	runTest(t, input, expected)
+	runExpressionTest(t, `"ab c"`, "ab c")
 }
 
 func TestStroppedIdentifierQuestion(t *testing.T) {
-	// skipped since this test doesn't take into account Key values
-	t.Skip()
-	input := `"ab c"?`
-	expected := `ast.NameForm{
-  Text: "ab c",
-  IsStropped: true,
-  HasQuestionMark: true,
-  VarArg: ast.VarArgData{
-    IsVarArg: false,
-    VarArgCount: nil,
-    MetaData: ast.MetaData{
-      Start: ast.Position{
-        Offset: 0,
-        Row: 0,
-        Column: 0,
-      },
-    },
-  },
-  MetaData: ast.MetaData{
-    Start: ast.Position{
-      Offset: 0,
-      Row: 0,
-      Column: 0,
-    },
-  },
-}`
-	runTest(t, input, expected)
+	runExpressionTest(t, `"ab c"?`, "ab c")
 }
 
 func TestVarArgIdentifier(t *testing.T) {
-	// skipped since this test doesn't take into account Key values
-	t.Skip()
-	input := `abc...`
-	expected := `ast.NameForm{
-  Text: "abc",
-  IsStropped: false,
-  HasQuestionMark: false,
-  VarArg: ast.VarArgData{
-    IsVarArg: true,
-    VarArgCount: nil,
-    MetaData: ast.MetaData{
-      Start: ast.Position{
-        Offset: 0,
-        Row: 0,
-        Column: 0,
-      },
-    },
-  },
-  MetaData: ast.MetaData{
-    Start: ast.Position{
-      Offset: 0,
-      Row: 0,
-      Column: 0,
-    },
-  },
-}`
-	runTest(t, input, expected)
+	runExpressionTest(t, "abc...", "abc...")
 }
 
 func TestStroppedVarArgIdentifier(t *testing.T) {
-	// skipped since this test doesn't take into account Key values
-	t.Skip()
-	input := `"ab c"?`
-	expected := `ast.NameForm{
-  Text: "ab c",
-  IsStropped: true,
-  HasQuestionMark: true,
-  VarArg: ast.VarArgData{
-    IsVarArg: false,
-    VarArgCount: nil,
-    MetaData: ast.MetaData{
-      Start: ast.Position{
-        Offset: 0,
-        Row: 0,
-        Column: 0,
-      },
-    },
-  },
-  MetaData: ast.MetaData{
-    Start: ast.Position{
-      Offset: 0,
-      Row: 0,
-      Column: 0,
-    },
-  },
-}`
-	runTest(t, input, expected)
+	runExpressionTest(t, `"ab c"?`, "ab c")
 }
 
 func TestStroppedVarArgIdentifierQuestion(t *testing.T) {
-	// skipped since this test doesn't take into account Key values
-	t.Skip()
-	input := `"ab c"...?`
-	expected := `ast.NameForm{
-  Text: "ab c",
-  IsStropped: true,
-  HasQuestionMark: true,
-  VarArg: ast.VarArgData{
-    IsVarArg: true,
-    VarArgCount: nil,
-    MetaData: ast.MetaData{
-      Start: ast.Position{
-        Offset: 0,
-        Row: 0,
-        Column: 0,
-      },
-    },
-  },
-  MetaData: ast.MetaData{
-    Start: ast.Position{
-      Offset: 0,
-      Row: 0,
-      Column: 0,
-    },
-  },
-}`
-	runTest(t, input, expected)
+	runExpressionTest(t, `"ab c"...?`, "ab c...")
 }
 
 func TestChainExpressionWithNames(t *testing.T) {
-	// skipped since this test doesn't take into account Key values
-	t.Skip()
-	input := `a.b.c`
-	expected := `ast.ChainExpression{
-  Parts: []ast.ExpressionType{
-    ast.NameForm{
-      Text: "a",
-      IsStropped: false,
-      HasQuestionMark: false,
-      VarArg: ast.VarArgData{
-        IsVarArg: false,
-        VarArgCount: nil,
-        MetaData: ast.MetaData{
-          Start: ast.Position{
-            Offset: 0,
-            Row: 0,
-            Column: 0,
-          },
-        },
-      },
-      MetaData: ast.MetaData{
-        Start: ast.Position{
-          Offset: 0,
-          Row: 0,
-          Column: 0,
-        },
-      },
-    },
-    ast.NameForm{
-      Text: "b",
-      IsStropped: false,
-      HasQuestionMark: false,
-      VarArg: ast.VarArgData{
-        IsVarArg: false,
-        VarArgCount: nil,
-        MetaData: ast.MetaData{
-          Start: ast.Position{
-            Offset: 0,
-            Row: 0,
-            Column: 0,
-          },
-        },
-      },
-      MetaData: ast.MetaData{
-        Start: ast.Position{
-          Offset: 2,
-          Row: 0,
-          Column: 2,
-        },
-      },
-    },
-    ast.NameForm{
-      Text: "c",
-      IsStropped: false,
-      HasQuestionMark: false,
-      VarArg: ast.VarArgData{
-        IsVarArg: false,
-        VarArgCount: nil,
-        MetaData: ast.MetaData{
-          Start: ast.Position{
-            Offset: 0,
-            Row: 0,
-            Column: 0,
-          },
-        },
-      },
-      MetaData: ast.MetaData{
-        Start: ast.Position{
-          Offset: 4,
-          Row: 0,
-          Column: 4,
-        },
-      },
-    },
-  },
-  HasTrailingOperator: false,
-  MetaData: ast.MetaData{
-    Start: ast.Position{
-      Offset: 0,
-      Row: 0,
-      Column: 0,
-    },
-  },
-}`
-	runTest(t, input, expected)
+	runExpressionTest(t, "a.b.c", "a.b.c")
+}
+
+func TestConditionalSetForm(t *testing.T) {
+	runFormTest(t, "{x | ...}", "{x | ...}")
+	runFormTest(t, "{f(x) | ...}", "{f(x) | ...}")
+	runFormTest(t, "{f(x, y) | ...}", "{f(x, y) | ...}")
+	runFormTest(t, "{(f(x, y), a) | ...}", "{(f(x, y), a) | ...}")
+	runFormTest(t, "{(f(x, y), a, {z | ...}) | ...}", "{(f(x, y), a, {z | ...}) | ...}")
+}
+
+func TestConditionalSetExpression(t *testing.T) {
+	runExpressionTest(t, "[x]{x | x}", "[x]{x | x}")
+	runExpressionTest(t, "[x]{x | x > 0}", "[x]{x | x > 0}")
+	runExpressionTest(t, "[x, y]{x | x > 0; y = 0}", "[x, y]{x | x > 0; y = 0}")
+	runExpressionTest(t, "[x, f(y)]{x | x > 0; y = 0}", "[x, f(y)]{x | x > 0; y = 0}")
+	runExpressionTest(t, "[x, y]{(x, y) | x > 0; y = 0}", "[x, y]{(x, y) | x > 0; y = 0}")
+	runExpressionTest(t, "[x, y]{(f(x), y) | x > 0; y = 0}", "[x, y]{(f(x), y) | x > 0; y = 0}")
+	runExpressionTest(t,
+		"[x, y]{(f(x), [y]{y | y}) | x > 0; y = 0}",
+		"[x, y]{(f(x), [y]{y | y}) | x > 0; y = 0}")
+}
+
+func TestConditionalSetIdForm(t *testing.T) {
+	runIdFormTest(t, "\\set[x]{x | f(x)}", "\\set{[x]{x | f(x)}}")
 }

@@ -425,10 +425,6 @@ func toCurlyArg(curlyParam *ast.CurlyParam) *CurlyPattern {
 	}
 
 	var squareArgs *[]FormPatternKind
-	if curlyParam.SquareParams != nil {
-		patterns := toFormPatterns(*curlyParam.SquareParams)
-		squareArgs = &patterns
-	}
 	var direction *DirectionPattern
 	if curlyParam.Direction != nil {
 		squareArgs := make([]DirectionParamParamPatternKind, 0)
@@ -450,10 +446,14 @@ func toCurlyArg(curlyParam *ast.CurlyParam) *CurlyPattern {
 			SquareArgs: squareArgs,
 		}
 	}
-	curlyArgs := toFormPatterns(*&curlyParam.CurlyParams)
+	var curlyArgs *[]FormPatternKind
+	if curlyParam.CurlyParams != nil {
+		tmpArgs := toFormPatterns(*curlyParam.CurlyParams)
+		curlyArgs = &tmpArgs
+	}
 	return &CurlyPattern{
 		SquareArgs: squareArgs,
-		CurlyArgs:  &curlyArgs,
+		CurlyArgs:  curlyArgs,
 		Direction:  direction,
 	}
 }

@@ -660,11 +660,10 @@ func matchCurlyParam(node *ast.CurlyParam, pattern *CurlyPattern) MatchResult {
 		}
 	}
 
-	curlyMatch := matchAllOptionalStructuralForms(&node.CurlyParams, pattern.CurlyArgs)
-	squareMatch := matchAllOptionalStructuralForms(node.SquareParams, pattern.SquareArgs)
+	curlyMatch := matchAllOptionalStructuralForms(node.CurlyParams, pattern.CurlyArgs)
 	directionMatch := matchDirection(node.Direction, pattern.Direction)
 
-	return unionMatches(curlyMatch, unionMatches(squareMatch, directionMatch))
+	return unionMatches(curlyMatch, directionMatch)
 }
 
 func matchNamedGroup(node ast.MlgNodeKind, pattern NamedGroupPattern) MatchResult {

@@ -161,3 +161,7 @@ func (n *PostfixOperatorForm) GetFormulationMetaData() *FormulationMetaData {
 func (n *FunctionLiteralExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
+
+func (n *FunctionLiteralForm) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}

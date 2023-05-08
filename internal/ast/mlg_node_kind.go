@@ -147,6 +147,7 @@ func (*FunctionLiteralExpression) MlgNodeType()              {}
 func (*CurlyParam) MlgNodeType()                             {}
 func (*CurlyArg) MlgNodeType()                               {}
 func (*DirectionalParam) MlgNodeType()                       {}
+func (*FunctionLiteralForm) MlgNodeType()                    {}
 
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck

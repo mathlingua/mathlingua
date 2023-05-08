@@ -2222,14 +2222,48 @@ func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
 func (fp *formulationParser) curlyParam() (ast.CurlyParam, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-	var squareParams *[]ast.StructuralFormKind
-	if square, squareOk := fp.squareParams(); squareOk {
-		squareParams = square
+	var curlyParams *[]ast.StructuralFormKind
+	if condSet, ok := fp.conditionalSetIdForm(); ok {
+		tmpCurly := make([]ast.StructuralFormKind, 0)
+		tmpCurly = append(tmpCurly, &condSet)
+		curlyParams = &tmpCurly
 	}
-	curlyParams, curlyOk := fp.curlyParams()
-	if !curlyOk {
-		fp.lexer.RollBack(id)
-		return ast.CurlyParam{}, false
+	if curlyParams == nil {
+		var squareArgs *[]ast.StructuralFormKind
+		squarePosition := fp.lexer.Position()
+		if square, squareOk := fp.squareParams(); squareOk {
+			squareArgs = square
+		}
+		realCurlyParams, curlyOk := fp.curlyParams()
+		if !curlyOk {
+			fp.lexer.RollBack(id)
+			return ast.CurlyParam{}, false
+		}
+		if squareArgs != nil {
+			if realCurlyParams == nil || len(*realCurlyParams) != 1 {
+				fp.errorAt("If square args are used exactly one argument must be specified", squarePosition)
+			} else {
+				tmpCurlyParams := make([]ast.StructuralFormKind, 0)
+				first := (*realCurlyParams)[0]
+				tmpCurlyParams = append(tmpCurlyParams, &ast.FunctionLiteralForm{
+					Lhs: ast.TupleForm{
+						Params: *squareArgs,
+						CommonMetaData: ast.CommonMetaData{
+							Start: squarePosition,
+							Key:   fp.keyGen.Next(),
+						},
+					},
+					Rhs: first,
+					CommonMetaData: ast.CommonMetaData{
+						Start: first.Start(),
+						Key:   fp.keyGen.Next(),
+					},
+				})
+				curlyParams = &tmpCurlyParams
+			}
+		} else {
+			curlyParams = realCurlyParams
+		}
 	}
 	var directionParam *ast.DirectionalParam
 	if param, ok := fp.directionParam(); ok {
@@ -2237,9 +2271,8 @@ func (fp *formulationParser) curlyParam() (ast.CurlyParam, bool) {
 	}
 	fp.lexer.Commit(id)
 	return ast.CurlyParam{
-		SquareParams: squareParams,
-		CurlyParams:  *curlyParams,
-		Direction:    directionParam,
+		CurlyParams: curlyParams,
+		Direction:   directionParam,
 		CommonMetaData: ast.CommonMetaData{
 			Key:   fp.keyGen.Next(),
 			Start: start,

@@ -66,3 +66,4 @@ func (*InfixOperatorForm) FormulationNodeType()                      {}
 func (*PrefixOperatorForm) FormulationNodeType()                     {}
 func (*PostfixOperatorForm) FormulationNodeType()                    {}
 func (*FunctionLiteralExpression) FormulationNodeType()              {}
+func (*FunctionLiteralForm) FormulationNodeType()                    {}

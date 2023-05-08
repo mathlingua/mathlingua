@@ -209,3 +209,4 @@ func (n *FunctionLiteralExpression) GetCommonMetaData() *CommonMetaData { return
 func (n *CurlyParam) GetCommonMetaData() *CommonMetaData                { return &n.CommonMetaData }
 func (n *CurlyArg) GetCommonMetaData() *CommonMetaData                  { return &n.CommonMetaData }
 func (n *DirectionalParam) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
+func (n *FunctionLiteralForm) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }

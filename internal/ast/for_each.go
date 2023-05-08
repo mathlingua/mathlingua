@@ -772,11 +772,15 @@ func (n *FunctionLiteralExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Rhs)
 }
 
+func (n *FunctionLiteralForm) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.Lhs)
+	fn(n.Rhs)
+}
+
 func (n *CurlyParam) ForEach(fn func(subNode MlgNodeKind)) {
-	if n.SquareParams != nil {
-		forEach(*n.SquareParams, fn)
+	if n.CurlyParams != nil {
+		forEach(*n.CurlyParams, fn)
 	}
-	forEach(n.CurlyParams, fn)
 	if n.Direction != nil {
 		fn(n.Direction)
 	}

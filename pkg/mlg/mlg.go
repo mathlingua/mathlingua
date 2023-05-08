@@ -146,6 +146,11 @@ func (m *mlg) printCheckStats(numErrors int, numWarnings int, numFilesProcessed 
 	}
 
 	m.logger.Log("")
-	m.logger.Failure(fmt.Sprintf("Processed %d %s and found %d %s and %d %s",
-		numFilesProcessed, filesText, numErrors, errorText, numWarnings, warningText))
+	if numErrors > 0 {
+		m.logger.Failure(fmt.Sprintf("Processed %d %s and found %d %s and %d %s",
+			numFilesProcessed, filesText, numErrors, errorText, numWarnings, warningText))
+	} else {
+		m.logger.Success(fmt.Sprintf("Processed %d %s and found %d %s and %d %s",
+			numFilesProcessed, filesText, numErrors, errorText, numWarnings, warningText))
+	}
 }

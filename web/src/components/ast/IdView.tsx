@@ -1,9 +1,11 @@
 import React from 'react';
 import { useTheme } from '../../hooks/theme';
 import { Theme } from '../../base/theme';
+import { LatexView } from '../LatexView';
 
 export interface IdViewProps {
   id: string | null;
+  isLatex: boolean;
 }
 
 export const IdView = (props: IdViewProps) => {
@@ -12,6 +14,15 @@ export const IdView = (props: IdViewProps) => {
 
   if (props.id === null) {
     return null;
+  }
+
+  if (props.isLatex) {
+    return (
+      <div style={styles.mathlinguaId}>
+        <LatexView latex={props.id} />
+        <hr style={styles.line} />
+      </div>
+    );
   }
 
   return (

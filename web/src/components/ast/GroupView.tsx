@@ -1,6 +1,5 @@
 import React from 'react';
 import { Group } from '../../types';
-import { IdView } from './IdView';
 import { Indent } from './Indent';
 import { Newline } from './Newline';
 import { SectionView } from './SectionView';
@@ -13,7 +12,6 @@ export interface GroupViewProps {
 export const GroupView = (props: GroupViewProps) => {
   return (
     <span>
-      <IdView id={props.node.Id} />
       {
         props.node.Sections?.map((sec, index) => (
           <span key={index}>

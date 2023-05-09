@@ -61,3 +61,7 @@ func (p *AliasPattern) GetVarArgData() VarArgPatternData     { return VarArgPatt
 func (p *ConditionaSetIdFormPattern) GetVarArgData() VarArgPatternData {
 	return VarArgPatternData{}
 }
+
+func (p *FunctionLiteralFormPattern) GetVarArgData() VarArgPatternData {
+	return VarArgPatternData{}
+}

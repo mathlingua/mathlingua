@@ -35,6 +35,7 @@ func (*TupleFormPattern) PatternType()                {}
 func (*ConditionalSetExpressionPattern) PatternType() {}
 func (*ConditionalSetFormPattern) PatternType()       {}
 func (*ConditionaSetIdFormPattern) PatternType()      {}
+func (*FunctionLiteralFormPattern) PatternType()      {}
 func (*InfixOperatorFormPattern) PatternType()        {}
 func (*PrefixOperatorFormPattern) PatternType()       {}
 func (*PostfixOperatorFormPattern) PatternType()      {}
@@ -71,6 +72,7 @@ func (*FunctionFormPattern) FormPatternType()        {}
 func (*TupleFormPattern) FormPatternType()           {}
 func (*ConditionalSetFormPattern) FormPatternType()  {}
 func (*ConditionaSetIdFormPattern) FormPatternType() {}
+func (*FunctionLiteralFormPattern) FormPatternType() {}
 func (*InfixOperatorFormPattern) FormPatternType()   {}
 func (*PrefixOperatorFormPattern) FormPatternType()  {}
 func (*PostfixOperatorFormPattern) FormPatternType() {}
@@ -96,7 +98,8 @@ func (*NameFormPattern) LiteralFormPatternType()            {}
 func (*FunctionFormPattern) LiteralFormPatternType()        {}
 func (*TupleFormPattern) LiteralFormPatternType()           {}
 func (*ConditionalSetFormPattern) LiteralFormPatternType()  {}
-func (*ConditionaSetIdFormPattern) LiteralFormPatternKind() {}
+func (*ConditionaSetIdFormPattern) LiteralFormPatternType() {}
+func (*FunctionLiteralFormPattern) LiteralFormPatternType() {}
 
 type OrdinalPattern struct {
 	Target LiteralFormPatternKind
@@ -142,6 +145,11 @@ type ConditionaSetIdFormPattern struct {
 	Symbols   []FormPatternKind
 	Target    FormPatternKind
 	Condition FunctionFormPattern
+}
+
+type FunctionLiteralFormPattern struct {
+	Lhs TupleFormPattern
+	Rhs FormPatternKind
 }
 
 type ConditionalSetExpressionPattern struct {
@@ -241,6 +249,8 @@ func ToFormPattern(item ast.StructuralFormKind) FormPatternKind {
 		return ToPrefixOperatorFormPattern(*n)
 	case *ast.ConditionalSetIdForm:
 		return ToConditionalSetIdFormPattern(*n)
+	case *ast.FunctionLiteralForm:
+		return ToFunctionLiteralFormPattern(*n)
 	default:
 		panic("Could not process a pattern for " +
 			item.ToCode(func(node ast.MlgNodeKind) (string, bool) { return "", false }))
@@ -354,6 +364,13 @@ func ToConditionalSetIdFormPattern(form ast.ConditionalSetIdForm) *ConditionaSet
 		Symbols:   toFormPatterns(form.Symbols),
 		Target:    ToFormPattern(form.Target),
 		Condition: *ToFunctionFormPattern(form.Condition),
+	}
+}
+
+func ToFunctionLiteralFormPattern(form ast.FunctionLiteralForm) *FunctionLiteralFormPattern {
+	return &FunctionLiteralFormPattern{
+		Lhs: *ToTupleFormPattern(form.Lhs),
+		Rhs: ToFormPattern(form.Rhs),
 	}
 }
 

@@ -251,55 +251,68 @@ func (w *workspace) commandToWritten(path ast.Path, node *ast.CommandExpression)
 						found = true
 
 						nameToWritten := make(map[string]string)
-						nameNoParenToWritten := make(map[string]string)
-						nameWithParenToWritten := make(map[string]string)
+						nameToWrittenPlus := make(map[string]string)
+						nameToWrittenMinus := make(map[string]string)
+						nameToWrittenEqual := make(map[string]string)
 
 						varArgNameToWritten := make(map[string][]string)
-						varArgNameNoParenToWritten := make(map[string][]string)
-						varArgNameWithParenToWritten := make(map[string][]string)
+						varArgNameToWrittenPlus := make(map[string][]string)
+						varArgNameToWrittenMinus := make(map[string][]string)
+						varArgNameToWrittenEqual := make(map[string][]string)
 
 						for name, exp := range matchResult.Mapping {
 							text := w.formulationNodeToWritten(path, exp)
-							textWithoutParen := strings.TrimSuffix(strings.TrimPrefix(text, "("), ")")
-							textWithParen := "(" + textWithoutParen + ")"
+							textPlus := getVarPlusQuestionMarkText(text, exp)
+							textMinus := getVarMinusQuestionMarkText(text, exp)
+							textEqual := getVarEqualQuestionMarkText(text)
 
 							nameToWritten[name] = text
-							nameNoParenToWritten[name] = textWithoutParen
-							nameWithParenToWritten[name] = textWithParen
+							nameToWrittenPlus[name] = textPlus
+							nameToWrittenMinus[name] = textMinus
+							nameToWrittenEqual[name] = textEqual
 
 							varArgNameToWritten[name] = []string{text}
-							varArgNameNoParenToWritten[name] = []string{textWithoutParen}
-							varArgNameWithParenToWritten[name] = []string{textWithParen}
+							varArgNameToWrittenPlus[name] = []string{textPlus}
+							varArgNameToWrittenMinus[name] = []string{textMinus}
+							varArgNameToWrittenEqual[name] = []string{textEqual}
 						}
 
 						for name, exps := range matchResult.VarArgMapping {
 							values := make([]string, 0)
-							valuesWithoutParen := make([]string, 0)
-							valuesWithParen := make([]string, 0)
+							valuesPlus := make([]string, 0)
+							valuesMinus := make([]string, 0)
+							valuesEqual := make([]string, 0)
 							for _, exp := range exps {
-								value := w.formulationNodeToWritten(path, exp)
-								valueWithoutParen := value
-								valueWithParen := value
+								val := w.formulationNodeToWritten(path, exp)
+								valPlus := getVarPlusQuestionMarkText(val, exp)
+								valMinus := getVarMinusQuestionMarkText(val, exp)
+								valEqual := getVarEqualQuestionMarkText(val)
 
-								values = append(values, value)
-								valuesWithoutParen = append(valuesWithoutParen, valueWithoutParen)
-								valuesWithParen = append(valuesWithParen, valueWithParen)
+								values = append(values, val)
+								valuesPlus = append(valuesPlus, valPlus)
+								valuesMinus = append(valuesMinus, valMinus)
+								valuesEqual = append(valuesEqual, valEqual)
 							}
 
 							varArgNameToWritten[name] = values
-							varArgNameNoParenToWritten[name] = valuesWithoutParen
-							varArgNameWithParenToWritten[name] = valuesWithParen
+							varArgNameToWrittenPlus[name] = valuesPlus
+							varArgNameToWrittenMinus[name] = valuesMinus
+							varArgNameToWrittenEqual[name] = valuesEqual
 
 							if len(values) > 0 {
 								nameToWritten[name] = values[0]
 							}
 
-							if len(valuesWithoutParen) > 0 {
-								nameNoParenToWritten[name] = valuesWithoutParen[0]
+							if len(valuesPlus) > 0 {
+								nameToWrittenPlus[name] = valuesPlus[0]
 							}
 
-							if len(valuesWithParen) > 0 {
-								nameWithParenToWritten[name] = valuesWithParen[0]
+							if len(valuesMinus) > 0 {
+								nameToWrittenMinus[name] = valuesMinus[0]
+							}
+
+							if len(valuesEqual) > 0 {
+								nameToWrittenEqual[name] = valuesEqual[0]
 							}
 						}
 
@@ -312,23 +325,26 @@ func (w *workspace) commandToWritten(path ast.Path, node *ast.CommandExpression)
 								if it.IsVarArg {
 									if it.NameSuffix == "+" {
 										result += valuesToString(
-											varArgNameWithParenToWritten[it.Name], it.Prefix, it.Infix, it.Suffix)
+											varArgNameToWrittenPlus[it.Name], it.Prefix, it.Infix, it.Suffix)
+									} else if it.NameSuffix == "-" {
+										result += valuesToString(
+											varArgNameToWrittenMinus[it.Name], it.Prefix, it.Infix, it.Suffix)
 									} else if it.NameSuffix == "=" {
 										result += valuesToString(
-											varArgNameToWritten[it.Name], it.Prefix, it.Infix, it.Suffix)
+											varArgNameToWrittenEqual[it.Name], it.Prefix, it.Infix, it.Suffix)
 									} else {
-										// default to - if the suffix is blank
 										result += valuesToString(
-											varArgNameNoParenToWritten[it.Name], it.Prefix, it.Infix, it.Suffix)
+											varArgNameToWritten[it.Name], it.Prefix, it.Infix, it.Suffix)
 									}
 								} else {
 									if it.NameSuffix == "+" {
-										result += nameWithParenToWritten[it.Name]
+										result += nameToWrittenPlus[it.Name]
+									} else if it.NameSuffix == "-" {
+										result += nameToWrittenMinus[it.Name]
 									} else if it.NameSuffix == "=" {
-										result += nameToWritten[it.Name]
+										result += nameToWrittenEqual[it.Name]
 									} else {
-										// default to - if the suffix is blank
-										result += nameNoParenToWritten[it.Name]
+										result += nameToWritten[it.Name]
 									}
 								}
 							}
@@ -590,6 +606,47 @@ func (w *workspace) findUsedUnknownSignatures() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func getVarQuestionMarkText(rawWritten string, originalNode ast.MlgNodeKind) string {
+	return getVarMinusQuestionMarkText(rawWritten, originalNode)
+}
+
+func getVarEqualQuestionMarkText(rawWritten string) string {
+	return rawWritten
+}
+
+func getVarPlusQuestionMarkText(rawWritten string, originalNode ast.MlgNodeKind) string {
+	if _, ok := originalNode.(*ast.NameForm); ok {
+		return rawWritten
+	}
+	result := rawWritten
+	if !strings.HasPrefix(result, "(") {
+		result = "(" + result
+	}
+	if !strings.HasSuffix(result, ")") {
+		result = result + ")"
+	}
+	return result
+}
+
+func getVarMinusQuestionMarkText(rawWritten string, originalNode ast.MlgNodeKind) string {
+	isTupleExp := false
+	if tup, ok := originalNode.(*ast.TupleExpression); ok {
+		if len(tup.Args) != 1 {
+			isTupleExp = true
+		}
+	}
+	isTupleForm := false
+	if tup, ok := originalNode.(*ast.TupleForm); ok {
+		if len(tup.Params) != 1 {
+			isTupleForm = true
+		}
+	}
+	if isTupleExp || isTupleForm {
+		return rawWritten
+	}
+	return strings.TrimSuffix(strings.TrimPrefix(rawWritten, "("), ")")
+}
 
 func valuesToString(values []string, prefix string, infix string, suffix string) string {
 	// this function assumes exactly one of prefix, infix, and suffix is non-empty

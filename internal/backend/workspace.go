@@ -249,21 +249,29 @@ func (w *workspace) commandToWritten(path ast.Path, node *ast.CommandExpression)
 					matchResult := Match(node, summaryInput)
 					if matchResult.MatchMakesSense && len(matchResult.Messages) == 0 {
 						found = true
+
 						nameToWritten := make(map[string]string)
 						nameNoParenToWritten := make(map[string]string)
 						nameWithParenToWritten := make(map[string]string)
-						for name, exp := range matchResult.Mapping {
-							text := w.formulationNodeToWritten(path, exp)
-							textWithoutParen := strings.TrimSuffix(strings.TrimPrefix(text, "("), ")")
-							textWithParen := "(" + textWithoutParen + ")"
-							nameToWritten[name] = text
-							nameNoParenToWritten[name] = textWithoutParen
-							nameWithParenToWritten[name] = textWithParen
-						}
 
 						varArgNameToWritten := make(map[string][]string)
 						varArgNameNoParenToWritten := make(map[string][]string)
 						varArgNameWithParenToWritten := make(map[string][]string)
+
+						for name, exp := range matchResult.Mapping {
+							text := w.formulationNodeToWritten(path, exp)
+							textWithoutParen := strings.TrimSuffix(strings.TrimPrefix(text, "("), ")")
+							textWithParen := "(" + textWithoutParen + ")"
+
+							nameToWritten[name] = text
+							nameNoParenToWritten[name] = textWithoutParen
+							nameWithParenToWritten[name] = textWithParen
+
+							varArgNameToWritten[name] = []string{text}
+							varArgNameNoParenToWritten[name] = []string{textWithoutParen}
+							varArgNameWithParenToWritten[name] = []string{textWithParen}
+						}
+
 						for name, exps := range matchResult.VarArgMapping {
 							values := make([]string, 0)
 							valuesWithoutParen := make([]string, 0)
@@ -281,6 +289,18 @@ func (w *workspace) commandToWritten(path ast.Path, node *ast.CommandExpression)
 							varArgNameToWritten[name] = values
 							varArgNameNoParenToWritten[name] = valuesWithoutParen
 							varArgNameWithParenToWritten[name] = valuesWithParen
+
+							if len(values) > 0 {
+								nameToWritten[name] = values[0]
+							}
+
+							if len(valuesWithoutParen) > 0 {
+								nameNoParenToWritten[name] = valuesWithoutParen[0]
+							}
+
+							if len(valuesWithParen) > 0 {
+								nameWithParenToWritten[name] = valuesWithParen[0]
+							}
 						}
 
 						result := ""

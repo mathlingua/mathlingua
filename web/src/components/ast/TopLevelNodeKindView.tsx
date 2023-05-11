@@ -1,20 +1,20 @@
 import React from 'react';
 import { useTheme } from '../../hooks/theme';
-import { Group, TextArgumentData, TopLevelNodeType } from '../../types';
+import { Group, TextArgumentData, TopLevelNodeKind } from '../../types';
 import { GroupView } from './GroupView';
 import { TextBlockView } from './TextBlockView';
 import { Theme } from '../../base/theme';
 import { IdView } from './IdView';
 
-export interface TopLevelNodeTypeViewProps {
-  node: TopLevelNodeType;
+export interface TopLevelNodeKindViewProps {
+  node: TopLevelNodeKind;
   isOnSmallScreen: boolean;
 }
 
-export const TopLevelNodeTypeView = (props: TopLevelNodeTypeViewProps) => {
+export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
   const theme = useTheme();
   const sections = (props.node as Group).Sections;
-  const styles = getTopLevelNodeTypeViewStyles(theme);
+  const styles = getTopLevelNodeKindViewStyles(theme);
   if (sections) {
     let called: string|undefined = undefined;
     let written: string|undefined = undefined;
@@ -75,7 +75,7 @@ export const TopLevelNodeTypeView = (props: TopLevelNodeTypeViewProps) => {
   }
 };
 
-function getTopLevelNodeTypeViewStyles(theme: Theme) {
+function getTopLevelNodeKindViewStyles(theme: Theme) {
   return {
     mathlinguaTopLevelEntity: {
       fontFamily: 'monospace',

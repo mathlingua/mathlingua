@@ -25,11 +25,11 @@ import (
 )
 
 type TextItemKind interface {
-	TextItemType()
+	TextItemKind()
 }
 
-func (*StringItem) TextItemType()       {}
-func (*SubstitutionItem) TextItemType() {}
+func (*StringItem) TextItemKind()       {}
+func (*SubstitutionItem) TextItemKind() {}
 
 type StringItem struct {
 	Text string

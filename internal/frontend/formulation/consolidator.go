@@ -243,22 +243,22 @@ func toShuntingYardItems(
 		curIsSpecialOp := isSpecialOperators[i]
 
 		prevType := none
-		curType := toIsOperatorToGeneralItemType(curIsOp, curIsSpecialOp)
+		curType := toIsOperatorToGeneralItemKind(curIsOp, curIsSpecialOp)
 		nextType := none
 
 		if i == 0 {
 			prevType = none
 		} else {
-			prevType = toIsOperatorToGeneralItemType(isOperators[i-1], isSpecialOperators[i-1])
+			prevType = toIsOperatorToGeneralItemKind(isOperators[i-1], isSpecialOperators[i-1])
 		}
 
 		if i == len(isOperators)-1 {
 			nextType = none
 		} else {
-			nextType = toIsOperatorToGeneralItemType(isOperators[i+1], isSpecialOperators[i+1])
+			nextType = toIsOperatorToGeneralItemKind(isOperators[i+1], isSpecialOperators[i+1])
 		}
 
-		itemTypes[i] = getGeneralOperatorType(prevType, curType, nextType)
+		itemTypes[i] = getGeneralOperatorKind(prevType, curType, nextType)
 	}
 
 	for i, node := range nodes {
@@ -274,7 +274,7 @@ func toShuntingYardItems(
 	return result
 }
 
-func toIsOperatorToGeneralItemType(isOperator bool, isSpecialOperator bool) generalItemType {
+func toIsOperatorToGeneralItemKind(isOperator bool, isSpecialOperator bool) generalItemType {
 	if isOperator {
 		return operator
 	} else if isSpecialOperator {
@@ -385,7 +385,7 @@ const (
 
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck
-func getGeneralOperatorType(
+func getGeneralOperatorKind(
 	prevType generalItemType,
 	curType generalItemType,
 	nextType generalItemType,

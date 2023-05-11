@@ -18,7 +18,7 @@ package ast
 
 type FormulationNodeKind interface {
 	MlgNodeKind
-	FormulationNodeType()
+	FormulationNodeKind()
 	Start() Position
 	GetFormulationMetaData() *FormulationMetaData
 	ToCode(fn func(node MlgNodeKind) (string, bool)) string
@@ -28,42 +28,42 @@ type FormulationMetaData struct {
 	Original FormulationNodeKind
 }
 
-func (*NameForm) FormulationNodeType()                               {}
-func (*FunctionForm) FormulationNodeType()                           {}
-func (*TupleForm) FormulationNodeType()                              {}
-func (*ConditionalSetForm) FormulationNodeType()                     {}
-func (*ConditionalSetIdForm) FormulationNodeType()                   {}
-func (*FunctionCallExpression) FormulationNodeType()                 {}
-func (*TupleExpression) FormulationNodeType()                        {}
-func (*ConditionalSetExpression) FormulationNodeType()               {}
-func (*CommandExpression) FormulationNodeType()                      {}
-func (*PrefixOperatorCallExpression) FormulationNodeType()           {}
-func (*PostfixOperatorCallExpression) FormulationNodeType()          {}
-func (*InfixOperatorCallExpression) FormulationNodeType()            {}
-func (*IsExpression) FormulationNodeType()                           {}
-func (*ExtendsExpression) FormulationNodeType()                      {}
-func (*AsExpression) FormulationNodeType()                           {}
-func (*OrdinalCallExpression) FormulationNodeType()                  {}
-func (*ChainExpression) FormulationNodeType()                        {}
-func (*Signature) FormulationNodeType()                              {}
-func (*MetaKinds) FormulationNodeType()                              {}
-func (*StructuralColonEqualsForm) FormulationNodeType()              {}
-func (*ExpressionColonEqualsItem) FormulationNodeType()              {}
-func (*ExpressionColonArrowItem) FormulationNodeType()               {}
-func (*ExpressionColonDashArrowItem) FormulationNodeType()           {}
-func (*EnclosedNonCommandOperatorTarget) FormulationNodeType()       {}
-func (*NonEnclosedNonCommandOperatorTarget) FormulationNodeType()    {}
-func (*CommandOperatorTarget) FormulationNodeType()                  {}
-func (*CommandId) FormulationNodeType()                              {}
-func (*PrefixOperatorId) FormulationNodeType()                       {}
-func (*PostfixOperatorId) FormulationNodeType()                      {}
-func (*InfixOperatorId) FormulationNodeType()                        {}
-func (*InfixCommandOperatorId) FormulationNodeType()                 {}
-func (*PseudoTokenNode) FormulationNodeType()                        {}
-func (*PseudoExpression) FormulationNodeType()                       {}
-func (*MultiplexedInfixOperatorCallExpression) FormulationNodeType() {}
-func (*InfixOperatorForm) FormulationNodeType()                      {}
-func (*PrefixOperatorForm) FormulationNodeType()                     {}
-func (*PostfixOperatorForm) FormulationNodeType()                    {}
-func (*FunctionLiteralExpression) FormulationNodeType()              {}
-func (*FunctionLiteralForm) FormulationNodeType()                    {}
+func (*NameForm) FormulationNodeKind()                               {}
+func (*FunctionForm) FormulationNodeKind()                           {}
+func (*TupleForm) FormulationNodeKind()                              {}
+func (*ConditionalSetForm) FormulationNodeKind()                     {}
+func (*ConditionalSetIdForm) FormulationNodeKind()                   {}
+func (*FunctionCallExpression) FormulationNodeKind()                 {}
+func (*TupleExpression) FormulationNodeKind()                        {}
+func (*ConditionalSetExpression) FormulationNodeKind()               {}
+func (*CommandExpression) FormulationNodeKind()                      {}
+func (*PrefixOperatorCallExpression) FormulationNodeKind()           {}
+func (*PostfixOperatorCallExpression) FormulationNodeKind()          {}
+func (*InfixOperatorCallExpression) FormulationNodeKind()            {}
+func (*IsExpression) FormulationNodeKind()                           {}
+func (*ExtendsExpression) FormulationNodeKind()                      {}
+func (*AsExpression) FormulationNodeKind()                           {}
+func (*OrdinalCallExpression) FormulationNodeKind()                  {}
+func (*ChainExpression) FormulationNodeKind()                        {}
+func (*Signature) FormulationNodeKind()                              {}
+func (*MetaKinds) FormulationNodeKind()                              {}
+func (*StructuralColonEqualsForm) FormulationNodeKind()              {}
+func (*ExpressionColonEqualsItem) FormulationNodeKind()              {}
+func (*ExpressionColonArrowItem) FormulationNodeKind()               {}
+func (*ExpressionColonDashArrowItem) FormulationNodeKind()           {}
+func (*EnclosedNonCommandOperatorTarget) FormulationNodeKind()       {}
+func (*NonEnclosedNonCommandOperatorTarget) FormulationNodeKind()    {}
+func (*CommandOperatorTarget) FormulationNodeKind()                  {}
+func (*CommandId) FormulationNodeKind()                              {}
+func (*PrefixOperatorId) FormulationNodeKind()                       {}
+func (*PostfixOperatorId) FormulationNodeKind()                      {}
+func (*InfixOperatorId) FormulationNodeKind()                        {}
+func (*InfixCommandOperatorId) FormulationNodeKind()                 {}
+func (*PseudoTokenNode) FormulationNodeKind()                        {}
+func (*PseudoExpression) FormulationNodeKind()                       {}
+func (*MultiplexedInfixOperatorCallExpression) FormulationNodeKind() {}
+func (*InfixOperatorForm) FormulationNodeKind()                      {}
+func (*PrefixOperatorForm) FormulationNodeKind()                     {}
+func (*PostfixOperatorForm) FormulationNodeKind()                    {}
+func (*FunctionLiteralExpression) FormulationNodeKind()              {}
+func (*FunctionLiteralForm) FormulationNodeKind()                    {}

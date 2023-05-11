@@ -23,12 +23,12 @@ import (
 )
 
 type ConstraintKind interface {
-	ConstraintType()
+	ConstraintKind()
 }
 
-func (*IsConstraint) ConstraintType()      {}
-func (*SpecConstraint) ConstraintType()    {}
-func (*ExtendsConstraint) ConstraintType() {}
+func (*IsConstraint) ConstraintKind()      {}
+func (*SpecConstraint) ConstraintKind()    {}
+func (*ExtendsConstraint) ConstraintKind() {}
 
 type IsConstraint struct {
 	Target       PatternKind

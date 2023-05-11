@@ -237,7 +237,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataKind, bool) {
 	if p.has(ast.ArgumentText) {
 		arg := p.lexer.Next()
 		return &ArgumentTextArgumentData{
-			Type: ArgumentTextArgumentDataType,
+			Type: ArgumentTextArgumentDataKind,
 			Text: arg.Text,
 			MetaData: MetaData{
 				Start: arg.Position,
@@ -249,7 +249,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataKind, bool) {
 	if p.has(ast.FormulationTokenType) {
 		arg := p.lexer.Next()
 		return &FormulationArgumentData{
-			Type: FormulationArgumentDataType,
+			Type: FormulationArgumentDataKind,
 			Text: arg.Text,
 			MetaData: MetaData{
 				Start: arg.Position,
@@ -261,7 +261,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataKind, bool) {
 	if p.has(ast.Text) {
 		arg := p.lexer.Next()
 		return &TextArgumentData{
-			Type: TextArgumentDataType,
+			Type: TextArgumentDataKind,
 			Text: arg.Text,
 			MetaData: MetaData{
 				Start: arg.Position,

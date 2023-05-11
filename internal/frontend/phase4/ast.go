@@ -30,9 +30,9 @@ const (
 	GroupType                    NodeType = "GroupType"
 	SectionType                  NodeType = "SectionType"
 	ArgumentType                 NodeType = "ArgumentType"
-	TextArgumentDataType         NodeType = "TextArgumentDataType"
-	FormulationArgumentDataType  NodeType = "FormulationArgumentDataType"
-	ArgumentTextArgumentDataType NodeType = "ArgumentTextArgumentDataType"
+	TextArgumentDataKind         NodeType = "TextArgumentDataKind"
+	FormulationArgumentDataKind  NodeType = "FormulationArgumentDataKind"
+	ArgumentTextArgumentDataKind NodeType = "ArgumentTextArgumentDataKind"
 )
 
 type MetaData struct {
@@ -229,13 +229,13 @@ func (a *ArgumentTextArgumentData) ChildAt(index int) Node {
 
 type ArgumentDataKind interface {
 	Node
-	ArgumentDataType()
+	ArgumentDataKind()
 }
 
-func (*Group) ArgumentDataType()                    {}
-func (*TextArgumentData) ArgumentDataType()         {}
-func (*FormulationArgumentData) ArgumentDataType()  {}
-func (*ArgumentTextArgumentData) ArgumentDataType() {}
+func (*Group) ArgumentDataKind()                    {}
+func (*TextArgumentData) ArgumentDataKind()         {}
+func (*FormulationArgumentData) ArgumentDataKind()  {}
+func (*ArgumentTextArgumentData) ArgumentDataKind() {}
 
 type TextBlock struct {
 	Type     NodeType
@@ -293,12 +293,12 @@ func (r *Document) ChildAt(index int) Node {
 
 type TopLevelNodeKind interface {
 	Node
-	TopLevelNodeType()
+	TopLevelNodeKind()
 	Start() ast.Position
 }
 
-func (*TextBlock) TopLevelNodeType() {}
-func (*Group) TopLevelNodeType()     {}
+func (*TextBlock) TopLevelNodeKind() {}
+func (*Group) TopLevelNodeKind()     {}
 
 type Root struct {
 	Type      NodeType

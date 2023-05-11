@@ -19,30 +19,30 @@ package backend
 import "mathlingua/internal/ast"
 
 type AliasSummaryKind interface {
-	AliasSummaryType()
+	AliasSummaryKind()
 }
 
-func (*SpecAliasSummary) AliasSummaryType() {}
+func (*SpecAliasSummary) AliasSummaryKind() {}
 
-func (*InfixExpAliasSummary) AliasSummaryType()          {}
-func (*PrefixExpAliasSummary) AliasSummaryType()         {}
-func (*PostfixExpAliasSummary) AliasSummaryType()        {}
-func (*FunctionExpAliasSummary) AliasSummaryType()       {}
-func (*CommandExpAliasSummary) AliasSummaryType()        {}
-func (*MemberNameExpAliasSummary) AliasSummaryType()     {}
-func (*MemberFunctionExpAliasSummary) AliasSummaryType() {}
-func (*MemberInfixExpAliasSummary) AliasSummaryType()    {}
-func (*MemberPrefixExpAliasSummary) AliasSummaryType()   {}
-func (*MemberPostfixExpAliasSummary) AliasSummaryType()  {}
+func (*InfixExpAliasSummary) AliasSummaryKind()          {}
+func (*PrefixExpAliasSummary) AliasSummaryKind()         {}
+func (*PostfixExpAliasSummary) AliasSummaryKind()        {}
+func (*FunctionExpAliasSummary) AliasSummaryKind()       {}
+func (*CommandExpAliasSummary) AliasSummaryKind()        {}
+func (*MemberNameExpAliasSummary) AliasSummaryKind()     {}
+func (*MemberFunctionExpAliasSummary) AliasSummaryKind() {}
+func (*MemberInfixExpAliasSummary) AliasSummaryKind()    {}
+func (*MemberPrefixExpAliasSummary) AliasSummaryKind()   {}
+func (*MemberPostfixExpAliasSummary) AliasSummaryKind()  {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type SpecAliasSummaryRhsKind interface {
-	SpecAliasSummaryRhsType()
+	SpecAliasSummaryRhsKind()
 }
 
-func (*IsConstraint) SpecAliasSummaryRhsType()   {}
-func (*SpecConstraint) SpecAliasSummaryRhsType() {}
+func (*IsConstraint) SpecAliasSummaryRhsKind()   {}
+func (*SpecConstraint) SpecAliasSummaryRhsKind() {}
 
 type SpecAliasSummary struct {
 	Lhs SpecAliasPattern
@@ -53,19 +53,19 @@ type SpecAliasSummary struct {
 
 type ExpAliasSummaryKind interface {
 	AliasSummaryKind
-	ExpAliasSummaryType()
+	ExpAliasSummaryKind()
 }
 
-func (*InfixExpAliasSummary) ExpAliasSummaryType()          {}
-func (*PrefixExpAliasSummary) ExpAliasSummaryType()         {}
-func (*PostfixExpAliasSummary) ExpAliasSummaryType()        {}
-func (*FunctionExpAliasSummary) ExpAliasSummaryType()       {}
-func (*CommandExpAliasSummary) ExpAliasSummaryType()        {}
-func (*MemberNameExpAliasSummary) ExpAliasSummaryType()     {}
-func (*MemberFunctionExpAliasSummary) ExpAliasSummaryType() {}
-func (*MemberInfixExpAliasSummary) ExpAliasSummaryType()    {}
-func (*MemberPrefixExpAliasSummary) ExpAliasSummaryType()   {}
-func (*MemberPostfixExpAliasSummary) ExpAliasSummaryType()  {}
+func (*InfixExpAliasSummary) ExpAliasSummaryKind()          {}
+func (*PrefixExpAliasSummary) ExpAliasSummaryKind()         {}
+func (*PostfixExpAliasSummary) ExpAliasSummaryKind()        {}
+func (*FunctionExpAliasSummary) ExpAliasSummaryKind()       {}
+func (*CommandExpAliasSummary) ExpAliasSummaryKind()        {}
+func (*MemberNameExpAliasSummary) ExpAliasSummaryKind()     {}
+func (*MemberFunctionExpAliasSummary) ExpAliasSummaryKind() {}
+func (*MemberInfixExpAliasSummary) ExpAliasSummaryKind()    {}
+func (*MemberPrefixExpAliasSummary) ExpAliasSummaryKind()   {}
+func (*MemberPostfixExpAliasSummary) ExpAliasSummaryKind()  {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

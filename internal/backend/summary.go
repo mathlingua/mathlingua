@@ -21,13 +21,13 @@ import (
 )
 
 type SummaryKind interface {
-	SummaryType()
+	SummaryKind()
 	GetExpAliasSummaries() []ExpAliasSummaryKind
 }
 
-func (*DescribesSummary) SummaryType() {}
-func (*DefinesSummary) SummaryType()   {}
-func (*StatesSummary) SummaryType()    {}
+func (*DescribesSummary) SummaryKind() {}
+func (*DefinesSummary) SummaryKind()   {}
+func (*StatesSummary) SummaryKind()    {}
 
 func (s *DescribesSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 	return s.ExpAliases

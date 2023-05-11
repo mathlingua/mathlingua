@@ -1,6 +1,6 @@
 import React from 'react';
 import { Argument } from '../../types';
-import { ArgumentDataTypeView } from './ArgumentDataTypeView';
+import { ArgumentDataKindView } from './ArgumentDataKindView';
 import { Dot } from './Dot';
 import { Indent } from './Indent';
 import { Space } from './Space';
@@ -15,7 +15,7 @@ export interface ArgumentViewProps {
 export const ArgumentView = (props: ArgumentViewProps) => {
   let component: React.ReactNode;
   if (props.node.IsInline) {
-    component = <ArgumentDataTypeView
+    component = <ArgumentDataKindView
       node={props.node.Arg}
       indent={props.indent+2}
       forceRenderAsLatex={props.forceRenderAsLatex}
@@ -24,7 +24,7 @@ export const ArgumentView = (props: ArgumentViewProps) => {
     component = (
       <>
         <Indent size={props.indent}/><Dot /><Space />
-        <ArgumentDataTypeView
+        <ArgumentDataKindView
           node={props.node.Arg}
           indent={props.indent+2}
           forceRenderAsLatex={props.forceRenderAsLatex} 

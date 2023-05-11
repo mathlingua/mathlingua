@@ -1,6 +1,6 @@
 import React from 'react';
 import { Document } from '../../types';
-import { TopLevelNodeTypeView } from './TopLevelNodeTypeView';
+import { TopLevelNodeKindView } from './TopLevelNodeKindView';
 
 export interface DocumentViewProps {
   node: Document;
@@ -13,7 +13,7 @@ export const DocumentView = (props: DocumentViewProps) => {
       {
         props.node.Nodes?.map((node, index) => (
           <span key={index}>
-            <TopLevelNodeTypeView node={node} isOnSmallScreen={props.isOnSmallScreen} />
+            <TopLevelNodeKindView node={node} isOnSmallScreen={props.isOnSmallScreen} />
           </span>
         ))
       }

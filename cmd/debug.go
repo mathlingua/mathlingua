@@ -350,7 +350,7 @@ func parseForFormulation(text string) (string, string, frontend.IDiagnosticTrack
 
 func createTestCaseForFormulation(input string) (string, string, bool) {
 	parseCode := `
-func parse(text string) (ast.NodeType, frontend.IDiagnosticTracker) {
+func parse(text string) (ast.MlgNodeKind, frontend.IDiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseExpression(text, ast.Position{}, tracker)
 	return node, tracker
@@ -372,7 +372,7 @@ func parseForForm(text string) (string, string, frontend.IDiagnosticTracker) {
 
 func createTestCaseForForm(input string) (string, string, bool) {
 	parseCode := `
-func parse(text string) (ast.NodeType, frontend.IDiagnosticTracker) {
+func parse(text string) (ast.MlgNodeKind, frontend.IDiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseForm(text, ast.Position{}, tracker)
 	return node, tracker
@@ -394,7 +394,7 @@ func parseForId(text string) (string, string, frontend.IDiagnosticTracker) {
 
 func createTestCaseForId(input string) (string, string, bool) {
 	parseCode := `
-func parse(text string) (ast.NodeType, frontend.IDiagnosticTracker) {
+func parse(text string) (ast.MlgNodeKind, frontend.IDiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseId(text, ast.Position{}, tracker)
 	return node, tracker

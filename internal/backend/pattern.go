@@ -25,32 +25,32 @@ import (
 // A pattern describes the shape of inputs to a Defines, Describes, States
 // provides, expression alias, or spec alias.
 type PatternKind interface {
-	PatternType()
+	PatternKind()
 	GetVarArgData() VarArgPatternData
 }
 
-func (*NameFormPattern) PatternType()                 {}
-func (*FunctionFormPattern) PatternType()             {}
-func (*TupleFormPattern) PatternType()                {}
-func (*ConditionalSetExpressionPattern) PatternType() {}
-func (*ConditionalSetFormPattern) PatternType()       {}
-func (*ConditionaSetIdFormPattern) PatternType()      {}
-func (*FunctionLiteralFormPattern) PatternType()      {}
-func (*InfixOperatorFormPattern) PatternType()        {}
-func (*PrefixOperatorFormPattern) PatternType()       {}
-func (*PostfixOperatorFormPattern) PatternType()      {}
-func (*OrdinalPattern) PatternType()                  {}
+func (*NameFormPattern) PatternKind()                 {}
+func (*FunctionFormPattern) PatternKind()             {}
+func (*TupleFormPattern) PatternKind()                {}
+func (*ConditionalSetExpressionPattern) PatternKind() {}
+func (*ConditionalSetFormPattern) PatternKind()       {}
+func (*ConditionaSetIdFormPattern) PatternKind()      {}
+func (*FunctionLiteralFormPattern) PatternKind()      {}
+func (*InfixOperatorFormPattern) PatternKind()        {}
+func (*PrefixOperatorFormPattern) PatternKind()       {}
+func (*PostfixOperatorFormPattern) PatternKind()      {}
+func (*OrdinalPattern) PatternKind()                  {}
 
-func (*NameColonEqualsPatternPattern) PatternType()  {}
-func (*FunctionColonEqualsNamePattern) PatternType() {}
-func (*InfixCommandOperatorPattern) PatternType()    {}
-func (*InfixCommandTargetPattern) PatternType()      {}
-func (*CommandPattern) PatternType()                 {}
-func (*NamedGroupPattern) PatternType()              {}
-func (*ChainExpressionPattern) PatternType()         {}
+func (*NameColonEqualsPatternPattern) PatternKind()  {}
+func (*FunctionColonEqualsNamePattern) PatternKind() {}
+func (*InfixCommandOperatorPattern) PatternKind()    {}
+func (*InfixCommandTargetPattern) PatternKind()      {}
+func (*CommandPattern) PatternKind()                 {}
+func (*NamedGroupPattern) PatternKind()              {}
+func (*ChainExpressionPattern) PatternKind()         {}
 
-func (*SpecAliasPattern) PatternType() {}
-func (*AliasPattern) PatternType()     {}
+func (*SpecAliasPattern) PatternKind() {}
+func (*AliasPattern) PatternKind()     {}
 
 type NameColonEqualsPatternPattern struct {
 	Lhs NameFormPattern
@@ -64,18 +64,18 @@ type FunctionColonEqualsNamePattern struct {
 
 type FormPatternKind interface {
 	PatternKind
-	FormPatternType()
+	FormPatternKind()
 }
 
-func (*NameFormPattern) FormPatternType()            {}
-func (*FunctionFormPattern) FormPatternType()        {}
-func (*TupleFormPattern) FormPatternType()           {}
-func (*ConditionalSetFormPattern) FormPatternType()  {}
-func (*ConditionaSetIdFormPattern) FormPatternType() {}
-func (*FunctionLiteralFormPattern) FormPatternType() {}
-func (*InfixOperatorFormPattern) FormPatternType()   {}
-func (*PrefixOperatorFormPattern) FormPatternType()  {}
-func (*PostfixOperatorFormPattern) FormPatternType() {}
+func (*NameFormPattern) FormPatternKind()            {}
+func (*FunctionFormPattern) FormPatternKind()        {}
+func (*TupleFormPattern) FormPatternKind()           {}
+func (*ConditionalSetFormPattern) FormPatternKind()  {}
+func (*ConditionaSetIdFormPattern) FormPatternKind() {}
+func (*FunctionLiteralFormPattern) FormPatternKind() {}
+func (*InfixOperatorFormPattern) FormPatternKind()   {}
+func (*PrefixOperatorFormPattern) FormPatternKind()  {}
+func (*PostfixOperatorFormPattern) FormPatternKind() {}
 
 type NameFormPattern struct {
 	Text            string
@@ -91,15 +91,15 @@ type FunctionFormPattern struct {
 }
 
 type LiteralFormPatternKind interface {
-	LiteralFormPatternType()
+	LiteralFormPatternKind()
 }
 
-func (*NameFormPattern) LiteralFormPatternType()            {}
-func (*FunctionFormPattern) LiteralFormPatternType()        {}
-func (*TupleFormPattern) LiteralFormPatternType()           {}
-func (*ConditionalSetFormPattern) LiteralFormPatternType()  {}
-func (*ConditionaSetIdFormPattern) LiteralFormPatternType() {}
-func (*FunctionLiteralFormPattern) LiteralFormPatternType() {}
+func (*NameFormPattern) LiteralFormPatternKind()            {}
+func (*FunctionFormPattern) LiteralFormPatternKind()        {}
+func (*TupleFormPattern) LiteralFormPatternKind()           {}
+func (*ConditionalSetFormPattern) LiteralFormPatternKind()  {}
+func (*ConditionaSetIdFormPattern) LiteralFormPatternKind() {}
+func (*FunctionLiteralFormPattern) LiteralFormPatternKind() {}
 
 type OrdinalPattern struct {
 	Target LiteralFormPatternKind
@@ -107,12 +107,12 @@ type OrdinalPattern struct {
 }
 
 type DirectionParamParamPatternKind interface {
-	DirectionParamParamPatternType()
+	DirectionParamParamPatternKind()
 }
 
-func (*NameFormPattern) DirectionParamParamPatternType()     {}
-func (*FunctionFormPattern) DirectionParamParamPatternType() {}
-func (*OrdinalPattern) DirectionParamParamPatternType()      {}
+func (*NameFormPattern) DirectionParamParamPatternKind()     {}
+func (*FunctionFormPattern) DirectionParamParamPatternKind() {}
+func (*OrdinalPattern) DirectionParamParamPatternKind()      {}
 
 type InfixOperatorFormPattern struct {
 	Operator NameFormPattern
@@ -257,7 +257,7 @@ func ToFormPattern(item ast.StructuralFormKind) FormPatternKind {
 	}
 }
 
-func ToDirectionParamParamPatternType(item ast.StructuralFormKind) DirectionParamParamPatternKind {
+func ToDirectionParamParamPatternKind(item ast.StructuralFormKind) DirectionParamParamPatternKind {
 	switch n := item.(type) {
 	case *ast.NameForm:
 		return ToNameFormPattern(*n)
@@ -467,7 +467,7 @@ func toCurlyArg(curlyParam *ast.CurlyParam) *CurlyPattern {
 		squareArgs := make([]DirectionParamParamPatternKind, 0)
 		for _, param := range curlyParam.Direction.SquareParams {
 			if form, ok := param.(ast.StructuralFormKind); ok {
-				squareArgs = append(squareArgs, ToDirectionParamParamPatternType(form))
+				squareArgs = append(squareArgs, ToDirectionParamParamPatternKind(form))
 			} else {
 				panic(fmt.Sprintf("Cannot convert direction square param to a pattern: %s",
 					mlglib.PrettyPrint(param)))

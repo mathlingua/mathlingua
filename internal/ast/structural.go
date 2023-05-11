@@ -44,7 +44,7 @@ type Alias struct {
 	CommonMetaData CommonMetaData
 }
 
-func (*Alias) ProvidesType() {}
+func (*Alias) ProvidesKind() {}
 
 type Formulation[T FormulationNodeKind] struct {
 	RawText        string
@@ -62,22 +62,22 @@ type TextItem struct {
 
 type ClauseKind interface {
 	StructuralNodeKind
-	ClauseType()
+	ClauseKind()
 }
 
-func (*Formulation[NodeType]) ClauseType() {}
-func (*AllOfGroup) ClauseType()            {}
-func (*NotGroup) ClauseType()              {}
-func (*AnyOfGroup) ClauseType()            {}
-func (*OneOfGroup) ClauseType()            {}
-func (*ExistsGroup) ClauseType()           {}
-func (*ExistsUniqueGroup) ClauseType()     {}
-func (*ForAllGroup) ClauseType()           {}
-func (*IfGroup) ClauseType()               {}
-func (*IffGroup) ClauseType()              {}
-func (*WhenGroup) ClauseType()             {}
-func (*PiecewiseGroup) ClauseType()        {}
-func (*GivenGroup) ClauseType()            {}
+func (*Formulation[NodeType]) ClauseKind() {}
+func (*AllOfGroup) ClauseKind()            {}
+func (*NotGroup) ClauseKind()              {}
+func (*AnyOfGroup) ClauseKind()            {}
+func (*OneOfGroup) ClauseKind()            {}
+func (*ExistsGroup) ClauseKind()           {}
+func (*ExistsUniqueGroup) ClauseKind()     {}
+func (*ForAllGroup) ClauseKind()           {}
+func (*IfGroup) ClauseKind()               {}
+func (*IffGroup) ClauseKind()              {}
+func (*WhenGroup) ClauseKind()             {}
+func (*PiecewiseGroup) ClauseKind()        {}
+func (*GivenGroup) ClauseKind()            {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -320,11 +320,11 @@ type WhenGroup struct {
 
 type ProvidesKind interface {
 	StructuralNodeKind
-	ProvidesType()
+	ProvidesKind()
 }
 
-func (*SymbolWrittenGroup) ProvidesType() {}
-func (*ConnectionGroup) ProvidesType()    {}
+func (*SymbolWrittenGroup) ProvidesKind() {}
+func (*ConnectionGroup) ProvidesKind()    {}
 
 var SymbolSections = []string{
 	LowerSymbolName,
@@ -462,19 +462,19 @@ type WritingAsSection struct {
 
 type DocumentedKind interface {
 	StructuralNodeKind
-	DocumentedType()
+	DocumentedKind()
 }
 
-func (*OverviewGroup) DocumentedType()   {}
-func (*MotivationGroup) DocumentedType() {}
-func (*HistoryGroup) DocumentedType()    {}
-func (*ExampleGroup) DocumentedType()    {}
-func (*RelatedGroup) DocumentedType()    {}
-func (*DiscovererGroup) DocumentedType() {}
-func (*NoteGroup) DocumentedType()       {}
-func (*WrittenGroup) DocumentedType()    {}
-func (*WritingGroup) DocumentedType()    {}
-func (*CalledGroup) DocumentedType()     {}
+func (*OverviewGroup) DocumentedKind()   {}
+func (*MotivationGroup) DocumentedKind() {}
+func (*HistoryGroup) DocumentedKind()    {}
+func (*ExampleGroup) DocumentedKind()    {}
+func (*RelatedGroup) DocumentedKind()    {}
+func (*DiscovererGroup) DocumentedKind() {}
+func (*NoteGroup) DocumentedKind()       {}
+func (*WrittenGroup) DocumentedKind()    {}
+func (*WritingGroup) DocumentedKind()    {}
+func (*CalledGroup) DocumentedKind()     {}
 
 var DetailsSections = []string{LowerDetailsName}
 
@@ -564,11 +564,11 @@ type NoteSection struct {
 
 type NoteKind interface {
 	StructuralNodeKind
-	NoteType()
+	NoteKind()
 }
 
-func (*TextItem) NoteType()        {}
-func (*DescribingGroup) NoteType() {}
+func (*TextItem) NoteKind()        {}
+func (*DescribingGroup) NoteKind() {}
 
 var DescribingSections = []string{LowerDescribingName, LowerContentName}
 
@@ -615,11 +615,11 @@ type JustifiedSection struct {
 
 type JustifiedKind interface {
 	StructuralNodeKind
-	JustifiedType()
+	JustifiedKind()
 }
 
-func (*LabelGroup) JustifiedType() {}
-func (*ByGroup) JustifiedType()    {}
+func (*LabelGroup) JustifiedKind() {}
+func (*ByGroup) JustifiedKind()    {}
 
 var LabelSections = []string{LowerLabelName, LowerByName}
 
@@ -997,14 +997,14 @@ type TopicSection struct {
 
 type SpecifyKind interface {
 	StructuralNodeKind
-	SpecifyType()
+	SpecifyKind()
 }
 
-func (*ZeroGroup) SpecifyType()          {}
-func (*PositiveIntGroup) SpecifyType()   {}
-func (*NegativeIntGroup) SpecifyType()   {}
-func (*PositiveFloatGroup) SpecifyType() {}
-func (*NegativeFloatGroup) SpecifyType() {}
+func (*ZeroGroup) SpecifyKind()          {}
+func (*PositiveIntGroup) SpecifyKind()   {}
+func (*NegativeIntGroup) SpecifyKind()   {}
+func (*PositiveFloatGroup) SpecifyKind() {}
+func (*NegativeFloatGroup) SpecifyKind() {}
 
 var ZeroSections = []string{LowerZeroName, LowerMeansName}
 
@@ -1103,11 +1103,11 @@ type PersonSection struct {
 
 type PersonKind interface {
 	StructuralNodeKind
-	PersonType()
+	PersonKind()
 }
 
-func (*NameGroup) PersonType()      {}
-func (*BiographyGroup) PersonType() {}
+func (*NameGroup) PersonKind()      {}
+func (*BiographyGroup) PersonKind() {}
 
 var NameSections = []string{LowerNameName}
 
@@ -1149,25 +1149,25 @@ type ResourceSection struct {
 	CommonMetaData CommonMetaData
 }
 
-func (*TitleGroup) ResourceType()       {}
-func (*AuthorGroup) ResourceType()      {}
-func (*OffsetGroup) ResourceType()      {}
-func (*UrlGroup) ResourceType()         {}
-func (*HomepageGroup) ResourceType()    {}
-func (*TypeGroup) ResourceType()        {}
-func (*EditorGroup) ResourceType()      {}
-func (*EditionGroup) ResourceType()     {}
-func (*InstitutionGroup) ResourceType() {}
-func (*JournalGroup) ResourceType()     {}
-func (*PublisherGroup) ResourceType()   {}
-func (*VolumeGroup) ResourceType()      {}
-func (*MonthGroup) ResourceType()       {}
-func (*YearGroup) ResourceType()        {}
-func (*DescriptionGroup) ResourceType() {}
+func (*TitleGroup) ResourceKind()       {}
+func (*AuthorGroup) ResourceKind()      {}
+func (*OffsetGroup) ResourceKind()      {}
+func (*UrlGroup) ResourceKind()         {}
+func (*HomepageGroup) ResourceKind()    {}
+func (*TypeGroup) ResourceKind()        {}
+func (*EditorGroup) ResourceKind()      {}
+func (*EditionGroup) ResourceKind()     {}
+func (*InstitutionGroup) ResourceKind() {}
+func (*JournalGroup) ResourceKind()     {}
+func (*PublisherGroup) ResourceKind()   {}
+func (*VolumeGroup) ResourceKind()      {}
+func (*MonthGroup) ResourceKind()       {}
+func (*YearGroup) ResourceKind()        {}
+func (*DescriptionGroup) ResourceKind() {}
 
 type ResourceKind interface {
 	StructuralNodeKind
-	ResourceType()
+	ResourceKind()
 }
 
 type TitleGroup struct {
@@ -1329,21 +1329,21 @@ type TextBlockItem struct {
 
 type TopLevelItemKind interface {
 	StructuralNodeKind
-	TopLevelItemType()
+	TopLevelItemKind()
 }
 
-func (*TextBlockItem) TopLevelItemType()   {}
-func (*DefinesGroup) TopLevelItemType()    {}
-func (*DescribesGroup) TopLevelItemType()  {}
-func (*StatesGroup) TopLevelItemType()     {}
-func (*AxiomGroup) TopLevelItemType()      {}
-func (*ConjectureGroup) TopLevelItemType() {}
-func (*TheoremGroup) TopLevelItemType()    {}
-func (*SpecifyGroup) TopLevelItemType()    {}
-func (*TopicGroup) TopLevelItemType()      {}
-func (*PersonGroup) TopLevelItemType()     {}
-func (*ResourceGroup) TopLevelItemType()   {}
-func (*ProofGroup) TopLevelItemType()      {}
+func (*TextBlockItem) TopLevelItemKind()   {}
+func (*DefinesGroup) TopLevelItemKind()    {}
+func (*DescribesGroup) TopLevelItemKind()  {}
+func (*StatesGroup) TopLevelItemKind()     {}
+func (*AxiomGroup) TopLevelItemKind()      {}
+func (*ConjectureGroup) TopLevelItemKind() {}
+func (*TheoremGroup) TopLevelItemKind()    {}
+func (*SpecifyGroup) TopLevelItemKind()    {}
+func (*TopicGroup) TopLevelItemKind()      {}
+func (*PersonGroup) TopLevelItemKind()     {}
+func (*ResourceGroup) TopLevelItemKind()   {}
+func (*ProofGroup) TopLevelItemKind()      {}
 
 type Document struct {
 	Items          []TopLevelItemKind

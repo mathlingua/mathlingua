@@ -550,7 +550,7 @@ func matchOrdinal(node ast.MlgNodeKind, pattern OrdinalPattern) MatchResult {
 	}
 }
 
-func matchAllDirectionParamParamType(
+func matchAllDirectionParamParamKind(
 	nodes []ast.DirectionParamParamKind,
 	patterns []DirectionParamParamPatternKind,
 ) MatchResult {
@@ -571,14 +571,14 @@ func matchAllDirectionParamParamType(
 		}
 	}
 
-	result := matchDirectionParamParamType(nodes[0], patterns[0])
+	result := matchDirectionParamParamKind(nodes[0], patterns[0])
 	for i := 1; i < len(nodes); i++ {
-		result = unionMatches(result, matchDirectionParamParamType(nodes[i], patterns[i]))
+		result = unionMatches(result, matchDirectionParamParamKind(nodes[i], patterns[i]))
 	}
 	return result
 }
 
-func matchDirectionParamParamType(
+func matchDirectionParamParamKind(
 	node ast.DirectionParamParamKind,
 	pattern DirectionParamParamPatternKind,
 ) MatchResult {
@@ -664,7 +664,7 @@ func matchDirection(node *ast.DirectionalParam, pattern *DirectionPattern) Match
 	}
 
 	nameMatch := matchName(nodeName, *patternName)
-	squareMatch := matchAllDirectionParamParamType(node.SquareParams, pattern.SquareArgs)
+	squareMatch := matchAllDirectionParamParamKind(node.SquareParams, pattern.SquareArgs)
 
 	return unionMatches(nameMatch, squareMatch)
 }

@@ -65,7 +65,7 @@ func initWorkspace() IWorkspace {
 }
 
 func paths(workspace IWorkspace, writer http.ResponseWriter, request *http.Request) {
-	setJsonContentType(writer)
+	setJsonContentKind(writer)
 	resp := PathsResponse{
 		Paths: workspace.Paths(),
 	}
@@ -73,7 +73,7 @@ func paths(workspace IWorkspace, writer http.ResponseWriter, request *http.Reque
 }
 
 func page(workspace IWorkspace, writer http.ResponseWriter, request *http.Request) {
-	setJsonContentType(writer)
+	setJsonContentKind(writer)
 	path := request.URL.Query().Get("path")
 	doc, diagnostics := workspace.GetDocumentAt(ast.ToPath(path))
 
@@ -87,7 +87,7 @@ func page(workspace IWorkspace, writer http.ResponseWriter, request *http.Reques
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func setJsonContentType(writer http.ResponseWriter) {
+func setJsonContentKind(writer http.ResponseWriter) {
 	writer.Header().Set("Content-Type", "application/json")
 }
 

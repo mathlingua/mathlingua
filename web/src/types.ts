@@ -4,9 +4,9 @@ export type DocumentType = "DocumentType";
 export type GroupType = "GroupType";
 export type SectionType = "SectionType";
 export type ArgumentType = "ArgumentType";
-export type TextArgumentDataType = "TextArgumentDataType";
-export type FormulationArgumentDataType = "FormulationArgumentDataType";
-export type ArgumentTextArgumentDataType = "ArgumentTextArgumentDataType";
+export type TextArgumentDataKind = "TextArgumentDataKind";
+export type FormulationArgumentDataKind = "FormulationArgumentDataKind";
+export type ArgumentTextArgumentDataKind = "ArgumentTextArgumentDataKind";
 
 export interface Position {
 	Offset: number;
@@ -45,11 +45,11 @@ export interface TextBlock {
 	MetaData: MetaData;
 }
 
-export type TopLevelNodeType = TextBlock | Group | null;
+export type TopLevelNodeKind = TextBlock | Group | null;
 
 export interface Document {
 	Type: DocumentType;
-	Nodes: TopLevelNodeType[] | null;
+	Nodes: TopLevelNodeKind[] | null;
 	MetaData: MetaData;
 }
 
@@ -70,28 +70,28 @@ export interface Section {
 export interface Argument {
 	Type: ArgumentType;
 	IsInline: boolean;
-	Arg: ArgumentDataType;
+	Arg: ArgumentDataKind;
 	MetaData: MetaData;
 }
 
-export type ArgumentDataType = Group |
+export type ArgumentDataKind = Group |
   TextArgumentData | FormulationArgumentData |
   ArgumentTextArgumentData | null;
 
 export interface TextArgumentData {
-	Type: TextArgumentDataType;
+	Type: TextArgumentDataKind;
   Text: string;
   MetaData: MetaData;
 }
 
 export interface FormulationArgumentData {
-	Type: FormulationArgumentDataType;
+	Type: FormulationArgumentDataKind;
 	Text: string;
 	MetaData: MetaData;
 }
 
 export interface ArgumentTextArgumentData {
-	Type: ArgumentTextArgumentDataType;
+	Type: ArgumentTextArgumentDataKind;
 	Text: string;
 	MetaData: MetaData;
 }

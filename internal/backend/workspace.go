@@ -822,3 +822,34 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *works
 		findUsedUnknownSignaturesImpl(subNode, path, w)
 	})
 }
+
+func getAllWords(node ast.MlgNodeKind) mlglib.ISet[string] {
+	result := mlglib.NewSet[string]()
+	getAllWordsImpl(node, result)
+	return result
+}
+
+func getAllWordsImpl(node ast.MlgNodeKind, result mlglib.ISet[string]) {
+	switch n := node.(type) {
+	case *ast.TextItem:
+		for _, item := range tokenize(n.RawText) {
+			result.Add(item)
+		}
+	case *ast.TextBlockItem:
+		for _, item := range tokenize(n.Text) {
+			result.Add(item)
+		}
+	}
+	node.ForEach(func(subNode ast.MlgNodeKind) {
+		getAllWordsImpl(subNode, result)
+	})
+}
+
+func tokenize(text string) []string {
+	result := make([]string, 0)
+	parts := strings.Split(text, " ")
+	for _, p := range parts {
+		result = append(result, strings.ToLower(p))
+	}
+	return result
+}

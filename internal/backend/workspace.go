@@ -631,16 +631,12 @@ func getVarPlusQuestionMarkText(rawWritten string, originalNode ast.MlgNodeKind)
 
 func getVarMinusQuestionMarkText(rawWritten string, originalNode ast.MlgNodeKind) string {
 	isTupleExp := false
-	if tup, ok := originalNode.(*ast.TupleExpression); ok {
-		if len(tup.Args) != 1 {
-			isTupleExp = true
-		}
+	if tup, ok := originalNode.(*ast.TupleExpression); ok && len(tup.Args) != 1 {
+		isTupleExp = true
 	}
 	isTupleForm := false
-	if tup, ok := originalNode.(*ast.TupleForm); ok {
-		if len(tup.Params) != 1 {
-			isTupleForm = true
-		}
+	if tup, ok := originalNode.(*ast.TupleForm); ok && len(tup.Params) != 1 {
+		isTupleForm = true
 	}
 	if isTupleExp || isTupleForm {
 		return rawWritten
@@ -657,23 +653,25 @@ func valuesToString(values []string, prefix string, infix string, suffix string)
 			result += v
 		}
 		return result
-	} else if suffix != "" {
+	}
+
+	if suffix != "" {
 		result := ""
 		for _, v := range values {
 			result += v
 			result += suffix
 		}
 		return result
-	} else {
-		result := ""
-		for i, v := range values {
-			if i > 0 {
-				result += infix
-			}
-			result += v
-		}
-		return result
 	}
+
+	result := ""
+	for i, v := range values {
+		if i > 0 {
+			result += infix
+		}
+		result += v
+	}
+	return result
 }
 
 // Replace `f(x)` with `f(x) := var'#'` but do not change `f(x) := y`
@@ -774,7 +772,6 @@ func expandAliasesAtWithAliases(node ast.MlgNodeKind, aliases []ExpAliasSummaryK
 	if node == nil {
 		return
 	}
-
 	node.ForEach(func(subNode ast.MlgNodeKind) {
 		for _, alias := range aliases {
 			ExpandAliasInline(subNode, alias)
@@ -786,7 +783,6 @@ func expandAliasesAt(node ast.MlgNodeKind, summaries map[string]SummaryKind) {
 	if node == nil {
 		return
 	}
-
 	switch entry := node.(type) {
 	case *ast.DefinesGroup:
 		metaId, ok := GetAstMetaId(entry)

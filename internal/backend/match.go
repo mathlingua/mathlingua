@@ -1260,7 +1260,7 @@ func sliceToString[T ast.FormulationNodeKind](nodes []T) string {
 		if i > 0 {
 			result += ", "
 		}
-		result += n.ToCode(noOp)
+		result += n.ToCode(ast.NoOp)
 	}
 	return result
 }

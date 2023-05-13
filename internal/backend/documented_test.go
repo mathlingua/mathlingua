@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestXxx(t *testing.T) {
+func TestParseCalledWritten(t *testing.T) {
 	text := "text1 A? text2 x+? text3 X?{abc...} text4 X+?{...xyz...} text5"
 	actual, err := ParseCalledWritten(text)
 	assert.Nil(t, err)

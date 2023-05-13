@@ -80,7 +80,7 @@ func ToExtendsConstraint(node ast.ExtendsExpression) ([]ExtendsConstraint, error
 func ToSpecConstraint(node ast.InfixOperatorCallExpression) (SpecConstraint, error) {
 	return SpecConstraint{
 		Target: ToPattern(node.Lhs),
-		Name:   node.Target.ToCode(noOp),
+		Name:   node.Target.ToCode(ast.NoOp),
 		Exp:    node.Rhs,
 		Scope:  node.CommonMetaData.Scope,
 	}, nil
@@ -92,7 +92,7 @@ func ToSpecConstraints(node ast.MultiplexedInfixOperatorCallExpression) ([]SpecC
 		for _, rhsExp := range node.Rhs {
 			result = append(result, SpecConstraint{
 				Target: ToPattern(lhsExp),
-				Name:   node.Target.ToCode(noOp),
+				Name:   node.Target.ToCode(ast.NoOp),
 				Exp:    rhsExp,
 				Scope:  node.CommonMetaData.Scope,
 			})
@@ -102,10 +102,6 @@ func ToSpecConstraints(node ast.MultiplexedInfixOperatorCallExpression) ([]SpecC
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func noOp(node ast.MlgNodeKind) (string, bool) {
-	return "", false
-}
 
 func toSingleStructuralForm(exp ast.ExpressionKind) (ast.StructuralFormKind, error) {
 	nodes, err := toStructuralForms(exp)
@@ -166,7 +162,8 @@ func toStructuralForms(exp ast.ExpressionKind) ([]ast.StructuralFormKind, error)
 			},
 		}, nil
 	default:
-		return nil, errors.New(fmt.Sprintf("Expected a structural form but found %s", exp.ToCode(noOp)))
+		return nil, errors.New(
+			fmt.Sprintf("Expected a structural form but found %s", exp.ToCode(ast.NoOp)))
 	}
 }
 
@@ -183,11 +180,11 @@ func toNameFormSlice(args []ast.StructuralFormKind) ([]ast.NameForm, error) {
 }
 
 func toNameForm(form ast.StructuralFormKind) (ast.NameForm, error) {
-	name, ok := form.(*ast.NameForm)
-	if ok {
+	if name, ok := form.(*ast.NameForm); ok {
 		return *name, nil
 	}
-	return ast.NameForm{}, errors.New(fmt.Sprintf("Expected a name but found %s", form.ToCode(noOp)))
+	return ast.NameForm{}, errors.New(
+		fmt.Sprintf("Expected a name but found %s", form.ToCode(ast.NoOp)))
 }
 
 func toSingleStructuralFormSlice(args []ast.ExpressionKind) ([]ast.StructuralFormKind, error) {

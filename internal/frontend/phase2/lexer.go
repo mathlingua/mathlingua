@@ -81,7 +81,9 @@ func getTokens(
 					Position: cur.Position,
 				})
 			}
-			if phase1Lexer.HasNext() && phase1Lexer.Peek().Type != ast.Space && phase1Lexer.Peek().Type != ast.DotSpace {
+			if phase1Lexer.HasNext() &&
+				phase1Lexer.Peek().Type != ast.Space &&
+				phase1Lexer.Peek().Type != ast.DotSpace {
 				// since there isn't a space handle any unindents
 				handleIndentsOrUnIndents(0, cur.Position)
 				prevIndent = 0

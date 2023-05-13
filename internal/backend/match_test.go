@@ -113,7 +113,7 @@ func nodeMapToString(mapping map[string]ast.MlgNodeKind) string {
 
 	result := ""
 	for _, key := range keys {
-		result += key + " -> " + ast.Debug(mapping[key], noOp) + "\n"
+		result += key + " -> " + ast.Debug(mapping[key], ast.NoOp) + "\n"
 	}
 	return result
 }
@@ -129,7 +129,7 @@ func nodeMapToStringSlice(mapping map[string][]ast.MlgNodeKind) string {
 			if i > 0 {
 				values += ","
 			}
-			values += ast.Debug(v, noOp)
+			values += ast.Debug(v, ast.NoOp)
 		}
 		result += key + " -> " + values + "\n"
 	}

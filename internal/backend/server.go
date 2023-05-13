@@ -56,7 +56,6 @@ func initWorkspace() IWorkspace {
 	tracker.AddListener(func(diag frontend.Diagnostic) {
 		fmt.Println(diag.String())
 	})
-
 	workspace, diagnostics := NewWorkspaceFromPaths([]string{"."}, tracker)
 	for _, diag := range diagnostics {
 		tracker.Append(diag)

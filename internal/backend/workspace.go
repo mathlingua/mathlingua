@@ -22,6 +22,7 @@ import (
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/phase4"
 	"mathlingua/internal/mlglib"
+	"sort"
 	"strings"
 	"unicode"
 )
@@ -150,11 +151,16 @@ func (w *workspace) DocumentCount() int {
 }
 
 func (w *workspace) Paths() []ast.Path {
-	paths := make([]ast.Path, 0)
+	paths := make([]string, 0)
 	for k := range w.contents {
-		paths = append(paths, k)
+		paths = append(paths, string(k))
 	}
-	return paths
+	sort.Strings(paths)
+	result := make([]ast.Path, 0)
+	for _, p := range paths {
+		result = append(result, ast.ToPath(p))
+	}
+	return result
 }
 
 func (w *workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Diagnostic) {

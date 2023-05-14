@@ -4,7 +4,7 @@
 set -e
 
 VERSION=$(cat pkg/mlg/mlg.go | \
-          grep -A1 'func (m \*Mlg) Version() string' | \
+          grep -A1 'func (m \*mlg) Version() string' | \
           grep 'return' | \
           sed 's|\treturn "v||' | \
           sed 's|"||')

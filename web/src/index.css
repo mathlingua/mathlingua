@@ -1,8 +1,18 @@
+
 html {
   background-color: #ffffff;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  padding: 0;
+  margin: 0;
 }
 
 body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  padding: 0;
   margin: 0;
   font-family: Georgia,"Times New Roman",Times,serif !important;
   color: black !important;
@@ -21,47 +31,14 @@ code {
     monospace;
 }
 
-.rs-tree-node-active .rs-tree-node-label-content {
-  background: none !important;
-  color: #05b !important;
-}
-
-.rs-tree > *:hover {
-  background: none !important;
-}
-
-.rs-tree-node-label :hover {
-  background: none !important;
-}
-
-.rs-tree-node {
-  margin-left: 0 !important;
-  margin-top: 1px !important;
-  padding-top: 1px !important;
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-.rs-tree-node-label {
-  margin-left: -3px !important;
-  margin-top: 1px !important;
-  padding-top: 1px !important;
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-.rs-tree-node-label-content {
-  margin-top: 1px !important;
-  padding-top: 1px !important;
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-.rs-tree-node-expand-icon-wrapper {
-  margin-top: 0px;
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .katex {
-  font-size: 120% !important;
+  font-size: 110% !important;
   color: black !important;
 }

@@ -5,8 +5,8 @@ import { ArgumentView } from './ArgumentView';
 import { Comma } from './Comma';
 import { Newline } from './Newline';
 import { Space } from './Space';
-import { Theme } from '../../base/theme';
-import { useTheme } from '../../hooks/theme';
+
+import styles from './SectionView.module.css';
 
 export interface SectionViewProps {
   node: Section;
@@ -14,12 +14,9 @@ export interface SectionViewProps {
 }
 
 export const SectionView = (props: SectionViewProps) => {
-  const theme = useTheme();
-  const styles = getStyles(theme);
-
   return (
     <>
-      <span style={styles.mathlinguaHeader}>{props.node.Name}</span>:<Space/>
+      <span className={styles.header}>{props.node.Name}</span>:<Space/>
       {
         props.node.Args?.map((arg, index) => (
           <span key={index}>
@@ -38,11 +35,3 @@ export const SectionView = (props: SectionViewProps) => {
     </>
   );
 };
-
-function getStyles(theme: Theme) {
-  return {
-    mathlinguaHeader: {
-      color: theme.colors.sectionHeaderColor,
-    }
-  };
-}

@@ -1,0 +1,11 @@
+
+.line {
+  margin-top: 4px;
+  margin-bottom: 4px;
+  margin-left: 0;
+  margin-right: 0;
+  padding: 0;
+  border-bottom: solid;
+  border-bottom-width: 0.5px;
+  border-bottom-color: #e5e5e5;
+}

@@ -1,7 +1,7 @@
 import React from 'react';
-import { useTheme } from '../../hooks/theme';
-import { Theme } from '../../base/theme';
-import { LatexView } from '../LatexView';
+
+import styles from './IdView.module.css';
+import { LatexView } from '../../design/LatexView';
 
 export interface IdViewProps {
   id: string | null;
@@ -9,41 +9,23 @@ export interface IdViewProps {
 }
 
 export const IdView = (props: IdViewProps) => {
-  const theme = useTheme();
-  const styles = getStyles(theme);
-
   if (props.id === null) {
     return null;
   }
 
   if (props.isLatex) {
     return (
-      <div style={styles.mathlinguaId}>
-        <LatexView latex={props.id} />
-        <hr style={styles.line} />
+      <div>
+        <LatexView latex={props.id} color='black' />
+        <div className={styles.line} />
       </div>
     );
   }
 
   return (
-    <div style={styles.mathlinguaId}>
+    <div>
       {props.id}
-      <hr style={styles.line} />
+      <div className={styles.line} />
     </div>
   );
 };
-
-function getStyles(theme: Theme) {
-  return {
-    mathlinguaId: {
-      color: theme.colors.idColor,
-    },
-    line: {
-      marginTop: theme.sizes.sizeXXSmall,
-      marginBottom: theme.sizes.sizeXXSmall,
-      marginLeft: 0,
-      marginRight: 0,
-      padding: 0,
-    },
-  };
-}

@@ -1,57 +1,35 @@
-import React, { useState } from 'react';
+import React from 'react';
+
+import styles from './MainPage.module.css';
 
 import MenuIcon from '@rsuite/icons/Menu';
-
 import { useFetch } from 'usehooks-ts';
-import { useTheme } from '../hooks/theme';
-import { Shell } from '../components/Shell';
-import { Sidebar } from '../components/Sidebar';
 import { PageResponse } from '../types';
+import { Sidebar } from '../components/Sidebar';
 import { DocumentView } from '../components/ast/DocumentView';
-import { Theme } from '../base/theme';
+import { Button } from '../design/Button';
 
 export function MainPage() {
-  const theme = useTheme();
-
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const isOnSmallScreen = determineIsOnSmallScreen(windowWidth, theme);
-  const [showSidebar, setShowSidebar] = React.useState(!isOnSmallScreen);
-  const [selectedPath, setSelectedPath] = React.useState(undefined as string | undefined);
+  const [windowWidth, setWindowWidth] = React.useState(window.innerWidth);
+  const isOnSmallScreen = determineIsOnSmallScreen(windowWidth);
+  const [open, setOpen] = React.useState(!isOnSmallScreen);
 
   window.addEventListener('resize', () => {
     const newWidth = window.innerWidth;
     setWindowWidth(newWidth);
-    const isOnSmallScreen = determineIsOnSmallScreen(newWidth, theme);
-    if (showSidebar && isOnSmallScreen) {
-      setShowSidebar(false);
-    }
   });
-
-  const styles = getStyles(theme, isOnSmallScreen);
 
   const [activePath, setActivePath] = React.useState<string>('');
   const { data } = useFetch<PageResponse>(`/api/page?path=${encodeURIComponent(activePath)}`);
 
-  const topbar = (
-    <button style={styles.menuButton}
-            onClick={() => setShowSidebar(!showSidebar)}>
-      <MenuIcon />
-    </button>
-  );
-
   const sidebar = (
-    <div style={styles.sidebar}>
-      <div style={styles.outline}>
-        Outline
-      </div>
+    <div className={styles.sidebar}>
       <Sidebar
-        selectedPath={selectedPath}
-        onSelect={(path, isInit) => {
-          setSelectedPath(path);
-          if (path.endsWith('.math')) {
-            setActivePath(path);
-            if (!isInit && isOnSmallScreen) {
-              setShowSidebar(false);
+        onSelect={(pathItem) => {
+          if (pathItem.path.endsWith('.math')) {
+            setActivePath(pathItem.path);
+            if (isOnSmallScreen) {
+              setOpen(false);
             }
           }
         }}/>
@@ -59,60 +37,44 @@ export function MainPage() {
   );
 
   const mainContent = (
-    <div style={styles.content}>
+    <div className={styles.mainContent}>
       {data?.Document && (
-        <div style={styles.page}>
+        <div className={styles.page}>
           <DocumentView node={data?.Document} isOnSmallScreen={isOnSmallScreen} />
         </div>
       )}
     </div>
   );
 
+
+  const leftStyle = {
+    display: open ? 'block' : 'none',
+  };
+
   return (
-    <Shell
-      showSidebar={showSidebar}
-      topbarContent={topbar}
-      sidebarContent={sidebar}
-      mainContent={mainContent}
-      isOnSmallScreen={isOnSmallScreen} />
+    <div className={styles.outerWrapper}>
+      <header className={styles.header}>
+        <Button flat
+                onClick={() => {
+          setOpen(!open);
+        }}>
+          <MenuIcon style={{color: 'black', }} />
+        </Button>
+      </header>
+      <main className={styles.content}>
+        <nav className={styles.left} style={leftStyle}>
+          {sidebar}
+        </nav>
+        <div className={styles.center}>
+          {mainContent}
+        </div>
+      </main>
+      <footer className={styles.footer}>
+      </footer>
+    </div>
   );
 }
 
-function getStyles(theme: Theme, isOnSmallScreen: boolean) {
-  return {
-    sidebar: {
-      width: 'max-content',
-      height: 'max-content',
-    },
-    content: {
-      height: 'max-content',
-      overflow: 'scroll',
-      marginLeft: 'auto',
-      marginRight: 'auto',
-      width: isOnSmallScreen ? '100%' : theme.sizes.mainWidth,
-    },
-    menuButton: {
-      background: 'none',
-      border: 'none',
-      margin: theme.sizes.sizeXSmall,
-    },
-    page: {
-      background: 'white',
-      paddingLeft: isOnSmallScreen ? '1ex' : '4em',
-      paddingRight: isOnSmallScreen ? '1ex' : '4em',
-      paddingTop: isOnSmallScreen ? '1ex' : '1em',
-      paddingBottom: isOnSmallScreen ? '1ex' : '1em',
-      margin: '1ex',
-    },
-    outline: {
-      fontWeight: 'bold',
-      paddingTop: theme.sizes.sizeXSmall,
-      paddingLeft: theme.sizes.sizeSmall,
-      fontSize: '110%',
-    },
-  };
-}
-
-export function determineIsOnSmallScreen(windowWidth: number, theme: Theme) {
-  return windowWidth <= 1080;
+function determineIsOnSmallScreen(windowWidth: number) {
+  return windowWidth <= 450;
 }

@@ -1,15 +1,12 @@
 import React from 'react';
 
-import { MathlinguaContext } from './base/context';
+import styles from './App.module.css';
 import { MainPage } from './pages/MainPage';
-import { LIGHT_THEME } from './base/theme';
 
-export function App() {
+export const App = () => {
   return (
-    <MathlinguaContext.Provider value={{
-      theme: LIGHT_THEME,
-    }}>
+    <div className={styles.App}>
       <MainPage />
-    </MathlinguaContext.Provider>
+    </div>
   );
 }

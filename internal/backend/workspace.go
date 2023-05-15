@@ -22,6 +22,7 @@ import (
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/phase4"
 	"mathlingua/internal/mlglib"
+	"regexp"
 	"sort"
 	"strings"
 	"unicode"
@@ -170,6 +171,7 @@ func (w *workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Di
 		w.formulationLikeToString(path, doc.Items[i], keyToFormulationStr)
 	}
 	phase4Doc := w.phase4Root.Documents[path]
+	inlineProcessForRendering(&phase4Doc)
 	w.updateFormulationStrings(path, &phase4Doc, keyToFormulationStr)
 	return phase4Doc, w.getDiagnosticsForPath(path)
 }
@@ -392,6 +394,8 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 	}
 	customToCode := func(node ast.MlgNodeKind) (string, bool) {
 		switch n := node.(type) {
+		case *ast.NameForm:
+			return nameToRenderedName(n.Text), true
 		case *ast.FunctionLiteralExpression:
 			result := ""
 			result += w.formulationNodeToWritten(path, &n.Lhs)
@@ -823,6 +827,83 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *works
 	node.ForEach(func(subNode ast.MlgNodeKind) {
 		findUsedUnknownSignaturesImpl(subNode, path, w)
 	})
+}
+
+func nameToRenderedName(name string) string {
+	if isGreekLetter(name) {
+		return fmt.Sprintf("\\%s", name)
+	}
+
+	reg := regexp.MustCompile("([a-zA-Z]+)(\\d+)")
+	items := reg.FindStringSubmatch(name)
+	// format of items: [(full match) (group 1) (group 2)]
+	if len(items) == 3 && items[0] == name {
+		return fmt.Sprintf("%s_{%s}", items[1], items[2])
+	}
+
+	return name
+}
+
+func isGreekLetter(name string) bool {
+	if name == "varGamma" ||
+		name == "varDelta" ||
+		name == "varTheta" ||
+		name == "varLambda" ||
+		name == "varXi" ||
+		name == "varPi" ||
+		name == "varSigma" ||
+		name == "varUpsilon" ||
+		name == "varPhi" ||
+		name == "varPsi" ||
+		name == "varOmega" {
+		return true
+	}
+
+	text := strings.ToLower(name)
+	return text == "alpha" ||
+		text == "beta" ||
+		text == "gamma" ||
+		text == "delta" ||
+		text == "epsilon" ||
+		text == "zeta" ||
+		text == "eta" ||
+		text == "theta" ||
+		text == "iota" ||
+		text == "kappa" ||
+		text == "mu" ||
+		text == "nu" ||
+		text == "xi" ||
+		text == "omicron" ||
+		text == "pi" ||
+		text == "rho" ||
+		text == "sigma" ||
+		text == "tau" ||
+		text == "upsilon" ||
+		text == "phi" ||
+		text == "chi" ||
+		text == "psi" ||
+		text == "omega" ||
+		name == "varepsilon" ||
+		name == "varkappa" ||
+		name == "vartheta" ||
+		name == "varpi" ||
+		name == "varrho" ||
+		name == "varsigma" ||
+		name == "varphi" ||
+		name == "digamma"
+}
+
+func inlineProcessForRendering(node phase4.Node) {
+	switch n := node.(type) {
+	case *phase4.Argument:
+		switch a := n.Arg.(type) {
+		case *phase4.ArgumentTextArgumentData:
+			a.Text = nameToRenderedName(a.Text)
+		}
+	}
+	for i := 0; i < node.Size(); i++ {
+		inlineProcessForRendering(node.ChildAt(i))
+	}
 }
 
 func getAllWords(node ast.MlgNodeKind) mlglib.ISet[string] {

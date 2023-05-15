@@ -56,7 +56,7 @@ export function MainPage() {
       <header className={styles.header}>
         <Button flat
                 onClick={() => {
-          setOpen(!open);
+          setOpen(open => !open);
         }}>
           <MenuIcon style={{
             color: 'black',

@@ -55,24 +55,6 @@ function populateTreeNode(root: TreeNode, parts: string[], index: number) {
   populateTreeNode(nextRoot, parts, index+1);
 }
 
-// Given "a/b/c/d" returns ["a", "a/b", "a/b/c", "a/b/c/d"]
-function decomposePath(path: string | undefined): string[] {
-  if (path === undefined) {
-    return [];
-  }
-
-  const result: string[] = [];
-  let buffer = '';
-  for (const part of path.split('/')) {
-    if (buffer.length > 0) {
-      buffer += '/';
-    }
-    buffer += part;
-    result.push(buffer);
-  }
-  return result;
-}
-
 function formatName(name: string): string {
   const text = name.replace(/\.math$/g, '').replace(/_/g, ' ');
   if (text.length === 0) {

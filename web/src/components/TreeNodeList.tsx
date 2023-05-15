@@ -15,12 +15,12 @@ export interface TreeNodeListProps {
 export function TreeNodeList(props: TreeNodeListProps) {
   const first = props.node.children?.find(node => node.children.length === 0);
   const [selectedItem, setSelectedItem] = React.useState(first);
+  const onSelect = props.onSelect;
   React.useEffect(() => {
-    console.log('props.node.children=', props.node.children);
     if (first) {
-      props.onSelect(first);
+      onSelect(first);
     }
-  }, []);
+  }, [first, onSelect]);
   return (
     <div className={styles.wrapper}>
       <div className={styles.outline}>

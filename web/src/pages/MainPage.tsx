@@ -58,7 +58,14 @@ export function MainPage() {
                 onClick={() => {
           setOpen(!open);
         }}>
-          <MenuIcon style={{color: 'black', }} />
+          <MenuIcon style={{
+            color: 'black',
+            marginLeft: 10,
+            marginRight: 0,
+            marginTop: 0,
+            marginBottom: 0,
+            padding: 0,
+          }} />
         </Button>
       </header>
       <main className={styles.content}>

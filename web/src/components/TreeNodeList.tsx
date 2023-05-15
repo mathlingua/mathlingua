@@ -20,7 +20,7 @@ export function TreeNodeList(props: TreeNodeListProps) {
     if (first) {
       onSelect(first);
     }
-  }, [first, onSelect]);
+  }, []);
   return (
     <div className={styles.wrapper}>
       <div className={styles.outline}>

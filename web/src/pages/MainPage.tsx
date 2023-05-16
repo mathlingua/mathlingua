@@ -68,14 +68,16 @@ export function MainPage() {
           }} />
         </Button>
       </header>
-      <main className={styles.content}>
-        <nav className={styles.left} style={leftStyle}>
-          {sidebar}
-        </nav>
-        <div className={styles.center}>
-          {mainContent}
-        </div>
-      </main>
+      <div className={styles.contentWrapper}>
+        <main className={styles.content}>
+          <nav className={styles.left} style={leftStyle}>
+            {sidebar}
+          </nav>
+          <div className={styles.center}>
+            {mainContent}
+          </div>
+        </main>
+      </div>
       <footer className={styles.footer}>
       </footer>
     </div>

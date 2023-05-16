@@ -672,8 +672,7 @@ func (fp *formulationParser) isExpressionTerminator(tokenType ast.TokenType) boo
 	return tokenType == ast.Comma ||
 		tokenType == ast.RParen ||
 		tokenType == ast.RSquare ||
-		tokenType == ast.RCurly ||
-		tokenType == ast.Semicolon
+		tokenType == ast.RCurly
 }
 
 func (fp *formulationParser) pseudoExpression(
@@ -929,7 +928,7 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 	fp.expect(ast.Bar)
 	conditions := make([]ast.ExpressionKind, 0)
 	for fp.lexer.HasNext() {
-		condition, ok := fp.expressionKind()
+		condition, ok := fp.expressionKind(ast.Semicolon)
 		if ok {
 			conditions = append(conditions, condition)
 		} else {
@@ -1194,6 +1193,10 @@ func (fp *formulationParser) colonDashArrowToken() (ast.PseudoTokenNode, bool) {
 	return fp.pseudoToken(ast.ColonDashArrow)
 }
 
+func (fp *formulationParser) semicolonToken() (ast.PseudoTokenNode, bool) {
+	return fp.pseudoToken(ast.Semicolon)
+}
+
 func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 	if as, ok := fp.asKeyword(); ok {
 		return as, ok
@@ -1229,6 +1232,10 @@ func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 
 	if rightArrow, ok := fp.rightArrow(); ok {
 		return rightArrow, ok
+	}
+
+	if semicolon, ok := fp.semicolonToken(); ok {
+		return semicolon, ok
 	}
 
 	return ast.PseudoTokenNode{}, false

@@ -394,10 +394,10 @@ type ExpressionColonArrowItem struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// x + y :-> x
+// x + y :-> x; y
 type ExpressionColonDashArrowItem struct {
 	Lhs                 ExpressionKind
-	Rhs                 ExpressionKind
+	Rhs                 []ExpressionKind
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

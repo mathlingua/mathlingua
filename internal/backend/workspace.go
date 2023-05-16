@@ -436,7 +436,12 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 			result := ""
 			result += w.formulationNodeToWritten(path, n.Lhs)
 			result += " \\coloneq\\!> "
-			result += w.formulationNodeToWritten(path, n.Rhs)
+			for i, item := range n.Rhs {
+				if i > 0 {
+					result += "; "
+				}
+				result += w.formulationNodeToWritten(path, item)
+			}
 			return result, true
 		case *ast.ExpressionColonEqualsItem:
 			result := ""

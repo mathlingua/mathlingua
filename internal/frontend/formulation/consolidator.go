@@ -28,8 +28,11 @@ func Consolidate(
 	path ast.Path,
 	nodes []ast.FormulationNodeKind,
 	tracker frontend.IDiagnosticTracker,
-) (
-	ast.FormulationNodeKind, bool) {
+) (ast.FormulationNodeKind, bool) {
+	if colonArrowDash, ok := maybeProcessExpressionColonDashArrowItem(path, nodes, tracker); ok {
+		return &colonArrowDash, true
+	}
+
 	items := mlglib.NewStack[ShuntingYardItem[ast.FormulationNodeKind]]()
 	for _, item := range ShuntingYard(toShuntingYardItems(nodes)) {
 		items.Push(item)
@@ -57,6 +60,71 @@ func GetPrecedenceAndIfInfix(node ast.ExpressionKind) (int, bool) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func maybeProcessExpressionColonDashArrowItem(
+	path ast.Path,
+	nodes []ast.FormulationNodeKind,
+	tracker frontend.IDiagnosticTracker,
+) (ast.ExpressionColonDashArrowItem, bool) {
+	index := -1
+	for i, n := range nodes {
+		if tok, ok := n.(*ast.PseudoTokenNode); ok {
+			if tok.Type == ast.ColonDashArrow {
+				index = i
+				break
+			}
+		}
+	}
+
+	if index < 0 {
+		return ast.ExpressionColonDashArrowItem{}, false
+	}
+
+	lhsNodes := make([]ast.FormulationNodeKind, 0)
+	for i := 0; i < index; i++ {
+		lhsNodes = append(lhsNodes, nodes[i])
+	}
+
+	lhs, ok := Consolidate(path, lhsNodes, tracker)
+	if !ok {
+		return ast.ExpressionColonDashArrowItem{}, false
+	}
+	lhsExp, ok := lhs.(ast.ExpressionKind)
+	if !ok {
+		return ast.ExpressionColonDashArrowItem{}, false
+	}
+
+	rhsNodes := make([]ast.ExpressionKind, 0)
+	i := index + 1
+	for i < len(nodes) {
+		partNodes := make([]ast.FormulationNodeKind, 0)
+		for i < len(nodes) {
+			cur := nodes[i]
+			i += 1
+			tok, ok := cur.(*ast.PseudoTokenNode)
+			if ok && tok.Text == ";" {
+				break
+			}
+			partNodes = append(partNodes, cur)
+		}
+		part, ok := Consolidate(path, partNodes, tracker)
+		if !ok {
+			return ast.ExpressionColonDashArrowItem{}, false
+		}
+		exp, ok := part.(ast.ExpressionKind)
+		if !ok {
+			return ast.ExpressionColonDashArrowItem{}, false
+		}
+		rhsNodes = append(rhsNodes, exp)
+	}
+
+	return ast.ExpressionColonDashArrowItem{
+		Lhs:                 lhsExp,
+		Rhs:                 rhsNodes,
+		CommonMetaData:      *lhs.GetCommonMetaData(),
+		FormulationMetaData: *lhs.GetFormulationMetaData(),
+	}, true
+}
 
 var default_expression ast.ExpressionKind = &ast.NameForm{}
 var default_kind_type ast.KindKind = &ast.NameForm{}
@@ -174,15 +242,15 @@ func toNode(
 				Lhs: lhs,
 				Rhs: rhs,
 			}
-		case top.Type == ast.ColonDashArrow:
-			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
-				tracker, top.Start())
-			tmp := toNode(path, items, tracker)
-			lhs := checkType(path, tmp, default_expression, "Expression", tracker, top.Start())
-			return &ast.ExpressionColonDashArrowItem{
-				Lhs: lhs,
-				Rhs: rhs,
-			}
+			//		case top.Type == ast.ColonDashArrow:
+			//			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
+			//				tracker, top.Start())
+			//			tmp := toNode(path, items, tracker)
+			//			lhs := checkType(path, tmp, default_expression, "Expression", tracker, top.Start())
+			//			return &ast.ExpressionColonDashArrowItem{
+			//				Lhs: lhs,
+			//				Rhs: rhs,
+			//			}
 		case top.Type == ast.ColonEquals:
 			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())

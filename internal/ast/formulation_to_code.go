@@ -254,7 +254,14 @@ func (n *ExpressionColonDashArrowItem) ToCode(
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return n.Lhs.ToCode(fn) + " :-> " + n.Rhs.ToCode(fn)
+	res := n.Lhs.ToCode(fn) + " :-> "
+	for i, rhsItem := range n.Rhs {
+		if i > 0 {
+			res += "; "
+		}
+		res += rhsItem.ToCode(fn)
+	}
+	return res
 }
 
 func (n *EnclosedNonCommandOperatorTarget) ToCode(

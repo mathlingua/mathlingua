@@ -667,7 +667,7 @@ func (n *ExpressionColonArrowItem) ForEach(fn func(subNode MlgNodeKind)) {
 
 func (n *ExpressionColonDashArrowItem) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
-	fn(n.Rhs)
+	forEachExpressionKind(n.Rhs, fn)
 }
 
 func (n *EnclosedNonCommandOperatorTarget) ForEach(fn func(subNode MlgNodeKind)) {
@@ -803,6 +803,12 @@ func (n *DirectionalParam) ForEach(fn func(subNode MlgNodeKind)) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func forEach[T MlgNodeKind](items []T, fn func(n MlgNodeKind)) {
+	for i, _ := range items {
+		fn(items[i])
+	}
+}
+
+func forEachExpressionKind(items []ExpressionKind, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(items[i])
 	}

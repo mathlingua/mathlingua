@@ -19,7 +19,6 @@ package config
 import (
 	"fmt"
 	"mathlingua/internal/mlglib"
-	"strings"
 )
 
 type MlgConfig struct {
@@ -28,8 +27,9 @@ type MlgConfig struct {
 
 type MlgViewConfig struct {
 	Title       string
-	Keywords    []string
+	Keywords    string
 	Description string
+	Home        string
 }
 
 func ParseMlgConfig(text string) (MlgConfig, error) {
@@ -43,7 +43,7 @@ func ParseMlgConfig(text string) (MlgConfig, error) {
 		return MlgConfig{
 			View: MlgViewConfig{
 				Title:       "",
-				Keywords:    []string{},
+				Keywords:    "",
 				Description: "",
 			},
 		}, nil
@@ -64,19 +64,16 @@ func ParseMlgConfig(text string) (MlgConfig, error) {
 	}
 
 	title, _ := viewConf.Get("title")
-	keywordsText, _ := viewConf.Get("keywords")
+	keywords, _ := viewConf.Get("keywords")
 	description, _ := viewConf.Get("description")
-
-	keywords := make([]string, 0)
-	for _, item := range strings.Split(keywordsText, ",") {
-		keywords = append(keywords, strings.Trim(item, " "))
-	}
+	home, _ := viewConf.Get("home")
 
 	return MlgConfig{
 		View: MlgViewConfig{
 			Title:       title,
 			Keywords:    keywords,
 			Description: description,
+			Home:        home,
 		},
 	}, nil
 }

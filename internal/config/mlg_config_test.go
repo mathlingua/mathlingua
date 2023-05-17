@@ -29,6 +29,7 @@ func TestParseMlgConfigText(t *testing.T) {
 title = some title
 description = some description
 keywords = keyword 1, keyword 2, keyword3
+home = some/path/doc.math
 `
 	conf, err := ParseMlgConfig(input)
 	assert.Nil(t, err)
@@ -37,11 +38,8 @@ keywords = keyword 1, keyword 2, keyword3
 		View: MlgViewConfig{
 			Title:       "some title",
 			Description: "some description",
-			Keywords: []string{
-				"keyword 1",
-				"keyword 2",
-				"keyword3",
-			},
+			Keywords:    "keyword 1, keyword 2, keyword3",
+			Home:        "some/path/doc.math",
 		},
 	}), mlglib.PrettyPrint(conf))
 }

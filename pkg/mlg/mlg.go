@@ -26,7 +26,7 @@ import (
 
 type IMlg interface {
 	Check(paths []string, showJson bool, debug bool)
-	View()
+	View(port int)
 	Version() string
 }
 
@@ -73,8 +73,8 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 	m.printCheckStats(numErrors, numWarnings, numFilesProcessed, debug, diagnostics)
 }
 
-func (m *mlg) View() {
-	backend.StartServer(m.conf)
+func (m *mlg) View(port int) {
+	backend.StartServer(port, m.conf)
 }
 
 func (m *mlg) Version() string {

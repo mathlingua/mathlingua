@@ -39,6 +39,6 @@ var checkCommand = &cobra.Command{
 }
 
 func init() {
-	checkCommand.Flags().BoolP("json", "", false, "Output diagnostics in JSON format")
+	checkCommand.Flags().BoolP("json", "j", false, "Output diagnostics in JSON format")
 	rootCmd.AddCommand(checkCommand)
 }

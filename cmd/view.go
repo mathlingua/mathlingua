@@ -22,18 +22,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var port int
+
 var viewCommand = &cobra.Command{
 	Use:   "view",
 	Short: "View rendered Mathlingua files",
 	Long:  "Renders the Mathlingua (.math) files in the current directory.",
-	Args:  cobra.MaximumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := mlg.NewLogger()
 		conf := mlg.LoadMlgConfig(logger)
-		mlg.NewMlg(conf, logger).View()
+		mlg.NewMlg(conf, logger).View(port)
 	},
 }
 
 func init() {
+	flags := viewCommand.Flags()
+	flags.IntVarP(&port, "port", "p", 8080, "The port on which to view the documents")
 	rootCmd.AddCommand(viewCommand)
 }

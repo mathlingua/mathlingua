@@ -31,7 +31,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func StartServer(conf config.MlgConfig) {
+func StartServer(port int, conf config.MlgConfig) {
 	workspace := initWorkspace()
 
 	router := mux.NewRouter()
@@ -78,8 +78,8 @@ func StartServer(conf config.MlgConfig) {
 		web.AssetHandler{}.ServeHTTP(w, r)
 	})
 
-	fmt.Println("Visit http://localhost:8080 to view your documents")
-	if err := http.ListenAndServe(":8080", router); err != nil {
+	fmt.Printf("Visit http://localhost:%d to view your documents\n", port)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), router); err != nil {
 		fmt.Println(err.Error())
 	}
 }

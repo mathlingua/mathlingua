@@ -49,24 +49,27 @@ func ParseMlgConfig(text string) (MlgConfig, error) {
 		}, nil
 	}
 
-	expectedNames := mlglib.NewSet[string]()
-	expectedNames.Add("mlg.view")
-
 	for _, name := range sectionNames {
-		if !expectedNames.Has(name) {
+		if !expected_mlg_section_names.Has(name) {
 			return MlgConfig{}, fmt.Errorf("Unexpected section: %s", name)
 		}
 	}
 
-	viewConf, ok := conf.Section("mlg.view")
+	viewConf, ok := conf.Section(mlg_view_section_name)
 	if !ok {
 		return MlgConfig{}, nil
 	}
 
-	title, _ := viewConf.Get("title")
-	keywords, _ := viewConf.Get("keywords")
-	description, _ := viewConf.Get("description")
-	home, _ := viewConf.Get("home")
+	for _, key := range viewConf.Keys() {
+		if !expected_mlg_view_keys.Has(key) {
+			return MlgConfig{}, fmt.Errorf("Unexpected key: %s", key)
+		}
+	}
+
+	title, _ := viewConf.Get(title_mlg_view_key)
+	keywords, _ := viewConf.Get(keywords_mlg_view_key)
+	description, _ := viewConf.Get(description_mlg_view_key)
+	home, _ := viewConf.Get(home_mlg_view_key)
 
 	return MlgConfig{
 		View: MlgViewConfig{
@@ -76,4 +79,31 @@ func ParseMlgConfig(text string) (MlgConfig, error) {
 			Home:        home,
 		},
 	}, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const title_mlg_view_key = "title"
+const keywords_mlg_view_key = "keywords"
+const description_mlg_view_key = "description"
+const home_mlg_view_key = "home"
+
+var mlg_view_section_name = "mlg.view"
+
+var expected_mlg_view_keys = buildExpectedMlgViewKeys()
+var expected_mlg_section_names = buildExpectedMlgSectionNames()
+
+func buildExpectedMlgViewKeys() mlglib.ISet[string] {
+	result := mlglib.NewSet[string]()
+	result.Add(title_mlg_view_key)
+	result.Add(keywords_mlg_view_key)
+	result.Add(description_mlg_view_key)
+	result.Add(home_mlg_view_key)
+	return result
+}
+
+func buildExpectedMlgSectionNames() mlglib.ISet[string] {
+	result := mlglib.NewSet[string]()
+	result.Add(mlg_view_section_name)
+	return result
 }

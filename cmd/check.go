@@ -31,7 +31,10 @@ var checkCommand = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		debug, _ := rootCmd.PersistentFlags().GetBool("debug")
 		json, _ := cmd.Flags().GetBool("json")
-		mlg.NewMlg(mlg.NewLogger()).Check(args, json, debug)
+
+		logger := mlg.NewLogger()
+		conf := mlg.LoadMlgConfig(logger)
+		mlg.NewMlg(conf, logger).Check(args, json, debug)
 	},
 }
 

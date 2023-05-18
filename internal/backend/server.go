@@ -17,17 +17,21 @@
 package backend
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/config"
 	"mathlingua/internal/frontend"
 	"mathlingua/web"
 	"net/http"
+	"path"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
 
-func StartServer() {
+func StartServer(conf config.MlgConfig) {
 	workspace := initWorkspace()
 
 	router := mux.NewRouter()
@@ -40,6 +44,37 @@ func StartServer() {
 	}).Methods("GET")
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		workspace = initWorkspace()
+		if r.URL != nil && (r.URL.Path == "/" || r.URL.Path == "/index.html") {
+			bytes, err := embed.FS.ReadFile(web.Assets, path.Join("build", "index.html"))
+			if err != nil {
+				// report an error to the console, but don't fail loading the index.html
+				// page without any customization
+				fmt.Printf("Could not customize the docs based on the Mlg config: %s", err)
+			} else {
+				content := string(bytes)
+
+				// set the title
+				content = strings.Replace(content, "<title></title>",
+					fmt.Sprintf("<title>%s</title>", conf.View.Title), 1)
+
+				// set the description
+				rawDescription := strings.ReplaceAll(conf.View.Description, "\"", "\\\"")
+				descriptionHtml := fmt.Sprintf(
+					"<meta name=\"description\" content=\"%s\"/>", rawDescription)
+				content = strings.Replace(content,
+					"<meta name=\"description\" content=\"\"/>", descriptionHtml, 1)
+
+				// set the keywords
+				rawKeywords := strings.ReplaceAll(conf.View.Keywords, "\"", "\\\"")
+				keywordsHtml := fmt.Sprintf("<meta name=\"keywords\" content=\"%s\"/>", rawKeywords)
+				content = strings.Replace(content,
+					"<meta name=\"keywords\" content=\"\"/>", keywordsHtml, 1)
+
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(content))
+				return
+			}
+		}
 		web.AssetHandler{}.ServeHTTP(w, r)
 	})
 

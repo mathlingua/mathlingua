@@ -28,7 +28,8 @@ var versionCommand = &cobra.Command{
 	Long:  "Prints version information and quits",
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := mlg.NewLogger()
-		version := mlg.NewMlg(logger).Version()
+		conf := mlg.LoadMlgConfig(logger)
+		version := mlg.NewMlg(conf, logger).Version()
 		logger.Log(version)
 	},
 }

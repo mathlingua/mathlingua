@@ -28,7 +28,9 @@ var viewCommand = &cobra.Command{
 	Long:  "Renders the Mathlingua (.math) files in the current directory.",
 	Args:  cobra.MaximumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		mlg.NewMlg(mlg.NewLogger()).View()
+		logger := mlg.NewLogger()
+		conf := mlg.LoadMlgConfig(logger)
+		mlg.NewMlg(conf, logger).View()
 	},
 }
 

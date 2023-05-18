@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"mathlingua/internal/backend"
+	"mathlingua/internal/config"
 	"mathlingua/internal/frontend"
 )
 
@@ -29,9 +30,10 @@ type IMlg interface {
 	Version() string
 }
 
-func NewMlg(logger ILogger) IMlg {
+func NewMlg(conf config.MlgConfig, logger ILogger) IMlg {
 	return &mlg{
 		logger: logger,
+		conf:   conf,
 	}
 }
 
@@ -39,6 +41,7 @@ func NewMlg(logger ILogger) IMlg {
 
 type mlg struct {
 	logger ILogger
+	conf   config.MlgConfig
 }
 
 func (m *mlg) Check(paths []string, showJson bool, debug bool) {
@@ -71,7 +74,7 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 }
 
 func (m *mlg) View() {
-	backend.StartServer()
+	backend.StartServer(m.conf)
 }
 
 func (m *mlg) Version() string {

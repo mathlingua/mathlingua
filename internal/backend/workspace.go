@@ -445,13 +445,13 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 		case *ast.ExpressionColonArrowItem:
 			result := ""
 			result += w.formulationNodeToWritten(path, n.Lhs)
-			result += " \\coloneqq\\!> "
+			result += " :\\rArr "
 			result += w.formulationNodeToWritten(path, n.Rhs)
 			return result, true
 		case *ast.ExpressionColonDashArrowItem:
 			result := ""
 			result += w.formulationNodeToWritten(path, n.Lhs)
-			result += " \\coloneq\\!> "
+			result += " :\\rarr "
 			for i, item := range n.Rhs {
 				if i > 0 {
 					result += "; "
@@ -504,15 +504,39 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 			return n.Text, true
 		case *ast.EnclosedNonCommandOperatorTarget:
 			text := w.formulationNodeToWritten(path, n.Target)
+
+			// if the text is of the form a.b.c.*
+			// then render the "a.b.c" as text
+			index := strings.LastIndex(text, ".")
+			if index >= 0 {
+				// text is of the form a.b.c.*
+				head := text[0:index]
+				tail := text[index+1:]
+				return fmt.Sprintf("\\:[\\textrm{%s}.%s]\\:", head, tail), true
+			}
+
+			// otherwise there are no . characters and so if the inner
+			// text starts with a letter (for example it could be
+			// "times") then render it as a LaTeX command (for
+			// example "\times")
+			//
+			// NOTE: this is just a hack until type checking is
+			//       complete so the operator can be disambiguated
+			//       and the actual rendering can be done as specified
+			//       by a "written" or "writing"
 			if len(text) > 0 && unicode.IsLetter(rune(text[0])) {
 				return "\\" + text, true
-			} else {
-				return text, true
 			}
+
+			// last it is an operator like * and so just return
+			// the original text
+			return text, true
 		case *ast.CommandExpression:
 			return w.commandToWritten(path, n)
 		case *ast.CommandOperatorTarget:
 			return w.commandInfixToWritten(path, n)
+		case *ast.AsExpression:
+			return w.formulationNodeToWritten(path, n.Lhs), true
 		default:
 			return "", false
 		}

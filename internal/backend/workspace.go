@@ -260,11 +260,15 @@ func (w *workspace) commandInfixToWritten(
 	path ast.Path,
 	node *ast.CommandOperatorTarget,
 ) (string, bool) {
-	return w.commandToWritten(path, &node.Command)
+	return w.commandToWritten(path, &node.Command, true)
 }
 
-func (w *workspace) commandToWritten(path ast.Path, node *ast.CommandExpression) (string, bool) {
-	sig := GetSignatureStringFromCommand(*node)
+func (w *workspace) commandToWritten(
+	path ast.Path,
+	node *ast.CommandExpression,
+	isInfix bool,
+) (string, bool) {
+	sig := GetSignatureStringFromCommand(*node, isInfix)
 	found := false
 	if id, ok := w.signaturesToIds[sig]; ok {
 		if summary, ok := w.summaries[id]; ok {
@@ -532,9 +536,9 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 			// the original text
 			return text, true
 		case *ast.CommandExpression:
-			return w.commandToWritten(path, n)
+			return w.commandToWritten(path, n, false)
 		case *ast.CommandOperatorTarget:
-			return w.commandInfixToWritten(path, n)
+			return w.commandToWritten(path, &n.Command, true)
 		case *ast.AsExpression:
 			return w.formulationNodeToWritten(path, n.Lhs), true
 		default:
@@ -583,12 +587,22 @@ func (w *workspace) getDiagnosticsForPath(path ast.Path) []frontend.Diagnostic {
 }
 
 func (w *workspace) initializeSignaturesToIds() {
-	for _, doc := range w.astRoot.Documents {
+	for path, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
 			sig, sigOk := GetSignatureStringFromTopLevel(item)
 			id, idOk := GetAstMetaId(item)
 			if sigOk && idOk {
-				w.signaturesToIds[sig] = id
+				if _, hasSig := w.signaturesToIds[sig]; hasSig {
+					w.tracker.Append(frontend.Diagnostic{
+						Type:     frontend.Error,
+						Origin:   frontend.BackendOrigin,
+						Message:  fmt.Sprintf("Duplicate defined signature %s", sig),
+						Path:     path,
+						Position: item.GetCommonMetaData().Start,
+					})
+				} else {
+					w.signaturesToIds[sig] = id
+				}
 			}
 		}
 	}
@@ -858,7 +872,7 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *works
 		return
 	}
 	if cmd, ok := node.(*ast.CommandExpression); ok {
-		sig := GetSignatureStringFromCommand(*cmd)
+		sig := GetSignatureStringFromCommand(*cmd, false)
 		if _, ok := w.signaturesToIds[sig]; !ok {
 			w.tracker.Append(frontend.Diagnostic{
 				Type:     frontend.Error,

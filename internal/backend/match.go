@@ -470,7 +470,7 @@ func matchInfixCommandTarget(node ast.MlgNodeKind, pattern InfixCommandTargetPat
 func matchCommand(node ast.MlgNodeKind, pattern CommandPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.CommandExpression:
-		nodeSig := GetSignatureStringFromCommand(*n)
+		nodeSig := GetSignatureStringFromCommand(*n, false)
 		if nodeSig != pattern.Signature {
 			return MatchResult{
 				MatchMakesSense: false,

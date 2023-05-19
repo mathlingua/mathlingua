@@ -51,7 +51,7 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
       idText = `\\textrm{${capitalize(called)}}`;
     } else if (written) {
       isLatex = true;
-      idText = `\\textrm{${capitalize(written)}}`;
+      idText = `\\textrm{$${capitalize(written)}$}`;
     } else {
       isLatex = false;
       idText = (props.node as Group).Id;

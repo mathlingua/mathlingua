@@ -26,8 +26,11 @@ export const TextArgumentDataView = (props: TextArgumentDataViewProps) => {
 
   // For an unknown reason, if the `'$ $' +` below is not provided, then
   // the ReactMarkdown is incorrectly rendered as a <code> in the DOM
+  const text = props.node.Text.startsWith('$') ?
+                props.node.Text :
+                '$ $' + props.node.Text;
   return (
-    <ReactMarkdown children={fn('$ $' + props.node.Text)}
+    <ReactMarkdown children={fn(text)}
                    remarkPlugins={[remarkGfm, remarkMath]}
                    rehypePlugins={[rehypeKatex]}
                    className={styles.markdown} />

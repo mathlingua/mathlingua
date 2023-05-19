@@ -23,7 +23,6 @@ import (
 	"mathlingua/internal/frontend/phase4"
 	"mathlingua/internal/mlglib"
 	"regexp"
-	"sort"
 	"strings"
 	"unicode"
 )
@@ -93,7 +92,7 @@ type WorkspacePageResponse struct {
 
 type PathsResponse struct {
 	Error string
-	Paths []ast.Path
+	Paths []PathLabelPair
 }
 
 type PageResponse struct {
@@ -106,17 +105,30 @@ type CheckResult struct {
 	Diagnostics []frontend.Diagnostic
 }
 
+type PathLabelPair struct {
+	Path  ast.Path
+	Label string
+	IsDir bool
+}
+
+type PathLabelContent struct {
+	Path  ast.Path
+	Label string
+	// Content is nil if the path is a directory
+	Content *string
+}
+
 type IWorkspace interface {
 	DocumentCount() int
-	Paths() []ast.Path
+	Paths() []PathLabelPair
 	GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Diagnostic)
 	Check() CheckResult
 }
 
-func NewWorkspace(contents map[ast.Path]string, tracker frontend.IDiagnosticTracker) IWorkspace {
+func NewWorkspace(contents []PathLabelContent, tracker frontend.IDiagnosticTracker) IWorkspace {
 	w := workspace{
 		tracker:         tracker,
-		contents:        make(map[ast.Path]string, 0),
+		contents:        contents,
 		signaturesToIds: make(map[string]string, 0),
 		summaries:       make(map[string]SummaryKind, 0),
 		phase4Entries:   make(map[string]phase4.TopLevelNodeKind, 0),
@@ -130,7 +142,7 @@ func NewWorkspace(contents map[ast.Path]string, tracker frontend.IDiagnosticTrac
 
 type workspace struct {
 	// map paths to path contents
-	contents map[ast.Path]string
+	contents []PathLabelContent
 	// the tracker used to record diagnostics
 	tracker frontend.IDiagnosticTracker
 	// mapping of paths to phase4 documents
@@ -151,15 +163,13 @@ func (w *workspace) DocumentCount() int {
 	return len(w.contents)
 }
 
-func (w *workspace) Paths() []ast.Path {
-	paths := make([]string, 0)
-	for k := range w.contents {
-		paths = append(paths, string(k))
-	}
-	sort.Strings(paths)
-	result := make([]ast.Path, 0)
-	for _, p := range paths {
-		result = append(result, ast.ToPath(p))
+func (w *workspace) Paths() []PathLabelPair {
+	result := make([]PathLabelPair, 0)
+	for _, pair := range w.contents {
+		result = append(result, PathLabelPair{
+			Path:  pair.Path,
+			Label: pair.Label,
+		})
 	}
 	return result
 }
@@ -178,10 +188,10 @@ func (w *workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Di
 
 func (w *workspace) Check() CheckResult {
 	w.findUsedUnknownSignatures()
-	for _, path := range w.Paths() {
+	for _, pair := range w.Paths() {
 		// get all of the documents to populate the tracker
 		// with any rendering errors
-		w.GetDocumentAt(path)
+		w.GetDocumentAt(pair.Path)
 	}
 	return CheckResult{
 		Diagnostics: w.tracker.Diagnostics(),
@@ -190,9 +200,15 @@ func (w *workspace) Check() CheckResult {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (w *workspace) initialize(contents map[ast.Path]string) {
+func (w *workspace) initialize(contents []PathLabelContent) {
 	w.contents = contents
-	w.phase4Root, w.astRoot = ParseRoot(w.contents, w.tracker)
+	contentMap := make(map[ast.Path]string)
+	for _, pair := range contents {
+		if pair.Content != nil {
+			contentMap[pair.Path] = *pair.Content
+		}
+	}
+	w.phase4Root, w.astRoot = ParseRoot(contentMap, w.tracker)
 	w.normalizeAst()
 	w.populateScopes()
 	w.initializeSignaturesToIds()

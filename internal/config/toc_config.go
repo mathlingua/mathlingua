@@ -21,11 +21,29 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
+type TocType string
+
+const (
+	Keep TocType = "keep"
+	Hide TocType = "hide"
+)
+
 type ITocConfig interface {
 	// Returns: (label, true) if the filename should have 'label' used
 	//     and: ("", false) if the filename should be hidden
 	LabelForFilename(filename string) (string, bool)
 	ExplicitFilenames() []string
+	StarAction() TocType
+}
+
+func NewDefaultTocConfig() ITocConfig {
+	config := tocConfig{
+		explicitFilenames: make([]string, 0),
+		nameToLabel:       make(map[string]string),
+		namesToHide:       mlglib.NewSet[string](),
+	}
+	config.setStarAction(Keep)
+	return &config
 }
 
 func ParseTocConfig(text string) (ITocConfig, error) {
@@ -69,10 +87,10 @@ func ParseTocConfig(text string) (ITocConfig, error) {
 			return &tocConfig{}, fmt.Errorf("If * is specified it must be the last element specified")
 		} else {
 			if starValue, ok := sec.Get("*"); ok {
-				if starValue == string(keep) {
-					result.setStarAction(keep)
-				} else if starValue == string(hide) {
-					result.setStarAction(hide)
+				if starValue == string(Keep) {
+					result.setStarAction(Keep)
+				} else if starValue == string(Hide) {
+					result.setStarAction(Hide)
 				} else {
 					return &tocConfig{}, fmt.Errorf("* must have a value of either 'keep' or 'hide'")
 				}
@@ -85,9 +103,9 @@ func ParseTocConfig(text string) (ITocConfig, error) {
 
 	for _, filename := range keys {
 		if label, ok := sec.Get(filename); ok {
-			if label == string(keep) {
+			if label == string(Keep) {
 				result.markToKeep(filename)
-			} else if label == string(hide) {
+			} else if label == string(Hide) {
 				result.markToHide(filename)
 			} else {
 				result.markNewLabel(filename, label)
@@ -101,13 +119,6 @@ func ParseTocConfig(text string) (ITocConfig, error) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type TocType string
-
-const (
-	keep TocType = "keep"
-	hide TocType = "hide"
-)
 
 type tocConfig struct {
 	explicitFilenames []string
@@ -126,7 +137,7 @@ func (tc *tocConfig) LabelForFilename(filename string) (string, bool) {
 		return "", false
 	}
 
-	if tc.starAction == keep {
+	if tc.starAction == Keep {
 		return filename, true
 	}
 
@@ -135,6 +146,10 @@ func (tc *tocConfig) LabelForFilename(filename string) (string, bool) {
 
 func (tc *tocConfig) ExplicitFilenames() []string {
 	return tc.explicitFilenames
+}
+
+func (tc *tocConfig) StarAction() TocType {
+	return tc.starAction
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

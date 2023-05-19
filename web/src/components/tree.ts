@@ -1,3 +1,4 @@
+import { PathLabelPair } from "../types";
 
 export interface TreeNode {
   label: string;
@@ -7,7 +8,7 @@ export interface TreeNode {
   children: TreeNode[];
 }
 
-export function buildTreeNode(paths: string[]): { tree: TreeNode; } {
+export function buildTreeNode(pairs: PathLabelPair[]): { tree: TreeNode; } {
   const sentinal: TreeNode = {
     label: '',
     name: '',
@@ -15,15 +16,15 @@ export function buildTreeNode(paths: string[]): { tree: TreeNode; } {
     parent: null,
     children: [],
   };
-  for (const path of paths) {
-    populateTreeNode(sentinal, path.split('/'), 0);
+  for (const pair of pairs) {
+    populateTreeNode(sentinal, pair.Path.split('/'), pair.Label, 0);
   }
   return {
     tree: sentinal,
   };
 }
 
-function populateTreeNode(root: TreeNode, parts: string[], index: number) {
+function populateTreeNode(root: TreeNode, parts: string[], label: string, index: number) {
   if (index >= parts.length) {
     return;
   }
@@ -43,7 +44,7 @@ function populateTreeNode(root: TreeNode, parts: string[], index: number) {
   } else {
     const path = parts.slice(0, index+1).join('/');
     nextRoot = {
-      label: formatName(cur),
+      label: index === parts.length - 1 ? label : cur,
       name: cur,
       path,
       parent: root,
@@ -52,17 +53,5 @@ function populateTreeNode(root: TreeNode, parts: string[], index: number) {
     root.children.push(nextRoot);
   }
 
-  populateTreeNode(nextRoot, parts, index+1);
-}
-
-function formatName(name: string): string {
-  const text = name.replace(/\.math$/g, '').replace(/_/g, ' ');
-  if (text.length === 0) {
-    return '';
-  }
-  return text.split(' ').map(part => {
-    const first = part[0];
-    const tail = part.substring(1);
-    return first.toUpperCase() + tail;
-  }).join(' ');
+  populateTreeNode(nextRoot, parts, label, index+1);
 }

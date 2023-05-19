@@ -24,9 +24,14 @@ export interface Diagnostic {
 	Position: Position;
 }
 
+export interface PathLabelPair {
+  Path: string;
+  Label: string;
+}
+
 export interface PathsResponse {
 	Error: string;
-	Paths: string[] | null;
+	Paths: PathLabelPair[] | null;
 }
 
 export interface PageResponse {

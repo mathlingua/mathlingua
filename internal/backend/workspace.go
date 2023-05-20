@@ -506,6 +506,9 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 			if n.Text == "!=" {
 				return "\\neq", true
 			}
+			if n.Text == "&" {
+				return "\\:\\&\\:", true
+			}
 			return n.Text, true
 		case *ast.EnclosedNonCommandOperatorTarget:
 			text := w.formulationNodeToWritten(path, n.Target)

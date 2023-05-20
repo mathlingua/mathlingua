@@ -31,6 +31,10 @@ testv:
 release:
 	./scripts/build-releases.sh --notarize
 
+.PHONY: artifacts
+artifacts:
+	./scripts/build-artifacts.sh
+
 .PHONY: vet
 vet:
 	go vet ./...
@@ -45,7 +49,7 @@ longlines:
 
 .PHONY: clean
 clean:
-	go clean
+	go clean && rm -Rf web/build
 
 .PHONY: format
 format:

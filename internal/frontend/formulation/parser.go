@@ -730,7 +730,7 @@ func (fp *formulationParser) pseudoExpression(
 			children = append(children, &set)
 		} else if sig, ok := fp.signature(); ok {
 			children = append(children, &sig)
-		} else if cmd, ok := fp.commandOperatorTarget(); ok {
+		} else if cmd, ok := fp.infixCommandExpression(); ok {
 			children = append(children, &cmd)
 		} else if cmd, ok := fp.commandExpression(false); ok {
 			children = append(children, &cmd)
@@ -1250,7 +1250,7 @@ func (fp *formulationParser) operatorKind() (ast.OperatorKind, bool) {
 		return &nonEnclosed, ok
 	}
 
-	if cmd, ok := fp.commandOperatorTarget(); ok {
+	if cmd, ok := fp.infixCommandExpression(); ok {
 		return &cmd, ok
 	}
 
@@ -1350,28 +1350,28 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	}, true
 }
 
-func (fp *formulationParser) commandOperatorTarget() (ast.CommandOperatorTarget, bool) {
-	start := fp.lexer.Position()
+func (fp *formulationParser) infixCommandExpression() (ast.InfixCommandExpression, bool) {
 	id := fp.lexer.Snapshot()
 	cmd, ok := fp.commandExpression(true)
 	if !ok {
 		fp.lexer.RollBack(id)
-		return ast.CommandOperatorTarget{}, false
+		return ast.InfixCommandExpression{}, false
 	}
 
 	if !fp.has(ast.Slash) {
 		fp.lexer.RollBack(id)
-		return ast.CommandOperatorTarget{}, false
+		return ast.InfixCommandExpression{}, false
 	}
 
 	fp.expect(ast.Slash)
 	fp.lexer.Commit(id)
-	return ast.CommandOperatorTarget{
-		Command: cmd,
-		CommonMetaData: ast.CommonMetaData{
-			Start: fp.getShiftedPosition(start),
-			Key:   fp.keyGen.Next(),
-		},
+	return ast.InfixCommandExpression{
+		Names:               cmd.Names,
+		CurlyArg:            cmd.CurlyArg,
+		NamedArgs:           cmd.NamedArgs,
+		ParenArgs:           cmd.ParenArgs,
+		CommonMetaData:      cmd.CommonMetaData,
+		FormulationMetaData: cmd.FormulationMetaData,
 	}, true
 }
 

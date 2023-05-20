@@ -53,7 +53,7 @@ func (*ExpressionColonArrowItem) FormulationNodeKind()               {}
 func (*ExpressionColonDashArrowItem) FormulationNodeKind()           {}
 func (*EnclosedNonCommandOperatorTarget) FormulationNodeKind()       {}
 func (*NonEnclosedNonCommandOperatorTarget) FormulationNodeKind()    {}
-func (*CommandOperatorTarget) FormulationNodeKind()                  {}
+func (*InfixCommandExpression) FormulationNodeKind()                 {}
 func (*CommandId) FormulationNodeKind()                              {}
 func (*PrefixOperatorId) FormulationNodeKind()                       {}
 func (*PostfixOperatorId) FormulationNodeKind()                      {}

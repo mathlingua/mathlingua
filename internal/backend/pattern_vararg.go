@@ -42,7 +42,7 @@ func (p *FunctionColonEqualsNamePattern) GetVarArgData() VarArgPatternData {
 func (p *InfixCommandOperatorPattern) GetVarArgData() VarArgPatternData {
 	return VarArgPatternData{}
 }
-func (p *InfixCommandTargetPattern) GetVarArgData() VarArgPatternData {
+func (p *InfixCommandPattern) GetVarArgData() VarArgPatternData {
 	return VarArgPatternData{}
 }
 func (p *CommandPattern) GetVarArgData() VarArgPatternData {

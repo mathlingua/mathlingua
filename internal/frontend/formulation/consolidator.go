@@ -217,7 +217,7 @@ func toNode(
 				Rhs:    lhs,
 			}
 		}
-	case *ast.CommandOperatorTarget:
+	case *ast.InfixCommandExpression:
 		// for example \f/
 		target := top
 		lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
@@ -369,7 +369,7 @@ func isOperator(node ast.FormulationNodeKind) bool {
 	case *ast.NonEnclosedNonCommandOperatorTarget:
 		// for example + or **
 		return true
-	case *ast.CommandOperatorTarget:
+	case *ast.InfixCommandExpression:
 		// for example \f/
 		return true
 	case *ast.PseudoTokenNode:
@@ -414,7 +414,7 @@ func isSpecialOperator(node ast.FormulationNodeKind) bool {
 	case *ast.NonEnclosedNonCommandOperatorTarget:
 		// for example + or **
 		return false
-	case *ast.CommandOperatorTarget:
+	case *ast.InfixCommandExpression:
 		// for example \f/
 		return false
 	case *ast.PseudoTokenNode:
@@ -595,7 +595,7 @@ func getPrecedenceAssociativity(
 	case *ast.NonEnclosedNonCommandOperatorTarget:
 		// for example + or **
 		return getOperatorPrecedenceAssociativityByText(node.Text, itemType)
-	case *ast.CommandOperatorTarget:
+	case *ast.InfixCommandExpression:
 		// for example \f/
 		return command_infix_precedence, command_infix_associativity
 	case *ast.PseudoTokenNode:

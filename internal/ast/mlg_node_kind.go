@@ -128,7 +128,7 @@ func (*ExpressionColonArrowItem) MlgNodeKind()               {}
 func (*ExpressionColonDashArrowItem) MlgNodeKind()           {}
 func (*EnclosedNonCommandOperatorTarget) MlgNodeKind()       {}
 func (*NonEnclosedNonCommandOperatorTarget) MlgNodeKind()    {}
-func (*CommandOperatorTarget) MlgNodeKind()                  {}
+func (*InfixCommandExpression) MlgNodeKind()                 {}
 func (*CommandId) MlgNodeKind()                              {}
 func (*PrefixOperatorId) MlgNodeKind()                       {}
 func (*PostfixOperatorId) MlgNodeKind()                      {}

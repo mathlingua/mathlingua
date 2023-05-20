@@ -411,7 +411,7 @@ type OperatorKind interface {
 
 func (*EnclosedNonCommandOperatorTarget) OperatorKind()    {}
 func (*NonEnclosedNonCommandOperatorTarget) OperatorKind() {}
-func (*CommandOperatorTarget) OperatorKind()               {}
+func (*InfixCommandExpression) OperatorKind()              {}
 
 // [x] or [x + y]
 type EnclosedNonCommandOperatorTarget struct {
@@ -431,8 +431,12 @@ type NonEnclosedNonCommandOperatorTarget struct {
 	FormulationMetaData FormulationMetaData
 }
 
-type CommandOperatorTarget struct {
-	Command             CommandExpression
+// \function:on{A}:to{B}/
+type InfixCommandExpression struct {
+	Names               []NameForm
+	CurlyArg            *CurlyArg
+	NamedArgs           *[]NamedArg
+	ParenArgs           *[]ExpressionKind
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

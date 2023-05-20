@@ -44,7 +44,7 @@ func (*OrdinalPattern) PatternKind()                  {}
 func (*NameColonEqualsPatternPattern) PatternKind()  {}
 func (*FunctionColonEqualsNamePattern) PatternKind() {}
 func (*InfixCommandOperatorPattern) PatternKind()    {}
-func (*InfixCommandTargetPattern) PatternKind()      {}
+func (*InfixCommandPattern) PatternKind()            {}
 func (*CommandPattern) PatternKind()                 {}
 func (*NamedGroupPattern) PatternKind()              {}
 func (*ChainExpressionPattern) PatternKind()         {}
@@ -166,12 +166,16 @@ type VarArgPatternData struct {
 
 type InfixCommandOperatorPattern struct {
 	Lhs      FormPatternKind
-	Operator CommandPattern
+	Operator InfixCommandPattern
 	Rhs      FormPatternKind
 }
 
-type InfixCommandTargetPattern struct {
-	Command CommandPattern
+type InfixCommandPattern struct {
+	Signature   string
+	Names       []NameFormPattern
+	CurlyArg    *CurlyPattern
+	NamedGroups *[]NamedGroupPattern
+	ParenArgs   *[]NameFormPattern
 }
 
 type CommandPattern struct {
@@ -422,6 +426,29 @@ func ToCommandPattern(id ast.CommandId) CommandPattern {
 		NamedGroups: toNamedGroupPatterns(id.NamedParams),
 		CurlyArg:    toCurlyArg(id.CurlyParam),
 		ParenArgs:   toParenArgs(id.ParenParams),
+	}
+}
+
+func ToInfixCommandPattern(id ast.InfixCommandOperatorId) InfixCommandPattern {
+	names := make([]NameFormPattern, 0)
+	for _, n := range id.Operator.Names {
+		names = append(names, NameFormPattern{
+			Text:            n.Text,
+			IsStropped:      false,
+			HasQuestionMark: false,
+			VarArg: VarArgPatternData{
+				IsVarArg:     false,
+				VarArgNames:  nil,
+				VarArgBounds: nil,
+			},
+		})
+	}
+	return InfixCommandPattern{
+		Signature:   GetSignatureStringFromInfixCommandId(id.Operator),
+		Names:       names,
+		NamedGroups: toNamedGroupPatterns(id.Operator.NamedParams),
+		CurlyArg:    toCurlyArg(id.Operator.CurlyParam),
+		ParenArgs:   toParenArgs(id.Operator.ParenParams),
 	}
 }
 

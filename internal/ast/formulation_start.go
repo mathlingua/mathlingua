@@ -41,7 +41,7 @@ func (n *ExpressionColonArrowItem) Start() Position               { return n.Com
 func (n *ExpressionColonDashArrowItem) Start() Position           { return n.CommonMetaData.Start }
 func (n *EnclosedNonCommandOperatorTarget) Start() Position       { return n.CommonMetaData.Start }
 func (n *NonEnclosedNonCommandOperatorTarget) Start() Position    { return n.CommonMetaData.Start }
-func (n *CommandOperatorTarget) Start() Position                  { return n.CommonMetaData.Start }
+func (n *InfixCommandExpression) Start() Position                 { return n.CommonMetaData.Start }
 func (n *CommandId) Start() Position                              { return n.CommonMetaData.Start }
 func (n *PrefixOperatorId) Start() Position                       { return n.CommonMetaData.Start }
 func (n *PostfixOperatorId) Start() Position                      { return n.CommonMetaData.Start }

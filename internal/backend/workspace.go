@@ -256,19 +256,20 @@ func (w *workspace) aliasToWritten(path ast.Path, node ast.Alias) string {
 	return w.formulationNodeToWritten(path, node.Root)
 }
 
-func (w *workspace) commandInfixToWritten(
+func (w *workspace) infixCommandToWritten(
 	path ast.Path,
-	node *ast.CommandOperatorTarget,
+	node *ast.InfixCommandExpression,
 ) (string, bool) {
-	return w.commandToWritten(path, &node.Command, true)
+	sig := GetSignatureStringFromInfixCommand(*node)
+	return w.toWrittenImpl(path, node, sig)
 }
 
-func (w *workspace) commandToWritten(
-	path ast.Path,
-	node *ast.CommandExpression,
-	isInfix bool,
-) (string, bool) {
-	sig := GetSignatureStringFromCommand(*node, isInfix)
+func (w *workspace) commandToWritten(path ast.Path, node *ast.CommandExpression) (string, bool) {
+	sig := GetSignatureStringFromCommand(*node)
+	return w.toWrittenImpl(path, node, sig)
+}
+
+func (w *workspace) toWrittenImpl(path ast.Path, node ast.MlgNodeKind, sig string) (string, bool) {
 	found := false
 	if id, ok := w.signaturesToIds[sig]; ok {
 		if summary, ok := w.summaries[id]; ok {
@@ -536,9 +537,9 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 			// the original text
 			return text, true
 		case *ast.CommandExpression:
-			return w.commandToWritten(path, n, false)
-		case *ast.CommandOperatorTarget:
-			return w.commandToWritten(path, &n.Command, true)
+			return w.commandToWritten(path, n)
+		case *ast.InfixCommandExpression:
+			return w.infixCommandToWritten(path, n)
 		case *ast.AsExpression:
 			return w.formulationNodeToWritten(path, n.Lhs), true
 		default:
@@ -872,7 +873,18 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *works
 		return
 	}
 	if cmd, ok := node.(*ast.CommandExpression); ok {
-		sig := GetSignatureStringFromCommand(*cmd, false)
+		sig := GetSignatureStringFromCommand(*cmd)
+		if _, ok := w.signaturesToIds[sig]; !ok {
+			w.tracker.Append(frontend.Diagnostic{
+				Type:     frontend.Error,
+				Origin:   frontend.BackendOrigin,
+				Message:  fmt.Sprintf("Unrecognized signature %s", sig),
+				Path:     path,
+				Position: node.GetCommonMetaData().Start,
+			})
+		}
+	} else if cmd, ok := node.(*ast.InfixCommandExpression); ok {
+		sig := GetSignatureStringFromInfixCommand(*cmd)
 		if _, ok := w.signaturesToIds[sig]; !ok {
 			w.tracker.Append(frontend.Diagnostic{
 				Type:     frontend.Error,

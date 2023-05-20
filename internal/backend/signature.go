@@ -65,7 +65,7 @@ func GetSignatureStringFromId(id ast.IdItem) (string, bool) {
 	}
 }
 
-func GetSignatureStringFromCommand(cmd ast.CommandExpression, isInfix bool) string {
+func GetSignatureStringFromCommand(cmd ast.CommandExpression) string {
 	names := make([]string, 0)
 	namedGroups := make([]string, 0)
 
@@ -80,7 +80,27 @@ func GetSignatureStringFromCommand(cmd ast.CommandExpression, isInfix bool) stri
 	sig := ast.Signature{
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
-		IsInfix:         isInfix,
+		IsInfix:         false,
+	}
+	return sig.ToCode(ast.NoOp)
+}
+
+func GetSignatureStringFromInfixCommand(cmd ast.InfixCommandExpression) string {
+	names := make([]string, 0)
+	namedGroups := make([]string, 0)
+
+	for _, n := range cmd.Names {
+		names = append(names, n.Text)
+	}
+
+	for _, ng := range *cmd.NamedArgs {
+		namedGroups = append(namedGroups, ng.Name.Text)
+	}
+
+	sig := ast.Signature{
+		MainNames:       names,
+		NamedGroupNames: namedGroups,
+		IsInfix:         true,
 	}
 	return sig.ToCode(ast.NoOp)
 }

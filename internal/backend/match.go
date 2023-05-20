@@ -69,8 +69,8 @@ func Match(node ast.MlgNodeKind, pattern PatternKind) MatchResult {
 		return matchInfixOperatorCommand(node, *p)
 	case *ChainExpressionPattern:
 		return matchChainExpression(node, *p)
-	case *InfixCommandTargetPattern:
-		return matchInfixCommandTarget(node, *p)
+	case *InfixCommandPattern:
+		return matchInfixCommandExpression(node, *p)
 	case *CommandPattern:
 		return matchCommand(node, *p)
 	case *SpecAliasPattern:
@@ -430,9 +430,7 @@ func matchInfixOperatorCommand(
 	switch n := node.(type) {
 	case *ast.InfixCommandOperatorId:
 		lhsMatch := Match(n.Lhs, pattern.Lhs)
-		opMatch := matchInfixCommandTarget(&n.Operator, InfixCommandTargetPattern{
-			Command: pattern.Operator,
-		})
+		opMatch := matchInfixCommandExpression(&n.Operator, pattern.Operator)
 		rhsMatch := Match(n.Rhs, pattern.Rhs)
 		return unionMatches(lhsMatch, unionMatches(opMatch, rhsMatch))
 	default:
@@ -445,15 +443,27 @@ func matchInfixOperatorCommand(
 	}
 }
 
-func matchInfixCommandTarget(node ast.MlgNodeKind, pattern InfixCommandTargetPattern) MatchResult {
+func matchInfixCommandExpression(node ast.MlgNodeKind, pattern InfixCommandPattern) MatchResult {
 	switch n := node.(type) {
-	case *ast.CommandOperatorTarget:
-		return matchCommand(&n.Command, pattern.Command)
+	case *ast.InfixCommandExpression:
+		nodeSig := GetSignatureStringFromInfixCommand(*n)
+		if nodeSig != pattern.Signature {
+			return MatchResult{
+				MatchMakesSense: false,
+			}
+		}
+		namesMatch := matchAllNames(n.Names, pattern.Names)
+		curlyMatch := matchCurlyArg(n.CurlyArg, pattern.CurlyArg)
+		namedArgsMatch := matchAllNamedArgs(n.NamedArgs, pattern.NamedGroups)
+		parensMatch := matchAllOptionalExpressionsToNames(n.ParenArgs, pattern.ParenArgs)
+		return unionMatches(namesMatch,
+			unionMatches(curlyMatch,
+				unionMatches(namedArgsMatch, parensMatch)))
 	case *ast.InfixCommandId:
-		namesMatch := matchAllNames(n.Names, pattern.Command.Names)
-		curlyMatch := matchCurlyParam(n.CurlyParam, pattern.Command.CurlyArg)
-		namedArgsMatch := matchAllNamedParams(n.NamedParams, pattern.Command.NamedGroups)
-		parensMatch := matchAllOptionalNames(n.ParenParams, pattern.Command.ParenArgs)
+		namesMatch := matchAllNames(n.Names, pattern.Names)
+		curlyMatch := matchCurlyParam(n.CurlyParam, pattern.CurlyArg)
+		namedArgsMatch := matchAllNamedParams(n.NamedParams, pattern.NamedGroups)
+		parensMatch := matchAllOptionalNames(n.ParenParams, pattern.ParenArgs)
 		return unionMatches(namesMatch,
 			unionMatches(curlyMatch,
 				unionMatches(namedArgsMatch, parensMatch)))
@@ -470,7 +480,7 @@ func matchInfixCommandTarget(node ast.MlgNodeKind, pattern InfixCommandTargetPat
 func matchCommand(node ast.MlgNodeKind, pattern CommandPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.CommandExpression:
-		nodeSig := GetSignatureStringFromCommand(*n, false)
+		nodeSig := GetSignatureStringFromCommand(*n)
 		if nodeSig != pattern.Signature {
 			return MatchResult{
 				MatchMakesSense: false,

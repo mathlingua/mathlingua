@@ -186,7 +186,7 @@ func (n *NonEnclosedNonCommandOperatorTarget) GetCommonMetaData() *CommonMetaDat
 	return &n.CommonMetaData
 }
 
-func (n *CommandOperatorTarget) GetCommonMetaData() *CommonMetaData  { return &n.CommonMetaData }
+func (n *InfixCommandExpression) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 func (n *CommandId) GetCommonMetaData() *CommonMetaData              { return &n.CommonMetaData }
 func (n *PrefixOperatorId) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
 func (n *PostfixOperatorId) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }

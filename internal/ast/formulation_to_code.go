@@ -298,11 +298,35 @@ func (n *NonEnclosedNonCommandOperatorTarget) ToCode(
 	return result
 }
 
-func (n *CommandOperatorTarget) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+func (n *InfixCommandExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return n.Command.ToCode(fn) + "/"
+	result := "\\"
+	for i, n := range n.Names {
+		if i > 0 {
+			result += "."
+		}
+		result += n.ToCode(fn)
+	}
+	if n.CurlyArg != nil {
+		result += n.CurlyArg.ToCode(fn)
+	}
+	if n.NamedArgs != nil {
+		for _, item := range *n.NamedArgs {
+			result += ":" + item.Name.ToCode(fn)
+			if item.CurlyArg != nil {
+				result += item.CurlyArg.ToCode(fn)
+			}
+		}
+	}
+	if n.ParenArgs != nil {
+		result += "("
+		result += commaSeparatedString(*n.ParenArgs, fn)
+		result += ")"
+	}
+	result += "/"
+	return result
 }
 
 func (n *CommandId) ToCode(fn func(node MlgNodeKind) (string, bool)) string {

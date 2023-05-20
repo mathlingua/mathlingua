@@ -112,7 +112,7 @@ func (n *NonEnclosedNonCommandOperatorTarget) GetFormulationMetaData() *Formulat
 	return &n.FormulationMetaData
 }
 
-func (n *CommandOperatorTarget) GetFormulationMetaData() *FormulationMetaData {
+func (n *InfixCommandExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 

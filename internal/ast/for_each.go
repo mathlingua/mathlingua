@@ -678,8 +678,17 @@ func (n *NonEnclosedNonCommandOperatorTarget) ForEach(fn func(subNode MlgNodeKin
 	// this doesn't have any sub nodes
 }
 
-func (n *CommandOperatorTarget) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(&n.Command)
+func (n *InfixCommandExpression) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachNameForm(n.Names, fn)
+	if n.CurlyArg != nil {
+		fn(n.CurlyArg)
+	}
+	if n.NamedArgs != nil {
+		forEachNamedArg(*n.NamedArgs, fn)
+	}
+	if n.ParenArgs != nil {
+		forEach(*n.ParenArgs, fn)
+	}
 }
 
 func (n *CommandId) ForEach(fn func(subNode MlgNodeKind)) {

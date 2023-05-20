@@ -30,23 +30,30 @@ type IMlg interface {
 	Version() string
 }
 
-func NewMlg(conf config.MlgConfig, logger ILogger) IMlg {
-	return &mlg{
-		logger: logger,
-		conf:   conf,
-	}
+func NewMlg(logger ILogger) IMlg {
+	m := mlg{}
+	m.initialize(logger)
+	return &m
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (m *mlg) initialize(logger ILogger) {
+	m.logger = logger
+	m.tracker = frontend.NewDiagnosticTracker()
+	m.conf = LoadMlgConfig(m.tracker)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type mlg struct {
-	logger ILogger
-	conf   config.MlgConfig
+	logger  ILogger
+	tracker frontend.IDiagnosticTracker
+	conf    config.MlgConfig
 }
 
 func (m *mlg) Check(paths []string, showJson bool, debug bool) {
-	workspace, diagnostics := backend.NewWorkspaceFromPaths(paths,
-		frontend.NewDiagnosticTracker())
+	workspace, diagnostics := backend.NewWorkspaceFromPaths(paths, m.tracker)
 
 	checkResult := workspace.Check()
 	diagnostics = append(diagnostics, checkResult.Diagnostics...)
@@ -148,7 +155,12 @@ func (m *mlg) printCheckStats(numErrors int, numWarnings int, numFilesProcessed 
 		filesText = "files"
 	}
 
-	m.logger.Log("")
+	if numErrors > 0 {
+		// if there are errors logged, then log a blank line before
+		// logging the summary
+		m.logger.Log("")
+	}
+
 	if numErrors > 0 {
 		m.logger.Failure(fmt.Sprintf("Processed %d %s and found %d %s and %d %s",
 			numFilesProcessed, filesText, numErrors, errorText, numWarnings, warningText))

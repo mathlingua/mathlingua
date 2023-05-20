@@ -18,18 +18,25 @@ package mlg
 
 import (
 	"fmt"
+	"mathlingua/internal/ast"
 	"mathlingua/internal/config"
+	"mathlingua/internal/frontend"
 	"os"
 	"path"
 )
 
 const mlg_conf_name = "mlg.conf"
 
-func LoadMlgConfig(logger ILogger) config.MlgConfig {
+func LoadMlgConfig(tracker frontend.IDiagnosticTracker) config.MlgConfig {
 	cwd, err := os.Getwd()
 	if err != nil {
-		logger.Warning(fmt.Sprintf("Could not determine if %s exists: "+
-			"Failed to determine the current working directory.\n", mlg_conf_name))
+		tracker.Append(frontend.Diagnostic{
+			Type:   frontend.Warning,
+			Origin: frontend.CliOrigin,
+			Message: fmt.Sprintf("Could not determine if %s exists: "+
+				"Failed to determine the current working directory.\n", mlg_conf_name),
+			Path: ast.ToPath(mlg_conf_name),
+		})
 		return config.MlgConfig{}
 	}
 
@@ -40,13 +47,23 @@ func LoadMlgConfig(logger ILogger) config.MlgConfig {
 	}
 
 	if err != nil {
-		logger.Error(fmt.Sprintf("An error occurred while reading %s: %s\n", mlg_conf_name, err))
+		tracker.Append(frontend.Diagnostic{
+			Type:    frontend.Error,
+			Origin:  frontend.CliOrigin,
+			Message: fmt.Sprintf("An error occurred while reading %s: %s\n", mlg_conf_name, err),
+			Path:    ast.ToPath(mlg_conf_name),
+		})
 		return config.MlgConfig{}
 	}
 
 	conf, err := config.ParseMlgConfig(string(content))
 	if err != nil {
-		logger.Error(fmt.Sprintf("An error occurred while parsing %s: %s\n", mlg_conf_name, err))
+		tracker.Append(frontend.Diagnostic{
+			Type:    frontend.Error,
+			Origin:  frontend.CliOrigin,
+			Message: fmt.Sprintf("An error occurred while parsing %s: %s\n", mlg_conf_name, err),
+			Path:    ast.ToPath(mlg_conf_name),
+		})
 		return config.MlgConfig{}
 	}
 

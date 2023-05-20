@@ -33,8 +33,7 @@ var checkCommand = &cobra.Command{
 		json, _ := cmd.Flags().GetBool("json")
 
 		logger := mlg.NewLogger()
-		conf := mlg.LoadMlgConfig(logger)
-		mlg.NewMlg(conf, logger).Check(args, json, debug)
+		mlg.NewMlg(logger).Check(args, json, debug)
 	},
 }
 

@@ -18,10 +18,11 @@
   margin-right: auto;
   background-color: transparent;
   border: none;
-  padding-top: 10px;
+  padding-top: 11px;
   padding-left: 15px;
   padding-right: 5px;
   font-family: inherit;
+  text-decoration: none;
   color: black;
   font-size: 1em;
 }
@@ -54,6 +55,11 @@
   align-items: flex-end;
   display: flex;
   cursor: pointer;
+  text-decoration: none;
+}
+
+.outlineButton:visited {
+  color: black;
 }
 
 .bold {

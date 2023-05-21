@@ -4,12 +4,16 @@ import styles from './MainPage.module.css';
 
 import MenuIcon from '@rsuite/icons/Menu';
 import { useFetch } from 'usehooks-ts';
-import { PageResponse } from '../types';
+import { PageResponse, PathsResponse } from '../types';
 import { Sidebar } from '../components/Sidebar';
 import { DocumentView } from '../components/ast/DocumentView';
 import { Button } from '../design/Button';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 export function MainPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [windowWidth, setWindowWidth] = React.useState(window.innerWidth);
   const isOnSmallScreen = determineIsOnSmallScreen(windowWidth);
   const [open, setOpen] = React.useState(!isOnSmallScreen);
@@ -20,17 +24,31 @@ export function MainPage() {
   });
 
   const [activePath, setActivePath] = React.useState<string>('');
-  const { data } = useFetch<PageResponse>(`/api/page?path=${encodeURIComponent(activePath)}`);
+  const { data: activePathData } = useFetch<PageResponse>(
+    `/api/page?path=${encodeURIComponent(activePath)}`);
+  const { data: pathsData } = useFetch<PathsResponse>('/api/paths');
+
+  React.useEffect(() => {
+    const first = pathsData?.Paths?.[0];
+    if (location.pathname === "/" && first !== undefined) {
+      navigate(first.Path);
+    }
+  }, [pathsData]);
+
+  React.useEffect(() => {
+    const pathname = location.pathname;
+    const trimmedPathname = pathname.startsWith('/') ? pathname.substring(1) : pathname;
+    setActivePath(trimmedPathname);
+  }, [location.pathname]);
 
   const sidebar = (
     <div className={styles.sidebar}>
       <Sidebar
+        selectedPath={activePath}
+        allPaths={pathsData?.Paths ?? null}
         onSelect={(pathItem) => {
-          if (pathItem.path.endsWith('.math')) {
-            setActivePath(pathItem.path);
-            if (isOnSmallScreen) {
-              setOpen(false);
-            }
+          if (pathItem.endsWith('.math') && isOnSmallScreen) {
+            setOpen(false);
           }
         }}/>
     </div>
@@ -38,9 +56,9 @@ export function MainPage() {
 
   const mainContent = (
     <div className={styles.mainContent}>
-      {data?.Document && (
+      {activePathData?.Document && (
         <div className={styles.page}>
-          <DocumentView node={data?.Document} isOnSmallScreen={isOnSmallScreen} />
+          <DocumentView node={activePathData?.Document} isOnSmallScreen={isOnSmallScreen} />
         </div>
       )}
     </div>

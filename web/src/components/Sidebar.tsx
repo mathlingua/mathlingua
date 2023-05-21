@@ -2,36 +2,38 @@ import React from 'react';
 
 import styles from './Sidebar.module.css';
 
-import { useFetch } from 'usehooks-ts';
-import { PathsResponse } from '../types';
+import { PathLabelPair } from '../types';
 import { TreeNodeList } from './TreeNodeList';
-import { TreeNode, buildTreeNode } from './tree';
+import { buildTreeNode } from './tree';
 
 export interface SidebarProps {
-  onSelect: (path: TreeNode) => void;
+  selectedPath: string;
+  allPaths: PathLabelPair[] | null;
+  onSelect: (path: string) => void;
 }
 
 export function Sidebar(props: SidebarProps) {
-  const [selectedPathItem, setSelectedPathItem] = React.useState<TreeNode | null>(null);
-  const { data } = useFetch<PathsResponse>('/api/paths');
-  const paths = data?.Paths
-  const { tree } = buildTreeNode(paths ?? []);
+  const { pathToNode, pathToParent } = React.useMemo(
+    () => buildTreeNode(props.allPaths ?? []), [props.allPaths]);
 
-  if (data === undefined) {
+    let selectedPath = props.selectedPath;
+  while (selectedPath.endsWith('/')) {
+    selectedPath = selectedPath.substring(0, selectedPath.length-1);
+  }
+
+  const selectedNode =
+    selectedPath.endsWith('.math') ?
+      pathToParent.get(selectedPath) :
+      pathToNode.get(selectedPath);
+
+  if (!selectedNode) {
     return <div className={styles.loading}>Loading...</div>;
   }
 
   return (
     <TreeNodeList
-      node={selectedPathItem ?? tree}
-      onSelect={(item) => {
-        if (item.children.length > 0) {
-          setSelectedPathItem(item);
-        }
-        props.onSelect(item);
-      }}
-      onGoToParent={(parent) => {
-        setSelectedPathItem(parent);
-      }} />
+      node={selectedNode}
+      selectedPath={selectedPath}
+      onSelected={props.onSelect} />
   );
 }

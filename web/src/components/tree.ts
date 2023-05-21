@@ -8,23 +8,44 @@ export interface TreeNode {
   children: TreeNode[];
 }
 
-export function buildTreeNode(pairs: PathLabelPair[]): { tree: TreeNode; } {
+export interface BuildTreeNodeResult {
+  pathToNode: Map<string, TreeNode>;
+  pathToParent: Map<string, TreeNode>;
+}
+
+export function buildTreeNode(pairs: PathLabelPair[]): BuildTreeNodeResult {
   const sentinal: TreeNode = {
-    label: '',
+    label: 'sentinal',
     name: '',
     path: '',
     parent: null,
     children: [],
   };
+
+  const pathToParent = new Map<string, TreeNode>();
+  pathToParent.set('', sentinal);
+
+  const pathToNode = new Map<string, TreeNode>();
+  pathToNode.set('', sentinal);
+
   for (const pair of pairs) {
-    populateTreeNode(sentinal, pair.Path.split('/'), pair.Label, 0);
+    populateTreeNode(sentinal, pair.Path.split('/'), pair.Label, 0, pathToNode, pathToParent);
   }
+
   return {
-    tree: sentinal,
+    pathToNode,
+    pathToParent,
   };
 }
 
-function populateTreeNode(root: TreeNode, parts: string[], label: string, index: number) {
+function populateTreeNode(
+  root: TreeNode,
+  parts: string[],
+  label: string,
+  index: number,
+  pathToNode: Map<string, TreeNode>,
+  pathToParent: Map<string, TreeNode>,
+) {
   if (index >= parts.length) {
     return;
   }
@@ -51,7 +72,10 @@ function populateTreeNode(root: TreeNode, parts: string[], label: string, index:
       children: [],
     };
     root.children.push(nextRoot);
+
+    pathToNode.set(path, nextRoot);
+    pathToParent.set(path, root);
   }
 
-  populateTreeNode(nextRoot, parts, label, index+1);
+  populateTreeNode(nextRoot, parts, label, index+1, pathToNode, pathToParent);
 }

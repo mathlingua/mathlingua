@@ -4,49 +4,46 @@ import UpIcon from '@rsuite/icons/ArrowUp';
 
 import styles from './TreeNodeList.module.css';
 import { TreeNode } from './tree';
-import { Button } from '../design/Button';
+import { Link, useNavigate } from 'react-router-dom';
 
 export interface TreeNodeListProps {
+  selectedPath: string;
   node: TreeNode;
-  onSelect: (item: TreeNode) => void;
-  onGoToParent: (parent: TreeNode) => void;
+  onSelected(path: string): void;
 }
 
 export function TreeNodeList(props: TreeNodeListProps) {
-  const first = props.node.children?.find(node => node.children.length === 0);
-  const [selectedItem, setSelectedItem] = React.useState(first);
-  const onSelect = props.onSelect;
+  const navigate = useNavigate();
+
   React.useEffect(() => {
-    if (first) {
-      onSelect(first);
+    if (!props.selectedPath.endsWith('.math')) {
+      const first = props.node.children.find(n => n.path.endsWith('.math'));
+      if (first) {
+        navigate(first.path);
+      }
     }
-  }, []);
+  }, [props.selectedPath]);
+
   return (
     <div className={styles.wrapper}>
       <div className={styles.outline}>
         {props.node.parent == null ? 'Outline' : null}
         {props.node.parent &&
-          <Button ariaLabel='Go to parent directory'
-                  onClick={() => {
-                    props.onGoToParent(props.node.parent!);
-                  }}
-                  flat
-                  className={styles.outlineButton}>
+          <Link to={props.node.parent.path}
+                className={styles.outlineButton}
+                onClick={() => props.onSelected(props.node.parent!.path)}>
             {props.node.label}
             <UpIcon />
-          </Button>}
+          </Link>}
       </div>
       {props.node.children.map(item => (
-        <button className={getItemClassName(selectedItem?.path === item.path,
-                                            item.children.length > 0)}
-                key={item.path}
-                onClick={(event) => {
-                  event.preventDefault();
-                  setSelectedItem(item);
-                  props.onSelect(item);
-                }}>
+        <Link to={item.path}
+              className={getItemClassName(props.selectedPath === item.path,
+                                          item.children.length > 0)}
+              key={item.path}
+              onClick={() => props.onSelected(item.path)}>
           {item.label}
-        </button>
+        </Link>
       ))}
     </div>
   );

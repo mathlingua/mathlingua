@@ -42,6 +42,7 @@ export interface PageResponse {
 
 export interface MetaData {
   Start: Position;
+  Id: string;
 }
 
 export interface TextBlock {

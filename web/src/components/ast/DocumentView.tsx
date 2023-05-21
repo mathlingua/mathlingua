@@ -12,7 +12,7 @@ export const DocumentView = (props: DocumentViewProps) => {
     <>
       {
         props.node.Nodes?.map((node, index) => (
-          <span key={index}>
+          <span id={node?.MetaData.Id ?? ''}  key={index}>
             <TopLevelNodeKindView node={node} isOnSmallScreen={props.isOnSmallScreen} />
           </span>
         ))

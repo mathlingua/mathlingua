@@ -629,6 +629,12 @@ func (w *workspace) initializePhase4Entries() {
 		for _, item := range doc.Nodes {
 			id, idOk := GetPhase4MetaId(item)
 			if idOk {
+				switch n := item.(type) {
+				case *phase4.TextBlock:
+					n.MetaData.Id = id
+				case *phase4.Group:
+					n.MetaData.Id = id
+				}
 				w.phase4Entries[id] = item
 			}
 		}

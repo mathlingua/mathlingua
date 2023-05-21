@@ -38,6 +38,7 @@ const (
 type MetaData struct {
 	Start ast.Position
 	Key   int
+	Id    string
 }
 
 type Node interface {

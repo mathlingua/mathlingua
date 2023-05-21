@@ -17,6 +17,8 @@
 package backend
 
 import (
+	"fmt"
+	"hash/fnv"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend/phase4"
 )
@@ -40,6 +42,10 @@ func GetPhase4MetaId(node phase4.TopLevelNodeKind) (string, bool) {
 			}
 		}
 		return metaId, found
+	case *phase4.TextBlock:
+		method := fnv.New32()
+		method.Write([]byte(tl.Text))
+		return fmt.Sprintf("%d", method.Sum32()), true
 	default:
 		return "", false
 	}

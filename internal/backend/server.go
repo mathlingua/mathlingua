@@ -47,38 +47,48 @@ func StartServer(port int, conf config.MlgConfig) {
 	}).Methods("GET")
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		workspace = initWorkspace()
-		if r.URL != nil && (r.URL.Path == "/" || r.URL.Path == "/index.html") {
-			bytes, err := embed.FS.ReadFile(web.Assets, path.Join("build", "index.html"))
-			if err != nil {
-				// report an error to the console, but don't fail loading the index.html
-				// page without any customization
-				fmt.Printf("Could not customize the docs based on the Mlg config: %s", err)
-			} else {
-				content := string(bytes)
 
-				// set the title
-				content = strings.Replace(content, "<title></title>",
-					fmt.Sprintf("<title>%s</title>", conf.View.Title), 1)
-
-				// set the description
-				rawDescription := strings.ReplaceAll(conf.View.Description, "\"", "\\\"")
-				descriptionHtml := fmt.Sprintf(
-					"<meta name=\"description\" content=\"%s\"/>", rawDescription)
-				content = strings.Replace(content,
-					"<meta name=\"description\" content=\"\"/>", descriptionHtml, 1)
-
-				// set the keywords
-				rawKeywords := strings.ReplaceAll(conf.View.Keywords, "\"", "\\\"")
-				keywordsHtml := fmt.Sprintf("<meta name=\"keywords\" content=\"%s\"/>", rawKeywords)
-				content = strings.Replace(content,
-					"<meta name=\"keywords\" content=\"\"/>", keywordsHtml, 1)
-
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(content))
-				return
-			}
+		// if the URL path cannot be determined, or corresponds to a static asset,
+		// then let the default handler handle the request
+		if r.URL == nil || strings.HasPrefix(r.URL.Path, "/static") {
+			web.AssetHandler{}.ServeHTTP(w, r)
+			return
 		}
-		web.AssetHandler{}.ServeHTTP(w, r)
+
+		// otherwise fall back to responding with the contents of index.html.
+		// This is needed to support client-side route handling.  Also, the
+		// content of index.html is modified (title, description, etc.) based
+		// on the user's configuration.
+		bytes, err := embed.FS.ReadFile(web.Assets, path.Join("build", "index.html"))
+		if err != nil {
+			// report an error to the console, but don't fail loading the index.html
+			// page without any customization
+			fmt.Printf("Could not customize the docs based on the Mlg config: %s", err)
+			web.AssetHandler{}.ServeHTTP(w, r)
+			return
+		}
+
+		content := string(bytes)
+
+		// set the title
+		content = strings.Replace(content, "<title></title>",
+			fmt.Sprintf("<title>%s</title>", conf.View.Title), 1)
+
+		// set the description
+		rawDescription := strings.ReplaceAll(conf.View.Description, "\"", "\\\"")
+		descriptionHtml := fmt.Sprintf(
+			"<meta name=\"description\" content=\"%s\"/>", rawDescription)
+		content = strings.Replace(content,
+			"<meta name=\"description\" content=\"\"/>", descriptionHtml, 1)
+
+		// set the keywords
+		rawKeywords := strings.ReplaceAll(conf.View.Keywords, "\"", "\\\"")
+		keywordsHtml := fmt.Sprintf("<meta name=\"keywords\" content=\"%s\"/>", rawKeywords)
+		content = strings.Replace(content,
+			"<meta name=\"keywords\" content=\"\"/>", keywordsHtml, 1)
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(content))
 	})
 
 	fmt.Printf("Visit http://localhost:%d to view your documents\n", port)

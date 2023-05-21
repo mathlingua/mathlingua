@@ -101,6 +101,11 @@ type PageResponse struct {
 	Document    phase4.Document
 }
 
+type EntryResponse struct {
+	Error string
+	Entry phase4.TopLevelNodeKind
+}
+
 type CheckResult struct {
 	Diagnostics []frontend.Diagnostic
 }
@@ -122,6 +127,7 @@ type IWorkspace interface {
 	DocumentCount() int
 	Paths() []PathLabelPair
 	GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Diagnostic)
+	GetEntry(id string) (phase4.TopLevelNodeKind, error)
 	Check() CheckResult
 }
 
@@ -176,14 +182,21 @@ func (w *workspace) Paths() []PathLabelPair {
 
 func (w *workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Diagnostic) {
 	doc := w.astRoot.Documents[path]
-	keyToFormulationStr := make(map[int]string, 0)
-	for i := range doc.Items {
-		w.formulationLikeToString(path, doc.Items[i], keyToFormulationStr)
-	}
 	phase4Doc := w.phase4Root.Documents[path]
-	inlineProcessForRendering(&phase4Doc)
-	w.updateFormulationStrings(path, &phase4Doc, keyToFormulationStr)
-	return phase4Doc, w.getDiagnosticsForPath(path)
+	result := w.getRenderedNode(path, &phase4Doc, &doc)
+	resultDoc, _ := result.(*phase4.Document)
+	return *resultDoc, w.getDiagnosticsForPath(path)
+}
+
+func (w *workspace) GetEntry(id string) (phase4.TopLevelNodeKind, error) {
+	phase4Entry, phase4Ok := w.phase4Entries[id]
+	astEntry, astOk := w.topLevelEntries[id]
+	if !phase4Ok || !astOk {
+		return nil, fmt.Errorf("An entry with id %s does not exist", id)
+	}
+	result := w.getRenderedNode(ast.ToPath(""), phase4Entry, astEntry)
+	castResult, _ := result.(phase4.TopLevelNodeKind)
+	return castResult, nil
 }
 
 func (w *workspace) Check() CheckResult {
@@ -215,6 +228,20 @@ func (w *workspace) initialize(contents []PathLabelContent) {
 	w.initializeSummaries()
 	w.initializePhase4Entries()
 	w.initializeTopLevelEntries()
+}
+
+func (w *workspace) getRenderedNode(
+	path ast.Path,
+	phase4Node phase4.Node,
+	astNode ast.MlgNodeKind,
+) phase4.Node {
+	// make a copy of the input node to return
+	result := phase4Node
+	keyToFormulationStr := make(map[int]string, 0)
+	w.formulationLikeToString(path, astNode, keyToFormulationStr)
+	inlineProcessForRendering(result)
+	w.updateFormulationStrings(path, result, keyToFormulationStr)
+	return result
 }
 
 func (w *workspace) formulationLikeToString(

@@ -42,6 +42,9 @@ func StartServer(port int, conf config.MlgConfig) {
 	router.HandleFunc("/api/page", func(w http.ResponseWriter, r *http.Request) {
 		page(workspace, w, r)
 	}).Methods("GET")
+	router.HandleFunc("/api/entry", func(w http.ResponseWriter, r *http.Request) {
+		entry(workspace, w, r)
+	}).Methods("GET")
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		workspace = initWorkspace()
 		if r.URL != nil && (r.URL.Path == "/" || r.URL.Path == "/index.html") {
@@ -114,6 +117,25 @@ func page(workspace IWorkspace, writer http.ResponseWriter, request *http.Reques
 	resp := PageResponse{
 		Diagnostics: diagnostics,
 		Document:    doc,
+	}
+
+	writeResponse(writer, &resp)
+}
+
+func entry(workspace IWorkspace, writer http.ResponseWriter, request *http.Request) {
+	setJsonContentKind(writer)
+
+	id := request.URL.Query().Get("id")
+	entry, err := workspace.GetEntry(id)
+
+	errStr := ""
+	if err != nil {
+		errStr = err.Error()
+	}
+
+	resp := EntryResponse{
+		Error: errStr,
+		Entry: entry,
 	}
 
 	writeResponse(writer, &resp)

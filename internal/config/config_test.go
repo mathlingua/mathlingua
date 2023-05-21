@@ -77,3 +77,50 @@ anotherKey = some.value
 		sections: expectedSections,
 	}), mlglib.PrettyPrint(conf))
 }
+
+func TestParseConfigDuplicateKey(t *testing.T) {
+	text := `
+[section.1]
+key1 = value1
+key1 = value2
+`
+	_, err := ParseTocConfig(text)
+	assert.NotNil(t, err)
+	assert.Equal(t, "Duplicate key specified: key1", err.Error())
+}
+
+func TestParseConfigNoEquals(t *testing.T) {
+	text := `
+[section.1]
+key1 value1
+`
+	_, err := ParseTocConfig(text)
+	assert.NotNil(t, err)
+	assert.Equal(t,
+		"Expected `key = value` cut couldn't find `=` token: key1 value1", err.Error())
+}
+
+func TestTocConfigUnexpectedSection(t *testing.T) {
+	text := `
+[section.1]
+[key1 = value1
+`
+	_, err := ParseTocConfig(text)
+	assert.NotNil(t, err)
+	assert.Equal(t,
+		"Unexpected key value that looks like the start of a section: [key1 = value1", err.Error())
+}
+
+func TestTocConfigDuplicateSection(t *testing.T) {
+	text := `
+[section.1]
+key1 = value1
+
+[section.1]
+key2 = value2
+`
+	_, err := ParseTocConfig(text)
+	assert.NotNil(t, err)
+	assert.Equal(t,
+		"Duplicate defined section: section.1", err.Error())
+}

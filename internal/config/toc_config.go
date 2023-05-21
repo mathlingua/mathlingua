@@ -70,10 +70,16 @@ func ParseTocConfig(text string) (ITocConfig, error) {
 		if key == "*" {
 			if starIndex < 0 {
 				starIndex = i
-			} else {
-				return &tocConfig{}, fmt.Errorf("If * is specified it must be specified only once")
+				// it is ok to break because the ParseConfig function will report
+				// an error if the * key is specified more than once
+				break
 			}
 		}
+	}
+
+	if starIndex < 0 {
+		return &tocConfig{}, fmt.Errorf(
+			"A toc.config must contain either '* = keep' or '* = hide' as its last entry")
 	}
 
 	result := tocConfig{
@@ -82,24 +88,22 @@ func ParseTocConfig(text string) (ITocConfig, error) {
 		namesToHide:       mlglib.NewSet[string](),
 	}
 
-	if starIndex >= 0 {
-		if starIndex != len(keys)-1 {
-			return &tocConfig{}, fmt.Errorf("If * is specified it must be the last element specified")
-		} else {
-			if starValue, ok := sec.Get("*"); ok {
-				if starValue == string(Keep) {
-					result.setStarAction(Keep)
-				} else if starValue == string(Hide) {
-					result.setStarAction(Hide)
-				} else {
-					return &tocConfig{}, fmt.Errorf("* must have a value of either 'keep' or 'hide'")
-				}
-			} else {
-				return &tocConfig{}, fmt.Errorf("Could not determine the value for *")
-			}
-			keys = keys[0 : len(keys)-1]
-		}
+	if starIndex != len(keys)-1 {
+		return &tocConfig{}, fmt.Errorf("If * is specified it must be the last element specified")
 	}
+
+	if starValue, ok := sec.Get("*"); ok {
+		if starValue == string(Keep) {
+			result.setStarAction(Keep)
+		} else if starValue == string(Hide) {
+			result.setStarAction(Hide)
+		} else {
+			return &tocConfig{}, fmt.Errorf("* must have a value of either 'keep' or 'hide'")
+		}
+	} else {
+		return &tocConfig{}, fmt.Errorf("Could not determine the value for *")
+	}
+	keys = keys[0 : len(keys)-1]
 
 	for _, filename := range keys {
 		if label, ok := sec.Get(filename); ok {

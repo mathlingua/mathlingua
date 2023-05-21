@@ -64,3 +64,45 @@ file4 = hide
 	assert.True(t, showOther2)
 	assert.Equal(t, other2, other2)
 }
+
+func TestTocConfigWithoutStar(t *testing.T) {
+	text := `
+[toc]
+file 1 = File 1 Label
+`
+	_, err := ParseTocConfig(text)
+	assert.NotNil(t, err)
+	assert.Equal(t,
+		"A toc.config must contain either '* = keep' or '* = hide' as its last entry", err.Error())
+}
+
+func TestTocConfigStarNotLast(t *testing.T) {
+	text := `
+[toc]
+* = keep
+file 1 = File 1 Label
+`
+	_, err := ParseTocConfig(text)
+	assert.NotNil(t, err)
+	assert.Equal(t, "If * is specified it must be the last element specified", err.Error())
+}
+
+func TestTocConfigStarInvalidValue(t *testing.T) {
+	text := `
+[toc]
+* = invalid
+`
+	_, err := ParseTocConfig(text)
+	assert.NotNil(t, err)
+	assert.Equal(t, "* must have a value of either 'keep' or 'hide'", err.Error())
+}
+
+func TestTocConfigStarNoValue(t *testing.T) {
+	text := `
+[toc]
+* =
+`
+	_, err := ParseTocConfig(text)
+	assert.NotNil(t, err)
+	assert.Equal(t, "* must have a value of either 'keep' or 'hide'", err.Error())
+}

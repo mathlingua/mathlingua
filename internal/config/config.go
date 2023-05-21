@@ -82,6 +82,10 @@ func ParseConfig(text string) (IConfig, error) {
 
 			key := strings.Trim(line[0:index], " ")
 			value := strings.Trim(line[index+1:], " ")
+			for i < len(lines) && strings.HasPrefix(lines[i], " ") {
+				value += lines[i]
+				i += 1
+			}
 
 			if _, ok := values[key]; ok {
 				return nil, fmt.Errorf("Duplicate key specified: %s", key)

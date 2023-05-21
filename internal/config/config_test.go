@@ -30,7 +30,11 @@ key = value
 some key = some value
 some.key=some.value
 some.other key       =         some other    value
-
+some.longer.value = this is some
+ text and some more
+   and even more
+ and some more
+     and some more
 
 
 [section.2]
@@ -45,6 +49,11 @@ anotherKey = some.value
 	section1Values["some key"] = "some value"
 	section1Values["some.key"] = "some.value"
 	section1Values["some.other key"] = "some other    value"
+	section1Values["some.longer.value"] = "this is some	text" +
+		" and some more" +
+		"   and even more	" +
+		"and some more" +
+		"     and some more"
 
 	section2Values := make(map[string]string)
 	section2Values["key"] = "value"

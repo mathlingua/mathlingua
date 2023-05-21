@@ -29,7 +29,6 @@ type MlgViewConfig struct {
 	Title       string
 	Keywords    string
 	Description string
-	Home        string
 }
 
 func ParseMlgConfig(text string) (MlgConfig, error) {
@@ -69,14 +68,12 @@ func ParseMlgConfig(text string) (MlgConfig, error) {
 	title, _ := viewConf.Get(title_mlg_view_key)
 	keywords, _ := viewConf.Get(keywords_mlg_view_key)
 	description, _ := viewConf.Get(description_mlg_view_key)
-	home, _ := viewConf.Get(home_mlg_view_key)
 
 	return MlgConfig{
 		View: MlgViewConfig{
 			Title:       title,
 			Keywords:    keywords,
 			Description: description,
-			Home:        home,
 		},
 	}, nil
 }

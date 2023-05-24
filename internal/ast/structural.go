@@ -46,11 +46,16 @@ type Alias struct {
 
 func (*Alias) ProvidesKind() {}
 
+type TopFormulationMetaData struct {
+	UsedSignatureStrings []string
+}
+
 type Formulation[T FormulationNodeKind] struct {
-	RawText        string
-	Root           T
-	Label          *string
-	CommonMetaData CommonMetaData
+	RawText             string
+	Root                T
+	Label               *string
+	CommonMetaData      CommonMetaData
+	FormulationMetaData TopFormulationMetaData
 }
 
 type TextItem struct {

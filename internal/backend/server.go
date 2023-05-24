@@ -42,9 +42,13 @@ func StartServer(port int, conf config.MlgConfig) {
 	router.HandleFunc("/api/page", func(w http.ResponseWriter, r *http.Request) {
 		page(workspace, w, r)
 	}).Methods("GET")
-	router.HandleFunc("/api/entry", func(w http.ResponseWriter, r *http.Request) {
-		entry(workspace, w, r)
+	router.HandleFunc("/api/entry/id/{id}", func(w http.ResponseWriter, r *http.Request) {
+		entryById(workspace, w, r)
 	}).Methods("GET")
+	router.HandleFunc("/api/entry/signature/{signature}",
+		func(w http.ResponseWriter, r *http.Request) {
+			entryBySignature(workspace, w, r)
+		}).Methods("GET")
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		workspace = initWorkspace()
 
@@ -132,11 +136,48 @@ func page(workspace IWorkspace, writer http.ResponseWriter, request *http.Reques
 	writeResponse(writer, &resp)
 }
 
-func entry(workspace IWorkspace, writer http.ResponseWriter, request *http.Request) {
+func entryById(workspace IWorkspace, writer http.ResponseWriter, request *http.Request) {
 	setJsonContentKind(writer)
 
-	id := request.URL.Query().Get("id")
-	entry, err := workspace.GetEntry(id)
+	id, ok := mux.Vars(request)["id"]
+	if !ok {
+		resp := EntryResponse{
+			Error: "id not specified",
+			Entry: nil,
+		}
+		writeResponse(writer, &resp)
+		return
+	}
+
+	entry, err := workspace.GetEntryById(id)
+
+	errStr := ""
+	if err != nil {
+		errStr = err.Error()
+	}
+
+	resp := EntryResponse{
+		Error: errStr,
+		Entry: entry,
+	}
+
+	writeResponse(writer, &resp)
+}
+
+func entryBySignature(workspace IWorkspace, writer http.ResponseWriter, request *http.Request) {
+	setJsonContentKind(writer)
+
+	signature, ok := mux.Vars(request)["signature"]
+	if !ok {
+		resp := EntryResponse{
+			Error: "signature not specified",
+			Entry: nil,
+		}
+		writeResponse(writer, &resp)
+		return
+	}
+
+	entry, err := workspace.GetEntryBySignature(signature)
 
 	errStr := ""
 	if err != nil {

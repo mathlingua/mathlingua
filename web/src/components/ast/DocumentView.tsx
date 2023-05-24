@@ -1,6 +1,7 @@
 import React from 'react';
+
 import { Document } from '../../types';
-import { TopLevelNodeKindView } from './TopLevelNodeKindView';
+import { MultiTopLevelItem } from './MultiTopLevelItem';
 
 export interface DocumentViewProps {
   node: Document;
@@ -13,7 +14,7 @@ export const DocumentView = (props: DocumentViewProps) => {
       {
         props.node.Nodes?.map((node, index) => (
           <span id={node?.MetaData.Id ?? ''}  key={index}>
-            <TopLevelNodeKindView node={node} isOnSmallScreen={props.isOnSmallScreen} />
+            <MultiTopLevelItem node={node} isOnSmallScreen={props.isOnSmallScreen} />
           </span>
         ))
       }

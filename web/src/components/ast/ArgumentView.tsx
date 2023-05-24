@@ -10,6 +10,7 @@ export interface ArgumentViewProps {
   indent: number;
   forceRenderAsLatex: boolean;
   preProcess?: (text: string) => string;
+  onSelectedSignature: (signature: string) => void;
 }
 
 export const ArgumentView = (props: ArgumentViewProps) => {
@@ -19,7 +20,8 @@ export const ArgumentView = (props: ArgumentViewProps) => {
       node={props.node.Arg}
       indent={props.indent+2}
       forceRenderAsLatex={props.forceRenderAsLatex}
-      preProcess={props.preProcess} />;
+      preProcess={props.preProcess}
+      onSelectedSignature={props.onSelectedSignature} />;
   } else {
     component = (
       <>
@@ -28,7 +30,8 @@ export const ArgumentView = (props: ArgumentViewProps) => {
           node={props.node.Arg}
           indent={props.indent+2}
           forceRenderAsLatex={props.forceRenderAsLatex} 
-          preProcess={props.preProcess} />
+          preProcess={props.preProcess}
+          onSelectedSignature={props.onSelectedSignature} />
       </>
     );
   }

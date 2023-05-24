@@ -1,0 +1,55 @@
+
+.latexViewButton {
+  border: none;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+  font-size: unset;
+  font-family: unset;
+}
+
+.dropdownContainer {
+  display: inline-block;
+  position: relative;
+  /*
+  border-bottom: solid;
+  border-bottom-width: 0.5px;
+  border-bottom-color: #eeeeee;
+  */
+}
+
+.dropdownMenu {
+  position: absolute;
+  background-color: white;
+  z-index: 1;
+  border: solid;
+  border-color: #e5e5e5;
+  border-width: 1px;
+  border-radius: 0;
+  box-shadow: rgba(50, 50, 105, 0.15) 0px 2px 5px 0px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px;
+  min-width: 100%;
+  width: max-content;
+}
+
+.dropdownMenuItem {
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  border: none;
+  background: transparent;
+  margin: 0;
+  font-size: unset;
+  font-family: unset;
+  min-width: 100%;
+  width: max-content;
+}
+
+.dropdownMenuItem:hover {
+  background-color: #f3f3f3;
+}
+
+.downIcon {
+  vertical-align: bottom;
+  color: #cccccc;
+}

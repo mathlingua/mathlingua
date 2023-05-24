@@ -144,3 +144,26 @@ func GetSignatureStringFromInfixCommandId(cmd ast.InfixCommandId) string {
 	}
 	return sig.ToCode(ast.NoOp)
 }
+
+func GetUsedSignatureStrings(node ast.MlgNodeKind) []string {
+	result := make([]string, 0)
+	getUsedSignaturesImpl(node, &result)
+	return result
+}
+
+func getUsedSignaturesImpl(node ast.MlgNodeKind, signatures *[]string) {
+	if node == nil {
+		return
+	}
+
+	switch n := node.(type) {
+	case *ast.CommandExpression:
+		*signatures = append(*signatures, GetSignatureStringFromCommand(*n))
+	case *ast.InfixCommandExpression:
+		*signatures = append(*signatures, GetSignatureStringFromInfixCommand(*n))
+	}
+
+	node.ForEach(func(subNode ast.MlgNodeKind) {
+		getUsedSignaturesImpl(subNode, signatures)
+	})
+}

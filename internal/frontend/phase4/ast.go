@@ -155,11 +155,11 @@ func (a *Argument) ToCode(writer ITextCodeWriter) {
 }
 
 func (a *Argument) Size() int {
-	return a.Arg.Size()
+	return 1
 }
 
 func (a *Argument) ChildAt(index int) Node {
-	return a.Arg.ChildAt(index)
+	return a.Arg
 }
 
 type TextArgumentData struct {
@@ -184,10 +184,15 @@ func (t *TextArgumentData) ChildAt(index int) Node {
 	panic("Cannot get children of an TextArgumentData")
 }
 
+type FormulationArgumentDataMetaData struct {
+	UsedSignatureStrings []string
+}
+
 type FormulationArgumentData struct {
-	Type     NodeType
-	Text     string
-	MetaData MetaData
+	Type                NodeType
+	Text                string
+	MetaData            MetaData
+	FormulationMetaData FormulationArgumentDataMetaData
 }
 
 func (f *FormulationArgumentData) write(indent int, writer ITextCodeWriter) {

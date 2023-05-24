@@ -90,10 +90,15 @@ export interface TextArgumentData {
   MetaData: MetaData;
 }
 
+export interface FormulationArgumentDataMetaData {
+	UsedSignatureStrings: string[] | null;
+}
+
 export interface FormulationArgumentData {
 	Type: FormulationArgumentDataKind;
 	Text: string;
 	MetaData: MetaData;
+  FormulationMetaData: FormulationArgumentDataMetaData;
 }
 
 export interface ArgumentTextArgumentData {

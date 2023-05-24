@@ -4,7 +4,7 @@
   max-width: 50%;
   width: fit-content;
   height: max-content;
-  overflow: auto;
+  overflow: visible;
   margin-top: 2ex;
   margin-bottom: 2ex;
   margin-left: auto;
@@ -14,6 +14,7 @@
   border-width: 1px;
   border-radius: 2px;
   box-shadow: rgba(50, 50, 105, 0.15) 0px 2px 5px 0px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px;
+  background-color: white;
 }
 
 @media screen and (max-width: 450px) {
@@ -26,4 +27,12 @@
 .mathlinguaTopLevelTextBlock {
   color: #555555;
   max-width: 100%;
+}
+
+.closeIcon {
+  margin-top: -7px;
+  margin-right: -5px;
+  float: right;
+  color: black;
+  font-size: 80%;
 }

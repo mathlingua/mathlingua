@@ -1,15 +1,20 @@
 import React from 'react';
 
+import CloseIcon from '@rsuite/icons/Close';
+
 import { Group, TextArgumentData, TopLevelNodeKind } from '../../types';
 import { GroupView } from './GroupView';
-import { TextBlockView } from './TextBlockView';
 import { IdView } from './IdView';
 
 import styles from './TopLevelNodeKindView.module.css';
+import { TextBlockView } from './TextBlockView';
 
 export interface TopLevelNodeKindViewProps {
   node: TopLevelNodeKind;
   isOnSmallScreen: boolean;
+  onSelectedSignature: (signature: string) => void;
+  showCloseIcon: boolean;
+  onCloseClicked: () => void;
 }
 
 export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
@@ -61,8 +66,16 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
     }
     return (
       <div className={styles.mathlinguaTopLevelEntity}>
+        {props.showCloseIcon &&
+          <span className={styles.closeIcon}
+                onClick={props.onCloseClicked}>
+            <CloseIcon />
+          </span>}
         <IdView id={idText} isLatex={isLatex} />
-        <GroupView node={props.node as any} indent={0} />
+        <GroupView
+          node={props.node as any}
+          indent={0}
+          onSelectedSignature={props.onSelectedSignature} />
       </div>
     );
   } else {

@@ -127,7 +127,8 @@ type IWorkspace interface {
 	DocumentCount() int
 	Paths() []PathLabelPair
 	GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Diagnostic)
-	GetEntry(id string) (phase4.TopLevelNodeKind, error)
+	GetEntryById(id string) (phase4.TopLevelNodeKind, error)
+	GetEntryBySignature(signature string) (phase4.TopLevelNodeKind, error)
 	Check() CheckResult
 }
 
@@ -188,7 +189,7 @@ func (w *workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Di
 	return *resultDoc, w.getDiagnosticsForPath(path)
 }
 
-func (w *workspace) GetEntry(id string) (phase4.TopLevelNodeKind, error) {
+func (w *workspace) GetEntryById(id string) (phase4.TopLevelNodeKind, error) {
 	phase4Entry, phase4Ok := w.phase4Entries[id]
 	astEntry, astOk := w.topLevelEntries[id]
 	if !phase4Ok || !astOk {
@@ -197,6 +198,14 @@ func (w *workspace) GetEntry(id string) (phase4.TopLevelNodeKind, error) {
 	result := w.getRenderedNode(ast.ToPath(""), phase4Entry, astEntry)
 	castResult, _ := result.(phase4.TopLevelNodeKind)
 	return castResult, nil
+}
+
+func (w *workspace) GetEntryBySignature(signature string) (phase4.TopLevelNodeKind, error) {
+	id, ok := w.signaturesToIds[signature]
+	if !ok {
+		return nil, fmt.Errorf("Could not determine the id for signature %s", signature)
+	}
+	return w.GetEntryById(id)
 }
 
 func (w *workspace) Check() CheckResult {
@@ -228,6 +237,7 @@ func (w *workspace) initialize(contents []PathLabelContent) {
 	w.initializeSummaries()
 	w.initializePhase4Entries()
 	w.initializeTopLevelEntries()
+	w.updateUsedSignatures()
 }
 
 func (w *workspace) getRenderedNode(
@@ -676,6 +686,68 @@ func (w *workspace) initializeTopLevelEntries() {
 				w.topLevelEntries[id] = item
 			}
 		}
+	}
+}
+
+func (w *workspace) updateUsedSignatures() {
+	for _, doc := range w.astRoot.Documents {
+		for _, item := range doc.Items {
+			if _, ok := item.(*ast.TextBlockItem); ok {
+				continue
+			}
+
+			updateAstUsedSignatures(item)
+			keyToUsedSignatures := make(map[int][]string, 0)
+			recordUsedSignatureStrings(item, keyToUsedSignatures)
+
+			id, ok := GetAstMetaId(item)
+			if !ok {
+				fmt.Printf("Could not get the identifier for %s\n", mlglib.PrettyPrint(item))
+				continue
+			}
+
+			phase4Item, ok := w.phase4Entries[id]
+			if !ok {
+				fmt.Printf("Could not get the phase4 item for id %s", id)
+				continue
+			}
+
+			w.updatePhase4UsedSignatures(phase4Item, keyToUsedSignatures)
+		}
+	}
+}
+
+func updateAstUsedSignatures(node ast.MlgNodeKind) {
+	if formulation, ok := node.(*ast.Formulation[ast.FormulationNodeKind]); ok {
+		formulation.FormulationMetaData.UsedSignatureStrings = GetUsedSignatureStrings(formulation)
+	}
+	node.ForEach(updateAstUsedSignatures)
+}
+
+func recordUsedSignatureStrings(node ast.MlgNodeKind, keyToUsedSignatures map[int][]string) {
+	if formulation, ok := node.(*ast.Formulation[ast.FormulationNodeKind]); ok {
+		key := formulation.GetCommonMetaData().Key
+		usedSignatures := formulation.FormulationMetaData.UsedSignatureStrings
+		keyToUsedSignatures[key] = usedSignatures
+	}
+	node.ForEach(func(subNode ast.MlgNodeKind) {
+		recordUsedSignatureStrings(subNode, keyToUsedSignatures)
+	})
+}
+
+func (w *workspace) updatePhase4UsedSignatures(
+	node phase4.Node,
+	keyToUsedSignatures map[int][]string,
+) {
+	if n, ok := node.(*phase4.FormulationArgumentData); ok {
+		key := n.MetaData.Key
+		signatures, ok := keyToUsedSignatures[key]
+		if ok {
+			n.FormulationMetaData.UsedSignatureStrings = signatures
+		}
+	}
+	for i := 0; i < node.Size(); i += 1 {
+		w.updatePhase4UsedSignatures(node.ChildAt(i), keyToUsedSignatures)
 	}
 }
 

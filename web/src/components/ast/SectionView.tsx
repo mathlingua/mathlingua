@@ -11,6 +11,7 @@ import styles from './SectionView.module.css';
 export interface SectionViewProps {
   node: Section;
   indent: number;
+  onSelectedSignature: (signature: string) => void;
 }
 
 export const SectionView = (props: SectionViewProps) => {
@@ -28,7 +29,8 @@ export const SectionView = (props: SectionViewProps) => {
               indent={props.indent}
               forceRenderAsLatex={props.node.Name === 'written' || props.node.Name === 'called'}
               preProcess={props.node.Name === 'called' ?
-                (text: string) => `\\textrm{${text}}` : undefined} />
+                (text: string) => `\\textrm{${text}}` : undefined}
+              onSelectedSignature={props.onSelectedSignature} />
           </span>
         ))
       }

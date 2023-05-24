@@ -43,6 +43,7 @@
   font-family: unset;
   min-width: 100%;
   width: max-content;
+  color: black;
 }
 
 .dropdownMenuItem:hover {

@@ -23,9 +23,11 @@ export function MainPage() {
     setWindowWidth(newWidth);
   });
 
-  const [activePath, setActivePath] = React.useState<string>('');
+  const pathname = location.pathname;
+  const trimmedPathname = pathname.startsWith('/') ? pathname.substring(1) : pathname;
+
   const { data: activePathData } = useFetch<PageResponse>(
-    `/api/page?path=${encodeURIComponent(activePath)}`);
+    `/api/page?path=${encodeURIComponent(trimmedPathname)}`);
   const { data: pathsData } = useFetch<PathsResponse>('/api/paths');
 
   React.useEffect(() => {
@@ -35,16 +37,10 @@ export function MainPage() {
     }
   }, [pathsData]);
 
-  React.useEffect(() => {
-    const pathname = location.pathname;
-    const trimmedPathname = pathname.startsWith('/') ? pathname.substring(1) : pathname;
-    setActivePath(trimmedPathname);
-  }, [location.pathname]);
-
   const sidebar = (
     <div className={styles.sidebar}>
       <Sidebar
-        selectedPath={activePath}
+        selectedPath={trimmedPathname}
         allPaths={pathsData?.Paths ?? null}
         onSelect={(pathItem) => {
           if (pathItem.endsWith('.math') && isOnSmallScreen) {

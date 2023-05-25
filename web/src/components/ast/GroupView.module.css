@@ -2,3 +2,11 @@
 .proofBottomGapFix {
   margin-top: -1em;
 }
+
+.separator {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  border-bottom: solid;
+  border-bottom-width: 0.5px;
+  border-bottom-color: #e5e5e5;
+}

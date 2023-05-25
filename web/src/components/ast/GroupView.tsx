@@ -1,4 +1,7 @@
 import React from 'react';
+
+import styles from './GroupView.module.css';
+
 import { Group } from '../../types';
 import { Indent } from './Indent';
 import { Newline } from './Newline';
@@ -18,10 +21,14 @@ export const GroupView = (props: GroupViewProps) => {
           <span key={index}>
             {index > 0 && <Newline />}
             {index > 0 && <Indent size={props.indent} />}
-            {sec.Name === 'Id' ? null : <SectionView
+            {sec.Name === 'Id' || sec.Name === 'Proof' ? null : <SectionView
               node={sec}
               indent={props.indent}
               onSelectedSignature={props.onSelectedSignature} />}
+            {/* The following is needed since otherwise there is an
+              * extra gap at the bottom of the group. */}
+            {sec.Name === 'Proof' ?
+              <div className={styles.proofBottomGapFix}></div> : null}
           </span>
         ))
       }

@@ -8,6 +8,8 @@ import { IdView } from './IdView';
 
 import styles from './TopLevelNodeKindView.module.css';
 import { TextBlockView } from './TextBlockView';
+import { MarkdownView } from '../../design/MarkdownView';
+import { LatexView } from '../../design/LatexView';
 
 export interface TopLevelNodeKindViewProps {
   node: TopLevelNodeKind;
@@ -64,19 +66,49 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
         idText = capitalize(idText.slice(1).replaceAll('.', ' '));
       }
     }
+
+    let proofText = '';
+    if (sections) {
+      for (const sec of sections) {
+        if (proofText.length > 0) {
+          break;
+        }
+
+        if (sec.Name === 'Proof') {
+          const args = sec.Args ?? [];
+          for (const arg of args) {
+            const innerArg = arg.Arg;
+            if (innerArg && innerArg.Type === 'TextArgumentDataKind') {
+              proofText = innerArg.Text;
+              break;
+            }
+          }
+        }
+      }
+    }
+
     return (
-      <div className={styles.mathlinguaTopLevelEntity}>
-        {props.showCloseIcon &&
-          <span className={styles.closeIcon}
-                onClick={props.onCloseClicked}>
-            <CloseIcon />
-          </span>}
-        <IdView id={idText} isLatex={isLatex} />
-        <GroupView
-          node={props.node as any}
-          indent={0}
-          onSelectedSignature={props.onSelectedSignature} />
-      </div>
+      <>
+        <div className={styles.mathlinguaTopLevelEntity}>
+          {props.showCloseIcon &&
+            <span className={styles.closeIcon}
+                  onClick={props.onCloseClicked}>
+              <CloseIcon />
+            </span>}
+          <IdView id={idText} isLatex={isLatex} />
+          <GroupView
+            node={props.node as any}
+            indent={0}
+            onSelectedSignature={props.onSelectedSignature} />
+        </div>
+        {proofText.length > 0 &&
+          <div className={styles.proofWrapper}>
+            <span className={styles.proofTitle}>Proof</span>
+            <MarkdownView text={`${proofText} $\\:\\:\\square$`}
+                          className={styles.proofContent} />
+          </div>
+        }
+      </>
     );
   } else {
     return (

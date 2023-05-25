@@ -1,5 +1,7 @@
 import React from 'react';
 
+import styles from './MarkdownView.module.css';
+
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
@@ -22,7 +24,9 @@ export const MarkdownView = (props: MarkdownViewProps) => {
     <ReactMarkdown children={text}
                    remarkPlugins={[remarkGfm, remarkMath]}
                    rehypePlugins={[rehypeKatex]}
-                   className={props.className} />
+                   className={[styles.markdown,
+                               props.className].filter(name => !!name)
+                                               .join(' ')} />
   );
 };
 

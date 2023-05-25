@@ -42,3 +42,8 @@ code {
   font-size: 110% !important;
   color: black !important;
 }
+
+div[class^="MarkdownView_markdown"] .katex-display {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}

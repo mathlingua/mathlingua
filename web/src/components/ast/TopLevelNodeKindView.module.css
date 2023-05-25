@@ -36,3 +36,18 @@
   color: black;
   font-size: 80%;
 }
+
+.proofWrapper {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.proofTitle {
+  color: #05b;
+  font-weight: bold;
+}
+
+.proofContent {
+  margin-bottom: 2em;
+}

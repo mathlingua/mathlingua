@@ -1,6 +1,5 @@
 import React from 'react';
 
-
 declare const katex: any;
 
 export interface LatexViewProps {

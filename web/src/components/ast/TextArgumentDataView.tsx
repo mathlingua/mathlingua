@@ -2,15 +2,9 @@ import React from 'react';
 
 import styles from './TextArgumentDataView.module.css';
 
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import remarkMath from 'remark-math'
-import rehypeKatex from 'rehype-katex'
-
-import 'katex/dist/katex.min.css';
-
 import { TextArgumentData } from '../../types';
 import { LatexView } from '../../design/LatexView';
+import { MarkdownView } from '../../design/MarkdownView';
 
 export interface TextArgumentDataViewProps {
   node: TextArgumentData;
@@ -24,15 +18,6 @@ export const TextArgumentDataView = (props: TextArgumentDataViewProps) => {
     return <LatexView latex={fn(props.node.Text)} color='black' />
   }
 
-  // For an unknown reason, if the `'$ $' +` below is not provided, then
-  // the ReactMarkdown is incorrectly rendered as a <code> in the DOM
-  const text = props.node.Text.startsWith('$') ?
-                props.node.Text :
-                '$ $' + props.node.Text;
-  return (
-    <ReactMarkdown children={fn(text)}
-                   remarkPlugins={[remarkGfm, remarkMath]}
-                   rehypePlugins={[rehypeKatex]}
-                   className={styles.markdown} />
-  );
+  return <MarkdownView text={fn(props.node.Text)}
+                       className={styles.markdown} />;
 };

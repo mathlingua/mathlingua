@@ -50,14 +50,14 @@ func StartServer(port int, conf config.MlgConfig) {
 			entryBySignature(workspace, w, r)
 		}).Methods("GET")
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		workspace = initWorkspace()
-
 		// if the URL path cannot be determined, or corresponds to a static asset,
 		// then let the default handler handle the request
 		if r.URL == nil || strings.HasPrefix(r.URL.Path, "/static") {
 			web.AssetHandler{}.ServeHTTP(w, r)
 			return
 		}
+
+		workspace = initWorkspace()
 
 		// otherwise fall back to responding with the contents of index.html.
 		// This is needed to support client-side route handling.  Also, the

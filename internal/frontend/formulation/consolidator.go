@@ -295,35 +295,39 @@ func toNode(
 	}
 }
 
+type firstPassType string
+
+const (
+	operandType             firstPassType = "operandType"
+	generalOperatorType     firstPassType = "generalOperatorType"
+	forcedInfixOperatorType firstPassType = "forcedInfixOperatorType"
+	noneType                firstPassType = "noneType"
+)
+
 func toShuntingYardItems(
 	nodes []ast.FormulationNodeKind,
 ) []ShuntingYardItem[ast.FormulationNodeKind] {
 	result := make([]ShuntingYardItem[ast.FormulationNodeKind], 0)
-	isOperators := make([]bool, len(nodes))
-	isSpecialOperators := make([]bool, len(nodes))
+	firstPassTypes := make([]firstPassType, len(nodes))
 	for i, node := range nodes {
-		isOperators[i] = isOperator(node)
-		isSpecialOperators[i] = isSpecialOperator(node)
+		firstPassTypes[i] = getFirstPassType(node)
 	}
 	itemTypes := make([]ItemType, len(nodes))
-	for i := range isOperators {
-		curIsOp := isOperators[i]
-		curIsSpecialOp := isSpecialOperators[i]
-
-		prevType := none
-		curType := toIsOperatorToGeneralItemKind(curIsOp, curIsSpecialOp)
-		nextType := none
+	for i := range firstPassTypes {
+		prevType := noneType
+		curType := firstPassTypes[i]
+		nextType := noneType
 
 		if i == 0 {
-			prevType = none
+			prevType = noneType
 		} else {
-			prevType = toIsOperatorToGeneralItemKind(isOperators[i-1], isSpecialOperators[i-1])
+			prevType = firstPassTypes[i-1]
 		}
 
-		if i == len(isOperators)-1 {
-			nextType = none
+		if i == len(firstPassTypes)-1 {
+			nextType = noneType
 		} else {
-			nextType = toIsOperatorToGeneralItemKind(isOperators[i+1], isSpecialOperators[i+1])
+			nextType = firstPassTypes[i+1]
 		}
 
 		itemTypes[i] = getGeneralOperatorKind(prevType, curType, nextType)
@@ -342,152 +346,90 @@ func toShuntingYardItems(
 	return result
 }
 
-func toIsOperatorToGeneralItemKind(isOperator bool, isSpecialOperator bool) generalItemType {
-	if isOperator {
-		return operator
-	} else if isSpecialOperator {
-		return specialOperator
-	} else {
-		return operand
-	}
-}
-
-func isOperator(node ast.FormulationNodeKind) bool {
+func getFirstPassType(node ast.FormulationNodeKind) firstPassType {
 	switch node := node.(type) {
 	case *ast.PrefixOperatorCallExpression:
-		// prefix operators
-		return true
+		return generalOperatorType
 	case *ast.PostfixOperatorCallExpression:
-		// postfix operators
-		return true
+		return generalOperatorType
 	case *ast.InfixOperatorCallExpression:
-		// infix operators
-		return true
+		return generalOperatorType
 	case *ast.EnclosedNonCommandOperatorTarget:
-		// for example [x]
-		return true
+		return generalOperatorType
 	case *ast.NonEnclosedNonCommandOperatorTarget:
-		// for example + or **
-		return true
+		return generalOperatorType
 	case *ast.InfixCommandExpression:
 		// for example \f/
-		return true
+		return forcedInfixOperatorType
 	case *ast.PseudoTokenNode:
 		// a token, for example :=, is, isnot
 		switch node.Type {
 		case ast.ColonEquals:
-			return false
+			return forcedInfixOperatorType
 		case ast.ColonArrow:
-			return false
+			return forcedInfixOperatorType
 		case ast.ColonDashArrow:
-			return false
+			return forcedInfixOperatorType
 		case ast.Operator:
-			return true
+			return generalOperatorType
 		case ast.Is:
-			return false
+			return forcedInfixOperatorType
 		case ast.Extends:
-			return false
+			return forcedInfixOperatorType
 		case ast.As:
-			return false
+			return forcedInfixOperatorType
 		default:
-			return false
+			return operandType
 		}
 	default:
-		return false
-	}
-}
-
-func isSpecialOperator(node ast.FormulationNodeKind) bool {
-	switch node := node.(type) {
-	case *ast.PrefixOperatorCallExpression:
-		// prefix operators
-		return false
-	case *ast.PostfixOperatorCallExpression:
-		// postfix operators
-		return false
-	case *ast.InfixOperatorCallExpression:
-		// infix operators
-		return false
-	case *ast.EnclosedNonCommandOperatorTarget:
-		// for example [x]
-		return false
-	case *ast.NonEnclosedNonCommandOperatorTarget:
-		// for example + or **
-		return false
-	case *ast.InfixCommandExpression:
-		// for example \f/
-		return false
-	case *ast.PseudoTokenNode:
-		// a token, for example :=, is, isnot
-		switch node.Type {
-		case ast.ColonEquals:
-			return true
-		case ast.ColonArrow:
-			return true
-		case ast.ColonDashArrow:
-			return true
-		case ast.Operator:
-			return false
-		case ast.Is:
-			return true
-		case ast.Extends:
-			return true
-		case ast.As:
-			return true
-		default:
-			return false
-		}
-	default:
-		return false
+		return operandType
 	}
 }
 
 type generalItemType string
 
 const (
-	operand         generalItemType = "operand"
-	operator        generalItemType = "operator"
-	specialOperator generalItemType = "specialOperator"
-	none            generalItemType = "none"
+	operand  generalItemType = "operand"
+	operator generalItemType = "operator"
+	none     generalItemType = "none"
 )
 
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck
 func getGeneralOperatorKind(
-	prevType generalItemType,
-	curType generalItemType,
-	nextType generalItemType,
+	prevType firstPassType,
+	curType firstPassType,
+	nextType firstPassType,
 ) ItemType {
 	switch {
-	case curType == none:
+	case curType == noneType:
 		panic("Cannot get the operator type of 'none'")
-	case curType == operand:
+	case curType == operandType:
 		return OperandType
-		//	case curType == specialOperator:
-		// treat all special operators as infix operators
-		//		return InfixOperatorType
-	// for all of these cases, the curType is operator
-	case prevType == operator && nextType == operator:
+	case curType == forcedInfixOperatorType:
 		return InfixOperatorType
-	case prevType == operand && nextType == operand:
+	// for the rest of the cases curType == generalOperatorType
+	case prevType == generalOperatorType && nextType == generalOperatorType:
 		return InfixOperatorType
-	case prevType == operator && nextType == operand:
+	case prevType == operandType && nextType == operandType:
 		return InfixOperatorType
-	case prevType == operand && nextType == operator:
+	case prevType == generalOperatorType && nextType == operandType:
 		return InfixOperatorType
-	case prevType == none:
-		return PrefixOperatorType
-	case nextType == none:
+	case prevType == operandType && nextType == generalOperatorType:
 		return PostfixOperatorType
-	case prevType == operator && nextType == operand:
+	case prevType == noneType:
 		return PrefixOperatorType
-	case prevType == operand && nextType == operator:
+	case nextType == noneType:
 		return PostfixOperatorType
-	case prevType == operand && nextType == specialOperator:
-		return PostfixOperatorType
-	case prevType == specialOperator && nextType == operand:
+	case prevType == generalOperatorType && nextType == operandType:
 		return PrefixOperatorType
-	case prevType == specialOperator && nextType == specialOperator:
+	case prevType == operandType && nextType == generalOperatorType:
+		return PostfixOperatorType
+	case prevType == operandType && nextType == forcedInfixOperatorType:
+		return PostfixOperatorType
+	case prevType == forcedInfixOperatorType && nextType == operandType:
+		return PrefixOperatorType
+	case prevType == forcedInfixOperatorType && nextType == forcedInfixOperatorType:
 		// users could write `:=> ! :=>` and we want to surface parse errors
 		// and not crash in this case
 		return InfixOperatorType

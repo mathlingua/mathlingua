@@ -259,6 +259,10 @@ func (w *workspace) formulationLikeToString(
 	node ast.MlgNodeKind,
 	keyToFormulationStr map[int]string,
 ) {
+	if node == nil {
+		return
+	}
+
 	if formulation, ok := node.(*ast.Formulation[ast.FormulationNodeKind]); ok {
 		key := formulation.GetCommonMetaData().Key
 		newText := w.formulationToWritten(path, *formulation)
@@ -718,6 +722,10 @@ func (w *workspace) updateUsedSignatures() {
 }
 
 func updateAstUsedSignatures(node ast.MlgNodeKind) {
+	if node == nil {
+		return
+	}
+
 	if formulation, ok := node.(*ast.Formulation[ast.FormulationNodeKind]); ok {
 		formulation.FormulationMetaData.UsedSignatureStrings = GetUsedSignatureStrings(formulation)
 	}
@@ -725,6 +733,10 @@ func updateAstUsedSignatures(node ast.MlgNodeKind) {
 }
 
 func recordUsedSignatureStrings(node ast.MlgNodeKind, keyToUsedSignatures map[int][]string) {
+	if node == nil {
+		return
+	}
+
 	if formulation, ok := node.(*ast.Formulation[ast.FormulationNodeKind]); ok {
 		key := formulation.GetCommonMetaData().Key
 		usedSignatures := formulation.FormulationMetaData.UsedSignatureStrings
@@ -950,6 +962,7 @@ func expandAliasesAtWithAliases(node ast.MlgNodeKind, aliases []ExpAliasSummaryK
 	if node == nil {
 		return
 	}
+
 	node.ForEach(func(subNode ast.MlgNodeKind) {
 		for _, alias := range aliases {
 			ExpandAliasInline(subNode, alias)
@@ -961,6 +974,7 @@ func expandAliasesAt(node ast.MlgNodeKind, summaries map[string]SummaryKind) {
 	if node == nil {
 		return
 	}
+
 	switch entry := node.(type) {
 	case *ast.DefinesGroup:
 		metaId, ok := GetAstMetaId(entry)
@@ -980,6 +994,7 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *works
 	if node == nil {
 		return
 	}
+
 	if cmd, ok := node.(*ast.CommandExpression); ok {
 		sig := GetSignatureStringFromCommand(*cmd)
 		if _, ok := w.signaturesToIds[sig]; !ok {
@@ -1092,6 +1107,10 @@ func getAllWords(node ast.MlgNodeKind) mlglib.ISet[string] {
 }
 
 func getAllWordsImpl(node ast.MlgNodeKind, result mlglib.ISet[string]) {
+	if node == nil {
+		return
+	}
+
 	switch n := node.(type) {
 	case *ast.TextItem:
 		for _, item := range tokenize(n.RawText) {

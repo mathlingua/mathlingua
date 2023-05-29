@@ -25,9 +25,12 @@ type SummaryKind interface {
 	GetExpAliasSummaries() []ExpAliasSummaryKind
 }
 
-func (*DescribesSummary) SummaryKind() {}
-func (*DefinesSummary) SummaryKind()   {}
-func (*StatesSummary) SummaryKind()    {}
+func (*DescribesSummary) SummaryKind()  {}
+func (*DefinesSummary) SummaryKind()    {}
+func (*StatesSummary) SummaryKind()     {}
+func (*AxiomSummary) SummaryKind()      {}
+func (*ConjectureSummary) SummaryKind() {}
+func (*TheoremSummary) SummaryKind()    {}
 
 func (s *DescribesSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 	return s.ExpAliases
@@ -39,6 +42,18 @@ func (s *DefinesSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 
 func (s *StatesSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 	return s.ExpAliases
+}
+
+func (s *AxiomSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
+	return []ExpAliasSummaryKind{}
+}
+
+func (s *ConjectureSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
+	return []ExpAliasSummaryKind{}
+}
+
+func (s *TheoremSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
+	return []ExpAliasSummaryKind{}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -83,6 +98,21 @@ type StatesSummary struct {
 	Called      []CalledSummary
 }
 
+type AxiomSummary struct {
+	Input  *PatternKind
+	Called []CalledSummary
+}
+
+type ConjectureSummary struct {
+	Input  *PatternKind
+	Called []CalledSummary
+}
+
+type TheoremSummary struct {
+	Input  *PatternKind
+	Called []CalledSummary
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func GetResolvedInput(summary SummaryKind) (PatternKind, bool) {
@@ -93,6 +123,21 @@ func GetResolvedInput(summary SummaryKind) (PatternKind, bool) {
 		return s.Input, true
 	case *StatesSummary:
 		return s.Input, true
+	case *AxiomSummary:
+		if s.Input == nil {
+			return nil, false
+		}
+		return *s.Input, true
+	case *ConjectureSummary:
+		if s.Input == nil {
+			return nil, false
+		}
+		return *s.Input, true
+	case *TheoremSummary:
+		if s.Input == nil {
+			return nil, false
+		}
+		return *s.Input, true
 	default:
 		return nil, false
 	}
@@ -103,14 +148,32 @@ func GetResolvedWritten(summary SummaryKind) ([]TextItemKind, bool) {
 	var written *[]TextItemKind
 	switch s := summary.(type) {
 	case *DescribesSummary:
-		called = getSingleCalled(s.Called)
-		written = getSingleWritten(s.Written)
+		if s != nil {
+			called = getSingleCalled(s.Called)
+			written = getSingleWritten(s.Written)
+		}
 	case *DefinesSummary:
-		called = getSingleCalled(s.Called)
-		written = getSingleWritten(s.Written)
+		if s != nil {
+			called = getSingleCalled(s.Called)
+			written = getSingleWritten(s.Written)
+		}
 	case *StatesSummary:
-		called = getSingleCalled(s.Called)
-		written = getSingleWritten(s.Written)
+		if s != nil {
+			called = getSingleCalled(s.Called)
+			written = getSingleWritten(s.Written)
+		}
+	case *AxiomSummary:
+		if s != nil {
+			called = getSingleCalled(s.Called)
+		}
+	case *ConjectureSummary:
+		if s != nil {
+			called = getSingleCalled(s.Called)
+		}
+	case *TheoremSummary:
+		if s != nil {
+			called = getSingleCalled(s.Called)
+		}
 	}
 
 	if written != nil {

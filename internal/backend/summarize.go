@@ -32,6 +32,12 @@ func Summarize(
 		return SummarizeDefines(entry), true
 	case *ast.StatesGroup:
 		return SummarizeStates(entry), true
+	case *ast.AxiomGroup:
+		return SummarizeAxiom(entry), true
+	case *ast.ConjectureGroup:
+		return SummarizeConjecture(entry), true
+	case *ast.TheoremGroup:
+		return SummarizeTheorem(entry), true
 	default:
 		return nil, false
 	}
@@ -73,6 +79,51 @@ func SummarizeStates(states *ast.StatesGroup) *StatesSummary {
 		Written: GetWrittenSummaries(states.Documented),
 		Writing: GetWritingSummaries(states.Documented),
 		Called:  GetCalledSummaries(states.Documented),
+	}
+}
+
+func SummarizeAxiom(axiom *ast.AxiomGroup) *AxiomSummary {
+	if axiom == nil {
+		return nil
+	}
+	var input *PatternKind
+	if axiom.Id != nil {
+		pattern, _ := toCommandPatternFromId(*axiom.Id)
+		input = &pattern
+	}
+	return &AxiomSummary{
+		Input:  input,
+		Called: GetCalledSummaries(axiom.Documented),
+	}
+}
+
+func SummarizeConjecture(conjecture *ast.ConjectureGroup) *ConjectureSummary {
+	if conjecture == nil {
+		return nil
+	}
+	var input *PatternKind
+	if conjecture.Id != nil {
+		pattern, _ := toCommandPatternFromId(*conjecture.Id)
+		input = &pattern
+	}
+	return &ConjectureSummary{
+		Input:  input,
+		Called: GetCalledSummaries(conjecture.Documented),
+	}
+}
+
+func SummarizeTheorem(theorem *ast.TheoremGroup) *TheoremSummary {
+	if theorem == nil {
+		return nil
+	}
+	var input *PatternKind
+	if theorem.Id != nil {
+		pattern, _ := toCommandPatternFromId(*theorem.Id)
+		input = &pattern
+	}
+	return &TheoremSummary{
+		Input:  input,
+		Called: GetCalledSummaries(theorem.Documented),
 	}
 }
 

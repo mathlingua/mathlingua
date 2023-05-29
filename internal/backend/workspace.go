@@ -706,13 +706,13 @@ func (w *workspace) updateUsedSignatures() {
 
 			id, ok := GetAstMetaId(item)
 			if !ok {
-				fmt.Printf("Could not get the identifier for %s\n", mlglib.PrettyPrint(item))
+				// fmt.Printf("Could not get the identifier for %s\n", mlglib.PrettyPrint(item))
 				continue
 			}
 
 			phase4Item, ok := w.phase4Entries[id]
 			if !ok {
-				fmt.Printf("Could not get the phase4 item for id %s", id)
+				// fmt.Printf("Could not get the phase4 item for id %s", id)
 				continue
 			}
 

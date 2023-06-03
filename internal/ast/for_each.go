@@ -138,7 +138,7 @@ func (n *ConnectionGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}
-	fn(n.Means.Means)
+	forEach(n.Means.Means, fn)
 	if n.Signfies != nil {
 		fn(&n.Signfies.Signifies)
 	}
@@ -205,9 +205,6 @@ func (n *ByGroup) ForEach(fn func(subNode MlgNodeKind)) {
 func (n *DescribesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Id)
 	fn(&n.Describes.Describes)
-	if n.With != nil {
-		forEachTarget(n.With.With, fn)
-	}
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}
@@ -246,9 +243,6 @@ func (n *DescribesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 func (n *DefinesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Id)
 	fn(&n.Defines.Defines)
-	if n.With != nil {
-		forEachTarget(n.With.With, fn)
-	}
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}
@@ -258,11 +252,8 @@ func (n *DefinesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.SuchThat != nil {
 		forEach(n.SuchThat.Clauses, fn)
 	}
-	if n.Generalizes != nil {
-		forEachFormulation(n.Generalizes.Generalizes, fn)
-	}
 	if n.Means != nil {
-		fn(n.Means.Means)
+		forEach(n.Means.Means, fn)
 	}
 	if n.Specifies != nil {
 		forEach(n.Specifies.Specifies, fn)
@@ -287,11 +278,25 @@ func (n *DefinesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
+func (n *CapturesGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.Id)
+	forEachFormulation(n.Captures.Captures, fn)
+	if n.Justified != nil {
+		forEach(n.Justified.Justified, fn)
+	}
+	if n.Documented != nil {
+		forEach(n.Documented.Documented, fn)
+	}
+	if n.References != nil {
+		forEachTextItem(n.References.References, fn)
+	}
+	if n.MetaId != nil {
+		fn(&n.MetaId.Id)
+	}
+}
+
 func (n *StatesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Id)
-	if n.With != nil {
-		forEachTarget(n.With.With, fn)
-	}
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}
@@ -433,23 +438,23 @@ func (n *TopicGroup) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
 func (n *ZeroGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(n.Means.Means)
+	fn(n.SingleMeans.Means)
 }
 
 func (n *PositiveIntGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(n.Means.Means)
+	fn(n.SingleMeans.Means)
 }
 
 func (n *NegativeIntGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(n.Means.Means)
+	fn(n.SingleMeans.Means)
 }
 
 func (n *PositiveFloatGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(n.Means.Means)
+	fn(n.SingleMeans.Means)
 }
 
 func (n *NegativeFloatGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(n.Means.Means)
+	fn(n.SingleMeans.Means)
 }
 
 func (n *SpecifyGroup) ForEach(fn func(subNode MlgNodeKind)) {

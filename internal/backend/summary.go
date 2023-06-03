@@ -28,6 +28,7 @@ type SummaryKind interface {
 func (*DescribesSummary) SummaryKind()  {}
 func (*DefinesSummary) SummaryKind()    {}
 func (*StatesSummary) SummaryKind()     {}
+func (*CapturesSummary) SummaryKind()   {}
 func (*AxiomSummary) SummaryKind()      {}
 func (*ConjectureSummary) SummaryKind() {}
 func (*TheoremSummary) SummaryKind()    {}
@@ -42,6 +43,10 @@ func (s *DefinesSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 
 func (s *StatesSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 	return s.ExpAliases
+}
+
+func (s *CapturesSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
+	return []ExpAliasSummaryKind{}
 }
 
 func (s *AxiomSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
@@ -98,6 +103,12 @@ type StatesSummary struct {
 	Called      []CalledSummary
 }
 
+type CapturesSummary struct {
+	Input   PatternKind
+	Written []WrittenSummary
+	Called  []CalledSummary
+}
+
 type AxiomSummary struct {
 	Input  *PatternKind
 	Called []CalledSummary
@@ -122,6 +133,8 @@ func GetResolvedInput(summary SummaryKind) (PatternKind, bool) {
 	case *DefinesSummary:
 		return s.Input, true
 	case *StatesSummary:
+		return s.Input, true
+	case *CapturesSummary:
 		return s.Input, true
 	case *AxiomSummary:
 		if s.Input == nil {
@@ -158,6 +171,11 @@ func GetResolvedWritten(summary SummaryKind) ([]TextItemKind, bool) {
 			written = getSingleWritten(s.Written)
 		}
 	case *StatesSummary:
+		if s != nil {
+			called = getSingleCalled(s.Called)
+			written = getSingleWritten(s.Written)
+		}
+	case *CapturesSummary:
 		if s != nil {
 			called = getSingleCalled(s.Called)
 			written = getSingleWritten(s.Written)

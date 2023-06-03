@@ -85,6 +85,7 @@ func (n *YearGroup) GetCommonMetaData() *CommonMetaData          { return &n.Com
 func (n *DescriptionGroup) GetCommonMetaData() *CommonMetaData   { return &n.CommonMetaData }
 func (n *Document) GetCommonMetaData() *CommonMetaData           { return &n.CommonMetaData }
 func (n *TextBlockItem) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
+func (n *CapturesGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
 
 func (n *NameForm) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData

@@ -69,6 +69,7 @@ func (*LabelGroup) MlgNodeKind()         {}
 func (*ByGroup) MlgNodeKind()            {}
 func (*DescribesGroup) MlgNodeKind()     {}
 func (*DefinesGroup) MlgNodeKind()       {}
+func (*CapturesGroup) MlgNodeKind()      {}
 func (*StatesGroup) MlgNodeKind()        {}
 func (*ProofGroup) MlgNodeKind()         {}
 func (*AxiomGroup) MlgNodeKind()         {}

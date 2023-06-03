@@ -915,18 +915,12 @@ func includeMissingIdentifiersAt(node ast.MlgNodeKind, keyGen mlglib.IKeyGenerat
 	case *ast.DefinesGroup:
 		defines := &n.Defines
 		defines.Defines = replaceMissingIdentifier(defines.Defines, keyGen)
-		if n.With != nil {
-			includeMissingIdentifiersInTargets(n.With.With, keyGen)
-		}
 		if n.Using != nil {
 			includeMissingIdentifiersInTargets(n.Using.Using, keyGen)
 		}
 	case *ast.DescribesGroup:
 		describes := &n.Describes
 		describes.Describes = replaceMissingIdentifier(describes.Describes, keyGen)
-		if n.With != nil {
-			includeMissingIdentifiersInTargets(n.With.With, keyGen)
-		}
 		if n.Using != nil {
 			includeMissingIdentifiersInTargets(n.Using.Using, keyGen)
 		}

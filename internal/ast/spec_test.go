@@ -192,7 +192,6 @@ var all_group_test_cases = []testCase{
 		actual: DescribesSections,
 		expected: []string{
 			"Describes",
-			"with?",
 			"using?",
 			"when?",
 			"suchThat?",
@@ -210,11 +209,9 @@ var all_group_test_cases = []testCase{
 		actual: DefinesSections,
 		expected: []string{
 			"Defines",
-			"with?",
 			"using?",
 			"when?",
 			"suchThat?",
-			"generalizes?",
 			"means?",
 			"specifies?",
 			"Provides?",
@@ -226,16 +223,25 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
+		actual: CapturesSections,
+		expected: []string{
+			"Captures",
+			"Justified?",
+			"Documented?",
+			"References?",
+			"Id?",
+		},
+	},
+	{
 		actual: StatesSections,
 		expected: []string{
 			"States",
-			"with?",
 			"using?",
 			"when?",
 			"suchThat?",
 			"that",
-			"Documented?",
 			"Justified?",
+			"Documented?",
 			"References?",
 			"Aliases?",
 			"Id?",

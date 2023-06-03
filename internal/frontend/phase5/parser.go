@@ -1024,10 +1024,6 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		return ast.DescribesGroup{}, false
 	}
 	describes := *p.toDescribesSection(sections[ast.UpperDescribesName])
-	var with *ast.WithSection
-	if sec, ok := sections[ast.LowerWithName]; ok {
-		with = p.toWithSection(sec)
-	}
 	var using *ast.UsingSection
 	if sec, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sec)
@@ -1075,7 +1071,6 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	return ast.DescribesGroup{
 		Id:             *id,
 		Describes:      describes,
-		With:           with,
 		Using:          using,
 		When:           when,
 		SuchThat:       suchThat,
@@ -1125,10 +1120,6 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 		return ast.DefinesGroup{}, false
 	}
 	defines := *p.toDefinesSection(sections[ast.UpperDefinesName])
-	var with *ast.WithSection
-	if sec, ok := sections[ast.LowerWithName]; ok {
-		with = p.toWithSection(sec)
-	}
 	var using *ast.UsingSection
 	if sec, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sec)
@@ -1140,10 +1131,6 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 	var suchThat *ast.SuchThatSection
 	if sec, ok := sections[ast.LowerSuchThatName]; ok {
 		suchThat = p.toSuchThatSection(sec)
-	}
-	var generalizes *ast.GeneralizesSection
-	if sec, ok := sections[ast.LowerGeneralizesName]; ok {
-		generalizes = p.toGeneralizesSection(sec)
 	}
 	var means *ast.MeansSection
 	if sec, ok := sections[ast.LowerMeansName]; ok {
@@ -1180,11 +1167,9 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 	return ast.DefinesGroup{
 		Id:             *id,
 		Defines:        defines,
-		With:           with,
 		Using:          using,
 		When:           when,
 		SuchThat:       suchThat,
-		Generalizes:    generalizes,
 		Means:          means,
 		Specifies:      specifies,
 		Provides:       provides,
@@ -1204,23 +1189,16 @@ func (p *parser) toDefinesSection(section phase4.Section) *ast.DefinesSection {
 	}
 }
 
-func (p *parser) toWithSection(section phase4.Section) *ast.WithSection {
-	return &ast.WithSection{
-		With:           p.oneOrMoreTargets(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toGeneralizesSection(section phase4.Section) *ast.GeneralizesSection {
-	return &ast.GeneralizesSection{
-		Generalizes:    p.oneOrMoreFormulation(section),
+func (p *parser) toSingleMeansSection(section phase4.Section) *ast.SingleMeansSection {
+	return &ast.SingleMeansSection{
+		Means:          p.exactlyOneClause(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toMeansSection(section phase4.Section) *ast.MeansSection {
 	return &ast.MeansSection{
-		Means:          p.exactlyOneClause(section),
+		Means:          p.oneOrMoreClauses(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -1228,6 +1206,53 @@ func (p *parser) toMeansSection(section phase4.Section) *ast.MeansSection {
 func (p *parser) toSpecifiesSection(section phase4.Section) *ast.SpecifiesSection {
 	return &ast.SpecifiesSection{
 		Specifies:      p.oneOrMoreClauses(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////// captures ////////////////////////////////////////////////
+
+func (p *parser) toCapturesGroup(group phase4.Group) (ast.CapturesGroup, bool) {
+	if !startsWithSections(group, ast.UpperCapturesName) {
+		return ast.CapturesGroup{}, false
+	}
+
+	id := p.getId(group, true)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.CapturesSections...)
+	if !ok || id == nil {
+		return ast.CapturesGroup{}, false
+	}
+	captures := *p.toCapturesSection(sections[ast.UpperCapturesName])
+	var justified *ast.JustifiedSection
+	if sec, ok := sections[ast.UpperJustifiedName]; ok {
+		justified = p.toJustifiedSection(sec)
+	}
+	var documented *ast.DocumentedSection
+	if sec, ok := sections[ast.UpperDocumentedName]; ok {
+		documented = p.toDocumentedSection(sec)
+	}
+	var references *ast.ReferencesSection
+	if sec, ok := sections[ast.UpperReferencesName]; ok {
+		references = p.toReferencesSection(sec)
+	}
+	var metaId *ast.MetaIdSection
+	if sec, ok := sections[ast.UpperIdName]; ok {
+		metaId = p.toMetaIdSection(sec)
+	}
+	return ast.CapturesGroup{
+		Id:             *id,
+		Captures:       captures,
+		Justified:      justified,
+		Documented:     documented,
+		References:     references,
+		MetaId:         metaId,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toCapturesSection(section phase4.Section) *ast.CapturesSection {
+	return &ast.CapturesSection{
+		Captures:       p.oneOrMoreFormulation(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -1245,10 +1270,6 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		return ast.StatesGroup{}, false
 	}
 	states := *p.toStatesSection(sections[ast.UpperStatesName])
-	var with *ast.WithSection
-	if sec, ok := sections[ast.LowerWithName]; ok {
-		with = p.toWithSection(sec)
-	}
 	var using *ast.UsingSection
 	if sec, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sec)
@@ -1262,13 +1283,13 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		suchThat = p.toSuchThatSection(sec)
 	}
 	that := *p.toThatSection(sections[ast.LowerThatName])
-	var documented *ast.DocumentedSection
-	if sec, ok := sections[ast.UpperDocumentedName]; ok {
-		documented = p.toDocumentedSection(sec)
-	}
 	var justified *ast.JustifiedSection
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		justified = p.toJustifiedSection(sec)
+	}
+	var documented *ast.DocumentedSection
+	if sec, ok := sections[ast.UpperDocumentedName]; ok {
+		documented = p.toDocumentedSection(sec)
 	}
 	var references *ast.ReferencesSection
 	if sec, ok := sections[ast.UpperReferencesName]; ok {
@@ -1285,13 +1306,12 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 	return ast.StatesGroup{
 		Id:             *id,
 		States:         states,
-		With:           with,
 		Using:          using,
 		When:           when,
 		SuchThat:       suchThat,
 		That:           that,
-		Documented:     documented,
 		Justified:      justified,
+		Documented:     documented,
 		References:     references,
 		Aliases:        aliases,
 		MetaId:         metaId,
@@ -1660,7 +1680,7 @@ func (p *parser) toZeroGroup(group phase4.Group) (ast.ZeroGroup, bool) {
 	}
 	return ast.ZeroGroup{
 		Zero:           *p.toZeroSection(sections[ast.LowerZeroName]),
-		Means:          *p.toMeansSection(sections[ast.LowerMeansName]),
+		SingleMeans:    *p.toSingleMeansSection(sections[ast.LowerMeansName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
@@ -1683,7 +1703,7 @@ func (p *parser) toPositiveIntGroup(group phase4.Group) (ast.PositiveIntGroup, b
 	}
 	return ast.PositiveIntGroup{
 		PositiveInt:    *p.toPositiveIntSection(sections[ast.LowerPositiveIntName]),
-		Means:          *p.toMeansSection(sections[ast.LowerMeansName]),
+		SingleMeans:    *p.toSingleMeansSection(sections[ast.LowerMeansName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
@@ -1706,7 +1726,7 @@ func (p *parser) toNegativeIntGroup(group phase4.Group) (ast.NegativeIntGroup, b
 	}
 	return ast.NegativeIntGroup{
 		NegativeInt:    *p.toNegativeIntSection(sections[ast.LowerNegativeIntName]),
-		Means:          *p.toMeansSection(sections[ast.LowerMeansName]),
+		SingleMeans:    *p.toSingleMeansSection(sections[ast.LowerMeansName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
@@ -1729,7 +1749,7 @@ func (p *parser) toPositiveFloatGroup(group phase4.Group) (ast.PositiveFloatGrou
 	}
 	return ast.PositiveFloatGroup{
 		PositiveFloat:  *p.toPositiveFloatSection(sections[ast.LowerPositiveFloatName]),
-		Means:          *p.toMeansSection(sections[ast.LowerMeansName]),
+		SingleMeans:    *p.toSingleMeansSection(sections[ast.LowerMeansName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
@@ -1752,7 +1772,7 @@ func (p *parser) toNegativeFloatGroup(group phase4.Group) (ast.NegativeFloatGrou
 	}
 	return ast.NegativeFloatGroup{
 		NegativeFloat:  *p.toNegativeFloatSection(sections[ast.LowerNegativeFloatName]),
-		Means:          *p.toMeansSection(sections[ast.LowerMeansName]),
+		SingleMeans:    *p.toSingleMeansSection(sections[ast.LowerMeansName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
@@ -2254,6 +2274,8 @@ func (p *parser) toTopLevelItemKind(item phase4.TopLevelNodeKind) (ast.TopLevelI
 		if grp, ok := p.toDefinesGroup(*item); ok {
 			return &grp, true
 		} else if grp, ok := p.toDescribesGroup(*item); ok {
+			return &grp, true
+		} else if grp, ok := p.toCapturesGroup(*item); ok {
 			return &grp, true
 		} else if grp, ok := p.toStatesGroup(*item); ok {
 			return &grp, true

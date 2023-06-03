@@ -57,6 +57,7 @@ func (*LabelGroup) StructuralNodeKind()         {}
 func (*ByGroup) StructuralNodeKind()            {}
 func (*DescribesGroup) StructuralNodeKind()     {}
 func (*DefinesGroup) StructuralNodeKind()       {}
+func (*CapturesGroup) StructuralNodeKind()      {}
 func (*StatesGroup) StructuralNodeKind()        {}
 func (*ProofGroup) StructuralNodeKind()         {}
 func (*AxiomGroup) StructuralNodeKind()         {}

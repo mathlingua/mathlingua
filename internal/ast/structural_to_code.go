@@ -259,7 +259,6 @@ func (n *DescribesGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
 	db.AppendSection(UpperDescribesName, indent, false)
 	db.Append(&n.Describes.Describes, indent+2, true)
-	db.MaybeAppendWithSection(n.With, indent, false)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhenSection(n.When, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
@@ -293,17 +292,11 @@ func (n *DefinesGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
 	db.AppendSection(UpperDefinesName, indent, false)
 	db.Append(&n.Defines.Defines, indent+2, true)
-	db.MaybeAppendWithSection(n.With, indent, false)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhenSection(n.When, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
-	if n.Generalizes != nil {
-		db.AppendSection(LowerGeneralizesName, indent, false)
-		db.AppendFormulations(n.Generalizes.Generalizes, indent+2, true)
-	}
 	if n.Means != nil {
-		db.AppendSection(LowerMeansName, indent, false)
-		db.Append(n.Means.Means, indent+2, true)
+		db.AppendClausesSection(LowerMeansName, n.Means.Means, indent, false)
 	}
 	if n.Specifies != nil {
 		db.AppendClausesSection(LowerSpecifiesName, n.Specifies.Specifies, indent, false)
@@ -327,22 +320,37 @@ func (n *DefinesGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *StatesGroup) ToCode(indent int, hasDot bool) []string {
+func (n *CapturesGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
-	db.AppendSection(UpperStatesName, indent, false)
-	db.MaybeAppendWithSection(n.With, indent, false)
-	db.MaybeAppendUsingSection(n.Using, indent, false)
-	db.MaybeAppendWhenSection(n.When, indent, false)
-	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
-	db.AppendClausesSection(LowerThatName, n.That.That, indent, false)
-	db.MaybeAppendDocumentedSection(n.Documented, indent, false)
+	db.AppendFormulationsSection(UpperCapturesName, n.Captures.Captures, indent, false)
 	if n.Justified != nil {
 		db.AppendSection(UpperJustifiedName, indent, false)
 		for _, item := range n.Justified.Justified {
 			db.Append(item, indent+2, true)
 		}
 	}
+	db.MaybeAppendDocumentedSection(n.Documented, indent, false)
+	db.MaybeAppendReferencesSection(n.References, indent, false)
+	db.MaybeAppendMetaIdSection(n.MetaId, indent, false)
+	return db.Lines()
+}
+
+func (n *StatesGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
+	db.AppendSection(UpperStatesName, indent, false)
+	db.MaybeAppendUsingSection(n.Using, indent, false)
+	db.MaybeAppendWhenSection(n.When, indent, false)
+	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
+	db.AppendClausesSection(LowerThatName, n.That.That, indent, false)
+	if n.Justified != nil {
+		db.AppendSection(UpperJustifiedName, indent, false)
+		for _, item := range n.Justified.Justified {
+			db.Append(item, indent+2, true)
+		}
+	}
+	db.MaybeAppendDocumentedSection(n.Documented, indent, false)
 	db.MaybeAppendReferencesSection(n.References, indent, false)
 	db.MaybeAppendAliasesSection(n.Aliases, indent, false)
 	db.MaybeAppendMetaIdSection(n.MetaId, indent, false)
@@ -425,35 +433,35 @@ func (n *TopicGroup) ToCode(indent int, hasDot bool) []string {
 func (n *ZeroGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerZeroName, indent, hasDot)
-	db.MaybeAppendMeansSection(&n.Means, indent, false)
+	db.MaybeAppendSingleMeansSection(&n.SingleMeans, indent, false)
 	return db.Lines()
 }
 
 func (n *PositiveIntGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerPositiveIntName, indent, hasDot)
-	db.MaybeAppendMeansSection(&n.Means, indent, false)
+	db.MaybeAppendSingleMeansSection(&n.SingleMeans, indent, false)
 	return db.Lines()
 }
 
 func (n *NegativeIntGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerNegativeIntName, indent, hasDot)
-	db.MaybeAppendMeansSection(&n.Means, indent, false)
+	db.MaybeAppendSingleMeansSection(&n.SingleMeans, indent, false)
 	return db.Lines()
 }
 
 func (n *PositiveFloatGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerPositiveFloatName, indent, hasDot)
-	db.MaybeAppendMeansSection(&n.Means, indent, false)
+	db.MaybeAppendSingleMeansSection(&n.SingleMeans, indent, false)
 	return db.Lines()
 }
 
 func (n *NegativeFloatGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerNegativeFloatName, indent, hasDot)
-	db.MaybeAppendMeansSection(&n.Means, indent, false)
+	db.MaybeAppendSingleMeansSection(&n.SingleMeans, indent, false)
 	return db.Lines()
 }
 
@@ -673,10 +681,18 @@ func (db *debugBuilder) AppendTextItems(items []TextItem, indent int, hasDot boo
 }
 
 func (db *debugBuilder) AppendFormulations(
-	items []Formulation[FormulationNodeKind], indent int, hasDot bool) {
+	items []Formulation[FormulationNodeKind], indent int, hasDot bool,
+) {
 	for _, item := range items {
 		db.Append(&item, indent, hasDot)
 	}
+}
+
+func (db *debugBuilder) AppendFormulationsSection(
+	name string, items []Formulation[FormulationNodeKind], indent int, hasDot bool,
+) {
+	db.AppendSection(name, indent, hasDot)
+	db.AppendFormulations(items, indent+2, true)
 }
 
 func (db *debugBuilder) AppendSpecsSection(name string, specs []Spec, indent int, hasDot bool) {
@@ -804,15 +820,6 @@ func (db *debugBuilder) MaybeAppendUsingSection(sec *UsingSection, indent int, h
 	}
 }
 
-func (db *debugBuilder) MaybeAppendWithSection(sec *WithSection, indent int, hasDot bool) {
-	if sec != nil {
-		db.AppendSection(LowerWithName, indent, hasDot)
-		for _, item := range sec.With {
-			db.Append(&item, indent+2, true)
-		}
-	}
-}
-
 func (db *debugBuilder) MaybeAppendIfSection(sec *IfSection, indent int, hasDot bool) {
 	if sec != nil {
 		db.AppendSection(LowerIfName, indent, hasDot)
@@ -831,7 +838,7 @@ func (db *debugBuilder) MaybeAppendIffSection(sec *IffSection, indent int, hasDo
 	}
 }
 
-func (db *debugBuilder) MaybeAppendMeansSection(sec *MeansSection, indent int, hasDot bool) {
+func (db *debugBuilder) MaybeAppendSingleMeansSection(sec *SingleMeansSection, indent int, hasDot bool) {
 	if sec != nil {
 		db.AppendSection(LowerMeansName, indent, hasDot)
 		db.Append(sec.Means, indent+2, true)

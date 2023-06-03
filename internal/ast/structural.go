@@ -662,7 +662,6 @@ type ReferencesSection struct {
 
 var DescribesSections = []string{
 	UpperDescribesName,
-	LowerWithQuestionName,
 	LowerUsingQuestionName,
 	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
@@ -679,7 +678,6 @@ var DescribesSections = []string{
 type DescribesGroup struct {
 	Id             IdItem
 	Describes      DescribesSection
-	With           *WithSection
 	Using          *UsingSection
 	When           *WhenSection
 	SuchThat       *SuchThatSection
@@ -696,11 +694,6 @@ type DescribesGroup struct {
 
 type DescribesSection struct {
 	Describes      Target
-	CommonMetaData CommonMetaData
-}
-
-type WithSection struct {
-	With           []Target
 	CommonMetaData CommonMetaData
 }
 
@@ -735,11 +728,9 @@ type MetaIdSection struct {
 
 var DefinesSections = []string{
 	UpperDefinesName,
-	LowerWithQuestionName,
 	LowerUsingQuestionName,
 	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
-	LowerGeneralizesQuestionName,
 	LowerMeansQuestionName,
 	LowerSpecifiesQuestionName,
 	UpperProvidesQuestionName,
@@ -753,11 +744,9 @@ var DefinesSections = []string{
 type DefinesGroup struct {
 	Id             IdItem
 	Defines        DefinesSection
-	With           *WithSection
 	Using          *UsingSection
 	When           *WhenSection
 	SuchThat       *SuchThatSection
-	Generalizes    *GeneralizesSection
 	Means          *MeansSection
 	Specifies      *SpecifiesSection
 	Provides       *ProvidesSection
@@ -774,13 +763,8 @@ type DefinesSection struct {
 	CommonMetaData CommonMetaData
 }
 
-type GeneralizesSection struct {
-	Generalizes    []Formulation[FormulationNodeKind]
-	CommonMetaData CommonMetaData
-}
-
 type MeansSection struct {
-	Means          ClauseKind
+	Means          []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -791,15 +775,39 @@ type SpecifiesSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+var CapturesSections = []string{
+	UpperCapturesName,
+	UpperJustifiedQuestionName,
+	UpperDocumentedQuestionName,
+	UpperReferencesQuestionName,
+	UpperIdQuestionName,
+}
+
+type CapturesGroup struct {
+	Id             IdItem
+	Captures       CapturesSection
+	Justified      *JustifiedSection
+	Documented     *DocumentedSection
+	References     *ReferencesSection
+	MetaId         *MetaIdSection
+	CommonMetaData CommonMetaData
+}
+
+type CapturesSection struct {
+	Captures       []Formulation[FormulationNodeKind]
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 var StatesSections = []string{
 	UpperStatesName,
-	LowerWithQuestionName,
 	LowerUsingQuestionName,
 	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
 	LowerThatName,
-	UpperDocumentedQuestionName,
 	UpperJustifiedQuestionName,
+	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
 	UpperAliasesQuestionName,
 	UpperIdQuestionName,
@@ -808,7 +816,6 @@ var StatesSections = []string{
 type StatesGroup struct {
 	Id             IdItem
 	States         StatesSection
-	With           *WithSection
 	Using          *UsingSection
 	When           *WhenSection
 	SuchThat       *SuchThatSection
@@ -1015,7 +1022,12 @@ var ZeroSections = []string{LowerZeroName, LowerMeansName}
 
 type ZeroGroup struct {
 	Zero           ZeroSection
-	Means          MeansSection
+	SingleMeans    SingleMeansSection
+	CommonMetaData CommonMetaData
+}
+
+type SingleMeansSection struct {
+	Means          ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -1027,7 +1039,7 @@ var PositiveIntSections = []string{LowerPositiveIntName, LowerMeansName}
 
 type PositiveIntGroup struct {
 	PositiveInt    PositiveIntSection
-	Means          MeansSection
+	SingleMeans    SingleMeansSection
 	CommonMetaData CommonMetaData
 }
 
@@ -1040,7 +1052,7 @@ var NegativeIntSections = []string{LowerNegativeIntName, LowerMeansName}
 
 type NegativeIntGroup struct {
 	NegativeInt    NegativeIntSection
-	Means          MeansSection
+	SingleMeans    SingleMeansSection
 	CommonMetaData CommonMetaData
 }
 
@@ -1053,7 +1065,7 @@ var PositiveFloatSections = []string{LowerPositiveFloatName, LowerMeansName}
 
 type PositiveFloatGroup struct {
 	PositiveFloat  PositiveFloatSection
-	Means          MeansSection
+	SingleMeans    SingleMeansSection
 	CommonMetaData CommonMetaData
 }
 
@@ -1066,7 +1078,7 @@ var NegativeFloatSections = []string{LowerNegativeFloatName, LowerMeansName}
 
 type NegativeFloatGroup struct {
 	NegativeFloat  NegativeFloatSection
-	Means          MeansSection
+	SingleMeans    SingleMeansSection
 	CommonMetaData CommonMetaData
 }
 
@@ -1349,6 +1361,7 @@ func (*TopicGroup) TopLevelItemKind()      {}
 func (*PersonGroup) TopLevelItemKind()     {}
 func (*ResourceGroup) TopLevelItemKind()   {}
 func (*ProofGroup) TopLevelItemKind()      {}
+func (*CapturesGroup) TopLevelItemKind()   {}
 
 type Document struct {
 	Items          []TopLevelItemKind

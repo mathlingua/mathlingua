@@ -32,6 +32,8 @@ func Summarize(
 		return SummarizeDefines(entry), true
 	case *ast.StatesGroup:
 		return SummarizeStates(entry), true
+	case *ast.CapturesGroup:
+		return SummarizeCaptures(entry), true
 	case *ast.AxiomGroup:
 		return SummarizeAxiom(entry), true
 	case *ast.ConjectureGroup:
@@ -79,6 +81,18 @@ func SummarizeStates(states *ast.StatesGroup) *StatesSummary {
 		Written: GetWrittenSummaries(states.Documented),
 		Writing: GetWritingSummaries(states.Documented),
 		Called:  GetCalledSummaries(states.Documented),
+	}
+}
+
+func SummarizeCaptures(captures *ast.CapturesGroup) *CapturesSummary {
+	if captures == nil {
+		return nil
+	}
+	input, _ := toCommandPatternFromId(captures.Id)
+	return &CapturesSummary{
+		Input:   input,
+		Written: GetWrittenSummaries(captures.Documented),
+		Called:  GetCalledSummaries(captures.Documented),
 	}
 }
 

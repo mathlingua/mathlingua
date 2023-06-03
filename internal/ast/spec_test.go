@@ -79,6 +79,15 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
+		actual: GivenSections,
+		expected: []string{
+			"given",
+			"where?",
+			"suchThat?",
+			"then",
+		},
+	},
+	{
 		actual: IfSections,
 		expected: []string{
 			"if",

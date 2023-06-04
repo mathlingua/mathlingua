@@ -363,6 +363,25 @@ var all_group_test_cases = []testCase{
 			"Id?",
 		},
 	},
+	{
+		actual: NameSections,
+		expected: []string{
+			"name",
+		},
+	},
+	{
+		actual: BiographySections,
+		expected: []string{
+			"biography",
+		},
+	},
+	{
+		actual: PersonSections,
+		expected: []string{
+			"Person",
+			"Id?",
+		},
+	},
 }
 
 func TestSpec(t *testing.T) {

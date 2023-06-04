@@ -155,9 +155,8 @@ func (n *CalledGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Called.Called, fn)
 }
 
-func (n *WritingGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachTextItem(n.As.As, fn)
-	fn(&n.Writing.Writing)
+func (n *ExpressedGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachTextItem(n.Expressed.Expressed, fn)
 }
 
 func (n *OverviewGroup) ForEach(fn func(subNode MlgNodeKind)) {

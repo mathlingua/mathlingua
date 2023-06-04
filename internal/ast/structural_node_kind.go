@@ -44,7 +44,7 @@ func (*SymbolWrittenGroup) StructuralNodeKind() {}
 func (*ConnectionGroup) StructuralNodeKind()    {}
 func (*WrittenGroup) StructuralNodeKind()       {}
 func (*CalledGroup) StructuralNodeKind()        {}
-func (*WritingGroup) StructuralNodeKind()       {}
+func (*ExpressedGroup) StructuralNodeKind()     {}
 func (*OverviewGroup) StructuralNodeKind()      {}
 func (*MotivationGroup) StructuralNodeKind()    {}
 func (*HistoryGroup) StructuralNodeKind()       {}

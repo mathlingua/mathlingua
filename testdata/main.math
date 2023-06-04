@@ -137,8 +137,7 @@ Justified:
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. writing: x
-  as: "-x?"
+. expressed: "X?"
 . note: "some note in Markdown"
 . overview: "some overview in Markdown"
 . motivation: "some motivation in Markdown"
@@ -179,8 +178,7 @@ Justified:
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. writing: x
-  as: "-x?"
+. expressed: "X?"
 . note: "some note in Markdown"
 . overview: "some overview in Markdown"
 . motivation: "some motivation in Markdown"
@@ -211,8 +209,7 @@ Justified:
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. writing: x
-  as: "-x?"
+. expressed: "X?"
 . note: "some note in Markdown"
 . overview: "some overview in Markdown"
 . motivation: "some motivation in Markdown"
@@ -242,8 +239,7 @@ Justified:
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. writing: x
-  as: "-x?"
+. expressed: "X?"
 . note: "some note in Markdown"
 . overview: "some overview in Markdown"
 . motivation: "some motivation in Markdown"
@@ -304,8 +300,7 @@ Proof:
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. writing: x
-  as: "-x?"
+. expressed: "X?"
 . note: "some note in Markdown"
 . overview: "some overview in Markdown"
 . motivation: "some motivation in Markdown"
@@ -342,8 +337,7 @@ then: 'x >= 0'
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. writing: x
-  as: "-x?"
+. expressed: "X?"
 . note: "some note in Markdown"
 . overview: "some overview in Markdown"
 . motivation: "some motivation in Markdown"
@@ -380,8 +374,7 @@ then: 'x >= 0'
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. writing: x
-  as: "-x?"
+. expressed: "X?"
 . note: "some note in Markdown"
 . overview: "some overview in Markdown"
 . motivation: "some motivation in Markdown"

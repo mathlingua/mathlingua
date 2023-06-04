@@ -182,11 +182,9 @@ func (n *CalledGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *WritingGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ExpressedGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendSection(LowerWritingName, indent, hasDot)
-	db.Append(&n.Writing.Writing, indent, false)
-	db.AppendTextItemsSection(LowerAsName, n.As.As, indent, false)
+	db.AppendTextItemsSection(LowerExpressedName, n.Expressed.Expressed, indent, false)
 	return db.Lines()
 }
 

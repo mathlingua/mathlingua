@@ -39,7 +39,7 @@ func (n *SymbolWrittenGroup) GetCommonMetaData() *CommonMetaData { return &n.Com
 func (n *ConnectionGroup) GetCommonMetaData() *CommonMetaData    { return &n.CommonMetaData }
 func (n *WrittenGroup) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
 func (n *CalledGroup) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
-func (n *WritingGroup) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
+func (n *ExpressedGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
 func (n *OverviewGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
 func (n *MotivationGroup) GetCommonMetaData() *CommonMetaData    { return &n.CommonMetaData }
 func (n *HistoryGroup) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }

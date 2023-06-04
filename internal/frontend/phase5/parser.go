@@ -615,34 +615,24 @@ func (p *parser) toCalledSection(section phase4.Section) *ast.CalledSection {
 	}
 }
 
-func (p *parser) toWritingGroup(group phase4.Group) (ast.WritingGroup, bool) {
-	if !startsWithSections(group, ast.LowerWritingName) {
-		return ast.WritingGroup{}, false
+func (p *parser) toExpressedGroup(group phase4.Group) (ast.ExpressedGroup, bool) {
+	if !startsWithSections(group, ast.LowerExpressedName) {
+		return ast.ExpressedGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.WritingSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ExpressedSections...)
 	if !ok {
-		return ast.WritingGroup{}, false
+		return ast.ExpressedGroup{}, false
 	}
-	writing := *p.toWritingSection(sections[ast.LowerWritingName])
-	as := *p.toWritingAsSection(sections[ast.LowerAsName])
-	return ast.WritingGroup{
-		Writing:        writing,
-		As:             as,
+	return ast.ExpressedGroup{
+		Expressed:      *p.toExpressedSection(sections[ast.LowerExpressedName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
 
-func (p *parser) toWritingSection(section phase4.Section) *ast.WritingSection {
-	return &ast.WritingSection{
-		Writing:        p.exactlyOneTarget(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toWritingAsSection(section phase4.Section) *ast.WritingAsSection {
-	return &ast.WritingAsSection{
-		As:             p.oneOrMoreTextItems(section),
+func (p *parser) toExpressedSection(section phase4.Section) *ast.ExpressedSection {
+	return &ast.ExpressedSection{
+		Expressed:      p.oneOrMoreTextItems(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -675,7 +665,7 @@ func (p *parser) toDocumentedKind(arg phase4.Argument) (ast.DocumentedKind, bool
 			return &grp, true
 		} else if grp, ok := p.toWrittenGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toWritingGroup(*group); ok {
+		} else if grp, ok := p.toExpressedGroup(*group); ok {
 			return &grp, true
 		} else if grp, ok := p.toCalledGroup(*group); ok {
 			return &grp, true
@@ -2711,7 +2701,7 @@ func (p *parser) toDocumentedKinds(args []phase4.Argument) []ast.DocumentedKind 
 				"Expected a %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, or %s: item",
 				ast.LowerDetailsName, ast.LowerOverviewName, ast.LowerMotivationName, ast.LowerHistoryName,
 				ast.LowerExampleName, ast.LowerRelatedName, ast.LowerDiscovererName, ast.LowerNoteName,
-				ast.LowerWrittenName, ast.LowerWritingName, ast.LowerCalledName), arg.MetaData.Start))
+				ast.LowerWrittenName, ast.LowerExpressedName, ast.LowerCalledName), arg.MetaData.Start))
 		}
 	}
 	return result

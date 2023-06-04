@@ -445,21 +445,15 @@ type CalledSection struct {
 	CommonMetaData CommonMetaData
 }
 
-var WritingSections = []string{LowerWritingName, LowerAsName}
+var ExpressedSections = []string{LowerExpressedName}
 
-type WritingGroup struct {
-	Writing        WritingSection
-	As             WritingAsSection
+type ExpressedGroup struct {
+	Expressed      ExpressedSection
 	CommonMetaData CommonMetaData
 }
 
-type WritingSection struct {
-	Writing        Target
-	CommonMetaData CommonMetaData
-}
-
-type WritingAsSection struct {
-	As             []TextItem
+type ExpressedSection struct {
+	Expressed      []TextItem
 	CommonMetaData CommonMetaData
 }
 
@@ -478,7 +472,7 @@ func (*RelatedGroup) DocumentedKind()    {}
 func (*DiscovererGroup) DocumentedKind() {}
 func (*NoteGroup) DocumentedKind()       {}
 func (*WrittenGroup) DocumentedKind()    {}
-func (*WritingGroup) DocumentedKind()    {}
+func (*ExpressedGroup) DocumentedKind()  {}
 func (*CalledGroup) DocumentedKind()     {}
 
 var DetailsSections = []string{LowerDetailsName}

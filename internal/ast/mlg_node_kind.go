@@ -56,7 +56,7 @@ func (*SymbolWrittenGroup) MlgNodeKind() {}
 func (*ConnectionGroup) MlgNodeKind()    {}
 func (*WrittenGroup) MlgNodeKind()       {}
 func (*CalledGroup) MlgNodeKind()        {}
-func (*WritingGroup) MlgNodeKind()       {}
+func (*ExpressedGroup) MlgNodeKind()     {}
 func (*OverviewGroup) MlgNodeKind()      {}
 func (*MotivationGroup) MlgNodeKind()    {}
 func (*HistoryGroup) MlgNodeKind()       {}

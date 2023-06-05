@@ -127,7 +127,7 @@ extends: 'X is \something.else'
 satisfies: 'X > 0'
 Provides:
 . 'x + y :=> x \plus/ y'
-. 'x [in]: X :=> x is \element:of{X}'
+. 'x [in]: X :-> x is \element:of{X}'
 . symbol: 'x - y :=> x \minus/ y'
   written: "x? -- y?"
 . connection:
@@ -170,7 +170,7 @@ means: 'X is \something.else'
 specifies: 'X(x) := 0'
 Provides:
 . 'x + y :=> x \plus/ y'
-. 'x [in]: X :=> x is \element:of{X}'
+. 'x [in]: X :-> x is \element:of{X}'
 . symbol: 'x - y :=> x \minus/ y'
   written: "x? -- y?"
 . connection:

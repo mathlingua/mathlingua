@@ -95,12 +95,6 @@ func GetAstMetaId(node ast.TopLevelItemKind) (string, bool) {
 			return "", false
 		}
 		return metaId.Id.RawText, true
-	case *ast.TopicGroup:
-		metaId := tl.MetaId
-		if metaId == nil {
-			return "", false
-		}
-		return metaId.Id.RawText, true
 	case *ast.PersonGroup:
 		metaId := tl.MetaId
 		if metaId == nil {

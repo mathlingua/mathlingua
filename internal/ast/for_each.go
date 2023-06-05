@@ -425,17 +425,6 @@ func (n *TheoremGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
-func (n *TopicGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(&n.Id)
-	fn(&n.Content.Content)
-	if n.References != nil {
-		forEachTextItem(n.References.References, fn)
-	}
-	if n.MetaId != nil {
-		fn(&n.MetaId.Id)
-	}
-}
-
 func (n *ZeroGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.SingleMeans.Means)
 }

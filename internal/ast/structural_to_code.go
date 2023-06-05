@@ -418,16 +418,6 @@ func (n *TheoremGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *TopicGroup) ToCode(indent int, hasDot bool) []string {
-	db := newDebugBuilder()
-	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
-	db.AppendSection(UpperTopicName, indent, false)
-	db.AppendSingleTextItemSection(LowerContentName, n.Content.Content, indent, false)
-	db.MaybeAppendReferencesSection(n.References, indent, false)
-	db.MaybeAppendMetaIdSection(n.MetaId, indent, false)
-	return db.Lines()
-}
-
 func (n *ZeroGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerZeroName, indent, hasDot)

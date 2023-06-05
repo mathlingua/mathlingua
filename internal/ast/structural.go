@@ -979,28 +979,6 @@ type ProofSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var TopicSections = []string{
-	UpperTopicName,
-	LowerContentName,
-	UpperReferencesQuestionName,
-	UpperIdQuestionName,
-}
-
-type TopicGroup struct {
-	Id             IdItem
-	Topic          TopicSection
-	Content        ContentSection
-	References     *ReferencesSection
-	MetaId         *MetaIdSection
-	CommonMetaData CommonMetaData
-}
-
-type TopicSection struct {
-	CommonMetaData CommonMetaData
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 type SpecifyKind interface {
 	StructuralNodeKind
 	SpecifyKind()
@@ -1351,7 +1329,6 @@ func (*AxiomGroup) TopLevelItemKind()      {}
 func (*ConjectureGroup) TopLevelItemKind() {}
 func (*TheoremGroup) TopLevelItemKind()    {}
 func (*SpecifyGroup) TopLevelItemKind()    {}
-func (*TopicGroup) TopLevelItemKind()      {}
 func (*PersonGroup) TopLevelItemKind()     {}
 func (*ResourceGroup) TopLevelItemKind()   {}
 func (*ProofGroup) TopLevelItemKind()      {}

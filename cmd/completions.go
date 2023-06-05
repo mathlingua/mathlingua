@@ -92,7 +92,6 @@ func getCompletionResult() completionsResult {
 		join(ast.AxiomSections),
 		join(ast.ConjectureSections),
 		join(ast.TheoremSections),
-		join(ast.TopicSections),
 		join(ast.ZeroSections),
 		join(ast.PositiveIntSections),
 		join(ast.NegativeIntSections),

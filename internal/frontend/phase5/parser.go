@@ -1610,6 +1610,13 @@ func (p *parser) toOfSection(section phase4.Section) *ast.OfSection {
 	}
 }
 
+func (p *parser) toContentSection(section phase4.Section) *ast.ContentSection {
+	return &ast.ContentSection{
+		Content:        p.exactlyOneTextItem(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
 ////////////////////////////////////////// specify /////////////////////////////////////////////////
 
 func (p *parser) toSpecifyGroup(group phase4.Group) (ast.SpecifyGroup, bool) {
@@ -1770,52 +1777,6 @@ func (p *parser) toNegativeFloatGroup(group phase4.Group) (ast.NegativeFloatGrou
 func (p *parser) toNegativeFloatSection(section phase4.Section) *ast.NegativeFloatSection {
 	return &ast.NegativeFloatSection{
 		NegativeFloat:  p.exactlyOneTarget(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-//////////////////////////////////////////// topic /////////////////////////////////////////////////
-
-func (p *parser) toTopicGroup(group phase4.Group) (ast.TopicGroup, bool) {
-	if !startsWithSections(group, ast.UpperTopicName) {
-		return ast.TopicGroup{}, false
-	}
-
-	id := p.getId(group, true)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.TopicSections...)
-	if !ok || id == nil {
-		return ast.TopicGroup{}, false
-	}
-	topic := *p.toTopicSection(sections[ast.UpperTopicName])
-	content := *p.toContentSection(sections[ast.LowerContentName])
-	var references *ast.ReferencesSection
-	if sec, ok := sections[ast.UpperJustifiedName]; ok {
-		references = p.toReferencesSection(sec)
-	}
-	var metaId *ast.MetaIdSection
-	if sec, ok := sections[ast.UpperIdName]; ok {
-		metaId = p.toMetaIdSection(sec)
-	}
-	return ast.TopicGroup{
-		Id:             *id,
-		Topic:          topic,
-		Content:        content,
-		References:     references,
-		MetaId:         metaId,
-		CommonMetaData: toCommonMetaData(group.MetaData),
-	}, true
-}
-
-func (p *parser) toTopicSection(section phase4.Section) *ast.TopicSection {
-	p.verifyNoArgs(section)
-	return &ast.TopicSection{
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toContentSection(section phase4.Section) *ast.ContentSection {
-	return &ast.ContentSection{
-		Content:        p.exactlyOneTextItem(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -2277,8 +2238,6 @@ func (p *parser) toTopLevelItemKind(item phase4.TopLevelNodeKind) (ast.TopLevelI
 			return &grp, true
 		} else if grp, ok := p.toSpecifyGroup(*item); ok {
 			return &grp, true
-		} else if grp, ok := p.toTopicGroup(*item); ok {
-			return &grp, ok
 		} else if grp, ok := p.toPersonGroup(*item); ok {
 			return &grp, ok
 		} else if grp, ok := p.toResourceGroup(*item); ok {

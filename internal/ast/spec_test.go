@@ -312,15 +312,6 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: TopicSections,
-		expected: []string{
-			"Topic",
-			"content",
-			"References?",
-			"Id?",
-		},
-	},
-	{
 		actual: PositiveIntSections,
 		expected: []string{
 			"positiveInt",

@@ -130,6 +130,13 @@ Provides:
 . 'x [in]: X :=> x is \element:of{X}'
 . symbol: 'x - y :=> x \minus/ y'
   written: "x? -- y?"
+. connection:
+  to: A
+  using: B, C
+  means: 'A is \something{B, C}'
+  signifies: 'A is \isomorphic.to{\B}'
+  viewable:
+  through: '\something2.asSomething{X}'
 Justified:
 . by: "\(some.theorem)"
 . label: "\(some.label)"
@@ -166,6 +173,13 @@ Provides:
 . 'x [in]: X :=> x is \element:of{X}'
 . symbol: 'x - y :=> x \minus/ y'
   written: "x? -- y?"
+. connection:
+  to: A
+  using: B, C
+  means: 'A is \something{B, C}'
+  signifies: 'A is \isomorphic.to{\B}'
+  viewable:
+  through: '\something2.asSomething{X}'
 Justified:
 . by: "\(some.theorem)"
 . label: "\(some.label)"

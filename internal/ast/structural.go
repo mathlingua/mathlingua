@@ -336,6 +336,12 @@ var SymbolSections = []string{
 	LowerWrittenQuestionName,
 }
 
+type SymbolWrittenGroup struct {
+	Symbol         SymbolSection
+	Written        *WrittenSection
+	CommonMetaData CommonMetaData
+}
+
 type SymbolSection struct {
 	Symbol         Alias
 	CommonMetaData CommonMetaData
@@ -343,12 +349,6 @@ type SymbolSection struct {
 
 type WrittenSection struct {
 	Written        []TextItem
-	CommonMetaData CommonMetaData
-}
-
-type SymbolWrittenGroup struct {
-	Symbol         SymbolSection
-	Written        *WrittenSection
 	CommonMetaData CommonMetaData
 }
 
@@ -360,6 +360,16 @@ var ConnectionSections = []string{
 	LowerSignifiesQuestionName,
 	LowerViewableQuestionName,
 	LowerThroughQuestionName,
+}
+
+type ConnectionGroup struct {
+	Connection     ConnectionSection
+	Using          *UsingSection
+	Means          MeansSection
+	Signfies       *SignifiesSection
+	Viewable       *ConnectionViewableSection
+	Through        *ConnectionThroughSection
+	CommonMetaData CommonMetaData
 }
 
 type ConnectionSection struct {
@@ -382,45 +392,6 @@ type ConnectionViewableSection struct {
 
 type ConnectionThroughSection struct {
 	Through        Formulation[FormulationNodeKind]
-	CommonMetaData CommonMetaData
-}
-
-type ConnectionGroup struct {
-	Connection     ConnectionSection
-	Using          *UsingSection
-	Means          MeansSection
-	Signfies       *SignifiesSection
-	Viewable       *ConnectionViewableSection
-	Through        *ConnectionThroughSection
-	CommonMetaData CommonMetaData
-}
-
-type SimpleOperationsSection struct {
-	Operations     []Alias
-	CommonMetaData CommonMetaData
-}
-
-type SingleAliasesSection struct {
-	Aliases        Alias
-	CommonMetaData CommonMetaData
-}
-
-type OperationSection struct {
-	Operation      Alias
-	CommonMetaData CommonMetaData
-}
-
-type OperationsSection struct {
-	CommonMetaData CommonMetaData
-}
-
-type OnSection struct {
-	On             []Target
-	CommonMetaData CommonMetaData
-}
-
-type SpecifySection struct {
-	Specify        []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -726,8 +697,8 @@ type StatesGroup struct {
 	When           *WhenSection
 	SuchThat       *SuchThatSection
 	That           ThatSection
-	Documented     *DocumentedSection
 	Justified      *JustifiedSection
+	Documented     *DocumentedSection
 	References     *ReferencesSection
 	Aliases        *AliasesSection
 	MetaId         *MetaIdSection
@@ -885,7 +856,7 @@ type TheoremSection struct {
 }
 
 type ProofSection struct {
-	Proof          TextItem
+	Proof          []TextItem
 	CommonMetaData CommonMetaData
 }
 

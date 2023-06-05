@@ -368,8 +368,7 @@ func (n *TheoremGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendIffSection(n.Iff, indent, false)
 	db.MaybeAppendThenSection(&n.Then, indent, false)
 	if n.Proof != nil {
-		db.AppendSection(UpperProofName, indent, false)
-		db.Append(&n.Proof.Proof, indent+2, true)
+		db.AppendTextItemsSection(UpperProofName, n.Proof.Proof, indent, false)
 	}
 	db.MaybeAppendDocumentedSection(n.Documented, indent, false)
 	db.MaybeAppendReferencesSection(n.References, indent, false)

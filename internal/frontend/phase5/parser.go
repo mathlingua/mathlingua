@@ -555,27 +555,6 @@ func (p *parser) toConnectionThroughSection(section phase4.Section) *ast.Connect
 	}
 }
 
-func (p *parser) toOperationsSection(section phase4.Section) *ast.OperationsSection {
-	p.verifyNoArgs(section)
-	return &ast.OperationsSection{
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toOnSection(section phase4.Section) *ast.OnSection {
-	return &ast.OnSection{
-		On:             p.oneOrMoreTargets(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toSpecifySection(section phase4.Section) *ast.SpecifySection {
-	return &ast.SpecifySection{
-		Specify:        p.oneOrMoreClauses(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
 /////////////////////////////// codified documented items //////////////////////////////////////////
 
 func (p *parser) toWrittenGroup(group phase4.Group) (ast.WrittenGroup, bool) {
@@ -765,13 +744,6 @@ func (p *parser) toProvidesKindFromGroup(group phase4.Group) (ast.ProvidesKind, 
 func (p *parser) toAliasesSection(section phase4.Section) *ast.AliasesSection {
 	return &ast.AliasesSection{
 		Aliases:        p.oneOrMoreAliases(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toSingleAliasesSection(section phase4.Section) *ast.SingleAliasesSection {
-	return &ast.SingleAliasesSection{
-		Aliases:        p.exactlyOneAlias(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -1432,7 +1404,7 @@ func (p *parser) toTheoremSection(section phase4.Section) *ast.TheoremSection {
 
 func (p *parser) toProofSection(section phase4.Section) *ast.ProofSection {
 	return &ast.ProofSection{
-		Proof:          p.exactlyOneTextItem(section),
+		Proof:          p.oneOrMoreTextItems(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }

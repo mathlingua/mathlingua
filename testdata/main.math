@@ -282,7 +282,8 @@ where: 'x is \something'
 if: 'x > 0'
 then: 'x >= 0'
 Proof:
-. "\(some.proof) or some inline proof"
+. "\(some.proof)"
+. "some inline proof"
 Documented:
 . written: "X?(x?)"
 . called: "some name"

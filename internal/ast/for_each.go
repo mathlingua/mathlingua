@@ -384,7 +384,7 @@ func (n *TheoremGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 	forEach(n.Then.Clauses, fn)
 	if n.Proof != nil {
-		fn(&n.Proof.Proof)
+		forEachTextItem(n.Proof.Proof, fn)
 	}
 	if n.Documented != nil {
 		forEach(n.Documented.Documented, fn)

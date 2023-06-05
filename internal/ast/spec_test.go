@@ -136,51 +136,15 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: DetailsSections,
-		expected: []string{
-			"details",
-		},
-	},
-	{
 		actual: OverviewSections,
 		expected: []string{
 			"overview",
 		},
 	},
 	{
-		actual: MotivationSections,
-		expected: []string{
-			"motivation",
-		},
-	},
-	{
-		actual: HistorySections,
-		expected: []string{
-			"history",
-		},
-	},
-	{
-		actual: ExampleSections,
-		expected: []string{
-			"example",
-		},
-	},
-	{
 		actual: RelatedSections,
 		expected: []string{
 			"related",
-		},
-	},
-	{
-		actual: DiscovererSections,
-		expected: []string{
-			"discoverer",
-		},
-	},
-	{
-		actual: NoteSections,
-		expected: []string{
-			"note",
 		},
 	},
 	{

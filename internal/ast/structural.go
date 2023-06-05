@@ -464,18 +464,11 @@ type DocumentedKind interface {
 	DocumentedKind()
 }
 
-func (*OverviewGroup) DocumentedKind()   {}
-func (*MotivationGroup) DocumentedKind() {}
-func (*HistoryGroup) DocumentedKind()    {}
-func (*ExampleGroup) DocumentedKind()    {}
-func (*RelatedGroup) DocumentedKind()    {}
-func (*DiscovererGroup) DocumentedKind() {}
-func (*NoteGroup) DocumentedKind()       {}
-func (*WrittenGroup) DocumentedKind()    {}
-func (*ExpressedGroup) DocumentedKind()  {}
-func (*CalledGroup) DocumentedKind()     {}
-
-var DetailsSections = []string{LowerDetailsName}
+func (*OverviewGroup) DocumentedKind()  {}
+func (*RelatedGroup) DocumentedKind()   {}
+func (*WrittenGroup) DocumentedKind()   {}
+func (*ExpressedGroup) DocumentedKind() {}
+func (*CalledGroup) DocumentedKind()    {}
 
 var OverviewSections = []string{LowerOverviewName}
 
@@ -489,42 +482,6 @@ type OverviewSection struct {
 	CommonMetaData CommonMetaData
 }
 
-var MotivationSections = []string{LowerMotivationName}
-
-type MotivationGroup struct {
-	Motivation     MotivationSection
-	CommonMetaData CommonMetaData
-}
-
-type MotivationSection struct {
-	Motivation     TextItem
-	CommonMetaData CommonMetaData
-}
-
-var HistorySections = []string{LowerHistoryName}
-
-type HistoryGroup struct {
-	History        HistorySection
-	CommonMetaData CommonMetaData
-}
-
-type HistorySection struct {
-	History        TextItem
-	CommonMetaData CommonMetaData
-}
-
-var ExampleSections = []string{LowerExampleName}
-
-type ExampleGroup struct {
-	Examples       ExampleSection
-	CommonMetaData CommonMetaData
-}
-
-type ExampleSection struct {
-	Examples       []TextItem
-	CommonMetaData CommonMetaData
-}
-
 var RelatedSections = []string{LowerRelatedName}
 
 type RelatedGroup struct {
@@ -534,51 +491,6 @@ type RelatedGroup struct {
 
 type RelatedSection struct {
 	Related        []TextItem
-	CommonMetaData CommonMetaData
-}
-
-var DiscovererSections = []string{LowerDiscovererName}
-
-type DiscovererGroup struct {
-	Discoverer     DiscovererSection
-	CommonMetaData CommonMetaData
-}
-
-type DiscovererSection struct {
-	Discoverer     []TextItem
-	CommonMetaData CommonMetaData
-}
-
-var NoteSections = []string{LowerNoteName}
-
-type NoteGroup struct {
-	Note           NoteSection
-	CommonMetaData CommonMetaData
-}
-
-type NoteSection struct {
-	Note           []NoteKind
-	CommonMetaData CommonMetaData
-}
-
-type NoteKind interface {
-	StructuralNodeKind
-	NoteKind()
-}
-
-func (*TextItem) NoteKind()        {}
-func (*DescribingGroup) NoteKind() {}
-
-var DescribingSections = []string{LowerDescribingName, LowerContentName}
-
-type DescribingGroup struct {
-	Describing     DescribingSection
-	Content        ContentSection
-	CommonMetaData CommonMetaData
-}
-
-type DescribingSection struct {
-	Describing     TextItem
 	CommonMetaData CommonMetaData
 }
 

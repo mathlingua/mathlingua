@@ -194,49 +194,9 @@ func (n *OverviewGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *MotivationGroup) ToCode(indent int, hasDot bool) []string {
-	db := newDebugBuilder()
-	db.AppendSingleTextItemSection(LowerMotivationName, n.Motivation.Motivation, indent, hasDot)
-	return db.Lines()
-}
-
-func (n *HistoryGroup) ToCode(indent int, hasDot bool) []string {
-	db := newDebugBuilder()
-	db.AppendSingleTextItemSection(LowerHistoryName, n.History.History, indent, hasDot)
-	return db.Lines()
-}
-
-func (n *ExampleGroup) ToCode(indent int, hasDot bool) []string {
-	db := newDebugBuilder()
-	db.AppendTextItemsSection(LowerExampleName, n.Examples.Examples, indent, hasDot)
-	return db.Lines()
-}
-
 func (n *RelatedGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendTextItemsSection(LowerRelatedName, n.Related.Related, indent, hasDot)
-	return db.Lines()
-}
-
-func (n *DiscovererGroup) ToCode(indent int, hasDot bool) []string {
-	db := newDebugBuilder()
-	db.AppendTextItemsSection(LowerDiscovererName, n.Discoverer.Discoverer, indent, hasDot)
-	return db.Lines()
-}
-
-func (n *NoteGroup) ToCode(indent int, hasDot bool) []string {
-	db := newDebugBuilder()
-	db.AppendSection(LowerNoteName, indent, hasDot)
-	for _, item := range n.Note.Note {
-		db.Append(item, indent+2, true)
-	}
-	return db.Lines()
-}
-
-func (n *DescribingGroup) ToCode(indent int, hasDot bool) []string {
-	db := newDebugBuilder()
-	db.AppendSingleTextItemSection(LowerDescribingName, n.Describing.Describing, indent, hasDot)
-	db.AppendSingleTextItemSection(LowerContentName, n.Content.Content, indent, hasDot)
 	return db.Lines()
 }
 

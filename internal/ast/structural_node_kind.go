@@ -46,13 +46,7 @@ func (*WrittenGroup) StructuralNodeKind()       {}
 func (*CalledGroup) StructuralNodeKind()        {}
 func (*ExpressedGroup) StructuralNodeKind()     {}
 func (*OverviewGroup) StructuralNodeKind()      {}
-func (*MotivationGroup) StructuralNodeKind()    {}
-func (*HistoryGroup) StructuralNodeKind()       {}
-func (*ExampleGroup) StructuralNodeKind()       {}
 func (*RelatedGroup) StructuralNodeKind()       {}
-func (*DiscovererGroup) StructuralNodeKind()    {}
-func (*NoteGroup) StructuralNodeKind()          {}
-func (*DescribingGroup) StructuralNodeKind()    {}
 func (*LabelGroup) StructuralNodeKind()         {}
 func (*ByGroup) StructuralNodeKind()            {}
 func (*DescribesGroup) StructuralNodeKind()     {}

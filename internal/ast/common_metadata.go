@@ -41,13 +41,7 @@ func (n *WrittenGroup) GetCommonMetaData() *CommonMetaData       { return &n.Com
 func (n *CalledGroup) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
 func (n *ExpressedGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
 func (n *OverviewGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
-func (n *MotivationGroup) GetCommonMetaData() *CommonMetaData    { return &n.CommonMetaData }
-func (n *HistoryGroup) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
-func (n *ExampleGroup) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
 func (n *RelatedGroup) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
-func (n *DiscovererGroup) GetCommonMetaData() *CommonMetaData    { return &n.CommonMetaData }
-func (n *NoteGroup) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
-func (n *DescribingGroup) GetCommonMetaData() *CommonMetaData    { return &n.CommonMetaData }
 func (n *LabelGroup) GetCommonMetaData() *CommonMetaData         { return &n.CommonMetaData }
 func (n *ByGroup) GetCommonMetaData() *CommonMetaData            { return &n.CommonMetaData }
 func (n *DescribesGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }

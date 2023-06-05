@@ -58,13 +58,7 @@ func (*WrittenGroup) MlgNodeKind()       {}
 func (*CalledGroup) MlgNodeKind()        {}
 func (*ExpressedGroup) MlgNodeKind()     {}
 func (*OverviewGroup) MlgNodeKind()      {}
-func (*MotivationGroup) MlgNodeKind()    {}
-func (*HistoryGroup) MlgNodeKind()       {}
-func (*ExampleGroup) MlgNodeKind()       {}
 func (*RelatedGroup) MlgNodeKind()       {}
-func (*DiscovererGroup) MlgNodeKind()    {}
-func (*NoteGroup) MlgNodeKind()          {}
-func (*DescribingGroup) MlgNodeKind()    {}
 func (*LabelGroup) MlgNodeKind()         {}
 func (*ByGroup) MlgNodeKind()            {}
 func (*DescribesGroup) MlgNodeKind()     {}

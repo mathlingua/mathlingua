@@ -651,17 +651,7 @@ func (p *parser) toDocumentedKind(arg phase4.Argument) (ast.DocumentedKind, bool
 	case *phase4.Group:
 		if grp, ok := p.toOverviewGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toMotivationGroup(*group); ok {
-			return &grp, true
-		} else if grp, ok := p.toHistoryGroup(*group); ok {
-			return &grp, true
-		} else if grp, ok := p.toExampleGroup(*group); ok {
-			return &grp, true
 		} else if grp, ok := p.toRelatedGroup(*group); ok {
-			return &grp, true
-		} else if grp, ok := p.toDiscovererGroup(*group); ok {
-			return &grp, true
-		} else if grp, ok := p.toNoteGroup(*group); ok {
 			return &grp, true
 		} else if grp, ok := p.toWrittenGroup(*group); ok {
 			return &grp, true
@@ -697,72 +687,6 @@ func (p *parser) toOverviewSection(section phase4.Section) *ast.OverviewSection 
 	}
 }
 
-func (p *parser) toMotivationGroup(group phase4.Group) (ast.MotivationGroup, bool) {
-	if !startsWithSections(group, ast.LowerMotivationName) {
-		return ast.MotivationGroup{}, false
-	}
-
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.MotivationSections...)
-	if !ok {
-		return ast.MotivationGroup{}, false
-	}
-	return ast.MotivationGroup{
-		Motivation:     *p.toMotivationSection(sections[ast.LowerMotivationName]),
-		CommonMetaData: toCommonMetaData(group.MetaData),
-	}, true
-}
-
-func (p *parser) toMotivationSection(section phase4.Section) *ast.MotivationSection {
-	return &ast.MotivationSection{
-		Motivation:     p.exactlyOneTextItem(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toHistoryGroup(group phase4.Group) (ast.HistoryGroup, bool) {
-	if !startsWithSections(group, ast.LowerHistoryName) {
-		return ast.HistoryGroup{}, false
-	}
-
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.HistorySections...)
-	if !ok {
-		return ast.HistoryGroup{}, false
-	}
-	return ast.HistoryGroup{
-		History:        *p.toHistorySection(sections[ast.LowerHistoryName]),
-		CommonMetaData: toCommonMetaData(group.MetaData),
-	}, true
-}
-
-func (p *parser) toHistorySection(section phase4.Section) *ast.HistorySection {
-	return &ast.HistorySection{
-		History:        p.exactlyOneTextItem(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toExampleGroup(group phase4.Group) (ast.ExampleGroup, bool) {
-	if !startsWithSections(group, ast.LowerExampleName) {
-		return ast.ExampleGroup{}, false
-	}
-
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ExampleSections...)
-	if !ok {
-		return ast.ExampleGroup{}, false
-	}
-	return ast.ExampleGroup{
-		Examples:       *p.toExampleSection(sections[ast.LowerExampleName]),
-		CommonMetaData: toCommonMetaData(group.MetaData),
-	}, true
-}
-
-func (p *parser) toExampleSection(section phase4.Section) *ast.ExampleSection {
-	return &ast.ExampleSection{
-		Examples:       p.oneOrMoreTextItems(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
 func (p *parser) toRelatedGroup(group phase4.Group) (ast.RelatedGroup, bool) {
 	if !startsWithSections(group, ast.LowerRelatedName) {
 		return ast.RelatedGroup{}, false
@@ -781,49 +705,6 @@ func (p *parser) toRelatedGroup(group phase4.Group) (ast.RelatedGroup, bool) {
 func (p *parser) toRelatedSection(section phase4.Section) *ast.RelatedSection {
 	return &ast.RelatedSection{
 		Related:        p.oneOrMoreTextItems(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toDiscovererGroup(group phase4.Group) (ast.DiscovererGroup, bool) {
-	if !startsWithSections(group, ast.LowerDiscovererName) {
-		return ast.DiscovererGroup{}, false
-	}
-
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.DiscovererSections...)
-	if !ok {
-		return ast.DiscovererGroup{}, false
-	}
-	return ast.DiscovererGroup{
-		Discoverer:     *p.toDiscovererSection(sections[ast.LowerDiscovererName]),
-		CommonMetaData: toCommonMetaData(group.MetaData),
-	}, true
-}
-
-func (p *parser) toDiscovererSection(section phase4.Section) *ast.DiscovererSection {
-	return &ast.DiscovererSection{
-		Discoverer:     p.oneOrMoreTextItems(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toNoteGroup(group phase4.Group) (ast.NoteGroup, bool) {
-	if !startsWithSections(group, ast.LowerNoteName) {
-		return ast.NoteGroup{}, false
-	}
-
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.NoteSections...)
-	if !ok {
-		return ast.NoteGroup{}, false
-	}
-	return ast.NoteGroup{
-		Note: *p.toNoteSection(sections[ast.LowerNoteName]),
-	}, true
-}
-
-func (p *parser) toNoteSection(section phase4.Section) *ast.NoteSection {
-	return &ast.NoteSection{
-		Note:           p.oneOrMoreNoteKinds(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -2452,40 +2333,6 @@ func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
 	}
 }
 
-func (p *parser) toNoteKind(arg phase4.Argument) (ast.NoteKind, bool) {
-	switch group := arg.Arg.(type) {
-	case *phase4.Group:
-		grp, _ := p.toDescribingGroup(*group)
-		return &grp, true
-	default:
-		textItem := p.toTextItem(arg)
-		return &textItem, true
-	}
-}
-
-func (p *parser) toDescribingGroup(group phase4.Group) (ast.DescribingGroup, bool) {
-	if !startsWithSections(group, ast.LowerDescribingName) {
-		return ast.DescribingGroup{}, false
-	}
-
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.DescribingSections...)
-	if !ok {
-		return ast.DescribingGroup{}, false
-	}
-
-	return ast.DescribingGroup{
-		Describing: *p.toDescribingSection(sections[ast.LowerDescribingName]),
-		Content:    *p.toContentSection(sections[ast.LowerContentName]),
-	}, true
-}
-
-func (p *parser) toDescribingSection(section phase4.Section) *ast.DescribingSection {
-	return &ast.DescribingSection{
-		Describing:     p.exactlyOneTextItem(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
 func (p *parser) toPersonKind(arg phase4.Argument) (ast.PersonKind, bool) {
 	switch group := arg.Arg.(type) {
 	case *phase4.Group:
@@ -2612,16 +2459,6 @@ func (p *parser) toTextItems(args []phase4.Argument) []ast.TextItem {
 	return result
 }
 
-func (p *parser) toNoteKinds(args []phase4.Argument) []ast.NoteKind {
-	result := make([]ast.NoteKind, 0)
-	for _, arg := range args {
-		if note, ok := p.toNoteKind(arg); ok {
-			result = append(result, note)
-		}
-	}
-	return result
-}
-
 func (p *parser) toPersonKinds(args []phase4.Argument) []ast.PersonKind {
 	result := make([]ast.PersonKind, 0)
 	for _, arg := range args {
@@ -2657,10 +2494,9 @@ func (p *parser) toDocumentedKinds(args []phase4.Argument) []ast.DocumentedKind 
 			result = append(result, doc)
 		} else {
 			p.tracker.Append(p.newError(fmt.Sprintf(
-				"Expected a %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, %s:, or %s: item",
-				ast.LowerDetailsName, ast.LowerOverviewName, ast.LowerMotivationName, ast.LowerHistoryName,
-				ast.LowerExampleName, ast.LowerRelatedName, ast.LowerDiscovererName, ast.LowerNoteName,
-				ast.LowerWrittenName, ast.LowerExpressedName, ast.LowerCalledName), arg.MetaData.Start))
+				"Expected a %s:, %s:, %s:, %s:, or %s: item",
+				ast.LowerOverviewName, ast.LowerRelatedName, ast.LowerWrittenName,
+				ast.LowerExpressedName, ast.LowerCalledName), arg.MetaData.Start))
 		}
 	}
 	return result
@@ -2740,10 +2576,6 @@ func (p *parser) oneOrMoreTextItems(section phase4.Section) []ast.TextItem {
 
 func (p *parser) zeroOrMoreTextItems(section phase4.Section) []ast.TextItem {
 	return p.toTextItems(section.Args)
-}
-
-func (p *parser) oneOrMoreNoteKinds(section phase4.Section) []ast.NoteKind {
-	return oneOrMore(p, p.toNoteKinds(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMorePersonKinds(section phase4.Section) []ast.PersonKind {

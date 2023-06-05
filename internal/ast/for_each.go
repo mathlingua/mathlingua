@@ -163,33 +163,8 @@ func (n *OverviewGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Overview.Overview)
 }
 
-func (n *MotivationGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(&n.Motivation.Motivation)
-}
-
-func (n *HistoryGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(&n.History.History)
-}
-
-func (n *ExampleGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachTextItem(n.Examples.Examples, fn)
-}
-
 func (n *RelatedGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Related.Related, fn)
-}
-
-func (n *DiscovererGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachTextItem(n.Discoverer.Discoverer, fn)
-}
-
-func (n *NoteGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEach(n.Note.Note, fn)
-}
-
-func (n *DescribingGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(&n.Describing.Describing)
-	fn(&n.Content.Content)
 }
 
 func (n *LabelGroup) ForEach(fn func(subNode MlgNodeKind)) {

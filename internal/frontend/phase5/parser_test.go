@@ -32,12 +32,13 @@ import (
 )
 
 func TestParserSmoke(t *testing.T) {
-	text, err := os.ReadFile(path.Join("..", "..", "..", "testdata", "main.math"))
+	inputTextData, err := os.ReadFile(path.Join("..", "..", "..", "testdata", "main.math"))
 	assert.Nil(t, err)
+	inputText := string(inputTextData)
 
 	tracker := frontend.NewDiagnosticTracker()
 
-	lexer1 := phase1.NewLexer(string(text), "", tracker)
+	lexer1 := phase1.NewLexer(inputText, "", tracker)
 	lexer2 := phase2.NewLexer(lexer1, "", tracker)
 	lexer3 := phase3.NewLexer(lexer2, "", tracker)
 
@@ -53,4 +54,15 @@ func TestParserSmoke(t *testing.T) {
 	assert.Equal(t, "", output)
 	assert.True(t, ok)
 	assert.Equal(t, 0, len(tracker.Diagnostics()))
+
+	codeWriter := phase4.NewTextCodeWriter()
+	root.ToCode(codeWriter)
+	actualOutput := codeWriter.String()
+
+	expectedOutputData, err := os.ReadFile(
+		path.Join("..", "..", "..", "testdata", "main_output.txt"))
+	assert.Nil(t, err)
+	expectedOutput := string(expectedOutputData)
+
+	assert.Equal(t, expectedOutput, actualOutput)
 }

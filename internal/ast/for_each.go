@@ -134,16 +134,19 @@ func (n *SymbolWrittenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
-func (n *ConnectionGroup) ForEach(fn func(subNode MlgNodeKind)) {
+func (n *LinkGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.To.To)
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}
-	forEach(n.Means.Means, fn)
-	if n.Signfies != nil {
-		fn(&n.Signfies.Signifies)
+	if n.Where != nil {
+		forEachSpec(n.Where.Specs, fn)
 	}
 	if n.Through != nil {
-		fn(&n.Through.Through)
+		forEachFormulation(n.Through.Through, fn)
+	}
+	if n.Signfies != nil {
+		forEachSpec(n.Signfies.Signifies, fn)
 	}
 }
 

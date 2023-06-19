@@ -336,6 +336,24 @@ var all_group_test_cases = []testCase{
 			"Id?",
 		},
 	},
+	{
+		actual: ResourceSections,
+		expected: []string{
+			"Resource",
+			"Id?",
+		},
+	},
+	{
+		actual: LinkSections,
+		expected: []string{
+			"link",
+			"to",
+			"using?",
+			"where?",
+			"through?",
+			"signifies?",
+		},
+	},
 }
 
 func TestSpec(t *testing.T) {

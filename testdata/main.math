@@ -130,13 +130,12 @@ Provides:
 . 'x [in]: X :-> x is \element:of{X}'
 . symbol: 'x - y :=> x \minus/ y'
   written: "x? -- y?"
-. connection:
+. link:
   to: A
   using: B, C
-  means: 'A is \something{B, C}'
+  where: 'A is \something{B, C}'
+  through: 'A := \something2.asSomething{X}'
   signifies: 'A is \isomorphic.to{\B}'
-  viewable:
-  through: '\something2.asSomething{X}'
 Justified:
 . by: "\(some.theorem)"
 . label: "\(some.label)"
@@ -173,13 +172,12 @@ Provides:
 . 'x [in]: X :-> x is \element:of{X}'
 . symbol: 'x - y :=> x \minus/ y'
   written: "x? -- y?"
-. connection:
+. link:
   to: A
   using: B, C
-  means: 'A is \something{B, C}'
+  where: 'A is \something{B, C}'
+  through: 'A := \something2.asSomething{X}'
   signifies: 'A is \isomorphic.to{\B}'
-  viewable:
-  through: '\something2.asSomething{X}'
 Justified:
 . by: "\(some.theorem)"
 . label: "\(some.label)"
@@ -411,4 +409,6 @@ Resource:
 . month: "January"
 . year: "2023"
 . description: "some description"
+------------------------------------------
+Id: "a9ec758e-4755-4173-9d25-4081c03c83dd"
 

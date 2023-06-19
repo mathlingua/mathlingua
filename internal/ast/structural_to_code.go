@@ -163,10 +163,16 @@ func (n *SymbolWrittenGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *ConnectionGroup) ToCode(indent int, hasDot bool) []string {
+func (n *LinkGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendSection(LowerConnectionName, indent, hasDot)
+	db.AppendSection(LowerLinkName, indent, hasDot)
+	db.AppendTargetSection(LowerToName, n.To.To, indent, hasDot)
 	db.MaybeAppendUsingSection(n.Using, indent, true)
+	db.MaybeAppendWhereSection(n.Where, indent, true)
+	db.MaybeAppendThroughSection(n.Through, indent, true)
+	if n.Signfies != nil {
+		db.AppendSpecsSection(LowerSignifiesName, n.Signfies.Signifies, indent, true)
+	}
 	return db.Lines()
 }
 
@@ -659,6 +665,12 @@ func (db *debugBuilder) AppendTargetsSection(
 	db.AppendTargets(targets, indent+2, true)
 }
 
+func (db *debugBuilder) AppendTargetSection(
+	name string, target Target, indent int, hasDot bool) {
+	db.AppendSection(name, indent, hasDot)
+	db.Append(&target, indent+2, true)
+}
+
 func (db *debugBuilder) AppendSingleTextItemSection(
 	name string, item TextItem, indent int, hasDot bool) {
 	db.AppendSection(name, indent, hasDot)
@@ -717,6 +729,15 @@ func (db *debugBuilder) MaybeAppendGivenSection(sec *GivenSection, indent int, h
 	if sec != nil {
 		db.AppendSection(LowerGivenName, indent, hasDot)
 		for _, item := range sec.Given {
+			db.Append(&item, indent+2, true)
+		}
+	}
+}
+
+func (db *debugBuilder) MaybeAppendThroughSection(sec *LinkThroughSection, indent int, hasDot bool) {
+	if sec != nil {
+		db.AppendSection(LowerThroughName, indent, hasDot)
+		for _, item := range sec.Through {
 			db.Append(&item, indent+2, true)
 		}
 	}

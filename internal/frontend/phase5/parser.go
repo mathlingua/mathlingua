@@ -487,70 +487,69 @@ func (p *parser) toWrittenSection(section phase4.Section) *ast.WrittenSection {
 	}
 }
 
-func (p *parser) toConnectionGroup(group phase4.Group) (ast.ConnectionGroup, bool) {
-	if !startsWithSections(group, ast.LowerConnectionName) {
-		return ast.ConnectionGroup{}, false
+func (p *parser) toLinkGroup(group phase4.Group) (ast.LinkGroup, bool) {
+	if !startsWithSections(group, ast.LowerLinkName) {
+		return ast.LinkGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ConnectionSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LinkSections...)
 	if !ok {
-		return ast.ConnectionGroup{}, false
+		return ast.LinkGroup{}, false
 	}
 
-	connection := *p.toConnectionSection(sections[ast.LowerConnectionName])
+	link := *p.toLinkSection(sections[ast.LowerLinkName])
+	to := *p.toToSection(sections[ast.LowerToName])
 	var using *ast.UsingSection
 	if sect, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sect)
 	}
-	means := *p.toMeansSection(sections[ast.LowerMeansName])
+	var where *ast.WhereSection
+	if sect, ok := sections[ast.LowerWhereName]; ok {
+		where = p.toWhereSection(sect)
+	}
+	var through *ast.LinkThroughSection
+	if sect, ok := sections[ast.LowerThroughName]; ok {
+		through = p.toLinkThroughSection(sect)
+	}
 	var signifies *ast.SignifiesSection
 	if sect, ok := sections[ast.LowerSignifiesName]; ok {
 		signifies = p.toSignifiesSection(sect)
 	}
-	var viewable *ast.ConnectionViewableSection
-	if sect, ok := sections[ast.LowerViewableName]; ok {
-		viewable = p.toConnectionViewableSection(sect)
-	}
-	var through *ast.ConnectionThroughSection
-	if sect, ok := sections[ast.LowerThroughName]; ok {
-		through = p.toConnectionThroughSection(sect)
-	}
-	return ast.ConnectionGroup{
-		Connection:     connection,
+	return ast.LinkGroup{
+		Link:           link,
+		To:             to,
 		Using:          using,
-		Means:          means,
-		Signfies:       signifies,
-		Viewable:       viewable,
+		Where:          where,
 		Through:        through,
+		Signfies:       signifies,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
 
-func (p *parser) toConnectionSection(section phase4.Section) *ast.ConnectionSection {
+func (p *parser) toLinkSection(section phase4.Section) *ast.LinkSection {
 	p.verifyNoArgs(section)
-	return &ast.ConnectionSection{
+	return &ast.LinkSection{
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toToSection(section phase4.Section) *ast.ToSection {
+	return &ast.ToSection{
+		To:             p.exactlyOneTarget(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
 
 func (p *parser) toSignifiesSection(section phase4.Section) *ast.SignifiesSection {
 	return &ast.SignifiesSection{
-		Signifies:      p.exactlyOneSpec(section),
+		Signifies:      p.oneOrMoreSpecs(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
 
-func (p *parser) toConnectionViewableSection(
-	section phase4.Section) *ast.ConnectionViewableSection {
-	p.verifyNoArgs(section)
-	return &ast.ConnectionViewableSection{
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toConnectionThroughSection(section phase4.Section) *ast.ConnectionThroughSection {
-	return &ast.ConnectionThroughSection{
-		Through:        p.exactlyOneFormulation(section),
+func (p *parser) toLinkThroughSection(section phase4.Section) *ast.LinkThroughSection {
+	return &ast.LinkThroughSection{
+		Through:        p.oneOrMoreFormulation(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -727,7 +726,7 @@ func (p *parser) toProvidesKindFromArg(arg phase4.Argument) (ast.ProvidesKind, b
 func (p *parser) toProvidesKindFromGroup(group phase4.Group) (ast.ProvidesKind, bool) {
 	if grp, ok := p.toSymbolWrittenGroup(group); ok {
 		return &grp, true
-	} else if grp, ok := p.toConnectionGroup(group); ok {
+	} else if grp, ok := p.toLinkGroup(group); ok {
 		return &grp, ok
 	} else {
 		p.tracker.Append(p.newError(fmt.Sprintf("Unrecognized argument for %s:\n"+

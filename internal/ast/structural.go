@@ -329,7 +329,7 @@ type ProvidesKind interface {
 }
 
 func (*SymbolWrittenGroup) ProvidesKind() {}
-func (*ConnectionGroup) ProvidesKind()    {}
+func (*LinkGroup) ProvidesKind()          {}
 
 var SymbolSections = []string{
 	LowerSymbolName,
@@ -352,27 +352,26 @@ type WrittenSection struct {
 	CommonMetaData CommonMetaData
 }
 
-var ConnectionSections = []string{
-	LowerConnectionName,
+var LinkSections = []string{
+	LowerLinkName,
 	LowerToName,
 	LowerUsingQuestionName,
-	LowerMeansName,
-	LowerSignifiesQuestionName,
-	LowerViewableQuestionName,
+	LowerWhereQuestionName,
 	LowerThroughQuestionName,
+	LowerSignifiesQuestionName,
 }
 
-type ConnectionGroup struct {
-	Connection     ConnectionSection
+type LinkGroup struct {
+	Link           LinkSection
+	To             ToSection
 	Using          *UsingSection
-	Means          MeansSection
+	Where          *WhereSection
+	Through        *LinkThroughSection
 	Signfies       *SignifiesSection
-	Viewable       *ConnectionViewableSection
-	Through        *ConnectionThroughSection
 	CommonMetaData CommonMetaData
 }
 
-type ConnectionSection struct {
+type LinkSection struct {
 	CommonMetaData CommonMetaData
 }
 
@@ -382,16 +381,12 @@ type ToSection struct {
 }
 
 type SignifiesSection struct {
-	Signifies      Spec
+	Signifies      []Spec
 	CommonMetaData CommonMetaData
 }
 
-type ConnectionViewableSection struct {
-	CommonMetaData CommonMetaData
-}
-
-type ConnectionThroughSection struct {
-	Through        Formulation[FormulationNodeKind]
+type LinkThroughSection struct {
+	Through        []Formulation[FormulationNodeKind]
 	CommonMetaData CommonMetaData
 }
 

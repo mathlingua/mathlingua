@@ -53,7 +53,7 @@ func (*IffGroup) MlgNodeKind()           {}
 func (*PiecewiseGroup) MlgNodeKind()     {}
 func (*WhenGroup) MlgNodeKind()          {}
 func (*SymbolWrittenGroup) MlgNodeKind() {}
-func (*ConnectionGroup) MlgNodeKind()    {}
+func (*LinkGroup) MlgNodeKind()          {}
 func (*WrittenGroup) MlgNodeKind()       {}
 func (*CalledGroup) MlgNodeKind()        {}
 func (*ExpressedGroup) MlgNodeKind()     {}

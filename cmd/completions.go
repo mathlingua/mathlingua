@@ -70,7 +70,7 @@ func getCompletionResult() completionsResult {
 		join(ast.PiecewiseSections),
 		join(ast.WhenSections),
 		join(ast.SymbolSections),
-		join(ast.ConnectionSections),
+		join(ast.LinkSections),
 		join(ast.WrittenSections),
 		join(ast.CalledSections),
 		join(ast.ExpressedSections),

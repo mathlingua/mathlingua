@@ -75,13 +75,18 @@ func TestPhase1LexerParsesId(t *testing.T) {
 	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := NewLexer("[some[id[x]]]", "", tracker)
 
-	actual := "\n"
+	actualText := ""
+	actualTypes := ""
 	for lexer1.HasNext() {
-		actual += lexer1.Next().Text + "\n"
+		next := lexer1.Next()
+		actualText += next.Text + "\n"
+		actualTypes += string(next.Type) + "\n"
 	}
 
-	expected := "\nsome[id[x]]\n<Newline>\n<Newline>\n<Newline>\n"
+	expectedText := "some[id[x]]\n<Newline>\n<Newline>\n<Newline>\n"
+	expectedTypes := "Id\nNewline\nNewline\nNewline\n"
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedText, actualText)
+	assert.Equal(t, expectedTypes, actualTypes)
 	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }

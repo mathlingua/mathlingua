@@ -2173,7 +2173,7 @@ func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.Formulat
 			return ast.Formulation[ast.FormulationNodeKind]{
 				RawText:        data.Text,
 				Root:           node,
-				Label:          nil,
+				Label:          data.Label,
 				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		}

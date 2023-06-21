@@ -113,49 +113,67 @@ func getTokens(text string, path ast.Path, tracker frontend.IDiagnosticTracker) 
 		}
 	}
 
-	collectEnclosedArgument := func() (ast.Token, bool) {
+	absorbWhitespace := func() {
+		for i < len(chars) && chars[i].Symbol == ' ' {
+			i++
+		}
+	}
+
+	collectEnclosedArguments := func() ([]ast.Token, bool) {
 		for i < len(chars) && chars[i].Symbol == ' ' {
 			i++
 		}
 
 		if i >= len(chars) {
-			return ast.Token{}, false
+			return nil, false
 		}
 
 		c := chars[i]
 		if c.Symbol == '"' {
 			i++
-			return ast.Token{
+			return []ast.Token{{
 				Type:     ast.Text,
 				Text:     collectUntil(c, '"', true),
 				Position: c.Position,
-			}, true
+			}}, true
 		} else if c.Symbol == '\'' {
+			result := []ast.Token{}
 			i++
-			return ast.Token{
+			result = append(result, ast.Token{
 				Type:     ast.FormulationTokenType,
 				Text:     collectUntil(c, '\'', false),
 				Position: c.Position,
-			}, true
+			})
+			absorbWhitespace()
+			if i < len(chars) && chars[i].Symbol == '(' {
+				start := chars[i].Position
+				i++ // skip the (
+				result = append(result, ast.Token{
+					Type:     ast.ParenLabel,
+					Text:     collectUntil(c, ')', false),
+					Position: start,
+				})
+			}
+			return result, true
 		} else if c.Symbol == '`' {
 			i++
-			return ast.Token{
+			return []ast.Token{{
 				Type:     ast.FormulationTokenType,
 				Text:     collectUntil(c, '`', false),
 				Position: c.Position,
-			}, true
+			}}, true
 		} else {
-			return ast.Token{}, false
+			return nil, false
 		}
 	}
 
-	collectNonEnclosedArgument := func() (ast.Token, bool) {
+	collectNonEnclosedArgument := func() ([]ast.Token, bool) {
 		for i < len(chars) && chars[i].Symbol == ' ' {
 			i++
 		}
 
 		if i >= len(chars) {
-			return ast.Token{}, false
+			return nil, false
 		}
 
 		start := chars[i]
@@ -186,31 +204,33 @@ func getTokens(text string, path ast.Path, tracker frontend.IDiagnosticTracker) 
 		}
 
 		if len(result) == 0 {
-			return ast.Token{}, false
+			return nil, false
 		}
 
-		return ast.Token{
+		return []ast.Token{{
 			Type:     ast.ArgumentText,
 			Text:     result,
 			Position: start.Position,
-		}, true
+		}}, true
 	}
 
-	collectArgument := func() (ast.Token, bool) {
-		arg, ok := collectEnclosedArgument()
+	collectArguments := func() ([]ast.Token, bool) {
+		arg, ok := collectEnclosedArguments()
 		if ok {
-			return arg, true
+			return arg, ok
 		}
 		return collectNonEnclosedArgument()
 	}
 
 	collectAllArguments := func() {
 		for i < len(chars) {
-			arg, ok := collectArgument()
+			args, ok := collectArguments()
 			if !ok {
 				break
 			}
-			appendToken(arg)
+			for _, item := range args {
+				appendToken(item)
+			}
 			if i >= len(chars) || chars[i].Symbol == '\n' {
 				break
 			} else if chars[i].Symbol == ',' {
@@ -222,9 +242,17 @@ func getTokens(text string, path ast.Path, tracker frontend.IDiagnosticTracker) 
 					Position: start.Position,
 				})
 			} else if chars[i].Symbol == ' ' {
-				appendDiagnostic("Unnecessary trailing whitespace", arg.Position)
+				position := ast.Position{}
+				if len(args) > 0 {
+					position = args[len(args)-1].Position
+				}
+				appendDiagnostic("Unnecessary trailing whitespace", position)
 			} else {
-				appendDiagnostic("Expected a , to follow this argument", arg.Position)
+				position := ast.Position{}
+				if len(args) > 0 {
+					position = args[len(args)-1].Position
+				}
+				appendDiagnostic("Expected a , to follow this argument", position)
 			}
 		}
 	}

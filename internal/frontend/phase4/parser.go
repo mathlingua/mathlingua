@@ -248,9 +248,15 @@ func (p *phase4Parser) argumentData() (ArgumentDataKind, bool) {
 
 	if p.has(ast.FormulationTokenType) {
 		arg := p.lexer.Next()
+		var label *string
+		if p.has(ast.ParenLabel) {
+			next := p.lexer.Next().Text
+			label = &next
+		}
 		return &FormulationArgumentData{
-			Type: FormulationArgumentDataKind,
-			Text: arg.Text,
+			Type:  FormulationArgumentDataKind,
+			Text:  arg.Text,
+			Label: label,
 			MetaData: MetaData{
 				Start: arg.Position,
 				Key:   p.keyGen.Next(),

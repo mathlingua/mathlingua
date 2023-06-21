@@ -90,3 +90,43 @@ func TestPhase1LexerParsesId(t *testing.T) {
 	assert.Equal(t, expectedTypes, actualTypes)
 	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
+
+func TestPhase1LexerParsesFormulation(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
+	lexer1 := NewLexer("x: 'some.formulation'", "", tracker)
+
+	actualText := ""
+	actualTypes := ""
+	for lexer1.HasNext() {
+		next := lexer1.Next()
+		actualText += next.Text + "\n"
+		actualTypes += string(next.Type) + "\n"
+	}
+
+	expectedText := "x\n:\nsome.formulation\n<Newline>\n<Newline>\n<Newline>\n"
+	expectedTypes := "Name\nColon\nFormulationTokenType\nNewline\nNewline\nNewline\n"
+
+	assert.Equal(t, expectedText, actualText)
+	assert.Equal(t, expectedTypes, actualTypes)
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
+}
+
+func TestPhase1LexerParenLabel(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
+	lexer1 := NewLexer("x: 'some.formulation'  (some.label)", "", tracker)
+
+	actualText := ""
+	actualTypes := ""
+	for lexer1.HasNext() {
+		next := lexer1.Next()
+		actualText += next.Text + "\n"
+		actualTypes += string(next.Type) + "\n"
+	}
+
+	expectedText := "x\n:\nsome.formulation\nsome.label\n<Newline>\n<Newline>\n<Newline>\n"
+	expectedTypes := "Name\nColon\nFormulationTokenType\nParenLabel\nNewline\nNewline\nNewline\n"
+
+	assert.Equal(t, expectedText, actualText)
+	assert.Equal(t, expectedTypes, actualTypes)
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
+}

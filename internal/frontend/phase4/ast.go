@@ -191,12 +191,17 @@ type FormulationArgumentDataMetaData struct {
 type FormulationArgumentData struct {
 	Type                NodeType
 	Text                string
+	Label               *string
 	MetaData            MetaData
 	FormulationMetaData FormulationArgumentDataMetaData
 }
 
 func (f *FormulationArgumentData) write(indent int, writer ITextCodeWriter) {
-	writer.WriteFormulation(fmt.Sprintf("'%s'", f.Text))
+	suffix := ""
+	if f.Label != nil {
+		suffix = fmt.Sprintf("     (%s)", *f.Label)
+	}
+	writer.WriteFormulation(fmt.Sprintf("'%s'%s", f.Text, suffix))
 }
 
 func (f *FormulationArgumentData) ToCode(writer ITextCodeWriter) {

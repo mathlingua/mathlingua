@@ -67,6 +67,7 @@ const (
 	LSquareColon          TokenType = "LSquareColon"
 	ColonRSquare          TokenType = "ColonRSquare"
 	RightArrow            TokenType = "RArrow"
+	ParenLabel            TokenType = "ParenLabel"
 )
 
 type Position struct {

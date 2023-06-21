@@ -17,6 +17,7 @@
 package ast
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -53,7 +54,11 @@ func (n *Alias) ToCode(indent int, hasDot bool) []string {
 }
 
 func (n *Formulation[T]) ToCode(indent int, hasDot bool) []string {
-	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode(NoOp)+"'")
+	text := "'" + n.Root.ToCode(NoOp) + "'"
+	if n.Label != nil {
+		text += fmt.Sprintf("     (%s)", *n.Label)
+	}
+	return buildIndentedLineSlice(indent, hasDot, text)
 }
 
 func (n *TextItem) ToCode(indent int, hasDot bool) []string {

@@ -51,6 +51,101 @@ a:
 	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
 
+func TestPhase3LexerGroupLabel(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
+	lexer1 := phase1.NewLexer(`
+[some.label]
+a:
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
+
+	actualText := "\n"
+	actualTypes := "\n"
+	for lexer3.HasNext() {
+		next := lexer3.Next()
+		actualText += next.Text + "\n"
+		actualTypes += string(next.Type) + "\n"
+	}
+
+	expectedText := strings.ReplaceAll(`
+		some.label
+		<BeginGroup>
+			<BeginSection>
+				a
+			<EndSection>
+		<EndGroup>
+		`, "\t", "")
+
+	expectedTypes := strings.ReplaceAll(`
+		Id
+		BeginGroup
+		BeginSection
+		Name
+		EndSection
+		EndGroup
+	`, "\t", "")
+
+	assert.Equal(t, expectedText, actualText)
+	assert.Equal(t, expectedTypes, actualTypes)
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
+}
+
+func TestPhase3LexerIndentedGroupLabel(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
+	lexer1 := phase1.NewLexer(`
+a:
+. [some.label]
+  b:
+`, "", tracker)
+	lexer2 := phase2.NewLexer(lexer1, "", tracker)
+	lexer3 := NewLexer(lexer2, "", tracker)
+
+	actualText := "\n"
+	actualTypes := "\n"
+	for lexer3.HasNext() {
+		next := lexer3.Next()
+		actualText += next.Text + "\n"
+		actualTypes += string(next.Type) + "\n"
+	}
+
+	expectedText := strings.ReplaceAll(`
+		<BeginGroup>
+			<BeginSection>
+				a
+				<BeginDotSpaceArgument>
+					some.label
+					<BeginGroup>
+						<BeginSection>
+							b
+						<EndSection>
+					<EndGroup>
+				<EndDotSpaceArgument>
+			<EndSection>
+		<EndGroup>
+		`, "\t", "")
+
+	expectedTypes := strings.ReplaceAll(`
+		BeginGroup
+			BeginSection
+				Name
+				BeginDotSpaceArgument
+					Id
+					BeginGroup
+						BeginSection
+							Name
+						EndSection
+					EndGroup
+				EndDotSpaceArgument
+			EndSection
+		EndGroup
+		`, "\t", "")
+
+	assert.Equal(t, expectedText, actualText)
+	assert.Equal(t, expectedTypes, actualTypes)
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
+}
+
 func TestPhase3LexerSingleSectionWithSingleArg(t *testing.T) {
 	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`

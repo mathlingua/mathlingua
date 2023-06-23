@@ -67,6 +67,7 @@ func (n *TextItem) ToCode(indent int, hasDot bool) []string {
 
 func (n *GivenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.MaybeAppendGivenSection(&n.Given, indent, hasDot)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
@@ -815,6 +816,12 @@ func (db *debugBuilder) MaybeAppendSingleMeansSection(sec *SingleMeansSection, i
 	if sec != nil {
 		db.AppendSection(LowerMeansName, indent, hasDot)
 		db.Append(sec.Means, indent+2, true)
+	}
+}
+
+func (db *debugBuilder) MaybeAppendGroupLabel(label *GroupLabel, indent int, hasDot bool) {
+	if label != nil {
+		db.AppendString(fmt.Sprintf("[%s]", label.Label), indent, hasDot)
 	}
 }
 

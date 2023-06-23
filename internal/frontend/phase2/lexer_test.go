@@ -65,3 +65,60 @@ d
 	assert.Equal(t, expected, actual)
 	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
+
+func TestPhase2LexerGroupLabel(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
+	lexer1 := phase1.NewLexer(`
+[label1]
+a:
+. [label2]
+  b:
+`, "", tracker)
+	lexer2 := NewLexer(lexer1, "", tracker)
+
+	actualText := "\n"
+	actualTypes := "\n"
+	for lexer2.HasNext() {
+		next := lexer2.Next()
+		actualText += next.Text + "\n"
+		actualTypes += string(next.Type) + "\n"
+	}
+
+	expectedText := `
+<Newline>
+label1
+<Newline>
+a
+:
+<Newline>
+<Indent>
+<DotSpace>
+label2
+<Newline>
+b
+:
+<Newline>
+<LineBreak>
+`
+
+	expectedTypes := `
+Newline
+Id
+Newline
+Name
+Colon
+Newline
+Indent
+DotSpace
+Id
+Newline
+Name
+Colon
+Newline
+LineBreak
+`
+
+	assert.Equal(t, expectedText, actualText)
+	assert.Equal(t, expectedTypes, actualTypes)
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
+}

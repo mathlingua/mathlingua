@@ -233,6 +233,9 @@ func getTokens(
 			skipNext()
 			maybeEndInlineArgument()
 			beginInlineArgument()
+		} else if has(ast.Id) {
+			appendNext()
+			beginGroup()
 		} else {
 			appendNext()
 		}

@@ -54,6 +54,7 @@ func (p *parser) toGivenGroup(group phase4.Group) (ast.GivenGroup, bool) {
 		return ast.GivenGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.GivenSections...)
 	if !ok {
 		return ast.GivenGroup{}, false
@@ -69,6 +70,7 @@ func (p *parser) toGivenGroup(group phase4.Group) (ast.GivenGroup, bool) {
 	}
 	then := *p.toThenSection(sections[ast.LowerThenName])
 	return ast.GivenGroup{
+		Label:          label,
 		Given:          given,
 		Where:          where,
 		SuchThat:       suchThat,
@@ -2147,10 +2149,25 @@ func (p *parser) getId(group phase4.Group, required bool) *ast.IdItem {
 	if required && group.Id == nil {
 		p.tracker.Append(p.newError("Expected a [...] item", group.MetaData.Start))
 		return nil
-	} else if group.Id == nil {
+	}
+	if group.Id == nil {
 		return nil
 	}
 	return p.toIdItem(*group.Id, group.MetaData.Start)
+}
+
+func (p *parser) getGroupLabel(group phase4.Group, required bool) *ast.GroupLabel {
+	if required && group.Id == nil {
+		p.tracker.Append(p.newError("Expected a [...] item", group.MetaData.Start))
+		return nil
+	}
+	if group.Id == nil {
+		return nil
+	}
+	return &ast.GroupLabel{
+		Label: *group.Id,
+		Start: group.MetaData.Start,
+	}
 }
 
 func (p *parser) getStringId(group phase4.Group, required bool) *string {

@@ -16,6 +16,11 @@
 
 package ast
 
+type GroupLabel struct {
+	Label string
+	Start Position
+}
+
 type IdItem struct {
 	RawText        string
 	Root           FormulationNodeKind
@@ -94,6 +99,7 @@ var GivenSections = []string{
 }
 
 type GivenGroup struct {
+	Label          *GroupLabel
 	Given          GivenSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection

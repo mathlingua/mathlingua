@@ -15,3 +15,42 @@
  */
 
 package phase4
+
+import (
+	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend"
+	"mathlingua/internal/frontend/phase1"
+	"mathlingua/internal/frontend/phase2"
+	"mathlingua/internal/frontend/phase3"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestParsesGroupWithLabel(t *testing.T) {
+	text := `
+[some.label]
+given: x
+then: 'y'
+`
+	path := ast.ToPath("/")
+	tracker := frontend.NewDiagnosticTracker()
+
+	lexer1 := phase1.NewLexer(text, path, tracker)
+	lexer2 := phase2.NewLexer(lexer1, path, tracker)
+	lexer3 := phase3.NewLexer(lexer2, path, tracker)
+	doc := Parse(lexer3, path, tracker)
+
+	writer := NewTextCodeWriter()
+	doc.ToCode(writer)
+
+	expected := `[some.label]
+given: x
+then: 'y'
+
+
+`
+	actual := writer.String()
+
+	assert.Equal(t, expected, actual)
+}

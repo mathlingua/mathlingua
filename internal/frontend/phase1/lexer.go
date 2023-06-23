@@ -129,7 +129,14 @@ func getTokens(text string, path ast.Path, tracker frontend.IDiagnosticTracker) 
 		}
 
 		c := chars[i]
-		if c.Symbol == '"' {
+		if c.Symbol == '[' {
+			i++
+			return []ast.Token{{
+				Type:     ast.Id,
+				Text:     collectUntil(c, ']', false),
+				Position: c.Position,
+			}}, true
+		} else if c.Symbol == '"' {
 			i++
 			return []ast.Token{{
 				Type:     ast.Text,

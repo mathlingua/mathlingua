@@ -68,7 +68,7 @@ func (n *TextItem) ToCode(indent int, hasDot bool) []string {
 func (n *GivenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.MaybeAppendGivenSection(&n.Given, indent, hasDot)
+	db.MaybeAppendGivenSection(&n.Given, indent, hasDot && n.Label == nil)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
 	db.MaybeAppendThenSection(&n.Then, indent, false)

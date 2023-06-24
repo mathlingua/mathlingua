@@ -134,8 +134,8 @@ func (n *SymbolWrittenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
-func (n *LinkGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(&n.To.To)
+func (n *ViewGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.As.As)
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}

@@ -190,11 +190,11 @@ func (n *SymbolWrittenGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *LinkGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ViewGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.AppendSection(LowerLinkName, indent, hasDot && n.Label == nil)
-	db.AppendTargetSection(LowerToName, n.To.To, indent, hasDot)
+	db.AppendSection(LowerViewName, indent, hasDot && n.Label == nil)
+	db.AppendTargetSection(LowerAsName, n.As.As, indent, hasDot)
 	db.MaybeAppendUsingSection(n.Using, indent, true)
 	db.MaybeAppendWhereSection(n.Where, indent, true)
 	db.MaybeAppendThroughSection(n.Through, indent, true)

@@ -344,10 +344,10 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: LinkSections,
+		actual: ViewSections,
 		expected: []string{
-			"link",
-			"to",
+			"view",
+			"as",
 			"using?",
 			"where?",
 			"through?",

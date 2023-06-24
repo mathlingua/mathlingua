@@ -344,7 +344,7 @@ type ProvidesKind interface {
 }
 
 func (*SymbolWrittenGroup) ProvidesKind() {}
-func (*LinkGroup) ProvidesKind()          {}
+func (*ViewGroup) ProvidesKind()          {}
 
 var SymbolSections = []string{
 	LowerSymbolName,
@@ -368,19 +368,19 @@ type WrittenSection struct {
 	CommonMetaData CommonMetaData
 }
 
-var LinkSections = []string{
-	LowerLinkName,
-	LowerToName,
+var ViewSections = []string{
+	LowerViewName,
+	LowerAsName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerThroughQuestionName,
 	LowerSignifiesQuestionName,
 }
 
-type LinkGroup struct {
+type ViewGroup struct {
 	Label          *GroupLabel
-	Link           LinkSection
-	To             ToSection
+	View           ViewSection
+	As             AsSection
 	Using          *UsingSection
 	Where          *WhereSection
 	Through        *LinkThroughSection
@@ -388,12 +388,12 @@ type LinkGroup struct {
 	CommonMetaData CommonMetaData
 }
 
-type LinkSection struct {
+type ViewSection struct {
 	CommonMetaData CommonMetaData
 }
 
-type ToSection struct {
-	To             Target
+type AsSection struct {
+	As             Target
 	CommonMetaData CommonMetaData
 }
 

@@ -942,7 +942,7 @@ func includeMissingIdentifiersAt(node ast.MlgNodeKind, keyGen mlglib.IKeyGenerat
 		includeMissingIdentifiersInTargets(n.Exists.Targets, keyGen)
 	case *ast.ExistsUniqueGroup:
 		includeMissingIdentifiersInTargets(n.ExistsUnique.Targets, keyGen)
-	case *ast.LinkGroup:
+	case *ast.ViewGroup:
 		if n.Using != nil {
 			includeMissingIdentifiersInTargets(n.Using.Using, keyGen)
 		}

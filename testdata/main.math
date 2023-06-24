@@ -130,8 +130,8 @@ Provides:
 . 'x [in]: X :-> x is \element:of{X}'
 . symbol: 'x - y :=> x \minus/ y'
   written: "x? -- y?"
-. link:
-  to: A
+. view:
+  as: A
   using: B, C
   where: 'A is \something{B, C}'
   through: 'A := \something2.asSomething{X}'
@@ -172,8 +172,8 @@ Provides:
 . 'x [in]: X :-> x is \element:of{X}'
 . symbol: 'x - y :=> x \minus/ y'
   written: "x? -- y?"
-. link:
-  to: A
+. view:
+  as: A
   using: B, C
   where: 'A is \something{B, C}'
   through: 'A := \something2.asSomething{X}'

@@ -36,7 +36,7 @@ func (n *IffGroup) GetCommonMetaData() *CommonMetaData           { return &n.Com
 func (n *PiecewiseGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
 func (n *WhenGroup) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
 func (n *SymbolWrittenGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-func (n *LinkGroup) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
+func (n *ViewGroup) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
 func (n *WrittenGroup) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
 func (n *CalledGroup) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
 func (n *ExpressedGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }

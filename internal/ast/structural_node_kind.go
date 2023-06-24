@@ -41,7 +41,7 @@ func (*IffGroup) StructuralNodeKind()           {}
 func (*PiecewiseGroup) StructuralNodeKind()     {}
 func (*WhenGroup) StructuralNodeKind()          {}
 func (*SymbolWrittenGroup) StructuralNodeKind() {}
-func (*LinkGroup) StructuralNodeKind()          {}
+func (*ViewGroup) StructuralNodeKind()          {}
 func (*WrittenGroup) StructuralNodeKind()       {}
 func (*CalledGroup) StructuralNodeKind()        {}
 func (*ExpressedGroup) StructuralNodeKind()     {}

@@ -513,19 +513,19 @@ func (p *parser) toWrittenSection(section phase4.Section) *ast.WrittenSection {
 	}
 }
 
-func (p *parser) toLinkGroup(group phase4.Group) (ast.LinkGroup, bool) {
-	if !startsWithSections(group, ast.LowerLinkName) {
-		return ast.LinkGroup{}, false
+func (p *parser) toViewGroup(group phase4.Group) (ast.ViewGroup, bool) {
+	if !startsWithSections(group, ast.LowerViewName) {
+		return ast.ViewGroup{}, false
 	}
 
 	label := p.getGroupLabel(group, false)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LinkSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ViewSections...)
 	if !ok {
-		return ast.LinkGroup{}, false
+		return ast.ViewGroup{}, false
 	}
 
-	link := *p.toLinkSection(sections[ast.LowerLinkName])
-	to := *p.toToSection(sections[ast.LowerToName])
+	view := *p.toViewSection(sections[ast.LowerViewName])
+	as := *p.toAsSection(sections[ast.LowerAsName])
 	var using *ast.UsingSection
 	if sect, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sect)
@@ -542,10 +542,10 @@ func (p *parser) toLinkGroup(group phase4.Group) (ast.LinkGroup, bool) {
 	if sect, ok := sections[ast.LowerSignifiesName]; ok {
 		signifies = p.toSignifiesSection(sect)
 	}
-	return ast.LinkGroup{
+	return ast.ViewGroup{
 		Label:          label,
-		Link:           link,
-		To:             to,
+		View:           view,
+		As:             as,
 		Using:          using,
 		Where:          where,
 		Through:        through,
@@ -554,16 +554,16 @@ func (p *parser) toLinkGroup(group phase4.Group) (ast.LinkGroup, bool) {
 	}, true
 }
 
-func (p *parser) toLinkSection(section phase4.Section) *ast.LinkSection {
+func (p *parser) toViewSection(section phase4.Section) *ast.ViewSection {
 	p.verifyNoArgs(section)
-	return &ast.LinkSection{
+	return &ast.ViewSection{
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
 
-func (p *parser) toToSection(section phase4.Section) *ast.ToSection {
-	return &ast.ToSection{
-		To:             p.exactlyOneTarget(section),
+func (p *parser) toAsSection(section phase4.Section) *ast.AsSection {
+	return &ast.AsSection{
+		As:             p.exactlyOneTarget(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -764,7 +764,7 @@ func (p *parser) toProvidesKindFromArg(arg phase4.Argument) (ast.ProvidesKind, b
 func (p *parser) toProvidesKindFromGroup(group phase4.Group) (ast.ProvidesKind, bool) {
 	if grp, ok := p.toSymbolWrittenGroup(group); ok {
 		return &grp, true
-	} else if grp, ok := p.toLinkGroup(group); ok {
+	} else if grp, ok := p.toViewGroup(group); ok {
 		return &grp, ok
 	} else {
 		p.tracker.Append(p.newError(fmt.Sprintf("Unrecognized argument for %s:\n"+

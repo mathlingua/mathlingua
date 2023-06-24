@@ -43,14 +43,22 @@ func (n *Spec) ToCode(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
-	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode(NoOp)+"'")
+	text := "'" + n.Root.ToCode(NoOp) + "'"
+	if n.Label != nil {
+		text += fmt.Sprintf("     (%s)", *n.Label)
+	}
+	return buildIndentedLineSlice(indent, hasDot, text)
 }
 
 func (n *Alias) ToCode(indent int, hasDot bool) []string {
 	if n.Root == nil {
 		return []string{n.RawText}
 	}
-	return buildIndentedLineSlice(indent, hasDot, "'"+n.Root.ToCode(NoOp)+"'")
+	text := "'" + n.Root.ToCode(NoOp) + "'"
+	if n.Label != nil {
+		text += fmt.Sprintf("     (%s)", *n.Label)
+	}
+	return buildIndentedLineSlice(indent, hasDot, text)
 }
 
 func (n *Formulation[T]) ToCode(indent int, hasDot bool) []string {
@@ -77,32 +85,37 @@ func (n *GivenGroup) ToCode(indent int, hasDot bool) []string {
 
 func (n *AllOfGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendClausesSection(LowerAllOfName, n.AllOf.Clauses, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendClausesSection(LowerAllOfName, n.AllOf.Clauses, indent, hasDot && n.Label == nil)
 	return db.Lines()
 }
 
 func (n *NotGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendSection(LowerNotName, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerNotName, indent, hasDot && n.Label == nil)
 	db.Append(n.Not.Clause, indent+2, true)
 	return db.Lines()
 }
 
 func (n *AnyOfGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendClausesSection(LowerAnyOfName, n.AnyOf.Clauses, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendClausesSection(LowerAnyOfName, n.AnyOf.Clauses, indent, hasDot && n.Label == nil)
 	return db.Lines()
 }
 
 func (n *OneOfGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendClausesSection(LowerOneOfName, n.OneOf.Clauses, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendClausesSection(LowerOneOfName, n.OneOf.Clauses, indent, hasDot && n.Label == nil)
 	return db.Lines()
 }
 
 func (n *ExistsGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendTargetsSection(LowerExistsName, n.Exists.Targets, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendTargetsSection(LowerExistsName, n.Exists.Targets, indent, hasDot && n.Label == nil)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
 	return db.Lines()
@@ -110,7 +123,9 @@ func (n *ExistsGroup) ToCode(indent int, hasDot bool) []string {
 
 func (n *ExistsUniqueGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendTargetsSection(LowerExistsName, n.ExistsUnique.Targets, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendTargetsSection(
+		LowerExistsName, n.ExistsUnique.Targets, indent, hasDot && n.Label == nil)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendSuchThatSection(&n.SuchThat, indent, false)
 	return db.Lines()
@@ -118,7 +133,8 @@ func (n *ExistsUniqueGroup) ToCode(indent int, hasDot bool) []string {
 
 func (n *ForAllGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendTargetsSection(LowerForAllName, n.ForAll.Targets, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendTargetsSection(LowerForAllName, n.ForAll.Targets, indent, hasDot && n.Label == nil)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
 	db.MaybeAppendThenSection(&n.Then, indent, false)
@@ -127,21 +143,24 @@ func (n *ForAllGroup) ToCode(indent int, hasDot bool) []string {
 
 func (n *IfGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.MaybeAppendIfSection(&n.If, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.MaybeAppendIfSection(&n.If, indent, hasDot && n.Label == nil)
 	db.MaybeAppendThenSection(&n.Then, indent, false)
 	return db.Lines()
 }
 
 func (n *IffGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.MaybeAppendIffSection(&n.Iff, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.MaybeAppendIffSection(&n.Iff, indent, hasDot && n.Label == nil)
 	db.MaybeAppendThenSection(&n.Then, indent, false)
 	return db.Lines()
 }
 
 func (n *PiecewiseGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendSection(LowerPiecewiseName, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerPiecewiseName, indent, hasDot && n.Label == nil)
 	for _, ifThen := range n.IfThen {
 		db.MaybeAppendIfSection(&ifThen.If, indent, false)
 		db.MaybeAppendThenSection(&ifThen.Then, indent, false)
@@ -154,14 +173,16 @@ func (n *PiecewiseGroup) ToCode(indent int, hasDot bool) []string {
 
 func (n *WhenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.MaybeAppendWhenSection(&n.When, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.MaybeAppendWhenSection(&n.When, indent, hasDot && n.Label == nil)
 	db.MaybeAppendThenSection(&n.Then, indent, false)
 	return db.Lines()
 }
 
 func (n *SymbolWrittenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendSection(LowerSymbolName, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerSymbolName, indent, hasDot && n.Label == nil)
 	db.Append(&n.Symbol.Symbol, indent+2, true)
 	if n.Written != nil {
 		db.AppendTextItemsSection(LowerWrittenName, n.Written.Written, indent, true)
@@ -171,7 +192,8 @@ func (n *SymbolWrittenGroup) ToCode(indent int, hasDot bool) []string {
 
 func (n *LinkGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendSection(LowerLinkName, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerLinkName, indent, hasDot && n.Label == nil)
 	db.AppendTargetSection(LowerToName, n.To.To, indent, hasDot)
 	db.MaybeAppendUsingSection(n.Using, indent, true)
 	db.MaybeAppendWhereSection(n.Where, indent, true)
@@ -184,31 +206,40 @@ func (n *LinkGroup) ToCode(indent int, hasDot bool) []string {
 
 func (n *WrittenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendTextItemsSection(LowerWrittenName, n.Written.Written, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendTextItemsSection(
+		LowerWrittenName, n.Written.Written, indent, hasDot && n.Label == nil)
 	return db.Lines()
 }
 
 func (n *CalledGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendTextItemsSection(LowerCalledName, n.Called.Called, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendTextItemsSection(LowerCalledName, n.Called.Called, indent, hasDot && n.Label == nil)
 	return db.Lines()
 }
 
 func (n *ExpressedGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendTextItemsSection(LowerExpressedName, n.Expressed.Expressed, indent, false)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendTextItemsSection(
+		LowerExpressedName, n.Expressed.Expressed, indent, hasDot && n.Label == nil)
 	return db.Lines()
 }
 
 func (n *OverviewGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendSingleTextItemSection(LowerOverviewName, n.Overview.Overview, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSingleTextItemSection(
+		LowerOverviewName, n.Overview.Overview, indent, hasDot && n.Label == nil)
 	return db.Lines()
 }
 
 func (n *RelatedGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendTextItemsSection(LowerRelatedName, n.Related.Related, indent, hasDot)
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendTextItemsSection(
+		LowerRelatedName, n.Related.Related, indent, hasDot && n.Label == nil)
 	return db.Lines()
 }
 

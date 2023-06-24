@@ -86,11 +86,13 @@ func (p *parser) toAllOfGroup(group phase4.Group) (ast.AllOfGroup, bool) {
 		return ast.AllOfGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.AllOfSections...)
 	if !ok {
 		return ast.AllOfGroup{}, false
 	}
 	return ast.AllOfGroup{
+		Label:          label,
 		AllOf:          *p.toAllOfSection(sections[ast.LowerAllOfName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
@@ -110,11 +112,13 @@ func (p *parser) toNotGroup(group phase4.Group) (ast.NotGroup, bool) {
 		return ast.NotGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.NotSections...)
 	if !ok {
 		return ast.NotGroup{}, false
 	}
 	return ast.NotGroup{
+		Label:          label,
 		Not:            *p.toNotSection(sections[ast.LowerNotName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
@@ -134,11 +138,13 @@ func (p *parser) toAnyOfGroup(group phase4.Group) (ast.AnyOfGroup, bool) {
 		return ast.AnyOfGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.AnyOfSections...)
 	if !ok {
 		return ast.AnyOfGroup{}, false
 	}
 	return ast.AnyOfGroup{
+		Label:          label,
 		AnyOf:          *p.toAnyOfSection(sections[ast.LowerAnyOfName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
@@ -158,11 +164,13 @@ func (p *parser) toOneOfGroup(group phase4.Group) (ast.OneOfGroup, bool) {
 		return ast.OneOfGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.OneOfSections...)
 	if !ok {
 		return ast.OneOfGroup{}, false
 	}
 	return ast.OneOfGroup{
+		Label:          label,
 		OneOf:          *p.toOneOfSection(sections[ast.LowerOneOfName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
@@ -182,6 +190,7 @@ func (p *parser) toExistsGroup(group phase4.Group) (ast.ExistsGroup, bool) {
 		return ast.ExistsGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ExistsSections...)
 	if !ok {
 		return ast.ExistsGroup{}, false
@@ -196,6 +205,7 @@ func (p *parser) toExistsGroup(group phase4.Group) (ast.ExistsGroup, bool) {
 		suchThat = p.toSuchThatSection(sect)
 	}
 	return ast.ExistsGroup{
+		Label:          label,
 		Exists:         exists,
 		Where:          where,
 		SuchThat:       suchThat,
@@ -231,6 +241,7 @@ func (p *parser) toExistsUniqueGroup(group phase4.Group) (ast.ExistsUniqueGroup,
 		return ast.ExistsUniqueGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ExistsUniqueSections...)
 	if !ok {
 		return ast.ExistsUniqueGroup{}, false
@@ -242,6 +253,7 @@ func (p *parser) toExistsUniqueGroup(group phase4.Group) (ast.ExistsUniqueGroup,
 	}
 	suchThat := *p.toSuchThatSection(sections[ast.LowerSuchThatName])
 	return ast.ExistsUniqueGroup{
+		Label:          label,
 		ExistsUnique:   existsUnique,
 		Where:          where,
 		SuchThat:       suchThat,
@@ -263,6 +275,7 @@ func (p *parser) toForAllGroup(group phase4.Group) (ast.ForAllGroup, bool) {
 		return ast.ForAllGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ForAllSections...)
 	if !ok {
 		return ast.ForAllGroup{}, false
@@ -278,6 +291,7 @@ func (p *parser) toForAllGroup(group phase4.Group) (ast.ForAllGroup, bool) {
 	}
 	then := *p.toThenSection(sections[ast.LowerThenName])
 	return ast.ForAllGroup{
+		Label:          label,
 		ForAll:         forAll,
 		Where:          where,
 		SuchThat:       suchThat,
@@ -307,11 +321,13 @@ func (p *parser) toIfGroup(group phase4.Group) (ast.IfGroup, bool) {
 		return ast.IfGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.IfSections...)
 	if !ok {
 		return ast.IfGroup{}, false
 	}
 	return ast.IfGroup{
+		Label:          label,
 		If:             *p.toIfSection(sections[ast.LowerIfName]),
 		Then:           *p.toThenSection(sections[ast.LowerThenName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
@@ -332,11 +348,13 @@ func (p *parser) toIffGroup(group phase4.Group) (ast.IffGroup, bool) {
 		return ast.IffGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.IffSections...)
 	if !ok {
 		return ast.IffGroup{}, false
 	}
 	return ast.IffGroup{
+		Label:          label,
 		Iff:            *p.toIffSection(sections[ast.LowerIffName]),
 		Then:           *p.toThenSection(sections[ast.LowerThenName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
@@ -357,11 +375,13 @@ func (p *parser) toWhenGroup(group phase4.Group) (ast.WhenGroup, bool) {
 		return ast.WhenGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.WhenSections...)
 	if !ok {
 		return ast.WhenGroup{}, false
 	}
 	return ast.WhenGroup{
+		Label:          label,
 		When:           *p.toWhenSection(sections[ast.LowerWhenName]),
 		Then:           *p.toThenSection(sections[ast.LowerThenName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
@@ -382,6 +402,7 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 		return ast.PiecewiseGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections := group.Sections
 	if len(sections) == 0 || sections[0].Name != ast.LowerPiecewiseName {
 		return ast.PiecewiseGroup{}, false
@@ -433,6 +454,7 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 		return ast.PiecewiseGroup{}, false
 	}
 	return ast.PiecewiseGroup{
+		Label:          label,
 		Piecewise:      piecewise,
 		IfThen:         ifThens,
 		Else:           elseSec,
@@ -459,6 +481,7 @@ func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGrou
 		return ast.SymbolWrittenGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.SymbolSections...)
 	if !ok {
 		return ast.SymbolWrittenGroup{}, false
@@ -469,6 +492,7 @@ func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGrou
 		written = p.toWrittenSection(sect)
 	}
 	return ast.SymbolWrittenGroup{
+		Label:          label,
 		Symbol:         symbol,
 		Written:        written,
 		CommonMetaData: toCommonMetaData(group.MetaData),
@@ -494,6 +518,7 @@ func (p *parser) toLinkGroup(group phase4.Group) (ast.LinkGroup, bool) {
 		return ast.LinkGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LinkSections...)
 	if !ok {
 		return ast.LinkGroup{}, false
@@ -518,6 +543,7 @@ func (p *parser) toLinkGroup(group phase4.Group) (ast.LinkGroup, bool) {
 		signifies = p.toSignifiesSection(sect)
 	}
 	return ast.LinkGroup{
+		Label:          label,
 		Link:           link,
 		To:             to,
 		Using:          using,
@@ -563,11 +589,13 @@ func (p *parser) toWrittenGroup(group phase4.Group) (ast.WrittenGroup, bool) {
 		return ast.WrittenGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.WrittenSections...)
 	if !ok {
 		return ast.WrittenGroup{}, false
 	}
 	return ast.WrittenGroup{
+		Label:          label,
 		Written:        *p.toWrittenSection(sections[ast.LowerWrittenName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
@@ -578,11 +606,13 @@ func (p *parser) toCalledGroup(group phase4.Group) (ast.CalledGroup, bool) {
 		return ast.CalledGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.CalledSections...)
 	if !ok {
 		return ast.CalledGroup{}, false
 	}
 	return ast.CalledGroup{
+		Label:          label,
 		Called:         *p.toCalledSection(sections[ast.LowerCalledName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
@@ -600,11 +630,13 @@ func (p *parser) toExpressedGroup(group phase4.Group) (ast.ExpressedGroup, bool)
 		return ast.ExpressedGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ExpressedSections...)
 	if !ok {
 		return ast.ExpressedGroup{}, false
 	}
 	return ast.ExpressedGroup{
+		Label:          label,
 		Expressed:      *p.toExpressedSection(sections[ast.LowerExpressedName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
@@ -650,11 +682,13 @@ func (p *parser) toOverviewGroup(group phase4.Group) (ast.OverviewGroup, bool) {
 		return ast.OverviewGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.OverviewSections...)
 	if !ok {
 		return ast.OverviewGroup{}, false
 	}
 	return ast.OverviewGroup{
+		Label:          label,
 		Overview:       *p.toOverviewSection(sections[ast.LowerOverviewName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
@@ -672,11 +706,13 @@ func (p *parser) toRelatedGroup(group phase4.Group) (ast.RelatedGroup, bool) {
 		return ast.RelatedGroup{}, false
 	}
 
+	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.RelatedSections...)
 	if !ok {
 		return ast.RelatedGroup{}, false
 	}
 	return ast.RelatedGroup{
+		Label:          label,
 		Related:        *p.toRelatedSection(sections[ast.LowerRelatedName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
@@ -2138,7 +2174,6 @@ func (p *parser) toIdItem(text string, position ast.Position) *ast.IdItem {
 		return &ast.IdItem{
 			RawText: text,
 			Root:    node,
-			Label:   nil,
 		}
 	} else {
 		return nil
@@ -2208,7 +2243,7 @@ func (p *parser) toClause(arg phase4.Argument) ast.ClauseKind {
 			return &ast.Formulation[ast.FormulationNodeKind]{
 				RawText:        data.Text,
 				Root:           node,
-				Label:          nil,
+				Label:          data.Label,
 				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		} else {
@@ -2257,7 +2292,7 @@ func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 			return ast.Spec{
 				RawText:        data.Text,
 				Root:           node,
-				Label:          nil,
+				Label:          data.Label,
 				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		} else {
@@ -2278,7 +2313,7 @@ func (p *parser) toAlias(arg phase4.Argument) ast.Alias {
 			return ast.Alias{
 				RawText:        data.Text,
 				Root:           node,
-				Label:          nil,
+				Label:          data.Label,
 				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		}
@@ -2295,7 +2330,6 @@ func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 			return ast.Target{
 				RawText:        data.Text,
 				Root:           node,
-				Label:          nil,
 				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		} else {
@@ -2385,7 +2419,7 @@ func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[*ast.Signa
 			return ast.Formulation[*ast.Signature]{
 				RawText:        data.Text,
 				Root:           &node,
-				Label:          nil,
+				Label:          data.Label,
 				CommonMetaData: toCommonMetaData(data.MetaData),
 			}
 		} else {

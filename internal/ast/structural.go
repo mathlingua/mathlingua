@@ -24,14 +24,12 @@ type GroupLabel struct {
 type IdItem struct {
 	RawText        string
 	Root           FormulationNodeKind
-	Label          *string
 	CommonMetaData CommonMetaData
 }
 
 type Target struct {
 	RawText        string
 	Root           FormulationNodeKind
-	Label          *string
 	CommonMetaData CommonMetaData
 }
 
@@ -112,6 +110,7 @@ type GivenGroup struct {
 var AllOfSections = []string{LowerAllOfName}
 
 type AllOfGroup struct {
+	Label          *GroupLabel
 	AllOf          AllOfSection
 	CommonMetaData CommonMetaData
 }
@@ -126,6 +125,7 @@ type AllOfSection struct {
 var NotSections = []string{LowerNotName}
 
 type NotGroup struct {
+	Label          *GroupLabel
 	Not            NotSection
 	CommonMetaData CommonMetaData
 }
@@ -140,6 +140,7 @@ type NotSection struct {
 var AnyOfSections = []string{LowerAnyOfName}
 
 type AnyOfGroup struct {
+	Label          *GroupLabel
 	AnyOf          AnyOfSection
 	CommonMetaData CommonMetaData
 }
@@ -154,6 +155,7 @@ type AnyOfSection struct {
 var OneOfSections = []string{LowerOneOfName}
 
 type OneOfGroup struct {
+	Label          *GroupLabel
 	OneOf          OneOfSection
 	CommonMetaData CommonMetaData
 }
@@ -172,6 +174,7 @@ var ExistsSections = []string{
 }
 
 type ExistsGroup struct {
+	Label          *GroupLabel
 	Exists         ExistsSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection
@@ -202,6 +205,7 @@ var ExistsUniqueSections = []string{
 }
 
 type ExistsUniqueGroup struct {
+	Label          *GroupLabel
 	ExistsUnique   ExistsUniqueSection
 	Where          *WhereSection
 	SuchThat       SuchThatSection
@@ -223,6 +227,7 @@ var ForAllSections = []string{
 }
 
 type ForAllGroup struct {
+	Label          *GroupLabel
 	ForAll         ForAllSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection
@@ -248,6 +253,7 @@ var IfSections = []string{
 }
 
 type IfGroup struct {
+	Label          *GroupLabel
 	If             IfSection
 	Then           ThenSection
 	CommonMetaData CommonMetaData
@@ -266,6 +272,7 @@ var IffSections = []string{
 }
 
 type IffGroup struct {
+	Label          *GroupLabel
 	Iff            IffSection
 	Then           ThenSection
 	CommonMetaData CommonMetaData
@@ -299,6 +306,7 @@ var PiecewiseSections = []string{
 }
 
 type PiecewiseGroup struct {
+	Label          *GroupLabel
 	Piecewise      PiecewiseSection
 	IfThen         []IfThen
 	Else           *ElseSection
@@ -322,6 +330,7 @@ var WhenSections = []string{
 }
 
 type WhenGroup struct {
+	Label          *GroupLabel
 	When           WhenSection
 	Then           ThenSection
 	CommonMetaData CommonMetaData
@@ -343,6 +352,7 @@ var SymbolSections = []string{
 }
 
 type SymbolWrittenGroup struct {
+	Label          *GroupLabel
 	Symbol         SymbolSection
 	Written        *WrittenSection
 	CommonMetaData CommonMetaData
@@ -368,6 +378,7 @@ var LinkSections = []string{
 }
 
 type LinkGroup struct {
+	Label          *GroupLabel
 	Link           LinkSection
 	To             ToSection
 	Using          *UsingSection
@@ -401,6 +412,7 @@ type LinkThroughSection struct {
 var WrittenSections = []string{LowerWrittenName}
 
 type WrittenGroup struct {
+	Label          *GroupLabel
 	Written        WrittenSection
 	CommonMetaData CommonMetaData
 }
@@ -408,6 +420,7 @@ type WrittenGroup struct {
 var CalledSections = []string{LowerCalledName}
 
 type CalledGroup struct {
+	Label          *GroupLabel
 	Called         CalledSection
 	CommonMetaData CommonMetaData
 }
@@ -420,6 +433,7 @@ type CalledSection struct {
 var ExpressedSections = []string{LowerExpressedName}
 
 type ExpressedGroup struct {
+	Label          *GroupLabel
 	Expressed      ExpressedSection
 	CommonMetaData CommonMetaData
 }
@@ -445,6 +459,7 @@ func (*CalledGroup) DocumentedKind()    {}
 var OverviewSections = []string{LowerOverviewName}
 
 type OverviewGroup struct {
+	Label          *GroupLabel
 	Overview       OverviewSection
 	CommonMetaData CommonMetaData
 }
@@ -457,6 +472,7 @@ type OverviewSection struct {
 var RelatedSections = []string{LowerRelatedName}
 
 type RelatedGroup struct {
+	Label          *GroupLabel
 	Related        RelatedSection
 	CommonMetaData CommonMetaData
 }

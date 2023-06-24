@@ -171,6 +171,7 @@ func setupScreen() {
 		inputArea.SetTitleColor(tcell.ColorBlack)
 		inputArea.SetBorderColor(tcell.ColorBlack)
 		inputArea.SetBackgroundColor(tcell.ColorWhite)
+		inputArea.SetTextStyle(tcell.StyleDefault)
 	}
 
 	if useStructuralParser {

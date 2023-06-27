@@ -138,3 +138,25 @@ c Name
 	assert.Equal(t, expected, actual)
 	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
+
+func TestFormulationLexerFunctionVarArg(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
+	lexer := NewLexer("/some/path", "f(x)...", tracker)
+
+	actual := "\n"
+	for lexer.HasNext() {
+		next := lexer.Next()
+		actual += fmt.Sprintf("%s %s\n", next.Text, next.Type)
+	}
+
+	expected := `
+f Name
+( LParen
+x Name
+) RParen
+... DotDotDot
+`
+
+	assert.Equal(t, expected, actual)
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
+}

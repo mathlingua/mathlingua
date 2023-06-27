@@ -842,6 +842,7 @@ func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpressio
 		}
 	}
 	fp.expect(ast.RParen)
+	varArgData, _ := fp.varArgData()
 	return ast.FunctionCallExpression{
 		Target: target,
 		Args:   args,
@@ -849,6 +850,7 @@ func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpressio
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
+		VarArg: varArgData,
 	}, true
 }
 

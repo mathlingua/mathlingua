@@ -201,6 +201,7 @@ type FunctionCallExpression struct {
 	Args                []ExpressionKind
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
+	VarArg              VarArgData
 }
 
 // x => x + 1 or (x, y) => x + y

@@ -66,7 +66,7 @@ func (n *FunctionCallExpression) ToCode(fn func(node MlgNodeKind) (string, bool)
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return n.Target.ToCode(fn) + "(" + commaSeparatedString(n.Args, fn) + ")"
+	return n.Target.ToCode(fn) + "(" + commaSeparatedString(n.Args, fn) + ")" + n.VarArg.ToCode(fn)
 }
 
 func (n *TupleExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {

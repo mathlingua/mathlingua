@@ -771,7 +771,9 @@ func (db *debugBuilder) MaybeAppendGivenSection(sec *GivenSection, indent int, h
 	}
 }
 
-func (db *debugBuilder) MaybeAppendThroughSection(sec *LinkThroughSection, indent int, hasDot bool) {
+func (db *debugBuilder) MaybeAppendThroughSection(
+	sec *LinkThroughSection, indent int, hasDot bool,
+) {
 	if sec != nil {
 		db.AppendSection(LowerThroughName, indent, hasDot)
 		for _, item := range sec.Through {
@@ -843,7 +845,9 @@ func (db *debugBuilder) MaybeAppendIffSection(sec *IffSection, indent int, hasDo
 	}
 }
 
-func (db *debugBuilder) MaybeAppendSingleMeansSection(sec *SingleMeansSection, indent int, hasDot bool) {
+func (db *debugBuilder) MaybeAppendSingleMeansSection(
+	sec *SingleMeansSection, indent int, hasDot bool,
+) {
 	if sec != nil {
 		db.AppendSection(LowerMeansName, indent, hasDot)
 		db.Append(sec.Means, indent+2, true)

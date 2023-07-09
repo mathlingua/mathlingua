@@ -1,10 +1,10 @@
 
 .mathlinguaTopLevelEntity {
   padding: 20px;
-  max-width: 50%;
+  max-width: 70%;
   width: fit-content;
   height: max-content;
-  overflow: visible;
+  overflow: auto;
   margin-top: 2ex;
   margin-bottom: 2ex;
   margin-left: auto;
@@ -23,6 +23,10 @@
     min-width: 50%;
     max-width: 80vw;
   }
+}
+
+.contentWrapper {
+  width: max-content;
 }
 
 .mathlinguaTopLevelTextBlock {

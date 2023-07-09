@@ -770,7 +770,7 @@ func (fp *formulationParser) metaKinds() (ast.MetaKinds, bool) {
 		}
 
 		if len(kinds) > 0 {
-			fp.expect(ast.Comma)
+			fp.expect(ast.Bar)
 		}
 
 		if tok, ok := fp.token(ast.Name); ok {

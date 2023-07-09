@@ -220,7 +220,7 @@ func (n *MetaKinds) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	result := "[:"
 	for i, name := range n.Kinds {
 		if i > 0 {
-			result += ", "
+			result += "|"
 		}
 		result += name
 	}

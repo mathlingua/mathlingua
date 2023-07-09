@@ -92,6 +92,7 @@ export interface TextArgumentData {
 
 export interface FormulationArgumentDataMetaData {
 	UsedSignatureStrings: string[] | null;
+  OriginalText: string | null;
 }
 
 export interface FormulationArgumentData {

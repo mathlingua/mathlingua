@@ -15,6 +15,10 @@
   background-color: #fefefe;
 }
 
+.selectedGroupListWrapper {
+  margin-top: 25px;
+}
+
 @media screen and (max-width: 450px) {
   .selectedGroupsInnerWrapper {
     min-width: 100%;
@@ -23,7 +27,7 @@
 
 .closeIcon {
   float: right;
-  color: black;
+  color: #aaaaaa;
   margin-right: 10px;
   margin-top: 6px;
   font-size: 80%;

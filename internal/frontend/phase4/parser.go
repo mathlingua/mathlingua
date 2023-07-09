@@ -261,6 +261,9 @@ func (p *phase4Parser) argumentData() (ArgumentDataKind, bool) {
 				Start: arg.Position,
 				Key:   p.keyGen.Next(),
 			},
+			FormulationMetaData: FormulationArgumentDataMetaData{
+				OriginalText: arg.Text,
+			},
 		}, true
 	}
 

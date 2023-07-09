@@ -9,6 +9,7 @@ import { LatexView } from '../../design/LatexView';
 
 export interface FormulationArgumentDataViewProps {
   node: FormulationArgumentData;
+  showSource: boolean;
   preProcess?: (text: string) => string;
   onSelectedSignature: (signature: string) => void;
 }
@@ -30,7 +31,8 @@ export const FormulationArgumentDataView = (props: FormulationArgumentDataViewPr
     <div className={styles.dropdownContainer}>
       <button className={styles.latexViewButton}
               onClick={() => setShowDropdown((shown) => !shown)}>
-        <LatexView latex={fn(props.node.Text)} color={'black'} />
+        {props.showSource ? <span className={styles.showSourceWrapper}>'{props.node.FormulationMetaData.OriginalText}'</span> :
+                            <LatexView latex={fn(props.node.Text)} color={'black'} />}
         {usedSignatures.length > 0 && <DownIcon className={styles.downIcon} />}
       </button>
       <div className={styles.dropdownMenu} style={dropdownMenuCss}>

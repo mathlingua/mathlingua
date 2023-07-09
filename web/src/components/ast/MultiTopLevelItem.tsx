@@ -47,13 +47,15 @@ export const MultiTopLevelItem = (props: MultiTopLevelItemProps) => {
                   onClick={() => setSelectedGroups([])}>
               <CloseIcon />
             </span>
-            {selectedGroups.map(group =>
-              <TopLevelNodeKindView key={group.Id || Date.now()}
-                                    node={group}
-                                    isOnSmallScreen={props.isOnSmallScreen}
-                                    onSelectedSignature={onSelectedSignature}
-                                    showCloseIcon={true}
-                                    onCloseClicked={() => onCloseClicked(group.Id)} />)}
+            <div className={styles.selectedGroupListWrapper}>
+              {selectedGroups.map(group =>
+                <TopLevelNodeKindView key={group.Id || Date.now()}
+                                      node={group}
+                                      isOnSmallScreen={props.isOnSmallScreen}
+                                      onSelectedSignature={onSelectedSignature}
+                                      showCloseIcon={true}
+                                      onCloseClicked={() => onCloseClicked(group.Id)} />)}
+            </div>
           </div>
         </div>}
     </>

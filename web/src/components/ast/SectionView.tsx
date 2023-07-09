@@ -10,6 +10,7 @@ import styles from './SectionView.module.css';
 
 export interface SectionViewProps {
   node: Section;
+  showSource: boolean;
   indent: number;
   onSelectedSignature: (signature: string) => void;
 }
@@ -26,6 +27,7 @@ export const SectionView = (props: SectionViewProps) => {
               <><Comma /></>}
             <ArgumentView
               node={arg}
+              showSource={props.showSource}
               indent={props.indent}
               forceRenderAsLatex={props.node.Name === 'written' || props.node.Name === 'called'}
               preProcess={props.node.Name === 'called' ?

@@ -1,6 +1,6 @@
 
 .mathlinguaTopLevelEntity {
-  padding: 2ex;
+  padding: 20px;
   max-width: 50%;
   width: fit-content;
   height: max-content;
@@ -19,6 +19,7 @@
 
 @media screen and (max-width: 450px) {
   .mathlinguaTopLevelEntity {
+    padding: 15px;
     min-width: 50%;
     max-width: 80vw;
   }
@@ -29,12 +30,23 @@
   max-width: 100%;
 }
 
+.iconWrapper {
+  color: #aaaaaa;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
 .closeIcon {
-  margin-top: -7px;
-  margin-right: -5px;
-  float: right;
-  color: black;
   font-size: 80%;
+  margin-top: -5px;
+  margin-left: -5px;
+}
+
+.switchIcon {
+  font-size: 80%;
+  margin-top: -5px;
+  margin-right: -5px;
 }
 
 .proofWrapper {

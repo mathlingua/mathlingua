@@ -9,6 +9,7 @@ import { SectionView } from './SectionView';
 
 export interface GroupViewProps {
   node: Group;
+  showSource: boolean;
   indent: number;
   onSelectedSignature: (signature: string) => void;
 }
@@ -21,7 +22,7 @@ export const GroupView = (props: GroupViewProps) => {
           <span key={index}>
             {index > 0 && <Newline />}
             {index > 0 && <Indent size={props.indent} />}
-            {section(sec, props.indent, props.onSelectedSignature)}
+            {section(sec, props.showSource, props.indent, props.onSelectedSignature)}
           </span>
         ))
       }
@@ -31,6 +32,7 @@ export const GroupView = (props: GroupViewProps) => {
 
 function section(
   sec: Section,
+  showSource: boolean,
   indent: number,
   onSelectedSignature: (signature: string) => void,
 ) {
@@ -38,7 +40,7 @@ function section(
     return null;
   }
 
-  if (sec.Name == 'Proof') {
+  if (sec.Name === 'Proof') {
     // The following is needed since otherwise there is an
     // extra gap at the bottom of the group.
     return <div className={styles.proofBottomGapFix}></div>;
@@ -46,10 +48,13 @@ function section(
 
   const secView = <SectionView
                     node={sec}
+                    showSource={showSource}
                     indent={indent}
                     onSelectedSignature={onSelectedSignature} />;
 
-  if (sec.Name === 'Provides' || sec.Name === 'Documented') {
+  const secHasSeparator = sec.Name === 'Provides' || sec.Name === 'Documented' ||
+                          sec.Name === 'References' || sec.Name === 'Aliases';
+  if (!showSource && secHasSeparator) {
     return (
       <>
         <div className={styles.separator}></div>

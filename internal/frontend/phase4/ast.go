@@ -186,6 +186,7 @@ func (t *TextArgumentData) ChildAt(index int) Node {
 
 type FormulationArgumentDataMetaData struct {
 	UsedSignatureStrings []string
+	OriginalText         string
 }
 
 type FormulationArgumentData struct {

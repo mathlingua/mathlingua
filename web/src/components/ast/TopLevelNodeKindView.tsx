@@ -1,6 +1,8 @@
 import React from 'react';
 
 import CloseIcon from '@rsuite/icons/Close';
+import MoreIcon from '@rsuite/icons/More';
+import MenuIcon from '@rsuite/icons/Menu';
 
 import { Group, TextArgumentData, TopLevelNodeKind } from '../../types';
 import { GroupView } from './GroupView';
@@ -9,7 +11,6 @@ import { IdView } from './IdView';
 import styles from './TopLevelNodeKindView.module.css';
 import { TextBlockView } from './TextBlockView';
 import { MarkdownView } from '../../design/MarkdownView';
-import { LatexView } from '../../design/LatexView';
 
 export interface TopLevelNodeKindViewProps {
   node: TopLevelNodeKind;
@@ -20,6 +21,8 @@ export interface TopLevelNodeKindViewProps {
 }
 
 export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
+  const [showSource, setShowSource] = React.useState(false);
+
   const sections = (props.node as Group).Sections;
   if (sections) {
     let called: string|undefined = undefined;
@@ -89,17 +92,19 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
 
     return (
       <>
-        <div className={styles.mathlinguaTopLevelEntity}>
-          {props.showCloseIcon &&
-            <span className={styles.closeIcon}
-                  onClick={props.onCloseClicked}>
-              <CloseIcon />
-            </span>}
-          <IdView id={idText} isLatex={isLatex} />
-          <GroupView
-            node={props.node as any}
-            indent={0}
-            onSelectedSignature={props.onSelectedSignature} />
+        <div className={styles.mathlinguaTopLevelEntity} style={{fontFamily: showSource ? 'courier, monospace' : undefined }}>
+          <div className={styles.iconWrapper}>
+            {props.showCloseIcon ? <CloseIcon className={styles.closeIcon} onClick={props.onCloseClicked} /> : <span></span>}
+            <MenuIcon className={styles.switchIcon} onClick={() => setShowSource(src => !src)} />
+          </div>
+          <div>
+            {showSource ? null : <IdView id={idText} isLatex={isLatex} />}
+            <GroupView
+              node={props.node as any}
+              showSource={showSource}
+              indent={0}
+              onSelectedSignature={props.onSelectedSignature} />
+          </div>
         </div>
         {proofText.length > 0 &&
           <div className={styles.proofWrapper}>

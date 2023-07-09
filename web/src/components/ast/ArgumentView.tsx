@@ -7,6 +7,7 @@ import { Space } from './Space';
 
 export interface ArgumentViewProps {
   node: Argument;
+  showSource: boolean;
   indent: number;
   forceRenderAsLatex: boolean;
   preProcess?: (text: string) => string;
@@ -18,6 +19,7 @@ export const ArgumentView = (props: ArgumentViewProps) => {
   if (props.node.IsInline) {
     component = <ArgumentDataKindView
       node={props.node.Arg}
+      showSource={props.showSource}
       indent={props.indent+2}
       forceRenderAsLatex={props.forceRenderAsLatex}
       preProcess={props.preProcess}
@@ -28,6 +30,7 @@ export const ArgumentView = (props: ArgumentViewProps) => {
         <Indent size={props.indent}/><Dot /><Space />
         <ArgumentDataKindView
           node={props.node.Arg}
+          showSource={props.showSource}
           indent={props.indent+2}
           forceRenderAsLatex={props.forceRenderAsLatex} 
           preProcess={props.preProcess}

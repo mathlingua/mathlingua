@@ -24,7 +24,9 @@ export const TextBlockView = (props: TextBlockViewProps) => {
    * more text...
    * ::
    */
-  const text = lines.length > 1 ? lines.slice(1).join('\n') : rawText;
+  // Note: A starting newline is needed since otherwise the content is
+  //       not rendered as markdown.
+  const text = lines.length > 1 ? '\n' + lines.slice(1).join('\n') : rawText;
   return (
     <div className={styles.mathlinguaTopLevelTextBlock}>
       <MarkdownView text={text} />

@@ -92,7 +92,10 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
 
     return (
       <>
-        <div className={styles.mathlinguaTopLevelEntity} style={{fontFamily: showSource ? 'courier, monospace' : undefined }}>
+        <div className={styles.mathlinguaTopLevelEntity} style={{
+            fontFamily: showSource ? 'source-code-pro, Menlo, Monaco, Consolas, \'Courier New\', monospace' : undefined,
+            fontSize: showSource ? '80%' : undefined,
+        }}>
           <div className={styles.iconWrapper}>
             {props.showCloseIcon ? <CloseIcon className={styles.closeIcon} onClick={props.onCloseClicked} /> : <span></span>}
             <MenuIcon className={styles.switchIcon} onClick={() => setShowSource(src => !src)} />

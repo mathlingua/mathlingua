@@ -67,6 +67,10 @@ testbed:
 debug:
 	go run main.go debug $(args)
 
+.PHONY: setup
+setup:
+	make setupgo && make setupweb
+
 .PHONY: setupgo
 setupgo:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest

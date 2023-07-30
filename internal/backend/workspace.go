@@ -130,6 +130,7 @@ type IWorkspace interface {
 	GetEntryById(id string) (phase4.TopLevelNodeKind, error)
 	GetEntryBySignature(signature string) (phase4.TopLevelNodeKind, error)
 	Check() CheckResult
+	GetUsages() []string
 }
 
 func NewWorkspace(contents []PathLabelContent, tracker frontend.IDiagnosticTracker) IWorkspace {
@@ -140,6 +141,7 @@ func NewWorkspace(contents []PathLabelContent, tracker frontend.IDiagnosticTrack
 		summaries:       make(map[string]SummaryKind, 0),
 		phase4Entries:   make(map[string]phase4.TopLevelNodeKind, 0),
 		topLevelEntries: make(map[string]ast.TopLevelItemKind, 0),
+		usages:          make([]string, 0),
 	}
 	w.initialize(contents)
 	return &w
@@ -164,6 +166,8 @@ type workspace struct {
 	phase4Entries map[string]phase4.TopLevelNodeKind
 	// map ids to phase5 top-level types
 	topLevelEntries map[string]ast.TopLevelItemKind
+	// usages of defined commands
+	usages []string
 }
 
 func (w *workspace) DocumentCount() int {
@@ -220,6 +224,10 @@ func (w *workspace) Check() CheckResult {
 	}
 }
 
+func (w *workspace) GetUsages() []string {
+	return w.usages
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (w *workspace) initialize(contents []PathLabelContent) {
@@ -238,6 +246,7 @@ func (w *workspace) initialize(contents []PathLabelContent) {
 	w.initializePhase4Entries()
 	w.initializeTopLevelEntries()
 	w.updateUsedSignatures()
+	w.initializeUsages()
 }
 
 func (w *workspace) getRenderedNode(
@@ -648,6 +657,17 @@ func (w *workspace) initializeSignaturesToIds() {
 				} else {
 					w.signaturesToIds[sig] = id
 				}
+			}
+		}
+	}
+}
+
+func (w *workspace) initializeUsages() {
+	for _, doc := range w.astRoot.Documents {
+		for _, item := range doc.Items {
+			usage, ok := GetUsageFromTopLevel(item)
+			if ok {
+				w.usages = append(w.usages, usage)
 			}
 		}
 	}

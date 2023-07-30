@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/pkg/mlg"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -42,17 +43,27 @@ type completionsResult struct {
 }
 
 func printCompletions() {
-	if data, err := json.MarshalIndent(COMPLETION_RESULT, "", "  "); err != nil {
+	logger := mlg.NewLogger()
+	usages := mlg.NewMlg(logger).GetUsages()
+	usagesAndCompletions := make([]string, 0)
+	usagesAndCompletions = append(usagesAndCompletions, FIXED_COMPLETIONS...)
+	usagesAndCompletions = append(usagesAndCompletions, usages...)
+
+	result := completionsResult{
+		Completions: usagesAndCompletions,
+	}
+
+	if data, err := json.MarshalIndent(result, "", "  "); err != nil {
 		fmt.Println("{\"Completions\": []}")
 	} else {
 		fmt.Println(string(data))
 	}
 }
 
-var COMPLETION_RESULT = getCompletionResult()
+var FIXED_COMPLETIONS = getFixedCompletions()
 
-func getCompletionResult() completionsResult {
-	completions := []string{
+func getFixedCompletions() []string {
+	return []string{
 		"in",
 		"is",
 		"as",
@@ -95,9 +106,6 @@ func getCompletionResult() completionsResult {
 		join(ast.NameSections),
 		join(ast.BiographySections),
 		join(ast.ResourceSections),
-	}
-	return completionsResult{
-		Completions: completions,
 	}
 }
 

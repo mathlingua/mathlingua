@@ -28,6 +28,7 @@ type IMlg interface {
 	Check(paths []string, showJson bool, debug bool)
 	View(port int)
 	Version() string
+	GetUsages() []string
 }
 
 func NewMlg(logger ILogger) IMlg {
@@ -86,6 +87,11 @@ func (m *mlg) View(port int) {
 
 func (m *mlg) Version() string {
 	return "v0.21.0"
+}
+
+func (m *mlg) GetUsages() []string {
+	workspace, _ := backend.NewWorkspaceFromPaths([]string{"."}, m.tracker)
+	return workspace.GetUsages()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

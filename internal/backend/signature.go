@@ -20,6 +20,51 @@ import (
 	"mathlingua/internal/ast"
 )
 
+func GetUsageFromTopLevel(topLevel ast.TopLevelItemKind) (string, bool) {
+	switch tl := topLevel.(type) {
+	case *ast.DefinesGroup:
+		return GetUsageFromId(tl.Id)
+	case *ast.DescribesGroup:
+		return GetUsageFromId(tl.Id)
+	case *ast.StatesGroup:
+		return GetUsageFromId(tl.Id)
+	case *ast.AxiomGroup:
+		if tl.Id == nil {
+			return "", false
+		}
+		return GetUsageFromId(*tl.Id)
+	case *ast.ConjectureGroup:
+		if tl.Id == nil {
+			return "", false
+		}
+		return GetUsageFromId(*tl.Id)
+	case *ast.TheoremGroup:
+		if tl.Id == nil {
+			return "", false
+		}
+		return GetUsageFromId(*tl.Id)
+	default:
+		return "", false
+	}
+}
+
+func GetUsageFromId(id ast.IdItem) (string, bool) {
+	root := id.Root
+	if root == nil {
+		return "", false
+	}
+	switch n := root.(type) {
+	case *ast.CommandId:
+		// \a.b.c{x, y}:a{x}:b{y}
+		return n.ToCode(ast.NoOp), true
+	case *ast.InfixCommandOperatorId:
+		// x \in/ y
+		return n.Operator.ToCode(ast.NoOp), true
+	default:
+		return "", false
+	}
+}
+
 func GetSignatureStringFromTopLevel(topLevel ast.TopLevelItemKind) (string, bool) {
 	switch tl := topLevel.(type) {
 	case *ast.DefinesGroup:

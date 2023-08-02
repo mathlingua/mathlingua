@@ -2450,14 +2450,14 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 
 func (fp *formulationParser) signature() (ast.Signature, bool) {
 	start := fp.lexer.Position()
-	if !fp.hasHas(ast.BackSlash, ast.LParen) {
+	if !fp.hasHas(ast.BackSlash, ast.LSquare) {
 		return ast.Signature{}, false
 	}
 	fp.expect(ast.BackSlash)
-	fp.expect(ast.LParen)
+	fp.expect(ast.LSquare)
 
 	mainNames := make([]string, 0)
-	for fp.lexer.HasNext() && !fp.has(ast.RParen) {
+	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
 		if fp.has(ast.Colon) {
 			break
 		}
@@ -2475,7 +2475,7 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 	}
 
 	namedGroupNames := make([]string, 0)
-	for fp.lexer.HasNext() && !fp.has(ast.RParen) {
+	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
 		if fp.has(ast.Colon) {
 			fp.lexer.Next() // skip the colon
 		} else {
@@ -2489,11 +2489,11 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 		namedGroupNames = append(namedGroupNames, name.Text)
 	}
 
-	for fp.lexer.HasNext() && !fp.has(ast.RParen) {
+	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
 		fp.error("Unexpected text")
 		fp.lexer.Next()
 	}
-	fp.expect(ast.RParen)
+	fp.expect(ast.RSquare)
 
 	isInfix := false
 	if fp.has(ast.Slash) {
@@ -2506,12 +2506,12 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 		innerLabelText := ""
 		fp.expect(ast.Colon)
 		fp.expect(ast.Colon)
-		fp.expect(ast.LSquare)
-		for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
+		fp.expect(ast.LParen)
+		for fp.lexer.HasNext() && !fp.has(ast.RParen) {
 			innerLabelText += fp.lexer.Next().Text
 		}
 		innerLabel = &innerLabelText
-		fp.expect(ast.RSquare)
+		fp.expect(ast.RParen)
 	}
 
 	return ast.Signature{

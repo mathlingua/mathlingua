@@ -328,7 +328,7 @@ type ChainExpression struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// \(a.b.c:x:y)::[inner label]
+// \[a.b.c:x:y]::(inner label)
 type Signature struct {
 	MainNames           []string
 	NamedGroupNames     []string

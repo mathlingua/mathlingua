@@ -23,23 +23,47 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestParseBasicConfigText(t *testing.T) {
+	input := `
+[section 1]
+key = "value"
+`
+	conf, err := ParseConfig(input)
+	assert.Nil(t, err)
+
+	section1Values := make(map[string]string)
+	section1Values["key"] = "value"
+
+	expectedSections := make(map[string]IConfigSection)
+	expectedSections["section 1"] = &configSection{
+		name:   "section 1",
+		keys:   []string{"key", "some key", "some.key", "some.other key"},
+		values: section1Values,
+	}
+
+	assert.Equal(t, mlglib.PrettyPrint(&config{
+		names:    []string{"section 1"},
+		sections: expectedSections,
+	}), mlglib.PrettyPrint(conf))
+}
+
 func TestParseConfigText(t *testing.T) {
 	input := `
 [section 1]
-key = value
-some key = some value
-some.key=some.value
-some.other key       =         some other    value
-some.longer.value = this is some
+key = "value"
+some key = "some value"
+some.key="some.value"
+some.other key       =         "some other    value"
+some.longer.value = "this is some
  text and some more
    and even more
  and some more
-     and some more
+     and some more"
 
 
 [section.2]
-key=value
-anotherKey = some.value
+key="value"
+anotherKey = "some.value"
 `
 	conf, err := ParseConfig(input)
 	assert.Nil(t, err)
@@ -81,10 +105,10 @@ anotherKey = some.value
 func TestParseConfigDuplicateKey(t *testing.T) {
 	text := `
 [section.1]
-key1 = value1
-key1 = value2
+key1 = "value1"
+key1 = "value2"
 `
-	_, err := ParseTocConfig(text)
+	_, err := ParseConfig(text)
 	assert.NotNil(t, err)
 	assert.Equal(t, "Duplicate key specified: key1", err.Error())
 }
@@ -97,27 +121,27 @@ key1 value1
 	_, err := ParseTocConfig(text)
 	assert.NotNil(t, err)
 	assert.Equal(t,
-		"Expected `key = value` cut couldn't find `=` token: key1 value1", err.Error())
+		"Expected = but found the end of text on line 2", err.Error())
 }
 
 func TestTocConfigUnexpectedSection(t *testing.T) {
 	text := `
 [section.1]
-[key1 = value1
+[key1 = "value1"
 `
 	_, err := ParseTocConfig(text)
 	assert.NotNil(t, err)
 	assert.Equal(t,
-		"Unexpected key value that looks like the start of a section: [key1 = value1", err.Error())
+		"Unexpected key value that looks like the start of a section: [key1", err.Error())
 }
 
-func TestTocConfigDuplicateSection(t *testing.T) {
+func TestConfigDuplicateSection(t *testing.T) {
 	text := `
 [section.1]
-key1 = value1
+key1 = "value1"
 
 [section.1]
-key2 = value2
+key2 = "value2"
 `
 	_, err := ParseTocConfig(text)
 	assert.NotNil(t, err)

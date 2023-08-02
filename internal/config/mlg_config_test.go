@@ -26,9 +26,9 @@ import (
 func TestParseMlgConfigText(t *testing.T) {
 	input := `
 [mlg.view]
-title = some title
-description = some description
-keywords = keyword 1, keyword 2, keyword3
+title = "some title"
+description = "some description"
+keywords = "keyword 1, keyword 2, keyword3"
 `
 	conf, err := ParseMlgConfig(input)
 	assert.Nil(t, err)

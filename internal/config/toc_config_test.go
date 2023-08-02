@@ -25,11 +25,11 @@ import (
 func TestParseTocConfigText(t *testing.T) {
 	text := `
 [toc]
-file 1 = File 1 Label
-file 2 = File 2 Label
-file3 = keep
-file4 = hide
-* = keep
+file 1 = "File 1 Label"
+file 2 = "File 2 Label"
+file3 = "keep"
+file4 = "hide"
+* = "keep"
 `
 	tocConfig, err := ParseTocConfig(text)
 	assert.Nil(t, err)
@@ -68,7 +68,7 @@ file4 = hide
 func TestTocConfigWithoutStar(t *testing.T) {
 	text := `
 [toc]
-file 1 = File 1 Label
+file 1 = "File 1 Label"
 `
 	_, err := ParseTocConfig(text)
 	assert.NotNil(t, err)
@@ -79,8 +79,8 @@ file 1 = File 1 Label
 func TestTocConfigStarNotLast(t *testing.T) {
 	text := `
 [toc]
-* = keep
-file 1 = File 1 Label
+* = "keep"
+file 1 = "File 1 Label"
 `
 	_, err := ParseTocConfig(text)
 	assert.NotNil(t, err)
@@ -90,7 +90,7 @@ file 1 = File 1 Label
 func TestTocConfigStarInvalidValue(t *testing.T) {
 	text := `
 [toc]
-* = invalid
+* = "invalid"
 `
 	_, err := ParseTocConfig(text)
 	assert.NotNil(t, err)
@@ -100,7 +100,7 @@ func TestTocConfigStarInvalidValue(t *testing.T) {
 func TestTocConfigStarNoValue(t *testing.T) {
 	text := `
 [toc]
-* =
+* = ""
 `
 	_, err := ParseTocConfig(text)
 	assert.NotNil(t, err)

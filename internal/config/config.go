@@ -33,80 +33,152 @@ type IConfigSection interface {
 }
 
 func ParseConfig(text string) (IConfig, error) {
-	lines := strings.Split(text, "\n")
-	if len(lines) == 0 {
-		return &config{}, nil
+	row := 0
+	index := 0
+
+	expect := func(c byte) error {
+		if index >= len(text) {
+			return fmt.Errorf("Expected %c but found the end of text on line %d", c, row+1)
+		}
+		if text[index] != c {
+			return fmt.Errorf("Expected %c but found %c on line %d", c, text[index], row+1)
+		}
+		return nil
+	}
+
+	skipNewlines := func() {
+		for index < len(text) && (text[index] == '\n' || text[index] == '\r') {
+			index++
+			row++
+		}
+	}
+
+	skipWhitespace := func() {
+		for index < len(text) && text[index] == ' ' {
+			index++
+			row++
+		}
+	}
+
+	sectionTitle := func() (string, error) {
+		err := expect('[')
+		if err != nil {
+			return "", err
+		}
+		title := ""
+		for index < len(text) && text[index] != '\n' {
+			title += string(text[index])
+			index++
+		}
+		if !strings.HasPrefix(title, "[") {
+			return "", fmt.Errorf("Expected a title of the form [title] on line %d", row+1)
+		}
+		if !strings.HasSuffix(title, "]") {
+			return "", fmt.Errorf("Expected a title of the form [title] on line %d", row+1)
+		}
+		return strings.TrimPrefix(strings.TrimSuffix(title, "]"), "["), nil
+	}
+
+	key := func() (string, error) {
+		result := ""
+		for index < len(text) && text[index] != '=' {
+			result += string(text[index])
+			index++
+		}
+		if len(result) == 0 {
+			return "", fmt.Errorf("A key cannot be empty on line %d", row+1)
+		}
+		if result[0] == ' ' {
+			return "", fmt.Errorf("A key cannot start with whitespace on line %d", row+1)
+		}
+		return strings.Trim(result, " "), nil
+	}
+
+	value := func() (string, error) {
+		err := expect('"')
+		if err != nil {
+			return "", err
+		}
+		// skip the "
+		index++
+		result := ""
+		for index < len(text) && (text[index] != '"' || (index > 0 && text[index] == '\\')) {
+			result += string(text[index])
+			index++
+		}
+		err = expect('"')
+		// skip the "
+		index++
+		if err != nil {
+			return "", err
+		}
+		return result, nil
+	}
+
+	hasEmptyLine := func() bool {
+		return index+1 < len(text) && text[index] == '\n' && text[index+1] == '\n'
 	}
 
 	sectionNames := make([]string, 0)
 	sections := make(map[string]IConfigSection)
 
-	i := 0
-	for i < len(lines) {
-		// move past any blank lines
-		for i < len(lines) && len(strings.Trim(lines[i], " ")) == 0 {
-			i += 1
-		}
-
-		if i >= len(lines) {
-			break
-		}
-
-		cur := strings.Trim(lines[i], " ")
-		if !strings.HasPrefix(cur, "[") || !strings.HasSuffix(cur, "]") {
-			return nil, fmt.Errorf("Expected a section header but found %s", cur)
-		}
-
-		sectionName := strings.TrimSuffix(strings.TrimPrefix(cur, "["), "]")
-		i += 1 // move past the section name
-
+	for index < len(text) {
 		keys := make([]string, 0)
 		values := make(map[string]string)
-		for i < len(lines) {
-			line := strings.Trim(lines[i], " ")
-			i += 1
-			if len(line) == 0 {
-				break
-			}
 
-			if strings.HasPrefix(line, "[") {
-				return nil, fmt.Errorf(
-					"Unexpected key value that looks like the start of a section: %s", line)
-			}
+		skipNewlines()
 
-			index := strings.Index(line, "=")
-			if index < 0 {
-				return nil, fmt.Errorf(
-					"Expected `key = value` cut couldn't find `=` token: %s", line)
-			}
-
-			key := strings.Trim(line[0:index], " ")
-			value := strings.Trim(line[index+1:], " ")
-			for i < len(lines) && strings.HasPrefix(lines[i], " ") {
-				value += lines[i]
-				i += 1
-			}
-
-			if _, ok := values[key]; ok {
-				return nil, fmt.Errorf("Duplicate key specified: %s", key)
-			}
-
-			keys = append(keys, key)
-			values[key] = value
+		title, err := sectionTitle()
+		if err != nil {
+			return nil, err
 		}
 
-		sec := configSection{
-			name:   sectionName,
+		err = expect('\n')
+		if err != nil {
+			return nil, err
+		}
+		// move past the newline
+		index++
+
+		for index < len(text) && !hasEmptyLine() {
+			k, err := key()
+			if err != nil {
+				return nil, err
+			}
+			if _, ok := values[k]; ok {
+				return nil, fmt.Errorf("Duplicate key specified: %s", k)
+			}
+			if strings.HasPrefix(k, "[") {
+				return nil, fmt.Errorf("Unexpected key value that looks like the start of a section: %s", k)
+			}
+			if err = expect('='); err != nil {
+				return nil, err
+			}
+			// move past the =
+			index++
+			skipWhitespace()
+			v, err := value()
+			if err != nil {
+				return nil, err
+			}
+			keys = append(keys, k)
+			values[k] = v
+			if !hasEmptyLine() && index < len(text) && text[index] == '\n' {
+				// move past the newline
+				index++
+			}
+		}
+
+		if _, ok := sections[title]; ok {
+			return nil, fmt.Errorf("Duplicate defined section: %s", title)
+		}
+
+		sectionNames = append(sectionNames, title)
+		sections[title] = &configSection{
+			name:   title,
 			keys:   keys,
 			values: values,
 		}
-
-		if _, ok := sections[sectionName]; ok {
-			return nil, fmt.Errorf("Duplicate defined section: %s", sectionName)
-		}
-
-		sectionNames = append(sectionNames, sectionName)
-		sections[sectionName] = &sec
 	}
 
 	return &config{

@@ -72,13 +72,15 @@ func Match(node ast.MlgNodeKind, pattern PatternKind) MatchResult {
 	case *InfixCommandPattern:
 		return matchInfixCommandExpression(node, *p)
 	case *CommandPattern:
-		return matchCommand(node, *p)
+		return matchCommandExpression(node, *p)
 	case *SpecAliasPattern:
 		return matchSpecAlias(node, *p)
 	case *AliasPattern:
 		return matchAlias(node, *p)
 	case *OrdinalPattern:
 		return matchOrdinal(node, *p)
+	case *FunctionLiteralFormPattern:
+		return matchFunctionLiteralExpression(node, *p)
 	default:
 		return MatchResult{
 			Messages: []string{
@@ -304,6 +306,25 @@ func matchConditionalSetForm(
 	}
 }
 
+func matchFunctionLiteralExpression(
+	node ast.MlgNodeKind,
+	pattern FunctionLiteralFormPattern,
+) MatchResult {
+	switch n := node.(type) {
+	case *ast.FunctionLiteralExpression:
+		lhsMatch := Match(&n.Lhs, &pattern.Lhs)
+		rhsMatch := Match(n.Rhs, pattern.Rhs)
+		return unionMatches(lhsMatch, rhsMatch)
+	default:
+		return MatchResult{
+			Messages: []string{
+				"Expected functional literal expression",
+			},
+			MatchMakesSense: true,
+		}
+	}
+}
+
 func matchConditionalSetIdForm(
 	node ast.MlgNodeKind,
 	pattern ConditionaSetIdFormPattern,
@@ -477,7 +498,7 @@ func matchInfixCommandExpression(node ast.MlgNodeKind, pattern InfixCommandPatte
 	}
 }
 
-func matchCommand(node ast.MlgNodeKind, pattern CommandPattern) MatchResult {
+func matchCommandExpression(node ast.MlgNodeKind, pattern CommandPattern) MatchResult {
 	switch n := node.(type) {
 	case *ast.CommandExpression:
 		nodeSig := GetSignatureStringFromCommand(*n)

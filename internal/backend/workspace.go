@@ -449,9 +449,10 @@ func (w *workspace) toWrittenImpl(path ast.Path, node ast.MlgNodeKind, sig strin
 	}
 	if !found {
 		w.tracker.Append(frontend.Diagnostic{
-			Type:     frontend.Error,
-			Origin:   frontend.BackendOrigin,
-			Message:  fmt.Sprintf("Unrecognized signature %s", sig),
+			Type:   frontend.Error,
+			Origin: frontend.BackendOrigin,
+			Message: fmt.Sprintf(
+				"Signature %s does not have a Documented:called: or Documented:written: section", sig),
 			Path:     path,
 			Position: node.GetCommonMetaData().Start,
 		})

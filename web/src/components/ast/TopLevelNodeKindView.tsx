@@ -1,7 +1,6 @@
 import React from 'react';
 
 import CloseIcon from '@rsuite/icons/Close';
-import MoreIcon from '@rsuite/icons/More';
 import MenuIcon from '@rsuite/icons/Menu';
 
 import { Group, TextArgumentData, TopLevelNodeKind } from '../../types';

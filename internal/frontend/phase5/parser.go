@@ -1277,7 +1277,6 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 
 func (p *parser) toAxiomSection(section phase4.Section) *ast.AxiomSection {
 	return &ast.AxiomSection{
-		Axiom:          p.zeroOrMoreTextItems(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -1360,7 +1359,6 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 
 func (p *parser) toConjectureSection(section phase4.Section) *ast.ConjectureSection {
 	return &ast.ConjectureSection{
-		Conjecture:     p.zeroOrMoreTextItems(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -1434,7 +1432,6 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 
 func (p *parser) toTheoremSection(section phase4.Section) *ast.TheoremSection {
 	return &ast.TheoremSection{
-		Theorem:        p.zeroOrMoreTextItems(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }

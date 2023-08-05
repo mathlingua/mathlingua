@@ -796,7 +796,6 @@ type AxiomGroup struct {
 }
 
 type AxiomSection struct {
-	Axiom          []TextItem
 	CommonMetaData CommonMetaData
 }
 
@@ -831,7 +830,6 @@ type ConjectureGroup struct {
 }
 
 type ConjectureSection struct {
-	Conjecture     []TextItem
 	CommonMetaData CommonMetaData
 }
 
@@ -868,7 +866,6 @@ type TheoremGroup struct {
 }
 
 type TheoremSection struct {
-	Theorem        []TextItem
 	CommonMetaData CommonMetaData
 }
 

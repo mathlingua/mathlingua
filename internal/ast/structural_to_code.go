@@ -420,6 +420,46 @@ func (n *TheoremGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
+func (n *CorollaryGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendIdItem(n.Id, indent, hasDot)
+	db.AppendSection(UpperCorollaryName, indent, hasDot && n.Id == nil)
+	db.AppendTextItemsSection(LowerToName, n.To.To, indent, false)
+	db.MaybeAppendGivenSection(n.Given, indent, false)
+	db.MaybeAppendWhereSection(n.Where, indent, false)
+	db.MaybeAppendIfSection(n.If, indent, false)
+	db.MaybeAppendIffSection(n.Iff, indent, false)
+	db.MaybeAppendThenSection(&n.Then, indent, false)
+	if n.Proof != nil {
+		db.AppendTextItemsSection(UpperProofName, n.Proof.Proof, indent, false)
+	}
+	db.MaybeAppendDocumentedSection(n.Documented, indent, false)
+	db.MaybeAppendReferencesSection(n.References, indent, false)
+	db.MaybeAppendAliasesSection(n.Aliases, indent, false)
+	db.MaybeAppendMetaIdSection(n.MetaId, indent, false)
+	return db.Lines()
+}
+
+func (n *LemmaGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendIdItem(n.Id, indent, hasDot)
+	db.AppendSection(UpperLemmaName, indent, hasDot && n.Id == nil)
+	db.AppendTextItemsSection(LowerForName, n.For.For, indent, false)
+	db.MaybeAppendGivenSection(n.Given, indent, false)
+	db.MaybeAppendWhereSection(n.Where, indent, false)
+	db.MaybeAppendIfSection(n.If, indent, false)
+	db.MaybeAppendIffSection(n.Iff, indent, false)
+	db.MaybeAppendThenSection(&n.Then, indent, false)
+	if n.Proof != nil {
+		db.AppendTextItemsSection(UpperProofName, n.Proof.Proof, indent, false)
+	}
+	db.MaybeAppendDocumentedSection(n.Documented, indent, false)
+	db.MaybeAppendReferencesSection(n.References, indent, false)
+	db.MaybeAppendAliasesSection(n.Aliases, indent, false)
+	db.MaybeAppendMetaIdSection(n.MetaId, indent, false)
+	return db.Lines()
+}
+
 func (n *ZeroGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.AppendSection(LowerZeroName, indent, hasDot)

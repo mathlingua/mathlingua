@@ -38,8 +38,10 @@ func Summarize(
 		return SummarizeAxiom(entry), true
 	case *ast.ConjectureGroup:
 		return SummarizeConjecture(entry), true
-	case *ast.TheoremGroup:
-		return SummarizeTheorem(entry), true
+	case *ast.CorollaryGroup:
+		return SummarizeCorollary(entry), true
+	case *ast.LemmaGroup:
+		return SummarizeLemma(entry), true
 	default:
 		return nil, false
 	}
@@ -138,6 +140,36 @@ func SummarizeTheorem(theorem *ast.TheoremGroup) *TheoremSummary {
 	return &TheoremSummary{
 		Input:  input,
 		Called: GetCalledSummaries(theorem.Documented),
+	}
+}
+
+func SummarizeCorollary(corollary *ast.CorollaryGroup) *CorollarySummary {
+	if corollary == nil {
+		return nil
+	}
+	var input *PatternKind
+	if corollary.Id != nil {
+		pattern, _ := toCommandPatternFromId(*corollary.Id)
+		input = &pattern
+	}
+	return &CorollarySummary{
+		Input:  input,
+		Called: GetCalledSummaries(corollary.Documented),
+	}
+}
+
+func SummarizeLemma(lemma *ast.LemmaGroup) *LemmaSummary {
+	if lemma == nil {
+		return nil
+	}
+	var input *PatternKind
+	if lemma.Id != nil {
+		pattern, _ := toCommandPatternFromId(*lemma.Id)
+		input = &pattern
+	}
+	return &LemmaSummary{
+		Input:  input,
+		Called: GetCalledSummaries(lemma.Documented),
 	}
 }
 

@@ -43,6 +43,16 @@ func GetUsageFromTopLevel(topLevel ast.TopLevelItemKind) (string, bool) {
 			return "", false
 		}
 		return GetUsageFromId(*tl.Id)
+	case *ast.CorollaryGroup:
+		if tl.Id == nil {
+			return "", false
+		}
+		return GetUsageFromId(*tl.Id)
+	case *ast.LemmaGroup:
+		if tl.Id == nil {
+			return "", false
+		}
+		return GetUsageFromId(*tl.Id)
 	default:
 		return "", false
 	}

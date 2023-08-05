@@ -32,6 +32,8 @@ func (*CapturesSummary) SummaryKind()   {}
 func (*AxiomSummary) SummaryKind()      {}
 func (*ConjectureSummary) SummaryKind() {}
 func (*TheoremSummary) SummaryKind()    {}
+func (*CorollarySummary) SummaryKind()  {}
+func (*LemmaSummary) SummaryKind()      {}
 
 func (s *DescribesSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 	return s.ExpAliases
@@ -58,6 +60,14 @@ func (s *ConjectureSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 }
 
 func (s *TheoremSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
+	return []ExpAliasSummaryKind{}
+}
+
+func (s *CorollarySummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
+	return []ExpAliasSummaryKind{}
+}
+
+func (s *LemmaSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 	return []ExpAliasSummaryKind{}
 }
 
@@ -120,6 +130,16 @@ type ConjectureSummary struct {
 }
 
 type TheoremSummary struct {
+	Input  *PatternKind
+	Called []CalledSummary
+}
+
+type CorollarySummary struct {
+	Input  *PatternKind
+	Called []CalledSummary
+}
+
+type LemmaSummary struct {
 	Input  *PatternKind
 	Called []CalledSummary
 }

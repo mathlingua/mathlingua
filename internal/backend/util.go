@@ -89,6 +89,18 @@ func GetAstMetaId(node ast.TopLevelItemKind) (string, bool) {
 			return "", false
 		}
 		return metaId.Id.RawText, true
+	case *ast.CorollaryGroup:
+		metaId := tl.MetaId
+		if metaId == nil {
+			return "", false
+		}
+		return metaId.Id.RawText, true
+	case *ast.LemmaGroup:
+		metaId := tl.MetaId
+		if metaId == nil {
+			return "", false
+		}
+		return metaId.Id.RawText, true
 	case *ast.SpecifyGroup:
 		metaId := tl.MetaId
 		if metaId == nil {

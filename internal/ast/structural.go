@@ -876,6 +876,92 @@ type ProofSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+var LemmaSections = []string{
+	UpperLemmaName,
+	LowerForName,
+	LowerGivenQuestionName,
+	LowerWhereQuestionName,
+	LowerIfQuestionName,
+	LowerIffQuestionName,
+	LowerThenName,
+	UpperProofQuestionName,
+	UpperDocumentedQuestionName,
+	UpperReferencesQuestionName,
+	UpperAliasesQuestionName,
+	UpperIdQuestionName,
+}
+
+type LemmaGroup struct {
+	Id             *IdItem
+	Lemma          LemmaSection
+	For            LemmaForSection
+	Given          *GivenSection
+	Where          *WhereSection
+	If             *IfSection
+	Iff            *IffSection
+	Then           ThenSection
+	Proof          *ProofSection
+	Documented     *DocumentedSection
+	References     *ReferencesSection
+	Aliases        *AliasesSection
+	MetaId         *MetaIdSection
+	CommonMetaData CommonMetaData
+}
+
+type LemmaSection struct {
+	CommonMetaData CommonMetaData
+}
+
+type LemmaForSection struct {
+	For            []TextItem
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var CorollarySections = []string{
+	UpperCorollaryName,
+	LowerToName,
+	LowerGivenQuestionName,
+	LowerWhereQuestionName,
+	LowerIfQuestionName,
+	LowerIffQuestionName,
+	LowerThenName,
+	UpperProofQuestionName,
+	UpperDocumentedQuestionName,
+	UpperReferencesQuestionName,
+	UpperAliasesQuestionName,
+	UpperIdQuestionName,
+}
+
+type CorollaryGroup struct {
+	Id             *IdItem
+	Corollary      CorollarySection
+	To             CorollaryToSection
+	Given          *GivenSection
+	Where          *WhereSection
+	If             *IfSection
+	Iff            *IffSection
+	Then           ThenSection
+	Proof          *ProofSection
+	Documented     *DocumentedSection
+	References     *ReferencesSection
+	Aliases        *AliasesSection
+	MetaId         *MetaIdSection
+	CommonMetaData CommonMetaData
+}
+
+type CorollarySection struct {
+	CommonMetaData CommonMetaData
+}
+
+type CorollaryToSection struct {
+	To             []TextItem
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 type SpecifyKind interface {
 	StructuralNodeKind
 	SpecifyKind()
@@ -1225,6 +1311,8 @@ func (*StatesGroup) TopLevelItemKind()     {}
 func (*AxiomGroup) TopLevelItemKind()      {}
 func (*ConjectureGroup) TopLevelItemKind() {}
 func (*TheoremGroup) TopLevelItemKind()    {}
+func (*CorollaryGroup) TopLevelItemKind()  {}
+func (*LemmaGroup) TopLevelItemKind()      {}
 func (*SpecifyGroup) TopLevelItemKind()    {}
 func (*PersonGroup) TopLevelItemKind()     {}
 func (*ResourceGroup) TopLevelItemKind()   {}

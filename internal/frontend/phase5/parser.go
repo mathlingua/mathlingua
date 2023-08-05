@@ -1443,6 +1443,160 @@ func (p *parser) toProofSection(section phase4.Section) *ast.ProofSection {
 	}
 }
 
+///////////////////////////////////////// corollary ///////////////////////////////////////////////
+
+func (p *parser) toCorollaryGroup(group phase4.Group) (ast.CorollaryGroup, bool) {
+	if !startsWithSections(group, ast.UpperCorollaryName) {
+		return ast.CorollaryGroup{}, false
+	}
+
+	id := p.getId(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.CorollarySections...)
+	if !ok {
+		return ast.CorollaryGroup{}, false
+	}
+	corollary := *p.toCorollarySection(sections[ast.UpperCorollaryName])
+	to := *p.toCorollaryToSection(sections[ast.LowerToName])
+	var given *ast.GivenSection
+	if sec, ok := sections[ast.LowerGivenName]; ok {
+		given = p.toGivenSection(sec)
+	}
+	var where *ast.WhereSection
+	if sec, ok := sections[ast.LowerWhereName]; ok {
+		where = p.toWhereSection(sec)
+	}
+	var ifSec *ast.IfSection
+	if sec, ok := sections[ast.LowerIfName]; ok {
+		ifSec = p.toIfSection(sec)
+	}
+	var iff *ast.IffSection
+	if sec, ok := sections[ast.LowerIffName]; ok {
+		iff = p.toIffSection(sec)
+	}
+	then := *p.toThenSection(sections[ast.LowerThenName])
+	var documented *ast.DocumentedSection
+	if sec, ok := sections[ast.UpperDocumentedName]; ok {
+		documented = p.toDocumentedSection(sec)
+	}
+	var references *ast.ReferencesSection
+	if sec, ok := sections[ast.UpperReferencesName]; ok {
+		references = p.toReferencesSection(sec)
+	}
+	var aliases *ast.AliasesSection
+	if sec, ok := sections[ast.UpperAliasesName]; ok {
+		aliases = p.toAliasesSection(sec)
+	}
+	var metaId *ast.MetaIdSection
+	if sec, ok := sections[ast.UpperIdName]; ok {
+		metaId = p.toMetaIdSection(sec)
+	}
+	return ast.CorollaryGroup{
+		Id:             id,
+		Corollary:      corollary,
+		To:             to,
+		Given:          given,
+		Where:          where,
+		If:             ifSec,
+		Iff:            iff,
+		Then:           then,
+		Documented:     documented,
+		References:     references,
+		Aliases:        aliases,
+		MetaId:         metaId,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toCorollarySection(section phase4.Section) *ast.CorollarySection {
+	return &ast.CorollarySection{
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toCorollaryToSection(section phase4.Section) *ast.CorollaryToSection {
+	return &ast.CorollaryToSection{
+		To:             p.oneOrMoreTextItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+///////////////////////////////////////// lemma ///////////////////////////////////////////////
+
+func (p *parser) toLemmaGroup(group phase4.Group) (ast.LemmaGroup, bool) {
+	if !startsWithSections(group, ast.UpperLemmaName) {
+		return ast.LemmaGroup{}, false
+	}
+
+	id := p.getId(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LemmaSections...)
+	if !ok {
+		return ast.LemmaGroup{}, false
+	}
+	lemma := *p.toLemmaSection(sections[ast.UpperLemmaName])
+	forSection := *p.toLemmaForSection(sections[ast.LowerForName])
+	var given *ast.GivenSection
+	if sec, ok := sections[ast.LowerGivenName]; ok {
+		given = p.toGivenSection(sec)
+	}
+	var where *ast.WhereSection
+	if sec, ok := sections[ast.LowerWhereName]; ok {
+		where = p.toWhereSection(sec)
+	}
+	var ifSec *ast.IfSection
+	if sec, ok := sections[ast.LowerIfName]; ok {
+		ifSec = p.toIfSection(sec)
+	}
+	var iff *ast.IffSection
+	if sec, ok := sections[ast.LowerIffName]; ok {
+		iff = p.toIffSection(sec)
+	}
+	then := *p.toThenSection(sections[ast.LowerThenName])
+	var documented *ast.DocumentedSection
+	if sec, ok := sections[ast.UpperDocumentedName]; ok {
+		documented = p.toDocumentedSection(sec)
+	}
+	var references *ast.ReferencesSection
+	if sec, ok := sections[ast.UpperReferencesName]; ok {
+		references = p.toReferencesSection(sec)
+	}
+	var aliases *ast.AliasesSection
+	if sec, ok := sections[ast.UpperAliasesName]; ok {
+		aliases = p.toAliasesSection(sec)
+	}
+	var metaId *ast.MetaIdSection
+	if sec, ok := sections[ast.UpperIdName]; ok {
+		metaId = p.toMetaIdSection(sec)
+	}
+	return ast.LemmaGroup{
+		Id:             id,
+		Lemma:          lemma,
+		For:            forSection,
+		Given:          given,
+		Where:          where,
+		If:             ifSec,
+		Iff:            iff,
+		Then:           then,
+		Documented:     documented,
+		References:     references,
+		Aliases:        aliases,
+		MetaId:         metaId,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toLemmaSection(section phase4.Section) *ast.LemmaSection {
+	return &ast.LemmaSection{
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toLemmaForSection(section phase4.Section) *ast.LemmaForSection {
+	return &ast.LemmaForSection{
+		For:            p.oneOrMoreTextItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
 ////////////////////////////////////////// text blocks /////////////////////////////////////////////
 
 func (p *parser) toTextBlockItem(block phase4.TextBlock) *ast.TextBlockItem {
@@ -2122,6 +2276,10 @@ func (p *parser) toTopLevelItemKind(item phase4.TopLevelNodeKind) (ast.TopLevelI
 		} else if grp, ok := p.toConjectureGroup(*item); ok {
 			return &grp, true
 		} else if grp, ok := p.toTheoremGroup(*item); ok {
+			return &grp, true
+		} else if grp, ok := p.toCorollaryGroup(*item); ok {
+			return &grp, true
+		} else if grp, ok := p.toLemmaGroup(*item); ok {
 			return &grp, true
 		} else if grp, ok := p.toSpecifyGroup(*item); ok {
 			return &grp, true

@@ -57,6 +57,8 @@ func (*ProofGroup) StructuralNodeKind()         {}
 func (*AxiomGroup) StructuralNodeKind()         {}
 func (*ConjectureGroup) StructuralNodeKind()    {}
 func (*TheoremGroup) StructuralNodeKind()       {}
+func (*CorollaryGroup) StructuralNodeKind()     {}
+func (*LemmaGroup) StructuralNodeKind()         {}
 func (*ZeroGroup) StructuralNodeKind()          {}
 func (*PositiveIntGroup) StructuralNodeKind()   {}
 func (*NegativeIntGroup) StructuralNodeKind()   {}

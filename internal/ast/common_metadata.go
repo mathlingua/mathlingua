@@ -51,6 +51,8 @@ func (n *ProofGroup) GetCommonMetaData() *CommonMetaData         { return &n.Com
 func (n *AxiomGroup) GetCommonMetaData() *CommonMetaData         { return &n.CommonMetaData }
 func (n *ConjectureGroup) GetCommonMetaData() *CommonMetaData    { return &n.CommonMetaData }
 func (n *TheoremGroup) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
+func (n *CorollaryGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
+func (n *LemmaGroup) GetCommonMetaData() *CommonMetaData         { return &n.CommonMetaData }
 func (n *ZeroGroup) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
 func (n *PositiveIntGroup) GetCommonMetaData() *CommonMetaData   { return &n.CommonMetaData }
 func (n *NegativeIntGroup) GetCommonMetaData() *CommonMetaData   { return &n.CommonMetaData }

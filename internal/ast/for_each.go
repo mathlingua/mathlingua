@@ -403,6 +403,76 @@ func (n *TheoremGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
+func (n *CorollaryGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	if n.Id != nil {
+		fn(n.Id)
+	}
+	forEachTextItem(n.To.To, fn)
+	if n.Given != nil {
+		forEachTarget(n.Given.Given, fn)
+	}
+	if n.Where != nil {
+		forEachSpec(n.Where.Specs, fn)
+	}
+	if n.If != nil {
+		forEach(n.If.Clauses, fn)
+	}
+	if n.Iff != nil {
+		forEach(n.Iff.Clauses, fn)
+	}
+	forEach(n.Then.Clauses, fn)
+	if n.Proof != nil {
+		forEachTextItem(n.Proof.Proof, fn)
+	}
+	if n.Documented != nil {
+		forEach(n.Documented.Documented, fn)
+	}
+	if n.References != nil {
+		forEachTextItem(n.References.References, fn)
+	}
+	if n.Aliases != nil {
+		forEachAlias(n.Aliases.Aliases, fn)
+	}
+	if n.MetaId != nil {
+		fn(&n.MetaId.Id)
+	}
+}
+
+func (n *LemmaGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	if n.Id != nil {
+		fn(n.Id)
+	}
+	forEachTextItem(n.For.For, fn)
+	if n.Given != nil {
+		forEachTarget(n.Given.Given, fn)
+	}
+	if n.Where != nil {
+		forEachSpec(n.Where.Specs, fn)
+	}
+	if n.If != nil {
+		forEach(n.If.Clauses, fn)
+	}
+	if n.Iff != nil {
+		forEach(n.Iff.Clauses, fn)
+	}
+	forEach(n.Then.Clauses, fn)
+	if n.Proof != nil {
+		forEachTextItem(n.Proof.Proof, fn)
+	}
+	if n.Documented != nil {
+		forEach(n.Documented.Documented, fn)
+	}
+	if n.References != nil {
+		forEachTextItem(n.References.References, fn)
+	}
+	if n.Aliases != nil {
+		forEachAlias(n.Aliases.Aliases, fn)
+	}
+	if n.MetaId != nil {
+		fn(&n.MetaId.Id)
+	}
+}
+
 func (n *ZeroGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.SingleMeans.Means)
 }

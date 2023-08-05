@@ -69,6 +69,8 @@ func (*ProofGroup) MlgNodeKind()         {}
 func (*AxiomGroup) MlgNodeKind()         {}
 func (*ConjectureGroup) MlgNodeKind()    {}
 func (*TheoremGroup) MlgNodeKind()       {}
+func (*CorollaryGroup) MlgNodeKind()     {}
+func (*LemmaGroup) MlgNodeKind()         {}
 func (*ZeroGroup) MlgNodeKind()          {}
 func (*PositiveIntGroup) MlgNodeKind()   {}
 func (*NegativeIntGroup) MlgNodeKind()   {}

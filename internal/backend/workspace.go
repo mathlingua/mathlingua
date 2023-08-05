@@ -957,6 +957,14 @@ func includeMissingIdentifiersAt(node ast.MlgNodeKind, keyGen mlglib.IKeyGenerat
 		if n.Given != nil {
 			includeMissingIdentifiersInTargets(n.Given.Given, keyGen)
 		}
+	case *ast.CorollaryGroup:
+		if n.Given != nil {
+			includeMissingIdentifiersInTargets(n.Given.Given, keyGen)
+		}
+	case *ast.LemmaGroup:
+		if n.Given != nil {
+			includeMissingIdentifiersInTargets(n.Given.Given, keyGen)
+		}
 	case *ast.ForAllGroup:
 		includeMissingIdentifiersInTargets(n.ForAll.Targets, keyGen)
 	case *ast.ExistsGroup:

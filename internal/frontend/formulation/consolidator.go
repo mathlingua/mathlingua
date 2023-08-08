@@ -267,7 +267,7 @@ func toNode(
 				tracker, top.Start())
 			return &ast.IsExpression{
 				Lhs: []ast.ExpressionKind{lhs},
-				Rhs: []ast.KindKind{rhs},
+				Rhs: expandIsExtendsRhs(rhs, "is", tracker, path, top.Start()),
 			}
 		case top.Type == ast.Extends:
 			rhs := checkType(path, toNode(path, items, tracker), default_kind_type, "Kind Type",
@@ -276,7 +276,7 @@ func toNode(
 				tracker, top.Start())
 			return &ast.ExtendsExpression{
 				Lhs: []ast.ExpressionKind{lhs},
-				Rhs: []ast.KindKind{rhs},
+				Rhs: expandIsExtendsRhs(rhs, "extends", tracker, path, top.Start()),
 			}
 		case top.Type == ast.As:
 			rhs := checkType(path, toNode(path, items, tracker), default_signature, "Signature",
@@ -293,6 +293,52 @@ func toNode(
 	default:
 		return top
 	}
+}
+
+func expandIsExtendsRhs(
+	node ast.FormulationNodeKind,
+	name string, // "is" or "extends"
+	tracker frontend.IDiagnosticTracker,
+	path ast.Path,
+	position ast.Position,
+) []ast.KindKind {
+	result := make([]ast.KindKind, 0)
+	switch n := node.(type) {
+	case *ast.InfixOperatorCallExpression:
+		switch t := n.Target.(type) {
+		case *ast.NonEnclosedNonCommandOperatorTarget:
+			if t.Text == "&" {
+				result = append(result, expandIsExtendsRhs(n.Lhs, name, tracker, path, position)...)
+				result = append(result, expandIsExtendsRhs(n.Rhs, name, tracker, path, position)...)
+			} else {
+				tracker.Append(frontend.Diagnostic{
+					Type:   frontend.Error,
+					Origin: frontend.FormulationConsolidatorOrigin,
+					Message: fmt.Sprintf(
+						"The only operator allowed on the right-hand-side of an '%s' expression is &", name),
+					Position: position,
+				})
+			}
+		default:
+			tracker.Append(frontend.Diagnostic{
+				Type:   frontend.Error,
+				Origin: frontend.FormulationConsolidatorOrigin,
+				Message: fmt.Sprintf(
+					"The only operator allowed on the right-hand-side of an '%s' expression is &", name),
+				Position: position,
+			})
+		}
+	case ast.KindKind:
+		result = append(result, n)
+	default:
+		tracker.Append(frontend.Diagnostic{
+			Type:     frontend.Error,
+			Origin:   frontend.FormulationConsolidatorOrigin,
+			Message:  fmt.Sprintf("Invalid item on the right-hand-side of an '%s' expression", name),
+			Position: position,
+		})
+	}
+	return result
 }
 
 type firstPassType string

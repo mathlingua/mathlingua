@@ -145,7 +145,7 @@ func (n *IsExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	result := ""
 	result += commaSeparatedString(n.Lhs, fn)
 	result += " is "
-	result += separatedString(n.Rhs, " & ", fn)
+	result += commaSeparatedString(n.Rhs, fn)
 	return result
 }
 
@@ -156,7 +156,7 @@ func (n *ExtendsExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) str
 	result := ""
 	result += commaSeparatedString(n.Lhs, fn)
 	result += " extends "
-	result += separatedString(n.Rhs, " & ", fn)
+	result += commaSeparatedString(n.Rhs, fn)
 	return result
 }
 

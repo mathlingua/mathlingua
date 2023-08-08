@@ -601,19 +601,9 @@ func (fp *formulationParser) multiplexedExpressionKind() (ast.ExpressionKind, bo
 			rhs = append(rhs, items[i].(ast.KindKind))
 			i++
 		}
-		rhsItems := make([]ast.KindKind, 0)
-		if len(rhs) != 1 {
-			fp.errorAt(
-				fmt.Sprintf(
-					"The right-hand-side of an 'is' expression must contain exactly one item, but found %d",
-					len(rhs)),
-				isExp.Start())
-		} else {
-			rhsItems = append(rhsItems, rhs[0])
-		}
 		return &ast.IsExpression{
 			Lhs: lhs,
-			Rhs: rhsItems,
+			Rhs: rhs,
 			CommonMetaData: ast.CommonMetaData{
 				Start: fp.getShiftedPosition(start),
 				Key:   fp.keyGen.Next(),
@@ -627,28 +617,17 @@ func (fp *formulationParser) multiplexedExpressionKind() (ast.ExpressionKind, bo
 			lhs = append(lhs, items[i])
 			i++
 		}
-		extendsExp := items[extendsIndex].(*ast.ExtendsExpression)
-		lhs = append(lhs, extendsExp.Lhs...)
-		rhs = append(rhs, extendsExp.Rhs...)
+		isExp := items[extendsIndex].(*ast.ExtendsExpression)
+		lhs = append(lhs, isExp.Lhs...)
+		rhs = append(rhs, isExp.Rhs...)
 		i = extendsIndex + 1
 		for i < len(items) {
 			rhs = append(rhs, items[i].(ast.KindKind))
 			i++
 		}
-		rhsItems := make([]ast.KindKind, 0)
-		if len(rhs) != 1 {
-			fp.errorAt(
-				fmt.Sprintf(
-					"The right-hand-side of an 'extends' expression must contain exactly "+
-						"one item, but found %d",
-					len(rhs)),
-				extendsExp.Start())
-		} else {
-			rhsItems = append(rhsItems, rhs[0])
-		}
 		return &ast.ExtendsExpression{
 			Lhs: lhs,
-			Rhs: rhsItems,
+			Rhs: rhs,
 			CommonMetaData: ast.CommonMetaData{
 				Start: fp.getShiftedPosition(start),
 				Key:   fp.keyGen.Next(),

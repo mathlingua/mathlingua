@@ -62,7 +62,7 @@ func ParseForm(
 		start:   start,
 		keyGen:  keyGen,
 	}
-	node, _ := parser.form()
+	node, _ := parser.structuralFormKindPossiblyWithColonEquals()
 	parser.finalize()
 	return node, node != nil && tracker.Length() == numDiagBefore
 }
@@ -1492,12 +1492,34 @@ func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandE
 
 /////////////////////////// forms ///////////////////////////////////////
 
-func (fp *formulationParser) form() (ast.FormulationNodeKind, bool) {
+func (fp *formulationParser) structuralFormKindWithoutColonEquals() (ast.StructuralFormKind, bool) {
+	if op, ok := fp.infixOperatorForm(); ok {
+		return &op, ok
+	}
+
+	if op, ok := fp.prefixOperatorForm(); ok {
+		return &op, ok
+	}
+
+	if op, ok := fp.postfixOperatorForm(); ok {
+		return &op, ok
+	}
+
+	if op, ok := fp.nameFunctionTupleOrSet(); ok {
+		return op, ok
+	}
+
+	return nil, false
+}
+
+func (fp *formulationParser) structuralFormKindPossiblyWithColonEquals() (
+	ast.StructuralFormKind, bool,
+) {
 	// The lint checker incorrectly reports `start` is not used even though it is.
 	// nolint:typecheck
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-	lhs, ok := fp.structuralFormKind()
+	lhs, ok := fp.structuralFormKindWithoutColonEquals()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return nil, false
@@ -1511,7 +1533,7 @@ func (fp *formulationParser) form() (ast.FormulationNodeKind, bool) {
 	switch lhs.(type) {
 	case *ast.NameForm:
 		fp.expect(ast.ColonEquals)
-		rhs, ok := fp.structuralFormKind()
+		rhs, ok := fp.structuralFormKindWithoutColonEquals()
 		if !ok {
 			fp.lexer.RollBack(id)
 			fp.error("Expected an item on the righ-hand-side of :=")
@@ -1529,7 +1551,7 @@ func (fp *formulationParser) form() (ast.FormulationNodeKind, bool) {
 		}, true
 	case *ast.FunctionForm:
 		fp.expect(ast.ColonEquals)
-		rhs, ok := fp.structuralFormKind()
+		rhs, ok := fp.structuralFormKindWithoutColonEquals()
 		if !ok {
 			fp.lexer.RollBack(id)
 			fp.error("Expected an item on the righ-hand-side of :=")
@@ -1568,7 +1590,7 @@ func (fp *formulationParser) parenParams() (*[]ast.StructuralFormKind, bool) {
 			fp.expect(ast.Comma)
 		}
 
-		arg, ok := fp.structuralFormKind()
+		arg, ok := fp.structuralFormKindWithoutColonEquals()
 		if !ok {
 			fp.lexer.RollBack(id)
 			return nil, false
@@ -1698,7 +1720,7 @@ func (fp *formulationParser) squareParams() (*[]ast.StructuralFormKind, bool) {
 			fp.expect(ast.Comma)
 		}
 
-		arg, ok := fp.structuralFormKind()
+		arg, ok := fp.structuralFormKindWithoutColonEquals()
 		if !ok {
 			fp.lexer.RollBack(id)
 			return nil, false
@@ -1727,7 +1749,7 @@ func (fp *formulationParser) curlyParams() (*[]ast.StructuralFormKind, bool) {
 			fp.expect(ast.Comma)
 		}
 
-		arg, ok := fp.structuralFormKind()
+		arg, ok := fp.structuralFormKindPossiblyWithColonEquals()
 		if !ok {
 			fp.lexer.RollBack(id)
 			return nil, false
@@ -1758,26 +1780,6 @@ func (fp *formulationParser) nameFunctionTupleOrSet() (ast.StructuralFormKind, b
 
 	if conditionalSet, ok := fp.conditionalSetForm(); ok {
 		return &conditionalSet, true
-	}
-
-	return nil, false
-}
-
-func (fp *formulationParser) structuralFormKind() (ast.StructuralFormKind, bool) {
-	if op, ok := fp.infixOperatorForm(); ok {
-		return &op, ok
-	}
-
-	if op, ok := fp.prefixOperatorForm(); ok {
-		return &op, ok
-	}
-
-	if op, ok := fp.postfixOperatorForm(); ok {
-		return &op, ok
-	}
-
-	if op, ok := fp.nameFunctionTupleOrSet(); ok {
-		return op, ok
 	}
 
 	return nil, false
@@ -1919,7 +1921,7 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 			fp.expect(ast.Comma)
 		}
 
-		param, ok := fp.structuralFormKind()
+		param, ok := fp.structuralFormKindWithoutColonEquals()
 		if !ok {
 			fp.error("Expected a structural form type")
 			// move past the unexpected token
@@ -1964,7 +1966,7 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 			}
 		}
 
-		param, ok := fp.structuralFormKind()
+		param, ok := fp.structuralFormKindPossiblyWithColonEquals()
 		if !ok {
 			fp.lexer.RollBack(id)
 			return ast.TupleForm{}, false
@@ -1992,7 +1994,7 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 		return ast.ConditionalSetForm{}, false
 	}
 
-	target, ok := fp.structuralFormKind()
+	target, ok := fp.structuralFormKindPossiblyWithColonEquals()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetForm{}, false
@@ -2063,7 +2065,7 @@ func (fp *formulationParser) idKind() (ast.IdKind, bool) {
 func (fp *formulationParser) infixCommandOperatorId() (ast.InfixCommandOperatorId, bool) {
 	id := fp.lexer.Snapshot()
 
-	lhs, ok := fp.nameFunctionTupleOrSet()
+	lhs, ok := fp.structuralFormKindPossiblyWithColonEquals()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandOperatorId{}, false
@@ -2075,7 +2077,7 @@ func (fp *formulationParser) infixCommandOperatorId() (ast.InfixCommandOperatorI
 		return ast.InfixCommandOperatorId{}, false
 	}
 
-	rhs, ok := fp.nameFunctionTupleOrSet()
+	rhs, ok := fp.structuralFormKindPossiblyWithColonEquals()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandOperatorId{}, false
@@ -2093,7 +2095,7 @@ func (fp *formulationParser) infixCommandOperatorId() (ast.InfixCommandOperatorI
 func (fp *formulationParser) infixOperatorId() (ast.InfixOperatorId, bool) {
 	id := fp.lexer.Snapshot()
 
-	lhs, ok := fp.nameFunctionTupleOrSet()
+	lhs, ok := fp.structuralFormKindPossiblyWithColonEquals()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixOperatorId{}, false
@@ -2105,7 +2107,7 @@ func (fp *formulationParser) infixOperatorId() (ast.InfixOperatorId, bool) {
 		return ast.InfixOperatorId{}, false
 	}
 
-	rhs, ok := fp.nameFunctionTupleOrSet()
+	rhs, ok := fp.structuralFormKindPossiblyWithColonEquals()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixOperatorId{}, false
@@ -2123,7 +2125,7 @@ func (fp *formulationParser) infixOperatorId() (ast.InfixOperatorId, bool) {
 func (fp *formulationParser) postfixOperatorId() (ast.PostfixOperatorId, bool) {
 	id := fp.lexer.Snapshot()
 
-	param, ok := fp.nameFunctionTupleOrSet()
+	param, ok := fp.structuralFormKindPossiblyWithColonEquals()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.PostfixOperatorId{}, false
@@ -2152,7 +2154,7 @@ func (fp *formulationParser) prefixOperatorId() (ast.PrefixOperatorId, bool) {
 		return ast.PrefixOperatorId{}, false
 	}
 
-	param, ok := fp.nameFunctionTupleOrSet()
+	param, ok := fp.structuralFormKindPossiblyWithColonEquals()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.PrefixOperatorId{}, false
@@ -2181,7 +2183,7 @@ func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, b
 	}
 
 	fp.expect(ast.LCurly)
-	target, ok := fp.structuralFormKind()
+	target, ok := fp.structuralFormKindPossiblyWithColonEquals()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetIdForm{}, false

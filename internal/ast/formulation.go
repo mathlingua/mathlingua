@@ -31,15 +31,16 @@ type StructuralFormKind interface {
 	StructuralForm()
 }
 
-func (*NameForm) StructuralForm()             {}
-func (*FunctionForm) StructuralForm()         {}
-func (*TupleForm) StructuralForm()            {}
-func (*ConditionalSetForm) StructuralForm()   {}
-func (*ConditionalSetIdForm) StructuralForm() {}
-func (*InfixOperatorForm) StructuralForm()    {}
-func (*PrefixOperatorForm) StructuralForm()   {}
-func (*PostfixOperatorForm) StructuralForm()  {}
-func (*FunctionLiteralForm) StructuralForm()  {}
+func (*NameForm) StructuralForm()                  {}
+func (*FunctionForm) StructuralForm()              {}
+func (*TupleForm) StructuralForm()                 {}
+func (*ConditionalSetForm) StructuralForm()        {}
+func (*ConditionalSetIdForm) StructuralForm()      {}
+func (*InfixOperatorForm) StructuralForm()         {}
+func (*PrefixOperatorForm) StructuralForm()        {}
+func (*PostfixOperatorForm) StructuralForm()       {}
+func (*FunctionLiteralForm) StructuralForm()       {}
+func (*StructuralColonEqualsForm) StructuralForm() {}
 
 // x
 type NameForm struct {

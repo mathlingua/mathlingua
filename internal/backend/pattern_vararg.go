@@ -33,10 +33,7 @@ func (p *PostfixOperatorFormPattern) GetVarArgData() VarArgPatternData {
 }
 func (p *OrdinalPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
 
-func (p *NameColonEqualsPatternPattern) GetVarArgData() VarArgPatternData {
-	return VarArgPatternData{}
-}
-func (p *FunctionColonEqualsNamePattern) GetVarArgData() VarArgPatternData {
+func (p *StructuralColonEqualsPattern) GetVarArgData() VarArgPatternData {
 	return VarArgPatternData{}
 }
 func (p *InfixCommandOperatorPattern) GetVarArgData() VarArgPatternData {

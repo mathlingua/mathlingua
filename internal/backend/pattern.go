@@ -41,25 +41,19 @@ func (*PrefixOperatorFormPattern) PatternKind()       {}
 func (*PostfixOperatorFormPattern) PatternKind()      {}
 func (*OrdinalPattern) PatternKind()                  {}
 
-func (*NameColonEqualsPatternPattern) PatternKind()  {}
-func (*FunctionColonEqualsNamePattern) PatternKind() {}
-func (*InfixCommandOperatorPattern) PatternKind()    {}
-func (*InfixCommandPattern) PatternKind()            {}
-func (*CommandPattern) PatternKind()                 {}
-func (*NamedGroupPattern) PatternKind()              {}
-func (*ChainExpressionPattern) PatternKind()         {}
+func (*StructuralColonEqualsPattern) PatternKind() {}
+func (*InfixCommandOperatorPattern) PatternKind()  {}
+func (*InfixCommandPattern) PatternKind()          {}
+func (*CommandPattern) PatternKind()               {}
+func (*NamedGroupPattern) PatternKind()            {}
+func (*ChainExpressionPattern) PatternKind()       {}
 
 func (*SpecAliasPattern) PatternKind() {}
 func (*AliasPattern) PatternKind()     {}
 
-type NameColonEqualsPatternPattern struct {
-	Lhs NameFormPattern
+type StructuralColonEqualsPattern struct {
+	Lhs PatternKind
 	Rhs PatternKind
-}
-
-type FunctionColonEqualsNamePattern struct {
-	Lhs FunctionFormPattern
-	Rhs NameFormPattern
 }
 
 type FormPatternKind interface {
@@ -67,15 +61,16 @@ type FormPatternKind interface {
 	FormPatternKind()
 }
 
-func (*NameFormPattern) FormPatternKind()            {}
-func (*FunctionFormPattern) FormPatternKind()        {}
-func (*TupleFormPattern) FormPatternKind()           {}
-func (*ConditionalSetFormPattern) FormPatternKind()  {}
-func (*ConditionaSetIdFormPattern) FormPatternKind() {}
-func (*FunctionLiteralFormPattern) FormPatternKind() {}
-func (*InfixOperatorFormPattern) FormPatternKind()   {}
-func (*PrefixOperatorFormPattern) FormPatternKind()  {}
-func (*PostfixOperatorFormPattern) FormPatternKind() {}
+func (*NameFormPattern) FormPatternKind()              {}
+func (*FunctionFormPattern) FormPatternKind()          {}
+func (*TupleFormPattern) FormPatternKind()             {}
+func (*ConditionalSetFormPattern) FormPatternKind()    {}
+func (*ConditionaSetIdFormPattern) FormPatternKind()   {}
+func (*FunctionLiteralFormPattern) FormPatternKind()   {}
+func (*InfixOperatorFormPattern) FormPatternKind()     {}
+func (*PrefixOperatorFormPattern) FormPatternKind()    {}
+func (*PostfixOperatorFormPattern) FormPatternKind()   {}
+func (*StructuralColonEqualsPattern) FormPatternKind() {}
 
 type NameFormPattern struct {
 	Text            string
@@ -255,6 +250,8 @@ func ToFormPattern(item ast.StructuralFormKind) FormPatternKind {
 		return ToConditionalSetIdFormPattern(*n)
 	case *ast.FunctionLiteralForm:
 		return ToFunctionLiteralFormPattern(*n)
+	case *ast.StructuralColonEqualsForm:
+		return ToStructuralColonEqualsPattern(*n)
 	default:
 		panic("Could not process a pattern for " +
 			item.ToCode(func(node ast.MlgNodeKind) (string, bool) { return "", false }))
@@ -449,6 +446,15 @@ func ToInfixCommandPattern(id ast.InfixCommandOperatorId) InfixCommandPattern {
 		NamedGroups: toNamedGroupPatterns(id.Operator.NamedParams),
 		CurlyArg:    toCurlyArg(id.Operator.CurlyParam),
 		ParenArgs:   toParenArgs(id.Operator.ParenParams),
+	}
+}
+
+func ToStructuralColonEqualsPattern(
+	colonEquals ast.StructuralColonEqualsForm,
+) *StructuralColonEqualsPattern {
+	return &StructuralColonEqualsPattern{
+		Lhs: ToFormPattern(colonEquals.Lhs),
+		Rhs: ToFormPattern(colonEquals.Rhs),
 	}
 }
 

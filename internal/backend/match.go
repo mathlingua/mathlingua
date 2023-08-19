@@ -61,10 +61,8 @@ func Match(node ast.MlgNodeKind, pattern PatternKind) MatchResult {
 		return matchPrefixOperator(node, *p)
 	case *PostfixOperatorFormPattern:
 		return matchPostfixOperator(node, *p)
-	case *NameColonEqualsPatternPattern:
-		return matchNameColonEquals(node, *p)
-	case *FunctionColonEqualsNamePattern:
-		return matchFunctionColonEquals(node, *p)
+	case *StructuralColonEqualsPattern:
+		return matchStructuralColonEquals(node, *p)
 	case *InfixCommandOperatorPattern:
 		return matchInfixOperatorCommand(node, *p)
 	case *ChainExpressionPattern:
@@ -124,9 +122,13 @@ func unionMatches(result1 MatchResult, result2 MatchResult) MatchResult {
 	}
 }
 
-func matchNameColonEquals(node ast.MlgNodeKind,
-	pattern NameColonEqualsPatternPattern) MatchResult {
+func matchStructuralColonEquals(node ast.MlgNodeKind,
+	pattern StructuralColonEqualsPattern) MatchResult {
 	switch n := node.(type) {
+	case *ast.NameForm:
+		return Match(n, pattern.Lhs)
+	case *ast.FunctionForm:
+		return Match(n, pattern.Lhs)
 	case *ast.StructuralColonEqualsForm:
 		name, ok := n.Lhs.(*ast.NameForm)
 		if !ok {
@@ -134,7 +136,7 @@ func matchNameColonEquals(node ast.MlgNodeKind,
 				MatchMakesSense: false,
 			}
 		}
-		lhsMatch := matchName(name, pattern.Lhs)
+		lhsMatch := Match(name, pattern.Lhs)
 		rhsMatch := Match(n.Rhs, pattern.Rhs)
 		return unionMatches(lhsMatch, rhsMatch)
 	case *ast.ExpressionColonEqualsItem:
@@ -144,46 +146,13 @@ func matchNameColonEquals(node ast.MlgNodeKind,
 				MatchMakesSense: false,
 			}
 		}
-		lhsMatch := matchName(name, pattern.Lhs)
+		lhsMatch := Match(name, pattern.Lhs)
 		rhsMatch := Match(n.Rhs, pattern.Rhs)
 		return unionMatches(lhsMatch, rhsMatch)
 	default:
 		return MatchResult{
 			Messages: []string{
-				"Expected `X :=`",
-			},
-			MatchMakesSense: true,
-		}
-	}
-}
-
-func matchFunctionColonEquals(node ast.MlgNodeKind,
-	pattern FunctionColonEqualsNamePattern) MatchResult {
-	switch n := node.(type) {
-	case *ast.StructuralColonEqualsForm:
-		fn, ok := n.Lhs.(*ast.FunctionForm)
-		if !ok {
-			return MatchResult{
-				MatchMakesSense: false,
-			}
-		}
-		lhsMatch := matchFunction(fn, pattern.Lhs)
-		rhsMatch := Match(n.Rhs, &pattern.Rhs)
-		return unionMatches(lhsMatch, rhsMatch)
-	case *ast.ExpressionColonEqualsItem:
-		fn, ok := n.Lhs.(*ast.FunctionCallExpression)
-		if !ok {
-			return MatchResult{
-				MatchMakesSense: false,
-			}
-		}
-		lhsMatch := matchFunction(fn, pattern.Lhs)
-		rhsMatch := Match(n.Rhs, &pattern.Rhs)
-		return unionMatches(lhsMatch, rhsMatch)
-	default:
-		return MatchResult{
-			Messages: []string{
-				"Expected a `f(x) :=`",
+				"Expected `... := ...`",
 			},
 			MatchMakesSense: true,
 		}

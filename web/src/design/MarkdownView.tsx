@@ -15,13 +15,8 @@ export interface MarkdownViewProps {
 }
 
 export const MarkdownView = (props: MarkdownViewProps) => {
-  // For an unknown reason, if the `'$ $' +` below is not provided, then
-  // the ReactMarkdown is incorrectly rendered as a <code> in the DOM
-  const text = props.text.startsWith('$') ?
-                props.text :
-                '$ $' + format(props.text);
   return (
-    <ReactMarkdown children={text}
+    <ReactMarkdown children={props.text}
                    remarkPlugins={[remarkGfm, remarkMath]}
                    rehypePlugins={[rehypeKatex]}
                    className={[styles.markdown,
@@ -29,10 +24,3 @@ export const MarkdownView = (props: MarkdownViewProps) => {
                                                .join(' ')} />
   );
 };
-
-function format(text: string): string {
-  return text.replaceAll(/\\\[/g, '$$$$')
-             .replaceAll(/\\\]/g, '$$$$')
-             .replaceAll(/\\\(/g, '$')
-             .replaceAll(/\\\)/g, '$');
-}

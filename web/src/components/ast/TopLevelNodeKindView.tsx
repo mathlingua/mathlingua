@@ -22,7 +22,8 @@ export interface TopLevelNodeKindViewProps {
 export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
   const [showSource, setShowSource] = React.useState(false);
 
-  const sections = (props.node as Group).Sections;
+  const group = props.node as Group;
+  const sections = group.Sections;
   if (sections) {
     let called: string|undefined = undefined;
     let written: string|undefined = undefined;
@@ -101,7 +102,7 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
           </div>
           <div className={styles.contentWrapper}>
             <div className={styles.innerContentWrapper}>
-              <IdView id={idText} isLatex={isLatex} showSource={showSource} />
+              <IdView id={idText} isLatex={isLatex} idSrc={group.Id} showSource={showSource} />
               <GroupView
                 node={props.node as any}
                 showSource={showSource}

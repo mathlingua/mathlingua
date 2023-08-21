@@ -467,7 +467,7 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 	customToCode := func(node ast.MlgNodeKind) (string, bool) {
 		switch n := node.(type) {
 		case *ast.NameForm:
-			return nameToRenderedName(n.Text), true
+			return nameToRenderedName(n.Text, n.VarArg.IsVarArg), true
 		case *ast.FunctionLiteralExpression:
 			result := ""
 			result += w.formulationNodeToWritten(path, &n.Lhs)
@@ -1046,7 +1046,7 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *works
 	})
 }
 
-func nameToRenderedName(name string) string {
+func nameToRenderedName(name string, isVarArg bool) string {
 	if isGreekLetter(name) {
 		return fmt.Sprintf("\\%s", name)
 	}
@@ -1056,6 +1056,10 @@ func nameToRenderedName(name string) string {
 	// format of items: [(full match) (group 1) (group 2)]
 	if len(items) == 3 && items[0] == name {
 		return fmt.Sprintf("%s_{%s}", items[1], items[2])
+	}
+
+	if isVarArg {
+		return fmt.Sprintf("{%s}...", name)
 	}
 
 	return name
@@ -1115,7 +1119,7 @@ func inlineProcessForRendering(node phase4.Node) {
 	case *phase4.Argument:
 		switch a := n.Arg.(type) {
 		case *phase4.ArgumentTextArgumentData:
-			a.Text = nameToRenderedName(a.Text)
+			a.Text = nameToRenderedName(a.Text, false)
 		}
 	}
 	for i := 0; i < node.Size(); i++ {

@@ -100,8 +100,8 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
             <MenuIcon className={styles.switchIcon} onClick={() => setShowSource(src => !src)} />
           </div>
           <div className={styles.contentWrapper}>
-            <div>
-              {showSource ? null : <IdView id={idText} isLatex={isLatex} />}
+            <div className={styles.innerContentWrapper}>
+              <IdView id={idText} isLatex={isLatex} showSource={showSource} />
               <GroupView
                 node={props.node as any}
                 showSource={showSource}

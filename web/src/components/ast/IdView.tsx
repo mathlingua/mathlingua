@@ -5,12 +5,21 @@ import { LatexView } from '../../design/LatexView';
 
 export interface IdViewProps {
   id: string | null;
+  showSource: boolean;
   isLatex: boolean;
 }
 
 export const IdView = (props: IdViewProps) => {
   if (props.id === null) {
     return null;
+  }
+
+  if (props.showSource) {
+    return (
+      <div className={styles.idSrc}>
+        [{props.id}]
+      </div>
+    );
   }
 
   if (props.isLatex) {

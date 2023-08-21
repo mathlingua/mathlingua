@@ -1,6 +1,9 @@
 
 .mathlinguaTopLevelEntity {
-  padding: 20px;
+  padding-top: 25px;
+  padding-bottom: 25px;
+  padding-left: 30px;
+  padding-right: 30px;
   max-width: 70%;
   width: fit-content;
   height: max-content;
@@ -11,7 +14,7 @@
   border: solid;
   border-color: #e5e5e5;
   border-width: 1px;
-  border-radius: 2px;
+  border-radius: 3px;
   box-shadow: rgba(50, 50, 105, 0.15) 0px 2px 5px 0px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px;
   background-color: white;
 }
@@ -25,6 +28,11 @@
 }
 
 .contentWrapper {
+  overflow-x: auto;
+  overflow-y: clip;
+}
+
+.innerContentWrapper {
   width: max-content;
 }
 

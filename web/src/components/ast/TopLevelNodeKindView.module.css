@@ -1,9 +1,9 @@
 
 .mathlinguaTopLevelEntity {
-  padding-top: 25px;
-  padding-bottom: 25px;
-  padding-left: 30px;
-  padding-right: 30px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  padding-left: 25px;
+  padding-right: 25px;
   max-width: 70%;
   width: fit-content;
   height: max-content;
@@ -50,21 +50,12 @@
 
 .closeIcon {
   font-size: 80%;
-  margin-top: -5px;
-  margin-left: -5px;
+  margin: 0;
 }
 
 .switchIcon {
   font-size: 80%;
-  margin-top: -5px;
-  margin-right: -12px;
-}
-
-@media screen and (max-width: 450px) {
-  .switchIcon {
-    margin-top: 0;
-    margin-right: 0;
-  }
+  margin: 0;
 }
 
 .proofWrapper {

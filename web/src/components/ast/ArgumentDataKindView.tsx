@@ -20,6 +20,7 @@ export const ArgumentDataKindView = (props: ArgumentDataKindViewProps) => {
       node={props.node as any}
       showSource={props.showSource}
       indent={props.indent}
+      skipDocumentsSection={false}
       onSelectedSignature={props.onSelectedSignature} />;
   } else if (props.node?.Type === 'TextArgumentDataKind') {
     return <TextArgumentDataView

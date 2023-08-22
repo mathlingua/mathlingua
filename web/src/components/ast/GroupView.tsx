@@ -11,6 +11,7 @@ export interface GroupViewProps {
   node: Group;
   showSource: boolean;
   indent: number;
+  skipDocumentsSection: boolean;
   onSelectedSignature: (signature: string) => void;
 }
 
@@ -19,11 +20,8 @@ export const GroupView = (props: GroupViewProps) => {
     <span>
       {
         props.node.Sections?.map((sec, index) => (
-          <span key={index}>
-            {index > 0 && <Newline />}
-            {index > 0 && <Indent size={props.indent} />}
-            {section(sec, props.showSource, props.indent, props.onSelectedSignature)}
-          </span>
+          section(sec, props.showSource, props.indent, props.skipDocumentsSection,
+            props.onSelectedSignature, index)
         ))
       }
     </span>
@@ -34,8 +32,14 @@ function section(
   sec: Section,
   showSource: boolean,
   indent: number,
+  skipDocumentsSection: boolean,
   onSelectedSignature: (signature: string) => void,
+  index: number,
 ) {
+  if (skipDocumentsSection && sec.Name === 'Documented') {
+    return null;
+  }
+
   if (sec.Name === 'Id') {
     return null;
   }
@@ -43,7 +47,13 @@ function section(
   if (sec.Name === 'Proof') {
     // The following is needed since otherwise there is an
     // extra gap at the bottom of the group.
-    return <div className={styles.proofBottomGapFix}></div>;
+    return (
+      <span key={index}>
+        {index > 0 && <Newline />}
+        {index > 0 && <Indent size={indent} />}
+        <div className={styles.proofBottomGapFix}></div>
+      </span>
+    );
   }
 
   const secView = <SectionView
@@ -56,12 +66,20 @@ function section(
                           sec.Name === 'References' || sec.Name === 'Aliases';
   if (!showSource && secHasSeparator) {
     return (
-      <>
+      <span key={index}>
+        {index > 0 && <Newline />}
+        {index > 0 && <Indent size={indent} />}
         <div className={styles.separator}></div>
         {secView}
-      </>
+      </span>
     );
   }
 
-  return secView;
+  return (
+    <span key={index}>
+      {index > 0 && <Newline />}
+      {index > 0 && <Indent size={indent} />}
+      {secView}
+    </span>
+  );
 }

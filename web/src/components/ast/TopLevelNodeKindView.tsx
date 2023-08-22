@@ -25,6 +25,7 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
   const group = props.node as Group;
   const sections = group.Sections;
   if (sections) {
+    let onlyHasCalledAndWritten = true;
     let called: string|undefined = undefined;
     let written: string|undefined = undefined;
     if (sections !== null){
@@ -35,6 +36,9 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
               const argSections = (arg.Arg as Group).Sections
               if (argSections !== null) {
                 for (const sec of argSections) {
+                  if (sec.Name !== 'called' && sec.Name !== 'written') {
+                    onlyHasCalledAndWritten = false;
+                  }
                   if (called === undefined &&
                       sec.Name === 'called' &&
                       sec.Args !== null &&
@@ -107,6 +111,7 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
                 node={props.node as any}
                 showSource={showSource}
                 indent={0}
+                skipDocumentsSection={onlyHasCalledAndWritten}
                 onSelectedSignature={props.onSelectedSignature} />
             </div>
           </div>

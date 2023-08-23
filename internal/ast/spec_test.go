@@ -195,6 +195,17 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
+		actual: LowerDefineSections,
+		expected: []string{
+			"define",
+			"using?",
+			"when?",
+			"suchThat?",
+			"means?",
+			"as",
+		},
+	},
+	{
 		actual: CapturesSections,
 		expected: []string{
 			"Captures",

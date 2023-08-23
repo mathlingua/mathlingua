@@ -255,6 +255,23 @@ func (n *DefinesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
+func (n *LowerDefineGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.Define.Define)
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
+	if n.When != nil {
+		forEach(n.When.When, fn)
+	}
+	if n.SuchThat != nil {
+		forEach(n.SuchThat.Clauses, fn)
+	}
+	if n.Means != nil {
+		forEach(n.Means.Means, fn)
+	}
+	forEach(n.As.As, fn)
+}
+
 func (n *CapturesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Id)
 	forEachFormulation(n.Captures.Captures, fn)

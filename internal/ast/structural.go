@@ -86,6 +86,7 @@ func (*IffGroup) ClauseKind()              {}
 func (*WhenGroup) ClauseKind()             {}
 func (*PiecewiseGroup) ClauseKind()        {}
 func (*GivenGroup) ClauseKind()            {}
+func (*LowerDefineGroup) ClauseKind()      {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -615,6 +616,37 @@ type SatisfiesSection struct {
 
 type MetaIdSection struct {
 	Id             TextItem
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var LowerDefineSections = []string{
+	LowerDefineName,
+	LowerUsingQuestionName,
+	LowerWhenQuestionName,
+	LowerSuchThatQuestionName,
+	LowerMeansQuestionName,
+	LowerAsName,
+}
+
+type LowerDefineGroup struct {
+	Define         LowerDefineSection
+	Using          *UsingSection
+	When           *WhenSection
+	SuchThat       *SuchThatSection
+	Means          *MeansSection
+	As             DefineAsSection
+	CommonMetaData CommonMetaData
+}
+
+type LowerDefineSection struct {
+	Define         Target
+	CommonMetaData CommonMetaData
+}
+
+type DefineAsSection struct {
+	As             []ClauseKind
 	CommonMetaData CommonMetaData
 }
 

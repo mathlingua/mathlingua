@@ -1051,7 +1051,7 @@ func nameToRenderedName(name string, isVarArg bool) string {
 		return fmt.Sprintf("\\%s", name)
 	}
 
-	reg := regexp.MustCompile("([a-zA-Z]+)(\\d+)")
+	reg := regexp.MustCompile(`([a-zA-Z]+)(\d+)`)
 	items := reg.FindStringSubmatch(name)
 	// format of items: [(full match) (group 1) (group 2)]
 	if len(items) == 3 && items[0] == name {

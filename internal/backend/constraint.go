@@ -17,7 +17,6 @@
 package backend
 
 import (
-	"errors"
 	"fmt"
 	"mathlingua/internal/ast"
 )
@@ -109,8 +108,8 @@ func toSingleStructuralForm(exp ast.ExpressionKind) (ast.StructuralFormKind, err
 		return nil, err
 	}
 	if len(nodes) != 1 {
-		return nil, errors.New(fmt.Sprintf("Expected a single structural form but found %d",
-			len(nodes)))
+		return nil, fmt.Errorf("Expected a single structural form but found %d",
+			len(nodes))
 	}
 	return nodes[0], nil
 }
@@ -162,8 +161,7 @@ func toStructuralForms(exp ast.ExpressionKind) ([]ast.StructuralFormKind, error)
 			},
 		}, nil
 	default:
-		return nil, errors.New(
-			fmt.Sprintf("Expected a structural form but found %s", exp.ToCode(ast.NoOp)))
+		return nil, fmt.Errorf("Expected a structural form but found %s", exp.ToCode(ast.NoOp))
 	}
 }
 
@@ -183,8 +181,7 @@ func toNameForm(form ast.StructuralFormKind) (ast.NameForm, error) {
 	if name, ok := form.(*ast.NameForm); ok {
 		return *name, nil
 	}
-	return ast.NameForm{}, errors.New(
-		fmt.Sprintf("Expected a name but found %s", form.ToCode(ast.NoOp)))
+	return ast.NameForm{}, fmt.Errorf("Expected a name but found %s", form.ToCode(ast.NoOp))
 }
 
 func toSingleStructuralFormSlice(args []ast.ExpressionKind) ([]ast.StructuralFormKind, error) {

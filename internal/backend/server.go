@@ -92,7 +92,9 @@ func StartServer(port int, conf config.MlgConfig) {
 			"<meta name=\"keywords\" content=\"\"/>", keywordsHtml, 1)
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(content))
+		if _, err = w.Write([]byte(content)); err != nil {
+			fmt.Printf("Failed to serve index.html: %s\n", err)
+		}
 	})
 
 	fmt.Printf("Visit http://localhost:%d to view your documents\n", port)

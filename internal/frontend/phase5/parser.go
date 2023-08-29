@@ -60,6 +60,10 @@ func (p *parser) toGivenGroup(group phase4.Group) (ast.GivenGroup, bool) {
 		return ast.GivenGroup{}, false
 	}
 	given := *p.toGivenSection(sections[ast.LowerGivenName])
+	var using *ast.UsingSection
+	if sect, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sect)
+	}
 	var where *ast.WhereSection
 	if sect, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sect)
@@ -72,6 +76,7 @@ func (p *parser) toGivenGroup(group phase4.Group) (ast.GivenGroup, bool) {
 	return ast.GivenGroup{
 		Label:          label,
 		Given:          given,
+		Using:          using,
 		Where:          where,
 		SuchThat:       suchThat,
 		Then:           then,
@@ -196,6 +201,10 @@ func (p *parser) toExistsGroup(group phase4.Group) (ast.ExistsGroup, bool) {
 		return ast.ExistsGroup{}, false
 	}
 	exists := *p.toExistsSection(sections[ast.LowerExistsName])
+	var using *ast.UsingSection
+	if sect, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sect)
+	}
 	var where *ast.WhereSection
 	if sect, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sect)
@@ -207,6 +216,7 @@ func (p *parser) toExistsGroup(group phase4.Group) (ast.ExistsGroup, bool) {
 	return ast.ExistsGroup{
 		Label:          label,
 		Exists:         exists,
+		Using:          using,
 		Where:          where,
 		SuchThat:       suchThat,
 		CommonMetaData: toCommonMetaData(group.MetaData),
@@ -247,6 +257,10 @@ func (p *parser) toExistsUniqueGroup(group phase4.Group) (ast.ExistsUniqueGroup,
 		return ast.ExistsUniqueGroup{}, false
 	}
 	existsUnique := *p.toExistsUniqueSection(sections[ast.LowerExistsUniqueName])
+	var using *ast.UsingSection
+	if sect, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sect)
+	}
 	var where *ast.WhereSection
 	if sect, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sect)
@@ -255,6 +269,7 @@ func (p *parser) toExistsUniqueGroup(group phase4.Group) (ast.ExistsUniqueGroup,
 	return ast.ExistsUniqueGroup{
 		Label:          label,
 		ExistsUnique:   existsUnique,
+		Using:          using,
 		Where:          where,
 		SuchThat:       suchThat,
 		CommonMetaData: toCommonMetaData(group.MetaData),
@@ -281,6 +296,10 @@ func (p *parser) toForAllGroup(group phase4.Group) (ast.ForAllGroup, bool) {
 		return ast.ForAllGroup{}, false
 	}
 	forAll := *p.toForAllSection(sections[ast.LowerForAllName])
+	var using *ast.UsingSection
+	if sect, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sect)
+	}
 	var where *ast.WhereSection
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
@@ -293,6 +312,7 @@ func (p *parser) toForAllGroup(group phase4.Group) (ast.ForAllGroup, bool) {
 	return ast.ForAllGroup{
 		Label:          label,
 		ForAll:         forAll,
+		Using:          using,
 		Where:          where,
 		SuchThat:       suchThat,
 		Then:           then,
@@ -1284,6 +1304,10 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
+	var using *ast.UsingSection
+	if sect, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sect)
+	}
 	var where *ast.WhereSection
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
@@ -1317,6 +1341,7 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 		Id:             id,
 		Axiom:          axiom,
 		Given:          given,
+		Using:          using,
 		Where:          where,
 		If:             ifSec,
 		Iff:            iff,
@@ -1366,6 +1391,10 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
+	var using *ast.UsingSection
+	if sect, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sect)
+	}
 	var where *ast.WhereSection
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
@@ -1399,6 +1428,7 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 		Id:             id,
 		Conjecture:     conjecture,
 		Given:          given,
+		Using:          using,
 		Where:          where,
 		If:             ifSec,
 		Iff:            iff,
@@ -1433,6 +1463,10 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 	var given *ast.GivenSection
 	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
+	}
+	var using *ast.UsingSection
+	if sect, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sect)
 	}
 	var where *ast.WhereSection
 	if sec, ok := sections[ast.LowerWhereName]; ok {
@@ -1471,6 +1505,7 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 		Id:             id,
 		Theorem:        theorem,
 		Given:          given,
+		Using:          using,
 		Where:          where,
 		If:             ifSec,
 		Iff:            iff,
@@ -1515,6 +1550,10 @@ func (p *parser) toCorollaryGroup(group phase4.Group) (ast.CorollaryGroup, bool)
 	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
+	var using *ast.UsingSection
+	if sect, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sect)
+	}
 	var where *ast.WhereSection
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
@@ -1549,6 +1588,7 @@ func (p *parser) toCorollaryGroup(group phase4.Group) (ast.CorollaryGroup, bool)
 		Corollary:      corollary,
 		To:             to,
 		Given:          given,
+		Using:          using,
 		Where:          where,
 		If:             ifSec,
 		Iff:            iff,
@@ -1592,6 +1632,10 @@ func (p *parser) toLemmaGroup(group phase4.Group) (ast.LemmaGroup, bool) {
 	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
+	var using *ast.UsingSection
+	if sect, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sect)
+	}
 	var where *ast.WhereSection
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
@@ -1626,6 +1670,7 @@ func (p *parser) toLemmaGroup(group phase4.Group) (ast.LemmaGroup, bool) {
 		Lemma:          lemma,
 		For:            forSection,
 		Given:          given,
+		Using:          using,
 		Where:          where,
 		If:             ifSec,
 		Iff:            iff,

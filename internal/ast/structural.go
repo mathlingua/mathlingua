@@ -92,6 +92,7 @@ func (*LowerDefineGroup) ClauseKind()      {}
 
 var GivenSections = []string{
 	LowerGivenName,
+	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerSuchThatQuestionName,
 	LowerThenName,
@@ -100,6 +101,7 @@ var GivenSections = []string{
 type GivenGroup struct {
 	Label          *GroupLabel
 	Given          GivenSection
+	Using          *UsingSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection
 	Then           ThenSection
@@ -170,6 +172,7 @@ type OneOfSection struct {
 
 var ExistsSections = []string{
 	LowerExistsName,
+	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerSuchThatName,
 }
@@ -177,6 +180,7 @@ var ExistsSections = []string{
 type ExistsGroup struct {
 	Label          *GroupLabel
 	Exists         ExistsSection
+	Using          *UsingSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection
 	CommonMetaData CommonMetaData
@@ -201,6 +205,7 @@ type SuchThatSection struct {
 
 var ExistsUniqueSections = []string{
 	LowerExistsUniqueName,
+	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerSuchThatName,
 }
@@ -208,6 +213,7 @@ var ExistsUniqueSections = []string{
 type ExistsUniqueGroup struct {
 	Label          *GroupLabel
 	ExistsUnique   ExistsUniqueSection
+	Using          *UsingSection
 	Where          *WhereSection
 	SuchThat       SuchThatSection
 	CommonMetaData CommonMetaData
@@ -222,6 +228,7 @@ type ExistsUniqueSection struct {
 
 var ForAllSections = []string{
 	LowerForAllName,
+	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerSuchThatQuestionName,
 	LowerThenName,
@@ -230,6 +237,7 @@ var ForAllSections = []string{
 type ForAllGroup struct {
 	Label          *GroupLabel
 	ForAll         ForAllSection
+	Using          *UsingSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection
 	Then           ThenSection
@@ -802,6 +810,7 @@ type ContentSection struct {
 var AxiomSections = []string{
 	UpperAxiomName,
 	LowerGivenQuestionName,
+	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerIfQuestionName,
 	LowerIffQuestionName,
@@ -816,6 +825,7 @@ type AxiomGroup struct {
 	Id             *IdItem
 	Axiom          AxiomSection
 	Given          *GivenSection
+	Using          *UsingSection
 	Where          *WhereSection
 	If             *IfSection
 	Iff            *IffSection
@@ -836,6 +846,7 @@ type AxiomSection struct {
 var ConjectureSections = []string{
 	UpperConjectureName,
 	LowerGivenQuestionName,
+	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerIfQuestionName,
 	LowerIffQuestionName,
@@ -850,6 +861,7 @@ type ConjectureGroup struct {
 	Id             *IdItem
 	Conjecture     ConjectureSection
 	Given          *GivenSection
+	Using          *UsingSection
 	Where          *WhereSection
 	If             *IfSection
 	Iff            *IffSection
@@ -870,6 +882,7 @@ type ConjectureSection struct {
 var TheoremSections = []string{
 	UpperTheoremName,
 	LowerGivenQuestionName,
+	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerIfQuestionName,
 	LowerIffQuestionName,
@@ -885,6 +898,7 @@ type TheoremGroup struct {
 	Id             *IdItem
 	Theorem        TheoremSection
 	Given          *GivenSection
+	Using          *UsingSection
 	Where          *WhereSection
 	If             *IfSection
 	Iff            *IffSection
@@ -912,6 +926,7 @@ var LemmaSections = []string{
 	UpperLemmaName,
 	LowerForName,
 	LowerGivenQuestionName,
+	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerIfQuestionName,
 	LowerIffQuestionName,
@@ -928,6 +943,7 @@ type LemmaGroup struct {
 	Lemma          LemmaSection
 	For            LemmaForSection
 	Given          *GivenSection
+	Using          *UsingSection
 	Where          *WhereSection
 	If             *IfSection
 	Iff            *IffSection
@@ -955,6 +971,7 @@ var CorollarySections = []string{
 	UpperCorollaryName,
 	LowerToName,
 	LowerGivenQuestionName,
+	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerIfQuestionName,
 	LowerIffQuestionName,
@@ -971,6 +988,7 @@ type CorollaryGroup struct {
 	Corollary      CorollarySection
 	To             CorollaryToSection
 	Given          *GivenSection
+	Using          *UsingSection
 	Where          *WhereSection
 	If             *IfSection
 	Iff            *IffSection

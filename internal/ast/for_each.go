@@ -48,6 +48,9 @@ func (n *TextItem) ForEach(fn func(subNode MlgNodeKind)) {
 
 func (n *GivenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTarget(n.Given.Given, fn)
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
 	}
@@ -75,6 +78,9 @@ func (n *OneOfGroup) ForEach(fn func(subNode MlgNodeKind)) {
 
 func (n *ExistsGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTarget(n.Exists.Targets, fn)
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
 	}
@@ -85,6 +91,9 @@ func (n *ExistsGroup) ForEach(fn func(subNode MlgNodeKind)) {
 
 func (n *ExistsUniqueGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTarget(n.ExistsUnique.Targets, fn)
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
 	}
@@ -93,6 +102,9 @@ func (n *ExistsUniqueGroup) ForEach(fn func(subNode MlgNodeKind)) {
 
 func (n *ForAllGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTarget(n.ForAll.Targets, fn)
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
 	}
@@ -331,6 +343,9 @@ func (n *AxiomGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
 	}
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
 	}
@@ -362,6 +377,9 @@ func (n *ConjectureGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
 	}
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
 	}
@@ -392,6 +410,9 @@ func (n *TheoremGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
+	}
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
 	}
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
@@ -428,6 +449,9 @@ func (n *CorollaryGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
 	}
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
 	}
@@ -462,6 +486,9 @@ func (n *LemmaGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.For.For, fn)
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
+	}
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
 	}
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)

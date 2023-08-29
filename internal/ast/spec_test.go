@@ -57,6 +57,7 @@ var all_group_test_cases = []testCase{
 		actual: ExistsSections,
 		expected: []string{
 			"exists",
+			"using?",
 			"where?",
 			"suchThat",
 		},
@@ -65,6 +66,7 @@ var all_group_test_cases = []testCase{
 		actual: ExistsUniqueSections,
 		expected: []string{
 			"existsUnique",
+			"using?",
 			"where?",
 			"suchThat",
 		},
@@ -73,6 +75,7 @@ var all_group_test_cases = []testCase{
 		actual: ForAllSections,
 		expected: []string{
 			"forAll",
+			"using?",
 			"where?",
 			"suchThat?",
 			"then",
@@ -82,6 +85,7 @@ var all_group_test_cases = []testCase{
 		actual: GivenSections,
 		expected: []string{
 			"given",
+			"using?",
 			"where?",
 			"suchThat?",
 			"then",
@@ -245,6 +249,7 @@ var all_group_test_cases = []testCase{
 		expected: []string{
 			"Axiom",
 			"given?",
+			"using?",
 			"where?",
 			"if?",
 			"iff?",
@@ -260,6 +265,7 @@ var all_group_test_cases = []testCase{
 		expected: []string{
 			"Conjecture",
 			"given?",
+			"using?",
 			"where?",
 			"if?",
 			"iff?",
@@ -275,6 +281,43 @@ var all_group_test_cases = []testCase{
 		expected: []string{
 			"Theorem",
 			"given?",
+			"using?",
+			"where?",
+			"if?",
+			"iff?",
+			"then",
+			"Proof?",
+			"Documented?",
+			"References?",
+			"Aliases?",
+			"Id?",
+		},
+	},
+	{
+		actual: CorollarySections,
+		expected: []string{
+			"Corollary",
+			"to",
+			"given?",
+			"using?",
+			"where?",
+			"if?",
+			"iff?",
+			"then",
+			"Proof?",
+			"Documented?",
+			"References?",
+			"Aliases?",
+			"Id?",
+		},
+	},
+	{
+		actual: LemmaSections,
+		expected: []string{
+			"Lemma",
+			"for",
+			"given?",
+			"using?",
 			"where?",
 			"if?",
 			"iff?",

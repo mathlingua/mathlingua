@@ -208,6 +208,17 @@ func (n *ViewGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
+func (n *EncodingGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerEncodingName, indent, hasDot && n.Label == nil)
+	db.AppendTargetSection(LowerAsName, n.As.As, indent, hasDot)
+	db.MaybeAppendUsingSection(n.Using, indent, true)
+	db.MaybeAppendWhereSection(n.Where, indent, true)
+	db.MaybeAppendThroughSection(n.Through, indent, true)
+	return db.Lines()
+}
+
 func (n *WrittenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)

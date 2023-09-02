@@ -162,6 +162,19 @@ func (n *ViewGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
+func (n *EncodingGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.As.As)
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
+	if n.Where != nil {
+		forEachSpec(n.Where.Specs, fn)
+	}
+	if n.Through != nil {
+		forEachFormulation(n.Through.Through, fn)
+	}
+}
+
 func (n *WrittenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Written.Written, fn)
 }

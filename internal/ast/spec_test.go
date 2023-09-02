@@ -408,6 +408,16 @@ var all_group_test_cases = []testCase{
 			"signifies?",
 		},
 	},
+	{
+		actual: EncodingSections,
+		expected: []string{
+			"encoding",
+			"as",
+			"using?",
+			"where?",
+			"through?",
+		},
+	},
 }
 
 func TestSpec(t *testing.T) {

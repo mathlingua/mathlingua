@@ -139,6 +139,11 @@ Provides:
   where: 'A is \something{B, C}'
   through: 'A := \something2.asSomething{X}'
   signifies: 'A is \isomorphic.to{\B}'
+. encoding:
+  as: A
+  using: B, C
+  where: 'A is \something{B, C}'
+  through: 'A := \something2.asSomething{X}'
 Justified:
 . by: "\[some.theorem]"
 . label: "\[some.label]"

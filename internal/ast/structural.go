@@ -354,6 +354,7 @@ type ProvidesKind interface {
 
 func (*SymbolWrittenGroup) ProvidesKind() {}
 func (*ViewGroup) ProvidesKind()          {}
+func (*EncodingGroup) ProvidesKind()      {}
 
 var SymbolSections = []string{
 	LowerSymbolName,
@@ -413,6 +414,30 @@ type SignifiesSection struct {
 
 type LinkThroughSection struct {
 	Through        []Formulation[FormulationNodeKind]
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var EncodingSections = []string{
+	LowerEncodingName,
+	LowerAsName,
+	LowerUsingQuestionName,
+	LowerWhereQuestionName,
+	LowerThroughQuestionName,
+}
+
+type EncodingGroup struct {
+	Label          *GroupLabel
+	Encoding       EncodingSection
+	As             AsSection
+	Using          *UsingSection
+	Where          *WhereSection
+	Through        *LinkThroughSection
+	CommonMetaData CommonMetaData
+}
+
+type EncodingSection struct {
 	CommonMetaData CommonMetaData
 }
 

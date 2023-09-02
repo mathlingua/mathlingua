@@ -533,6 +533,49 @@ func (p *parser) toWrittenSection(section phase4.Section) *ast.WrittenSection {
 	}
 }
 
+func (p *parser) toEncodingGroup(group phase4.Group) (ast.EncodingGroup, bool) {
+	if !startsWithSections(group, ast.LowerEncodingName) {
+		return ast.EncodingGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.EncodingSections...)
+	if !ok {
+		return ast.EncodingGroup{}, false
+	}
+
+	encoding := *p.toEncodingSection(sections[ast.LowerEncodingName])
+	as := *p.toAsSection(sections[ast.LowerAsName])
+	var using *ast.UsingSection
+	if sect, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sect)
+	}
+	var where *ast.WhereSection
+	if sect, ok := sections[ast.LowerWhereName]; ok {
+		where = p.toWhereSection(sect)
+	}
+	var through *ast.LinkThroughSection
+	if sect, ok := sections[ast.LowerThroughName]; ok {
+		through = p.toLinkThroughSection(sect)
+	}
+	return ast.EncodingGroup{
+		Label:          label,
+		Encoding:       encoding,
+		As:             as,
+		Using:          using,
+		Where:          where,
+		Through:        through,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toEncodingSection(section phase4.Section) *ast.EncodingSection {
+	p.verifyNoArgs(section)
+	return &ast.EncodingSection{
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
 func (p *parser) toViewGroup(group phase4.Group) (ast.ViewGroup, bool) {
 	if !startsWithSections(group, ast.LowerViewName) {
 		return ast.ViewGroup{}, false
@@ -785,6 +828,8 @@ func (p *parser) toProvidesKindFromGroup(group phase4.Group) (ast.ProvidesKind, 
 	if grp, ok := p.toSymbolWrittenGroup(group); ok {
 		return &grp, true
 	} else if grp, ok := p.toViewGroup(group); ok {
+		return &grp, ok
+	} else if grp, ok := p.toEncodingGroup(group); ok {
 		return &grp, ok
 	} else {
 		p.tracker.Append(p.newError(fmt.Sprintf("Unrecognized argument for %s:\n"+

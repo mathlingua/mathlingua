@@ -42,6 +42,7 @@ func (*PiecewiseGroup) StructuralNodeKind()     {}
 func (*WhenGroup) StructuralNodeKind()          {}
 func (*SymbolWrittenGroup) StructuralNodeKind() {}
 func (*ViewGroup) StructuralNodeKind()          {}
+func (*EncodingGroup) StructuralNodeKind()      {}
 func (*WrittenGroup) StructuralNodeKind()       {}
 func (*CalledGroup) StructuralNodeKind()        {}
 func (*ExpressedGroup) StructuralNodeKind()     {}

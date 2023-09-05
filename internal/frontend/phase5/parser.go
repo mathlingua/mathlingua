@@ -47,19 +47,19 @@ type parser struct {
 	keyGen  mlglib.IKeyGenerator
 }
 
-///////////////////////////////////////// given ////////////////////////////////////////////////////
+///////////////////////////////////////// let ////////////////////////////////////////////////////
 
-func (p *parser) toGivenGroup(group phase4.Group) (ast.GivenGroup, bool) {
-	if !startsWithSections(group, ast.LowerGivenName) {
-		return ast.GivenGroup{}, false
+func (p *parser) toLetGroup(group phase4.Group) (ast.LetGroup, bool) {
+	if !startsWithSections(group, ast.LowerLetName) {
+		return ast.LetGroup{}, false
 	}
 
 	label := p.getGroupLabel(group, false)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.GivenSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LetSections...)
 	if !ok {
-		return ast.GivenGroup{}, false
+		return ast.LetGroup{}, false
 	}
-	given := *p.toGivenSection(sections[ast.LowerGivenName])
+	let := *p.toLetSection(sections[ast.LowerLetName])
 	var using *ast.UsingSection
 	if sect, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sect)
@@ -73,15 +73,22 @@ func (p *parser) toGivenGroup(group phase4.Group) (ast.GivenGroup, bool) {
 		suchThat = p.toSuchThatSection(sect)
 	}
 	then := *p.toThenSection(sections[ast.LowerThenName])
-	return ast.GivenGroup{
+	return ast.LetGroup{
 		Label:          label,
-		Given:          given,
+		Let:            let,
 		Using:          using,
 		Where:          where,
 		SuchThat:       suchThat,
 		Then:           then,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
+}
+
+func (p *parser) toLetSection(section phase4.Section) *ast.LetSection {
+	return &ast.LetSection{
+		Let:            p.oneOrMoreTargets(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
 }
 
 ///////////////////////////////////////// allOf ////////////////////////////////////////////////////
@@ -2571,7 +2578,7 @@ func (p *parser) toClause(arg phase4.Argument) ast.ClauseKind {
 			return &grp
 		} else if grp, ok := p.toPiecewiseGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toGivenGroup(*data); ok {
+		} else if grp, ok := p.toLetGroup(*data); ok {
 			return &grp
 		} else if grp, ok := p.toLowerDefineGroup(*data); ok {
 			return &grp

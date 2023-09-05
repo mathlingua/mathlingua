@@ -23,7 +23,7 @@ func (n *Spec) GetCommonMetaData() *CommonMetaData               { return &n.Com
 func (n *Alias) GetCommonMetaData() *CommonMetaData              { return &n.CommonMetaData }
 func (n *Formulation[T]) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
 func (n *TextItem) GetCommonMetaData() *CommonMetaData           { return &n.CommonMetaData }
-func (n *GivenGroup) GetCommonMetaData() *CommonMetaData         { return &n.CommonMetaData }
+func (n *LetGroup) GetCommonMetaData() *CommonMetaData           { return &n.CommonMetaData }
 func (n *AllOfGroup) GetCommonMetaData() *CommonMetaData         { return &n.CommonMetaData }
 func (n *NotGroup) GetCommonMetaData() *CommonMetaData           { return &n.CommonMetaData }
 func (n *AnyOfGroup) GetCommonMetaData() *CommonMetaData         { return &n.CommonMetaData }

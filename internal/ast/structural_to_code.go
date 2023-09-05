@@ -73,10 +73,10 @@ func (n *TextItem) ToCode(indent int, hasDot bool) []string {
 	return buildIndentedLineSlice(indent, hasDot, "\""+n.RawText+"\"")
 }
 
-func (n *GivenGroup) ToCode(indent int, hasDot bool) []string {
+func (n *LetGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.MaybeAppendGivenSection(&n.Given, indent, hasDot && n.Label == nil)
+	db.MaybeAppendLetSection(&n.Let, indent, hasDot && n.Label == nil)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
@@ -831,6 +831,15 @@ func (db *debugBuilder) MaybeAppendAliasesSection(sec *AliasesSection, indent in
 	if sec != nil {
 		db.AppendSection(UpperAliasesName, indent, hasDot)
 		for _, item := range sec.Aliases {
+			db.Append(&item, indent+2, true)
+		}
+	}
+}
+
+func (db *debugBuilder) MaybeAppendLetSection(sec *LetSection, indent int, hasDot bool) {
+	if sec != nil {
+		db.AppendSection(LowerLetName, indent, hasDot)
+		for _, item := range sec.Let {
 			db.Append(&item, indent+2, true)
 		}
 	}

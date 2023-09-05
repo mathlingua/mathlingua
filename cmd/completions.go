@@ -68,7 +68,7 @@ func getFixedCompletions() []string {
 		"is",
 		"as",
 		"extends",
-		join(ast.GivenSections),
+		join(ast.LetSections),
 		join(ast.AllOfSections),
 		join(ast.NotSections),
 		join(ast.AnyOfSections),

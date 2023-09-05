@@ -28,7 +28,7 @@ func (*Spec) StructuralNodeKind()               {}
 func (*Alias) StructuralNodeKind()              {}
 func (*Formulation[T]) StructuralNodeKind()     {}
 func (*TextItem) StructuralNodeKind()           {}
-func (*GivenGroup) StructuralNodeKind()         {}
+func (*LetGroup) StructuralNodeKind()           {}
 func (*AllOfGroup) StructuralNodeKind()         {}
 func (*NotGroup) StructuralNodeKind()           {}
 func (*AnyOfGroup) StructuralNodeKind()         {}

@@ -85,26 +85,31 @@ func (*IfGroup) ClauseKind()               {}
 func (*IffGroup) ClauseKind()              {}
 func (*WhenGroup) ClauseKind()             {}
 func (*PiecewiseGroup) ClauseKind()        {}
-func (*GivenGroup) ClauseKind()            {}
+func (*LetGroup) ClauseKind()              {}
 func (*LowerDefineGroup) ClauseKind()      {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var GivenSections = []string{
-	LowerGivenName,
+var LetSections = []string{
+	LowerLetName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerSuchThatQuestionName,
 	LowerThenName,
 }
 
-type GivenGroup struct {
+type LetGroup struct {
 	Label          *GroupLabel
-	Given          GivenSection
+	Let            LetSection
 	Using          *UsingSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection
 	Then           ThenSection
+	CommonMetaData CommonMetaData
+}
+
+type LetSection struct {
+	Let            []Target
 	CommonMetaData CommonMetaData
 }
 

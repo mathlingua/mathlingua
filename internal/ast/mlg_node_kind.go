@@ -40,7 +40,7 @@ func (*Spec) MlgNodeKind()               {}
 func (*Alias) MlgNodeKind()              {}
 func (*Formulation[T]) MlgNodeKind()     {}
 func (*TextItem) MlgNodeKind()           {}
-func (*GivenGroup) MlgNodeKind()         {}
+func (*LetGroup) MlgNodeKind()           {}
 func (*AllOfGroup) MlgNodeKind()         {}
 func (*NotGroup) MlgNodeKind()           {}
 func (*AnyOfGroup) MlgNodeKind()         {}

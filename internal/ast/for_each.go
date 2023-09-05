@@ -46,8 +46,8 @@ func (n *TextItem) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
-func (n *GivenGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachTarget(n.Given.Given, fn)
+func (n *LetGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachTarget(n.Let.Let, fn)
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}

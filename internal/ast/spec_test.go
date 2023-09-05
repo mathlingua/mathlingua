@@ -82,9 +82,9 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: GivenSections,
+		actual: LetSections,
 		expected: []string{
-			"given",
+			"let",
 			"using?",
 			"where?",
 			"suchThat?",

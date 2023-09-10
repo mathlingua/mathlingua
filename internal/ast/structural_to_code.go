@@ -91,6 +91,14 @@ func (n *AllOfGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
+func (n *EquivalentlyGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendClausesSection(LowerEquivalentlyName, n.Equivalently.Clauses, indent,
+		hasDot && n.Label == nil)
+	return db.Lines()
+}
+
 func (n *NotGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)

@@ -30,6 +30,12 @@ type testCase struct {
 
 var all_group_test_cases = []testCase{
 	{
+		actual: EquivalentlySections,
+		expected: []string{
+			"equivalently",
+		},
+	},
+	{
 		actual: AllOfSections,
 		expected: []string{
 			"allOf",

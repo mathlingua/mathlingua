@@ -78,6 +78,7 @@ func (*AllOfGroup) ClauseKind()            {}
 func (*NotGroup) ClauseKind()              {}
 func (*AnyOfGroup) ClauseKind()            {}
 func (*OneOfGroup) ClauseKind()            {}
+func (*EquivalentlyGroup) ClauseKind()     {}
 func (*ExistsGroup) ClauseKind()           {}
 func (*ExistsUniqueGroup) ClauseKind()     {}
 func (*ForAllGroup) ClauseKind()           {}
@@ -110,6 +111,21 @@ type LetGroup struct {
 
 type LetSection struct {
 	Let            []Target
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var EquivalentlySections = []string{LowerEquivalentlyName}
+
+type EquivalentlyGroup struct {
+	Label          *GroupLabel
+	Equivalently   EquivalentlySection
+	CommonMetaData CommonMetaData
+}
+
+type EquivalentlySection struct {
+	Clauses        []ClauseKind
 	CommonMetaData CommonMetaData
 }
 

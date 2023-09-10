@@ -91,6 +91,32 @@ func (p *parser) toLetSection(section phase4.Section) *ast.LetSection {
 	}
 }
 
+//////////////////////////////////// equivalently //////////////////////////////////////////////////
+
+func (p *parser) toEquivalentlyGroup(group phase4.Group) (ast.EquivalentlyGroup, bool) {
+	if !startsWithSections(group, ast.LowerEquivalentlyName) {
+		return ast.EquivalentlyGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.EquivalentlySections...)
+	if !ok {
+		return ast.EquivalentlyGroup{}, false
+	}
+	return ast.EquivalentlyGroup{
+		Label:          label,
+		Equivalently:   *p.toEquivalentlySection(sections[ast.LowerEquivalentlyName]),
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toEquivalentlySection(section phase4.Section) *ast.EquivalentlySection {
+	return &ast.EquivalentlySection{
+		Clauses:        p.oneOrMoreClauses(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
 ///////////////////////////////////////// allOf ////////////////////////////////////////////////////
 
 func (p *parser) toAllOfGroup(group phase4.Group) (ast.AllOfGroup, bool) {
@@ -2557,6 +2583,8 @@ func (p *parser) toClause(arg phase4.Argument) ast.ClauseKind {
 		}
 	case *phase4.Group:
 		if grp, ok := p.toAllOfGroup(*data); ok {
+			return &grp
+		} else if grp, ok := p.toEquivalentlyGroup(*data); ok {
 			return &grp
 		} else if grp, ok := p.toNotGroup(*data); ok {
 			return &grp

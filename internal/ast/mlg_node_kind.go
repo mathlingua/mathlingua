@@ -42,6 +42,7 @@ func (*Formulation[T]) MlgNodeKind()     {}
 func (*TextItem) MlgNodeKind()           {}
 func (*LetGroup) MlgNodeKind()           {}
 func (*AllOfGroup) MlgNodeKind()         {}
+func (*EquivalentlyGroup) MlgNodeKind()  {}
 func (*NotGroup) MlgNodeKind()           {}
 func (*AnyOfGroup) MlgNodeKind()         {}
 func (*OneOfGroup) MlgNodeKind()         {}

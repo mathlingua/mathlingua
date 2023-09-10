@@ -30,6 +30,7 @@ func (*Formulation[T]) StructuralNodeKind()     {}
 func (*TextItem) StructuralNodeKind()           {}
 func (*LetGroup) StructuralNodeKind()           {}
 func (*AllOfGroup) StructuralNodeKind()         {}
+func (*EquivalentlyGroup) StructuralNodeKind()  {}
 func (*NotGroup) StructuralNodeKind()           {}
 func (*AnyOfGroup) StructuralNodeKind()         {}
 func (*OneOfGroup) StructuralNodeKind()         {}

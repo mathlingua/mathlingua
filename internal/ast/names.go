@@ -16,6 +16,7 @@
 
 package ast
 
+const LowerEquivalentlyName = "equivalently"
 const LowerAllOfName = "allOf"
 const LowerAnyOfName = "anyOf"
 const LowerAsName = "as"

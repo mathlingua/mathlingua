@@ -64,6 +64,10 @@ func (n *AllOfGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.AllOf.Clauses, fn)
 }
 
+func (n *EquivalentlyGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEach(n.Equivalently.Clauses, fn)
+}
+
 func (n *NotGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Not.Clause)
 }

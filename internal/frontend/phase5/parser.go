@@ -2569,6 +2569,11 @@ func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.Formulat
 
 func (p *parser) toClause(arg phase4.Argument) ast.ClauseKind {
 	switch data := arg.Arg.(type) {
+	case *phase4.TextArgumentData:
+		return &ast.TextItem{
+			RawText:        data.Text,
+			CommonMetaData: toCommonMetaData(arg.MetaData),
+		}
 	case *phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
 			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {

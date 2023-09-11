@@ -73,6 +73,7 @@ type ClauseKind interface {
 	ClauseKind()
 }
 
+func (*TextItem) ClauseKind()              {}
 func (*Formulation[NodeType]) ClauseKind() {}
 func (*AllOfGroup) ClauseKind()            {}
 func (*NotGroup) ClauseKind()              {}

@@ -202,7 +202,15 @@ func getTokens(path ast.Path, text string, tracker frontend.IDiagnosticTracker) 
 				Position: cur.Position,
 			})
 		case cur.Symbol == '.':
-			if i+1 < len(chars) && chars[i].Symbol == '.' && chars[i+1].Symbol == '.' {
+			if i+2 < len(chars) && chars[i].Symbol == '.' && chars[i+1].Symbol == '.' &&
+				chars[i+2].Symbol == '.' {
+				i += 3 // skip the ...
+				appendToken(ast.Token{
+					Type:     ast.Name,
+					Text:     "....",
+					Position: cur.Position,
+				})
+			} else if i+1 < len(chars) && chars[i].Symbol == '.' && chars[i+1].Symbol == '.' {
 				i += 2 // skip the ..
 				appendToken(ast.Token{
 					Type:     ast.DotDotDot,

@@ -415,7 +415,7 @@ type ViewGroup struct {
 	As             AsSection
 	Using          *UsingSection
 	Where          *WhereSection
-	Through        *LinkThroughSection
+	Through        *ThroughSection
 	Signfies       *SignifiesSection
 	CommonMetaData CommonMetaData
 }
@@ -434,7 +434,7 @@ type SignifiesSection struct {
 	CommonMetaData CommonMetaData
 }
 
-type LinkThroughSection struct {
+type ThroughSection struct {
 	Through        []Formulation[FormulationNodeKind]
 	CommonMetaData CommonMetaData
 }
@@ -455,7 +455,7 @@ type EncodingGroup struct {
 	As             AsSection
 	Using          *UsingSection
 	Where          *WhereSection
-	Through        *LinkThroughSection
+	Through        *ThroughSection
 	CommonMetaData CommonMetaData
 }
 
@@ -848,7 +848,7 @@ type OfSection struct {
 }
 
 type ContentSection struct {
-	Content        TextItem
+	Content        []ProofItemKind
 	CommonMetaData CommonMetaData
 }
 
@@ -963,7 +963,7 @@ type TheoremSection struct {
 }
 
 type ProofSection struct {
-	Proof          []TextItem
+	Proof          []ProofItemKind
 	CommonMetaData CommonMetaData
 }
 
@@ -1418,5 +1418,356 @@ func (*CapturesGroup) TopLevelItemKind()   {}
 
 type Document struct {
 	Items          []TopLevelItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type ProofItemKind interface {
+	StructuralNodeKind
+	ProofItemKind()
+}
+
+func (*EquivalentlyGroup) ProofItemKind()                {}
+func (*AllOfGroup) ProofItemKind()                       {}
+func (*NotGroup) ProofItemKind()                         {}
+func (*AnyOfGroup) ProofItemKind()                       {}
+func (*OneOfGroup) ProofItemKind()                       {}
+func (*ExistsGroup) ProofItemKind()                      {}
+func (*ExistsUniqueGroup) ProofItemKind()                {}
+func (*ForAllGroup) ProofItemKind()                      {}
+func (*LetGroup) ProofItemKind()                         {}
+func (*DefinesGroup) ProofItemKind()                     {}
+func (*IfGroup) ProofItemKind()                          {}
+func (*IffGroup) ProofItemKind()                         {}
+func (*LowerDefineGroup) ProofItemKind()                 {}
+func (*ProofNoteByGroup) ProofItemKind()                 {}
+func (*ProofNoteBecauseGroup) ProofItemKind()            {}
+func (*ProofByNoteGroup) ProofItemKind()                 {}
+func (*ProofBecauseNoteGroup) ProofItemKind()            {}
+func (*IndependentlyGroup) ProofItemKind()               {}
+func (*ChainGroup) ProofItemKind()                       {}
+func (*SupposeGroup) ProofItemKind()                     {}
+func (*BlockGroup) ProofItemKind()                       {}
+func (*CasewiseGroup) ProofItemKind()                    {}
+func (*WithoutLossOfGeneralityGroup) ProofItemKind()     {}
+func (*QedGroup) ProofItemKind()                         {}
+func (*ContradictionGroup) ProofItemKind()               {}
+func (*DoneGroup) ProofItemKind()                        {}
+func (*ForContradictionGroup) ProofItemKind()            {}
+func (*ForInductionGroup) ProofItemKind()                {}
+func (*ClaimGroup) ProofItemKind()                       {}
+func (*TextItem) ProofItemKind()                         {}
+func (*Formulation[FormulationNodeKind]) ProofItemKind() {}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofNoteBySections = []string{
+	LowerNoteName,
+	LowerByName,
+}
+
+type ProofNoteByGroup struct {
+	Label          *GroupLabel
+	Note           ProofNoteSection
+	By             ProofBySection
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofByNoteSections = []string{
+	LowerByName,
+	LowerNoteName,
+}
+
+type ProofByNoteGroup struct {
+	Label          *GroupLabel
+	By             ProofBySection
+	Note           ProofNoteSection
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofNoteBecauseSections = []string{
+	LowerNoteName,
+	LowerBecauseName,
+}
+
+type ProofNoteBecauseGroup struct {
+	Label          *GroupLabel
+	Note           ProofNoteSection
+	Because        ProofBecauseSection
+	CommonMetaData CommonMetaData
+}
+
+var ProofBecauseNoteSections = []string{
+	LowerBecauseName,
+	LowerNoteName,
+}
+
+type ProofBecauseNoteGroup struct {
+	Label          *GroupLabel
+	Because        ProofBecauseSection
+	Note           ProofNoteSection
+	CommonMetaData CommonMetaData
+}
+
+type ProofNoteSection struct {
+	Note           []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+type ProofBySection struct {
+	Items          []TextItem
+	CommonMetaData CommonMetaData
+}
+
+type ProofBecauseSection struct {
+	Because        []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var IndependentlySections = []string{
+	LowerIndependentlyName,
+}
+
+type IndependentlyGroup struct {
+	Label          *GroupLabel
+	Independently  IndependentlySection
+	CommonMetaData CommonMetaData
+}
+
+type IndependentlySection struct {
+	Independently  []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ChainSections = []string{
+	LowerChainName,
+}
+
+type ChainGroup struct {
+	Label          *GroupLabel
+	Chain          ChainSection
+	CommonMetaData CommonMetaData
+}
+
+type ChainSection struct {
+	Chain          []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var SupposeSections = []string{
+	LowerSupposeName,
+	LowerThenName,
+}
+
+type SupposeGroup struct {
+	Label          *GroupLabel
+	Suppose        SupposeSection
+	Then           SupposeThenSection
+	CommonMetaData CommonMetaData
+}
+
+type SupposeSection struct {
+	Suppose        []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+type SupposeThenSection struct {
+	Then           []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var BlockSections = []string{
+	LowerBlockName,
+}
+
+type BlockGroup struct {
+	Label          *GroupLabel
+	Block          BlockSection
+	CommonMetaData CommonMetaData
+}
+
+type BlockSection struct {
+	Block          []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var CasewiseSections = []string{
+	LowerCasewiseName,
+	LowerCaseName,
+}
+
+type CasewiseGroup struct {
+	Label          *GroupLabel
+	Casewise       CasewiseSection
+	Cases          []CaseSection
+	CommonMetaData CommonMetaData
+}
+
+type CasewiseSection struct {
+	CommonMetaData CommonMetaData
+}
+
+type CaseSection struct {
+	Case           []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var WithoutLossOfGeneralitySections = []string{
+	LowerWithoutLossOfGeneralityName,
+}
+
+type WithoutLossOfGeneralityGroup struct {
+	Label                   *GroupLabel
+	WithoutLossOfGenerality WithoutLossOfGeneralitySection
+	CommonMetaData          CommonMetaData
+}
+
+type WithoutLossOfGeneralitySection struct {
+	Items          []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var QedSections = []string{
+	LowerQedName,
+}
+
+type QedGroup struct {
+	Label          *GroupLabel
+	Qed            QedSection
+	CommonMetaData CommonMetaData
+}
+
+type QedSection struct {
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var DoneSections = []string{
+	LowerDoneName,
+}
+
+type DoneGroup struct {
+	Label          *GroupLabel
+	Done           DoneSection
+	CommonMetaData CommonMetaData
+}
+
+type DoneSection struct {
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ContradictionSections = []string{
+	LowerContradictionName,
+}
+
+type ContradictionGroup struct {
+	Label          *GroupLabel
+	Contradiction  ContradictionSection
+	CommonMetaData CommonMetaData
+}
+
+type ContradictionSection struct {
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ForContradictionSections = []string{
+	LowerForContradictionName,
+	LowerSupposeName,
+	LowerThenName,
+}
+
+type ForContradictionGroup struct {
+	Label            *GroupLabel
+	ForContradiction ForContradictionSection
+	Suppose          SupposeSection
+	Then             SupposeThenSection
+	CommonMetaData   CommonMetaData
+}
+
+type ForContradictionSection struct {
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ForInductionSections = []string{
+	LowerForInductionName,
+	LowerBaseCaseName,
+	LowerGenerallyName,
+}
+
+type ForInductionGroup struct {
+	Label          *GroupLabel
+	ForInduction   ForInductionSection
+	BaseCase       BaseCaseSection
+	Generally      GenerallySection
+	CommonMetaData CommonMetaData
+}
+
+type ForInductionSection struct {
+	CommonMetaData CommonMetaData
+}
+
+type BaseCaseSection struct {
+	BaseCase       []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+type GenerallySection struct {
+	Generally      []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ClaimSections = []string{
+	LowerClaimName,
+	LowerGivenQuestionName,
+	LowerUsingQuestionName,
+	LowerWhereQuestionName,
+	LowerIfQuestionName,
+	LowerIffQuestionName,
+	LowerThenName,
+	UpperProofQuestionName,
+}
+
+type ClaimGroup struct {
+	Label          *GroupLabel
+	Claim          ClaimSection
+	Given          *GivenSection
+	Using          *UsingSection
+	Where          *WhereSection
+	If             *IfSection
+	Iff            *IffSection
+	Then           ThenSection
+	Proof          *ProofSection
+	CommonMetaData CommonMetaData
+}
+
+type ClaimSection struct {
 	CommonMetaData CommonMetaData
 }

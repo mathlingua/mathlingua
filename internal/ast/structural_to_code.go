@@ -400,7 +400,7 @@ func (n *ProofGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
 	db.AppendSection(UpperProofName, indent, false)
 	db.AppendSingleTextItemSection(LowerOfName, n.Of.Of, indent, false)
-	db.AppendSingleTextItemSection(LowerContentName, n.Content.Content, indent, false)
+	db.AppendProofItemsSection(LowerContentName, n.Content.Content, indent, false)
 	db.MaybeAppendReferencesSection(n.References, indent, false)
 	db.MaybeAppendMetaIdSection(n.MetaId, indent, false)
 	return db.Lines()
@@ -451,7 +451,7 @@ func (n *TheoremGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendIffSection(n.Iff, indent, false)
 	db.MaybeAppendThenSection(&n.Then, indent, false)
 	if n.Proof != nil {
-		db.AppendTextItemsSection(UpperProofName, n.Proof.Proof, indent, false)
+		db.AppendProofItemsSection(UpperProofName, n.Proof.Proof, indent, false)
 	}
 	db.MaybeAppendDocumentedSection(n.Documented, indent, false)
 	db.MaybeAppendReferencesSection(n.References, indent, false)
@@ -472,7 +472,7 @@ func (n *CorollaryGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendIffSection(n.Iff, indent, false)
 	db.MaybeAppendThenSection(&n.Then, indent, false)
 	if n.Proof != nil {
-		db.AppendTextItemsSection(UpperProofName, n.Proof.Proof, indent, false)
+		db.AppendProofItemsSection(UpperProofName, n.Proof.Proof, indent, false)
 	}
 	db.MaybeAppendDocumentedSection(n.Documented, indent, false)
 	db.MaybeAppendReferencesSection(n.References, indent, false)
@@ -493,7 +493,7 @@ func (n *LemmaGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendIffSection(n.Iff, indent, false)
 	db.MaybeAppendThenSection(&n.Then, indent, false)
 	if n.Proof != nil {
-		db.AppendTextItemsSection(UpperProofName, n.Proof.Proof, indent, false)
+		db.AppendProofItemsSection(UpperProofName, n.Proof.Proof, indent, false)
 	}
 	db.MaybeAppendDocumentedSection(n.Documented, indent, false)
 	db.MaybeAppendReferencesSection(n.References, indent, false)
@@ -696,6 +696,142 @@ func (n *TextBlockItem) ToCode(indent int, hasDot bool) []string {
 	return buildIndentedLineSlice(indent, hasDot, "::"+n.Text+"::")
 }
 
+func (n *ProofNoteByGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerNoteName, n.Note.Note, indent, hasDot && n.Label == nil)
+	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofNoteBecauseGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerNoteName, n.Note.Note, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofByNoteGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerNoteName, n.Note.Note, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofBecauseNoteGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerNoteName, n.Note.Note, indent, false)
+	return db.Lines()
+}
+
+func (n *IndependentlyGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(
+		LowerIndependentlyName, n.Independently.Independently, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *ChainGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerChainName, n.Chain.Chain, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *SupposeGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerSupposeName, n.Suppose.Suppose, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerThenName, n.Then.Then, indent, false)
+	return db.Lines()
+}
+
+func (n *BlockGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerBlockName, n.Block.Block, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *CasewiseGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerCasewiseName, indent, hasDot && n.Label == nil)
+	for _, caseSection := range n.Cases {
+		db.AppendProofItemsSection(LowerCaseName, caseSection.Case, indent, false)
+	}
+	return db.Lines()
+}
+
+func (n *WithoutLossOfGeneralityGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(
+		LowerWithoutLossOfGeneralityName, n.WithoutLossOfGenerality.Items,
+		indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *QedGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerQedName, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *ContradictionGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerContradictionName, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *DoneGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerDoneName, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *ForContradictionGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerForContradictionName, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerSupposeName, n.Suppose.Suppose, indent, false)
+	db.AppendProofItemsSection(LowerThenName, n.Then.Then, indent, false)
+	return db.Lines()
+}
+
+func (n *ForInductionGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerForInductionName, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerBaseCaseName, n.BaseCase.BaseCase, indent, false)
+	db.AppendProofItemsSection(LowerGenerallyName, n.Generally.Generally, indent, false)
+	return db.Lines()
+}
+
+func (n *ClaimGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerClaimName, indent, hasDot && n.Label == nil)
+	db.MaybeAppendGivenSection(n.Given, indent, false)
+	db.MaybeAppendUsingSection(n.Using, indent, false)
+	db.MaybeAppendWhereSection(n.Where, indent, false)
+	db.MaybeAppendIfSection(n.If, indent, false)
+	db.MaybeAppendIffSection(n.Iff, indent, false)
+	db.MaybeAppendThenSection(&n.Then, indent, false)
+	if n.Proof != nil {
+		db.AppendProofItemsSection(UpperProofName, n.Proof.Proof, indent, false)
+	}
+	return db.Lines()
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Note: This file contains methods that look similar because a non-generic struct in Go cannot
@@ -746,6 +882,12 @@ func (db *debugBuilder) AppendClauses(clauses []ClauseKind, indent int, hasDot b
 	}
 }
 
+func (db *debugBuilder) AppendProofItems(proofItems []ProofItemKind, indent int, hasDot bool) {
+	for _, item := range proofItems {
+		db.Append(item, indent, hasDot)
+	}
+}
+
 func (db *debugBuilder) AppendTextItems(items []TextItem, indent int, hasDot bool) {
 	for _, item := range items {
 		db.Append(&item, indent, hasDot)
@@ -776,6 +918,12 @@ func (db *debugBuilder) AppendClausesSection(
 	name string, clauses []ClauseKind, indent int, hasDot bool) {
 	db.AppendSection(name, indent, hasDot)
 	db.AppendClauses(clauses, indent+2, true)
+}
+
+func (db *debugBuilder) AppendProofItemsSection(
+	name string, proofItems []ProofItemKind, indent int, hasDot bool) {
+	db.AppendSection(name, indent, hasDot)
+	db.AppendProofItems(proofItems, indent+2, true)
 }
 
 func (db *debugBuilder) AppendTargetsSection(
@@ -863,7 +1011,7 @@ func (db *debugBuilder) MaybeAppendGivenSection(sec *GivenSection, indent int, h
 }
 
 func (db *debugBuilder) MaybeAppendThroughSection(
-	sec *LinkThroughSection, indent int, hasDot bool,
+	sec *ThroughSection, indent int, hasDot bool,
 ) {
 	if sec != nil {
 		db.AppendSection(LowerThroughName, indent, hasDot)

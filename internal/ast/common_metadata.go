@@ -198,6 +198,10 @@ func (n *MultiplexedInfixOperatorCallExpression) GetCommonMetaData() *CommonMeta
 	return &n.CommonMetaData
 }
 
+func (n *WithoutLossOfGeneralityGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
 func (n *InfixOperatorForm) GetCommonMetaData() *CommonMetaData         { return &n.CommonMetaData }
 func (n *PrefixOperatorForm) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
 func (n *PostfixOperatorForm) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
@@ -209,3 +213,18 @@ func (n *CurlyParam) GetCommonMetaData() *CommonMetaData                { return
 func (n *CurlyArg) GetCommonMetaData() *CommonMetaData                  { return &n.CommonMetaData }
 func (n *DirectionalParam) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
 func (n *FunctionLiteralForm) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
+func (n *ProofNoteByGroup) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
+func (n *ProofNoteBecauseGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
+func (n *ProofByNoteGroup) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
+func (n *ProofBecauseNoteGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
+func (n *IndependentlyGroup) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
+func (n *ChainGroup) GetCommonMetaData() *CommonMetaData                { return &n.CommonMetaData }
+func (n *SupposeGroup) GetCommonMetaData() *CommonMetaData              { return &n.CommonMetaData }
+func (n *BlockGroup) GetCommonMetaData() *CommonMetaData                { return &n.CommonMetaData }
+func (n *CasewiseGroup) GetCommonMetaData() *CommonMetaData             { return &n.CommonMetaData }
+func (n *QedGroup) GetCommonMetaData() *CommonMetaData                  { return &n.CommonMetaData }
+func (n *ContradictionGroup) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
+func (n *DoneGroup) GetCommonMetaData() *CommonMetaData                 { return &n.CommonMetaData }
+func (n *ForContradictionGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
+func (n *ForInductionGroup) GetCommonMetaData() *CommonMetaData         { return &n.CommonMetaData }
+func (n *ClaimGroup) GetCommonMetaData() *CommonMetaData                { return &n.CommonMetaData }

@@ -587,9 +587,9 @@ func (p *parser) toEncodingGroup(group phase4.Group) (ast.EncodingGroup, bool) {
 	if sect, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sect)
 	}
-	var through *ast.LinkThroughSection
+	var through *ast.ThroughSection
 	if sect, ok := sections[ast.LowerThroughName]; ok {
-		through = p.toLinkThroughSection(sect)
+		through = p.toThroughSection(sect)
 	}
 	return ast.EncodingGroup{
 		Label:          label,
@@ -630,9 +630,9 @@ func (p *parser) toViewGroup(group phase4.Group) (ast.ViewGroup, bool) {
 	if sect, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sect)
 	}
-	var through *ast.LinkThroughSection
+	var through *ast.ThroughSection
 	if sect, ok := sections[ast.LowerThroughName]; ok {
-		through = p.toLinkThroughSection(sect)
+		through = p.toThroughSection(sect)
 	}
 	var signifies *ast.SignifiesSection
 	if sect, ok := sections[ast.LowerSignifiesName]; ok {
@@ -671,8 +671,8 @@ func (p *parser) toSignifiesSection(section phase4.Section) *ast.SignifiesSectio
 	}
 }
 
-func (p *parser) toLinkThroughSection(section phase4.Section) *ast.LinkThroughSection {
-	return &ast.LinkThroughSection{
+func (p *parser) toThroughSection(section phase4.Section) *ast.ThroughSection {
+	return &ast.ThroughSection{
 		Through:        p.oneOrMoreFormulation(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
@@ -1433,6 +1433,7 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 }
 
 func (p *parser) toAxiomSection(section phase4.Section) *ast.AxiomSection {
+	p.verifyNoArgs(section)
 	return &ast.AxiomSection{
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
@@ -1520,6 +1521,7 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 }
 
 func (p *parser) toConjectureSection(section phase4.Section) *ast.ConjectureSection {
+	p.verifyNoArgs(section)
 	return &ast.ConjectureSection{
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
@@ -1598,6 +1600,7 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 }
 
 func (p *parser) toTheoremSection(section phase4.Section) *ast.TheoremSection {
+	p.verifyNoArgs(section)
 	return &ast.TheoremSection{
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
@@ -1605,7 +1608,7 @@ func (p *parser) toTheoremSection(section phase4.Section) *ast.TheoremSection {
 
 func (p *parser) toProofSection(section phase4.Section) *ast.ProofSection {
 	return &ast.ProofSection{
-		Proof:          p.oneOrMoreTextItems(section),
+		Proof:          p.oneOrMoreProofItems(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -1680,6 +1683,7 @@ func (p *parser) toCorollaryGroup(group phase4.Group) (ast.CorollaryGroup, bool)
 }
 
 func (p *parser) toCorollarySection(section phase4.Section) *ast.CorollarySection {
+	p.verifyNoArgs(section)
 	return &ast.CorollarySection{
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
@@ -1762,6 +1766,7 @@ func (p *parser) toLemmaGroup(group phase4.Group) (ast.LemmaGroup, bool) {
 }
 
 func (p *parser) toLemmaSection(section phase4.Section) *ast.LemmaSection {
+	p.verifyNoArgs(section)
 	return &ast.LemmaSection{
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
@@ -1830,7 +1835,7 @@ func (p *parser) toOfSection(section phase4.Section) *ast.OfSection {
 
 func (p *parser) toContentSection(section phase4.Section) *ast.ContentSection {
 	return &ast.ContentSection{
-		Content:        p.exactlyOneTextItem(section),
+		Content:        p.oneOrMoreProofItems(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -2549,7 +2554,9 @@ func (p *parser) getStringId(group phase4.Group, required bool) *string {
 
 //////////////////////////////////////// arguments /////////////////////////////////////////////////
 
-func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.FormulationNodeKind] {
+func (p *parser) maybeToFormulation(
+	arg phase4.Argument,
+) (ast.Formulation[ast.FormulationNodeKind], bool) {
 	switch data := arg.Arg.(type) {
 	case *phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(
@@ -2559,10 +2566,16 @@ func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.Formulat
 				Root:           node,
 				Label:          data.Label,
 				CommonMetaData: toCommonMetaData(data.MetaData),
-			}
+			}, true
 		}
 	}
+	return ast.Formulation[ast.FormulationNodeKind]{}, false
+}
 
+func (p *parser) toFormulation(arg phase4.Argument) ast.Formulation[ast.FormulationNodeKind] {
+	if formulation, ok := p.maybeToFormulation(arg); ok {
+		return formulation
+	}
 	p.tracker.Append(p.newError("Expected a formulation", arg.MetaData.Start))
 	return ast.Formulation[ast.FormulationNodeKind]{}
 }
@@ -2683,17 +2696,24 @@ func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 	}
 }
 
-func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
+func (p *parser) maybeToTextItem(arg phase4.Argument) (ast.TextItem, bool) {
 	switch data := arg.Arg.(type) {
 	case *phase4.TextArgumentData:
 		return ast.TextItem{
 			RawText:        data.Text,
 			CommonMetaData: toCommonMetaData(data.MetaData),
-		}
+		}, true
 	default:
-		p.tracker.Append(p.newError("Expected a \"...\" item", arg.MetaData.Start))
-		return ast.TextItem{}
+		return ast.TextItem{}, false
 	}
+}
+
+func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
+	item, ok := p.maybeToTextItem(arg)
+	if !ok {
+		p.tracker.Append(p.newError("Expected a \"...\" item", arg.MetaData.Start))
+	}
+	return item
 }
 
 func (p *parser) toPersonKind(arg phase4.Argument) (ast.PersonKind, bool) {
@@ -2786,6 +2806,14 @@ func (p *parser) toClauses(args []phase4.Argument) []ast.ClauseKind {
 	result := make([]ast.ClauseKind, 0)
 	for _, arg := range args {
 		result = append(result, p.toClause(arg))
+	}
+	return result
+}
+
+func (p *parser) toProofItems(args []phase4.Argument) []ast.ProofItemKind {
+	result := make([]ast.ProofItemKind, 0)
+	for _, arg := range args {
+		result = append(result, p.toProofItem(arg))
 	}
 	return result
 }
@@ -2883,6 +2911,585 @@ func (p *parser) toSpecifyKinds(args []phase4.Argument) []ast.SpecifyKind {
 	return result
 }
 
+func (p *parser) toProofItem(arg phase4.Argument) ast.ProofItemKind {
+	if item, ok := p.maybeToTextItem(arg); ok {
+		return &item
+	} else if formulation, ok := p.maybeToFormulation(arg); ok {
+		return &formulation
+	}
+	switch group := arg.Arg.(type) {
+	case *phase4.Group:
+		if grp, ok := p.toEquivalentlyGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toAllOfGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toNotGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toAnyOfGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toOneOfGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toExistsGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toExistsUniqueGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toForAllGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toLetGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toLowerDefineGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toIfGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toIffGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofNoteByGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofNoteBecauseGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofByNoteGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofBecauseNoteGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toIndependentlyGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toChainGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toSupposeGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toBlockGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toWithoutLossOfGeneralityGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toQedGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toContradictionGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toDoneGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toForContradictionGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toForInductionGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toClaimGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toCasewiseGroup(*group); ok {
+			return &grp
+		}
+	}
+
+	p.tracker.Append(p.newError("Expected a proof item", arg.MetaData.Start))
+	return &ast.TextItem{}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toProofNoteByGroup(group phase4.Group) (ast.ProofNoteByGroup, bool) {
+	if !startsWithSections(group, ast.LowerNoteName, ast.LowerByName) {
+		return ast.ProofNoteByGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofNoteBySections...)
+	if !ok {
+		return ast.ProofNoteByGroup{}, false
+	}
+	note := *p.toProofNoteSection(sections[ast.LowerNoteName])
+	by := *p.toProofBySection(sections[ast.LowerByName])
+	return ast.ProofNoteByGroup{
+		Label:          label,
+		Note:           note,
+		By:             by,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toProofNoteBecauseGroup(group phase4.Group) (ast.ProofNoteBecauseGroup, bool) {
+	if !startsWithSections(group, ast.LowerNoteName, ast.LowerBecauseName) {
+		return ast.ProofNoteBecauseGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker,
+		ast.ProofNoteBecauseSections...)
+	if !ok {
+		return ast.ProofNoteBecauseGroup{}, false
+	}
+	note := *p.toProofNoteSection(sections[ast.LowerNoteName])
+	because := *p.toProofBecauseSection(sections[ast.LowerBecauseName])
+	return ast.ProofNoteBecauseGroup{
+		Label:          label,
+		Note:           note,
+		Because:        because,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toProofByNoteGroup(group phase4.Group) (ast.ProofByNoteGroup, bool) {
+	if !startsWithSections(group, ast.LowerByName, ast.LowerNoteName) {
+		return ast.ProofByNoteGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker,
+		ast.ProofByNoteSections...)
+	if !ok {
+		return ast.ProofByNoteGroup{}, false
+	}
+	by := *p.toProofBySection(sections[ast.LowerByName])
+	note := *p.toProofNoteSection(sections[ast.LowerNoteName])
+	return ast.ProofByNoteGroup{
+		Label:          label,
+		By:             by,
+		Note:           note,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toProofBecauseNoteGroup(group phase4.Group) (ast.ProofBecauseNoteGroup, bool) {
+	if !startsWithSections(group, ast.LowerBecauseName, ast.LowerNoteName) {
+		return ast.ProofBecauseNoteGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker,
+		ast.ProofBecauseNoteSections...)
+	if !ok {
+		return ast.ProofBecauseNoteGroup{}, false
+	}
+	because := *p.toProofBecauseSection(sections[ast.LowerBecauseName])
+	note := *p.toProofNoteSection(sections[ast.LowerNoteName])
+	return ast.ProofBecauseNoteGroup{
+		Label:          label,
+		Because:        because,
+		Note:           note,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toProofNoteSection(section phase4.Section) *ast.ProofNoteSection {
+	return &ast.ProofNoteSection{
+		Note:           p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toProofBySection(section phase4.Section) *ast.ProofBySection {
+	return &ast.ProofBySection{
+		Items:          p.oneOrMoreTextItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toProofBecauseSection(section phase4.Section) *ast.ProofBecauseSection {
+	return &ast.ProofBecauseSection{
+		Because:        p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toIndependentlyGroup(group phase4.Group) (ast.IndependentlyGroup, bool) {
+	if !startsWithSections(group, ast.LowerIndependentlyName) {
+		return ast.IndependentlyGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.IndependentlySections...)
+	if !ok {
+		return ast.IndependentlyGroup{}, false
+	}
+	independently := *p.toIndependentlySection(sections[ast.LowerIndependentlyName])
+	return ast.IndependentlyGroup{
+		Label:          label,
+		Independently:  independently,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toIndependentlySection(section phase4.Section) *ast.IndependentlySection {
+	return &ast.IndependentlySection{
+		Independently:  p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toChainGroup(group phase4.Group) (ast.ChainGroup, bool) {
+	if !startsWithSections(group, ast.LowerChainName) {
+		return ast.ChainGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ChainSections...)
+	if !ok {
+		return ast.ChainGroup{}, false
+	}
+	chain := *p.toChainSection(sections[ast.LowerChainName])
+	return ast.ChainGroup{
+		Label:          label,
+		Chain:          chain,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toChainSection(section phase4.Section) *ast.ChainSection {
+	return &ast.ChainSection{
+		Chain:          p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toBlockGroup(group phase4.Group) (ast.BlockGroup, bool) {
+	if !startsWithSections(group, ast.LowerBlockName) {
+		return ast.BlockGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.BlockSections...)
+	if !ok {
+		return ast.BlockGroup{}, false
+	}
+	block := *p.toBlockSection(sections[ast.LowerBlockName])
+	return ast.BlockGroup{
+		Label:          label,
+		Block:          block,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toBlockSection(section phase4.Section) *ast.BlockSection {
+	return &ast.BlockSection{
+		Block:          p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toSupposeGroup(group phase4.Group) (ast.SupposeGroup, bool) {
+	if !startsWithSections(group, ast.LowerSupposeName) {
+		return ast.SupposeGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.SupposeSections...)
+	if !ok {
+		return ast.SupposeGroup{}, false
+	}
+	suppose := *p.toSupposeSection(sections[ast.LowerSupposeName])
+	then := *p.toSupposeThenSection(sections[ast.LowerThenName])
+	return ast.SupposeGroup{
+		Label:          label,
+		Suppose:        suppose,
+		Then:           then,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toSupposeSection(section phase4.Section) *ast.SupposeSection {
+	return &ast.SupposeSection{
+		Suppose:        p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toSupposeThenSection(section phase4.Section) *ast.SupposeThenSection {
+	return &ast.SupposeThenSection{
+		Then:           p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toWithoutLossOfGeneralityGroup(
+	group phase4.Group,
+) (ast.WithoutLossOfGeneralityGroup, bool) {
+	if !startsWithSections(group, ast.LowerWithoutLossOfGeneralityName) {
+		return ast.WithoutLossOfGeneralityGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(
+		p.path, group.Sections, p.tracker, ast.WithoutLossOfGeneralitySections...)
+	if !ok {
+		return ast.WithoutLossOfGeneralityGroup{}, false
+	}
+	withoutLossOfGenerality := *p.toWithoutLossOfGeneralitySection(
+		sections[ast.LowerWithoutLossOfGeneralityName])
+	return ast.WithoutLossOfGeneralityGroup{
+		Label:                   label,
+		WithoutLossOfGenerality: withoutLossOfGenerality,
+		CommonMetaData:          toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toWithoutLossOfGeneralitySection(
+	section phase4.Section,
+) *ast.WithoutLossOfGeneralitySection {
+	return &ast.WithoutLossOfGeneralitySection{
+		Items:          p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toQedGroup(group phase4.Group) (ast.QedGroup, bool) {
+	if !startsWithSections(group, ast.LowerQedName) {
+		return ast.QedGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.QedSections...)
+	if !ok {
+		return ast.QedGroup{}, false
+	}
+	qed := *p.toQedSection(sections[ast.LowerQedName])
+	return ast.QedGroup{
+		Label:          label,
+		Qed:            qed,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toQedSection(section phase4.Section) *ast.QedSection {
+	p.verifyNoArgs(section)
+	return &ast.QedSection{CommonMetaData: toCommonMetaData(section.MetaData)}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toContradictionGroup(group phase4.Group) (ast.ContradictionGroup, bool) {
+	if !startsWithSections(group, ast.LowerContradictionName) {
+		return ast.ContradictionGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ContradictionSections...)
+	if !ok {
+		return ast.ContradictionGroup{}, false
+	}
+	contradiction := *p.toContradictionSection(sections[ast.LowerContradictionName])
+	return ast.ContradictionGroup{
+		Label:          label,
+		Contradiction:  contradiction,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toContradictionSection(section phase4.Section) *ast.ContradictionSection {
+	p.verifyNoArgs(section)
+	return &ast.ContradictionSection{CommonMetaData: toCommonMetaData(section.MetaData)}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toDoneGroup(group phase4.Group) (ast.DoneGroup, bool) {
+	if !startsWithSections(group, ast.LowerDoneName) {
+		return ast.DoneGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.DoneSections...)
+	if !ok {
+		return ast.DoneGroup{}, false
+	}
+	done := *p.toDoneSection(sections[ast.LowerDoneName])
+	return ast.DoneGroup{
+		Label:          label,
+		Done:           done,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toDoneSection(section phase4.Section) *ast.DoneSection {
+	p.verifyNoArgs(section)
+	return &ast.DoneSection{CommonMetaData: toCommonMetaData(section.MetaData)}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toForContradictionGroup(group phase4.Group) (ast.ForContradictionGroup, bool) {
+	if !startsWithSections(group, ast.LowerForContradictionName) {
+		return ast.ForContradictionGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(
+		p.path, group.Sections, p.tracker, ast.ForContradictionSections...)
+	if !ok {
+		return ast.ForContradictionGroup{}, false
+	}
+	forContradiction := *p.toForContradictionSection(sections[ast.LowerForContradictionName])
+	suppose := *p.toSupposeSection(sections[ast.LowerSupposeName])
+	then := *p.toSupposeThenSection(sections[ast.LowerThenName])
+	return ast.ForContradictionGroup{
+		Label:            label,
+		ForContradiction: forContradiction,
+		Suppose:          suppose,
+		Then:             then,
+		CommonMetaData:   toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toForContradictionSection(section phase4.Section) *ast.ForContradictionSection {
+	p.verifyNoArgs(section)
+	return &ast.ForContradictionSection{CommonMetaData: toCommonMetaData(section.MetaData)}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toForInductionGroup(group phase4.Group) (ast.ForInductionGroup, bool) {
+	if !startsWithSections(group, ast.LowerForInductionName) {
+		return ast.ForInductionGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ForInductionSections...)
+	if !ok {
+		return ast.ForInductionGroup{}, false
+	}
+	forInduction := *p.toForInductionSection(sections[ast.LowerForInductionName])
+	baseCase := *p.toBaseCaseSection(sections[ast.LowerBaseCaseName])
+	generally := *p.toGenerallySection(sections[ast.LowerGenerallyName])
+	return ast.ForInductionGroup{
+		Label:          label,
+		ForInduction:   forInduction,
+		BaseCase:       baseCase,
+		Generally:      generally,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toForInductionSection(section phase4.Section) *ast.ForInductionSection {
+	p.verifyNoArgs(section)
+	return &ast.ForInductionSection{CommonMetaData: toCommonMetaData(section.MetaData)}
+}
+
+func (p *parser) toBaseCaseSection(section phase4.Section) *ast.BaseCaseSection {
+	return &ast.BaseCaseSection{
+		BaseCase:       p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toGenerallySection(section phase4.Section) *ast.GenerallySection {
+	return &ast.GenerallySection{
+		Generally:      p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toClaimGroup(group phase4.Group) (ast.ClaimGroup, bool) {
+	if !startsWithSections(group, ast.LowerClaimName) {
+		return ast.ClaimGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ClaimSections...)
+	if !ok {
+		return ast.ClaimGroup{}, false
+	}
+	claim := *p.toClaimSection(sections[ast.LowerClaimName])
+	var given *ast.GivenSection
+	if sec, ok := sections[ast.LowerGivenName]; ok {
+		given = p.toGivenSection(sec)
+	}
+	var using *ast.UsingSection
+	if sect, ok := sections[ast.LowerUsingName]; ok {
+		using = p.toUsingSection(sect)
+	}
+	var where *ast.WhereSection
+	if sec, ok := sections[ast.LowerWhereName]; ok {
+		where = p.toWhereSection(sec)
+	}
+	var ifSec *ast.IfSection
+	if sec, ok := sections[ast.LowerIfName]; ok {
+		ifSec = p.toIfSection(sec)
+	}
+	var iff *ast.IffSection
+	if sec, ok := sections[ast.LowerIffName]; ok {
+		iff = p.toIffSection(sec)
+	}
+	then := *p.toThenSection(sections[ast.LowerThenName])
+	var proof *ast.ProofSection
+	if sec, ok := sections[ast.UpperProofName]; ok {
+		proof = p.toProofSection(sec)
+	}
+	return ast.ClaimGroup{
+		Label:          label,
+		Claim:          claim,
+		Given:          given,
+		Using:          using,
+		Where:          where,
+		If:             ifSec,
+		Iff:            iff,
+		Then:           then,
+		Proof:          proof,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toClaimSection(section phase4.Section) *ast.ClaimSection {
+	p.verifyNoArgs(section)
+	return &ast.ClaimSection{
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toCasewiseGroup(group phase4.Group) (ast.CasewiseGroup, bool) {
+	if !startsWithSections(group, ast.LowerCasewiseName) {
+		return ast.CasewiseGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections := group.Sections
+	if len(sections) == 0 || sections[0].Name != ast.LowerCasewiseName {
+		return ast.CasewiseGroup{}, false
+	}
+	casewise := *p.toCasewiseSection(sections[0])
+	cases := make([]ast.CaseSection, 0)
+	i := 1
+	for i < len(sections) {
+		section := sections[i]
+		i++
+		if section.Name != ast.LowerCaseName {
+			p.tracker.Append(p.newError(fmt.Sprintf("Expected section '%s' but found '%s'",
+				ast.LowerCaseName, section.Name), section.MetaData.Start))
+			return ast.CasewiseGroup{}, false
+		}
+		cases = append(cases, *p.toCaseSection(section))
+	}
+	return ast.CasewiseGroup{
+		Label:          label,
+		Casewise:       casewise,
+		Cases:          cases,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toCasewiseSection(section phase4.Section) *ast.CasewiseSection {
+	p.verifyNoArgs(section)
+	return &ast.CasewiseSection{CommonMetaData: toCommonMetaData(section.MetaData)}
+}
+
+func (p *parser) toCaseSection(section phase4.Section) *ast.CaseSection {
+	return &ast.CaseSection{
+		Case:           p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (p *parser) verifyNoArgs(section phase4.Section) {
@@ -2893,6 +3500,10 @@ func (p *parser) verifyNoArgs(section phase4.Section) {
 
 func (p *parser) oneOrMoreClauses(section phase4.Section) []ast.ClauseKind {
 	return oneOrMore(p, p.toClauses(section.Args), section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) oneOrMoreProofItems(section phase4.Section) []ast.ProofItemKind {
+	return oneOrMore(p, p.toProofItems(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneClause(section phase4.Section) ast.ClauseKind {

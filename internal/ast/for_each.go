@@ -350,13 +350,11 @@ func (n *StatesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 func (n *ProofGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Id)
 	fn(&n.Of.Of)
-	fn(&n.Content.Content)
+	forEachProofItem(n.Content.Content, fn)
 }
 
 func (n *AxiomGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	if n.Id != nil {
-		fn(n.Id)
-	}
+	maybeForIdItem(n.Id, fn)
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
 	}
@@ -388,9 +386,7 @@ func (n *AxiomGroup) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
 func (n *ConjectureGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	if n.Id != nil {
-		fn(n.Id)
-	}
+	maybeForIdItem(n.Id, fn)
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
 	}
@@ -422,9 +418,7 @@ func (n *ConjectureGroup) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
 func (n *TheoremGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	if n.Id != nil {
-		fn(n.Id)
-	}
+	maybeForIdItem(n.Id, fn)
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
 	}
@@ -442,7 +436,7 @@ func (n *TheoremGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 	forEach(n.Then.Clauses, fn)
 	if n.Proof != nil {
-		forEachTextItem(n.Proof.Proof, fn)
+		forEachProofItem(n.Proof.Proof, fn)
 	}
 	if n.Documented != nil {
 		forEach(n.Documented.Documented, fn)
@@ -459,9 +453,7 @@ func (n *TheoremGroup) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
 func (n *CorollaryGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	if n.Id != nil {
-		fn(n.Id)
-	}
+	maybeForIdItem(n.Id, fn)
 	forEachTextItem(n.To.To, fn)
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
@@ -480,7 +472,7 @@ func (n *CorollaryGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 	forEach(n.Then.Clauses, fn)
 	if n.Proof != nil {
-		forEachTextItem(n.Proof.Proof, fn)
+		forEachProofItem(n.Proof.Proof, fn)
 	}
 	if n.Documented != nil {
 		forEach(n.Documented.Documented, fn)
@@ -497,9 +489,7 @@ func (n *CorollaryGroup) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
 func (n *LemmaGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	if n.Id != nil {
-		fn(n.Id)
-	}
+	maybeForIdItem(n.Id, fn)
 	forEachTextItem(n.For.For, fn)
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
@@ -518,7 +508,7 @@ func (n *LemmaGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 	forEach(n.Then.Clauses, fn)
 	if n.Proof != nil {
-		forEachTextItem(n.Proof.Proof, fn)
+		forEachProofItem(n.Proof.Proof, fn)
 	}
 	if n.Documented != nil {
 		forEach(n.Documented.Documented, fn)
@@ -911,7 +901,101 @@ func (n *DirectionalParam) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.SquareParams, fn)
 }
 
+func (n *ProofNoteByGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Note.Note, fn)
+	forEachTextItem(n.By.Items, fn)
+}
+
+func (n *ProofNoteBecauseGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Note.Note, fn)
+	forEachProofItem(n.Because.Because, fn)
+}
+
+func (n *ProofByNoteGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachTextItem(n.By.Items, fn)
+	forEachProofItem(n.Note.Note, fn)
+}
+
+func (n *ProofBecauseNoteGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Because.Because, fn)
+	forEachProofItem(n.Note.Note, fn)
+}
+
+func (n *IndependentlyGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Independently.Independently, fn)
+}
+
+func (n *ChainGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Chain.Chain, fn)
+}
+
+func (n *SupposeGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Suppose.Suppose, fn)
+	forEachProofItem(n.Then.Then, fn)
+}
+
+func (n *BlockGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Block.Block, fn)
+}
+
+func (n *CasewiseGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	for i, _ := range n.Cases {
+		forEachProofItem(n.Cases[i].Case, fn)
+	}
+}
+
+func (n *WithoutLossOfGeneralityGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.WithoutLossOfGenerality.Items, fn)
+}
+
+func (n *QedGroup) ForEach(fn func(subNode MlgNodeKind)) {
+}
+
+func (n *ContradictionGroup) ForEach(fn func(subNode MlgNodeKind)) {
+}
+
+func (n *DoneGroup) ForEach(fn func(subNode MlgNodeKind)) {
+}
+
+func (n *ForContradictionGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Suppose.Suppose, fn)
+	forEachProofItem(n.Then.Then, fn)
+}
+
+func (n *ForInductionGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.BaseCase.BaseCase, fn)
+	forEachProofItem(n.Generally.Generally, fn)
+}
+
+func (n *ClaimGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	if n.Given != nil {
+		forEachTarget(n.Given.Given, fn)
+	}
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
+	if n.Where != nil {
+		forEachSpec(n.Where.Specs, fn)
+	}
+	if n.If != nil {
+		forEach(n.If.Clauses, fn)
+	}
+	if n.Iff != nil {
+		forEach(n.Iff.Clauses, fn)
+	}
+	forEach(n.Then.Clauses, fn)
+	if n.Proof != nil {
+		forEachProofItem(n.Proof.Proof, fn)
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func maybeForIdItem(id *IdItem, fn func(n MlgNodeKind)) {
+	if id != nil {
+		fn(id)
+	}
+}
 
 func forEach[T MlgNodeKind](items []T, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
@@ -970,5 +1054,11 @@ func forEachAlias(items []Alias, fn func(n MlgNodeKind)) {
 func forEachTextItem(items []TextItem, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(&items[i])
+	}
+}
+
+func forEachProofItem(items []ProofItemKind, fn func(n MlgNodeKind)) {
+	for i, _ := range items {
+		fn(items[i])
 	}
 }

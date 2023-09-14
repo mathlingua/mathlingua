@@ -147,6 +147,22 @@ func (*CurlyParam) MlgNodeKind()                             {}
 func (*CurlyArg) MlgNodeKind()                               {}
 func (*DirectionalParam) MlgNodeKind()                       {}
 func (*FunctionLiteralForm) MlgNodeKind()                    {}
+func (*ProofNoteByGroup) MlgNodeKind()                       {}
+func (*ProofNoteBecauseGroup) MlgNodeKind()                  {}
+func (*ProofByNoteGroup) MlgNodeKind()                       {}
+func (*ProofBecauseNoteGroup) MlgNodeKind()                  {}
+func (*IndependentlyGroup) MlgNodeKind()                     {}
+func (*ChainGroup) MlgNodeKind()                             {}
+func (*SupposeGroup) MlgNodeKind()                           {}
+func (*BlockGroup) MlgNodeKind()                             {}
+func (*WithoutLossOfGeneralityGroup) MlgNodeKind()           {}
+func (*QedGroup) MlgNodeKind()                               {}
+func (*ContradictionGroup) MlgNodeKind()                     {}
+func (*DoneGroup) MlgNodeKind()                              {}
+func (*ForContradictionGroup) MlgNodeKind()                  {}
+func (*ForInductionGroup) MlgNodeKind()                      {}
+func (*ClaimGroup) MlgNodeKind()                             {}
+func (*CasewiseGroup) MlgNodeKind()                          {}
 
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck

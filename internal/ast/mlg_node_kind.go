@@ -151,18 +151,18 @@ func (*ProofNoteByGroup) MlgNodeKind()                       {}
 func (*ProofNoteBecauseGroup) MlgNodeKind()                  {}
 func (*ProofByNoteGroup) MlgNodeKind()                       {}
 func (*ProofBecauseNoteGroup) MlgNodeKind()                  {}
-func (*IndependentlyGroup) MlgNodeKind()                     {}
-func (*ChainGroup) MlgNodeKind()                             {}
-func (*SupposeGroup) MlgNodeKind()                           {}
-func (*BlockGroup) MlgNodeKind()                             {}
-func (*WithoutLossOfGeneralityGroup) MlgNodeKind()           {}
-func (*QedGroup) MlgNodeKind()                               {}
-func (*ContradictionGroup) MlgNodeKind()                     {}
-func (*DoneGroup) MlgNodeKind()                              {}
-func (*ForContradictionGroup) MlgNodeKind()                  {}
-func (*ForInductionGroup) MlgNodeKind()                      {}
-func (*ClaimGroup) MlgNodeKind()                             {}
-func (*CasewiseGroup) MlgNodeKind()                          {}
+func (*ProofIndependentlyGroup) MlgNodeKind()                {}
+func (*ProofChainGroup) MlgNodeKind()                        {}
+func (*ProofSupposeGroup) MlgNodeKind()                      {}
+func (*ProofBlockGroup) MlgNodeKind()                        {}
+func (*ProofWithoutLossOfGeneralityGroup) MlgNodeKind()      {}
+func (*ProofQedGroup) MlgNodeKind()                          {}
+func (*ProofContradictionGroup) MlgNodeKind()                {}
+func (*ProofDoneGroup) MlgNodeKind()                         {}
+func (*ProofForContradictionGroup) MlgNodeKind()             {}
+func (*ProofForInductionGroup) MlgNodeKind()                 {}
+func (*ProofClaimGroup) MlgNodeKind()                        {}
+func (*ProofCasewiseGroup) MlgNodeKind()                     {}
 
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck

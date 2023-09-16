@@ -123,6 +123,88 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
+		actual: ProofEquivalentlySections,
+		expected: []string{
+			"equivalently",
+		},
+	},
+	{
+		actual: ProofAllOfSections,
+		expected: []string{
+			"allOf",
+		},
+	},
+	{
+		actual: ProofNotSections,
+		expected: []string{
+			"not",
+		},
+	},
+	{
+		actual: ProofAnyOfSections,
+		expected: []string{
+			"anyOf",
+		},
+	},
+	{
+		actual: ProofOneOfSections,
+		expected: []string{
+			"oneOf",
+		},
+	},
+	{
+		actual: ProofExistsSections,
+		expected: []string{
+			"exists",
+			"using?",
+			"where?",
+			"suchThat",
+		},
+	},
+	{
+		actual: ProofExistsUniqueSections,
+		expected: []string{
+			"existsUnique",
+			"using?",
+			"where?",
+			"suchThat",
+		},
+	},
+	{
+		actual: ProofForAllSections,
+		expected: []string{
+			"forAll",
+			"using?",
+			"where?",
+			"suchThat?",
+			"then",
+		},
+	},
+	{
+		actual: ProofLetSections,
+		expected: []string{
+			"let",
+			"using?",
+			"where?",
+			"suchThat?",
+			"then",
+		},
+	},
+	{
+		actual: ProofIfSections,
+		expected: []string{
+			"if",
+			"then",
+		},
+	},
+	{
+		actual: ProofIffSections,
+		expected: []string{
+			"iff",
+			"then",
+		},
+	},
+	{
 		actual: PiecewiseSections,
 		expected: []string{
 			"piecewise",

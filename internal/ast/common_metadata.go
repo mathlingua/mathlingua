@@ -228,3 +228,14 @@ func (n *ProofDoneGroup) GetCommonMetaData() *CommonMetaData             { retur
 func (n *ProofForContradictionGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 func (n *ProofForInductionGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
 func (n *ProofClaimGroup) GetCommonMetaData() *CommonMetaData            { return &n.CommonMetaData }
+func (n *ProofEquivalentlyGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
+func (n *ProofAllOfGroup) GetCommonMetaData() *CommonMetaData            { return &n.CommonMetaData }
+func (n *ProofNotGroup) GetCommonMetaData() *CommonMetaData              { return &n.CommonMetaData }
+func (n *ProofAnyOfGroup) GetCommonMetaData() *CommonMetaData            { return &n.CommonMetaData }
+func (n *ProofOneOfGroup) GetCommonMetaData() *CommonMetaData            { return &n.CommonMetaData }
+func (n *ProofExistsGroup) GetCommonMetaData() *CommonMetaData           { return &n.CommonMetaData }
+func (n *ProofExistsUniqueGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
+func (n *ProofForAllGroup) GetCommonMetaData() *CommonMetaData           { return &n.CommonMetaData }
+func (n *ProofLetGroup) GetCommonMetaData() *CommonMetaData              { return &n.CommonMetaData }
+func (n *ProofIfGroup) GetCommonMetaData() *CommonMetaData               { return &n.CommonMetaData }
+func (n *ProofIffGroup) GetCommonMetaData() *CommonMetaData              { return &n.CommonMetaData }

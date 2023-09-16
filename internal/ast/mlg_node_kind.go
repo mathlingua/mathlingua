@@ -163,6 +163,17 @@ func (*ProofForContradictionGroup) MlgNodeKind()             {}
 func (*ProofForInductionGroup) MlgNodeKind()                 {}
 func (*ProofClaimGroup) MlgNodeKind()                        {}
 func (*ProofCasewiseGroup) MlgNodeKind()                     {}
+func (*ProofEquivalentlyGroup) MlgNodeKind()                 {}
+func (*ProofAllOfGroup) MlgNodeKind()                        {}
+func (*ProofNotGroup) MlgNodeKind()                          {}
+func (*ProofAnyOfGroup) MlgNodeKind()                        {}
+func (*ProofOneOfGroup) MlgNodeKind()                        {}
+func (*ProofExistsGroup) MlgNodeKind()                       {}
+func (*ProofExistsUniqueGroup) MlgNodeKind()                 {}
+func (*ProofForAllGroup) MlgNodeKind()                       {}
+func (*ProofLetGroup) MlgNodeKind()                          {}
+func (*ProofIfGroup) MlgNodeKind()                           {}
+func (*ProofIffGroup) MlgNodeKind()                          {}
 
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck

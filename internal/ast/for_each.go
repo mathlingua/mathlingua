@@ -128,6 +128,88 @@ func (n *IffGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Then.Clauses, fn)
 }
 
+func (n *ProofLetGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachTarget(n.Let.Let, fn)
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
+	if n.Where != nil {
+		forEachSpec(n.Where.Specs, fn)
+	}
+	if n.SuchThat != nil {
+		forEach(n.SuchThat.Items, fn)
+	}
+	forEach(n.Then.Then, fn)
+}
+
+func (n *ProofAllOfGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEach(n.AllOf.Items, fn)
+}
+
+func (n *ProofEquivalentlyGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEach(n.Equivalently.Items, fn)
+}
+
+func (n *ProofNotGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(n.Not.Item)
+}
+
+func (n *ProofAnyOfGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEach(n.AnyOf.Items, fn)
+}
+
+func (n *ProofOneOfGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEach(n.OneOf.Items, fn)
+}
+
+func (n *ProofExistsGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachTarget(n.Exists.Targets, fn)
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
+	if n.Where != nil {
+		forEachSpec(n.Where.Specs, fn)
+	}
+	if n.SuchThat != nil {
+		forEach(n.SuchThat.Items, fn)
+	}
+}
+
+func (n *ProofExistsUniqueGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachTarget(n.ExistsUnique.Targets, fn)
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
+	if n.Where != nil {
+		forEachSpec(n.Where.Specs, fn)
+	}
+	forEach(n.SuchThat.Items, fn)
+}
+
+func (n *ProofForAllGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachTarget(n.ForAll.Targets, fn)
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
+	}
+	if n.Where != nil {
+		forEachSpec(n.Where.Specs, fn)
+	}
+	if n.SuchThat != nil {
+		forEach(n.SuchThat.Items, fn)
+	}
+	forEach(n.Then.Then, fn)
+}
+
+func (n *ProofIfGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEach(n.If.Items, fn)
+	forEach(n.Then.Then, fn)
+}
+
+func (n *ProofIffGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEach(n.Iff.Items, fn)
+	forEach(n.Then.Then, fn)
+}
+
 func (n *PiecewiseGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	for i, _ := range n.IfThen {
 		forEach(n.IfThen[i].If.Clauses, fn)

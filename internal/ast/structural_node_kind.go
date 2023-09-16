@@ -105,3 +105,14 @@ func (*ProofDoneGroup) StructuralNodeKind()                    {}
 func (*ProofForContradictionGroup) StructuralNodeKind()        {}
 func (*ProofForInductionGroup) StructuralNodeKind()            {}
 func (*ProofClaimGroup) StructuralNodeKind()                   {}
+func (*ProofEquivalentlyGroup) StructuralNodeKind()            {}
+func (*ProofAllOfGroup) StructuralNodeKind()                   {}
+func (*ProofNotGroup) StructuralNodeKind()                     {}
+func (*ProofAnyOfGroup) StructuralNodeKind()                   {}
+func (*ProofOneOfGroup) StructuralNodeKind()                   {}
+func (*ProofExistsGroup) StructuralNodeKind()                  {}
+func (*ProofExistsUniqueGroup) StructuralNodeKind()            {}
+func (*ProofForAllGroup) StructuralNodeKind()                  {}
+func (*ProofLetGroup) StructuralNodeKind()                     {}
+func (*ProofIfGroup) StructuralNodeKind()                      {}
+func (*ProofIffGroup) StructuralNodeKind()                     {}

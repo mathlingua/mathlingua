@@ -832,6 +832,102 @@ func (n *ProofClaimGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
+func (n *ProofLetGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.MaybeAppendLetSection(&n.Let, indent, hasDot && n.Label == nil)
+	db.MaybeAppendUsingSection(n.Using, indent, false)
+	db.MaybeAppendWhereSection(n.Where, indent, false)
+	db.MaybeAppendProofSuchThatSection(n.SuchThat, indent, false)
+	db.MaybeAppendProofThenSection(&n.Then, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofAllOfGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerAllOfName, n.AllOf.Items, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *ProofEquivalentlyGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerEquivalentlyName, n.Equivalently.Items, indent,
+		hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *ProofNotGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerNotName, indent, hasDot && n.Label == nil)
+	db.Append(n.Not.Item, indent+2, true)
+	return db.Lines()
+}
+
+func (n *ProofAnyOfGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerAnyOfName, n.AnyOf.Items, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *ProofOneOfGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerOneOfName, n.OneOf.Items, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *ProofExistsGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendTargetsSection(LowerExistsName, n.Exists.Targets, indent, hasDot && n.Label == nil)
+	db.MaybeAppendUsingSection(n.Using, indent, false)
+	db.MaybeAppendWhereSection(n.Where, indent, false)
+	db.MaybeAppendProofSuchThatSection(n.SuchThat, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofExistsUniqueGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendTargetsSection(
+		LowerExistsName, n.ExistsUnique.Targets, indent, hasDot && n.Label == nil)
+	db.MaybeAppendUsingSection(n.Using, indent, false)
+	db.MaybeAppendWhereSection(n.Where, indent, false)
+	db.MaybeAppendProofSuchThatSection(&n.SuchThat, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofForAllGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendTargetsSection(LowerForAllName, n.ForAll.Targets, indent, hasDot && n.Label == nil)
+	db.MaybeAppendUsingSection(n.Using, indent, false)
+	db.MaybeAppendWhereSection(n.Where, indent, false)
+	db.MaybeAppendProofSuchThatSection(n.SuchThat, indent, false)
+	db.MaybeAppendProofThenSection(&n.Then, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofIfGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.MaybeAppendProofIfSection(&n.If, indent, hasDot && n.Label == nil)
+	db.MaybeAppendProofThenSection(&n.Then, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofIffGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.MaybeAppendProofIffSection(&n.Iff, indent, hasDot && n.Label == nil)
+	db.MaybeAppendProofThenSection(&n.Then, indent, false)
+	return db.Lines()
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Note: This file contains methods that look similar because a non-generic struct in Go cannot
@@ -1048,10 +1144,32 @@ func (db *debugBuilder) MaybeAppendSuchThatSection(sec *SuchThatSection, indent 
 	}
 }
 
+func (db *debugBuilder) MaybeAppendProofSuchThatSection(
+	sec *ProofSuchThatSection, indent int, hasDot bool,
+) {
+	if sec != nil {
+		db.AppendSection(LowerSuchThatName, indent, hasDot)
+		for _, item := range sec.Items {
+			db.Append(item, indent+2, true)
+		}
+	}
+}
+
 func (db *debugBuilder) MaybeAppendThenSection(sec *ThenSection, indent int, hasDot bool) {
 	if sec != nil {
 		db.AppendSection(LowerThenName, indent, hasDot)
 		for _, item := range sec.Clauses {
+			db.Append(item, indent+2, true)
+		}
+	}
+}
+
+func (db *debugBuilder) MaybeAppendProofThenSection(
+	sec *ProofThenSection, indent int, hasDot bool,
+) {
+	if sec != nil {
+		db.AppendSection(LowerThenName, indent, hasDot)
+		for _, item := range sec.Then {
 			db.Append(item, indent+2, true)
 		}
 	}
@@ -1075,10 +1193,28 @@ func (db *debugBuilder) MaybeAppendIfSection(sec *IfSection, indent int, hasDot 
 	}
 }
 
+func (db *debugBuilder) MaybeAppendProofIfSection(sec *ProofIfSection, indent int, hasDot bool) {
+	if sec != nil {
+		db.AppendSection(LowerIfName, indent, hasDot)
+		for _, item := range sec.Items {
+			db.Append(item, indent+2, true)
+		}
+	}
+}
+
 func (db *debugBuilder) MaybeAppendIffSection(sec *IffSection, indent int, hasDot bool) {
 	if sec != nil {
 		db.AppendSection(LowerIfName, indent, hasDot)
 		for _, item := range sec.Clauses {
+			db.Append(item, indent+2, true)
+		}
+	}
+}
+
+func (db *debugBuilder) MaybeAppendProofIffSection(sec *ProofIffSection, indent int, hasDot bool) {
+	if sec != nil {
+		db.AppendSection(LowerIfName, indent, hasDot)
+		for _, item := range sec.Items {
 			db.Append(item, indent+2, true)
 		}
 	}

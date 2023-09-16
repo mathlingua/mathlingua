@@ -106,6 +106,22 @@ func getFixedCompletions() []string {
 		join(ast.NameSections),
 		join(ast.BiographySections),
 		join(ast.ResourceSections),
+		join(ast.ProofNoteBySections),
+		join(ast.ProofNoteBecauseSections),
+		join(ast.ProofByNoteSections),
+		join(ast.ProofBecauseNoteSections),
+		join(ast.ProofIndependentlySections),
+		join(ast.ProofChainSections),
+		join(ast.ProofSupposeSections),
+		join(ast.ProofBlockSections),
+		join(ast.ProofCasewiseSections),
+		join(ast.ProofWithoutLossOfGeneralitySections),
+		join(ast.ProofQedSections),
+		join(ast.ProofContradictionSections),
+		join(ast.ProofDoneSections),
+		join(ast.ProofForContradictionSections),
+		join(ast.ProofForInductionSections),
+		join(ast.ProofClaimSections),
 	}
 }
 

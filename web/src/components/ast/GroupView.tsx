@@ -44,18 +44,6 @@ function section(
     return null;
   }
 
-  if (sec.Name === 'Proof') {
-    // The following is needed since otherwise there is an
-    // extra gap at the bottom of the group.
-    return (
-      <span key={index}>
-        {index > 0 && <Newline />}
-        {index > 0 && <Indent size={indent} />}
-        <div className={styles.proofBottomGapFix}></div>
-      </span>
-    );
-  }
-
   const secView = <SectionView
                     node={sec}
                     showSource={showSource}

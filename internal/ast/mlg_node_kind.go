@@ -149,8 +149,8 @@ func (*DirectionalParam) MlgNodeKind()                       {}
 func (*FunctionLiteralForm) MlgNodeKind()                    {}
 func (*ProofNoteByGroup) MlgNodeKind()                       {}
 func (*ProofNoteBecauseGroup) MlgNodeKind()                  {}
-func (*ProofByNoteGroup) MlgNodeKind()                       {}
-func (*ProofBecauseNoteGroup) MlgNodeKind()                  {}
+func (*ProofByThenGroup) MlgNodeKind()                       {}
+func (*ProofBecauseThenGroup) MlgNodeKind()                  {}
 func (*ProofIndependentlyGroup) MlgNodeKind()                {}
 func (*ProofChainGroup) MlgNodeKind()                        {}
 func (*ProofSupposeGroup) MlgNodeKind()                      {}

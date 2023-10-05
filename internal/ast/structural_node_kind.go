@@ -91,8 +91,8 @@ func (*Document) StructuralNodeKind()                          {}
 func (*TextBlockItem) StructuralNodeKind()                     {}
 func (*ProofNoteByGroup) StructuralNodeKind()                  {}
 func (*ProofNoteBecauseGroup) StructuralNodeKind()             {}
-func (*ProofByNoteGroup) StructuralNodeKind()                  {}
-func (*ProofBecauseNoteGroup) StructuralNodeKind()             {}
+func (*ProofByThenGroup) StructuralNodeKind()                  {}
+func (*ProofBecauseThenGroup) StructuralNodeKind()             {}
 func (*ProofIndependentlyGroup) StructuralNodeKind()           {}
 func (*ProofChainGroup) StructuralNodeKind()                   {}
 func (*ProofSupposeGroup) StructuralNodeKind()                 {}

@@ -215,8 +215,8 @@ func (n *DirectionalParam) GetCommonMetaData() *CommonMetaData           { retur
 func (n *FunctionLiteralForm) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
 func (n *ProofNoteByGroup) GetCommonMetaData() *CommonMetaData           { return &n.CommonMetaData }
 func (n *ProofNoteBecauseGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
-func (n *ProofByNoteGroup) GetCommonMetaData() *CommonMetaData           { return &n.CommonMetaData }
-func (n *ProofBecauseNoteGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
+func (n *ProofByThenGroup) GetCommonMetaData() *CommonMetaData           { return &n.CommonMetaData }
+func (n *ProofBecauseThenGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
 func (n *ProofIndependentlyGroup) GetCommonMetaData() *CommonMetaData    { return &n.CommonMetaData }
 func (n *ProofChainGroup) GetCommonMetaData() *CommonMetaData            { return &n.CommonMetaData }
 func (n *ProofSupposeGroup) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }

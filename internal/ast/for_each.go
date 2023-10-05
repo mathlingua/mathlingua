@@ -993,14 +993,14 @@ func (n *ProofNoteBecauseGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Because.Because, fn)
 }
 
-func (n *ProofByNoteGroup) ForEach(fn func(subNode MlgNodeKind)) {
+func (n *ProofByThenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.By.Items, fn)
-	forEachProofItem(n.Note.Note, fn)
+	forEachProofItem(n.Then.Then, fn)
 }
 
-func (n *ProofBecauseNoteGroup) ForEach(fn func(subNode MlgNodeKind)) {
+func (n *ProofBecauseThenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Because.Because, fn)
-	forEachProofItem(n.Note.Note, fn)
+	forEachProofItem(n.Then.Then, fn)
 }
 
 func (n *ProofIndependentlyGroup) ForEach(fn func(subNode MlgNodeKind)) {

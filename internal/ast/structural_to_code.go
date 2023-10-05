@@ -712,19 +712,19 @@ func (n *ProofNoteBecauseGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *ProofByNoteGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ProofByThenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, hasDot && n.Label == nil)
-	db.AppendProofItemsSection(LowerNoteName, n.Note.Note, indent, false)
+	db.AppendProofItemsSection(LowerThenName, n.Then.Then, indent, false)
 	return db.Lines()
 }
 
-func (n *ProofBecauseNoteGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ProofBecauseThenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, hasDot && n.Label == nil)
-	db.AppendProofItemsSection(LowerNoteName, n.Note.Note, indent, false)
+	db.AppendProofItemsSection(LowerThenName, n.Then.Then, indent, false)
 	return db.Lines()
 }
 

@@ -1442,8 +1442,8 @@ func (*ProofIfGroup) ProofItemKind()                      {}
 func (*ProofIffGroup) ProofItemKind()                     {}
 func (*ProofNoteByGroup) ProofItemKind()                  {}
 func (*ProofNoteBecauseGroup) ProofItemKind()             {}
-func (*ProofByNoteGroup) ProofItemKind()                  {}
-func (*ProofBecauseNoteGroup) ProofItemKind()             {}
+func (*ProofByThenGroup) ProofItemKind()                  {}
+func (*ProofBecauseThenGroup) ProofItemKind()             {}
 func (*ProofIndependentlyGroup) ProofItemKind()           {}
 func (*ProofChainGroup) ProofItemKind()                   {}
 func (*ProofSupposeGroup) ProofItemKind()                 {}
@@ -1475,15 +1475,15 @@ type ProofNoteByGroup struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var ProofByNoteSections = []string{
+var ProofByThenSections = []string{
 	LowerByName,
-	LowerNoteName,
+	LowerThenName,
 }
 
-type ProofByNoteGroup struct {
+type ProofByThenGroup struct {
 	Label          *GroupLabel
 	By             ProofBySection
-	Note           ProofNoteSection
+	Then           ProofThenSection
 	CommonMetaData CommonMetaData
 }
 
@@ -1501,15 +1501,15 @@ type ProofNoteBecauseGroup struct {
 	CommonMetaData CommonMetaData
 }
 
-var ProofBecauseNoteSections = []string{
+var ProofBecauseThenSections = []string{
 	LowerBecauseName,
-	LowerNoteName,
+	LowerThenName,
 }
 
-type ProofBecauseNoteGroup struct {
+type ProofBecauseThenGroup struct {
 	Label          *GroupLabel
 	Because        ProofBecauseSection
-	Note           ProofNoteSection
+	Then           ProofThenSection
 	CommonMetaData CommonMetaData
 }
 

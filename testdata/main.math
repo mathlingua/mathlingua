@@ -572,9 +572,9 @@ Proof:
 . note: "something"
   because: "something"
 . by: "\(something)"
-  note: "something"
+  then: "something"
 . because: "something"
-  note: "something"
+  then: "something"
 . independently:
   . "abc"
   . "xyz"

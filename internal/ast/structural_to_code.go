@@ -715,7 +715,8 @@ func (n *ProofThusByGroup) ToCode(indent int, hasDot bool) []string {
 func (n *ProofThereforeByGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.AppendProofItemsSection(LowerThereforeName, n.Therefore.Therefore, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerThereforeName, n.Therefore.Therefore,
+		indent, hasDot && n.Label == nil)
 	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
 	return db.Lines()
 }
@@ -765,7 +766,8 @@ func (n *ProofThusBecauseGroup) ToCode(indent int, hasDot bool) []string {
 func (n *ProofThereforeBecauseGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.AppendProofItemsSection(LowerThereforeName, n.Therefore.Therefore, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerThereforeName, n.Therefore.Therefore,
+		indent, hasDot && n.Label == nil)
 	db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
 	return db.Lines()
 }

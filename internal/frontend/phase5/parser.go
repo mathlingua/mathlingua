@@ -3109,7 +3109,8 @@ func (p *parser) toProofThereforeByGroup(group phase4.Group) (ast.ProofTherefore
 	}
 
 	label := p.getGroupLabel(group, false)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofThereforeBySections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker,
+		ast.ProofThereforeBySections...)
 	if !ok {
 		return ast.ProofThereforeByGroup{}, false
 	}
@@ -3228,7 +3229,9 @@ func (p *parser) toProofThusBecauseGroup(group phase4.Group) (ast.ProofThusBecau
 	}, true
 }
 
-func (p *parser) toProofThereforeBecauseGroup(group phase4.Group) (ast.ProofThereforeBecauseGroup, bool) {
+func (p *parser) toProofThereforeBecauseGroup(
+	group phase4.Group,
+) (ast.ProofThereforeBecauseGroup, bool) {
 	if !startsWithSections(group, ast.LowerThereforeName, ast.LowerBecauseName) {
 		return ast.ProofThereforeBecauseGroup{}, false
 	}

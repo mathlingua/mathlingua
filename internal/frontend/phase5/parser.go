@@ -2943,9 +2943,31 @@ func (p *parser) toProofItem(arg phase4.Argument) ast.ProofItemKind {
 			return &grp
 		} else if grp, ok := p.toProofIffGroup(*group); ok {
 			return &grp
-		} else if grp, ok := p.toProofNoteByGroup(*group); ok {
+		} else if grp, ok := p.toProofThenByGroup(*group); ok {
 			return &grp
-		} else if grp, ok := p.toProofNoteBecauseGroup(*group); ok {
+		} else if grp, ok := p.toProofThusByGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofThereforeByGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofHenceByGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofNoticeByGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofNextByGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofThenBecauseGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofThusBecauseGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofThereforeBecauseGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofHenceBecauseGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofNoticeBecauseGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofNextBecauseGroup(*group); ok {
+			return &grp
+		} else if grp, ok := p.toProofNextByGroup(*group); ok {
 			return &grp
 		} else if grp, ok := p.toProofByThenGroup(*group); ok {
 			return &grp
@@ -2984,46 +3006,292 @@ func (p *parser) toProofItem(arg phase4.Argument) ast.ProofItemKind {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (p *parser) toProofNoteByGroup(group phase4.Group) (ast.ProofNoteByGroup, bool) {
-	if !startsWithSections(group, ast.LowerNoteName, ast.LowerByName) {
-		return ast.ProofNoteByGroup{}, false
+func (p *parser) toProofNoticeSection(section phase4.Section) *ast.ProofNoticeSection {
+	return &ast.ProofNoticeSection{
+		Notice:         p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toProofThusSection(section phase4.Section) *ast.ProofThusSection {
+	return &ast.ProofThusSection{
+		Thus:           p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toProofThereforeSection(section phase4.Section) *ast.ProofThereforeSection {
+	return &ast.ProofThereforeSection{
+		Therefore:      p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toProofHenceSection(section phase4.Section) *ast.ProofHenceSection {
+	return &ast.ProofHenceSection{
+		Hence:          p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toProofNextSection(section phase4.Section) *ast.ProofNextSection {
+	return &ast.ProofNextSection{
+		Next:           p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toProofNoticeByGroup(group phase4.Group) (ast.ProofNoticeByGroup, bool) {
+	if !startsWithSections(group, ast.LowerNoticeName, ast.LowerByName) {
+		return ast.ProofNoticeByGroup{}, false
 	}
 
 	label := p.getGroupLabel(group, false)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofNoteBySections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofNoticeBySections...)
 	if !ok {
-		return ast.ProofNoteByGroup{}, false
+		return ast.ProofNoticeByGroup{}, false
 	}
-	note := *p.toProofNoteSection(sections[ast.LowerNoteName])
+	notice := *p.toProofNoticeSection(sections[ast.LowerNoticeName])
 	by := *p.toProofBySection(sections[ast.LowerByName])
-	return ast.ProofNoteByGroup{
+	return ast.ProofNoticeByGroup{
 		Label:          label,
-		Note:           note,
+		Notice:         notice,
 		By:             by,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
 
-func (p *parser) toProofNoteBecauseGroup(group phase4.Group) (ast.ProofNoteBecauseGroup, bool) {
-	if !startsWithSections(group, ast.LowerNoteName, ast.LowerBecauseName) {
-		return ast.ProofNoteBecauseGroup{}, false
+func (p *parser) toProofThenByGroup(group phase4.Group) (ast.ProofThenByGroup, bool) {
+	if !startsWithSections(group, ast.LowerThenName, ast.LowerByName) {
+		return ast.ProofThenByGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofThenBySections...)
+	if !ok {
+		return ast.ProofThenByGroup{}, false
+	}
+	then := *p.toProofThenSection(sections[ast.LowerThenName])
+	by := *p.toProofBySection(sections[ast.LowerByName])
+	return ast.ProofThenByGroup{
+		Label:          label,
+		Then:           then,
+		By:             by,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toProofThusByGroup(group phase4.Group) (ast.ProofThusByGroup, bool) {
+	if !startsWithSections(group, ast.LowerThusName, ast.LowerByName) {
+		return ast.ProofThusByGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofThusBySections...)
+	if !ok {
+		return ast.ProofThusByGroup{}, false
+	}
+	thus := *p.toProofThusSection(sections[ast.LowerThusName])
+	by := *p.toProofBySection(sections[ast.LowerByName])
+	return ast.ProofThusByGroup{
+		Label:          label,
+		Thus:           thus,
+		By:             by,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toProofThereforeByGroup(group phase4.Group) (ast.ProofThereforeByGroup, bool) {
+	if !startsWithSections(group, ast.LowerThereforeName, ast.LowerByName) {
+		return ast.ProofThereforeByGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofThereforeBySections...)
+	if !ok {
+		return ast.ProofThereforeByGroup{}, false
+	}
+	therefore := *p.toProofThereforeSection(sections[ast.LowerThereforeName])
+	by := *p.toProofBySection(sections[ast.LowerByName])
+	return ast.ProofThereforeByGroup{
+		Label:          label,
+		Therefore:      therefore,
+		By:             by,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toProofHenceByGroup(group phase4.Group) (ast.ProofHenceByGroup, bool) {
+	if !startsWithSections(group, ast.LowerHenceName, ast.LowerByName) {
+		return ast.ProofHenceByGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofHenceBySections...)
+	if !ok {
+		return ast.ProofHenceByGroup{}, false
+	}
+	hence := *p.toProofHenceSection(sections[ast.LowerHenceName])
+	by := *p.toProofBySection(sections[ast.LowerByName])
+	return ast.ProofHenceByGroup{
+		Label:          label,
+		Hence:          hence,
+		By:             by,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toProofNextByGroup(group phase4.Group) (ast.ProofNextByGroup, bool) {
+	if !startsWithSections(group, ast.LowerNextName, ast.LowerByName) {
+		return ast.ProofNextByGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofNextBySections...)
+	if !ok {
+		return ast.ProofNextByGroup{}, false
+	}
+	next := *p.toProofNextSection(sections[ast.LowerNextName])
+	by := *p.toProofBySection(sections[ast.LowerByName])
+	return ast.ProofNextByGroup{
+		Label:          label,
+		Next:           next,
+		By:             by,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toProofNoticeBecauseGroup(group phase4.Group) (ast.ProofNoticeBecauseGroup, bool) {
+	if !startsWithSections(group, ast.LowerNoticeName, ast.LowerBecauseName) {
+		return ast.ProofNoticeBecauseGroup{}, false
 	}
 
 	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker,
-		ast.ProofNoteBecauseSections...)
+		ast.ProofNoticeBecauseSections...)
 	if !ok {
-		return ast.ProofNoteBecauseGroup{}, false
+		return ast.ProofNoticeBecauseGroup{}, false
 	}
-	note := *p.toProofNoteSection(sections[ast.LowerNoteName])
+	notice := *p.toProofNoticeSection(sections[ast.LowerNoticeName])
 	because := *p.toProofBecauseSection(sections[ast.LowerBecauseName])
-	return ast.ProofNoteBecauseGroup{
+	return ast.ProofNoticeBecauseGroup{
 		Label:          label,
-		Note:           note,
+		Notice:         notice,
 		Because:        because,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
+
+func (p *parser) toProofThenBecauseGroup(group phase4.Group) (ast.ProofThenBecauseGroup, bool) {
+	if !startsWithSections(group, ast.LowerThenName, ast.LowerBecauseName) {
+		return ast.ProofThenBecauseGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker,
+		ast.ProofThenBecauseSections...)
+	if !ok {
+		return ast.ProofThenBecauseGroup{}, false
+	}
+	then := *p.toProofThenSection(sections[ast.LowerThenName])
+	because := *p.toProofBecauseSection(sections[ast.LowerBecauseName])
+	return ast.ProofThenBecauseGroup{
+		Label:          label,
+		Then:           then,
+		Because:        because,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toProofThusBecauseGroup(group phase4.Group) (ast.ProofThusBecauseGroup, bool) {
+	if !startsWithSections(group, ast.LowerThusName, ast.LowerBecauseName) {
+		return ast.ProofThusBecauseGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker,
+		ast.ProofThusBecauseSections...)
+	if !ok {
+		return ast.ProofThusBecauseGroup{}, false
+	}
+	thus := *p.toProofThusSection(sections[ast.LowerThusName])
+	because := *p.toProofBecauseSection(sections[ast.LowerBecauseName])
+	return ast.ProofThusBecauseGroup{
+		Label:          label,
+		Thus:           thus,
+		Because:        because,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toProofThereforeBecauseGroup(group phase4.Group) (ast.ProofThereforeBecauseGroup, bool) {
+	if !startsWithSections(group, ast.LowerThereforeName, ast.LowerBecauseName) {
+		return ast.ProofThereforeBecauseGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker,
+		ast.ProofThereforeBecauseSections...)
+	if !ok {
+		return ast.ProofThereforeBecauseGroup{}, false
+	}
+	therefore := *p.toProofThereforeSection(sections[ast.LowerThereforeName])
+	because := *p.toProofBecauseSection(sections[ast.LowerBecauseName])
+	return ast.ProofThereforeBecauseGroup{
+		Label:          label,
+		Therefore:      therefore,
+		Because:        because,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toProofHenceBecauseGroup(group phase4.Group) (ast.ProofHenceBecauseGroup, bool) {
+	if !startsWithSections(group, ast.LowerHenceName, ast.LowerBecauseName) {
+		return ast.ProofHenceBecauseGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker,
+		ast.ProofHenceBecauseSections...)
+	if !ok {
+		return ast.ProofHenceBecauseGroup{}, false
+	}
+	hence := *p.toProofHenceSection(sections[ast.LowerHenceName])
+	because := *p.toProofBecauseSection(sections[ast.LowerBecauseName])
+	return ast.ProofHenceBecauseGroup{
+		Label:          label,
+		Hence:          hence,
+		Because:        because,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toProofNextBecauseGroup(group phase4.Group) (ast.ProofNextBecauseGroup, bool) {
+	if !startsWithSections(group, ast.LowerNextName, ast.LowerBecauseName) {
+		return ast.ProofNextBecauseGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker,
+		ast.ProofNextBecauseSections...)
+	if !ok {
+		return ast.ProofNextBecauseGroup{}, false
+	}
+	next := *p.toProofNextSection(sections[ast.LowerNextName])
+	because := *p.toProofBecauseSection(sections[ast.LowerBecauseName])
+	return ast.ProofNextBecauseGroup{
+		Label:          label,
+		Next:           next,
+		Because:        because,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (p *parser) toProofByThenGroup(group phase4.Group) (ast.ProofByThenGroup, bool) {
 	if !startsWithSections(group, ast.LowerByName, ast.LowerThenName) {
@@ -3065,13 +3333,6 @@ func (p *parser) toProofBecauseThenGroup(group phase4.Group) (ast.ProofBecauseTh
 		Then:           then,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
-}
-
-func (p *parser) toProofNoteSection(section phase4.Section) *ast.ProofNoteSection {
-	return &ast.ProofNoteSection{
-		Note:           p.oneOrMoreProofItems(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
 }
 
 func (p *parser) toProofBySection(section phase4.Section) *ast.ProofBySection {

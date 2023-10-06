@@ -696,18 +696,100 @@ func (n *TextBlockItem) ToCode(indent int, hasDot bool) []string {
 	return buildIndentedLineSlice(indent, hasDot, "::"+n.Text+"::")
 }
 
-func (n *ProofNoteByGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ProofThenByGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.AppendProofItemsSection(LowerNoteName, n.Note.Note, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerThenName, n.Then.Then, indent, hasDot && n.Label == nil)
 	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
 	return db.Lines()
 }
 
-func (n *ProofNoteBecauseGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ProofThusByGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.AppendProofItemsSection(LowerNoteName, n.Note.Note, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerThusName, n.Thus.Thus, indent, hasDot && n.Label == nil)
+	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofThereforeByGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerThereforeName, n.Therefore.Therefore, indent, hasDot && n.Label == nil)
+	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofHenceByGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerHenceName, n.Hence.Hence, indent, hasDot && n.Label == nil)
+	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofNoticeByGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerNoticeName, n.Notice.Notice, indent, hasDot && n.Label == nil)
+	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofNextByGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerNextName, n.Next.Next, indent, hasDot && n.Label == nil)
+	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
+	return db.Lines()
+}
+
+//////////////////////////
+
+func (n *ProofThenBecauseGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerThenName, n.Then.Then, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofThusBecauseGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerThusName, n.Thus.Thus, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofThereforeBecauseGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerThereforeName, n.Therefore.Therefore, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofHenceBecauseGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerHenceName, n.Hence.Hence, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofNoticeBecauseGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerNoticeName, n.Notice.Notice, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
+	return db.Lines()
+}
+
+func (n *ProofNextBecauseGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerNextName, n.Next.Next, indent, hasDot && n.Label == nil)
 	db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
 	return db.Lines()
 }

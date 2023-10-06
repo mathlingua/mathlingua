@@ -1440,8 +1440,18 @@ func (*ProofForAllGroup) ProofItemKind()                  {}
 func (*ProofLetGroup) ProofItemKind()                     {}
 func (*ProofIfGroup) ProofItemKind()                      {}
 func (*ProofIffGroup) ProofItemKind()                     {}
-func (*ProofNoteByGroup) ProofItemKind()                  {}
-func (*ProofNoteBecauseGroup) ProofItemKind()             {}
+func (*ProofThenByGroup) ProofItemKind()                  {}
+func (*ProofThusByGroup) ProofItemKind()                  {}
+func (*ProofThereforeByGroup) ProofItemKind()             {}
+func (*ProofHenceByGroup) ProofItemKind()                 {}
+func (*ProofNoticeByGroup) ProofItemKind()                {}
+func (*ProofNextByGroup) ProofItemKind()                  {}
+func (*ProofThenBecauseGroup) ProofItemKind()             {}
+func (*ProofThusBecauseGroup) ProofItemKind()             {}
+func (*ProofThereforeBecauseGroup) ProofItemKind()        {}
+func (*ProofHenceBecauseGroup) ProofItemKind()            {}
+func (*ProofNoticeBecauseGroup) ProofItemKind()           {}
+func (*ProofNextBecauseGroup) ProofItemKind()             {}
 func (*ProofByThenGroup) ProofItemKind()                  {}
 func (*ProofBecauseThenGroup) ProofItemKind()             {}
 func (*ProofIndependentlyGroup) ProofItemKind()           {}
@@ -1461,15 +1471,194 @@ func (*Formulation[FormulationNodeKind]) ProofItemKind()  {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var ProofNoteBySections = []string{
-	LowerNoteName,
+var ProofNoticeBySections = []string{
+	LowerNoticeName,
 	LowerByName,
 }
 
-type ProofNoteByGroup struct {
+type ProofNoticeByGroup struct {
 	Label          *GroupLabel
-	Note           ProofNoteSection
+	Notice         ProofNoticeSection
 	By             ProofBySection
+	CommonMetaData CommonMetaData
+}
+
+type ProofNoticeSection struct {
+	Notice         []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofThenBySections = []string{
+	LowerThenName,
+	LowerByName,
+}
+
+type ProofThenByGroup struct {
+	Label          *GroupLabel
+	Then           ProofThenSection
+	By             ProofBySection
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofThusBySections = []string{
+	LowerThusName,
+	LowerByName,
+}
+
+type ProofThusByGroup struct {
+	Label          *GroupLabel
+	Thus           ProofThusSection
+	By             ProofBySection
+	CommonMetaData CommonMetaData
+}
+
+type ProofThusSection struct {
+	Thus           []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofThereforeBySections = []string{
+	LowerThereforeName,
+	LowerByName,
+}
+
+type ProofThereforeByGroup struct {
+	Label          *GroupLabel
+	Therefore      ProofThereforeSection
+	By             ProofBySection
+	CommonMetaData CommonMetaData
+}
+
+type ProofThereforeSection struct {
+	Therefore      []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofHenceBySections = []string{
+	LowerHenceName,
+	LowerByName,
+}
+
+type ProofHenceByGroup struct {
+	Label          *GroupLabel
+	Hence          ProofHenceSection
+	By             ProofBySection
+	CommonMetaData CommonMetaData
+}
+
+type ProofHenceSection struct {
+	Hence          []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofNextBySections = []string{
+	LowerNextName,
+	LowerByName,
+}
+
+type ProofNextByGroup struct {
+	Label          *GroupLabel
+	Next           ProofNextSection
+	By             ProofBySection
+	CommonMetaData CommonMetaData
+}
+
+type ProofNextSection struct {
+	Next           []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofNoticeBecauseSections = []string{
+	LowerNoticeName,
+	LowerBecauseName,
+}
+
+type ProofNoticeBecauseGroup struct {
+	Label          *GroupLabel
+	Notice         ProofNoticeSection
+	Because        ProofBecauseSection
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofThenBecauseSections = []string{
+	LowerThenName,
+	LowerBecauseName,
+}
+
+type ProofThenBecauseGroup struct {
+	Label          *GroupLabel
+	Then           ProofThenSection
+	Because        ProofBecauseSection
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofThusBecauseSections = []string{
+	LowerThusName,
+	LowerBecauseName,
+}
+
+type ProofThusBecauseGroup struct {
+	Label          *GroupLabel
+	Thus           ProofThusSection
+	Because        ProofBecauseSection
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofThereforeBecauseSections = []string{
+	LowerThereforeName,
+	LowerBecauseName,
+}
+
+type ProofThereforeBecauseGroup struct {
+	Label          *GroupLabel
+	Therefore      ProofThereforeSection
+	Because        ProofBecauseSection
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofHenceBecauseSections = []string{
+	LowerHenceName,
+	LowerBecauseName,
+}
+
+type ProofHenceBecauseGroup struct {
+	Label          *GroupLabel
+	Hence          ProofHenceSection
+	Because        ProofBecauseSection
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofNextBecauseSections = []string{
+	LowerNextName,
+	LowerBecauseName,
+}
+
+type ProofNextBecauseGroup struct {
+	Label          *GroupLabel
+	Next           ProofNextSection
+	Because        ProofBecauseSection
 	CommonMetaData CommonMetaData
 }
 
@@ -1489,18 +1678,6 @@ type ProofByThenGroup struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var ProofNoteBecauseSections = []string{
-	LowerNoteName,
-	LowerBecauseName,
-}
-
-type ProofNoteBecauseGroup struct {
-	Label          *GroupLabel
-	Note           ProofNoteSection
-	Because        ProofBecauseSection
-	CommonMetaData CommonMetaData
-}
-
 var ProofBecauseThenSections = []string{
 	LowerBecauseName,
 	LowerThenName,
@@ -1510,11 +1687,6 @@ type ProofBecauseThenGroup struct {
 	Label          *GroupLabel
 	Because        ProofBecauseSection
 	Then           ProofThenSection
-	CommonMetaData CommonMetaData
-}
-
-type ProofNoteSection struct {
-	Note           []ProofItemKind
 	CommonMetaData CommonMetaData
 }
 

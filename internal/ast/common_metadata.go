@@ -239,7 +239,7 @@ func (n *ProofBecauseThenGroup) GetCommonMetaData() *CommonMetaData { return &n.
 
 func (n *ProofIndependentlyGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
-func (n *ProofChainGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
+func (n *ProofSequentiallyGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
 func (n *ProofSupposeGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 

@@ -2975,7 +2975,7 @@ func (p *parser) toProofItem(arg phase4.Argument) ast.ProofItemKind {
 			return &grp
 		} else if grp, ok := p.toProofIndependentlyGroup(*group); ok {
 			return &grp
-		} else if grp, ok := p.toProofChainGroup(*group); ok {
+		} else if grp, ok := p.toProofSequentiallyGroup(*group); ok {
 			return &grp
 		} else if grp, ok := p.toProofSupposeGroup(*group); ok {
 			return &grp
@@ -3384,27 +3384,28 @@ func (p *parser) toProofIndependentlySection(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (p *parser) toProofChainGroup(group phase4.Group) (ast.ProofChainGroup, bool) {
-	if !startsWithSections(group, ast.LowerChainName) {
-		return ast.ProofChainGroup{}, false
+func (p *parser) toProofSequentiallyGroup(group phase4.Group) (ast.ProofSequentiallyGroup, bool) {
+	if !startsWithSections(group, ast.LowerSequentiallyName) {
+		return ast.ProofSequentiallyGroup{}, false
 	}
 
 	label := p.getGroupLabel(group, false)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofChainSections...)
+	sections, ok := IdentifySections(
+		p.path, group.Sections, p.tracker, ast.ProofSequentiallySections...)
 	if !ok {
-		return ast.ProofChainGroup{}, false
+		return ast.ProofSequentiallyGroup{}, false
 	}
-	chain := *p.toProofChainSection(sections[ast.LowerChainName])
-	return ast.ProofChainGroup{
+	sequentially := *p.toProofSequentiallySection(sections[ast.LowerSequentiallyName])
+	return ast.ProofSequentiallyGroup{
 		Label:          label,
-		Chain:          chain,
+		Sequentially:   sequentially,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
 
-func (p *parser) toProofChainSection(section phase4.Section) *ast.ProofChainSection {
-	return &ast.ProofChainSection{
-		Chain:          p.oneOrMoreProofItems(section),
+func (p *parser) toProofSequentiallySection(section phase4.Section) *ast.ProofSequentiallySection {
+	return &ast.ProofSequentiallySection{
+		Sequentially:   p.oneOrMoreProofItems(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }

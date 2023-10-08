@@ -598,7 +598,7 @@ Proof:
 . independently:
   . "abc"
   . "xyz"
-. chain:
+. sequentially:
   . "abc"
   . "xyz"
 . suppose: "abc"

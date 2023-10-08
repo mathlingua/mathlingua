@@ -1057,8 +1057,8 @@ func (n *ProofIndependentlyGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Independently.Independently, fn)
 }
 
-func (n *ProofChainGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Chain.Chain, fn)
+func (n *ProofSequentiallyGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Sequentially.Sequentially, fn)
 }
 
 func (n *ProofSupposeGroup) ForEach(fn func(subNode MlgNodeKind)) {

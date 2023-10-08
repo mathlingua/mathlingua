@@ -121,7 +121,7 @@ func getFixedCompletions() []string {
 		join(ast.ProofByThenSections),
 		join(ast.ProofBecauseThenSections),
 		join(ast.ProofIndependentlySections),
-		join(ast.ProofChainSections),
+		join(ast.ProofSequentiallySections),
 		join(ast.ProofSupposeSections),
 		join(ast.ProofBlockSections),
 		join(ast.ProofCasewiseSections),

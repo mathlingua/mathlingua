@@ -820,10 +820,10 @@ func (n *ProofIndependentlyGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *ProofChainGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ProofSequentiallyGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.AppendProofItemsSection(LowerChainName, n.Chain.Chain, indent, hasDot && n.Label == nil)
+	db.AppendProofItemsSection(LowerSequentiallyName, n.Sequentially.Sequentially, indent, hasDot && n.Label == nil)
 	return db.Lines()
 }
 

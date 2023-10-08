@@ -1460,9 +1460,7 @@ func (*ProofSupposeGroup) ProofItemKind()                 {}
 func (*ProofBlockGroup) ProofItemKind()                   {}
 func (*ProofCasewiseGroup) ProofItemKind()                {}
 func (*ProofWithoutLossOfGeneralityGroup) ProofItemKind() {}
-func (*ProofQedGroup) ProofItemKind()                     {}
 func (*ProofContradictingGroup) ProofItemKind()           {}
-func (*ProofDoneGroup) ProofItemKind()                    {}
 func (*ProofForContradictionGroup) ProofItemKind()        {}
 func (*ProofForInductionGroup) ProofItemKind()            {}
 func (*ProofClaimGroup) ProofItemKind()                   {}
@@ -1812,38 +1810,6 @@ type ProofWithoutLossOfGeneralityGroup struct {
 
 type ProofWithoutLossOfGeneralitySection struct {
 	Items          []ProofItemKind
-	CommonMetaData CommonMetaData
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-var ProofQedSections = []string{
-	LowerQedName,
-}
-
-type ProofQedGroup struct {
-	Label          *GroupLabel
-	Qed            ProofQedSection
-	CommonMetaData CommonMetaData
-}
-
-type ProofQedSection struct {
-	CommonMetaData CommonMetaData
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-var ProofDoneSections = []string{
-	LowerDoneName,
-}
-
-type ProofDoneGroup struct {
-	Label          *GroupLabel
-	Done           ProofDoneSection
-	CommonMetaData CommonMetaData
-}
-
-type ProofDoneSection struct {
 	CommonMetaData CommonMetaData
 }
 

@@ -2983,11 +2983,7 @@ func (p *parser) toProofItem(arg phase4.Argument) ast.ProofItemKind {
 			return &grp
 		} else if grp, ok := p.toProofWithoutLossOfGeneralityGroup(*group); ok {
 			return &grp
-		} else if grp, ok := p.toProofQedGroup(*group); ok {
-			return &grp
 		} else if grp, ok := p.toProofContradictingGroup(*group); ok {
-			return &grp
-		} else if grp, ok := p.toProofDoneGroup(*group); ok {
 			return &grp
 		} else if grp, ok := p.toProofForContradictionGroup(*group); ok {
 			return &grp
@@ -3508,31 +3504,6 @@ func (p *parser) toProofWithoutLossOfGeneralitySection(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (p *parser) toProofQedGroup(group phase4.Group) (ast.ProofQedGroup, bool) {
-	if !startsWithSections(group, ast.LowerQedName) {
-		return ast.ProofQedGroup{}, false
-	}
-
-	label := p.getGroupLabel(group, false)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofQedSections...)
-	if !ok {
-		return ast.ProofQedGroup{}, false
-	}
-	qed := *p.toProofQedSection(sections[ast.LowerQedName])
-	return ast.ProofQedGroup{
-		Label:          label,
-		Qed:            qed,
-		CommonMetaData: toCommonMetaData(group.MetaData),
-	}, true
-}
-
-func (p *parser) toProofQedSection(section phase4.Section) *ast.ProofQedSection {
-	p.verifyNoArgs(section)
-	return &ast.ProofQedSection{CommonMetaData: toCommonMetaData(section.MetaData)}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 func (p *parser) toProofContradictingGroup(group phase4.Group) (ast.ProofContradictingGroup, bool) {
 	if !startsWithSections(group, ast.LowerContradictingName) {
 		return ast.ProofContradictingGroup{}, false
@@ -3559,31 +3530,6 @@ func (p *parser) toProofContradictingSection(
 		Contradicting:  p.oneOrMoreTextItems(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func (p *parser) toProofDoneGroup(group phase4.Group) (ast.ProofDoneGroup, bool) {
-	if !startsWithSections(group, ast.LowerDoneName) {
-		return ast.ProofDoneGroup{}, false
-	}
-
-	label := p.getGroupLabel(group, false)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofDoneSections...)
-	if !ok {
-		return ast.ProofDoneGroup{}, false
-	}
-	done := *p.toProofDoneSection(sections[ast.LowerDoneName])
-	return ast.ProofDoneGroup{
-		Label:          label,
-		Done:           done,
-		CommonMetaData: toCommonMetaData(group.MetaData),
-	}, true
-}
-
-func (p *parser) toProofDoneSection(section phase4.Section) *ast.ProofDoneSection {
-	p.verifyNoArgs(section)
-	return &ast.ProofDoneSection{CommonMetaData: toCommonMetaData(section.MetaData)}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

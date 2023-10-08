@@ -1080,14 +1080,8 @@ func (n *ProofWithoutLossOfGeneralityGroup) ForEach(fn func(subNode MlgNodeKind)
 	forEachProofItem(n.WithoutLossOfGenerality.Items, fn)
 }
 
-func (n *ProofQedGroup) ForEach(fn func(subNode MlgNodeKind)) {
-}
-
 func (n *ProofContradictingGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.Contradicting.Contradicting, fn)
-}
-
-func (n *ProofDoneGroup) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
 func (n *ProofForContradictionGroup) ForEach(fn func(subNode MlgNodeKind)) {

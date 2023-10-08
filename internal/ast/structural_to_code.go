@@ -861,24 +861,10 @@ func (n *ProofWithoutLossOfGeneralityGroup) ToCode(indent int, hasDot bool) []st
 	return db.Lines()
 }
 
-func (n *ProofQedGroup) ToCode(indent int, hasDot bool) []string {
-	db := newDebugBuilder()
-	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.AppendSection(LowerQedName, indent, hasDot && n.Label == nil)
-	return db.Lines()
-}
-
 func (n *ProofContradictingGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.AppendTextItemsSection(LowerContradictingName, n.Contradicting.Contradicting, indent, hasDot)
-	return db.Lines()
-}
-
-func (n *ProofDoneGroup) ToCode(indent int, hasDot bool) []string {
-	db := newDebugBuilder()
-	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.AppendSection(LowerDoneName, indent, hasDot && n.Label == nil)
 	return db.Lines()
 }
 

@@ -577,9 +577,7 @@ Proof:
 . withoutLossOfGenerality:
   . "abc"
   . 'xyz'
-. qed:
 . contradicting: "a"
-. done:
 . forContradiction:
   suppose: "something"
   then: "something"

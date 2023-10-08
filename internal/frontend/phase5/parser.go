@@ -2985,7 +2985,7 @@ func (p *parser) toProofItem(arg phase4.Argument) ast.ProofItemKind {
 			return &grp
 		} else if grp, ok := p.toProofQedGroup(*group); ok {
 			return &grp
-		} else if grp, ok := p.toProofContradictionGroup(*group); ok {
+		} else if grp, ok := p.toProofContradictingGroup(*group); ok {
 			return &grp
 		} else if grp, ok := p.toProofDoneGroup(*group); ok {
 			return &grp
@@ -3533,30 +3533,32 @@ func (p *parser) toProofQedSection(section phase4.Section) *ast.ProofQedSection 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (p *parser) toProofContradictionGroup(group phase4.Group) (ast.ProofContradictionGroup, bool) {
-	if !startsWithSections(group, ast.LowerContradictionName) {
-		return ast.ProofContradictionGroup{}, false
+func (p *parser) toProofContradictingGroup(group phase4.Group) (ast.ProofContradictingGroup, bool) {
+	if !startsWithSections(group, ast.LowerContradictingName) {
+		return ast.ProofContradictingGroup{}, false
 	}
 
 	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(
-		p.path, group.Sections, p.tracker, ast.ProofContradictionSections...)
+		p.path, group.Sections, p.tracker, ast.ProofContradictingSections...)
 	if !ok {
-		return ast.ProofContradictionGroup{}, false
+		return ast.ProofContradictingGroup{}, false
 	}
-	contradiction := *p.toProofContradictionSection(sections[ast.LowerContradictionName])
-	return ast.ProofContradictionGroup{
+	contradicting := *p.toProofContradictingSection(sections[ast.LowerContradictingName])
+	return ast.ProofContradictingGroup{
 		Label:          label,
-		Contradiction:  contradiction,
+		Contradicting:  contradicting,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
 
-func (p *parser) toProofContradictionSection(
+func (p *parser) toProofContradictingSection(
 	section phase4.Section,
-) *ast.ProofContradictionSection {
-	p.verifyNoArgs(section)
-	return &ast.ProofContradictionSection{CommonMetaData: toCommonMetaData(section.MetaData)}
+) *ast.ProofContradictingSection {
+	return &ast.ProofContradictingSection{
+		Contradicting:  p.oneOrMoreTextItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

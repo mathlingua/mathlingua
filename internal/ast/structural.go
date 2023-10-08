@@ -1461,7 +1461,7 @@ func (*ProofBlockGroup) ProofItemKind()                   {}
 func (*ProofCasewiseGroup) ProofItemKind()                {}
 func (*ProofWithoutLossOfGeneralityGroup) ProofItemKind() {}
 func (*ProofQedGroup) ProofItemKind()                     {}
-func (*ProofContradictionGroup) ProofItemKind()           {}
+func (*ProofContradictingGroup) ProofItemKind()           {}
 func (*ProofDoneGroup) ProofItemKind()                    {}
 func (*ProofForContradictionGroup) ProofItemKind()        {}
 func (*ProofForInductionGroup) ProofItemKind()            {}
@@ -1849,17 +1849,18 @@ type ProofDoneSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var ProofContradictionSections = []string{
-	LowerContradictionName,
+var ProofContradictingSections = []string{
+	LowerContradictingName,
 }
 
-type ProofContradictionGroup struct {
+type ProofContradictingGroup struct {
 	Label          *GroupLabel
-	Contradiction  ProofContradictionSection
+	Contradicting  ProofContradictingSection
 	CommonMetaData CommonMetaData
 }
 
-type ProofContradictionSection struct {
+type ProofContradictingSection struct {
+	Contradicting  []TextItem
 	CommonMetaData CommonMetaData
 }
 

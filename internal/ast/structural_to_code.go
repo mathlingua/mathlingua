@@ -868,10 +868,10 @@ func (n *ProofQedGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *ProofContradictionGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ProofContradictingGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.AppendSection(LowerContradictionName, indent, hasDot && n.Label == nil)
+	db.AppendTextItemsSection(LowerContradictingName, n.Contradicting.Contradicting, indent, hasDot)
 	return db.Lines()
 }
 

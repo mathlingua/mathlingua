@@ -249,7 +249,7 @@ func (n *ProofCasewiseGroup) GetCommonMetaData() *CommonMetaData { return &n.Com
 
 func (n *ProofQedGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
-func (n *ProofContradictionGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
+func (n *ProofContradictingGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
 func (n *ProofDoneGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 

@@ -110,7 +110,7 @@ func (*ProofBlockGroup) StructuralNodeKind()                   {}
 func (*ProofCasewiseGroup) StructuralNodeKind()                {}
 func (*ProofWithoutLossOfGeneralityGroup) StructuralNodeKind() {}
 func (*ProofQedGroup) StructuralNodeKind()                     {}
-func (*ProofContradictionGroup) StructuralNodeKind()           {}
+func (*ProofContradictingGroup) StructuralNodeKind()           {}
 func (*ProofDoneGroup) StructuralNodeKind()                    {}
 func (*ProofForContradictionGroup) StructuralNodeKind()        {}
 func (*ProofForInductionGroup) StructuralNodeKind()            {}

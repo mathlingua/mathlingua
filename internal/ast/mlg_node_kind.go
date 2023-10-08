@@ -167,7 +167,7 @@ func (*ProofSupposeGroup) MlgNodeKind()                      {}
 func (*ProofBlockGroup) MlgNodeKind()                        {}
 func (*ProofWithoutLossOfGeneralityGroup) MlgNodeKind()      {}
 func (*ProofQedGroup) MlgNodeKind()                          {}
-func (*ProofContradictionGroup) MlgNodeKind()                {}
+func (*ProofContradictingGroup) MlgNodeKind()                {}
 func (*ProofDoneGroup) MlgNodeKind()                         {}
 func (*ProofForContradictionGroup) MlgNodeKind()             {}
 func (*ProofForInductionGroup) MlgNodeKind()                 {}

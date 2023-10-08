@@ -578,7 +578,7 @@ Proof:
   . "abc"
   . 'xyz'
 . qed:
-. contradiction:
+. contradicting: "a"
 . done:
 . forContradiction:
   suppose: "something"

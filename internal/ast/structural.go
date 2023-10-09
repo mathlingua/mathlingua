@@ -378,7 +378,7 @@ func (*SymbolWrittenGroup) ProvidesKind() {}
 func (*ViewGroup) ProvidesKind()          {}
 func (*EncodingGroup) ProvidesKind()      {}
 
-var SymbolSections = []string{
+var SymbolWrittenSections = []string{
 	LowerSymbolName,
 	LowerWrittenQuestionName,
 }
@@ -1239,6 +1239,8 @@ type ResourceKind interface {
 	ResourceKind()
 }
 
+var TitleSections = []string{LowerTitleName}
+
 type TitleGroup struct {
 	Title          TitleSection
 	CommonMetaData CommonMetaData
@@ -1248,6 +1250,8 @@ type TitleSection struct {
 	Title          TextItem
 	CommonMetaData CommonMetaData
 }
+
+var AuthorSections = []string{LowerAuthorName}
 
 type AuthorGroup struct {
 	Author         AuthorSection
@@ -1259,6 +1263,8 @@ type AuthorSection struct {
 	CommonMetaData CommonMetaData
 }
 
+var OffsetSections = []string{LowerOffsetName}
+
 type OffsetGroup struct {
 	Offset         OffsetSection
 	CommonMetaData CommonMetaData
@@ -1268,6 +1274,8 @@ type OffsetSection struct {
 	Offset         TextItem
 	CommonMetaData CommonMetaData
 }
+
+var UrlSections = []string{LowerUrlName}
 
 type UrlGroup struct {
 	Url            UrlSection
@@ -1279,6 +1287,8 @@ type UrlSection struct {
 	CommonMetaData CommonMetaData
 }
 
+var HomepageSections = []string{LowerHomepageName}
+
 type HomepageGroup struct {
 	Homepage       HomepageSection
 	CommonMetaData CommonMetaData
@@ -1288,6 +1298,8 @@ type HomepageSection struct {
 	Homepage       TextItem
 	CommonMetaData CommonMetaData
 }
+
+var TypeSections = []string{LowerTypeName}
 
 type TypeGroup struct {
 	Type           TypeSection
@@ -1299,6 +1311,8 @@ type TypeSection struct {
 	CommonMetaData CommonMetaData
 }
 
+var EditorSections = []string{LowerEditorName}
+
 type EditorGroup struct {
 	Editor         EditorSection
 	CommonMetaData CommonMetaData
@@ -1308,6 +1322,8 @@ type EditorSection struct {
 	Editor         []TextItem
 	CommonMetaData CommonMetaData
 }
+
+var EditionSections = []string{LowerEditionName}
 
 type EditionGroup struct {
 	Edition        EditionSection
@@ -1319,6 +1335,8 @@ type EditionSection struct {
 	CommonMetaData CommonMetaData
 }
 
+var InstitutionSections = []string{LowerInstitutionName}
+
 type InstitutionGroup struct {
 	Institution    InstitutionSection
 	CommonMetaData CommonMetaData
@@ -1328,6 +1346,8 @@ type InstitutionSection struct {
 	Institution    []TextItem
 	CommonMetaData CommonMetaData
 }
+
+var JournalSections = []string{LowerJournalName}
 
 type JournalGroup struct {
 	Journal        JournalSection
@@ -1339,6 +1359,8 @@ type JournalSection struct {
 	CommonMetaData CommonMetaData
 }
 
+var PublisherSections = []string{LowerPublisherName}
+
 type PublisherGroup struct {
 	Publisher      PublisherSection
 	CommonMetaData CommonMetaData
@@ -1348,6 +1370,8 @@ type PublisherSection struct {
 	Publisher      []TextItem
 	CommonMetaData CommonMetaData
 }
+
+var VolumeSections = []string{LowerVolumeName}
 
 type VolumeGroup struct {
 	Volume         VolumeSection
@@ -1359,6 +1383,8 @@ type VolumeSection struct {
 	CommonMetaData CommonMetaData
 }
 
+var MonthSections = []string{LowerMonthName}
+
 type MonthGroup struct {
 	Month          MonthSection
 	CommonMetaData CommonMetaData
@@ -1369,6 +1395,8 @@ type MonthSection struct {
 	CommonMetaData CommonMetaData
 }
 
+var YearSections = []string{LowerYearName}
+
 type YearGroup struct {
 	Year           YearSection
 	CommonMetaData CommonMetaData
@@ -1378,6 +1406,8 @@ type YearSection struct {
 	Year           TextItem
 	CommonMetaData CommonMetaData
 }
+
+var DescriptionSections = []string{LowerDescriptionName}
 
 type DescriptionGroup struct {
 	Description    DescriptionSection

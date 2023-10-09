@@ -535,7 +535,7 @@ func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGrou
 	}
 
 	label := p.getGroupLabel(group, false)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.SymbolSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.SymbolWrittenSections...)
 	if !ok {
 		return ast.SymbolWrittenGroup{}, false
 	}
@@ -2113,7 +2113,7 @@ func (p *parser) toTitleGroup(group phase4.Group) (ast.TitleGroup, bool) {
 		return ast.TitleGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerTitleName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.TitleSections...)
 	if !ok {
 		return ast.TitleGroup{}, false
 	}
@@ -2135,7 +2135,7 @@ func (p *parser) toAuthorGroup(group phase4.Group) (ast.AuthorGroup, bool) {
 		return ast.AuthorGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerAuthorName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.AuthorSections...)
 	if !ok {
 		return ast.AuthorGroup{}, false
 	}
@@ -2157,7 +2157,7 @@ func (p *parser) toOffsetGroup(group phase4.Group) (ast.OffsetGroup, bool) {
 		return ast.OffsetGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerOffsetName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.OffsetSections...)
 	if !ok {
 		return ast.OffsetGroup{}, false
 	}
@@ -2179,7 +2179,7 @@ func (p *parser) toUrlGroup(group phase4.Group) (ast.UrlGroup, bool) {
 		return ast.UrlGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerUrlName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.UrlSections...)
 	if !ok {
 		return ast.UrlGroup{}, false
 	}
@@ -2201,7 +2201,7 @@ func (p *parser) toHomepageGroup(group phase4.Group) (ast.HomepageGroup, bool) {
 		return ast.HomepageGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerHomepageName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.HomepageSections...)
 	if !ok {
 		return ast.HomepageGroup{}, false
 	}
@@ -2223,7 +2223,7 @@ func (p *parser) toTypeGroup(group phase4.Group) (ast.TypeGroup, bool) {
 		return ast.TypeGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerTypeName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.TypeSections...)
 	if !ok {
 		return ast.TypeGroup{}, false
 	}
@@ -2245,7 +2245,7 @@ func (p *parser) toEditionGroup(group phase4.Group) (ast.EditionGroup, bool) {
 		return ast.EditionGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerEditionName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.EditionSections...)
 	if !ok {
 		return ast.EditionGroup{}, false
 	}
@@ -2267,7 +2267,7 @@ func (p *parser) toEditorGroup(group phase4.Group) (ast.EditorGroup, bool) {
 		return ast.EditorGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerEditorName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.EditorSections...)
 	if !ok {
 		return ast.EditorGroup{}, false
 	}
@@ -2289,7 +2289,7 @@ func (p *parser) toInstitutionGroup(group phase4.Group) (ast.InstitutionGroup, b
 		return ast.InstitutionGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerInstitutionName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.InstitutionSections...)
 	if !ok {
 		return ast.InstitutionGroup{}, false
 	}
@@ -2311,7 +2311,7 @@ func (p *parser) toJournalGroup(group phase4.Group) (ast.JournalGroup, bool) {
 		return ast.JournalGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerJournalName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.JournalSections...)
 	if !ok {
 		return ast.JournalGroup{}, false
 	}
@@ -2333,7 +2333,7 @@ func (p *parser) toPublisherGroup(group phase4.Group) (ast.PublisherGroup, bool)
 		return ast.PublisherGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerPublisherName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.PublisherSections...)
 	if !ok {
 		return ast.PublisherGroup{}, false
 	}
@@ -2355,7 +2355,7 @@ func (p *parser) toVolumeGroup(group phase4.Group) (ast.VolumeGroup, bool) {
 		return ast.VolumeGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerVolumeName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.VolumeSections...)
 	if !ok {
 		return ast.VolumeGroup{}, false
 	}
@@ -2377,7 +2377,7 @@ func (p *parser) toMonthGroup(group phase4.Group) (ast.MonthGroup, bool) {
 		return ast.MonthGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerMonthName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.MonthSections...)
 	if !ok {
 		return ast.MonthGroup{}, false
 	}
@@ -2399,7 +2399,7 @@ func (p *parser) toYearGroup(group phase4.Group) (ast.YearGroup, bool) {
 		return ast.YearGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerYearName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.YearSections...)
 	if !ok {
 		return ast.YearGroup{}, false
 	}
@@ -2421,7 +2421,7 @@ func (p *parser) toDescriptionGroup(group phase4.Group) (ast.DescriptionGroup, b
 		return ast.DescriptionGroup{}, false
 	}
 
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerDescriptionName)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.DescriptionSections...)
 	if !ok {
 		return ast.DescriptionGroup{}, false
 	}

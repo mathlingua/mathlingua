@@ -162,7 +162,7 @@ func (*ProofNextBecauseGroup) MlgNodeKind()                  {}
 func (*ProofByThenGroup) MlgNodeKind()                       {}
 func (*ProofBecauseThenGroup) MlgNodeKind()                  {}
 func (*ProofIndependentlyGroup) MlgNodeKind()                {}
-func (*ProofSequentiallyGroup) MlgNodeKind()                 {}
+func (*ProofStepwiseGroup) MlgNodeKind()                     {}
 func (*ProofSupposeGroup) MlgNodeKind()                      {}
 func (*ProofBlockGroup) MlgNodeKind()                        {}
 func (*ProofWithoutLossOfGeneralityGroup) MlgNodeKind()      {}

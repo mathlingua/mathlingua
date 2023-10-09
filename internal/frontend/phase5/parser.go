@@ -2975,7 +2975,7 @@ func (p *parser) toProofItem(arg phase4.Argument) ast.ProofItemKind {
 			return &grp
 		} else if grp, ok := p.toProofIndependentlyGroup(*group); ok {
 			return &grp
-		} else if grp, ok := p.toProofSequentiallyGroup(*group); ok {
+		} else if grp, ok := p.toProofStepwiseGroup(*group); ok {
 			return &grp
 		} else if grp, ok := p.toProofSupposeGroup(*group); ok {
 			return &grp
@@ -3380,28 +3380,28 @@ func (p *parser) toProofIndependentlySection(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (p *parser) toProofSequentiallyGroup(group phase4.Group) (ast.ProofSequentiallyGroup, bool) {
-	if !startsWithSections(group, ast.LowerSequentiallyName) {
-		return ast.ProofSequentiallyGroup{}, false
+func (p *parser) toProofStepwiseGroup(group phase4.Group) (ast.ProofStepwiseGroup, bool) {
+	if !startsWithSections(group, ast.LowerStepwiseName) {
+		return ast.ProofStepwiseGroup{}, false
 	}
 
 	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(
-		p.path, group.Sections, p.tracker, ast.ProofSequentiallySections...)
+		p.path, group.Sections, p.tracker, ast.ProofStepwiseSections...)
 	if !ok {
-		return ast.ProofSequentiallyGroup{}, false
+		return ast.ProofStepwiseGroup{}, false
 	}
-	sequentially := *p.toProofSequentiallySection(sections[ast.LowerSequentiallyName])
-	return ast.ProofSequentiallyGroup{
+	stepwise := *p.toProofStepwiseSection(sections[ast.LowerStepwiseName])
+	return ast.ProofStepwiseGroup{
 		Label:          label,
-		Sequentially:   sequentially,
+		Stepwise:       stepwise,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
 
-func (p *parser) toProofSequentiallySection(section phase4.Section) *ast.ProofSequentiallySection {
-	return &ast.ProofSequentiallySection{
-		Sequentially:   p.oneOrMoreProofItems(section),
+func (p *parser) toProofStepwiseSection(section phase4.Section) *ast.ProofStepwiseSection {
+	return &ast.ProofStepwiseSection{
+		Stepwise:       p.oneOrMoreProofItems(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }

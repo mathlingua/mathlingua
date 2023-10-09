@@ -1455,7 +1455,7 @@ func (*ProofNextBecauseGroup) ProofItemKind()             {}
 func (*ProofByThenGroup) ProofItemKind()                  {}
 func (*ProofBecauseThenGroup) ProofItemKind()             {}
 func (*ProofIndependentlyGroup) ProofItemKind()           {}
-func (*ProofSequentiallyGroup) ProofItemKind()            {}
+func (*ProofStepwiseGroup) ProofItemKind()                {}
 func (*ProofSupposeGroup) ProofItemKind()                 {}
 func (*ProofBlockGroup) ProofItemKind()                   {}
 func (*ProofCasewiseGroup) ProofItemKind()                {}
@@ -1717,18 +1717,18 @@ type ProofIndependentlySection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var ProofSequentiallySections = []string{
-	LowerSequentiallyName,
+var ProofStepwiseSections = []string{
+	LowerStepwiseName,
 }
 
-type ProofSequentiallyGroup struct {
+type ProofStepwiseGroup struct {
 	Label          *GroupLabel
-	Sequentially   ProofSequentiallySection
+	Stepwise       ProofStepwiseSection
 	CommonMetaData CommonMetaData
 }
 
-type ProofSequentiallySection struct {
-	Sequentially   []ProofItemKind
+type ProofStepwiseSection struct {
+	Stepwise       []ProofItemKind
 	CommonMetaData CommonMetaData
 }
 

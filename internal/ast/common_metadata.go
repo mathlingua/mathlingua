@@ -278,3 +278,10 @@ func (n *ProofLetGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMe
 func (n *ProofIfGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
 func (n *ProofIffGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
+
+func (n *ProofThenGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
+func (n *ProofThusGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
+func (n *ProofThereforeGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
+func (n *ProofHenceGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
+func (n *ProofNoticeGroup) GetCommonMetaData() *CommonMetaData    { return &n.CommonMetaData }
+func (n *ProofNextGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }

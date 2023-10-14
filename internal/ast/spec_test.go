@@ -774,6 +774,42 @@ var all_group_test_cases = []testCase{
 			"means",
 		},
 	},
+	{
+		actual: ProofThenSections,
+		expected: []string{
+			"then",
+		},
+	},
+	{
+		actual: ProofThusSections,
+		expected: []string{
+			"thus",
+		},
+	},
+	{
+		actual: ProofThereforeSections,
+		expected: []string{
+			"therefore",
+		},
+	},
+	{
+		actual: ProofHenceSections,
+		expected: []string{
+			"hence",
+		},
+	},
+	{
+		actual: ProofNoticeSections,
+		expected: []string{
+			"notice",
+		},
+	},
+	{
+		actual: ProofNextSections,
+		expected: []string{
+			"next",
+		},
+	},
 }
 
 func TestSpec(t *testing.T) {

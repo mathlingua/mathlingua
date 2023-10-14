@@ -89,6 +89,12 @@ func (*YearGroup) StructuralNodeKind()                         {}
 func (*DescriptionGroup) StructuralNodeKind()                  {}
 func (*Document) StructuralNodeKind()                          {}
 func (*TextBlockItem) StructuralNodeKind()                     {}
+func (*ProofThenGroup) StructuralNodeKind()                    {}
+func (*ProofThusGroup) StructuralNodeKind()                    {}
+func (*ProofThereforeGroup) StructuralNodeKind()               {}
+func (*ProofHenceGroup) StructuralNodeKind()                   {}
+func (*ProofNoticeGroup) StructuralNodeKind()                  {}
+func (*ProofNextGroup) StructuralNodeKind()                    {}
 func (*ProofThenByGroup) StructuralNodeKind()                  {}
 func (*ProofThusByGroup) StructuralNodeKind()                  {}
 func (*ProofThereforeByGroup) StructuralNodeKind()             {}

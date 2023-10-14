@@ -983,6 +983,30 @@ func (n *DirectionalParam) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.SquareParams, fn)
 }
 
+func (n *ProofThenGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Then.Then, fn)
+}
+
+func (n *ProofThusGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Thus.Thus, fn)
+}
+
+func (n *ProofThereforeGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Therefore.Therefore, fn)
+}
+
+func (n *ProofHenceGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Hence.Hence, fn)
+}
+
+func (n *ProofNoticeGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Notice.Notice, fn)
+}
+
+func (n *ProofNextGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.Next.Next, fn)
+}
+
 func (n *ProofThenByGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Then.Then, fn)
 	forEachTextItem(n.By.Items, fn)

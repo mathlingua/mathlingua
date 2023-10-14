@@ -696,6 +696,49 @@ func (n *TextBlockItem) ToCode(indent int, hasDot bool) []string {
 	return buildIndentedLineSlice(indent, hasDot, "::"+n.Text+"::")
 }
 
+func (n *ProofThenGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerThenName, n.Then.Then, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *ProofThusGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerThusName, n.Thus.Thus, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *ProofThereforeGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerThereforeName, n.Therefore.Therefore,
+		indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *ProofHenceGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerHenceName, n.Hence.Hence, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *ProofNoticeGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerNoticeName, n.Notice.Notice, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
+func (n *ProofNextGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendProofItemsSection(LowerNextName, n.Next.Next, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
 func (n *ProofThenByGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
@@ -744,8 +787,6 @@ func (n *ProofNextByGroup) ToCode(indent int, hasDot bool) []string {
 	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
 	return db.Lines()
 }
-
-//////////////////////////
 
 func (n *ProofThenBecauseGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()

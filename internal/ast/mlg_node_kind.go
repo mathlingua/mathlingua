@@ -147,6 +147,12 @@ func (*CurlyParam) MlgNodeKind()                             {}
 func (*CurlyArg) MlgNodeKind()                               {}
 func (*DirectionalParam) MlgNodeKind()                       {}
 func (*FunctionLiteralForm) MlgNodeKind()                    {}
+func (*ProofThenGroup) MlgNodeKind()                         {}
+func (*ProofThusGroup) MlgNodeKind()                         {}
+func (*ProofThereforeGroup) MlgNodeKind()                    {}
+func (*ProofHenceGroup) MlgNodeKind()                        {}
+func (*ProofNoticeGroup) MlgNodeKind()                       {}
+func (*ProofNextGroup) MlgNodeKind()                         {}
 func (*ProofThenByGroup) MlgNodeKind()                       {}
 func (*ProofThusByGroup) MlgNodeKind()                       {}
 func (*ProofThereforeByGroup) MlgNodeKind()                  {}

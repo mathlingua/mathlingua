@@ -289,3 +289,7 @@ func (n *ProofThereforeGroup) GetCommonMetaData() *CommonMetaData { return &n.Co
 func (n *ProofHenceGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
 func (n *ProofNoticeGroup) GetCommonMetaData() *CommonMetaData    { return &n.CommonMetaData }
 func (n *ProofNextGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
+
+func (n *SelectFromBuiltinExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}

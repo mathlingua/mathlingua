@@ -820,6 +820,10 @@ func (n Signature) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
+func (n *SelectFromBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.Target)
+}
+
 func (n *TypeMetaKind) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Signatures != nil {
 		forEachSignature(*n.Signatures, fn)

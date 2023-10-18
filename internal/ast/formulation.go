@@ -195,6 +195,7 @@ func (*ExpressionColonArrowItem) ExpressionKind()               {}
 func (*ExpressionColonDashArrowItem) ExpressionKind()           {}
 func (*Signature) ExpressionKind()                              {}
 func (*FunctionLiteralExpression) ExpressionKind()              {}
+func (*SelectFromBuiltinExpression) ExpressionKind()            {}
 
 // f(x + y, z) or (f + g)(x)
 type FunctionCallExpression struct {
@@ -323,6 +324,16 @@ type OrdinalCallExpression struct {
 type ChainExpression struct {
 	Parts               []ExpressionKind
 	HasTrailingOperator bool
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// \\select{statement|specification}:from{x}
+type SelectFromBuiltinExpression struct {
+	Kinds               []string
+	Target              NameForm
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

@@ -746,14 +746,16 @@ func (fp *formulationParser) pseudoExpression(
 			children = append(children, &set)
 		} else if sig, ok := fp.signature(); ok {
 			children = append(children, &sig)
-		} else if cmd, ok := fp.infixCommandExpression(); ok {
-			children = append(children, &cmd)
-		} else if cmd, ok := fp.commandExpression(false); ok {
-			children = append(children, &cmd)
 		} else if kind, ok := fp.typeMetaKind(); ok {
 			children = append(children, &kind)
 		} else if kind, ok := fp.formulationMetaKinds(); ok {
 			children = append(children, &kind)
+		} else if cmd, ok := fp.selectFromBuiltinExpression(); ok {
+			children = append(children, &cmd)
+		} else if cmd, ok := fp.infixCommandExpression(); ok {
+			children = append(children, &cmd)
+		} else if cmd, ok := fp.commandExpression(false); ok {
+			children = append(children, &cmd)
 		} else {
 			if fp.lexer.HasNext() {
 				next := fp.lexer.Next()
@@ -778,7 +780,7 @@ func (fp *formulationParser) typeMetaKind() (ast.TypeMetaKind, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
 	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
-		fmt.Println("A")
+		fp.lexer.RollBack(id)
 		return ast.TypeMetaKind{}, false
 	}
 
@@ -838,34 +840,7 @@ func (fp *formulationParser) typeMetaKind() (ast.TypeMetaKind, bool) {
 	}, true
 }
 
-func (fp *formulationParser) formulationMetaKinds() (ast.FormulationMetaKind, bool) {
-	start := fp.lexer.Position()
-	id := fp.lexer.Snapshot()
-	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
-		return ast.FormulationMetaKind{}, false
-	}
-
-	fp.expect(ast.BackSlash) // skip the \
-	fp.expect(ast.BackSlash) // skip the \
-
-	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "formulation" {
-		fp.lexer.RollBack(id)
-		return ast.FormulationMetaKind{}, false
-	}
-
-	fp.expect(ast.Name) // skip the "formulation" name
-
-	if !fp.has(ast.LCurly) {
-		fp.lexer.Commit(id)
-		return ast.FormulationMetaKind{
-			Kinds: nil,
-			CommonMetaData: ast.CommonMetaData{
-				Start: fp.getShiftedPosition(start),
-				Key:   fp.keyGen.Next(),
-			},
-		}, true
-	}
-
+func (fp *formulationParser) kinds() []string {
 	fp.expect(ast.LCurly)
 	kinds := make([]string, 0)
 	for fp.lexer.HasNext() {
@@ -893,9 +868,124 @@ func (fp *formulationParser) formulationMetaKinds() (ast.FormulationMetaKind, bo
 		}
 	}
 	fp.expect(ast.RCurly)
+	return kinds
+}
+
+func (fp *formulationParser) formulationMetaKinds() (ast.FormulationMetaKind, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
+		fp.lexer.RollBack(id)
+		return ast.FormulationMetaKind{}, false
+	}
+
+	fp.expect(ast.BackSlash) // skip the \
+	fp.expect(ast.BackSlash) // skip the \
+
+	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "formulation" {
+		fp.lexer.RollBack(id)
+		return ast.FormulationMetaKind{}, false
+	}
+
+	fp.expect(ast.Name) // skip the "formulation" name
+
+	if !fp.has(ast.LCurly) {
+		fp.lexer.Commit(id)
+		return ast.FormulationMetaKind{
+			Kinds: nil,
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+	kinds := fp.kinds()
 	fp.lexer.Commit(id)
 	return ast.FormulationMetaKind{
 		Kinds: &kinds,
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) selectFromBuiltinExpression() (ast.SelectFromBuiltinExpression, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
+		fp.lexer.RollBack(id)
+		return ast.SelectFromBuiltinExpression{}, false
+	}
+
+	fp.expect(ast.BackSlash) // skip the \
+	fp.expect(ast.BackSlash) // skip the \
+
+	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "select" {
+		fp.lexer.RollBack(id)
+		return ast.SelectFromBuiltinExpression{}, false
+	}
+
+	formulationName, _ := fp.expect(ast.Name) // skip the "select" name
+
+	if !fp.has(ast.LCurly) {
+		fp.errorAt("Expected at {", formulationName.Position)
+		fp.lexer.Commit(id)
+		return ast.SelectFromBuiltinExpression{
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+	kinds := fp.kinds()
+
+	if len(kinds) == 0 {
+		fp.errorAt("At least one argument must be provided", formulationName.Position)
+	}
+
+	if !fp.hasHas(ast.Colon, ast.Name) || fp.lexer.PeekPeek().Text != "from" {
+		fp.errorAt("Expected :from{} to follow \\\\select{}", formulationName.Position)
+		fp.lexer.Commit(id)
+		return ast.SelectFromBuiltinExpression{
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+
+	fp.expect(ast.Colon)
+	fromName, _ := fp.expect(ast.Name)
+
+	if !fp.has(ast.LCurly) {
+		fp.errorAt("Expected {", fromName.Position)
+		fp.lexer.Commit(id)
+		return ast.SelectFromBuiltinExpression{
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+
+	fp.expect(ast.LCurly)
+	target, ok := fp.nameForm()
+	if !ok {
+		fp.errorAt("Expected a name", fromName.Position)
+		fp.lexer.Commit(id)
+		return ast.SelectFromBuiltinExpression{
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+	fp.expect(ast.RCurly)
+	fp.lexer.Commit(id)
+	return ast.SelectFromBuiltinExpression{
+		Kinds:  kinds,
+		Target: target,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

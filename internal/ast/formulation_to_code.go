@@ -213,6 +213,23 @@ func (n *Signature) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	return result
 }
 
+func (n *SelectFromBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	result := "\\\\select{"
+	for i, name := range n.Kinds {
+		if i > 0 {
+			result += " | "
+		}
+		result += name
+	}
+	result += "}:from{"
+	result += n.Target.ToCode(fn)
+	result += "}"
+	return result
+}
+
 func (n *TypeMetaKind) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res

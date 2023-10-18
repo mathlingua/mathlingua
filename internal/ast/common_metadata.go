@@ -131,7 +131,11 @@ func (n *Signature) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
 
-func (n *MetaKinds) GetCommonMetaData() *CommonMetaData {
+func (n *TypeMetaKind) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *FormulationMetaKind) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
 

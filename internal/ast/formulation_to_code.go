@@ -213,18 +213,39 @@ func (n *Signature) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	return result
 }
 
-func (n *MetaKinds) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+func (n *TypeMetaKind) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
 	}
-	result := "[:"
-	for i, name := range n.Kinds {
-		if i > 0 {
-			result += "|"
+	result := "\\\\type"
+	if n.Signatures != nil {
+		result += "{"
+		for i, sig := range *n.Signatures {
+			if i > 0 {
+				result += " & "
+			}
+			result += sig.ToCode(fn)
 		}
-		result += name
+		result += "}"
 	}
-	result += ":]"
+	return result
+}
+
+func (n *FormulationMetaKind) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	result := "\\\\formulation"
+	if n.Kinds != nil {
+		result += "{"
+		for i, name := range *n.Kinds {
+			if i > 0 {
+				result += " | "
+			}
+			result += name
+		}
+		result += "}"
+	}
 	return result
 }
 

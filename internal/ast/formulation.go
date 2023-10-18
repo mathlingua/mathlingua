@@ -346,21 +346,24 @@ type KindKind interface {
 	KindKind()
 }
 
-// [: specification, states :]
-type MetaKinds struct {
-	Kinds               []string
+// \\type{\[set] & \[group]}
+type TypeMetaKind struct {
+	Signatures          *[]Signature
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
 
-func (*NameForm) KindKind()                      {} // x could refer to a type
-func (*CommandExpression) KindKind()             {} // \function:on{A}:to{B}
-func (*PrefixOperatorCallExpression) KindKind()  {} // *A
-func (*PostfixOperatorCallExpression) KindKind() {} // B!
-func (*InfixOperatorCallExpression) KindKind()   {} // A \to/ B
-func (*MetaKinds) KindKind()                     {} // [: specification, states :]
+// \\formulation{expression | statement}
+type FormulationMetaKind struct {
+	Kinds               *[]string
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+func (*NameForm) KindKind()            {} // x could refer to a type
+func (*CommandExpression) KindKind()   {} // \function:on{A}:to{B}
+func (*TypeMetaKind) KindKind()        {} // \\type{\[set] & \[group]}
+func (*FormulationMetaKind) KindKind() {} // \\formulation{expression | statement}
 
 ////////////////////////////// Colon Equals ////////////////////////////////////////////////////////
 

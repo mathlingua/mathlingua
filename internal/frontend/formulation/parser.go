@@ -750,7 +750,9 @@ func (fp *formulationParser) pseudoExpression(
 			children = append(children, &cmd)
 		} else if cmd, ok := fp.commandExpression(false); ok {
 			children = append(children, &cmd)
-		} else if kind, ok := fp.metaKinds(); ok {
+		} else if kind, ok := fp.typeMetaKind(); ok {
+			children = append(children, &kind)
+		} else if kind, ok := fp.formulationMetaKinds(); ok {
 			children = append(children, &kind)
 		} else {
 			if fp.lexer.HasNext() {
@@ -772,16 +774,102 @@ func (fp *formulationParser) pseudoExpression(
 	}, true
 }
 
-func (fp *formulationParser) metaKinds() (ast.MetaKinds, bool) {
+func (fp *formulationParser) typeMetaKind() (ast.TypeMetaKind, bool) {
 	start := fp.lexer.Position()
-	if !fp.has(ast.LSquareColon) {
-		return ast.MetaKinds{}, false
+	id := fp.lexer.Snapshot()
+	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
+		fmt.Println("A")
+		return ast.TypeMetaKind{}, false
 	}
 
-	fp.expect(ast.LSquareColon)
+	fp.expect(ast.BackSlash) // skip the \
+	fp.expect(ast.BackSlash) // skip the \
+
+	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "type" {
+		fp.lexer.RollBack(id)
+		return ast.TypeMetaKind{}, false
+	}
+
+	fp.expect(ast.Name) // skip the "type" name
+
+	if !fp.has(ast.LCurly) {
+		fp.lexer.Commit(id)
+		return ast.TypeMetaKind{
+			Signatures: nil,
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+
+	fp.expect(ast.LCurly)
+	signatures := make([]ast.Signature, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(ast.RCurly) {
+			break
+		}
+
+		if len(signatures) > 0 {
+			if !fp.has(ast.Operator) || fp.lexer.Peek().Text != "&" {
+				fp.error(fmt.Sprintf("Expected a &"))
+			}
+			if fp.has(ast.Operator) {
+				fp.next() // move past the token
+			}
+		}
+
+		if sig, ok := fp.signature(); ok {
+			signatures = append(signatures, sig)
+		} else {
+			fp.error("Expected a signature")
+			// move past the unexpected token
+			fp.lexer.Next()
+		}
+	}
+	fp.expect(ast.RCurly)
+	fp.lexer.Commit(id)
+	return ast.TypeMetaKind{
+		Signatures: &signatures,
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) formulationMetaKinds() (ast.FormulationMetaKind, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
+		return ast.FormulationMetaKind{}, false
+	}
+
+	fp.expect(ast.BackSlash) // skip the \
+	fp.expect(ast.BackSlash) // skip the \
+
+	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "formulation" {
+		fp.lexer.RollBack(id)
+		return ast.FormulationMetaKind{}, false
+	}
+
+	fp.expect(ast.Name) // skip the "formulation" name
+
+	if !fp.has(ast.LCurly) {
+		fp.lexer.Commit(id)
+		return ast.FormulationMetaKind{
+			Kinds: nil,
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+
+	fp.expect(ast.LCurly)
 	kinds := make([]string, 0)
 	for fp.lexer.HasNext() {
-		if fp.has(ast.ColonRSquare) {
+		if fp.has(ast.RCurly) {
 			break
 		}
 
@@ -804,9 +892,10 @@ func (fp *formulationParser) metaKinds() (ast.MetaKinds, bool) {
 			fp.lexer.Next()
 		}
 	}
-	fp.expect(ast.ColonRSquare)
-	return ast.MetaKinds{
-		Kinds: kinds,
+	fp.expect(ast.RCurly)
+	fp.lexer.Commit(id)
+	return ast.FormulationMetaKind{
+		Kinds: &kinds,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

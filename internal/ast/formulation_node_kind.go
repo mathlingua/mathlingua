@@ -46,7 +46,8 @@ func (*AsExpression) FormulationNodeKind()                           {}
 func (*OrdinalCallExpression) FormulationNodeKind()                  {}
 func (*ChainExpression) FormulationNodeKind()                        {}
 func (*Signature) FormulationNodeKind()                              {}
-func (*MetaKinds) FormulationNodeKind()                              {}
+func (*TypeMetaKind) FormulationNodeKind()                           {}
+func (*FormulationMetaKind) FormulationNodeKind()                    {}
 func (*StructuralColonEqualsForm) FormulationNodeKind()              {}
 func (*ExpressionColonEqualsItem) FormulationNodeKind()              {}
 func (*ExpressionColonArrowItem) FormulationNodeKind()               {}

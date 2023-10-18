@@ -120,7 +120,8 @@ func (*AsExpression) MlgNodeKind()                           {}
 func (*OrdinalCallExpression) MlgNodeKind()                  {}
 func (*ChainExpression) MlgNodeKind()                        {}
 func (*Signature) MlgNodeKind()                              {}
-func (*MetaKinds) MlgNodeKind()                              {}
+func (*TypeMetaKind) MlgNodeKind()                           {}
+func (*FormulationMetaKind) MlgNodeKind()                    {}
 func (*StructuralColonEqualsForm) MlgNodeKind()              {}
 func (*ExpressionColonEqualsItem) MlgNodeKind()              {}
 func (*ExpressionColonArrowItem) MlgNodeKind()               {}

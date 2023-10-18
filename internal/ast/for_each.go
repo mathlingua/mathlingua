@@ -820,7 +820,13 @@ func (n Signature) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
-func (n *MetaKinds) ForEach(fn func(subNode MlgNodeKind)) {
+func (n *TypeMetaKind) ForEach(fn func(subNode MlgNodeKind)) {
+	if n.Signatures != nil {
+		forEachSignature(*n.Signatures, fn)
+	}
+}
+
+func (n *FormulationMetaKind) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
@@ -1185,6 +1191,12 @@ func forEachFormulation(items []Formulation[FormulationNodeKind], fn func(n MlgN
 }
 
 func forEachTarget(items []Target, fn func(n MlgNodeKind)) {
+	for i, _ := range items {
+		fn(&items[i])
+	}
+}
+
+func forEachSignature(items []Signature, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(&items[i])
 	}

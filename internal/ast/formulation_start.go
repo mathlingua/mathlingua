@@ -34,7 +34,8 @@ func (n *AsExpression) Start() Position                           { return n.Com
 func (n *OrdinalCallExpression) Start() Position                  { return n.CommonMetaData.Start }
 func (n *ChainExpression) Start() Position                        { return n.CommonMetaData.Start }
 func (n *Signature) Start() Position                              { return n.CommonMetaData.Start }
-func (n *MetaKinds) Start() Position                              { return n.CommonMetaData.Start }
+func (n *TypeMetaKind) Start() Position                           { return n.CommonMetaData.Start }
+func (n *FormulationMetaKind) Start() Position                    { return n.CommonMetaData.Start }
 func (n *StructuralColonEqualsForm) Start() Position              { return n.CommonMetaData.Start }
 func (n *ExpressionColonEqualsItem) Start() Position              { return n.CommonMetaData.Start }
 func (n *ExpressionColonArrowItem) Start() Position               { return n.CommonMetaData.Start }

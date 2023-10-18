@@ -73,7 +73,23 @@ func (n *TupleExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) strin
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return "(" + commaSeparatedString(n.Args, fn) + ")"
+
+	result := ""
+	if n.IsCurly {
+		result += "{"
+	} else {
+		result += "("
+	}
+
+	result += commaSeparatedString(n.Args, fn)
+
+	if n.IsCurly {
+		result += "}"
+	} else {
+		result += ")"
+	}
+
+	return result
 }
 
 func (n *ConditionalSetExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {

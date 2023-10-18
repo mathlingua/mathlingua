@@ -372,10 +372,13 @@ type FormulationMetaKind struct {
 	FormulationMetaData FormulationMetaData
 }
 
-func (*NameForm) KindKind()            {} // x could refer to a type
-func (*CommandExpression) KindKind()   {} // \function:on{A}:to{B}
-func (*TypeMetaKind) KindKind()        {} // \\type{\[set] & \[group]}
-func (*FormulationMetaKind) KindKind() {} // \\formulation{expression | statement}
+func (*NameForm) KindKind()                      {} // x could refer to a type
+func (*CommandExpression) KindKind()             {} // \function:on{A}:to{B}
+func (*PrefixOperatorCallExpression) KindKind()  {} // *A
+func (*PostfixOperatorCallExpression) KindKind() {} // B!
+func (*InfixOperatorCallExpression) KindKind()   {} // A \to/ B
+func (*TypeMetaKind) KindKind()                  {} // \\type{\[set] & \[group]}
+func (*FormulationMetaKind) KindKind()           {} // \\formulation{expression | statement}
 
 ////////////////////////////// Colon Equals ////////////////////////////////////////////////////////
 

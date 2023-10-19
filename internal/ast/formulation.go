@@ -214,10 +214,10 @@ type FunctionLiteralExpression struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// (x + y, z) or {x}
+// (x + y, z) or (:x:)
 type TupleExpression struct {
 	Args                []ExpressionKind
-	IsCurly             bool
+	IsInvisible         bool
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

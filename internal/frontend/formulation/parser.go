@@ -1050,17 +1050,17 @@ func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpressio
 }
 
 func (fp *formulationParser) singleItemTupleExpression() (ast.TupleExpression, bool) {
-	if tup, ok := fp.singleItemParenOrCurlyTupleExpression(true); ok {
+	if tup, ok := fp.singleItemParenOrInvisibleTupleExpression(true); ok {
 		return tup, true
 	}
-	return fp.singleItemParenOrCurlyTupleExpression(false)
+	return fp.singleItemParenOrInvisibleTupleExpression(false)
 }
 
-func (fp *formulationParser) singleItemParenOrCurlyTupleExpression(
-	isCurly bool,
+func (fp *formulationParser) singleItemParenOrInvisibleTupleExpression(
+	isInvisible bool,
 ) (ast.TupleExpression, bool) {
 	id := fp.lexer.Snapshot()
-	tup, ok := fp.parenOrCurlyTupleExpression(isCurly)
+	tup, ok := fp.parenOrInvisibleTupleExpression(isInvisible)
 	if !ok || len(tup.Args) != 1 {
 		fp.lexer.RollBack(id)
 		return ast.TupleExpression{}, false
@@ -1070,28 +1070,30 @@ func (fp *formulationParser) singleItemParenOrCurlyTupleExpression(
 }
 
 func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
-	if tup, ok := fp.parenOrCurlyTupleExpression(true); ok {
+	if tup, ok := fp.parenOrInvisibleTupleExpression(true); ok {
 		return tup, true
 	}
-	return fp.parenOrCurlyTupleExpression(false)
+	return fp.parenOrInvisibleTupleExpression(false)
 }
 
-func (fp *formulationParser) parenOrCurlyTupleExpression(isCurly bool) (ast.TupleExpression, bool) {
+func (fp *formulationParser) parenOrInvisibleTupleExpression(
+	isInvisible bool,
+) (ast.TupleExpression, bool) {
 	left := ast.LParen
 	right := ast.RParen
 
-	if isCurly {
-		left = ast.LCurly
-		right = ast.RCurly
+	if isInvisible {
+		left = ast.LParenColon
+		right = ast.ColonRParen
+	}
+
+	if !fp.has(left) {
+		return ast.TupleExpression{}, false
 	}
 
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-	_, ok := fp.token(left)
-	if !ok {
-		fp.lexer.RollBack(id)
-		return ast.TupleExpression{}, false
-	}
+	fp.expect(left)
 	args := make([]ast.ExpressionKind, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(right) {
@@ -1102,7 +1104,7 @@ func (fp *formulationParser) parenOrCurlyTupleExpression(isCurly bool) (ast.Tupl
 			fp.expect(ast.Comma)
 		}
 
-		arg, ok := fp.expressionKind()
+		arg, ok := fp.expressionKind(ast.ColonRParen)
 		if !ok {
 			fp.lexer.RollBack(id)
 			return ast.TupleExpression{}, false
@@ -1110,15 +1112,15 @@ func (fp *formulationParser) parenOrCurlyTupleExpression(isCurly bool) (ast.Tupl
 		args = append(args, arg)
 	}
 	fp.expect(right)
-	fp.lexer.Commit(id)
 
-	if isCurly && len(args) != 1 {
-		fp.errorAt("A {...} must contain one element", start)
+	if isInvisible && len(args) != 1 {
+		fp.errorAt("A (:...:) must contain one element", start)
 	}
 
+	fp.lexer.Commit(id)
 	return ast.TupleExpression{
-		Args:    args,
-		IsCurly: isCurly,
+		Args:        args,
+		IsInvisible: isInvisible,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

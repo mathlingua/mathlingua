@@ -114,11 +114,20 @@ func getTokens(path ast.Path, text string, tracker frontend.IDiagnosticTracker) 
 				Position: cur.Position,
 			})
 		case cur.Symbol == '(':
-			appendToken(ast.Token{
-				Type:     ast.LParen,
-				Text:     "(",
-				Position: cur.Position,
-			})
+			if i < len(chars) && chars[i].Symbol == ':' {
+				i++ // move past the :
+				appendToken(ast.Token{
+					Type:     ast.LParenColon,
+					Text:     "(:",
+					Position: cur.Position,
+				})
+			} else {
+				appendToken(ast.Token{
+					Type:     ast.LParen,
+					Text:     "(",
+					Position: cur.Position,
+				})
+			}
 		case cur.Symbol == ')':
 			appendToken(ast.Token{
 				Type:     ast.RParen,
@@ -126,20 +135,11 @@ func getTokens(path ast.Path, text string, tracker frontend.IDiagnosticTracker) 
 				Position: cur.Position,
 			})
 		case cur.Symbol == '[':
-			if i < len(chars) && chars[i].Symbol == ':' {
-				i++ // move past the :
-				appendToken(ast.Token{
-					Type:     ast.LSquareColon,
-					Text:     "[:",
-					Position: cur.Position,
-				})
-			} else {
-				appendToken(ast.Token{
-					Type:     ast.LSquare,
-					Text:     "[",
-					Position: cur.Position,
-				})
-			}
+			appendToken(ast.Token{
+				Type:     ast.LSquare,
+				Text:     "[",
+				Position: cur.Position,
+			})
 		case cur.Symbol == ']':
 			appendToken(ast.Token{
 				Type:     ast.RSquare,
@@ -263,11 +263,11 @@ func getTokens(path ast.Path, text string, tracker frontend.IDiagnosticTracker) 
 					Text:     ":->",
 					Position: cur.Position,
 				})
-			} else if i < len(chars) && chars[i].Symbol == ']' {
-				i++ // move past the ]
+			} else if i < len(chars) && chars[i].Symbol == ')' {
+				i++ // move past the )
 				appendToken(ast.Token{
-					Type:     ast.ColonRSquare,
-					Text:     ":]",
+					Type:     ast.ColonRParen,
+					Text:     ":)",
 					Position: cur.Position,
 				})
 			} else {

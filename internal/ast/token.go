@@ -64,10 +64,10 @@ const (
 	Extends               TokenType = "Extends"
 	As                    TokenType = "As"
 	At                    TokenType = "At"
-	LSquareColon          TokenType = "LSquareColon"
-	ColonRSquare          TokenType = "ColonRSquare"
 	RightArrow            TokenType = "RArrow"
 	ParenLabel            TokenType = "ParenLabel"
+	LParenColon           TokenType = "LParenColon"
+	ColonRParen           TokenType = "ColonRParen"
 )
 
 type Position struct {

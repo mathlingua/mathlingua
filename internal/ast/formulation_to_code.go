@@ -75,16 +75,16 @@ func (n *TupleExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) strin
 	}
 
 	result := ""
-	if n.IsCurly {
-		result += "{"
+	if n.IsInvisible {
+		result += "(:"
 	} else {
 		result += "("
 	}
 
 	result += commaSeparatedString(n.Args, fn)
 
-	if n.IsCurly {
-		result += "}"
+	if n.IsInvisible {
+		result += ":)"
 	} else {
 		result += ")"
 	}

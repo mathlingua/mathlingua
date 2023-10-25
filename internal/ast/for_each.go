@@ -824,6 +824,14 @@ func (n *SelectFromBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Target)
 }
 
+func (n *MapToElseBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.Target)
+	fn(n.To)
+	if n.Else != nil {
+		fn(n.Else)
+	}
+}
+
 func (n *TypeMetaKind) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Signatures != nil {
 		forEachSignature(*n.Signatures, fn)

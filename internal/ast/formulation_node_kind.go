@@ -69,3 +69,4 @@ func (*PostfixOperatorForm) FormulationNodeKind()                    {}
 func (*FunctionLiteralExpression) FormulationNodeKind()              {}
 func (*FunctionLiteralForm) FormulationNodeKind()                    {}
 func (*SelectFromBuiltinExpression) FormulationNodeKind()            {}
+func (*MapToElseBuiltinExpression) FormulationNodeKind()             {}

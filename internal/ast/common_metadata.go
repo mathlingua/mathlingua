@@ -293,3 +293,7 @@ func (n *ProofNextGroup) GetCommonMetaData() *CommonMetaData      { return &n.Co
 func (n *SelectFromBuiltinExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
+
+func (n *MapToElseBuiltinExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}

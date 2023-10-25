@@ -175,3 +175,7 @@ func (n *FunctionLiteralForm) GetFormulationMetaData() *FormulationMetaData {
 func (n *SelectFromBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
+
+func (n *MapToElseBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}

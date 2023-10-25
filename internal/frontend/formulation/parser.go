@@ -750,6 +750,8 @@ func (fp *formulationParser) pseudoExpression(
 			children = append(children, &kind)
 		} else if kind, ok := fp.formulationMetaKinds(); ok {
 			children = append(children, &kind)
+		} else if builtin, ok := fp.mapToElseBuiltinExpression(); ok {
+			children = append(children, &builtin)
 		} else if cmd, ok := fp.selectFromBuiltinExpression(); ok {
 			children = append(children, &cmd)
 		} else if cmd, ok := fp.infixCommandExpression(); ok {
@@ -903,6 +905,81 @@ func (fp *formulationParser) formulationMetaKinds() (ast.FormulationMetaKind, bo
 	fp.lexer.Commit(id)
 	return ast.FormulationMetaKind{
 		Kinds: &kinds,
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) mapToElseBuiltinExpression() (ast.MapToElseBuiltinExpression, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
+		fp.lexer.RollBack(id)
+		return ast.MapToElseBuiltinExpression{}, false
+	}
+
+	fp.expect(ast.BackSlash) // skip the \
+	fp.expect(ast.BackSlash) // skip the \
+
+	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "map" {
+		fp.lexer.RollBack(id)
+		return ast.MapToElseBuiltinExpression{}, false
+	}
+
+	mapName, _ := fp.expect(ast.Name) // skip the "map" name
+
+	if !fp.has(ast.LCurly) {
+		fp.errorAt("Expected at {", mapName.Position)
+		fp.lexer.Commit(id)
+		return ast.MapToElseBuiltinExpression{}, true
+	}
+
+	fp.expect(ast.LCurly)
+	target, ok := fp.ordinalCallExpression()
+	if !ok {
+		fp.errorAt("Expected an ordinal expression as an argument", mapName.Position)
+		fp.lexer.Commit(id)
+		return ast.MapToElseBuiltinExpression{}, true
+	}
+	fp.expect(ast.RCurly)
+
+	fp.expect(ast.Colon)
+	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "to" {
+		fp.lexer.Commit(id)
+		return ast.MapToElseBuiltinExpression{}, true
+	}
+
+	toName, _ := fp.expect(ast.Name) // skip the "to" name
+	fp.expect(ast.LCurly)
+	to, ok := fp.expressionKind()
+	if !ok {
+		fp.errorAt("Expected an expression", toName.Position)
+		fp.lexer.Commit(id)
+		return ast.MapToElseBuiltinExpression{}, true
+	}
+	fp.expect(ast.RCurly)
+
+	var elseExp ast.ExpressionKind
+	if fp.hasHas(ast.Colon, ast.Name) && fp.lexer.PeekPeek().Text == "else" {
+		fp.expect(ast.Colon)
+		elseName, _ := fp.expect(ast.Name) // skip the else
+		fp.expect(ast.LCurly)
+		elseExp, ok = fp.expressionKind()
+		if !ok {
+			fp.errorAt("Expected an expression", elseName.Position)
+			fp.lexer.Commit(id)
+			return ast.MapToElseBuiltinExpression{}, true
+		}
+		fp.expect(ast.RCurly)
+	}
+
+	fp.lexer.Commit(id)
+	return ast.MapToElseBuiltinExpression{
+		Target: target,
+		To:     to,
+		Else:   elseExp,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

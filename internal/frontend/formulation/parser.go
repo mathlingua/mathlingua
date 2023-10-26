@@ -252,6 +252,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 			IsVarArg: false,
 		}, false
 	}
+	varArgBounds := make([]ast.NameForm, 0)
 	id := fp.lexer.Snapshot()
 	fp.expect(ast.LCurly)
 	if fp.has(ast.Name) {
@@ -271,18 +272,27 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 		}
 		fp.next() // absorb the ...
 		bound, ok := fp.token(ast.Name)
-		if !ok {
-			fp.lexer.RollBack(id)
-			return ast.VarArgData{
-				IsVarArg: false,
-			}, false
+		if ok {
+			varArgBounds = append(varArgBounds,
+				ast.NameForm{
+					Text:            bound.Text,
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg: ast.VarArgData{
+						IsVarArg:            false,
+						VarArgNames:         nil,
+						VarArgBounds:        nil,
+						CommonMetaData:      ast.CommonMetaData{},
+						FormulationMetaData: ast.FormulationMetaData{},
+					},
+				})
 		}
 		fp.expect(ast.RCurly)
 		fp.lexer.Commit(id)
 		return ast.VarArgData{
 			IsVarArg: true,
 			VarArgNames: []ast.NameForm{
-				ast.NameForm{
+				{
 					Text:            varName.Text,
 					IsStropped:      false,
 					HasQuestionMark: false,
@@ -295,20 +305,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 					},
 				},
 			},
-			VarArgBounds: []ast.NameForm{
-				ast.NameForm{
-					Text:            bound.Text,
-					IsStropped:      false,
-					HasQuestionMark: false,
-					VarArg: ast.VarArgData{
-						IsVarArg:            false,
-						VarArgNames:         nil,
-						VarArgBounds:        nil,
-						CommonMetaData:      ast.CommonMetaData{},
-						FormulationMetaData: ast.FormulationMetaData{},
-					},
-				},
-			},
+			VarArgBounds: varArgBounds,
 			CommonMetaData: ast.CommonMetaData{
 				Start: start,
 				Key:   fp.keyGen.Next(),

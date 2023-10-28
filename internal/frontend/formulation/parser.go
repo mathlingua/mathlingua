@@ -1590,15 +1590,18 @@ func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (
 
 func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	ast.EnclosedNonCommandOperatorTarget, bool) {
+	if !fp.has(ast.LSquareColon) && !fp.has(ast.LSquareDot) {
+		return ast.EnclosedNonCommandOperatorTarget{}, false
+	}
+
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
+
 	hasLeftColon := false
-	if _, ok := fp.token(ast.Colon); ok {
+	if _, ok := fp.token(ast.LSquareColon); ok {
 		hasLeftColon = true
-	}
-	if _, ok := fp.token(ast.LSquare); !ok {
-		fp.lexer.RollBack(id)
-		return ast.EnclosedNonCommandOperatorTarget{}, false
+	} else {
+		fp.expect(ast.LSquareDot)
 	}
 
 	var target ast.ExpressionKind
@@ -1623,22 +1626,13 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 
-	if _, ok := fp.token(ast.RSquare); !ok {
-		fp.lexer.RollBack(id)
-		return ast.EnclosedNonCommandOperatorTarget{}, false
-	}
-
 	hasRightColon := false
-	if _, ok := fp.token(ast.Colon); ok {
+	if !fp.has(ast.ColonRSquare) && !fp.has(ast.DotRSquare) {
+		fp.errorAt("Expected a matching :] or .]", start)
+	} else if _, ok := fp.token(ast.ColonRSquare); ok {
 		hasRightColon = true
-	}
-
-	if !hasRightColon && fp.has(ast.LCurly) {
-		// in this case the text is of the form [...]{
-		// which means the [] should not be treated as a
-		// unit, but are instead part of a set expression
-		fp.lexer.RollBack(id)
-		return ast.EnclosedNonCommandOperatorTarget{}, false
+	} else {
+		fp.expect(ast.DotRSquare)
 	}
 
 	fp.lexer.Commit(id)

@@ -68,6 +68,10 @@ const (
 	ParenLabel            TokenType = "ParenLabel"
 	LParenColon           TokenType = "LParenColon"
 	ColonRParen           TokenType = "ColonRParen"
+	LSquareColon          TokenType = "LSquareColon"
+	ColonRSquare          TokenType = "ColonRSquare"
+	LSquareDot            TokenType = "LSquareDot"
+	DotRSquare            TokenType = "DotRSquare"
 )
 
 type Position struct {

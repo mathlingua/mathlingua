@@ -340,16 +340,19 @@ func (n *EnclosedNonCommandOperatorTarget) ToCode(
 	if res, ok := fn(n); ok {
 		return res
 	}
-	result := ""
+	result := "["
 	if n.HasLeftColon {
 		result += ":"
+	} else {
+		result += "."
 	}
-	result += "["
 	result += n.Target.ToCode(fn)
-	result += "]"
 	if n.HasRightColon {
 		result += ":"
+	} else {
+		result += "."
 	}
+	result += "]"
 	return result
 }
 

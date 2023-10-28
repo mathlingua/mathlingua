@@ -1932,16 +1932,16 @@ func (fp *formulationParser) directionParamParamKind() (ast.DirectionParamParamK
 	return nil, false
 }
 
-func (fp *formulationParser) squareDirectionalParams() (*[]ast.DirectionParamParamKind, bool) {
+func (fp *formulationParser) curlyDirectionalParams() (*[]ast.DirectionParamParamKind, bool) {
 	id := fp.lexer.Snapshot()
-	_, ok := fp.token(ast.LSquare)
+	_, ok := fp.token(ast.LCurly)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return nil, false
 	}
 	args := make([]ast.DirectionParamParamKind, 0)
 	for fp.lexer.HasNext() {
-		if fp.has(ast.RSquare) {
+		if fp.has(ast.RCurly) {
 			break
 		}
 
@@ -1956,7 +1956,7 @@ func (fp *formulationParser) squareDirectionalParams() (*[]ast.DirectionParamPar
 		}
 		args = append(args, arg)
 	}
-	fp.expect(ast.RSquare)
+	fp.expect(ast.RCurly)
 	fp.lexer.Commit(id)
 	return &args, true
 }
@@ -1972,7 +1972,7 @@ func (fp *formulationParser) directionParam() (*ast.DirectionalParam, bool) {
 	if n, ok := fp.nameForm(); ok {
 		name = &n
 	}
-	square, ok := fp.squareDirectionalParams()
+	square, ok := fp.curlyDirectionalParams()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return &ast.DirectionalParam{}, false
@@ -2146,6 +2146,27 @@ func (fp *formulationParser) operatorAsNameForm() (ast.NameForm, bool) {
 		},
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(next.Position),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) simpleNameForm() (ast.NameForm, bool) {
+	start := fp.lexer.Position()
+	if !fp.has(ast.Name) {
+		return ast.NameForm{}, false
+	}
+
+	name := fp.next().Text
+	return ast.NameForm{
+		Text:            name,
+		IsStropped:      false,
+		HasQuestionMark: false,
+		VarArg: ast.VarArgData{
+			IsVarArg: false,
+		},
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
 		},
 	}, true
@@ -2511,7 +2532,7 @@ func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
 	}
 	id := fp.lexer.Snapshot()
 	fp.expect(ast.Colon)
-	name, ok := fp.nameForm()
+	name, ok := fp.simpleNameForm()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.NamedParam{}, false

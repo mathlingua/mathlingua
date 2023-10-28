@@ -633,9 +633,9 @@ func (n *DirectionalParam) ToCode(fn func(node MlgNodeKind) (string, bool)) stri
 	if n.Name != nil {
 		result += n.Name.ToCode(fn)
 	}
-	result += "["
+	result += "{"
 	result += commaSeparatedString(n.SquareParams, fn)
-	result += "]"
+	result += "}"
 	return result
 }
 

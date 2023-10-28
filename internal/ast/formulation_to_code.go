@@ -187,7 +187,7 @@ func (n *OrdinalCallExpression) ToCode(fn func(node MlgNodeKind) (string, bool))
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return n.Target.ToCode(fn) + "{" + commaSeparatedString(n.Args, fn) + "}"
+	return n.Target.ToCode(fn) + "[" + commaSeparatedString(n.Args, fn) + "]"
 }
 
 func (n *ChainExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {

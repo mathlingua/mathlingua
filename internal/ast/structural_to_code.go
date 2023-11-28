@@ -173,9 +173,11 @@ func (n *PiecewiseGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.AppendSection(LowerPiecewiseName, indent, hasDot && n.Label == nil)
-	for _, ifThen := range n.IfThen {
-		db.MaybeAppendIfSection(&ifThen.If, indent, false)
-		db.MaybeAppendThenSection(&ifThen.Then, indent, false)
+	db.MaybeAppendIfSection(&n.IfThen.If, indent, false)
+	db.MaybeAppendThenSection(&n.IfThen.Then, indent, false)
+	for _, elseIfThen := range n.ElseIfThen {
+		db.MaybeAppendElseIfSection(&elseIfThen.ElseIf, indent, false)
+		db.MaybeAppendThenSection(&elseIfThen.Then, indent, false)
 	}
 	if n.Else != nil {
 		db.AppendClausesSection(LowerElseName, n.Else.Items, indent, false)
@@ -1299,6 +1301,15 @@ func (db *debugBuilder) MaybeAppendUsingSection(sec *UsingSection, indent int, h
 func (db *debugBuilder) MaybeAppendIfSection(sec *IfSection, indent int, hasDot bool) {
 	if sec != nil {
 		db.AppendSection(LowerIfName, indent, hasDot)
+		for _, item := range sec.Clauses {
+			db.Append(item, indent+2, true)
+		}
+	}
+}
+
+func (db *debugBuilder) MaybeAppendElseIfSection(sec *ElseIfSection, indent int, hasDot bool) {
+	if sec != nil {
+		db.AppendSection(LowerElseIfName, indent, hasDot)
 		for _, item := range sec.Clauses {
 			db.Append(item, indent+2, true)
 		}

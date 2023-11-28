@@ -329,17 +329,31 @@ type IfThen struct {
 	CommonMetaData CommonMetaData
 }
 
+type ElseIfThen struct {
+	ElseIf         ElseIfSection
+	Then           ThenSection
+	CommonMetaData CommonMetaData
+}
+
+type ElseIfSection struct {
+	Clauses        []ClauseKind
+	CommonMetaData CommonMetaData
+}
+
 var PiecewiseSections = []string{
 	LowerPiecewiseName,
 	LowerIfName,
 	LowerThenName,
+	LowerElseIfQuestionName,
+	LowerThenQuestionName,
 	LowerElseQuestionName,
 }
 
 type PiecewiseGroup struct {
 	Label          *GroupLabel
 	Piecewise      PiecewiseSection
-	IfThen         []IfThen
+	IfThen         IfThen
+	ElseIfThen     []ElseIfThen
 	Else           *ElseSection
 	CommonMetaData CommonMetaData
 }

@@ -211,9 +211,11 @@ func (n *ProofIffGroup) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
 func (n *PiecewiseGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	for i, _ := range n.IfThen {
-		forEach(n.IfThen[i].If.Clauses, fn)
-		forEach(n.IfThen[i].Then.Clauses, fn)
+	forEach(n.IfThen.If.Clauses, fn)
+	forEach(n.IfThen.Then.Clauses, fn)
+	for i := range n.ElseIfThen {
+		forEach(n.ElseIfThen[i].ElseIf.Clauses, fn)
+		forEach(n.ElseIfThen[i].Then.Clauses, fn)
 	}
 	if n.Else != nil {
 		forEach(n.Else.Items, fn)

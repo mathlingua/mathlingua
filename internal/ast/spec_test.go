@@ -368,6 +368,8 @@ var all_group_test_cases = []testCase{
 			"piecewise",
 			"if",
 			"then",
+			"elseIf?",
+			"then?",
 			"else?",
 		},
 	},

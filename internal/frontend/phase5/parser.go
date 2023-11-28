@@ -394,6 +394,13 @@ func (p *parser) toIfSection(section phase4.Section) *ast.IfSection {
 	}
 }
 
+func (p *parser) toElseIfSection(section phase4.Section) *ast.ElseIfSection {
+	return &ast.ElseIfSection{
+		Clauses:        p.oneOrMoreClauses(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
 /////////////////////////////////////////// iff ////////////////////////////////////////////////////
 
 func (p *parser) toIffGroup(group phase4.Group) (ast.IffGroup, bool) {
@@ -457,26 +464,39 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 
 	label := p.getGroupLabel(group, false)
 	sections := group.Sections
+
 	if len(sections) == 0 || sections[0].Name != ast.LowerPiecewiseName {
 		return ast.PiecewiseGroup{}, false
 	}
 	piecewise := *p.toPiecewiseSection(sections[0])
-	ifThens := make([]ast.IfThen, 0)
-	i := 1
+
+	if len(sections) < 3 ||
+		sections[1].Name != ast.LowerIfName ||
+		sections[2].Name != ast.LowerThenName {
+		return ast.PiecewiseGroup{}, false
+	}
+
+	ifThen := ast.IfThen{
+		If:   *p.toIfSection(sections[1]),
+		Then: *p.toThenSection(sections[2]),
+	}
+
+	elseIfThens := make([]ast.ElseIfThen, 0)
+	i := 3 // the first three sections are piecewise, if, and then
 	for i < len(sections) {
 		section1 := sections[i]
 		if section1.Name == ast.LowerElseName {
 			break
 		}
 		i++
-		if section1.Name != ast.LowerIfName {
+		if section1.Name != ast.LowerElseIfName {
 			p.tracker.Append(p.newError(fmt.Sprintf("Expected section '%s' but found '%s'",
-				ast.LowerIfName, section1.Name), section1.MetaData.Start))
+				ast.LowerElseIfName, section1.Name), section1.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
 		if i >= len(sections) {
 			p.tracker.Append(p.newError(fmt.Sprintf("Expected section '%s' to follow an '%s' section",
-				ast.LowerThenName, ast.LowerIfName), section1.MetaData.Start))
+				ast.LowerThenName, ast.LowerElseIfName), section1.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
 		section2 := sections[i]
@@ -486,9 +506,9 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 				ast.LowerThenName, section2.Name), section2.MetaData.Start))
 			return ast.PiecewiseGroup{}, false
 		}
-		ifThens = append(ifThens, ast.IfThen{
-			If:   *p.toIfSection(section1),
-			Then: *p.toThenSection(section2),
+		elseIfThens = append(elseIfThens, ast.ElseIfThen{
+			ElseIf: *p.toElseIfSection(section1),
+			Then:   *p.toThenSection(section2),
 		})
 	}
 	var elseSec *ast.ElseSection
@@ -509,7 +529,8 @@ func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool)
 	return ast.PiecewiseGroup{
 		Label:          label,
 		Piecewise:      piecewise,
-		IfThen:         ifThens,
+		IfThen:         ifThen,
+		ElseIfThen:     elseIfThens,
 		Else:           elseSec,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true

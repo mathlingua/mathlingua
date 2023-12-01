@@ -506,20 +506,6 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ProofHenceBecauseSections,
-		expected: []string{
-			"hence",
-			"because",
-		},
-	},
-	{
-		actual: ProofHenceBySections,
-		expected: []string{
-			"hence",
-			"by",
-		},
-	},
-	{
 		actual: ProofIfSections,
 		expected: []string{
 			"if",
@@ -550,37 +536,9 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ProofNextBecauseSections,
-		expected: []string{
-			"next",
-			"because",
-		},
-	},
-	{
-		actual: ProofNextBySections,
-		expected: []string{
-			"next",
-			"by",
-		},
-	},
-	{
 		actual: ProofNotSections,
 		expected: []string{
 			"not",
-		},
-	},
-	{
-		actual: ProofNoticeBecauseSections,
-		expected: []string{
-			"notice",
-			"because",
-		},
-	},
-	{
-		actual: ProofNoticeBySections,
-		expected: []string{
-			"notice",
-			"by",
 		},
 	},
 	{
@@ -600,48 +558,6 @@ var all_group_test_cases = []testCase{
 		expected: []string{
 			"suppose",
 			"then",
-		},
-	},
-	{
-		actual: ProofThenBecauseSections,
-		expected: []string{
-			"then",
-			"because",
-		},
-	},
-	{
-		actual: ProofThenBySections,
-		expected: []string{
-			"then",
-			"by",
-		},
-	},
-	{
-		actual: ProofThereforeBecauseSections,
-		expected: []string{
-			"therefore",
-			"because",
-		},
-	},
-	{
-		actual: ProofThereforeBySections,
-		expected: []string{
-			"therefore",
-			"by",
-		},
-	},
-	{
-		actual: ProofThusBecauseSections,
-		expected: []string{
-			"thus",
-			"because",
-		},
-	},
-	{
-		actual: ProofThusBySections,
-		expected: []string{
-			"thus",
-			"by",
 		},
 	},
 	{
@@ -780,36 +696,48 @@ var all_group_test_cases = []testCase{
 		actual: ProofThenSections,
 		expected: []string{
 			"then",
+			"by?",
+			"because?",
 		},
 	},
 	{
 		actual: ProofThusSections,
 		expected: []string{
 			"thus",
+			"by?",
+			"because?",
 		},
 	},
 	{
 		actual: ProofThereforeSections,
 		expected: []string{
 			"therefore",
+			"by?",
+			"because?",
 		},
 	},
 	{
 		actual: ProofHenceSections,
 		expected: []string{
 			"hence",
+			"by?",
+			"because?",
 		},
 	},
 	{
 		actual: ProofNoticeSections,
 		expected: []string{
 			"notice",
+			"by?",
+			"because?",
 		},
 	},
 	{
 		actual: ProofNextSections,
 		expected: []string{
 			"next",
+			"by?",
+			"because?",
 		},
 	},
 }

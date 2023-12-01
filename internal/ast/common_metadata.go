@@ -211,32 +211,6 @@ func (n *DirectionalParam) GetCommonMetaData() *CommonMetaData { return &n.Commo
 
 func (n *FunctionLiteralForm) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
-func (n *ProofThenByGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
-func (n *ProofThusByGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
-func (n *ProofThereforeByGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
-func (n *ProofHenceByGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
-func (n *ProofNoticeByGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
-func (n *ProofNextByGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
-func (n *ProofThenBecauseGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
-func (n *ProofThusBecauseGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
-func (n *ProofThereforeBecauseGroup) GetCommonMetaData() *CommonMetaData {
-	return &n.CommonMetaData
-}
-
-func (n *ProofHenceBecauseGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
-func (n *ProofNoticeBecauseGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
-func (n *ProofNextBecauseGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
 func (n *ProofByThenGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
 func (n *ProofBecauseThenGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }

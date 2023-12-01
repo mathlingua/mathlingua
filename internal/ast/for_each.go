@@ -1005,86 +1005,62 @@ func (n *DirectionalParam) ForEach(fn func(subNode MlgNodeKind)) {
 
 func (n *ProofThenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Then.Then, fn)
+	if n.By != nil {
+		forEachTextItem(n.By.Items, fn)
+	}
+	if n.Because != nil {
+		forEachProofItem(n.Because.Because, fn)
+	}
 }
 
 func (n *ProofThusGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Thus.Thus, fn)
+	if n.By != nil {
+		forEachTextItem(n.By.Items, fn)
+	}
+	if n.Because != nil {
+		forEachProofItem(n.Because.Because, fn)
+	}
 }
 
 func (n *ProofThereforeGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Therefore.Therefore, fn)
+	if n.By != nil {
+		forEachTextItem(n.By.Items, fn)
+	}
+	if n.Because != nil {
+		forEachProofItem(n.Because.Because, fn)
+	}
 }
 
 func (n *ProofHenceGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Hence.Hence, fn)
+	if n.By != nil {
+		forEachTextItem(n.By.Items, fn)
+	}
+	if n.Because != nil {
+		forEachProofItem(n.Because.Because, fn)
+	}
 }
 
 func (n *ProofNoticeGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Notice.Notice, fn)
+	if n.By != nil {
+		forEachTextItem(n.By.Items, fn)
+	}
+	if n.Because != nil {
+		forEachProofItem(n.Because.Because, fn)
+	}
 }
 
 func (n *ProofNextGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Next.Next, fn)
-}
-
-func (n *ProofThenByGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Then.Then, fn)
-	forEachTextItem(n.By.Items, fn)
-}
-
-func (n *ProofThusByGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Thus.Thus, fn)
-	forEachTextItem(n.By.Items, fn)
-}
-
-func (n *ProofThereforeByGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Therefore.Therefore, fn)
-	forEachTextItem(n.By.Items, fn)
-}
-
-func (n *ProofHenceByGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Hence.Hence, fn)
-	forEachTextItem(n.By.Items, fn)
-}
-
-func (n *ProofNoticeByGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Notice.Notice, fn)
-	forEachTextItem(n.By.Items, fn)
-}
-
-func (n *ProofNextByGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Next.Next, fn)
-	forEachTextItem(n.By.Items, fn)
-}
-
-func (n *ProofThenBecauseGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Then.Then, fn)
-	forEachProofItem(n.Because.Because, fn)
-}
-
-func (n *ProofThusBecauseGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Thus.Thus, fn)
-	forEachProofItem(n.Because.Because, fn)
-}
-
-func (n *ProofThereforeBecauseGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Therefore.Therefore, fn)
-	forEachProofItem(n.Because.Because, fn)
-}
-
-func (n *ProofHenceBecauseGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Hence.Hence, fn)
-	forEachProofItem(n.Because.Because, fn)
-}
-
-func (n *ProofNoticeBecauseGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Notice.Notice, fn)
-	forEachProofItem(n.Because.Because, fn)
-}
-
-func (n *ProofNextBecauseGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Next.Next, fn)
-	forEachProofItem(n.Because.Because, fn)
+	if n.By != nil {
+		forEachTextItem(n.By.Items, fn)
+	}
+	if n.Because != nil {
+		forEachProofItem(n.Because.Because, fn)
+	}
 }
 
 func (n *ProofByThenGroup) ForEach(fn func(subNode MlgNodeKind)) {

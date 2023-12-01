@@ -154,7 +154,7 @@ func (*ProofThereforeGroup) MlgNodeKind()                    {}
 func (*ProofHenceGroup) MlgNodeKind()                        {}
 func (*ProofNoticeGroup) MlgNodeKind()                       {}
 func (*ProofNextGroup) MlgNodeKind()                         {}
-func (*ProofByThenGroup) MlgNodeKind()                       {}
+func (*ProofByBecauseThenGroup) MlgNodeKind()                {}
 func (*ProofBecauseThenGroup) MlgNodeKind()                  {}
 func (*ProofIndependentlyGroup) MlgNodeKind()                {}
 func (*ProofStepwiseGroup) MlgNodeKind()                     {}

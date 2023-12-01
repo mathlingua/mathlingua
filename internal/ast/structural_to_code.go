@@ -777,10 +777,13 @@ func (n *ProofNextGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *ProofByThenGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ProofByBecauseThenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, hasDot && n.Label == nil)
+	if n.Because != nil {
+		db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
+	}
 	db.AppendProofItemsSection(LowerThenName, n.Then.Then, indent, false)
 	return db.Lines()
 }

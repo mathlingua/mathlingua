@@ -1063,8 +1063,11 @@ func (n *ProofNextGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
-func (n *ProofByThenGroup) ForEach(fn func(subNode MlgNodeKind)) {
+func (n *ProofByBecauseThenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.By.Items, fn)
+	if n.Because != nil {
+		forEachProofItem(n.Because.Because, fn)
+	}
 	forEachProofItem(n.Then.Then, fn)
 }
 

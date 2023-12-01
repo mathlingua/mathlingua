@@ -423,9 +423,10 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ProofByThenSections,
+		actual: ProofByBecauseThenSections,
 		expected: []string{
 			"by",
+			"because?",
 			"then",
 		},
 	},

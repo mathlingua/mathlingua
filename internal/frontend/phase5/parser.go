@@ -2978,7 +2978,7 @@ func (p *parser) toProofItem(arg phase4.Argument) ast.ProofItemKind {
 			return &grp
 		} else if grp, ok := p.toProofNextGroup(*group); ok {
 			return &grp
-		} else if grp, ok := p.toProofByThenGroup(*group); ok {
+		} else if grp, ok := p.toProofByBecauseThenGroup(*group); ok {
 			return &grp
 		} else if grp, ok := p.toProofBecauseThenGroup(*group); ok {
 			return &grp
@@ -3219,22 +3219,27 @@ func (p *parser) toProofNextGroup(group phase4.Group) (ast.ProofNextGroup, bool)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (p *parser) toProofByThenGroup(group phase4.Group) (ast.ProofByThenGroup, bool) {
+func (p *parser) toProofByBecauseThenGroup(group phase4.Group) (ast.ProofByBecauseThenGroup, bool) {
 	if !startsWithSections(group, ast.LowerByName, ast.LowerThenName) {
-		return ast.ProofByThenGroup{}, false
+		return ast.ProofByBecauseThenGroup{}, false
 	}
 
 	label := p.getGroupLabel(group, false)
 	sections, ok := IdentifySections(p.path, group.Sections, p.tracker,
-		ast.ProofByThenSections...)
+		ast.ProofByBecauseThenSections...)
 	if !ok {
-		return ast.ProofByThenGroup{}, false
+		return ast.ProofByBecauseThenGroup{}, false
 	}
 	by := *p.toProofBySection(sections[ast.LowerByName])
+	var because *ast.ProofBecauseSection
+	if sec, ok := sections[ast.LowerBecauseName]; ok {
+		because = p.toProofBecauseSection(sec)
+	}
 	then := *p.toProofThenSection(sections[ast.LowerThenName])
-	return ast.ProofByThenGroup{
+	return ast.ProofByBecauseThenGroup{
 		Label:          label,
 		By:             by,
+		Because:        because,
 		Then:           then,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true

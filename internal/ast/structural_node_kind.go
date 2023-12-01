@@ -95,7 +95,7 @@ func (*ProofThereforeGroup) StructuralNodeKind()               {}
 func (*ProofHenceGroup) StructuralNodeKind()                   {}
 func (*ProofNoticeGroup) StructuralNodeKind()                  {}
 func (*ProofNextGroup) StructuralNodeKind()                    {}
-func (*ProofByThenGroup) StructuralNodeKind()                  {}
+func (*ProofByBecauseThenGroup) StructuralNodeKind()           {}
 func (*ProofBecauseThenGroup) StructuralNodeKind()             {}
 func (*ProofIndependentlyGroup) StructuralNodeKind()           {}
 func (*ProofStepwiseGroup) StructuralNodeKind()                {}

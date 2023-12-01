@@ -1490,7 +1490,7 @@ func (*ProofThereforeGroup) ProofItemKind()               {}
 func (*ProofHenceGroup) ProofItemKind()                   {}
 func (*ProofNoticeGroup) ProofItemKind()                  {}
 func (*ProofNextGroup) ProofItemKind()                    {}
-func (*ProofByThenGroup) ProofItemKind()                  {}
+func (*ProofByBecauseThenGroup) ProofItemKind()           {}
 func (*ProofBecauseThenGroup) ProofItemKind()             {}
 func (*ProofIndependentlyGroup) ProofItemKind()           {}
 func (*ProofStepwiseGroup) ProofItemKind()                {}
@@ -1633,14 +1633,16 @@ type ProofNextSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var ProofByThenSections = []string{
+var ProofByBecauseThenSections = []string{
 	LowerByName,
+	LowerBecauseQuestionName,
 	LowerThenName,
 }
 
-type ProofByThenGroup struct {
+type ProofByBecauseThenGroup struct {
 	Label          *GroupLabel
 	By             ProofBySection
+	Because        *ProofBecauseSection
 	Then           ProofThenSection
 	CommonMetaData CommonMetaData
 }

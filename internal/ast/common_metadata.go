@@ -211,7 +211,7 @@ func (n *DirectionalParam) GetCommonMetaData() *CommonMetaData { return &n.Commo
 
 func (n *FunctionLiteralForm) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
-func (n *ProofByThenGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
+func (n *ProofByBecauseThenGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
 func (n *ProofBecauseThenGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 

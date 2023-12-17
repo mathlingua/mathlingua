@@ -1590,7 +1590,7 @@ func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (
 
 func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	ast.EnclosedNonCommandOperatorTarget, bool) {
-	if !fp.has(ast.LSquareColon) && !fp.has(ast.LSquareDot) {
+	if !fp.has(ast.LSquareDot) && !fp.hasHas(ast.Colon, ast.LSquareDot) {
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 
@@ -1598,8 +1598,10 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	id := fp.lexer.Snapshot()
 
 	hasLeftColon := false
-	if _, ok := fp.token(ast.LSquareColon); ok {
+	if fp.hasHas(ast.Colon, ast.LSquareDot) {
 		hasLeftColon = true
+		fp.expect(ast.Colon)
+		fp.expect(ast.LSquareDot)
 	} else {
 		fp.expect(ast.LSquareDot)
 	}
@@ -1626,13 +1628,11 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 
+	fp.expect(ast.DotRSquare)
+
 	hasRightColon := false
-	if !fp.has(ast.ColonRSquare) && !fp.has(ast.DotRSquare) {
-		fp.errorAt("Expected a matching :] or .]", start)
-	} else if _, ok := fp.token(ast.ColonRSquare); ok {
+	if _, ok := fp.token(ast.Colon); ok {
 		hasRightColon = true
-	} else {
-		fp.expect(ast.DotRSquare)
 	}
 
 	fp.lexer.Commit(id)

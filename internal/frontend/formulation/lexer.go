@@ -135,14 +135,7 @@ func getTokens(path ast.Path, text string, tracker frontend.IDiagnosticTracker) 
 				Position: cur.Position,
 			})
 		case cur.Symbol == '[':
-			if i < len(chars) && chars[i].Symbol == ':' {
-				i++ // move past the :
-				appendToken(ast.Token{
-					Type:     ast.LSquareColon,
-					Text:     "[:",
-					Position: cur.Position,
-				})
-			} else if i < len(chars) && chars[i].Symbol == '.' {
+			if i < len(chars) && chars[i].Symbol == '.' {
 				i++ // move past the .
 				appendToken(ast.Token{
 					Type:     ast.LSquareDot,
@@ -291,13 +284,6 @@ func getTokens(path ast.Path, text string, tracker frontend.IDiagnosticTracker) 
 				appendToken(ast.Token{
 					Type:     ast.ColonDashArrow,
 					Text:     ":->",
-					Position: cur.Position,
-				})
-			} else if i < len(chars) && chars[i].Symbol == ']' {
-				i++ // move past the ]
-				appendToken(ast.Token{
-					Type:     ast.ColonRSquare,
-					Text:     ":]",
 					Position: cur.Position,
 				})
 			} else {

@@ -68,8 +68,6 @@ const (
 	ParenLabel            TokenType = "ParenLabel"
 	LParenDot             TokenType = "LParenDot"
 	DotRParen             TokenType = "DotRParen"
-	LSquareColon          TokenType = "LSquareColon"
-	ColonRSquare          TokenType = "ColonRSquare"
 	LSquareDot            TokenType = "LSquareDot"
 	DotRSquare            TokenType = "DotRSquare"
 )

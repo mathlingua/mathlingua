@@ -363,6 +363,38 @@ type Signature struct {
 	FormulationMetaData FormulationMetaData
 }
 
+// \:a.b.c:x{\:a & \:b}:y{\:c}
+type Type struct {
+	Names               []NameForm
+	CurlyParam          *CurlyTypeParam
+	NamedParams         *[]NamedTypeParam
+	ParenParams         *[]Type
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+type NamedTypeParam struct {
+	Name                NameForm
+	CurlyParam          *CurlyTypeParam
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+// []{} or {}
+type CurlyTypeParam struct {
+	CurlyParams         *[]Type
+	Direction           *DirectionalTypeParam
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+type DirectionalTypeParam struct {
+	Name                *NameForm
+	SquareParams        []Type
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
 /////////////////////////////// Kinds //////////////////////////////////////////////////////////////
 
 type KindKind interface {

@@ -834,40 +834,6 @@ type ThatSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var ProofSections = []string{
-	UpperProofName,
-	LowerOfName,
-	LowerContentName,
-	UpperReferencesQuestionName,
-	UpperIdQuestionName,
-}
-
-type ProofGroup struct {
-	Id             IdItem
-	Proof          TopLevelProofSection
-	Of             OfSection
-	Content        ContentSection
-	References     *ReferencesSection
-	MetaId         *MetaIdSection
-	CommonMetaData CommonMetaData
-}
-
-type TopLevelProofSection struct {
-	CommonMetaData CommonMetaData
-}
-
-type OfSection struct {
-	Of             TextItem
-	CommonMetaData CommonMetaData
-}
-
-type ContentSection struct {
-	Content        []ProofItemKind
-	CommonMetaData CommonMetaData
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 var AxiomSections = []string{
 	UpperAxiomName,
 	LowerGivenQuestionName,
@@ -1457,7 +1423,6 @@ func (*LemmaGroup) TopLevelItemKind()      {}
 func (*SpecifyGroup) TopLevelItemKind()    {}
 func (*PersonGroup) TopLevelItemKind()     {}
 func (*ResourceGroup) TopLevelItemKind()   {}
-func (*ProofGroup) TopLevelItemKind()      {}
 func (*CapturesGroup) TopLevelItemKind()   {}
 
 type Document struct {

@@ -388,16 +388,6 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ProofSections,
-		expected: []string{
-			"Proof",
-			"of",
-			"content",
-			"References?",
-			"Id?",
-		},
-	},
-	{
 		actual: ProofAllOfSections,
 		expected: []string{
 			"allOf",

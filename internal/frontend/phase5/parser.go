@@ -1809,58 +1809,6 @@ func (p *parser) toTextBlockItem(block phase4.TextBlock) *ast.TextBlockItem {
 	}
 }
 
-////////////////////////////////////////////// proof ///////////////////////////////////////////////
-
-func (p *parser) toProofGroup(group phase4.Group) (ast.ProofGroup, bool) {
-	if !startsWithSections(group, ast.UpperProofName) {
-		return ast.ProofGroup{}, false
-	}
-
-	id := p.getId(group, true)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofSections...)
-	if !ok || id == nil {
-		return ast.ProofGroup{}, false
-	}
-	var references *ast.ReferencesSection
-	if sec, ok := sections[ast.UpperReferencesName]; ok {
-		references = p.toReferencesSection(sec)
-	}
-	var metaId *ast.MetaIdSection
-	if sec, ok := sections[ast.UpperIdName]; ok {
-		metaId = p.toMetaIdSection(sec)
-	}
-	return ast.ProofGroup{
-		Id:             *id,
-		Proof:          *p.toTopLevelProofSection(sections[ast.UpperProofName]),
-		Of:             *p.toOfSection(sections[ast.LowerOfName]),
-		Content:        *p.toContentSection(sections[ast.LowerContentName]),
-		References:     references,
-		MetaId:         metaId,
-		CommonMetaData: toCommonMetaData(group.MetaData),
-	}, true
-}
-
-func (p *parser) toTopLevelProofSection(section phase4.Section) *ast.TopLevelProofSection {
-	p.verifyNoArgs(section)
-	return &ast.TopLevelProofSection{
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toOfSection(section phase4.Section) *ast.OfSection {
-	return &ast.OfSection{
-		Of:             p.exactlyOneTextItem(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toContentSection(section phase4.Section) *ast.ContentSection {
-	return &ast.ContentSection{
-		Content:        p.oneOrMoreProofItems(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
 ////////////////////////////////////////// specify /////////////////////////////////////////////////
 
 func (p *parser) toSpecifyGroup(group phase4.Group) (ast.SpecifyGroup, bool) {
@@ -2489,8 +2437,6 @@ func (p *parser) toTopLevelItemKind(item phase4.TopLevelNodeKind) (ast.TopLevelI
 		} else if grp, ok := p.toPersonGroup(*item); ok {
 			return &grp, ok
 		} else if grp, ok := p.toResourceGroup(*item); ok {
-			return &grp, ok
-		} else if grp, ok := p.toProofGroup(*item); ok {
 			return &grp, ok
 		}
 	}

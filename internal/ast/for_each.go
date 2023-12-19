@@ -431,12 +431,6 @@ func (n *StatesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
-func (n *ProofGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(&n.Id)
-	fn(&n.Of.Of)
-	forEachProofItem(n.Content.Content, fn)
-}
-
 func (n *AxiomGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	maybeForIdItem(n.Id, fn)
 	if n.Given != nil {

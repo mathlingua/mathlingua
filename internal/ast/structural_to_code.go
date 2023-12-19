@@ -397,17 +397,6 @@ func (n *StatesGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *ProofGroup) ToCode(indent int, hasDot bool) []string {
-	db := newDebugBuilder()
-	db.MaybeAppendIdItem(&n.Id, indent, hasDot)
-	db.AppendSection(UpperProofName, indent, false)
-	db.AppendSingleTextItemSection(LowerOfName, n.Of.Of, indent, false)
-	db.AppendProofItemsSection(LowerContentName, n.Content.Content, indent, false)
-	db.MaybeAppendReferencesSection(n.References, indent, false)
-	db.MaybeAppendMetaIdSection(n.MetaId, indent, false)
-	return db.Lines()
-}
-
 func (n *AxiomGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(n.Id, indent, hasDot)

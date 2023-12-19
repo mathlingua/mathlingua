@@ -763,7 +763,7 @@ func commaSeparatedString[T FormulationNodeKind](forms []T,
 func commaSeparatedStringOfNameForms(forms []NameForm,
 	fn func(node MlgNodeKind) (string, bool)) string {
 	result := ""
-	for i, _ := range forms {
+	for i := range forms {
 		if i > 0 {
 			result += ", "
 		}
@@ -775,7 +775,7 @@ func commaSeparatedStringOfNameForms(forms []NameForm,
 func commaSeparatedStringOfDirectionTypes(directions []DirectionType,
 	fn func(node MlgNodeKind) (string, bool)) string {
 	result := ""
-	for i, _ := range directions {
+	for i := range directions {
 		if i > 0 {
 			result += ", "
 		}
@@ -792,7 +792,7 @@ func semicolonSeparatedString[T FormulationNodeKind](forms []T,
 func separatedString[T FormulationNodeKind](forms []T, separator string,
 	fn func(node MlgNodeKind) (string, bool)) string {
 	result := ""
-	for i, _ := range forms {
+	for i := range forms {
 		if i > 0 {
 			result += separator
 		}

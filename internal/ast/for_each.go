@@ -711,7 +711,7 @@ func (n *DescriptionGroup) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
 func (n *Document) ForEach(fn func(subNode MlgNodeKind)) {
-	for i, _ := range n.Items {
+	for i := range n.Items {
 		fn(n.Items[i])
 	}
 }
@@ -1121,7 +1121,7 @@ func (n *ProofBlockGroup) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
 func (n *ProofCasewiseGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	for i, _ := range n.Cases {
+	for i := range n.Cases {
 		forEachProofItem(n.Cases[i].Case, fn)
 	}
 }
@@ -1201,85 +1201,85 @@ func maybeForIdItem(id *IdItem, fn func(n MlgNodeKind)) {
 }
 
 func forEach[T MlgNodeKind](items []T, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(items[i])
 	}
 }
 
 func forEachDirectionType(items []DirectionType, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(&items[i])
 	}
 }
 
 func forEachExpressionKind(items []ExpressionKind, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(items[i])
 	}
 }
 
 func forEachNameForm(items []NameForm, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(&items[i])
 	}
 }
 
 func forEachNamedArg(items []NamedArg, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(&items[i])
 	}
 }
 
 func forEachNamedTypeParam(items []NamedTypeParam, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(&items[i])
 	}
 }
 
 func forEachNamedParam(items []NamedParam, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(&items[i])
 	}
 }
 
 func forEachFormulation(items []Formulation[FormulationNodeKind], fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(&items[i])
 	}
 }
 
 func forEachTarget(items []Target, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(&items[i])
 	}
 }
 
 func forEachSignature(items []Signature, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(&items[i])
 	}
 }
 
 func forEachSpec(items []Spec, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(&items[i])
 	}
 }
 
 func forEachAlias(items []Alias, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(&items[i])
 	}
 }
 
 func forEachTextItem(items []TextItem, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(&items[i])
 	}
 }
 
 func forEachProofItem(items []ProofItemKind, fn func(n MlgNodeKind)) {
-	for i, _ := range items {
+	for i := range items {
 		fn(items[i])
 	}
 }

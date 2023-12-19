@@ -128,7 +128,7 @@ func maybeProcessExpressionColonDashArrowItem(
 
 var default_expression ast.ExpressionKind = &ast.NameForm{}
 var default_kind_type ast.KindKind = &ast.NameForm{}
-var default_signature *ast.Signature = &ast.Signature{}
+var default_type_kind ast.TypeKind = &ast.CommandType{}
 
 func toNode(
 	path ast.Path,
@@ -291,13 +291,13 @@ func toNode(
 				Rhs: []ast.KindKind{rhs},
 			}
 		case top.Type == ast.As:
-			rhs := checkType(path, toNode(path, items, tracker), default_signature, "Signature",
+			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Type",
 				tracker, top.Start())
 			lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
 			return &ast.AsExpression{
 				Lhs: lhs,
-				Rhs: *rhs,
+				Rhs: rhs,
 			}
 		default:
 			return top

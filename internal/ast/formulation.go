@@ -308,10 +308,12 @@ type ExtendsExpression struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// x as \[y]
+// x as \:y
 type AsExpression struct {
-	Lhs                 ExpressionKind
-	Rhs                 Signature
+	Lhs ExpressionKind
+	// the right-hand-side is an ExpressionKind and not a TypeKind
+	// to support `x as \:y` and `x as (\:a \:in:/ \:b)`
+	Rhs                 ExpressionKind
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

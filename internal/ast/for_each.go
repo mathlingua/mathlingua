@@ -806,7 +806,7 @@ func (n *ExtendsExpression) ForEach(fn func(subNode MlgNodeKind)) {
 
 func (n *AsExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
-	fn(&n.Rhs)
+	fn(n.Rhs)
 }
 
 func (n *OrdinalCallExpression) ForEach(fn func(subNode MlgNodeKind)) {

@@ -500,16 +500,16 @@ type CalledSection struct {
 	CommonMetaData CommonMetaData
 }
 
-var ExpressedSections = []string{LowerExpressedName}
+var WritingSections = []string{LowerWritingName}
 
-type ExpressedGroup struct {
+type WritingGroup struct {
 	Label          *GroupLabel
-	Expressed      ExpressedSection
+	Writing        WritingSection
 	CommonMetaData CommonMetaData
 }
 
-type ExpressedSection struct {
-	Expressed      []TextItem
+type WritingSection struct {
+	Writing        []TextItem
 	CommonMetaData CommonMetaData
 }
 
@@ -520,11 +520,11 @@ type DocumentedKind interface {
 	DocumentedKind()
 }
 
-func (*OverviewGroup) DocumentedKind()  {}
-func (*RelatedGroup) DocumentedKind()   {}
-func (*WrittenGroup) DocumentedKind()   {}
-func (*ExpressedGroup) DocumentedKind() {}
-func (*CalledGroup) DocumentedKind()    {}
+func (*OverviewGroup) DocumentedKind() {}
+func (*RelatedGroup) DocumentedKind()  {}
+func (*WrittenGroup) DocumentedKind()  {}
+func (*WritingGroup) DocumentedKind()  {}
+func (*CalledGroup) DocumentedKind()   {}
 
 var OverviewSections = []string{LowerOverviewName}
 

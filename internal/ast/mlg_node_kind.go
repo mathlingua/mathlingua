@@ -58,7 +58,7 @@ func (*ViewGroup) MlgNodeKind()          {}
 func (*EncodingGroup) MlgNodeKind()      {}
 func (*WrittenGroup) MlgNodeKind()       {}
 func (*CalledGroup) MlgNodeKind()        {}
-func (*ExpressedGroup) MlgNodeKind()     {}
+func (*WritingGroup) MlgNodeKind()       {}
 func (*OverviewGroup) MlgNodeKind()      {}
 func (*RelatedGroup) MlgNodeKind()       {}
 func (*LabelGroup) MlgNodeKind()         {}

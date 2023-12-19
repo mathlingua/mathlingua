@@ -56,10 +56,10 @@ type WrittenSummary struct {
 	Errors        []string
 }
 
-type ExpressedSummary struct {
-	RawWritten      string
-	ParsedExpressed []TextItemKind
-	Errors          []string
+type WritingSummary struct {
+	RawWritten    string
+	ParsedWriting []TextItemKind
+	Errors        []string
 }
 
 func ToCalledSummaries(node ast.CalledGroup) []CalledSummary {
@@ -90,15 +90,15 @@ func ToWrittenSummaries(node ast.WrittenGroup) []WrittenSummary {
 	return result
 }
 
-func ToExpressedSummaries(node ast.ExpressedGroup) []ExpressedSummary {
-	result := make([]ExpressedSummary, 0)
-	for _, item := range node.Expressed.Expressed {
+func ToWritingSummaries(node ast.WritingGroup) []WritingSummary {
+	result := make([]WritingSummary, 0)
+	for _, item := range node.Writing.Writing {
 		raw := item.RawText
 		parsed, err := ParseCalledWritten(raw)
-		result = append(result, ExpressedSummary{
-			RawWritten:      raw,
-			ParsedExpressed: parsed,
-			Errors:          errorToString(err),
+		result = append(result, WritingSummary{
+			RawWritten:    raw,
+			ParsedWriting: parsed,
+			Errors:        errorToString(err),
 		})
 	}
 	return result
@@ -126,21 +126,21 @@ func GetWrittenSummaries(documented *ast.DocumentedSection) []WrittenSummary {
 	return summaries
 }
 
-func GetExpressedSummaries(documented *ast.DocumentedSection) []ExpressedSummary {
-	summaries := make([]ExpressedSummary, 0)
+func GetWritingSummaries(documented *ast.DocumentedSection) []WritingSummary {
+	summaries := make([]WritingSummary, 0)
 	if documented == nil {
 		return summaries
 	}
 	for _, docItem := range documented.Documented {
 		switch item := docItem.(type) {
-		case *ast.ExpressedGroup:
-			for _, as := range item.Expressed.Expressed {
+		case *ast.WritingGroup:
+			for _, as := range item.Writing.Writing {
 				raw := as.RawText
 				parsed, err := ParseCalledWritten(raw)
-				summaries = append(summaries, ExpressedSummary{
-					RawWritten:      raw,
-					ParsedExpressed: parsed,
-					Errors:          errorToString(err),
+				summaries = append(summaries, WritingSummary{
+					RawWritten:    raw,
+					ParsedWriting: parsed,
+					Errors:        errorToString(err),
 				})
 			}
 		}

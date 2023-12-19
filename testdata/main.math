@@ -174,7 +174,7 @@ Justified:
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. expressed: "X?"
+. writing: "X?"
 . overview: "some overview in Markdown"
 . related: "\[some.item]"
 References:
@@ -216,7 +216,7 @@ Justified:
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. expressed: "X?"
+. writing: "X?"
 . overview: "some overview in Markdown"
 . related: "\[some.item]"
 References:
@@ -242,7 +242,7 @@ Justified:
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. expressed: "X?"
+. writing: "X?"
 . overview: "some overview in Markdown"
 . related: "\[some.item]"
 References:
@@ -267,7 +267,7 @@ Justified:
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. expressed: "X?"
+. writing: "X?"
 . overview: "some overview in Markdown"
 . related: "\[some.item]"
 References:
@@ -308,7 +308,7 @@ Proof:
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. expressed: "X?"
+. writing: "X?"
 . overview: "some overview in Markdown"
 . related: "\[some.item]"
 References:
@@ -337,7 +337,7 @@ Proof:
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. expressed: "X?"
+. writing: "X?"
 . overview: "some overview in Markdown"
 . related: "\[some.item]"
 References:
@@ -366,7 +366,7 @@ Proof:
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. expressed: "X?"
+. writing: "X?"
 . overview: "some overview in Markdown"
 . related: "\[some.item]"
 References:
@@ -399,7 +399,7 @@ then: 'x >= 0'
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. expressed: "X?"
+. writing: "X?"
 . overview: "some overview in Markdown"
 . related: "\[some.item]"
 References:
@@ -432,7 +432,7 @@ then: 'x >= 0'
 Documented:
 . written: "X?(x?)"
 . called: "some name"
-. expressed: "X?"
+. writing: "X?"
 . overview: "some overview in Markdown"
 . related: "\[some.item]"
 References:

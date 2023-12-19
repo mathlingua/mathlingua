@@ -41,7 +41,7 @@ func (n *ViewGroup) GetCommonMetaData() *CommonMetaData          { return &n.Com
 func (n *EncodingGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
 func (n *WrittenGroup) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
 func (n *CalledGroup) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
-func (n *ExpressedGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
+func (n *WritingGroup) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
 func (n *OverviewGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
 func (n *RelatedGroup) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
 func (n *LabelGroup) GetCommonMetaData() *CommonMetaData         { return &n.CommonMetaData }

@@ -742,26 +742,26 @@ func (p *parser) toCalledSection(section phase4.Section) *ast.CalledSection {
 	}
 }
 
-func (p *parser) toExpressedGroup(group phase4.Group) (ast.ExpressedGroup, bool) {
-	if !startsWithSections(group, ast.LowerExpressedName) {
-		return ast.ExpressedGroup{}, false
+func (p *parser) toWritingGroup(group phase4.Group) (ast.WritingGroup, bool) {
+	if !startsWithSections(group, ast.LowerWritingName) {
+		return ast.WritingGroup{}, false
 	}
 
 	label := p.getGroupLabel(group, false)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ExpressedSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.WritingSections...)
 	if !ok {
-		return ast.ExpressedGroup{}, false
+		return ast.WritingGroup{}, false
 	}
-	return ast.ExpressedGroup{
+	return ast.WritingGroup{
 		Label:          label,
-		Expressed:      *p.toExpressedSection(sections[ast.LowerExpressedName]),
+		Writing:        *p.toWritingSection(sections[ast.LowerWritingName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
 
-func (p *parser) toExpressedSection(section phase4.Section) *ast.ExpressedSection {
-	return &ast.ExpressedSection{
-		Expressed:      p.oneOrMoreTextItems(section),
+func (p *parser) toWritingSection(section phase4.Section) *ast.WritingSection {
+	return &ast.WritingSection{
+		Writing:        p.oneOrMoreTextItems(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -784,7 +784,7 @@ func (p *parser) toDocumentedKind(arg phase4.Argument) (ast.DocumentedKind, bool
 			return &grp, true
 		} else if grp, ok := p.toWrittenGroup(*group); ok {
 			return &grp, true
-		} else if grp, ok := p.toExpressedGroup(*group); ok {
+		} else if grp, ok := p.toWritingGroup(*group); ok {
 			return &grp, true
 		} else if grp, ok := p.toCalledGroup(*group); ok {
 			return &grp, true
@@ -2854,7 +2854,7 @@ func (p *parser) toDocumentedKinds(args []phase4.Argument) []ast.DocumentedKind 
 			p.tracker.Append(p.newError(fmt.Sprintf(
 				"Expected a %s:, %s:, %s:, %s:, or %s: item",
 				ast.LowerOverviewName, ast.LowerRelatedName, ast.LowerWrittenName,
-				ast.LowerExpressedName, ast.LowerCalledName), arg.MetaData.Start))
+				ast.LowerWritingName, ast.LowerCalledName), arg.MetaData.Start))
 		}
 	}
 	return result

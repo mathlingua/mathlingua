@@ -85,7 +85,7 @@ func getFixedCompletions() []string {
 		join(ast.EncodingSections),
 		join(ast.WrittenSections),
 		join(ast.CalledSections),
-		join(ast.ExpressedSections),
+		join(ast.WritingSections),
 		join(ast.OverviewSections),
 		join(ast.RelatedSections),
 		join(ast.LabelSections),

@@ -212,9 +212,9 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ExpressedSections,
+		actual: WritingSections,
 		expected: []string{
-			"expressed",
+			"writing",
 		},
 	},
 	{

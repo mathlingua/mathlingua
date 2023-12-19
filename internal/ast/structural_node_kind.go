@@ -46,7 +46,7 @@ func (*ViewGroup) StructuralNodeKind()                         {}
 func (*EncodingGroup) StructuralNodeKind()                     {}
 func (*WrittenGroup) StructuralNodeKind()                      {}
 func (*CalledGroup) StructuralNodeKind()                       {}
-func (*ExpressedGroup) StructuralNodeKind()                    {}
+func (*WritingGroup) StructuralNodeKind()                      {}
 func (*OverviewGroup) StructuralNodeKind()                     {}
 func (*RelatedGroup) StructuralNodeKind()                      {}
 func (*LabelGroup) StructuralNodeKind()                        {}

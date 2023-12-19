@@ -83,7 +83,7 @@ type DescribesSummary struct {
 	ExpAliases  []ExpAliasSummaryKind
 	SpecAliases []SpecAliasSummary
 	Written     []WrittenSummary
-	Expressed   []ExpressedSummary
+	Writing     []WritingSummary
 	Called      []CalledSummary
 }
 
@@ -97,7 +97,7 @@ type DefinesSummary struct {
 	ExpAliases  []ExpAliasSummaryKind
 	SpecAliases []SpecAliasSummary
 	Written     []WrittenSummary
-	Expressed   []ExpressedSummary
+	Writing     []WritingSummary
 	Called      []CalledSummary
 }
 
@@ -109,7 +109,7 @@ type StatesSummary struct {
 	ExpAliases  []ExpAliasSummaryKind
 	SpecAliases []SpecAliasSummary
 	Written     []WrittenSummary
-	Expressed   []ExpressedSummary
+	Writing     []WritingSummary
 	Called      []CalledSummary
 }
 

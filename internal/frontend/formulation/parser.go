@@ -1971,15 +1971,15 @@ func (fp *formulationParser) directionParam() (*ast.DirectionalParam, bool) {
 	if n, ok := fp.nameForm(); ok {
 		name = &n
 	}
-	square, ok := fp.curlyDirectionalParams()
+	curly, ok := fp.curlyDirectionalParams()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return &ast.DirectionalParam{}, false
 	}
 	fp.lexer.Commit(id)
 	return &ast.DirectionalParam{
-		Name:         name,
-		SquareParams: *square,
+		Name:        name,
+		CurlyParams: *curly,
 		CommonMetaData: ast.CommonMetaData{
 			Key:   fp.keyGen.Next(),
 			Start: start,
@@ -2974,15 +2974,15 @@ func (fp *formulationParser) directionTypeParam() (*ast.DirectionalTypeParam, bo
 	if n, ok := fp.nameForm(); ok {
 		name = &n
 	}
-	square, ok := fp.curlyDirectionalTypeParams()
+	curly, ok := fp.curlyDirectionalTypeParams()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return &ast.DirectionalTypeParam{}, false
 	}
 	fp.lexer.Commit(id)
 	return &ast.DirectionalTypeParam{
-		Name:             name,
-		SquareTypeParams: *square,
+		Name:            name,
+		CurlyTypeParams: *curly,
 		CommonMetaData: ast.CommonMetaData{
 			Key:   fp.keyGen.Next(),
 			Start: start,

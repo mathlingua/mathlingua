@@ -188,8 +188,8 @@ type CurlyPattern struct {
 }
 
 type DirectionPattern struct {
-	Name       *NameFormPattern
-	SquareArgs []DirectionParamParamPatternKind
+	Name      *NameFormPattern
+	CurlyArgs []DirectionParamParamPatternKind
 }
 
 type ChainExpressionPattern struct {
@@ -497,10 +497,10 @@ func toCurlyArg(curlyParam *ast.CurlyParam) *CurlyPattern {
 	var squareArgs *[]FormPatternKind
 	var direction *DirectionPattern
 	if curlyParam.Direction != nil {
-		squareArgs := make([]DirectionParamParamPatternKind, 0)
-		for _, param := range curlyParam.Direction.SquareParams {
+		curlyArgs := make([]DirectionParamParamPatternKind, 0)
+		for _, param := range curlyParam.Direction.CurlyParams {
 			if form, ok := param.(ast.StructuralFormKind); ok {
-				squareArgs = append(squareArgs, ToDirectionParamParamPatternKind(form))
+				curlyArgs = append(curlyArgs, ToDirectionParamParamPatternKind(form))
 			} else {
 				panic(fmt.Sprintf("Cannot convert direction square param to a pattern: %s",
 					mlglib.PrettyPrint(param)))
@@ -512,8 +512,8 @@ func toCurlyArg(curlyParam *ast.CurlyParam) *CurlyPattern {
 			name = tmpPattern
 		}
 		direction = &DirectionPattern{
-			Name:       name,
-			SquareArgs: squareArgs,
+			Name:      name,
+			CurlyArgs: curlyArgs,
 		}
 	}
 	var curlyArgs *[]FormPatternKind

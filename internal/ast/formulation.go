@@ -318,7 +318,7 @@ type AsExpression struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// x{1}
+// x[1]
 type OrdinalCallExpression struct {
 	Target              LiteralFormKind
 	Args                []ExpressionKind
@@ -414,7 +414,7 @@ type CurlyTypeParam struct {
 
 type DirectionalTypeParam struct {
 	Name                *NameForm
-	SquareTypeParams    []DirectionType
+	CurlyTypeParams     []DirectionType
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
@@ -586,7 +586,7 @@ func (*OrdinalCallExpression) DirectionParamParamKind() {}
 
 type DirectionalParam struct {
 	Name                *NameForm
-	SquareParams        []DirectionParamParamKind
+	CurlyParams         []DirectionParamParamKind
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

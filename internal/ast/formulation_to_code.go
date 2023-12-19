@@ -655,7 +655,7 @@ func (n *DirectionalParam) ToCode(fn func(node MlgNodeKind) (string, bool)) stri
 		result += n.Name.ToCode(fn)
 	}
 	result += "{"
-	result += commaSeparatedString(n.SquareParams, fn)
+	result += commaSeparatedString(n.CurlyParams, fn)
 	result += "}"
 	return result
 }
@@ -669,7 +669,7 @@ func (n *DirectionalTypeParam) ToCode(fn func(node MlgNodeKind) (string, bool)) 
 		result += n.Name.ToCode(fn)
 	}
 	result += "{"
-	result += commaSeparatedStringOfDirectionTypes(n.SquareTypeParams, fn)
+	result += commaSeparatedStringOfDirectionTypes(n.CurlyTypeParams, fn)
 	result += "}"
 	return result
 }

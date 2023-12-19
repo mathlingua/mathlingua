@@ -1016,14 +1016,14 @@ func (n *DirectionalParam) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Name != nil {
 		fn(n.Name)
 	}
-	forEach(n.SquareParams, fn)
+	forEach(n.CurlyParams, fn)
 }
 
 func (n *DirectionalTypeParam) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Name != nil {
 		fn(n.Name)
 	}
-	forEachDirectionType(n.SquareTypeParams, fn)
+	forEachDirectionType(n.CurlyTypeParams, fn)
 }
 
 func (n *DirectionType) ForEach(fn func(subNode MlgNodeKind)) {

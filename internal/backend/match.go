@@ -664,7 +664,7 @@ func matchDirection(node *ast.DirectionalParam, pattern *DirectionPattern) Match
 	}
 
 	nameMatch := matchName(nodeName, *patternName)
-	squareMatch := matchAllDirectionParamParamKind(node.SquareParams, pattern.SquareArgs)
+	squareMatch := matchAllDirectionParamParamKind(node.CurlyParams, pattern.CurlyArgs)
 
 	return unionMatches(nameMatch, squareMatch)
 }

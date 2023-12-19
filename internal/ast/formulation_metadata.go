@@ -179,3 +179,11 @@ func (n *SelectFromBuiltinExpression) GetFormulationMetaData() *FormulationMetaD
 func (n *MapToElseBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
+
+func (n *CommandType) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}
+
+func (n *InfixCommandType) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}

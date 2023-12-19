@@ -229,6 +229,18 @@ func toNode(
 			Lhs:    rhs,
 			Rhs:    lhs,
 		}
+	case *ast.InfixCommandType:
+		// for example \:f:/
+		target := top
+		lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
+			tracker, top.Start())
+		rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
+			tracker, top.Start())
+		return &ast.InfixOperatorCallExpression{
+			Target: target,
+			Lhs:    rhs,
+			Rhs:    lhs,
+		}
 	case *ast.PseudoTokenNode:
 		// a token, for example :=, :=>, :->, is, isnot
 		switch {
@@ -360,6 +372,9 @@ func getFirstPassType(node ast.FormulationNodeKind) firstPassType {
 		return generalOperatorType
 	case *ast.InfixCommandExpression:
 		// for example \f/
+		return forcedInfixOperatorType
+	case *ast.InfixCommandType:
+		// for example \:f:/
 		return forcedInfixOperatorType
 	case *ast.PseudoTokenNode:
 		// a token, for example :=, is, isnot
@@ -539,6 +554,9 @@ func getPrecedenceAssociativity(
 		return getOperatorPrecedenceAssociativityByText(node.Text, itemType)
 	case *ast.InfixCommandExpression:
 		// for example \f/
+		return command_infix_precedence, command_infix_associativity
+	case *ast.InfixCommandType:
+		// for example \:f:/
 		return command_infix_precedence, command_infix_associativity
 	case *ast.PseudoTokenNode:
 		// a token, for example :=, :=>, is

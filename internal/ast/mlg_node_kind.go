@@ -179,6 +179,12 @@ func (*ProofIfGroup) MlgNodeKind()                           {}
 func (*ProofIffGroup) MlgNodeKind()                          {}
 func (*SelectFromBuiltinExpression) MlgNodeKind()            {}
 func (*MapToElseBuiltinExpression) MlgNodeKind()             {}
+func (*CommandType) MlgNodeKind()                            {}
+func (*InfixCommandType) MlgNodeKind()                       {}
+func (*NamedTypeParam) MlgNodeKind()                         {}
+func (*CurlyTypeParam) MlgNodeKind()                         {}
+func (*DirectionalTypeParam) MlgNodeKind()                   {}
+func (*DirectionType) MlgNodeKind()                          {}
 
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck

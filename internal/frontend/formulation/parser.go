@@ -22,6 +22,7 @@ import (
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/mlglib"
+	"strconv"
 	"strings"
 )
 
@@ -721,7 +722,11 @@ func (fp *formulationParser) pseudoExpression(
 			break
 		}
 
-		if op, ok := fp.operatorKind(); ok {
+		if cmd, ok := fp.infixCommandType(); ok {
+			children = append(children, &cmd)
+		} else if cmd, ok := fp.commandType(true); ok {
+			children = append(children, &cmd)
+		} else if op, ok := fp.operatorKind(); ok {
 			children = append(children, op)
 		} else if chain, ok := fp.chainExpression(false); ok {
 			children = append(children, &chain)
@@ -2760,6 +2765,263 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+////////////////////////////////////////// type ////////////////////////////////////////////////////
+
+func (fp *formulationParser) typeKind(allowOperator bool) (ast.TypeKind, bool) {
+	if item, ok := fp.commandType(allowOperator); ok {
+		return &item, true
+	}
+
+	if item, ok := fp.infixCommandType(); ok {
+		return &item, true
+	}
+
+	return nil, false
+}
+
+func (fp *formulationParser) commandType(allowOperator bool) (ast.CommandType, bool) {
+	start := fp.lexer.Position()
+	if !fp.hasHas(ast.BackSlash, ast.Colon) {
+		return ast.CommandType{}, false
+	}
+
+	id := fp.lexer.Snapshot()
+	fp.expect(ast.BackSlash)
+	fp.expect(ast.Colon)
+	names := make([]ast.NameForm, 0)
+	for fp.lexer.HasNext() {
+		if name, ok := fp.chainName(); ok {
+			names = append(names, name)
+		} else {
+			if !allowOperator {
+				break
+			}
+			if op, ok := fp.operatorToken(); ok {
+				names = append(names, ast.NameForm{
+					Text:            op.Text,
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg:          ast.VarArgData{},
+					CommonMetaData:  op.CommonMetaData,
+				})
+			} else {
+				break
+			}
+		}
+		if fp.has(ast.Dot) {
+			fp.expect(ast.Dot)
+		} else {
+			break
+		}
+	}
+
+	if len(names) == 0 {
+		fp.lexer.RollBack(id)
+		return ast.CommandType{}, false
+	}
+
+	var curlyTypeParam *ast.CurlyTypeParam
+	if param, ok := fp.curlyTypeParam(); ok {
+		curlyTypeParam = &param
+	}
+
+	namedTypeParams := make([]ast.NamedTypeParam, 0)
+	for fp.lexer.HasNext() {
+		if namedTypeParam, ok := fp.namedTypeParam(); ok {
+			namedTypeParams = append(namedTypeParams, namedTypeParam)
+		} else {
+			break
+		}
+	}
+
+	var parenArgs *[]ast.ExpressionKind
+	if form, ok := fp.parenArgs(); ok {
+		parenArgs = form
+	}
+
+	fp.lexer.Commit(id)
+	return ast.CommandType{
+		Names:           names,
+		CurlyTypeParam:  curlyTypeParam,
+		NamedTypeParams: &namedTypeParams,
+		ParenTypeParams: parenArgs,
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) infixCommandType() (ast.InfixCommandType, bool) {
+	id := fp.lexer.Snapshot()
+	cmd, ok := fp.commandType(true)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.InfixCommandType{}, false
+	}
+
+	if !fp.hasHas(ast.Colon, ast.Slash) {
+		fp.lexer.RollBack(id)
+		return ast.InfixCommandType{}, false
+	}
+
+	fp.expect(ast.Colon)
+	fp.expect(ast.Slash)
+
+	fp.lexer.Commit(id)
+	return ast.InfixCommandType{
+		Names:           cmd.Names,
+		CurlyTypeParam:  cmd.CurlyTypeParam,
+		NamedTypeParams: cmd.NamedTypeParams,
+		ParenTypeParams: cmd.ParenTypeParams,
+		CommonMetaData:  cmd.CommonMetaData,
+	}, true
+}
+
+func (fp *formulationParser) namedTypeParam() (ast.NamedTypeParam, bool) {
+	start := fp.lexer.Position()
+	if !fp.hasHas(ast.Colon, ast.Name) {
+		return ast.NamedTypeParam{}, false
+	}
+	id := fp.lexer.Snapshot()
+	fp.expect(ast.Colon)
+	name, ok := fp.simpleNameForm()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.NamedTypeParam{}, false
+	}
+	var curlyTypeParam *ast.CurlyTypeParam
+	if param, ok := fp.curlyTypeParam(); ok {
+		curlyTypeParam = &param
+	}
+	fp.lexer.Commit(id)
+	return ast.NamedTypeParam{
+		Name:           name,
+		CurlyTypeParam: curlyTypeParam,
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) curlyTypeParam() (ast.CurlyTypeParam, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+
+	curlyArgs, curlyOk := fp.curlyArgs()
+	if !curlyOk {
+		fp.lexer.RollBack(id)
+		return ast.CurlyTypeParam{}, false
+	}
+
+	var directionTypeParam *ast.DirectionalTypeParam
+	if param, ok := fp.directionTypeParam(); ok {
+		directionTypeParam = param
+	}
+	fp.lexer.Commit(id)
+	return ast.CurlyTypeParam{
+		CurlyTypeParams: curlyArgs,
+		TypeDirection:   directionTypeParam,
+		CommonMetaData: ast.CommonMetaData{
+			Key:   fp.keyGen.Next(),
+			Start: start,
+		},
+	}, true
+}
+
+func (fp *formulationParser) curlyDirectionalTypeParams() (*[]ast.DirectionType, bool) {
+	id := fp.lexer.Snapshot()
+	_, ok := fp.token(ast.LCurly)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return nil, false
+	}
+	args := make([]ast.DirectionType, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(ast.RCurly) {
+			break
+		}
+
+		if len(args) > 0 {
+			fp.expect(ast.Comma)
+		}
+
+		arg, ok := fp.directionType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return nil, false
+		}
+		args = append(args, *arg)
+	}
+	fp.expect(ast.RCurly)
+	fp.lexer.Commit(id)
+	return &args, true
+}
+
+func (fp *formulationParser) directionTypeParam() (*ast.DirectionalTypeParam, bool) {
+	start := fp.lexer.Position()
+	_, atOk := fp.token(ast.At)
+	if !atOk {
+		return &ast.DirectionalTypeParam{}, false
+	}
+	id := fp.lexer.Snapshot()
+	var name *ast.NameForm
+	if n, ok := fp.nameForm(); ok {
+		name = &n
+	}
+	square, ok := fp.curlyDirectionalTypeParams()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return &ast.DirectionalTypeParam{}, false
+	}
+	fp.lexer.Commit(id)
+	return &ast.DirectionalTypeParam{
+		Name:             name,
+		SquareTypeParams: *square,
+		CommonMetaData: ast.CommonMetaData{
+			Key:   fp.keyGen.Next(),
+			Start: start,
+		},
+	}, true
+}
+
+func (fp *formulationParser) directionType() (*ast.DirectionType, bool) {
+	start := fp.lexer.Position()
+	if !fp.lexer.HasNext() || !strings.HasPrefix(fp.lexer.Peek().Text, "#") {
+		return nil, false
+	}
+
+	fp.lexer.Next() // ignore the #
+	id := fp.lexer.Snapshot()
+
+	if !fp.lexer.HasNext() {
+		fp.errorAt("Expected # to be followed by an integer but found end of text", start)
+		fp.lexer.RollBack(id)
+		return nil, false
+	}
+
+	maybeNumberText := fp.lexer.Peek().Text
+	number, err := strconv.ParseUint(maybeNumberText, 10, 32)
+	if err != nil {
+		fp.errorAt(fmt.Sprintf("Expected # to be followed by an integer but found '%s'",
+			maybeNumberText), start)
+		fp.lexer.RollBack(id)
+		return nil, false
+	}
+
+	fp.lexer.Next() // move past the number
+
+	fp.lexer.Commit(id)
+	return &ast.DirectionType{
+		Number: uint32(number),
+		CommonMetaData: ast.CommonMetaData{
+			Key:   fp.keyGen.Next(),
+			Start: start,
 		},
 	}, true
 }

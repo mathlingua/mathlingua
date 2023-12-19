@@ -16,6 +16,8 @@
 
 package ast
 
+import "fmt"
+
 func FormulationNodeToCode(node FormulationNodeKind,
 	fn func(node MlgNodeKind) (string, bool)) string {
 	if node == nil {
@@ -613,6 +615,22 @@ func (n *CurlyParam) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	return result
 }
 
+func (n *CurlyTypeParam) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	result := ""
+	if n.CurlyTypeParams != nil {
+		result += "{"
+		result += commaSeparatedString(*n.CurlyTypeParams, fn)
+		result += "}"
+	}
+	if n.TypeDirection != nil {
+		result += n.TypeDirection.ToCode(fn)
+	}
+	return result
+}
+
 func (n *CurlyArg) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
@@ -642,6 +660,27 @@ func (n *DirectionalParam) ToCode(fn func(node MlgNodeKind) (string, bool)) stri
 	return result
 }
 
+func (n *DirectionalTypeParam) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	result := "@"
+	if n.Name != nil {
+		result += n.Name.ToCode(fn)
+	}
+	result += "{"
+	result += commaSeparatedStringOfDirectionTypes(n.SquareTypeParams, fn)
+	result += "}"
+	return result
+}
+
+func (n *DirectionType) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	return fmt.Sprintf("#%d", n.Number)
+}
+
 func (n *FunctionLiteralForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
@@ -650,6 +689,67 @@ func (n *FunctionLiteralForm) ToCode(fn func(node MlgNodeKind) (string, bool)) s
 	result += n.Lhs.ToCode(fn)
 	result += " => "
 	result += n.Rhs.ToCode(fn)
+	return result
+}
+
+func (n *CommandType) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	result := "\\:"
+	for i, n := range n.Names {
+		if i > 0 {
+			result += "."
+		}
+		result += n.ToCode(fn)
+	}
+	if n.CurlyTypeParam != nil {
+		result += n.CurlyTypeParam.ToCode(fn)
+	}
+	if n.NamedTypeParams != nil {
+		for _, item := range *n.NamedTypeParams {
+			result += ":" + item.Name.ToCode(fn)
+			if item.CurlyTypeParam != nil {
+				result += item.CurlyTypeParam.ToCode(fn)
+			}
+		}
+	}
+	if n.ParenTypeParams != nil {
+		result += "("
+		result += commaSeparatedString(*n.ParenTypeParams, fn)
+		result += ")"
+	}
+	return result
+}
+
+func (n *InfixCommandType) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	result := "\\:"
+	for i, n := range n.Names {
+		if i > 0 {
+			result += "."
+		}
+		result += n.ToCode(fn)
+	}
+	if n.CurlyTypeParam != nil {
+		result += n.CurlyTypeParam.ToCode(fn)
+	}
+	if n.NamedTypeParams != nil {
+		for _, item := range *n.NamedTypeParams {
+			result += ":" + item.Name.ToCode(fn)
+			if item.CurlyTypeParam != nil {
+				result += item.CurlyTypeParam.ToCode(fn)
+			}
+		}
+	}
+	if n.ParenTypeParams != nil {
+		result += "("
+		result += commaSeparatedString(*n.ParenTypeParams, fn)
+		result += ")"
+	}
+	result += ":/"
 	return result
 }
 
@@ -668,6 +768,18 @@ func commaSeparatedStringOfNameForms(forms []NameForm,
 			result += ", "
 		}
 		result += forms[i].ToCode(fn)
+	}
+	return result
+}
+
+func commaSeparatedStringOfDirectionTypes(directions []DirectionType,
+	fn func(node MlgNodeKind) (string, bool)) string {
+	result := ""
+	for i, _ := range directions {
+		if i > 0 {
+			result += ", "
+		}
+		result += directions[i].ToCode(fn)
 	}
 	return result
 }

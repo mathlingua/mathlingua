@@ -197,6 +197,8 @@ func (*Signature) ExpressionKind()                              {}
 func (*FunctionLiteralExpression) ExpressionKind()              {}
 func (*SelectFromBuiltinExpression) ExpressionKind()            {}
 func (*MapToElseBuiltinExpression) ExpressionKind()             {}
+func (*CommandType) ExpressionKind()                            {}
+func (*InfixCommandType) ExpressionKind()                       {}
 
 // f(x + y, z) or (f + g)(x)
 type FunctionCallExpression struct {
@@ -363,34 +365,61 @@ type Signature struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// \:a.b.c:x{\:a & \:b}:y{\:c}
-type Type struct {
+/////////////////////////////////////////// types //////////////////////////////////////////////////
+
+type TypeKind interface {
+	ExpressionKind
+	TypeKind()
+}
+
+func (*InfixCommandType) TypeKind() {}
+func (*CommandType) TypeKind()      {}
+
+// \function:on{\:set}:to{\:set}/
+type InfixCommandType struct {
 	Names               []NameForm
-	CurlyParam          *CurlyTypeParam
-	NamedParams         *[]NamedTypeParam
-	ParenParams         *[]Type
+	CurlyTypeParam      *CurlyTypeParam
+	NamedTypeParams     *[]NamedTypeParam
+	ParenTypeParams     *[]ExpressionKind
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+// \:a.b.c:x{\:a & \:b}:y{\:c}
+type CommandType struct {
+	Names               []NameForm
+	CurlyTypeParam      *CurlyTypeParam
+	NamedTypeParams     *[]NamedTypeParam
+	ParenTypeParams     *[]ExpressionKind
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
 
 type NamedTypeParam struct {
 	Name                NameForm
-	CurlyParam          *CurlyTypeParam
+	CurlyTypeParam      *CurlyTypeParam
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
 
-// []{} or {}
+// {}
 type CurlyTypeParam struct {
-	CurlyParams         *[]Type
-	Direction           *DirectionalTypeParam
+	CurlyTypeParams     *[]ExpressionKind
+	TypeDirection       *DirectionalTypeParam
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
 
 type DirectionalTypeParam struct {
 	Name                *NameForm
-	SquareParams        []Type
+	SquareTypeParams    []DirectionType
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+// #1 or #2
+type DirectionType struct {
+	Number              uint32
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
@@ -476,6 +505,7 @@ type OperatorKind interface {
 func (*EnclosedNonCommandOperatorTarget) OperatorKind()    {}
 func (*NonEnclosedNonCommandOperatorTarget) OperatorKind() {}
 func (*InfixCommandExpression) OperatorKind()              {}
+func (*InfixCommandType) OperatorKind()                    {}
 
 // [x] or [x + y]
 type EnclosedNonCommandOperatorTarget struct {

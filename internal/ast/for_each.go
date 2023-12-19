@@ -905,6 +905,13 @@ func (n *NamedParam) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
+func (n *NamedTypeParam) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.Name)
+	if n.CurlyTypeParam != nil {
+		fn(n.CurlyTypeParam)
+	}
+}
+
 func (n *PrefixOperatorId) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Operator)
 	fn(n.Param)
@@ -989,6 +996,15 @@ func (n *CurlyParam) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
+func (n *CurlyTypeParam) ForEach(fn func(subNode MlgNodeKind)) {
+	if n.CurlyTypeParams != nil {
+		forEach(*n.CurlyTypeParams, fn)
+	}
+	if n.TypeDirection != nil {
+		fn(n.TypeDirection)
+	}
+}
+
 func (n *CurlyArg) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(*n.CurlyArgs, fn)
 	if n.Direction != nil {
@@ -1001,6 +1017,17 @@ func (n *DirectionalParam) ForEach(fn func(subNode MlgNodeKind)) {
 		fn(n.Name)
 	}
 	forEach(n.SquareParams, fn)
+}
+
+func (n *DirectionalTypeParam) ForEach(fn func(subNode MlgNodeKind)) {
+	if n.Name != nil {
+		fn(n.Name)
+	}
+	forEachDirectionType(n.SquareTypeParams, fn)
+}
+
+func (n *DirectionType) ForEach(fn func(subNode MlgNodeKind)) {
+	// a DirectionType does not have any child nodes
 }
 
 func (n *ProofThenGroup) ForEach(fn func(subNode MlgNodeKind)) {
@@ -1139,6 +1166,32 @@ func (n *ProofClaimGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
+func (n *CommandType) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachNameForm(n.Names, fn)
+	if n.CurlyTypeParam != nil {
+		fn(n.CurlyTypeParam)
+	}
+	if n.NamedTypeParams != nil {
+		forEachNamedTypeParam(*n.NamedTypeParams, fn)
+	}
+	if n.ParenTypeParams != nil {
+		forEach(*n.ParenTypeParams, fn)
+	}
+}
+
+func (n *InfixCommandType) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachNameForm(n.Names, fn)
+	if n.CurlyTypeParam != nil {
+		fn(n.CurlyTypeParam)
+	}
+	if n.NamedTypeParams != nil {
+		forEachNamedTypeParam(*n.NamedTypeParams, fn)
+	}
+	if n.ParenTypeParams != nil {
+		forEach(*n.ParenTypeParams, fn)
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func maybeForIdItem(id *IdItem, fn func(n MlgNodeKind)) {
@@ -1150,6 +1203,12 @@ func maybeForIdItem(id *IdItem, fn func(n MlgNodeKind)) {
 func forEach[T MlgNodeKind](items []T, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(items[i])
+	}
+}
+
+func forEachDirectionType(items []DirectionType, fn func(n MlgNodeKind)) {
+	for i, _ := range items {
+		fn(&items[i])
 	}
 }
 
@@ -1166,6 +1225,12 @@ func forEachNameForm(items []NameForm, fn func(n MlgNodeKind)) {
 }
 
 func forEachNamedArg(items []NamedArg, fn func(n MlgNodeKind)) {
+	for i, _ := range items {
+		fn(&items[i])
+	}
+}
+
+func forEachNamedTypeParam(items []NamedTypeParam, fn func(n MlgNodeKind)) {
 	for i, _ := range items {
 		fn(&items[i])
 	}

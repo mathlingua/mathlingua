@@ -70,3 +70,5 @@ func (*FunctionLiteralExpression) FormulationNodeKind()              {}
 func (*FunctionLiteralForm) FormulationNodeKind()                    {}
 func (*SelectFromBuiltinExpression) FormulationNodeKind()            {}
 func (*MapToElseBuiltinExpression) FormulationNodeKind()             {}
+func (*CommandType) FormulationNodeKind()                            {}
+func (*InfixCommandType) FormulationNodeKind()                       {}

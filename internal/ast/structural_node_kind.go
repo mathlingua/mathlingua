@@ -96,13 +96,12 @@ func (*ProofNoticeGroup) StructuralNodeKind()                  {}
 func (*ProofNextGroup) StructuralNodeKind()                    {}
 func (*ProofByBecauseThenGroup) StructuralNodeKind()           {}
 func (*ProofBecauseThenGroup) StructuralNodeKind()             {}
-func (*ProofIndependentlyGroup) StructuralNodeKind()           {}
 func (*ProofStepwiseGroup) StructuralNodeKind()                {}
 func (*ProofSupposeGroup) StructuralNodeKind()                 {}
 func (*ProofBlockGroup) StructuralNodeKind()                   {}
 func (*ProofCasewiseGroup) StructuralNodeKind()                {}
 func (*ProofWithoutLossOfGeneralityGroup) StructuralNodeKind() {}
-func (*ProofContradictingGroup) StructuralNodeKind()           {}
+func (*ProofContradictionGroup) StructuralNodeKind()           {}
 func (*ProofForContradictionGroup) StructuralNodeKind()        {}
 func (*ProofForInductionGroup) StructuralNodeKind()            {}
 func (*ProofClaimGroup) StructuralNodeKind()                   {}
@@ -117,3 +116,10 @@ func (*ProofForAllGroup) StructuralNodeKind()                  {}
 func (*ProofLetGroup) StructuralNodeKind()                     {}
 func (*ProofIfGroup) StructuralNodeKind()                      {}
 func (*ProofIffGroup) StructuralNodeKind()                     {}
+func (*ProofForContrapositiveGroup) StructuralNodeKind()       {}
+func (*ProofQedGroup) StructuralNodeKind()                     {}
+func (*ProofAbsurdGroup) StructuralNodeKind()                  {}
+func (*ProofDoneGroup) StructuralNodeKind()                    {}
+func (*ProofPartwiseGroup) StructuralNodeKind()                {}
+func (*ProofSufficesToShowGroup) StructuralNodeKind()          {}
+func (*ProofToShowGroup) StructuralNodeKind()                  {}

@@ -1457,16 +1457,22 @@ func (*ProofNoticeGroup) ProofItemKind()                  {}
 func (*ProofNextGroup) ProofItemKind()                    {}
 func (*ProofByBecauseThenGroup) ProofItemKind()           {}
 func (*ProofBecauseThenGroup) ProofItemKind()             {}
-func (*ProofIndependentlyGroup) ProofItemKind()           {}
 func (*ProofStepwiseGroup) ProofItemKind()                {}
 func (*ProofSupposeGroup) ProofItemKind()                 {}
 func (*ProofBlockGroup) ProofItemKind()                   {}
 func (*ProofCasewiseGroup) ProofItemKind()                {}
 func (*ProofWithoutLossOfGeneralityGroup) ProofItemKind() {}
-func (*ProofContradictingGroup) ProofItemKind()           {}
 func (*ProofForContradictionGroup) ProofItemKind()        {}
 func (*ProofForInductionGroup) ProofItemKind()            {}
 func (*ProofClaimGroup) ProofItemKind()                   {}
+func (*ProofForContrapositiveGroup) ProofItemKind()       {}
+func (*ProofQedGroup) ProofItemKind()                     {}
+func (*ProofAbsurdGroup) ProofItemKind()                  {}
+func (*ProofDoneGroup) ProofItemKind()                    {}
+func (*ProofContradictionGroup) ProofItemKind()           {}
+func (*ProofPartwiseGroup) ProofItemKind()                {}
+func (*ProofSufficesToShowGroup) ProofItemKind()          {}
+func (*ProofToShowGroup) ProofItemKind()                  {}
 func (*TextItem) ProofItemKind()                          {}
 func (*Formulation[FormulationNodeKind]) ProofItemKind()  {}
 
@@ -1638,23 +1644,6 @@ type ProofBecauseSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var ProofIndependentlySections = []string{
-	LowerIndependentlyName,
-}
-
-type ProofIndependentlyGroup struct {
-	Label          *GroupLabel
-	Independently  ProofIndependentlySection
-	CommonMetaData CommonMetaData
-}
-
-type ProofIndependentlySection struct {
-	Independently  []ProofItemKind
-	CommonMetaData CommonMetaData
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 var ProofStepwiseSections = []string{
 	LowerStepwiseName,
 }
@@ -1711,12 +1700,14 @@ type ProofBlockSection struct {
 var ProofCasewiseSections = []string{
 	LowerCasewiseName,
 	LowerCaseName,
+	LowerElseQuestionName,
 }
 
 type ProofCasewiseGroup struct {
 	Label          *GroupLabel
 	Casewise       ProofCasewiseSection
 	Cases          []ProofCaseSection
+	Else           *ProofElseSection
 	CommonMetaData CommonMetaData
 }
 
@@ -1726,6 +1717,75 @@ type ProofCasewiseSection struct {
 
 type ProofCaseSection struct {
 	Case           []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+type ProofElseSection struct {
+	Else           []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofPartwiseSections = []string{
+	LowerPartwiseName,
+	LowerPartName,
+}
+
+type ProofPartwiseGroup struct {
+	Label          *GroupLabel
+	Partwise       ProofPartwiseSection
+	Parts          []ProofPartSection
+	CommonMetaData CommonMetaData
+}
+
+type ProofPartwiseSection struct {
+	CommonMetaData CommonMetaData
+}
+
+type ProofPartSection struct {
+	Part           []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofSufficesToShowSections = []string{
+	LowerSufficesToShowName,
+}
+
+type ProofSufficesToShowGroup struct {
+	Label          *GroupLabel
+	SufficesToShow ProofSufficesToShowSection
+	CommonMetaData CommonMetaData
+}
+
+type ProofSufficesToShowSection struct {
+	Items          []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofToShowSections = []string{
+	LowerToShowName,
+	LowerObserveName,
+}
+
+type ProofToShowGroup struct {
+	Label          *GroupLabel
+	ToShow         ProofToShowSection
+	Observe        ProofObserveSection
+	CommonMetaData CommonMetaData
+}
+
+type ProofToShowSection struct {
+	Items          []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+type ProofObserveSection struct {
+	Items          []ProofItemKind
 	CommonMetaData CommonMetaData
 }
 
@@ -1748,18 +1808,82 @@ type ProofWithoutLossOfGeneralitySection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var ProofContradictingSections = []string{
-	LowerContradictingName,
+var ProofRemarkSections = []string{
+	LowerRemarkName,
 }
 
-type ProofContradictingGroup struct {
+type ProofRemarkGroup struct {
 	Label          *GroupLabel
-	Contradicting  ProofContradictingSection
+	Remark         ProofRemarkSection
 	CommonMetaData CommonMetaData
 }
 
-type ProofContradictingSection struct {
-	Contradicting  []TextItem
+type ProofRemarkSection struct {
+	Remark         TextItem
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofContradictionSections = []string{
+	LowerContradictionName,
+}
+
+type ProofContradictionGroup struct {
+	Label          *GroupLabel
+	Contradiction  ProofContradictionSection
+	CommonMetaData CommonMetaData
+}
+
+type ProofContradictionSection struct {
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofAbsurdSections = []string{
+	LowerAbsurdName,
+}
+
+type ProofAbsurdGroup struct {
+	Label          *GroupLabel
+	Absurd         ProofAbsurdSection
+	CommonMetaData CommonMetaData
+}
+
+type ProofAbsurdSection struct {
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofDoneSections = []string{
+	LowerDoneName,
+}
+
+type ProofDoneGroup struct {
+	Label          *GroupLabel
+	Done           ProofDoneSection
+	CommonMetaData CommonMetaData
+}
+
+type ProofDoneSection struct {
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofQedSections = []string{
+	LowerQedName,
+}
+
+type ProofQedGroup struct {
+	Label          *GroupLabel
+	Qed            ProofQedSection
+	CommonMetaData CommonMetaData
+}
+
+type ProofQedSection struct {
 	CommonMetaData CommonMetaData
 }
 
@@ -1767,19 +1891,33 @@ type ProofContradictingSection struct {
 
 var ProofForContradictionSections = []string{
 	LowerForContradictionName,
-	LowerSupposeName,
-	LowerThenName,
 }
 
 type ProofForContradictionGroup struct {
 	Label            *GroupLabel
 	ForContradiction ProofForContradictionSection
-	Suppose          ProofSupposeSection
-	Then             ProofThenSection
 	CommonMetaData   CommonMetaData
 }
 
 type ProofForContradictionSection struct {
+	Items          []ProofItemKind
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var ProofForContrapositiveSections = []string{
+	LowerForContrapositiveName,
+}
+
+type ProofForContrapositiveGroup struct {
+	Label             *GroupLabel
+	ForContrapositive ProofForContrapositiveSection
+	CommonMetaData    CommonMetaData
+}
+
+type ProofForContrapositiveSection struct {
+	Items          []ProofItemKind
 	CommonMetaData CommonMetaData
 }
 
@@ -1787,29 +1925,16 @@ type ProofForContradictionSection struct {
 
 var ProofForInductionSections = []string{
 	LowerForInductionName,
-	LowerBaseCaseName,
-	LowerGenerallyName,
 }
 
 type ProofForInductionGroup struct {
 	Label          *GroupLabel
 	ForInduction   ProofForInductionSection
-	BaseCase       ProofBaseCaseSection
-	Generally      ProofGenerallySection
 	CommonMetaData CommonMetaData
 }
 
 type ProofForInductionSection struct {
-	CommonMetaData CommonMetaData
-}
-
-type ProofBaseCaseSection struct {
-	BaseCase       []ProofItemKind
-	CommonMetaData CommonMetaData
-}
-
-type ProofGenerallySection struct {
-	Generally      []ProofItemKind
+	Items          []ProofItemKind
 	CommonMetaData CommonMetaData
 }
 

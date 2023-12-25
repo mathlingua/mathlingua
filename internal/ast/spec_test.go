@@ -425,6 +425,7 @@ var all_group_test_cases = []testCase{
 		expected: []string{
 			"casewise",
 			"case",
+			"else?",
 		},
 	},
 	{
@@ -441,9 +442,9 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ProofContradictingSections,
+		actual: ProofContradictionSections,
 		expected: []string{
-			"contradicting",
+			"contradiction",
 		},
 	},
 	{
@@ -484,16 +485,12 @@ var all_group_test_cases = []testCase{
 		actual: ProofForContradictionSections,
 		expected: []string{
 			"forContradiction",
-			"suppose",
-			"then",
 		},
 	},
 	{
 		actual: ProofForInductionSections,
 		expected: []string{
 			"forInduction",
-			"baseCase",
-			"generally",
 		},
 	},
 	{
@@ -508,12 +505,6 @@ var all_group_test_cases = []testCase{
 		expected: []string{
 			"iff",
 			"then",
-		},
-	},
-	{
-		actual: ProofIndependentlySections,
-		expected: []string{
-			"independently",
 		},
 	},
 	{
@@ -729,6 +720,50 @@ var all_group_test_cases = []testCase{
 			"next",
 			"by?",
 			"because?",
+		},
+	},
+	{
+		actual: ProofForContrapositiveSections,
+		expected: []string{
+			"forContrapositive",
+		},
+	},
+	{
+		actual: ProofQedSections,
+		expected: []string{
+			"qed",
+		},
+	},
+	{
+		actual: ProofAbsurdSections,
+		expected: []string{
+			"absurd",
+		},
+	},
+	{
+		actual: ProofDoneSections,
+		expected: []string{
+			"done",
+		},
+	},
+	{
+		actual: ProofPartwiseSections,
+		expected: []string{
+			"partwise",
+			"part",
+		},
+	},
+	{
+		actual: ProofSufficesToShowSections,
+		expected: []string{
+			"sufficesToShow",
+		},
+	},
+	{
+		actual: ProofToShowSections,
+		expected: []string{
+			"toShow",
+			"observe",
 		},
 	},
 }

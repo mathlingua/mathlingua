@@ -1097,10 +1097,6 @@ func (n *ProofBecauseThenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Then.Then, fn)
 }
 
-func (n *ProofIndependentlyGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Independently.Independently, fn)
-}
-
 func (n *ProofStepwiseGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Stepwise.Stepwise, fn)
 }
@@ -1118,24 +1114,17 @@ func (n *ProofCasewiseGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	for i := range n.Cases {
 		forEachProofItem(n.Cases[i].Case, fn)
 	}
+	if n.Else != nil {
+		forEachProofItem(n.Else.Else, fn)
+	}
 }
 
 func (n *ProofWithoutLossOfGeneralityGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.WithoutLossOfGenerality.Items, fn)
 }
 
-func (n *ProofContradictingGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachTextItem(n.Contradicting.Contradicting, fn)
-}
-
 func (n *ProofForContradictionGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.Suppose.Suppose, fn)
-	forEachProofItem(n.Then.Then, fn)
-}
-
-func (n *ProofForInductionGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachProofItem(n.BaseCase.BaseCase, fn)
-	forEachProofItem(n.Generally.Generally, fn)
+	forEachProofItem(n.ForContradiction.Items, fn)
 }
 
 func (n *ProofClaimGroup) ForEach(fn func(subNode MlgNodeKind)) {
@@ -1185,6 +1174,37 @@ func (n *InfixCommandType) ForEach(fn func(subNode MlgNodeKind)) {
 		forEach(*n.ParenTypeParams, fn)
 	}
 }
+
+func (n *ProofForContrapositiveGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.ForContrapositive.Items, fn)
+}
+
+func (n *ProofForInductionGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.ForInduction.Items, fn)
+}
+
+func (n *ProofPartwiseGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	for _, part := range n.Parts {
+		forEachProofItem(part.Part, fn)
+	}
+}
+
+func (n *ProofSufficesToShowGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.SufficesToShow.Items, fn)
+}
+
+func (n *ProofToShowGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachProofItem(n.ToShow.Items, fn)
+	forEachProofItem(n.Observe.Items, fn)
+}
+
+func (n *ProofQedGroup) ForEach(fn func(subNode MlgNodeKind)) {}
+
+func (n *ProofAbsurdGroup) ForEach(fn func(subNode MlgNodeKind)) {}
+
+func (n *ProofDoneGroup) ForEach(fn func(subNode MlgNodeKind)) {}
+
+func (n *ProofContradictionGroup) ForEach(fn func(subNode MlgNodeKind)) {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

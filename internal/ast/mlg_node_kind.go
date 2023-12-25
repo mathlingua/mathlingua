@@ -155,12 +155,11 @@ func (*ProofNoticeGroup) MlgNodeKind()                       {}
 func (*ProofNextGroup) MlgNodeKind()                         {}
 func (*ProofByBecauseThenGroup) MlgNodeKind()                {}
 func (*ProofBecauseThenGroup) MlgNodeKind()                  {}
-func (*ProofIndependentlyGroup) MlgNodeKind()                {}
 func (*ProofStepwiseGroup) MlgNodeKind()                     {}
 func (*ProofSupposeGroup) MlgNodeKind()                      {}
 func (*ProofBlockGroup) MlgNodeKind()                        {}
 func (*ProofWithoutLossOfGeneralityGroup) MlgNodeKind()      {}
-func (*ProofContradictingGroup) MlgNodeKind()                {}
+func (*ProofContradictionGroup) MlgNodeKind()                {}
 func (*ProofForContradictionGroup) MlgNodeKind()             {}
 func (*ProofForInductionGroup) MlgNodeKind()                 {}
 func (*ProofClaimGroup) MlgNodeKind()                        {}
@@ -184,6 +183,13 @@ func (*NamedTypeParam) MlgNodeKind()                         {}
 func (*CurlyTypeParam) MlgNodeKind()                         {}
 func (*DirectionalTypeParam) MlgNodeKind()                   {}
 func (*DirectionType) MlgNodeKind()                          {}
+func (*ProofForContrapositiveGroup) MlgNodeKind()            {}
+func (*ProofQedGroup) MlgNodeKind()                          {}
+func (*ProofAbsurdGroup) MlgNodeKind()                       {}
+func (*ProofDoneGroup) MlgNodeKind()                         {}
+func (*ProofPartwiseGroup) MlgNodeKind()                     {}
+func (*ProofSufficesToShowGroup) MlgNodeKind()               {}
+func (*ProofToShowGroup) MlgNodeKind()                       {}
 
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck

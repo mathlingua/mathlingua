@@ -214,8 +214,6 @@ func (n *ProofByBecauseThenGroup) GetCommonMetaData() *CommonMetaData { return &
 
 func (n *ProofBecauseThenGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
-func (n *ProofIndependentlyGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
 func (n *ProofStepwiseGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
 func (n *ProofSupposeGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
@@ -224,7 +222,7 @@ func (n *ProofBlockGroup) GetCommonMetaData() *CommonMetaData { return &n.Common
 
 func (n *ProofCasewiseGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
-func (n *ProofContradictingGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
+func (n *ProofContradictionGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
 func (n *ProofForContradictionGroup) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
@@ -277,3 +275,31 @@ func (n *NamedTypeParam) GetCommonMetaData() *CommonMetaData       { return &n.C
 func (n *CurlyTypeParam) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
 func (n *DirectionalTypeParam) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 func (n *DirectionType) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
+
+func (n *ProofForContrapositiveGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ProofQedGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ProofAbsurdGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ProofDoneGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ProofPartwiseGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ProofSufficesToShowGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ProofToShowGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}

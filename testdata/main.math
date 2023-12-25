@@ -609,9 +609,6 @@ Proof:
   then: "something"
 . because: "something"
   then: "something"
-. independently:
-  . "abc"
-  . "xyz"
 . stepwise:
   . "abc"
   . "xyz"
@@ -622,16 +619,33 @@ Proof:
 . casewise:
   case: "abc"
   case: "xyz"
+  else: "x"
 . withoutLossOfGenerality:
   . "abc"
   . 'xyz'
-. contradicting: "a"
+. qed:
+. absurd:
+. done:
+. contradiction:
 . forContradiction:
-  suppose: "something"
-  then: "something"
+  . 'a'
 . forInduction:
-  baseCase: "something"
-  generally: "something"
+  . 'b'
+. forContrapositive:
+  . 'c'
+. sufficesToShow:
+  . 'd'
+. toShow:
+  . 'x'
+  observe:
+  . 'y'
+. partwise:
+  part:
+  . 'a'
+  part:
+  . 'b'
+  part:
+  . 'c'
 . claim:
   given: x
   using: y

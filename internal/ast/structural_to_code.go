@@ -785,6 +785,13 @@ func (n *ProofBecauseThenGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
+func (n *ProofRemarkGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSingleTextItemSection(LowerRemarkName, n.Remark.Remark, indent, hasDot && n.Label == nil)
+	return db.Lines()
+}
+
 func (n *ProofStepwiseGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)

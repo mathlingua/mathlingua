@@ -2960,6 +2960,8 @@ func (p *parser) toProofItem(arg phase4.Argument) ast.ProofItemKind {
 			return &grp
 		} else if grp, ok := p.toProofToShowGroup(*group); ok {
 			return &grp
+		} else if grp, ok := p.toProofRemarkGroup(*group); ok {
+			return &grp
 		}
 	}
 
@@ -3322,6 +3324,30 @@ func (p *parser) toProofBlockGroup(group phase4.Group) (ast.ProofBlockGroup, boo
 func (p *parser) toProofBlockSection(section phase4.Section) *ast.ProofBlockSection {
 	return &ast.ProofBlockSection{
 		Block:          p.oneOrMoreProofItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toProofRemarkGroup(group phase4.Group) (ast.ProofRemarkGroup, bool) {
+	if !startsWithSections(group, ast.LowerRemarkName) {
+		return ast.ProofRemarkGroup{}, false
+	}
+
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ProofRemarkSections...)
+	if !ok {
+		return ast.ProofRemarkGroup{}, false
+	}
+
+	return ast.ProofRemarkGroup{
+		Remark: *p.toProofRemarkSection(sections[ast.LowerRemarkName]),
+	}, true
+}
+
+func (p *parser) toProofRemarkSection(section phase4.Section) *ast.ProofRemarkSection {
+	return &ast.ProofRemarkSection{
+		Remark:         p.exactlyOneTextItem(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }

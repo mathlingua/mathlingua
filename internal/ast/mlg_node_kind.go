@@ -190,6 +190,7 @@ func (*ProofDoneGroup) MlgNodeKind()                         {}
 func (*ProofPartwiseGroup) MlgNodeKind()                     {}
 func (*ProofSufficesToShowGroup) MlgNodeKind()               {}
 func (*ProofToShowGroup) MlgNodeKind()                       {}
+func (*ProofRemarkGroup) MlgNodeKind()                       {}
 
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck

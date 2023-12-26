@@ -766,6 +766,12 @@ var all_group_test_cases = []testCase{
 			"observe",
 		},
 	},
+	{
+		actual: ProofRemarkSections,
+		expected: []string{
+			"remark",
+		},
+	},
 }
 
 func TestSpec(t *testing.T) {

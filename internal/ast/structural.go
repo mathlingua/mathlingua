@@ -1473,6 +1473,7 @@ func (*ProofContradictionGroup) ProofItemKind()           {}
 func (*ProofPartwiseGroup) ProofItemKind()                {}
 func (*ProofSufficesToShowGroup) ProofItemKind()          {}
 func (*ProofToShowGroup) ProofItemKind()                  {}
+func (*ProofRemarkGroup) ProofItemKind()                  {}
 func (*TextItem) ProofItemKind()                          {}
 func (*Formulation[FormulationNodeKind]) ProofItemKind()  {}
 

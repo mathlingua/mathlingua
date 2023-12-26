@@ -123,3 +123,4 @@ func (*ProofDoneGroup) StructuralNodeKind()                    {}
 func (*ProofPartwiseGroup) StructuralNodeKind()                {}
 func (*ProofSufficesToShowGroup) StructuralNodeKind()          {}
 func (*ProofToShowGroup) StructuralNodeKind()                  {}
+func (*ProofRemarkGroup) StructuralNodeKind()                  {}

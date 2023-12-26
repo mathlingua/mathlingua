@@ -303,3 +303,7 @@ func (n *ProofSufficesToShowGroup) GetCommonMetaData() *CommonMetaData {
 func (n *ProofToShowGroup) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
+
+func (n *ProofRemarkGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}

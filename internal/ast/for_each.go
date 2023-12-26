@@ -1175,6 +1175,10 @@ func (n *InfixCommandType) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
+func (n *ProofRemarkGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.Remark.Remark)
+}
+
 func (n *ProofForContrapositiveGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.ForContrapositive.Items, fn)
 }

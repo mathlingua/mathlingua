@@ -28,8 +28,8 @@
 }
 
 .contentWrapper {
-  overflow-x: auto;
-  overflow-y: clip;
+  overflow-x: visible;
+  overflow-y: visible;
 }
 
 .innerContentWrapper {

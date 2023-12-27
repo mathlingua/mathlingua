@@ -801,7 +801,7 @@ func (fp *formulationParser) typeMetaKind() (ast.TypeMetaKind, bool) {
 	if !fp.has(ast.LCurly) {
 		fp.lexer.Commit(id)
 		return ast.TypeMetaKind{
-			Signatures: nil,
+			Types: nil,
 			CommonMetaData: ast.CommonMetaData{
 				Start: fp.getShiftedPosition(start),
 				Key:   fp.keyGen.Next(),
@@ -810,13 +810,13 @@ func (fp *formulationParser) typeMetaKind() (ast.TypeMetaKind, bool) {
 	}
 
 	fp.expect(ast.LCurly)
-	signatures := make([]ast.Signature, 0)
+	types := make([]ast.TypeKind, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RCurly) {
 			break
 		}
 
-		if len(signatures) > 0 {
+		if len(types) > 0 {
 			if !fp.has(ast.Operator) || fp.lexer.Peek().Text != "&" {
 				fp.error(fmt.Sprintf("Expected a &"))
 			}
@@ -825,10 +825,16 @@ func (fp *formulationParser) typeMetaKind() (ast.TypeMetaKind, bool) {
 			}
 		}
 
-		if sig, ok := fp.signature(); ok {
-			signatures = append(signatures, sig)
+		if exp, ok := fp.expressionKind(ast.RCurly); ok {
+			if t, ok := exp.(ast.TypeKind); ok {
+				types = append(types, t)
+			} else {
+				fp.error("Expected a type")
+				// move past the unexpected token
+				fp.lexer.Next()
+			}
 		} else {
-			fp.error("Expected a signature")
+			fp.error("Expected a type expression")
 			// move past the unexpected token
 			fp.lexer.Next()
 		}
@@ -836,7 +842,7 @@ func (fp *formulationParser) typeMetaKind() (ast.TypeMetaKind, bool) {
 	fp.expect(ast.RCurly)
 	fp.lexer.Commit(id)
 	return ast.TypeMetaKind{
-		Signatures: &signatures,
+		Types: &types,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

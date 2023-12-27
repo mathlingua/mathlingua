@@ -374,10 +374,11 @@ type TypeKind interface {
 	TypeKind()
 }
 
-func (*InfixCommandType) TypeKind() {}
-func (*CommandType) TypeKind()      {}
+func (*InfixCommandType) TypeKind()            {}
+func (*CommandType) TypeKind()                 {}
+func (*InfixOperatorCallExpression) TypeKind() {} // \:set \:in:/ \:set
 
-// \function:on{\:set}:to{\:set}/
+// \:function:on{\:set}:to{\:set}:/
 type InfixCommandType struct {
 	Names               []NameForm
 	CurlyTypeParam      *CurlyTypeParam
@@ -433,9 +434,10 @@ type KindKind interface {
 	KindKind()
 }
 
-// \\type{\[set] & \[group]}
+// \\type{\:set & \:group}
+// \\type{\:set \:in:/ \:set}
 type TypeMetaKind struct {
-	Signatures          *[]Signature
+	Types               *[]TypeKind
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

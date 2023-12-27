@@ -596,6 +596,65 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 			return w.infixCommandToWritten(path, n)
 		case *ast.AsExpression:
 			return w.formulationNodeToWritten(path, n.Lhs), true
+		case *ast.CommandType:
+			// \:set
+			noPrefix := strings.Replace(n.ToCode(ast.NoOp), "\\:", "", 1)
+			return fmt.Sprintf("\\textrm{%s}", noPrefix), true
+		case *ast.InfixCommandType:
+			// \:in:/
+			noPrefix := strings.Replace(n.ToCode(ast.NoOp), "\\:", "", 1)
+			noSuffix := strings.Replace(noPrefix, ":/", "", 1)
+			return fmt.Sprintf("\\textrm{ %s }", noSuffix), true
+		case *ast.TypeMetaKind:
+			// \\type{\:set & \:group}
+			text := "\\textrm{type}"
+			if n.Types != nil {
+				text += "\\textrm{ of }"
+				for i, t := range *n.Types {
+					if i > 0 {
+						text += "\\textrm{ and }"
+					}
+					text += w.formulationNodeToWritten(path, t)
+				}
+			}
+			return text, true
+		case *ast.FormulationMetaKind:
+			// \\formulation{expression | statement}
+			if n.Kinds == nil {
+				return "formulation", true
+			}
+			text := "\\textrm{"
+			for i, kind := range *n.Kinds {
+				if i > 0 {
+					text += " or "
+				}
+				text += kind
+			}
+			text += "}"
+			return text, true
+		case *ast.MapToElseBuiltinExpression:
+			// \\map{x[i[k]]}:to{x[i[k]] + 1}:else{0}
+			text := "\\textrm{map }"
+			text += w.formulationNodeToWritten(path, &n.Target)
+			text += "\\textrm{ to }"
+			text += w.formulationNodeToWritten(path, n.To)
+			if n.Else != nil {
+				text += "\\textrm{ else }"
+				text += w.formulationNodeToWritten(path, n.Else)
+			}
+			return text, true
+		case *ast.SelectFromBuiltinExpression:
+			// \\select{statement|specification}:from{x}
+			text := "\\textrm{select }"
+			for i, kind := range n.Kinds {
+				if i > 0 {
+					text += " \\text{ or }"
+				}
+				text += fmt.Sprintf("\\textrm{%s}", kind)
+			}
+			text += "\\textrm{ from }"
+			text += w.formulationNodeToWritten(path, &n.Target)
+			return text, true
 		default:
 			return "", false
 		}

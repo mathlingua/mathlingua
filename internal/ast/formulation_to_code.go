@@ -270,13 +270,13 @@ func (n *TypeMetaKind) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 		return res
 	}
 	result := "\\\\type"
-	if n.Signatures != nil {
+	if n.Types != nil {
 		result += "{"
-		for i, sig := range *n.Signatures {
+		for i, t := range *n.Types {
 			if i > 0 {
 				result += " & "
 			}
-			result += sig.ToCode(fn)
+			result += t.ToCode(fn)
 		}
 		result += "}"
 	}

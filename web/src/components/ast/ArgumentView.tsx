@@ -27,7 +27,9 @@ export const ArgumentView = (props: ArgumentViewProps) => {
   } else {
     component = (
       <>
-        <Indent size={props.indent}/><Dot /><Space />
+        <Indent size={props.indent} showSource={props.showSource} />
+        <Dot showSource={props.showSource} />
+        <Space showSource={props.showSource} />
         <ArgumentDataKindView
           node={props.node.Arg}
           showSource={props.showSource}

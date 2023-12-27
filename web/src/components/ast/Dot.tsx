@@ -1,6 +1,14 @@
 import React from 'react';
 
-export const Dot = () => {
+export interface DotProps {
+  showSource: boolean;
+}
+
+export const Dot = (props: DotProps) => {
+  if (props.showSource) {
+    return <span>.</span>;
+  }
+
   return (
     <span style={DOT_STYLE}>
       &#8729;

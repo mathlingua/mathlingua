@@ -18,13 +18,15 @@ export interface SectionViewProps {
 export const SectionView = (props: SectionViewProps) => {
   return (
     <>
-      <span className={styles.header}>{props.node.Name}</span>:<Space/>
+      <span className={styles.header}>
+        {props.node.Name}
+      </span>:<Space showSource={props.showSource} />
       {
         props.node.Args?.map((arg, index) => (
           <span key={index}>
             {!arg.IsInline && <Newline />}
             {(arg.IsInline && props.node.Args?.[index-1]?.IsInline) &&
-              <><Comma /></>}
+              <><Comma showSource={props.showSource} /></>}
             <ArgumentView
               node={arg}
               showSource={props.showSource}

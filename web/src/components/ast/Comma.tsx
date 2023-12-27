@@ -1,10 +1,14 @@
 import React from 'react';
 import { Space } from './Space';
 
-export const Comma = () => {
+export interface CommaProps {
+  showSource: boolean;
+}
+
+export const Comma = (props: CommaProps) => {
   return (
     <>
-      ,<Space />
+      ,<Space showSource={props.showSource} />
     </>
   );
 };

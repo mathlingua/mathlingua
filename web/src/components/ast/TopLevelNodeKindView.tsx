@@ -104,14 +104,18 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
             {props.showCloseIcon ? <CloseIcon className={styles.closeIcon} onClick={props.onCloseClicked} /> : <span></span>}
             <MenuIcon className={styles.switchIcon} onClick={() => setShowSource(src => !src)} />
           </div>
-          <div className={styles.contentWrapper}>
+          <div className={styles.contentWrapper}
+               style={{
+                 overflowX: showSource ? 'auto' : undefined,
+                 overflowY: showSource ? 'auto' : undefined,
+               }}>
             <div className={styles.innerContentWrapper}>
               <IdView id={idText} isLatex={isLatex} idSrc={group.Id} showSource={showSource} />
               <GroupView
                 node={props.node as any}
                 showSource={showSource}
                 indent={0}
-                skipDocumentsSection={onlyHasCalledAndWritten}
+                skipDocumentsSection={!showSource && onlyHasCalledAndWritten}
                 onSelectedSignature={props.onSelectedSignature} />
             </div>
           </div>

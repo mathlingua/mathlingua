@@ -56,7 +56,7 @@ function section(
     return (
       <span key={index}>
         {index > 0 && <Newline />}
-        {index > 0 && <Indent size={indent} />}
+        {index > 0 && <Indent size={indent} showSource={showSource} />}
         <div className={styles.separator}></div>
         {secView}
       </span>
@@ -66,7 +66,7 @@ function section(
   return (
     <span key={index}>
       {index > 0 && <Newline />}
-      {index > 0 && <Indent size={indent} />}
+      {index > 0 && <Indent size={indent} showSource={showSource} />}
       {secView}
     </span>
   );

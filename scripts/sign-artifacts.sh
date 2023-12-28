@@ -23,6 +23,18 @@ then
     exit 1
   fi
 
+  if [ -z "$MLG_DEV_APP_PASSWORD" ]; then
+    echo "You must set the MLG_DEV_APP_PASSWORD environment variable to an "
+    echo "app-specific password.  See the 'How to generate an app-specific password'"
+    echo "section of https://support.apple.com/en-us/HT204397."
+    exit 1
+  fi
+
+  echo "Ensuring the mlg app-specific password is stored in the keychain"
+  xcrun altool --store-password-in-keychain-item altool \
+    -u "$MLG_DEV_APPLE_EMAIL" \
+    -p "$MLG_DEV_APP_PASSWORD"
+
   if [ "$1" = "--notarize" ]; then
     echo "Attempting to notarize the MacOS binaries"
     for file in $(ls release/mlg-*-darwin-*)

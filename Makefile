@@ -35,6 +35,10 @@ release:
 artifacts:
 	./scripts/build-artifacts.sh
 
+.PHONY: format
+format:
+	go fmt ./...
+
 .PHONY: vet
 vet:
 	go vet ./...
@@ -45,15 +49,15 @@ lint:
 
 .PHONY: longlines
 longlines:
-	grep -l -E '.{101}' `find . -iname '*.go'`
+	./scripts/find-long-lines.sh
+
+.PHONY: check
+check:
+	make format && make vet && make lint && make longlines
 
 .PHONY: clean
 clean:
 	go clean && rm -Rf web/build
-
-.PHONY: format
-format:
-	go fmt ./...
 
 .PHONY: deps
 deps:

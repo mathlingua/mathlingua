@@ -114,7 +114,7 @@ func GetSignatureStringFromId(id ast.IdItem) (string, bool) {
 		return GetSignatureStringFromCommandId(*n), true
 	case *ast.InfixCommandOperatorId:
 		// x \in/ y
-		return GetSignatureStringFromInfixCommandId(*&n.Operator), true
+		return GetSignatureStringFromInfixCommandId(n.Operator), true
 	default:
 		return "", false
 	}

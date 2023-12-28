@@ -1272,12 +1272,6 @@ func forEachTarget(items []Target, fn func(n MlgNodeKind)) {
 	}
 }
 
-func forEachSignature(items []Signature, fn func(n MlgNodeKind)) {
-	for i := range items {
-		fn(&items[i])
-	}
-}
-
 func forEachTypeKind(types []TypeKind, fn func(n MlgNodeKind)) {
 	for i := range types {
 		fn(types[i])

@@ -722,10 +722,8 @@ func (fp *formulationParser) pseudoExpression(
 			break
 		}
 
-		if cmd, ok := fp.infixCommandType(); ok {
-			children = append(children, &cmd)
-		} else if cmd, ok := fp.commandType(true); ok {
-			children = append(children, &cmd)
+		if cmd, ok := fp.typeKind(true); ok {
+			children = append(children, cmd)
 		} else if op, ok := fp.operatorKind(); ok {
 			children = append(children, op)
 		} else if chain, ok := fp.chainExpression(false); ok {
@@ -818,7 +816,7 @@ func (fp *formulationParser) typeMetaKind() (ast.TypeMetaKind, bool) {
 
 		if len(types) > 0 {
 			if !fp.has(ast.Operator) || fp.lexer.Peek().Text != "&" {
-				fp.error(fmt.Sprintf("Expected a &"))
+				fp.error(fmt.Sprint("Expected an &"))
 			}
 			if fp.has(ast.Operator) {
 				fp.next() // move past the token
@@ -1863,35 +1861,6 @@ func (fp *formulationParser) structuralFormKindPossiblyWithColonEquals() (
 	}
 }
 
-func (fp *formulationParser) parenParams() (*[]ast.StructuralFormKind, bool) {
-	id := fp.lexer.Snapshot()
-	_, ok := fp.token(ast.LParen)
-	if !ok {
-		fp.lexer.RollBack(id)
-		return nil, false
-	}
-	args := make([]ast.StructuralFormKind, 0)
-	for fp.lexer.HasNext() {
-		if fp.has(ast.RParen) {
-			break
-		}
-
-		if len(args) > 0 {
-			fp.expect(ast.Comma)
-		}
-
-		arg, ok := fp.structuralFormKindWithoutColonEquals()
-		if !ok {
-			fp.lexer.RollBack(id)
-			return nil, false
-		}
-		args = append(args, arg)
-	}
-	fp.expect(ast.RParen)
-	fp.lexer.Commit(id)
-	return &args, true
-}
-
 func (fp *formulationParser) nameParams() ([]ast.NameForm, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LParen)
@@ -2335,26 +2304,6 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 	}, true
 }
 
-func (fp *formulationParser) literalFormKind() (ast.LiteralFormKind, bool) {
-	if name, ok := fp.nameForm(); ok {
-		return &name, ok
-	}
-
-	if fun, ok := fp.functionForm(); ok {
-		return &fun, ok
-	}
-
-	if tup, ok := fp.tupleForm(); ok {
-		return &tup, ok
-	}
-
-	if set, ok := fp.conditionalSetIdForm(); ok {
-		return &set, ok
-	}
-
-	return nil, false
-}
-
 ////////////////////////////////////////// id forms ////////////////////////////////////////////////
 
 func (fp *formulationParser) idKind() (ast.IdKind, bool) {
@@ -2778,11 +2727,11 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 ////////////////////////////////////////// type ////////////////////////////////////////////////////
 
 func (fp *formulationParser) typeKind(allowOperator bool) (ast.TypeKind, bool) {
-	if item, ok := fp.commandType(allowOperator); ok {
+	if item, ok := fp.infixCommandType(); ok {
 		return &item, true
 	}
 
-	if item, ok := fp.infixCommandType(); ok {
+	if item, ok := fp.commandType(allowOperator); ok {
 		return &item, true
 	}
 

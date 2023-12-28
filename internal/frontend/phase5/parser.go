@@ -2739,26 +2739,6 @@ func (p *parser) toBiographySection(section phase4.Section) *ast.BiographySectio
 	}
 }
 
-func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[*ast.Signature] {
-	switch data := arg.Arg.(type) {
-	case *phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseSignature(
-			p.path, data.Text, arg.MetaData.Start, p.tracker, p.keyGen); ok {
-			return ast.Formulation[*ast.Signature]{
-				RawText:        data.Text,
-				Root:           &node,
-				Label:          data.Label,
-				CommonMetaData: toCommonMetaData(data.MetaData),
-			}
-		} else {
-			return ast.Formulation[*ast.Signature]{}
-		}
-	}
-
-	p.tracker.Append(p.newError("Expected a signature", arg.MetaData.Start))
-	return ast.Formulation[*ast.Signature]{}
-}
-
 ///////////////////////////////////// argument lists ///////////////////////////////////////////////
 
 func (p *parser) toFormulations(args []phase4.Argument) []ast.Formulation[ast.FormulationNodeKind] {
@@ -2833,14 +2813,6 @@ func (p *parser) toResourceKinds(args []phase4.Argument) []ast.ResourceKind {
 		if note, ok := p.toResourceKind(arg); ok {
 			result = append(result, note)
 		}
-	}
-	return result
-}
-
-func (p *parser) toSignaturesItems(args []phase4.Argument) []ast.Formulation[*ast.Signature] {
-	result := make([]ast.Formulation[*ast.Signature], 0)
-	for _, arg := range args {
-		result = append(result, p.toSignatureItem(arg))
 	}
 	return result
 }
@@ -4205,12 +4177,6 @@ func (p *parser) exactlyOneProofItem(section phase4.Section) ast.ProofItemKind {
 	return exactlyOne(p, p.toProofItems(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) exactlyOneFormulation(
-	section phase4.Section) ast.Formulation[ast.FormulationNodeKind] {
-	var def ast.Formulation[ast.FormulationNodeKind] = ast.Formulation[ast.FormulationNodeKind]{}
-	return exactlyOne(p, p.toFormulations(section.Args), def, section.MetaData.Start, p.tracker)
-}
-
 func (p *parser) oneOrMoreFormulation(
 	section phase4.Section) []ast.Formulation[ast.FormulationNodeKind] {
 	return oneOrMore(p, p.toFormulations(section.Args), section.MetaData.Start, p.tracker)
@@ -4229,21 +4195,12 @@ func (p *parser) exactlyOneAlias(section phase4.Section) ast.Alias {
 	return exactlyOne(p, p.toAliases(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) exactlyOneSpec(section phase4.Section) ast.Spec {
-	var def ast.Spec = ast.Spec{}
-	return exactlyOne(p, p.toSpecs(section.Args), def, section.MetaData.Start, p.tracker)
-}
-
 func (p *parser) oneOrMoreTargets(section phase4.Section) []ast.Target {
 	return oneOrMore(p, p.toTargets(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreTextItems(section phase4.Section) []ast.TextItem {
 	return oneOrMore(p, p.toTextItems(section.Args), section.MetaData.Start, p.tracker)
-}
-
-func (p *parser) zeroOrMoreTextItems(section phase4.Section) []ast.TextItem {
-	return p.toTextItems(section.Args)
 }
 
 func (p *parser) oneOrMorePersonKinds(section phase4.Section) []ast.PersonKind {
@@ -4257,15 +4214,6 @@ func (p *parser) oneOrMoreResourceKinds(section phase4.Section) []ast.ResourceKi
 func (p *parser) exactlyOneTarget(section phase4.Section) ast.Target {
 	var def ast.Target = ast.Target{}
 	return exactlyOne(p, p.toTargets(section.Args), def, section.MetaData.Start, p.tracker)
-}
-
-func (p *parser) exactlyOneSignatureItem(section phase4.Section) ast.Formulation[*ast.Signature] {
-	var def ast.Formulation[*ast.Signature] = ast.Formulation[*ast.Signature]{}
-	return exactlyOne(p, p.toSignaturesItems(section.Args), def, section.MetaData.Start, p.tracker)
-}
-
-func (p *parser) oneOrMoreSignatureItems(section phase4.Section) []ast.Formulation[*ast.Signature] {
-	return oneOrMore(p, p.toSignaturesItems(section.Args), section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) exactlyOneTextItem(section phase4.Section) ast.TextItem {
@@ -4317,15 +4265,6 @@ func startsWithSections(group phase4.Group, names ...string) bool {
 	return true
 }
 
-func endsWithSection(group phase4.Group, name string) bool {
-	sections := group.Sections
-	if len(sections) == 0 {
-		return false
-	} else {
-		return sections[len(sections)-1].Name == name
-	}
-}
-
 func (p *parser) newError(message string, position ast.Position) frontend.Diagnostic {
 	return frontend.Diagnostic{
 		Path:     p.path,
@@ -4334,17 +4273,6 @@ func (p *parser) newError(message string, position ast.Position) frontend.Diagno
 		Message:  message,
 		Position: position,
 	}
-}
-
-func sectionNamesToString(names []string) string {
-	result := ""
-	for i, name := range names {
-		result += name + ":"
-		if i != len(names)-1 {
-			result += "\n"
-		}
-	}
-	return result
 }
 
 func toCommonMetaData(metaData phase4.MetaData) ast.CommonMetaData {

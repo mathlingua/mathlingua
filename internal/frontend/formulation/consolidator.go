@@ -128,7 +128,6 @@ func maybeProcessExpressionColonDashArrowItem(
 
 var default_expression ast.ExpressionKind = &ast.NameForm{}
 var default_kind_type ast.KindKind = &ast.NameForm{}
-var default_type_kind ast.TypeKind = &ast.CommandType{}
 
 func toNode(
 	path ast.Path,
@@ -401,14 +400,6 @@ func getFirstPassType(node ast.FormulationNodeKind) firstPassType {
 	}
 }
 
-type generalItemType string
-
-const (
-	operand  generalItemType = "operand"
-	operator generalItemType = "operator"
-	none     generalItemType = "none"
-)
-
 // The lint checker incorrectly reports that this function needs a return statement.
 // nolint:typecheck
 func getGeneralOperatorKind(
@@ -454,7 +445,7 @@ func getGeneralOperatorKind(
 	}
 }
 
-const is_not_is_precedence = 1
+const is_precedence = 1
 const as_precedence = 2
 const colon_equal_precedence = 3
 const colon_arrow_precedence = 3
@@ -470,7 +461,7 @@ const plus_minus_precedence = 7
 const times_divide_precedence = 10
 const caret_precedence = 11
 
-const is_not_is_associativity = LeftAssociative
+const is_associativity = LeftAssociative
 const as_associativity = LeftAssociative
 const colon_equal_associativity = RightAssociative
 const colon_arrow_associativity = RightAssociative
@@ -501,6 +492,8 @@ func getOperatorPrecedenceAssociativityByText(
 		return colon_arrow_precedence, colon_arrow_associativity
 	case text == ":->":
 		return colon_dash_arrow_precedence, colon_dash_arrow_associativity
+	case text == "->":
+		return right_arrow_precedence, right_arrow_associativity
 	case strings.Contains(text, "!="):
 		return equal_like_precedence, equal_like_associativity
 	case strings.Contains(text, "="):
@@ -520,9 +513,7 @@ func getOperatorPrecedenceAssociativityByText(
 	case text == "^" && itemType == InfixOperatorType:
 		return caret_precedence, caret_associativity
 	case text == "is":
-		return is_not_is_precedence, is_not_is_associativity
-	case text == "isnot":
-		return is_not_is_precedence, is_not_is_associativity
+		return is_precedence, is_associativity
 	case text == "as":
 		return as_precedence, as_associativity
 	case itemType == InfixOperatorType:

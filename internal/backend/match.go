@@ -737,9 +737,8 @@ func matchChainExpression(node ast.MlgNodeKind, pattern ChainExpressionPattern) 
 }
 
 func matchSpecAlias(node ast.MlgNodeKind, pattern SpecAliasPattern) MatchResult {
-	switch n := node.(type) {
+	switch node.(type) {
 	case *ast.ExpressionColonDashArrowItem:
-		n = n
 		return MatchResult{}
 	default:
 		return MatchResult{
@@ -749,9 +748,8 @@ func matchSpecAlias(node ast.MlgNodeKind, pattern SpecAliasPattern) MatchResult 
 }
 
 func matchAlias(node ast.MlgNodeKind, pattern AliasPattern) MatchResult {
-	switch n := node.(type) {
+	switch node.(type) {
 	case *ast.ExpressionColonArrowItem:
-		n = n
 		return MatchResult{}
 	default:
 		return MatchResult{

@@ -42,9 +42,7 @@ func populateDocumentScopes(doc *ast.Document) {
 	for _, item := range doc.Items {
 		if specify, ok := item.(*ast.SpecifyGroup); ok {
 			for _, specifyItem := range specify.Specify.Specify {
-				if si, siOk := specifyItem.(*ast.ZeroGroup); siOk {
-					//					si.Means.Means
-					si = si
+				if _, siOk := specifyItem.(*ast.ZeroGroup); siOk {
 				}
 			}
 		}

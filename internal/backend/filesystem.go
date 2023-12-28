@@ -27,6 +27,9 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func NewWorkspaceFromPaths(
@@ -245,7 +248,7 @@ func pathNameToLabel(name string) string {
 		if i > 0 {
 			result += " "
 		}
-		result += strings.Title(part)
+		result += cases.Title(language.English).String(part)
 	}
 	return result
 }

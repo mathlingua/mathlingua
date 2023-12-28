@@ -1212,6 +1212,7 @@ func matchAllNamedParams(nodes *[]ast.NamedParam, patterns *[]NamedGroupPattern)
 	return result
 }
 
+// nolint:unused
 func matchDirectionParams(
 	nodes *[]ast.DirectionParamParamKind,
 	patterns *[]FormPatternKind,

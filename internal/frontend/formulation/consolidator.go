@@ -325,8 +325,10 @@ func toShuntingYardItems(
 	}
 	itemTypes := make([]ItemType, len(nodes))
 	for i := range firstPassTypes {
+		// nolint:ineffassign
 		prevType := noneType
 		curType := firstPassTypes[i]
+		// nolint:ineffassign
 		nextType := noneType
 
 		if i == 0 {

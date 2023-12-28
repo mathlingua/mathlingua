@@ -42,6 +42,7 @@ func populateDocumentScopes(doc *ast.Document) {
 	for _, item := range doc.Items {
 		if specify, ok := item.(*ast.SpecifyGroup); ok {
 			for _, specifyItem := range specify.Specify.Specify {
+				// nolint:staticcheck
 				if _, siOk := specifyItem.(*ast.ZeroGroup); siOk {
 				}
 			}
@@ -49,6 +50,7 @@ func populateDocumentScopes(doc *ast.Document) {
 	}
 }
 
+// nolint:unused
 func getIdentifierInfos(clause ast.ClauseKind) []ast.IdentifierInfo {
 	return []ast.IdentifierInfo{}
 }

@@ -102,6 +102,7 @@ func ToSpecConstraints(node ast.MultiplexedInfixOperatorCallExpression) ([]SpecC
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// nolint:unused
 func toSingleStructuralForm(exp ast.ExpressionKind) (ast.StructuralFormKind, error) {
 	nodes, err := toStructuralForms(exp)
 	if err != nil {
@@ -114,6 +115,7 @@ func toSingleStructuralForm(exp ast.ExpressionKind) (ast.StructuralFormKind, err
 	return nodes[0], nil
 }
 
+// nolint:unused
 func toStructuralForms(exp ast.ExpressionKind) ([]ast.StructuralFormKind, error) {
 	switch n := exp.(type) {
 	case *ast.NameForm:
@@ -165,6 +167,7 @@ func toStructuralForms(exp ast.ExpressionKind) ([]ast.StructuralFormKind, error)
 	}
 }
 
+// nolint:unused
 func toNameFormSlice(args []ast.StructuralFormKind) ([]ast.NameForm, error) {
 	result := make([]ast.NameForm, 0)
 	for _, arg := range args {
@@ -177,6 +180,7 @@ func toNameFormSlice(args []ast.StructuralFormKind) ([]ast.NameForm, error) {
 	return result, nil
 }
 
+// nolint:unused
 func toNameForm(form ast.StructuralFormKind) (ast.NameForm, error) {
 	if name, ok := form.(*ast.NameForm); ok {
 		return *name, nil
@@ -184,6 +188,7 @@ func toNameForm(form ast.StructuralFormKind) (ast.NameForm, error) {
 	return ast.NameForm{}, fmt.Errorf("Expected a name but found %s", form.ToCode(ast.NoOp))
 }
 
+// nolint:unused
 func toSingleStructuralFormSlice(args []ast.ExpressionKind) ([]ast.StructuralFormKind, error) {
 	result := make([]ast.StructuralFormKind, 0)
 	for _, arg := range args {

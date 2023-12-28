@@ -816,7 +816,7 @@ func (fp *formulationParser) typeMetaKind() (ast.TypeMetaKind, bool) {
 
 		if len(types) > 0 {
 			if !fp.has(ast.Operator) || fp.lexer.Peek().Text != "&" {
-				fp.error(fmt.Sprint("Expected an &"))
+				fp.error("Expected an &")
 			}
 			if fp.has(ast.Operator) {
 				fp.next() // move past the token
@@ -1671,14 +1671,7 @@ func (fp *formulationParser) infixCommandExpression() (ast.InfixCommandExpressio
 
 	fp.expect(ast.Slash)
 	fp.lexer.Commit(id)
-	return ast.InfixCommandExpression{
-		Names:               cmd.Names,
-		CurlyArg:            cmd.CurlyArg,
-		NamedArgs:           cmd.NamedArgs,
-		ParenArgs:           cmd.ParenArgs,
-		CommonMetaData:      cmd.CommonMetaData,
-		FormulationMetaData: cmd.FormulationMetaData,
-	}, true
+	return ast.InfixCommandExpression(cmd), true
 }
 
 func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {

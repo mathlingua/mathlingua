@@ -468,6 +468,7 @@ func toFormPatterns(items []ast.StructuralFormKind) []FormPatternKind {
 	return patterns
 }
 
+// nolint:unused
 func toNameFormPatterns(params []ast.NameForm) []NameFormPattern {
 	result := make([]NameFormPattern, 0)
 	for _, p := range params {

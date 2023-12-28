@@ -327,6 +327,7 @@ func (w *workspace) toWrittenImpl(path ast.Path, node ast.MlgNodeKind, sig strin
 				if summaryInput, ok := GetResolvedInput(summary); ok {
 					matchResult := Match(node, summaryInput)
 					if matchResult.MatchMakesSense && len(matchResult.Messages) == 0 {
+						// nolint:ineffassign
 						found = true
 
 						nameToWritten := make(map[string]string)
@@ -877,6 +878,7 @@ func (w *workspace) findUsedUnknownSignatures() {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// nolint:unused
 func getVarQuestionMarkText(rawWritten string, originalNode ast.MlgNodeKind) string {
 	return getVarMinusQuestionMarkText(rawWritten, originalNode)
 }
@@ -1186,6 +1188,7 @@ func inlineProcessForRendering(node phase4.Node) {
 	}
 }
 
+/*
 func getAllWords(node ast.MlgNodeKind) mlglib.ISet[string] {
 	result := mlglib.NewSet[string]()
 	getAllWordsImpl(node, result)
@@ -1220,3 +1223,4 @@ func tokenize(text string) []string {
 	}
 	return result
 }
+*/

@@ -86,7 +86,7 @@ func (m *mlg) View(port int) {
 }
 
 func (m *mlg) Version() string {
-	return "v0.21.0"
+	return "v0.22.0"
 }
 
 func (m *mlg) GetUsages() []string {

@@ -32,7 +32,7 @@
 }
 
 .selected {
-  color: #05b;
+  color: var(--accent-color);
 }
 
 .outline {

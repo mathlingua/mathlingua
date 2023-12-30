@@ -3,12 +3,24 @@ import React from 'react';
 import styles from './MainPage.module.css';
 
 import MenuIcon from '@rsuite/icons/Menu';
+import GearIcon from '@rsuite/icons/Gear';
 import { useFetch } from 'usehooks-ts';
 import { PageResponse, PathsResponse } from '../types';
 import { Sidebar } from '../components/Sidebar';
 import { DocumentView } from '../components/ast/DocumentView';
 import { Button } from '../design/Button';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+const ACCENT_COLORS = [
+  '#05b',
+  '#a8326f',
+  '#32a852',
+  '#804609',
+  '#00a382',
+  '#f07c00',
+  'black',
+  'gray',
+];
 
 export function MainPage() {
   const navigate = useNavigate();
@@ -17,6 +29,8 @@ export function MainPage() {
   const [windowWidth, setWindowWidth] = React.useState(window.innerWidth);
   const isOnSmallScreen = determineIsOnSmallScreen(windowWidth);
   const [open, setOpen] = React.useState(!isOnSmallScreen);
+
+  const accentColorIndex = React.useRef(0);
 
   window.addEventListener('resize', () => {
     const newWidth = window.innerWidth;
@@ -72,15 +86,14 @@ export function MainPage() {
                 onClick={() => {
           setOpen(open => !open);
         }}>
-          <MenuIcon style={{
-            color: 'black',
-            marginLeft: 10,
-            marginRight: 0,
-            marginTop: 0,
-            marginBottom: 0,
-            padding: 0,
-          }} />
+          <MenuIcon className={styles.headerIcon} />
         </Button>
+        <GearIcon className={styles.headerIcon}
+                  onClick={() => {
+                    accentColorIndex.current = (accentColorIndex.current + 1) % ACCENT_COLORS.length;
+                    document.documentElement.style.setProperty('--accent-color',
+                      ACCENT_COLORS[accentColorIndex.current]);
+                  }}/>
       </header>
       <div className={styles.contentWrapper}>
         <main className={styles.content}>

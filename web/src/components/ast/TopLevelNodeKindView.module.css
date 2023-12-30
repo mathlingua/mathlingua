@@ -65,7 +65,7 @@
 }
 
 .proofTitle {
-  color: #05b;
+  color: var(--accent-color);
   font-weight: bold;
 }
 

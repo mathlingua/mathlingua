@@ -12,11 +12,11 @@
   margin-left: auto;
   margin-right: auto;
   border: solid;
-  border-color: #e5e5e5;
+  border-color: var(--border-color);
   border-width: 1px;
   border-radius: 3px;
-  box-shadow: rgba(50, 50, 105, 0.15) 0px 2px 5px 0px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px;
-  background-color: white;
+  box-shadow: var(--box-shadow);
+  background-color: var(--background-color);
 }
 
 @media screen and (max-width: 450px) {
@@ -37,12 +37,11 @@
 }
 
 .mathlinguaTopLevelTextBlock {
-  color: #555555;
   max-width: 100%;
 }
 
 .iconWrapper {
-  color: #aaaaaa;
+  color: var(--top-level-node-kind-menu-icon-color);
   display: flex;
   justify-content: space-between;
   margin-bottom: 6px;

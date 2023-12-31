@@ -23,7 +23,7 @@
   padding-right: 5px;
   font-family: inherit;
   text-decoration: none;
-  color: black;
+  color: var(--text-color);
   font-size: 1em;
 }
 
@@ -42,7 +42,7 @@
   padding-left: 15px;
   font-size: 110%;
   border-bottom: solid;
-  border-bottom-color: #e5e5e5;
+  border-bottom-color: var(--border-color);
   border-bottom-width: 0.5px;
 }
 
@@ -59,7 +59,7 @@
 }
 
 .outlineButton:visited {
-  color: black;
+  color: var(--text-color);
 }
 
 .bold {

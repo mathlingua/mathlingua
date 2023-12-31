@@ -1,10 +1,22 @@
 
 :root {
   --accent-color: #05b;
+  --background-color: #ffffff;
+  --etched-background-color: #fefefe;
+  --text-color: black;
+  --border-color: #e5e5e5;
+  --box-shadow: rgba(50, 50, 105, 0.15) 0px 2px 5px 0px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px;
+  --etched-box-shadow: inset 0 0 5px rgba(50, 50, 105, 0.15);
+  --formulation-dropdown-icon-color: #cccccc;
+  --formulation-dropdown-item-hover-color: #f3f3f3;
+  --top-level-node-kind-menu-icon-color: #aaaaaa;
+  --source-code-formulation-color: darkcyan;
+  --source-code-id-color: #6052f2;
+  --source-code-text-color: green;
 }
 
 html {
-  background-color: #ffffff;
+  background-color: var(--background-color);
   width: 100%;
   height: 100%;
   display: flex;
@@ -19,7 +31,7 @@ body {
   padding: 0;
   margin: 0;
   font-family: Georgia,"Times New Roman",Times,serif !important;
-  color: black !important;
+  color: var(--text-color) !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -44,7 +56,7 @@ code {
 
 .katex {
   font-size: 110% !important;
-  color: black !important;
+  color: var(--text-color) !important;
 }
 
 div[class^="MarkdownView_markdown"] .katex-display {

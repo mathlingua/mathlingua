@@ -6,5 +6,5 @@
 }
 
 .showSourceWrapper {
-  color: green;
+  color: var(--source-code-text-color);
 }

@@ -11,22 +11,17 @@
 .dropdownContainer {
   display: inline-block;
   position: relative;
-  /*
-  border-bottom: solid;
-  border-bottom-width: 0.5px;
-  border-bottom-color: #eeeeee;
-  */
 }
 
 .dropdownMenu {
   position: absolute;
-  background-color: white;
+  background-color: var(--background-color);
   z-index: 1;
   border: solid;
-  border-color: #e5e5e5;
+  border-color: var(--border-color);
   border-width: 1px;
   border-radius: 0;
-  box-shadow: rgba(50, 50, 105, 0.15) 0px 2px 5px 0px, rgba(0, 0, 0, 0.05) 0px 1px 1px 0px;
+  box-shadow: var(--box-shadow);
   min-width: 100%;
   width: max-content;
 }
@@ -43,18 +38,18 @@
   font-family: unset;
   min-width: 100%;
   width: max-content;
-  color: black;
+  color: var(--text-color);
 }
 
 .dropdownMenuItem:hover {
-  background-color: #f3f3f3;
+  background-color: var(--formulation-dropdown-item-hover-color);
 }
 
 .downIcon {
   vertical-align: bottom;
-  color: #cccccc;
+  color: var(--formulation-dropdown-icon-color);
 }
 
 .showSourceWrapper {
-  color: darkcyan;
+  color: var(--source-code-formulation-color);
 }

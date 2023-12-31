@@ -10,27 +10,17 @@ import { Sidebar } from '../components/Sidebar';
 import { DocumentView } from '../components/ast/DocumentView';
 import { Button } from '../design/Button';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-const ACCENT_COLORS = [
-  '#05b',
-  '#a8326f',
-  '#32a852',
-  '#804609',
-  '#00a382',
-  '#f07c00',
-  'black',
-  'gray',
-];
+import { getNextTheme, useTheme } from '../hooks/useTheme';
 
 export function MainPage() {
+  const {setTheme} = useTheme();
+
   const navigate = useNavigate();
   const location = useLocation();
 
   const [windowWidth, setWindowWidth] = React.useState(window.innerWidth);
   const isOnSmallScreen = determineIsOnSmallScreen(windowWidth);
   const [open, setOpen] = React.useState(!isOnSmallScreen);
-
-  const accentColorIndex = React.useRef(0);
 
   window.addEventListener('resize', () => {
     const newWidth = window.innerWidth;
@@ -90,9 +80,7 @@ export function MainPage() {
         </Button>
         <GearIcon className={styles.headerIcon}
                   onClick={() => {
-                    accentColorIndex.current = (accentColorIndex.current + 1) % ACCENT_COLORS.length;
-                    document.documentElement.style.setProperty('--accent-color',
-                      ACCENT_COLORS[accentColorIndex.current]);
+                    setTheme(theme => getNextTheme(theme));
                   }}/>
       </header>
       <div className={styles.contentWrapper}>

@@ -33,6 +33,7 @@
 
 .selected {
   color: var(--accent-color);
+  text-decoration: var(--selected-tree-node-text-decoration);
 }
 
 .outline {
@@ -64,4 +65,8 @@
 
 .bold {
   font-weight: bold;
+}
+
+.upIcon {
+  color: var(--text-color);
 }

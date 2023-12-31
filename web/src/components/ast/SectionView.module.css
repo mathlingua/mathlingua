@@ -1,4 +1,5 @@
 
 .header {
   color: var(--accent-color);
+  font-weight: var(--header-font-weight);
 }

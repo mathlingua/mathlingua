@@ -33,7 +33,7 @@ export function TreeNodeList(props: TreeNodeListProps) {
                 className={styles.outlineButton}
                 onClick={() => props.onSelected(props.node.parent!.path)}>
             {props.node.label}
-            <UpIcon />
+            <UpIcon className={styles.upIcon} />
           </Link>}
       </div>
       {props.node.children.map(item => (

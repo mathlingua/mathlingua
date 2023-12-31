@@ -13,7 +13,52 @@
   --source-code-formulation-color: darkcyan;
   --source-code-id-color: #6052f2;
   --source-code-text-color: green;
+  --header-font-weight: none;
+  --selected-tree-node-text-decoration: none;
+  --link-color: var(--accent-color);
 }
+
+/* high contrast
+:root {
+  --accent-color: black;
+  --background-color: white;
+  --etched-background-color: white;
+  --text-color: black;
+  --border-color: black;
+  --box-shadow: none;
+  --etched-box-shadow: none;
+  --formulation-dropdown-icon-color: black;
+  --formulation-dropdown-item-hover-color: black;
+  --top-level-node-kind-menu-icon-color: black;
+  --source-code-formulation-color: black;
+  --source-code-id-color: black;
+  --source-code-text-color: black;
+  --header-font-weight: bold;
+  --selected-tree-node-text-decoration: underline;
+  --link-color: var(--accent-color);
+}
+*/
+
+/* sepia
+:root {
+  --accent-color:  #704214;
+  --background-color: #f0ece7;
+  --etched-background-color: color-mix(in srgb, var(--background-color) 100%, var(--accent-color) 1%);
+  --text-color: #4e2e0e;
+  --border-color: #d4c6b8;
+  --box-shadow: #d4c6b8 0px 2px 5px 0px, #d4c6b826 0px 1px 1px 0px;
+  --etched-box-shadow: inset 0 0 5px #d4c6b8;
+  --formulation-dropdown-icon-color: #b7a089;
+  --formulation-dropdown-item-hover-color: #e2d9d0;
+  --top-level-node-kind-menu-icon-color: #9a7a5a;
+  --source-code-formulation-color: #197361;
+  --source-code-id-color: #1c5b80;
+  --source-code-text-color: #1f6319;
+  --header-font-weight: bold;
+  --selected-tree-node-text-decoration: underline;
+  --link-color: var(--accent-color);
+}
+*/
 
 html {
   background-color: var(--background-color);
@@ -45,6 +90,10 @@ h1, h2, h3, h4, h5, h6 {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+a {
+  color: var(--link-color);
 }
 
 #root {

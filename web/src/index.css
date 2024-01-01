@@ -14,7 +14,7 @@ body {
   display: flex;
   padding: 0;
   margin: 0;
-  font-family: Georgia,"Times New Roman",Times,serif !important;
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif !important;
   color: var(--text-color) !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

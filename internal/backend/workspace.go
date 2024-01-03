@@ -471,7 +471,11 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 			return nameToRenderedName(n.Text, n.VarArg.IsVarArg), true
 		case *ast.FunctionLiteralExpression:
 			result := ""
-			result += w.formulationNodeToWritten(path, &n.Lhs)
+			if len(n.Lhs.Params) == 1 {
+				result += w.formulationNodeToWritten(path, n.Lhs.Params[0])
+			} else {
+				result += w.formulationNodeToWritten(path, &n.Lhs)
+			}
 			result += " \\mapsto "
 			result += w.formulationNodeToWritten(path, n.Rhs)
 			return result, true
@@ -502,7 +506,7 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 		case *ast.ExpressionColonArrowItem:
 			result := ""
 			result += w.formulationNodeToWritten(path, n.Lhs)
-			result += " :\\mapsto "
+			result += " :\\rArr "
 			result += w.formulationNodeToWritten(path, n.Rhs)
 			return result, true
 		case *ast.ExpressionColonDashArrowItem:

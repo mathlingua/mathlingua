@@ -64,7 +64,7 @@ const (
 	Extends               TokenType = "Extends"
 	As                    TokenType = "As"
 	At                    TokenType = "At"
-	RightArrow            TokenType = "RArrow"
+	BarRightDashArrow     TokenType = "BarRightDashArrow"
 	ParenLabel            TokenType = "ParenLabel"
 	LParenDot             TokenType = "LParenDot"
 	DotRParen             TokenType = "DotRParen"

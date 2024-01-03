@@ -427,13 +427,13 @@ func (fp *formulationParser) literalExpressionKind() (ast.LiteralExpressionKind,
 func (fp *formulationParser) functionLiteralExpression() (ast.FunctionLiteralExpression, bool) {
 	id := fp.lexer.Snapshot()
 
-	if fp.hasHas(ast.Name, ast.RightArrow) {
+	if fp.hasHas(ast.Name, ast.BarRightDashArrow) {
 		name, nameOk := fp.nameForm()
 		if !nameOk {
 			fp.lexer.RollBack(id)
 			return ast.FunctionLiteralExpression{}, false
 		}
-		fp.expect(ast.RightArrow)
+		fp.expect(ast.BarRightDashArrow)
 		exp, expOk := fp.expressionKind()
 		if !expOk {
 			fp.lexer.RollBack(id)
@@ -461,7 +461,7 @@ func (fp *formulationParser) functionLiteralExpression() (ast.FunctionLiteralExp
 		return ast.FunctionLiteralExpression{}, false
 	}
 
-	_, arrowOk := fp.token(ast.RightArrow)
+	_, arrowOk := fp.token(ast.BarRightDashArrow)
 	if !arrowOk {
 		fp.lexer.RollBack(id)
 		return ast.FunctionLiteralExpression{}, false
@@ -1489,8 +1489,8 @@ func (fp *formulationParser) operatorToken() (ast.PseudoTokenNode, bool) {
 	return ast.PseudoTokenNode{}, false
 }
 
-func (fp *formulationParser) rightArrow() (ast.PseudoTokenNode, bool) {
-	return fp.pseudoToken(ast.RightArrow)
+func (fp *formulationParser) barRightDashArrow() (ast.PseudoTokenNode, bool) {
+	return fp.pseudoToken(ast.BarRightDashArrow)
 }
 
 func (fp *formulationParser) colonEqualsToken() (ast.PseudoTokenNode, bool) {
@@ -1542,8 +1542,8 @@ func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 		return colonDashArrow, ok
 	}
 
-	if rightArrow, ok := fp.rightArrow(); ok {
-		return rightArrow, ok
+	if barRightDashArrow, ok := fp.barRightDashArrow(); ok {
+		return barRightDashArrow, ok
 	}
 
 	if semicolon, ok := fp.semicolonToken(); ok {

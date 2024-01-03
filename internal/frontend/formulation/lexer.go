@@ -174,11 +174,20 @@ func getTokens(path ast.Path, text string, tracker frontend.IDiagnosticTracker) 
 				Position: cur.Position,
 			})
 		case cur.Symbol == '|':
-			appendToken(ast.Token{
-				Type:     ast.Bar,
-				Text:     "|",
-				Position: cur.Position,
-			})
+			if i+1 < len(chars) && chars[i].Symbol == '-' && chars[i+1].Symbol == '>' {
+				i += 2 // move past the ->
+				appendToken(ast.Token{
+					Type:     ast.BarRightDashArrow,
+					Text:     "|->",
+					Position: cur.Position,
+				})
+			} else {
+				appendToken(ast.Token{
+					Type:     ast.Bar,
+					Text:     "|",
+					Position: cur.Position,
+				})
+			}
 		case cur.Symbol == '/':
 			appendToken(ast.Token{
 				Type:     ast.Slash,
@@ -248,20 +257,11 @@ func getTokens(path ast.Path, text string, tracker frontend.IDiagnosticTracker) 
 				})
 			}
 		case cur.Symbol == '=':
-			if i < len(chars) && chars[i].Symbol == '>' {
-				i++ // move past the >
-				appendToken(ast.Token{
-					Type:     ast.RightArrow,
-					Text:     "=>",
-					Position: cur.Position,
-				})
-			} else {
-				appendToken(ast.Token{
-					Type:     ast.Operator,
-					Text:     "=",
-					Position: cur.Position,
-				})
-			}
+			appendToken(ast.Token{
+				Type:     ast.Operator,
+				Text:     "=",
+				Position: cur.Position,
+			})
 		case cur.Symbol == ':':
 			if i < len(chars) && chars[i].Symbol == '=' {
 				i++ // move past the =

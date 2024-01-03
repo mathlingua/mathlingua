@@ -103,7 +103,7 @@ type ConditionalSetForm struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// x => f(x) or (x, y) => f(x)
+// x |-> f(x) or (x, y) |-> f(x)
 type FunctionLiteralForm struct {
 	Lhs                 TupleForm
 	Rhs                 StructuralFormKind
@@ -209,7 +209,7 @@ type FunctionCallExpression struct {
 	VarArg              VarArgData
 }
 
-// x => x + 1 or (x, y) => x + y
+// x |-> x + 1 or (x, y) |-> x + y
 type FunctionLiteralExpression struct {
 	Lhs                 TupleForm
 	Rhs                 ExpressionKind

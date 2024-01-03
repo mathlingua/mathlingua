@@ -596,7 +596,7 @@ func (n *FunctionLiteralExpression) ToCode(fn func(node MlgNodeKind) (string, bo
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return n.Lhs.ToCode(fn) + " => " + n.Rhs.ToCode(fn)
+	return n.Lhs.ToCode(fn) + " |-> " + n.Rhs.ToCode(fn)
 }
 
 func (n *CurlyParam) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
@@ -687,7 +687,7 @@ func (n *FunctionLiteralForm) ToCode(fn func(node MlgNodeKind) (string, bool)) s
 	}
 	result := ""
 	result += n.Lhs.ToCode(fn)
-	result += " => "
+	result += " |-> "
 	result += n.Rhs.ToCode(fn)
 	return result
 }

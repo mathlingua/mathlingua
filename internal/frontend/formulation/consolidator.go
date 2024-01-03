@@ -452,7 +452,7 @@ const as_precedence = 2
 const colon_equal_precedence = 3
 const colon_arrow_precedence = 3
 const colon_dash_arrow_precedence = 3
-const right_arrow_precedence = 3
+const bar_right_dash_arrow_precedence = 3
 const equal_like_precedence = 4
 const enclosed_infix_precedence = 5
 const command_infix_precedence = 6
@@ -468,7 +468,7 @@ const as_associativity = LeftAssociative
 const colon_equal_associativity = RightAssociative
 const colon_arrow_associativity = RightAssociative
 const colon_dash_arrow_associativity = RightAssociative
-const right_arrow_associativity = RightAssociative
+const bar_right_dash_arrow_associativity = RightAssociative
 const equal_like_associativity = RightAssociative
 const enclosed_infix_associativity = LeftAssociative
 const command_infix_associativity = LeftAssociative
@@ -494,8 +494,8 @@ func getOperatorPrecedenceAssociativityByText(
 		return colon_arrow_precedence, colon_arrow_associativity
 	case text == ":->":
 		return colon_dash_arrow_precedence, colon_dash_arrow_associativity
-	case text == "->":
-		return right_arrow_precedence, right_arrow_associativity
+	case text == "|->":
+		return bar_right_dash_arrow_precedence, bar_right_dash_arrow_associativity
 	case strings.Contains(text, "!="):
 		return equal_like_precedence, equal_like_associativity
 	case strings.Contains(text, "="):

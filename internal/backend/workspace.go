@@ -472,7 +472,7 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 		case *ast.FunctionLiteralExpression:
 			result := ""
 			result += w.formulationNodeToWritten(path, &n.Lhs)
-			result += " \\rArr "
+			result += " \\mapsto "
 			result += w.formulationNodeToWritten(path, n.Rhs)
 			return result, true
 		case *ast.ConditionalSetExpression:
@@ -502,7 +502,7 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 		case *ast.ExpressionColonArrowItem:
 			result := ""
 			result += w.formulationNodeToWritten(path, n.Lhs)
-			result += " :\\rArr "
+			result += " :\\mapsto "
 			result += w.formulationNodeToWritten(path, n.Rhs)
 			return result, true
 		case *ast.ExpressionColonDashArrowItem:

@@ -284,6 +284,10 @@ func (w *workspace) formulationLikeToString(
 		key := alias.GetCommonMetaData().Key
 		newText := w.aliasToWritten(path, *alias)
 		keyToFormulationStr[key] = newText
+	} else if target, ok := node.(*ast.Target); ok {
+		key := target.GetCommonMetaData().Key
+		newText := w.targetToWritten(path, *target)
+		keyToFormulationStr[key] = newText
 	} else {
 		node.ForEach(func(subNode ast.MlgNodeKind) {
 			w.formulationLikeToString(path, subNode, keyToFormulationStr)
@@ -303,6 +307,10 @@ func (w *workspace) specToWritten(path ast.Path, node ast.Spec) string {
 }
 
 func (w *workspace) aliasToWritten(path ast.Path, node ast.Alias) string {
+	return w.formulationNodeToWritten(path, node.Root)
+}
+
+func (w *workspace) targetToWritten(path ast.Path, node ast.Target) string {
 	return w.formulationNodeToWritten(path, node.Root)
 }
 
@@ -469,6 +477,19 @@ func (w *workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 		switch n := node.(type) {
 		case *ast.NameForm:
 			return nameToRenderedName(n.Text, n.VarArg.IsVarArg), true
+		case *ast.ConditionalSetForm:
+			result := "\\left \\{"
+			result += w.formulationNodeToWritten(path, n.Target)
+			result += "\\: | \\: \\ldots"
+			result += "\\right \\}"
+			return result, true
+		case *ast.ConditionalSetIdForm:
+			result := "\\left \\{"
+			result += w.formulationNodeToWritten(path, n.Target)
+			result += "\\: | \\:"
+			result += w.formulationNodeToWritten(path, &n.Condition)
+			result += "\\ldots \\right \\}"
+			return result, true
 		case *ast.FunctionLiteralExpression:
 			result := ""
 			if len(n.Lhs.Params) == 1 {
@@ -675,6 +696,20 @@ func (w *workspace) updateFormulationStrings(
 ) {
 	if arg, ok := node.(*phase4.Argument); ok {
 		if argData, ok := arg.Arg.(*phase4.FormulationArgumentData); ok {
+			key := argData.MetaData.Key
+			if newText, ok := keyToFormulationStr[key]; ok {
+				argData.Text = newText
+			} else {
+				w.tracker.Append(frontend.Diagnostic{
+					Type:     frontend.Warning,
+					Origin:   frontend.BackendOrigin,
+					Message:  fmt.Sprintf("Could not process: %s", argData.Text),
+					Path:     path,
+					Position: arg.MetaData.Start,
+				})
+			}
+		} else if argData, ok := arg.Arg.(*phase4.ArgumentTextArgumentData); ok {
+			// this branch is needed to handle Targets
 			key := argData.MetaData.Key
 			if newText, ok := keyToFormulationStr[key]; ok {
 				argData.Text = newText

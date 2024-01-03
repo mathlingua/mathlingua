@@ -713,15 +713,12 @@ func (w *workspace) updateFormulationStrings(
 			key := argData.MetaData.Key
 			if newText, ok := keyToFormulationStr[key]; ok {
 				argData.Text = newText
-			} else {
-				w.tracker.Append(frontend.Diagnostic{
-					Type:     frontend.Warning,
-					Origin:   frontend.BackendOrigin,
-					Message:  fmt.Sprintf("Could not process: %s", argData.Text),
-					Path:     path,
-					Position: arg.MetaData.Start,
-				})
 			}
+			// else if the `keyToFormulationStr`` map doesn't contain `key` then
+			// the `argData` doesn't need its text modified.  That is, it can be
+			// treated as LaTeX code as is.
+			// For example, f(x) can be rendered as is, but {x | ...} needs to
+			// be rendered as \left \{x \: | \: \ldots \right \}
 		}
 	}
 	size := node.Size()

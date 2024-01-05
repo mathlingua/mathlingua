@@ -72,61 +72,61 @@ func (*MemberPostfixExpAliasSummary) ExpAliasSummaryKind()  {}
 type InfixExpAliasSummary struct {
 	Lhs   InfixOperatorFormPattern
 	Rhs   ast.ExpressionKind
-	Scope ast.IScope
+	Scope *ast.Scope
 }
 
 type PrefixExpAliasSummary struct {
 	Lhs   PrefixOperatorFormPattern
 	Rhs   ast.ExpressionKind
-	Scope ast.IScope
+	Scope *ast.Scope
 }
 
 type PostfixExpAliasSummary struct {
 	Lhs   PostfixOperatorFormPattern
 	Rhs   ast.ExpressionKind
-	Scope ast.IScope
+	Scope *ast.Scope
 }
 
 type FunctionExpAliasSummary struct {
 	Lhs   FunctionFormPattern
 	Rhs   ast.ExpressionKind
-	Scope ast.IScope
+	Scope *ast.Scope
 }
 
 type CommandExpAliasSummary struct {
 	Lhs   CommandPattern
 	Rhs   ast.ExpressionKind
-	Scope ast.IScope
+	Scope *ast.Scope
 }
 
 type MemberNameExpAliasSummary struct {
 	Lhs   ChainExpressionPattern
 	Rhs   ast.ExpressionKind
-	Scope ast.IScope
+	Scope *ast.Scope
 }
 
 type MemberFunctionExpAliasSummary struct {
 	Lhs   ChainExpressionPattern
 	Rhs   ast.ExpressionKind
-	Scope ast.IScope
+	Scope *ast.Scope
 }
 
 type MemberInfixExpAliasSummary struct {
 	Lhs   InfixOperatorFormPattern
 	Rhs   ast.ExpressionKind
-	Scope ast.IScope
+	Scope *ast.Scope
 }
 
 type MemberPrefixExpAliasSummary struct {
 	Lhs   PrefixOperatorFormPattern
 	Rhs   ast.ExpressionKind
-	Scope ast.IScope
+	Scope *ast.Scope
 }
 
 type MemberPostfixExpAliasSummary struct {
 	Lhs   PostfixOperatorFormPattern
 	Rhs   ast.ExpressionKind
-	Scope ast.IScope
+	Scope *ast.Scope
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

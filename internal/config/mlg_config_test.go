@@ -33,7 +33,7 @@ keywords = "keyword 1, keyword 2, keyword3"
 	conf, err := ParseMlgConfig(input)
 	assert.Nil(t, err)
 
-	assert.Equal(t, mlglib.PrettyPrint(MlgConfig{
+	assert.Equal(t, mlglib.PrettyPrint(&MlgConfig{
 		View: MlgViewConfig{
 			Title:       "some title",
 			Description: "some description",

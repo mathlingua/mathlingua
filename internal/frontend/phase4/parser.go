@@ -24,9 +24,9 @@ import (
 )
 
 func Parse(
-	phase3Lexer frontend.ILexer,
+	phase3Lexer *frontend.Lexer,
 	path ast.Path,
-	tracker frontend.IDiagnosticTracker,
+	tracker *frontend.DiagnosticTracker,
 ) Document {
 	parser := phase4Parser{
 		path:    path,
@@ -42,9 +42,9 @@ func Parse(
 
 type phase4Parser struct {
 	path    ast.Path
-	lexer   frontend.ILexer
-	tracker frontend.IDiagnosticTracker
-	keyGen  mlglib.IKeyGenerator
+	lexer   *frontend.Lexer
+	tracker *frontend.DiagnosticTracker
+	keyGen  *mlglib.KeyGenerator
 }
 
 func (p *phase4Parser) appendDiagnostic(message string, position ast.Position) {

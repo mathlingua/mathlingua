@@ -31,15 +31,15 @@ type MlgViewConfig struct {
 	Description string
 }
 
-func ParseMlgConfig(text string) (MlgConfig, error) {
+func ParseMlgConfig(text string) (*MlgConfig, error) {
 	conf, err := ParseConfig(text)
 	if err != nil {
-		return MlgConfig{}, err
+		return nil, err
 	}
 
 	sectionNames := conf.SectionNames()
 	if len(sectionNames) == 0 {
-		return MlgConfig{
+		return &MlgConfig{
 			View: MlgViewConfig{
 				Title:       "",
 				Keywords:    "",
@@ -50,18 +50,18 @@ func ParseMlgConfig(text string) (MlgConfig, error) {
 
 	for _, name := range sectionNames {
 		if !expected_mlg_section_names.Has(name) {
-			return MlgConfig{}, fmt.Errorf("Unexpected section: %s", name)
+			return nil, fmt.Errorf("Unexpected section: %s", name)
 		}
 	}
 
 	viewConf, ok := conf.Section(mlg_view_section_name)
 	if !ok {
-		return MlgConfig{}, nil
+		return &MlgConfig{}, nil
 	}
 
 	for _, key := range viewConf.Keys() {
 		if !expected_mlg_view_keys.Has(key) {
-			return MlgConfig{}, fmt.Errorf("Unexpected key: %s", key)
+			return nil, fmt.Errorf("Unexpected key: %s", key)
 		}
 	}
 
@@ -69,7 +69,7 @@ func ParseMlgConfig(text string) (MlgConfig, error) {
 	keywords, _ := viewConf.Get(keywords_mlg_view_key)
 	description, _ := viewConf.Get(description_mlg_view_key)
 
-	return MlgConfig{
+	return &MlgConfig{
 		View: MlgViewConfig{
 			Title:       title,
 			Keywords:    keywords,
@@ -90,7 +90,7 @@ var mlg_view_section_name = "mlg.view"
 var expected_mlg_view_keys = buildExpectedMlgViewKeys()
 var expected_mlg_section_names = buildExpectedMlgSectionNames()
 
-func buildExpectedMlgViewKeys() mlglib.ISet[string] {
+func buildExpectedMlgViewKeys() *mlglib.Set[string] {
 	result := mlglib.NewSet[string]()
 	result.Add(title_mlg_view_key)
 	result.Add(keywords_mlg_view_key)
@@ -99,7 +99,7 @@ func buildExpectedMlgViewKeys() mlglib.ISet[string] {
 	return result
 }
 
-func buildExpectedMlgSectionNames() mlglib.ISet[string] {
+func buildExpectedMlgSectionNames() *mlglib.Set[string] {
 	result := mlglib.NewSet[string]()
 	result.Add(mlg_view_section_name)
 	return result

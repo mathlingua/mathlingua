@@ -63,41 +63,32 @@ func (diag *Diagnostic) String() string {
 		prefix, diag.Path, diag.Position.Row+1, diag.Position.Column+1, diag.Message)
 }
 
-type IDiagnosticTracker interface {
-	AddListener(listener func(diag Diagnostic))
-	Append(diagnostic Diagnostic)
-	Diagnostics() []Diagnostic
-	Length() int
-}
-
-func NewDiagnosticTracker() IDiagnosticTracker {
-	return &diagnosticTracker{
+func NewDiagnosticTracker() *DiagnosticTracker {
+	return &DiagnosticTracker{
 		diagnostics: make([]Diagnostic, 0),
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type diagnosticTracker struct {
+type DiagnosticTracker struct {
 	diagnostics []Diagnostic
 	listeners   []func(diag Diagnostic)
 }
 
-func (dt *diagnosticTracker) AddListener(listener func(diag Diagnostic)) {
+func (dt *DiagnosticTracker) AddListener(listener func(diag Diagnostic)) {
 	dt.listeners = append(dt.listeners, listener)
 }
 
-func (dt *diagnosticTracker) Append(diagnostic Diagnostic) {
+func (dt *DiagnosticTracker) Append(diagnostic Diagnostic) {
 	dt.diagnostics = append(dt.diagnostics, diagnostic)
 	for _, listener := range dt.listeners {
 		listener(diagnostic)
 	}
 }
 
-func (dt *diagnosticTracker) Diagnostics() []Diagnostic {
+func (dt *DiagnosticTracker) Diagnostics() []Diagnostic {
 	return dt.diagnostics
 }
 
-func (dt *diagnosticTracker) Length() int {
+func (dt *DiagnosticTracker) Length() int {
 	return len(dt.diagnostics)
 }

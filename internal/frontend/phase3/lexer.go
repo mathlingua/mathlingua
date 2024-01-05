@@ -24,19 +24,19 @@ import (
 )
 
 func NewLexer(
-	phase2Lexer frontend.ILexer,
+	phase2Lexer *frontend.Lexer,
 	path ast.Path,
-	tracker frontend.IDiagnosticTracker,
-) frontend.ILexer {
+	tracker *frontend.DiagnosticTracker,
+) *frontend.Lexer {
 	return frontend.NewLexer(getTokens(phase2Lexer, path, tracker))
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func getTokens(
-	phase2Lexer frontend.ILexer,
+	phase2Lexer *frontend.Lexer,
 	path ast.Path,
-	tracker frontend.IDiagnosticTracker,
+	tracker *frontend.DiagnosticTracker,
 ) []ast.Token {
 	tokens := make([]ast.Token, 0)
 	stack := mlglib.NewStack[ast.TokenType]()

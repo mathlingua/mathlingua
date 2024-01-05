@@ -24,6 +24,6 @@ func CloneNode[T MlgNodeKind](node T) T {
 
 func cloneScopes(n MlgNodeKind) {
 	metaData := n.GetCommonMetaData()
-	metaData.Scope = metaData.Scope.Clone()
+	metaData.Scope = *metaData.Scope.Clone()
 	n.ForEach(cloneScopes)
 }

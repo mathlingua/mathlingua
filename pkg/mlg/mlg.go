@@ -24,36 +24,29 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-type IMlg interface {
-	Check(paths []string, showJson bool, debug bool)
-	View(port int)
-	Version() string
-	GetUsages() []string
-}
-
-func NewMlg(logger ILogger) IMlg {
-	m := mlg{}
+func NewMlg(logger *Logger) *Mlg {
+	m := Mlg{}
 	m.initialize(logger)
 	return &m
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func (m *mlg) initialize(logger ILogger) {
-	m.logger = logger
-	m.tracker = frontend.NewDiagnosticTracker()
-	m.conf = LoadMlgConfig(m.tracker)
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type mlg struct {
-	logger  ILogger
-	tracker frontend.IDiagnosticTracker
+type Mlg struct {
+	logger  *Logger
+	tracker *frontend.DiagnosticTracker
 	conf    config.MlgConfig
 }
 
-func (m *mlg) Check(paths []string, showJson bool, debug bool) {
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (m *Mlg) initialize(logger *Logger) {
+	m.logger = logger
+	m.tracker = frontend.NewDiagnosticTracker()
+	m.conf = *LoadMlgConfig(m.tracker)
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 	workspace, diagnostics := backend.NewWorkspaceFromPaths(paths, m.tracker)
 
 	checkResult := workspace.Check()
@@ -81,22 +74,22 @@ func (m *mlg) Check(paths []string, showJson bool, debug bool) {
 	m.printCheckStats(numErrors, numWarnings, numFilesProcessed, debug, diagnostics)
 }
 
-func (m *mlg) View(port int) {
+func (m *Mlg) View(port int) {
 	backend.StartServer(port, m.conf)
 }
 
-func (m *mlg) Version() string {
+func (m *Mlg) Version() string {
 	return "v0.22.0"
 }
 
-func (m *mlg) GetUsages() []string {
+func (m *Mlg) GetUsages() []string {
 	workspace, _ := backend.NewWorkspaceFromPaths([]string{"."}, m.tracker)
 	return workspace.GetUsages()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (m *mlg) printAsJson(checkResult backend.CheckResult) {
+func (m *Mlg) printAsJson(checkResult backend.CheckResult) {
 	if data, err := json.MarshalIndent(checkResult, "", "  "); err != nil {
 		m.logger.Error(fmt.Sprintf(
 			"{\"Diagnostics\": [{\"Type\": \"Error\", \"Message\": \"%s\"}]}", err))
@@ -105,7 +98,7 @@ func (m *mlg) printAsJson(checkResult backend.CheckResult) {
 	}
 }
 
-func (m *mlg) printCheckStats(numErrors int, numWarnings int, numFilesProcessed int,
+func (m *Mlg) printCheckStats(numErrors int, numWarnings int, numFilesProcessed int,
 	debug bool, diagnostics []frontend.Diagnostic) {
 	for index, diag := range diagnostics {
 		if index > 0 {

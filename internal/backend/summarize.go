@@ -23,7 +23,7 @@ import (
 
 func Summarize(
 	node ast.TopLevelItemKind,
-	tracker frontend.IDiagnosticTracker,
+	tracker *frontend.DiagnosticTracker,
 ) (SummaryKind, bool) {
 	switch entry := node.(type) {
 	case *ast.DescribesGroup:

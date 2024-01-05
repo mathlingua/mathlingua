@@ -42,7 +42,7 @@ type MetaData struct {
 }
 
 type Node interface {
-	ToCode(writer ITextCodeWriter)
+	ToCode(writer *TextCodeWriter)
 	Size() int
 	ChildAt(index int) Node
 }
@@ -54,7 +54,7 @@ type Group struct {
 	MetaData MetaData
 }
 
-func (g *Group) write(indent int, writer ITextCodeWriter) {
+func (g *Group) write(indent int, writer *TextCodeWriter) {
 	if g.Id != nil {
 		writer.WriteId(fmt.Sprintf("[%s]", *g.Id))
 		writer.WriteNewline()
@@ -69,7 +69,7 @@ func (g *Group) write(indent int, writer ITextCodeWriter) {
 	}
 }
 
-func (g *Group) ToCode(writer ITextCodeWriter) {
+func (g *Group) ToCode(writer *TextCodeWriter) {
 	g.write(0, writer)
 }
 
@@ -92,7 +92,7 @@ type Section struct {
 	MetaData MetaData
 }
 
-func (s *Section) write(indent int, writer ITextCodeWriter) {
+func (s *Section) write(indent int, writer *TextCodeWriter) {
 	writer.WriteHeader(fmt.Sprintf("%s:", s.Name))
 
 	isFirstInline := true
@@ -116,7 +116,7 @@ func (s *Section) write(indent int, writer ITextCodeWriter) {
 	}
 }
 
-func (s *Section) ToCode(writer ITextCodeWriter) {
+func (s *Section) ToCode(writer *TextCodeWriter) {
 	s.write(0, writer)
 }
 
@@ -135,7 +135,7 @@ type Argument struct {
 	MetaData MetaData
 }
 
-func (a *Argument) write(indent int, writer ITextCodeWriter) {
+func (a *Argument) write(indent int, writer *TextCodeWriter) {
 	switch t := a.Arg.(type) {
 	case *TextArgumentData:
 		t.write(indent, writer)
@@ -150,7 +150,7 @@ func (a *Argument) write(indent int, writer ITextCodeWriter) {
 	}
 }
 
-func (a *Argument) ToCode(writer ITextCodeWriter) {
+func (a *Argument) ToCode(writer *TextCodeWriter) {
 	a.write(0, writer)
 }
 
@@ -168,11 +168,11 @@ type TextArgumentData struct {
 	MetaData MetaData
 }
 
-func (t *TextArgumentData) write(indent int, writer ITextCodeWriter) {
+func (t *TextArgumentData) write(indent int, writer *TextCodeWriter) {
 	writer.WriteText(fmt.Sprintf("\"%s\"", t.Text))
 }
 
-func (t *TextArgumentData) ToCode(writer ITextCodeWriter) {
+func (t *TextArgumentData) ToCode(writer *TextCodeWriter) {
 	t.write(0, writer)
 }
 
@@ -197,7 +197,7 @@ type FormulationArgumentData struct {
 	FormulationMetaData FormulationArgumentDataMetaData
 }
 
-func (f *FormulationArgumentData) write(indent int, writer ITextCodeWriter) {
+func (f *FormulationArgumentData) write(indent int, writer *TextCodeWriter) {
 	suffix := ""
 	if f.Label != nil {
 		suffix = fmt.Sprintf("     (%s)", *f.Label)
@@ -205,7 +205,7 @@ func (f *FormulationArgumentData) write(indent int, writer ITextCodeWriter) {
 	writer.WriteFormulation(fmt.Sprintf("'%s'%s", f.Text, suffix))
 }
 
-func (f *FormulationArgumentData) ToCode(writer ITextCodeWriter) {
+func (f *FormulationArgumentData) ToCode(writer *TextCodeWriter) {
 	f.write(0, writer)
 }
 
@@ -223,11 +223,11 @@ type ArgumentTextArgumentData struct {
 	MetaData MetaData
 }
 
-func (a *ArgumentTextArgumentData) write(indent int, writer ITextCodeWriter) {
+func (a *ArgumentTextArgumentData) write(indent int, writer *TextCodeWriter) {
 	writer.WriteDirect(a.Text)
 }
 
-func (a *ArgumentTextArgumentData) ToCode(writer ITextCodeWriter) {
+func (a *ArgumentTextArgumentData) ToCode(writer *TextCodeWriter) {
 	a.write(0, writer)
 }
 
@@ -255,12 +255,12 @@ type TextBlock struct {
 	MetaData MetaData
 }
 
-func (t *TextBlock) write(indent int, writer ITextCodeWriter) {
+func (t *TextBlock) write(indent int, writer *TextCodeWriter) {
 	writer.WriteTextBlock(fmt.Sprintf("::%s::", t.Text))
 	writer.WriteNewline()
 }
 
-func (t *TextBlock) ToCode(writer ITextCodeWriter) {
+func (t *TextBlock) ToCode(writer *TextCodeWriter) {
 	t.write(0, writer)
 }
 
@@ -282,7 +282,7 @@ type Document struct {
 	MetaData MetaData
 }
 
-func (r *Document) write(indent int, writer ITextCodeWriter) {
+func (r *Document) write(indent int, writer *TextCodeWriter) {
 	for _, node := range r.Nodes {
 		node.ToCode(writer)
 		writer.WriteNewline()
@@ -291,7 +291,7 @@ func (r *Document) write(indent int, writer ITextCodeWriter) {
 	}
 }
 
-func (r *Document) ToCode(writer ITextCodeWriter) {
+func (r *Document) ToCode(writer *TextCodeWriter) {
 	r.write(0, writer)
 }
 

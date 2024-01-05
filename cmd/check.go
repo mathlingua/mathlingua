@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"mathlingua/pkg/mlg"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -32,7 +33,7 @@ var checkCommand = &cobra.Command{
 		debug, _ := rootCmd.PersistentFlags().GetBool("debug")
 		json, _ := cmd.Flags().GetBool("json")
 
-		logger := mlg.NewLogger()
+		logger := mlg.NewLogger(os.Stdout)
 		mlg.NewMlg(logger).Check(args, json, debug)
 	},
 }

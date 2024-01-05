@@ -27,7 +27,7 @@ import (
 
 const mlg_conf_name = "mlg.conf"
 
-func LoadMlgConfig(tracker frontend.IDiagnosticTracker) config.MlgConfig {
+func LoadMlgConfig(tracker *frontend.DiagnosticTracker) *config.MlgConfig {
 	cwd, err := os.Getwd()
 	if err != nil {
 		tracker.Append(frontend.Diagnostic{
@@ -37,13 +37,13 @@ func LoadMlgConfig(tracker frontend.IDiagnosticTracker) config.MlgConfig {
 				"Failed to determine the current working directory.\n", mlg_conf_name),
 			Path: ast.ToPath(mlg_conf_name),
 		})
-		return config.MlgConfig{}
+		return &config.MlgConfig{}
 	}
 
 	content, err := os.ReadFile(path.Join(cwd, mlg_conf_name))
 	if err != nil && os.IsNotExist(err) {
 		// if the config file doesn't exist, then use the default config
-		return config.MlgConfig{}
+		return &config.MlgConfig{}
 	}
 
 	if err != nil {
@@ -53,7 +53,7 @@ func LoadMlgConfig(tracker frontend.IDiagnosticTracker) config.MlgConfig {
 			Message: fmt.Sprintf("An error occurred while reading %s: %s\n", mlg_conf_name, err),
 			Path:    ast.ToPath(mlg_conf_name),
 		})
-		return config.MlgConfig{}
+		return &config.MlgConfig{}
 	}
 
 	conf, err := config.ParseMlgConfig(string(content))
@@ -64,7 +64,7 @@ func LoadMlgConfig(tracker frontend.IDiagnosticTracker) config.MlgConfig {
 			Message: fmt.Sprintf("An error occurred while parsing %s: %s\n", mlg_conf_name, err),
 			Path:    ast.ToPath(mlg_conf_name),
 		})
-		return config.MlgConfig{}
+		return &config.MlgConfig{}
 	}
 
 	return conf

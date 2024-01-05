@@ -23,19 +23,19 @@ import (
 )
 
 func NewLexer(
-	phase1Lexer frontend.ILexer,
+	phase1Lexer *frontend.Lexer,
 	path ast.Path,
-	tracker frontend.IDiagnosticTracker,
-) frontend.ILexer {
+	tracker *frontend.DiagnosticTracker,
+) *frontend.Lexer {
 	return frontend.NewLexer(getTokens(phase1Lexer, path, tracker))
 }
 
 //////////////////////////////////////////////////////////////////
 
 func getTokens(
-	phase1Lexer frontend.ILexer,
+	phase1Lexer *frontend.Lexer,
 	path ast.Path,
-	tracker frontend.IDiagnosticTracker,
+	tracker *frontend.DiagnosticTracker,
 ) []ast.Token {
 	tokens := make([]ast.Token, 0)
 	prevIndent := 0

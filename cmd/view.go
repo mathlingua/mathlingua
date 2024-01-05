@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"mathlingua/pkg/mlg"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -29,7 +30,7 @@ var viewCommand = &cobra.Command{
 	Short: "View rendered Mathlingua files",
 	Long:  "Renders the Mathlingua (.math) files in the current directory.",
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := mlg.NewLogger()
+		logger := mlg.NewLogger(os.Stdout)
 		mlg.NewMlg(logger).View(port)
 	},
 }

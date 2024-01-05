@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/pkg/mlg"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -43,7 +44,7 @@ type completionsResult struct {
 }
 
 func printCompletions() {
-	logger := mlg.NewLogger()
+	logger := mlg.NewLogger(os.Stdout)
 	usages := mlg.NewMlg(logger).GetUsages()
 	usagesAndCompletions := make([]string, 0)
 	usagesAndCompletions = append(usagesAndCompletions, FIXED_COMPLETIONS...)

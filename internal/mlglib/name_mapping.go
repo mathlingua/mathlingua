@@ -16,35 +16,27 @@
 
 package mlglib
 
-type INameMapping interface {
-	AddMapping(fromName string, toName string)
-	GetFromName(toName string) string
-	GetToName(fromName string) string
-}
-
-func NewNameMapping() INameMapping {
-	return &nameMapping{
+func NewNameMapping() *NameMapping {
+	return &NameMapping{
 		fromToToNames: make(map[string]string, 0),
 		toToFromNames: make(map[string]string, 0),
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type nameMapping struct {
+type NameMapping struct {
 	fromToToNames map[string]string
 	toToFromNames map[string]string
 }
 
-func (nm *nameMapping) AddMapping(fromName string, toName string) {
+func (nm *NameMapping) AddMapping(fromName string, toName string) {
 	nm.fromToToNames[fromName] = toName
 	nm.toToFromNames[toName] = fromName
 }
 
-func (nm *nameMapping) GetFromName(toName string) string {
+func (nm *NameMapping) GetFromName(toName string) string {
 	return nm.toToFromNames[toName]
 }
 
-func (nm *nameMapping) GetToName(fromName string) string {
+func (nm *NameMapping) GetToName(fromName string) string {
 	return nm.fromToToNames[fromName]
 }

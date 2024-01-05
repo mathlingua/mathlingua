@@ -28,8 +28,8 @@ import (
 func Parse(
 	doc phase4.Document,
 	path ast.Path,
-	tracker frontend.IDiagnosticTracker,
-	keyGen mlglib.IKeyGenerator,
+	tracker *frontend.DiagnosticTracker,
+	keyGen *mlglib.KeyGenerator,
 ) (ast.Document, bool) {
 	p := parser{
 		path:    path,
@@ -43,8 +43,8 @@ func Parse(
 
 type parser struct {
 	path    ast.Path
-	tracker frontend.IDiagnosticTracker
-	keyGen  mlglib.IKeyGenerator
+	tracker *frontend.DiagnosticTracker
+	keyGen  *mlglib.KeyGenerator
 }
 
 ///////////////////////////////////////// let ////////////////////////////////////////////////////
@@ -4232,7 +4232,7 @@ func (p *parser) oneOrMoreSpecifyKinds(section phase4.Section) []ast.SpecifyKind
 ///////////////////////////////////// support functions ////////////////////////////////////////////
 
 func oneOrMore[T any](p *parser, items []T, position ast.Position,
-	tracker frontend.IDiagnosticTracker) []T {
+	tracker *frontend.DiagnosticTracker) []T {
 	if len(items) == 0 {
 		tracker.Append(p.newError("Expected at least one item", position))
 		return []T{}
@@ -4241,7 +4241,7 @@ func oneOrMore[T any](p *parser, items []T, position ast.Position,
 }
 
 func exactlyOne[T any](p *parser, items []T, defaultItem T, position ast.Position,
-	tracker frontend.IDiagnosticTracker) T {
+	tracker *frontend.DiagnosticTracker) T {
 	if len(items) != 1 {
 		tracker.Append(p.newError("Expected at exactly one item", position))
 	}
@@ -4279,6 +4279,6 @@ func toCommonMetaData(metaData phase4.MetaData) ast.CommonMetaData {
 	return ast.CommonMetaData{
 		Start: metaData.Start,
 		Key:   metaData.Key,
-		Scope: nil,
+		Scope: *ast.NewScope(),
 	}
 }

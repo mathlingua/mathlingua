@@ -32,20 +32,20 @@ func (*ExtendsConstraint) ConstraintKind() {}
 type IsConstraint struct {
 	Target       PatternKind
 	SignatureExp ast.KindKind
-	Scope        ast.IScope
+	Scope        *ast.Scope
 }
 
 type ExtendsConstraint struct {
 	Target       PatternKind
 	SignatureExp ast.KindKind
-	Scope        ast.IScope
+	Scope        *ast.Scope
 }
 
 type SpecConstraint struct {
 	Target PatternKind
 	Name   string
 	Exp    ast.ExpressionKind
-	Scope  ast.IScope
+	Scope  *ast.Scope
 }
 
 func ToIsConstraint(node ast.IsExpression) ([]IsConstraint, error) {
@@ -55,7 +55,7 @@ func ToIsConstraint(node ast.IsExpression) ([]IsConstraint, error) {
 			result = append(result, IsConstraint{
 				Target:       ToPattern(lhsExp),
 				SignatureExp: rhsExp,
-				Scope:        node.CommonMetaData.Scope,
+				Scope:        &node.CommonMetaData.Scope,
 			})
 		}
 	}
@@ -69,7 +69,7 @@ func ToExtendsConstraint(node ast.ExtendsExpression) ([]ExtendsConstraint, error
 			result = append(result, ExtendsConstraint{
 				Target:       ToPattern(lhsExp),
 				SignatureExp: rhsExp,
-				Scope:        node.CommonMetaData.Scope,
+				Scope:        &node.CommonMetaData.Scope,
 			})
 		}
 	}
@@ -81,7 +81,7 @@ func ToSpecConstraint(node ast.InfixOperatorCallExpression) (SpecConstraint, err
 		Target: ToPattern(node.Lhs),
 		Name:   node.Target.ToCode(ast.NoOp),
 		Exp:    node.Rhs,
-		Scope:  node.CommonMetaData.Scope,
+		Scope:  &node.CommonMetaData.Scope,
 	}, nil
 }
 
@@ -93,7 +93,7 @@ func ToSpecConstraints(node ast.MultiplexedInfixOperatorCallExpression) ([]SpecC
 				Target: ToPattern(lhsExp),
 				Name:   node.Target.ToCode(ast.NoOp),
 				Exp:    rhsExp,
-				Scope:  node.CommonMetaData.Scope,
+				Scope:  &node.CommonMetaData.Scope,
 			})
 		}
 	}

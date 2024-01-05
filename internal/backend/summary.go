@@ -74,7 +74,7 @@ func (s *LemmaSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type DescribesSummary struct {
-	DefScope    ast.IScope
+	DefScope    *ast.Scope
 	Input       PatternKind
 	Output      PatternKind
 	Usings      []PatternKind
@@ -88,7 +88,7 @@ type DescribesSummary struct {
 }
 
 type DefinesSummary struct {
-	DefScope    ast.IScope
+	DefScope    *ast.Scope
 	Input       PatternKind
 	Output      PatternKind
 	Usings      []PatternKind
@@ -102,7 +102,7 @@ type DefinesSummary struct {
 }
 
 type StatesSummary struct {
-	DefScope    ast.IScope
+	DefScope    *ast.Scope
 	Input       PatternKind
 	Output      PatternKind
 	Usings      []PatternKind

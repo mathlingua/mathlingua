@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func parseExpression(text string) (ast.FormulationNodeKind, frontend.IDiagnosticTracker) {
+func parseExpression(text string) (ast.FormulationNodeKind, *frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := ParseExpression("/some/path", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return node, tracker
@@ -45,7 +45,7 @@ func runExpressionTest(t *testing.T, input string, expected string) {
 	assert.Equal(t, expected, actual)
 }
 
-func parseIdForm(text string) (ast.FormulationNodeKind, frontend.IDiagnosticTracker) {
+func parseIdForm(text string) (ast.FormulationNodeKind, *frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := ParseId("/some/path", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return node, tracker
@@ -66,7 +66,7 @@ func runIdFormTest(t *testing.T, input string, expected string) {
 	assert.Equal(t, expected, actual)
 }
 
-func parseForm(text string) (ast.FormulationNodeKind, frontend.IDiagnosticTracker) {
+func parseForm(text string) (ast.FormulationNodeKind, *frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := ParseForm("/some/path", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
 	return node, tracker

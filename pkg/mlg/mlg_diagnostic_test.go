@@ -17,7 +17,7 @@
 package mlg
 
 import (
-	"fmt"
+	"bytes"
 	"os"
 	"testing"
 
@@ -332,33 +332,11 @@ func runTest(t *testing.T, testCase TestCase) {
 		t.FailNow()
 	}
 
-	logger := DebugLogger{}
-	mlg := NewMlg(&logger)
+	var buffer bytes.Buffer
+
+	logger := NewLogger(&buffer)
+	mlg := NewMlg(logger)
 	mlg.Check([]string{"."}, false, false)
 
-	assert.Equal(t, testCase.ExpectedOutput, logger.output)
-}
-
-type DebugLogger struct {
-	output string
-}
-
-func (dl *DebugLogger) Error(text string) {
-	dl.output += fmt.Sprintf("ERROR: %s\n", text)
-}
-
-func (dl *DebugLogger) Warning(text string) {
-	dl.output += fmt.Sprintf("WARNING: %s\n", text)
-}
-
-func (dl *DebugLogger) Failure(text string) {
-	dl.output += fmt.Sprintf("FAILURE: %s\n", text)
-}
-
-func (dl *DebugLogger) Success(text string) {
-	dl.output += fmt.Sprintf("SUCCESS: %s\n", text)
-}
-
-func (dl *DebugLogger) Log(text string) {
-	dl.output += fmt.Sprintf("%s\n", text)
+	assert.Equal(t, testCase.ExpectedOutput, buffer.String())
 }

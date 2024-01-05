@@ -28,40 +28,32 @@ const (
 	Hide TocType = "hide"
 )
 
-type ITocConfig interface {
-	// Returns: (label, true) if the filename should have 'label' used
-	//     and: ("", false) if the filename should be hidden
-	LabelForFilename(filename string) (string, bool)
-	ExplicitFilenames() []string
-	StarAction() TocType
-}
-
-func NewDefaultTocConfig() ITocConfig {
-	config := tocConfig{
+func NewDefaultTocConfig() *TocConfig {
+	config := &TocConfig{
 		explicitFilenames: make([]string, 0),
 		nameToLabel:       make(map[string]string),
-		namesToHide:       mlglib.NewSet[string](),
+		namesToHide:       *mlglib.NewSet[string](),
 	}
 	config.setStarAction(Keep)
-	return &config
+	return config
 }
 
-func ParseTocConfig(text string) (ITocConfig, error) {
+func ParseTocConfig(text string) (*TocConfig, error) {
 	conf, err := ParseConfig(text)
 	if err != nil {
-		return &tocConfig{}, err
+		return nil, err
 	}
 
 	names := conf.SectionNames()
 	for _, name := range names {
 		if name != "toc" {
-			return &tocConfig{}, fmt.Errorf("Unexpected section: %s", name)
+			return nil, fmt.Errorf("Unexpected section: %s", name)
 		}
 	}
 
 	sec, found := conf.Section("toc")
 	if !found {
-		return &tocConfig{}, fmt.Errorf("The [toc] section was not specified")
+		return nil, fmt.Errorf("The [toc] section was not specified")
 	}
 
 	keys := sec.Keys()
@@ -78,18 +70,18 @@ func ParseTocConfig(text string) (ITocConfig, error) {
 	}
 
 	if starIndex < 0 {
-		return &tocConfig{}, fmt.Errorf(
+		return &TocConfig{}, fmt.Errorf(
 			"A toc.config must contain either '* = keep' or '* = hide' as its last entry")
 	}
 
-	result := tocConfig{
+	result := &TocConfig{
 		explicitFilenames: make([]string, 0),
 		nameToLabel:       make(map[string]string),
-		namesToHide:       mlglib.NewSet[string](),
+		namesToHide:       *mlglib.NewSet[string](),
 	}
 
 	if starIndex != len(keys)-1 {
-		return &tocConfig{}, fmt.Errorf("If * is specified it must be the last element specified")
+		return &TocConfig{}, fmt.Errorf("If * is specified it must be the last element specified")
 	}
 
 	if starValue, ok := sec.Get("*"); ok {
@@ -98,10 +90,10 @@ func ParseTocConfig(text string) (ITocConfig, error) {
 		} else if starValue == string(Hide) {
 			result.setStarAction(Hide)
 		} else {
-			return &tocConfig{}, fmt.Errorf("* must have a value of either 'keep' or 'hide'")
+			return &TocConfig{}, fmt.Errorf("* must have a value of either 'keep' or 'hide'")
 		}
 	} else {
-		return &tocConfig{}, fmt.Errorf("Could not determine the value for *")
+		return &TocConfig{}, fmt.Errorf("Could not determine the value for *")
 	}
 	keys = keys[0 : len(keys)-1]
 
@@ -115,23 +107,25 @@ func ParseTocConfig(text string) (ITocConfig, error) {
 				result.markNewLabel(filename, label)
 			}
 		} else {
-			return &tocConfig{}, fmt.Errorf("Could not determine the lable for %s", filename)
+			return &TocConfig{}, fmt.Errorf("Could not determine the lable for %s", filename)
 		}
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type tocConfig struct {
+type TocConfig struct {
 	explicitFilenames []string
 	nameToLabel       map[string]string
-	namesToHide       mlglib.ISet[string]
+	namesToHide       mlglib.Set[string]
 	starAction        TocType
 }
 
-func (tc *tocConfig) LabelForFilename(filename string) (string, bool) {
+// Returns: (label, true) if the filename should have 'label' used
+// and: ("", false) if the filename should be hidden
+func (tc *TocConfig) LabelForFilename(filename string) (string, bool) {
 	label, ok := tc.nameToLabel[filename]
 	if ok {
 		return label, true
@@ -148,30 +142,30 @@ func (tc *tocConfig) LabelForFilename(filename string) (string, bool) {
 	return "", false
 }
 
-func (tc *tocConfig) ExplicitFilenames() []string {
+func (tc *TocConfig) ExplicitFilenames() []string {
 	return tc.explicitFilenames
 }
 
-func (tc *tocConfig) StarAction() TocType {
+func (tc *TocConfig) StarAction() TocType {
 	return tc.starAction
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (tc *tocConfig) markToKeep(filename string) {
+func (tc *TocConfig) markToKeep(filename string) {
 	tc.markNewLabel(filename, filename)
 }
 
-func (tc *tocConfig) markToHide(filename string) {
+func (tc *TocConfig) markToHide(filename string) {
 	tc.explicitFilenames = append(tc.explicitFilenames, filename)
 	tc.namesToHide.Add(filename)
 }
 
-func (tc *tocConfig) markNewLabel(filename string, label string) {
+func (tc *TocConfig) markNewLabel(filename string, label string) {
 	tc.explicitFilenames = append(tc.explicitFilenames, filename)
 	tc.nameToLabel[filename] = label
 }
 
-func (tc *tocConfig) setStarAction(action TocType) {
+func (tc *TocConfig) setStarAction(action TocType) {
 	tc.starAction = action
 }

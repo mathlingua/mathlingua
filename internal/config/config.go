@@ -21,18 +21,7 @@ import (
 	"strings"
 )
 
-type IConfig interface {
-	SectionNames() []string
-	Section(name string) (IConfigSection, bool)
-}
-
-type IConfigSection interface {
-	Name() string
-	Keys() []string
-	Get(key string) (string, bool)
-}
-
-func ParseConfig(text string) (IConfig, error) {
+func ParseConfig(text string) (*Config, error) {
 	row := 0
 	index := 0
 
@@ -120,7 +109,7 @@ func ParseConfig(text string) (IConfig, error) {
 	}
 
 	sectionNames := make([]string, 0)
-	sections := make(map[string]IConfigSection)
+	sections := make(map[string]*ConfigSection)
 
 	for index < len(text) {
 		keys := make([]string, 0)
@@ -174,14 +163,14 @@ func ParseConfig(text string) (IConfig, error) {
 		}
 
 		sectionNames = append(sectionNames, title)
-		sections[title] = &configSection{
+		sections[title] = &ConfigSection{
 			name:   title,
 			keys:   keys,
 			values: values,
 		}
 	}
 
-	return &config{
+	return &Config{
 		names:    sectionNames,
 		sections: sections,
 	}, nil
@@ -189,21 +178,21 @@ func ParseConfig(text string) (IConfig, error) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type configSection struct {
+type ConfigSection struct {
 	name   string
 	keys   []string
 	values map[string]string
 }
 
-func (cs *configSection) Name() string {
+func (cs *ConfigSection) Name() string {
 	return cs.name
 }
 
-func (cs *configSection) Keys() []string {
+func (cs *ConfigSection) Keys() []string {
 	return cs.keys
 }
 
-func (cs *configSection) Get(key string) (string, bool) {
+func (cs *ConfigSection) Get(key string) (string, bool) {
 	if sec, ok := cs.values[key]; ok {
 		return sec, ok
 	}
@@ -212,16 +201,16 @@ func (cs *configSection) Get(key string) (string, bool) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type config struct {
+type Config struct {
 	names    []string
-	sections map[string]IConfigSection
+	sections map[string]*ConfigSection
 }
 
-func (c *config) SectionNames() []string {
+func (c *Config) SectionNames() []string {
 	return c.names
 }
 
-func (c *config) Section(name string) (IConfigSection, bool) {
+func (c *Config) Section(name string) (*ConfigSection, bool) {
 	if sec, ok := c.sections[name]; ok {
 		return sec, true
 	}

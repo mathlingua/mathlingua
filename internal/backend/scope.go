@@ -21,7 +21,7 @@ import (
 	"mathlingua/internal/frontend"
 )
 
-func PopulateScopes(node ast.MlgNodeKind, tracker frontend.IDiagnosticTracker) {
+func PopulateScopes(node ast.MlgNodeKind, tracker *frontend.DiagnosticTracker) {
 	if node == nil {
 		return
 	}

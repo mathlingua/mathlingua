@@ -166,7 +166,7 @@ func stringMapToStringSlice(mapping map[string][]string) string {
 }
 
 func parseNode(t *testing.T, exp string) ast.MlgNodeKind {
-	return parseImpl(t, exp, func(text string) (ast.MlgNodeKind, frontend.IDiagnosticTracker, bool) {
+	return parseImpl(t, exp, func(text string) (ast.MlgNodeKind, *frontend.DiagnosticTracker, bool) {
 		tracker := frontend.NewDiagnosticTracker()
 		keyGen := mlglib.NewKeyGenerator()
 		root, ok := formulation.ParseExpression(ast.ToPath("/"), exp, ast.Position{
@@ -179,7 +179,7 @@ func parseNode(t *testing.T, exp string) ast.MlgNodeKind {
 }
 
 func parseForm(t *testing.T, exp string) ast.StructuralFormKind {
-	node := parseImpl(t, exp, func(text string) (ast.MlgNodeKind, frontend.IDiagnosticTracker, bool) {
+	node := parseImpl(t, exp, func(text string) (ast.MlgNodeKind, *frontend.DiagnosticTracker, bool) {
 		tracker := frontend.NewDiagnosticTracker()
 		keyGen := mlglib.NewKeyGenerator()
 		root, ok := formulation.ParseForm(ast.ToPath("/"), exp, ast.Position{
@@ -199,7 +199,7 @@ func parseForm(t *testing.T, exp string) ast.StructuralFormKind {
 }
 
 func parseImpl(t *testing.T, exp string,
-	parse func(text string) (ast.MlgNodeKind, frontend.IDiagnosticTracker, bool)) ast.MlgNodeKind {
+	parse func(text string) (ast.MlgNodeKind, *frontend.DiagnosticTracker, bool)) ast.MlgNodeKind {
 	root, tracker, ok := parse(exp)
 	messages := ""
 	for _, diag := range tracker.Diagnostics() {

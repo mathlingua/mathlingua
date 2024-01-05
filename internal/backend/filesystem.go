@@ -34,8 +34,8 @@ import (
 
 func NewWorkspaceFromPaths(
 	paths []string,
-	tracker frontend.IDiagnosticTracker,
-) (IWorkspace, []frontend.Diagnostic) {
+	tracker *frontend.DiagnosticTracker,
+) (*Workspace, []frontend.Diagnostic) {
 	diagnostics := make([]frontend.Diagnostic, 0)
 
 	findFiles, findDiagnostics := getMathlinguaFiles(paths)

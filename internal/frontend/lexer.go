@@ -22,57 +22,43 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-type ILexer interface {
-	HasNext() bool
-	HasNextNext() bool
-	Next() ast.Token
-	Peek() ast.Token
-	PeekPeek() ast.Token
-	Position() ast.Position
-	Snapshot() int
-	Commit(id int)
-	RollBack(id int)
-}
-
-func NewLexer(tokens []ast.Token) ILexer {
-	return &lexer{
+func NewLexer(tokens []ast.Token) *Lexer {
+	return &Lexer{
 		index:     0,
 		tokens:    tokens,
-		snapshots: mlglib.NewStack[snapshot](),
+		snapshots: *mlglib.NewStack[snapshot](),
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type lexer struct {
+type Lexer struct {
 	index     int
 	tokens    []ast.Token
-	snapshots mlglib.IStack[snapshot]
+	snapshots mlglib.Stack[snapshot]
 }
 
-func (lex *lexer) HasNext() bool {
+func (lex *Lexer) HasNext() bool {
 	return lex.index < len(lex.tokens)
 }
 
-func (lex *lexer) HasNextNext() bool {
+func (lex *Lexer) HasNextNext() bool {
 	return lex.index+1 < len(lex.tokens)
 }
 
-func (lex *lexer) Next() ast.Token {
+func (lex *Lexer) Next() ast.Token {
 	peek := lex.Peek()
 	lex.index++
 	return peek
 }
 
-func (lex *lexer) Peek() ast.Token {
+func (lex *Lexer) Peek() ast.Token {
 	return lex.tokens[lex.index]
 }
 
-func (lex *lexer) PeekPeek() ast.Token {
+func (lex *Lexer) PeekPeek() ast.Token {
 	return lex.tokens[lex.index+1]
 }
 
-func (lex *lexer) Position() ast.Position {
+func (lex *Lexer) Position() ast.Position {
 	if lex.HasNext() {
 		return lex.Peek().Position
 	} else {
@@ -84,7 +70,7 @@ func (lex *lexer) Position() ast.Position {
 	}
 }
 
-func (lex *lexer) Snapshot() int {
+func (lex *Lexer) Snapshot() int {
 	id := 0
 	if !lex.snapshots.IsEmpty() {
 		id = lex.snapshots.Peek().id + 1
@@ -96,7 +82,7 @@ func (lex *lexer) Snapshot() int {
 	return id
 }
 
-func (lex *lexer) Commit(id int) {
+func (lex *Lexer) Commit(id int) {
 	if lex.snapshots.IsEmpty() || lex.snapshots.Peek().id != id {
 		panic(fmt.Sprintf("Lexer requested committing with id %d but expected %d",
 			id, lex.snapshots.Peek().id))
@@ -104,7 +90,7 @@ func (lex *lexer) Commit(id int) {
 	lex.snapshots.Pop()
 }
 
-func (lex *lexer) RollBack(id int) {
+func (lex *Lexer) RollBack(id int) {
 	if lex.snapshots.IsEmpty() || lex.snapshots.Peek().id != id {
 		panic(fmt.Sprintf("Lexer requested rolling back with id %d but expected %d",
 			id, lex.snapshots.Peek().id))

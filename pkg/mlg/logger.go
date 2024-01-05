@@ -18,44 +18,39 @@ package mlg
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/fatih/color"
 )
 
-type ILogger interface {
-	Error(text string)
-	Warning(text string)
-	Failure(text string)
-	Success(text string)
-	Log(text string)
+func NewLogger(writer io.Writer) *Logger {
+	return &Logger{
+		writer: writer,
+	}
 }
 
-func NewLogger() ILogger {
-	return &logger{}
+type Logger struct {
+	writer io.Writer
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type logger struct{}
-
-func (lg *logger) Error(text string) {
-	fmt.Printf("%s %s\n", boldRed("ERROR:"), text)
+func (lg *Logger) Error(text string) {
+	fmt.Fprintf(lg.writer, "%s %s\n", boldRed("ERROR:"), text)
 }
 
-func (lg *logger) Warning(text string) {
-	fmt.Printf("%s %s\n", boldYellow("WARNING:"), text)
+func (lg *Logger) Warning(text string) {
+	fmt.Fprintf(lg.writer, "%s %s\n", boldYellow("WARNING:"), text)
 }
 
-func (lg *logger) Failure(text string) {
-	fmt.Printf("%s %s\n", boldRed("FAILURE:"), text)
+func (lg *Logger) Failure(text string) {
+	fmt.Fprintf(lg.writer, "%s %s\n", boldRed("FAILURE:"), text)
 }
 
-func (lg *logger) Success(text string) {
-	fmt.Printf("%s %s\n", boldGreen("SUCCESS:"), text)
+func (lg *Logger) Success(text string) {
+	fmt.Fprintf(lg.writer, "%s %s\n", boldGreen("SUCCESS:"), text)
 }
 
-func (lg *logger) Log(text string) {
-	fmt.Println(text)
+func (lg *Logger) Log(text string) {
+	fmt.Fprintln(lg.writer, text)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

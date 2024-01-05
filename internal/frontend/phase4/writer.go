@@ -16,35 +16,17 @@
 
 package phase4
 
-import "fmt"
-
-type ITextCodeWriter interface {
-	fmt.Stringer
-	WriteIndent(indent int)
-	WriteHeader(header string)
-	WriteId(id string)
-	WriteSpace()
-	WriteDotSpace()
-	WriteNewline()
-	WriteText(text string)
-	WriteFormulation(text string)
-	WriteDirect(text string)
-	WriteTextBlock(text string)
-}
-
-func NewTextCodeWriter() ITextCodeWriter {
-	return &textCodeWriter{
+func NewTextCodeWriter() *TextCodeWriter {
+	return &TextCodeWriter{
 		text: "",
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type textCodeWriter struct {
+type TextCodeWriter struct {
 	text string
 }
 
-func (w *textCodeWriter) WriteIndent(indent int) {
+func (w *TextCodeWriter) WriteIndent(indent int) {
 	i := 0
 	for i < indent {
 		i++
@@ -52,48 +34,48 @@ func (w *textCodeWriter) WriteIndent(indent int) {
 	}
 }
 
-func (w *textCodeWriter) WriteHeader(header string) {
+func (w *TextCodeWriter) WriteHeader(header string) {
 	w.write(header)
 }
 
-func (w *textCodeWriter) WriteId(id string) {
+func (w *TextCodeWriter) WriteId(id string) {
 	w.write(id)
 }
 
-func (w *textCodeWriter) WriteSpace() {
+func (w *TextCodeWriter) WriteSpace() {
 	w.WriteText(" ")
 }
 
-func (w *textCodeWriter) WriteDotSpace() {
+func (w *TextCodeWriter) WriteDotSpace() {
 	w.write(". ")
 }
 
-func (w *textCodeWriter) WriteNewline() {
+func (w *TextCodeWriter) WriteNewline() {
 	w.write("\n")
 }
 
-func (w *textCodeWriter) WriteText(text string) {
+func (w *TextCodeWriter) WriteText(text string) {
 	w.write(text)
 }
 
-func (w *textCodeWriter) WriteFormulation(text string) {
+func (w *TextCodeWriter) WriteFormulation(text string) {
 	w.write(text)
 }
 
-func (w *textCodeWriter) WriteDirect(text string) {
+func (w *TextCodeWriter) WriteDirect(text string) {
 	w.write(text)
 }
 
-func (w *textCodeWriter) WriteTextBlock(text string) {
+func (w *TextCodeWriter) WriteTextBlock(text string) {
 	w.WriteText(text)
 }
 
-func (w *textCodeWriter) String() string {
+func (w *TextCodeWriter) String() string {
 	return w.text
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (w *textCodeWriter) write(text string) {
+func (w *TextCodeWriter) write(text string) {
 	w.text += text
 }

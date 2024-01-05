@@ -27,7 +27,7 @@ import (
 func Consolidate(
 	path ast.Path,
 	nodes []ast.FormulationNodeKind,
-	tracker frontend.IDiagnosticTracker,
+	tracker *frontend.DiagnosticTracker,
 ) (ast.FormulationNodeKind, bool) {
 	if colonArrowDash, ok := maybeProcessExpressionColonDashArrowItem(path, nodes, tracker); ok {
 		return &colonArrowDash, true
@@ -64,7 +64,7 @@ func GetPrecedenceAndIfInfix(node ast.ExpressionKind) (int, bool) {
 func maybeProcessExpressionColonDashArrowItem(
 	path ast.Path,
 	nodes []ast.FormulationNodeKind,
-	tracker frontend.IDiagnosticTracker,
+	tracker *frontend.DiagnosticTracker,
 ) (ast.ExpressionColonDashArrowItem, bool) {
 	index := -1
 	for i, n := range nodes {
@@ -131,8 +131,8 @@ var default_kind_type ast.KindKind = &ast.NameForm{}
 
 func toNode(
 	path ast.Path,
-	items mlglib.IStack[ShuntingYardItem[ast.FormulationNodeKind]],
-	tracker frontend.IDiagnosticTracker,
+	items *mlglib.Stack[ShuntingYardItem[ast.FormulationNodeKind]],
+	tracker *frontend.DiagnosticTracker,
 ) ast.FormulationNodeKind {
 	if items.IsEmpty() {
 		return nil
@@ -564,7 +564,7 @@ func checkType[T any](
 	node ast.FormulationNodeKind,
 	def T,
 	typeName string,
-	tracker frontend.IDiagnosticTracker,
+	tracker *frontend.DiagnosticTracker,
 	fallbackPosition ast.Position,
 ) T {
 	cast, ok := node.(T)

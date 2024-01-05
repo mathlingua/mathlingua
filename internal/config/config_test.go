@@ -34,14 +34,14 @@ key = "value"
 	section1Values := make(map[string]string)
 	section1Values["key"] = "value"
 
-	expectedSections := make(map[string]IConfigSection)
-	expectedSections["section 1"] = &configSection{
+	expectedSections := make(map[string]*ConfigSection)
+	expectedSections["section 1"] = &ConfigSection{
 		name:   "section 1",
 		keys:   []string{"key", "some key", "some.key", "some.other key"},
 		values: section1Values,
 	}
 
-	assert.Equal(t, mlglib.PrettyPrint(&config{
+	assert.Equal(t, mlglib.PrettyPrint(&Config{
 		names:    []string{"section 1"},
 		sections: expectedSections,
 	}), mlglib.PrettyPrint(conf))
@@ -83,20 +83,20 @@ anotherKey = "some.value"
 	section2Values["key"] = "value"
 	section2Values["anotherKey"] = "some.value"
 
-	expectedSections := make(map[string]IConfigSection)
-	expectedSections["section 1"] = &configSection{
+	expectedSections := make(map[string]*ConfigSection)
+	expectedSections["section 1"] = &ConfigSection{
 		name:   "section 1",
 		keys:   []string{"key", "some key", "some.key", "some.other key"},
 		values: section1Values,
 	}
 
-	expectedSections["section.2"] = &configSection{
+	expectedSections["section.2"] = &ConfigSection{
 		name:   "section.2",
 		keys:   []string{"key", "anotherKey"},
 		values: section2Values,
 	}
 
-	assert.Equal(t, mlglib.PrettyPrint(&config{
+	assert.Equal(t, mlglib.PrettyPrint(&Config{
 		names:    []string{"section 1", "section.2"},
 		sections: expectedSections,
 	}), mlglib.PrettyPrint(conf))

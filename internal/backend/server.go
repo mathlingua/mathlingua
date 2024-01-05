@@ -105,7 +105,7 @@ func StartServer(port int, conf config.MlgConfig) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func initWorkspace() IWorkspace {
+func initWorkspace() *Workspace {
 	tracker := frontend.NewDiagnosticTracker()
 	tracker.AddListener(func(diag frontend.Diagnostic) {
 		fmt.Println(diag.String())
@@ -117,7 +117,7 @@ func initWorkspace() IWorkspace {
 	return workspace
 }
 
-func paths(workspace IWorkspace, writer http.ResponseWriter, request *http.Request) {
+func paths(workspace *Workspace, writer http.ResponseWriter, request *http.Request) {
 	setJsonContentKind(writer)
 	resp := PathsResponse{
 		Paths: workspace.Paths(),
@@ -125,7 +125,7 @@ func paths(workspace IWorkspace, writer http.ResponseWriter, request *http.Reque
 	writeResponse(writer, &resp)
 }
 
-func page(workspace IWorkspace, writer http.ResponseWriter, request *http.Request) {
+func page(workspace *Workspace, writer http.ResponseWriter, request *http.Request) {
 	setJsonContentKind(writer)
 	path := request.URL.Query().Get("path")
 	doc, diagnostics := workspace.GetDocumentAt(ast.ToPath(path))
@@ -138,7 +138,7 @@ func page(workspace IWorkspace, writer http.ResponseWriter, request *http.Reques
 	writeResponse(writer, &resp)
 }
 
-func entryById(workspace IWorkspace, writer http.ResponseWriter, request *http.Request) {
+func entryById(workspace *Workspace, writer http.ResponseWriter, request *http.Request) {
 	setJsonContentKind(writer)
 
 	id, ok := mux.Vars(request)["id"]
@@ -166,7 +166,7 @@ func entryById(workspace IWorkspace, writer http.ResponseWriter, request *http.R
 	writeResponse(writer, &resp)
 }
 
-func entryBySignature(workspace IWorkspace, writer http.ResponseWriter, request *http.Request) {
+func entryBySignature(workspace *Workspace, writer http.ResponseWriter, request *http.Request) {
 	setJsonContentKind(writer)
 
 	signature, ok := mux.Vars(request)["signature"]

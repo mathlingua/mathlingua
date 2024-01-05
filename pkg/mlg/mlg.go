@@ -36,16 +36,6 @@ type Mlg struct {
 	conf    config.MlgConfig
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func (m *Mlg) initialize(logger *Logger) {
-	m.logger = logger
-	m.tracker = frontend.NewDiagnosticTracker()
-	m.conf = *LoadMlgConfig(m.tracker)
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 func (m *Mlg) Check(paths []string, showJson bool, debug bool) {
 	workspace, diagnostics := backend.NewWorkspaceFromPaths(paths, m.tracker)
 
@@ -88,6 +78,12 @@ func (m *Mlg) GetUsages() []string {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (m *Mlg) initialize(logger *Logger) {
+	m.logger = logger
+	m.tracker = frontend.NewDiagnosticTracker()
+	m.conf = *LoadMlgConfig(m.tracker)
+}
 
 func (m *Mlg) printAsJson(checkResult backend.CheckResult) {
 	if data, err := json.MarshalIndent(checkResult, "", "  "); err != nil {

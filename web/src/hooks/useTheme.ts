@@ -4,7 +4,8 @@ export type Theme = 'light' |
                     'dark' |
                     'sunset' |
                     'high-contrast-light' |
-                    'high-contrast-dark';
+                    'high-contrast-dark' |
+                    'minimal-light';
 
 const LIGHT = {
   '--accent-color': '#05b',
@@ -21,10 +22,10 @@ const LIGHT = {
   '--source-code-id-color': '#6052f2',
   '--source-code-text-color': 'green',
   '--header-font-weight': 'none',
+  '--source-header-font-weight': '400',
   '--selected-tree-node-text-decoration': 'none',
   '--link-color': 'var(--accent-color)',
 };
-
 
 const HIGH_CONTRAST_LIGHT = {
   '--accent-color': 'black',
@@ -41,6 +42,27 @@ const HIGH_CONTRAST_LIGHT = {
   '--source-code-id-color': 'black',
   '--source-code-text-color': 'black',
   '--header-font-weight': 'bold',
+  '--source-header-font-weight': '400',
+  '--selected-tree-node-text-decoration': 'underline',
+  '--link-color': 'var(--accent-color)',
+};
+
+const MINIMAL_LIGHT = {
+  '--accent-color': 'black',
+  '--background-color': 'white',
+  '--etched-background-color': 'white',
+  '--text-color': 'black',
+  '--border-color': '#cccccc',
+  '--box-shadow': '#d4c6b8 0px 2px 5px 0px, #d4c6b826 0px 1px 1px 0px',
+  '--etched-box-shadow': 'inset 0 0 5px #d4c6b8',
+  '--formulation-dropdown-icon-color': '#333333',
+  '--formulation-dropdown-item-hover-color': '#eeeeee',
+  '--top-level-node-kind-menu-icon-color': '#333333',
+  '--source-code-formulation-color': '#777777',
+  '--source-code-id-color': 'black',
+  '--source-code-text-color': '#777777',
+  '--header-font-weight': 'bold',
+  '--source-header-font-weight': 'bold',
   '--selected-tree-node-text-decoration': 'underline',
   '--link-color': 'var(--accent-color)',
 };
@@ -60,6 +82,7 @@ const SUNSET = {
   '--source-code-id-color': '#1c5b80',
   '--source-code-text-color': '#1f6319',
   '--header-font-weight': 'bold',
+  '--source-header-font-weight': '400',
   '--selected-tree-node-text-decoration': 'underline',
   '--link-color': 'var(--accent-color)',
 };
@@ -98,6 +121,7 @@ const DARK = {
   '--source-code-id-color': '#453ab9',
   '--source-code-text-color': 'rgb(0, 111, 0)',
   '--header-font-weight': 'none',
+  '--source-header-font-weight': '400',
   '--selected-tree-node-text-decoration': 'none',
   '--link-color': 'var(--accent-color)',
 };
@@ -116,6 +140,8 @@ function themeToCss(theme: Theme): Record<string, string> {
       return HIGH_CONTRAST_LIGHT;
     case 'high-contrast-dark':
       return HIGH_CONTRAST_DARK;
+    case 'minimal-light':
+      return MINIMAL_LIGHT;
     default:
       return LIGHT;
   }
@@ -132,6 +158,8 @@ export function getNextTheme(theme: Theme): Theme {
     case 'high-contrast-dark':
       return 'high-contrast-light';
     case 'high-contrast-light':
+      return 'minimal-light';
+    case 'minimal-light':
       return 'light';
     default:
       return 'light';

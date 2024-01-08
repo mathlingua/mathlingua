@@ -19,7 +19,7 @@ export const SectionView = (props: SectionViewProps) => {
   return (
     <>
       <span className={styles.header} style={{
-        fontWeight: props.showSource ? '400' : undefined,
+        fontWeight: props.showSource ? 'var(--source-header-font-weight)' : undefined,
       }}>
         {props.node.Name}
       </span>:<Space showSource={props.showSource} />

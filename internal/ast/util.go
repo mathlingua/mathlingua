@@ -37,3 +37,45 @@ func Debug(node MlgNodeKind, fn func(node MlgNodeKind) (string, bool)) string {
 		panic(fmt.Sprintf("Cannot debug a node: %s", mlglib.PrettyPrint(node)))
 	}
 }
+
+func CloneNode[T MlgNodeKind](node T) T {
+	copy := node
+	copy.ForEach(cloneScopes)
+	return copy
+}
+
+func cloneScopes(n MlgNodeKind) {
+	metaData := n.GetCommonMetaData()
+	metaData.Scope = *metaData.Scope.Clone()
+	n.ForEach(cloneScopes)
+}
+
+type Char struct {
+	Symbol   rune
+	Position Position
+}
+
+func GetChars(text string) []Char {
+	chars := make([]Char, 0)
+	curRow := 0
+	curColumn := 0
+	prevPos := 0
+	for pos, c := range text {
+		if c == '\n' {
+			curRow++
+			curColumn = 0
+		} else {
+			curColumn += pos - prevPos
+		}
+		prevPos = pos
+		chars = append(chars, Char{
+			Symbol: c,
+			Position: Position{
+				Offset: pos,
+				Row:    curRow,
+				Column: curColumn,
+			},
+		})
+	}
+	return chars
+}

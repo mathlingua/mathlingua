@@ -18,13 +18,13 @@ package ast
 
 import "path/filepath"
 
+type Root struct {
+	Documents      map[Path]Document
+	CommonMetaData CommonMetaData
+}
+
 type Path string
 
 func ToPath(str string) Path {
 	return Path(filepath.ToSlash(str))
-}
-
-type Root struct {
-	Documents      map[Path]Document
-	CommonMetaData CommonMetaData
 }

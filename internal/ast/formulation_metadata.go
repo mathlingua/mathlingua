@@ -16,6 +16,10 @@
 
 package ast
 
+type FormulationMetaData struct {
+	Original FormulationNodeKind
+}
+
 func (n *NameForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }

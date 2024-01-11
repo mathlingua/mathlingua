@@ -16,10 +16,6 @@
 
 package ast
 
-type FormulationMetaData struct {
-	Original FormulationNodeKind
-}
-
 type VarArgData struct {
 	IsVarArg            bool
 	VarArgNames         []NameForm

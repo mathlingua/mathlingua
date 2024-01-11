@@ -16,6 +16,12 @@
 
 package ast
 
+type CommonMetaData struct {
+	Start Position
+	Key   int
+	Scope Scope
+}
+
 func (n *Root) GetCommonMetaData() *CommonMetaData               { return &n.CommonMetaData }
 func (n *IdItem) GetCommonMetaData() *CommonMetaData             { return &n.CommonMetaData }
 func (n *Target) GetCommonMetaData() *CommonMetaData             { return &n.CommonMetaData }

@@ -22,12 +22,6 @@ type MlgNodeKind interface {
 	ForEach(fn func(subNode MlgNodeKind))
 }
 
-type CommonMetaData struct {
-	Start Position
-	Key   int
-	Scope Scope
-}
-
 func (*Root) MlgNodeKind()               {}
 func (*IdItem) MlgNodeKind()             {}
 func (*Target) MlgNodeKind()             {}

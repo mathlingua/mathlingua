@@ -16,6 +16,24 @@
 
 package ast
 
+import (
+	"fmt"
+	"mathlingua/internal/mlglib"
+)
+
 func NoOp(val MlgNodeKind) (string, bool) {
 	return "", false
+}
+
+// The lint checker incorrectly reports that this function needs a return statement.
+// nolint:typecheck
+func Debug(node MlgNodeKind, fn func(node MlgNodeKind) (string, bool)) string {
+	switch node := node.(type) {
+	case StructuralNodeKind:
+		return StructuralNodeToCode(node)
+	case FormulationNodeKind:
+		return FormulationNodeToCode(node, fn)
+	default:
+		panic(fmt.Sprintf("Cannot debug a node: %s", mlglib.PrettyPrint(node)))
+	}
 }

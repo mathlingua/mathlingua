@@ -291,8 +291,8 @@ func (n *DescribesGroup) ToCode(indent int, hasDot bool) []string {
 	if n.Extends != nil {
 		db.AppendClausesSection(LowerExtendsName, n.Extends.Extends, indent, false)
 	}
-	if n.Satisfies != nil {
-		db.AppendClausesSection(LowerSatisfiesName, n.Satisfies.Satisfies, indent, false)
+	if n.Specifies != nil {
+		db.AppendClausesSection(LowerSpecifiesName, n.Specifies.Specifies, indent, false)
 	}
 	if n.Provides != nil {
 		db.AppendSection(UpperProvidesName, indent, false)

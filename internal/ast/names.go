@@ -25,8 +25,13 @@ const LowerByName = "by"
 const LowerByQuestionName = LowerByName + "?"
 const LowerCalledName = "called"
 const LowerContentName = "content"
-const LowerSpecifiesName = "specifies"
-const LowerSpecifiesQuestionName = LowerSpecifiesName + "?"
+
+// const LowerSpecifiesName = "specifies"
+// const LowerSpecifiesQuestionName = LowerSpecifiesName + "?"
+
+const LowerExpressesName = "expresses"
+const LowerExpressesQuestionName = LowerExpressesName + "?"
+
 const LowerElseName = "else"
 const LowerElseQuestionName = LowerElseName + "?"
 const LowerExistsName = "exists"

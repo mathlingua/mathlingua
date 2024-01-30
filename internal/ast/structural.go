@@ -675,7 +675,7 @@ var DefinesSections = []string{
 	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
 	LowerMeansQuestionName,
-	LowerSpecifiesQuestionName,
+	LowerExpressesQuestionName,
 	UpperProvidesQuestionName,
 	UpperJustifiedQuestionName,
 	UpperDocumentedQuestionName,
@@ -691,7 +691,7 @@ type DefinesGroup struct {
 	When           *WhenSection
 	SuchThat       *SuchThatSection
 	Means          *MeansSection
-	Specifies      *SpecifiesSection
+	Expresses      *ExpressesSection
 	Provides       *ProvidesSection
 	Justified      *JustifiedSection
 	Documented     *DocumentedSection
@@ -711,8 +711,8 @@ type MeansSection struct {
 	CommonMetaData CommonMetaData
 }
 
-type SpecifiesSection struct {
-	Specifies      []ClauseKind
+type ExpressesSection struct {
+	Expresses      []ClauseKind
 	CommonMetaData CommonMetaData
 }
 

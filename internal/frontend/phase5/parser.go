@@ -1189,9 +1189,9 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 	if sec, ok := sections[ast.LowerMeansName]; ok {
 		means = p.toMeansSection(sec)
 	}
-	var specifies *ast.SpecifiesSection
-	if sec, ok := sections[ast.LowerSpecifiesName]; ok {
-		specifies = p.toSpecifiesSection(sec)
+	var expresses *ast.ExpressesSection
+	if sec, ok := sections[ast.LowerExpressesName]; ok {
+		expresses = p.toExpressesSection(sec)
 	}
 	var provides *ast.ProvidesSection
 	if sec, ok := sections[ast.UpperProvidesName]; ok {
@@ -1224,7 +1224,7 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 		When:           when,
 		SuchThat:       suchThat,
 		Means:          means,
-		Specifies:      specifies,
+		Expresses:      expresses,
 		Provides:       provides,
 		Justified:      justified,
 		Documented:     documented,
@@ -1256,9 +1256,9 @@ func (p *parser) toMeansSection(section phase4.Section) *ast.MeansSection {
 	}
 }
 
-func (p *parser) toSpecifiesSection(section phase4.Section) *ast.SpecifiesSection {
-	return &ast.SpecifiesSection{
-		Specifies:      p.oneOrMoreClauses(section),
+func (p *parser) toExpressesSection(section phase4.Section) *ast.ExpressesSection {
+	return &ast.ExpressesSection{
+		Expresses:      p.oneOrMoreClauses(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }

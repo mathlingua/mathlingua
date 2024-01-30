@@ -345,8 +345,8 @@ func (n *DefinesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Means != nil {
 		forEach(n.Means.Means, fn)
 	}
-	if n.Specifies != nil {
-		forEach(n.Specifies.Specifies, fn)
+	if n.Expresses != nil {
+		forEach(n.Expresses.Expresses, fn)
 	}
 	if n.Provides != nil {
 		forEach(n.Provides.Provides, fn)

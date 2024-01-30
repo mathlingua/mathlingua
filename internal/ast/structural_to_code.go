@@ -324,8 +324,8 @@ func (n *DefinesGroup) ToCode(indent int, hasDot bool) []string {
 	if n.Means != nil {
 		db.AppendClausesSection(LowerMeansName, n.Means.Means, indent, false)
 	}
-	if n.Specifies != nil {
-		db.AppendClausesSection(LowerSpecifiesName, n.Specifies.Specifies, indent, false)
+	if n.Expresses != nil {
+		db.AppendClausesSection(LowerExpressesName, n.Expresses.Expresses, indent, false)
 	}
 	if n.Provides != nil {
 		db.AppendSection(UpperProvidesName, indent, false)

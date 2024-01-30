@@ -38,7 +38,7 @@ Defines: y
 ------------------------------------------
 Id: "456"`,
 		ExpectedOutput: `ERROR: test.math (9, 1)
-Duplicate defined signature \[a]
+Duplicate defined signature \:a
 
 FAILURE: Processed 1 file and found 1 error and 0 warnings
 `,
@@ -54,10 +54,10 @@ then: 'x is \a'
 ------------------------------------------
 Id: "123"`,
 		ExpectedOutput: `ERROR: test.math (4, 13)
-Unrecognized signature \[a]
+Unrecognized signature \:a
 
 ERROR: test.math (4, 13)
-Signature \[a] does not have a Documented:called: or Documented:written: section
+Signature \:a does not have a Documented:called: or Documented:written: section
 
 FAILURE: Processed 1 file and found 2 errors and 0 warnings
 `,
@@ -79,7 +79,7 @@ then: 'x is \a'
 ------------------------------------------
 Id: "456"`,
 		ExpectedOutput: `ERROR: test.math (10, 13)
-Signature \[a] does not have a Documented:called: or Documented:written: section
+Signature \:a does not have a Documented:called: or Documented:written: section
 
 FAILURE: Processed 1 file and found 1 error and 0 warnings
 `,

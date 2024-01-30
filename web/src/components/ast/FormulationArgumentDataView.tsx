@@ -32,7 +32,7 @@ export const FormulationArgumentDataView = (props: FormulationArgumentDataViewPr
       <button className={styles.latexViewButton}
               onClick={() => setShowDropdown((shown) => !shown)}>
         {props.showSource ? <span className={styles.showSourceWrapper}>'{props.node.FormulationMetaData.OriginalText}'</span> :
-                            <LatexView latex={fn(props.node.Text)} color={'black'} />}
+                            <LatexView latex={fn(props.node.Text)} color='black' />}
         {usedSignatures.length > 0 && <DownIcon className={styles.downIcon} />}
       </button>
       <div className={styles.dropdownMenu} style={dropdownMenuCss}>
@@ -43,7 +43,7 @@ export const FormulationArgumentDataView = (props: FormulationArgumentDataViewPr
                     props.onSelectedSignature(src);
                     setShowDropdown(false);
                   }}>
-            {src}
+            <span style={{ fontFamily: 'KaTeX_Main' }}>{src}</span>
           </button>
         ))}
       </div>

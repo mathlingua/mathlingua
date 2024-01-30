@@ -210,7 +210,7 @@ func (n *Signature) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
 	}
-	result := "\\["
+	result := "\\:"
 	for i, item := range n.MainNames {
 		if i > 0 {
 			result += "."
@@ -221,9 +221,8 @@ func (n *Signature) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 		result += ":"
 		result += item
 	}
-	result += "]"
 	if n.IsInfix {
-		result += "/"
+		result += ":/"
 	}
 	if n.InnerLabel != nil {
 		result += "::(" + *n.InnerLabel + ")"

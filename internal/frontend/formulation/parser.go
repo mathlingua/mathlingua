@@ -2977,79 +2977,118 @@ func (fp *formulationParser) directionType() (*ast.DirectionType, bool) {
 ///////////////////////////////////////// signature ////////////////////////////////////////////////
 
 func (fp *formulationParser) signature() (ast.Signature, bool) {
-	start := fp.lexer.Position()
-	if !fp.hasHas(ast.BackSlash, ast.LSquare) {
+	if !fp.hasHas(ast.BackSlash, ast.Colon) {
 		return ast.Signature{}, false
 	}
-	fp.expect(ast.BackSlash)
-	fp.expect(ast.LSquare)
 
-	mainNames := make([]string, 0)
-	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
-		if fp.has(ast.Colon) {
-			break
-		}
-		name, ok := fp.chainName()
-		if !ok {
-			fp.error("Expected a name")
-			break
-		}
-		mainNames = append(mainNames, name.Text)
-		if fp.has(ast.Dot) {
-			fp.lexer.Next() // skip the dot
-		} else {
-			break
+	start := fp.lexer.Position()
+	typeKind, ok := fp.typeKind(true)
+
+	var signature *ast.Signature
+	if ok {
+		switch t := typeKind.(type) {
+		case *ast.InfixCommandType:
+			if t.CurlyTypeParam != nil {
+				fp.errorAt("A signature cannot contain a {}", start)
+			}
+			if t.ParenTypeParams != nil {
+				fp.errorAt("A signature cannot contain a ()", start)
+			}
+			if t.NamedTypeParams != nil {
+				hasNameWithCurlyArgs := false
+				for _, n := range *t.NamedTypeParams {
+					if n.CurlyTypeParam != nil {
+						hasNameWithCurlyArgs = true
+						break
+					}
+				}
+				if hasNameWithCurlyArgs {
+					fp.errorAt("A signature cannot contain a :name{}", start)
+				}
+			}
+
+			mainNames := make([]string, 0)
+			for _, n := range t.Names {
+				mainNames = append(mainNames, n.Text)
+			}
+
+			namedGroupNames := make([]string, 0)
+			if t.NamedTypeParams != nil {
+				for _, n := range *t.NamedTypeParams {
+					namedGroupNames = append(namedGroupNames, n.Name.Text)
+				}
+			}
+
+			signature = &ast.Signature{
+				MainNames:           mainNames,
+				NamedGroupNames:     namedGroupNames,
+				IsInfix:             true,
+				InnerLabel:          nil, // will be added below
+				CommonMetaData:      *typeKind.GetCommonMetaData(),
+				FormulationMetaData: *typeKind.GetFormulationMetaData(),
+			}
+		case *ast.CommandType:
+			if t.CurlyTypeParam != nil {
+				fp.errorAt("A signature cannot contain a {}", start)
+			}
+			if t.ParenTypeParams != nil {
+				fp.errorAt("A signature cannot contain a ()", start)
+			}
+			if t.NamedTypeParams != nil {
+				hasNameWithCurlyArgs := false
+				for _, n := range *t.NamedTypeParams {
+					if n.CurlyTypeParam != nil {
+						hasNameWithCurlyArgs = true
+						break
+					}
+				}
+				if hasNameWithCurlyArgs {
+					fp.errorAt("A signature cannot contain a :name{}", start)
+				}
+			}
+
+			mainNames := make([]string, 0)
+			for _, n := range t.Names {
+				mainNames = append(mainNames, n.Text)
+			}
+
+			namedGroupNames := make([]string, 0)
+			if t.NamedTypeParams != nil {
+				for _, n := range *t.NamedTypeParams {
+					namedGroupNames = append(namedGroupNames, n.Name.Text)
+				}
+			}
+
+			signature = &ast.Signature{
+				MainNames:           mainNames,
+				NamedGroupNames:     namedGroupNames,
+				IsInfix:             false,
+				InnerLabel:          nil, // will be added below
+				CommonMetaData:      *typeKind.GetCommonMetaData(),
+				FormulationMetaData: *typeKind.GetFormulationMetaData(),
+			}
+		case *ast.InfixOperatorCallExpression:
+			// an infix operator call expression is not a valid signature
+			signature = nil
 		}
 	}
 
-	namedGroupNames := make([]string, 0)
-	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
-		if fp.has(ast.Colon) {
-			fp.lexer.Next() // skip the colon
-		} else {
-			break
-		}
-		name, ok := fp.chainName()
-		if !ok {
-			fp.error("Excpected a name")
-			break
-		}
-		namedGroupNames = append(namedGroupNames, name.Text)
+	if signature == nil {
+		fp.errorAt("Expected a signature", start)
+		return ast.Signature{}, true
 	}
 
-	for fp.lexer.HasNext() && !fp.has(ast.RSquare) {
-		fp.error("Unexpected text")
-		fp.lexer.Next()
-	}
-	fp.expect(ast.RSquare)
-
-	isInfix := false
-	if fp.has(ast.Slash) {
-		fp.expect(ast.Slash)
-		isInfix = true
-	}
-
-	var innerLabel *string
 	if fp.hasHas(ast.Colon, ast.Colon) {
-		innerLabelText := ""
+		innerLabel := ""
 		fp.expect(ast.Colon)
 		fp.expect(ast.Colon)
 		fp.expect(ast.LParen)
 		for fp.lexer.HasNext() && !fp.has(ast.RParen) {
-			innerLabelText += fp.lexer.Next().Text
+			innerLabel += fp.lexer.Next().Text
 		}
-		innerLabel = &innerLabelText
 		fp.expect(ast.RParen)
+		signature.InnerLabel = &innerLabel
 	}
 
-	return ast.Signature{
-		MainNames:       mainNames,
-		NamedGroupNames: namedGroupNames,
-		InnerLabel:      innerLabel,
-		IsInfix:         isInfix,
-		CommonMetaData: ast.CommonMetaData{
-			Start: fp.getShiftedPosition(start),
-			Key:   fp.keyGen.Next(),
-		},
-	}, true
+	return *signature, true
 }

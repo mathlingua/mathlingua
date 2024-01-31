@@ -3084,7 +3084,17 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 		fp.expect(ast.Colon)
 		fp.expect(ast.LParen)
 		for fp.lexer.HasNext() && !fp.has(ast.RParen) {
-			innerLabel += fp.lexer.Next().Text
+			position := fp.lexer.Position()
+			name, ok := fp.nameForm()
+			if !ok {
+				fp.next() // absorb the next token
+				fp.errorAt("Expected a name", position)
+			}
+			innerLabel += name.Text
+			if !fp.has(ast.RParen) {
+				fp.expect(ast.Dot)
+				innerLabel += "."
+			}
 		}
 		fp.expect(ast.RParen)
 		signature.InnerLabel = &innerLabel

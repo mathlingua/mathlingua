@@ -51,6 +51,7 @@ var useStructuralParser bool
 var useFormulationParser bool
 var useIdParser bool
 var useFormParser bool
+var useSignatureParser bool
 var direct bool
 var showAst bool
 
@@ -60,6 +61,7 @@ func init() {
 	flags.BoolVar(&useFormulationParser, "formulation", false, "Use the formulation parser")
 	flags.BoolVar(&useIdParser, "id", false, "Use the id parser")
 	flags.BoolVar(&useFormParser, "form", false, "Use the form parser")
+	flags.BoolVar(&useSignatureParser, "signature", false, "Use the signature parser")
 	flags.BoolVar(&direct, "direct", false, "Directly check the input.txt text and don't open the ux")
 	flags.BoolVar(&showAst, "ast", false, "Show the AST in the output pane")
 	debugCommand.MarkFlagsMutuallyExclusive("structural", "formulation", "id", "form")
@@ -67,7 +69,8 @@ func init() {
 }
 
 func setupScreen() {
-	if !useStructuralParser && !useFormulationParser && !useIdParser && !useFormParser {
+	if !useStructuralParser && !useFormulationParser &&
+		!useIdParser && !useFormParser && !useSignatureParser {
 		useStructuralParser = true
 	}
 
@@ -182,6 +185,8 @@ func setupScreen() {
 		inputArea.SetTitle("Input (id)")
 	} else if useFormParser {
 		inputArea.SetTitle("Input (form)")
+	} else if useSignatureParser {
+		inputArea.SetTitle("Input (signature)")
 	} else {
 		inputArea.SetTitle("Input")
 	}
@@ -279,6 +284,8 @@ func parse(text string) (string, string, *frontend.DiagnosticTracker) {
 		return parseForForm(text)
 	} else if useIdParser {
 		return parseForId(text)
+	} else if useSignatureParser {
+		return parseForSignature(text)
 	} else {
 		panic("Unsupported parser")
 	}
@@ -391,6 +398,19 @@ func parse(text string) (ast.MlgNodeKind, frontend.IDiagnosticTracker) {
 		text, _, tracker := parseForForm(input)
 		return text, tracker
 	}, parseCode)
+}
+
+//////////////////////////////////// signature /////////////////////////////////////////////////////
+
+func parseForSignature(text string) (string, string, *frontend.DiagnosticTracker) {
+	tracker := frontend.NewDiagnosticTracker()
+	node, ok := formulation.ParseSignature(
+		"", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
+	astText := ""
+	if ok {
+		astText = ast.FormulationNodeToCode(&node, ast.NoOp)
+	}
+	return astText, mlglib.PrettyPrint(node), tracker
 }
 
 /////////////////////////////////////////// id /////////////////////////////////////////////////////

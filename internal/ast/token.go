@@ -61,6 +61,7 @@ const (
 	DotDotDot             TokenType = "DotDotDot"
 	QuestionMark          TokenType = "QuestionMark"
 	Is                    TokenType = "Is"
+	Satisfies             TokenType = "Satisfies"
 	Extends               TokenType = "Extends"
 	As                    TokenType = "As"
 	At                    TokenType = "At"

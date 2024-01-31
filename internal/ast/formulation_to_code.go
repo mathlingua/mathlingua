@@ -167,6 +167,17 @@ func (n *IsExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	return result
 }
 
+func (n *SatisfiesExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	result := ""
+	result += commaSeparatedString(n.Lhs, fn)
+	result += " satisfies "
+	result += commaSeparatedString(n.Rhs, fn)
+	return result
+}
+
 func (n *ExtendsExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res

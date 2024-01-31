@@ -312,6 +312,12 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 						Text:     "is",
 						Position: cur.Position,
 					})
+				} else if name == "satisfies" {
+					appendToken(ast.Token{
+						Type:     ast.Satisfies,
+						Text:     "satisfies",
+						Position: cur.Position,
+					})
 				} else if name == "extends" {
 					appendToken(ast.Token{
 						Type:     ast.Extends,

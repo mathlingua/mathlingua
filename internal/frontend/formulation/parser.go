@@ -3173,26 +3173,31 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 	}
 
 	if fp.hasHas(ast.Colon, ast.Colon) {
-		innerLabel := ""
 		fp.expect(ast.Colon)
 		fp.expect(ast.Colon)
-		fp.expect(ast.LParen)
-		for fp.lexer.HasNext() && !fp.has(ast.RParen) {
-			position := fp.lexer.Position()
-			name, ok := fp.nameForm()
-			if !ok {
-				fp.next() // absorb the next token
-				fp.errorAt("Expected a name", position)
-			}
-			innerLabel += name.Text
-			if !fp.has(ast.RParen) {
-				fp.expect(ast.Dot)
-				innerLabel += "."
-			}
-		}
-		fp.expect(ast.RParen)
+		innerLabel := fp.labelText()
 		signature.InnerLabel = &innerLabel
 	}
 
 	return *signature, true
+}
+
+func (fp *formulationParser) labelText() string {
+	innerLabel := ""
+	fp.expect(ast.LParen)
+	for fp.lexer.HasNext() && !fp.has(ast.RParen) {
+		position := fp.lexer.Position()
+		name, ok := fp.nameForm()
+		if !ok {
+			fp.next() // absorb the next token
+			fp.errorAt("Expected a name", position)
+		}
+		innerLabel += name.Text
+		if !fp.has(ast.RParen) {
+			fp.expect(ast.Dot)
+			innerLabel += "."
+		}
+	}
+	fp.expect(ast.RParen)
+	return innerLabel
 }

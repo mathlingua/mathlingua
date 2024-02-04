@@ -156,11 +156,20 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 				Position: cur.Position,
 			})
 		case cur.Symbol == '{':
-			appendToken(ast.Token{
-				Type:     ast.LCurly,
-				Text:     "{",
-				Position: cur.Position,
-			})
+			if i < len(chars) && chars[i].Symbol == '.' {
+				i++ // move past the .
+				appendToken(ast.Token{
+					Type:     ast.LCurlyDot,
+					Text:     "{.",
+					Position: cur.Position,
+				})
+			} else {
+				appendToken(ast.Token{
+					Type:     ast.LCurly,
+					Text:     "{",
+					Position: cur.Position,
+				})
+			}
 		case cur.Symbol == '}':
 			appendToken(ast.Token{
 				Type:     ast.RCurly,
@@ -232,6 +241,13 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 				appendToken(ast.Token{
 					Type:     ast.DotRParen,
 					Text:     ".)",
+					Position: cur.Position,
+				})
+			} else if i < len(chars) && chars[i].Symbol == '}' {
+				i++ // move past the }
+				appendToken(ast.Token{
+					Type:     ast.DotRCurly,
+					Text:     ".}",
 					Position: cur.Position,
 				})
 			} else if i+2 < len(chars) && chars[i].Symbol == '.' && chars[i+1].Symbol == '.' &&

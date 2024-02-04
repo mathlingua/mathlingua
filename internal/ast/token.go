@@ -71,6 +71,8 @@ const (
 	DotRParen             TokenType = "DotRParen"
 	LSquareDot            TokenType = "LSquareDot"
 	DotRSquare            TokenType = "DotRSquare"
+	LCurlyDot             TokenType = "LCurlyDot"
+	DotRCurly             TokenType = "DotRCurly"
 )
 
 type Token struct {

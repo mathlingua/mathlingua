@@ -153,6 +153,7 @@ func (*SelectFromBuiltinExpression) ExpressionKind()            {}
 func (*MapToElseBuiltinExpression) ExpressionKind()             {}
 func (*CommandType) ExpressionKind()                            {}
 func (*InfixCommandType) ExpressionKind()                       {}
+func (*TypeMetaKind) ExpressionKind()                           {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

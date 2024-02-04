@@ -1039,6 +1039,10 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	if sec, ok := sections[ast.LowerExtendsName]; ok {
 		extends = p.toExtendsSection(sec)
 	}
+	var equivalentTo *ast.EquivalentToSection
+	if sec, ok := sections[ast.LowerEquivalentToName]; ok {
+		equivalentTo = p.toEquivalentToSection(sec)
+	}
 	var specifies *ast.SpecifiesSection
 	if sec, ok := sections[ast.LowerSpecifiesName]; ok {
 		specifies = p.toSpecifiesSection(sec)
@@ -1074,6 +1078,7 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		When:           when,
 		SuchThat:       suchThat,
 		Extends:        extends,
+		EquivalentTo:   equivalentTo,
 		Specifies:      specifies,
 		Provides:       provides,
 		Justified:      justified,
@@ -1189,6 +1194,10 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 	if sec, ok := sections[ast.LowerMeansName]; ok {
 		means = p.toMeansSection(sec)
 	}
+	var equivalentTo *ast.EquivalentToSection
+	if sec, ok := sections[ast.LowerEquivalentToName]; ok {
+		equivalentTo = p.toEquivalentToSection(sec)
+	}
 	var expresses *ast.ExpressesSection
 	if sec, ok := sections[ast.LowerExpressesName]; ok {
 		expresses = p.toExpressesSection(sec)
@@ -1224,6 +1233,7 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 		When:           when,
 		SuchThat:       suchThat,
 		Means:          means,
+		EquivalentTo:   equivalentTo,
 		Expresses:      expresses,
 		Provides:       provides,
 		Justified:      justified,
@@ -1252,6 +1262,13 @@ func (p *parser) toSingleMeansSection(section phase4.Section) *ast.SingleMeansSe
 func (p *parser) toMeansSection(section phase4.Section) *ast.MeansSection {
 	return &ast.MeansSection{
 		Means:          p.oneOrMoreClauses(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toEquivalentToSection(section phase4.Section) *ast.EquivalentToSection {
+	return &ast.EquivalentToSection{
+		EquivalentTo:   p.oneOrMoreClauses(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }

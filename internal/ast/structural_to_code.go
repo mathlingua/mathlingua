@@ -698,7 +698,7 @@ func (n *ProofThenGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.AppendProofItemsSection(LowerThenName, n.Then.Then, indent, hasDot && n.Label == nil)
 	if n.By != nil {
-		db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
+		db.AppendProofItemsSection(LowerByName, n.By.By, indent, false)
 	}
 	if n.Because != nil {
 		db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
@@ -711,7 +711,7 @@ func (n *ProofThusGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.AppendProofItemsSection(LowerThusName, n.Thus.Thus, indent, hasDot && n.Label == nil)
 	if n.By != nil {
-		db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
+		db.AppendProofItemsSection(LowerByName, n.By.By, indent, false)
 	}
 	if n.Because != nil {
 		db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
@@ -725,7 +725,7 @@ func (n *ProofThereforeGroup) ToCode(indent int, hasDot bool) []string {
 	db.AppendProofItemsSection(LowerThereforeName, n.Therefore.Therefore,
 		indent, hasDot && n.Label == nil)
 	if n.By != nil {
-		db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
+		db.AppendProofItemsSection(LowerByName, n.By.By, indent, false)
 	}
 	if n.Because != nil {
 		db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
@@ -738,7 +738,7 @@ func (n *ProofHenceGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.AppendProofItemsSection(LowerHenceName, n.Hence.Hence, indent, hasDot && n.Label == nil)
 	if n.By != nil {
-		db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
+		db.AppendProofItemsSection(LowerByName, n.By.By, indent, false)
 	}
 	if n.Because != nil {
 		db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
@@ -751,7 +751,7 @@ func (n *ProofNoticeGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.AppendProofItemsSection(LowerNoticeName, n.Notice.Notice, indent, hasDot && n.Label == nil)
 	if n.By != nil {
-		db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
+		db.AppendProofItemsSection(LowerByName, n.By.By, indent, false)
 	}
 	if n.Because != nil {
 		db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
@@ -764,7 +764,7 @@ func (n *ProofNextGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.AppendProofItemsSection(LowerNextName, n.Next.Next, indent, hasDot && n.Label == nil)
 	if n.By != nil {
-		db.AppendTextItemsSection(LowerByName, n.By.Items, indent, false)
+		db.AppendProofItemsSection(LowerByName, n.By.By, indent, false)
 	}
 	if n.Because != nil {
 		db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
@@ -775,7 +775,9 @@ func (n *ProofNextGroup) ToCode(indent int, hasDot bool) []string {
 func (n *ProofByBecauseThenGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.AppendTextItemsSection(LowerByName, n.By.Items, indent, hasDot && n.Label == nil)
+	if n.By != nil {
+		db.AppendProofItemsSection(LowerByName, n.By.By, indent, hasDot && n.Label == nil)
+	}
 	if n.Because != nil {
 		db.AppendProofItemsSection(LowerBecauseName, n.Because.Because, indent, false)
 	}

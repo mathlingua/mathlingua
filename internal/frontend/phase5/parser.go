@@ -3179,7 +3179,10 @@ func (p *parser) toProofByBecauseThenGroup(group phase4.Group) (ast.ProofByBecau
 	if !ok {
 		return ast.ProofByBecauseThenGroup{}, false
 	}
-	by := *p.toProofBySection(sections[ast.LowerByName])
+	var by *ast.ProofBySection
+	if sec, ok := sections[ast.LowerByName]; ok {
+		by = p.toProofBySection(sec)
+	}
 	var because *ast.ProofBecauseSection
 	if sec, ok := sections[ast.LowerBecauseName]; ok {
 		because = p.toProofBecauseSection(sec)
@@ -3217,7 +3220,7 @@ func (p *parser) toProofBecauseThenGroup(group phase4.Group) (ast.ProofBecauseTh
 
 func (p *parser) toProofBySection(section phase4.Section) *ast.ProofBySection {
 	return &ast.ProofBySection{
-		Items:          p.oneOrMoreTextItems(section),
+		By:             p.oneOrMoreProofItems(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }

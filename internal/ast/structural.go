@@ -1466,7 +1466,7 @@ var ProofByBecauseThenSections = []string{
 
 type ProofByBecauseThenGroup struct {
 	Label          *GroupLabel
-	By             ProofBySection
+	By             *ProofBySection
 	Because        *ProofBecauseSection
 	Then           ProofThenSection
 	CommonMetaData CommonMetaData
@@ -1487,7 +1487,7 @@ type ProofBecauseThenGroup struct {
 }
 
 type ProofBySection struct {
-	Items          []TextItem
+	By             []ProofItemKind
 	CommonMetaData CommonMetaData
 }
 

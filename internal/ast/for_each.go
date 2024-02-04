@@ -1038,7 +1038,7 @@ func (n *DirectionType) ForEach(fn func(subNode MlgNodeKind)) {
 func (n *ProofThenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Then.Then, fn)
 	if n.By != nil {
-		forEachTextItem(n.By.Items, fn)
+		forEachProofItem(n.By.By, fn)
 	}
 	if n.Because != nil {
 		forEachProofItem(n.Because.Because, fn)
@@ -1048,7 +1048,7 @@ func (n *ProofThenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 func (n *ProofThusGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Thus.Thus, fn)
 	if n.By != nil {
-		forEachTextItem(n.By.Items, fn)
+		forEachProofItem(n.By.By, fn)
 	}
 	if n.Because != nil {
 		forEachProofItem(n.Because.Because, fn)
@@ -1058,7 +1058,7 @@ func (n *ProofThusGroup) ForEach(fn func(subNode MlgNodeKind)) {
 func (n *ProofThereforeGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Therefore.Therefore, fn)
 	if n.By != nil {
-		forEachTextItem(n.By.Items, fn)
+		forEachProofItem(n.By.By, fn)
 	}
 	if n.Because != nil {
 		forEachProofItem(n.Because.Because, fn)
@@ -1068,7 +1068,7 @@ func (n *ProofThereforeGroup) ForEach(fn func(subNode MlgNodeKind)) {
 func (n *ProofHenceGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Hence.Hence, fn)
 	if n.By != nil {
-		forEachTextItem(n.By.Items, fn)
+		forEachProofItem(n.By.By, fn)
 	}
 	if n.Because != nil {
 		forEachProofItem(n.Because.Because, fn)
@@ -1078,7 +1078,7 @@ func (n *ProofHenceGroup) ForEach(fn func(subNode MlgNodeKind)) {
 func (n *ProofNoticeGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Notice.Notice, fn)
 	if n.By != nil {
-		forEachTextItem(n.By.Items, fn)
+		forEachProofItem(n.By.By, fn)
 	}
 	if n.Because != nil {
 		forEachProofItem(n.Because.Because, fn)
@@ -1088,7 +1088,7 @@ func (n *ProofNoticeGroup) ForEach(fn func(subNode MlgNodeKind)) {
 func (n *ProofNextGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Next.Next, fn)
 	if n.By != nil {
-		forEachTextItem(n.By.Items, fn)
+		forEachProofItem(n.By.By, fn)
 	}
 	if n.Because != nil {
 		forEachProofItem(n.Because.Because, fn)
@@ -1096,7 +1096,9 @@ func (n *ProofNextGroup) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
 func (n *ProofByBecauseThenGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachTextItem(n.By.Items, fn)
+	if n.By != nil {
+		forEachProofItem(n.By.By, fn)
+	}
 	if n.Because != nil {
 		forEachProofItem(n.Because.Because, fn)
 	}

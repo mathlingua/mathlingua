@@ -275,6 +275,10 @@ func (n *SelectFromBuiltinExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
 
+func (n *DefinitionBuiltinExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
 func (n *MapToElseBuiltinExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }

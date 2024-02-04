@@ -277,6 +277,24 @@ func (n *SelectFromBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, 
 	return result
 }
 
+func (n *DefinitionBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	result := "\\\\definition"
+	if n.Of != nil {
+		result += ":of{"
+		result += n.Of.ToCode(fn)
+		result += "}"
+	}
+	if n.Satisfies != nil {
+		result += ":satisfies{"
+		result += n.Satisfies.ToCode(fn)
+		result += "}"
+	}
+	return result
+}
+
 func (n *TypeMetaKind) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res

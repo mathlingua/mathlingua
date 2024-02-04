@@ -801,6 +801,8 @@ func (fp *formulationParser) pseudoExpression(
 			children = append(children, &builtin)
 		} else if cmd, ok := fp.selectFromBuiltinExpression(); ok {
 			children = append(children, &cmd)
+		} else if cmd, ok := fp.definitionBuiltinExpression(); ok {
+			children = append(children, &cmd)
 		} else if cmd, ok := fp.infixCommandExpression(); ok {
 			children = append(children, &cmd)
 		} else if cmd, ok := fp.commandExpression(false); ok {
@@ -1116,6 +1118,110 @@ func (fp *formulationParser) selectFromBuiltinExpression() (ast.SelectFromBuilti
 	return ast.SelectFromBuiltinExpression{
 		Kinds:  kinds,
 		Target: target,
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) definitionBuiltinExpression() (ast.DefinitionBuiltinExpression, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
+		fp.lexer.RollBack(id)
+		return ast.DefinitionBuiltinExpression{}, false
+	}
+
+	fp.expect(ast.BackSlash) // skip the \
+	fp.expect(ast.BackSlash) // skip the \
+
+	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "definition" {
+		fp.lexer.RollBack(id)
+		return ast.DefinitionBuiltinExpression{}, false
+	}
+
+	formulationName, _ := fp.expect(ast.Name) // skip the "definition" name
+
+	if !fp.hasHas(ast.Colon, ast.Name) || fp.lexer.PeekPeek().Text != "of" {
+		fp.errorAt("Expected :of{} to follow \\\\definition{}", formulationName.Position)
+		fp.lexer.Commit(id)
+		return ast.DefinitionBuiltinExpression{
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+
+	fp.expect(ast.Colon)
+	ofName, _ := fp.expect(ast.Name) // move past the of name
+
+	if !fp.has(ast.LCurly) {
+		fp.errorAt("Expected {", ofName.Position)
+		fp.lexer.Commit(id)
+		return ast.DefinitionBuiltinExpression{
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+
+	fp.expect(ast.LCurly)
+	of, ok := fp.expressionKind()
+	if !ok {
+		fp.errorAt("Expected a name", ofName.Position)
+		fp.lexer.Commit(id)
+		return ast.DefinitionBuiltinExpression{
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+	fp.expect(ast.RCurly)
+
+	var satisfies ast.ExpressionKind
+	if fp.hasHas(ast.Colon, ast.Satisfies) && fp.lexer.PeekPeek().Text == "satisfies" {
+		fp.expect(ast.Colon)
+		satisfiesName, _ := fp.expect(ast.Satisfies) // move past the satisfies name
+
+		if !fp.has(ast.LCurly) {
+			fp.errorAt("Expected {", satisfiesName.Position)
+			fp.lexer.Commit(id)
+			return ast.DefinitionBuiltinExpression{
+				CommonMetaData: ast.CommonMetaData{
+					Start: fp.getShiftedPosition(start),
+					Key:   fp.keyGen.Next(),
+				},
+			}, true
+		}
+
+		fp.expect(ast.LCurly)
+		if signature, ok := fp.signature(); ok {
+			satisfies = &signature
+		} else {
+			satisfies, ok = fp.expressionKind()
+			if !ok {
+				fp.errorAt("Expected an expression or signature", satisfiesName.Position)
+				fp.lexer.Commit(id)
+				return ast.DefinitionBuiltinExpression{
+					CommonMetaData: ast.CommonMetaData{
+						Start: fp.getShiftedPosition(start),
+						Key:   fp.keyGen.Next(),
+					},
+				}, true
+			}
+		}
+
+		fp.expect(ast.RCurly)
+	}
+
+	fp.lexer.Commit(id)
+	return ast.DefinitionBuiltinExpression{
+		Of:        of,
+		Satisfies: satisfies,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

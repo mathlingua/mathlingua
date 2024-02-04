@@ -831,6 +831,15 @@ func (n *SelectFromBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Target)
 }
 
+func (n *DefinitionBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
+	if n.Of != nil {
+		fn(n.Of)
+	}
+	if n.Satisfies != nil {
+		fn(n.Satisfies)
+	}
+}
+
 func (n *MapToElseBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Target)
 	fn(n.To)

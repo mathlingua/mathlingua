@@ -184,6 +184,10 @@ func (n *SelectFromBuiltinExpression) GetFormulationMetaData() *FormulationMetaD
 	return &n.FormulationMetaData
 }
 
+func (n *DefinitionBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}
+
 func (n *MapToElseBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }

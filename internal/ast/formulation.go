@@ -288,6 +288,22 @@ type MapToElseBuiltinExpression struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// \\definition:of{f}
+// \\definition:of{f}:satisfies{\:continuous.function:on:to}
+// \\definition:of{f}:satisfies{\:continuous.function:on{A}:to{B}}
+// \\definition:of{f}:satisfies{\:continuous.function:on:to::(some.label)}
+// \\definition:of{f}:satisfies{\:continuous.function:on{A}:to{B}::(some.label)}
+// \\definition:of{A \subset/ B}:satisfies{\:some.thing}
+// \\definition:of{A \subset/ B}:satisfies{\:some.thing::(some.label)}
+type DefinitionBuiltinExpression struct {
+	Of                  ExpressionKind // Note: of is optional
+	Satisfies           ExpressionKind // Note: satifies is optional
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // \:a.b.c:x:y::(inner.label)
 type Signature struct {
 	MainNames           []string

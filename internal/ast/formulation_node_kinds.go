@@ -66,6 +66,7 @@ func (*PostfixOperatorForm) FormulationNodeKind()                    {}
 func (*FunctionLiteralExpression) FormulationNodeKind()              {}
 func (*FunctionLiteralForm) FormulationNodeKind()                    {}
 func (*SelectFromBuiltinExpression) FormulationNodeKind()            {}
+func (*DefinitionBuiltinExpression) FormulationNodeKind()            {}
 func (*MapToElseBuiltinExpression) FormulationNodeKind()             {}
 func (*CommandType) FormulationNodeKind()                            {}
 func (*InfixCommandType) FormulationNodeKind()                       {}
@@ -150,6 +151,7 @@ func (*ExpressionColonDashArrowItem) ExpressionKind()           {}
 func (*Signature) ExpressionKind()                              {}
 func (*FunctionLiteralExpression) ExpressionKind()              {}
 func (*SelectFromBuiltinExpression) ExpressionKind()            {}
+func (*DefinitionBuiltinExpression) ExpressionKind()            {}
 func (*MapToElseBuiltinExpression) ExpressionKind()             {}
 func (*CommandType) ExpressionKind()                            {}
 func (*InfixCommandType) ExpressionKind()                       {}

@@ -402,9 +402,18 @@ type ExpressionColonDashArrowItem struct {
 
 ////////////////////////////////////// Operators ///////////////////////////////////////////////////
 
-// [x] or [x + y]
+type EnclosedType string
+
+const (
+	EnclosedSquare EnclosedType = "EnclosedSquare"
+	EnclosedParen  EnclosedType = "EnclosedParen"
+	EnclosedCurly  EnclosedType = "EnclosedCurly"
+)
+
+// [.x.], [.x + y.], (.x.), {.x.}, :(.x.), (.x.):, etc.
 type EnclosedNonCommandOperatorTarget struct {
 	Target              ExpressionKind
+	Type                EnclosedType
 	HasLeftColon        bool
 	HasRightColon       bool
 	CommonMetaData      CommonMetaData

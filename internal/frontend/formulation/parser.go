@@ -1658,21 +1658,55 @@ func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (
 
 func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	ast.EnclosedNonCommandOperatorTarget, bool) {
-	if !fp.has(ast.LSquareDot) && !fp.hasHas(ast.Colon, ast.LSquareDot) {
+	if !fp.has(ast.LSquareDot) && !fp.hasHas(ast.Colon, ast.LSquareDot) &&
+		!fp.has(ast.LParenDot) && !fp.hasHas(ast.Colon, ast.LParenDot) &&
+		!fp.has(ast.LCurlyDot) && !fp.hasHas(ast.Colon, ast.LCurlyDot) {
 		return ast.EnclosedNonCommandOperatorTarget{}, false
+	}
+
+	var enclosedType ast.EnclosedType
+	var expectedEnd ast.TokenType
+	var hasLeftColon bool
+
+	if fp.has(ast.LSquareDot) {
+		hasLeftColon = false
+		enclosedType = ast.EnclosedSquare
+		expectedEnd = ast.DotRSquare
+		fp.expect(ast.LSquareDot)
+	} else if fp.hasHas(ast.Colon, ast.LSquareDot) {
+		hasLeftColon = true
+		enclosedType = ast.EnclosedSquare
+		expectedEnd = ast.DotRSquare
+		fp.expect(ast.Colon)
+		fp.expect(ast.LSquareDot)
+	} else if fp.has(ast.LParenDot) {
+		hasLeftColon = false
+		enclosedType = ast.EnclosedParen
+		expectedEnd = ast.DotRParen
+		fp.expect(ast.LParenDot)
+	} else if fp.hasHas(ast.Colon, ast.LParenDot) {
+		hasLeftColon = true
+		enclosedType = ast.EnclosedParen
+		expectedEnd = ast.DotRParen
+		fp.expect(ast.Colon)
+		fp.expect(ast.LParenDot)
+	} else if fp.has(ast.LCurlyDot) {
+		hasLeftColon = false
+		enclosedType = ast.EnclosedCurly
+		expectedEnd = ast.DotRCurly
+		fp.expect(ast.LCurlyDot)
+	} else if fp.hasHas(ast.Colon, ast.LCurlyDot) {
+		hasLeftColon = true
+		enclosedType = ast.EnclosedCurly
+		expectedEnd = ast.DotRCurly
+		fp.expect(ast.Colon)
+		fp.expect(ast.LCurlyDot)
+	} else {
+		panic("Reached an enclosed operator with an unexpected start")
 	}
 
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-
-	hasLeftColon := false
-	if fp.hasHas(ast.Colon, ast.LSquareDot) {
-		hasLeftColon = true
-		fp.expect(ast.Colon)
-		fp.expect(ast.LSquareDot)
-	} else {
-		fp.expect(ast.LSquareDot)
-	}
 
 	var target ast.ExpressionKind
 	if opName, ok := fp.operatorAsNameForm(); ok {
@@ -1696,7 +1730,7 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 
-	fp.expect(ast.DotRSquare)
+	fp.expect(expectedEnd)
 
 	hasRightColon := false
 	if _, ok := fp.token(ast.Colon); ok {
@@ -1706,6 +1740,7 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	fp.lexer.Commit(id)
 	return ast.EnclosedNonCommandOperatorTarget{
 		Target:        target,
+		Type:          enclosedType,
 		HasLeftColon:  hasLeftColon,
 		HasRightColon: hasRightColon,
 		CommonMetaData: ast.CommonMetaData{

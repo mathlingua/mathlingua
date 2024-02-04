@@ -16,7 +16,9 @@
 
 package ast
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func FormulationNodeToCode(node FormulationNodeKind,
 	fn func(node MlgNodeKind) (string, bool)) string {
@@ -352,19 +354,35 @@ func (n *EnclosedNonCommandOperatorTarget) ToCode(
 	if res, ok := fn(n); ok {
 		return res
 	}
-	result := "["
+
+	prefix := ""
+	suffix := ""
+
+	if n.Type == EnclosedParen {
+		prefix = "(."
+		suffix = ".)"
+	} else if n.Type == EnclosedSquare {
+		prefix = "[."
+		suffix = ".]"
+	} else if n.Type == EnclosedCurly {
+		prefix = "{."
+		suffix = ".}"
+	} else {
+		panic(fmt.Sprintf("Unknown enclosed operator type %s", n.Type))
+	}
+
+	result := ""
 	if n.HasLeftColon {
 		result += ":"
-	} else {
-		result += "."
 	}
+
+	result += prefix
 	result += n.Target.ToCode(fn)
+	result += suffix
+
 	if n.HasRightColon {
 		result += ":"
-	} else {
-		result += "."
 	}
-	result += "]"
 	return result
 }
 

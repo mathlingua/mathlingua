@@ -1213,8 +1213,8 @@ func (fp *formulationParser) parenOrInvisibleTupleExpression(
 	right := ast.RParen
 
 	if isInvisible {
-		left = ast.LParenDot
-		right = ast.DotRParen
+		left = ast.LParenColon
+		right = ast.ColonRParen
 	}
 
 	if !fp.has(left) {
@@ -1234,7 +1234,7 @@ func (fp *formulationParser) parenOrInvisibleTupleExpression(
 			fp.expect(ast.Comma)
 		}
 
-		arg, ok := fp.expressionKind(ast.DotRParen)
+		arg, ok := fp.expressionKind(ast.ColonRParen)
 		if !ok {
 			fp.lexer.RollBack(id)
 			return ast.TupleExpression{}, false

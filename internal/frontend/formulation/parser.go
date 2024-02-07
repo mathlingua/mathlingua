@@ -807,6 +807,8 @@ func (fp *formulationParser) pseudoExpression(
 			children = append(children, &cmd)
 		} else if cmd, ok := fp.commandExpression(false); ok {
 			children = append(children, &cmd)
+		} else if grp, ok := fp.labeledGrouping(); ok {
+			children = append(children, &grp)
 		} else {
 			if fp.lexer.HasNext() {
 				next := fp.lexer.Next()
@@ -1357,6 +1359,36 @@ func (fp *formulationParser) parenOrInvisibleTupleExpression(
 	return ast.TupleExpression{
 		Args:        args,
 		IsInvisible: isInvisible,
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) labeledGrouping() (ast.LabeledGrouping, bool) {
+	if !fp.has(ast.LCurlyColon) {
+		return ast.LabeledGrouping{}, false
+	}
+
+	start := fp.lexer.Position()
+	fp.expect(ast.LCurlyColon)
+
+	exp, ok := fp.expressionKind(ast.ColonRCurly)
+	if !ok {
+		fp.errorAt("Expected an expression", start)
+	}
+
+	fp.expect(ast.ColonRCurly)
+
+	label := fp.labelText()
+	if len(label) == 0 {
+		fp.errorAt("Expected a label", start)
+	}
+
+	return ast.LabeledGrouping{
+		Arg:   exp,
+		Label: label,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),
@@ -3305,5 +3337,5 @@ func (fp *formulationParser) labelText() string {
 		}
 	}
 	fp.expect(ast.RParen)
-	return innerLabel
+	return strings.Trim(innerLabel, " ")
 }

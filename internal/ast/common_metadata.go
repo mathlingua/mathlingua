@@ -97,6 +97,7 @@ func (n *ConditionalSetForm) GetCommonMetaData() *CommonMetaData       { return 
 func (n *ConditionalSetIdForm) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
 func (n *FunctionCallExpression) GetCommonMetaData() *CommonMetaData   { return &n.CommonMetaData }
 func (n *TupleExpression) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
+func (n *LabeledGrouping) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
 func (n *ConditionalSetExpression) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 func (n *CommandExpression) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
 

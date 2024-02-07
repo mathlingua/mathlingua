@@ -97,6 +97,7 @@ func (*ConditionalSetForm) MlgNodeKind()                     {}
 func (*ConditionalSetIdForm) MlgNodeKind()                   {}
 func (*FunctionCallExpression) MlgNodeKind()                 {}
 func (*TupleExpression) MlgNodeKind()                        {}
+func (*LabeledGrouping) MlgNodeKind()                        {}
 func (*ConditionalSetExpression) MlgNodeKind()               {}
 func (*CommandExpression) MlgNodeKind()                      {}
 func (*PrefixOperatorCallExpression) MlgNodeKind()           {}

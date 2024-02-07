@@ -148,6 +148,14 @@ type TupleExpression struct {
 	FormulationMetaData FormulationMetaData
 }
 
+// {:a + b:}(some.label)
+type LabeledGrouping struct {
+	Arg                 ExpressionKind
+	Label               string
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
 // [x]{(x, x+1) | x is \real ; x > 0}
 type ConditionalSetExpression struct {
 	Symbols             []StructuralFormKind

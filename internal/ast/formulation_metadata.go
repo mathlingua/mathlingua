@@ -48,6 +48,10 @@ func (n *TupleExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 
+func (n *LabeledGrouping) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}
+
 func (n *ConditionalSetExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }

@@ -96,6 +96,20 @@ func (n *TupleExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) strin
 	return result
 }
 
+func (n *LabeledGrouping) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+
+	result := "{:"
+	result += n.Arg.ToCode(fn)
+	result += ":}("
+	result += n.Label
+	result += ")"
+
+	return result
+}
+
 func (n *ConditionalSetExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res

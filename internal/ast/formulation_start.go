@@ -23,6 +23,7 @@ func (n *ConditionalSetForm) Start() Position                     { return n.Com
 func (n *ConditionalSetIdForm) Start() Position                   { return n.CommonMetaData.Start }
 func (n *FunctionCallExpression) Start() Position                 { return n.CommonMetaData.Start }
 func (n *TupleExpression) Start() Position                        { return n.CommonMetaData.Start }
+func (n *LabeledGrouping) Start() Position                        { return n.CommonMetaData.Start }
 func (n *ConditionalSetExpression) Start() Position               { return n.CommonMetaData.Start }
 func (n *CommandExpression) Start() Position                      { return n.CommonMetaData.Start }
 func (n *PrefixOperatorCallExpression) Start() Position           { return n.CommonMetaData.Start }

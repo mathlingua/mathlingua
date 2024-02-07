@@ -767,6 +767,10 @@ func (n *TupleExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Args, fn)
 }
 
+func (n *LabeledGrouping) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(n.Arg)
+}
+
 func (n *ConditionalSetExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Symbols, fn)
 	fn(n.Target)

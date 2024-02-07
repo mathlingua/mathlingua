@@ -31,6 +31,7 @@ func (*ConditionalSetForm) FormulationNodeKind()                     {}
 func (*ConditionalSetIdForm) FormulationNodeKind()                   {}
 func (*FunctionCallExpression) FormulationNodeKind()                 {}
 func (*TupleExpression) FormulationNodeKind()                        {}
+func (*LabeledGrouping) FormulationNodeKind()                        {}
 func (*ConditionalSetExpression) FormulationNodeKind()               {}
 func (*CommandExpression) FormulationNodeKind()                      {}
 func (*PrefixOperatorCallExpression) FormulationNodeKind()           {}
@@ -131,6 +132,7 @@ type ExpressionKind interface {
 func (*NameForm) ExpressionKind()                               {}
 func (*FunctionCallExpression) ExpressionKind()                 {}
 func (*TupleExpression) ExpressionKind()                        {}
+func (*LabeledGrouping) ExpressionKind()                        {}
 func (*ConditionalSetExpression) ExpressionKind()               {}
 func (*CommandExpression) ExpressionKind()                      {}
 func (*PrefixOperatorCallExpression) ExpressionKind()           {}

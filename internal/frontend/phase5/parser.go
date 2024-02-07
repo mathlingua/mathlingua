@@ -1428,6 +1428,10 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
 	var ifSec *ast.IfSection
 	if sec, ok := sections[ast.LowerIfName]; ok {
 		ifSec = p.toIfSection(sec)
@@ -1459,6 +1463,7 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 		Given:          given,
 		Using:          using,
 		Where:          where,
+		SuchThat:       suchThat,
 		If:             ifSec,
 		Iff:            iff,
 		Then:           then,
@@ -1516,6 +1521,10 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
 	var ifSec *ast.IfSection
 	if sec, ok := sections[ast.LowerIfName]; ok {
 		ifSec = p.toIfSection(sec)
@@ -1547,6 +1556,7 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 		Given:          given,
 		Using:          using,
 		Where:          where,
+		SuchThat:       suchThat,
 		If:             ifSec,
 		Iff:            iff,
 		Then:           then,
@@ -1590,6 +1600,10 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
 	var ifSec *ast.IfSection
 	if sec, ok := sections[ast.LowerIfName]; ok {
 		ifSec = p.toIfSection(sec)
@@ -1625,6 +1639,7 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 		Given:          given,
 		Using:          using,
 		Where:          where,
+		SuchThat:       suchThat,
 		If:             ifSec,
 		Iff:            iff,
 		Then:           then,
@@ -1677,6 +1692,10 @@ func (p *parser) toCorollaryGroup(group phase4.Group) (ast.CorollaryGroup, bool)
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
 	var ifSec *ast.IfSection
 	if sec, ok := sections[ast.LowerIfName]; ok {
 		ifSec = p.toIfSection(sec)
@@ -1709,6 +1728,7 @@ func (p *parser) toCorollaryGroup(group phase4.Group) (ast.CorollaryGroup, bool)
 		Given:          given,
 		Using:          using,
 		Where:          where,
+		SuchThat:       suchThat,
 		If:             ifSec,
 		Iff:            iff,
 		Then:           then,
@@ -1760,6 +1780,10 @@ func (p *parser) toLemmaGroup(group phase4.Group) (ast.LemmaGroup, bool) {
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
 	var ifSec *ast.IfSection
 	if sec, ok := sections[ast.LowerIfName]; ok {
 		ifSec = p.toIfSection(sec)
@@ -1792,6 +1816,7 @@ func (p *parser) toLemmaGroup(group phase4.Group) (ast.LemmaGroup, bool) {
 		Given:          given,
 		Using:          using,
 		Where:          where,
+		SuchThat:       suchThat,
 		If:             ifSec,
 		Iff:            iff,
 		Then:           then,

@@ -448,6 +448,9 @@ func (n *AxiomGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
 	}
+	if n.SuchThat != nil {
+		forEach(n.SuchThat.Clauses, fn)
+	}
 	if n.If != nil {
 		forEach(n.If.Clauses, fn)
 	}
@@ -480,6 +483,9 @@ func (n *ConjectureGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
 	}
+	if n.SuchThat != nil {
+		forEach(n.SuchThat.Clauses, fn)
+	}
 	if n.If != nil {
 		forEach(n.If.Clauses, fn)
 	}
@@ -511,6 +517,9 @@ func (n *TheoremGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
+	}
+	if n.SuchThat != nil {
+		forEach(n.SuchThat.Clauses, fn)
 	}
 	if n.If != nil {
 		forEach(n.If.Clauses, fn)
@@ -548,6 +557,9 @@ func (n *CorollaryGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
 	}
+	if n.SuchThat != nil {
+		forEach(n.SuchThat.Clauses, fn)
+	}
 	if n.If != nil {
 		forEach(n.If.Clauses, fn)
 	}
@@ -583,6 +595,9 @@ func (n *LemmaGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 	if n.Where != nil {
 		forEachSpec(n.Where.Specs, fn)
+	}
+	if n.SuchThat != nil {
+		forEach(n.SuchThat.Clauses, fn)
 	}
 	if n.If != nil {
 		forEach(n.If.Clauses, fn)

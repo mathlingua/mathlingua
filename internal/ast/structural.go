@@ -796,6 +796,7 @@ var AxiomSections = []string{
 	LowerGivenQuestionName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
+	LowerSuchThatQuestionName,
 	LowerIfQuestionName,
 	LowerIffQuestionName,
 	LowerThenName,
@@ -811,6 +812,7 @@ type AxiomGroup struct {
 	Given          *GivenSection
 	Using          *UsingSection
 	Where          *WhereSection
+	SuchThat       *SuchThatSection
 	If             *IfSection
 	Iff            *IffSection
 	Then           ThenSection
@@ -832,6 +834,7 @@ var ConjectureSections = []string{
 	LowerGivenQuestionName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
+	LowerSuchThatQuestionName,
 	LowerIfQuestionName,
 	LowerIffQuestionName,
 	LowerThenName,
@@ -847,6 +850,7 @@ type ConjectureGroup struct {
 	Given          *GivenSection
 	Using          *UsingSection
 	Where          *WhereSection
+	SuchThat       *SuchThatSection
 	If             *IfSection
 	Iff            *IffSection
 	Then           ThenSection
@@ -868,6 +872,7 @@ var TheoremSections = []string{
 	LowerGivenQuestionName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
+	LowerSuchThatQuestionName,
 	LowerIfQuestionName,
 	LowerIffQuestionName,
 	LowerThenName,
@@ -884,6 +889,7 @@ type TheoremGroup struct {
 	Given          *GivenSection
 	Using          *UsingSection
 	Where          *WhereSection
+	SuchThat       *SuchThatSection
 	If             *IfSection
 	Iff            *IffSection
 	Then           ThenSection
@@ -912,6 +918,7 @@ var LemmaSections = []string{
 	LowerGivenQuestionName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
+	LowerSuchThatQuestionName,
 	LowerIfQuestionName,
 	LowerIffQuestionName,
 	LowerThenName,
@@ -929,6 +936,7 @@ type LemmaGroup struct {
 	Given          *GivenSection
 	Using          *UsingSection
 	Where          *WhereSection
+	SuchThat       *SuchThatSection
 	If             *IfSection
 	Iff            *IffSection
 	Then           ThenSection
@@ -957,6 +965,7 @@ var CorollarySections = []string{
 	LowerGivenQuestionName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
+	LowerSuchThatQuestionName,
 	LowerIfQuestionName,
 	LowerIffQuestionName,
 	LowerThenName,
@@ -974,6 +983,7 @@ type CorollaryGroup struct {
 	Given          *GivenSection
 	Using          *UsingSection
 	Where          *WhereSection
+	SuchThat       *SuchThatSection
 	If             *IfSection
 	Iff            *IffSection
 	Then           ThenSection

@@ -542,7 +542,7 @@ var LabelSections = []string{LowerLabelName, LowerByName}
 
 type LabelGroup struct {
 	Label          LabelSection
-	By             BySection
+	By             ProofBySection
 	CommonMetaData CommonMetaData
 }
 
@@ -554,12 +554,7 @@ type LabelSection struct {
 var BySections = []string{LowerByName}
 
 type ByGroup struct {
-	By             BySection
-	CommonMetaData CommonMetaData
-}
-
-type BySection struct {
-	By             []TextItem
+	By             ProofBySection
 	CommonMetaData CommonMetaData
 }
 

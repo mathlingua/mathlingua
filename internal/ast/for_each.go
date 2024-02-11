@@ -285,11 +285,11 @@ func (n *RelatedGroup) ForEach(fn func(subNode MlgNodeKind)) {
 
 func (n *LabelGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Label.Label)
-	forEachTextItem(n.By.By, fn)
+	forEachProofItem(n.By.By, fn)
 }
 
 func (n *ByGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachTextItem(n.By.By, fn)
+	forEachProofItem(n.By.By, fn)
 }
 
 func (n *DescribesGroup) ForEach(fn func(subNode MlgNodeKind)) {

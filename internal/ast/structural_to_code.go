@@ -276,7 +276,7 @@ func (n *LabelGroup) ToCode(indent int, hasDot bool) []string {
 
 func (n *ByGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
-	db.AppendTextItemsSection(LowerByName, n.By.By, indent, hasDot)
+	db.AppendProofItemsSection(LowerByName, n.By.By, indent, hasDot)
 	return db.Lines()
 }
 

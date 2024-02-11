@@ -965,7 +965,7 @@ func (p *parser) toLabelGroup(group phase4.Group) (ast.LabelGroup, bool) {
 	}
 	return ast.LabelGroup{
 		Label:          *p.toLabelSection(sections[ast.LowerLabelName]),
-		By:             *p.toBySection(sections[ast.LowerByName]),
+		By:             *p.toProofBySection(sections[ast.LowerByName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
@@ -980,16 +980,9 @@ func (p *parser) toByGroup(group phase4.Group) (ast.ByGroup, bool) {
 		return ast.ByGroup{}, false
 	}
 	return ast.ByGroup{
-		By:             *p.toBySection(sections[ast.LowerByName]),
+		By:             *p.toProofBySection(sections[ast.LowerByName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
-}
-
-func (p *parser) toBySection(section phase4.Section) *ast.BySection {
-	return &ast.BySection{
-		By:             p.oneOrMoreTextItems(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
 }
 
 ////////////////////////////////////// references //////////////////////////////////////////////////

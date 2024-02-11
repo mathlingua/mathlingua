@@ -22,7 +22,7 @@ export function TreeNodeList(props: TreeNodeListProps) {
         navigate(first.path);
       }
     }
-  }, [props.selectedPath]);
+  }, [props.selectedPath, navigate, props.node.children]);
 
   return (
     <div className={styles.wrapper}>

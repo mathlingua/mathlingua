@@ -39,7 +39,7 @@ export function MainPage() {
     if (location.pathname === "/" && first !== undefined) {
       navigate(first.Path);
     }
-  }, [pathsData]);
+  }, [pathsData, location.pathname, navigate]);
 
   const sidebar = (
     <div className={styles.sidebar}>

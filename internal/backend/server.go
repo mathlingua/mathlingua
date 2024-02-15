@@ -52,7 +52,9 @@ func StartServer(port int, conf config.MlgConfig) {
 	router.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// if the URL path cannot be determined, or corresponds to a static asset,
 		// then let the default handler handle the request
-		if r.URL == nil || strings.HasPrefix(r.URL.Path, "/static") {
+		if r.URL == nil || strings.HasPrefix(r.URL.Path, "/static") ||
+			strings.HasPrefix(r.URL.Path, "/logo") || r.URL.Path == "/favicon.ico" ||
+			r.URL.Path == "/manifest.json" || r.URL.Path == "robots.txt" {
 			web.AssetHandler{}.ServeHTTP(w, r)
 			return
 		}

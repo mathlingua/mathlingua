@@ -113,27 +113,6 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 				Text:     ",",
 				Position: cur.Position,
 			})
-		case cur.Symbol == '`' && i < len(chars) && chars[i].Symbol == '(':
-			i++ // move past the (
-			appendToken(ast.Token{
-				Type:     ast.BacktickLParen,
-				Text:     "`(",
-				Position: cur.Position,
-			})
-		case cur.Symbol == '`' && i < len(chars) && chars[i].Symbol == '[':
-			i++ // move past the [
-			appendToken(ast.Token{
-				Type:     ast.BacktickLSquare,
-				Text:     "`[",
-				Position: cur.Position,
-			})
-		case cur.Symbol == '`' && i < len(chars) && chars[i].Symbol == '{':
-			i++ // move past the {
-			appendToken(ast.Token{
-				Type:     ast.BacktickLCurly,
-				Text:     "`{",
-				Position: cur.Position,
-			})
 		case cur.Symbol == '(':
 			if i < len(chars) && chars[i].Symbol == '.' {
 				i++ // move past the .
@@ -157,20 +136,11 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 				})
 			}
 		case cur.Symbol == ')':
-			if i < len(chars) && chars[i].Symbol == '`' {
-				i++ // move past the `
-				appendToken(ast.Token{
-					Type:     ast.RParenBacktick,
-					Text:     ")`",
-					Position: cur.Position,
-				})
-			} else {
-				appendToken(ast.Token{
-					Type:     ast.RParen,
-					Text:     ")",
-					Position: cur.Position,
-				})
-			}
+			appendToken(ast.Token{
+				Type:     ast.RParen,
+				Text:     ")",
+				Position: cur.Position,
+			})
 		case cur.Symbol == '[':
 			if i < len(chars) && chars[i].Symbol == '.' {
 				i++ // move past the .
@@ -187,20 +157,11 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 				})
 			}
 		case cur.Symbol == ']':
-			if i < len(chars) && chars[i].Symbol == '`' {
-				i++ // move past the `
-				appendToken(ast.Token{
-					Type:     ast.RSquareBacktick,
-					Text:     "]`",
-					Position: cur.Position,
-				})
-			} else {
-				appendToken(ast.Token{
-					Type:     ast.RSquare,
-					Text:     "]",
-					Position: cur.Position,
-				})
-			}
+			appendToken(ast.Token{
+				Type:     ast.RSquare,
+				Text:     "]",
+				Position: cur.Position,
+			})
 		case cur.Symbol == '{':
 			if i < len(chars) && chars[i].Symbol == '.' {
 				i++ // move past the .
@@ -224,20 +185,11 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 				})
 			}
 		case cur.Symbol == '}':
-			if i < len(chars) && chars[i].Symbol == '`' {
-				i++ // move past the `
-				appendToken(ast.Token{
-					Type:     ast.RCurlyBacktick,
-					Text:     "}`",
-					Position: cur.Position,
-				})
-			} else {
-				appendToken(ast.Token{
-					Type:     ast.RCurly,
-					Text:     "}",
-					Position: cur.Position,
-				})
-			}
+			appendToken(ast.Token{
+				Type:     ast.RCurly,
+				Text:     "}",
+				Position: cur.Position,
+			})
 		case cur.Symbol == '_':
 			appendToken(ast.Token{
 				Type:     ast.Underscore,
@@ -462,7 +414,7 @@ func isWhitespace(c rune) bool {
 }
 
 func isNameSymbol(c rune) bool {
-	return unicode.IsLetter(c) || unicode.IsDigit(c) || c == '\''
+	return unicode.IsLetter(c) || unicode.IsDigit(c) || c == '`' || c == '\''
 }
 
 func isOperatorSymbol(c rune) bool {

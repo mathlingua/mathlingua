@@ -77,12 +77,6 @@ const (
 	ColonRParen           TokenType = "ColonRParen"
 	LCurlyColon           TokenType = "LCurlyColon"
 	ColonRCurly           TokenType = "ColonRCurly"
-	BacktickLParen        TokenType = "BacktickLParen"
-	RParenBacktick        TokenType = "RParenBacktick"
-	BacktickLSquare       TokenType = "BacktickLSquare"
-	RSquareBacktick       TokenType = "RSquareBacktick"
-	BacktickLCurly        TokenType = "BacktickLCurly"
-	RCurlyBacktick        TokenType = "RCurlyBacktick"
 )
 
 type Token struct {

@@ -135,14 +135,7 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 				Position: cur.Position,
 			})
 		case cur.Symbol == '(':
-			if i < len(chars) && chars[i].Symbol == '.' {
-				i++ // move past the .
-				appendToken(ast.Token{
-					Type:     ast.LParenDot,
-					Text:     "(.",
-					Position: cur.Position,
-				})
-			} else if i < len(chars) && chars[i].Symbol == ':' {
+			if i < len(chars) && chars[i].Symbol == ':' {
 				i++ // move past the :
 				appendToken(ast.Token{
 					Type:     ast.LParenColon,
@@ -172,20 +165,11 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 				})
 			}
 		case cur.Symbol == '[':
-			if i < len(chars) && chars[i].Symbol == '.' {
-				i++ // move past the .
-				appendToken(ast.Token{
-					Type:     ast.LSquareDot,
-					Text:     "[.",
-					Position: cur.Position,
-				})
-			} else {
-				appendToken(ast.Token{
-					Type:     ast.LSquare,
-					Text:     "[",
-					Position: cur.Position,
-				})
-			}
+			appendToken(ast.Token{
+				Type:     ast.LSquare,
+				Text:     "[",
+				Position: cur.Position,
+			})
 		case cur.Symbol == ']':
 			if i < len(chars) && chars[i].Symbol == '`' {
 				i++ // move past the `
@@ -202,14 +186,7 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 				})
 			}
 		case cur.Symbol == '{':
-			if i < len(chars) && chars[i].Symbol == '.' {
-				i++ // move past the .
-				appendToken(ast.Token{
-					Type:     ast.LCurlyDot,
-					Text:     "{.",
-					Position: cur.Position,
-				})
-			} else if i < len(chars) && chars[i].Symbol == ':' {
+			if i < len(chars) && chars[i].Symbol == ':' {
 				i++ // move past the .
 				appendToken(ast.Token{
 					Type:     ast.LCurlyColon,
@@ -291,28 +268,7 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 				Position: cur.Position,
 			})
 		case cur.Symbol == '.':
-			if i < len(chars) && chars[i].Symbol == ']' {
-				i++ // move past the ]
-				appendToken(ast.Token{
-					Type:     ast.DotRSquare,
-					Text:     ".]",
-					Position: cur.Position,
-				})
-			} else if i < len(chars) && chars[i].Symbol == ')' {
-				i++ // move past the )
-				appendToken(ast.Token{
-					Type:     ast.DotRParen,
-					Text:     ".)",
-					Position: cur.Position,
-				})
-			} else if i < len(chars) && chars[i].Symbol == '}' {
-				i++ // move past the }
-				appendToken(ast.Token{
-					Type:     ast.DotRCurly,
-					Text:     ".}",
-					Position: cur.Position,
-				})
-			} else if i+2 < len(chars) && chars[i].Symbol == '.' && chars[i+1].Symbol == '.' &&
+			if i+2 < len(chars) && chars[i].Symbol == '.' && chars[i+1].Symbol == '.' &&
 				chars[i+2].Symbol == '.' {
 				i += 3 // skip the ...
 				appendToken(ast.Token{

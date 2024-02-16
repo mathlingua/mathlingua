@@ -1796,9 +1796,9 @@ func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (
 
 func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	ast.EnclosedNonCommandOperatorTarget, bool) {
-	if !fp.has(ast.BacktickLSquare) && !fp.hasHas(ast.Colon, ast.BacktickLSquare) &&
-		!fp.has(ast.BacktickLParen) && !fp.hasHas(ast.Colon, ast.BacktickLParen) &&
-		!fp.has(ast.BacktickLCurly) && !fp.hasHas(ast.Colon, ast.BacktickLCurly) {
+	if !fp.has(ast.LSquareDot) && !fp.hasHas(ast.Colon, ast.LSquareDot) &&
+		!fp.has(ast.LParenDot) && !fp.hasHas(ast.Colon, ast.LParenDot) &&
+		!fp.has(ast.LCurlyDot) && !fp.hasHas(ast.Colon, ast.LCurlyDot) {
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 
@@ -1806,39 +1806,39 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	var expectedEnd ast.TokenType
 	var hasLeftColon bool
 
-	if fp.has(ast.BacktickLSquare) {
+	if fp.has(ast.LSquareDot) {
 		hasLeftColon = false
 		enclosedType = ast.EnclosedSquare
-		expectedEnd = ast.RSquareBacktick
-		fp.expect(ast.BacktickLSquare)
-	} else if fp.hasHas(ast.Colon, ast.BacktickLSquare) {
+		expectedEnd = ast.DotRSquare
+		fp.expect(ast.LSquareDot)
+	} else if fp.hasHas(ast.Colon, ast.LSquareDot) {
 		hasLeftColon = true
 		enclosedType = ast.EnclosedSquare
-		expectedEnd = ast.RSquareBacktick
+		expectedEnd = ast.DotRSquare
 		fp.expect(ast.Colon)
-		fp.expect(ast.BacktickLSquare)
-	} else if fp.has(ast.BacktickLParen) {
+		fp.expect(ast.LSquareDot)
+	} else if fp.has(ast.LParenDot) {
 		hasLeftColon = false
 		enclosedType = ast.EnclosedParen
-		expectedEnd = ast.RParenBacktick
-		fp.expect(ast.BacktickLParen)
-	} else if fp.hasHas(ast.Colon, ast.BacktickLParen) {
+		expectedEnd = ast.DotRParen
+		fp.expect(ast.LParenDot)
+	} else if fp.hasHas(ast.Colon, ast.LParenDot) {
 		hasLeftColon = true
 		enclosedType = ast.EnclosedParen
-		expectedEnd = ast.RParenBacktick
+		expectedEnd = ast.DotRParen
 		fp.expect(ast.Colon)
-		fp.expect(ast.BacktickLParen)
-	} else if fp.has(ast.BacktickLCurly) {
+		fp.expect(ast.LParenDot)
+	} else if fp.has(ast.LCurlyDot) {
 		hasLeftColon = false
 		enclosedType = ast.EnclosedCurly
-		expectedEnd = ast.RCurlyBacktick
-		fp.expect(ast.BacktickLCurly)
-	} else if fp.hasHas(ast.Colon, ast.BacktickLCurly) {
+		expectedEnd = ast.DotRCurly
+		fp.expect(ast.LCurlyDot)
+	} else if fp.hasHas(ast.Colon, ast.LCurlyDot) {
 		hasLeftColon = true
 		enclosedType = ast.EnclosedCurly
-		expectedEnd = ast.RCurlyBacktick
+		expectedEnd = ast.DotRCurly
 		fp.expect(ast.Colon)
-		fp.expect(ast.BacktickLCurly)
+		fp.expect(ast.LCurlyDot)
 	} else {
 		panic("Reached an enclosed operator with an unexpected start")
 	}

@@ -198,6 +198,9 @@ func (n *SymbolWrittenGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.AppendSection(LowerSymbolName, indent, hasDot && n.Label == nil)
 	db.Append(&n.Symbol.Symbol, indent+2, true)
+	if n.Replaces != nil {
+		db.AppendFormulationSection(LowerReplacesName, n.Replaces.Replaces, indent, true)
+	}
 	if n.Written != nil {
 		db.AppendTextItemsSection(LowerWrittenName, n.Written.Written, indent, true)
 	}
@@ -1108,6 +1111,13 @@ func (db *debugBuilder) AppendFormulations(
 	for _, item := range items {
 		db.Append(&item, indent, hasDot)
 	}
+}
+
+func (db *debugBuilder) AppendFormulationSection(
+	name string, item Formulation[FormulationNodeKind], indent int, hasDot bool,
+) {
+	db.AppendSection(name, indent, hasDot)
+	db.Append(&item, indent+2, true)
 }
 
 func (db *debugBuilder) AppendFormulationsSection(

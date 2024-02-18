@@ -599,6 +599,7 @@ var all_group_test_cases = []testCase{
 		actual: SymbolWrittenSections,
 		expected: []string{
 			"symbol",
+			"replaces?",
 			"written?",
 		},
 	},

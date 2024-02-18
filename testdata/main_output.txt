@@ -141,6 +141,7 @@ Provides:
 . 'a :[.left.] b :=> a * b'
 . 'a [.right.]: b :=> a * b'
 . symbol: 'x - y :=> x \minus/ y'
+  replaces: 'x * y'
   written: "x? -- y?"
 . view:
   as: A

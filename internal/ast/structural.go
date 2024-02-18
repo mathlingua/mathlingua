@@ -361,18 +361,25 @@ type WhenGroup struct {
 
 var SymbolWrittenSections = []string{
 	LowerSymbolName,
+	LowerReplacesQuestionName,
 	LowerWrittenQuestionName,
 }
 
 type SymbolWrittenGroup struct {
 	Label          *GroupLabel
 	Symbol         SymbolSection
+	Replaces       *ReplacesSection
 	Written        *WrittenSection
 	CommonMetaData CommonMetaData
 }
 
 type SymbolSection struct {
 	Symbol         Alias
+	CommonMetaData CommonMetaData
+}
+
+type ReplacesSection struct {
+	Replaces       Formulation[FormulationNodeKind]
 	CommonMetaData CommonMetaData
 }
 

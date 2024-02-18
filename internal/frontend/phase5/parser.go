@@ -561,6 +561,10 @@ func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGrou
 		return ast.SymbolWrittenGroup{}, false
 	}
 	symbol := *p.toSymbolSection(sections[ast.LowerSymbolName])
+	var replaces *ast.ReplacesSection
+	if sect, ok := sections[ast.LowerReplacesName]; ok {
+		replaces = p.toReplacesSection(sect)
+	}
 	var written *ast.WrittenSection
 	if sect, ok := sections[ast.LowerWrittenName]; ok {
 		written = p.toWrittenSection(sect)
@@ -568,6 +572,7 @@ func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGrou
 	return ast.SymbolWrittenGroup{
 		Label:          label,
 		Symbol:         symbol,
+		Replaces:       replaces,
 		Written:        written,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
@@ -576,6 +581,13 @@ func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGrou
 func (p *parser) toSymbolSection(section phase4.Section) *ast.SymbolSection {
 	return &ast.SymbolSection{
 		Symbol:         p.exactlyOneAlias(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toReplacesSection(section phase4.Section) *ast.ReplacesSection {
+	return &ast.ReplacesSection{
+		Replaces:       p.exactlyOneFormulation(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -4213,6 +4225,12 @@ func (p *parser) exactlyOneClause(section phase4.Section) ast.ClauseKind {
 func (p *parser) exactlyOneProofItem(section phase4.Section) ast.ProofItemKind {
 	var def ast.ProofItemKind = &ast.Formulation[ast.FormulationNodeKind]{}
 	return exactlyOne(p, p.toProofItems(section.Args), def, section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) exactlyOneFormulation(
+	section phase4.Section) ast.Formulation[ast.FormulationNodeKind] {
+	var def ast.Formulation[ast.FormulationNodeKind] = ast.Formulation[ast.FormulationNodeKind]{}
+	return exactlyOne(p, p.toFormulations(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 func (p *parser) oneOrMoreFormulation(

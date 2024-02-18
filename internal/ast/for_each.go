@@ -229,6 +229,9 @@ func (n *WhenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 
 func (n *SymbolWrittenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Symbol.Symbol)
+	if n.Replaces != nil {
+		fn(&n.Replaces.Replaces)
+	}
 	if n.Written != nil {
 		forEachTextItem(n.Written.Written, fn)
 	}

@@ -162,13 +162,6 @@ func getTokens(text string, path ast.Path, tracker *frontend.DiagnosticTracker) 
 				})
 			}
 			return result, true
-		} else if c.Symbol == '`' {
-			i++
-			return []ast.Token{{
-				Type:     ast.FormulationTokenType,
-				Text:     collectUntil(c, '`', false),
-				Position: c.Position,
-			}}, true
 		} else {
 			return nil, false
 		}

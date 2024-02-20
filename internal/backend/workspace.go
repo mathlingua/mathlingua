@@ -1134,22 +1134,23 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *Works
 }
 
 func nameToRenderedName(name string, isVarArg bool) string {
-	if isGreekLetter(name) {
-		return fmt.Sprintf("\\%s", name)
+	namePrime := strings.ReplaceAll(name, "`", "'")
+	if isGreekLetter(namePrime) {
+		return fmt.Sprintf("\\%s", namePrime)
 	}
 
 	reg := regexp.MustCompile(`([a-zA-Z]+)(\d+)`)
-	items := reg.FindStringSubmatch(name)
+	items := reg.FindStringSubmatch(namePrime)
 	// format of items: [(full match) (group 1) (group 2)]
-	if len(items) == 3 && items[0] == name {
+	if len(items) == 3 && items[0] == namePrime {
 		return fmt.Sprintf("%s_{%s}", items[1], items[2])
 	}
 
 	if isVarArg {
-		return fmt.Sprintf("{%s}...", name)
+		return fmt.Sprintf("{%s}...", namePrime)
 	}
 
-	return name
+	return namePrime
 }
 
 func isGreekLetter(name string) bool {

@@ -414,7 +414,7 @@ func isWhitespace(c rune) bool {
 }
 
 func isNameSymbol(c rune) bool {
-	return unicode.IsLetter(c) || unicode.IsDigit(c) || c == '`' || c == '\''
+	return unicode.IsLetter(c) || unicode.IsDigit(c) || c == '`'
 }
 
 func isOperatorSymbol(c rune) bool {

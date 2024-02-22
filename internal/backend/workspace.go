@@ -1133,24 +1133,66 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *Works
 	})
 }
 
+func splitName(name string) []string {
+	result := make([]string, 0)
+	runes := []rune(name)
+	i := 0
+	for i < len(runes) {
+		if unicode.IsLetter(runes[i]) {
+			inner := make([]rune, 0)
+			for i < len(runes) && unicode.IsLetter(runes[i]) {
+				inner = append(inner, runes[i])
+				i++
+			}
+			result = append(result, string(inner))
+		} else {
+			result = append(result, string(runes[i]))
+			i++
+		}
+	}
+	return result
+}
+
 func nameToRenderedName(name string, isVarArg bool) string {
-	namePrime := strings.ReplaceAll(name, "`", "'")
-	if isGreekLetter(namePrime) {
-		return fmt.Sprintf("\\%s", namePrime)
+	processed := processSpecialTokens(name)
+	if !isVarArg {
+		return processed
+	}
+	return fmt.Sprintf("{%s}...", processed)
+}
+
+func processSpecialTokens(name string) string {
+	// split the name into alphabetic and non-alphabetic parts
+	// and convert ` tokens to ' and greek names to the associated
+	// LaTeX equivalent
+	joined := ""
+	for _, part := range splitName(name) {
+		if isGreekLetter(part) {
+			joined += fmt.Sprintf("\\%s", part)
+		} else if part == "`" {
+			joined += "'"
+		} else {
+			joined += part
+		}
 	}
 
-	reg := regexp.MustCompile(`([a-zA-Z]+)(\d+)`)
-	items := reg.FindStringSubmatch(namePrime)
+	// convert x0 to x_{0} but don't convert 123 to 1_{23}
+	digitRegex := regexp.MustCompile(`([^_0-9]+)(\d+)`)
+	digitItems := digitRegex.FindStringSubmatch(joined)
 	// format of items: [(full match) (group 1) (group 2)]
-	if len(items) == 3 && items[0] == namePrime {
-		return fmt.Sprintf("%s_{%s}", items[1], items[2])
+	if len(digitItems) == 3 && digitItems[0] == joined {
+		return fmt.Sprintf("%s_{%s}", digitItems[1], digitItems[2])
 	}
 
-	if isVarArg {
-		return fmt.Sprintf("{%s}...", namePrime)
+	// convert abc_xyz to abc_{xyz}
+	underscoreRegex := regexp.MustCompile(`([^_]+)_(.+)`)
+	underscoreItems := underscoreRegex.FindStringSubmatch(joined)
+	// format of items: [(full match) (group 1) (group 2)]
+	if len(underscoreItems) == 3 && underscoreItems[0] == joined {
+		return fmt.Sprintf("%s_{%s}", underscoreItems[1], processSpecialTokens(underscoreItems[2]))
 	}
 
-	return namePrime
+	return joined
 }
 
 func isGreekLetter(name string) bool {
@@ -1214,40 +1256,3 @@ func inlineProcessForRendering(node phase4.Node) {
 		inlineProcessForRendering(node.ChildAt(i))
 	}
 }
-
-/*
-func getAllWords(node ast.MlgNodeKind) mlglib.ISet[string] {
-	result := mlglib.NewSet[string]()
-	getAllWordsImpl(node, result)
-	return result
-}
-
-func getAllWordsImpl(node ast.MlgNodeKind, result mlglib.ISet[string]) {
-	if node == nil {
-		return
-	}
-
-	switch n := node.(type) {
-	case *ast.TextItem:
-		for _, item := range tokenize(n.RawText) {
-			result.Add(item)
-		}
-	case *ast.TextBlockItem:
-		for _, item := range tokenize(n.Text) {
-			result.Add(item)
-		}
-	}
-	node.ForEach(func(subNode ast.MlgNodeKind) {
-		getAllWordsImpl(subNode, result)
-	})
-}
-
-func tokenize(text string) []string {
-	result := make([]string, 0)
-	parts := strings.Split(text, " ")
-	for _, p := range parts {
-		result = append(result, strings.ToLower(p))
-	}
-	return result
-}
-*/

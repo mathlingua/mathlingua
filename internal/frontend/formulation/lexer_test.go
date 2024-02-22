@@ -29,7 +29,7 @@ func TestFormulationLexer(t *testing.T) {
 	lexer := NewLexer("/some/path", `
 xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is `+
 		`\something/ x as \[something] "*+" name @ extends (. .)|->abc=:->....[..]satisfies{..}(::)`+
-		"{::} name`",
+		"{::} name` *+`",
 		tracker)
 
 	actual := "\n"
@@ -124,7 +124,7 @@ satisfies Satisfies
 :) ColonRParen
 {: LCurlyColon
 :} ColonRCurly
-` + "name` Name\n"
+` + "name` Name\n*+` Operator\n"
 
 	assert.Equal(t, expected, actual)
 	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())

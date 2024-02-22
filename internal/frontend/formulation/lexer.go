@@ -432,5 +432,6 @@ func isOperatorSymbol(c rune) bool {
 		c == '=' ||
 		c == '|' ||
 		c == '<' ||
-		c == '>'
+		c == '>' ||
+		c == '`'
 }

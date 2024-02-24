@@ -47,6 +47,10 @@ a {
   color: var(--text-color) !important;
 }
 
+.katex .texttt {
+  font-family: KaTeX_Main !important;
+}
+
 div[class^="MarkdownView_markdown"] .katex-display {
   margin-top: 5px;
   margin-bottom: 5px;

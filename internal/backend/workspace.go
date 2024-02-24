@@ -516,7 +516,21 @@ func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 			return result, true
 		case *ast.ExpressionColonArrowItem:
 			result := ""
-			result += w.formulationNodeToWritten(path, n.Lhs)
+			switch lhs := n.Lhs.(type) {
+			case *ast.CommandExpression:
+				// if the left-hand-side is of the form \f then print it verbatim
+				result += fmt.Sprintf("\\verb'%s'", lhs.ToCode(ast.NoOp))
+			case *ast.InfixOperatorCallExpression:
+				if _, ok := lhs.Target.(*ast.InfixCommandExpression); ok {
+					// if the left-hand-side is of the form `x \in/ y` then
+					// print it verbatim
+					result += fmt.Sprintf("\\verb'%s'", lhs.ToCode(ast.NoOp))
+				} else {
+					result += w.formulationNodeToWritten(path, n.Lhs)
+				}
+			default:
+				result += w.formulationNodeToWritten(path, n.Lhs)
+			}
 			result += " :\\rArr "
 			result += w.formulationNodeToWritten(path, n.Rhs)
 			return result, true

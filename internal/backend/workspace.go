@@ -1129,7 +1129,12 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *Works
 		}
 	}
 	node.ForEach(func(subNode ast.MlgNodeKind) {
-		findUsedUnknownSignaturesImpl(subNode, path, w)
+		switch n := subNode.(type) {
+		case *ast.ExpressionColonArrowItem:
+			findUsedUnknownSignaturesImpl(n.Rhs, path, w)
+		default:
+			findUsedUnknownSignaturesImpl(subNode, path, w)
+		}
 	})
 }
 

@@ -284,8 +284,8 @@ func (n *MapToElseBuiltinExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
 
-func (n *CommandType) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
-func (n *InfixCommandType) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
+func (n *CommandTypeForm) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
+func (n *InfixCommandTypeForm) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 func (n *NamedTypeParam) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
 func (n *CurlyTypeParam) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
 func (n *DirectionalTypeParam) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }

@@ -169,8 +169,8 @@ func (*ProofIffGroup) MlgNodeKind()                          {}
 func (*SelectFromBuiltinExpression) MlgNodeKind()            {}
 func (*DefinitionBuiltinExpression) MlgNodeKind()            {}
 func (*MapToElseBuiltinExpression) MlgNodeKind()             {}
-func (*CommandType) MlgNodeKind()                            {}
-func (*InfixCommandType) MlgNodeKind()                       {}
+func (*CommandTypeForm) MlgNodeKind()                        {}
+func (*InfixCommandTypeForm) MlgNodeKind()                   {}
 func (*NamedTypeParam) MlgNodeKind()                         {}
 func (*CurlyTypeParam) MlgNodeKind()                         {}
 func (*DirectionalTypeParam) MlgNodeKind()                   {}

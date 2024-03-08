@@ -38,18 +38,6 @@ func Debug(node MlgNodeKind, fn func(node MlgNodeKind) (string, bool)) string {
 	}
 }
 
-func CloneNode[T MlgNodeKind](node T) T {
-	copy := node
-	copy.ForEach(cloneScopes)
-	return copy
-}
-
-func cloneScopes(n MlgNodeKind) {
-	metaData := n.GetCommonMetaData()
-	metaData.Scope = *metaData.Scope.Clone()
-	n.ForEach(cloneScopes)
-}
-
 type Char struct {
 	Symbol   rune
 	Position Position

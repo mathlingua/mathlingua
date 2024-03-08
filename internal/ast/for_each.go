@@ -1193,7 +1193,7 @@ func (n *ProofClaimGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
-func (n *CommandType) ForEach(fn func(subNode MlgNodeKind)) {
+func (n *CommandTypeForm) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachNameForm(n.Names, fn)
 	if n.CurlyTypeParam != nil {
 		fn(n.CurlyTypeParam)
@@ -1206,7 +1206,7 @@ func (n *CommandType) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
-func (n *InfixCommandType) ForEach(fn func(subNode MlgNodeKind)) {
+func (n *InfixCommandTypeForm) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachNameForm(n.Names, fn)
 	if n.CurlyTypeParam != nil {
 		fn(n.CurlyTypeParam)
@@ -1316,7 +1316,7 @@ func forEachTarget(items []Target, fn func(n MlgNodeKind)) {
 	}
 }
 
-func forEachTypeKind(types []TypeKind, fn func(n MlgNodeKind)) {
+func forEachTypeKind(types []TypeFormKind, fn func(n MlgNodeKind)) {
 	for i := range types {
 		fn(types[i])
 	}

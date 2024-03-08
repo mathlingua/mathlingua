@@ -69,8 +69,8 @@ func (*FunctionLiteralForm) FormulationNodeKind()                    {}
 func (*SelectFromBuiltinExpression) FormulationNodeKind()            {}
 func (*DefinitionBuiltinExpression) FormulationNodeKind()            {}
 func (*MapToElseBuiltinExpression) FormulationNodeKind()             {}
-func (*CommandType) FormulationNodeKind()                            {}
-func (*InfixCommandType) FormulationNodeKind()                       {}
+func (*CommandTypeForm) FormulationNodeKind()                        {}
+func (*InfixCommandTypeForm) FormulationNodeKind()                   {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -155,19 +155,19 @@ func (*FunctionLiteralExpression) ExpressionKind()              {}
 func (*SelectFromBuiltinExpression) ExpressionKind()            {}
 func (*DefinitionBuiltinExpression) ExpressionKind()            {}
 func (*MapToElseBuiltinExpression) ExpressionKind()             {}
-func (*CommandType) ExpressionKind()                            {}
-func (*InfixCommandType) ExpressionKind()                       {}
+func (*CommandTypeForm) ExpressionKind()                        {}
+func (*InfixCommandTypeForm) ExpressionKind()                   {}
 func (*TypeMetaKind) ExpressionKind()                           {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type TypeKind interface {
+type TypeFormKind interface {
 	ExpressionKind
 	TypeKind()
 }
 
-func (*InfixCommandType) TypeKind()            {}
-func (*CommandType) TypeKind()                 {}
+func (*InfixCommandTypeForm) TypeKind()        {}
+func (*CommandTypeForm) TypeKind()             {}
 func (*InfixOperatorCallExpression) TypeKind() {} // \:set \:in:/ \:set
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -205,7 +205,7 @@ type OperatorKind interface {
 func (*EnclosedNonCommandOperatorTarget) OperatorKind()    {}
 func (*NonEnclosedNonCommandOperatorTarget) OperatorKind() {}
 func (*InfixCommandExpression) OperatorKind()              {}
-func (*InfixCommandType) OperatorKind()                    {}
+func (*InfixCommandTypeForm) OperatorKind()                {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

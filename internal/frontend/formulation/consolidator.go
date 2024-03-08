@@ -228,7 +228,7 @@ func toNode(
 			Lhs:    rhs,
 			Rhs:    lhs,
 		}
-	case *ast.InfixCommandType:
+	case *ast.InfixCommandTypeForm:
 		// for example \:f:/
 		target := top
 		lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
@@ -383,7 +383,7 @@ func getFirstPassType(node ast.FormulationNodeKind) firstPassType {
 	case *ast.InfixCommandExpression:
 		// for example \f/
 		return forcedInfixOperatorType
-	case *ast.InfixCommandType:
+	case *ast.InfixCommandTypeForm:
 		// for example \:f:/
 		return forcedInfixOperatorType
 	case *ast.PseudoTokenNode:
@@ -563,7 +563,7 @@ func getPrecedenceAssociativity(
 	case *ast.InfixCommandExpression:
 		// for example \f/
 		return command_infix_precedence, command_infix_associativity
-	case *ast.InfixCommandType:
+	case *ast.InfixCommandTypeForm:
 		// for example \:f:/
 		return command_infix_precedence, command_infix_associativity
 	case *ast.PseudoTokenNode:

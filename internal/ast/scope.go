@@ -16,31 +16,34 @@
 
 package ast
 
-func NewScope() *Scope {
+func NewScope(parent *Scope) *Scope {
 	return &Scope{
-		idenInfos: make(map[string]*IdentifierInfo, 0),
+		parent:  parent,
+		symbols: make(map[string]*Symbol, 0),
 	}
 }
 
 type Scope struct {
-	idenInfos map[string]*IdentifierInfo
+	parent  *Scope
+	symbols map[string]*Symbol
 }
 
-func (s *Scope) SetIdentifierInfo(identifier string, info IdentifierInfo) {
-	s.idenInfos[identifier] = &info
-}
-
-func (s *Scope) GetMutableIdentifierInfo(identifier string) (*IdentifierInfo, bool) {
-	info, ok := s.idenInfos[identifier]
-	return info, ok
-}
-
-func (s *Scope) Clone() *Scope {
-	idensCopy := make(map[string]*IdentifierInfo, 0)
-	for iden, info := range s.idenInfos {
-		idensCopy[iden] = info.Clone()
+func (s *Scope) SetAliased(existingName string, newName string) {
+	if _, ok := s.symbols[existingName]; ok {
+		s.symbols[newName] = s.symbols[existingName]
+		return
 	}
-	return &Scope{
-		idenInfos: idensCopy,
+	if s.parent != nil {
+		s.parent.SetAliased(existingName, newName)
 	}
+}
+
+func (s *Scope) GetSymbol(name string) (*Symbol, bool) {
+	if sym, ok := s.symbols[name]; ok {
+		return sym, ok
+	}
+	if s.parent != nil {
+		return s.parent.GetSymbol(name)
+	}
+	return nil, false
 }

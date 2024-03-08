@@ -766,7 +766,7 @@ func (n *FunctionLiteralForm) ToCode(fn func(node MlgNodeKind) (string, bool)) s
 	return result
 }
 
-func (n *CommandType) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+func (n *CommandTypeForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
 	}
@@ -796,7 +796,7 @@ func (n *CommandType) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	return result
 }
 
-func (n *InfixCommandType) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+func (n *InfixCommandTypeForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
 	}

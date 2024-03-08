@@ -626,11 +626,11 @@ func (w *Workspace) formulationNodeToWritten(path ast.Path, mlgNode ast.MlgNodeK
 			return w.infixCommandToWritten(path, n)
 		case *ast.AsExpression:
 			return w.formulationNodeToWritten(path, n.Lhs), true
-		case *ast.CommandType:
+		case *ast.CommandTypeForm:
 			// \:set
 			noPrefix := strings.Replace(n.ToCode(ast.NoOp), "\\:", "", 1)
 			return fmt.Sprintf("\\textrm{%s}", noPrefix), true
-		case *ast.InfixCommandType:
+		case *ast.InfixCommandTypeForm:
 			// \:in:/
 			noPrefix := strings.Replace(n.ToCode(ast.NoOp), "\\:", "", 1)
 			noSuffix := strings.Replace(noPrefix, ":/", "", 1)

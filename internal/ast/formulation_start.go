@@ -61,5 +61,5 @@ func (n *FunctionLiteralForm) Start() Position                    { return n.Com
 func (n *SelectFromBuiltinExpression) Start() Position            { return n.CommonMetaData.Start }
 func (n *DefinitionBuiltinExpression) Start() Position            { return n.CommonMetaData.Start }
 func (n *MapToElseBuiltinExpression) Start() Position             { return n.CommonMetaData.Start }
-func (n *CommandType) Start() Position                            { return n.CommonMetaData.Start }
-func (n *InfixCommandType) Start() Position                       { return n.CommonMetaData.Start }
+func (n *CommandTypeForm) Start() Position                        { return n.CommonMetaData.Start }
+func (n *InfixCommandTypeForm) Start() Position                   { return n.CommonMetaData.Start }

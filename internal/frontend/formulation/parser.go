@@ -859,7 +859,7 @@ func (fp *formulationParser) typeMetaKind() (ast.TypeMetaKind, bool) {
 	}
 
 	fp.expect(ast.LCurly)
-	types := make([]ast.TypeKind, 0)
+	types := make([]ast.TypeFormKind, 0)
 	for fp.lexer.HasNext() {
 		if fp.has(ast.RCurly) {
 			break
@@ -875,7 +875,7 @@ func (fp *formulationParser) typeMetaKind() (ast.TypeMetaKind, bool) {
 		}
 
 		if exp, ok := fp.expressionKind(ast.RCurly); ok {
-			if t, ok := exp.(ast.TypeKind); ok {
+			if t, ok := exp.(ast.TypeFormKind); ok {
 				types = append(types, t)
 			} else {
 				fp.error("Expected a type")
@@ -2951,7 +2951,7 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 
 ////////////////////////////////////////// type ////////////////////////////////////////////////////
 
-func (fp *formulationParser) typeKind(allowOperator bool) (ast.TypeKind, bool) {
+func (fp *formulationParser) typeKind(allowOperator bool) (ast.TypeFormKind, bool) {
 	if item, ok := fp.infixCommandType(); ok {
 		return &item, true
 	}
@@ -2963,10 +2963,10 @@ func (fp *formulationParser) typeKind(allowOperator bool) (ast.TypeKind, bool) {
 	return nil, false
 }
 
-func (fp *formulationParser) commandType(allowOperator bool) (ast.CommandType, bool) {
+func (fp *formulationParser) commandType(allowOperator bool) (ast.CommandTypeForm, bool) {
 	start := fp.lexer.Position()
 	if !fp.hasHas(ast.BackSlash, ast.Colon) {
-		return ast.CommandType{}, false
+		return ast.CommandTypeForm{}, false
 	}
 
 	id := fp.lexer.Snapshot()
@@ -3001,7 +3001,7 @@ func (fp *formulationParser) commandType(allowOperator bool) (ast.CommandType, b
 
 	if len(names) == 0 {
 		fp.lexer.RollBack(id)
-		return ast.CommandType{}, false
+		return ast.CommandTypeForm{}, false
 	}
 
 	var curlyTypeParam *ast.CurlyTypeParam
@@ -3024,7 +3024,7 @@ func (fp *formulationParser) commandType(allowOperator bool) (ast.CommandType, b
 	}
 
 	fp.lexer.Commit(id)
-	return ast.CommandType{
+	return ast.CommandTypeForm{
 		Names:           names,
 		CurlyTypeParam:  curlyTypeParam,
 		NamedTypeParams: &namedTypeParams,
@@ -3036,24 +3036,24 @@ func (fp *formulationParser) commandType(allowOperator bool) (ast.CommandType, b
 	}, true
 }
 
-func (fp *formulationParser) infixCommandType() (ast.InfixCommandType, bool) {
+func (fp *formulationParser) infixCommandType() (ast.InfixCommandTypeForm, bool) {
 	id := fp.lexer.Snapshot()
 	cmd, ok := fp.commandType(true)
 	if !ok {
 		fp.lexer.RollBack(id)
-		return ast.InfixCommandType{}, false
+		return ast.InfixCommandTypeForm{}, false
 	}
 
 	if !fp.hasHas(ast.Colon, ast.Slash) {
 		fp.lexer.RollBack(id)
-		return ast.InfixCommandType{}, false
+		return ast.InfixCommandTypeForm{}, false
 	}
 
 	fp.expect(ast.Colon)
 	fp.expect(ast.Slash)
 
 	fp.lexer.Commit(id)
-	return ast.InfixCommandType{
+	return ast.InfixCommandTypeForm{
 		Names:           cmd.Names,
 		CurlyTypeParam:  cmd.CurlyTypeParam,
 		NamedTypeParams: cmd.NamedTypeParams,
@@ -3219,7 +3219,7 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 	var signature *ast.Signature
 	if ok {
 		switch t := typeKind.(type) {
-		case *ast.InfixCommandType:
+		case *ast.InfixCommandTypeForm:
 			if t.CurlyTypeParam != nil {
 				fp.errorAt("A signature cannot contain a {}", start)
 			}
@@ -3259,7 +3259,7 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 				CommonMetaData:      *typeKind.GetCommonMetaData(),
 				FormulationMetaData: *typeKind.GetFormulationMetaData(),
 			}
-		case *ast.CommandType:
+		case *ast.CommandTypeForm:
 			if t.CurlyTypeParam != nil {
 				fp.errorAt("A signature cannot contain a {}", start)
 			}

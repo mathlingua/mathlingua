@@ -325,7 +325,7 @@ type Signature struct {
 /////////////////////////////////////////// types //////////////////////////////////////////////////
 
 // \:function:on{\:set}:to{\:set}:/
-type InfixCommandType struct {
+type InfixCommandTypeForm struct {
 	Names               []NameForm
 	CurlyTypeParam      *CurlyTypeParam
 	NamedTypeParams     *[]NamedTypeParam
@@ -335,7 +335,7 @@ type InfixCommandType struct {
 }
 
 // \:a.b.c:x{\:a & \:b}:y{\:c}
-type CommandType struct {
+type CommandTypeForm struct {
 	Names               []NameForm
 	CurlyTypeParam      *CurlyTypeParam
 	NamedTypeParams     *[]NamedTypeParam
@@ -378,7 +378,7 @@ type DirectionType struct {
 // \\type{\:set & \:group}
 // \\type{\:set \:in:/ \:set}
 type TypeMetaKind struct {
-	Types               *[]TypeKind
+	Types               *[]TypeFormKind
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

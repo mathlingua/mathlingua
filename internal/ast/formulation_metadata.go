@@ -196,10 +196,10 @@ func (n *MapToElseBuiltinExpression) GetFormulationMetaData() *FormulationMetaDa
 	return &n.FormulationMetaData
 }
 
-func (n *CommandType) GetFormulationMetaData() *FormulationMetaData {
+func (n *CommandTypeForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 
-func (n *InfixCommandType) GetFormulationMetaData() *FormulationMetaData {
+func (n *InfixCommandTypeForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }

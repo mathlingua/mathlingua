@@ -49,8 +49,3 @@ func populateDocumentScopes(doc *ast.Document) {
 		}
 	}
 }
-
-// nolint:unused
-func getIdentifierInfos(clause ast.ClauseKind) []ast.IdentifierInfo {
-	return []ast.IdentifierInfo{}
-}

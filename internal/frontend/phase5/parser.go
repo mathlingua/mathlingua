@@ -4335,6 +4335,6 @@ func toCommonMetaData(metaData phase4.MetaData) ast.CommonMetaData {
 	return ast.CommonMetaData{
 		Start: metaData.Start,
 		Key:   metaData.Key,
-		Scope: *ast.NewScope(),
+		Scope: *ast.NewScope(nil),
 	}
 }

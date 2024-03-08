@@ -17,30 +17,30 @@
 package ast
 
 type Symbol struct {
-	Names              []string
-	IsInfereble        bool
-	IsPlaceholder      bool
-	IsNumberLiteral    bool
-	ResolvedConstraint *ResolvedConstraint
-	RawConstraint      *RawConstraint
-	DeclaringScope     *Scope
+	Names           []string
+	IsInfereble     bool
+	IsPlaceholder   bool
+	IsNumberLiteral bool
+	ResolvedSpec    *ResolvedSymbolSpec
+	RawSpec         *RawSymbolSpec
+	DeclaringScope  *Scope
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type Constraint interface {
-	Constraint()
+type SymbolSpec interface {
+	SymbolSpec()
 }
 
-func (*ResolvedConstraint) Constraint() {}
-func (*RawConstraint) Constraint()      {}
+func (*ResolvedSymbolSpec) SymbolSpec() {}
+func (*RawSymbolSpec) SymbolSpec()      {}
 
-type ResolvedConstraint struct {
+type ResolvedSymbolSpec struct {
 	Is        ResolvedType
 	Satisfies []ResolvedType
 }
 
-type RawConstraint struct {
+type RawSymbolSpec struct {
 	Is        Type
 	Satisfies []Type
 }

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package backend
+package ast
 
 import (
 	"fmt"
-	"mathlingua/internal/ast"
 	"mathlingua/internal/mlglib"
 )
 
@@ -212,67 +211,67 @@ type AliasPattern struct {
 	Rhs PatternKind
 }
 
-func ToPatternFromTarget(item ast.Target) PatternKind {
+func ToPatternFromTarget(item Target) PatternKind {
 	switch n := item.Root.(type) {
-	case ast.StructuralFormKind:
+	case StructuralFormKind:
 		return ToFormPattern(n)
 	default:
 		return nil
 	}
 }
 
-func ToPattern(exp ast.ExpressionKind) PatternKind {
+func ToPattern(exp ExpressionKind) PatternKind {
 	switch n := exp.(type) {
-	case ast.StructuralFormKind:
+	case StructuralFormKind:
 		return ToFormPattern(n)
 	default:
 		return nil
 	}
 }
 
-func ToFormPattern(item ast.StructuralFormKind) FormPatternKind {
+func ToFormPattern(item StructuralFormKind) FormPatternKind {
 	switch n := item.(type) {
-	case *ast.NameForm:
+	case *NameForm:
 		return ToNameFormPattern(*n)
-	case *ast.FunctionForm:
+	case *FunctionForm:
 		return ToFunctionFormPattern(*n)
-	case *ast.TupleForm:
+	case *TupleForm:
 		return ToTupleFormPattern(*n)
-	case *ast.ConditionalSetForm:
+	case *ConditionalSetForm:
 		return ToConditionalSetFormPattern(*n)
-	case *ast.InfixOperatorForm:
+	case *InfixOperatorForm:
 		return ToInfixOperatorFormPattern(*n)
-	case *ast.PostfixOperatorForm:
+	case *PostfixOperatorForm:
 		return ToPostfixOperatorFormPattern(*n)
-	case *ast.PrefixOperatorForm:
+	case *PrefixOperatorForm:
 		return ToPrefixOperatorFormPattern(*n)
-	case *ast.ConditionalSetIdForm:
+	case *ConditionalSetIdForm:
 		return ToConditionalSetIdFormPattern(*n)
-	case *ast.FunctionLiteralForm:
+	case *FunctionLiteralForm:
 		return ToFunctionLiteralFormPattern(*n)
-	case *ast.StructuralColonEqualsForm:
+	case *StructuralColonEqualsForm:
 		return ToStructuralColonEqualsPattern(*n)
 	default:
 		panic("Could not process a pattern for " +
-			item.ToCode(func(node ast.MlgNodeKind) (string, bool) { return "", false }))
+			item.ToCode(func(node MlgNodeKind) (string, bool) { return "", false }))
 	}
 }
 
-func ToDirectionParamParamPatternKind(item ast.StructuralFormKind) DirectionParamParamPatternKind {
+func ToDirectionParamParamPatternKind(item StructuralFormKind) DirectionParamParamPatternKind {
 	switch n := item.(type) {
-	case *ast.NameForm:
+	case *NameForm:
 		return ToNameFormPattern(*n)
-	case *ast.FunctionForm:
+	case *FunctionForm:
 		return ToFunctionFormPattern(*n)
 	default:
 		return nil
 	}
 }
 
-func ToVarArgPatternData(data ast.VarArgData) VarArgPatternData {
+func ToVarArgPatternData(data VarArgData) VarArgPatternData {
 	varArgNames := make([]NameFormPattern, 0)
 	varArgNames = append(varArgNames,
-		mlglib.Map(data.VarArgNames, func(name ast.NameForm) NameFormPattern {
+		mlglib.Map(data.VarArgNames, func(name NameForm) NameFormPattern {
 			return NameFormPattern{
 				Text:            name.Text,
 				IsStropped:      false,
@@ -287,7 +286,7 @@ func ToVarArgPatternData(data ast.VarArgData) VarArgPatternData {
 
 	varArgBounds := make([]NameFormPattern, 0)
 	varArgBounds = append(varArgBounds,
-		mlglib.Map(data.VarArgBounds, func(name ast.NameForm) NameFormPattern {
+		mlglib.Map(data.VarArgBounds, func(name NameForm) NameFormPattern {
 			return NameFormPattern{
 				Text:            name.Text,
 				IsStropped:      false,
@@ -307,7 +306,7 @@ func ToVarArgPatternData(data ast.VarArgData) VarArgPatternData {
 	}
 }
 
-func ToNameFormPattern(form ast.NameForm) *NameFormPattern {
+func ToNameFormPattern(form NameForm) *NameFormPattern {
 	return &NameFormPattern{
 		Text:            form.Text,
 		IsStropped:      form.IsStropped,
@@ -316,7 +315,7 @@ func ToNameFormPattern(form ast.NameForm) *NameFormPattern {
 	}
 }
 
-func ToFunctionFormPattern(form ast.FunctionForm) *FunctionFormPattern {
+func ToFunctionFormPattern(form FunctionForm) *FunctionFormPattern {
 	return &FunctionFormPattern{
 		Target: *ToNameFormPattern(form.Target),
 		Params: toFormPatterns(form.Params),
@@ -324,28 +323,28 @@ func ToFunctionFormPattern(form ast.FunctionForm) *FunctionFormPattern {
 	}
 }
 
-func ToTupleFormPattern(form ast.TupleForm) *TupleFormPattern {
+func ToTupleFormPattern(form TupleForm) *TupleFormPattern {
 	return &TupleFormPattern{
 		Params: toFormPatterns(form.Params),
 		VarArg: ToVarArgPatternData(form.VarArg),
 	}
 }
 
-func ToConditionalSetFormPattern(form ast.ConditionalSetForm) *ConditionalSetFormPattern {
+func ToConditionalSetFormPattern(form ConditionalSetForm) *ConditionalSetFormPattern {
 	return &ConditionalSetFormPattern{
 		Target: ToFormPattern(form.Target),
 		VarArg: ToVarArgPatternData(form.VarArg),
 	}
 }
 
-func ToConditionalSetFormPatternFromId(form ast.ConditionalSetIdForm) ConditionalSetFormPattern {
+func ToConditionalSetFormPatternFromId(form ConditionalSetIdForm) ConditionalSetFormPattern {
 	return ConditionalSetFormPattern{
 		Target: ToFormPattern(form.Target),
 		VarArg: ToVarArgPatternData(form.Condition.VarArg),
 	}
 }
 
-func ToInfixOperatorFormPattern(form ast.InfixOperatorForm) *InfixOperatorFormPattern {
+func ToInfixOperatorFormPattern(form InfixOperatorForm) *InfixOperatorFormPattern {
 	return &InfixOperatorFormPattern{
 		Operator: *ToNameFormPattern(form.Operator),
 		Lhs:      ToFormPattern(form.Lhs),
@@ -353,14 +352,14 @@ func ToInfixOperatorFormPattern(form ast.InfixOperatorForm) *InfixOperatorFormPa
 	}
 }
 
-func ToInfixOperatorFormPatternFromId(form ast.InfixOperatorId) InfixOperatorFormPattern {
+func ToInfixOperatorFormPatternFromId(form InfixOperatorId) InfixOperatorFormPattern {
 	return InfixOperatorFormPattern{
 		Operator: toNameFormPatternFromText(form.Operator.Text),
 		Lhs:      ToFormPattern(form.Lhs),
 	}
 }
 
-func ToConditionalSetIdFormPattern(form ast.ConditionalSetIdForm) *ConditionaSetIdFormPattern {
+func ToConditionalSetIdFormPattern(form ConditionalSetIdForm) *ConditionaSetIdFormPattern {
 	return &ConditionaSetIdFormPattern{
 		Symbols:   toFormPatterns(form.Symbols),
 		Target:    ToFormPattern(form.Target),
@@ -368,42 +367,42 @@ func ToConditionalSetIdFormPattern(form ast.ConditionalSetIdForm) *ConditionaSet
 	}
 }
 
-func ToFunctionLiteralFormPattern(form ast.FunctionLiteralForm) *FunctionLiteralFormPattern {
+func ToFunctionLiteralFormPattern(form FunctionLiteralForm) *FunctionLiteralFormPattern {
 	return &FunctionLiteralFormPattern{
 		Lhs: *ToTupleFormPattern(form.Lhs),
 		Rhs: ToFormPattern(form.Rhs),
 	}
 }
 
-func ToPrefixOperatorFormPattern(form ast.PrefixOperatorForm) *PrefixOperatorFormPattern {
+func ToPrefixOperatorFormPattern(form PrefixOperatorForm) *PrefixOperatorFormPattern {
 	return &PrefixOperatorFormPattern{
 		Operator: *ToNameFormPattern(form.Operator),
 		Param:    ToFormPattern(form.Param),
 	}
 }
 
-func ToPrefixOperatorFormPatternFromId(form ast.PrefixOperatorId) PrefixOperatorFormPattern {
+func ToPrefixOperatorFormPatternFromId(form PrefixOperatorId) PrefixOperatorFormPattern {
 	return PrefixOperatorFormPattern{
 		Operator: toNameFormPatternFromText(form.Operator.Text),
 		Param:    ToFormPattern(form.Param),
 	}
 }
 
-func ToPostfixOperatorFormPattern(form ast.PostfixOperatorForm) *PostfixOperatorFormPattern {
+func ToPostfixOperatorFormPattern(form PostfixOperatorForm) *PostfixOperatorFormPattern {
 	return &PostfixOperatorFormPattern{
 		Operator: *ToNameFormPattern(form.Operator),
 		Param:    ToFormPattern(form.Param),
 	}
 }
 
-func ToPostfixOperatorFormPatternFromId(form ast.PostfixOperatorId) PostfixOperatorFormPattern {
+func ToPostfixOperatorFormPatternFromId(form PostfixOperatorId) PostfixOperatorFormPattern {
 	return PostfixOperatorFormPattern{
 		Operator: toNameFormPatternFromText(form.Operator.Text),
 		Param:    ToFormPattern(form.Param),
 	}
 }
 
-func ToCommandPattern(id ast.CommandId) CommandPattern {
+func ToCommandPattern(id CommandId) CommandPattern {
 	names := make([]NameFormPattern, 0)
 	for _, n := range id.Names {
 		names = append(names, NameFormPattern{
@@ -426,7 +425,7 @@ func ToCommandPattern(id ast.CommandId) CommandPattern {
 	}
 }
 
-func ToInfixCommandPattern(id ast.InfixCommandOperatorId) InfixCommandPattern {
+func ToInfixCommandPattern(id InfixCommandOperatorId) InfixCommandPattern {
 	names := make([]NameFormPattern, 0)
 	for _, n := range id.Operator.Names {
 		names = append(names, NameFormPattern{
@@ -450,7 +449,7 @@ func ToInfixCommandPattern(id ast.InfixCommandOperatorId) InfixCommandPattern {
 }
 
 func ToStructuralColonEqualsPattern(
-	colonEquals ast.StructuralColonEqualsForm,
+	colonEquals StructuralColonEqualsForm,
 ) *StructuralColonEqualsPattern {
 	return &StructuralColonEqualsPattern{
 		Lhs: ToFormPattern(colonEquals.Lhs),
@@ -460,7 +459,7 @@ func ToStructuralColonEqualsPattern(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func toFormPatterns(items []ast.StructuralFormKind) []FormPatternKind {
+func toFormPatterns(items []StructuralFormKind) []FormPatternKind {
 	patterns := make([]FormPatternKind, 0)
 	for _, item := range items {
 		patterns = append(patterns, ToFormPattern(item))
@@ -469,7 +468,7 @@ func toFormPatterns(items []ast.StructuralFormKind) []FormPatternKind {
 }
 
 // nolint:unused
-func toNameFormPatterns(params []ast.NameForm) []NameFormPattern {
+func toNameFormPatterns(params []NameForm) []NameFormPattern {
 	result := make([]NameFormPattern, 0)
 	for _, p := range params {
 		result = append(result, *ToNameFormPattern(p))
@@ -490,7 +489,7 @@ func toNameFormPatternFromText(text string) NameFormPattern {
 	}
 }
 
-func toCurlyArg(curlyParam *ast.CurlyParam) *CurlyPattern {
+func toCurlyArg(curlyParam *CurlyParam) *CurlyPattern {
 	if curlyParam == nil {
 		return nil
 	}
@@ -500,7 +499,7 @@ func toCurlyArg(curlyParam *ast.CurlyParam) *CurlyPattern {
 	if curlyParam.Direction != nil {
 		curlyArgs := make([]DirectionParamParamPatternKind, 0)
 		for _, param := range curlyParam.Direction.CurlyParams {
-			if form, ok := param.(ast.StructuralFormKind); ok {
+			if form, ok := param.(StructuralFormKind); ok {
 				curlyArgs = append(curlyArgs, ToDirectionParamParamPatternKind(form))
 			} else {
 				panic(fmt.Sprintf("Cannot convert direction square param to a pattern: %s",
@@ -529,7 +528,7 @@ func toCurlyArg(curlyParam *ast.CurlyParam) *CurlyPattern {
 	}
 }
 
-func toNamedGroupPatterns(nameParams *[]ast.NamedParam) *[]NamedGroupPattern {
+func toNamedGroupPatterns(nameParams *[]NamedParam) *[]NamedGroupPattern {
 	if nameParams == nil {
 		return nil
 	}
@@ -547,7 +546,7 @@ func toNamedGroupPatterns(nameParams *[]ast.NamedParam) *[]NamedGroupPattern {
 	return &result
 }
 
-func toParenArgs(names *[]ast.NameForm) *[]NameFormPattern {
+func toParenArgs(names *[]NameForm) *[]NameFormPattern {
 	if names == nil {
 		return nil
 	}

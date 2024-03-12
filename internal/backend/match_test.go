@@ -90,7 +90,7 @@ func runTest(t *testing.T, expText string, patternText string,
 	expectedVarArg map[string][]string) {
 	expNode := parseNode(t, expText)
 	patternNode := parseForm(t, patternText)
-	pattern := ToFormPattern(patternNode)
+	pattern := ast.ToFormPattern(patternNode)
 	assert.NotNil(t, pattern,
 		fmt.Sprintf("Could not determine the pattern for: %s\n%s",
 			patternText,

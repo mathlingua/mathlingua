@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package backend
+package ast
 
 import (
 	"fmt"
-	"mathlingua/internal/ast"
 	"mathlingua/internal/mlglib"
 	"regexp"
 	"strings"
@@ -62,7 +61,7 @@ type WritingSummary struct {
 	Errors        []string
 }
 
-func ToCalledSummaries(node ast.CalledGroup) []CalledSummary {
+func ToCalledSummaries(node CalledGroup) []CalledSummary {
 	result := make([]CalledSummary, 0)
 	for _, item := range node.Called.Called {
 		raw := item.RawText
@@ -76,7 +75,7 @@ func ToCalledSummaries(node ast.CalledGroup) []CalledSummary {
 	return result
 }
 
-func ToWrittenSummaries(node ast.WrittenGroup) []WrittenSummary {
+func ToWrittenSummaries(node WrittenGroup) []WrittenSummary {
 	result := make([]WrittenSummary, 0)
 	for _, item := range node.Written.Written {
 		raw := item.RawText
@@ -90,7 +89,7 @@ func ToWrittenSummaries(node ast.WrittenGroup) []WrittenSummary {
 	return result
 }
 
-func ToWritingSummaries(node ast.WritingGroup) []WritingSummary {
+func ToWritingSummaries(node WritingGroup) []WritingSummary {
 	result := make([]WritingSummary, 0)
 	for _, item := range node.Writing.Writing {
 		raw := item.RawText
@@ -104,14 +103,14 @@ func ToWritingSummaries(node ast.WritingGroup) []WritingSummary {
 	return result
 }
 
-func GetWrittenSummaries(documented *ast.DocumentedSection) []WrittenSummary {
+func GetWrittenSummaries(documented *DocumentedSection) []WrittenSummary {
 	summaries := make([]WrittenSummary, 0)
 	if documented == nil {
 		return summaries
 	}
 	for _, docItem := range documented.Documented {
 		switch item := docItem.(type) {
-		case *ast.WrittenGroup:
+		case *WrittenGroup:
 			for _, text := range item.Written.Written {
 				raw := text.RawText
 				parsed, err := ParseCalledWritten(raw)
@@ -126,14 +125,14 @@ func GetWrittenSummaries(documented *ast.DocumentedSection) []WrittenSummary {
 	return summaries
 }
 
-func GetWritingSummaries(documented *ast.DocumentedSection) []WritingSummary {
+func GetWritingSummaries(documented *DocumentedSection) []WritingSummary {
 	summaries := make([]WritingSummary, 0)
 	if documented == nil {
 		return summaries
 	}
 	for _, docItem := range documented.Documented {
 		switch item := docItem.(type) {
-		case *ast.WritingGroup:
+		case *WritingGroup:
 			for _, as := range item.Writing.Writing {
 				raw := as.RawText
 				parsed, err := ParseCalledWritten(raw)
@@ -148,14 +147,14 @@ func GetWritingSummaries(documented *ast.DocumentedSection) []WritingSummary {
 	return summaries
 }
 
-func GetCalledSummaries(documented *ast.DocumentedSection) []CalledSummary {
+func GetCalledSummaries(documented *DocumentedSection) []CalledSummary {
 	summaries := make([]CalledSummary, 0)
 	if documented == nil {
 		return summaries
 	}
 	for _, docItem := range documented.Documented {
 		switch item := docItem.(type) {
-		case *ast.CalledGroup:
+		case *CalledGroup:
 			for _, text := range item.Called.Called {
 				raw := text.RawText
 				parsed, err := ParseCalledWritten(raw)

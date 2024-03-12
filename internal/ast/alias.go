@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package backend
-
-import "mathlingua/internal/ast"
+package ast
 
 type AliasSummaryKind interface {
 	AliasSummaryKind()
@@ -41,8 +39,8 @@ type SpecAliasSummaryRhsKind interface {
 	SpecAliasSummaryRhsKind()
 }
 
-func (*IsConstraint) SpecAliasSummaryRhsKind()   {}
-func (*SpecConstraint) SpecAliasSummaryRhsKind() {}
+// func (*IsConstraint) SpecAliasSummaryRhsKind()   {}
+// func (*SpecConstraint) SpecAliasSummaryRhsKind() {}
 
 type SpecAliasSummary struct {
 	Lhs SpecAliasPattern
@@ -71,72 +69,72 @@ func (*MemberPostfixExpAliasSummary) ExpAliasSummaryKind()  {}
 
 type InfixExpAliasSummary struct {
 	Lhs   InfixOperatorFormPattern
-	Rhs   ast.ExpressionKind
-	Scope *ast.Scope
+	Rhs   ExpressionKind
+	Scope *Scope
 }
 
 type PrefixExpAliasSummary struct {
 	Lhs   PrefixOperatorFormPattern
-	Rhs   ast.ExpressionKind
-	Scope *ast.Scope
+	Rhs   ExpressionKind
+	Scope *Scope
 }
 
 type PostfixExpAliasSummary struct {
 	Lhs   PostfixOperatorFormPattern
-	Rhs   ast.ExpressionKind
-	Scope *ast.Scope
+	Rhs   ExpressionKind
+	Scope *Scope
 }
 
 type FunctionExpAliasSummary struct {
 	Lhs   FunctionFormPattern
-	Rhs   ast.ExpressionKind
-	Scope *ast.Scope
+	Rhs   ExpressionKind
+	Scope *Scope
 }
 
 type CommandExpAliasSummary struct {
 	Lhs   CommandPattern
-	Rhs   ast.ExpressionKind
-	Scope *ast.Scope
+	Rhs   ExpressionKind
+	Scope *Scope
 }
 
 type MemberNameExpAliasSummary struct {
 	Lhs   ChainExpressionPattern
-	Rhs   ast.ExpressionKind
-	Scope *ast.Scope
+	Rhs   ExpressionKind
+	Scope *Scope
 }
 
 type MemberFunctionExpAliasSummary struct {
 	Lhs   ChainExpressionPattern
-	Rhs   ast.ExpressionKind
-	Scope *ast.Scope
+	Rhs   ExpressionKind
+	Scope *Scope
 }
 
 type MemberInfixExpAliasSummary struct {
 	Lhs   InfixOperatorFormPattern
-	Rhs   ast.ExpressionKind
-	Scope *ast.Scope
+	Rhs   ExpressionKind
+	Scope *Scope
 }
 
 type MemberPrefixExpAliasSummary struct {
 	Lhs   PrefixOperatorFormPattern
-	Rhs   ast.ExpressionKind
-	Scope *ast.Scope
+	Rhs   ExpressionKind
+	Scope *Scope
 }
 
 type MemberPostfixExpAliasSummary struct {
 	Lhs   PostfixOperatorFormPattern
-	Rhs   ast.ExpressionKind
-	Scope *ast.Scope
+	Rhs   ExpressionKind
+	Scope *Scope
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func ToInfixExpAliasSummary(node ast.ExpressionColonArrowItem) InfixExpAliasSummary {
+func ToInfixExpAliasSummary(node ExpressionColonArrowItem) InfixExpAliasSummary {
 	return InfixExpAliasSummary{}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func ExpandAliasInline(node ast.MlgNodeKind, aliasSummary AliasSummaryKind) bool {
+func ExpandAliasInline(node MlgNodeKind, aliasSummary AliasSummaryKind) bool {
 	return false
 }

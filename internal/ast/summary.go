@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-package backend
-
-import (
-	"mathlingua/internal/ast"
-)
+package ast
 
 type SummaryKind interface {
 	SummaryKind()
@@ -74,12 +70,12 @@ func (s *LemmaSummary) GetExpAliasSummaries() []ExpAliasSummaryKind {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type DescribesSummary struct {
-	DefScope    *ast.Scope
-	Input       PatternKind
-	Output      PatternKind
-	Usings      []PatternKind
-	When        []ConstraintKind
-	Extends     []ConstraintKind
+	DefScope *Scope
+	Input    PatternKind
+	Output   PatternKind
+	Usings   []PatternKind
+	//	When        []ConstraintKind
+	//	Extends     []ConstraintKind
 	ExpAliases  []ExpAliasSummaryKind
 	SpecAliases []SpecAliasSummary
 	Written     []WrittenSummary
@@ -88,12 +84,12 @@ type DescribesSummary struct {
 }
 
 type DefinesSummary struct {
-	DefScope    *ast.Scope
-	Input       PatternKind
-	Output      PatternKind
-	Usings      []PatternKind
-	When        []ConstraintKind
-	Means       []ConstraintKind
+	DefScope *Scope
+	Input    PatternKind
+	Output   PatternKind
+	Usings   []PatternKind
+	//	When        []ConstraintKind
+	//	Means       []ConstraintKind
 	ExpAliases  []ExpAliasSummaryKind
 	SpecAliases []SpecAliasSummary
 	Written     []WrittenSummary
@@ -102,7 +98,7 @@ type DefinesSummary struct {
 }
 
 type StatesSummary struct {
-	DefScope    *ast.Scope
+	DefScope    *Scope
 	Input       PatternKind
 	Output      PatternKind
 	Usings      []PatternKind

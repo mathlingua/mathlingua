@@ -128,7 +128,7 @@ func NewWorkspace(contents []PathLabelContent, tracker *frontend.DiagnosticTrack
 		tracker:         tracker,
 		contents:        contents,
 		signaturesToIds: make(map[string]string, 0),
-		summaries:       make(map[string]SummaryKind, 0),
+		summaries:       make(map[string]ast.SummaryKind, 0),
 		phase4Entries:   make(map[string]phase4.TopLevelNodeKind, 0),
 		topLevelEntries: make(map[string]ast.TopLevelItemKind, 0),
 		usages:          make([]string, 0),
@@ -151,7 +151,7 @@ type Workspace struct {
 	// map signatures to ids
 	signaturesToIds map[string]string
 	// map ids to summaries
-	summaries map[string]SummaryKind
+	summaries map[string]ast.SummaryKind
 	// map ids to phase4 parses of top-level entries
 	phase4Entries map[string]phase4.TopLevelNodeKind
 	// map ids to phase5 top-level types
@@ -308,12 +308,12 @@ func (w *Workspace) infixCommandToWritten(
 	path ast.Path,
 	node *ast.InfixCommandExpression,
 ) (string, bool) {
-	sig := GetSignatureStringFromInfixCommand(*node)
+	sig := ast.GetSignatureStringFromInfixCommand(*node)
 	return w.toWrittenImpl(path, node, sig)
 }
 
 func (w *Workspace) commandToWritten(path ast.Path, node *ast.CommandExpression) (string, bool) {
-	sig := GetSignatureStringFromCommand(*node)
+	sig := ast.GetSignatureStringFromCommand(*node)
 	return w.toWrittenImpl(path, node, sig)
 }
 
@@ -321,8 +321,8 @@ func (w *Workspace) toWrittenImpl(path ast.Path, node ast.MlgNodeKind, sig strin
 	found := false
 	if id, ok := w.signaturesToIds[sig]; ok {
 		if summary, ok := w.summaries[id]; ok {
-			if writtenItems, ok := GetResolvedWritten(summary); ok {
-				if summaryInput, ok := GetResolvedInput(summary); ok {
+			if writtenItems, ok := ast.GetResolvedWritten(summary); ok {
+				if summaryInput, ok := ast.GetResolvedInput(summary); ok {
 					matchResult := Match(node, summaryInput)
 					if matchResult.MatchMakesSense && len(matchResult.Messages) == 0 {
 						// nolint:ineffassign
@@ -397,9 +397,9 @@ func (w *Workspace) toWrittenImpl(path ast.Path, node ast.MlgNodeKind, sig strin
 						result := ""
 						for _, item := range writtenItems {
 							switch it := item.(type) {
-							case *StringItem:
+							case *ast.StringItem:
 								result += it.Text
-							case *SubstitutionItem:
+							case *ast.SubstitutionItem:
 								if it.IsVarArg {
 									if it.NameSuffix == "+" {
 										result += valuesToString(
@@ -744,7 +744,7 @@ func (w *Workspace) getDiagnosticsForPath(path ast.Path) []frontend.Diagnostic {
 func (w *Workspace) initializeSignaturesToIds() {
 	for path, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
-			sig, sigOk := GetSignatureStringFromTopLevel(item)
+			sig, sigOk := ast.GetSignatureStringFromTopLevel(item)
 			id, idOk := GetAstMetaId(item)
 			if sigOk && idOk {
 				if _, hasSig := w.signaturesToIds[sig]; hasSig {
@@ -766,7 +766,7 @@ func (w *Workspace) initializeSignaturesToIds() {
 func (w *Workspace) initializeUsages() {
 	for _, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
-			usage, ok := GetUsageFromTopLevel(item)
+			usage, ok := ast.GetUsageFromTopLevel(item)
 			if ok {
 				w.usages = append(w.usages, usage)
 			}
@@ -848,7 +848,7 @@ func updateAstUsedSignatures(node ast.MlgNodeKind) {
 	}
 
 	if formulation, ok := node.(*ast.Formulation[ast.FormulationNodeKind]); ok {
-		formulation.FormulationMetaData.UsedSignatureStrings = GetUsedSignatureStrings(formulation)
+		formulation.FormulationMetaData.UsedSignatureStrings = ast.GetUsedSignatureStrings(formulation)
 	}
 	node.ForEach(updateAstUsedSignatures)
 }
@@ -897,7 +897,7 @@ func (w *Workspace) normalizeAst() {
 }
 
 func (w *Workspace) populateScopes() {
-	PopulateScopes(w.astRoot, w.tracker)
+	// PopulateScopes(w.astRoot, w.tracker)
 }
 
 func (w *Workspace) includeMissingIdentifiers() {
@@ -1082,19 +1082,19 @@ func includeMissingIdentifiersAt(node ast.MlgNodeKind, keyGen *mlglib.KeyGenerat
 	})
 }
 
-func expandAliasesAtWithAliases(node ast.MlgNodeKind, aliases []ExpAliasSummaryKind) {
+func expandAliasesAtWithAliases(node ast.MlgNodeKind, aliases []ast.ExpAliasSummaryKind) {
 	if node == nil {
 		return
 	}
 
 	node.ForEach(func(subNode ast.MlgNodeKind) {
 		for _, alias := range aliases {
-			ExpandAliasInline(subNode, alias)
+			ast.ExpandAliasInline(subNode, alias)
 		}
 	})
 }
 
-func expandAliasesAt(node ast.MlgNodeKind, summaries map[string]SummaryKind) {
+func expandAliasesAt(node ast.MlgNodeKind, summaries map[string]ast.SummaryKind) {
 	if node == nil {
 		return
 	}
@@ -1120,7 +1120,7 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *Works
 	}
 
 	if cmd, ok := node.(*ast.CommandExpression); ok {
-		sig := GetSignatureStringFromCommand(*cmd)
+		sig := ast.GetSignatureStringFromCommand(*cmd)
 		if _, ok := w.signaturesToIds[sig]; !ok {
 			w.tracker.Append(frontend.Diagnostic{
 				Type:     frontend.Error,
@@ -1131,7 +1131,7 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *Works
 			})
 		}
 	} else if cmd, ok := node.(*ast.InfixCommandExpression); ok {
-		sig := GetSignatureStringFromInfixCommand(*cmd)
+		sig := ast.GetSignatureStringFromInfixCommand(*cmd)
 		if _, ok := w.signaturesToIds[sig]; !ok {
 			w.tracker.Append(frontend.Diagnostic{
 				Type:     frontend.Error,

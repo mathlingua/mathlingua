@@ -14,41 +14,37 @@
  * limitations under the License.
  */
 
-package backend
+package ast
 
-import (
-	"mathlingua/internal/ast"
-)
-
-func GetUsageFromTopLevel(topLevel ast.TopLevelItemKind) (string, bool) {
+func GetUsageFromTopLevel(topLevel TopLevelItemKind) (string, bool) {
 	switch tl := topLevel.(type) {
-	case *ast.DefinesGroup:
+	case *DefinesGroup:
 		return GetUsageFromId(tl.Id)
-	case *ast.DescribesGroup:
+	case *DescribesGroup:
 		return GetUsageFromId(tl.Id)
-	case *ast.StatesGroup:
+	case *StatesGroup:
 		return GetUsageFromId(tl.Id)
-	case *ast.AxiomGroup:
+	case *AxiomGroup:
 		if tl.Id == nil {
 			return "", false
 		}
 		return GetUsageFromId(*tl.Id)
-	case *ast.ConjectureGroup:
+	case *ConjectureGroup:
 		if tl.Id == nil {
 			return "", false
 		}
 		return GetUsageFromId(*tl.Id)
-	case *ast.TheoremGroup:
+	case *TheoremGroup:
 		if tl.Id == nil {
 			return "", false
 		}
 		return GetUsageFromId(*tl.Id)
-	case *ast.CorollaryGroup:
+	case *CorollaryGroup:
 		if tl.Id == nil {
 			return "", false
 		}
 		return GetUsageFromId(*tl.Id)
-	case *ast.LemmaGroup:
+	case *LemmaGroup:
 		if tl.Id == nil {
 			return "", false
 		}
@@ -58,42 +54,42 @@ func GetUsageFromTopLevel(topLevel ast.TopLevelItemKind) (string, bool) {
 	}
 }
 
-func GetUsageFromId(id ast.IdItem) (string, bool) {
+func GetUsageFromId(id IdItem) (string, bool) {
 	root := id.Root
 	if root == nil {
 		return "", false
 	}
 	switch n := root.(type) {
-	case *ast.CommandId:
+	case *CommandId:
 		// \a.b.c{x, y}:a{x}:b{y}
-		return n.ToCode(ast.NoOp), true
-	case *ast.InfixCommandOperatorId:
+		return n.ToCode(NoOp), true
+	case *InfixCommandOperatorId:
 		// x \in/ y
-		return n.Operator.ToCode(ast.NoOp), true
+		return n.Operator.ToCode(NoOp), true
 	default:
 		return "", false
 	}
 }
 
-func GetSignatureStringFromTopLevel(topLevel ast.TopLevelItemKind) (string, bool) {
+func GetSignatureStringFromTopLevel(topLevel TopLevelItemKind) (string, bool) {
 	switch tl := topLevel.(type) {
-	case *ast.DefinesGroup:
+	case *DefinesGroup:
 		return GetSignatureStringFromId(tl.Id)
-	case *ast.DescribesGroup:
+	case *DescribesGroup:
 		return GetSignatureStringFromId(tl.Id)
-	case *ast.StatesGroup:
+	case *StatesGroup:
 		return GetSignatureStringFromId(tl.Id)
-	case *ast.AxiomGroup:
+	case *AxiomGroup:
 		if tl.Id == nil {
 			return "", false
 		}
 		return GetSignatureStringFromId(*tl.Id)
-	case *ast.ConjectureGroup:
+	case *ConjectureGroup:
 		if tl.Id == nil {
 			return "", false
 		}
 		return GetSignatureStringFromId(*tl.Id)
-	case *ast.TheoremGroup:
+	case *TheoremGroup:
 		if tl.Id == nil {
 			return "", false
 		}
@@ -103,16 +99,16 @@ func GetSignatureStringFromTopLevel(topLevel ast.TopLevelItemKind) (string, bool
 	}
 }
 
-func GetSignatureStringFromId(id ast.IdItem) (string, bool) {
+func GetSignatureStringFromId(id IdItem) (string, bool) {
 	root := id.Root
 	if root == nil {
 		return "", false
 	}
 	switch n := root.(type) {
-	case *ast.CommandId:
+	case *CommandId:
 		// \a.b.c{x, y}:a{x}:b{y}
 		return GetSignatureStringFromCommandId(*n), true
-	case *ast.InfixCommandOperatorId:
+	case *InfixCommandOperatorId:
 		// x \in/ y
 		return GetSignatureStringFromInfixCommandId(n.Operator), true
 	default:
@@ -120,7 +116,7 @@ func GetSignatureStringFromId(id ast.IdItem) (string, bool) {
 	}
 }
 
-func GetSignatureStringFromCommand(cmd ast.CommandExpression) string {
+func GetSignatureStringFromCommand(cmd CommandExpression) string {
 	names := make([]string, 0)
 	namedGroups := make([]string, 0)
 
@@ -132,15 +128,15 @@ func GetSignatureStringFromCommand(cmd ast.CommandExpression) string {
 		namedGroups = append(namedGroups, ng.Name.Text)
 	}
 
-	sig := ast.Signature{
+	sig := Signature{
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
 		IsInfix:         false,
 	}
-	return sig.ToCode(ast.NoOp)
+	return sig.ToCode(NoOp)
 }
 
-func GetSignatureStringFromInfixCommand(cmd ast.InfixCommandExpression) string {
+func GetSignatureStringFromInfixCommand(cmd InfixCommandExpression) string {
 	names := make([]string, 0)
 	namedGroups := make([]string, 0)
 
@@ -152,15 +148,15 @@ func GetSignatureStringFromInfixCommand(cmd ast.InfixCommandExpression) string {
 		namedGroups = append(namedGroups, ng.Name.Text)
 	}
 
-	sig := ast.Signature{
+	sig := Signature{
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
 		IsInfix:         true,
 	}
-	return sig.ToCode(ast.NoOp)
+	return sig.ToCode(NoOp)
 }
 
-func GetSignatureStringFromCommandId(cmd ast.CommandId) string {
+func GetSignatureStringFromCommandId(cmd CommandId) string {
 	names := make([]string, 0)
 	namedGroups := make([]string, 0)
 
@@ -172,15 +168,15 @@ func GetSignatureStringFromCommandId(cmd ast.CommandId) string {
 		namedGroups = append(namedGroups, ng.Name.Text)
 	}
 
-	sig := ast.Signature{
+	sig := Signature{
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
 		IsInfix:         false,
 	}
-	return sig.ToCode(ast.NoOp)
+	return sig.ToCode(NoOp)
 }
 
-func GetSignatureStringFromInfixCommandId(cmd ast.InfixCommandId) string {
+func GetSignatureStringFromInfixCommandId(cmd InfixCommandId) string {
 	names := make([]string, 0)
 	namedGroups := make([]string, 0)
 
@@ -192,33 +188,33 @@ func GetSignatureStringFromInfixCommandId(cmd ast.InfixCommandId) string {
 		namedGroups = append(namedGroups, ng.Name.Text)
 	}
 
-	sig := ast.Signature{
+	sig := Signature{
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
 		IsInfix:         true,
 	}
-	return sig.ToCode(ast.NoOp)
+	return sig.ToCode(NoOp)
 }
 
-func GetUsedSignatureStrings(node ast.MlgNodeKind) []string {
+func GetUsedSignatureStrings(node MlgNodeKind) []string {
 	result := make([]string, 0)
 	getUsedSignaturesImpl(node, &result)
 	return result
 }
 
-func getUsedSignaturesImpl(node ast.MlgNodeKind, signatures *[]string) {
+func getUsedSignaturesImpl(node MlgNodeKind, signatures *[]string) {
 	if node == nil {
 		return
 	}
 
 	switch n := node.(type) {
-	case *ast.CommandExpression:
+	case *CommandExpression:
 		*signatures = append(*signatures, GetSignatureStringFromCommand(*n))
-	case *ast.InfixCommandExpression:
+	case *InfixCommandExpression:
 		*signatures = append(*signatures, GetSignatureStringFromInfixCommand(*n))
 	}
 
-	node.ForEach(func(subNode ast.MlgNodeKind) {
+	node.ForEach(func(subNode MlgNodeKind) {
 		getUsedSignaturesImpl(subNode, signatures)
 	})
 }

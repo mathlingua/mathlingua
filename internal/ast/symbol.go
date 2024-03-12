@@ -21,6 +21,7 @@ type Symbol struct {
 	IsInfereble     bool
 	IsPlaceholder   bool
 	IsNumberLiteral bool
+	Pattern         PatternKind
 	ResolvedSpec    *ResolvedSymbolSpec
 	RawSpec         *RawSymbolSpec
 	DeclaringScope  *Scope

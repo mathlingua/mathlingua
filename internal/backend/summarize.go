@@ -24,7 +24,7 @@ import (
 func Summarize(
 	node ast.TopLevelItemKind,
 	tracker *frontend.DiagnosticTracker,
-) (SummaryKind, bool) {
+) (ast.SummaryKind, bool) {
 	switch entry := node.(type) {
 	case *ast.DescribesGroup:
 		return SummarizeDescribes(entry), true
@@ -47,143 +47,143 @@ func Summarize(
 	}
 }
 
-func SummarizeDescribes(describes *ast.DescribesGroup) *DescribesSummary {
+func SummarizeDescribes(describes *ast.DescribesGroup) *ast.DescribesSummary {
 	if describes == nil {
 		return nil
 	}
 	input, _ := toCommandPatternFromId(describes.Id)
-	return &DescribesSummary{
+	return &ast.DescribesSummary{
 		Input:   input,
-		Written: GetWrittenSummaries(describes.Documented),
-		Writing: GetWritingSummaries(describes.Documented),
-		Called:  GetCalledSummaries(describes.Documented),
+		Written: ast.GetWrittenSummaries(describes.Documented),
+		Writing: ast.GetWritingSummaries(describes.Documented),
+		Called:  ast.GetCalledSummaries(describes.Documented),
 	}
 }
 
-func SummarizeDefines(defines *ast.DefinesGroup) *DefinesSummary {
+func SummarizeDefines(defines *ast.DefinesGroup) *ast.DefinesSummary {
 	if defines == nil {
 		return nil
 	}
 	input, _ := toCommandPatternFromId(defines.Id)
-	return &DefinesSummary{
+	return &ast.DefinesSummary{
 		Input:   input,
-		Written: GetWrittenSummaries(defines.Documented),
-		Writing: GetWritingSummaries(defines.Documented),
-		Called:  GetCalledSummaries(defines.Documented),
+		Written: ast.GetWrittenSummaries(defines.Documented),
+		Writing: ast.GetWritingSummaries(defines.Documented),
+		Called:  ast.GetCalledSummaries(defines.Documented),
 	}
 }
 
-func SummarizeStates(states *ast.StatesGroup) *StatesSummary {
+func SummarizeStates(states *ast.StatesGroup) *ast.StatesSummary {
 	if states == nil {
 		return nil
 	}
 	input, _ := toCommandPatternFromId(states.Id)
-	return &StatesSummary{
+	return &ast.StatesSummary{
 		Input:   input,
-		Written: GetWrittenSummaries(states.Documented),
-		Writing: GetWritingSummaries(states.Documented),
-		Called:  GetCalledSummaries(states.Documented),
+		Written: ast.GetWrittenSummaries(states.Documented),
+		Writing: ast.GetWritingSummaries(states.Documented),
+		Called:  ast.GetCalledSummaries(states.Documented),
 	}
 }
 
-func SummarizeCaptures(captures *ast.CapturesGroup) *CapturesSummary {
+func SummarizeCaptures(captures *ast.CapturesGroup) *ast.CapturesSummary {
 	if captures == nil {
 		return nil
 	}
 	input, _ := toCommandPatternFromId(captures.Id)
-	return &CapturesSummary{
+	return &ast.CapturesSummary{
 		Input:   input,
-		Written: GetWrittenSummaries(captures.Documented),
-		Called:  GetCalledSummaries(captures.Documented),
+		Written: ast.GetWrittenSummaries(captures.Documented),
+		Called:  ast.GetCalledSummaries(captures.Documented),
 	}
 }
 
-func SummarizeAxiom(axiom *ast.AxiomGroup) *AxiomSummary {
+func SummarizeAxiom(axiom *ast.AxiomGroup) *ast.AxiomSummary {
 	if axiom == nil {
 		return nil
 	}
-	var input *PatternKind
+	var input *ast.PatternKind
 	if axiom.Id != nil {
 		pattern, _ := toCommandPatternFromId(*axiom.Id)
 		input = &pattern
 	}
-	return &AxiomSummary{
+	return &ast.AxiomSummary{
 		Input:  input,
-		Called: GetCalledSummaries(axiom.Documented),
+		Called: ast.GetCalledSummaries(axiom.Documented),
 	}
 }
 
-func SummarizeConjecture(conjecture *ast.ConjectureGroup) *ConjectureSummary {
+func SummarizeConjecture(conjecture *ast.ConjectureGroup) *ast.ConjectureSummary {
 	if conjecture == nil {
 		return nil
 	}
-	var input *PatternKind
+	var input *ast.PatternKind
 	if conjecture.Id != nil {
 		pattern, _ := toCommandPatternFromId(*conjecture.Id)
 		input = &pattern
 	}
-	return &ConjectureSummary{
+	return &ast.ConjectureSummary{
 		Input:  input,
-		Called: GetCalledSummaries(conjecture.Documented),
+		Called: ast.GetCalledSummaries(conjecture.Documented),
 	}
 }
 
-func SummarizeTheorem(theorem *ast.TheoremGroup) *TheoremSummary {
+func SummarizeTheorem(theorem *ast.TheoremGroup) *ast.TheoremSummary {
 	if theorem == nil {
 		return nil
 	}
-	var input *PatternKind
+	var input *ast.PatternKind
 	if theorem.Id != nil {
 		pattern, _ := toCommandPatternFromId(*theorem.Id)
 		input = &pattern
 	}
-	return &TheoremSummary{
+	return &ast.TheoremSummary{
 		Input:  input,
-		Called: GetCalledSummaries(theorem.Documented),
+		Called: ast.GetCalledSummaries(theorem.Documented),
 	}
 }
 
-func SummarizeCorollary(corollary *ast.CorollaryGroup) *CorollarySummary {
+func SummarizeCorollary(corollary *ast.CorollaryGroup) *ast.CorollarySummary {
 	if corollary == nil {
 		return nil
 	}
-	var input *PatternKind
+	var input *ast.PatternKind
 	if corollary.Id != nil {
 		pattern, _ := toCommandPatternFromId(*corollary.Id)
 		input = &pattern
 	}
-	return &CorollarySummary{
+	return &ast.CorollarySummary{
 		Input:  input,
-		Called: GetCalledSummaries(corollary.Documented),
+		Called: ast.GetCalledSummaries(corollary.Documented),
 	}
 }
 
-func SummarizeLemma(lemma *ast.LemmaGroup) *LemmaSummary {
+func SummarizeLemma(lemma *ast.LemmaGroup) *ast.LemmaSummary {
 	if lemma == nil {
 		return nil
 	}
-	var input *PatternKind
+	var input *ast.PatternKind
 	if lemma.Id != nil {
 		pattern, _ := toCommandPatternFromId(*lemma.Id)
 		input = &pattern
 	}
-	return &LemmaSummary{
+	return &ast.LemmaSummary{
 		Input:  input,
-		Called: GetCalledSummaries(lemma.Documented),
+		Called: ast.GetCalledSummaries(lemma.Documented),
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func toCommandPatternFromId(id ast.IdItem) (PatternKind, bool) {
+func toCommandPatternFromId(id ast.IdItem) (ast.PatternKind, bool) {
 	switch root := id.Root.(type) {
 	case *ast.CommandId:
-		pattern := ToCommandPattern(*root)
+		pattern := ast.ToCommandPattern(*root)
 		return &pattern, true
 	case *ast.InfixCommandOperatorId:
-		pattern := ToInfixCommandPattern(*root)
+		pattern := ast.ToInfixCommandPattern(*root)
 		return &pattern, true
 	default:
-		return &CommandPattern{}, false
+		return &ast.CommandPattern{}, false
 	}
 }

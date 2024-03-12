@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package backend
+package ast
 
 func (p *NameFormPattern) GetVarArgData() VarArgPatternData                 { return p.VarArg }
 func (p *FunctionFormPattern) GetVarArgData() VarArgPatternData             { return p.VarArg }

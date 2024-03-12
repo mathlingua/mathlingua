@@ -29,46 +29,46 @@ type Symbol struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type SymbolSpec interface {
-	SymbolSpec()
+type SymbolSpecKind interface {
+	SymbolSpecKind()
 }
 
-func (*ResolvedSymbolSpec) SymbolSpec() {}
-func (*RawSymbolSpec) SymbolSpec()      {}
+func (*ResolvedSymbolSpec) SymbolSpecKind() {}
+func (*RawSymbolSpec) SymbolSpecKind()      {}
 
 type ResolvedSymbolSpec struct {
-	Is        ResolvedType
-	Satisfies []ResolvedType
+	Is        ResolvedTypeKind
+	Satisfies []ResolvedTypeKind
 }
 
 type RawSymbolSpec struct {
-	Is        Type
-	Satisfies []Type
+	Is        TypeKind
+	Satisfies []TypeKind
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type Type interface {
-	Type()
+type TypeKind interface {
+	TypeKind()
 }
 
-func (*RawNonInfixCommandType) Type() {}
-func (*RawInfixCommandType) Type()    {}
-func (*RawDynamicInfixType) Type()    {}
+func (*RawNonInfixCommandType) TypeKind() {}
+func (*RawInfixCommandType) TypeKind()    {}
+func (*RawDynamicInfixType) TypeKind()    {}
 
-func (*ResolvedNonInfixCommandType) Type() {}
-func (*ResolvedInfixCommandType) Type()    {}
+func (*ResolvedNonInfixCommandType) TypeKind() {}
+func (*ResolvedInfixCommandType) TypeKind()    {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type RawType interface {
-	Type
+type RawTypeKind interface {
+	TypeKind
 	ResolvedType()
 }
 
-func (*RawNonInfixCommandType) RawType() {}
-func (*RawInfixCommandType) RawType()    {}
-func (*RawDynamicInfixType) RawType()    {}
+func (*RawNonInfixCommandType) RawTypeKind() {}
+func (*RawInfixCommandType) RawTypeKind()    {}
+func (*RawDynamicInfixType) RawTypeKind()    {}
 
 type RawNonInfixCommandType struct {
 	Names                []string
@@ -93,13 +93,13 @@ type RawDynamicInfixType struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type ResolvedType interface {
-	Type
-	ResolvedType()
+type ResolvedTypeKind interface {
+	TypeKind
+	ResolvedTypeKind()
 }
 
-func (*ResolvedNonInfixCommandType) ResolvedType() {}
-func (*ResolvedInfixCommandType) ResolvedType()    {}
+func (*ResolvedNonInfixCommandType) ResolvedTypeKind() {}
+func (*ResolvedInfixCommandType) ResolvedTypeKind()    {}
 
 type ResolvedNonInfixCommandType struct {
 	Names                []string
@@ -108,11 +108,11 @@ type ResolvedNonInfixCommandType struct {
 
 type ResolvedNamedGroupTypeParam struct {
 	Name   string
-	Params []Type
+	Params []TypeKind
 }
 
 type ResolvedInfixCommandType struct {
-	Lhs    Type
+	Lhs    TypeKind
 	Target ResolvedNonInfixCommandType
-	Rhs    Type
+	Rhs    TypeKind
 }

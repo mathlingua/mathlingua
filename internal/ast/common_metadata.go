@@ -20,6 +20,9 @@ type CommonMetaData struct {
 	Start Position
 	Key   int
 	Scope Scope
+	// TypeDescription is nil if the node doesn't have type information available
+	// for example it is not an ExpresionKind node or it hasn't been resolved
+	TypeDescription *TypeDescription
 }
 
 func (n *Root) GetCommonMetaData() *CommonMetaData               { return &n.CommonMetaData }

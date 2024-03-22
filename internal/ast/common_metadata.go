@@ -120,7 +120,7 @@ func (n *IsExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
 
-func (n *SatisfiesExpression) GetCommonMetaData() *CommonMetaData {
+func (n *AlsoExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
 

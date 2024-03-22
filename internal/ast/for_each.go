@@ -821,7 +821,7 @@ func (n *IsExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Rhs, fn)
 }
 
-func (n *SatisfiesExpression) ForEach(fn func(subNode MlgNodeKind)) {
+func (n *AlsoExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Lhs, fn)
 	forEach(n.Rhs, fn)
 }

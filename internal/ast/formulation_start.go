@@ -30,7 +30,7 @@ func (n *PrefixOperatorCallExpression) Start() Position           { return n.Com
 func (n *PostfixOperatorCallExpression) Start() Position          { return n.CommonMetaData.Start }
 func (n *InfixOperatorCallExpression) Start() Position            { return n.CommonMetaData.Start }
 func (n *IsExpression) Start() Position                           { return n.CommonMetaData.Start }
-func (n *SatisfiesExpression) Start() Position                    { return n.CommonMetaData.Start }
+func (n *AlsoExpression) Start() Position                         { return n.CommonMetaData.Start }
 func (n *ExtendsExpression) Start() Position                      { return n.CommonMetaData.Start }
 func (n *AsExpression) Start() Position                           { return n.CommonMetaData.Start }
 func (n *OrdinalCallExpression) Start() Position                  { return n.CommonMetaData.Start }

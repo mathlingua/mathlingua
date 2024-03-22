@@ -38,7 +38,7 @@ func (*PrefixOperatorCallExpression) FormulationNodeKind()           {}
 func (*PostfixOperatorCallExpression) FormulationNodeKind()          {}
 func (*InfixOperatorCallExpression) FormulationNodeKind()            {}
 func (*IsExpression) FormulationNodeKind()                           {}
-func (*SatisfiesExpression) FormulationNodeKind()                    {}
+func (*AlsoExpression) FormulationNodeKind()                         {}
 func (*ExtendsExpression) FormulationNodeKind()                      {}
 func (*AsExpression) FormulationNodeKind()                           {}
 func (*OrdinalCallExpression) FormulationNodeKind()                  {}
@@ -144,7 +144,7 @@ func (*ChainExpression) ExpressionKind()                        {}
 func (*PseudoTokenNode) ExpressionKind()                        {}
 func (*PseudoExpression) ExpressionKind()                       {}
 func (*IsExpression) ExpressionKind()                           {}
-func (*SatisfiesExpression) ExpressionKind()                    {}
+func (*AlsoExpression) ExpressionKind()                         {}
 func (*ExtendsExpression) ExpressionKind()                      {}
 func (*MultiplexedInfixOperatorCallExpression) ExpressionKind() {}
 func (*ExpressionColonEqualsItem) ExpressionKind()              {}

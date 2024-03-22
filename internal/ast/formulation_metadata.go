@@ -76,7 +76,7 @@ func (n *IsExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 
-func (n *SatisfiesExpression) GetFormulationMetaData() *FormulationMetaData {
+func (n *AlsoExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 

@@ -231,8 +231,8 @@ type IsExpression struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// x satisfies \y & \z
-type SatisfiesExpression struct {
+// x also \y & \z
+type AlsoExpression struct {
 	Lhs                 []ExpressionKind
 	Rhs                 []KindKind
 	CommonMetaData      CommonMetaData

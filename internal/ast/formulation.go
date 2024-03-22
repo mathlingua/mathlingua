@@ -35,6 +35,7 @@ type NameForm struct {
 	VarArg              VarArgData
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
+	UniqueName          string
 }
 
 // f(x, y)

@@ -125,13 +125,14 @@ type PathLabelContent struct {
 
 func NewWorkspace(contents []PathLabelContent, tracker *frontend.DiagnosticTracker) *Workspace {
 	w := Workspace{
-		tracker:         tracker,
-		contents:        contents,
-		signaturesToIds: make(map[string]string, 0),
-		summaries:       make(map[string]ast.SummaryKind, 0),
-		phase4Entries:   make(map[string]phase4.TopLevelNodeKind, 0),
-		topLevelEntries: make(map[string]ast.TopLevelItemKind, 0),
-		usages:          make([]string, 0),
+		tracker:             tracker,
+		contents:            contents,
+		signaturesToIds:     make(map[string]string, 0),
+		documentedSummaries: make(map[string]ast.DocumentedSummary, 0),
+		inputSummaries:      make(map[string]ast.InputSummary, 0),
+		phase4Entries:       make(map[string]phase4.TopLevelNodeKind, 0),
+		topLevelEntries:     make(map[string]ast.TopLevelItemKind, 0),
+		usages:              make([]string, 0),
 	}
 	w.initialize(contents)
 	return &w
@@ -150,8 +151,10 @@ type Workspace struct {
 	astRoot *ast.Root
 	// map signatures to ids
 	signaturesToIds map[string]string
-	// map ids to summaries
-	summaries map[string]ast.SummaryKind
+	// map ids to summaries of the Documented section
+	documentedSummaries map[string]ast.DocumentedSummary
+	// map ids to summaries of top-level item inputs
+	inputSummaries map[string]ast.InputSummary
 	// map ids to phase4 parses of top-level entries
 	phase4Entries map[string]phase4.TopLevelNodeKind
 	// map ids to phase5 top-level types
@@ -320,10 +323,10 @@ func (w *Workspace) commandToWritten(path ast.Path, node *ast.CommandExpression)
 func (w *Workspace) toWrittenImpl(path ast.Path, node ast.MlgNodeKind, sig string) (string, bool) {
 	found := false
 	if id, ok := w.signaturesToIds[sig]; ok {
-		if summary, ok := w.summaries[id]; ok {
-			if writtenItems, ok := ast.GetResolvedWritten(summary); ok {
-				if summaryInput, ok := ast.GetResolvedInput(summary); ok {
-					matchResult := Match(node, summaryInput)
+		if docSummary, ok := w.documentedSummaries[id]; ok {
+			if writtenItems, ok := ast.GetResolvedWritten(docSummary); ok {
+				if summaryInput, ok := w.inputSummaries[id]; ok {
+					matchResult := Match(node, summaryInput.Input)
 					if matchResult.MatchMakesSense && len(matchResult.Messages) == 0 {
 						// nolint:ineffassign
 						found = true
@@ -778,9 +781,18 @@ func (w *Workspace) initializeSummaries() {
 	for _, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
 			id, idOk := GetAstMetaId(item)
-			summary, summaryOk := Summarize(item, w.tracker)
-			if idOk && summaryOk {
-				w.summaries[id] = summary
+			if !idOk {
+				continue
+			}
+
+			docSummary, docSummaryOk := GetDocumentedSummary(item, w.tracker)
+			if docSummaryOk && docSummary != nil {
+				w.documentedSummaries[id] = *docSummary
+			}
+
+			inputSummary, inputSummaryOk := GetInputSummary(item, w.tracker)
+			if inputSummaryOk && inputSummary != nil {
+				w.inputSummaries[id] = *inputSummary
 			}
 		}
 	}
@@ -893,7 +905,7 @@ func (w *Workspace) updatePhase4UsedSignatures(
 //   - Any alias in formulations are expanded so that aliases are not needed anymore.
 func (w *Workspace) normalizeAst() {
 	w.includeMissingIdentifiers()
-	w.expandAliases()
+	// TODO: expand aliases
 }
 
 func (w *Workspace) populateScopes() {
@@ -902,10 +914,6 @@ func (w *Workspace) populateScopes() {
 
 func (w *Workspace) includeMissingIdentifiers() {
 	includeMissingIdentifiersAt(w.astRoot, mlglib.NewKeyGenerator())
-}
-
-func (w *Workspace) expandAliases() {
-	expandAliasesAt(w.astRoot, w.summaries)
 }
 
 func (w *Workspace) findUsedUnknownSignatures() {
@@ -1079,38 +1087,6 @@ func includeMissingIdentifiersAt(node ast.MlgNodeKind, keyGen *mlglib.KeyGenerat
 	}
 	node.ForEach(func(subNode ast.MlgNodeKind) {
 		includeMissingIdentifiersAt(subNode, keyGen)
-	})
-}
-
-func expandAliasesAtWithAliases(node ast.MlgNodeKind, aliases []ast.ExpAliasSummaryKind) {
-	if node == nil {
-		return
-	}
-
-	node.ForEach(func(subNode ast.MlgNodeKind) {
-		for _, alias := range aliases {
-			ast.ExpandAliasInline(subNode, alias)
-		}
-	})
-}
-
-func expandAliasesAt(node ast.MlgNodeKind, summaries map[string]ast.SummaryKind) {
-	if node == nil {
-		return
-	}
-
-	switch entry := node.(type) {
-	case *ast.DefinesGroup:
-		metaId, ok := GetAstMetaId(entry)
-		if ok {
-			summary, ok := summaries[metaId]
-			if ok {
-				expandAliasesAtWithAliases(node, summary.GetExpAliasSummaries())
-			}
-		}
-	}
-	node.ForEach(func(n ast.MlgNodeKind) {
-		expandAliasesAt(n, summaries)
 	})
 }
 

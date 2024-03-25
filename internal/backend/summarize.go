@@ -16,11 +16,7 @@
 
 package backend
 
-import (
-	"mathlingua/internal/ast"
-	"mathlingua/internal/frontend"
-)
-
+/*
 func Summarize(
 	node ast.TopLevelItemKind,
 	tracker *frontend.DiagnosticTracker,
@@ -187,3 +183,4 @@ func toCommandPatternFromId(id ast.IdItem) (ast.PatternKind, bool) {
 		return &ast.CommandPattern{}, false
 	}
 }
+*/

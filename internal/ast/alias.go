@@ -126,15 +126,3 @@ type MemberPostfixExpAliasSummary struct {
 	Rhs   ExpressionKind
 	Scope *Scope
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func ToInfixExpAliasSummary(node ExpressionColonArrowItem) InfixExpAliasSummary {
-	return InfixExpAliasSummary{}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func ExpandAliasInline(node MlgNodeKind, aliasSummary AliasSummaryKind) bool {
-	return false
-}

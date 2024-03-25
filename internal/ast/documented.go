@@ -61,6 +61,12 @@ type WritingSummary struct {
 	Errors        []string
 }
 
+type DocumentedSummary struct {
+	Written []WrittenSummary
+	Writing []WritingSummary
+	Called  []CalledSummary
+}
+
 func ToCalledSummaries(node CalledGroup) []CalledSummary {
 	result := make([]CalledSummary, 0)
 	for _, item := range node.Called.Called {
@@ -303,7 +309,46 @@ func ParseCalledWritten(text string) ([]TextItemKind, error) {
 	return result, nil
 }
 
+func GetResolvedWritten(summary DocumentedSummary) ([]TextItemKind, bool) {
+	called := getSingleCalled(summary.Called)
+	written := getSingleWritten(summary.Written)
+
+	if written != nil {
+		return *written, true
+	}
+
+	if called != nil {
+		result := make([]TextItemKind, 0)
+		result = append(result, &StringItem{
+			Text: "\\textrm{",
+		})
+		result = append(result, *called...)
+		result = append(result, &StringItem{
+			Text: "}",
+		})
+		return result, true
+	}
+
+	return nil, false
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func getSingleCalled(called []CalledSummary) *[]TextItemKind {
+	if len(called) == 0 {
+		return nil
+	}
+	text := called[0].ParsedCalled
+	return &text
+}
+
+func getSingleWritten(written []WrittenSummary) *[]TextItemKind {
+	if len(written) == 0 {
+		return nil
+	}
+	text := written[0].ParsedWritten
+	return &text
+}
 
 func errorToString(err error) []string {
 	if err == nil {

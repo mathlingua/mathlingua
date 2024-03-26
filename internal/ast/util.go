@@ -42,28 +42,3 @@ type Char struct {
 	Symbol   rune
 	Position Position
 }
-
-func GetChars(text string) []Char {
-	chars := make([]Char, 0)
-	curRow := 0
-	curColumn := 0
-	prevPos := 0
-	for pos, c := range text {
-		if c == '\n' {
-			curRow++
-			curColumn = 0
-		} else {
-			curColumn += pos - prevPos
-		}
-		prevPos = pos
-		chars = append(chars, Char{
-			Symbol: c,
-			Position: Position{
-				Offset: pos,
-				Row:    curRow,
-				Column: curColumn,
-			},
-		})
-	}
-	return chars
-}

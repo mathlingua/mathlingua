@@ -162,10 +162,10 @@ func GetLemmaInputSummary(lemma *ast.LemmaGroup) *ast.InputSummary {
 func toCommandPatternFromId(id ast.IdItem) (ast.PatternKind, bool) {
 	switch root := id.Root.(type) {
 	case *ast.CommandId:
-		pattern := ast.ToCommandPattern(*root)
+		pattern := ToCommandPattern(*root)
 		return &pattern, true
 	case *ast.InfixCommandOperatorId:
-		pattern := ast.ToInfixCommandPattern(*root)
+		pattern := ToInfixCommandPattern(*root)
 		return &pattern, true
 	default:
 		return &ast.CommandPattern{}, false

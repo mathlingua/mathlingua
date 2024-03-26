@@ -34,7 +34,7 @@ func NewLexer(text string, path ast.Path, tracker *frontend.DiagnosticTracker) *
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func getTokens(text string, path ast.Path, tracker *frontend.DiagnosticTracker) []ast.Token {
-	chars := ast.GetChars(text)
+	chars := frontend.GetChars(text)
 	i := 0
 
 	tokens := make([]ast.Token, 0)

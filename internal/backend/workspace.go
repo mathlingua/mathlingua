@@ -311,12 +311,12 @@ func (w *Workspace) infixCommandToWritten(
 	path ast.Path,
 	node *ast.InfixCommandExpression,
 ) (string, bool) {
-	sig := ast.GetSignatureStringFromInfixCommand(*node)
+	sig := GetSignatureStringFromInfixCommand(*node)
 	return w.toWrittenImpl(path, node, sig)
 }
 
 func (w *Workspace) commandToWritten(path ast.Path, node *ast.CommandExpression) (string, bool) {
-	sig := ast.GetSignatureStringFromCommand(*node)
+	sig := GetSignatureStringFromCommand(*node)
 	return w.toWrittenImpl(path, node, sig)
 }
 
@@ -324,7 +324,7 @@ func (w *Workspace) toWrittenImpl(path ast.Path, node ast.MlgNodeKind, sig strin
 	found := false
 	if id, ok := w.signaturesToIds[sig]; ok {
 		if docSummary, ok := w.documentedSummaries[id]; ok {
-			if writtenItems, ok := ast.GetResolvedWritten(docSummary); ok {
+			if writtenItems, ok := GetResolvedWritten(docSummary); ok {
 				if summaryInput, ok := w.inputSummaries[id]; ok {
 					matchResult := Match(node, summaryInput.Input)
 					if matchResult.MatchMakesSense && len(matchResult.Messages) == 0 {
@@ -747,7 +747,7 @@ func (w *Workspace) getDiagnosticsForPath(path ast.Path) []frontend.Diagnostic {
 func (w *Workspace) initializeSignaturesToIds() {
 	for path, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
-			sig, sigOk := ast.GetSignatureStringFromTopLevel(item)
+			sig, sigOk := GetSignatureStringFromTopLevel(item)
 			id, idOk := GetAstMetaId(item)
 			if sigOk && idOk {
 				if _, hasSig := w.signaturesToIds[sig]; hasSig {
@@ -769,7 +769,7 @@ func (w *Workspace) initializeSignaturesToIds() {
 func (w *Workspace) initializeUsages() {
 	for _, doc := range w.astRoot.Documents {
 		for _, item := range doc.Items {
-			usage, ok := ast.GetUsageFromTopLevel(item)
+			usage, ok := GetUsageFromTopLevel(item)
 			if ok {
 				w.usages = append(w.usages, usage)
 			}
@@ -860,7 +860,7 @@ func updateAstUsedSignatures(node ast.MlgNodeKind) {
 	}
 
 	if formulation, ok := node.(*ast.Formulation[ast.FormulationNodeKind]); ok {
-		formulation.FormulationMetaData.UsedSignatureStrings = ast.GetUsedSignatureStrings(formulation)
+		formulation.FormulationMetaData.UsedSignatureStrings = GetUsedSignatureStrings(formulation)
 	}
 	node.ForEach(updateAstUsedSignatures)
 }
@@ -1096,7 +1096,7 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *Works
 	}
 
 	if cmd, ok := node.(*ast.CommandExpression); ok {
-		sig := ast.GetSignatureStringFromCommand(*cmd)
+		sig := GetSignatureStringFromCommand(*cmd)
 		if _, ok := w.signaturesToIds[sig]; !ok {
 			w.tracker.Append(frontend.Diagnostic{
 				Type:     frontend.Error,
@@ -1107,7 +1107,7 @@ func findUsedUnknownSignaturesImpl(node ast.MlgNodeKind, path ast.Path, w *Works
 			})
 		}
 	} else if cmd, ok := node.(*ast.InfixCommandExpression); ok {
-		sig := ast.GetSignatureStringFromInfixCommand(*cmd)
+		sig := GetSignatureStringFromInfixCommand(*cmd)
 		if _, ok := w.signaturesToIds[sig]; !ok {
 			w.tracker.Append(frontend.Diagnostic{
 				Type:     frontend.Error,

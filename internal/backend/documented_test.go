@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package ast
+package backend
 
 import (
+	"mathlingua/internal/ast"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,11 +27,11 @@ func TestParseCalledWritten(t *testing.T) {
 	text := "text1 A? text2 x+? text3 X?{abc...} text4 X+?{...xyz...} text5"
 	actual, err := ParseCalledWritten(text)
 	assert.Nil(t, err)
-	expected := []TextItemKind{
-		&StringItem{
+	expected := []ast.TextItemKind{
+		&ast.StringItem{
 			Text: "text1 ",
 		},
-		&SubstitutionItem{
+		&ast.SubstitutionItem{
 			Name:       "A",
 			NameSuffix: "",
 			IsVarArg:   false,
@@ -38,10 +39,10 @@ func TestParseCalledWritten(t *testing.T) {
 			Suffix:     "",
 			Infix:      "",
 		},
-		&StringItem{
+		&ast.StringItem{
 			Text: " text2 ",
 		},
-		&SubstitutionItem{
+		&ast.SubstitutionItem{
 			Name:       "x",
 			NameSuffix: "+",
 			IsVarArg:   false,
@@ -49,10 +50,10 @@ func TestParseCalledWritten(t *testing.T) {
 			Suffix:     "",
 			Infix:      "",
 		},
-		&StringItem{
+		&ast.StringItem{
 			Text: " text3 ",
 		},
-		&SubstitutionItem{
+		&ast.SubstitutionItem{
 			Name:       "X",
 			NameSuffix: "",
 			IsVarArg:   true,
@@ -60,10 +61,10 @@ func TestParseCalledWritten(t *testing.T) {
 			Suffix:     "",
 			Infix:      "",
 		},
-		&StringItem{
+		&ast.StringItem{
 			Text: " text4 ",
 		},
-		&SubstitutionItem{
+		&ast.SubstitutionItem{
 			Name:       "X",
 			NameSuffix: "+",
 			IsVarArg:   true,
@@ -71,7 +72,7 @@ func TestParseCalledWritten(t *testing.T) {
 			Suffix:     "",
 			Infix:      "xyz",
 		},
-		&StringItem{
+		&ast.StringItem{
 			Text: " text5",
 		},
 	}

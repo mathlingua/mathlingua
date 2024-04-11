@@ -16,7 +16,7 @@
   border-width: 1px;
   border-radius: 3px;
   box-shadow: var(--box-shadow);
-  background-color: var(--background-color);
+  background-color: var(--top-level-entity-background-color, var(--background-color));
 }
 
 @media screen and (max-width: 450px) {

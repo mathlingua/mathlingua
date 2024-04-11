@@ -15,7 +15,7 @@
 
 .dropdownMenu {
   position: absolute;
-  background-color: var(--background-color);
+  background-color: var(--dropdown-menu-background-color, var(--background-color));
   z-index: 1;
   border: solid;
   border-color: var(--border-color);

@@ -1,6 +1,7 @@
 import React from 'react';
 
 export type Theme = 'light' |
+                    'alt-light' |
                     'dark' |
                     'sunset' |
                     'high-contrast-light' |
@@ -8,6 +9,13 @@ export type Theme = 'light' |
                     'minimal-light';
 
 const LIGHT = {
+  '--dropdown-menu-background-color': 'unset',
+  '--top-level-entity-background-color': 'unset',
+  '--button-background-color': 'unset',
+  '--page-background-color': 'unset',
+  '--left-background-color': 'unset',
+  '--header-background-color': 'unset',
+  '--header-shadow': 'none',
   '--accent-color': '#05b',
   '--background-color': '#ffffff',
   '--etched-background-color': '#fefefe',
@@ -27,7 +35,26 @@ const LIGHT = {
   '--link-color': 'var(--accent-color)',
 };
 
+const ALT_LIGHT = {
+  ...LIGHT,
+  '--dropdown-menu-background-color': 'transparent',
+  '--top-level-entity-background-color': 'white',
+  '--button-background-color': 'transparent',
+  '--left-background-color': 'white',
+  '--header-background-color': 'white',
+  '--background-color': '#fafafa',
+  '--page-background-color': 'var(--background-color)',
+  '--header-shadow': 'none',
+};
+
 const HIGH_CONTRAST_LIGHT = {
+  '--dropdown-menu-background-color': 'unset',
+  '--top-level-entity-background-color': 'unset',
+  '--button-background-color': 'unset',
+  '--page-background-color': 'unset',
+  '--left-background-color': 'unset',
+  '--header-background-color': 'unset',
+  '--header-shadow': 'none',
   '--accent-color': 'black',
   '--background-color': 'white',
   '--etched-background-color': 'white',
@@ -48,6 +75,13 @@ const HIGH_CONTRAST_LIGHT = {
 };
 
 const MINIMAL_LIGHT = {
+  '--dropdown-menu-background-color': 'unset',
+  '--top-level-entity-background-color': 'unset',
+  '--button-background-color': 'unset',
+  '--page-background-color': 'unset',
+  '--left-background-color': 'unset',
+  '--header-background-color': 'unset',
+  '--header-shadow': 'none',
   '--accent-color': 'black',
   '--background-color': 'white',
   '--etched-background-color': 'white',
@@ -68,6 +102,13 @@ const MINIMAL_LIGHT = {
 };
 
 const SUNSET = {
+  '--dropdown-menu-background-color': 'unset',
+  '--top-level-entity-background-color': 'unset',
+  '--button-background-color': 'unset',
+  '--page-background-color': 'unset',
+  '--left-background-color': 'unset',
+  '--header-background-color': 'unset',
+  '--header-shadow': 'none',
   '--accent-color': ' #704214',
   '--background-color': '#f0ece7',
   '--etched-background-color': 'color-mix(in srgb, var(--background-color) 100%, var(--accent-color) 1%)',
@@ -88,6 +129,13 @@ const SUNSET = {
 };
 
 const HIGH_CONTRAST_DARK = {
+  '--dropdown-menu-background-color': 'unset',
+  '--top-level-entity-background-color': 'unset',
+  '--button-background-color': 'unset',
+  '--page-background-color': 'unset',
+  '--left-background-color': 'unset',
+  '--header-background-color': 'unset',
+  '--header-shadow': 'none',
   '--accent-color': 'white',
   '--background-color': 'black',
   '--etched-background-color': 'black',
@@ -107,6 +155,13 @@ const HIGH_CONTRAST_DARK = {
 };
 
 const DARK = {
+  '--dropdown-menu-background-color': 'unset',
+  '--top-level-entity-background-color': 'unset',
+  '--button-background-color': 'unset',
+  '--page-background-color': 'unset',
+  '--left-background-color': 'unset',
+  '--header-background-color': 'unset',
+  '--header-shadow': 'none',
   '--accent-color': '#4c6abe',
   '--background-color': '#222326',
   '--etched-background-color': '#202124',
@@ -132,6 +187,8 @@ function themeToCss(theme: Theme): Record<string, string> {
   switch (theme) {
     case 'light':
       return LIGHT;
+    case 'alt-light':
+      return ALT_LIGHT;
     case 'dark':
       return DARK;
     case 'sunset':
@@ -150,6 +207,8 @@ function themeToCss(theme: Theme): Record<string, string> {
 export function getNextTheme(theme: Theme): Theme {
   switch (theme) {
     case 'light':
+      return 'alt-light';
+    case 'alt-light':
       return 'sunset';
     case 'sunset':
       return 'dark';

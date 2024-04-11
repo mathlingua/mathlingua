@@ -20,7 +20,7 @@
 }
 
 .page {
-  background: var(--background-color);
+  background: var(--page-background-color, var(--background-color));
   padding-left: 4em;
   padding-right: 4em;
   padding-top: 1em;
@@ -54,7 +54,8 @@
   border-bottom: solid;
   border-bottom-width: 1px;
   border-bottom-color: var(--border-color);
-  box-shadow: var(--box-shadow);
+  box-shadow: var(--header-shadow, var(--box-shadow));
+  background-color: var(--header-background-color, var(--background-color));
 }
 
 .headerIcon {
@@ -100,6 +101,7 @@
   border-right: solid;
   border-right-width: 1px;
   border-right-color: var(--border-color);
+  background-color: var(--left-background-color, var(--background-color));
 }
 
 .center {

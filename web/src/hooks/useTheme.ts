@@ -9,7 +9,7 @@ export type Theme = 'light' |
                     'minimal-light';
 
 const LIGHT = {
-  '--dropdown-menu-background-color': 'unset',
+  '--dropdown-menu-background-color': 'white',
   '--top-level-entity-background-color': 'unset',
   '--button-background-color': 'unset',
   '--page-background-color': 'unset',
@@ -37,18 +37,19 @@ const LIGHT = {
 
 const ALT_LIGHT = {
   ...LIGHT,
-  '--dropdown-menu-background-color': 'transparent',
+  '--dropdown-menu-background-color': 'white',
   '--top-level-entity-background-color': 'white',
   '--button-background-color': 'transparent',
   '--left-background-color': 'white',
   '--header-background-color': 'white',
-  '--background-color': '#fafafa',
+  '--background-color': '#fbfbfb',
+  '--etched-background-color': '#fcfcfc',
   '--page-background-color': 'var(--background-color)',
   '--header-shadow': 'none',
 };
 
 const HIGH_CONTRAST_LIGHT = {
-  '--dropdown-menu-background-color': 'unset',
+  '--dropdown-menu-background-color': 'white',
   '--top-level-entity-background-color': 'unset',
   '--button-background-color': 'unset',
   '--page-background-color': 'unset',
@@ -75,7 +76,7 @@ const HIGH_CONTRAST_LIGHT = {
 };
 
 const MINIMAL_LIGHT = {
-  '--dropdown-menu-background-color': 'unset',
+  '--dropdown-menu-background-color': 'white',
   '--top-level-entity-background-color': 'unset',
   '--button-background-color': 'unset',
   '--page-background-color': 'unset',
@@ -102,7 +103,7 @@ const MINIMAL_LIGHT = {
 };
 
 const SUNSET = {
-  '--dropdown-menu-background-color': 'unset',
+  '--dropdown-menu-background-color': '#f0ece7',
   '--top-level-entity-background-color': 'unset',
   '--button-background-color': 'unset',
   '--page-background-color': 'unset',
@@ -129,7 +130,7 @@ const SUNSET = {
 };
 
 const HIGH_CONTRAST_DARK = {
-  '--dropdown-menu-background-color': 'unset',
+  '--dropdown-menu-background-color': 'black',
   '--top-level-entity-background-color': 'unset',
   '--button-background-color': 'unset',
   '--page-background-color': 'unset',
@@ -155,7 +156,7 @@ const HIGH_CONTRAST_DARK = {
 };
 
 const DARK = {
-  '--dropdown-menu-background-color': 'unset',
+  '--dropdown-menu-background-color': '#222326',
   '--top-level-entity-background-color': 'unset',
   '--button-background-color': 'unset',
   '--page-background-color': 'unset',

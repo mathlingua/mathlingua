@@ -301,17 +301,6 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: LowerDefineSections,
-		expected: []string{
-			"define",
-			"using?",
-			"when?",
-			"suchThat?",
-			"means?",
-			"as",
-		},
-	},
-	{
 		actual: MonthSections,
 		expected: []string{
 			"month",

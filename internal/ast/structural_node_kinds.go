@@ -53,7 +53,6 @@ func (*LabelGroup) StructuralNodeKind()                        {}
 func (*ByGroup) StructuralNodeKind()                           {}
 func (*DescribesGroup) StructuralNodeKind()                    {}
 func (*DefinesGroup) StructuralNodeKind()                      {}
-func (*LowerDefineGroup) StructuralNodeKind()                  {}
 func (*CapturesGroup) StructuralNodeKind()                     {}
 func (*StatesGroup) StructuralNodeKind()                       {}
 func (*AxiomGroup) StructuralNodeKind()                        {}
@@ -147,7 +146,6 @@ func (*IffGroup) ClauseKind()              {}
 func (*WhenGroup) ClauseKind()             {}
 func (*PiecewiseGroup) ClauseKind()        {}
 func (*LetGroup) ClauseKind()              {}
-func (*LowerDefineGroup) ClauseKind()      {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -257,7 +255,6 @@ type ProofItemKind interface {
 	ProofItemKind()
 }
 
-func (*LowerDefineGroup) ProofItemKind()                  {}
 func (*ProofEquivalentlyGroup) ProofItemKind()            {}
 func (*ProofAllOfGroup) ProofItemKind()                   {}
 func (*ProofNotGroup) ProofItemKind()                     {}

@@ -647,37 +647,6 @@ type MetaIdSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var LowerDefineSections = []string{
-	LowerDefineName,
-	LowerUsingQuestionName,
-	LowerWhenQuestionName,
-	LowerSuchThatQuestionName,
-	LowerMeansQuestionName,
-	LowerAsName,
-}
-
-type LowerDefineGroup struct {
-	Define         LowerDefineSection
-	Using          *UsingSection
-	When           *WhenSection
-	SuchThat       *SuchThatSection
-	Means          *MeansSection
-	As             DefineAsSection
-	CommonMetaData CommonMetaData
-}
-
-type LowerDefineSection struct {
-	Define         Target
-	CommonMetaData CommonMetaData
-}
-
-type DefineAsSection struct {
-	As             []ClauseKind
-	CommonMetaData CommonMetaData
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 var DefinesSections = []string{
 	UpperDefinesName,
 	LowerUsingQuestionName,

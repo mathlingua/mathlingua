@@ -93,7 +93,6 @@ func getFixedCompletions() []string {
 		join(ast.BySections),
 		join(ast.DescribesSections),
 		join(ast.DefinesSections),
-		join(ast.LowerDefineSections),
 		join(ast.CapturesSections),
 		join(ast.StatesSections),
 		join(ast.AxiomSections),

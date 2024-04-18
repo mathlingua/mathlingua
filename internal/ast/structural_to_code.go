@@ -355,20 +355,6 @@ func (n *DefinesGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *LowerDefineGroup) ToCode(indent int, hasDot bool) []string {
-	db := newDebugBuilder()
-	db.AppendSection(LowerDefineName, indent, false)
-	db.Append(&n.Define.Define, indent+2, true)
-	db.MaybeAppendUsingSection(n.Using, indent, false)
-	db.MaybeAppendWhenSection(n.When, indent, false)
-	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
-	if n.Means != nil {
-		db.AppendClausesSection(LowerMeansName, n.Means.Means, indent, false)
-	}
-	db.AppendClausesSection(LowerAsName, n.As.As, indent, false)
-	return db.Lines()
-}
-
 func (n *CapturesGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendIdItem(&n.Id, indent, hasDot)

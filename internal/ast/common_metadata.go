@@ -57,7 +57,6 @@ func (n *LabelGroup) GetCommonMetaData() *CommonMetaData         { return &n.Com
 func (n *ByGroup) GetCommonMetaData() *CommonMetaData            { return &n.CommonMetaData }
 func (n *DescribesGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
 func (n *DefinesGroup) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
-func (n *LowerDefineGroup) GetCommonMetaData() *CommonMetaData   { return &n.CommonMetaData }
 func (n *StatesGroup) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
 func (n *AxiomGroup) GetCommonMetaData() *CommonMetaData         { return &n.CommonMetaData }
 func (n *ConjectureGroup) GetCommonMetaData() *CommonMetaData    { return &n.CommonMetaData }

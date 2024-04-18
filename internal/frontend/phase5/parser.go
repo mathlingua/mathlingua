@@ -1116,60 +1116,6 @@ func (p *parser) toSpecifiesSection(section phase4.Section) *ast.SpecifiesSectio
 	}
 }
 
-/////////////////////////////////////////// lower defines //////////////////////////////////////////
-
-func (p *parser) toLowerDefineGroup(group phase4.Group) (ast.LowerDefineGroup, bool) {
-	if !startsWithSections(group, ast.LowerDefineName) {
-		return ast.LowerDefineGroup{}, false
-	}
-
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LowerDefineSections...)
-	if !ok {
-		return ast.LowerDefineGroup{}, false
-	}
-	define := *p.toLowerDefineSection(sections[ast.LowerDefineName])
-	var using *ast.UsingSection
-	if sec, ok := sections[ast.LowerUsingName]; ok {
-		using = p.toUsingSection(sec)
-	}
-	var when *ast.WhenSection
-	if sec, ok := sections[ast.LowerWhenName]; ok {
-		when = p.toWhenSection(sec)
-	}
-	var suchThat *ast.SuchThatSection
-	if sec, ok := sections[ast.LowerSuchThatName]; ok {
-		suchThat = p.toSuchThatSection(sec)
-	}
-	var means *ast.MeansSection
-	if sec, ok := sections[ast.LowerMeansName]; ok {
-		means = p.toMeansSection(sec)
-	}
-	as := *p.toDefineAsSection(sections[ast.LowerAsName])
-	return ast.LowerDefineGroup{
-		Define:         define,
-		Using:          using,
-		When:           when,
-		SuchThat:       suchThat,
-		Means:          means,
-		As:             as,
-		CommonMetaData: toCommonMetaData(group.MetaData),
-	}, true
-}
-
-func (p *parser) toLowerDefineSection(section phase4.Section) *ast.LowerDefineSection {
-	return &ast.LowerDefineSection{
-		Define:         p.exactlyOneTarget(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
-func (p *parser) toDefineAsSection(section phase4.Section) *ast.DefineAsSection {
-	return &ast.DefineAsSection{
-		As:             p.oneOrMoreClauses(section),
-		CommonMetaData: toCommonMetaData(section.MetaData),
-	}
-}
-
 ///////////////////////////////////////////// defines //////////////////////////////////////////////
 
 func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
@@ -2640,8 +2586,6 @@ func (p *parser) toClause(arg phase4.Argument) ast.ClauseKind {
 			return &grp
 		} else if grp, ok := p.toLetGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toLowerDefineGroup(*data); ok {
-			return &grp
 		}
 	}
 
@@ -2922,8 +2866,6 @@ func (p *parser) toProofItem(arg phase4.Argument) ast.ProofItemKind {
 		} else if grp, ok := p.toProofForAllGroup(*group); ok {
 			return &grp
 		} else if grp, ok := p.toProofLetGroup(*group); ok {
-			return &grp
-		} else if grp, ok := p.toLowerDefineGroup(*group); ok {
 			return &grp
 		} else if grp, ok := p.toProofIfGroup(*group); ok {
 			return &grp

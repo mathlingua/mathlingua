@@ -29,7 +29,7 @@ func (*Spec) MlgNodeKind()               {}
 func (*Alias) MlgNodeKind()              {}
 func (*Formulation[T]) MlgNodeKind()     {}
 func (*TextItem) MlgNodeKind()           {}
-func (*LetGroup) MlgNodeKind()           {}
+func (*DeclareGroup) MlgNodeKind()       {}
 func (*AllOfGroup) MlgNodeKind()         {}
 func (*EquivalentlyGroup) MlgNodeKind()  {}
 func (*NotGroup) MlgNodeKind()           {}
@@ -162,7 +162,7 @@ func (*ProofOneOfGroup) MlgNodeKind()                        {}
 func (*ProofExistsGroup) MlgNodeKind()                       {}
 func (*ProofExistsUniqueGroup) MlgNodeKind()                 {}
 func (*ProofForAllGroup) MlgNodeKind()                       {}
-func (*ProofLetGroup) MlgNodeKind()                          {}
+func (*ProofDeclareGroup) MlgNodeKind()                      {}
 func (*ProofIfGroup) MlgNodeKind()                           {}
 func (*ProofIffGroup) MlgNodeKind()                          {}
 func (*SelectFromBuiltinExpression) MlgNodeKind()            {}

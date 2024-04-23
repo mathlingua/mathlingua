@@ -291,9 +291,9 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: LetSections,
+		actual: DeclareSections,
 		expected: []string{
-			"let",
+			"declare",
 			"using?",
 			"where?",
 			"suchThat?",
@@ -503,9 +503,9 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: ProofLetSections,
+		actual: ProofDeclareSections,
 		expected: []string{
-			"let",
+			"declare",
 			"using?",
 			"where?",
 			"suchThat?",

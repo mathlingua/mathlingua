@@ -28,7 +28,7 @@ func (*Spec) StructuralNodeKind()                              {}
 func (*Alias) StructuralNodeKind()                             {}
 func (*Formulation[T]) StructuralNodeKind()                    {}
 func (*TextItem) StructuralNodeKind()                          {}
-func (*LetGroup) StructuralNodeKind()                          {}
+func (*DeclareGroup) StructuralNodeKind()                      {}
 func (*AllOfGroup) StructuralNodeKind()                        {}
 func (*EquivalentlyGroup) StructuralNodeKind()                 {}
 func (*NotGroup) StructuralNodeKind()                          {}
@@ -112,7 +112,7 @@ func (*ProofOneOfGroup) StructuralNodeKind()                   {}
 func (*ProofExistsGroup) StructuralNodeKind()                  {}
 func (*ProofExistsUniqueGroup) StructuralNodeKind()            {}
 func (*ProofForAllGroup) StructuralNodeKind()                  {}
-func (*ProofLetGroup) StructuralNodeKind()                     {}
+func (*ProofDeclareGroup) StructuralNodeKind()                 {}
 func (*ProofIfGroup) StructuralNodeKind()                      {}
 func (*ProofIffGroup) StructuralNodeKind()                     {}
 func (*ProofForContrapositiveGroup) StructuralNodeKind()       {}
@@ -145,7 +145,7 @@ func (*IfGroup) ClauseKind()               {}
 func (*IffGroup) ClauseKind()              {}
 func (*WhenGroup) ClauseKind()             {}
 func (*PiecewiseGroup) ClauseKind()        {}
-func (*LetGroup) ClauseKind()              {}
+func (*DeclareGroup) ClauseKind()          {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -263,7 +263,7 @@ func (*ProofOneOfGroup) ProofItemKind()                   {}
 func (*ProofExistsGroup) ProofItemKind()                  {}
 func (*ProofExistsUniqueGroup) ProofItemKind()            {}
 func (*ProofForAllGroup) ProofItemKind()                  {}
-func (*ProofLetGroup) ProofItemKind()                     {}
+func (*ProofDeclareGroup) ProofItemKind()                 {}
 func (*ProofIfGroup) ProofItemKind()                      {}
 func (*ProofIffGroup) ProofItemKind()                     {}
 func (*ProofThenGroup) ProofItemKind()                    {}

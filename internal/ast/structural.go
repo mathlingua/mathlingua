@@ -68,17 +68,17 @@ type TextItem struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var LetSections = []string{
-	LowerLetName,
+var DeclareSections = []string{
+	LowerDeclareName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerSuchThatQuestionName,
 	LowerThenName,
 }
 
-type LetGroup struct {
+type DeclareGroup struct {
 	Label          *GroupLabel
-	Let            LetSection
+	Declare        DeclareSection
 	Using          *UsingSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection
@@ -86,8 +86,8 @@ type LetGroup struct {
 	CommonMetaData CommonMetaData
 }
 
-type LetSection struct {
-	Let            []Target
+type DeclareSection struct {
+	Declare        []Target
 	CommonMetaData CommonMetaData
 }
 
@@ -1979,17 +1979,17 @@ type ProofIffSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var ProofLetSections = []string{
-	LowerLetName,
+var ProofDeclareSections = []string{
+	LowerDeclareName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerSuchThatQuestionName,
 	LowerThenName,
 }
 
-type ProofLetGroup struct {
+type ProofDeclareGroup struct {
 	Label          *GroupLabel
-	Let            LetSection
+	Declare        DeclareSection
 	Using          *UsingSection
 	Where          *WhereSection
 	SuchThat       *ProofSuchThatSection

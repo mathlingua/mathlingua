@@ -49,17 +49,17 @@ type parser struct {
 
 ///////////////////////////////////////// let ////////////////////////////////////////////////////
 
-func (p *parser) toLetGroup(group phase4.Group) (ast.LetGroup, bool) {
-	if !startsWithSections(group, ast.LowerLetName) {
-		return ast.LetGroup{}, false
+func (p *parser) toDeclareGroup(group phase4.Group) (ast.DeclareGroup, bool) {
+	if !startsWithSections(group, ast.LowerDeclareName) {
+		return ast.DeclareGroup{}, false
 	}
 
 	label := p.getGroupLabel(group, false)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LetSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.DeclareSections...)
 	if !ok {
-		return ast.LetGroup{}, false
+		return ast.DeclareGroup{}, false
 	}
-	let := *p.toLetSection(sections[ast.LowerLetName])
+	declare := *p.toDeclareSection(sections[ast.LowerDeclareName])
 	var using *ast.UsingSection
 	if sect, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sect)
@@ -73,9 +73,9 @@ func (p *parser) toLetGroup(group phase4.Group) (ast.LetGroup, bool) {
 		suchThat = p.toSuchThatSection(sect)
 	}
 	then := *p.toThenSection(sections[ast.LowerThenName])
-	return ast.LetGroup{
+	return ast.DeclareGroup{
 		Label:          label,
-		Let:            let,
+		Declare:        declare,
 		Using:          using,
 		Where:          where,
 		SuchThat:       suchThat,
@@ -84,9 +84,9 @@ func (p *parser) toLetGroup(group phase4.Group) (ast.LetGroup, bool) {
 	}, true
 }
 
-func (p *parser) toLetSection(section phase4.Section) *ast.LetSection {
-	return &ast.LetSection{
-		Let:            p.oneOrMoreTargets(section),
+func (p *parser) toDeclareSection(section phase4.Section) *ast.DeclareSection {
+	return &ast.DeclareSection{
+		Declare:        p.oneOrMoreTargets(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -2584,7 +2584,7 @@ func (p *parser) toClause(arg phase4.Argument) ast.ClauseKind {
 			return &grp
 		} else if grp, ok := p.toPiecewiseGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toLetGroup(*data); ok {
+		} else if grp, ok := p.toDeclareGroup(*data); ok {
 			return &grp
 		}
 	}
@@ -2865,7 +2865,7 @@ func (p *parser) toProofItem(arg phase4.Argument) ast.ProofItemKind {
 			return &grp
 		} else if grp, ok := p.toProofForAllGroup(*group); ok {
 			return &grp
-		} else if grp, ok := p.toProofLetGroup(*group); ok {
+		} else if grp, ok := p.toProofDeclareGroup(*group); ok {
 			return &grp
 		} else if grp, ok := p.toProofIfGroup(*group); ok {
 			return &grp
@@ -4108,17 +4108,17 @@ func (p *parser) toProofIffSection(section phase4.Section) *ast.ProofIffSection 
 
 ///////////////////////////////////////// let ////////////////////////////////////////////////////
 
-func (p *parser) toProofLetGroup(group phase4.Group) (ast.ProofLetGroup, bool) {
-	if !startsWithSections(group, ast.LowerLetName) {
-		return ast.ProofLetGroup{}, false
+func (p *parser) toProofDeclareGroup(group phase4.Group) (ast.ProofDeclareGroup, bool) {
+	if !startsWithSections(group, ast.LowerDeclareName) {
+		return ast.ProofDeclareGroup{}, false
 	}
 
 	label := p.getGroupLabel(group, false)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.LetSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.DeclareSections...)
 	if !ok {
-		return ast.ProofLetGroup{}, false
+		return ast.ProofDeclareGroup{}, false
 	}
-	let := *p.toLetSection(sections[ast.LowerLetName])
+	declare := *p.toDeclareSection(sections[ast.LowerDeclareName])
 	var using *ast.UsingSection
 	if sect, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sect)
@@ -4132,9 +4132,9 @@ func (p *parser) toProofLetGroup(group phase4.Group) (ast.ProofLetGroup, bool) {
 		suchThat = p.toProofSuchThatSection(sect)
 	}
 	then := *p.toProofThenSection(sections[ast.LowerThenName])
-	return ast.ProofLetGroup{
+	return ast.ProofDeclareGroup{
 		Label:          label,
-		Let:            let,
+		Declare:        declare,
 		Using:          using,
 		Where:          where,
 		SuchThat:       suchThat,

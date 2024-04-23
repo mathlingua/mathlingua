@@ -46,8 +46,8 @@ func (n *TextItem) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
-func (n *LetGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachTarget(n.Let.Let, fn)
+func (n *DeclareGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachTarget(n.Declare.Declare, fn)
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}
@@ -128,8 +128,8 @@ func (n *IffGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Then.Clauses, fn)
 }
 
-func (n *ProofLetGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEachTarget(n.Let.Let, fn)
+func (n *ProofDeclareGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEachTarget(n.Declare.Declare, fn)
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}

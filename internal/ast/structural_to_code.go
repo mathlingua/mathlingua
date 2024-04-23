@@ -73,10 +73,10 @@ func (n *TextItem) ToCode(indent int, hasDot bool) []string {
 	return buildIndentedLineSlice(indent, hasDot, "\""+n.RawText+"\"")
 }
 
-func (n *LetGroup) ToCode(indent int, hasDot bool) []string {
+func (n *DeclareGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.MaybeAppendLetSection(&n.Let, indent, hasDot && n.Label == nil)
+	db.MaybeAppendLetSection(&n.Declare, indent, hasDot && n.Label == nil)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
@@ -877,10 +877,10 @@ func (n *ProofClaimGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *ProofLetGroup) ToCode(indent int, hasDot bool) []string {
+func (n *ProofDeclareGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.MaybeAppendLetSection(&n.Let, indent, hasDot && n.Label == nil)
+	db.MaybeAppendLetSection(&n.Declare, indent, hasDot && n.Label == nil)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendProofSuchThatSection(n.SuchThat, indent, false)
@@ -1196,10 +1196,10 @@ func (db *debugBuilder) MaybeAppendAliasesSection(sec *AliasesSection, indent in
 	}
 }
 
-func (db *debugBuilder) MaybeAppendLetSection(sec *LetSection, indent int, hasDot bool) {
+func (db *debugBuilder) MaybeAppendLetSection(sec *DeclareSection, indent int, hasDot bool) {
 	if sec != nil {
-		db.AppendSection(LowerLetName, indent, hasDot)
-		for _, item := range sec.Let {
+		db.AppendSection(LowerDeclareName, indent, hasDot)
+		for _, item := range sec.Declare {
 			db.Append(&item, indent+2, true)
 		}
 	}

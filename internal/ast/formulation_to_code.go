@@ -390,13 +390,13 @@ func (n *EnclosedNonCommandOperatorTarget) ToCode(
 	prefix := ""
 	suffix := ""
 
-	if n.Type == EnclosedParen {
+	if n.Type == InfixParen {
 		prefix = "(."
 		suffix = ".)"
-	} else if n.Type == EnclosedSquare {
+	} else if n.Type == InfixSquare {
 		prefix = "[."
 		suffix = ".]"
-	} else if n.Type == EnclosedCurly {
+	} else if n.Type == InfixCurly {
 		prefix = "{."
 		suffix = ".}"
 	} else {
@@ -438,7 +438,24 @@ func (n *InfixCommandExpression) ToCode(fn func(node MlgNodeKind) (string, bool)
 	if res, ok := fn(n); ok {
 		return res
 	}
-	result := "\\"
+
+	prefix := ""
+	suffix := ""
+
+	if n.Type == InfixParen {
+		prefix = "\\("
+		suffix = ")/"
+	} else if n.Type == InfixSquare {
+		prefix = "\\["
+		suffix = "]/"
+	} else if n.Type == InfixCurly {
+		prefix = "\\{"
+		suffix = "}/"
+	} else {
+		panic(fmt.Sprintf("Unknown infix command operator type %s", n.Type))
+	}
+
+	result := prefix
 	for i, n := range n.Names {
 		if i > 0 {
 			result += "."
@@ -461,7 +478,7 @@ func (n *InfixCommandExpression) ToCode(fn func(node MlgNodeKind) (string, bool)
 		result += commaSeparatedString(*n.ParenArgs, fn)
 		result += ")"
 	}
-	result += "/"
+	result += suffix
 	return result
 }
 

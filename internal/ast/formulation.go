@@ -427,18 +427,18 @@ type ExpressionColonDashArrowItem struct {
 
 ////////////////////////////////////// Operators ///////////////////////////////////////////////////
 
-type EnclosedType string
+type InfixType string
 
 const (
-	EnclosedSquare EnclosedType = "EnclosedSquare"
-	EnclosedParen  EnclosedType = "EnclosedParen"
-	EnclosedCurly  EnclosedType = "EnclosedCurly"
+	InfixSquare InfixType = "InfixSquare"
+	InfixParen  InfixType = "InfixParen"
+	InfixCurly  InfixType = "InfixCurly"
 )
 
 // [.x.], [.x + y.], (.x.), {.x.}, :(.x.), (.x.):, etc.
 type EnclosedNonCommandOperatorTarget struct {
 	Target              ExpressionKind
-	Type                EnclosedType
+	Type                InfixType
 	HasLeftColon        bool
 	HasRightColon       bool
 	CommonMetaData      CommonMetaData
@@ -454,8 +454,11 @@ type NonEnclosedNonCommandOperatorTarget struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// \function:on{A}:to{B}/
+// \{function:on{A}:to{B}}/
+// \[function:on{A}:to{B}]/
+// \(function:on{A}:to{B})/
 type InfixCommandExpression struct {
+	Type                InfixType
 	Names               []NameForm
 	CurlyArg            *CurlyArg
 	NamedArgs           *[]NamedArg
@@ -498,8 +501,11 @@ type DirectionalParam struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// \function:on{A}:to{B}/
+// \{function:on{A}:to{B}}/
+// \[function:on{A}:to{B}]/
+// \(function:on{A}:to{B})/
 type InfixCommandId struct {
+	Type                InfixType
 	Names               []NameForm
 	CurlyParam          *CurlyParam
 	NamedParams         *[]NamedParam
@@ -532,7 +538,9 @@ type InfixOperatorId struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// A \subset/ B
+// A \{subset}/ B
+// A \(in)/ B
+// A \[in]/ B
 type InfixCommandOperatorId struct {
 	Lhs                 StructuralFormKind
 	Operator            InfixCommandId

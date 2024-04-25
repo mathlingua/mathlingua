@@ -1814,40 +1814,40 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 
-	var enclosedType ast.EnclosedType
+	var infixType ast.InfixType
 	var expectedEnd ast.TokenType
 	var hasLeftColon bool
 
 	if fp.has(ast.LSquareDot) {
 		hasLeftColon = false
-		enclosedType = ast.EnclosedSquare
+		infixType = ast.InfixSquare
 		expectedEnd = ast.DotRSquare
 		fp.expect(ast.LSquareDot)
 	} else if fp.hasHas(ast.Colon, ast.LSquareDot) {
 		hasLeftColon = true
-		enclosedType = ast.EnclosedSquare
+		infixType = ast.InfixSquare
 		expectedEnd = ast.DotRSquare
 		fp.expect(ast.Colon)
 		fp.expect(ast.LSquareDot)
 	} else if fp.has(ast.LParenDot) {
 		hasLeftColon = false
-		enclosedType = ast.EnclosedParen
+		infixType = ast.InfixParen
 		expectedEnd = ast.DotRParen
 		fp.expect(ast.LParenDot)
 	} else if fp.hasHas(ast.Colon, ast.LParenDot) {
 		hasLeftColon = true
-		enclosedType = ast.EnclosedParen
+		infixType = ast.InfixParen
 		expectedEnd = ast.DotRParen
 		fp.expect(ast.Colon)
 		fp.expect(ast.LParenDot)
 	} else if fp.has(ast.LCurlyDot) {
 		hasLeftColon = false
-		enclosedType = ast.EnclosedCurly
+		infixType = ast.InfixCurly
 		expectedEnd = ast.DotRCurly
 		fp.expect(ast.LCurlyDot)
 	} else if fp.hasHas(ast.Colon, ast.LCurlyDot) {
 		hasLeftColon = true
-		enclosedType = ast.EnclosedCurly
+		infixType = ast.InfixCurly
 		expectedEnd = ast.DotRCurly
 		fp.expect(ast.Colon)
 		fp.expect(ast.LCurlyDot)
@@ -1890,7 +1890,7 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	fp.lexer.Commit(id)
 	return ast.EnclosedNonCommandOperatorTarget{
 		Target:        target,
-		Type:          enclosedType,
+		Type:          infixType,
 		HasLeftColon:  hasLeftColon,
 		HasRightColon: hasRightColon,
 		CommonMetaData: ast.CommonMetaData{
@@ -1900,22 +1900,63 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	}, true
 }
 
+// The return type is the InfixType,
+// the expected start type (for either (, [, or {),
+// the expected end type (for either ), ], or }),
+// and whether the next tokens are \[, \(, or \{
+func (fp *formulationParser) checkInfixTypePrefix() (
+	ast.InfixType,
+	ast.TokenType,
+	ast.TokenType,
+	bool,
+) {
+	if fp.hasHas(ast.BackSlash, ast.LSquare) {
+		return ast.InfixSquare, ast.LSquare, ast.RSquare, true
+	} else if fp.hasHas(ast.BackSlash, ast.LParen) {
+		return ast.InfixParen, ast.LParen, ast.RParen, true
+	} else if fp.hasHas(ast.BackSlash, ast.LCurly) {
+		return ast.InfixCurly, ast.LCurly, ast.RCurly, true
+	} else {
+		return "", "", "", false
+	}
+}
+
 func (fp *formulationParser) infixCommandExpression() (ast.InfixCommandExpression, bool) {
+	infixType, expectedStartToken, expectedEndToken, hasInfixType := fp.checkInfixTypePrefix()
+	if !hasInfixType || !fp.hasHas(ast.BackSlash, expectedStartToken) {
+		return ast.InfixCommandExpression{}, false
+	}
+
+	start := fp.lexer.Position()
+
+	fp.expect(ast.BackSlash)
+	fp.expect(expectedStartToken)
+
 	id := fp.lexer.Snapshot()
-	cmd, ok := fp.commandExpression(true)
+	cmd, ok := fp.commandExpressionContent(true, start)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandExpression{}, false
 	}
 
-	if !fp.has(ast.Slash) {
+	if !fp.hasHas(expectedEndToken, ast.Slash) {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandExpression{}, false
 	}
 
+	fp.expect(expectedEndToken)
 	fp.expect(ast.Slash)
+
 	fp.lexer.Commit(id)
-	return ast.InfixCommandExpression(cmd), true
+	return ast.InfixCommandExpression{
+		Type:                infixType,
+		Names:               cmd.Names,
+		CurlyArg:            cmd.CurlyArg,
+		NamedArgs:           cmd.NamedArgs,
+		ParenArgs:           cmd.ParenArgs,
+		CommonMetaData:      cmd.CommonMetaData,
+		FormulationMetaData: cmd.FormulationMetaData,
+	}, true
 }
 
 func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
@@ -1946,14 +1987,19 @@ func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
 }
 
 func (fp *formulationParser) commandExpression(allowOperator bool) (ast.CommandExpression, bool) {
-	start := fp.lexer.Position()
 	if !fp.has(ast.BackSlash) {
 		return ast.CommandExpression{}, false
 	}
-
-	id := fp.lexer.Snapshot()
-	// move past the backslash
+	start := fp.lexer.Position()
 	fp.expect(ast.BackSlash)
+	return fp.commandExpressionContent(allowOperator, start)
+}
+
+func (fp *formulationParser) commandExpressionContent(allowOperator bool, start ast.Position) (
+	ast.CommandExpression,
+	bool,
+) {
+	id := fp.lexer.Snapshot()
 	names := make([]ast.NameForm, 0)
 	for fp.lexer.HasNext() {
 		if name, ok := fp.chainName(); ok {

@@ -2912,22 +2912,35 @@ func (fp *formulationParser) curlyArg() (ast.CurlyArg, bool) {
 }
 
 func (fp *formulationParser) infixCommandId() (ast.InfixCommandId, bool) {
+	infixType, expectedStartToken, expectedEndToken, hasInfixType := fp.checkInfixTypePrefix()
+	if !hasInfixType || !fp.hasHas(ast.BackSlash, expectedStartToken) {
+		return ast.InfixCommandId{}, false
+	}
+
+	start := fp.lexer.Position()
+
+	fp.expect(ast.BackSlash)
+	fp.expect(expectedStartToken)
+
 	id := fp.lexer.Snapshot()
-	cmd, ok := fp.commandId(true)
+	cmd, ok := fp.commandIdContent(true, start)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandId{}, false
 	}
 
-	_, ok = fp.token(ast.Slash)
-	if !ok {
+	if !fp.hasHas(expectedEndToken, ast.Slash) {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandId{}, false
 	}
+
+	fp.expect(expectedEndToken)
+	fp.expect(ast.Slash)
 
 	fp.lexer.Commit(id)
 	return ast.InfixCommandId{
 		Names:          cmd.Names,
+		Type:           infixType,
 		CurlyParam:     cmd.CurlyParam,
 		NamedParams:    cmd.NamedParams,
 		ParenParams:    cmd.ParenParams,
@@ -2940,9 +2953,15 @@ func (fp *formulationParser) commandId(allowOperator bool) (ast.CommandId, bool)
 	if !fp.has(ast.BackSlash) {
 		return ast.CommandId{}, false
 	}
-
-	id := fp.lexer.Snapshot()
 	fp.expect(ast.BackSlash)
+	return fp.commandIdContent(allowOperator, start)
+}
+
+func (fp *formulationParser) commandIdContent(allowOperator bool, start ast.Position) (
+	ast.CommandId,
+	bool,
+) {
+	id := fp.lexer.Snapshot()
 	names := make([]ast.NameForm, 0)
 	for fp.lexer.HasNext() {
 		if name, ok := fp.chainName(); ok {

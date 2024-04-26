@@ -537,7 +537,24 @@ func (n *InfixCommandId) ToCode(fn func(node MlgNodeKind) (string, bool)) string
 	if res, ok := fn(n); ok {
 		return res
 	}
-	result := "\\"
+
+	prefix := ""
+	suffix := ""
+
+	if n.Type == InfixParen {
+		prefix = "\\("
+		suffix = ")/"
+	} else if n.Type == InfixSquare {
+		prefix = "\\["
+		suffix = "]/"
+	} else if n.Type == InfixCurly {
+		prefix = "\\{"
+		suffix = "}/"
+	} else {
+		panic(fmt.Sprintf("Unknown infix command operator type %s", n.Type))
+	}
+
+	result := prefix
 	for i, n := range n.Names {
 		if i > 0 {
 			result += "."
@@ -560,7 +577,7 @@ func (n *InfixCommandId) ToCode(fn func(node MlgNodeKind) (string, bool)) string
 		result += commaSeparatedStringOfNameForms(*n.ParenParams, fn)
 		result += ")"
 	}
-	result += "/"
+	result += suffix
 	return result
 }
 

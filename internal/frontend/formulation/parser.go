@@ -2938,6 +2938,11 @@ func (fp *formulationParser) infixCommandId() (ast.InfixCommandId, bool) {
 	fp.expect(ast.Slash)
 
 	fp.lexer.Commit(id)
+
+	if infixType == ast.InfixParen {
+		fp.errorAt("An id cannot use the form \\(...)/.  Instead use form \\[...]//", start)
+	}
+
 	return ast.InfixCommandId{
 		Names:          cmd.Names,
 		Type:           infixType,

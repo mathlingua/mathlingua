@@ -793,6 +793,8 @@ func (fp *formulationParser) pseudoExpression(
 			children = append(children, &set)
 		} else if sig, ok := fp.signature(); ok {
 			children = append(children, &sig)
+		} else if exp, ok := fp.typeOfBuiltinExpression(); ok {
+			children = append(children, &exp)
 		} else if kind, ok := fp.typeMetaKind(); ok {
 			children = append(children, &kind)
 		} else if kind, ok := fp.formulationMetaKinds(); ok {
@@ -803,6 +805,12 @@ func (fp *formulationParser) pseudoExpression(
 			children = append(children, &cmd)
 		} else if cmd, ok := fp.definitionBuiltinExpression(); ok {
 			children = append(children, &cmd)
+		} else if exp, ok := fp.booleanBuiltinExpression(); ok {
+			children = append(children, &exp)
+		} else if exp, ok := fp.trueBuiltinExpression(); ok {
+			children = append(children, &exp)
+		} else if exp, ok := fp.falseBuiltinExpression(); ok {
+			children = append(children, &exp)
 		} else if cmd, ok := fp.infixCommandExpression(); ok {
 			children = append(children, &cmd)
 		} else if cmd, ok := fp.commandExpression(false); ok {
@@ -1224,6 +1232,161 @@ func (fp *formulationParser) definitionBuiltinExpression() (ast.DefinitionBuilti
 	return ast.DefinitionBuiltinExpression{
 		Of:        of,
 		Satisfies: satisfies,
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) typeOfBuiltinExpression() (ast.TypeOfBuiltinExpression, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
+		fp.lexer.RollBack(id)
+		return ast.TypeOfBuiltinExpression{}, false
+	}
+
+	fp.expect(ast.BackSlash) // skip the \
+	fp.expect(ast.BackSlash) // skip the \
+
+	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "type" {
+		fp.lexer.RollBack(id)
+		return ast.TypeOfBuiltinExpression{}, false
+	}
+
+	typeName, _ := fp.expect(ast.Name) // skip the "type" name
+
+	if !fp.has(ast.Colon) {
+		// then the input could be \\type{x} and so return false
+		// to indicate no match
+		fp.lexer.RollBack(id)
+		return ast.TypeOfBuiltinExpression{}, false
+	}
+
+	if !fp.hasHas(ast.Colon, ast.Name) || fp.lexer.PeekPeek().Text != "of" {
+		fp.errorAt("Expected :of{} to follow \\\\type{}", typeName.Position)
+		fp.lexer.Commit(id)
+		return ast.TypeOfBuiltinExpression{
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+
+	fp.expect(ast.Colon)
+	ofName, _ := fp.expect(ast.Name) // move past the of name
+
+	if !fp.has(ast.LCurly) {
+		fp.errorAt("Expected {", ofName.Position)
+		fp.lexer.Commit(id)
+		return ast.TypeOfBuiltinExpression{
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+
+	fp.expect(ast.LCurly)
+	of, ok := fp.expressionKind()
+	if !ok {
+		fp.errorAt("Expected a name", ofName.Position)
+		fp.lexer.Commit(id)
+		return ast.TypeOfBuiltinExpression{
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	}
+	fp.expect(ast.RCurly)
+
+	fp.lexer.Commit(id)
+	return ast.TypeOfBuiltinExpression{
+		Of: of,
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) booleanBuiltinExpression() (ast.BooleanBuiltinExpression, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
+		fp.lexer.RollBack(id)
+		return ast.BooleanBuiltinExpression{}, false
+	}
+
+	fp.expect(ast.BackSlash) // skip the \
+	fp.expect(ast.BackSlash) // skip the \
+
+	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "boolean" {
+		fp.lexer.RollBack(id)
+		return ast.BooleanBuiltinExpression{}, false
+	}
+
+	fp.expect(ast.Name) // skip the "boolean" name
+
+	fp.lexer.Commit(id)
+	return ast.BooleanBuiltinExpression{
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) trueBuiltinExpression() (ast.TrueBuiltinExpression, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
+		fp.lexer.RollBack(id)
+		return ast.TrueBuiltinExpression{}, false
+	}
+
+	fp.expect(ast.BackSlash) // skip the \
+	fp.expect(ast.BackSlash) // skip the \
+
+	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "true" {
+		fp.lexer.RollBack(id)
+		return ast.TrueBuiltinExpression{}, false
+	}
+
+	fp.expect(ast.Name) // skip the "true" name
+
+	fp.lexer.Commit(id)
+	return ast.TrueBuiltinExpression{
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) falseBuiltinExpression() (ast.FalseBuiltinExpression, bool) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
+		fp.lexer.RollBack(id)
+		return ast.FalseBuiltinExpression{}, false
+	}
+
+	fp.expect(ast.BackSlash) // skip the \
+	fp.expect(ast.BackSlash) // skip the \
+
+	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "false" {
+		fp.lexer.RollBack(id)
+		return ast.FalseBuiltinExpression{}, false
+	}
+
+	fp.expect(ast.Name) // skip the "false" name
+
+	fp.lexer.Commit(id)
+	return ast.FalseBuiltinExpression{
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

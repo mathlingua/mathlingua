@@ -313,6 +313,35 @@ type DefinitionBuiltinExpression struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// \\type:of{x}
+type TypeOfBuiltinExpression struct {
+	Of                  ExpressionKind
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// \\boolean
+type BooleanBuiltinExpression struct {
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+// \\true
+type TrueBuiltinExpression struct {
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+// \\false
+type FalseBuiltinExpression struct {
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // \:a.b.c:x:y::(inner.label)
 type Signature struct {
 	MainNames           []string

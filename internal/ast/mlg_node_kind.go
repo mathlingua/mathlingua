@@ -182,3 +182,7 @@ func (*ProofPartwiseGroup) MlgNodeKind()                     {}
 func (*ProofSufficesToShowGroup) MlgNodeKind()               {}
 func (*ProofToShowGroup) MlgNodeKind()                       {}
 func (*ProofRemarkGroup) MlgNodeKind()                       {}
+func (*TypeOfBuiltinExpression) MlgNodeKind()                {}
+func (*BooleanBuiltinExpression) MlgNodeKind()               {}
+func (*TrueBuiltinExpression) MlgNodeKind()                  {}
+func (*FalseBuiltinExpression) MlgNodeKind()                 {}

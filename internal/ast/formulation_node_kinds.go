@@ -71,6 +71,10 @@ func (*DefinitionBuiltinExpression) FormulationNodeKind()            {}
 func (*MapToElseBuiltinExpression) FormulationNodeKind()             {}
 func (*CommandTypeForm) FormulationNodeKind()                        {}
 func (*InfixCommandTypeForm) FormulationNodeKind()                   {}
+func (*TypeOfBuiltinExpression) FormulationNodeKind()                {}
+func (*BooleanBuiltinExpression) FormulationNodeKind()               {}
+func (*TrueBuiltinExpression) FormulationNodeKind()                  {}
+func (*FalseBuiltinExpression) FormulationNodeKind()                 {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -158,6 +162,10 @@ func (*MapToElseBuiltinExpression) ExpressionKind()             {}
 func (*CommandTypeForm) ExpressionKind()                        {}
 func (*InfixCommandTypeForm) ExpressionKind()                   {}
 func (*TypeMetaKind) ExpressionKind()                           {}
+func (*TypeOfBuiltinExpression) ExpressionKind()                {}
+func (*BooleanBuiltinExpression) ExpressionKind()               {}
+func (*TrueBuiltinExpression) ExpressionKind()                  {}
+func (*FalseBuiltinExpression) ExpressionKind()                 {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -184,6 +192,9 @@ func (*PostfixOperatorCallExpression) KindKind() {} // B!
 func (*InfixOperatorCallExpression) KindKind()   {} // A \to/ B
 func (*TypeMetaKind) KindKind()                  {} // \\type{\[set] & \[group]}
 func (*FormulationMetaKind) KindKind()           {} // \\formulation{expression | statement}
+func (*BooleanBuiltinExpression) KindKind()      {} // \\boolean
+func (*TrueBuiltinExpression) KindKind()         {} // \\true
+func (*FalseBuiltinExpression) KindKind()        {} // \\false
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

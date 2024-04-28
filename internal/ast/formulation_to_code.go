@@ -309,6 +309,37 @@ func (n *DefinitionBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, 
 	return result
 }
 
+func (n *TypeOfBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	result := "\\\\type:of{"
+	result += n.Of.ToCode(fn)
+	result += "}"
+	return result
+}
+
+func (n *BooleanBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	return "\\\\boolean"
+}
+
+func (n *TrueBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	return "\\\\true"
+}
+
+func (n *FalseBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	return "\\\\false"
+}
+
 func (n *TypeMetaKind) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res

@@ -203,3 +203,19 @@ func (n *CommandTypeForm) GetFormulationMetaData() *FormulationMetaData {
 func (n *InfixCommandTypeForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
+
+func (n *TypeOfBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}
+
+func (n *BooleanBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}
+
+func (n *TrueBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}
+
+func (n *FalseBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}

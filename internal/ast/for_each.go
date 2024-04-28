@@ -853,6 +853,19 @@ func (n *MapToElseBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
+func (n *TypeOfBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(n.Of)
+}
+
+func (n *BooleanBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
+}
+
+func (n *TrueBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
+}
+
+func (n *FalseBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
+}
+
 func (n *TypeMetaKind) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Types != nil {
 		forEachTypeKind(*n.Types, fn)

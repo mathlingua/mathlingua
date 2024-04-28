@@ -63,3 +63,7 @@ func (n *DefinitionBuiltinExpression) Start() Position            { return n.Com
 func (n *MapToElseBuiltinExpression) Start() Position             { return n.CommonMetaData.Start }
 func (n *CommandTypeForm) Start() Position                        { return n.CommonMetaData.Start }
 func (n *InfixCommandTypeForm) Start() Position                   { return n.CommonMetaData.Start }
+func (n *TypeOfBuiltinExpression) Start() Position                { return n.CommonMetaData.Start }
+func (n *BooleanBuiltinExpression) Start() Position               { return n.CommonMetaData.Start }
+func (n *TrueBuiltinExpression) Start() Position                  { return n.CommonMetaData.Start }
+func (n *FalseBuiltinExpression) Start() Position                 { return n.CommonMetaData.Start }

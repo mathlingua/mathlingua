@@ -324,3 +324,19 @@ func (n *ProofToShowGroup) GetCommonMetaData() *CommonMetaData {
 func (n *ProofRemarkGroup) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
+
+func (n *TypeOfBuiltinExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *BooleanBuiltinExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *TrueBuiltinExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *FalseBuiltinExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}

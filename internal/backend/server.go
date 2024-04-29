@@ -130,7 +130,7 @@ func paths(workspace *Workspace, writer http.ResponseWriter, request *http.Reque
 func page(workspace *Workspace, writer http.ResponseWriter, request *http.Request) {
 	setJsonContentKind(writer)
 	path := request.URL.Query().Get("path")
-	doc, diagnostics := workspace.GetDocumentAt(ast.ToPath(path))
+	doc, _, diagnostics := workspace.GetDocumentAt(ast.ToPath(path))
 
 	resp := PageResponse{
 		Diagnostics: diagnostics,

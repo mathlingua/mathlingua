@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/backend"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/formulation"
 	"mathlingua/internal/frontend/phase1"
@@ -318,6 +319,8 @@ func parseForStructural(text string) (string, string, *frontend.DiagnosticTracke
 
 	root := phase4.Parse(lexer3, "", tracker)
 	doc, ok := phase5.Parse(root, "", tracker, mlglib.NewKeyGenerator())
+
+	backend.CheckRequirements(ast.ToPath("/"), &doc, tracker)
 
 	astText := ""
 	if ok {

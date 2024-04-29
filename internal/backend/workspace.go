@@ -160,7 +160,9 @@ func (w *Workspace) Check() CheckResult {
 	for _, pair := range w.Paths() {
 		// get all of the documents to populate the tracker
 		// with any rendering errors
-		w.GetDocumentAt(pair.Path)
+		path := pair.Path
+		_, astDoc, _ := w.GetDocumentAt(path)
+		CheckRequirements(pair.Path, &astDoc, w.nodeTracker.tracker)
 	}
 	return CheckResult{
 		Diagnostics: w.diasnosticTracker.Diagnostics(),
@@ -182,11 +184,11 @@ func (w *Workspace) Paths() []PathLabelPair {
 	return result
 }
 
-func (w *Workspace) GetDocumentAt(path ast.Path) (phase4.Document, []frontend.Diagnostic) {
-	astDoc, phase4Doc := w.nodeTracker.GetDocumentAt(path)
-	result := w.writtenResolver.GetRenderedNode(path, &astDoc, &phase4Doc)
+func (w *Workspace) GetDocumentAt(path ast.Path) (phase4.Document, ast.Document, []frontend.Diagnostic) {
+	phase4Doc, astDoc := w.nodeTracker.GetDocumentAt(path)
+	result := w.writtenResolver.GetRenderedNode(path, &phase4Doc, &astDoc)
 	resultDoc, _ := result.(*phase4.Document)
-	return *resultDoc, w.getDiagnosticsForPath(path)
+	return *resultDoc, astDoc, w.getDiagnosticsForPath(path)
 }
 
 func (w *Workspace) GetEntryById(id string) (phase4.TopLevelNodeKind, error) {

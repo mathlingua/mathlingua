@@ -195,6 +195,7 @@ func (*FormulationMetaKind) KindKind()           {} // \\formulation{expression 
 func (*BooleanBuiltinExpression) KindKind()      {} // \\boolean
 func (*TrueBuiltinExpression) KindKind()         {} // \\true
 func (*FalseBuiltinExpression) KindKind()        {} // \\false
+func (*TypeOfBuiltinExpression) KindKind()       {} // \\type:of{x}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

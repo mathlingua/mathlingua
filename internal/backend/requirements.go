@@ -17,6 +17,7 @@
 package backend
 
 import (
+	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 )
@@ -39,6 +40,10 @@ func CheckRequirements(
 		checkLemmaGroup(path, *n, tracker)
 	case *ast.ProofClaimGroup:
 		checkProofClaimGroup(path, *n, tracker)
+	case *ast.IsExpression:
+		checkIsExpression(path, *n, tracker)
+	case *ast.AlsoExpression:
+		checkAlsoExpression(path, *n, tracker)
 	}
 
 	node.ForEach(func(subNode ast.MlgNodeKind) {
@@ -130,31 +135,85 @@ func checkProofClaimGroup(
 		tracker)
 }
 
+func checkIsExpression(
+	path ast.Path,
+	node ast.IsExpression,
+	tracker *frontend.DiagnosticTracker,
+) {
+	checkIsOrAlsoExpression(path, node.GetCommonMetaData().Start, "is", node.Rhs, tracker)
+}
+
+func checkAlsoExpression(
+	path ast.Path,
+	node ast.AlsoExpression,
+	tracker *frontend.DiagnosticTracker,
+) {
+	checkIsOrAlsoExpression(path, node.GetCommonMetaData().Start, "also", node.Rhs, tracker)
+}
+
+func checkIsOrAlsoExpression(
+	path ast.Path,
+	position ast.Position,
+	isOrAlsoName string,
+	rhs []ast.KindKind,
+	tracker *frontend.DiagnosticTracker,
+) {
+	for _, item := range rhs {
+		_, isName := item.(*ast.NameForm)
+		_, isType := item.(*ast.TypeMetaKind)
+		_, isTypeOf := item.(*ast.TypeOfBuiltinExpression)
+		_, isBoolean := item.(*ast.BooleanBuiltinExpression)
+		_, isTrue := item.(*ast.TrueBuiltinExpression)
+		_, isFalse := item.(*ast.FalseBuiltinExpression)
+		_, isCommand := item.(*ast.CommandExpression)
+		if !isName && !isType && !isTypeOf && !isBoolean && !isTrue && !isFalse && !isCommand {
+			appendError(
+				path,
+				position,
+				fmt.Sprintf("The right-hand-side of an '%s' statement ", isOrAlsoName)+
+					"can only contain a name, command, \\\\type, \\\\type:of, "+
+					"\\\\boolean, \\\\true, or \\\\false",
+				tracker)
+		}
+	}
+}
+
 func checkResultGivenSuchThatIf(
 	path ast.Path,
-	potition ast.Position,
+	position ast.Position,
 	givenSection *ast.GivenSection,
 	suchThatSection *ast.SuchThatSection,
 	ifSection *ast.IfSection,
 	tracker *frontend.DiagnosticTracker,
 ) {
 	if suchThatSection != nil && ifSection != nil {
-		tracker.Append(frontend.Diagnostic{
-			Type:     frontend.Error,
-			Origin:   frontend.BackendOrigin,
-			Message:  "An if: section cannot be specified if a suchThat: section is specified",
-			Position: potition,
-			Path:     path,
-		})
+		appendError(
+			path,
+			position,
+			"An if: section cannot be specified if a suchThat: section is specified",
+			tracker)
 	}
 
 	if givenSection != nil && ifSection != nil {
-		tracker.Append(frontend.Diagnostic{
-			Type:     frontend.Error,
-			Origin:   frontend.BackendOrigin,
-			Message:  "An if: section cannot be specified if a given: section is specified",
-			Position: potition,
-			Path:     path,
-		})
+		appendError(
+			path,
+			position,
+			"An if: section cannot be specified if a given: section is specified",
+			tracker)
 	}
+}
+
+func appendError(
+	path ast.Path,
+	potition ast.Position,
+	message string,
+	tracker *frontend.DiagnosticTracker,
+) {
+	tracker.Append(frontend.Diagnostic{
+		Type:     frontend.Error,
+		Origin:   frontend.BackendOrigin,
+		Message:  message,
+		Position: potition,
+		Path:     path,
+	})
 }

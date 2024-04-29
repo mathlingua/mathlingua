@@ -356,6 +356,7 @@ func parseForFormulation(text string) (string, string, *frontend.DiagnosticTrack
 	tracker := frontend.NewDiagnosticTracker()
 	node, ok := formulation.ParseExpression(
 		"", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
+	backend.CheckRequirements(ast.ToPath("/"), node, tracker)
 	astText := ""
 	if ok {
 		astText = ast.FormulationNodeToCode(node, ast.NoOp)
@@ -382,6 +383,7 @@ func parse(text string) (ast.MlgNodeKind, frontend.IDiagnosticTracker) {
 func parseForForm(text string) (string, string, *frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, ok := formulation.ParseForm("", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
+	backend.CheckRequirements(ast.ToPath("/"), node, tracker)
 	astText := ""
 	if ok {
 		astText = ast.FormulationNodeToCode(node, ast.NoOp)
@@ -409,6 +411,7 @@ func parseForSignature(text string) (string, string, *frontend.DiagnosticTracker
 	tracker := frontend.NewDiagnosticTracker()
 	node, ok := formulation.ParseSignature(
 		"", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
+	backend.CheckRequirements(ast.ToPath("/"), &node, tracker)
 	astText := ""
 	if ok {
 		astText = ast.FormulationNodeToCode(&node, ast.NoOp)
@@ -421,6 +424,7 @@ func parseForSignature(text string) (string, string, *frontend.DiagnosticTracker
 func parseForId(text string) (string, string, *frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, ok := formulation.ParseId("", text, ast.Position{}, tracker, mlglib.NewKeyGenerator())
+	backend.CheckRequirements(ast.ToPath("/"), node, tracker)
 	astText := ""
 	if ok {
 		astText = ast.FormulationNodeToCode(node, ast.NoOp)

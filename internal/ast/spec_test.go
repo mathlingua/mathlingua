@@ -430,6 +430,7 @@ var all_group_test_cases = []testCase{
 			"given?",
 			"using?",
 			"where?",
+			"suchThat?",
 			"if?",
 			"iff?",
 			"then",

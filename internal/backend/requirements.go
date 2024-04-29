@@ -37,6 +37,8 @@ func CheckRequirements(
 		checkTheoremGroup(path, *n, tracker)
 	case *ast.LemmaGroup:
 		checkLemmaGroup(path, *n, tracker)
+	case *ast.ProofClaimGroup:
+		checkProofClaimGroup(path, *n, tracker)
 	}
 
 	node.ForEach(func(subNode ast.MlgNodeKind) {
@@ -103,6 +105,20 @@ func checkTheoremGroup(
 func checkLemmaGroup(
 	path ast.Path,
 	node ast.LemmaGroup,
+	tracker *frontend.DiagnosticTracker,
+) {
+	checkResultGivenSuchThatIf(
+		path,
+		node.GetCommonMetaData().Start,
+		node.Given,
+		node.SuchThat,
+		node.If,
+		tracker)
+}
+
+func checkProofClaimGroup(
+	path ast.Path,
+	node ast.ProofClaimGroup,
 	tracker *frontend.DiagnosticTracker,
 ) {
 	checkResultGivenSuchThatIf(

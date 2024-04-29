@@ -868,6 +868,7 @@ func (n *ProofClaimGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendGivenSection(n.Given, indent, false)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
+	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
 	db.MaybeAppendIfSection(n.If, indent, false)
 	db.MaybeAppendIffSection(n.Iff, indent, false)
 	db.MaybeAppendThenSection(&n.Then, indent, false)

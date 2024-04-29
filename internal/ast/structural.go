@@ -1780,6 +1780,7 @@ var ProofClaimSections = []string{
 	LowerGivenQuestionName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
+	LowerSuchThatQuestionName,
 	LowerIfQuestionName,
 	LowerIffQuestionName,
 	LowerThenName,
@@ -1792,6 +1793,7 @@ type ProofClaimGroup struct {
 	Given          *GivenSection
 	Using          *UsingSection
 	Where          *WhereSection
+	SuchThat       *SuchThatSection
 	If             *IfSection
 	Iff            *IffSection
 	Then           ThenSection

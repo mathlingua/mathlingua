@@ -615,6 +615,7 @@ Proof:
   given: x
   using: y
   where: 'y is \y'
+  suchThat: 'x > 0'
   if: 'y > 0'
   then: 'y > 0'
 . equivalently:

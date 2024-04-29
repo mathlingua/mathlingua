@@ -3657,6 +3657,10 @@ func (p *parser) toProofClaimGroup(group phase4.Group) (ast.ProofClaimGroup, boo
 	if sec, ok := sections[ast.LowerWhereName]; ok {
 		where = p.toWhereSection(sec)
 	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections[ast.LowerSuchThatName]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
 	var ifSec *ast.IfSection
 	if sec, ok := sections[ast.LowerIfName]; ok {
 		ifSec = p.toIfSection(sec)
@@ -3676,6 +3680,7 @@ func (p *parser) toProofClaimGroup(group phase4.Group) (ast.ProofClaimGroup, boo
 		Given:          given,
 		Using:          using,
 		Where:          where,
+		SuchThat:       suchThat,
 		If:             ifSec,
 		Iff:            iff,
 		Then:           then,

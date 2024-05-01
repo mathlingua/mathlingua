@@ -27,6 +27,10 @@ func CheckRequirements(
 	node ast.MlgNodeKind,
 	tracker *frontend.DiagnosticTracker,
 ) {
+	if node == nil {
+		return
+	}
+
 	switch n := node.(type) {
 	case *ast.AxiomGroup:
 		checkAxiomGroup(path, *n, tracker)

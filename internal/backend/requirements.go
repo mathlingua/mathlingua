@@ -170,13 +170,14 @@ func checkIsOrAlsoExpression(
 		_, isTrue := item.(*ast.TrueBuiltinExpression)
 		_, isFalse := item.(*ast.FalseBuiltinExpression)
 		_, isCommand := item.(*ast.CommandExpression)
-		if !isName && !isType && !isTypeOf && !isBoolean && !isTrue && !isFalse && !isCommand {
+		_, isFormulation := item.(*ast.FormulationMetaKind)
+		if !isName && !isType && !isTypeOf && !isBoolean && !isTrue && !isFalse && !isCommand && !isFormulation {
 			appendError(
 				path,
 				position,
 				fmt.Sprintf("The right-hand-side of an '%s' statement ", isOrAlsoName)+
 					"can only contain a name, command, \\\\type, \\\\type:of, "+
-					"\\\\boolean, \\\\true, or \\\\false",
+					"\\\\boolean, \\\\true, \\\\false, or \\\\formulation",
 				tracker)
 		}
 	}

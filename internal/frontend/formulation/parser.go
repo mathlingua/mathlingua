@@ -2014,8 +2014,6 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 		expectedEnd = ast.DotRCurly
 		fp.expect(ast.Colon)
 		fp.expect(ast.LCurlyDot)
-	} else {
-		panic("Reached an enclosed operator with an unexpected start")
 	}
 
 	start := fp.lexer.Position()
@@ -3214,9 +3212,17 @@ func (fp *formulationParser) commandType(allowOperator bool) (ast.CommandTypeFor
 		return ast.CommandTypeForm{}, false
 	}
 
-	id := fp.lexer.Snapshot()
 	fp.expect(ast.BackSlash)
 	fp.expect(ast.Colon)
+
+	return fp.commandTypeContent(allowOperator, start)
+}
+
+func (fp *formulationParser) commandTypeContent(
+	allowOperator bool,
+	start ast.Position,
+) (ast.CommandTypeForm, bool) {
+	id := fp.lexer.Snapshot()
 	names := make([]ast.NameForm, 0)
 	for fp.lexer.HasNext() {
 		if name, ok := fp.chainName(); ok {
@@ -3282,23 +3288,59 @@ func (fp *formulationParser) commandType(allowOperator bool) (ast.CommandTypeFor
 }
 
 func (fp *formulationParser) infixCommandType() (ast.InfixCommandTypeForm, bool) {
+	if !fp.hasHas(ast.BackSlash, ast.Colon) {
+		return ast.InfixCommandTypeForm{}, false
+	}
+
+	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
-	cmd, ok := fp.commandType(true)
+
+	fp.expect(ast.BackSlash)
+	fp.expect(ast.Colon)
+
+	var infixType ast.InfixType
+	var expectedEnd ast.TokenType
+
+	if fp.has(ast.LParen) {
+		infixType = ast.InfixParen
+		expectedEnd = ast.RParen
+		fp.expect(ast.LParen)
+	} else if fp.has(ast.LSquare) {
+		infixType = ast.InfixSquare
+		expectedEnd = ast.RSquare
+		fp.expect(ast.LSquare)
+	} else if fp.has(ast.LCurly) {
+		infixType = ast.InfixCurly
+		expectedEnd = ast.RCurly
+		fp.expect(ast.LCurly)
+	} else {
+		// the tokens \: were found but is not followed by
+		// (, [, or { and so the text is not an infix command type
+		// but rather an non-infix command type
+		fp.lexer.RollBack(id)
+		return ast.InfixCommandTypeForm{}, false
+	}
+
+	cmd, ok := fp.commandTypeContent(true, start)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandTypeForm{}, false
 	}
 
-	if !fp.hasHas(ast.Colon, ast.Slash) {
+	if !fp.hasHas(expectedEnd, ast.Colon) {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandTypeForm{}, false
 	}
 
+	fp.expect(expectedEnd)
 	fp.expect(ast.Colon)
+
+	// also expect a slash and report an error if it is not found
 	fp.expect(ast.Slash)
 
 	fp.lexer.Commit(id)
 	return ast.InfixCommandTypeForm{
+		InfixType:       infixType,
 		Names:           cmd.Names,
 		CurlyTypeParam:  cmd.CurlyTypeParam,
 		NamedTypeParams: cmd.NamedTypeParams,
@@ -3500,6 +3542,7 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 				MainNames:           mainNames,
 				NamedGroupNames:     namedGroupNames,
 				IsInfix:             true,
+				InfixType:           t.InfixType,
 				InnerLabel:          nil, // will be added below
 				CommonMetaData:      *typeKind.GetCommonMetaData(),
 				FormulationMetaData: *typeKind.GetFormulationMetaData(),

@@ -343,10 +343,14 @@ type FalseBuiltinExpression struct {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // \:a.b.c:x:y::(inner.label)
+// \:{a.b.c:x:y}:/::(inner.label)
+// \:[a.b.c:x:y]:/::(inner.label)
+// \:(a.b.c:x:y):/::(inner.label)
 type Signature struct {
 	MainNames           []string
 	NamedGroupNames     []string
 	IsInfix             bool
+	InfixType           InfixType
 	InnerLabel          *string
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
@@ -356,6 +360,7 @@ type Signature struct {
 
 // \:function:on{\:set}:to{\:set}:/
 type InfixCommandTypeForm struct {
+	InfixType           InfixType
 	Names               []NameForm
 	CurlyTypeParam      *CurlyTypeParam
 	NamedTypeParams     *[]NamedTypeParam

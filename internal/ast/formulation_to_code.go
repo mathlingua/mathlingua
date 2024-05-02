@@ -237,7 +237,29 @@ func (n *Signature) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
 	}
-	result := "\\:"
+
+	prefix := ""
+	suffix := ""
+
+	if n.IsInfix {
+		if n.InfixType == InfixParen {
+			prefix = "\\:("
+			suffix = "):/"
+		} else if n.InfixType == InfixSquare {
+			prefix = "\\:["
+			suffix = "]:/"
+		} else if n.InfixType == InfixCurly {
+			prefix = "\\:{"
+			suffix = "}:/"
+		} else {
+			panic(fmt.Sprintf("Unknown signature infix type %s", n.InfixType))
+		}
+	} else {
+		prefix = "\\:"
+		suffix = ""
+	}
+
+	result := prefix
 	for i, item := range n.MainNames {
 		if i > 0 {
 			result += "."
@@ -248,9 +270,7 @@ func (n *Signature) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 		result += ":"
 		result += item
 	}
-	if n.IsInfix {
-		result += ":/"
-	}
+	result += suffix
 	if n.InnerLabel != nil {
 		result += "::(" + *n.InnerLabel + ")"
 	}
@@ -865,7 +885,24 @@ func (n *InfixCommandTypeForm) ToCode(fn func(node MlgNodeKind) (string, bool)) 
 	if res, ok := fn(n); ok {
 		return res
 	}
-	result := "\\:"
+
+	prefix := ""
+	suffix := ""
+
+	if n.InfixType == InfixParen {
+		prefix = "\\:("
+		suffix = "):/"
+	} else if n.InfixType == InfixSquare {
+		prefix = "\\:["
+		suffix = "]:/"
+	} else if n.InfixType == InfixCurly {
+		prefix = "\\:{"
+		suffix = "}:/"
+	} else {
+		panic(fmt.Sprintf("Unknown signature infix type %s", n.InfixType))
+	}
+
+	result := prefix
 	for i, n := range n.Names {
 		if i > 0 {
 			result += "."
@@ -888,7 +925,7 @@ func (n *InfixCommandTypeForm) ToCode(fn func(node MlgNodeKind) (string, bool)) 
 		result += commaSeparatedString(*n.ParenTypeParams, fn)
 		result += ")"
 	}
-	result += ":/"
+	result += suffix
 	return result
 }
 

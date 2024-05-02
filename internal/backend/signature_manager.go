@@ -320,6 +320,7 @@ func GetSignatureStringFromInfixCommand(cmd ast.InfixCommandExpression) string {
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
 		IsInfix:         true,
+		InfixType:       cmd.Type,
 	}
 	return sig.ToCode(ast.NoOp)
 }
@@ -360,6 +361,7 @@ func GetSignatureStringFromInfixCommandId(cmd ast.InfixCommandId) string {
 		MainNames:       names,
 		NamedGroupNames: namedGroups,
 		IsInfix:         true,
+		InfixType:       cmd.Type,
 	}
 	return sig.ToCode(ast.NoOp)
 }

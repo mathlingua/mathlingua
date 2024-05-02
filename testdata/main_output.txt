@@ -484,7 +484,7 @@ if:
 . 'a is \\type{\:function & \:set}'
 . 'a is \\formulation{statement}'
 . 'a is \\type{\:function}'
-. 'a is \\type{\:set \:in:/ \:set}'
+. 'a is \\type{\:set \:{in}:/ \:set}'
 . 'a is \\formulation'
 . 'a is \\type'
 . 'b := \\select{statement}:from{x}'

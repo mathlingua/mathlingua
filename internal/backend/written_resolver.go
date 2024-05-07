@@ -517,6 +517,14 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 			text += "\\textrm{ from }"
 			text += w.formulationNodeToWritten(path, &n.Target)
 			return text, true
+		case *ast.TrueBuiltinExpression:
+			return "\\textrm{true}", true
+		case *ast.FalseBuiltinExpression:
+			return "\\textrm{false}", true
+		case *ast.BooleanBuiltinExpression:
+			return "\\textrm{boolean}", true
+		case *ast.TypeOfBuiltinExpression:
+			return "\\textrm{type of }" + w.formulationNodeToWritten(path, n.Of), true
 		default:
 			return "", false
 		}

@@ -171,12 +171,20 @@ func checkIsOrAlsoExpression(
 		_, isFalse := item.(*ast.FalseBuiltinExpression)
 		_, isCommand := item.(*ast.CommandExpression)
 		_, isFormulation := item.(*ast.FormulationMetaKind)
-		if !isName && !isType && !isTypeOf && !isBoolean && !isTrue && !isFalse && !isCommand && !isFormulation {
+		var isAndOperator = false
+		if infixOp, isInfixOp := item.(*ast.InfixOperatorCallExpression); isInfixOp {
+			target, isNonEnclosed := infixOp.Target.(*ast.NonEnclosedNonCommandOperatorTarget)
+			if isNonEnclosed {
+				isAndOperator = target.Text == "&"
+			}
+		}
+		if !isName && !isType && !isTypeOf && !isBoolean && !isTrue && !isFalse &&
+			!isCommand && !isFormulation && !isAndOperator {
 			appendError(
 				path,
 				position,
 				fmt.Sprintf("The right-hand-side of an '%s' statement ", isOrAlsoName)+
-					"can only contain a name, command, \\\\type, \\\\type:of, "+
+					"can only contain a name, command, command & command, \\\\type, \\\\type:of, "+
 					"\\\\boolean, \\\\true, \\\\false, or \\\\formulation",
 				tracker)
 		}

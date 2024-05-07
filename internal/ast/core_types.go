@@ -128,11 +128,11 @@ type RawTypeSpec struct {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type TypeDescription struct {
-	Is   TypeSpec
-	Also []TypeSpec
+	Is        TypeSpec
+	Satisfies []TypeSpec
 }
 
 type RawTypeDescription struct {
-	Is   RawTypeSpec
-	Also []RawTypeSpec
+	Is        RawTypeSpec
+	Satisfies []RawTypeSpec
 }

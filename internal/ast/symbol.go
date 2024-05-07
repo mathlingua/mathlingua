@@ -37,13 +37,13 @@ func (*ResolvedSymbolSpec) SymbolSpecKind() {}
 func (*RawSymbolSpec) SymbolSpecKind()      {}
 
 type ResolvedSymbolSpec struct {
-	Is   ResolvedTypeKind
-	Also []ResolvedTypeKind
+	Is        ResolvedTypeKind
+	Satisfies []ResolvedTypeKind
 }
 
 type RawSymbolSpec struct {
-	Is   TypeKind
-	Also []TypeKind
+	Is        TypeKind
+	Satisfies []TypeKind
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

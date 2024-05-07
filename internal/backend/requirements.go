@@ -46,8 +46,8 @@ func CheckRequirements(
 		checkProofClaimGroup(path, *n, tracker)
 	case *ast.IsExpression:
 		checkIsExpression(path, *n, tracker)
-	case *ast.AlsoExpression:
-		checkAlsoExpression(path, *n, tracker)
+	case *ast.SatisfiesExpression:
+		checkSatisfiesExpression(path, *n, tracker)
 	}
 
 	node.ForEach(func(subNode ast.MlgNodeKind) {
@@ -144,21 +144,23 @@ func checkIsExpression(
 	node ast.IsExpression,
 	tracker *frontend.DiagnosticTracker,
 ) {
-	checkIsOrAlsoExpression(path, node.GetCommonMetaData().Start, "is", node.Rhs, tracker)
+	checkIsOrSatisfiesExpression(path, node.GetCommonMetaData().Start,
+		"is", node.Rhs, tracker)
 }
 
-func checkAlsoExpression(
+func checkSatisfiesExpression(
 	path ast.Path,
-	node ast.AlsoExpression,
+	node ast.SatisfiesExpression,
 	tracker *frontend.DiagnosticTracker,
 ) {
-	checkIsOrAlsoExpression(path, node.GetCommonMetaData().Start, "also", node.Rhs, tracker)
+	checkIsOrSatisfiesExpression(path, node.GetCommonMetaData().Start,
+		"satisfies", node.Rhs, tracker)
 }
 
-func checkIsOrAlsoExpression(
+func checkIsOrSatisfiesExpression(
 	path ast.Path,
 	position ast.Position,
-	isOrAlsoName string,
+	isOrSatisfiesName string,
 	rhs []ast.KindKind,
 	tracker *frontend.DiagnosticTracker,
 ) {
@@ -183,7 +185,7 @@ func checkIsOrAlsoExpression(
 			appendError(
 				path,
 				position,
-				fmt.Sprintf("The right-hand-side of an '%s' statement ", isOrAlsoName)+
+				fmt.Sprintf("The right-hand-side of an '%s' statement ", isOrSatisfiesName)+
 					"can only contain a name, command, command & command, \\\\type, \\\\type:of, "+
 					"\\\\boolean, \\\\true, \\\\false, or \\\\formulation",
 				tracker)

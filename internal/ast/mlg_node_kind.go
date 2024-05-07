@@ -103,7 +103,7 @@ func (*PrefixOperatorCallExpression) MlgNodeKind()           {}
 func (*PostfixOperatorCallExpression) MlgNodeKind()          {}
 func (*InfixOperatorCallExpression) MlgNodeKind()            {}
 func (*IsExpression) MlgNodeKind()                           {}
-func (*AlsoExpression) MlgNodeKind()                         {}
+func (*SatisfiesExpression) MlgNodeKind()                    {}
 func (*ExtendsExpression) MlgNodeKind()                      {}
 func (*AsExpression) MlgNodeKind()                           {}
 func (*OrdinalCallExpression) MlgNodeKind()                  {}

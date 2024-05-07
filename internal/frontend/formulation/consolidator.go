@@ -241,7 +241,7 @@ func toNode(
 			Rhs:    lhs,
 		}
 	case *ast.PseudoTokenNode:
-		// a token, for example :=, :=>, :->, is, also
+		// a token, for example :=, :=>, :->, is, satisfies
 		switch {
 		case top.Type == ast.ColonArrow:
 			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
@@ -280,12 +280,12 @@ func toNode(
 				Lhs: []ast.ExpressionKind{lhs},
 				Rhs: []ast.KindKind{rhs},
 			}
-		case top.Type == ast.Also:
+		case top.Type == ast.Satisfies:
 			rhs := checkType(path, toNode(path, items, tracker), default_kind_type, "Kind Type",
 				tracker, top.Start())
 			lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())
-			return &ast.AlsoExpression{
+			return &ast.SatisfiesExpression{
 				Lhs: []ast.ExpressionKind{lhs},
 				Rhs: []ast.KindKind{rhs},
 			}
@@ -387,7 +387,7 @@ func getFirstPassType(node ast.FormulationNodeKind) firstPassType {
 		// for example \:f:/
 		return forcedInfixOperatorType
 	case *ast.PseudoTokenNode:
-		// a token, for example :=, is, also
+		// a token, for example :=, is, satisfies
 		switch node.Type {
 		case ast.ColonEquals:
 			return forcedInfixOperatorType
@@ -399,7 +399,7 @@ func getFirstPassType(node ast.FormulationNodeKind) firstPassType {
 			return generalOperatorType
 		case ast.Is:
 			return forcedInfixOperatorType
-		case ast.Also:
+		case ast.Satisfies:
 			return forcedInfixOperatorType
 		case ast.Extends:
 			return forcedInfixOperatorType
@@ -459,7 +459,7 @@ func getGeneralOperatorKind(
 }
 
 const is_precedence = 1
-const also_precedence = 1
+const satisfies_precedence = 1
 const as_precedence = 2
 const colon_equal_precedence = 3
 const colon_arrow_precedence = 3
@@ -476,7 +476,7 @@ const times_divide_precedence = 10
 const caret_precedence = 11
 
 const is_associativity = LeftAssociative
-const also_associativity = LeftAssociative
+const satisfies_associativity = LeftAssociative
 const as_associativity = LeftAssociative
 const colon_equal_associativity = RightAssociative
 const colon_arrow_associativity = RightAssociative
@@ -529,8 +529,8 @@ func getOperatorPrecedenceAssociativityByText(
 		return caret_precedence, caret_associativity
 	case text == "is":
 		return is_precedence, is_associativity
-	case text == "also":
-		return also_precedence, also_associativity
+	case text == "satisfies":
+		return satisfies_precedence, satisfies_associativity
 	case text == "as":
 		return as_precedence, as_associativity
 	case itemType == InfixOperatorType:

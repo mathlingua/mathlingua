@@ -509,7 +509,6 @@ func (fp *formulationParser) multiplexedExpressionKind() (ast.ExpressionKind, bo
 	}
 
 	isIndex := -1
-	satisfiesIndex := -1
 	extendsIndex := -1
 
 	minPrecIndexMinIndex := math.MaxInt
@@ -523,14 +522,6 @@ func (fp *formulationParser) multiplexedExpressionKind() (ast.ExpressionKind, bo
 				fp.error("'is' statements cannot be nested")
 			}
 			isIndex = i
-		}
-
-		_, satisfiesOk := item.(*ast.SatisfiesExpression)
-		if satisfiesOk {
-			if satisfiesIndex >= 0 {
-				fp.error("'satisfies' statements cannot be nested")
-			}
-			satisfiesIndex = i
 		}
 
 		_, extendsOk := item.(*ast.ExtendsExpression)
@@ -551,9 +542,9 @@ func (fp *formulationParser) multiplexedExpressionKind() (ast.ExpressionKind, bo
 		}
 	}
 
-	// if there isn't an 'is', 'satisfies', or 'extends' statement and there
+	// if there isn't an 'is' or 'extends' statement and there
 	// is at least one infix operator
-	if isIndex == -1 && extendsIndex == -1 && satisfiesIndex == -1 && minPrecIndexMaxIndex >= 0 {
+	if isIndex == -1 && extendsIndex == -1 && minPrecIndexMaxIndex >= 0 {
 		if minPrecIndexMinIndex != minPrecIndexMaxIndex {
 			fp.error(
 				"A multiplexed operator can only be used if exactly one operator has minimum precedence")
@@ -589,13 +580,7 @@ func (fp *formulationParser) multiplexedExpressionKind() (ast.ExpressionKind, bo
 	if isIndex >= 0 && extendsIndex >= 0 {
 		fp.error("'is' and 'extends' statements cannot be used together")
 		return nil, false
-	} else if isIndex >= 0 && satisfiesIndex >= 0 {
-		fp.error("'is' and 'satisfies' statements cannot be used together")
-		return nil, false
-	} else if extendsIndex >= 0 && satisfiesIndex >= 0 {
-		fp.error("'extends' and 'satisfies' statements cannot be used together")
-		return nil, false
-	} else if isIndex == -1 && extendsIndex == -1 && satisfiesIndex == -1 {
+	} else if isIndex == -1 && extendsIndex == -1 {
 		fp.error("multiple comma separated expressions is not supported in this context")
 		return nil, false
 	} else if isIndex >= 0 {
@@ -623,38 +608,6 @@ func (fp *formulationParser) multiplexedExpressionKind() (ast.ExpressionKind, bo
 				isExp.Start())
 		}
 		return &ast.IsExpression{
-			Lhs: lhs,
-			Rhs: rhs,
-			CommonMetaData: ast.CommonMetaData{
-				Start: fp.getShiftedPosition(start),
-				Key:   fp.keyGen.Next(),
-			},
-		}, true
-	} else if satisfiesIndex >= 0 {
-		lhs := make([]ast.ExpressionKind, 0)
-		rhs := make([]ast.KindKind, 0)
-		i := 0
-		for i < satisfiesIndex {
-			lhs = append(lhs, items[i])
-			i++
-		}
-		satisfiesExp := items[satisfiesIndex].(*ast.SatisfiesExpression)
-		lhs = append(lhs, satisfiesExp.Lhs...)
-		rhs = append(rhs, satisfiesExp.Rhs...)
-		i = satisfiesIndex + 1
-		for i < len(items) {
-			rhs = append(rhs, items[i].(ast.KindKind))
-			i++
-		}
-		if len(rhs) != 1 {
-			fp.errorAt(
-				fmt.Sprintf(
-					"The right-hand-side of a 'satisfies' expression must contain exactly "+
-						"one item, but found %d",
-					len(rhs)),
-				satisfiesExp.Start())
-		}
-		return &ast.SatisfiesExpression{
 			Lhs: lhs,
 			Rhs: rhs,
 			CommonMetaData: ast.CommonMetaData{
@@ -1193,9 +1146,9 @@ func (fp *formulationParser) definitionBuiltinExpression() (ast.DefinitionBuilti
 	fp.expect(ast.RCurly)
 
 	var satisfies ast.ExpressionKind
-	if fp.hasHas(ast.Colon, ast.Satisfies) && fp.lexer.PeekPeek().Text == "satisfies" {
+	if fp.hasHas(ast.Colon, ast.Name) && fp.lexer.PeekPeek().Text == "satisfies" {
 		fp.expect(ast.Colon)
-		satisfiesName, _ := fp.expect(ast.Satisfies) // move past the satisfies name
+		satisfiesName, _ := fp.expect(ast.Name) // move past the satisfies name
 
 		if !fp.has(ast.LCurly) {
 			fp.errorAt("Expected {", satisfiesName.Position)
@@ -1641,10 +1594,6 @@ func (fp *formulationParser) chainName() (ast.NameForm, bool) {
 		return toNameForm(tok), ok
 	}
 
-	if tok, ok := fp.satisfiesKeyword(); ok {
-		return toNameForm(tok), ok
-	}
-
 	if tok, ok := fp.asKeyword(); ok {
 		return toNameForm(tok), ok
 	}
@@ -1816,10 +1765,6 @@ func (fp *formulationParser) isKeyword() (ast.PseudoTokenNode, bool) {
 	return fp.pseudoToken(ast.Is)
 }
 
-func (fp *formulationParser) satisfiesKeyword() (ast.PseudoTokenNode, bool) {
-	return fp.pseudoToken(ast.Satisfies)
-}
-
 func (fp *formulationParser) extendsKeyword() (ast.PseudoTokenNode, bool) {
 	return fp.pseudoToken(ast.Extends)
 }
@@ -1871,10 +1816,6 @@ func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 	}
 
 	if is, ok := fp.isKeyword(); ok {
-		return is, ok
-	}
-
-	if is, ok := fp.satisfiesKeyword(); ok {
 		return is, ok
 	}
 

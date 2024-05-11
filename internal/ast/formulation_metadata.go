@@ -76,10 +76,6 @@ func (n *IsExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 
-func (n *SatisfiesExpression) GetFormulationMetaData() *FormulationMetaData {
-	return &n.FormulationMetaData
-}
-
 func (n *ExtendsExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }

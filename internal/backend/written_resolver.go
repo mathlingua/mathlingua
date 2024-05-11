@@ -399,22 +399,6 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 				result += w.formulationNodeToWritten(path, exp)
 			}
 			return result, true
-		case *ast.SatisfiesExpression:
-			result := ""
-			for i, exp := range n.Lhs {
-				if i > 0 {
-					result += ", "
-				}
-				result += w.formulationNodeToWritten(path, exp)
-			}
-			result += " \\textrm{ satisfies } "
-			for i, exp := range n.Rhs {
-				if i > 0 {
-					result += ", "
-				}
-				result += w.formulationNodeToWritten(path, exp)
-			}
-			return result, true
 		case *ast.ExtendsExpression:
 			result := ""
 			for i, exp := range n.Lhs {

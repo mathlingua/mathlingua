@@ -17,7 +17,6 @@
 package backend
 
 import (
-	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 )
@@ -46,8 +45,6 @@ func CheckRequirements(
 		checkProofClaimGroup(path, *n, tracker)
 	case *ast.IsExpression:
 		checkIsExpression(path, *n, tracker)
-	case *ast.SatisfiesExpression:
-		checkSatisfiesExpression(path, *n, tracker)
 	}
 
 	node.ForEach(func(subNode ast.MlgNodeKind) {
@@ -141,30 +138,10 @@ func checkProofClaimGroup(
 
 func checkIsExpression(
 	path ast.Path,
-	node ast.IsExpression,
+	isExpression ast.IsExpression,
 	tracker *frontend.DiagnosticTracker,
 ) {
-	checkIsOrSatisfiesExpression(path, node.GetCommonMetaData().Start,
-		"is", node.Rhs, tracker)
-}
-
-func checkSatisfiesExpression(
-	path ast.Path,
-	node ast.SatisfiesExpression,
-	tracker *frontend.DiagnosticTracker,
-) {
-	checkIsOrSatisfiesExpression(path, node.GetCommonMetaData().Start,
-		"satisfies", node.Rhs, tracker)
-}
-
-func checkIsOrSatisfiesExpression(
-	path ast.Path,
-	position ast.Position,
-	isOrSatisfiesName string,
-	rhs []ast.KindKind,
-	tracker *frontend.DiagnosticTracker,
-) {
-	for _, item := range rhs {
+	for _, item := range isExpression.Rhs {
 		_, isName := item.(*ast.NameForm)
 		_, isType := item.(*ast.TypeMetaKind)
 		_, isTypeOf := item.(*ast.TypeOfBuiltinExpression)
@@ -184,8 +161,8 @@ func checkIsOrSatisfiesExpression(
 			!isCommand && !isFormulation && !isAndOperator {
 			appendError(
 				path,
-				position,
-				fmt.Sprintf("The right-hand-side of an '%s' statement ", isOrSatisfiesName)+
+				isExpression.Start(),
+				"The right-hand-side of an 'is' statement "+
 					"can only contain a name, command, command & command, \\\\type, \\\\type:of, "+
 					"\\\\boolean, \\\\true, \\\\false, or \\\\formulation",
 				tracker)

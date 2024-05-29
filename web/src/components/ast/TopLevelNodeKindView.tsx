@@ -97,7 +97,7 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
     return (
       <>
         <div className={styles.mathlinguaTopLevelEntity} style={{
-            fontFamily: showSource ? 'source-code-pro, Menlo, Monaco, Consolas, \'Courier New\', monospace' : undefined,
+            fontFamily: showSource ? '"Courier Prime", Courier' : undefined,
             fontSize: showSource ? '80%' : undefined,
         }}>
           <div className={styles.iconWrapper}>

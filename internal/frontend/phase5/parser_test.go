@@ -32,7 +32,7 @@ import (
 )
 
 func TestParserSmoke(t *testing.T) {
-	inputTextData, err := os.ReadFile(path.Join("..", "..", "..", "testdata", "main.math"))
+	inputTextData, err := os.ReadFile(path.Join("..", "..", "..", "testdata", "structural.math"))
 	assert.Nil(t, err)
 	inputText := string(inputTextData)
 
@@ -60,7 +60,7 @@ func TestParserSmoke(t *testing.T) {
 	actualOutput := codeWriter.String()
 
 	expectedOutputData, err := os.ReadFile(
-		path.Join("..", "..", "..", "testdata", "main_output.txt"))
+		path.Join("..", "..", "..", "testdata", "structural_expected.txt"))
 	assert.Nil(t, err)
 	expectedOutput := string(expectedOutputData)
 

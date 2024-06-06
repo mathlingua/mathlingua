@@ -18,14 +18,22 @@ export function MainPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [windowWidth, setWindowWidth] = React.useState(window.innerWidth);
-  const isOnSmallScreen = determineIsOnSmallScreen(windowWidth);
+  const isOnSmallScreen = determineIsOnSmallScreen(window.innerWidth);
   const [open, setOpen] = React.useState(!isOnSmallScreen);
 
-  window.addEventListener('resize', () => {
-    const newWidth = window.innerWidth;
-    setWindowWidth(newWidth);
-  });
+  React.useEffect(() => {
+    const listener = () => {
+      if (open && determineIsOnSmallScreen(window.innerWidth)) {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', listener);
+    return () => window.removeEventListener('resize', listener);
+    // open should not be in the dependency array since the effect
+    // should only be run when the component first renders
+    // eslint-disable-next-line
+  }, []);
 
   const pathname = location.pathname;
   const trimmedPathname = pathname.startsWith('/') ? pathname.substring(1) : pathname;
@@ -74,7 +82,7 @@ export function MainPage() {
       <header className={styles.header}>
         <Button flat
                 onClick={() => {
-          setOpen(open => !open);
+          setOpen(oldOpen => !oldOpen);
         }}>
           <MenuIcon className={styles.headerIcon} />
         </Button>
@@ -100,5 +108,5 @@ export function MainPage() {
 }
 
 function determineIsOnSmallScreen(windowWidth: number) {
-  return windowWidth <= 450;
+  return windowWidth <= 864;
 }

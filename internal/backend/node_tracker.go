@@ -73,6 +73,11 @@ func (nt *NodeTracker) GetDocumentAt(path ast.Path) (phase4.Document, ast.Docume
 	return phase4Doc, astDoc
 }
 
+func (nt *NodeTracker) GetIdForSignature(signature string) (string, bool) {
+	id, ok := nt.signaturesToIds[signature]
+	return id, ok
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func (nt *NodeTracker) initialize(contents []PathLabelContent) {

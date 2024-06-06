@@ -202,8 +202,11 @@ func (w *Workspace) GetEntryById(id string) (phase4.TopLevelNodeKind, error) {
 }
 
 func (w *Workspace) GetEntryBySignature(signature string) (phase4.TopLevelNodeKind, error) {
-	topLevelNode, _, err := w.nodeTracker.GetEntryBySignature(signature)
-	return topLevelNode, err
+	id, ok := w.nodeTracker.GetIdForSignature(signature)
+	if !ok {
+		return nil, fmt.Errorf(fmt.Sprintf("Could not get ID for signature %s", signature))
+	}
+	return w.GetEntryById(id)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -402,7 +402,7 @@ type MatchingGroup struct {
 }
 
 type MatchingSection struct {
-	Matching       Target
+	Matching       []Target
 	CommonMetaData CommonMetaData
 }
 
@@ -433,7 +433,7 @@ type MatchingCaseGroup struct {
 }
 
 type MatchingCaseSection struct {
-	Case           Formulation[FormulationNodeKind]
+	Case           []Formulation[FormulationNodeKind]
 	CommonMetaData CommonMetaData
 }
 

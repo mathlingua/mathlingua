@@ -1058,7 +1058,7 @@ func (n *InductivelyCaseGroup) ToCode(indent int, hasDot bool) []string {
 func (n *MatchingGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.AppendSection(LowerMatchingName, indent, hasDot && n.Label == nil)
+	db.AppendTargetsSection(LowerMatchingName, n.Matching.Matching, indent, hasDot && n.Label == nil)
 	if n.As != nil {
 		db.AppendFormulationSection(LowerAsName, n.As.As, indent, false)
 	}
@@ -1072,8 +1072,7 @@ func (n *MatchingGroup) ToCode(indent int, hasDot bool) []string {
 func (n *MatchingCaseGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.AppendSection(LowerCaseName, indent, hasDot && n.Label == nil)
-	db.Append(&n.Case.Case, indent, true)
+	db.AppendFormulationsSection(LowerCaseName, n.Case.Case, indent, hasDot && n.Label == nil)
 	if n.Given != nil {
 		db.AppendSection(LowerGivenName, indent, false)
 		db.AppendTargetsSection(LowerGivenName, n.Given.Given, indent, false)

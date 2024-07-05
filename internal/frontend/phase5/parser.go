@@ -2072,7 +2072,7 @@ func (p *parser) toMatchingGroup(group phase4.Group) (ast.MatchingGroup, bool) {
 
 func (p *parser) toMatchingSection(section phase4.Section) *ast.MatchingSection {
 	return &ast.MatchingSection{
-		Matching:       p.exactlyOneTarget(section),
+		Matching:       p.oneOrMoreTargets(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -2124,7 +2124,7 @@ func (p *parser) toMatchingCaseGroup(group phase4.Group) (ast.MatchingCaseGroup,
 
 func (p *parser) toMatchingCaseSection(section phase4.Section) *ast.MatchingCaseSection {
 	return &ast.MatchingCaseSection{
-		Case:           p.exactlyOneFormulation(section),
+		Case:           p.oneOrMoreFormulation(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -4455,7 +4455,7 @@ func oneOrMore[T any](p *parser, items []T, position ast.Position,
 func exactlyOne[T any](p *parser, items []T, defaultItem T, position ast.Position,
 	tracker *frontend.DiagnosticTracker) T {
 	if len(items) != 1 {
-		tracker.Append(p.newError("Expected at exactly one item", position))
+		tracker.Append(p.newError("Expected exactly one item", position))
 	}
 	if len(items) == 0 {
 		return defaultItem

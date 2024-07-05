@@ -345,6 +345,100 @@ type ElseSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+var InductivelySections = []string{
+	LowerInductivelyName,
+	LowerOneOfName,
+}
+
+type InductivelyGroup struct {
+	Label          *GroupLabel
+	Inductively    InductivelySection
+	OneOf          InductivelyOneOfSection
+	CommonMetaData CommonMetaData
+}
+
+type InductivelySection struct {
+	CommonMetaData CommonMetaData
+}
+
+type InductivelyOneOfSection struct {
+	OneOf          []InductivelyCaseGroup
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var InductivelyCaseSections = []string{
+	LowerCaseName,
+	LowerGivenQuestionName,
+}
+
+type InductivelyCaseGroup struct {
+	Label          *GroupLabel
+	Case           InductivelyCaseSection
+	Given          *GivenSection
+	CommonMetaData CommonMetaData
+}
+
+type InductivelyCaseSection struct {
+	Case           Formulation[FormulationNodeKind]
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var MatchingSections = []string{
+	LowerMatchingName,
+	LowerAsQuestionName,
+	LowerAgainstName,
+}
+
+type MatchingGroup struct {
+	Label          *GroupLabel
+	Matching       MatchingSection
+	As             *MatchingAsSection
+	Against        MatchingAgainstSection
+	CommonMetaData CommonMetaData
+}
+
+type MatchingSection struct {
+	Matching       Target
+	CommonMetaData CommonMetaData
+}
+
+type MatchingAsSection struct {
+	As             Formulation[FormulationNodeKind]
+	CommonMetaData CommonMetaData
+}
+
+type MatchingAgainstSection struct {
+	Against        []MatchingCaseGroup
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var MatchingCaseSections = []string{
+	LowerCaseName,
+	LowerGivenQuestionName,
+	LowerThenName,
+}
+
+type MatchingCaseGroup struct {
+	Label          *GroupLabel
+	Case           MatchingCaseSection
+	Given          *GivenSection
+	Then           ThenSection
+	CommonMetaData CommonMetaData
+}
+
+type MatchingCaseSection struct {
+	Case           Formulation[FormulationNodeKind]
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 var WhenSections = []string{
 	LowerWhenName,
 	LowerThenName,

@@ -123,6 +123,10 @@ func (*ProofPartwiseGroup) StructuralNodeKind()                {}
 func (*ProofSufficesToShowGroup) StructuralNodeKind()          {}
 func (*ProofToShowGroup) StructuralNodeKind()                  {}
 func (*ProofRemarkGroup) StructuralNodeKind()                  {}
+func (*InductivelyGroup) StructuralNodeKind()                  {}
+func (*InductivelyCaseGroup) StructuralNodeKind()              {}
+func (*MatchingGroup) StructuralNodeKind()                     {}
+func (*MatchingCaseGroup) StructuralNodeKind()                 {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -146,6 +150,8 @@ func (*IffGroup) ClauseKind()              {}
 func (*WhenGroup) ClauseKind()             {}
 func (*PiecewiseGroup) ClauseKind()        {}
 func (*DeclareGroup) ClauseKind()          {}
+func (*InductivelyGroup) ClauseKind()      {}
+func (*MatchingGroup) ClauseKind()         {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

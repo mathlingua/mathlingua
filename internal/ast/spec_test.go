@@ -770,6 +770,36 @@ var all_group_test_cases = []testCase{
 			"remark",
 		},
 	},
+	{
+		actual: InductivelySections,
+		expected: []string{
+			"inductively",
+			"oneOf",
+		},
+	},
+	{
+		actual: InductivelyCaseSections,
+		expected: []string{
+			"case",
+			"given?",
+		},
+	},
+	{
+		actual: MatchingCaseSections,
+		expected: []string{
+			"case",
+			"given?",
+			"then",
+		},
+	},
+	{
+		actual: MatchingSections,
+		expected: []string{
+			"matching",
+			"as?",
+			"against",
+		},
+	},
 }
 
 func TestSpec(t *testing.T) {

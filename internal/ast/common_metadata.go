@@ -336,3 +336,19 @@ func (n *TrueBuiltinExpression) GetCommonMetaData() *CommonMetaData {
 func (n *FalseBuiltinExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
+
+func (n *InductivelyGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *InductivelyCaseGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *MatchingGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *MatchingCaseGroup) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}

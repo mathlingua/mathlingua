@@ -1032,6 +1032,58 @@ func (n *ProofToShowGroup) ToCode(indent int, hasDot bool) []string {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+func (n *InductivelyGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerInductivelyName, indent, hasDot && n.Label == nil)
+	db.AppendSection(LowerOneOfName, indent, false)
+	for _, caseGroup := range n.OneOf.OneOf {
+		db.Append(&caseGroup, indent, true)
+	}
+	return db.Lines()
+}
+
+func (n *InductivelyCaseGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerCaseName, indent, hasDot && n.Label == nil)
+	db.Append(&n.Case.Case, indent, true)
+	if n.Given != nil {
+		db.AppendSection(LowerGivenName, indent, false)
+		db.AppendTargetsSection(LowerGivenName, n.Given.Given, indent, false)
+	}
+	return db.Lines()
+}
+
+func (n *MatchingGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerMatchingName, indent, hasDot && n.Label == nil)
+	if n.As != nil {
+		db.AppendFormulationSection(LowerAsName, n.As.As, indent, false)
+	}
+	db.AppendSection(LowerAgainstName, indent, false)
+	for _, caseGroup := range n.Against.Against {
+		db.Append(&caseGroup, indent, true)
+	}
+	return db.Lines()
+}
+
+func (n *MatchingCaseGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSection(LowerCaseName, indent, hasDot && n.Label == nil)
+	db.Append(&n.Case.Case, indent, true)
+	if n.Given != nil {
+		db.AppendSection(LowerGivenName, indent, false)
+		db.AppendTargetsSection(LowerGivenName, n.Given.Given, indent, false)
+	}
+	db.AppendClausesSection(LowerThenName, n.Then.Clauses, indent, false)
+	return db.Lines()
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // Note: This file contains methods that look similar because a non-generic struct in Go cannot
 //       have a generic method and slices in Go do not support variances (in particular, they are
 //       not covariant).  Thus, a specialized version of each method is needed for each type.

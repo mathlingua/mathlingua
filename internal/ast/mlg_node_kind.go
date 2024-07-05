@@ -185,3 +185,7 @@ func (*TypeOfBuiltinExpression) MlgNodeKind()                {}
 func (*BooleanBuiltinExpression) MlgNodeKind()               {}
 func (*TrueBuiltinExpression) MlgNodeKind()                  {}
 func (*FalseBuiltinExpression) MlgNodeKind()                 {}
+func (*InductivelyGroup) MlgNodeKind()                       {}
+func (*InductivelyCaseGroup) MlgNodeKind()                   {}
+func (*MatchingGroup) MlgNodeKind()                          {}
+func (*MatchingCaseGroup) MlgNodeKind()                      {}

@@ -1968,6 +1968,169 @@ func (p *parser) toNegativeFloatSection(section phase4.Section) *ast.NegativeFlo
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+func (p *parser) toInductivelyGroup(group phase4.Group) (ast.InductivelyGroup, bool) {
+	if !startsWithSections(group, ast.LowerInductivelyName) {
+		return ast.InductivelyGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.InductivelySections...)
+	if !ok {
+		return ast.InductivelyGroup{}, false
+	}
+
+	inductively := *p.toInductivelySection(sections[ast.LowerInductivelyName])
+	oneOf := *p.toInductivelyOneOfSection(sections[ast.LowerOneOfName])
+
+	return ast.InductivelyGroup{
+		Label:          label,
+		Inductively:    inductively,
+		OneOf:          oneOf,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toInductivelySection(section phase4.Section) *ast.InductivelySection {
+	p.verifyNoArgs(section)
+	return &ast.InductivelySection{
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toInductivelyOneOfSection(section phase4.Section) *ast.InductivelyOneOfSection {
+	return &ast.InductivelyOneOfSection{
+		OneOf:          p.oneOrMoreInductivelyCaseGroups(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toInductivelyCaseGroup(group phase4.Group) (ast.InductivelyCaseGroup, bool) {
+	if !startsWithSections(group, ast.LowerCaseName) {
+		return ast.InductivelyCaseGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.InductivelyCaseSections...)
+	if !ok {
+		return ast.InductivelyCaseGroup{}, false
+	}
+
+	caseSec := *p.toInductivelyCaseSection(sections[ast.LowerCaseName])
+
+	var givenSec *ast.GivenSection
+	if sec, ok := sections[ast.LowerGivenName]; ok {
+		givenSec = p.toGivenSection(sec)
+	}
+
+	return ast.InductivelyCaseGroup{
+		Label:          label,
+		Case:           caseSec,
+		Given:          givenSec,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toInductivelyCaseSection(section phase4.Section) *ast.InductivelyCaseSection {
+	return &ast.InductivelyCaseSection{
+		Case:           p.exactlyOneFormulation(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toMatchingGroup(group phase4.Group) (ast.MatchingGroup, bool) {
+	if !startsWithSections(group, ast.LowerMatchingName) {
+		return ast.MatchingGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.MatchingSections...)
+	if !ok {
+		return ast.MatchingGroup{}, false
+	}
+
+	matching := *p.toMatchingSection(sections[ast.LowerMatchingName])
+
+	var as *ast.MatchingAsSection
+	if sec, ok := sections[ast.LowerAsName]; ok {
+		as = p.toMatchingAsSection(sec)
+	}
+
+	against := *p.toMatchingAgainstSection(sections[ast.LowerAgainstName])
+
+	return ast.MatchingGroup{
+		Label:          label,
+		Matching:       matching,
+		As:             as,
+		Against:        against,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toMatchingSection(section phase4.Section) *ast.MatchingSection {
+	return &ast.MatchingSection{
+		Matching:       p.exactlyOneTarget(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toMatchingAsSection(section phase4.Section) *ast.MatchingAsSection {
+	return &ast.MatchingAsSection{
+		As:             p.exactlyOneFormulation(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toMatchingAgainstSection(section phase4.Section) *ast.MatchingAgainstSection {
+	return &ast.MatchingAgainstSection{
+		Against:        p.oneOrMoreMatchingCaseGroups(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (p *parser) toMatchingCaseGroup(group phase4.Group) (ast.MatchingCaseGroup, bool) {
+	if !startsWithSections(group, ast.LowerCaseName) {
+		return ast.MatchingCaseGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.MatchingCaseSections...)
+	if !ok {
+		return ast.MatchingCaseGroup{}, false
+	}
+
+	caseSec := *p.toMatchingCaseSection(sections[ast.LowerCaseName])
+
+	var givenSec *ast.GivenSection
+	if sec, ok := sections[ast.LowerGivenName]; ok {
+		givenSec = p.toGivenSection(sec)
+	}
+
+	thenSec := *p.toThenSection(sections[ast.LowerThenName])
+
+	return ast.MatchingCaseGroup{
+		Label:          label,
+		Case:           caseSec,
+		Given:          givenSec,
+		Then:           thenSec,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toMatchingCaseSection(section phase4.Section) *ast.MatchingCaseSection {
+	return &ast.MatchingCaseSection{
+		Case:           p.exactlyOneFormulation(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 func (p *parser) toResourceGroup(group phase4.Group) (ast.ResourceGroup, bool) {
 	if !startsWithSections(group, ast.UpperResourceName) {
 		return ast.ResourceGroup{}, false
@@ -2586,6 +2749,10 @@ func (p *parser) toClause(arg phase4.Argument) ast.ClauseKind {
 			return &grp
 		} else if grp, ok := p.toDeclareGroup(*data); ok {
 			return &grp
+		} else if grp, ok := p.toInductivelyGroup(*data); ok {
+			return &grp
+		} else if grp, ok := p.toMatchingGroup(*data); ok {
+			return &grp
 		}
 	}
 
@@ -2836,6 +3003,40 @@ func (p *parser) toSpecifyKinds(args []phase4.Argument) []ast.SpecifyKind {
 				ast.LowerNegativeIntName,
 				ast.LowerPositiveFloatName,
 				ast.LowerNegativeFloatName), arg.MetaData.Start))
+		}
+	}
+	return result
+}
+
+func (p *parser) toInductivelyCaseGroups(args []phase4.Argument) []ast.InductivelyCaseGroup {
+	result := make([]ast.InductivelyCaseGroup, 0)
+	for _, arg := range args {
+		switch data := arg.Arg.(type) {
+		case *phase4.Group:
+			if grp, ok := p.toInductivelyCaseGroup(*data); ok {
+				result = append(result, grp)
+			} else {
+				p.tracker.Append(p.newError("Expected a case:given?: item", arg.MetaData.Start))
+			}
+		default:
+			p.tracker.Append(p.newError("Expected a case:given?: item", arg.MetaData.Start))
+		}
+	}
+	return result
+}
+
+func (p *parser) toMatchingCaseGroups(args []phase4.Argument) []ast.MatchingCaseGroup {
+	result := make([]ast.MatchingCaseGroup, 0)
+	for _, arg := range args {
+		switch data := arg.Arg.(type) {
+		case *phase4.Group:
+			if grp, ok := p.toMatchingCaseGroup(*data); ok {
+				result = append(result, grp)
+			} else {
+				p.tracker.Append(p.newError("Expected a case:given?:then: item", arg.MetaData.Start))
+			}
+		default:
+			p.tracker.Append(p.newError("Expected a case:given?:then: item", arg.MetaData.Start))
 		}
 	}
 	return result
@@ -4230,6 +4431,14 @@ func (p *parser) oneOrMoreDocumentedKinds(section phase4.Section) []ast.Document
 
 func (p *parser) oneOrMoreSpecifyKinds(section phase4.Section) []ast.SpecifyKind {
 	return oneOrMore(p, p.toSpecifyKinds(section.Args), section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) oneOrMoreInductivelyCaseGroups(section phase4.Section) []ast.InductivelyCaseGroup {
+	return oneOrMore(p, p.toInductivelyCaseGroups(section.Args), section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) oneOrMoreMatchingCaseGroups(section phase4.Section) []ast.MatchingCaseGroup {
+	return oneOrMore(p, p.toMatchingCaseGroups(section.Args), section.MetaData.Start, p.tracker)
 }
 
 ///////////////////////////////////// support functions ////////////////////////////////////////////

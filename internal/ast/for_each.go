@@ -1057,6 +1057,41 @@ func (n *DirectionType) ForEach(fn func(subNode MlgNodeKind)) {
 	// a DirectionType does not have any child nodes
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func (n *InductivelyGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	for _, caseGroup := range n.OneOf.OneOf {
+		fn(&caseGroup)
+	}
+}
+
+func (n *InductivelyCaseGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.Case.Case)
+	if n.Given != nil {
+		forEachTarget(n.Given.Given, fn)
+	}
+}
+
+func (n *MatchingGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.Matching.Matching)
+	if n.As != nil {
+		fn(&n.As.As)
+	}
+	for _, caseGroup := range n.Against.Against {
+		fn(&caseGroup)
+	}
+}
+
+func (n *MatchingCaseGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.Case.Case)
+	if n.Given != nil {
+		forEachTarget(n.Given.Given, fn)
+	}
+	forEach(n.Then.Clauses, fn)
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 func (n *ProofThenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachProofItem(n.Then.Then, fn)
 	if n.By != nil {

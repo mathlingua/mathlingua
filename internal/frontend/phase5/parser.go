@@ -2019,15 +2019,15 @@ func (p *parser) toInductivelyCaseGroup(group phase4.Group) (ast.InductivelyCase
 
 	caseSec := *p.toInductivelyCaseSection(sections[ast.LowerCaseName])
 
-	var givenSec *ast.GivenSection
-	if sec, ok := sections[ast.LowerGivenName]; ok {
-		givenSec = p.toGivenSection(sec)
+	var usingSec *ast.UsingSection
+	if sec, ok := sections[ast.LowerUsingName]; ok {
+		usingSec = p.toUsingSection(sec)
 	}
 
 	return ast.InductivelyCaseGroup{
 		Label:          label,
 		Case:           caseSec,
-		Given:          givenSec,
+		Using:          usingSec,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
@@ -2106,9 +2106,9 @@ func (p *parser) toMatchingCaseGroup(group phase4.Group) (ast.MatchingCaseGroup,
 
 	caseSec := *p.toMatchingCaseSection(sections[ast.LowerCaseName])
 
-	var givenSec *ast.GivenSection
-	if sec, ok := sections[ast.LowerGivenName]; ok {
-		givenSec = p.toGivenSection(sec)
+	var usingSec *ast.UsingSection
+	if sec, ok := sections[ast.LowerUsingName]; ok {
+		usingSec = p.toUsingSection(sec)
 	}
 
 	thenSec := *p.toThenSection(sections[ast.LowerThenName])
@@ -2116,7 +2116,7 @@ func (p *parser) toMatchingCaseGroup(group phase4.Group) (ast.MatchingCaseGroup,
 	return ast.MatchingCaseGroup{
 		Label:          label,
 		Case:           caseSec,
-		Given:          givenSec,
+		Using:          usingSec,
 		Then:           thenSec,
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true

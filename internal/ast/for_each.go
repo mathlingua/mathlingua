@@ -1067,8 +1067,8 @@ func (n *InductivelyGroup) ForEach(fn func(subNode MlgNodeKind)) {
 
 func (n *InductivelyCaseGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Case.Case)
-	if n.Given != nil {
-		forEachTarget(n.Given.Given, fn)
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
 	}
 }
 
@@ -1084,8 +1084,8 @@ func (n *MatchingGroup) ForEach(fn func(subNode MlgNodeKind)) {
 
 func (n *MatchingCaseGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachFormulation(n.Case.Case, fn)
-	if n.Given != nil {
-		forEachTarget(n.Given.Given, fn)
+	if n.Using != nil {
+		forEachTarget(n.Using.Using, fn)
 	}
 	forEach(n.Then.Clauses, fn)
 }

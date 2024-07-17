@@ -781,14 +781,14 @@ var all_group_test_cases = []testCase{
 		actual: InductivelyCaseSections,
 		expected: []string{
 			"case",
-			"given?",
+			"using?",
 		},
 	},
 	{
 		actual: MatchingCaseSections,
 		expected: []string{
 			"case",
-			"given?",
+			"using?",
 			"then",
 		},
 	},

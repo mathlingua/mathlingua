@@ -763,7 +763,7 @@ specifies:
   oneOf:
   . case: 'n := \natural.0'
   . case: 'n := \natural.succ(m)'
-    given: m
+    using: m
 Documented:
 . called: "natural number"
 ------------------------------------------
@@ -780,7 +780,7 @@ expresses:
   . case: 'n := 0'
     then: 'n + m := m'
   . case: 'n := k++'
-    given: k
+    using: k
     then: 'n + m := (k + m)++'
 Documented:
 . written: "n? + m?"
@@ -800,7 +800,7 @@ expresses:
     . 'm := 0'
     then: 'n + m := m'
   . case: 'n := k++'
-    given: k
+    using: k
     then: 'n + m := (k + m)++'
 Documented:
 . written: "n? + m?"

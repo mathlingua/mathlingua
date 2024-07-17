@@ -370,13 +370,13 @@ type InductivelyOneOfSection struct {
 
 var InductivelyCaseSections = []string{
 	LowerCaseName,
-	LowerGivenQuestionName,
+	LowerUsingQuestionName,
 }
 
 type InductivelyCaseGroup struct {
 	Label          *GroupLabel
 	Case           InductivelyCaseSection
-	Given          *GivenSection
+	Using          *UsingSection
 	CommonMetaData CommonMetaData
 }
 
@@ -420,14 +420,14 @@ type MatchingAgainstSection struct {
 
 var MatchingCaseSections = []string{
 	LowerCaseName,
-	LowerGivenQuestionName,
+	LowerUsingQuestionName,
 	LowerThenName,
 }
 
 type MatchingCaseGroup struct {
 	Label          *GroupLabel
 	Case           MatchingCaseSection
-	Given          *GivenSection
+	Using          *UsingSection
 	Then           ThenSection
 	CommonMetaData CommonMetaData
 }

@@ -2659,17 +2659,31 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 		return ast.ConditionalSetForm{}, false
 	}
 
-	_, ok = fp.token(ast.DotDotDot)
+	specification, ok := fp.functionForm()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetForm{}, false
 	}
+
+	var condition *ast.FunctionForm
+	if fp.has(ast.Bar) {
+		fp.expect(ast.Bar)
+		cond, ok := fp.functionForm()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return ast.ConditionalSetForm{}, false
+		}
+		condition = &cond
+	}
+
 	fp.expect(ast.RCurly)
 	varArg, _ := fp.varArgData()
 	fp.lexer.Commit(id)
 	return ast.ConditionalSetForm{
-		Target: target,
-		VarArg: varArg,
+		Target:        target,
+		Specification: specification,
+		Condition:     condition,
+		VarArg:        varArg,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

@@ -80,9 +80,11 @@ type TupleForm struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// {x | ...}
+// {x | S(x) | P(x)}
 type ConditionalSetForm struct {
 	Target              StructuralFormKind
+	Specification       FunctionForm
+	Condition           *FunctionForm
 	VarArg              VarArgData
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData

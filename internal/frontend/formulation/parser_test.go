@@ -123,11 +123,17 @@ func TestChainExpressionWithNames(t *testing.T) {
 }
 
 func TestConditionalSetForm(t *testing.T) {
-	runFormTest(t, "{x | ...}", "{x | ...}")
-	runFormTest(t, "{f(x) | ...}", "{f(x) | ...}")
-	runFormTest(t, "{f(x, y) | ...}", "{f(x, y) | ...}")
-	runFormTest(t, "{(f(x, y), a) | ...}", "{(f(x, y), a) | ...}")
-	runFormTest(t, "{(f(x, y), a, {z | ...}) | ...}", "{(f(x, y), a, {z | ...}) | ...}")
+	runFormTest(t, "{x | s(x)}", "{x | s(x)}")
+	runFormTest(t, "{x | s(x) | p(x)}", "{x | s(x) | p(x)}")
+	runFormTest(t, "{f(x) | s(x)}", "{f(x) | s(x)}")
+	runFormTest(t, "{f(x) | s(x) | p(x)}", "{f(x) | s(x) | p(x)}")
+	runFormTest(t, "{f(x, y) | s(x)}", "{f(x, y) | s(x)}")
+	runFormTest(t, "{f(x, y) | s(x) | p(x)}", "{f(x, y) | s(x) | p(x)}")
+	runFormTest(t, "{(f(x, y), a) | s(x)}", "{(f(x, y), a) | s(x)}")
+	runFormTest(t, "{(f(x, y), a, {z | s(x)}) | s(x)}", "{(f(x, y), a, {z | s(x)}) | s(x)}")
+	runFormTest(t,
+		"{(f(x, y), a, {z | s(x) | p(x)}) | s(x) | p(x)}",
+		"{(f(x, y), a, {z | s(x) | p(x)}) | s(x) | p(x)}")
 }
 
 func TestConditionalSetExpression(t *testing.T) {

@@ -54,7 +54,16 @@ func (n *ConditionalSetForm) ToCode(fn func(node MlgNodeKind) (string, bool)) st
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return "{" + n.Target.ToCode(fn) + " | ...}" + n.VarArg.ToCode(fn)
+	result := "{"
+	result += n.Target.ToCode(fn)
+	result += " | "
+	result += n.Specification.ToCode(fn)
+	if n.Condition != nil {
+		result += " | "
+		result += n.Condition.ToCode(fn)
+	}
+	result += "}"
+	return result
 }
 
 func (n *ConditionalSetIdForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {

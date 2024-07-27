@@ -125,9 +125,10 @@ type TupleFormPattern struct {
 }
 
 type ConditionalSetFormPattern struct {
-	Target    FormPatternKind
-	Condition FunctionFormPattern
-	VarArg    VarArgPatternData
+	Target        FormPatternKind
+	Specification FunctionFormPattern
+	Condition     *FunctionFormPattern
+	VarArg        VarArgPatternData
 }
 
 type ConditionaSetIdFormPattern struct {

@@ -142,9 +142,15 @@ func ToTupleFormPattern(form ast.TupleForm) *ast.TupleFormPattern {
 }
 
 func ToConditionalSetFormPattern(form ast.ConditionalSetForm) *ast.ConditionalSetFormPattern {
+	var conditionPattern *ast.FunctionFormPattern
+	if form.Condition != nil {
+		conditionPattern = ToFunctionFormPattern(*form.Condition)
+	}
 	return &ast.ConditionalSetFormPattern{
-		Target: ToFormPattern(form.Target),
-		VarArg: ToVarArgPatternData(form.VarArg),
+		Target:        ToFormPattern(form.Target),
+		Specification: *ToFunctionFormPattern(form.Specification),
+		Condition:     conditionPattern,
+		VarArg:        ToVarArgPatternData(form.VarArg),
 	}
 }
 

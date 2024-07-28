@@ -1917,43 +1917,15 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 
-	var infixType ast.InfixType
-	var expectedEnd ast.TokenType
 	var hasLeftColon bool
 
 	if fp.has(ast.LSquareDot) {
 		hasLeftColon = false
-		infixType = ast.InfixSquare
-		expectedEnd = ast.DotRSquare
 		fp.expect(ast.LSquareDot)
 	} else if fp.hasHas(ast.Colon, ast.LSquareDot) {
 		hasLeftColon = true
-		infixType = ast.InfixSquare
-		expectedEnd = ast.DotRSquare
 		fp.expect(ast.Colon)
 		fp.expect(ast.LSquareDot)
-	} else if fp.has(ast.LParenDot) {
-		hasLeftColon = false
-		infixType = ast.InfixParen
-		expectedEnd = ast.DotRParen
-		fp.expect(ast.LParenDot)
-	} else if fp.hasHas(ast.Colon, ast.LParenDot) {
-		hasLeftColon = true
-		infixType = ast.InfixParen
-		expectedEnd = ast.DotRParen
-		fp.expect(ast.Colon)
-		fp.expect(ast.LParenDot)
-	} else if fp.has(ast.LCurlyDot) {
-		hasLeftColon = false
-		infixType = ast.InfixCurly
-		expectedEnd = ast.DotRCurly
-		fp.expect(ast.LCurlyDot)
-	} else if fp.hasHas(ast.Colon, ast.LCurlyDot) {
-		hasLeftColon = true
-		infixType = ast.InfixCurly
-		expectedEnd = ast.DotRCurly
-		fp.expect(ast.Colon)
-		fp.expect(ast.LCurlyDot)
 	}
 
 	start := fp.lexer.Position()
@@ -1981,7 +1953,7 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 
-	fp.expect(expectedEnd)
+	fp.expect(ast.DotRSquare)
 
 	hasRightColon := false
 	if _, ok := fp.token(ast.Colon); ok {
@@ -1991,7 +1963,6 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	fp.lexer.Commit(id)
 	return ast.EnclosedNonCommandOperatorTarget{
 		Target:        target,
-		Type:          infixType,
 		HasLeftColon:  hasLeftColon,
 		HasRightColon: hasRightColon,
 		CommonMetaData: ast.CommonMetaData{
@@ -2001,37 +1972,15 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	}, true
 }
 
-// The return type is the InfixType,
-// the expected start type (for either (, [, or {),
-// the expected end type (for either ), ], or }),
-// and whether the next tokens are \[, \(, or \{
-func (fp *formulationParser) checkInfixTypePrefix() (
-	ast.InfixType,
-	ast.TokenType,
-	ast.TokenType,
-	bool,
-) {
-	if fp.hasHas(ast.BackSlash, ast.LSquare) {
-		return ast.InfixSquare, ast.LSquare, ast.RSquare, true
-	} else if fp.hasHas(ast.BackSlash, ast.LParen) {
-		return ast.InfixParen, ast.LParen, ast.RParen, true
-	} else if fp.hasHas(ast.BackSlash, ast.LCurly) {
-		return ast.InfixCurly, ast.LCurly, ast.RCurly, true
-	} else {
-		return "", "", "", false
-	}
-}
-
 func (fp *formulationParser) infixCommandExpression() (ast.InfixCommandExpression, bool) {
-	infixType, expectedStartToken, expectedEndToken, hasInfixType := fp.checkInfixTypePrefix()
-	if !hasInfixType || !fp.hasHas(ast.BackSlash, expectedStartToken) {
+	if !fp.hasHas(ast.BackSlash, ast.Dot) {
 		return ast.InfixCommandExpression{}, false
 	}
 
 	start := fp.lexer.Position()
 
 	fp.expect(ast.BackSlash)
-	fp.expect(expectedStartToken)
+	fp.expect(ast.Dot)
 
 	id := fp.lexer.Snapshot()
 	cmd, ok := fp.commandExpressionContent(true, start)
@@ -2040,17 +1989,16 @@ func (fp *formulationParser) infixCommandExpression() (ast.InfixCommandExpressio
 		return ast.InfixCommandExpression{}, false
 	}
 
-	if !fp.hasHas(expectedEndToken, ast.Slash) {
+	if !fp.hasHas(ast.Dot, ast.Slash) {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandExpression{}, false
 	}
 
-	fp.expect(expectedEndToken)
+	fp.expect(ast.Dot)
 	fp.expect(ast.Slash)
 
 	fp.lexer.Commit(id)
 	return ast.InfixCommandExpression{
-		Type:                infixType,
 		Names:               cmd.Names,
 		CurlyArg:            cmd.CurlyArg,
 		NamedArgs:           cmd.NamedArgs,
@@ -2121,7 +2069,8 @@ func (fp *formulationParser) commandExpressionContent(allowOperator bool, start 
 				break
 			}
 		}
-		if fp.has(ast.Dot) {
+		// ./ is how infix commands are terminated
+		if fp.has(ast.Dot) && !fp.hasHas(ast.Dot, ast.Slash) {
 			fp.expect(ast.Dot)
 		} else {
 			break
@@ -3039,15 +2988,14 @@ func (fp *formulationParser) curlyArg() (ast.CurlyArg, bool) {
 }
 
 func (fp *formulationParser) infixCommandId() (ast.InfixCommandId, bool) {
-	infixType, expectedStartToken, expectedEndToken, hasInfixType := fp.checkInfixTypePrefix()
-	if !hasInfixType || !fp.hasHas(ast.BackSlash, expectedStartToken) {
+	if !fp.hasHas(ast.BackSlash, ast.Dot) {
 		return ast.InfixCommandId{}, false
 	}
 
 	start := fp.lexer.Position()
 
 	fp.expect(ast.BackSlash)
-	fp.expect(expectedStartToken)
+	fp.expect(ast.Dot)
 
 	id := fp.lexer.Snapshot()
 	cmd, ok := fp.commandIdContent(true, start)
@@ -3056,23 +3004,18 @@ func (fp *formulationParser) infixCommandId() (ast.InfixCommandId, bool) {
 		return ast.InfixCommandId{}, false
 	}
 
-	if !fp.hasHas(expectedEndToken, ast.Slash) {
+	if !fp.hasHas(ast.Dot, ast.Slash) {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandId{}, false
 	}
 
-	fp.expect(expectedEndToken)
+	fp.expect(ast.Dot)
 	fp.expect(ast.Slash)
 
 	fp.lexer.Commit(id)
 
-	if infixType == ast.InfixParen {
-		fp.errorAt("An id cannot use the form \\(...)/.  Instead use form \\[...]//", start)
-	}
-
 	return ast.InfixCommandId{
 		Names:          cmd.Names,
-		Type:           infixType,
 		CurlyParam:     cmd.CurlyParam,
 		NamedParams:    cmd.NamedParams,
 		ParenParams:    cmd.ParenParams,
@@ -3114,7 +3057,8 @@ func (fp *formulationParser) commandIdContent(allowOperator bool, start ast.Posi
 				break
 			}
 		}
-		if fp.has(ast.Dot) {
+		// ./ is how an infix command is terminated
+		if fp.has(ast.Dot) && !fp.hasHas(ast.Dot, ast.Slash) {
 			fp.expect(ast.Dot)
 		} else {
 			break
@@ -3264,41 +3208,17 @@ func (fp *formulationParser) infixCommandType() (ast.InfixCommandTypeForm, bool)
 	fp.expect(ast.BackSlash)
 	fp.expect(ast.Colon)
 
-	var infixType ast.InfixType
-	var expectedEnd ast.TokenType
-
-	if fp.has(ast.LParen) {
-		infixType = ast.InfixParen
-		expectedEnd = ast.RParen
-		fp.expect(ast.LParen)
-	} else if fp.has(ast.LSquare) {
-		infixType = ast.InfixSquare
-		expectedEnd = ast.RSquare
-		fp.expect(ast.LSquare)
-	} else if fp.has(ast.LCurly) {
-		infixType = ast.InfixCurly
-		expectedEnd = ast.RCurly
-		fp.expect(ast.LCurly)
-	} else {
-		// the tokens \: were found but is not followed by
-		// (, [, or { and so the text is not an infix command type
-		// but rather an non-infix command type
-		fp.lexer.RollBack(id)
-		return ast.InfixCommandTypeForm{}, false
-	}
-
 	cmd, ok := fp.commandTypeContent(true, start)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandTypeForm{}, false
 	}
 
-	if !fp.hasHas(expectedEnd, ast.Colon) {
+	if !fp.has(ast.Colon) {
 		fp.lexer.RollBack(id)
 		return ast.InfixCommandTypeForm{}, false
 	}
 
-	fp.expect(expectedEnd)
 	fp.expect(ast.Colon)
 
 	// also expect a slash and report an error if it is not found
@@ -3306,7 +3226,6 @@ func (fp *formulationParser) infixCommandType() (ast.InfixCommandTypeForm, bool)
 
 	fp.lexer.Commit(id)
 	return ast.InfixCommandTypeForm{
-		InfixType:       infixType,
 		Names:           cmd.Names,
 		CurlyTypeParam:  cmd.CurlyTypeParam,
 		NamedTypeParams: cmd.NamedTypeParams,
@@ -3508,7 +3427,6 @@ func (fp *formulationParser) signature() (ast.Signature, bool) {
 				MainNames:           mainNames,
 				NamedGroupNames:     namedGroupNames,
 				IsInfix:             true,
-				InfixType:           t.InfixType,
 				InnerLabel:          nil, // will be added below
 				CommonMetaData:      *typeKind.GetCommonMetaData(),
 				FormulationMetaData: *typeKind.GetFormulationMetaData(),

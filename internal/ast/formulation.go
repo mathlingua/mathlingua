@@ -347,7 +347,6 @@ type Signature struct {
 	MainNames           []string
 	NamedGroupNames     []string
 	IsInfix             bool
-	InfixType           InfixType
 	InnerLabel          *string
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
@@ -357,7 +356,6 @@ type Signature struct {
 
 // \:function:on{\:set}:to{\:set}:/
 type InfixCommandTypeForm struct {
-	InfixType           InfixType
 	Names               []NameForm
 	CurlyTypeParam      *CurlyTypeParam
 	NamedTypeParams     *[]NamedTypeParam
@@ -458,18 +456,9 @@ type ExpressionColonDashArrowItem struct {
 
 ////////////////////////////////////// Operators ///////////////////////////////////////////////////
 
-type InfixType string
-
-const (
-	InfixSquare InfixType = "InfixSquare"
-	InfixParen  InfixType = "InfixParen"
-	InfixCurly  InfixType = "InfixCurly"
-)
-
 // [.x.], [.x + y.], (.x.), {.x.}, :(.x.), (.x.):, etc.
 type EnclosedNonCommandOperatorTarget struct {
 	Target              ExpressionKind
-	Type                InfixType
 	HasLeftColon        bool
 	HasRightColon       bool
 	CommonMetaData      CommonMetaData
@@ -485,11 +474,8 @@ type NonEnclosedNonCommandOperatorTarget struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// \{function:on{A}:to{B}}/
-// \[function:on{A}:to{B}]/
-// \(function:on{A}:to{B})/
+// \.function:on{A}:to{B}./
 type InfixCommandExpression struct {
-	Type                InfixType
 	Names               []NameForm
 	CurlyArg            *CurlyArg
 	NamedArgs           *[]NamedArg
@@ -532,11 +518,8 @@ type DirectionalParam struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// \{function:on{A}:to{B}}/
-// \[function:on{A}:to{B}]/
-// \(function:on{A}:to{B})/
+// \.function:on{A}:to{B}./
 type InfixCommandId struct {
-	Type                InfixType
 	Names               []NameForm
 	CurlyParam          *CurlyParam
 	NamedParams         *[]NamedParam
@@ -569,9 +552,7 @@ type InfixOperatorId struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// A \{subset}/ B
-// A \(in)/ B
-// A \[in]/ B
+// A \.subset./ B
 type InfixCommandOperatorId struct {
 	Lhs                 StructuralFormKind
 	Operator            InfixCommandId

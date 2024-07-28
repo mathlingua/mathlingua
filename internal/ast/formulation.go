@@ -160,11 +160,13 @@ type LabeledGrouping struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// [x]{(x, x+1) | x is \real ; x > 0}
+// [x]{(x, x+1) | x is \real | x > 0}
+// [x]{(x, x+1) | x is \real}
 type ConditionalSetExpression struct {
 	Symbols             []StructuralFormKind
 	Target              ExpressionKind
-	Conditions          []ExpressionKind
+	Specifications      []ExpressionKind
+	Condition           ExpressionKind // optional
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

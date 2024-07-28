@@ -1539,11 +1539,11 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 	}
 
 	fp.expect(ast.Bar)
-	conditions := make([]ast.ExpressionKind, 0)
+	specifications := make([]ast.ExpressionKind, 0)
 	for fp.lexer.HasNext() {
-		condition, ok := fp.expressionKind(ast.Semicolon)
+		spec, ok := fp.expressionKind(ast.Semicolon, ast.Bar)
 		if ok {
-			conditions = append(conditions, condition)
+			specifications = append(specifications, spec)
 		} else {
 			break
 		}
@@ -1555,6 +1555,16 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 		}
 	}
 
+	var condition ast.ExpressionKind
+	if fp.has(ast.Bar) {
+		fp.expect(ast.Bar)
+		condition, ok = fp.expressionKind()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return ast.ConditionalSetExpression{}, false
+		}
+	}
+
 	if !fp.has(ast.RCurly) {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetExpression{}, false
@@ -1563,9 +1573,10 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 	fp.expect(ast.RCurly)
 	fp.lexer.Commit(id)
 	return ast.ConditionalSetExpression{
-		Symbols:    *symbols,
-		Target:     target,
-		Conditions: conditions,
+		Symbols:        *symbols,
+		Target:         target,
+		Specifications: specifications,
+		Condition:      condition,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

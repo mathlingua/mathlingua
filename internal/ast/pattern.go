@@ -144,9 +144,10 @@ type FunctionLiteralFormPattern struct {
 }
 
 type ConditionalSetExpressionPattern struct {
-	Target     FormPatternKind
-	Conditions []FormPatternKind
-	VarArg     VarArgPatternData
+	Target         FormPatternKind
+	Specifications []FormPatternKind
+	Condition      *FormPatternKind
+	VarArg         VarArgPatternData
 }
 
 type VarArgPatternData struct {

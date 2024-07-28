@@ -335,11 +335,15 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 			result := "\\left \\{"
 			result += w.formulationNodeToWritten(path, n.Target)
 			result += "\\: | \\:"
-			for i, cond := range n.Conditions {
+			for i, cond := range n.Specifications {
 				if i > 0 {
 					result += " ;\\: "
 				}
 				result += w.formulationNodeToWritten(path, cond)
+			}
+			if n.Condition != nil {
+				result += "\\: | \\:"
+				result += w.formulationNodeToWritten(path, n.Condition)
 			}
 			result += "\\right \\}"
 			return result, true

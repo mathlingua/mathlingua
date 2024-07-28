@@ -315,10 +315,15 @@ func matchConditionalSetIdForm(
 		return result
 	case *ast.ConditionalSetExpression:
 		targetMatch := Match(n.Target, pattern.Target)
-		conditionsMatch := matchAllExpressions(n.Conditions, []ast.FormPatternKind{
-			pattern.Condition,
+		specsMatch := matchAllExpressions(n.Specifications, []ast.FormPatternKind{
+			&pattern.Specification,
 		})
-		return unionMatches(targetMatch, conditionsMatch)
+		result := unionMatches(targetMatch, specsMatch)
+		if n.Condition != nil {
+			conditionMatch := Match(n.Condition, pattern.Condition)
+			result = unionMatches(result, conditionMatch)
+		}
+		return result
 	default:
 		return MatchResult{
 			Messages: []string{
@@ -336,8 +341,13 @@ func matchConditionalSetExpression(
 	switch n := node.(type) {
 	case *ast.ConditionalSetExpression:
 		targetMatch := Match(n.Target, pattern.Target)
-		conditionsMatch := matchAllExpressions(n.Conditions, pattern.Conditions)
-		return unionMatches(targetMatch, conditionsMatch)
+		specsMatch := matchAllExpressions(n.Specifications, pattern.Specifications)
+		result := unionMatches(targetMatch, specsMatch)
+		if n.Condition != nil && pattern.Condition != nil {
+			conditionMatch := Match(n.Condition, *pattern.Condition)
+			result = unionMatches(result, conditionMatch)
+		}
+		return result
 	default:
 		return MatchResult{
 			Messages: []string{

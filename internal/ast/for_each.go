@@ -767,7 +767,10 @@ func (n *LabeledGrouping) ForEach(fn func(subNode MlgNodeKind)) {
 func (n *ConditionalSetExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Symbols, fn)
 	fn(n.Target)
-	forEach(n.Conditions, fn)
+	forEach(n.Specifications, fn)
+	if n.Condition != nil {
+		fn(n.Condition)
+	}
 }
 
 func (n *CommandExpression) ForEach(fn func(subNode MlgNodeKind)) {

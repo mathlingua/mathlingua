@@ -127,8 +127,13 @@ func (n *ConditionalSetExpression) ToCode(fn func(node MlgNodeKind) (string, boo
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return "[" + commaSeparatedString(n.Symbols, fn) + "]{" +
-		n.Target.ToCode(fn) + " | " + semicolonSeparatedString(n.Conditions, fn) + "}"
+	result := "[" + commaSeparatedString(n.Symbols, fn) + "]{" +
+		n.Target.ToCode(fn) + " | " + semicolonSeparatedString(n.Specifications, fn)
+	if n.Condition != nil {
+		result += " | " + n.Condition.ToCode(fn)
+	}
+	result += "}"
+	return result
 }
 
 func (n *CommandExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {

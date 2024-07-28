@@ -55,7 +55,7 @@ func (p *ChainExpressionPattern) GetVarArgData() VarArgPatternData {
 func (p *SpecAliasPattern) GetVarArgData() VarArgPatternData { return VarArgPatternData{} }
 func (p *AliasPattern) GetVarArgData() VarArgPatternData     { return VarArgPatternData{} }
 
-func (p *ConditionaSetIdFormPattern) GetVarArgData() VarArgPatternData {
+func (p *ConditionalSetIdFormPattern) GetVarArgData() VarArgPatternData {
 	return VarArgPatternData{}
 }
 

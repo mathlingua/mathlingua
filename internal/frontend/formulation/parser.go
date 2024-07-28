@@ -2842,10 +2842,21 @@ func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, b
 	}
 
 	fp.expect(ast.Bar)
-	condition, ok := fp.functionForm()
+	specification, ok := fp.functionForm()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetIdForm{}, false
+	}
+
+	var condition *ast.FunctionForm
+	if fp.has(ast.Bar) {
+		fp.expect(ast.Bar)
+		cond, ok := fp.functionForm()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return ast.ConditionalSetIdForm{}, false
+		}
+		condition = &cond
 	}
 
 	if !fp.has(ast.RCurly) {
@@ -2856,9 +2867,10 @@ func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, b
 	fp.expect(ast.RCurly)
 	fp.lexer.Commit(id)
 	return ast.ConditionalSetIdForm{
-		Symbols:   *symbols,
-		Target:    target,
-		Condition: condition,
+		Symbols:       *symbols,
+		Target:        target,
+		Specification: specification,
+		Condition:     condition,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

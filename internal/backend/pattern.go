@@ -155,9 +155,15 @@ func ToConditionalSetFormPattern(form ast.ConditionalSetForm) *ast.ConditionalSe
 }
 
 func ToConditionalSetFormPatternFromId(form ast.ConditionalSetIdForm) ast.ConditionalSetFormPattern {
+	var conditionPattern *ast.FunctionFormPattern
+	if form.Condition != nil {
+		conditionPattern = ToFunctionFormPattern(*form.Condition)
+	}
 	return ast.ConditionalSetFormPattern{
-		Target: ToFormPattern(form.Target),
-		VarArg: ToVarArgPatternData(form.Condition.VarArg),
+		Target:        ToFormPattern(form.Target),
+		Specification: *ToFunctionFormPattern(form.Specification),
+		Condition:     conditionPattern,
+		VarArg:        ToVarArgPatternData(form.Condition.VarArg),
 	}
 }
 
@@ -176,11 +182,16 @@ func ToInfixOperatorFormPatternFromId(form ast.InfixOperatorId) ast.InfixOperato
 	}
 }
 
-func ToConditionalSetIdFormPattern(form ast.ConditionalSetIdForm) *ast.ConditionaSetIdFormPattern {
-	return &ast.ConditionaSetIdFormPattern{
-		Symbols:   toFormPatterns(form.Symbols),
-		Target:    ToFormPattern(form.Target),
-		Condition: *ToFunctionFormPattern(form.Condition),
+func ToConditionalSetIdFormPattern(form ast.ConditionalSetIdForm) *ast.ConditionalSetIdFormPattern {
+	var conditionPattern *ast.FunctionFormPattern
+	if form.Condition != nil {
+		conditionPattern = ToFunctionFormPattern(*form.Condition)
+	}
+	return &ast.ConditionalSetIdFormPattern{
+		Symbols:       toFormPatterns(form.Symbols),
+		Target:        ToFormPattern(form.Target),
+		Specification: *ToFunctionFormPattern(form.Specification),
+		Condition:     conditionPattern,
 	}
 }
 

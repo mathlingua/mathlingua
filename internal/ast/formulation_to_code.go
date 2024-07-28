@@ -70,9 +70,13 @@ func (n *ConditionalSetIdForm) ToCode(fn func(node MlgNodeKind) (string, bool)) 
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return "[" + commaSeparatedString(n.Symbols, fn) +
-		"]{" + n.Target.ToCode(fn) + " | " + n.Condition.ToCode(fn) +
-		"}"
+	result := "[" + commaSeparatedString(n.Symbols, fn) +
+		"]{" + n.Target.ToCode(fn) + " | " + n.Specification.ToCode(fn)
+	if n.Condition != nil {
+		result += " | " + n.Condition.ToCode(fn)
+	}
+	result += "}"
+	return result
 }
 
 func (n *FunctionCallExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {

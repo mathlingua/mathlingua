@@ -100,11 +100,12 @@ type FunctionLiteralForm struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// [x]{x | f(x)...}
+// [x]{x | s(x)... | p(x)}
 type ConditionalSetIdForm struct {
 	Symbols             []StructuralFormKind
 	Target              StructuralFormKind
-	Condition           FunctionForm
+	Specification       FunctionForm
+	Condition           *FunctionForm
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

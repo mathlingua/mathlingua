@@ -150,4 +150,5 @@ func TestConditionalSetExpression(t *testing.T) {
 
 func TestConditionalSetIdForm(t *testing.T) {
 	runIdFormTest(t, "\\set[x]{x | f(x)}", "\\set{[x]{x | f(x)}}")
+	runIdFormTest(t, "\\set[x]{x | s(x) | p(x)}", "\\set{[x]{x | s(x) | p(x)}}")
 }

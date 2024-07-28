@@ -314,8 +314,12 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 			result := "\\left \\{"
 			result += w.formulationNodeToWritten(path, n.Target)
 			result += "\\: | \\:"
-			result += w.formulationNodeToWritten(path, &n.Condition)
-			result += "\\ldots \\right \\}"
+			result += w.formulationNodeToWritten(path, &n.Specification)
+			if n.Condition != nil {
+				result += "\\: | \\:"
+				result += w.formulationNodeToWritten(path, n.Condition)
+			}
+			result += "\\right \\}"
 			return result, true
 		case *ast.FunctionLiteralExpression:
 			result := ""

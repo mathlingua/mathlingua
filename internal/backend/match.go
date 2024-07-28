@@ -53,7 +53,7 @@ func Match(node ast.MlgNodeKind, pattern ast.PatternKind) MatchResult {
 		return matchConditionalSetExpression(node, *p)
 	case *ast.ConditionalSetFormPattern:
 		return matchConditionalSetForm(node, *p)
-	case *ast.ConditionaSetIdFormPattern:
+	case *ast.ConditionalSetIdFormPattern:
 		return matchConditionalSetIdForm(node, *p)
 	case *ast.InfixOperatorFormPattern:
 		return matchInfixOperator(node, *p)
@@ -302,17 +302,21 @@ func matchFunctionLiteralExpression(
 
 func matchConditionalSetIdForm(
 	node ast.MlgNodeKind,
-	pattern ast.ConditionaSetIdFormPattern,
+	pattern ast.ConditionalSetIdFormPattern,
 ) MatchResult {
 	switch n := node.(type) {
 	case *ast.ConditionalSetIdForm:
 		targetMatch := Match(n.Target, pattern.Target)
-		conditionMatch := matchFunction(&n.Condition, pattern.Condition)
-		return unionMatches(targetMatch, conditionMatch)
+		specMatch := matchFunction(&n.Specification, pattern.Specification)
+		result := unionMatches(targetMatch, specMatch)
+		if n.Condition != nil && pattern.Condition != nil {
+			result = unionMatches(result, matchFunction(n.Condition, *pattern.Condition))
+		}
+		return result
 	case *ast.ConditionalSetExpression:
 		targetMatch := Match(n.Target, pattern.Target)
 		conditionsMatch := matchAllExpressions(n.Conditions, []ast.FormPatternKind{
-			&pattern.Condition,
+			pattern.Condition,
 		})
 		return unionMatches(targetMatch, conditionsMatch)
 	default:

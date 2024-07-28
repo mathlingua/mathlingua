@@ -28,7 +28,7 @@ func (*FunctionFormPattern) PatternKind()             {}
 func (*TupleFormPattern) PatternKind()                {}
 func (*ConditionalSetExpressionPattern) PatternKind() {}
 func (*ConditionalSetFormPattern) PatternKind()       {}
-func (*ConditionaSetIdFormPattern) PatternKind()      {}
+func (*ConditionalSetIdFormPattern) PatternKind()     {}
 func (*FunctionLiteralFormPattern) PatternKind()      {}
 func (*InfixOperatorFormPattern) PatternKind()        {}
 func (*PrefixOperatorFormPattern) PatternKind()       {}
@@ -59,7 +59,7 @@ func (*NameFormPattern) FormPatternKind()              {}
 func (*FunctionFormPattern) FormPatternKind()          {}
 func (*TupleFormPattern) FormPatternKind()             {}
 func (*ConditionalSetFormPattern) FormPatternKind()    {}
-func (*ConditionaSetIdFormPattern) FormPatternKind()   {}
+func (*ConditionalSetIdFormPattern) FormPatternKind()  {}
 func (*FunctionLiteralFormPattern) FormPatternKind()   {}
 func (*InfixOperatorFormPattern) FormPatternKind()     {}
 func (*PrefixOperatorFormPattern) FormPatternKind()    {}
@@ -83,12 +83,12 @@ type LiteralFormPatternKind interface {
 	LiteralFormPatternKind()
 }
 
-func (*NameFormPattern) LiteralFormPatternKind()            {}
-func (*FunctionFormPattern) LiteralFormPatternKind()        {}
-func (*TupleFormPattern) LiteralFormPatternKind()           {}
-func (*ConditionalSetFormPattern) LiteralFormPatternKind()  {}
-func (*ConditionaSetIdFormPattern) LiteralFormPatternKind() {}
-func (*FunctionLiteralFormPattern) LiteralFormPatternKind() {}
+func (*NameFormPattern) LiteralFormPatternKind()             {}
+func (*FunctionFormPattern) LiteralFormPatternKind()         {}
+func (*TupleFormPattern) LiteralFormPatternKind()            {}
+func (*ConditionalSetFormPattern) LiteralFormPatternKind()   {}
+func (*ConditionalSetIdFormPattern) LiteralFormPatternKind() {}
+func (*FunctionLiteralFormPattern) LiteralFormPatternKind()  {}
 
 type OrdinalPattern struct {
 	Target LiteralFormPatternKind
@@ -131,10 +131,11 @@ type ConditionalSetFormPattern struct {
 	VarArg        VarArgPatternData
 }
 
-type ConditionaSetIdFormPattern struct {
-	Symbols   []FormPatternKind
-	Target    FormPatternKind
-	Condition FunctionFormPattern
+type ConditionalSetIdFormPattern struct {
+	Symbols       []FormPatternKind
+	Target        FormPatternKind
+	Specification FunctionFormPattern
+	Condition     *FunctionFormPattern
 }
 
 type FunctionLiteralFormPattern struct {

@@ -1324,7 +1324,10 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 	if sec, ok := sections[ast.LowerSpecifiesName]; ok {
 		specifies = p.toSpecifiesSection(sec)
 	}
-	that := *p.toThatSection(sections[ast.LowerThatName])
+	var that *ast.ThatSection
+	if sec, ok := sections[ast.LowerThatName]; ok {
+		that = p.toThatSection(sec)
+	}
 	var justified *ast.JustifiedSection
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
 		justified = p.toJustifiedSection(sec)

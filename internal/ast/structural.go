@@ -832,7 +832,7 @@ var StatesSections = []string{
 	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
 	LowerSpecifiesQuestionName,
-	LowerThatName,
+	LowerThatQuestionName,
 	UpperJustifiedQuestionName,
 	UpperDocumentedQuestionName,
 	UpperReferencesQuestionName,
@@ -847,7 +847,7 @@ type StatesGroup struct {
 	When           *WhenSection
 	SuchThat       *SuchThatSection
 	Specifies      *SpecifiesSection
-	That           ThatSection
+	That           *ThatSection
 	Justified      *JustifiedSection
 	Documented     *DocumentedSection
 	References     *ReferencesSection

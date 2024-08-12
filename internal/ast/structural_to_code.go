@@ -387,7 +387,9 @@ func (n *StatesGroup) ToCode(indent int, hasDot bool) []string {
 	if n.Specifies != nil {
 		db.AppendSpecsSection(LowerSpecifiesName, n.Specifies.Specifies, indent, false)
 	}
-	db.AppendClausesSection(LowerThatName, n.That.That, indent, false)
+	if n.That != nil {
+		db.AppendClausesSection(LowerThatName, n.That.That, indent, false)
+	}
 	if n.Justified != nil {
 		db.AppendSection(UpperJustifiedName, indent, false)
 		for _, item := range n.Justified.Justified {

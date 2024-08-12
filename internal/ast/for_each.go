@@ -414,7 +414,9 @@ func (n *StatesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Specifies != nil {
 		forEachSpec(n.Specifies.Specifies, fn)
 	}
-	forEach(n.That.That, fn)
+	if n.That != nil {
+		forEach(n.That.That, fn)
+	}
 	if n.Justified != nil {
 		forEach(n.Justified.Justified, fn)
 	}

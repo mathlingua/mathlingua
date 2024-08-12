@@ -580,7 +580,7 @@ var all_group_test_cases = []testCase{
 			"when?",
 			"suchThat?",
 			"specifies?",
-			"that",
+			"that?",
 			"Justified?",
 			"Documented?",
 			"References?",

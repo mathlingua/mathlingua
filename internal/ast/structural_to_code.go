@@ -297,6 +297,9 @@ func (n *DescribesGroup) ToCode(indent int, hasDot bool) []string {
 	if n.EquivalentTo != nil {
 		db.AppendClausesSection(LowerEquivalentToName, n.EquivalentTo.EquivalentTo, indent, false)
 	}
+	if n.Specifies != nil {
+		db.AppendSpecsSection(LowerSpecifiesName, n.Specifies.Specifies, indent, false)
+	}
 	if n.Satisfying != nil {
 		db.AppendClausesSection(LowerSatisfyingName, n.Satisfying.Satisfying, indent, false)
 	}
@@ -332,6 +335,9 @@ func (n *DefinesGroup) ToCode(indent int, hasDot bool) []string {
 	}
 	if n.EquivalentTo != nil {
 		db.AppendClausesSection(LowerEquivalentToName, n.EquivalentTo.EquivalentTo, indent, false)
+	}
+	if n.Specifies != nil {
+		db.AppendSpecsSection(LowerSpecifiesName, n.Specifies.Specifies, indent, false)
 	}
 	if n.Expressing != nil {
 		db.AppendClausesSection(LowerExpressingName, n.Expressing.Expressing, indent, false)
@@ -378,6 +384,9 @@ func (n *StatesGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhenSection(n.When, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
+	if n.Specifies != nil {
+		db.AppendSpecsSection(LowerSpecifiesName, n.Specifies.Specifies, indent, false)
+	}
 	db.AppendClausesSection(LowerThatName, n.That.That, indent, false)
 	if n.Justified != nil {
 		db.AppendSection(UpperJustifiedName, indent, false)

@@ -1048,6 +1048,10 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	if sec, ok := sections[ast.LowerEquivalentToName]; ok {
 		equivalentTo = p.toEquivalentToSection(sec)
 	}
+	var specifies *ast.SpecifiesSection
+	if sec, ok := sections[ast.LowerSpecifiesName]; ok {
+		specifies = p.toSpecifiesSection(sec)
+	}
 	var satisfying *ast.SatisfyingSection
 	if sec, ok := sections[ast.LowerSatisfyingName]; ok {
 		satisfying = p.toSatisfyingSection(sec)
@@ -1084,6 +1088,7 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		SuchThat:       suchThat,
 		Extends:        extends,
 		EquivalentTo:   equivalentTo,
+		Specifies:      specifies,
 		Satisfying:     satisfying,
 		Provides:       provides,
 		Justified:      justified,
@@ -1112,6 +1117,13 @@ func (p *parser) toExtendsSection(section phase4.Section) *ast.ExtendsSection {
 func (p *parser) toSatisfyingSection(section phase4.Section) *ast.SatisfyingSection {
 	return &ast.SatisfyingSection{
 		Satisfying:     p.oneOrMoreClauses(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toSpecifiesSection(section phase4.Section) *ast.SpecifiesSection {
+	return &ast.SpecifiesSection{
+		Specifies:      p.oneOrMoreSpecs(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -1149,6 +1161,10 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 	if sec, ok := sections[ast.LowerEquivalentToName]; ok {
 		equivalentTo = p.toEquivalentToSection(sec)
 	}
+	var specifies *ast.SpecifiesSection
+	if sec, ok := sections[ast.LowerSpecifiesName]; ok {
+		specifies = p.toSpecifiesSection(sec)
+	}
 	var expressing *ast.ExpressingSection
 	if sec, ok := sections[ast.LowerExpressingName]; ok {
 		expressing = p.toExpressingSection(sec)
@@ -1185,6 +1201,7 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 		SuchThat:       suchThat,
 		Means:          means,
 		EquivalentTo:   equivalentTo,
+		Specifies:      specifies,
 		Expressing:     expressing,
 		Provides:       provides,
 		Justified:      justified,
@@ -1303,6 +1320,10 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 	if sec, ok := sections[ast.LowerSuchThatName]; ok {
 		suchThat = p.toSuchThatSection(sec)
 	}
+	var specifies *ast.SpecifiesSection
+	if sec, ok := sections[ast.LowerSpecifiesName]; ok {
+		specifies = p.toSpecifiesSection(sec)
+	}
 	that := *p.toThatSection(sections[ast.LowerThatName])
 	var justified *ast.JustifiedSection
 	if sec, ok := sections[ast.UpperJustifiedName]; ok {
@@ -1330,6 +1351,7 @@ func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 		Using:          using,
 		When:           when,
 		SuchThat:       suchThat,
+		Specifies:      specifies,
 		That:           that,
 		Justified:      justified,
 		Documented:     documented,

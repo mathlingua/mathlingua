@@ -675,6 +675,7 @@ var DescribesSections = []string{
 	LowerSuchThatQuestionName,
 	LowerExtendsQuestionName,
 	LowerEquivalentToQuestionName,
+	LowerSpecifiesQuestionName,
 	LowerSatisfyingQuestionName,
 	UpperProvidesQuestionName,
 	UpperJustifiedQuestionName,
@@ -692,6 +693,7 @@ type DescribesGroup struct {
 	SuchThat       *SuchThatSection
 	Extends        *ExtendsSection
 	EquivalentTo   *EquivalentToSection
+	Specifies      *SpecifiesSection
 	Satisfying     *SatisfyingSection
 	Provides       *ProvidesSection
 	Justified      *JustifiedSection
@@ -732,6 +734,11 @@ type SatisfyingSection struct {
 	CommonMetaData CommonMetaData
 }
 
+type SpecifiesSection struct {
+	Specifies      []Spec
+	CommonMetaData CommonMetaData
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type MetaIdSection struct {
@@ -748,6 +755,7 @@ var DefinesSections = []string{
 	LowerSuchThatQuestionName,
 	LowerMeansQuestionName,
 	LowerEquivalentToQuestionName,
+	LowerSpecifiesQuestionName,
 	LowerExpressingQuestionName,
 	UpperProvidesQuestionName,
 	UpperJustifiedQuestionName,
@@ -765,6 +773,7 @@ type DefinesGroup struct {
 	SuchThat       *SuchThatSection
 	Means          *MeansSection
 	EquivalentTo   *EquivalentToSection
+	Specifies      *SpecifiesSection
 	Expressing     *ExpressingSection
 	Provides       *ProvidesSection
 	Justified      *JustifiedSection
@@ -822,6 +831,7 @@ var StatesSections = []string{
 	LowerUsingQuestionName,
 	LowerWhenQuestionName,
 	LowerSuchThatQuestionName,
+	LowerSpecifiesQuestionName,
 	LowerThatName,
 	UpperJustifiedQuestionName,
 	UpperDocumentedQuestionName,
@@ -836,6 +846,7 @@ type StatesGroup struct {
 	Using          *UsingSection
 	When           *WhenSection
 	SuchThat       *SuchThatSection
+	Specifies      *SpecifiesSection
 	That           ThatSection
 	Justified      *JustifiedSection
 	Documented     *DocumentedSection

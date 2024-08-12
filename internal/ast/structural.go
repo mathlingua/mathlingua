@@ -675,7 +675,7 @@ var DescribesSections = []string{
 	LowerSuchThatQuestionName,
 	LowerExtendsQuestionName,
 	LowerEquivalentToQuestionName,
-	LowerSpecifiesQuestionName,
+	LowerSatisfyingQuestionName,
 	UpperProvidesQuestionName,
 	UpperJustifiedQuestionName,
 	UpperDocumentedQuestionName,
@@ -692,7 +692,7 @@ type DescribesGroup struct {
 	SuchThat       *SuchThatSection
 	Extends        *ExtendsSection
 	EquivalentTo   *EquivalentToSection
-	Specifies      *SpecifiesSection
+	Satisfying     *SatisfyingSection
 	Provides       *ProvidesSection
 	Justified      *JustifiedSection
 	Documented     *DocumentedSection
@@ -727,8 +727,8 @@ type EquivalentToSection struct {
 	CommonMetaData CommonMetaData
 }
 
-type SpecifiesSection struct {
-	Specifies      []ClauseKind
+type SatisfyingSection struct {
+	Satisfying     []ClauseKind
 	CommonMetaData CommonMetaData
 }
 
@@ -748,7 +748,7 @@ var DefinesSections = []string{
 	LowerSuchThatQuestionName,
 	LowerMeansQuestionName,
 	LowerEquivalentToQuestionName,
-	LowerExpressesQuestionName,
+	LowerExpressingQuestionName,
 	UpperProvidesQuestionName,
 	UpperJustifiedQuestionName,
 	UpperDocumentedQuestionName,
@@ -765,7 +765,7 @@ type DefinesGroup struct {
 	SuchThat       *SuchThatSection
 	Means          *MeansSection
 	EquivalentTo   *EquivalentToSection
-	Expresses      *ExpressesSection
+	Expressing     *ExpressingSection
 	Provides       *ProvidesSection
 	Justified      *JustifiedSection
 	Documented     *DocumentedSection
@@ -785,8 +785,8 @@ type MeansSection struct {
 	CommonMetaData CommonMetaData
 }
 
-type ExpressesSection struct {
-	Expresses      []ClauseKind
+type ExpressingSection struct {
+	Expressing     []ClauseKind
 	CommonMetaData CommonMetaData
 }
 

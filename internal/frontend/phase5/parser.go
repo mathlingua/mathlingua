@@ -1048,9 +1048,9 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	if sec, ok := sections[ast.LowerEquivalentToName]; ok {
 		equivalentTo = p.toEquivalentToSection(sec)
 	}
-	var specifies *ast.SpecifiesSection
-	if sec, ok := sections[ast.LowerSpecifiesName]; ok {
-		specifies = p.toSpecifiesSection(sec)
+	var satisfying *ast.SatisfyingSection
+	if sec, ok := sections[ast.LowerSatisfyingName]; ok {
+		satisfying = p.toSatisfyingSection(sec)
 	}
 	var provides *ast.ProvidesSection
 	if sec, ok := sections[ast.UpperProvidesName]; ok {
@@ -1084,7 +1084,7 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		SuchThat:       suchThat,
 		Extends:        extends,
 		EquivalentTo:   equivalentTo,
-		Specifies:      specifies,
+		Satisfying:     satisfying,
 		Provides:       provides,
 		Justified:      justified,
 		Documented:     documented,
@@ -1109,9 +1109,9 @@ func (p *parser) toExtendsSection(section phase4.Section) *ast.ExtendsSection {
 	}
 }
 
-func (p *parser) toSpecifiesSection(section phase4.Section) *ast.SpecifiesSection {
-	return &ast.SpecifiesSection{
-		Specifies:      p.oneOrMoreClauses(section),
+func (p *parser) toSatisfyingSection(section phase4.Section) *ast.SatisfyingSection {
+	return &ast.SatisfyingSection{
+		Satisfying:     p.oneOrMoreClauses(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -1149,9 +1149,9 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 	if sec, ok := sections[ast.LowerEquivalentToName]; ok {
 		equivalentTo = p.toEquivalentToSection(sec)
 	}
-	var expresses *ast.ExpressesSection
-	if sec, ok := sections[ast.LowerExpressesName]; ok {
-		expresses = p.toExpressesSection(sec)
+	var expressing *ast.ExpressingSection
+	if sec, ok := sections[ast.LowerExpressingName]; ok {
+		expressing = p.toExpressingSection(sec)
 	}
 	var provides *ast.ProvidesSection
 	if sec, ok := sections[ast.UpperProvidesName]; ok {
@@ -1185,7 +1185,7 @@ func (p *parser) toDefinesGroup(group phase4.Group) (ast.DefinesGroup, bool) {
 		SuchThat:       suchThat,
 		Means:          means,
 		EquivalentTo:   equivalentTo,
-		Expresses:      expresses,
+		Expressing:     expressing,
 		Provides:       provides,
 		Justified:      justified,
 		Documented:     documented,
@@ -1224,9 +1224,9 @@ func (p *parser) toEquivalentToSection(section phase4.Section) *ast.EquivalentTo
 	}
 }
 
-func (p *parser) toExpressesSection(section phase4.Section) *ast.ExpressesSection {
-	return &ast.ExpressesSection{
-		Expresses:      p.oneOrMoreClauses(section),
+func (p *parser) toExpressingSection(section phase4.Section) *ast.ExpressingSection {
+	return &ast.ExpressingSection{
+		Expressing:     p.oneOrMoreClauses(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }

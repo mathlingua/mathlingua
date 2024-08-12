@@ -313,8 +313,8 @@ func (n *DescribesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.EquivalentTo != nil {
 		forEach(n.EquivalentTo.EquivalentTo, fn)
 	}
-	if n.Specifies != nil {
-		forEach(n.Specifies.Specifies, fn)
+	if n.Satisfying != nil {
+		forEach(n.Satisfying.Satisfying, fn)
 	}
 	if n.Provides != nil {
 		forEach(n.Provides.Provides, fn)
@@ -354,8 +354,8 @@ func (n *DefinesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.EquivalentTo != nil {
 		forEach(n.EquivalentTo.EquivalentTo, fn)
 	}
-	if n.Expresses != nil {
-		forEach(n.Expresses.Expresses, fn)
+	if n.Expressing != nil {
+		forEach(n.Expressing.Expressing, fn)
 	}
 	if n.Provides != nil {
 		forEach(n.Provides.Provides, fn)

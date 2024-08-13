@@ -150,6 +150,7 @@ func checkIsExpression(
 		_, isFalse := item.(*ast.FalseBuiltinExpression)
 		_, isCommand := item.(*ast.CommandExpression)
 		_, isFormulation := item.(*ast.FormulationMetaKind)
+		_, isSelectFrom := item.(*ast.SelectFromBuiltinExpression)
 		var isAndOperator = false
 		if infixOp, isInfixOp := item.(*ast.InfixOperatorCallExpression); isInfixOp {
 			target, isNonEnclosed := infixOp.Target.(*ast.NonEnclosedNonCommandOperatorTarget)
@@ -158,13 +159,13 @@ func checkIsExpression(
 			}
 		}
 		if !isName && !isType && !isTypeOf && !isBoolean && !isTrue && !isFalse &&
-			!isCommand && !isFormulation && !isAndOperator {
+			!isCommand && !isFormulation && !isAndOperator && !isSelectFrom {
 			appendError(
 				path,
 				isExpression.Start(),
 				"The right-hand-side of an 'is' statement "+
 					"can only contain a name, command, command & command, \\\\type, \\\\type:of, "+
-					"\\\\boolean, \\\\true, \\\\false, or \\\\formulation",
+					"\\\\select:from, \\\\boolean, \\\\true, \\\\false, or \\\\formulation",
 				tracker)
 		}
 	}

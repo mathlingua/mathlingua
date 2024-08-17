@@ -1,9 +1,9 @@
 
 .mathlinguaTopLevelEntity {
-  padding-top: 20px;
-  padding-bottom: 20px;
-  padding-left: 25px;
-  padding-right: 25px;
+  padding-top: 25px;
+  padding-bottom: 25px;
+  padding-left: 35px;
+  padding-right: 35px;
   max-width: 70%;
   width: fit-content;
   height: max-content;
@@ -14,7 +14,7 @@
   border: solid;
   border-color: var(--border-color);
   border-width: 1px;
-  border-radius: 3px;
+  border-radius: 10px;
   box-shadow: var(--box-shadow);
   background-color: var(--top-level-entity-background-color, var(--background-color));
 }

@@ -107,3 +107,41 @@
 .center {
   flex: auto;
 }
+
+.navigationWrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navigationButtonLeft {
+  font-size: 125%;
+  color: var(--text-color);
+  margin-left: 32px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.navigationButtonLeftDisabled {
+  font-size: 125%;
+  color: var(--border-color);
+  margin-left: 32px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.navigationButtonRight {
+  font-size: 125%;
+  color: var(--text-color);
+  margin-right: 32px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.navigationButtonRightDisabled {
+  font-size: 125%;
+  color: var(--border-color);
+  margin-right: 32px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}

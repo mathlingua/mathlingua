@@ -4,12 +4,15 @@ import styles from './MainPage.module.css';
 
 import MenuIcon from '@rsuite/icons/Menu';
 import GearIcon from '@rsuite/icons/Gear';
+import LeftIcon from '@rsuite/icons/ArrowLeftLine';
+import RightIcon from '@rsuite/icons/ArrowRightLine';
+
 import { useFetch } from 'usehooks-ts';
 import { PageResponse, PathsResponse } from '../types';
 import { Sidebar } from '../components/Sidebar';
 import { DocumentView } from '../components/ast/DocumentView';
 import { Button } from '../design/Button';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getNextTheme, useTheme } from '../hooks/useTheme';
 
 export function MainPage() {
@@ -42,6 +45,11 @@ export function MainPage() {
     `/api/page?path=${encodeURIComponent(trimmedPathname)}`);
   const { data: pathsData } = useFetch<PathsResponse>('/api/paths');
 
+  const allPaths = pathsData?.Paths?.filter(path => path.Path.endsWith('.math')) ?? [];
+  const activeIndex = allPaths.findIndex((path) => path.Path === trimmedPathname);
+  const prevItem = (activeIndex > 0) ? allPaths[activeIndex - 1] : null;
+  const nextItem = (activeIndex < allPaths.length - 1) ? allPaths[activeIndex + 1] : null;
+
   React.useEffect(() => {
     const first = pathsData?.Paths?.[0];
     if (location.pathname === "/" && first !== undefined) {
@@ -69,6 +77,27 @@ export function MainPage() {
           <DocumentView node={activePathData?.Document} isOnSmallScreen={isOnSmallScreen} />
         </div>
       )}
+      {(prevItem !== null || nextItem !== null) &&
+        (
+          <div className={styles.navigationWrapper}>
+            {prevItem?.Path ?
+              (
+                <Link to={prevItem.Path}>
+                  <Button flat className={styles.navigationButtonLeft}><LeftIcon /></Button>
+                </Link>
+               ) : (
+                <Button flat className={styles.navigationButtonLeftDisabled}><LeftIcon /></Button>
+               )}
+            {nextItem?.Path ?
+              (
+                <Link to={nextItem.Path}>
+                  <Button flat className={styles.navigationButtonRight}><RightIcon /></Button>
+                </Link>
+              ) : (
+                <Button flat className={styles.navigationButtonRightDisabled}><RightIcon /></Button>
+              )}
+          </div>
+        )}
     </div>
   );
 

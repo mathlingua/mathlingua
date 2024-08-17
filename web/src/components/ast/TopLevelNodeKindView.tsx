@@ -115,7 +115,7 @@ export const TopLevelNodeKindView = (props: TopLevelNodeKindViewProps) => {
                 node={props.node as any}
                 showSource={showSource}
                 indent={0}
-                skipDocumentsSection={!showSource && onlyHasCalledAndWritten}
+                skipDocumentsSection={!showSource /* && onlyHasCalledAndWritten */}
                 onSelectedSignature={props.onSelectedSignature} />
             </div>
           </div>

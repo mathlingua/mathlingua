@@ -222,7 +222,7 @@ export function getNextTheme(theme: Theme): Theme {
     case 'minimal-light':
       return 'light';
     default:
-      return 'light';
+      return 'alt-light';
   }
 }
 

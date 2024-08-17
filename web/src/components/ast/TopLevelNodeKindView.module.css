@@ -21,7 +21,7 @@
 
 @media screen and (max-width: 450px) {
   .mathlinguaTopLevelEntity {
-    padding: 15px;
+    padding: 25px;
     min-width: 50%;
     max-width: 80vw;
   }

@@ -56,6 +56,7 @@ const (
 	BackSlash             TokenType = "BackSlash"
 	Semicolon             TokenType = "Semicolon"
 	ColonEquals           TokenType = "ColonEquals"
+	ColonEqualsColon      TokenType = "ColonEqualsColon"
 	ColonDashArrow        TokenType = "ColonDashArrow"
 	ColonArrow            TokenType = "ColonArrow"
 	DotDotDot             TokenType = "DotDotDot"
@@ -72,10 +73,10 @@ const (
 	DotRSquare            TokenType = "DotRSquare"
 	LCurlyDot             TokenType = "LCurlyDot"
 	DotRCurly             TokenType = "DotRCurly"
-	LParenColon           TokenType = "LParenColon"
-	ColonRParen           TokenType = "ColonRParen"
 	LCurlyColon           TokenType = "LCurlyColon"
 	ColonRCurly           TokenType = "ColonRCurly"
+	BarRSquare            TokenType = "BarRSquare"
+	LSquareBar            TokenType = "LSquareBar"
 )
 
 type Token struct {

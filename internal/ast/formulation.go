@@ -38,6 +38,16 @@ type NameForm struct {
 	UniqueName          string
 }
 
+// $x or $"x" or $x...
+type SymbolForm struct {
+	Text string
+	// specifies $"x" vs $x but Text will never contain the quotes
+	IsStropped          bool
+	VarArg              VarArgData
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
 // f(x, y)
 type FunctionForm struct {
 	Target              NameForm
@@ -144,7 +154,7 @@ type FunctionLiteralExpression struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// (x + y, z) or (:x:)
+// (x + y, z) or (.x.)
 type TupleExpression struct {
 	Args                []ExpressionKind
 	IsInvisible         bool
@@ -152,10 +162,26 @@ type TupleExpression struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// {:a + b:}(some.label)
+// (a, b, c)[|a := 0; 0|] or (x + y)[|x := 0; y := 1|] or
+// (P \.and./ Q)[|P := x is A; Q := y is B]
+type SubstitutionExpression struct {
+	Target              TupleExpression
+	Substitutions       map[string]ExpressionKind
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+// {.a + b.}(some.label)
 type LabeledGrouping struct {
 	Arg                 ExpressionKind
 	Label               string
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+// {:x:}
+type EncodedCastGrouping struct {
+	Arg                 ExpressionKind
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
@@ -456,7 +482,7 @@ type ExpressionColonDashArrowItem struct {
 
 ////////////////////////////////////// Operators ///////////////////////////////////////////////////
 
-// [.x.], [.x + y.], (.x.), {.x.}, :(.x.), (.x.):, etc.
+// [.x.], [.x + y.], :[.x.], [.x.]:
 type EnclosedNonCommandOperatorTarget struct {
 	Target              ExpressionKind
 	HasLeftColon        bool

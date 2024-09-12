@@ -93,7 +93,7 @@ func (n *TupleExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) strin
 
 	result := ""
 	if n.IsInvisible {
-		result += "(:"
+		result += "(."
 	} else {
 		result += "("
 	}
@@ -101,7 +101,7 @@ func (n *TupleExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) strin
 	result += commaSeparatedString(n.Args, fn)
 
 	if n.IsInvisible {
-		result += ":)"
+		result += ".)"
 	} else {
 		result += ")"
 	}
@@ -114,9 +114,9 @@ func (n *LabeledGrouping) ToCode(fn func(node MlgNodeKind) (string, bool)) strin
 		return res
 	}
 
-	result := "{:"
+	result := "{."
 	result += n.Arg.ToCode(fn)
-	result += ":}("
+	result += ".}("
 	result += n.Label
 	result += ")"
 
@@ -647,7 +647,7 @@ func (n *VarArgData) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 
 	result := ""
 	if len(n.VarArgNames) > 0 {
-		result += "{"
+		result += "["
 	}
 	if len(n.VarArgNames) > 1 {
 		result += "("
@@ -677,7 +677,7 @@ func (n *VarArgData) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 		}
 	}
 	if len(n.VarArgNames) > 0 {
-		result += "}"
+		result += "]"
 	}
 	return result
 }

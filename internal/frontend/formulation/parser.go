@@ -1437,8 +1437,8 @@ func (fp *formulationParser) parenOrInvisibleTupleExpression(
 	right := ast.RParen
 
 	if isInvisible {
-		left = ast.LParenColon
-		right = ast.ColonRParen
+		left = ast.LParenDot
+		right = ast.DotRParen
 	}
 
 	if !fp.has(left) {
@@ -1458,7 +1458,7 @@ func (fp *formulationParser) parenOrInvisibleTupleExpression(
 			fp.expect(ast.Comma)
 		}
 
-		arg, ok := fp.expressionKind(ast.ColonRParen)
+		arg, ok := fp.expressionKind(ast.DotRParen)
 		if !ok {
 			fp.lexer.RollBack(id)
 			return ast.TupleExpression{}, false
@@ -1468,7 +1468,7 @@ func (fp *formulationParser) parenOrInvisibleTupleExpression(
 	fp.expect(right)
 
 	if isInvisible && len(args) != 1 {
-		fp.errorAt("A (:...:) must contain one element", start)
+		fp.errorAt("A (. ... .) must contain one element", start)
 	}
 
 	fp.lexer.Commit(id)
@@ -1483,19 +1483,19 @@ func (fp *formulationParser) parenOrInvisibleTupleExpression(
 }
 
 func (fp *formulationParser) labeledGrouping() (ast.LabeledGrouping, bool) {
-	if !fp.has(ast.LCurlyColon) {
+	if !fp.has(ast.LCurlyDot) {
 		return ast.LabeledGrouping{}, false
 	}
 
 	start := fp.lexer.Position()
-	fp.expect(ast.LCurlyColon)
+	fp.expect(ast.LCurlyDot)
 
-	exp, ok := fp.expressionKind(ast.ColonRCurly)
+	exp, ok := fp.expressionKind(ast.DotRCurly)
 	if !ok {
 		fp.errorAt("Expected an expression", start)
 	}
 
-	fp.expect(ast.ColonRCurly)
+	fp.expect(ast.DotRCurly)
 
 	label := fp.labelText()
 	if len(label) == 0 {
@@ -1911,9 +1911,7 @@ func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (
 
 func (fp *formulationParser) enclosedNonCommandOperatorTarget() (
 	ast.EnclosedNonCommandOperatorTarget, bool) {
-	if !fp.has(ast.LSquareDot) && !fp.hasHas(ast.Colon, ast.LSquareDot) &&
-		!fp.has(ast.LParenDot) && !fp.hasHas(ast.Colon, ast.LParenDot) &&
-		!fp.has(ast.LCurlyDot) && !fp.hasHas(ast.Colon, ast.LCurlyDot) {
+	if !fp.has(ast.LSquareDot) && !fp.hasHas(ast.Colon, ast.LSquareDot) {
 		return ast.EnclosedNonCommandOperatorTarget{}, false
 	}
 

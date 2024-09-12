@@ -121,13 +121,6 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 					Text:     "(.",
 					Position: cur.Position,
 				})
-			} else if i < len(chars) && chars[i].Symbol == ':' {
-				i++ // move past the :
-				appendToken(ast.Token{
-					Type:     ast.LParenColon,
-					Text:     "(:",
-					Position: cur.Position,
-				})
 			} else {
 				appendToken(ast.Token{
 					Type:     ast.LParen,
@@ -149,6 +142,13 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 					Text:     "[.",
 					Position: cur.Position,
 				})
+			} else if i < len(chars) && chars[i].Symbol == '|' {
+				i++ // move past the |
+				appendToken(ast.Token{
+					Type:     ast.LSquareBar,
+					Text:     "[|",
+					Position: cur.Position,
+				})
 			} else {
 				appendToken(ast.Token{
 					Type:     ast.LSquare,
@@ -156,6 +156,13 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 					Position: cur.Position,
 				})
 			}
+		case cur.Symbol == '|' && i < len(chars) && chars[i].Symbol == ']':
+			i++ // move past the ]
+			appendToken(ast.Token{
+				Type:     ast.BarRSquare,
+				Text:     "|]",
+				Position: cur.Position,
+			})
 		case cur.Symbol == ']':
 			appendToken(ast.Token{
 				Type:     ast.RSquare,
@@ -293,14 +300,7 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 				Position: cur.Position,
 			})
 		case cur.Symbol == ':':
-			if i < len(chars) && chars[i].Symbol == ')' {
-				i++ // move past the )
-				appendToken(ast.Token{
-					Type:     ast.ColonRParen,
-					Text:     ":)",
-					Position: cur.Position,
-				})
-			} else if i < len(chars) && chars[i].Symbol == '}' {
+			if i < len(chars) && chars[i].Symbol == '}' {
 				i++ // move past the }
 				appendToken(ast.Token{
 					Type:     ast.ColonRCurly,
@@ -314,6 +314,13 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 					appendToken(ast.Token{
 						Type:     ast.ColonArrow,
 						Text:     ":=>",
+						Position: cur.Position,
+					})
+				} else if i < len(chars) && chars[i].Symbol == ':' {
+					i++ // move past the :
+					appendToken(ast.Token{
+						Type:     ast.ColonEqualsColon,
+						Text:     ":=:",
 						Position: cur.Position,
 					})
 				} else {

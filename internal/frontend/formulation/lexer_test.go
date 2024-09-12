@@ -29,7 +29,7 @@ func TestFormulationLexer(t *testing.T) {
 	lexer := NewLexer("/some/path", `
 xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is `+
 		`\something/ x as \[something] "*+" name @ extends (. .)|->abc=:->....[..] `+
-		"{..}(::){::} name` *+`",
+		"{..}[||]{::}:=: name` *+`",
 		tracker)
 
 	actual := "\n"
@@ -119,10 +119,11 @@ abc Name
 .] DotRSquare
 {. LCurlyDot
 .} DotRCurly
-(: LParenColon
-:) ColonRParen
+[| LSquareBar
+|] BarRSquare
 {: LCurlyColon
 :} ColonRCurly
+:=: ColonEqualsColon
 ` + "name` Name\n*+` Operator\n"
 
 	assert.Equal(t, expected, actual)

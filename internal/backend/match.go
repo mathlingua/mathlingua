@@ -575,55 +575,6 @@ func matchOrdinal(node ast.MlgNodeKind, pattern ast.OrdinalPattern) MatchResult 
 	}
 }
 
-func matchAllDirectionParamParamKind(
-	nodes []ast.DirectionParamParamKind,
-	patterns []ast.DirectionParamParamPatternKind,
-) MatchResult {
-	if len(nodes) != len(patterns) {
-		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeKind),
-			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d: Received: %s",
-					len(patterns), len(nodes), sliceToString(nodes)),
-			},
-			MatchMakesSense: true,
-		}
-	}
-
-	if len(nodes) == 0 {
-		return MatchResult{
-			MatchMakesSense: true,
-		}
-	}
-
-	result := matchDirectionParamParamKind(nodes[0], patterns[0])
-	for i := 1; i < len(nodes); i++ {
-		result = unionMatches(result, matchDirectionParamParamKind(nodes[i], patterns[i]))
-	}
-	return result
-}
-
-func matchDirectionParamParamKind(
-	node ast.DirectionParamParamKind,
-	pattern ast.DirectionParamParamPatternKind,
-) MatchResult {
-	switch p := pattern.(type) {
-	case *ast.NameFormPattern:
-		return matchName(node, *p)
-	case *ast.FunctionFormPattern:
-		return matchFunction(node, *p)
-	case *ast.OrdinalPattern:
-		return matchOrdinal(node, *p)
-	default:
-		return MatchResult{
-			Messages: []string{
-				"Expected a direction",
-			},
-			MatchMakesSense: true,
-		}
-	}
-}
-
 func matchCurlyParam(node *ast.CurlyParam, pattern *ast.CurlyPattern) MatchResult {
 	if node == nil || pattern == nil {
 		if node == nil && pattern == nil {
@@ -1160,47 +1111,6 @@ func matchAllNamedParams(nodes *[]ast.NamedParam, patterns *[]ast.NamedGroupPatt
 	result := Match(&nodesValue[0], &patternsValue[0])
 	for i := 1; i < len(*nodes); i++ {
 		result = unionMatches(result, Match(&nodesValue[i], &patternsValue[i]))
-	}
-	return result
-}
-
-// nolint:unused
-func matchDirectionParams(
-	nodes *[]ast.DirectionParamParamKind,
-	patterns *[]ast.FormPatternKind,
-) MatchResult {
-	if nodes == nil {
-		zeroNodes := make([]ast.DirectionParamParamKind, 0)
-		nodes = &zeroNodes
-	}
-
-	if patterns == nil {
-		zeroPatterns := make([]ast.FormPatternKind, 0)
-		patterns = &zeroPatterns
-	}
-
-	if len(*nodes) != len(*patterns) {
-		return MatchResult{
-			Mapping: make(map[string]ast.MlgNodeKind),
-			Messages: []string{
-				fmt.Sprintf("Expected %d values but found %d: Received: %s",
-					len(*patterns), len(*nodes), sliceToString(*nodes)),
-			},
-			MatchMakesSense: true,
-		}
-	}
-
-	if len(*nodes) == 0 {
-		return MatchResult{
-			MatchMakesSense: true,
-		}
-	}
-
-	nodesValue := *nodes
-	patternsValue := *patterns
-	result := Match(nodesValue[0], patternsValue[0])
-	for i := 1; i < len(*nodes); i++ {
-		result = unionMatches(result, Match(nodesValue[i], patternsValue[i]))
 	}
 	return result
 }

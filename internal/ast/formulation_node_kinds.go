@@ -225,17 +225,6 @@ func (*InfixCommandOperatorId) IdKind() {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type DirectionParamParamKind interface {
-	FormulationNodeKind
-	DirectionParamParamKind()
-}
-
-func (*NameForm) DirectionParamParamKind()              {}
-func (*FunctionForm) DirectionParamParamKind()          {}
-func (*OrdinalCallExpression) DirectionParamParamKind() {}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 type StructuralColonEqualsColonFormItemKind interface {
 	FormulationNodeKind
 	StructuralColonEqualsColonFormItemKind()

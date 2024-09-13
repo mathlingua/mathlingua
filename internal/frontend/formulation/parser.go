@@ -2301,51 +2301,6 @@ func (fp *formulationParser) nameParams() ([]ast.NameForm, bool) {
 	return names, true
 }
 
-func (fp *formulationParser) directionParamParamKind() (ast.DirectionParamParamKind, bool) {
-	if call, ok := fp.ordinalCallExpression(); ok {
-		return &call, true
-	}
-
-	if function, ok := fp.functionForm(); ok {
-		return &function, true
-	}
-
-	if name, ok := fp.nameForm(); ok {
-		return &name, true
-	}
-
-	return nil, false
-}
-
-func (fp *formulationParser) curlyDirectionalParams() (*[]ast.DirectionParamParamKind, bool) {
-	id := fp.lexer.Snapshot()
-	_, ok := fp.token(ast.LCurly)
-	if !ok {
-		fp.lexer.RollBack(id)
-		return nil, false
-	}
-	args := make([]ast.DirectionParamParamKind, 0)
-	for fp.lexer.HasNext() {
-		if fp.has(ast.RCurly) {
-			break
-		}
-
-		if len(args) > 0 {
-			fp.expect(ast.Comma)
-		}
-
-		arg, ok := fp.directionParamParamKind()
-		if !ok {
-			fp.lexer.RollBack(id)
-			return nil, false
-		}
-		args = append(args, arg)
-	}
-	fp.expect(ast.RCurly)
-	fp.lexer.Commit(id)
-	return &args, true
-}
-
 func (fp *formulationParser) squareParams() (*[]ast.StructuralFormKind, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LSquare)

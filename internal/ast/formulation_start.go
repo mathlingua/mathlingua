@@ -38,6 +38,7 @@ func (n *Signature) Start() Position                              { return n.Com
 func (n *TypeMetaKind) Start() Position                           { return n.CommonMetaData.Start }
 func (n *FormulationMetaKind) Start() Position                    { return n.CommonMetaData.Start }
 func (n *StructuralColonEqualsForm) Start() Position              { return n.CommonMetaData.Start }
+func (n *StructuralColonEqualsColonForm) Start() Position         { return n.CommonMetaData.Start }
 func (n *ExpressionColonEqualsItem) Start() Position              { return n.CommonMetaData.Start }
 func (n *ExpressionColonArrowItem) Start() Position               { return n.CommonMetaData.Start }
 func (n *ExpressionColonDashArrowItem) Start() Position           { return n.CommonMetaData.Start }

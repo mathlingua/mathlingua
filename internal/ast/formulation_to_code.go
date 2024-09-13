@@ -396,6 +396,13 @@ func (n *StructuralColonEqualsForm) ToCode(fn func(node MlgNodeKind) (string, bo
 	return n.Lhs.ToCode(fn) + " := " + n.Rhs.ToCode(fn)
 }
 
+func (n *StructuralColonEqualsColonForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	return n.Lhs.ToCode(fn) + " :=: " + n.Rhs.ToCode(fn)
+}
+
 func (n *ExpressionColonEqualsItem) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res

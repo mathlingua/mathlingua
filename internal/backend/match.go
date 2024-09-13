@@ -122,6 +122,8 @@ func unionMatches(result1 MatchResult, result2 MatchResult) MatchResult {
 	}
 }
 
+// TODO: add matchStructuralColonEqualsColon
+
 func matchStructuralColonEquals(node ast.MlgNodeKind,
 	pattern ast.StructuralColonEqualsPattern) MatchResult {
 	switch n := node.(type) {

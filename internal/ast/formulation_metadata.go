@@ -106,6 +106,10 @@ func (n *StructuralColonEqualsForm) GetFormulationMetaData() *FormulationMetaDat
 	return &n.FormulationMetaData
 }
 
+func (n *StructuralColonEqualsColonForm) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}
+
 func (n *ExpressionColonEqualsItem) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }

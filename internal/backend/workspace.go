@@ -237,6 +237,7 @@ func (w *Workspace) getDiagnosticsForPath(path ast.Path) []frontend.Diagnostic {
 // Replace `(a, b)` with `var'#' := (a, b)` but do not change `X := (a, b)`
 func replaceMissingIdentifier(target ast.Target, keyGen *mlglib.KeyGenerator) ast.Target {
 	switch f := target.Root.(type) {
+	// TODO: determine if the StructuralColonEqualsColonForm needs to be checked
 	case *ast.FunctionForm:
 		return ast.Target{
 			Root: &ast.StructuralColonEqualsForm{

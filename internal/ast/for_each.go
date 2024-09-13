@@ -897,6 +897,11 @@ func (n *StructuralColonEqualsForm) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Rhs)
 }
 
+func (n *StructuralColonEqualsColonForm) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(n.Lhs)
+	fn(n.Rhs)
+}
+
 func (n *ExpressionColonEqualsItem) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
 	fn(n.Rhs)

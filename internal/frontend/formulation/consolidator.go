@@ -241,7 +241,7 @@ func toNode(
 			Rhs:    lhs,
 		}
 	case *ast.PseudoTokenNode:
-		// a token, for example :=, :=>, :->, is
+		// a token, for example :=, :=:, :=>, :->, is
 		switch {
 		case top.Type == ast.ColonArrow:
 			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
@@ -253,15 +253,6 @@ func toNode(
 				Lhs: lhs,
 				Rhs: rhs,
 			}
-			//		case top.Type == ast.ColonDashArrow:
-			//			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
-			//				tracker, top.Start())
-			//			tmp := toNode(path, items, tracker)
-			//			lhs := checkType(path, tmp, default_expression, "Expression", tracker, top.Start())
-			//			return &ast.ExpressionColonDashArrowItem{
-			//				Lhs: lhs,
-			//				Rhs: rhs,
-			//			}
 		case top.Type == ast.ColonEquals:
 			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
 				tracker, top.Start())

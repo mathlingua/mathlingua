@@ -62,6 +62,7 @@ func ToFormPattern(item ast.StructuralFormKind) ast.FormPatternKind {
 		return ToFunctionLiteralFormPattern(*n)
 	case *ast.StructuralColonEqualsForm:
 		return ToStructuralColonEqualsPattern(*n)
+	// TODO: add StructuralColonEqualsColonForm case
 	default:
 		panic("Could not process a pattern for " +
 			item.ToCode(func(node ast.MlgNodeKind) (string, bool) { return "", false }))
@@ -275,6 +276,8 @@ func ToInfixCommandPattern(id ast.InfixCommandOperatorId) ast.InfixCommandPatter
 		ParenArgs:   toParenArgs(id.Operator.ParenParams),
 	}
 }
+
+// TODO: add ToStructuralColonEqualsColonPattern
 
 func ToStructuralColonEqualsPattern(
 	colonEquals ast.StructuralColonEqualsForm,

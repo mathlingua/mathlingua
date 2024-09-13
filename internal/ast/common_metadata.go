@@ -151,6 +151,10 @@ func (n *StructuralColonEqualsForm) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
 
+func (n *StructuralColonEqualsColonForm) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
 func (n *ExpressionColonEqualsItem) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }

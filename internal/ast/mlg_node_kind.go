@@ -111,6 +111,7 @@ func (*Signature) MlgNodeKind()                              {}
 func (*TypeMetaKind) MlgNodeKind()                           {}
 func (*FormulationMetaKind) MlgNodeKind()                    {}
 func (*StructuralColonEqualsForm) MlgNodeKind()              {}
+func (*StructuralColonEqualsColonForm) MlgNodeKind()         {}
 func (*ExpressionColonEqualsItem) MlgNodeKind()              {}
 func (*ExpressionColonArrowItem) MlgNodeKind()               {}
 func (*ExpressionColonDashArrowItem) MlgNodeKind()           {}

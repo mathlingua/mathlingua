@@ -456,6 +456,15 @@ type StructuralColonEqualsForm struct {
 	FormulationMetaData FormulationMetaData
 }
 
+// f(x...) :=: f((x...))
+// (X, *, e, f(x)) :=: ((X, *, e), f(x))
+type StructuralColonEqualsColonForm struct {
+	Lhs                 StructuralColonEqualsColonFormItemKind
+	Rhs                 StructuralColonEqualsColonFormItemKind
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
 // f(x) := x + 1
 type ExpressionColonEqualsItem struct {
 	Lhs                 ExpressionKind

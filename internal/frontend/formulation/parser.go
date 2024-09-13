@@ -1809,6 +1809,10 @@ func (fp *formulationParser) colonEqualsToken() (ast.PseudoTokenNode, bool) {
 	return fp.pseudoToken(ast.ColonEquals)
 }
 
+func (fp *formulationParser) colonEqualsColonToken() (ast.PseudoTokenNode, bool) {
+	return fp.pseudoToken(ast.ColonEqualsColon)
+}
+
 func (fp *formulationParser) colonArrowToken() (ast.PseudoTokenNode, bool) {
 	return fp.pseudoToken(ast.ColonArrow)
 }
@@ -1844,6 +1848,10 @@ func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 
 	if colonEquals, ok := fp.colonEqualsToken(); ok {
 		return colonEquals, ok
+	}
+
+	if colonEqualsColon, ok := fp.colonEqualsColonToken(); ok {
+		return colonEqualsColon, ok
 	}
 
 	if colonArrow, ok := fp.colonArrowToken(); ok {
@@ -2111,7 +2119,61 @@ func (fp *formulationParser) commandExpressionContent(allowOperator bool, start 
 
 /////////////////////////// forms ///////////////////////////////////////
 
+func (fp *formulationParser) structuralColonEqualsColonFormItemKind() (
+	ast.StructuralColonEqualsColonFormItemKind, bool,
+) {
+	if fun, ok := fp.functionForm(); ok {
+		return &fun, true
+	}
+
+	if tuple, ok := fp.tupleForm(); ok {
+		return &tuple, true
+	}
+
+	return nil, false
+}
+
+func (fp *formulationParser) structuralColonEqualsColonForm() (
+	ast.StructuralColonEqualsColonForm, bool,
+) {
+	start := fp.lexer.Position()
+	id := fp.lexer.Snapshot()
+	lhs, ok := fp.structuralColonEqualsColonFormItemKind()
+
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.StructuralColonEqualsColonForm{}, false
+	}
+
+	if !fp.has(ast.ColonEqualsColon) {
+		fp.lexer.RollBack(id)
+		return ast.StructuralColonEqualsColonForm{}, false
+	}
+
+	fp.expect(ast.ColonEqualsColon)
+
+	rhs, ok := fp.structuralColonEqualsColonFormItemKind()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.StructuralColonEqualsColonForm{}, false
+	}
+
+	fp.lexer.Commit(id)
+	return ast.StructuralColonEqualsColonForm{
+		Lhs: lhs,
+		Rhs: rhs,
+		CommonMetaData: ast.CommonMetaData{
+			Key:   fp.keyGen.Next(),
+			Start: start,
+		},
+	}, true
+}
+
 func (fp *formulationParser) structuralFormKindWithoutColonEquals() (ast.StructuralFormKind, bool) {
+	if form, ok := fp.structuralColonEqualsColonForm(); ok {
+		return &form, ok
+	}
+
 	if op, ok := fp.infixOperatorForm(); ok {
 		return &op, ok
 	}
@@ -2155,7 +2217,7 @@ func (fp *formulationParser) structuralFormKindPossiblyWithColonEquals() (
 		rhs, ok := fp.structuralFormKindWithoutColonEquals()
 		if !ok {
 			fp.lexer.RollBack(id)
-			fp.error("Expected an item on the righ-hand-side of :=")
+			fp.error("Expected an item on the right-hand-side of :=")
 			return nil, false
 		}
 
@@ -2173,7 +2235,25 @@ func (fp *formulationParser) structuralFormKindPossiblyWithColonEquals() (
 		rhs, ok := fp.structuralFormKindWithoutColonEquals()
 		if !ok {
 			fp.lexer.RollBack(id)
-			fp.error("Expected an item on the righ-hand-side of :=")
+			fp.error("Expected an item on the right-hand-side of :=")
+			return nil, false
+		}
+
+		fp.lexer.Commit(id)
+		return &ast.StructuralColonEqualsForm{
+			Lhs: lhs,
+			Rhs: rhs,
+			CommonMetaData: ast.CommonMetaData{
+				Start: fp.getShiftedPosition(start),
+				Key:   fp.keyGen.Next(),
+			},
+		}, true
+	case *ast.StructuralColonEqualsColonForm:
+		fp.expect(ast.ColonEquals)
+		rhs, ok := fp.structuralFormKindWithoutColonEquals()
+		if !ok {
+			fp.lexer.RollBack(id)
+			fp.error("Expected an item on the right-hand-side of :=")
 			return nil, false
 		}
 

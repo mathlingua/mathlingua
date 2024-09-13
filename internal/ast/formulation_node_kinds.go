@@ -46,6 +46,7 @@ func (*Signature) FormulationNodeKind()                              {}
 func (*TypeMetaKind) FormulationNodeKind()                           {}
 func (*FormulationMetaKind) FormulationNodeKind()                    {}
 func (*StructuralColonEqualsForm) FormulationNodeKind()              {}
+func (*StructuralColonEqualsColonForm) FormulationNodeKind()         {}
 func (*ExpressionColonEqualsItem) FormulationNodeKind()              {}
 func (*ExpressionColonArrowItem) FormulationNodeKind()               {}
 func (*ExpressionColonDashArrowItem) FormulationNodeKind()           {}
@@ -82,16 +83,17 @@ type StructuralFormKind interface {
 	StructuralForm()
 }
 
-func (*NameForm) StructuralForm()                  {}
-func (*FunctionForm) StructuralForm()              {}
-func (*TupleForm) StructuralForm()                 {}
-func (*ConditionalSetForm) StructuralForm()        {}
-func (*ConditionalSetIdForm) StructuralForm()      {}
-func (*InfixOperatorForm) StructuralForm()         {}
-func (*PrefixOperatorForm) StructuralForm()        {}
-func (*PostfixOperatorForm) StructuralForm()       {}
-func (*FunctionLiteralForm) StructuralForm()       {}
-func (*StructuralColonEqualsForm) StructuralForm() {}
+func (*NameForm) StructuralForm()                       {}
+func (*FunctionForm) StructuralForm()                   {}
+func (*TupleForm) StructuralForm()                      {}
+func (*ConditionalSetForm) StructuralForm()             {}
+func (*ConditionalSetIdForm) StructuralForm()           {}
+func (*InfixOperatorForm) StructuralForm()              {}
+func (*PrefixOperatorForm) StructuralForm()             {}
+func (*PostfixOperatorForm) StructuralForm()            {}
+func (*FunctionLiteralForm) StructuralForm()            {}
+func (*StructuralColonEqualsForm) StructuralForm()      {}
+func (*StructuralColonEqualsColonForm) StructuralForm() {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -198,16 +200,6 @@ func (*SelectFromBuiltinExpression) KindKind()   {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type ColonEqualsKind interface {
-	FormulationNodeKind
-	ColonEqualsKind()
-}
-
-func (StructuralColonEqualsForm) ColonEqualsKind() {}
-func (ExpressionColonEqualsItem) ColonEqualsKind() {}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 type OperatorKind interface {
 	FormulationNodeKind
 	OperatorKind()
@@ -241,3 +233,13 @@ type DirectionParamParamKind interface {
 func (*NameForm) DirectionParamParamKind()              {}
 func (*FunctionForm) DirectionParamParamKind()          {}
 func (*OrdinalCallExpression) DirectionParamParamKind() {}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+type StructuralColonEqualsColonFormItemKind interface {
+	FormulationNodeKind
+	StructuralColonEqualsColonFormItemKind()
+}
+
+func (*FunctionForm) StructuralColonEqualsColonFormItemKind() {}
+func (*TupleForm) StructuralColonEqualsColonFormItemKind()    {}

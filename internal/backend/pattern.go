@@ -17,7 +17,6 @@
 package backend
 
 import (
-	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/mlglib"
 )
@@ -326,27 +325,6 @@ func toCurlyArg(curlyParam *ast.CurlyParam) *ast.CurlyPattern {
 	}
 
 	var squareArgs *[]ast.FormPatternKind
-	var direction *ast.DirectionPattern
-	if curlyParam.Direction != nil {
-		curlyArgs := make([]ast.DirectionParamParamPatternKind, 0)
-		for _, param := range curlyParam.Direction.CurlyParams {
-			if form, ok := param.(ast.StructuralFormKind); ok {
-				curlyArgs = append(curlyArgs, ToDirectionParamParamPatternKind(form))
-			} else {
-				panic(fmt.Sprintf("Cannot convert direction square param to a pattern: %s",
-					mlglib.PrettyPrint(param)))
-			}
-		}
-		var name *ast.NameFormPattern
-		if curlyParam.Direction.Name != nil {
-			tmpPattern := ToNameFormPattern(*curlyParam.Direction.Name)
-			name = tmpPattern
-		}
-		direction = &ast.DirectionPattern{
-			Name:      name,
-			CurlyArgs: curlyArgs,
-		}
-	}
 	var curlyArgs *[]ast.FormPatternKind
 	if curlyParam.CurlyParams != nil {
 		tmpArgs := toFormPatterns(*curlyParam.CurlyParams)
@@ -355,7 +333,6 @@ func toCurlyArg(curlyParam *ast.CurlyParam) *ast.CurlyPattern {
 	return &ast.CurlyPattern{
 		SquareArgs: squareArgs,
 		CurlyArgs:  curlyArgs,
-		Direction:  direction,
 	}
 }
 

@@ -556,10 +556,7 @@ func matchCurlyArg(node *ast.CurlyArg, pattern *ast.CurlyPattern) MatchResult {
 		}
 	}
 
-	argsMatch := matchAllOptionalExpressionsToForms(node.CurlyArgs, pattern.CurlyArgs)
-	directionMatch := matchDirection(node.Direction, pattern.Direction)
-
-	return unionMatches(argsMatch, directionMatch)
+	return matchAllOptionalExpressionsToForms(node.CurlyArgs, pattern.CurlyArgs)
 }
 
 func matchOrdinal(node ast.MlgNodeKind, pattern ast.OrdinalPattern) MatchResult {
@@ -627,76 +624,6 @@ func matchDirectionParamParamKind(
 	}
 }
 
-func matchDirection(node *ast.DirectionalParam, pattern *ast.DirectionPattern) MatchResult {
-	if node == nil || pattern == nil {
-		if node == nil && pattern != nil {
-			return MatchResult{
-				Mapping: make(map[string]ast.MlgNodeKind),
-				Messages: []string{
-					"Expected a direction but didn't receive one",
-				},
-				MatchMakesSense: true,
-			}
-		}
-
-		if node != nil && pattern == nil {
-			return MatchResult{
-				Mapping: make(map[string]ast.MlgNodeKind),
-				Messages: []string{
-					"Did not expect a direction but received one",
-				},
-				MatchMakesSense: true,
-			}
-		}
-
-		if node == nil && pattern == nil {
-			return MatchResult{
-				Mapping:         make(map[string]ast.MlgNodeKind),
-				Messages:        []string{},
-				MatchMakesSense: true,
-			}
-		}
-	}
-
-	nodeName := node.Name
-	patternName := pattern.Name
-
-	if nodeName == nil || patternName == nil {
-		if nodeName == nil && patternName != nil {
-			return MatchResult{
-				Mapping: make(map[string]ast.MlgNodeKind),
-				Messages: []string{
-					"Expected a direction name but didn't receive one",
-				},
-				MatchMakesSense: true,
-			}
-		}
-
-		if nodeName != nil && patternName == nil {
-			return MatchResult{
-				Mapping: make(map[string]ast.MlgNodeKind),
-				Messages: []string{
-					"Did not expect a direction name but received one",
-				},
-				MatchMakesSense: true,
-			}
-		}
-
-		if node == nil && pattern == nil {
-			return MatchResult{
-				Mapping:         make(map[string]ast.MlgNodeKind),
-				Messages:        []string{},
-				MatchMakesSense: true,
-			}
-		}
-	}
-
-	nameMatch := matchName(nodeName, *patternName)
-	squareMatch := matchAllDirectionParamParamKind(node.CurlyParams, pattern.CurlyArgs)
-
-	return unionMatches(nameMatch, squareMatch)
-}
-
 func matchCurlyParam(node *ast.CurlyParam, pattern *ast.CurlyPattern) MatchResult {
 	if node == nil || pattern == nil {
 		if node == nil && pattern == nil {
@@ -724,10 +651,7 @@ func matchCurlyParam(node *ast.CurlyParam, pattern *ast.CurlyPattern) MatchResul
 		}
 	}
 
-	curlyMatch := matchAllOptionalStructuralForms(node.CurlyParams, pattern.CurlyArgs)
-	directionMatch := matchDirection(node.Direction, pattern.Direction)
-
-	return unionMatches(curlyMatch, directionMatch)
+	return matchAllOptionalStructuralForms(node.CurlyParams, pattern.CurlyArgs)
 }
 
 func matchNamedGroup(node ast.MlgNodeKind, pattern ast.NamedGroupPattern) MatchResult {

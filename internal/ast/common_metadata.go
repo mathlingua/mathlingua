@@ -219,8 +219,6 @@ func (n *CurlyParam) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaD
 
 func (n *CurlyArg) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
-func (n *DirectionalParam) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-
 func (n *FunctionLiteralForm) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 
 func (n *ProofByBecauseThenGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }

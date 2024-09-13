@@ -217,7 +217,6 @@ type CommandExpression struct {
 // []{} or {}
 type CurlyArg struct {
 	CurlyArgs           *[]ExpressionKind
-	Direction           *DirectionalParam
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
@@ -541,14 +540,6 @@ type CommandId struct {
 // []{} or {}
 type CurlyParam struct {
 	CurlyParams         *[]StructuralFormKind
-	Direction           *DirectionalParam
-	CommonMetaData      CommonMetaData
-	FormulationMetaData FormulationMetaData
-}
-
-type DirectionalParam struct {
-	Name                *NameForm
-	CurlyParams         []DirectionParamParamKind
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

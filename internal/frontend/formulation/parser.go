@@ -2346,33 +2346,6 @@ func (fp *formulationParser) curlyDirectionalParams() (*[]ast.DirectionParamPara
 	return &args, true
 }
 
-func (fp *formulationParser) directionParam() (*ast.DirectionalParam, bool) {
-	start := fp.lexer.Position()
-	_, atOk := fp.token(ast.At)
-	if !atOk {
-		return &ast.DirectionalParam{}, false
-	}
-	id := fp.lexer.Snapshot()
-	var name *ast.NameForm
-	if n, ok := fp.nameForm(); ok {
-		name = &n
-	}
-	curly, ok := fp.curlyDirectionalParams()
-	if !ok {
-		fp.lexer.RollBack(id)
-		return &ast.DirectionalParam{}, false
-	}
-	fp.lexer.Commit(id)
-	return &ast.DirectionalParam{
-		Name:        name,
-		CurlyParams: *curly,
-		CommonMetaData: ast.CommonMetaData{
-			Key:   fp.keyGen.Next(),
-			Start: start,
-		},
-	}, true
-}
-
 func (fp *formulationParser) squareParams() (*[]ast.StructuralFormKind, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LSquare)
@@ -2989,14 +2962,9 @@ func (fp *formulationParser) curlyParam() (ast.CurlyParam, bool) {
 			curlyParams = realCurlyParams
 		}
 	}
-	var directionParam *ast.DirectionalParam
-	if param, ok := fp.directionParam(); ok {
-		directionParam = param
-	}
 	fp.lexer.Commit(id)
 	return ast.CurlyParam{
 		CurlyParams: curlyParams,
-		Direction:   directionParam,
 		CommonMetaData: ast.CommonMetaData{
 			Key:   fp.keyGen.Next(),
 			Start: start,
@@ -3050,14 +3018,9 @@ func (fp *formulationParser) curlyArg() (ast.CurlyArg, bool) {
 			curlyArgs = realCurlyArgs
 		}
 	}
-	var directionParam *ast.DirectionalParam
-	if param, ok := fp.directionParam(); ok {
-		directionParam = param
-	}
 	fp.lexer.Commit(id)
 	return ast.CurlyArg{
 		CurlyArgs: curlyArgs,
-		Direction: directionParam,
 		CommonMetaData: ast.CommonMetaData{
 			Key:   fp.keyGen.Next(),
 			Start: start,

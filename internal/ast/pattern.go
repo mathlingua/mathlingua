@@ -181,12 +181,6 @@ type CommandPattern struct {
 type CurlyPattern struct {
 	SquareArgs *[]FormPatternKind
 	CurlyArgs  *[]FormPatternKind
-	Direction  *DirectionPattern
-}
-
-type DirectionPattern struct {
-	Name      *NameFormPattern
-	CurlyArgs []DirectionParamParamPatternKind
 }
 
 type ChainExpressionPattern struct {

@@ -1044,9 +1044,6 @@ func (n *CurlyParam) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.CurlyParams != nil {
 		forEach(*n.CurlyParams, fn)
 	}
-	if n.Direction != nil {
-		fn(n.Direction)
-	}
 }
 
 func (n *CurlyTypeParam) ForEach(fn func(subNode MlgNodeKind)) {
@@ -1060,16 +1057,6 @@ func (n *CurlyTypeParam) ForEach(fn func(subNode MlgNodeKind)) {
 
 func (n *CurlyArg) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(*n.CurlyArgs, fn)
-	if n.Direction != nil {
-		fn(n.Direction)
-	}
-}
-
-func (n *DirectionalParam) ForEach(fn func(subNode MlgNodeKind)) {
-	if n.Name != nil {
-		fn(n.Name)
-	}
-	forEach(n.CurlyParams, fn)
 }
 
 func (n *DirectionalTypeParam) ForEach(fn func(subNode MlgNodeKind)) {

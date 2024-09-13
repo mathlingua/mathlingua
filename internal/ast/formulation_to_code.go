@@ -715,9 +715,6 @@ func (n *CurlyParam) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 		result += commaSeparatedString(*n.CurlyParams, fn)
 		result += "}"
 	}
-	if n.Direction != nil {
-		result += n.Direction.ToCode(fn)
-	}
 	return result
 }
 
@@ -745,23 +742,6 @@ func (n *CurlyArg) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if n.CurlyArgs != nil {
 		result += commaSeparatedString(*n.CurlyArgs, fn)
 	}
-	result += "}"
-	if n.Direction != nil {
-		result += n.Direction.ToCode(fn)
-	}
-	return result
-}
-
-func (n *DirectionalParam) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
-	if res, ok := fn(n); ok {
-		return res
-	}
-	result := "@"
-	if n.Name != nil {
-		result += n.Name.ToCode(fn)
-	}
-	result += "{"
-	result += commaSeparatedString(n.CurlyParams, fn)
 	result += "}"
 	return result
 }

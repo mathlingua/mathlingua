@@ -52,6 +52,7 @@ var all_group_test_cases = []testCase{
 		expected: []string{
 			"Axiom",
 			"given?",
+			"declaring?",
 			"using?",
 			"where?",
 			"suchThat?",
@@ -97,6 +98,7 @@ var all_group_test_cases = []testCase{
 		expected: []string{
 			"Conjecture",
 			"given?",
+			"declaring?",
 			"using?",
 			"where?",
 			"suchThat?",
@@ -115,6 +117,7 @@ var all_group_test_cases = []testCase{
 			"Corollary",
 			"to",
 			"given?",
+			"declaring?",
 			"using?",
 			"where?",
 			"suchThat?",
@@ -279,6 +282,7 @@ var all_group_test_cases = []testCase{
 			"Lemma",
 			"for",
 			"given?",
+			"declaring?",
 			"using?",
 			"where?",
 			"suchThat?",
@@ -601,6 +605,7 @@ var all_group_test_cases = []testCase{
 		expected: []string{
 			"Theorem",
 			"given?",
+			"declaring?",
 			"using?",
 			"where?",
 			"suchThat?",

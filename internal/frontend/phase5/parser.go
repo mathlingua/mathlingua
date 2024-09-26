@@ -1396,6 +1396,10 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
+	var declaring *ast.DeclaringSection
+	if sec, ok := sections[ast.LowerDeclaringName]; ok {
+		declaring = p.toDeclaringSection(sec)
+	}
 	var using *ast.UsingSection
 	if sect, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sect)
@@ -1437,6 +1441,7 @@ func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 		Id:             id,
 		Axiom:          axiom,
 		Given:          given,
+		Declaring:      declaring,
 		Using:          using,
 		Where:          where,
 		SuchThat:       suchThat,
@@ -1465,6 +1470,13 @@ func (p *parser) toGivenSection(section phase4.Section) *ast.GivenSection {
 	}
 }
 
+func (p *parser) toDeclaringSection(section phase4.Section) *ast.DeclaringSection {
+	return &ast.DeclaringSection{
+		Declaring:      p.oneOrMoreTargets(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
 func (p *parser) toUsingSection(section phase4.Section) *ast.UsingSection {
 	return &ast.UsingSection{
 		Using:          p.oneOrMoreTargets(section),
@@ -1488,6 +1500,10 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 	var given *ast.GivenSection
 	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
+	}
+	var declaring *ast.DeclaringSection
+	if sec, ok := sections[ast.LowerDeclaringName]; ok {
+		declaring = p.toDeclaringSection(sec)
 	}
 	var using *ast.UsingSection
 	if sect, ok := sections[ast.LowerUsingName]; ok {
@@ -1530,6 +1546,7 @@ func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, boo
 		Id:             id,
 		Conjecture:     conjecture,
 		Given:          given,
+		Declaring:      declaring,
 		Using:          using,
 		Where:          where,
 		SuchThat:       suchThat,
@@ -1567,6 +1584,10 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 	var given *ast.GivenSection
 	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
+	}
+	var declaring *ast.DeclaringSection
+	if sec, ok := sections[ast.LowerDeclaringName]; ok {
+		declaring = p.toDeclaringSection(sec)
 	}
 	var using *ast.UsingSection
 	if sect, ok := sections[ast.LowerUsingName]; ok {
@@ -1613,6 +1634,7 @@ func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 		Id:             id,
 		Theorem:        theorem,
 		Given:          given,
+		Declaring:      declaring,
 		Using:          using,
 		Where:          where,
 		SuchThat:       suchThat,
@@ -1660,6 +1682,10 @@ func (p *parser) toCorollaryGroup(group phase4.Group) (ast.CorollaryGroup, bool)
 	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
+	var declaring *ast.DeclaringSection
+	if sec, ok := sections[ast.LowerDeclaringName]; ok {
+		declaring = p.toDeclaringSection(sec)
+	}
 	var using *ast.UsingSection
 	if sect, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sect)
@@ -1702,6 +1728,7 @@ func (p *parser) toCorollaryGroup(group phase4.Group) (ast.CorollaryGroup, bool)
 		Corollary:      corollary,
 		To:             to,
 		Given:          given,
+		Declaring:      declaring,
 		Using:          using,
 		Where:          where,
 		SuchThat:       suchThat,
@@ -1748,6 +1775,10 @@ func (p *parser) toLemmaGroup(group phase4.Group) (ast.LemmaGroup, bool) {
 	if sec, ok := sections[ast.LowerGivenName]; ok {
 		given = p.toGivenSection(sec)
 	}
+	var declaring *ast.DeclaringSection
+	if sec, ok := sections[ast.LowerDeclaringName]; ok {
+		declaring = p.toDeclaringSection(sec)
+	}
 	var using *ast.UsingSection
 	if sect, ok := sections[ast.LowerUsingName]; ok {
 		using = p.toUsingSection(sect)
@@ -1790,6 +1821,7 @@ func (p *parser) toLemmaGroup(group phase4.Group) (ast.LemmaGroup, bool) {
 		Lemma:          lemma,
 		For:            forSection,
 		Given:          given,
+		Declaring:      declaring,
 		Using:          using,
 		Where:          where,
 		SuchThat:       suchThat,

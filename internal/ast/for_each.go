@@ -439,6 +439,9 @@ func (n *AxiomGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
 	}
+	if n.Declaring != nil {
+		forEachTarget(n.Declaring.Declaring, fn)
+	}
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}
@@ -474,6 +477,9 @@ func (n *ConjectureGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
 	}
+	if n.Declaring != nil {
+		forEachTarget(n.Declaring.Declaring, fn)
+	}
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}
@@ -508,6 +514,9 @@ func (n *TheoremGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	maybeForIdItem(n.Id, fn)
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
+	}
+	if n.Declaring != nil {
+		forEachTarget(n.Declaring.Declaring, fn)
 	}
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
@@ -548,6 +557,9 @@ func (n *CorollaryGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
 	}
+	if n.Declaring != nil {
+		forEachTarget(n.Declaring.Declaring, fn)
+	}
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)
 	}
@@ -586,6 +598,9 @@ func (n *LemmaGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	forEachTextItem(n.For.For, fn)
 	if n.Given != nil {
 		forEachTarget(n.Given.Given, fn)
+	}
+	if n.Declaring != nil {
+		forEachTarget(n.Declaring.Declaring, fn)
 	}
 	if n.Using != nil {
 		forEachTarget(n.Using.Using, fn)

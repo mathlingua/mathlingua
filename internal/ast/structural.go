@@ -870,6 +870,7 @@ type ThatSection struct {
 var AxiomSections = []string{
 	UpperAxiomName,
 	LowerGivenQuestionName,
+	LowerDeclaringQuestionName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerSuchThatQuestionName,
@@ -886,6 +887,7 @@ type AxiomGroup struct {
 	Id             *IdItem
 	Axiom          AxiomSection
 	Given          *GivenSection
+	Declaring      *DeclaringSection
 	Using          *UsingSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection
@@ -903,11 +905,17 @@ type AxiomSection struct {
 	CommonMetaData CommonMetaData
 }
 
+type DeclaringSection struct {
+	Declaring      []Target
+	CommonMetaData CommonMetaData
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var ConjectureSections = []string{
 	UpperConjectureName,
 	LowerGivenQuestionName,
+	LowerDeclaringQuestionName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerSuchThatQuestionName,
@@ -924,6 +932,7 @@ type ConjectureGroup struct {
 	Id             *IdItem
 	Conjecture     ConjectureSection
 	Given          *GivenSection
+	Declaring      *DeclaringSection
 	Using          *UsingSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection
@@ -946,6 +955,7 @@ type ConjectureSection struct {
 var TheoremSections = []string{
 	UpperTheoremName,
 	LowerGivenQuestionName,
+	LowerDeclaringQuestionName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerSuchThatQuestionName,
@@ -963,6 +973,7 @@ type TheoremGroup struct {
 	Id             *IdItem
 	Theorem        TheoremSection
 	Given          *GivenSection
+	Declaring      *DeclaringSection
 	Using          *UsingSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection
@@ -992,6 +1003,7 @@ var LemmaSections = []string{
 	UpperLemmaName,
 	LowerForName,
 	LowerGivenQuestionName,
+	LowerDeclaringQuestionName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerSuchThatQuestionName,
@@ -1010,6 +1022,7 @@ type LemmaGroup struct {
 	Lemma          LemmaSection
 	For            LemmaForSection
 	Given          *GivenSection
+	Declaring      *DeclaringSection
 	Using          *UsingSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection
@@ -1039,6 +1052,7 @@ var CorollarySections = []string{
 	UpperCorollaryName,
 	LowerToName,
 	LowerGivenQuestionName,
+	LowerDeclaringQuestionName,
 	LowerUsingQuestionName,
 	LowerWhereQuestionName,
 	LowerSuchThatQuestionName,
@@ -1057,6 +1071,7 @@ type CorollaryGroup struct {
 	Corollary      CorollarySection
 	To             CorollaryToSection
 	Given          *GivenSection
+	Declaring      *DeclaringSection
 	Using          *UsingSection
 	Where          *WhereSection
 	SuchThat       *SuchThatSection

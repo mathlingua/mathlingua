@@ -408,6 +408,7 @@ func (n *AxiomGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendIdItem(n.Id, indent, hasDot)
 	db.AppendSection(UpperAxiomName, indent, hasDot && n.Id == nil)
 	db.MaybeAppendGivenSection(n.Given, indent, false)
+	db.MaybeAppendDeclaringSection(n.Declaring, indent, false)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
@@ -426,6 +427,7 @@ func (n *ConjectureGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendIdItem(n.Id, indent, hasDot)
 	db.AppendSection(UpperConjectureName, indent, hasDot && n.Id == nil)
 	db.MaybeAppendGivenSection(n.Given, indent, false)
+	db.MaybeAppendDeclaringSection(n.Declaring, indent, false)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
@@ -444,6 +446,7 @@ func (n *TheoremGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendIdItem(n.Id, indent, hasDot)
 	db.AppendSection(UpperTheoremName, indent, hasDot && n.Id == nil)
 	db.MaybeAppendGivenSection(n.Given, indent, false)
+	db.MaybeAppendDeclaringSection(n.Declaring, indent, false)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
@@ -466,6 +469,7 @@ func (n *CorollaryGroup) ToCode(indent int, hasDot bool) []string {
 	db.AppendSection(UpperCorollaryName, indent, hasDot && n.Id == nil)
 	db.AppendTextItemsSection(LowerToName, n.To.To, indent, false)
 	db.MaybeAppendGivenSection(n.Given, indent, false)
+	db.MaybeAppendDeclaringSection(n.Declaring, indent, false)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
@@ -488,6 +492,7 @@ func (n *LemmaGroup) ToCode(indent int, hasDot bool) []string {
 	db.AppendSection(UpperLemmaName, indent, hasDot && n.Id == nil)
 	db.AppendTextItemsSection(LowerForName, n.For.For, indent, false)
 	db.MaybeAppendGivenSection(n.Given, indent, false)
+	db.MaybeAppendDeclaringSection(n.Declaring, indent, false)
 	db.MaybeAppendUsingSection(n.Using, indent, false)
 	db.MaybeAppendWhereSection(n.Where, indent, false)
 	db.MaybeAppendSuchThatSection(n.SuchThat, indent, false)
@@ -1270,6 +1275,19 @@ func (db *debugBuilder) MaybeAppendGivenSection(sec *GivenSection, indent int, h
 	if sec != nil {
 		db.AppendSection(LowerGivenName, indent, hasDot)
 		for _, item := range sec.Given {
+			db.Append(&item, indent+2, true)
+		}
+	}
+}
+
+func (db *debugBuilder) MaybeAppendDeclaringSection(
+	sec *DeclaringSection,
+	indent int,
+	hasDot bool,
+) {
+	if sec != nil {
+		db.AppendSection(LowerDeclaringName, indent, hasDot)
+		for _, item := range sec.Declaring {
 			db.Append(&item, indent+2, true)
 		}
 	}

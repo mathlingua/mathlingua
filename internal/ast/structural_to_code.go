@@ -210,6 +210,15 @@ func (n *SymbolWrittenGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
+func (n *ComparisonGroup) ToCode(indent int, hasDot bool) []string {
+	db := newDebugBuilder()
+	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
+	db.AppendSingleTextItemSection(
+		LowerComparisonName, n.Comparison.Comparison, indent, hasDot && n.Label == nil)
+	db.AppendTextItemsSection(LowerProvidedName, n.Provided.Provided, indent, false)
+	return db.Lines()
+}
+
 func (n *ViewGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)

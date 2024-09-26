@@ -453,6 +453,30 @@ type WhenGroup struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+var ComparisonSections = []string{
+	LowerComparisonName,
+	LowerProvidedName,
+}
+
+type ComparisonGroup struct {
+	Label          *GroupLabel
+	Comparison     ComparisonSection
+	Provided       ProvidedSection
+	CommonMetaData CommonMetaData
+}
+
+type ComparisonSection struct {
+	Comparison     TextItem
+	CommonMetaData CommonMetaData
+}
+
+type ProvidedSection struct {
+	Provided       []TextItem
+	CommonMetaData CommonMetaData
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 var SymbolWrittenSections = []string{
 	LowerSymbolName,
 	LowerTracksQuestionName,

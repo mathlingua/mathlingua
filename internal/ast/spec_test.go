@@ -593,6 +593,13 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
+		actual: ComparisonSections,
+		expected: []string{
+			"comparison",
+			"provided",
+		},
+	},
+	{
 		actual: SymbolWrittenSections,
 		expected: []string{
 			"symbol",

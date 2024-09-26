@@ -654,6 +654,40 @@ func (p *parser) toEncodingSection(section phase4.Section) *ast.EncodingSection 
 	}
 }
 
+func (p *parser) toComparisonGroup(group phase4.Group) (ast.ComparisonGroup, bool) {
+	if !startsWithSections(group, ast.LowerComparisonName) {
+		return ast.ComparisonGroup{}, false
+	}
+
+	label := p.getGroupLabel(group, false)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.ComparisonSections...)
+	if !ok {
+		return ast.ComparisonGroup{}, false
+	}
+	comparison := *p.toComparisonSection(sections[ast.LowerComparisonName])
+	provided := *p.toProvidedSection(sections[ast.LowerProvidedName])
+	return ast.ComparisonGroup{
+		Label:          label,
+		Comparison:     comparison,
+		Provided:       provided,
+		CommonMetaData: toCommonMetaData(group.MetaData),
+	}, true
+}
+
+func (p *parser) toComparisonSection(section phase4.Section) *ast.ComparisonSection {
+	return &ast.ComparisonSection{
+		Comparison:     p.exactlyOneTextItem(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toProvidedSection(section phase4.Section) *ast.ProvidedSection {
+	return &ast.ProvidedSection{
+		Provided:       p.oneOrMoreTextItems(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
 func (p *parser) toViewGroup(group phase4.Group) (ast.ViewGroup, bool) {
 	if !startsWithSections(group, ast.LowerViewName) {
 		return ast.ViewGroup{}, false
@@ -909,10 +943,13 @@ func (p *parser) toProvidesKindFromGroup(group phase4.Group) (ast.ProvidesKind, 
 		return &grp, ok
 	} else if grp, ok := p.toEncodingGroup(group); ok {
 		return &grp, ok
+	} else if grp, ok := p.toComparisonGroup(group); ok {
+		return &grp, ok
 	} else {
 		p.tracker.Append(p.newError(fmt.Sprintf("Unrecognized argument for %s:\n"+
-			"Expected one of:\n\n%s:\n\n%s:\n",
+			"Expected one of:\n\n%s:\n\n%s:\n\n%s:\n",
 			ast.UpperProvidesName,
+			ast.LowerComparisonName,
 			ast.LowerOperationsName,
 			ast.LowerMembersName), group.Start()))
 		return nil, false

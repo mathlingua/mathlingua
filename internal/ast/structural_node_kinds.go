@@ -42,6 +42,7 @@ func (*IffGroup) StructuralNodeKind()                          {}
 func (*PiecewiseGroup) StructuralNodeKind()                    {}
 func (*WhenGroup) StructuralNodeKind()                         {}
 func (*SymbolWrittenGroup) StructuralNodeKind()                {}
+func (*ComparisonGroup) StructuralNodeKind()                   {}
 func (*ViewGroup) StructuralNodeKind()                         {}
 func (*EncodingGroup) StructuralNodeKind()                     {}
 func (*WrittenGroup) StructuralNodeKind()                      {}
@@ -163,6 +164,7 @@ type ProvidesKind interface {
 func (*SymbolWrittenGroup) ProvidesKind() {}
 func (*ViewGroup) ProvidesKind()          {}
 func (*EncodingGroup) ProvidesKind()      {}
+func (*ComparisonGroup) ProvidesKind()    {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

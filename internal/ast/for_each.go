@@ -240,6 +240,11 @@ func (n *SymbolWrittenGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
+func (n *ComparisonGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.Comparison.Comparison)
+	forEachTextItem(n.Provided.Provided, fn)
+}
+
 func (n *ViewGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.As.As)
 	if n.Using != nil {

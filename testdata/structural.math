@@ -168,6 +168,10 @@ Provides:
   using: B, C
   where: 'A is \something{B, C}'
   through: 'A := \something2.asSomething{X}'
+. comparison: "\function:on{A}:to{B} is \function:on{X}:to{Y}"
+  provided:
+  . "X is A"
+  . "B is Y"
 Justified:
 . by: "\:some.theorem"
 . label: "\(some.label)"

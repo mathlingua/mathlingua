@@ -1555,14 +1555,15 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 		}
 	}
 
-	var condition ast.ExpressionKind
+	var condition mlglib.Optional[ast.ExpressionKind]
 	if fp.has(ast.Bar) {
 		fp.expect(ast.Bar)
-		condition, ok = fp.expressionKind()
+		conditionExp, ok := fp.expressionKind()
 		if !ok {
 			fp.lexer.RollBack(id)
 			return ast.ConditionalSetExpression{}, false
 		}
+		condition = mlglib.Some(conditionExp)
 	}
 
 	if !fp.has(ast.RCurly) {

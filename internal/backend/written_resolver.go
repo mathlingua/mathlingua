@@ -341,9 +341,9 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 				}
 				result += w.formulationNodeToWritten(path, cond)
 			}
-			if n.Condition != nil {
+			if condition, ok := n.Condition.Get(); ok {
 				result += "\\: | \\:"
-				result += w.formulationNodeToWritten(path, n.Condition)
+				result += w.formulationNodeToWritten(path, condition)
 			}
 			result += "\\right \\}"
 			return result, true

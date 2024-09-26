@@ -797,8 +797,8 @@ func (n *ConditionalSetExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Symbols, fn)
 	fn(n.Target)
 	forEach(n.Specifications, fn)
-	if n.Condition != nil {
-		fn(n.Condition)
+	if condition, ok := n.Condition.Get(); ok {
+		fn(condition)
 	}
 }
 

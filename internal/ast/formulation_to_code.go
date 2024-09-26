@@ -129,8 +129,8 @@ func (n *ConditionalSetExpression) ToCode(fn func(node MlgNodeKind) (string, boo
 	}
 	result := "[" + commaSeparatedString(n.Symbols, fn) + "]{" +
 		n.Target.ToCode(fn) + " | " + semicolonSeparatedString(n.Specifications, fn)
-	if n.Condition != nil {
-		result += " | " + n.Condition.ToCode(fn)
+	if condition, ok := n.Condition.Get(); ok {
+		result += " | " + condition.ToCode(fn)
 	}
 	result += "}"
 	return result

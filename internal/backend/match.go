@@ -321,8 +321,8 @@ func matchConditionalSetIdForm(
 			&pattern.Specification,
 		})
 		result := unionMatches(targetMatch, specsMatch)
-		if n.Condition != nil {
-			conditionMatch := Match(n.Condition, pattern.Condition)
+		if condition, ok := n.Condition.Get(); ok {
+			conditionMatch := Match(condition, pattern.Condition)
 			result = unionMatches(result, conditionMatch)
 		}
 		return result
@@ -345,8 +345,8 @@ func matchConditionalSetExpression(
 		targetMatch := Match(n.Target, pattern.Target)
 		specsMatch := matchAllExpressions(n.Specifications, pattern.Specifications)
 		result := unionMatches(targetMatch, specsMatch)
-		if n.Condition != nil && pattern.Condition != nil {
-			conditionMatch := Match(n.Condition, *pattern.Condition)
+		if condition, condOk := n.Condition.Get(); condOk && pattern.Condition != nil {
+			conditionMatch := Match(condition, *pattern.Condition)
 			result = unionMatches(result, conditionMatch)
 		}
 		return result

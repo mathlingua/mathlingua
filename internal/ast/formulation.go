@@ -16,6 +16,8 @@
 
 package ast
 
+import "mathlingua/internal/mlglib"
+
 type VarArgData struct {
 	IsVarArg            bool
 	VarArgNames         []NameForm
@@ -90,7 +92,7 @@ type TupleForm struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// {x | S(x) | P(x)}
+// {x : S(x) | P(x)}
 type ConditionalSetForm struct {
 	Target              StructuralFormKind
 	Specification       FunctionForm
@@ -110,7 +112,7 @@ type FunctionLiteralForm struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// [x]{x | s(x)... | p(x)}
+// [x]{x : s(x)... | p(x)}
 type ConditionalSetIdForm struct {
 	Symbols             []StructuralFormKind
 	Target              StructuralFormKind
@@ -186,13 +188,13 @@ type EncodedCastGrouping struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// [x]{(x, x+1) | x is \real | x > 0}
-// [x]{(x, x+1) | x is \real}
+// [x]{(x, x+1) : x is \real | x > 0}
+// [x]{(x, x+1) : x is \real}
 type ConditionalSetExpression struct {
 	Symbols             []StructuralFormKind
 	Target              ExpressionKind
 	Specifications      []ExpressionKind
-	Condition           ExpressionKind // optional
+	Condition           mlglib.Optional[ExpressionKind]
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

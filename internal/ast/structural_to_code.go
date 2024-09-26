@@ -198,6 +198,9 @@ func (n *SymbolWrittenGroup) ToCode(indent int, hasDot bool) []string {
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
 	db.AppendSection(LowerSymbolName, indent, hasDot && n.Label == nil)
 	db.Append(&n.Symbol.Symbol, indent+2, true)
+	if n.Tracks != nil {
+		db.AppendFormulationSection(LowerTracksName, n.Tracks.Tracks, indent, true)
+	}
 	if n.Replaces != nil {
 		db.AppendFormulationSection(LowerReplacesName, n.Replaces.Replaces, indent, true)
 	}

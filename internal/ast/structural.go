@@ -455,6 +455,7 @@ type WhenGroup struct {
 
 var SymbolWrittenSections = []string{
 	LowerSymbolName,
+	LowerTracksQuestionName,
 	LowerReplacesQuestionName,
 	LowerWrittenQuestionName,
 }
@@ -462,6 +463,7 @@ var SymbolWrittenSections = []string{
 type SymbolWrittenGroup struct {
 	Label          *GroupLabel
 	Symbol         SymbolSection
+	Tracks         *TracksSection
 	Replaces       *ReplacesSection
 	Written        *WrittenSection
 	CommonMetaData CommonMetaData
@@ -469,6 +471,11 @@ type SymbolWrittenGroup struct {
 
 type SymbolSection struct {
 	Symbol         Alias
+	CommonMetaData CommonMetaData
+}
+
+type TracksSection struct {
+	Tracks         Formulation[FormulationNodeKind]
 	CommonMetaData CommonMetaData
 }
 

@@ -561,6 +561,10 @@ func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGrou
 		return ast.SymbolWrittenGroup{}, false
 	}
 	symbol := *p.toSymbolSection(sections[ast.LowerSymbolName])
+	var tracks *ast.TracksSection
+	if sect, ok := sections[ast.LowerTracksName]; ok {
+		tracks = p.toTracksSection(sect)
+	}
 	var replaces *ast.ReplacesSection
 	if sect, ok := sections[ast.LowerReplacesName]; ok {
 		replaces = p.toReplacesSection(sect)
@@ -572,6 +576,7 @@ func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGrou
 	return ast.SymbolWrittenGroup{
 		Label:          label,
 		Symbol:         symbol,
+		Tracks:         tracks,
 		Replaces:       replaces,
 		Written:        written,
 		CommonMetaData: toCommonMetaData(group.MetaData),
@@ -581,6 +586,13 @@ func (p *parser) toSymbolWrittenGroup(group phase4.Group) (ast.SymbolWrittenGrou
 func (p *parser) toSymbolSection(section phase4.Section) *ast.SymbolSection {
 	return &ast.SymbolSection{
 		Symbol:         p.exactlyOneAlias(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toTracksSection(section phase4.Section) *ast.TracksSection {
+	return &ast.TracksSection{
+		Tracks:         p.exactlyOneFormulation(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }

@@ -95,7 +95,7 @@ type TupleForm struct {
 // {x : S(x) | P(x)}
 type ConditionalSetForm struct {
 	Target              StructuralFormKind
-	Specification       FunctionForm
+	Specification       *FunctionForm
 	Condition           *FunctionForm
 	VarArg              VarArgData
 	CommonMetaData      CommonMetaData

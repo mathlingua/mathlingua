@@ -56,8 +56,10 @@ func (n *ConditionalSetForm) ToCode(fn func(node MlgNodeKind) (string, bool)) st
 	}
 	result := "{"
 	result += n.Target.ToCode(fn)
-	result += " | "
-	result += n.Specification.ToCode(fn)
+	if n.Specification != nil {
+		result += " : "
+		result += n.Specification.ToCode(fn)
+	}
 	if n.Condition != nil {
 		result += " | "
 		result += n.Condition.ToCode(fn)

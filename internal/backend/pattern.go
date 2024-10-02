@@ -146,9 +146,13 @@ func ToConditionalSetFormPattern(form ast.ConditionalSetForm) *ast.ConditionalSe
 	if form.Condition != nil {
 		conditionPattern = ToFunctionFormPattern(*form.Condition)
 	}
+	var specPattern *ast.FunctionFormPattern
+	if form.Specification != nil {
+		specPattern = ToFunctionFormPattern(*form.Specification)
+	}
 	return &ast.ConditionalSetFormPattern{
 		Target:        ToFormPattern(form.Target),
-		Specification: *ToFunctionFormPattern(form.Specification),
+		Specification: specPattern,
 		Condition:     conditionPattern,
 		VarArg:        ToVarArgPatternData(form.VarArg),
 	}
@@ -161,7 +165,7 @@ func ToConditionalSetFormPatternFromId(form ast.ConditionalSetIdForm) ast.Condit
 	}
 	return ast.ConditionalSetFormPattern{
 		Target:        ToFormPattern(form.Target),
-		Specification: *ToFunctionFormPattern(form.Specification),
+		Specification: ToFunctionFormPattern(form.Specification),
 		Condition:     conditionPattern,
 		VarArg:        ToVarArgPatternData(form.Condition.VarArg),
 	}

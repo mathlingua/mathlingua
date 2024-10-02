@@ -302,8 +302,10 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 		case *ast.ConditionalSetForm:
 			result := "\\left \\{"
 			result += w.formulationNodeToWritten(path, n.Target)
-			result += "\\: | \\:"
-			result += w.formulationNodeToWritten(path, &n.Specification)
+			if n.Specification != nil {
+				result += "\\: : \\:"
+				result += w.formulationNodeToWritten(path, n.Specification)
+			}
 			if n.Condition != nil {
 				result += "\\: | \\:"
 				result += w.formulationNodeToWritten(path, n.Condition)

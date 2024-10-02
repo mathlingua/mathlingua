@@ -2620,24 +2620,30 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 		return ast.ConditionalSetForm{}, false
 	}
 
-	_, ok = fp.token(ast.Bar)
-	if !ok {
+	if !fp.has(ast.Bar) && !fp.has(ast.Colon) {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetForm{}, false
 	}
 
-	specification, ok := fp.functionForm()
-	if !ok {
-		fp.lexer.RollBack(id)
-		return ast.ConditionalSetForm{}, false
+	var specification *ast.FunctionForm
+	if fp.has(ast.Colon) {
+		colon, _ := fp.expect(ast.Colon)
+		spec, ok := fp.functionForm()
+		if !ok {
+			fp.lexer.RollBack(id)
+			fp.errorAt("Expected a function form to follow a :", colon.Position)
+			return ast.ConditionalSetForm{}, false
+		}
+		specification = &spec
 	}
 
 	var condition *ast.FunctionForm
 	if fp.has(ast.Bar) {
-		fp.expect(ast.Bar)
+		bar, _ := fp.expect(ast.Bar)
 		cond, ok := fp.functionForm()
 		if !ok {
 			fp.lexer.RollBack(id)
+			fp.errorAt("Expected a function form to follow a |", bar.Position)
 			return ast.ConditionalSetForm{}, false
 		}
 		condition = &cond

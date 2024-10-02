@@ -264,13 +264,13 @@ func matchConditionalSetForm(
 ) MatchResult {
 	switch n := node.(type) {
 	case *ast.ConditionalSetForm:
-		targetMatch := Match(n.Target, pattern.Target)
-		specMatch := Match(&n.Specification, &pattern.Specification)
-		varArgMatch := matchVarArg(n.VarArg, pattern.VarArg)
-		result := unionMatches(specMatch, unionMatches(targetMatch, varArgMatch))
+		result := Match(n.Target, pattern.Target)
+		if n.Specification != nil {
+			result = unionMatches(result, Match(n.Specification, pattern.Specification))
+		}
+		result = unionMatches(result, matchVarArg(n.VarArg, pattern.VarArg))
 		if n.Condition != nil {
-			conditionMatch := Match(n.Condition, pattern.Condition)
-			result = unionMatches(result, conditionMatch)
+			result = unionMatches(result, Match(n.Condition, pattern.Condition))
 		}
 		return result
 	default:

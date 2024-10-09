@@ -315,8 +315,10 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 		case *ast.ConditionalSetIdForm:
 			result := "\\left \\{"
 			result += w.formulationNodeToWritten(path, n.Target)
-			result += "\\: | \\:"
-			result += w.formulationNodeToWritten(path, &n.Specification)
+			if n.Specification != nil {
+				result += "\\: : \\:"
+				result += w.formulationNodeToWritten(path, n.Specification)
+			}
 			if n.Condition != nil {
 				result += "\\: | \\:"
 				result += w.formulationNodeToWritten(path, n.Condition)
@@ -336,12 +338,14 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 		case *ast.ConditionalSetExpression:
 			result := "\\left \\{"
 			result += w.formulationNodeToWritten(path, n.Target)
-			result += "\\: | \\:"
-			for i, cond := range n.Specifications {
-				if i > 0 {
-					result += " ;\\: "
+			if len(n.Specifications) > 0 {
+				result += "\\: : \\:"
+				for i, cond := range n.Specifications {
+					if i > 0 {
+						result += " ;\\: "
+					}
+					result += w.formulationNodeToWritten(path, cond)
 				}
-				result += w.formulationNodeToWritten(path, cond)
 			}
 			if condition, ok := n.Condition.Get(); ok {
 				result += "\\: | \\:"

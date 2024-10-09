@@ -143,16 +143,14 @@ func TestConditionalSetForm(t *testing.T) {
 
 func TestConditionalSetExpression(t *testing.T) {
 	runExpressionTest(t, "[x]{x : x}", "[x]{x : x}")
-	/*
-		runExpressionTest(t, "[x]{x | x > 0}", "[x]{x | x > 0}")
-		runExpressionTest(t, "[x, y]{x | x > 0; y = 0}", "[x, y]{x | x > 0; y = 0}")
-		runExpressionTest(t, "[x, f(y)]{x | x > 0; y = 0}", "[x, f(y)]{x | x > 0; y = 0}")
-		runExpressionTest(t, "[x, y]{(x, y) | x > 0; y = 0}", "[x, y]{(x, y) | x > 0; y = 0}")
-		runExpressionTest(t, "[x, y]{(f(x), y) | x > 0; y = 0}", "[x, y]{(f(x), y) | x > 0; y = 0}")
-		runExpressionTest(t,
-			"[x, y]{(f(x), [y]{y | y}) | x > 0; y = 0}",
-			"[x, y]{(f(x), [y]{y | y}) | x > 0; y = 0}")
-	*/
+	runExpressionTest(t, "[x]{x | x > 0}", "[x]{x | x > 0}")
+	runExpressionTest(t, "[x, y]{x | x > 0 \\.and./ y = 0}", "[x, y]{x | x > 0 \\.and./ y = 0}")
+	runExpressionTest(t, "[x, f(y)]{x | x > 0 \\.and./ y = 0}", "[x, f(y)]{x | x > 0 \\.and./ y = 0}")
+	runExpressionTest(t, "[x, y]{(x, y) | x > 0 \\.and./ y = 0}", "[x, y]{(x, y) | x > 0 \\.and./ y = 0}")
+	runExpressionTest(t, "[x, y]{(f(x), y) | x > 0 \\.and./ y = 0}", "[x, y]{(f(x), y) | x > 0 \\.and./ y = 0}")
+	runExpressionTest(t,
+		"[x, y]{(f(x), [y]{y | y}) | x > 0 \\.and./ y = 0}",
+		"[x, y]{(f(x), [y]{y | y}) | x > 0 \\.and./ y = 0}")
 }
 
 func TestConditionalSetIdForm(t *testing.T) {

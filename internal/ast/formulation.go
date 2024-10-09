@@ -116,7 +116,7 @@ type FunctionLiteralForm struct {
 type ConditionalSetIdForm struct {
 	Symbols             []StructuralFormKind
 	Target              StructuralFormKind
-	Specification       FunctionForm
+	Specification       *FunctionForm
 	Condition           *FunctionForm
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData

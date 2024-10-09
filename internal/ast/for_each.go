@@ -781,7 +781,9 @@ func (n *ConditionalSetForm) ForEach(fn func(subNode MlgNodeKind)) {
 func (n *ConditionalSetIdForm) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Symbols, fn)
 	fn(n.Target)
-	fn(&n.Specification)
+	if n.Specification != nil {
+		fn(n.Specification)
+	}
 	if n.Condition != nil {
 		fn(n.Condition)
 	}

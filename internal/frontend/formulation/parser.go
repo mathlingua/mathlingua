@@ -1527,31 +1527,33 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 	}
 
 	fp.expect(ast.LCurly)
-	target, ok := fp.expressionKind(ast.Bar)
+	target, ok := fp.expressionKind(ast.Bar, ast.Colon)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetExpression{}, false
 	}
 
-	if !fp.has(ast.Bar) {
+	if !fp.has(ast.Bar) && !fp.has(ast.Colon) {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetExpression{}, false
 	}
 
-	fp.expect(ast.Bar)
 	specifications := make([]ast.ExpressionKind, 0)
-	for fp.lexer.HasNext() {
-		spec, ok := fp.expressionKind(ast.Semicolon, ast.Bar)
-		if ok {
-			specifications = append(specifications, spec)
-		} else {
-			break
-		}
+	if fp.has(ast.Colon) {
+		fp.expect(ast.Colon)
+		for fp.lexer.HasNext() {
+			spec, ok := fp.expressionKind(ast.Semicolon, ast.Bar)
+			if ok {
+				specifications = append(specifications, spec)
+			} else {
+				break
+			}
 
-		if fp.has(ast.Semicolon) {
-			fp.expect(ast.Semicolon)
-		} else {
-			break
+			if fp.has(ast.Semicolon) {
+				fp.expect(ast.Semicolon)
+			} else {
+				break
+			}
 		}
 	}
 
@@ -2809,16 +2811,21 @@ func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, b
 		return ast.ConditionalSetIdForm{}, false
 	}
 
-	if !fp.has(ast.Bar) {
+	if !fp.has(ast.Bar) && !fp.has(ast.Colon) {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetIdForm{}, false
 	}
 
-	fp.expect(ast.Bar)
-	specification, ok := fp.functionForm()
-	if !ok {
-		fp.lexer.RollBack(id)
-		return ast.ConditionalSetIdForm{}, false
+	var specification *ast.FunctionForm
+	if fp.has(ast.Colon) {
+		colon, _ := fp.expect(ast.Colon)
+		spec, ok := fp.functionForm()
+		if !ok {
+			fp.lexer.RollBack(id)
+			fp.errorAt("Expected a function form to follow a :", colon.Position)
+			return ast.ConditionalSetIdForm{}, false
+		}
+		specification = &spec
 	}
 
 	var condition *ast.FunctionForm

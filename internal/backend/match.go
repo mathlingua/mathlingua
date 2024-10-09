@@ -308,19 +308,22 @@ func matchConditionalSetIdForm(
 ) MatchResult {
 	switch n := node.(type) {
 	case *ast.ConditionalSetIdForm:
-		targetMatch := Match(n.Target, pattern.Target)
-		specMatch := matchFunction(&n.Specification, pattern.Specification)
-		result := unionMatches(targetMatch, specMatch)
+		result := Match(n.Target, pattern.Target)
+		if n.Specification != nil && pattern.Specification != nil {
+			result = unionMatches(result, matchFunction(n.Specification, *pattern.Specification))
+		}
 		if n.Condition != nil && pattern.Condition != nil {
 			result = unionMatches(result, matchFunction(n.Condition, *pattern.Condition))
 		}
 		return result
 	case *ast.ConditionalSetExpression:
-		targetMatch := Match(n.Target, pattern.Target)
-		specsMatch := matchAllExpressions(n.Specifications, []ast.FormPatternKind{
-			&pattern.Specification,
-		})
-		result := unionMatches(targetMatch, specsMatch)
+		result := Match(n.Target, pattern.Target)
+		if n.Specifications != nil && pattern.Specification != nil {
+			expsMatch := matchAllExpressions(n.Specifications, []ast.FormPatternKind{
+				pattern.Specification,
+			})
+			result = unionMatches(result, expsMatch)
+		}
 		if condition, ok := n.Condition.Get(); ok {
 			conditionMatch := Match(condition, pattern.Condition)
 			result = unionMatches(result, conditionMatch)

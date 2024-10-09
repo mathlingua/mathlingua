@@ -73,7 +73,10 @@ func (n *ConditionalSetIdForm) ToCode(fn func(node MlgNodeKind) (string, bool)) 
 		return res
 	}
 	result := "[" + commaSeparatedString(n.Symbols, fn) +
-		"]{" + n.Target.ToCode(fn) + " | " + n.Specification.ToCode(fn)
+		"]{" + n.Target.ToCode(fn)
+	if n.Specification != nil {
+		result += " : " + n.Specification.ToCode(fn)
+	}
 	if n.Condition != nil {
 		result += " | " + n.Condition.ToCode(fn)
 	}
@@ -130,7 +133,10 @@ func (n *ConditionalSetExpression) ToCode(fn func(node MlgNodeKind) (string, boo
 		return res
 	}
 	result := "[" + commaSeparatedString(n.Symbols, fn) + "]{" +
-		n.Target.ToCode(fn) + " | " + semicolonSeparatedString(n.Specifications, fn)
+		n.Target.ToCode(fn)
+	if len(n.Specifications) > 0 {
+		result += " : " + semicolonSeparatedString(n.Specifications, fn)
+	}
 	if condition, ok := n.Condition.Get(); ok {
 		result += " | " + condition.ToCode(fn)
 	}

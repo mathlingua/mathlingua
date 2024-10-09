@@ -134,7 +134,7 @@ type ConditionalSetFormPattern struct {
 type ConditionalSetIdFormPattern struct {
 	Symbols       []FormPatternKind
 	Target        FormPatternKind
-	Specification FunctionFormPattern
+	Specification *FunctionFormPattern
 	Condition     *FunctionFormPattern
 }
 

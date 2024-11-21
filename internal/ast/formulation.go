@@ -92,8 +92,9 @@ type TupleForm struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// {x : S(x) | P(x)}
+// [x]{x : S(x) | P(x)}
 type ConditionalSetForm struct {
+	Symbols             []StructuralFormKind
 	Target              StructuralFormKind
 	Specification       *FunctionForm
 	Condition           *FunctionForm

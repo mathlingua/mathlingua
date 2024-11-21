@@ -54,7 +54,7 @@ func (n *ConditionalSetForm) ToCode(fn func(node MlgNodeKind) (string, bool)) st
 	if res, ok := fn(n); ok {
 		return res
 	}
-	result := "{"
+	result := "[" + commaSeparatedString(n.Symbols, fn) + "]{"
 	result += n.Target.ToCode(fn)
 	if n.Specification != nil {
 		result += " : "

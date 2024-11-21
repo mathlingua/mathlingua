@@ -2611,6 +2611,13 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool) {
 	start := fp.lexer.Position()
 	id := fp.lexer.Snapshot()
+
+	symbols, ok := fp.squareParams()
+	if !ok || symbols == nil {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetForm{}, false
+	}
+
 	if _, ok := fp.token(ast.LCurly); !ok {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetForm{}, false
@@ -2655,6 +2662,7 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 	varArg, _ := fp.varArgData()
 	fp.lexer.Commit(id)
 	return ast.ConditionalSetForm{
+		Symbols:       *symbols,
 		Target:        target,
 		Specification: specification,
 		Condition:     condition,

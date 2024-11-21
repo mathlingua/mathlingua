@@ -769,6 +769,7 @@ func (n *TupleForm) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
 func (n *ConditionalSetForm) ForEach(fn func(subNode MlgNodeKind)) {
+	forEach(n.Symbols, fn)
 	fn(n.Target)
 	if n.Specification != nil {
 		fn(n.Specification)

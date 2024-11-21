@@ -79,6 +79,10 @@ func parseForm(text string) (ast.FormulationNodeKind, *frontend.DiagnosticTracke
 
 func runFormTest(t *testing.T, input string, expected string) {
 	doc, tracker := parseForm(input)
+	assert.NotNil(t, doc)
+	if doc == nil {
+		return
+	}
 	actual := doc.ToCode(func(node ast.MlgNodeKind) (string, bool) { return "", false })
 
 	messages := ""
@@ -128,17 +132,17 @@ func TestChainExpressionWithNames(t *testing.T) {
 }
 
 func TestConditionalSetForm(t *testing.T) {
-	runFormTest(t, "{x : s(x)}", "{x : s(x)}")
-	runFormTest(t, "{x : s(x) | p(x)}", "{x : s(x) | p(x)}")
-	runFormTest(t, "{f(x) : s(x)}", "{f(x) : s(x)}")
-	runFormTest(t, "{f(x) : s(x) | p(x)}", "{f(x) : s(x) | p(x)}")
-	runFormTest(t, "{f(x, y) : s(x)}", "{f(x, y) : s(x)}")
-	runFormTest(t, "{f(x, y) : s(x) | p(x)}", "{f(x, y) : s(x) | p(x)}")
-	runFormTest(t, "{(f(x, y), a) : s(x)}", "{(f(x, y), a) : s(x)}")
-	runFormTest(t, "{(f(x, y), a, {z : s(x)}) : s(x)}", "{(f(x, y), a, {z : s(x)}) : s(x)}")
+	runFormTest(t, "[x]{x : s(x)}", "[x]{x : s(x)}")
+	runFormTest(t, "[x]{x : s(x) | p(x)}", "[x]{x : s(x) | p(x)}")
+	runFormTest(t, "[x]{f(x) : s(x)}", "[x]{f(x) : s(x)}")
+	runFormTest(t, "[x]{f(x) : s(x) | p(x)}", "[x]{f(x) : s(x) | p(x)}")
+	runFormTest(t, "[x, y]{f(x, y) : s(x)}", "[x, y]{f(x, y) : s(x)}")
+	runFormTest(t, "[x, y]{f(x, y) : s(x) | p(x)}", "[x, y]{f(x, y) : s(x) | p(x)}")
+	runFormTest(t, "[x, y]{(f(x, y), a) : s(x)}", "[x, y]{(f(x, y), a) : s(x)}")
+	runFormTest(t, "[x, y]{(f(x, y), a, [z]{z : s(x)}) : s(x)}", "[x, y]{(f(x, y), a, [z]{z : s(x)}) : s(x)}")
 	runFormTest(t,
-		"{(f(x, y), a, {z : s(x) | p(x)}) : s(x) | p(x)}",
-		"{(f(x, y), a, {z : s(x) | p(x)}) : s(x) | p(x)}")
+		"[x, y]{(f(x, y), a, [z]{z : s(x) | p(x)}) : s(x) | p(x)}",
+		"[x, y]{(f(x, y), a, [z]{z : s(x) | p(x)}) : s(x) | p(x)}")
 }
 
 func TestConditionalSetExpression(t *testing.T) {
@@ -149,8 +153,8 @@ func TestConditionalSetExpression(t *testing.T) {
 	runExpressionTest(t, "[x, y]{(x, y) | x > 0 \\.and./ y = 0}", "[x, y]{(x, y) | x > 0 \\.and./ y = 0}")
 	runExpressionTest(t, "[x, y]{(f(x), y) | x > 0 \\.and./ y = 0}", "[x, y]{(f(x), y) | x > 0 \\.and./ y = 0}")
 	runExpressionTest(t,
-		"[x, y]{(f(x), [y]{y | y}) | x > 0 \\.and./ y = 0}",
-		"[x, y]{(f(x), [y]{y | y}) | x > 0 \\.and./ y = 0}")
+		"[x, y]{(f(x), [z]{z | g(y)}) | x > 0 \\.and./ y = 0}",
+		"[x, y]{(f(x), [z]{z | g(y)}) | x > 0 \\.and./ y = 0}")
 }
 
 func TestConditionalSetIdForm(t *testing.T) {

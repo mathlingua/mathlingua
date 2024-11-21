@@ -125,6 +125,7 @@ type TupleFormPattern struct {
 }
 
 type ConditionalSetFormPattern struct {
+	Symbols       []FormPatternKind
 	Target        FormPatternKind
 	Specification *FunctionFormPattern
 	Condition     *FunctionFormPattern

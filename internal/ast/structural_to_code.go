@@ -351,8 +351,8 @@ func (n *DefinesGroup) ToCode(indent int, hasDot bool) []string {
 	if n.Specifies != nil {
 		db.AppendSpecsSection(LowerSpecifiesName, n.Specifies.Specifies, indent, false)
 	}
-	if n.Expressing != nil {
-		db.AppendClausesSection(LowerExpressingName, n.Expressing.Expressing, indent, false)
+	if n.Expresses != nil {
+		db.AppendClausesSection(LowerExpressesName, n.Expresses.Expresses, indent, false)
 	}
 	if n.Provides != nil {
 		db.AppendSection(UpperProvidesName, indent, false)

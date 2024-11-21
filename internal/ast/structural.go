@@ -787,7 +787,7 @@ var DefinesSections = []string{
 	LowerMeansQuestionName,
 	LowerEquivalentToQuestionName,
 	LowerSpecifiesQuestionName,
-	LowerExpressingQuestionName,
+	LowerExpressesQuestionName,
 	UpperProvidesQuestionName,
 	UpperJustifiedQuestionName,
 	UpperDocumentedQuestionName,
@@ -805,7 +805,7 @@ type DefinesGroup struct {
 	Means          *MeansSection
 	EquivalentTo   *EquivalentToSection
 	Specifies      *SpecifiesSection
-	Expressing     *ExpressingSection
+	Expresses      *ExpressesSection
 	Provides       *ProvidesSection
 	Justified      *JustifiedSection
 	Documented     *DocumentedSection
@@ -825,8 +825,8 @@ type MeansSection struct {
 	CommonMetaData CommonMetaData
 }
 
-type ExpressingSection struct {
-	Expressing     []ClauseKind
+type ExpressesSection struct {
+	Expresses      []ClauseKind
 	CommonMetaData CommonMetaData
 }
 

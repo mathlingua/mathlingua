@@ -707,7 +707,7 @@ var DescribesSections = []string{
 	LowerExtendsQuestionName,
 	LowerEquivalentToQuestionName,
 	LowerSpecifiesQuestionName,
-	LowerSatisfyingQuestionName,
+	LowerSatisfiesQuestionName,
 	UpperProvidesQuestionName,
 	UpperJustifiedQuestionName,
 	UpperDocumentedQuestionName,
@@ -725,7 +725,7 @@ type DescribesGroup struct {
 	Extends        *ExtendsSection
 	EquivalentTo   *EquivalentToSection
 	Specifies      *SpecifiesSection
-	Satisfying     *SatisfyingSection
+	Satisfies      *SatisfiesSection
 	Provides       *ProvidesSection
 	Justified      *JustifiedSection
 	Documented     *DocumentedSection
@@ -760,8 +760,8 @@ type EquivalentToSection struct {
 	CommonMetaData CommonMetaData
 }
 
-type SatisfyingSection struct {
-	Satisfying     []ClauseKind
+type SatisfiesSection struct {
+	Satisfies      []ClauseKind
 	CommonMetaData CommonMetaData
 }
 

@@ -160,7 +160,7 @@ var all_group_test_cases = []testCase{
 			"extends?",
 			"equivalentTo?",
 			"specifies?",
-			"satisfying?",
+			"satisfies?",
 			"Provides?",
 			"Justified?",
 			"Documented?",

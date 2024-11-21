@@ -324,8 +324,8 @@ func (n *DescribesGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Specifies != nil {
 		forEachSpec(n.Specifies.Specifies, fn)
 	}
-	if n.Satisfying != nil {
-		forEach(n.Satisfying.Satisfying, fn)
+	if n.Satisfies != nil {
+		forEach(n.Satisfies.Satisfies, fn)
 	}
 	if n.Provides != nil {
 		forEach(n.Provides.Provides, fn)

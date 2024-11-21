@@ -1101,9 +1101,9 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 	if sec, ok := sections[ast.LowerSpecifiesName]; ok {
 		specifies = p.toSpecifiesSection(sec)
 	}
-	var satisfying *ast.SatisfyingSection
-	if sec, ok := sections[ast.LowerSatisfyingName]; ok {
-		satisfying = p.toSatisfyingSection(sec)
+	var satisfies *ast.SatisfiesSection
+	if sec, ok := sections[ast.LowerSatisfiesName]; ok {
+		satisfies = p.toSatisfiesSection(sec)
 	}
 	var provides *ast.ProvidesSection
 	if sec, ok := sections[ast.UpperProvidesName]; ok {
@@ -1138,7 +1138,7 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 		Extends:        extends,
 		EquivalentTo:   equivalentTo,
 		Specifies:      specifies,
-		Satisfying:     satisfying,
+		Satisfies:      satisfies,
 		Provides:       provides,
 		Justified:      justified,
 		Documented:     documented,
@@ -1163,9 +1163,9 @@ func (p *parser) toExtendsSection(section phase4.Section) *ast.ExtendsSection {
 	}
 }
 
-func (p *parser) toSatisfyingSection(section phase4.Section) *ast.SatisfyingSection {
-	return &ast.SatisfyingSection{
-		Satisfying:     p.oneOrMoreClauses(section),
+func (p *parser) toSatisfiesSection(section phase4.Section) *ast.SatisfiesSection {
+	return &ast.SatisfiesSection{
+		Satisfies:      p.oneOrMoreClauses(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }

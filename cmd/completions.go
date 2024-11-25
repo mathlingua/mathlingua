@@ -88,7 +88,7 @@ func getFixedCompletions() []string {
 		join(ast.InductivelyCaseSections),
 		join(ast.MatchingSections),
 		join(ast.MatchingCaseSections),
-		join(ast.WhenSections),
+		join(ast.AssertingSections),
 		join(ast.SymbolWrittenSections),
 		join(ast.ViewSections),
 		join(ast.EncodingSections),

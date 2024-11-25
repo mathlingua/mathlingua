@@ -439,15 +439,20 @@ type MatchingCaseSection struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var WhenSections = []string{
-	LowerWhenName,
+var AssertingSections = []string{
+	LowerAssertingName,
 	LowerThenName,
 }
 
-type WhenGroup struct {
+type AssertingGroup struct {
 	Label          *GroupLabel
-	When           WhenSection
+	Asserting      AssertingSection
 	Then           ThenSection
+	CommonMetaData CommonMetaData
+}
+
+type AssertingSection struct {
+	Asserting      []ClauseKind
 	CommonMetaData CommonMetaData
 }
 

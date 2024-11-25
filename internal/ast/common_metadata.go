@@ -44,7 +44,7 @@ func (n *ForAllGroup) GetCommonMetaData() *CommonMetaData        { return &n.Com
 func (n *IfGroup) GetCommonMetaData() *CommonMetaData            { return &n.CommonMetaData }
 func (n *IffGroup) GetCommonMetaData() *CommonMetaData           { return &n.CommonMetaData }
 func (n *PiecewiseGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
-func (n *WhenGroup) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }
+func (n *AssertingGroup) GetCommonMetaData() *CommonMetaData     { return &n.CommonMetaData }
 func (n *SymbolWrittenGroup) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 func (n *ComparisonGroup) GetCommonMetaData() *CommonMetaData    { return &n.CommonMetaData }
 func (n *ViewGroup) GetCommonMetaData() *CommonMetaData          { return &n.CommonMetaData }

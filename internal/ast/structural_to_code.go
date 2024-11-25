@@ -185,10 +185,10 @@ func (n *PiecewiseGroup) ToCode(indent int, hasDot bool) []string {
 	return db.Lines()
 }
 
-func (n *WhenGroup) ToCode(indent int, hasDot bool) []string {
+func (n *AssertingGroup) ToCode(indent int, hasDot bool) []string {
 	db := newDebugBuilder()
 	db.MaybeAppendGroupLabel(n.Label, indent, hasDot)
-	db.MaybeAppendWhenSection(&n.When, indent, hasDot && n.Label == nil)
+	db.MaybeAppendAssertingSection(&n.Asserting, indent, hasDot && n.Label == nil)
 	db.MaybeAppendThenSection(&n.Then, indent, false)
 	return db.Lines()
 }
@@ -1329,6 +1329,15 @@ func (db *debugBuilder) MaybeAppendWhenSection(sec *WhenSection, indent int, has
 	if sec != nil {
 		db.AppendSection(LowerWhenName, indent, hasDot)
 		for _, item := range sec.When {
+			db.Append(item, indent+2, true)
+		}
+	}
+}
+
+func (db *debugBuilder) MaybeAppendAssertingSection(sec *AssertingSection, indent int, hasDot bool) {
+	if sec != nil {
+		db.AppendSection(LowerAssertingName, indent, hasDot)
+		for _, item := range sec.Asserting {
 			db.Append(item, indent+2, true)
 		}
 	}

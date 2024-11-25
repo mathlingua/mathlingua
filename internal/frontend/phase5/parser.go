@@ -430,27 +430,27 @@ func (p *parser) toIffSection(section phase4.Section) *ast.IffSection {
 
 ////////////////////////////////////////// when ////////////////////////////////////////////////////
 
-func (p *parser) toWhenGroup(group phase4.Group) (ast.WhenGroup, bool) {
-	if !startsWithSections(group, ast.LowerWhenName) {
-		return ast.WhenGroup{}, false
+func (p *parser) toAssertingGroup(group phase4.Group) (ast.AssertingGroup, bool) {
+	if !startsWithSections(group, ast.LowerAssertingName) {
+		return ast.AssertingGroup{}, false
 	}
 
 	label := p.getGroupLabel(group, false)
-	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.WhenSections...)
+	sections, ok := IdentifySections(p.path, group.Sections, p.tracker, ast.AssertingSections...)
 	if !ok {
-		return ast.WhenGroup{}, false
+		return ast.AssertingGroup{}, false
 	}
-	return ast.WhenGroup{
+	return ast.AssertingGroup{
 		Label:          label,
-		When:           *p.toWhenSection(sections[ast.LowerWhenName]),
+		Asserting:      *p.toAssertingSection(sections[ast.LowerAssertingName]),
 		Then:           *p.toThenSection(sections[ast.LowerThenName]),
 		CommonMetaData: toCommonMetaData(group.MetaData),
 	}, true
 }
 
-func (p *parser) toWhenSection(section phase4.Section) *ast.WhenSection {
-	return &ast.WhenSection{
-		When:           p.oneOrMoreClauses(section),
+func (p *parser) toAssertingSection(section phase4.Section) *ast.AssertingSection {
+	return &ast.AssertingSection{
+		Asserting:      p.oneOrMoreClauses(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -1152,6 +1152,13 @@ func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool)
 func (p *parser) toDescribesSection(section phase4.Section) *ast.DescribesSection {
 	return &ast.DescribesSection{
 		Describes:      p.exactlyOneTarget(section),
+		CommonMetaData: toCommonMetaData(section.MetaData),
+	}
+}
+
+func (p *parser) toWhenSection(section phase4.Section) *ast.WhenSection {
+	return &ast.WhenSection{
+		When:           p.oneOrMoreClauses(section),
 		CommonMetaData: toCommonMetaData(section.MetaData),
 	}
 }
@@ -2849,7 +2856,7 @@ func (p *parser) toClause(arg phase4.Argument) ast.ClauseKind {
 			return &grp
 		} else if grp, ok := p.toIffGroup(*data); ok {
 			return &grp
-		} else if grp, ok := p.toWhenGroup(*data); ok {
+		} else if grp, ok := p.toAssertingGroup(*data); ok {
 			return &grp
 		} else if grp, ok := p.toPiecewiseGroup(*data); ok {
 			return &grp

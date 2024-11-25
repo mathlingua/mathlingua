@@ -40,7 +40,7 @@ func (*ForAllGroup) StructuralNodeKind()                       {}
 func (*IfGroup) StructuralNodeKind()                           {}
 func (*IffGroup) StructuralNodeKind()                          {}
 func (*PiecewiseGroup) StructuralNodeKind()                    {}
-func (*WhenGroup) StructuralNodeKind()                         {}
+func (*AssertingGroup) StructuralNodeKind()                    {}
 func (*SymbolWrittenGroup) StructuralNodeKind()                {}
 func (*ComparisonGroup) StructuralNodeKind()                   {}
 func (*ViewGroup) StructuralNodeKind()                         {}
@@ -148,7 +148,7 @@ func (*ExistsUniqueGroup) ClauseKind()     {}
 func (*ForAllGroup) ClauseKind()           {}
 func (*IfGroup) ClauseKind()               {}
 func (*IffGroup) ClauseKind()              {}
-func (*WhenGroup) ClauseKind()             {}
+func (*AssertingGroup) ClauseKind()        {}
 func (*PiecewiseGroup) ClauseKind()        {}
 func (*DeclareGroup) ClauseKind()          {}
 func (*InductivelyGroup) ClauseKind()      {}

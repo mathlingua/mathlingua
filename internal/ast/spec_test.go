@@ -663,9 +663,9 @@ var all_group_test_cases = []testCase{
 		},
 	},
 	{
-		actual: WhenSections,
+		actual: AssertingSections,
 		expected: []string{
-			"when",
+			"asserting",
 			"then",
 		},
 	},

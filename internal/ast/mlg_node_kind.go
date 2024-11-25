@@ -41,7 +41,7 @@ func (*ForAllGroup) MlgNodeKind()        {}
 func (*IfGroup) MlgNodeKind()            {}
 func (*IffGroup) MlgNodeKind()           {}
 func (*PiecewiseGroup) MlgNodeKind()     {}
-func (*WhenGroup) MlgNodeKind()          {}
+func (*AssertingGroup) MlgNodeKind()     {}
 func (*SymbolWrittenGroup) MlgNodeKind() {}
 func (*ComparisonGroup) MlgNodeKind()    {}
 func (*ViewGroup) MlgNodeKind()          {}

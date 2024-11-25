@@ -222,8 +222,8 @@ func (n *PiecewiseGroup) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
-func (n *WhenGroup) ForEach(fn func(subNode MlgNodeKind)) {
-	forEach(n.When.When, fn)
+func (n *AssertingGroup) ForEach(fn func(subNode MlgNodeKind)) {
+	forEach(n.Asserting.Asserting, fn)
 	forEach(n.Then.Clauses, fn)
 }
 

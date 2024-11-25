@@ -248,14 +248,14 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 			VarArgBounds: nil,
 		}, true
 	}
-	if !fp.hasHas(ast.LSquare, ast.Name) && !fp.hasHas(ast.LSquare, ast.LParen) {
+	if !fp.hasHas(ast.LCurly, ast.Name) && !fp.hasHas(ast.LCurly, ast.LParen) {
 		return ast.VarArgData{
 			IsVarArg: false,
 		}, false
 	}
 	varArgBounds := make([]ast.NameForm, 0)
 	id := fp.lexer.Snapshot()
-	fp.expect(ast.LSquare)
+	fp.expect(ast.LCurly)
 	if fp.has(ast.Name) {
 		// its of the form 'name...bound'
 		varName, ok := fp.token(ast.Name)
@@ -288,7 +288,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 					},
 				})
 		}
-		fp.expect(ast.RSquare)
+		fp.expect(ast.RCurly)
 		fp.lexer.Commit(id)
 		return ast.VarArgData{
 			IsVarArg: true,
@@ -385,7 +385,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 				})
 		}
 		fp.expect(ast.RParen)
-		fp.expect(ast.RSquare)
+		fp.expect(ast.RCurly)
 		fp.lexer.Commit(id)
 		return ast.VarArgData{
 			IsVarArg:     true,
@@ -1380,7 +1380,7 @@ func (fp *formulationParser) ordinalCallExpression() (ast.OrdinalCallExpression,
 		return ast.OrdinalCallExpression{}, false
 	}
 
-	_, ok = fp.token(ast.LSquare)
+	_, ok = fp.token(ast.LCurly)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.OrdinalCallExpression{}, false
@@ -1388,7 +1388,7 @@ func (fp *formulationParser) ordinalCallExpression() (ast.OrdinalCallExpression,
 
 	args := make([]ast.ExpressionKind, 0)
 	for fp.lexer.HasNext() {
-		if fp.has(ast.RSquare) {
+		if fp.has(ast.RCurly) {
 			break
 		}
 
@@ -1409,7 +1409,7 @@ func (fp *formulationParser) ordinalCallExpression() (ast.OrdinalCallExpression,
 		return ast.OrdinalCallExpression{}, false
 	}
 
-	_, ok = fp.token(ast.RSquare)
+	_, ok = fp.token(ast.RCurly)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.OrdinalCallExpression{}, false

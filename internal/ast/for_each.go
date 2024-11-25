@@ -876,10 +876,6 @@ func (n Signature) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
-func (n *SelectFromBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(&n.Target)
-}
-
 func (n *DefinitionBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.Of != nil {
 		fn(n.Of)

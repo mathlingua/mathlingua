@@ -56,7 +56,6 @@ func (n *PrefixOperatorForm) Start() Position                     { return n.Com
 func (n *PostfixOperatorForm) Start() Position                    { return n.CommonMetaData.Start }
 func (n *FunctionLiteralExpression) Start() Position              { return n.CommonMetaData.Start }
 func (n *FunctionLiteralForm) Start() Position                    { return n.CommonMetaData.Start }
-func (n *SelectFromBuiltinExpression) Start() Position            { return n.CommonMetaData.Start }
 func (n *DefinitionBuiltinExpression) Start() Position            { return n.CommonMetaData.Start }
 func (n *MapToElseBuiltinExpression) Start() Position             { return n.CommonMetaData.Start }
 func (n *CommandTypeForm) Start() Position                        { return n.CommonMetaData.Start }

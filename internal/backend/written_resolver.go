@@ -497,18 +497,6 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 				text += w.formulationNodeToWritten(path, n.Else)
 			}
 			return text, true
-		case *ast.SelectFromBuiltinExpression:
-			// \\select{statement|specification}:from{x}
-			text := "\\textrm{select }"
-			for i, kind := range n.Kinds {
-				if i > 0 {
-					text += " \\text{ or }"
-				}
-				text += fmt.Sprintf("\\textrm{%s}", kind)
-			}
-			text += "\\textrm{ from }"
-			text += w.formulationNodeToWritten(path, &n.Target)
-			return text, true
 		case *ast.AbstractBuiltinExpression:
 			return "\\textrm{abstract}", true
 		case *ast.SpecificationBuiltinExpression:

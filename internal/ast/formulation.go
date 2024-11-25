@@ -301,16 +301,6 @@ type ChainExpression struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// \\select{statement|specification}:from{x}
-type SelectFromBuiltinExpression struct {
-	Kinds               []string
-	Target              NameForm
-	CommonMetaData      CommonMetaData
-	FormulationMetaData FormulationMetaData
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 // \\map{x{i{k}}}:to{x{i{k}} + 1}:else{0}
 type MapToElseBuiltinExpression struct {
 	Target              OrdinalCallExpression

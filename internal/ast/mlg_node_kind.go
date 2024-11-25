@@ -163,7 +163,6 @@ func (*ProofForAllGroup) MlgNodeKind()                       {}
 func (*ProofDeclareGroup) MlgNodeKind()                      {}
 func (*ProofIfGroup) MlgNodeKind()                           {}
 func (*ProofIffGroup) MlgNodeKind()                          {}
-func (*SelectFromBuiltinExpression) MlgNodeKind()            {}
 func (*DefinitionBuiltinExpression) MlgNodeKind()            {}
 func (*MapToElseBuiltinExpression) MlgNodeKind()             {}
 func (*CommandTypeForm) MlgNodeKind()                        {}

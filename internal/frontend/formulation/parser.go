@@ -758,8 +758,6 @@ func (fp *formulationParser) pseudoExpression(
 			children = append(children, &sig)
 		} else if builtin, ok := fp.mapToElseBuiltinExpression(); ok {
 			children = append(children, &builtin)
-		} else if cmd, ok := fp.selectFromBuiltinExpression(); ok {
-			children = append(children, &cmd)
 		} else if cmd, ok := fp.definitionBuiltinExpression(); ok {
 			children = append(children, &cmd)
 		} else if cmd, ok := fp.infixCommandExpression(); ok {
@@ -887,89 +885,6 @@ func (fp *formulationParser) mapToElseBuiltinExpression() (ast.MapToElseBuiltinE
 		Target: target,
 		To:     to,
 		Else:   elseExp,
-		CommonMetaData: ast.CommonMetaData{
-			Start: fp.getShiftedPosition(start),
-			Key:   fp.keyGen.Next(),
-		},
-	}, true
-}
-
-func (fp *formulationParser) selectFromBuiltinExpression() (ast.SelectFromBuiltinExpression, bool) {
-	start := fp.lexer.Position()
-	id := fp.lexer.Snapshot()
-	if !fp.hasHas(ast.BackSlash, ast.BackSlash) {
-		fp.lexer.RollBack(id)
-		return ast.SelectFromBuiltinExpression{}, false
-	}
-
-	fp.expect(ast.BackSlash) // skip the \
-	fp.expect(ast.BackSlash) // skip the \
-
-	if !fp.has(ast.Name) || fp.lexer.Peek().Text != "select" {
-		fp.lexer.RollBack(id)
-		return ast.SelectFromBuiltinExpression{}, false
-	}
-
-	formulationName, _ := fp.expect(ast.Name) // skip the "select" name
-
-	if !fp.has(ast.LCurly) {
-		fp.errorAt("Expected at {", formulationName.Position)
-		fp.lexer.Commit(id)
-		return ast.SelectFromBuiltinExpression{
-			CommonMetaData: ast.CommonMetaData{
-				Start: fp.getShiftedPosition(start),
-				Key:   fp.keyGen.Next(),
-			},
-		}, true
-	}
-	kinds := fp.kinds()
-
-	if len(kinds) == 0 {
-		fp.errorAt("At least one argument must be provided", formulationName.Position)
-	}
-
-	if !fp.hasHas(ast.Colon, ast.Name) || fp.lexer.PeekPeek().Text != "from" {
-		fp.errorAt("Expected :from{} to follow \\\\select{}", formulationName.Position)
-		fp.lexer.Commit(id)
-		return ast.SelectFromBuiltinExpression{
-			CommonMetaData: ast.CommonMetaData{
-				Start: fp.getShiftedPosition(start),
-				Key:   fp.keyGen.Next(),
-			},
-		}, true
-	}
-
-	fp.expect(ast.Colon)
-	fromName, _ := fp.expect(ast.Name)
-
-	if !fp.has(ast.LCurly) {
-		fp.errorAt("Expected {", fromName.Position)
-		fp.lexer.Commit(id)
-		return ast.SelectFromBuiltinExpression{
-			CommonMetaData: ast.CommonMetaData{
-				Start: fp.getShiftedPosition(start),
-				Key:   fp.keyGen.Next(),
-			},
-		}, true
-	}
-
-	fp.expect(ast.LCurly)
-	target, ok := fp.nameForm()
-	if !ok {
-		fp.errorAt("Expected a name", fromName.Position)
-		fp.lexer.Commit(id)
-		return ast.SelectFromBuiltinExpression{
-			CommonMetaData: ast.CommonMetaData{
-				Start: fp.getShiftedPosition(start),
-				Key:   fp.keyGen.Next(),
-			},
-		}, true
-	}
-	fp.expect(ast.RCurly)
-	fp.lexer.Commit(id)
-	return ast.SelectFromBuiltinExpression{
-		Kinds:  kinds,
-		Target: target,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

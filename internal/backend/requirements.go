@@ -149,7 +149,6 @@ func checkIsExpression(
 		_, isStatementBuiltIn := item.(*ast.StatementBuiltinExpression)
 		_, isExpressionBuiltIn := item.(*ast.ExpressionBuiltinExpression)
 		_, isCommand := item.(*ast.CommandExpression)
-		_, isSelectFrom := item.(*ast.SelectFromBuiltinExpression)
 		var isAndOperator = false
 		if infixOp, isInfixOp := item.(*ast.InfixOperatorCallExpression); isInfixOp {
 			target, isNonEnclosed := infixOp.Target.(*ast.NonEnclosedNonCommandOperatorTarget)
@@ -158,14 +157,13 @@ func checkIsExpression(
 			}
 		}
 		if !isName && !isTypeBuiltIn && !isAbstractBuiltIn && !isSpecificationBuiltIn &&
-			!isExpressionBuiltIn && !isStatementBuiltIn && !isCommand && !isAndOperator &&
-			!isSelectFrom {
+			!isExpressionBuiltIn && !isStatementBuiltIn && !isCommand && !isAndOperator {
 			appendError(
 				path,
 				isExpression.Start(),
 				"The right-hand-side of an 'is' statement "+
 					"can only contain a name, command, command & command, \\\\type, "+
-					"\\\\select:from, \\\\abstract, \\\\specification, \\\\statement, or \\\\expression",
+					"\\\\abstract, \\\\specification, \\\\statement, or \\\\expression",
 				tracker)
 		}
 	}

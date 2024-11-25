@@ -338,29 +338,32 @@ type DefinitionBuiltinExpression struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// \\type:of{x}
-type TypeOfBuiltinExpression struct {
-	Of                  ExpressionKind
+// \\type
+type TypeBuiltinExpression struct {
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// \\boolean
-type BooleanBuiltinExpression struct {
+// \\abstract
+type AbstractBuiltinExpression struct {
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
 
-// \\true
-type TrueBuiltinExpression struct {
+// \\specification
+type SpecificationBuiltinExpression struct {
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
 
-// \\false
-type FalseBuiltinExpression struct {
+// \\statement
+type StatementBuiltinExpression struct {
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
+// \\expression
+type ExpressionBuiltinExpression struct {
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }
@@ -427,23 +430,6 @@ type DirectionalTypeParam struct {
 // #1 or #2
 type DirectionType struct {
 	Number              uint32
-	CommonMetaData      CommonMetaData
-	FormulationMetaData FormulationMetaData
-}
-
-/////////////////////////////// Kinds //////////////////////////////////////////////////////////////
-
-// \\type{\:set & \:group}
-// \\type{\:set \:in:/ \:set}
-type TypeMetaKind struct {
-	Types               *[]TypeFormKind
-	CommonMetaData      CommonMetaData
-	FormulationMetaData FormulationMetaData
-}
-
-// \\formulation{expression | statement}
-type FormulationMetaKind struct {
-	Kinds               *[]string
 	CommonMetaData      CommonMetaData
 	FormulationMetaData FormulationMetaData
 }

@@ -109,8 +109,6 @@ func (*AsExpression) MlgNodeKind()                           {}
 func (*OrdinalCallExpression) MlgNodeKind()                  {}
 func (*ChainExpression) MlgNodeKind()                        {}
 func (*Signature) MlgNodeKind()                              {}
-func (*TypeMetaKind) MlgNodeKind()                           {}
-func (*FormulationMetaKind) MlgNodeKind()                    {}
 func (*StructuralColonEqualsForm) MlgNodeKind()              {}
 func (*StructuralColonEqualsColonForm) MlgNodeKind()         {}
 func (*ExpressionColonEqualsItem) MlgNodeKind()              {}
@@ -182,11 +180,12 @@ func (*ProofPartwiseGroup) MlgNodeKind()                     {}
 func (*ProofSufficesToShowGroup) MlgNodeKind()               {}
 func (*ProofToShowGroup) MlgNodeKind()                       {}
 func (*ProofRemarkGroup) MlgNodeKind()                       {}
-func (*TypeOfBuiltinExpression) MlgNodeKind()                {}
-func (*BooleanBuiltinExpression) MlgNodeKind()               {}
-func (*TrueBuiltinExpression) MlgNodeKind()                  {}
-func (*FalseBuiltinExpression) MlgNodeKind()                 {}
 func (*InductivelyGroup) MlgNodeKind()                       {}
 func (*InductivelyCaseGroup) MlgNodeKind()                   {}
 func (*MatchingGroup) MlgNodeKind()                          {}
 func (*MatchingCaseGroup) MlgNodeKind()                      {}
+func (*AbstractBuiltinExpression) MlgNodeKind()              {}
+func (*SpecificationBuiltinExpression) MlgNodeKind()         {}
+func (*StatementBuiltinExpression) MlgNodeKind()             {}
+func (*ExpressionBuiltinExpression) MlgNodeKind()            {}
+func (*TypeBuiltinExpression) MlgNodeKind()                  {}

@@ -35,8 +35,6 @@ func (n *AsExpression) Start() Position                           { return n.Com
 func (n *OrdinalCallExpression) Start() Position                  { return n.CommonMetaData.Start }
 func (n *ChainExpression) Start() Position                        { return n.CommonMetaData.Start }
 func (n *Signature) Start() Position                              { return n.CommonMetaData.Start }
-func (n *TypeMetaKind) Start() Position                           { return n.CommonMetaData.Start }
-func (n *FormulationMetaKind) Start() Position                    { return n.CommonMetaData.Start }
 func (n *StructuralColonEqualsForm) Start() Position              { return n.CommonMetaData.Start }
 func (n *StructuralColonEqualsColonForm) Start() Position         { return n.CommonMetaData.Start }
 func (n *ExpressionColonEqualsItem) Start() Position              { return n.CommonMetaData.Start }
@@ -63,7 +61,8 @@ func (n *DefinitionBuiltinExpression) Start() Position            { return n.Com
 func (n *MapToElseBuiltinExpression) Start() Position             { return n.CommonMetaData.Start }
 func (n *CommandTypeForm) Start() Position                        { return n.CommonMetaData.Start }
 func (n *InfixCommandTypeForm) Start() Position                   { return n.CommonMetaData.Start }
-func (n *TypeOfBuiltinExpression) Start() Position                { return n.CommonMetaData.Start }
-func (n *BooleanBuiltinExpression) Start() Position               { return n.CommonMetaData.Start }
-func (n *TrueBuiltinExpression) Start() Position                  { return n.CommonMetaData.Start }
-func (n *FalseBuiltinExpression) Start() Position                 { return n.CommonMetaData.Start }
+func (n *AbstractBuiltinExpression) Start() Position              { return n.CommonMetaData.Start }
+func (n *SpecificationBuiltinExpression) Start() Position         { return n.CommonMetaData.Start }
+func (n *StatementBuiltinExpression) Start() Position             { return n.CommonMetaData.Start }
+func (n *ExpressionBuiltinExpression) Start() Position            { return n.CommonMetaData.Start }
+func (n *TypeBuiltinExpression) Start() Position                  { return n.CommonMetaData.Start }

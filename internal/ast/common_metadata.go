@@ -140,11 +140,23 @@ func (n *Signature) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
 
-func (n *TypeMetaKind) GetCommonMetaData() *CommonMetaData {
+func (n *TypeBuiltinExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
 
-func (n *FormulationMetaKind) GetCommonMetaData() *CommonMetaData {
+func (n *AbstractBuiltinExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *SpecificationBuiltinExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *StatementBuiltinExpression) GetCommonMetaData() *CommonMetaData {
+	return &n.CommonMetaData
+}
+
+func (n *ExpressionBuiltinExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
 
@@ -321,22 +333,6 @@ func (n *ProofToShowGroup) GetCommonMetaData() *CommonMetaData {
 }
 
 func (n *ProofRemarkGroup) GetCommonMetaData() *CommonMetaData {
-	return &n.CommonMetaData
-}
-
-func (n *TypeOfBuiltinExpression) GetCommonMetaData() *CommonMetaData {
-	return &n.CommonMetaData
-}
-
-func (n *BooleanBuiltinExpression) GetCommonMetaData() *CommonMetaData {
-	return &n.CommonMetaData
-}
-
-func (n *TrueBuiltinExpression) GetCommonMetaData() *CommonMetaData {
-	return &n.CommonMetaData
-}
-
-func (n *FalseBuiltinExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
 

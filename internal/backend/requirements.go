@@ -143,13 +143,12 @@ func checkIsExpression(
 ) {
 	for _, item := range isExpression.Rhs {
 		_, isName := item.(*ast.NameForm)
-		_, isType := item.(*ast.TypeMetaKind)
-		_, isTypeOf := item.(*ast.TypeOfBuiltinExpression)
-		_, isBoolean := item.(*ast.BooleanBuiltinExpression)
-		_, isTrue := item.(*ast.TrueBuiltinExpression)
-		_, isFalse := item.(*ast.FalseBuiltinExpression)
+		_, isTypeBuiltIn := item.(*ast.TypeBuiltinExpression)
+		_, isAbstractBuiltIn := item.(*ast.AbstractBuiltinExpression)
+		_, isSpecificationBuiltIn := item.(*ast.SpecificationBuiltinExpression)
+		_, isStatementBuiltIn := item.(*ast.StatementBuiltinExpression)
+		_, isExpressionBuiltIn := item.(*ast.ExpressionBuiltinExpression)
 		_, isCommand := item.(*ast.CommandExpression)
-		_, isFormulation := item.(*ast.FormulationMetaKind)
 		_, isSelectFrom := item.(*ast.SelectFromBuiltinExpression)
 		var isAndOperator = false
 		if infixOp, isInfixOp := item.(*ast.InfixOperatorCallExpression); isInfixOp {
@@ -158,14 +157,15 @@ func checkIsExpression(
 				isAndOperator = target.Text == "&"
 			}
 		}
-		if !isName && !isType && !isTypeOf && !isBoolean && !isTrue && !isFalse &&
-			!isCommand && !isFormulation && !isAndOperator && !isSelectFrom {
+		if !isName && !isTypeBuiltIn && !isAbstractBuiltIn && !isSpecificationBuiltIn &&
+			!isExpressionBuiltIn && !isStatementBuiltIn && !isCommand && !isAndOperator &&
+			!isSelectFrom {
 			appendError(
 				path,
 				isExpression.Start(),
 				"The right-hand-side of an 'is' statement "+
-					"can only contain a name, command, command & command, \\\\type, \\\\type:of, "+
-					"\\\\select:from, \\\\boolean, \\\\true, \\\\false, or \\\\formulation",
+					"can only contain a name, command, command & command, \\\\type, "+
+					"\\\\select:from, \\\\abstract, \\\\specification, \\\\statement, or \\\\expression",
 				tracker)
 		}
 	}

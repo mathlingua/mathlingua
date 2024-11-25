@@ -43,8 +43,6 @@ func (*AsExpression) FormulationNodeKind()                           {}
 func (*OrdinalCallExpression) FormulationNodeKind()                  {}
 func (*ChainExpression) FormulationNodeKind()                        {}
 func (*Signature) FormulationNodeKind()                              {}
-func (*TypeMetaKind) FormulationNodeKind()                           {}
-func (*FormulationMetaKind) FormulationNodeKind()                    {}
 func (*StructuralColonEqualsForm) FormulationNodeKind()              {}
 func (*StructuralColonEqualsColonForm) FormulationNodeKind()         {}
 func (*ExpressionColonEqualsItem) FormulationNodeKind()              {}
@@ -71,10 +69,11 @@ func (*DefinitionBuiltinExpression) FormulationNodeKind()            {}
 func (*MapToElseBuiltinExpression) FormulationNodeKind()             {}
 func (*CommandTypeForm) FormulationNodeKind()                        {}
 func (*InfixCommandTypeForm) FormulationNodeKind()                   {}
-func (*TypeOfBuiltinExpression) FormulationNodeKind()                {}
-func (*BooleanBuiltinExpression) FormulationNodeKind()               {}
-func (*TrueBuiltinExpression) FormulationNodeKind()                  {}
-func (*FalseBuiltinExpression) FormulationNodeKind()                 {}
+func (*AbstractBuiltinExpression) FormulationNodeKind()              {}
+func (*SpecificationBuiltinExpression) FormulationNodeKind()         {}
+func (*StatementBuiltinExpression) FormulationNodeKind()             {}
+func (*ExpressionBuiltinExpression) FormulationNodeKind()            {}
+func (*TypeBuiltinExpression) FormulationNodeKind()                  {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -161,11 +160,11 @@ func (*DefinitionBuiltinExpression) ExpressionKind()            {}
 func (*MapToElseBuiltinExpression) ExpressionKind()             {}
 func (*CommandTypeForm) ExpressionKind()                        {}
 func (*InfixCommandTypeForm) ExpressionKind()                   {}
-func (*TypeMetaKind) ExpressionKind()                           {}
-func (*TypeOfBuiltinExpression) ExpressionKind()                {}
-func (*BooleanBuiltinExpression) ExpressionKind()               {}
-func (*TrueBuiltinExpression) ExpressionKind()                  {}
-func (*FalseBuiltinExpression) ExpressionKind()                 {}
+func (*AbstractBuiltinExpression) ExpressionKind()              {}
+func (*SpecificationBuiltinExpression) ExpressionKind()         {}
+func (*StatementBuiltinExpression) ExpressionKind()             {}
+func (*ExpressionBuiltinExpression) ExpressionKind()            {}
+func (*TypeBuiltinExpression) ExpressionKind()                  {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -185,18 +184,18 @@ type KindKind interface {
 	KindKind()
 }
 
-func (*NameForm) KindKind()                      {} // x could refer to a type
-func (*CommandExpression) KindKind()             {} // \function:on{A}:to{B}
-func (*PrefixOperatorCallExpression) KindKind()  {} // *A
-func (*PostfixOperatorCallExpression) KindKind() {} // B!
-func (*InfixOperatorCallExpression) KindKind()   {} // A \to/ B
-func (*TypeMetaKind) KindKind()                  {} // \\type{\[set] & \[group]}
-func (*FormulationMetaKind) KindKind()           {} // \\formulation{expression | statement}
-func (*BooleanBuiltinExpression) KindKind()      {} // \\boolean
-func (*TrueBuiltinExpression) KindKind()         {} // \\true
-func (*FalseBuiltinExpression) KindKind()        {} // \\false
-func (*TypeOfBuiltinExpression) KindKind()       {} // \\type:of{x}
-func (*SelectFromBuiltinExpression) KindKind()   {}
+func (*NameForm) KindKind()                       {} // x could refer to a type
+func (*CommandExpression) KindKind()              {} // \function:on{A}:to{B}
+func (*PrefixOperatorCallExpression) KindKind()   {} // *A
+func (*PostfixOperatorCallExpression) KindKind()  {} // B!
+func (*InfixOperatorCallExpression) KindKind()    {} // A \to/ B
+func (*AbstractBuiltinExpression) KindKind()      {} // \\abstract
+func (*SpecificationBuiltinExpression) KindKind() {} // \\specification
+func (*StatementBuiltinExpression) KindKind()     {} // \\statement
+func (*ExpressionBuiltinExpression) KindKind()    {} // \\expression
+func (*TypeBuiltinExpression) KindKind()          {} // \\type
+
+func (*SelectFromBuiltinExpression) KindKind() {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

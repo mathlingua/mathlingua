@@ -486,33 +486,6 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 			noPrefix := strings.Replace(n.ToCode(ast.NoOp), "\\:", "", 1)
 			noSuffix := strings.Replace(noPrefix, ":/", "", 1)
 			return fmt.Sprintf("\\textrm{ %s }", noSuffix), true
-		case *ast.TypeMetaKind:
-			// \\type{\:set & \:group}
-			text := "\\textrm{type}"
-			if n.Types != nil {
-				text += "\\textrm{ of }"
-				for i, t := range *n.Types {
-					if i > 0 {
-						text += "\\textrm{ and }"
-					}
-					text += w.formulationNodeToWritten(path, t)
-				}
-			}
-			return text, true
-		case *ast.FormulationMetaKind:
-			// \\formulation{expression | statement}
-			if n.Kinds == nil {
-				return "formulation", true
-			}
-			text := "\\textrm{"
-			for i, kind := range *n.Kinds {
-				if i > 0 {
-					text += " or "
-				}
-				text += kind
-			}
-			text += "}"
-			return text, true
 		case *ast.MapToElseBuiltinExpression:
 			// \\map{x[i[k]]}:to{x[i[k]] + 1}:else{0}
 			text := "\\textrm{map }"
@@ -536,14 +509,16 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 			text += "\\textrm{ from }"
 			text += w.formulationNodeToWritten(path, &n.Target)
 			return text, true
-		case *ast.TrueBuiltinExpression:
-			return "\\textrm{true}", true
-		case *ast.FalseBuiltinExpression:
-			return "\\textrm{false}", true
-		case *ast.BooleanBuiltinExpression:
-			return "\\textrm{boolean}", true
-		case *ast.TypeOfBuiltinExpression:
-			return "\\textrm{type of }" + w.formulationNodeToWritten(path, n.Of), true
+		case *ast.AbstractBuiltinExpression:
+			return "\\textrm{abstract}", true
+		case *ast.SpecificationBuiltinExpression:
+			return "\\textrm{specification}", true
+		case *ast.StatementBuiltinExpression:
+			return "\\textrm{statement}", true
+		case *ast.ExpressionBuiltinExpression:
+			return "\\textrm{expression}", true
+		case *ast.TypeBuiltinExpression:
+			return "\\textrm{type}", true
 		default:
 			return "", false
 		}

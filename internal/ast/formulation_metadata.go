@@ -94,14 +94,6 @@ func (n *ChainExpression) GetFormulationMetaData() *FormulationMetaData {
 
 func (n *Signature) GetFormulationMetaData() *FormulationMetaData { return &n.FormulationMetaData }
 
-func (n *TypeMetaKind) GetFormulationMetaData() *FormulationMetaData {
-	return &n.FormulationMetaData
-}
-
-func (n *FormulationMetaKind) GetFormulationMetaData() *FormulationMetaData {
-	return &n.FormulationMetaData
-}
-
 func (n *StructuralColonEqualsForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
@@ -204,18 +196,22 @@ func (n *InfixCommandTypeForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 
-func (n *TypeOfBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
+func (n *TypeBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 
-func (n *BooleanBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
+func (n *AbstractBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 
-func (n *TrueBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
+func (n *SpecificationBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 
-func (n *FalseBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
+func (n *StatementBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}
+
+func (n *ExpressionBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }

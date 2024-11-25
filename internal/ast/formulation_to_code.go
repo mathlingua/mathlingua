@@ -330,71 +330,39 @@ func (n *DefinitionBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, 
 	return result
 }
 
-func (n *TypeOfBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+func (n *AbstractBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
 	}
-	result := "\\\\type:of{"
-	result += n.Of.ToCode(fn)
-	result += "}"
-	return result
+	return "\\\\abstract"
 }
 
-func (n *BooleanBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+func (n *SpecificationBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return "\\\\boolean"
+	return "\\\\specification"
 }
 
-func (n *TrueBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+func (n *StatementBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return "\\\\true"
+	return "\\\\statement"
 }
 
-func (n *FalseBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+func (n *ExpressionBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
 	}
-	return "\\\\false"
+	return "\\\\expression"
 }
 
-func (n *TypeMetaKind) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+func (n *TypeBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res
 	}
-	result := "\\\\type"
-	if n.Types != nil {
-		result += "{"
-		for i, t := range *n.Types {
-			if i > 0 {
-				result += " & "
-			}
-			result += t.ToCode(fn)
-		}
-		result += "}"
-	}
-	return result
-}
-
-func (n *FormulationMetaKind) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
-	if res, ok := fn(n); ok {
-		return res
-	}
-	result := "\\\\formulation"
-	if n.Kinds != nil {
-		result += "{"
-		for i, name := range *n.Kinds {
-			if i > 0 {
-				result += " | "
-			}
-			result += name
-		}
-		result += "}"
-	}
-	return result
+	return "\\\\type"
 }
 
 func (n *StructuralColonEqualsForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {

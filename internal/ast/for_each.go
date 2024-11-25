@@ -897,27 +897,19 @@ func (n *MapToElseBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
-func (n *TypeOfBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(n.Of)
+func (n *TypeBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
-func (n *BooleanBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
+func (n *AbstractBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
-func (n *TrueBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
+func (n *SpecificationBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
-func (n *FalseBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
+func (n *StatementBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
-func (n *TypeMetaKind) ForEach(fn func(subNode MlgNodeKind)) {
-	if n.Types != nil {
-		forEachTypeKind(*n.Types, fn)
-	}
-}
-
-func (n *FormulationMetaKind) ForEach(fn func(subNode MlgNodeKind)) {
-	// this doesn't have any sub nodes
+func (n *ExpressionBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 }
 
 func (n *StructuralColonEqualsForm) ForEach(fn func(subNode MlgNodeKind)) {

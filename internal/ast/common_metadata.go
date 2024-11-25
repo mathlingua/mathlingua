@@ -120,10 +120,6 @@ func (n *IsExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }
 
-func (n *ExtendsExpression) GetCommonMetaData() *CommonMetaData {
-	return &n.CommonMetaData
-}
-
 func (n *AsExpression) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData
 }

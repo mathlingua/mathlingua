@@ -67,7 +67,6 @@ func getFixedCompletions() []string {
 	return []string{
 		"is",
 		"as",
-		"extends",
 		"\\\\abstract",
 		"\\\\specification",
 		"\\\\statement",

@@ -853,11 +853,6 @@ func (n *IsExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Rhs, fn)
 }
 
-func (n *ExtendsExpression) ForEach(fn func(subNode MlgNodeKind)) {
-	forEach(n.Lhs, fn)
-	forEach(n.Rhs, fn)
-}
-
 func (n *AsExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(n.Lhs)
 	fn(n.Rhs)

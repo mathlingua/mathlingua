@@ -509,7 +509,6 @@ func (fp *formulationParser) multiplexedExpressionKind() (ast.ExpressionKind, bo
 	}
 
 	isIndex := -1
-	extendsIndex := -1
 
 	minPrecIndexMinIndex := math.MaxInt
 	minPrecIndexMaxIndex := -1
@@ -524,14 +523,6 @@ func (fp *formulationParser) multiplexedExpressionKind() (ast.ExpressionKind, bo
 			isIndex = i
 		}
 
-		_, extendsOk := item.(*ast.ExtendsExpression)
-		if extendsOk {
-			if extendsIndex >= 0 {
-				fp.error("'extends' statements cannot be nested")
-			}
-			extendsIndex = i
-		}
-
 		prec, isInfix := GetPrecedenceAndIfInfix(item)
 		if isInfix {
 			if prec >= minPrec {
@@ -542,9 +533,9 @@ func (fp *formulationParser) multiplexedExpressionKind() (ast.ExpressionKind, bo
 		}
 	}
 
-	// if there isn't an 'is' or 'extends' statement and there
+	// if there isn't an 'is' statement and there
 	// is at least one infix operator
-	if isIndex == -1 && extendsIndex == -1 && minPrecIndexMaxIndex >= 0 {
+	if isIndex == -1 && minPrecIndexMaxIndex >= 0 {
 		if minPrecIndexMinIndex != minPrecIndexMaxIndex {
 			fp.error(
 				"A multiplexed operator can only be used if exactly one operator has minimum precedence")
@@ -577,13 +568,7 @@ func (fp *formulationParser) multiplexedExpressionKind() (ast.ExpressionKind, bo
 		}
 	}
 
-	if isIndex >= 0 && extendsIndex >= 0 {
-		fp.error("'is' and 'extends' statements cannot be used together")
-		return nil, false
-	} else if isIndex == -1 && extendsIndex == -1 {
-		fp.error("multiple comma separated expressions is not supported in this context")
-		return nil, false
-	} else if isIndex >= 0 {
+	if isIndex >= 0 {
 		lhs := make([]ast.ExpressionKind, 0)
 		rhs := make([]ast.KindKind, 0)
 		i := 0
@@ -608,38 +593,6 @@ func (fp *formulationParser) multiplexedExpressionKind() (ast.ExpressionKind, bo
 				isExp.Start())
 		}
 		return &ast.IsExpression{
-			Lhs: lhs,
-			Rhs: rhs,
-			CommonMetaData: ast.CommonMetaData{
-				Start: fp.getShiftedPosition(start),
-				Key:   fp.keyGen.Next(),
-			},
-		}, true
-	} else if extendsIndex >= 0 {
-		lhs := make([]ast.ExpressionKind, 0)
-		rhs := make([]ast.KindKind, 0)
-		i := 0
-		for i < extendsIndex {
-			lhs = append(lhs, items[i])
-			i++
-		}
-		extendsExp := items[extendsIndex].(*ast.ExtendsExpression)
-		lhs = append(lhs, extendsExp.Lhs...)
-		rhs = append(rhs, extendsExp.Rhs...)
-		i = extendsIndex + 1
-		for i < len(items) {
-			rhs = append(rhs, items[i].(ast.KindKind))
-			i++
-		}
-		if len(rhs) != 1 {
-			fp.errorAt(
-				fmt.Sprintf(
-					"The right-hand-side of an 'extends' expression must contain exactly "+
-						"one item, but found %d",
-					len(rhs)),
-				extendsExp.Start())
-		}
-		return &ast.ExtendsExpression{
 			Lhs: lhs,
 			Rhs: rhs,
 			CommonMetaData: ast.CommonMetaData{

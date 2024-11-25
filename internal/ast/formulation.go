@@ -265,14 +265,6 @@ type IsExpression struct {
 	FormulationMetaData FormulationMetaData
 }
 
-// x extends \y
-type ExtendsExpression struct {
-	Lhs                 []ExpressionKind
-	Rhs                 []KindKind
-	CommonMetaData      CommonMetaData
-	FormulationMetaData FormulationMetaData
-}
-
 // x as \:y
 type AsExpression struct {
 	Lhs ExpressionKind

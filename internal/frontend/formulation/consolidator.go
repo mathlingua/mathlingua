@@ -271,15 +271,6 @@ func toNode(
 				Lhs: []ast.ExpressionKind{lhs},
 				Rhs: []ast.KindKind{rhs},
 			}
-		case top.Type == ast.Extends:
-			rhs := checkType(path, toNode(path, items, tracker), default_kind_type, "Kind Type",
-				tracker, top.Start())
-			lhs := checkType(path, toNode(path, items, tracker), default_expression, "Expression",
-				tracker, top.Start())
-			return &ast.ExtendsExpression{
-				Lhs: []ast.ExpressionKind{lhs},
-				Rhs: []ast.KindKind{rhs},
-			}
 		case top.Type == ast.As:
 			rhs := checkType(path, toNode(path, items, tracker), default_expression, "Type",
 				tracker, top.Start())

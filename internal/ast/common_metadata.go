@@ -293,8 +293,6 @@ func (n *CommandTypeForm) GetCommonMetaData() *CommonMetaData      { return &n.C
 func (n *InfixCommandTypeForm) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
 func (n *NamedTypeParam) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
 func (n *CurlyTypeParam) GetCommonMetaData() *CommonMetaData       { return &n.CommonMetaData }
-func (n *DirectionalTypeParam) GetCommonMetaData() *CommonMetaData { return &n.CommonMetaData }
-func (n *DirectionType) GetCommonMetaData() *CommonMetaData        { return &n.CommonMetaData }
 
 func (n *ProofForContrapositiveGroup) GetCommonMetaData() *CommonMetaData {
 	return &n.CommonMetaData

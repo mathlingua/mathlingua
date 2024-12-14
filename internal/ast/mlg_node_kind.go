@@ -168,8 +168,6 @@ func (*CommandTypeForm) MlgNodeKind()                        {}
 func (*InfixCommandTypeForm) MlgNodeKind()                   {}
 func (*NamedTypeParam) MlgNodeKind()                         {}
 func (*CurlyTypeParam) MlgNodeKind()                         {}
-func (*DirectionalTypeParam) MlgNodeKind()                   {}
-func (*DirectionType) MlgNodeKind()                          {}
 func (*ProofForContrapositiveGroup) MlgNodeKind()            {}
 func (*ProofQedGroup) MlgNodeKind()                          {}
 func (*ProofAbsurdGroup) MlgNodeKind()                       {}

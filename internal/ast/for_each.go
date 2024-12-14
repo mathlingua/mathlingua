@@ -1061,24 +1061,10 @@ func (n *CurlyTypeParam) ForEach(fn func(subNode MlgNodeKind)) {
 	if n.CurlyTypeParams != nil {
 		forEach(*n.CurlyTypeParams, fn)
 	}
-	if n.TypeDirection != nil {
-		fn(n.TypeDirection)
-	}
 }
 
 func (n *CurlyArg) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(*n.CurlyArgs, fn)
-}
-
-func (n *DirectionalTypeParam) ForEach(fn func(subNode MlgNodeKind)) {
-	if n.Name != nil {
-		fn(n.Name)
-	}
-	forEachDirectionType(n.CurlyTypeParams, fn)
-}
-
-func (n *DirectionType) ForEach(fn func(subNode MlgNodeKind)) {
-	// a DirectionType does not have any child nodes
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1318,12 +1304,6 @@ func maybeForIdItem(id *IdItem, fn func(n MlgNodeKind)) {
 func forEach[T MlgNodeKind](items []T, fn func(n MlgNodeKind)) {
 	for i := range items {
 		fn(items[i])
-	}
-}
-
-func forEachDirectionType(items []DirectionType, fn func(n MlgNodeKind)) {
-	for i := range items {
-		fn(&items[i])
 	}
 }
 

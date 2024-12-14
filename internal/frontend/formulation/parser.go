@@ -22,7 +22,6 @@ import (
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/mlglib"
-	"strconv"
 	"strings"
 )
 
@@ -2960,106 +2959,9 @@ func (fp *formulationParser) curlyTypeParam() (ast.CurlyTypeParam, bool) {
 		return ast.CurlyTypeParam{}, false
 	}
 
-	var directionTypeParam *ast.DirectionalTypeParam
-	if param, ok := fp.directionTypeParam(); ok {
-		directionTypeParam = param
-	}
 	fp.lexer.Commit(id)
 	return ast.CurlyTypeParam{
 		CurlyTypeParams: curlyArgs,
-		TypeDirection:   directionTypeParam,
-		CommonMetaData: ast.CommonMetaData{
-			Key:   fp.keyGen.Next(),
-			Start: start,
-		},
-	}, true
-}
-
-func (fp *formulationParser) curlyDirectionalTypeParams() (*[]ast.DirectionType, bool) {
-	id := fp.lexer.Snapshot()
-	_, ok := fp.token(ast.LCurly)
-	if !ok {
-		fp.lexer.RollBack(id)
-		return nil, false
-	}
-	args := make([]ast.DirectionType, 0)
-	for fp.lexer.HasNext() {
-		if fp.has(ast.RCurly) {
-			break
-		}
-
-		if len(args) > 0 {
-			fp.expect(ast.Comma)
-		}
-
-		arg, ok := fp.directionType()
-		if !ok {
-			fp.lexer.RollBack(id)
-			return nil, false
-		}
-		args = append(args, *arg)
-	}
-	fp.expect(ast.RCurly)
-	fp.lexer.Commit(id)
-	return &args, true
-}
-
-func (fp *formulationParser) directionTypeParam() (*ast.DirectionalTypeParam, bool) {
-	start := fp.lexer.Position()
-	_, atOk := fp.token(ast.At)
-	if !atOk {
-		return &ast.DirectionalTypeParam{}, false
-	}
-	id := fp.lexer.Snapshot()
-	var name *ast.NameForm
-	if n, ok := fp.nameForm(); ok {
-		name = &n
-	}
-	curly, ok := fp.curlyDirectionalTypeParams()
-	if !ok {
-		fp.lexer.RollBack(id)
-		return &ast.DirectionalTypeParam{}, false
-	}
-	fp.lexer.Commit(id)
-	return &ast.DirectionalTypeParam{
-		Name:            name,
-		CurlyTypeParams: *curly,
-		CommonMetaData: ast.CommonMetaData{
-			Key:   fp.keyGen.Next(),
-			Start: start,
-		},
-	}, true
-}
-
-func (fp *formulationParser) directionType() (*ast.DirectionType, bool) {
-	start := fp.lexer.Position()
-	if !fp.lexer.HasNext() || !strings.HasPrefix(fp.lexer.Peek().Text, "#") {
-		return nil, false
-	}
-
-	fp.lexer.Next() // ignore the #
-	id := fp.lexer.Snapshot()
-
-	if !fp.lexer.HasNext() {
-		fp.errorAt("Expected # to be followed by an integer but found end of text", start)
-		fp.lexer.RollBack(id)
-		return nil, false
-	}
-
-	maybeNumberText := fp.lexer.Peek().Text
-	number, err := strconv.ParseUint(maybeNumberText, 10, 32)
-	if err != nil {
-		fp.errorAt(fmt.Sprintf("Expected # to be followed by an integer but found '%s'",
-			maybeNumberText), start)
-		fp.lexer.RollBack(id)
-		return nil, false
-	}
-
-	fp.lexer.Next() // move past the number
-
-	fp.lexer.Commit(id)
-	return &ast.DirectionType{
-		Number: uint32(number),
 		CommonMetaData: ast.CommonMetaData{
 			Key:   fp.keyGen.Next(),
 			Start: start,

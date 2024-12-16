@@ -706,6 +706,8 @@ func (fp *formulationParser) pseudoExpression(
 			children = append(children, &fun)
 		} else if name, ok := fp.nameForm(); ok {
 			children = append(children, &name)
+		} else if symbol, ok := fp.symbolForm(); ok {
+			children = append(children, &symbol)
 		} else if fun, ok := fp.functionCallExpression(); ok {
 			children = append(children, &fun)
 		} else if tup, ok := fp.tupleForm(); ok {
@@ -1857,6 +1859,10 @@ func (fp *formulationParser) structuralFormKindWithoutColonEquals() (ast.Structu
 		return &form, ok
 	}
 
+	if symbol, ok := fp.symbolForm(); ok {
+		return &symbol, ok
+	}
+
 	if op, ok := fp.infixOperatorForm(); ok {
 		return &op, ok
 	}
@@ -2198,6 +2204,33 @@ func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 		IsStropped:      isStropped,
 		HasQuestionMark: hasQuestionMark,
 		VarArg:          varArgData,
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) symbolForm() (ast.SymbolForm, bool) {
+	start := fp.lexer.Position()
+	if !fp.hasHas(ast.DollarSign, ast.Name) {
+		return ast.SymbolForm{}, false
+	}
+
+	fp.expect(ast.DollarSign) // skip the $
+	name := fp.next().Text
+	isStropped := false
+	if strings.HasPrefix(name, "\"") && strings.HasSuffix(name, "\"") {
+		isStropped = true
+		name = strings.TrimPrefix(strings.TrimSuffix(name, "\""), "\"")
+	}
+
+	varArgData, _ := fp.varArgData()
+
+	return ast.SymbolForm{
+		Text:       name,
+		IsStropped: isStropped,
+		VarArg:     varArgData,
 		CommonMetaData: ast.CommonMetaData{
 			Start: fp.getShiftedPosition(start),
 			Key:   fp.keyGen.Next(),

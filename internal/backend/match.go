@@ -47,6 +47,8 @@ func Match(node ast.MlgNodeKind, pattern ast.PatternKind) MatchResult {
 		return matchFunction(node, *p)
 	case *ast.ExpressionFormPattern:
 		return matchExpressionForm(node, *p)
+	case *ast.SymbolFormPattern:
+		return matchSymbol(node, *p)
 	case *ast.NameFormPattern:
 		return matchName(node, *p)
 	case *ast.TupleFormPattern:
@@ -131,7 +133,11 @@ func matchStructuralColonEquals(node ast.MlgNodeKind,
 	switch n := node.(type) {
 	case *ast.NameForm:
 		return Match(n, pattern.Lhs)
+	case *ast.SymbolForm:
+		return Match(n, pattern.Lhs)
 	case *ast.FunctionForm:
+		return Match(n, pattern.Lhs)
+	case *ast.ExpressionForm:
 		return Match(n, pattern.Lhs)
 	case *ast.StructuralColonEqualsForm:
 		name, ok := n.Lhs.(*ast.NameForm)
@@ -182,6 +188,16 @@ func matchName(node ast.MlgNodeKind, pattern ast.NameFormPattern) MatchResult {
 			Messages:        []string{},
 			MatchMakesSense: true,
 		}
+	}
+}
+
+func matchSymbol(node ast.MlgNodeKind, pattern ast.SymbolFormPattern) MatchResult {
+	mapping := make(map[string]ast.MlgNodeKind)
+	mapping[pattern.Text] = node
+	return MatchResult{
+		Mapping:         mapping,
+		Messages:        []string{},
+		MatchMakesSense: true,
 	}
 }
 
@@ -777,6 +793,14 @@ func checkExpressionFormPatternsForVarArg(
 				Messages:        []string{},
 				MatchMakesSense: true,
 			}
+		} else if f, ok := first.(*ast.SymbolFormPattern); ok {
+			varArgMapping[f.Text] = values
+			return &MatchResult{
+				Mapping:         make(map[string]ast.MlgNodeKind),
+				VarArgMapping:   varArgMapping,
+				Messages:        []string{},
+				MatchMakesSense: true,
+			}
 		} else if f, ok := first.(*ast.FunctionFormPattern); ok {
 			varArgMapping[f.Target.Text] = values
 			return &MatchResult{
@@ -787,7 +811,7 @@ func checkExpressionFormPatternsForVarArg(
 			}
 		} else {
 			return &MatchResult{
-				Messages:        []string{"Only a name or function can be variadic"},
+				Messages:        []string{"Only a name, symbol, or function can be variadic"},
 				MatchMakesSense: true,
 			}
 		}

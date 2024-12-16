@@ -94,6 +94,7 @@ func (n *TextBlockItem) GetCommonMetaData() *CommonMetaData      { return &n.Com
 func (n *CapturesGroup) GetCommonMetaData() *CommonMetaData      { return &n.CommonMetaData }
 
 func (n *NameForm) GetCommonMetaData() *CommonMetaData                 { return &n.CommonMetaData }
+func (n *SymbolForm) GetCommonMetaData() *CommonMetaData               { return &n.CommonMetaData }
 func (n *FunctionForm) GetCommonMetaData() *CommonMetaData             { return &n.CommonMetaData }
 func (n *ExpressionForm) GetCommonMetaData() *CommonMetaData           { return &n.CommonMetaData }
 func (n *TupleForm) GetCommonMetaData() *CommonMetaData                { return &n.CommonMetaData }

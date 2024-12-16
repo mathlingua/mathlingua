@@ -34,6 +34,12 @@ func TestName(t *testing.T) {
 	}, map[string][]string{})
 }
 
+func TestSymbol(t *testing.T) {
+	runTest(t, "$x", "$y", map[string]string{
+		"x": "y",
+	}, map[string][]string{})
+}
+
 func TestNameAdvanced(t *testing.T) {
 	runTest(t, "\\x", "X", map[string]string{
 		"X": "\\x",
@@ -42,6 +48,12 @@ func TestNameAdvanced(t *testing.T) {
 
 func TestNameVarArg(t *testing.T) {
 	runTest(t, "x", "X...", map[string]string{
+		"x": "X",
+	}, map[string][]string{})
+}
+
+func TestSymbolVarArg(t *testing.T) {
+	runTest(t, "$x", "$X...", map[string]string{
 		"x": "X",
 	}, map[string][]string{})
 }

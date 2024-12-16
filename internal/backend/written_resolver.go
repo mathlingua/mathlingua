@@ -299,6 +299,8 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 		switch n := node.(type) {
 		case *ast.NameForm:
 			return nameToRenderedName(n.Text, n.VarArg.IsVarArg), true
+		case *ast.SymbolForm:
+			return "\\$" + nameToRenderedName(n.Text, n.VarArg.IsVarArg), true
 		case *ast.ConditionalSetForm:
 			result := "\\left \\{"
 			result += w.formulationNodeToWritten(path, n.Target)

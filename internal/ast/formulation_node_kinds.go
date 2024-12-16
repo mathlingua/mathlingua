@@ -25,6 +25,7 @@ type FormulationNodeKind interface {
 }
 
 func (*NameForm) FormulationNodeKind()                               {}
+func (*SymbolForm) FormulationNodeKind()                             {}
 func (*FunctionForm) FormulationNodeKind()                           {}
 func (*ExpressionForm) FormulationNodeKind()                         {}
 func (*TupleForm) FormulationNodeKind()                              {}
@@ -82,6 +83,7 @@ type StructuralFormKind interface {
 }
 
 func (*NameForm) StructuralForm()                       {}
+func (*SymbolForm) StructuralForm()                     {}
 func (*FunctionForm) StructuralForm()                   {}
 func (*ExpressionForm) StructuralForm()                 {}
 func (*TupleForm) StructuralForm()                      {}
@@ -136,6 +138,7 @@ type ExpressionKind interface {
 }
 
 func (*NameForm) ExpressionKind()                               {}
+func (*SymbolForm) ExpressionKind()                             {}
 func (*FunctionCallExpression) ExpressionKind()                 {}
 func (*ExpressionForm) ExpressionKind()                         {}
 func (*TupleExpression) ExpressionKind()                        {}

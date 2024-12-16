@@ -43,6 +43,8 @@ func ToFormPattern(item ast.StructuralFormKind) ast.FormPatternKind {
 	switch n := item.(type) {
 	case *ast.NameForm:
 		return ToNameFormPattern(*n)
+	case *ast.SymbolForm:
+		return ToSymbolFormPattern(*n)
 	case *ast.FunctionForm:
 		return ToFunctionFormPattern(*n)
 	case *ast.ExpressionForm:
@@ -127,6 +129,14 @@ func ToNameFormPattern(form ast.NameForm) *ast.NameFormPattern {
 		IsStropped:      form.IsStropped,
 		HasQuestionMark: form.HasQuestionMark,
 		VarArg:          ToVarArgPatternData(form.VarArg),
+	}
+}
+
+func ToSymbolFormPattern(form ast.SymbolForm) *ast.SymbolFormPattern {
+	return &ast.SymbolFormPattern{
+		Text:       form.Text,
+		IsStropped: form.IsStropped,
+		VarArg:     ToVarArgPatternData(form.VarArg),
 	}
 }
 

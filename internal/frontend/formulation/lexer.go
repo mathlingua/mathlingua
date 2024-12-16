@@ -107,6 +107,12 @@ func getTokens(path ast.Path, text string, tracker *frontend.DiagnosticTracker) 
 				Text:     "@",
 				Position: cur.Position,
 			})
+		case cur.Symbol == '$':
+			appendToken(ast.Token{
+				Type:     ast.DollarSign,
+				Text:     "$",
+				Position: cur.Position,
+			})
 		case cur.Symbol == ',':
 			appendToken(ast.Token{
 				Type:     ast.Comma,
@@ -423,7 +429,6 @@ func isOperatorSymbol(c rune) bool {
 		c == '!' ||
 		c == '@' ||
 		c == '#' ||
-		c == '$' ||
 		c == '%' ||
 		c == '^' ||
 		c == '&' ||

@@ -759,6 +759,10 @@ func (n *NameForm) ForEach(fn func(subNode MlgNodeKind)) {
 	// this doesn't have any sub nodes
 }
 
+func (n *SymbolForm) ForEach(fn func(subNode MlgNodeKind)) {
+	// this doesn't have any sub nodes
+}
+
 func (n *FunctionForm) ForEach(fn func(subNode MlgNodeKind)) {
 	fn(&n.Target)
 	forEach(n.Params, fn)

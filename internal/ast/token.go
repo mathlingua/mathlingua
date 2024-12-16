@@ -77,6 +77,7 @@ const (
 	ColonRCurly           TokenType = "ColonRCurly"
 	BarRSquare            TokenType = "BarRSquare"
 	LSquareBar            TokenType = "LSquareBar"
+	DollarSign            TokenType = "DollarSign"
 )
 
 type Token struct {

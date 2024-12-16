@@ -24,6 +24,10 @@ func (n *NameForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 
+func (n *SymbolForm) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}
+
 func (n *FunctionForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }

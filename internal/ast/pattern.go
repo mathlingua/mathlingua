@@ -24,6 +24,7 @@ type PatternKind interface {
 }
 
 func (*NameFormPattern) PatternKind()                 {}
+func (*SymbolFormPattern) PatternKind()               {}
 func (*FunctionFormPattern) PatternKind()             {}
 func (*ExpressionFormPattern) PatternKind()           {}
 func (*TupleFormPattern) PatternKind()                {}
@@ -57,6 +58,7 @@ type FormPatternKind interface {
 }
 
 func (*NameFormPattern) FormPatternKind()              {}
+func (*SymbolFormPattern) FormPatternKind()            {}
 func (*FunctionFormPattern) FormPatternKind()          {}
 func (*ExpressionFormPattern) FormPatternKind()        {}
 func (*TupleFormPattern) FormPatternKind()             {}
@@ -73,6 +75,12 @@ type NameFormPattern struct {
 	IsStropped      bool
 	HasQuestionMark bool
 	VarArg          VarArgPatternData
+}
+
+type SymbolFormPattern struct {
+	Text       string
+	IsStropped bool
+	VarArg     VarArgPatternData
 }
 
 type FunctionFormPattern struct {
@@ -92,6 +100,7 @@ type LiteralFormPatternKind interface {
 }
 
 func (*NameFormPattern) LiteralFormPatternKind()             {}
+func (*SymbolFormPattern) LiteralFormPatternKind()           {}
 func (*FunctionFormPattern) LiteralFormPatternKind()         {}
 func (*ExpressionFormPattern) LiteralFormPatternKind()       {}
 func (*TupleFormPattern) LiteralFormPatternKind()            {}

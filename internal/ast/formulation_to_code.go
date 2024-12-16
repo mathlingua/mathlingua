@@ -31,6 +31,13 @@ func (n *NameForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	return n.Text + n.VarArg.ToCode(fn)
 }
 
+func (n *SymbolForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	return "$" + n.Text + n.VarArg.ToCode(fn)
+}
+
 func (n *FunctionForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res

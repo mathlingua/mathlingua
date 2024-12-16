@@ -28,6 +28,10 @@ func (n *FunctionForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }
 
+func (n *ExpressionForm) GetFormulationMetaData() *FormulationMetaData {
+	return &n.FormulationMetaData
+}
+
 func (n *TupleForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }

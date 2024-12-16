@@ -45,6 +45,8 @@ func Match(node ast.MlgNodeKind, pattern ast.PatternKind) MatchResult {
 	switch p := pattern.(type) {
 	case *ast.FunctionFormPattern:
 		return matchFunction(node, *p)
+	case *ast.ExpressionFormPattern:
+		return matchExpressionForm(node, *p)
 	case *ast.NameFormPattern:
 		return matchName(node, *p)
 	case *ast.TupleFormPattern:
@@ -231,6 +233,26 @@ func matchFunction(node ast.MlgNodeKind, pattern ast.FunctionFormPattern) MatchR
 		return MatchResult{
 			Messages: []string{
 				fmt.Sprintf("Expected a function call but found %s",
+					ast.Debug(node, func(node ast.MlgNodeKind) (string, bool) {
+						return "", false
+					})),
+			},
+			MatchMakesSense: true,
+		}
+	}
+}
+
+func matchExpressionForm(node ast.MlgNodeKind, pattern ast.ExpressionFormPattern) MatchResult {
+	switch n := node.(type) {
+	case *ast.ExpressionForm:
+		targetMatch := matchName(&n.Target, pattern.Target)
+		paramsMatch := matchAllStructuralForms(n.Params, pattern.Params)
+		varArgMatch := matchVarArg(n.VarArg, pattern.VarArg)
+		return unionMatches(targetMatch, unionMatches(paramsMatch, varArgMatch))
+	default:
+		return MatchResult{
+			Messages: []string{
+				fmt.Sprintf("Expected a expression form but found %s",
 					ast.Debug(node, func(node ast.MlgNodeKind) (string, bool) {
 						return "", false
 					})),

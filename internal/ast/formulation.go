@@ -59,6 +59,15 @@ type FunctionForm struct {
 	FormulationMetaData FormulationMetaData
 }
 
+// f[x, y]
+type ExpressionForm struct {
+	Target              NameForm
+	Params              []StructuralFormKind
+	VarArg              VarArgData
+	CommonMetaData      CommonMetaData
+	FormulationMetaData FormulationMetaData
+}
+
 // x * y
 type InfixOperatorForm struct {
 	Operator            NameForm

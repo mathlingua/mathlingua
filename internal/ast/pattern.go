@@ -25,6 +25,7 @@ type PatternKind interface {
 
 func (*NameFormPattern) PatternKind()                 {}
 func (*FunctionFormPattern) PatternKind()             {}
+func (*ExpressionFormPattern) PatternKind()           {}
 func (*TupleFormPattern) PatternKind()                {}
 func (*ConditionalSetExpressionPattern) PatternKind() {}
 func (*ConditionalSetFormPattern) PatternKind()       {}
@@ -57,6 +58,7 @@ type FormPatternKind interface {
 
 func (*NameFormPattern) FormPatternKind()              {}
 func (*FunctionFormPattern) FormPatternKind()          {}
+func (*ExpressionFormPattern) FormPatternKind()        {}
 func (*TupleFormPattern) FormPatternKind()             {}
 func (*ConditionalSetFormPattern) FormPatternKind()    {}
 func (*ConditionalSetIdFormPattern) FormPatternKind()  {}
@@ -79,12 +81,19 @@ type FunctionFormPattern struct {
 	VarArg VarArgPatternData
 }
 
+type ExpressionFormPattern struct {
+	Target NameFormPattern
+	Params []FormPatternKind
+	VarArg VarArgPatternData
+}
+
 type LiteralFormPatternKind interface {
 	LiteralFormPatternKind()
 }
 
 func (*NameFormPattern) LiteralFormPatternKind()             {}
 func (*FunctionFormPattern) LiteralFormPatternKind()         {}
+func (*ExpressionFormPattern) LiteralFormPatternKind()       {}
 func (*TupleFormPattern) LiteralFormPatternKind()            {}
 func (*ConditionalSetFormPattern) LiteralFormPatternKind()   {}
 func (*ConditionalSetIdFormPattern) LiteralFormPatternKind() {}
@@ -99,9 +108,10 @@ type DirectionParamParamPatternKind interface {
 	DirectionParamParamPatternKind()
 }
 
-func (*NameFormPattern) DirectionParamParamPatternKind()     {}
-func (*FunctionFormPattern) DirectionParamParamPatternKind() {}
-func (*OrdinalPattern) DirectionParamParamPatternKind()      {}
+func (*NameFormPattern) DirectionParamParamPatternKind()       {}
+func (*FunctionFormPattern) DirectionParamParamPatternKind()   {}
+func (*ExpressionFormPattern) DirectionParamParamPatternKind() {}
+func (*OrdinalPattern) DirectionParamParamPatternKind()        {}
 
 type InfixOperatorFormPattern struct {
 	Operator NameFormPattern

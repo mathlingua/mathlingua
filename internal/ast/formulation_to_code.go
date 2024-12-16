@@ -39,6 +39,14 @@ func (n *FunctionForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 		")" + n.VarArg.ToCode(fn)
 }
 
+func (n *ExpressionForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
+	if res, ok := fn(n); ok {
+		return res
+	}
+	return n.Target.ToCode(fn) + "[" + commaSeparatedString(n.Params, fn) +
+		"]" + n.VarArg.ToCode(fn)
+}
+
 func (n *TupleForm) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res

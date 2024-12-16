@@ -45,6 +45,8 @@ func ToFormPattern(item ast.StructuralFormKind) ast.FormPatternKind {
 		return ToNameFormPattern(*n)
 	case *ast.FunctionForm:
 		return ToFunctionFormPattern(*n)
+	case *ast.ExpressionForm:
+		return ToExpressionFormPattern(*n)
 	case *ast.TupleForm:
 		return ToTupleFormPattern(*n)
 	case *ast.ConditionalSetForm:
@@ -74,6 +76,8 @@ func ToDirectionParamParamPatternKind(item ast.StructuralFormKind) ast.Direction
 		return ToNameFormPattern(*n)
 	case *ast.FunctionForm:
 		return ToFunctionFormPattern(*n)
+	case *ast.ExpressionForm:
+		return ToExpressionFormPattern(*n)
 	default:
 		return nil
 	}
@@ -128,6 +132,14 @@ func ToNameFormPattern(form ast.NameForm) *ast.NameFormPattern {
 
 func ToFunctionFormPattern(form ast.FunctionForm) *ast.FunctionFormPattern {
 	return &ast.FunctionFormPattern{
+		Target: *ToNameFormPattern(form.Target),
+		Params: toFormPatterns(form.Params),
+		VarArg: ToVarArgPatternData(form.VarArg),
+	}
+}
+
+func ToExpressionFormPattern(form ast.ExpressionForm) *ast.ExpressionFormPattern {
+	return &ast.ExpressionFormPattern{
 		Target: *ToNameFormPattern(form.Target),
 		Params: toFormPatterns(form.Params),
 		VarArg: ToVarArgPatternData(form.VarArg),

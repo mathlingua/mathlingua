@@ -764,6 +764,11 @@ func (n *FunctionForm) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Params, fn)
 }
 
+func (n *ExpressionForm) ForEach(fn func(subNode MlgNodeKind)) {
+	fn(&n.Target)
+	forEach(n.Params, fn)
+}
+
 func (n *TupleForm) ForEach(fn func(subNode MlgNodeKind)) {
 	forEach(n.Params, fn)
 }

@@ -18,6 +18,7 @@ package ast
 
 func (p *NameFormPattern) GetVarArgData() VarArgPatternData                 { return p.VarArg }
 func (p *FunctionFormPattern) GetVarArgData() VarArgPatternData             { return p.VarArg }
+func (p *ExpressionFormPattern) GetVarArgData() VarArgPatternData           { return p.VarArg }
 func (p *TupleFormPattern) GetVarArgData() VarArgPatternData                { return p.VarArg }
 func (p *ConditionalSetExpressionPattern) GetVarArgData() VarArgPatternData { return p.VarArg }
 func (p *ConditionalSetFormPattern) GetVarArgData() VarArgPatternData       { return p.VarArg }

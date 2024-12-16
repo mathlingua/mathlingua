@@ -408,6 +408,10 @@ func (fp *formulationParser) literalExpressionKind() (ast.LiteralExpressionKind,
 		return &set, ok
 	}
 
+	if fun, ok := fp.expressionForm(); ok {
+		return &fun, ok
+	}
+
 	if fun, ok := fp.functionCallExpression(); ok {
 		return &fun, ok
 	}
@@ -696,6 +700,8 @@ func (fp *formulationParser) pseudoExpression(
 			children = append(children, &pseudoToken)
 		} else if ord, ok := fp.ordinalCallExpression(); ok {
 			children = append(children, &ord)
+		} else if fun, ok := fp.expressionForm(); ok {
+			children = append(children, &fun)
 		} else if fun, ok := fp.functionForm(); ok {
 			children = append(children, &fun)
 		} else if name, ok := fp.nameForm(); ok {
@@ -1795,6 +1801,10 @@ func (fp *formulationParser) commandExpressionContent(allowOperator bool, start 
 func (fp *formulationParser) structuralColonEqualsColonFormItemKind() (
 	ast.StructuralColonEqualsColonFormItemKind, bool,
 ) {
+	if fun, ok := fp.expressionForm(); ok {
+		return &fun, true
+	}
+
 	if fun, ok := fp.functionForm(); ok {
 		return &fun, true
 	}
@@ -2033,6 +2043,10 @@ func (fp *formulationParser) curlyParams() (*[]ast.StructuralFormKind, bool) {
 }
 
 func (fp *formulationParser) nameFunctionTupleOrSet() (ast.StructuralFormKind, bool) {
+	if fun, ok := fp.expressionForm(); ok {
+		return &fun, true
+	}
+
 	if fun, ok := fp.functionForm(); ok {
 		return &fun, true
 	}
@@ -2226,6 +2240,51 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 
 	varArgData, _ := fp.varArgData()
 	return ast.FunctionForm{
+		Target: target,
+		Params: params,
+		VarArg: varArgData,
+		CommonMetaData: ast.CommonMetaData{
+			Start: fp.getShiftedPosition(start),
+			Key:   fp.keyGen.Next(),
+		},
+	}, true
+}
+
+func (fp *formulationParser) expressionForm() (ast.ExpressionForm, bool) {
+	start := fp.lexer.Position()
+	if !fp.hasHas(ast.Name, ast.LSquare) {
+		return ast.ExpressionForm{}, false
+	}
+
+	target, ok := fp.nameForm()
+	if !ok {
+		return ast.ExpressionForm{}, false
+	}
+
+	params := make([]ast.StructuralFormKind, 0)
+	fp.expect(ast.LSquare)
+	for fp.lexer.HasNext() {
+		if fp.has(ast.RSquare) {
+			break
+		}
+
+		if len(params) > 0 {
+			fp.expect(ast.Comma)
+		}
+
+		param, ok := fp.structuralFormKindWithoutColonEquals()
+		if !ok {
+			fp.error("Expected a structural form type")
+			// move past the unexpected token
+			fp.lexer.Next()
+		} else {
+			params = append(params, param)
+		}
+	}
+	fp.expect(ast.RSquare)
+
+	varArgData, _ := fp.varArgData()
+	return ast.ExpressionForm{
 		Target: target,
 		Params: params,
 		VarArg: varArgData,

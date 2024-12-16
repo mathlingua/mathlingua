@@ -26,6 +26,7 @@ type FormulationNodeKind interface {
 
 func (*NameForm) FormulationNodeKind()                               {}
 func (*FunctionForm) FormulationNodeKind()                           {}
+func (*ExpressionForm) FormulationNodeKind()                         {}
 func (*TupleForm) FormulationNodeKind()                              {}
 func (*ConditionalSetForm) FormulationNodeKind()                     {}
 func (*ConditionalSetIdForm) FormulationNodeKind()                   {}
@@ -82,6 +83,7 @@ type StructuralFormKind interface {
 
 func (*NameForm) StructuralForm()                       {}
 func (*FunctionForm) StructuralForm()                   {}
+func (*ExpressionForm) StructuralForm()                 {}
 func (*TupleForm) StructuralForm()                      {}
 func (*ConditionalSetForm) StructuralForm()             {}
 func (*ConditionalSetIdForm) StructuralForm()           {}
@@ -101,6 +103,7 @@ type LiteralFormKind interface {
 
 func (*NameForm) LiteralFormKind()             {}
 func (*FunctionForm) LiteralFormKind()         {}
+func (*ExpressionForm) LiteralFormKind()       {}
 func (*TupleForm) LiteralFormKind()            {}
 func (*ConditionalSetIdForm) LiteralFormKind() {}
 
@@ -114,6 +117,7 @@ type LiteralExpressionKind interface {
 func (*FunctionCallExpression) LiteralExpressionKind()    {}
 func (*TupleExpression) LiteralExpressionKind()           {}
 func (*ConditionalSetExpression) LiteralExpressionKind()  {}
+func (*ExpressionForm) LiteralExpressionKind()            {}
 func (*FunctionLiteralExpression) LiteralExpressionKind() {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -133,6 +137,7 @@ type ExpressionKind interface {
 
 func (*NameForm) ExpressionKind()                               {}
 func (*FunctionCallExpression) ExpressionKind()                 {}
+func (*ExpressionForm) ExpressionKind()                         {}
 func (*TupleExpression) ExpressionKind()                        {}
 func (*LabeledGrouping) ExpressionKind()                        {}
 func (*ConditionalSetExpression) ExpressionKind()               {}
@@ -223,5 +228,6 @@ type StructuralColonEqualsColonFormItemKind interface {
 	StructuralColonEqualsColonFormItemKind()
 }
 
-func (*FunctionForm) StructuralColonEqualsColonFormItemKind() {}
-func (*TupleForm) StructuralColonEqualsColonFormItemKind()    {}
+func (*FunctionForm) StructuralColonEqualsColonFormItemKind()   {}
+func (*TupleForm) StructuralColonEqualsColonFormItemKind()      {}
+func (*ExpressionForm) StructuralColonEqualsColonFormItemKind() {}

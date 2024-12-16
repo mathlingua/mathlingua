@@ -252,6 +252,20 @@ func replaceMissingIdentifier(target ast.Target, keyGen *mlglib.KeyGenerator) as
 				},
 			},
 		}
+	case *ast.ExpressionForm:
+		return ast.Target{
+			Root: &ast.StructuralColonEqualsForm{
+				Lhs: f,
+				Rhs: &ast.NameForm{
+					Text:            fmt.Sprintf("var'%d'", keyGen.Next()),
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg: ast.VarArgData{
+						IsVarArg: false,
+					},
+				},
+			},
+		}
 	case *ast.TupleForm:
 		return ast.Target{
 			Root: &ast.StructuralColonEqualsForm{

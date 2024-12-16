@@ -92,6 +92,7 @@ func (*TextBlockItem) MlgNodeKind()      {}
 
 func (*NameForm) MlgNodeKind()                               {}
 func (*FunctionForm) MlgNodeKind()                           {}
+func (*ExpressionForm) MlgNodeKind()                         {}
 func (*TupleForm) MlgNodeKind()                              {}
 func (*ConditionalSetForm) MlgNodeKind()                     {}
 func (*ConditionalSetIdForm) MlgNodeKind()                   {}

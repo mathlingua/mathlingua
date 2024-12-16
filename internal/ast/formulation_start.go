@@ -18,6 +18,7 @@ package ast
 
 func (n *NameForm) Start() Position                               { return n.CommonMetaData.Start }
 func (n *FunctionForm) Start() Position                           { return n.CommonMetaData.Start }
+func (n *ExpressionForm) Start() Position                         { return n.CommonMetaData.Start }
 func (n *TupleForm) Start() Position                              { return n.CommonMetaData.Start }
 func (n *ConditionalSetForm) Start() Position                     { return n.CommonMetaData.Start }
 func (n *ConditionalSetIdForm) Start() Position                   { return n.CommonMetaData.Start }

@@ -1,7 +1,11 @@
 
 .PHONY: build
 build:
-	go build -o bin/mlg main.go
+	make union && go build -o bin/mlg main.go
+
+.PHONY: union
+union:
+	go run unions/main.go
 
 .PHONY: web
 web:

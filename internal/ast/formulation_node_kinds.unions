@@ -1,0 +1,208 @@
+/*
+ * Copyright 2023 Dominic Kramer
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package ast
+
+union FormulationNodeKind extends MlgNodeKind {
+  NameForm
+  SymbolForm
+  FunctionForm
+  ExpressionForm
+  TupleForm
+  ConditionalSetForm
+  ConditionalSetIdForm
+  FunctionCallExpression
+  TupleExpression
+  LabeledGrouping
+  ConditionalSetExpression
+  CommandExpression
+  PrefixOperatorCallExpression
+  PostfixOperatorCallExpression
+  InfixOperatorCallExpression
+  IsExpression
+  AsExpression
+  OrdinalCallExpression
+  ChainExpression
+  Signature
+  StructuralColonEqualsForm
+  StructuralColonEqualsColonForm
+  ExpressionColonEqualsItem
+  ExpressionColonArrowItem
+  ExpressionColonDashArrowItem
+  EnclosedNonCommandOperatorTarget
+  NonEnclosedNonCommandOperatorTarget
+  InfixCommandExpression
+  CommandId
+  PrefixOperatorId
+  PostfixOperatorId
+  InfixOperatorId
+  InfixCommandOperatorId
+  PseudoTokenNode
+  PseudoExpression
+  MultiplexedInfixOperatorCallExpression
+  InfixOperatorForm
+  PrefixOperatorForm
+  PostfixOperatorForm
+  FunctionLiteralExpression
+  FunctionLiteralForm
+  DefinitionBuiltinExpression
+  MapToElseBuiltinExpression
+  CommandTypeForm
+  InfixCommandTypeForm
+  AbstractBuiltinExpression
+  SpecificationBuiltinExpression
+  StatementBuiltinExpression
+  ExpressionBuiltinExpression
+  TypeBuiltinExpression	
+
+	Start() Position
+	GetFormulationMetaData() *FormulationMetaData
+	ToCode(fn func(node MlgNodeKind) (string, bool)) string
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union StructuralFormKind extends FormulationNodeKind {
+  NameForm
+  SymbolForm
+  FunctionForm
+  ExpressionForm
+  TupleForm
+  ConditionalSetForm
+  ConditionalSetIdForm
+  InfixOperatorForm
+  PrefixOperatorForm
+  PostfixOperatorForm
+  FunctionLiteralForm
+  StructuralColonEqualsForm
+  StructuralColonEqualsColonForm
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union LiteralFormKind extends FormulationNodeKind {
+  NameForm
+  FunctionForm
+  ExpressionForm
+  TupleForm
+  ConditionalSetIdForm
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union LiteralExpressionKind extends FormulationNodeKind {
+  FunctionCallExpression
+  TupleExpression
+  ConditionalSetExpression
+  ExpressionForm
+  FunctionLiteralExpression
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union LiteralKind extends LiteralFormKind,LiteralExpressionKind {
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union ExpressionKind extends FormulationNodeKind {
+  NameForm
+  SymbolForm
+  FunctionCallExpression
+  ExpressionForm
+  TupleExpression
+  LabeledGrouping
+  ConditionalSetExpression
+  CommandExpression
+  PrefixOperatorCallExpression
+  PostfixOperatorCallExpression
+  InfixOperatorCallExpression
+  AsExpression
+  OrdinalCallExpression
+  ChainExpression
+  PseudoTokenNode
+  PseudoExpression
+  IsExpression
+  MultiplexedInfixOperatorCallExpression
+  ExpressionColonEqualsItem
+  ExpressionColonArrowItem
+  ExpressionColonDashArrowItem
+  Signature
+  FunctionLiteralExpression
+  DefinitionBuiltinExpression
+  MapToElseBuiltinExpression
+  CommandTypeForm
+  InfixCommandTypeForm
+  AbstractBuiltinExpression
+  SpecificationBuiltinExpression
+  StatementBuiltinExpression
+  ExpressionBuiltinExpression
+  TypeBuiltinExpression
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union TypeFormKind extends ExpressionKind {
+  InfixCommandTypeForm
+  CommandTypeForm
+  InfixOperatorCallExpression
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union KindKind extends FormulationNodeKind {
+  NameForm
+  CommandExpression
+  PrefixOperatorCallExpression
+  PostfixOperatorCallExpression
+  InfixOperatorCallExpression
+  AbstractBuiltinExpression
+  SpecificationBuiltinExpression
+  StatementBuiltinExpression
+  ExpressionBuiltinExpression
+  TypeBuiltinExpression
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union OperatorKind extends FormulationNodeKind {
+  EnclosedNonCommandOperatorTarget
+  NonEnclosedNonCommandOperatorTarget
+  InfixCommandExpression
+  InfixCommandTypeForm
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union IdKind extends FormulationNodeKind {
+  CommandId
+  PrefixOperatorId
+  PostfixOperatorId
+  InfixOperatorId
+  InfixCommandOperatorId
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union StructuralColonEqualsColonFormItemKind extends FormulationNodeKind {
+  FunctionForm
+  TupleForm
+  ExpressionForm
+}

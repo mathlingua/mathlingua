@@ -29,13 +29,6 @@ type Symbol struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type SymbolSpecKind interface {
-	SymbolSpecKind()
-}
-
-func (*ResolvedSymbolSpec) SymbolSpecKind() {}
-func (*RawSymbolSpec) SymbolSpecKind()      {}
-
 type ResolvedSymbolSpec struct {
 	Is        ResolvedTypeKind
 	Satisfies []ResolvedTypeKind
@@ -47,28 +40,6 @@ type RawSymbolSpec struct {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type TypeKind interface {
-	TypeKind()
-}
-
-func (*RawNonInfixCommandType) TypeKind() {}
-func (*RawInfixCommandType) TypeKind()    {}
-func (*RawDynamicInfixType) TypeKind()    {}
-
-func (*ResolvedNonInfixCommandType) TypeKind() {}
-func (*ResolvedInfixCommandType) TypeKind()    {}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type RawTypeKind interface {
-	TypeKind
-	ResolvedType()
-}
-
-func (*RawNonInfixCommandType) RawTypeKind() {}
-func (*RawInfixCommandType) RawTypeKind()    {}
-func (*RawDynamicInfixType) RawTypeKind()    {}
 
 type RawNonInfixCommandType struct {
 	Names                []string
@@ -92,14 +63,6 @@ type RawDynamicInfixType struct {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type ResolvedTypeKind interface {
-	TypeKind
-	ResolvedTypeKind()
-}
-
-func (*ResolvedNonInfixCommandType) ResolvedTypeKind() {}
-func (*ResolvedInfixCommandType) ResolvedTypeKind()    {}
 
 type ResolvedNonInfixCommandType struct {
 	Names                []string

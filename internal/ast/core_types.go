@@ -16,17 +16,6 @@
 
 package ast
 
-type CoreTypeKind interface {
-	CoreTypeKind()
-}
-
-func (*AtomicCoreType) CoreTypeKind()   {}
-func (*FunctionCoreType) CoreTypeKind() {}
-func (*TupleCoreType) CoreTypeKind()    {}
-func (*SetCoreType) CoreTypeKind()      {}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 type AtomicCoreType struct {
 	Signature string
 }
@@ -73,18 +62,6 @@ type SetCoreType struct {
 	Input  []CoreTypeKind
 	Target CoreTypeKind
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type RawCoreTypeKind interface {
-	RawCoreTypeKind()
-}
-
-func (*RawAtomicCoreType) RawCoreTypeKind()    {}
-func (*RawFunctionCoreType) RawCoreTypeKind()  {}
-func (*RawTupleCoreType) RawCoreTypeKind()     {}
-func (*RawSetCoreType) RawCoreTypeKind()       {}
-func (*RawSpecAliasCoreType) RawCoreTypeKind() {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

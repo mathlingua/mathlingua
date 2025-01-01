@@ -16,54 +16,10 @@
 
 package ast
 
-type AliasSummaryKind interface {
-	AliasSummaryKind()
-}
-
-func (*SpecAliasSummary) AliasSummaryKind() {}
-
-func (*InfixExpAliasSummary) AliasSummaryKind()          {}
-func (*PrefixExpAliasSummary) AliasSummaryKind()         {}
-func (*PostfixExpAliasSummary) AliasSummaryKind()        {}
-func (*FunctionExpAliasSummary) AliasSummaryKind()       {}
-func (*CommandExpAliasSummary) AliasSummaryKind()        {}
-func (*MemberNameExpAliasSummary) AliasSummaryKind()     {}
-func (*MemberFunctionExpAliasSummary) AliasSummaryKind() {}
-func (*MemberInfixExpAliasSummary) AliasSummaryKind()    {}
-func (*MemberPrefixExpAliasSummary) AliasSummaryKind()   {}
-func (*MemberPostfixExpAliasSummary) AliasSummaryKind()  {}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type SpecAliasSummaryRhsKind interface {
-	SpecAliasSummaryRhsKind()
-}
-
-// func (*IsConstraint) SpecAliasSummaryRhsKind()   {}
-// func (*SpecConstraint) SpecAliasSummaryRhsKind() {}
-
 type SpecAliasSummary struct {
 	Lhs SpecAliasPattern
 	Rhs SpecAliasSummaryRhsKind
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type ExpAliasSummaryKind interface {
-	AliasSummaryKind
-	ExpAliasSummaryKind()
-}
-
-func (*InfixExpAliasSummary) ExpAliasSummaryKind()          {}
-func (*PrefixExpAliasSummary) ExpAliasSummaryKind()         {}
-func (*PostfixExpAliasSummary) ExpAliasSummaryKind()        {}
-func (*FunctionExpAliasSummary) ExpAliasSummaryKind()       {}
-func (*CommandExpAliasSummary) ExpAliasSummaryKind()        {}
-func (*MemberNameExpAliasSummary) ExpAliasSummaryKind()     {}
-func (*MemberFunctionExpAliasSummary) ExpAliasSummaryKind() {}
-func (*MemberInfixExpAliasSummary) ExpAliasSummaryKind()    {}
-func (*MemberPrefixExpAliasSummary) ExpAliasSummaryKind()   {}
-func (*MemberPostfixExpAliasSummary) ExpAliasSummaryKind()  {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

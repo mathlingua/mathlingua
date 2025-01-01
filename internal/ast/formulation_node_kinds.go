@@ -79,22 +79,22 @@ func (*TypeBuiltinExpression) FormulationNodeKind()                  {}
 
 type StructuralFormKind interface {
 	FormulationNodeKind
-	StructuralForm()
+	StructuralFormKind()
 }
 
-func (*NameForm) StructuralForm()                       {}
-func (*SymbolForm) StructuralForm()                     {}
-func (*FunctionForm) StructuralForm()                   {}
-func (*ExpressionForm) StructuralForm()                 {}
-func (*TupleForm) StructuralForm()                      {}
-func (*ConditionalSetForm) StructuralForm()             {}
-func (*ConditionalSetIdForm) StructuralForm()           {}
-func (*InfixOperatorForm) StructuralForm()              {}
-func (*PrefixOperatorForm) StructuralForm()             {}
-func (*PostfixOperatorForm) StructuralForm()            {}
-func (*FunctionLiteralForm) StructuralForm()            {}
-func (*StructuralColonEqualsForm) StructuralForm()      {}
-func (*StructuralColonEqualsColonForm) StructuralForm() {}
+func (*NameForm) StructuralFormKind()                       {}
+func (*SymbolForm) StructuralFormKind()                     {}
+func (*FunctionForm) StructuralFormKind()                   {}
+func (*ExpressionForm) StructuralFormKind()                 {}
+func (*TupleForm) StructuralFormKind()                      {}
+func (*ConditionalSetForm) StructuralFormKind()             {}
+func (*ConditionalSetIdForm) StructuralFormKind()           {}
+func (*InfixOperatorForm) StructuralFormKind()              {}
+func (*PrefixOperatorForm) StructuralFormKind()             {}
+func (*PostfixOperatorForm) StructuralFormKind()            {}
+func (*FunctionLiteralForm) StructuralFormKind()            {}
+func (*StructuralColonEqualsForm) StructuralFormKind()      {}
+func (*StructuralColonEqualsColonForm) StructuralFormKind() {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -174,12 +174,12 @@ func (*TypeBuiltinExpression) ExpressionKind()                  {}
 
 type TypeFormKind interface {
 	ExpressionKind
-	TypeKind()
+	TypeFormKind()
 }
 
-func (*InfixCommandTypeForm) TypeKind()        {}
-func (*CommandTypeForm) TypeKind()             {}
-func (*InfixOperatorCallExpression) TypeKind() {} // \:set \:in:/ \:set
+func (*InfixCommandTypeForm) TypeFormKind()        {}
+func (*CommandTypeForm) TypeFormKind()             {}
+func (*InfixOperatorCallExpression) TypeFormKind() {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -188,16 +188,16 @@ type KindKind interface {
 	KindKind()
 }
 
-func (*NameForm) KindKind()                       {} // x could refer to a type
-func (*CommandExpression) KindKind()              {} // \function:on{A}:to{B}
-func (*PrefixOperatorCallExpression) KindKind()   {} // *A
-func (*PostfixOperatorCallExpression) KindKind()  {} // B!
-func (*InfixOperatorCallExpression) KindKind()    {} // A \to/ B
-func (*AbstractBuiltinExpression) KindKind()      {} // \\abstract
-func (*SpecificationBuiltinExpression) KindKind() {} // \\specification
-func (*StatementBuiltinExpression) KindKind()     {} // \\statement
-func (*ExpressionBuiltinExpression) KindKind()    {} // \\expression
-func (*TypeBuiltinExpression) KindKind()          {} // \\type
+func (*NameForm) KindKind()                       {}
+func (*CommandExpression) KindKind()              {}
+func (*PrefixOperatorCallExpression) KindKind()   {}
+func (*PostfixOperatorCallExpression) KindKind()  {}
+func (*InfixOperatorCallExpression) KindKind()    {}
+func (*AbstractBuiltinExpression) KindKind()      {}
+func (*SpecificationBuiltinExpression) KindKind() {}
+func (*StatementBuiltinExpression) KindKind()     {}
+func (*ExpressionBuiltinExpression) KindKind()    {}
+func (*TypeBuiltinExpression) KindKind()          {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

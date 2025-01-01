@@ -16,59 +16,10 @@
 
 package ast
 
-// A pattern describes the shape of inputs to a Defines, Describes, States
-// provides, expression alias, or spec alias.
-type PatternKind interface {
-	PatternKind()
-	GetVarArgData() VarArgPatternData
-}
-
-func (*NameFormPattern) PatternKind()                 {}
-func (*SymbolFormPattern) PatternKind()               {}
-func (*FunctionFormPattern) PatternKind()             {}
-func (*ExpressionFormPattern) PatternKind()           {}
-func (*TupleFormPattern) PatternKind()                {}
-func (*ConditionalSetExpressionPattern) PatternKind() {}
-func (*ConditionalSetFormPattern) PatternKind()       {}
-func (*ConditionalSetIdFormPattern) PatternKind()     {}
-func (*FunctionLiteralFormPattern) PatternKind()      {}
-func (*InfixOperatorFormPattern) PatternKind()        {}
-func (*PrefixOperatorFormPattern) PatternKind()       {}
-func (*PostfixOperatorFormPattern) PatternKind()      {}
-func (*OrdinalPattern) PatternKind()                  {}
-
-func (*StructuralColonEqualsPattern) PatternKind() {}
-func (*InfixCommandOperatorPattern) PatternKind()  {}
-func (*InfixCommandPattern) PatternKind()          {}
-func (*CommandPattern) PatternKind()               {}
-func (*NamedGroupPattern) PatternKind()            {}
-func (*ChainExpressionPattern) PatternKind()       {}
-
-func (*SpecAliasPattern) PatternKind() {}
-func (*AliasPattern) PatternKind()     {}
-
 type StructuralColonEqualsPattern struct {
 	Lhs PatternKind
 	Rhs PatternKind
 }
-
-type FormPatternKind interface {
-	PatternKind
-	FormPatternKind()
-}
-
-func (*NameFormPattern) FormPatternKind()              {}
-func (*SymbolFormPattern) FormPatternKind()            {}
-func (*FunctionFormPattern) FormPatternKind()          {}
-func (*ExpressionFormPattern) FormPatternKind()        {}
-func (*TupleFormPattern) FormPatternKind()             {}
-func (*ConditionalSetFormPattern) FormPatternKind()    {}
-func (*ConditionalSetIdFormPattern) FormPatternKind()  {}
-func (*FunctionLiteralFormPattern) FormPatternKind()   {}
-func (*InfixOperatorFormPattern) FormPatternKind()     {}
-func (*PrefixOperatorFormPattern) FormPatternKind()    {}
-func (*PostfixOperatorFormPattern) FormPatternKind()   {}
-func (*StructuralColonEqualsPattern) FormPatternKind() {}
 
 type NameFormPattern struct {
 	Text            string
@@ -95,32 +46,10 @@ type ExpressionFormPattern struct {
 	VarArg VarArgPatternData
 }
 
-type LiteralFormPatternKind interface {
-	LiteralFormPatternKind()
-}
-
-func (*NameFormPattern) LiteralFormPatternKind()             {}
-func (*SymbolFormPattern) LiteralFormPatternKind()           {}
-func (*FunctionFormPattern) LiteralFormPatternKind()         {}
-func (*ExpressionFormPattern) LiteralFormPatternKind()       {}
-func (*TupleFormPattern) LiteralFormPatternKind()            {}
-func (*ConditionalSetFormPattern) LiteralFormPatternKind()   {}
-func (*ConditionalSetIdFormPattern) LiteralFormPatternKind() {}
-func (*FunctionLiteralFormPattern) LiteralFormPatternKind()  {}
-
 type OrdinalPattern struct {
 	Target LiteralFormPatternKind
 	Params []NameFormPattern
 }
-
-type DirectionParamParamPatternKind interface {
-	DirectionParamParamPatternKind()
-}
-
-func (*NameFormPattern) DirectionParamParamPatternKind()       {}
-func (*FunctionFormPattern) DirectionParamParamPatternKind()   {}
-func (*ExpressionFormPattern) DirectionParamParamPatternKind() {}
-func (*OrdinalPattern) DirectionParamParamPatternKind()        {}
 
 type InfixOperatorFormPattern struct {
 	Operator NameFormPattern

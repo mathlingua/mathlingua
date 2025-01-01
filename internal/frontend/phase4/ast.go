@@ -239,16 +239,6 @@ func (a *ArgumentTextArgumentData) ChildAt(index int) Node {
 	panic("Cannot get children of an ArgumentTextArgumentData")
 }
 
-type ArgumentDataKind interface {
-	Node
-	ArgumentDataKind()
-}
-
-func (*Group) ArgumentDataKind()                    {}
-func (*TextArgumentData) ArgumentDataKind()         {}
-func (*FormulationArgumentData) ArgumentDataKind()  {}
-func (*ArgumentTextArgumentData) ArgumentDataKind() {}
-
 type TextBlock struct {
 	Type     NodeType
 	Text     string
@@ -302,15 +292,6 @@ func (r *Document) Size() int {
 func (r *Document) ChildAt(index int) Node {
 	return r.Nodes[index]
 }
-
-type TopLevelNodeKind interface {
-	Node
-	TopLevelNodeKind()
-	Start() ast.Position
-}
-
-func (*TextBlock) TopLevelNodeKind() {}
-func (*Group) TopLevelNodeKind()     {}
 
 type Root struct {
 	Type      NodeType

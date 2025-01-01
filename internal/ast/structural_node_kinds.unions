@@ -1,0 +1,274 @@
+/*
+ * Copyright 2024 Dominic Kramer
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package ast
+
+union StructuralNodeKind extends MlgNodeKind {
+  IdItem
+  Target
+  Spec
+  Alias
+  Formulation[T]
+  TextItem
+  DeclareGroup
+  AllOfGroup
+  EquivalentlyGroup
+  NotGroup
+  AnyOfGroup
+  OneOfGroup
+  ExistsGroup
+  ExistsUniqueGroup
+  ForAllGroup
+  IfGroup
+  IffGroup
+  PiecewiseGroup
+  AssertingGroup
+  SymbolWrittenGroup
+  ComparisonGroup
+  ViewGroup
+  EncodingGroup
+  WrittenGroup
+  CalledGroup
+  WritingGroup
+  OverviewGroup
+  RelatedGroup
+  LabelGroup
+  ByGroup
+  DescribesGroup
+  DefinesGroup
+  CapturesGroup
+  StatesGroup
+  AxiomGroup
+  ConjectureGroup
+  TheoremGroup
+  CorollaryGroup
+  LemmaGroup
+  ZeroGroup
+  PositiveIntGroup
+  NegativeIntGroup
+  PositiveFloatGroup
+  NegativeFloatGroup
+  SpecifyGroup
+  PersonGroup
+  NameGroup
+  BiographyGroup
+  ResourceGroup
+  TitleGroup
+  AuthorGroup
+  OffsetGroup
+  UrlGroup
+  HomepageGroup
+  TypeGroup
+  EditorGroup
+  EditionGroup
+  InstitutionGroup
+  JournalGroup
+  PublisherGroup
+  VolumeGroup
+  MonthGroup
+  YearGroup
+  DescriptionGroup
+  Document
+  TextBlockItem
+  ProofThenGroup
+  ProofThusGroup
+  ProofThereforeGroup
+  ProofHenceGroup
+  ProofNoticeGroup
+  ProofNextGroup
+  ProofByBecauseThenGroup
+  ProofBecauseThenGroup
+  ProofStepwiseGroup
+  ProofSupposeGroup
+  ProofBlockGroup
+  ProofCasewiseGroup
+  ProofWithoutLossOfGeneralityGroup
+  ProofContradictionGroup
+  ProofForContradictionGroup
+  ProofForInductionGroup
+  ProofClaimGroup
+  ProofEquivalentlyGroup
+  ProofAllOfGroup
+  ProofNotGroup
+  ProofAnyOfGroup
+  ProofOneOfGroup
+  ProofExistsGroup
+  ProofExistsUniqueGroup
+  ProofForAllGroup
+  ProofDeclareGroup
+  ProofIfGroup
+  ProofIffGroup
+  ProofForContrapositiveGroup
+  ProofQedGroup
+  ProofAbsurdGroup
+  ProofDoneGroup
+  ProofPartwiseGroup
+  ProofSufficesToShowGroup
+  ProofToShowGroup
+  ProofRemarkGroup
+  InductivelyGroup
+  InductivelyCaseGroup
+  MatchingGroup
+  MatchingCaseGroup
+
+	ToCode(indent int, hasDot bool) []string
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union ClauseKind extends StructuralNodeKind {
+  TextItem
+  Formulation[NodeType]
+  AllOfGroup
+  NotGroup
+  AnyOfGroup
+  OneOfGroup
+  EquivalentlyGroup
+  ExistsGroup
+  ExistsUniqueGroup
+  ForAllGroup
+  IfGroup
+  IffGroup
+  AssertingGroup
+  PiecewiseGroup
+  DeclareGroup
+  InductivelyGroup
+  MatchingGroup
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union ProvidesKind extends StructuralNodeKind {
+  SymbolWrittenGroup
+  ViewGroup
+  EncodingGroup
+  ComparisonGroup
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union DocumentedKind extends StructuralNodeKind {
+  OverviewGroup
+  RelatedGroup
+  WrittenGroup
+  WritingGroup
+  CalledGroup
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union JustifiedKind extends StructuralNodeKind {
+  LabelGroup
+  ByGroup
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union SpecifyKind extends StructuralNodeKind {
+  ZeroGroup
+  PositiveIntGroup
+  NegativeIntGroup
+  PositiveFloatGroup
+  NegativeFloatGroup
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union PersonKind extends StructuralNodeKind {
+  NameGroup
+  BiographyGroup	
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union ResourceKind extends StructuralNodeKind {
+  TitleGroup
+  AuthorGroup
+  OffsetGroup
+  UrlGroup
+  HomepageGroup
+  TypeGroup
+  EditorGroup
+  EditionGroup
+  InstitutionGroup
+  JournalGroup
+  PublisherGroup
+  VolumeGroup
+  MonthGroup
+  YearGroup
+  DescriptionGroup
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union TopLevelItemKind extends StructuralNodeKind {
+  TextBlockItem
+  DefinesGroup
+  DescribesGroup
+  StatesGroup
+  AxiomGroup
+  ConjectureGroup
+  TheoremGroup
+  CorollaryGroup
+  LemmaGroup
+  SpecifyGroup
+  PersonGroup
+  ResourceGroup
+  CapturesGroup
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+union ProofItemKind extends StructuralNodeKind {
+  ProofEquivalentlyGroup
+  ProofAllOfGroup
+  ProofNotGroup
+  ProofAnyOfGroup
+  ProofOneOfGroup
+  ProofExistsGroup
+  ProofExistsUniqueGroup
+  ProofForAllGroup
+  ProofDeclareGroup
+  ProofIfGroup
+  ProofIffGroup
+  ProofThenGroup
+  ProofThusGroup
+  ProofThereforeGroup
+  ProofHenceGroup
+  ProofNoticeGroup
+  ProofNextGroup
+  ProofByBecauseThenGroup
+  ProofBecauseThenGroup
+  ProofStepwiseGroup
+  ProofSupposeGroup
+  ProofBlockGroup
+  ProofCasewiseGroup
+  ProofWithoutLossOfGeneralityGroup
+  ProofForContradictionGroup
+  ProofForInductionGroup
+  ProofClaimGroup
+  ProofForContrapositiveGroup
+  ProofQedGroup
+  ProofAbsurdGroup
+  ProofDoneGroup
+  ProofContradictionGroup
+  ProofPartwiseGroup
+  ProofSufficesToShowGroup
+  ProofToShowGroup
+  ProofRemarkGroup
+  TextItem
+  Formulation[FormulationNodeKind]
+}

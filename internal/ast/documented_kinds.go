@@ -16,39 +16,9 @@
 
 package ast
 
-type StringItem struct {
-	Text string
+type TextItemKind interface {
+	TextItemKind()
 }
 
-type SubstitutionItem struct {
-	Name       string
-	NameSuffix string
-	IsVarArg   bool
-	Prefix     string
-	Suffix     string
-	Infix      string
-}
-
-type CalledSummary struct {
-	RawCalled    string
-	ParsedCalled []TextItemKind
-	Errors       []string
-}
-
-type WrittenSummary struct {
-	RawWritten    string
-	ParsedWritten []TextItemKind
-	Errors        []string
-}
-
-type WritingSummary struct {
-	RawWritten    string
-	ParsedWriting []TextItemKind
-	Errors        []string
-}
-
-type DocumentedSummary struct {
-	Written []WrittenSummary
-	Writing []WritingSummary
-	Called  []CalledSummary
-}
+func (*StringItem) TextItemKind()       {}
+func (*SubstitutionItem) TextItemKind() {}

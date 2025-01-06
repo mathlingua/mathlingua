@@ -75,12 +75,3 @@ union LiteralFormPatternKind {
   ConditionalSetIdFormPattern
   FunctionLiteralFormPattern
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-union DirectionParamParamPatternKind {
-  NameFormPattern
-  FunctionFormPattern
-  ExpressionFormPattern
-  OrdinalPattern
-}

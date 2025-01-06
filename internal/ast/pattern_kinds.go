@@ -79,14 +79,3 @@ func (*TupleFormPattern) LiteralFormPatternKind()            {}
 func (*ConditionalSetFormPattern) LiteralFormPatternKind()   {}
 func (*ConditionalSetIdFormPattern) LiteralFormPatternKind() {}
 func (*FunctionLiteralFormPattern) LiteralFormPatternKind()  {}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-type DirectionParamParamPatternKind interface {
-	DirectionParamParamPatternKind()
-}
-
-func (*NameFormPattern) DirectionParamParamPatternKind()       {}
-func (*FunctionFormPattern) DirectionParamParamPatternKind()   {}
-func (*ExpressionFormPattern) DirectionParamParamPatternKind() {}
-func (*OrdinalPattern) DirectionParamParamPatternKind()        {}

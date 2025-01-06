@@ -72,19 +72,6 @@ func ToFormPattern(item ast.StructuralFormKind) ast.FormPatternKind {
 	}
 }
 
-func ToDirectionParamParamPatternKind(item ast.StructuralFormKind) ast.DirectionParamParamPatternKind {
-	switch n := item.(type) {
-	case *ast.NameForm:
-		return ToNameFormPattern(*n)
-	case *ast.FunctionForm:
-		return ToFunctionFormPattern(*n)
-	case *ast.ExpressionForm:
-		return ToExpressionFormPattern(*n)
-	default:
-		return nil
-	}
-}
-
 func ToVarArgPatternData(data ast.VarArgData) ast.VarArgPatternData {
 	varArgNames := make([]ast.NameFormPattern, 0)
 	varArgNames = append(varArgNames,

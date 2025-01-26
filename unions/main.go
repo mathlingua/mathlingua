@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Dominic Kramer
+ * Copyright 2025 Dominic Kramer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 const UNIONS_SUFFIX = ".unions"
@@ -152,7 +153,14 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+
+	var group sync.WaitGroup
 	for _, filename := range unionFiles {
-		processUnionFile(filename)
+		group.Add(1)
+		go func(name string) {
+			defer group.Done()
+			processUnionFile(name)
+		}(filename)
 	}
+	group.Wait()
 }

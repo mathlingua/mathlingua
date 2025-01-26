@@ -3,9 +3,9 @@
 build:
 	make union && go build -o bin/mlg main.go
 
-.PHONY: union
+.PHONY: unions
 union:
-	go run unions/main.go
+	go run scripts/unions.go
 
 .PHONY: web
 web:

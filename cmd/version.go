@@ -17,7 +17,8 @@
 package cmd
 
 import (
-	"mathlingua/pkg/mlg"
+	"mathlingua/internal/logger"
+	"mathlingua/internal/mlg"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -28,7 +29,7 @@ var versionCommand = &cobra.Command{
 	Short: "Print version information and quit",
 	Long:  "Prints version information and quits",
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := mlg.NewLogger(os.Stdout)
+		logger := logger.NewLogger(os.Stdout)
 		version := mlg.NewMlg(logger).Version()
 		logger.Log(version)
 	},

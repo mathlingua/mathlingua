@@ -18,6 +18,7 @@ package mlg
 
 import (
 	"bytes"
+	"mathlingua/internal/logger"
 	"os"
 	"testing"
 
@@ -334,7 +335,7 @@ func runTest(t *testing.T, testCase TestCase) {
 
 	var buffer bytes.Buffer
 
-	logger := NewLogger(&buffer)
+	logger := logger.NewLogger(&buffer)
 	mlg := NewMlg(logger)
 	mlg.Check([]string{"."}, false, false)
 

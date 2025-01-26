@@ -22,16 +22,17 @@ import (
 	"mathlingua/internal/backend"
 	"mathlingua/internal/config"
 	"mathlingua/internal/frontend"
+	"mathlingua/internal/logger"
 )
 
-func NewMlg(logger *Logger) *Mlg {
+func NewMlg(logger *logger.Logger) *Mlg {
 	m := Mlg{}
 	m.initialize(logger)
 	return &m
 }
 
 type Mlg struct {
-	logger  *Logger
+	logger  *logger.Logger
 	tracker *frontend.DiagnosticTracker
 	conf    config.MlgConfig
 }
@@ -79,10 +80,10 @@ func (m *Mlg) GetUsages() []string {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (m *Mlg) initialize(logger *Logger) {
+func (m *Mlg) initialize(logger *logger.Logger) {
 	m.logger = logger
 	m.tracker = frontend.NewDiagnosticTracker()
-	m.conf = *LoadMlgConfig(m.tracker)
+	m.conf = *config.LoadMlgConfig(m.tracker)
 }
 
 func (m *Mlg) printAsJson(checkResult backend.CheckResult) {

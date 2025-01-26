@@ -20,7 +20,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"mathlingua/internal/ast"
-	"mathlingua/pkg/mlg"
+	"mathlingua/internal/logger"
+	"mathlingua/internal/mlg"
 	"os"
 	"strings"
 
@@ -44,7 +45,7 @@ type completionsResult struct {
 }
 
 func printCompletions() {
-	logger := mlg.NewLogger(os.Stdout)
+	logger := logger.NewLogger(os.Stdout)
 	usages := mlg.NewMlg(logger).GetUsages()
 	usagesAndCompletions := make([]string, 0)
 	usagesAndCompletions = append(usagesAndCompletions, FIXED_COMPLETIONS...)

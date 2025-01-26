@@ -18,8 +18,8 @@ package phase3
 
 import (
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/phase1"
-	"mathlingua/internal/frontend/phase2"
+	"mathlingua/internal/frontend/structural/phase1"
+	"mathlingua/internal/frontend/structural/phase2"
 	"strings"
 	"testing"
 

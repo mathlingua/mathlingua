@@ -19,11 +19,11 @@ package backend
 import (
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/phase1"
-	"mathlingua/internal/frontend/phase2"
-	"mathlingua/internal/frontend/phase3"
-	"mathlingua/internal/frontend/phase4"
-	"mathlingua/internal/frontend/phase5"
+	"mathlingua/internal/frontend/structural/phase1"
+	"mathlingua/internal/frontend/structural/phase2"
+	"mathlingua/internal/frontend/structural/phase3"
+	"mathlingua/internal/frontend/structural/phase4"
+	"mathlingua/internal/frontend/structural/phase5"
 	"mathlingua/internal/mlglib"
 )
 

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"mathlingua/internal/ast"
-	"mathlingua/internal/frontend/phase4"
+	"mathlingua/internal/frontend/structural/phase4"
 )
 
 func GetPhase4MetaId(node phase4.TopLevelNodeKind) (string, bool) {

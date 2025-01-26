@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/phase4"
+	"mathlingua/internal/frontend/structural/phase4"
 )
 
 type SignatureManager struct {

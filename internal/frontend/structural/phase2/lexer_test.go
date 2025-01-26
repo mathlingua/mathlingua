@@ -18,7 +18,7 @@ package phase2
 
 import (
 	"mathlingua/internal/frontend"
-	"mathlingua/internal/frontend/phase1"
+	"mathlingua/internal/frontend/structural/phase1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

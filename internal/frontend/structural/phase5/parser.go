@@ -21,7 +21,7 @@ import (
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/formulation"
-	"mathlingua/internal/frontend/phase4"
+	"mathlingua/internal/frontend/structural/phase4"
 	"mathlingua/internal/mlglib"
 )
 

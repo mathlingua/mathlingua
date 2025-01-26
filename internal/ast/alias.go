@@ -24,61 +24,51 @@ type SpecAliasSummary struct {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 type InfixExpAliasSummary struct {
-	Lhs   InfixOperatorFormPattern
-	Rhs   ExpressionKind
-	Scope *Scope
+	Lhs InfixOperatorFormPattern
+	Rhs ExpressionKind
 }
 
 type PrefixExpAliasSummary struct {
-	Lhs   PrefixOperatorFormPattern
-	Rhs   ExpressionKind
-	Scope *Scope
+	Lhs PrefixOperatorFormPattern
+	Rhs ExpressionKind
 }
 
 type PostfixExpAliasSummary struct {
-	Lhs   PostfixOperatorFormPattern
-	Rhs   ExpressionKind
-	Scope *Scope
+	Lhs PostfixOperatorFormPattern
+	Rhs ExpressionKind
 }
 
 type FunctionExpAliasSummary struct {
-	Lhs   FunctionFormPattern
-	Rhs   ExpressionKind
-	Scope *Scope
+	Lhs FunctionFormPattern
+	Rhs ExpressionKind
 }
 
 type CommandExpAliasSummary struct {
-	Lhs   CommandPattern
-	Rhs   ExpressionKind
-	Scope *Scope
+	Lhs CommandPattern
+	Rhs ExpressionKind
 }
 
 type MemberNameExpAliasSummary struct {
-	Lhs   ChainExpressionPattern
-	Rhs   ExpressionKind
-	Scope *Scope
+	Lhs ChainExpressionPattern
+	Rhs ExpressionKind
 }
 
 type MemberFunctionExpAliasSummary struct {
-	Lhs   ChainExpressionPattern
-	Rhs   ExpressionKind
-	Scope *Scope
+	Lhs ChainExpressionPattern
+	Rhs ExpressionKind
 }
 
 type MemberInfixExpAliasSummary struct {
-	Lhs   InfixOperatorFormPattern
-	Rhs   ExpressionKind
-	Scope *Scope
+	Lhs InfixOperatorFormPattern
+	Rhs ExpressionKind
 }
 
 type MemberPrefixExpAliasSummary struct {
-	Lhs   PrefixOperatorFormPattern
-	Rhs   ExpressionKind
-	Scope *Scope
+	Lhs PrefixOperatorFormPattern
+	Rhs ExpressionKind
 }
 
 type MemberPostfixExpAliasSummary struct {
-	Lhs   PostfixOperatorFormPattern
-	Rhs   ExpressionKind
-	Scope *Scope
+	Lhs PostfixOperatorFormPattern
+	Rhs ExpressionKind
 }

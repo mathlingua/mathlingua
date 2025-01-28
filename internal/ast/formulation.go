@@ -302,17 +302,6 @@ type ChainExpression struct {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// \\map{x{i{k}}}:to{x{i{k}} + 1}:else{0}
-type MapToElseBuiltinExpression struct {
-	Target              OrdinalCallExpression
-	To                  ExpressionKind
-	Else                ExpressionKind // Note: else is optional
-	CommonMetaData      CommonMetaData
-	FormulationMetaData FormulationMetaData
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
 // \\definition:of{f}
 // \\definition:of{f}:satisfies{\:continuous.function:on:to}
 // \\definition:of{f}:satisfies{\:continuous.function:on{A}:to{B}}

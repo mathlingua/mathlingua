@@ -164,7 +164,6 @@ func (*ProofDeclareGroup) MlgNodeKind()                      {}
 func (*ProofIfGroup) MlgNodeKind()                           {}
 func (*ProofIffGroup) MlgNodeKind()                          {}
 func (*DefinitionBuiltinExpression) MlgNodeKind()            {}
-func (*MapToElseBuiltinExpression) MlgNodeKind()             {}
 func (*CommandTypeForm) MlgNodeKind()                        {}
 func (*InfixCommandTypeForm) MlgNodeKind()                   {}
 func (*NamedTypeParam) MlgNodeKind()                         {}

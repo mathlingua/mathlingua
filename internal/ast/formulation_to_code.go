@@ -278,23 +278,6 @@ func (n *Signature) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	return result
 }
 
-func (n *MapToElseBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
-	if res, ok := fn(n); ok {
-		return res
-	}
-	result := "\\\\map{"
-	result += n.Target.ToCode(fn)
-	result += "}:to{"
-	result += n.To.ToCode(fn)
-	result += "}"
-	if n.Else != nil {
-		result += ":else{"
-		result += n.Else.ToCode(fn)
-		result += "}"
-	}
-	return result
-}
-
 func (n *DefinitionBuiltinExpression) ToCode(fn func(node MlgNodeKind) (string, bool)) string {
 	if res, ok := fn(n); ok {
 		return res

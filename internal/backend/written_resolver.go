@@ -472,17 +472,6 @@ func (w *WrittenResolver) formulationNodeToWritten(path ast.Path, mlgNode ast.Ml
 			noPrefix := strings.Replace(n.ToCode(ast.NoOp), "\\:", "", 1)
 			noSuffix := strings.Replace(noPrefix, ":/", "", 1)
 			return fmt.Sprintf("\\textrm{ %s }", noSuffix), true
-		case *ast.MapToElseBuiltinExpression:
-			// \\map{x[i[k]]}:to{x[i[k]] + 1}:else{0}
-			text := "\\textrm{map }"
-			text += w.formulationNodeToWritten(path, &n.Target)
-			text += "\\textrm{ to }"
-			text += w.formulationNodeToWritten(path, n.To)
-			if n.Else != nil {
-				text += "\\textrm{ else }"
-				text += w.formulationNodeToWritten(path, n.Else)
-			}
-			return text, true
 		case *ast.AbstractBuiltinExpression:
 			return "\\textrm{abstract}", true
 		case *ast.SpecificationBuiltinExpression:

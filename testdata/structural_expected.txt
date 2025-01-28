@@ -496,8 +496,6 @@ if:
 . 'a is \\statement'
 . 'a is \\expression'
 . 'a is \\type'
-. 'f(\\map{x{i}}:to{x{i} + 1})'
-. 'a... := \\map{x{i{k}}}:to{x{i{k}} + 1}:else{a + 1}'
 . 'x{i...}'
 . 'x{i...n}'
 . 'x{(i, j)...(m, n)}'

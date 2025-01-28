@@ -160,7 +160,6 @@ union MlgNodeKind {
 	ProofIfGroup
 	ProofIffGroup
 	DefinitionBuiltinExpression
-	MapToElseBuiltinExpression
 	CommandTypeForm
 	InfixCommandTypeForm
 	NamedTypeParam

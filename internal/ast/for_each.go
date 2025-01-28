@@ -889,14 +889,6 @@ func (n *DefinitionBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 	}
 }
 
-func (n *MapToElseBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
-	fn(&n.Target)
-	fn(n.To)
-	if n.Else != nil {
-		fn(n.Else)
-	}
-}
-
 func (n *TypeBuiltinExpression) ForEach(fn func(subNode MlgNodeKind)) {
 }
 

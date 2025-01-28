@@ -184,10 +184,6 @@ func (n *DefinitionBuiltinExpression) GetFormulationMetaData() *FormulationMetaD
 	return &n.FormulationMetaData
 }
 
-func (n *MapToElseBuiltinExpression) GetFormulationMetaData() *FormulationMetaData {
-	return &n.FormulationMetaData
-}
-
 func (n *CommandTypeForm) GetFormulationMetaData() *FormulationMetaData {
 	return &n.FormulationMetaData
 }

@@ -2,8 +2,4 @@
 .idea
 .gitpod.yml
 .vscode
-/bin
-/mlg
-/release
-/temp
-/testbed
+/target

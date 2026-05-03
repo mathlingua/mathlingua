@@ -13,6 +13,8 @@ pub struct Cli {
 pub enum Command {
     /// Check Mathlingua files for errors
     Check,
+    /// Initialize a Mathlingua collection
+    Init,
     /// Print version information and quit
     Version,
     /// View rendered Mathlingua files

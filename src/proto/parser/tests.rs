@@ -4,8 +4,10 @@ use crate::proto::ast::{Argument, Group};
 
 fn parse_input(input: &str) -> (Vec<Group>, Vec<Diagnostic>) {
     let mut tracker = DiagnosticTracker::new();
-    let mut parser = Parser::new(input);
-    let groups = parser.parse(&mut tracker);
+    let groups = {
+        let mut parser = Parser::new(input, &mut tracker);
+        parser.parse()
+    };
 
     (groups, tracker.diagnostics().to_vec())
 }
@@ -26,9 +28,10 @@ then:
   . "abc"
 "#;
     let mut tracker = DiagnosticTracker::new();
-    let mut parser = Parser::new(input);
-
-    let groups = parser.parse(&mut tracker);
+    let groups = {
+        let mut parser = Parser::new(input, &mut tracker);
+        parser.parse()
+    };
 
     assert!(tracker.diagnostics().is_empty());
     assert_eq!(groups.len(), 1);
@@ -75,9 +78,10 @@ fn reports_unexpected_headers_and_continues() {
 Defines: f(x_)
 "#;
     let mut tracker = DiagnosticTracker::new();
-    let mut parser = Parser::new(input);
-
-    let groups = parser.parse(&mut tracker);
+    let groups = {
+        let mut parser = Parser::new(input, &mut tracker);
+        parser.parse()
+    };
     let diagnostics = tracker.diagnostics();
 
     assert_eq!(groups.len(), 1);
@@ -94,9 +98,10 @@ fn skips_comments_inside_groups_and_arguments() {
 . y
 "#;
     let mut tracker = DiagnosticTracker::new();
-    let mut parser = Parser::new(input);
-
-    let groups = parser.parse(&mut tracker);
+    let groups = {
+        let mut parser = Parser::new(input, &mut tracker);
+        parser.parse()
+    };
 
     assert!(tracker.diagnostics().is_empty());
     assert_eq!(groups.len(), 1);
@@ -109,9 +114,10 @@ fn reports_malformed_sections_without_panicking() {
 Defines: f(x_)
 "#;
     let mut tracker = DiagnosticTracker::new();
-    let mut parser = Parser::new(input);
-
-    let groups = parser.parse(&mut tracker);
+    let groups = {
+        let mut parser = Parser::new(input, &mut tracker);
+        parser.parse()
+    };
     let diagnostics = tracker.diagnostics();
 
     assert_eq!(groups.len(), 1);
@@ -128,9 +134,10 @@ Defines: f(x_)
 fn reports_unexpected_indentation_in_arguments() {
     let input = "when:\n    x\n";
     let mut tracker = DiagnosticTracker::new();
-    let mut parser = Parser::new(input);
-
-    let groups = parser.parse(&mut tracker);
+    let groups = {
+        let mut parser = Parser::new(input, &mut tracker);
+        parser.parse()
+    };
     let diagnostics = tracker.diagnostics();
 
     assert_eq!(groups.len(), 1);
@@ -152,9 +159,10 @@ when:
   )
 "#;
     let mut tracker = DiagnosticTracker::new();
-    let mut parser = Parser::new(input);
-
-    let groups = parser.parse(&mut tracker);
+    let groups = {
+        let mut parser = Parser::new(input, &mut tracker);
+        parser.parse()
+    };
 
     assert!(tracker.diagnostics().is_empty());
     assert_eq!(groups.len(), 1);
@@ -176,9 +184,10 @@ when:
 fn parses_dot_delimited_multiline_formulations() {
     let input = "when:\n. (.\n    x + y\n  .)\n";
     let mut tracker = DiagnosticTracker::new();
-    let mut parser = Parser::new(input);
-
-    let groups = parser.parse(&mut tracker);
+    let groups = {
+        let mut parser = Parser::new(input, &mut tracker);
+        parser.parse()
+    };
 
     assert!(tracker.diagnostics().is_empty());
     assert!(matches!(
@@ -191,9 +200,10 @@ fn parses_dot_delimited_multiline_formulations() {
 fn reports_single_quoted_formulations_as_invalid() {
     let input = "Defines: 'f(x_)'\nwhen:\n. 'x in A'\n";
     let mut tracker = DiagnosticTracker::new();
-    let mut parser = Parser::new(input);
-
-    let groups = parser.parse(&mut tracker);
+    let groups = {
+        let mut parser = Parser::new(input, &mut tracker);
+        parser.parse()
+    };
     let diagnostics = tracker.diagnostics();
 
     assert_eq!(groups.len(), 1);
@@ -212,9 +222,10 @@ fn reports_single_quoted_formulations_as_invalid() {
 fn reports_unterminated_multiline_formulations() {
     let input = "when:\n. (\n    x in A\n";
     let mut tracker = DiagnosticTracker::new();
-    let mut parser = Parser::new(input);
-
-    let groups = parser.parse(&mut tracker);
+    let groups = {
+        let mut parser = Parser::new(input, &mut tracker);
+        parser.parse()
+    };
     let diagnostics = tracker.diagnostics();
 
     assert_eq!(groups.len(), 1);

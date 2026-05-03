@@ -1,8 +1,10 @@
 use super::Lexer;
+use crate::diagnostics::DiagnosticTracker;
 
 #[test]
 fn lexes_indent_and_dot_prefixes() {
-    let lexer = Lexer::new("  . x");
+    let mut tracker = DiagnosticTracker::new();
+    let lexer = Lexer::new("  . x", &mut tracker);
     let line = lexer.peek().expect("expected one lexed line");
 
     assert_eq!(line.text, "x");
@@ -14,7 +16,8 @@ fn lexes_indent_and_dot_prefixes() {
 
 #[test]
 fn identifies_blank_lines_after_trimming_leading_whitespace() {
-    let lexer = Lexer::new("   \n-- comment");
+    let mut tracker = DiagnosticTracker::new();
+    let lexer = Lexer::new("   \n-- comment", &mut tracker);
     let blank = lexer.peek().expect("expected first line");
 
     assert!(blank.is_blank());
@@ -22,7 +25,8 @@ fn identifies_blank_lines_after_trimming_leading_whitespace() {
 
 #[test]
 fn peeks_and_iterates_through_multiple_lines_in_order() {
-    let mut lexer = Lexer::new("alpha\n  . beta\n");
+    let mut tracker = DiagnosticTracker::new();
+    let mut lexer = Lexer::new("alpha\n  . beta\n", &mut tracker);
 
     let first = lexer.peek().cloned().expect("expected first line");
     assert_eq!(first.text, "alpha");
@@ -48,7 +52,8 @@ fn peeks_and_iterates_through_multiple_lines_in_order() {
 
 #[test]
 fn only_treats_dot_followed_by_space_as_a_dot_prefix() {
-    let mut lexer = Lexer::new("  .x");
+    let mut tracker = DiagnosticTracker::new();
+    let mut lexer = Lexer::new("  .x", &mut tracker);
     let line = lexer.next().expect("expected one line");
 
     assert_eq!(line.text, ".x");
@@ -59,7 +64,8 @@ fn only_treats_dot_followed_by_space_as_a_dot_prefix() {
 
 #[test]
 fn preserves_trailing_whitespace_after_trimming_leading_whitespace() {
-    let mut lexer = Lexer::new("  value  ");
+    let mut tracker = DiagnosticTracker::new();
+    let mut lexer = Lexer::new("  value  ", &mut tracker);
     let line = lexer.next().expect("expected one line");
 
     assert_eq!(line.text, "value  ");

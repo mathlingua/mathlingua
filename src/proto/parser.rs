@@ -6,18 +6,18 @@ const MULTILINE_FORMULATION_DELIMITERS: [(&str, &str); 4] =
     [("(", ")"), ("[", "]"), ("{", "}"), ("(.", ".)")];
 
 #[derive(Debug)]
-pub struct Parser {
-    lexer: Lexer,
+pub struct Parser<'a> {
+    lexer: Lexer<'a>,
 }
 
-impl Parser {
-    pub fn new(input: &str) -> Self {
+impl<'a> Parser<'a> {
+    pub fn new(input: &str, diagnostics: &'a mut DiagnosticTracker) -> Self {
         Self {
-            lexer: Lexer::new(input),
+            lexer: Lexer::new(input, diagnostics),
         }
     }
 
-    pub fn parse(&mut self, diagnostics: &mut DiagnosticTracker) -> Vec<Group> {
+    pub fn parse(&mut self) -> Vec<Group> {
         let mut groups = Vec::new();
 
         loop {
@@ -27,10 +27,10 @@ impl Parser {
                 break;
             };
 
-            match self.parse_group(0, diagnostics) {
+            match self.parse_group(0) {
                 Some(group) => groups.push(group),
                 None => {
-                    diagnostics.error(
+                    self.lexer.error(
                         next_line.metadata.row,
                         format!("Unexpected line: {}", next_line.text),
                     );
@@ -54,7 +54,7 @@ impl Parser {
         }
     }
 
-    fn parse_group(&mut self, indent: usize, diagnostics: &mut DiagnosticTracker) -> Option<Group> {
+    fn parse_group(&mut self, indent: usize) -> Option<Group> {
         self.skip_comments();
 
         let first_line = self.lexer.peek()?.clone();
@@ -78,7 +78,7 @@ impl Parser {
                 break;
             }
 
-            diagnostics.error(
+            self.lexer.error(
                 line.metadata.row,
                 format!("Unexpected header: {}", line.text),
             );
@@ -97,10 +97,10 @@ impl Parser {
                 break;
             }
 
-            match self.parse_section(indent, diagnostics) {
+            match self.parse_section(indent) {
                 Some(section) => sections.push(section),
                 None => {
-                    diagnostics.error(line.metadata.row, "Expected a section");
+                    self.lexer.error(line.metadata.row, "Expected a section");
                     let _ = self.lexer.next();
                 }
             }
@@ -113,11 +113,7 @@ impl Parser {
         })
     }
 
-    fn parse_section(
-        &mut self,
-        indent: usize,
-        diagnostics: &mut DiagnosticTracker,
-    ) -> Option<Section> {
+    fn parse_section(&mut self, indent: usize) -> Option<Section> {
         self.skip_comments();
 
         let first_line = self.lexer.next()?;
@@ -126,7 +122,7 @@ impl Parser {
         }
 
         if first_line.metadata.indent != indent {
-            diagnostics.error(
+            self.lexer.error(
                 first_line.metadata.row,
                 format!(
                     "Expected section indent {indent}, found {}",
@@ -144,12 +140,11 @@ impl Parser {
                         argument,
                         first_line.metadata.row,
                         first_line.metadata.indent,
-                        diagnostics,
                     ),
                 )
             }
             None => {
-                diagnostics.error(
+                self.lexer.error(
                     first_line.metadata.row,
                     format!("Expected ':' in section line: {}", first_line.text),
                 );
@@ -172,13 +167,13 @@ impl Parser {
             }
 
             if line.metadata.indent > expected_indent {
-                diagnostics.error(line.metadata.row, "Unexpected indent");
+                self.lexer.error(line.metadata.row, "Unexpected indent");
             }
 
-            match self.parse_argument(expected_indent, diagnostics) {
+            match self.parse_argument(expected_indent) {
                 Some(argument) => arguments.push(argument),
                 None => {
-                    diagnostics.error(line.metadata.row, "Expected an argument");
+                    self.lexer.error(line.metadata.row, "Expected an argument");
                     let _ = self.lexer.next();
                 }
             }
@@ -197,7 +192,6 @@ impl Parser {
         argument: &str,
         row: usize,
         indent: usize,
-        diagnostics: &mut DiagnosticTracker,
     ) -> Option<String> {
         if argument.is_empty() {
             return None;
@@ -205,16 +199,16 @@ impl Parser {
 
         let mut text = argument.to_owned();
         if let Some(close_delimiter) = multiline_formulation_close(argument) {
-            text =
-                self.consume_multiline_formulation(text, close_delimiter, row, indent, diagnostics);
+            text = self.consume_multiline_formulation(text, close_delimiter, row, indent);
         } else if is_single_quoted_formulation(argument) {
-            diagnostics.error(row, "Single-quoted formulations are not allowed");
+            self.lexer
+                .error(row, "Single-quoted formulations are not allowed");
         }
 
         Some(text)
     }
 
-    fn parse_formulation(&mut self, diagnostics: &mut DiagnosticTracker) -> Option<Formulation> {
+    fn parse_formulation(&mut self) -> Option<Formulation> {
         if !matches!(
             self.lexer.peek(),
             Some(line)
@@ -230,11 +224,10 @@ impl Parser {
                 close_delimiter,
                 line.metadata.row,
                 line.metadata.indent,
-                diagnostics,
             )
         } else {
             if is_single_quoted_formulation(&line.text) {
-                diagnostics.error(
+                self.lexer.error(
                     line.metadata.row,
                     "Single-quoted formulations are not allowed",
                 );
@@ -260,21 +253,16 @@ impl Parser {
         })
     }
 
-    fn parse_argument(
-        &mut self,
-        indent: usize,
-        diagnostics: &mut DiagnosticTracker,
-    ) -> Option<Argument> {
+    fn parse_argument(&mut self, indent: usize) -> Option<Argument> {
         if let Some(text) = self.parse_text() {
             return Some(Argument::Text(text));
         }
 
         if self.peek_starts_group() {
-            return self.parse_group(indent, diagnostics).map(Argument::Group);
+            return self.parse_group(indent).map(Argument::Group);
         }
 
-        self.parse_formulation(diagnostics)
-            .map(Argument::Formulation)
+        self.parse_formulation().map(Argument::Formulation)
     }
 
     fn peek_starts_group(&self) -> bool {
@@ -295,13 +283,12 @@ impl Parser {
         close_delimiter: &str,
         row: usize,
         indent: usize,
-        diagnostics: &mut DiagnosticTracker,
     ) -> String {
         let mut lines = vec![opening_line.clone()];
 
         loop {
             let Some(line) = self.lexer.next() else {
-                diagnostics.error(
+                self.lexer.error(
                     row,
                     format!("Unterminated formulation block starting with {opening_line}"),
                 );

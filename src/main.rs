@@ -1,5 +1,6 @@
 mod cli;
 mod commands;
+mod constants;
 pub mod diagnostics;
 pub mod proto;
 

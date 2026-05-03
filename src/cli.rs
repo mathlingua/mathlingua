@@ -1,4 +1,5 @@
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
+use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
 #[command(name = "mlg")]
@@ -12,13 +13,20 @@ pub struct Cli {
 #[derive(Clone, Debug, Subcommand)]
 pub enum Command {
     /// Check Mathlingua files for errors
-    Check,
+    Check(CheckArgs),
     /// Initialize a Mathlingua collection
     Init,
     /// Print version information and quit
     Version,
     /// View rendered Mathlingua files
     View,
+}
+
+#[derive(Clone, Debug, Args, PartialEq, Eq)]
+pub struct CheckArgs {
+    /// Directories or .mlg files to check. Defaults to the collection's content directory.
+    #[arg(value_name = "PATH")]
+    pub paths: Vec<PathBuf>,
 }
 
 #[cfg(test)]

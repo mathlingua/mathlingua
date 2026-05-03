@@ -4,7 +4,10 @@ fn sample_diagnostic() -> Diagnostic {
     Diagnostic {
         message: "unexpected token".to_string(),
         severity: Severity::Error,
-        location: Location { row: 7 },
+        location: Location {
+            path: None,
+            row: Some(7),
+        },
     }
 }
 
@@ -60,4 +63,24 @@ fn formats_display_using_one_based_line_numbers() {
     let diagnostic = Diagnostic::error(2, "unexpected token");
 
     assert_eq!(diagnostic.to_string(), "error at line 3: unexpected token");
+}
+
+#[test]
+fn supports_file_scoped_diagnostics() {
+    let diagnostic = Diagnostic::file_error("content/example.mlg", 4, "unexpected token");
+
+    assert_eq!(
+        diagnostic.to_string(),
+        "error at content/example.mlg:5: unexpected token"
+    );
+}
+
+#[test]
+fn supports_path_scoped_diagnostics_without_line_numbers() {
+    let diagnostic = Diagnostic::path_warning("content", "directory skipped");
+
+    assert_eq!(
+        diagnostic.to_string(),
+        "warning at content: directory skipped"
+    );
 }

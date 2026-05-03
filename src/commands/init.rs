@@ -1,11 +1,10 @@
+use crate::constants::{CONFIG_FILE, CONTENT_DIR};
 use std::env;
 use std::fs;
 use std::io;
 use std::path::Path;
 use std::process;
 
-const CONFIG_FILE: &str = "mlg.json";
-const CONTENT_DIR: &str = "content";
 const DEFAULT_CONFIG: &str = "{}\n";
 
 pub fn run() {

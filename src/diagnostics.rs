@@ -1,15 +1,34 @@
 use std::fmt;
+use std::path::PathBuf;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Severity {
     Error,
-    #[allow(dead_code)]
     Warning,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Location {
-    pub row: usize,
+    pub path: Option<PathBuf>,
+    pub row: Option<usize>,
+}
+
+impl Location {
+    pub fn new(path: Option<PathBuf>, row: Option<usize>) -> Self {
+        Self { path, row }
+    }
+
+    pub fn at_row(row: usize) -> Self {
+        Self::new(None, Some(row))
+    }
+
+    pub fn at_path(path: impl Into<PathBuf>) -> Self {
+        Self::new(Some(path.into()), None)
+    }
+
+    pub fn at_path_and_row(path: impl Into<PathBuf>, row: usize) -> Self {
+        Self::new(Some(path.into()), Some(row))
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -20,21 +39,49 @@ pub struct Diagnostic {
 }
 
 impl Diagnostic {
-    pub fn new(message: impl Into<String>, severity: Severity, row: usize) -> Self {
+    pub fn new(message: impl Into<String>, severity: Severity, location: Location) -> Self {
         Self {
             message: message.into(),
             severity,
-            location: Location { row },
+            location,
         }
     }
 
     pub fn error(row: usize, message: impl Into<String>) -> Self {
-        Self::new(message, Severity::Error, row)
+        Self::new(message, Severity::Error, Location::at_row(row))
     }
 
-    #[allow(dead_code)]
     pub fn warning(row: usize, message: impl Into<String>) -> Self {
-        Self::new(message, Severity::Warning, row)
+        Self::new(message, Severity::Warning, Location::at_row(row))
+    }
+
+    pub fn path_error(path: impl Into<PathBuf>, message: impl Into<String>) -> Self {
+        Self::new(message, Severity::Error, Location::at_path(path))
+    }
+
+    pub fn path_warning(path: impl Into<PathBuf>, message: impl Into<String>) -> Self {
+        Self::new(message, Severity::Warning, Location::at_path(path))
+    }
+
+    pub fn file_error(path: impl Into<PathBuf>, row: usize, message: impl Into<String>) -> Self {
+        Self::new(
+            message,
+            Severity::Error,
+            Location::at_path_and_row(path, row),
+        )
+    }
+
+    pub fn file_warning(path: impl Into<PathBuf>, row: usize, message: impl Into<String>) -> Self {
+        Self::new(
+            message,
+            Severity::Warning,
+            Location::at_path_and_row(path, row),
+        )
+    }
+
+    pub fn with_path(mut self, path: impl Into<PathBuf>) -> Self {
+        self.location.path = Some(path.into());
+        self
     }
 }
 
@@ -45,12 +92,20 @@ impl fmt::Display for Diagnostic {
             Severity::Warning => "warning",
         };
 
-        write!(
-            f,
-            "{severity} at line {}: {}",
-            self.location.row + 1,
-            self.message
-        )
+        match (&self.location.path, self.location.row) {
+            (Some(path), Some(row)) => {
+                write!(
+                    f,
+                    "{severity} at {}:{}: {}",
+                    path.display(),
+                    row + 1,
+                    self.message
+                )
+            }
+            (Some(path), None) => write!(f, "{severity} at {}: {}", path.display(), self.message),
+            (None, Some(row)) => write!(f, "{severity} at line {}: {}", row + 1, self.message),
+            (None, None) => write!(f, "{severity}: {}", self.message),
+        }
     }
 }
 
@@ -70,6 +125,31 @@ impl DiagnosticTracker {
 
     pub fn error(&mut self, row: usize, message: impl Into<String>) {
         self.push(Diagnostic::error(row, message));
+    }
+
+    pub fn warning(&mut self, row: usize, message: impl Into<String>) {
+        self.push(Diagnostic::warning(row, message));
+    }
+
+    pub fn path_error(&mut self, path: impl Into<PathBuf>, message: impl Into<String>) {
+        self.push(Diagnostic::path_error(path, message));
+    }
+
+    pub fn path_warning(&mut self, path: impl Into<PathBuf>, message: impl Into<String>) {
+        self.push(Diagnostic::path_warning(path, message));
+    }
+
+    pub fn file_error(&mut self, path: impl Into<PathBuf>, row: usize, message: impl Into<String>) {
+        self.push(Diagnostic::file_error(path, row, message));
+    }
+
+    pub fn file_warning(
+        &mut self,
+        path: impl Into<PathBuf>,
+        row: usize,
+        message: impl Into<String>,
+    ) {
+        self.push(Diagnostic::file_warning(path, row, message));
     }
 
     pub fn diagnostics(&self) -> &[Diagnostic] {

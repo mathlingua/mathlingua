@@ -1,5 +1,6 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
-use crate::diagnostics::{Diagnostic, DiagnosticTracker, Severity};
+use crate::diagnostics::DiagnosticTracker;
+use crate::diagnostics::reporting::print_diagnostics_to_stderr;
 use crate::proto::Parser as ProtoParser;
 use std::collections::BTreeSet;
 use std::env;
@@ -19,9 +20,8 @@ pub fn run(paths: &[PathBuf]) {
 
     let result = run_in(&cwd, paths);
 
-    for diagnostic in result.diagnostics.diagnostics() {
-        eprintln!("{}", render_diagnostic(&cwd, diagnostic));
-    }
+    print_diagnostics_to_stderr(&cwd, result.diagnostics.diagnostics())
+        .expect("failed to print diagnostics");
 
     if result.diagnostics.has_errors() {
         eprintln!(
@@ -202,45 +202,6 @@ fn render_success(summary: &CheckSummary) -> String {
     } else {
         format!("Checked {} files", summary.files_checked)
     }
-}
-
-fn render_diagnostic(cwd: &Path, diagnostic: &Diagnostic) -> String {
-    let severity = match diagnostic.severity {
-        Severity::Error => "error",
-        Severity::Warning => "warning",
-    };
-
-    match (&diagnostic.location.path, diagnostic.location.row) {
-        (Some(path), Some(row)) => {
-            format!(
-                "{}:{}: {severity}: {}",
-                display_path(cwd, path),
-                row + 1,
-                diagnostic.message
-            )
-        }
-        (Some(path), None) => {
-            format!(
-                "{}: {severity}: {}",
-                display_path(cwd, path),
-                diagnostic.message
-            )
-        }
-        (None, Some(row)) => format!("line {}: {severity}: {}", row + 1, diagnostic.message),
-        (None, None) => format!("{severity}: {}", diagnostic.message),
-    }
-}
-
-fn display_path(cwd: &Path, path: &Path) -> String {
-    path.strip_prefix(cwd)
-        .map(|relative| {
-            if relative.as_os_str().is_empty() {
-                ".".to_string()
-            } else {
-                relative.display().to_string()
-            }
-        })
-        .unwrap_or_else(|_| path.display().to_string())
 }
 
 fn format_diagnostic_count(diagnostic_count: usize) -> String {

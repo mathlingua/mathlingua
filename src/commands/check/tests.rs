@@ -1,4 +1,5 @@
-use super::{find_collection_root, render_diagnostic, resolve_source_files, run_in};
+use super::{find_collection_root, resolve_source_files, run_in};
+use crate::diagnostics::reporting::format_diagnostic;
 use crate::diagnostics::{Diagnostic, DiagnosticTracker, Location, Severity};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -155,7 +156,7 @@ fn renders_issues_relative_to_the_working_directory_when_possible() {
     };
 
     assert_eq!(
-        render_diagnostic(cwd, &diagnostic),
+        format_diagnostic(cwd, &diagnostic, false),
         "content/example.mlg:4: error: Unexpected header: [duplicate]"
     );
 }

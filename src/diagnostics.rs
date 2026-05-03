@@ -1,6 +1,8 @@
 use std::fmt;
 use std::path::PathBuf;
 
+pub mod reporting;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Severity {
     Error,

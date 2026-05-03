@@ -1,5 +1,6 @@
 mod cli;
 mod commands;
+pub mod diagnostics;
 
 use clap::Parser;
 

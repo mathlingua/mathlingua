@@ -1,6 +1,7 @@
 mod cli;
 mod commands;
 pub mod diagnostics;
+pub mod proto;
 
 use clap::Parser;
 

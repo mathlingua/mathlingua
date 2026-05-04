@@ -1,6 +1,5 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
-use crate::diagnostics::DiagnosticTracker;
-use crate::diagnostics::reporting::print_diagnostics_to_stderr;
+use crate::diagnostics::{ColorMode, DiagnosticFormatter, DiagnosticTracker};
 use crate::proto::Parser as ProtoParser;
 use std::collections::BTreeSet;
 use std::env;
@@ -20,8 +19,14 @@ pub fn run(paths: &[PathBuf]) {
 
     let result = run_in(&cwd, paths);
 
-    print_diagnostics_to_stderr(&cwd, result.diagnostics.diagnostics())
-        .expect("failed to print diagnostics");
+    let rendered = DiagnosticFormatter::new()
+        .with_base_path(&cwd)
+        .with_color_mode(ColorMode::Auto)
+        .format_all(result.diagnostics.diagnostics());
+
+    if !rendered.is_empty() {
+        eprintln!("{rendered}");
+    }
 
     if result.diagnostics.has_errors() {
         eprintln!(
@@ -217,8 +222,9 @@ fn format_diagnostic_count(diagnostic_count: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::{find_collection_root, resolve_source_files, run_in};
-    use crate::diagnostics::reporting::format_diagnostic;
-    use crate::diagnostics::{Diagnostic, DiagnosticTracker, Location, Severity};
+    use crate::diagnostics::{
+        ColorMode, Diagnostic, DiagnosticFormatter, DiagnosticTracker, Location, Severity,
+    };
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -367,6 +373,9 @@ mod tests {
     #[test]
     fn renders_issues_relative_to_the_working_directory_when_possible() {
         let cwd = Path::new("/repo");
+        let formatter = DiagnosticFormatter::new()
+            .with_base_path(cwd)
+            .with_color_mode(ColorMode::Never);
         let diagnostic = Diagnostic {
             message: "Unexpected header: [duplicate]".to_string(),
             severity: Severity::Error,
@@ -374,7 +383,7 @@ mod tests {
         };
 
         assert_eq!(
-            format_diagnostic(cwd, &diagnostic, false),
+            formatter.format(&diagnostic),
             "content/example.mlg:4: error: Unexpected header: [duplicate]"
         );
     }

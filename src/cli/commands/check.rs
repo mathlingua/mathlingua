@@ -1,6 +1,6 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
 use crate::diagnostics::{ColorMode, DiagnosticFormatter, DiagnosticTracker};
-use crate::proto::Parser as ProtoParser;
+use crate::frontend::proto::Parser as ProtoParser;
 use std::collections::BTreeSet;
 use std::env;
 use std::fs;

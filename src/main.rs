@@ -1,12 +1,7 @@
-mod cli;
-mod commands;
-mod constants;
-pub mod diagnostics;
-pub mod proto;
-
 use clap::Parser;
+use mlg::cli::{self, Cli};
 
 fn main() {
-    let cli = cli::Cli::parse();
-    commands::run(cli.command);
+    let cli = Cli::parse();
+    cli::run(cli.command);
 }

@@ -3,9 +3,9 @@ mod init;
 mod version;
 mod view;
 
-use crate::cli::Command;
+use super::Command;
 
-pub fn run(command: Command) {
+pub(super) fn run(command: Command) {
     match command {
         Command::Check(args) => check::run(&args.paths),
         Command::Init => init::run(),

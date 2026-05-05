@@ -322,7 +322,7 @@ fn is_single_quoted_formulation(text: &str) -> bool {
 mod tests {
     use super::{Parser, is_single_quoted_formulation, multiline_formulation_close};
     use crate::diagnostics::{Diagnostic, DiagnosticTracker};
-    use crate::proto::ast::{Argument, Group};
+    use crate::frontend::proto::ast::{Argument, Group};
 
     fn parse_input(input: &str) -> (Vec<Group>, Vec<Diagnostic>) {
         let mut tracker = DiagnosticTracker::new();

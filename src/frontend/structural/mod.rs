@@ -1,1 +1,4 @@
-//! Structural-language frontend passes.
+pub mod ast;
+pub mod parser;
+
+pub use parser::parse_document;

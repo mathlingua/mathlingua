@@ -1,0 +1,363 @@
+Title: "Foundations"
+
+Section: "Sets"
+
+Subsection: "Membership"
+
+Subsubsection: "Examples"
+
+
+[\structure]
+Describes: S := (X, *)
+using:
+. X is \set
+. X "contains" Element
+when:
+. [logic.`set.ops`.when]
+  allOf:
+  . x = x
+  . y = y
+extends: X is \set via (X, Y)
+specifies:
+. Y is \set via (X, Y)
+. y "contains" Y
+satisfies:
+. [logic.satisfies]
+  not:
+  . x = y
+Provides:
+. [symbol.plus]
+  symbol: plus(x_, y_) :=> x + y
+  written:
+  . "+"
+Justified:
+. [proof.label]
+  label:
+  . "Closure"
+  by:
+  . "Definition"
+  comment: "standard"
+Documented:
+. [docs.written]
+  written:
+  . "plus"
+Aliases:
+. [alias.expr]
+  alias: plus(x_, y_) :=> x + y
+  written:
+  . "+"
+References:
+. $book.plus
+Metadata:
+. id: "desc-1"
+
+
+[\structure.connection]
+Describes: T
+Provides:
+. [conn.plus]
+  connection:
+  . "addition"
+  to:
+  . "binary operation"
+  using:
+  . X is \set
+  means:
+  . "adds elements"
+  signifies:
+  . "closure"
+  viewable:
+  . "as a table"
+  through:
+  . "worked examples"
+Justified:
+. [proof.by]
+  by:
+  . "Convention"
+  comment: "accepted"
+Documented:
+. [docs.called]
+  called:
+  . "addition"
+Aliases:
+. [alias.spec]
+  alias: x_ "in" X :-> x is \element
+Metadata:
+. version: "1.0"
+
+
+[\structure.writing]
+Describes: W
+Documented:
+. [docs.`inline.notation`]
+  writing: plus(x_, y_) :~> x + y
+  as:
+  . "inline notation"
+
+[\structure.overview]
+Describes: O
+Documented:
+. [docs.overview]
+  overview: "Binary operation on X"
+
+[\structure.related]
+Describes: R
+Documented:
+. [docs.related]
+  related:
+  . "group"
+  . "ring"
+
+[\structure.discoverer]
+Describes: D
+Documented:
+. [docs.discoverer]
+  discoverer:
+  . "Gauss"
+
+
+[\constant]
+Defines: zero is \element
+using:
+. X is \set
+expresses:
+. [logic.expr]
+  piecewise:
+  . "choose a representative"
+  if:
+  . x = x
+  then:
+  . x = x
+  else:
+  . y = y
+
+
+[\transform]
+Refines: x is \logic.$prefix.(f:on{x}, g:to{y})::target.$tail{z}:via{w}(u, v)
+using:
+. X is \set
+when:
+. [logic.exists]
+  existsUnique: x is \element
+  suchThat:
+  . x = x
+specifies: y is \(f)::[[g]]
+satisfies:
+. [logic.given]
+  given: x is \element
+  where:
+  . x = x
+  then:
+  . y = y
+
+
+[\statement]
+States:
+. "Closure law"
+. "Associativity"
+using:
+. X is \set
+that:
+. [logic.exists]
+  exists: y is \element
+  suchThat:
+  . y = y
+
+
+[\statement.expr]
+States:
+that:
+. (
+    y = y
+  )
+
+
+[\axiom]
+Axiom:
+. "Every element equals itself"
+given:
+. X is \set
+where:
+. [logic.not]
+  not:
+  . x = y
+then:
+. [logic.if]
+  if:
+  . x = x
+  then:
+  . y = y
+iff:
+. [logic.iff]
+  iff:
+  . x = x
+  then:
+  . y = y
+Justified:
+. [axiom.justified]
+  by:
+  . "Definition"
+  comment: "classical"
+Documented:
+. [axiom.written]
+  written:
+  . "axiom"
+Aliases:
+. [axiom.alias]
+  alias: axiom(x_) :=> x
+References:
+. $axiom.ref
+Metadata:
+. id: "ax-1"
+
+Theorem:
+then:
+. [logic.any]
+  anyOf:
+  . x = x
+  . y = y
+
+[\corollary]
+Corollary:
+. "Immediate consequence"
+of:
+. "Previous theorem"
+then:
+. [logic.one]
+  oneOf:
+  . x = x
+  . y = y
+
+Lemma:
+then:
+. [logic.forall]
+  forAll: x is \element
+  where:
+  . x = x
+  then:
+  . x = x
+
+[\conjecture]
+Conjecture:
+. "Open question"
+then:
+. [logic.exists]
+  exists: x is \element
+  suchThat:
+  . x = x
+
+
+[@`isaac.newton`]
+Person:
+. "Natural philosopher"
+name:
+. "Isaac Newton"
+. "I. Newton"
+biography: "Worked on calculus and mechanics"
+
+
+[$book.`chapter.1`]
+Resource:
+. title: "Elements"
+
+[$book.author]
+Resource:
+. author:
+  . "Euclid"
+  . "Translator"
+
+[$book.offset]
+Resource:
+. offset: "Book I"
+
+[$book.url]
+Resource:
+. url: "https://example.com/elements"
+
+[$book.homepage]
+Resource:
+. homepage: "https://example.com"
+
+[$book.type]
+Resource:
+. type: "book"
+
+[$book.edition]
+Resource:
+. edition: "second"
+
+[$book.editor]
+Resource:
+. editor: "Editor Name"
+
+[$book.institution]
+Resource:
+. institution: "Library"
+
+[$book.journal]
+Resource:
+. journal: "Journal Name"
+
+[$book.publisher]
+Resource:
+. publisher: "Publisher Name"
+
+[$book.volume]
+Resource:
+. volume: "I"
+
+[$book.month]
+Resource:
+. month: "January"
+
+[$book.year]
+Resource:
+. year: "300BC"
+
+[$book.description]
+Resource:
+. description: "Classic text"
+
+
+Specify:
+. [numbers.positive.int]
+  positive:
+  . "positive"
+  int:
+  . "integer"
+  is:
+  . "greater than zero"
+
+Specify:
+. [numbers.negative.int]
+  negative:
+  . "negative"
+  int:
+  . "integer"
+  is:
+  . "less than zero"
+
+Specify:
+. [numbers.zero]
+  zero:
+  . "zero"
+  is:
+  . "additive identity"
+
+Specify:
+. [numbers.positive.decimal]
+  positive:
+  . "positive"
+  decimal:
+  . "decimal"
+  is:
+  . "greater than zero"
+
+Specify:
+. [numbers.negative.decimal]
+  negative:
+  . "negative"
+  decimal:
+  . "decimal"
+  is:
+  . "less than zero"

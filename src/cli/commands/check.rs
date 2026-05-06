@@ -1,6 +1,7 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
 use crate::diagnostics::{ColorMode, DiagnosticFormatter, DiagnosticTracker};
 use crate::frontend::proto::Parser as ProtoParser;
+use crate::frontend::structural::parse_document;
 use std::collections::BTreeSet;
 use std::env;
 use std::fs;
@@ -196,6 +197,10 @@ fn parse_source_file(path: &Path, diagnostics: &mut DiagnosticTracker) {
         let _ = parser.parse();
     }
 
+    if !file_diagnostics.has_errors() {
+        let _ = parse_document(&source, &mut file_diagnostics);
+    }
+
     for diagnostic in file_diagnostics.diagnostics() {
         diagnostics.push(diagnostic.clone().with_path(path.to_path_buf()));
     }
@@ -240,8 +245,8 @@ mod tests {
 
         fs::create_dir_all(&nested_cwd).unwrap();
         fs::write(root.join("mlg.json"), "{}\n").unwrap();
-        fs::write(root.join("content/sets.mlg"), "Defines: A\n").unwrap();
-        fs::write(nested_cwd.join("groups.mlg"), "Defines: G\n").unwrap();
+        fs::write(root.join("content/sets.mlg"), "Title: \"Sets\"\n").unwrap();
+        fs::write(nested_cwd.join("groups.mlg"), "Title: \"Groups\"\n").unwrap();
 
         let result = run_in(&nested_cwd, &[]);
 
@@ -269,7 +274,7 @@ mod tests {
         let docs = temp_dir.path().join("docs/logic");
 
         fs::create_dir_all(&docs).unwrap();
-        fs::write(docs.join("intro.mlg"), "Defines: f(x_)\n").unwrap();
+        fs::write(docs.join("intro.mlg"), "Title: \"Intro\"\n").unwrap();
         fs::write(docs.join("notes.txt"), "ignore me").unwrap();
 
         let result = run_in(temp_dir.path(), &[PathBuf::from("docs")]);

@@ -1,0 +1,674 @@
+use crate::frontend::formulation::ast::{self, BinaryOperator, ExpressionKind, FormOrDeclarationKind, HighPrecedenceInfix, NamedOperatorKind, PlaceholderFormKind, TupleExpressionElement, TupleFormElement, UnaryOperator};
+use crate::frontend::formulation::span::Span;
+use crate::frontend::formulation::token::{LexicalError, Token};
+
+grammar;
+
+extern {
+    type Location = usize;
+    type Error = LexicalError;
+
+    enum Token {
+        "(." => Token::DotLParen,
+        ".)" => Token::DotRParen,
+        "[|" => Token::LNamedArguments,
+        "|]" => Token::RNamedArguments,
+        "\\:" => Token::InfixCommandStart,
+        ":/" => Token::InfixCommandEnd,
+        "named_operator" => Token::NamedOperator(<String>),
+        "left_named_operator" => Token::LeftNamedOperator(<String>),
+        "right_named_operator" => Token::RightNamedOperator(<String>),
+        "label" => Token::Label(<Vec<String>>),
+        ":=" => Token::Declare,
+        "is_not?" => Token::IsNotPredicate,
+        "is?" => Token::IsPredicate,
+        "is" => Token::Is,
+        "quoted_name" => Token::QuotedName(<String>),
+        "magnetic_placeholder" => Token::MagneticPlaceholder(<String>),
+        "placeholder" => Token::Placeholder(<String>),
+        "name" => Token::Name(<String>),
+        "special_operator" => Token::SpecialOperator(<String>),
+        "\\" => Token::CommandStart,
+        "+" => Token::Plus,
+        "-" => Token::Minus,
+        "*" => Token::Star,
+        "/" => Token::Slash,
+        "=" => Token::Equals,
+        "^" => Token::Caret,
+        "(" => Token::LParen,
+        ")" => Token::RParen,
+        "{" => Token::LBrace,
+        "}" => Token::RBrace,
+        "[" => Token::LBracket,
+        "]" => Token::RBracket,
+        "," => Token::Comma,
+        ":" => Token::Colon,
+        "." => Token::Dot,
+        "|" => Token::Pipe,
+        "$" => Token::Dollar,
+    }
+}
+
+pub InputExpression: ast::Expression = {
+    <expression:SpecOrPredicateExpression> => expression,
+};
+
+pub InputFormOrDeclaration: ast::FormOrDeclaration = {
+    <form:FormOrDeclaration> => form,
+};
+
+Name: String = {
+    <name:"name"> => name,
+};
+
+QuotedName: String = {
+    <name:"quoted_name"> => name,
+};
+
+PlaceholderName: String = {
+    <name:"placeholder"> => name,
+};
+
+MagneticPlaceholderName: String = {
+    <name:"magnetic_placeholder"> => name,
+};
+
+LabelToken: ast::Label = {
+    <l:@L> <parts:"label"> <r:@R> => ast::Label {
+        span: Span::new(l, r),
+        parts,
+    },
+};
+
+AnyOperator: ast::Operator = {
+    <l:@L> <operator:"special_operator"> <r:@R> => ast::Operator::new(Span::new(l, r), operator),
+    <l:@L> "+" <r:@R> => ast::Operator::new(Span::new(l, r), "+"),
+    <l:@L> "-" <r:@R> => ast::Operator::new(Span::new(l, r), "-"),
+    <l:@L> "*" <r:@R> => ast::Operator::new(Span::new(l, r), "*"),
+    <l:@L> "/" <r:@R> => ast::Operator::new(Span::new(l, r), "/"),
+    <l:@L> "=" <r:@R> => ast::Operator::new(Span::new(l, r), "="),
+    <l:@L> "^" <r:@R> => ast::Operator::new(Span::new(l, r), "^"),
+};
+
+FormOperator: ast::Operator = {
+    <operator:AnyOperator> => operator,
+    <operator:NamedOperatorToken> => ast::Operator::new(operator.span, operator.name),
+};
+
+NamedOperatorToken: ast::NamedOperator = {
+    <l:@L> <name:"named_operator"> <r:@R> => ast::NamedOperator {
+        span: Span::new(l, r),
+        name,
+        kind: NamedOperatorKind::Plain,
+    },
+    <l:@L> <name:"left_named_operator"> <r:@R> => ast::NamedOperator {
+        span: Span::new(l, r),
+        name,
+        kind: NamedOperatorKind::LeftColon,
+    },
+    <l:@L> <name:"right_named_operator"> <r:@R> => ast::NamedOperator {
+        span: Span::new(l, r),
+        name,
+        kind: NamedOperatorKind::RightColon,
+    },
+};
+
+Placeholder: ast::Placeholder = {
+    <l:@L> <name:PlaceholderName> <r:@R> => ast::Placeholder::new(Span::new(l, r), name),
+};
+
+MagneticPlaceholder: ast::MagneticPlaceholder = {
+    <l:@L> <name:MagneticPlaceholderName> <r:@R> => ast::MagneticPlaceholder {
+        span: Span::new(l, r),
+        name,
+    },
+};
+
+PlaceholderList: Vec<ast::Placeholder> = {
+    <placeholder:Placeholder> => vec![placeholder],
+    <mut placeholders:PlaceholderList> "," <placeholder:Placeholder> => {
+        placeholders.push(placeholder);
+        placeholders
+    },
+};
+
+PlaceholderFormTail: Vec<ast::Placeholder> = {
+    => Vec::new(),
+    "(" <arguments:PlaceholderList> ")" => arguments,
+};
+
+PlaceholderForm: ast::PlaceholderForm = {
+    <placeholder:Placeholder> <arguments:PlaceholderFormTail> => {
+        let span = if let Some(last) = arguments.last() {
+            Span::new(placeholder.span.start, last.span.end + 1)
+        } else {
+            placeholder.span
+        };
+
+        if arguments.is_empty() {
+            ast::PlaceholderForm::new(span, PlaceholderFormKind::Placeholder(placeholder))
+        } else {
+            ast::PlaceholderForm::new(
+                span,
+                PlaceholderFormKind::Function {
+                    placeholder,
+                    arguments,
+                },
+            )
+        }
+    },
+};
+
+FunctionForm: ast::FunctionForm = {
+    <l:@L> <name:Name> "(" <magnetic:MagneticPlaceholder> ")" <r:@R> => ast::FunctionForm {
+        span: Span::new(l, r),
+        name,
+        magnetic_placeholder: Some(magnetic),
+        placeholders: Vec::new(),
+    },
+    <l:@L> <name:Name> "(" <placeholders:PlaceholderList> ")" <r:@R> => ast::FunctionForm {
+        span: Span::new(l, r),
+        name,
+        magnetic_placeholder: None,
+        placeholders,
+    },
+};
+
+TupleFormElementList: Vec<TupleFormElement> = {
+    <element:TupleFormElement> => vec![element],
+    <mut elements:TupleFormElementList> "," <element:TupleFormElement> => {
+        elements.push(element);
+        elements
+    },
+};
+
+TupleForm: ast::TupleForm = {
+    <l:@L> "(" <first:TupleFormElement> "," <rest:TupleFormElementList> ")" <r:@R> => {
+        let mut elements = vec![first];
+        elements.extend(rest);
+        ast::TupleForm {
+            span: Span::new(l, r),
+            elements,
+        }
+    },
+};
+
+TupleFormElement: TupleFormElement = {
+    <form:FormOrDeclaration> => TupleFormElement::Form(form),
+    <operator:AnyOperator> => TupleFormElement::Operator(operator),
+};
+
+SetForm: ast::SetForm = {
+    <l:@L> "{" <placeholder_form:PlaceholderForm> "}" <r:@R> => ast::SetForm {
+        span: Span::new(l, r),
+        placeholder_form,
+    },
+};
+
+FunctionFormOrDeclaration: ast::FormOrDeclaration = {
+    <l:@L> <name:Name> ":=" <form:FunctionForm> <r:@R> => ast::FormOrDeclaration::new(
+        Span::new(l, r),
+        FormOrDeclarationKind::FunctionDeclaration {
+            name: Some(name),
+            form,
+        },
+    ),
+    <form:FunctionForm> => ast::FormOrDeclaration::new(
+        form.span,
+        FormOrDeclarationKind::FunctionDeclaration {
+            name: None,
+            form,
+        },
+    ),
+};
+
+TupleFormOrDeclaration: ast::FormOrDeclaration = {
+    <l:@L> <name:Name> ":=" <form:TupleForm> <r:@R> => ast::FormOrDeclaration::new(
+        Span::new(l, r),
+        FormOrDeclarationKind::TupleDeclaration {
+            name: Some(name),
+            form,
+        },
+    ),
+    <form:TupleForm> => ast::FormOrDeclaration::new(
+        form.span,
+        FormOrDeclarationKind::TupleDeclaration {
+            name: None,
+            form,
+        },
+    ),
+};
+
+SetFormOrDeclaration: ast::FormOrDeclaration = {
+    <l:@L> <name:Name> ":=" <form:SetForm> <r:@R> => ast::FormOrDeclaration::new(
+        Span::new(l, r),
+        FormOrDeclarationKind::SetDeclaration {
+            name: Some(name),
+            form,
+        },
+    ),
+    <form:SetForm> => ast::FormOrDeclaration::new(
+        form.span,
+        FormOrDeclarationKind::SetDeclaration {
+            name: None,
+            form,
+        },
+    ),
+};
+
+FormOrDeclaration: ast::FormOrDeclaration = {
+    <l:@L> <name:Name> <r:@R> => ast::FormOrDeclaration::new(
+        Span::new(l, r),
+        FormOrDeclarationKind::Name(name),
+    ),
+    <form:FunctionFormOrDeclaration> => form,
+    <form:TupleFormOrDeclaration> => form,
+    <form:SetFormOrDeclaration> => form,
+    <l:@L> <left:Placeholder> <operator:FormOperator> <right:Placeholder> <r:@R> => ast::FormOrDeclaration::new(
+        Span::new(l, r),
+        FormOrDeclarationKind::InfixOperator {
+            left,
+            operator,
+            right,
+        },
+    ),
+    <l:@L> <operator:FormOperator> <placeholder:Placeholder> <r:@R> => ast::FormOrDeclaration::new(
+        Span::new(l, r),
+        FormOrDeclarationKind::PrefixOperator {
+            operator,
+            placeholder,
+        },
+    ),
+    <l:@L> <placeholder:Placeholder> <operator:FormOperator> <r:@R> => ast::FormOrDeclaration::new(
+        Span::new(l, r),
+        FormOrDeclarationKind::PostfixOperator {
+            placeholder,
+            operator,
+        },
+    ),
+};
+
+PrefixOperator: UnaryOperator = {
+    <l:@L> "+" <r:@R> => UnaryOperator::Arithmetic(ast::Operator::new(Span::new(l, r), "+")),
+    <l:@L> "-" <r:@R> => UnaryOperator::Arithmetic(ast::Operator::new(Span::new(l, r), "-")),
+};
+
+EqualityOperator: BinaryOperator = {
+    <l:@L> "=" <r:@R> => BinaryOperator::Equality(ast::Operator::new(Span::new(l, r), "=")),
+};
+
+AdditiveOperator: BinaryOperator = {
+    <l:@L> "+" <r:@R> => BinaryOperator::Add(ast::Operator::new(Span::new(l, r), "+")),
+    <l:@L> "-" <r:@R> => BinaryOperator::Subtract(ast::Operator::new(Span::new(l, r), "-")),
+};
+
+MultiplicativeOperator: BinaryOperator = {
+    <l:@L> "*" <r:@R> => BinaryOperator::Multiply(ast::Operator::new(Span::new(l, r), "*")),
+    <l:@L> "/" <r:@R> => BinaryOperator::Divide(ast::Operator::new(Span::new(l, r), "/")),
+};
+
+PowerOperator: BinaryOperator = {
+    <l:@L> "^" <r:@R> => BinaryOperator::Power(ast::Operator::new(Span::new(l, r), "^")),
+};
+
+HighPrecedenceInfixOperator: HighPrecedenceInfix = {
+    <operator:NamedOperatorToken> => HighPrecedenceInfix::Binary(BinaryOperator::Named(operator)),
+    <command:InfixCommand> => HighPrecedenceInfix::Command(command),
+};
+
+ExpressionList: Vec<ast::Expression> = {
+    <expression:SpecOrPredicateExpression> => vec![expression],
+    <mut expressions:ExpressionList> "," <expression:SpecOrPredicateExpression> => {
+        expressions.push(expression);
+        expressions
+    },
+};
+
+TupleExpressionElementList: Vec<TupleExpressionElement> = {
+    <element:TupleExpressionElement> => vec![element],
+    <mut elements:TupleExpressionElementList> "," <element:TupleExpressionElement> => {
+        elements.push(element);
+        elements
+    },
+};
+
+TupleExpressionElement: TupleExpressionElement = {
+    <expression:SpecOrPredicateExpression> => TupleExpressionElement::Expression(expression),
+    <operator:AnyOperator> => TupleExpressionElement::Operator(operator),
+};
+
+FunctionNamedExpressionElementLhs: ast::FunctionNamedExpressionElementLhs = {
+    <name:Name> => ast::FunctionNamedExpressionElementLhs::Name(name),
+    <subset:SubsetNameCall> => ast::FunctionNamedExpressionElementLhs::SubsetCall(subset),
+};
+
+FunctionNamedExpressionElementList: Vec<ast::FunctionNamedExpressionElement> = {
+    <element:FunctionNamedExpressionElement> => vec![element],
+    <mut elements:FunctionNamedExpressionElementList> "," <element:FunctionNamedExpressionElement> => {
+        elements.push(element);
+        elements
+    },
+};
+
+FunctionNamedExpressionElement: ast::FunctionNamedExpressionElement = {
+    <l:@L> <lhs:FunctionNamedExpressionElementLhs> ":=" <expression:SpecOrPredicateExpression> <r:@R> => ast::FunctionNamedExpressionElement {
+        span: Span::new(l, r),
+        lhs,
+        expression,
+    },
+};
+
+GroupedExpression: ast::Expression = {
+    <l:@L> "(" <expression:SpecOrPredicateExpression> ")" <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Grouped {
+            expression: Box::new(expression),
+            dot_delimited: false,
+        },
+    ),
+    <l:@L> "(." <expression:SpecOrPredicateExpression> ".)" <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Grouped {
+            expression: Box::new(expression),
+            dot_delimited: true,
+        },
+    ),
+};
+
+LabeledExpression: ast::Expression = {
+    <l:@L> <expression:GroupedExpression> <label:LabelToken> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Labeled {
+            expression: Box::new(expression),
+            label,
+        },
+    ),
+};
+
+SubsetNameCall: ast::SubsetCall = {
+    <l:@L> <target:Name> "[" <first:Name> "]" <r:@R> => ast::SubsetCall::One {
+        span: Span::new(l, r),
+        target,
+        first,
+    },
+    <l:@L> <target:Name> "[" <first:Name> "," <second:Name> "]" <r:@R> => ast::SubsetCall::Two {
+        span: Span::new(l, r),
+        target,
+        first,
+        second,
+    },
+    <l:@L> <target:Name> "[" <outer:Name> "[" <inner_target:Name> "]" "]" <r:@R> => ast::SubsetCall::Nested {
+        span: Span::new(l, r),
+        target,
+        outer,
+        inner_target,
+    },
+};
+
+ChainPart: ast::ChainPart = {
+    <name:Name> => ast::ChainPart::Name(name),
+    "$" <name:Name> => ast::ChainPart::Alias(name),
+    <operator:"special_operator"> => ast::ChainPart::Operator(operator),
+};
+
+Chain: ast::Chain = {
+    <l:@L> <part:ChainPart> <r:@R> => ast::Chain {
+        span: Span::new(l, r),
+        parts: vec![part],
+    },
+    <chain:Chain> "." <part:ChainPart> <r:@R> => {
+        let mut parts = chain.parts;
+        parts.push(part);
+        ast::Chain {
+            span: Span::new(chain.span.start, r),
+            parts,
+        }
+    },
+};
+
+CurlyExpressionArgs: ast::CurlyExpressionArgs = {
+    <l:@L> "{" <expressions:ExpressionList> "}" <r:@R> => ast::CurlyExpressionArgs {
+        span: Span::new(l, r),
+        expressions,
+    },
+};
+
+CurlyExpressionArgsList: Vec<ast::CurlyExpressionArgs> = {
+    <arg:CurlyExpressionArgs> => vec![arg],
+    <mut args:CurlyExpressionArgsList> <arg:CurlyExpressionArgs> => {
+        args.push(arg);
+        args
+    },
+};
+
+CurlyExpressionArgsOpt: Vec<ast::CurlyExpressionArgs> = {
+    => Vec::new(),
+    <args:CurlyExpressionArgsList> => args,
+};
+
+ParenExpressionArgs: ast::ParenExpressionArgs = {
+    <l:@L> "(" <expressions:ExpressionList> ")" <r:@R> => ast::ParenExpressionArgs {
+        span: Span::new(l, r),
+        expressions,
+    },
+};
+
+ParenExpressionArgsList: Vec<ast::ParenExpressionArgs> = {
+    <arg:ParenExpressionArgs> => vec![arg],
+    <mut args:ParenExpressionArgsList> <arg:ParenExpressionArgs> => {
+        args.push(arg);
+        args
+    },
+};
+
+ParenExpressionArgsOpt: Vec<ast::ParenExpressionArgs> = {
+    => Vec::new(),
+    <args:ParenExpressionArgsList> => args,
+};
+
+CommandExpressionTailPart: ast::CommandExpressionTailPart = {
+    <l:@L> ":" <chain:Chain> <args:CurlyExpressionArgsList> <r:@R> => ast::CommandExpressionTailPart {
+        span: Span::new(l, r),
+        chain,
+        args,
+    },
+};
+
+CommandExpressionTailList: Vec<ast::CommandExpressionTailPart> = {
+    <part:CommandExpressionTailPart> => vec![part],
+    <mut parts:CommandExpressionTailList> <part:CommandExpressionTailPart> => {
+        parts.push(part);
+        parts
+    },
+};
+
+CommandExpressionTailOpt: Vec<ast::CommandExpressionTailPart> = {
+    => Vec::new(),
+    <parts:CommandExpressionTailList> => parts,
+};
+
+CommandExpression: ast::CommandExpression = {
+    <l:@L> "\\" <chain:Chain> <head_args:CurlyExpressionArgsOpt> <tail:CommandExpressionTailOpt> <paren_args:ParenExpressionArgsOpt> <r:@R> => ast::CommandExpression {
+        span: Span::new(l, r),
+        chain,
+        head_args,
+        tail,
+        paren_args,
+    },
+};
+
+InfixCommand: ast::InfixCommand = {
+    <l:@L> "\\:" <chain:Chain> <head_args:CurlyExpressionArgsOpt> <tail:CommandExpressionTailOpt> ":/" <r:@R> => ast::InfixCommand {
+        span: Span::new(l, r),
+        chain,
+        head_args,
+        tail,
+    },
+};
+
+ExpressionSpec: ast::SpecStatement = {
+    <l:@L> <subject:EqualityExpression> <operator:QuotedName> <name:Name> <r:@R> => ast::SpecStatement {
+        span: Span::new(l, r),
+        subject: Box::new(subject),
+        operator,
+        name,
+    },
+};
+
+SetExpression: ast::Expression = {
+    <l:@L> "{" <spec:ExpressionSpec> ":" <target:PlaceholderForm> <predicate:("|" <SpecOrPredicateExpression>)?> "}" <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Set(ast::SetExpression {
+            span: Span::new(l, r),
+            spec,
+            target,
+            predicate: predicate.map(Box::new),
+        }),
+    ),
+};
+
+PrimaryExpression: ast::Expression = {
+    <expression:LabeledExpression> => expression,
+    <expression:GroupedExpression> => expression,
+    <l:@L> <name:Name> "(" <arguments:ExpressionList> ")" <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::FunctionCall { name, arguments },
+    ),
+    <l:@L> <name:Name> "[|" <elements:FunctionNamedExpressionElementList> "|]" <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::FunctionNamedCall { name, elements },
+    ),
+    <l:@L> "(" <first:TupleExpressionElement> "," <rest:TupleExpressionElementList> ")" <r:@R> => {
+        let mut elements = vec![first];
+        elements.extend(rest);
+        ast::Expression::new(Span::new(l, r), ExpressionKind::Tuple(elements))
+    },
+    <expression:SetExpression> => expression,
+    <l:@L> <subset:SubsetNameCall> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::SubsetCall(subset),
+    ),
+    <l:@L> <command:CommandExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Command(command),
+    ),
+    <l:@L> <name:Name> <r:@R> => ast::Expression::new(Span::new(l, r), ExpressionKind::Name(name)),
+};
+
+UnaryExpression: ast::Expression = {
+    <operator:PrefixOperator> <expression:UnaryExpression> => ast::Expression::new(
+        Span::new(operator.span().start, expression.span.end),
+        ExpressionKind::Prefix {
+            operator,
+            expression: Box::new(expression),
+        },
+    ),
+    <expression:PrimaryExpression> => expression,
+};
+
+HighPrecedenceExpression: ast::Expression = {
+    <first:UnaryExpression> => first,
+    <left:HighPrecedenceExpression> <operator:HighPrecedenceInfixOperator> <right:UnaryExpression> => {
+        let span = Span::new(left.span.start, right.span.end);
+        match operator {
+            HighPrecedenceInfix::Binary(operator) => ast::Expression::new(
+                span,
+                ExpressionKind::Binary {
+                    left: Box::new(left),
+                    operator,
+                    right: Box::new(right),
+                },
+            ),
+            HighPrecedenceInfix::Command(command) => ast::Expression::new(
+                span,
+                ExpressionKind::InfixCommand {
+                    left: Box::new(left),
+                    command,
+                    right: Box::new(right),
+                },
+            ),
+        }
+    },
+};
+
+PowerExpression: ast::Expression = {
+    <left:HighPrecedenceExpression> <operator:PowerOperator> <right:PowerExpression> => ast::Expression::new(
+        Span::new(left.span.start, right.span.end),
+        ExpressionKind::Binary {
+            left: Box::new(left),
+            operator,
+            right: Box::new(right),
+        },
+    ),
+    <expression:HighPrecedenceExpression> => expression,
+};
+
+MultiplicativeExpression: ast::Expression = {
+    <expression:PowerExpression> => expression,
+    <left:MultiplicativeExpression> <operator:MultiplicativeOperator> <right:PowerExpression> => ast::Expression::new(
+        Span::new(left.span.start, right.span.end),
+        ExpressionKind::Binary {
+            left: Box::new(left),
+            operator,
+            right: Box::new(right),
+        },
+    ),
+};
+
+AdditiveExpression: ast::Expression = {
+    <expression:MultiplicativeExpression> => expression,
+    <left:AdditiveExpression> <operator:AdditiveOperator> <right:MultiplicativeExpression> => ast::Expression::new(
+        Span::new(left.span.start, right.span.end),
+        ExpressionKind::Binary {
+            left: Box::new(left),
+            operator,
+            right: Box::new(right),
+        },
+    ),
+};
+
+EqualityExpression: ast::Expression = {
+    <expression:AdditiveExpression> => expression,
+    <left:EqualityExpression> <operator:EqualityOperator> <right:AdditiveExpression> => ast::Expression::new(
+        Span::new(left.span.start, right.span.end),
+        ExpressionKind::Binary {
+            left: Box::new(left),
+            operator,
+            right: Box::new(right),
+        },
+    ),
+};
+
+SpecOrPredicateExpression: ast::Expression = {
+    <expression:EqualityExpression> => expression,
+    <l:@L> <subject:EqualityExpression> <operator:QuotedName> <name:Name> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::SpecStatement(ast::SpecStatement {
+            span: Span::new(l, r),
+            subject: Box::new(subject),
+            operator,
+            name,
+        }),
+    ),
+    <l:@L> <subject:EqualityExpression> "is?" <command:CommandExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::IsPredicate {
+            subject: Box::new(subject),
+            command,
+        },
+    ),
+    <l:@L> <subject:EqualityExpression> "is_not?" <command:CommandExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::IsNotPredicate {
+            subject: Box::new(subject),
+            command,
+        },
+    ),
+    <l:@L> <subject:EqualityExpression> "is" <command:CommandExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::IsType {
+            subject: Box::new(subject),
+            ty: ast::TypeExpression::Command(command),
+        },
+    ),
+};

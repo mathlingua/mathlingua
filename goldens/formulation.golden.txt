@@ -1,0 +1,118 @@
+Value
+
+
+123
+
+
+`x + y`
+
+
+x + y * z
+
+
+x = y = z
+
+
+x ^ y ^ z
+
+
+-(.x + y.)
+
+
+(x + 1)[:some.label:]
+
+
+(.
+  x + y
+.)[:normalized:]
+
+
+x {.plus.} y
+
+
+x :{.before.} y
+
+
+x {.after.}: y
+
+
+f(x, y + z)
+
+
+(x, +, y)
+
+
+Domain[element]
+
+
+Pair[left, right]
+
+
+nested[outer[inner]]
+
+
+f[|value := x, Pair[left, right] := y, nested[outer[inner]] := z|]
+
+
+{x "in" X : f_(a_, b_) | y is \type{A}}
+
+
+{
+  x "in" X : f_(a_, b_)
+  | y is \type{A}
+}
+
+
+x "in" X
+
+
+x "maps_to" Codomain
+
+
+x is \type{A}
+
+
+x is? \even
+
+
+x is_not? \odd
+
+
+\set
+
+
+\closed.set
+
+
+\axiom.of.existence.of.empty.set
+
+
+\Z{n}
+
+
+\function:on{A}:to{B}
+
+
+\function:on{A}:to{B}(x)
+
+
+\group:over{A}
+
+
+\sin(x)
+
+
+\generalized.zeta{n}(x)
+
+
+\some.function:on{A}(x,y)
+
+
+\logic.$alias.=={x}{y}
+  :from{A}{B}
+  :to{C}
+  (x, y)
+  (z)
+
+
+x \:map.$alias.=={A}:to{B}:/ y

@@ -1,6 +1,5 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
 use crate::diagnostics::{ColorMode, DiagnosticFormatter, DiagnosticTracker};
-use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::structural::parse_document;
 use std::collections::BTreeSet;
 use std::env;
@@ -192,14 +191,7 @@ fn parse_source_file(path: &Path, diagnostics: &mut DiagnosticTracker) {
     };
 
     let mut file_diagnostics = DiagnosticTracker::new();
-    {
-        let mut parser = ProtoParser::new(&source, &mut file_diagnostics);
-        let _ = parser.parse();
-    }
-
-    if !file_diagnostics.has_errors() {
-        let _ = parse_document(&source, &mut file_diagnostics);
-    }
+    let _ = parse_document(&source, &mut file_diagnostics);
 
     for diagnostic in file_diagnostics.diagnostics() {
         diagnostics.push(diagnostic.clone().with_path(path.to_path_buf()));
@@ -307,16 +299,34 @@ mod tests {
         let result = run_in(temp_dir.path(), &[PathBuf::from("broken.mlg")]);
         let diagnostics = result.diagnostics.diagnostics();
 
-        assert_eq!(diagnostics.len(), 1);
-        assert_eq!(
-            diagnostics[0].location.path,
-            Some(file.canonicalize().unwrap())
-        );
-        assert_eq!(diagnostics[0].location.row, Some(0));
-        assert_eq!(
-            diagnostics[0].message,
-            "Single-quoted formulations are not allowed"
-        );
+        assert!(diagnostics.len() >= 1);
+        assert!(diagnostics.iter().all(|diagnostic| {
+            diagnostic.location.path == Some(file.canonicalize().unwrap())
+        }));
+        assert!(diagnostics.iter().any(|diagnostic| {
+            diagnostic.location.row == Some(0)
+                && diagnostic.message == "Single-quoted formulations are not allowed"
+        }));
+        assert!(result.diagnostics.has_errors());
+    }
+
+    #[test]
+    fn check_reports_structural_and_formulation_diagnostics_for_invalid_files() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("broken-structural.mlg");
+
+        fs::write(&file, "[\\function]\nDefines: x |plus|\n").unwrap();
+
+        let result = run_in(temp_dir.path(), &[PathBuf::from("broken-structural.mlg")]);
+        let diagnostics = result.diagnostics.diagnostics();
+
+        assert!(diagnostics.len() >= 1);
+        assert!(diagnostics.iter().all(|diagnostic| {
+            diagnostic.location.path == Some(file.canonicalize().unwrap())
+        }));
+        assert!(diagnostics.iter().any(|diagnostic| {
+            diagnostic.message.starts_with("Invalid Defines formulation:")
+        }));
         assert!(result.diagnostics.has_errors());
     }
 

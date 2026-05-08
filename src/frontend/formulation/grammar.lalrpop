@@ -15,6 +15,7 @@ extern {
         "|]" => Token::RNamedArguments,
         "\\:" => Token::InfixCommandStart,
         ":/" => Token::InfixCommandEnd,
+        "both_named_operator" => Token::BothNamedOperator(<String>),
         "named_operator" => Token::NamedOperator(<String>),
         "left_named_operator" => Token::LeftNamedOperator(<String>),
         "right_named_operator" => Token::RightNamedOperator(<String>),
@@ -90,12 +91,27 @@ AnyOperator: ast::Operator = {
     <l:@L> "^" <r:@R> => ast::Operator::new(Span::new(l, r), "^"),
 };
 
-FormOperator: ast::Operator = {
+InfixFormOperator: ast::Operator = {
     <operator:AnyOperator> => operator,
     <operator:NamedOperatorToken> => ast::Operator::new(operator.span, operator.name),
 };
 
+PrefixFormOperator: ast::Operator = {
+    <operator:AnyOperator> => operator,
+    <l:@L> <name:Name> "|" <r:@R> => ast::Operator::new(Span::new(l, r), name),
+};
+
+PostfixFormOperator: ast::Operator = {
+    <operator:AnyOperator> => operator,
+    <l:@L> "|" <name:Name> <r:@R> => ast::Operator::new(Span::new(l, r), name),
+};
+
 NamedOperatorToken: ast::NamedOperator = {
+    <l:@L> <name:"both_named_operator"> <r:@R> => ast::NamedOperator {
+        span: Span::new(l, r),
+        name,
+        kind: NamedOperatorKind::BothColon,
+    },
     <l:@L> <name:"named_operator"> <r:@R> => ast::NamedOperator {
         span: Span::new(l, r),
         name,
@@ -264,7 +280,7 @@ FormOrDeclaration: ast::FormOrDeclaration = {
     <form:FunctionFormOrDeclaration> => form,
     <form:TupleFormOrDeclaration> => form,
     <form:SetFormOrDeclaration> => form,
-    <l:@L> <left:Placeholder> <operator:FormOperator> <right:Placeholder> <r:@R> => ast::FormOrDeclaration::new(
+    <l:@L> <left:Placeholder> <operator:InfixFormOperator> <right:Placeholder> <r:@R> => ast::FormOrDeclaration::new(
         Span::new(l, r),
         FormOrDeclarationKind::InfixOperator {
             left,
@@ -272,14 +288,14 @@ FormOrDeclaration: ast::FormOrDeclaration = {
             right,
         },
     ),
-    <l:@L> <operator:FormOperator> <placeholder:Placeholder> <r:@R> => ast::FormOrDeclaration::new(
+    <l:@L> <operator:PrefixFormOperator> <placeholder:Placeholder> <r:@R> => ast::FormOrDeclaration::new(
         Span::new(l, r),
         FormOrDeclarationKind::PrefixOperator {
             operator,
             placeholder,
         },
     ),
-    <l:@L> <placeholder:Placeholder> <operator:FormOperator> <r:@R> => ast::FormOrDeclaration::new(
+    <l:@L> <placeholder:Placeholder> <operator:PostfixFormOperator> <r:@R> => ast::FormOrDeclaration::new(
         Span::new(l, r),
         FormOrDeclarationKind::PostfixOperator {
             placeholder,

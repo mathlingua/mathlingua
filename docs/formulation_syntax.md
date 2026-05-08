@@ -144,13 +144,19 @@ Important distinction:
 
 ### Named operators
 
-The lexer recognizes three named-operator spellings:
+The lexer recognizes four infix named-operator spellings:
 
-- plain: `{.name.}`
-- left-colon: `:{.name.}`
-- right-colon: `{.name.}:`
+- plain: `|name|`
+- left-colon: `:|name|`
+- right-colon: `|name|:`
+- both-colon: `:|name|:`
 
-`name` uses the identifier-like rule, not the backtick rule.
+For form declarations, it also recognizes:
+
+- prefix-form operator: `name|`
+- postfix-form operator: `|name`
+
+`name` uses the identifier-like rule, not the backtick rule in all of these spellings.
 
 ### Special operators
 
@@ -387,7 +393,7 @@ Examples:
 - `$alias`
 - `<=`
 
-Named operators like `{.plus.}` are not chain parts.
+Named operators like `|plus|` are not chain parts.
 
 ## Forms and Declarations
 
@@ -399,9 +405,9 @@ FormOrDeclaration ::=
   | FunctionFormOrDeclaration
   | TupleFormOrDeclaration
   | SetFormOrDeclaration
-  | Placeholder FormOperator Placeholder
-  | FormOperator Placeholder
-  | Placeholder FormOperator
+  | Placeholder InfixFormOperator Placeholder
+  | PrefixFormOperator Placeholder
+  | Placeholder PostfixFormOperator
 
 FunctionFormOrDeclaration ::= [Name ":="] FunctionForm
 FunctionForm ::= Name "(" MagneticPlaceholder ")"
@@ -436,9 +442,9 @@ Examples:
 - `Pair := (x_, y_)`
 - `{x_}`
 - `Set := {x_}`
-- `x_ {.plus.} y_`
-- `{.neg.} x_`
-- `x_ {.prime.}`
+- `x_ |plus| y_`
+- `neg| x_`
+- `x_ |prime`
 
 ## Statement-Like Form Parsers
 
@@ -695,9 +701,13 @@ MagneticPlaceholder ::= IdentifierName "__"
 QuotedName ::= "\"" IdentifierName "\""
 Label ::= "[:" IdentifierName ("." IdentifierName)* ":]"
 
-NamedOperator ::= "{." IdentifierName ".}"
-                | ":{." IdentifierName ".}"
-                | "{." IdentifierName ".}:"
+NamedOperator ::= "|" IdentifierName "|"
+                | ":|" IdentifierName "|"
+                | "|" IdentifierName "|:"
+                | ":|" IdentifierName "|:"
+
+PrefixFormNamedOperator ::= IdentifierName "|"
+PostfixFormNamedOperator ::= "|" IdentifierName
 
 SpecialOperator ::= token matched by (?:[-~!#%^&*+=|<>/]{2,}|[~!#%&<>])
 OperatorText ::= non-empty raw string whose characters are all in -~!#%^&*\+=|<>/
@@ -707,7 +717,9 @@ OperatorText ::= non-empty raw string whose characters are all in -~!#%^&*\+=|<>
 
 ```text
 AnyOperator ::= SpecialOperator | "+" | "-" | "*" | "/" | "=" | "^"
-FormOperator ::= AnyOperator | NamedOperator
+InfixFormOperator ::= AnyOperator | NamedOperator
+PrefixFormOperator ::= AnyOperator | PrefixFormNamedOperator
+PostfixFormOperator ::= AnyOperator | PostfixFormNamedOperator
 
 PlaceholderList ::= Placeholder ("," Placeholder)*
 ExpressionList ::= Expression ("," Expression)*
@@ -729,9 +741,9 @@ FormOrDeclaration ::=
   | FunctionFormOrDeclaration
   | TupleFormOrDeclaration
   | SetFormOrDeclaration
-  | Placeholder FormOperator Placeholder
-  | FormOperator Placeholder
-  | Placeholder FormOperator
+  | Placeholder InfixFormOperator Placeholder
+  | PrefixFormOperator Placeholder
+  | Placeholder PostfixFormOperator
 
 FunctionFormOrDeclaration ::= FunctionForm
                             | Name ":=" FunctionForm
@@ -948,7 +960,7 @@ Only the three hard-coded name-only shapes are accepted.
 
 ### Named-operator precedence is single-step
 
-The grammar does not allow an ungrouped chain like `a {.f.} b {.g.} c`.
+The grammar does not allow an ungrouped chain like `a |f| b |g| c`.
 
 ### Tail parts require `{...}`
 

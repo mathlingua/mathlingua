@@ -238,6 +238,7 @@ pub enum NamedOperatorKind {
     Plain,
     LeftColon,
     RightColon,
+    BothColon,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

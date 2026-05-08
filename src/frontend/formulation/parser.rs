@@ -1170,7 +1170,7 @@ mod tests {
 
     #[test]
     fn parses_named_operators() {
-        let expression = parse_expression("x {.plus.} y").expect("expected named operator");
+        let expression = parse_expression("x |plus| y").expect("expected named operator");
 
         match expression.kind {
             ExpressionKind::Binary {
@@ -1216,14 +1216,30 @@ mod tests {
 
     #[test]
     fn parses_operator_forms() {
-        let form = parse_form_or_declaration("x_ {.plus.} y_").expect("expected infix operator");
+        let plain = parse_form_or_declaration("x_ |plus| y_").expect("expected infix operator");
+        let left = parse_form_or_declaration("x_ :|before| y_")
+            .expect("expected left-colon infix operator");
+        let right = parse_form_or_declaration("x_ |after|: y_")
+            .expect("expected right-colon infix operator");
+        let both = parse_form_or_declaration("x_ :|around|: y_")
+            .expect("expected both-colon infix operator");
 
-        match form.kind {
-            FormOrDeclarationKind::InfixOperator { operator, .. } => {
-                assert_eq!(operator.text, "plus");
-            }
-            other => panic!("expected infix operator form, got {other:?}"),
-        }
+        assert!(matches!(
+            plain.kind,
+            FormOrDeclarationKind::InfixOperator { ref operator, .. } if operator.text == "plus"
+        ));
+        assert!(matches!(
+            left.kind,
+            FormOrDeclarationKind::InfixOperator { ref operator, .. } if operator.text == "before"
+        ));
+        assert!(matches!(
+            right.kind,
+            FormOrDeclarationKind::InfixOperator { ref operator, .. } if operator.text == "after"
+        ));
+        assert!(matches!(
+            both.kind,
+            FormOrDeclarationKind::InfixOperator { ref operator, .. } if operator.text == "around"
+        ));
     }
 
     #[test]
@@ -1669,8 +1685,12 @@ mod tests {
     fn parses_prefix_postfix_and_infix_operator_forms() {
         let prefix = parse_form_or_declaration("-x_").expect("expected prefix operator form");
         let postfix = parse_form_or_declaration("x_ !").expect("expected postfix operator form");
+        let named_prefix =
+            parse_form_or_declaration("neg| x_").expect("expected named prefix operator form");
+        let named_postfix =
+            parse_form_or_declaration("x_ |prime").expect("expected named postfix operator form");
         let infix =
-            parse_form_or_declaration("x_ {.plus.} y_").expect("expected infix operator form");
+            parse_form_or_declaration("x_ |plus| y_").expect("expected infix operator form");
 
         assert!(matches!(
             prefix.kind,
@@ -1681,15 +1701,24 @@ mod tests {
             FormOrDeclarationKind::PostfixOperator { ref operator, .. } if operator.text == "!"
         ));
         assert!(matches!(
+            named_prefix.kind,
+            FormOrDeclarationKind::PrefixOperator { ref operator, .. } if operator.text == "neg"
+        ));
+        assert!(matches!(
+            named_postfix.kind,
+            FormOrDeclarationKind::PostfixOperator { ref operator, .. } if operator.text == "prime"
+        ));
+        assert!(matches!(
             infix.kind,
             FormOrDeclarationKind::InfixOperator { ref operator, .. } if operator.text == "plus"
         ));
     }
 
     #[test]
-    fn parses_left_and_right_named_operator_expressions() {
-        let left = parse_expression("x :{.before.} y").expect("expected left-colon operator");
-        let right = parse_expression("x {.after.}: y").expect("expected right-colon operator");
+    fn parses_left_right_and_both_named_operator_expressions() {
+        let left = parse_expression("x :|before| y").expect("expected left-colon operator");
+        let right = parse_expression("x |after|: y").expect("expected right-colon operator");
+        let both = parse_expression("x :|around|: y").expect("expected both-colon operator");
 
         assert!(matches!(
             left.kind,
@@ -1704,6 +1733,13 @@ mod tests {
                 operator: BinaryOperator::Named(ref operator),
                 ..
             } if operator.kind == NamedOperatorKind::RightColon && operator.name == "after"
+        ));
+        assert!(matches!(
+            both.kind,
+            ExpressionKind::Binary {
+                operator: BinaryOperator::Named(ref operator),
+                ..
+            } if operator.kind == NamedOperatorKind::BothColon && operator.name == "around"
         ));
     }
 

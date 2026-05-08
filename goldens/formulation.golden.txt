@@ -27,13 +27,16 @@ x ^ y ^ z
 .)[:normalized:]
 
 
-x {.plus.} y
+x |plus| y
 
 
-x :{.before.} y
+x :|before| y
 
 
-x {.after.}: y
+x |after|: y
+
+
+x :|around|: y
 
 
 f(x, y + z)

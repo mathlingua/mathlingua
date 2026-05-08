@@ -33,7 +33,7 @@ mod tests {
 
     #[test]
     fn lexes_placeholders_names_and_operators() {
-        let tokens: Vec<_> = Lexer::new("f(x_, y__) + {.op.}")
+        let tokens: Vec<_> = Lexer::new("f(x_, y__) + |op| neg| |prime")
             .map(|item| item.expect("expected valid token").1)
             .collect();
 
@@ -48,6 +48,10 @@ mod tests {
                 Token::RParen,
                 Token::Plus,
                 Token::NamedOperator("op".to_string()),
+                Token::Name("neg".to_string()),
+                Token::Pipe,
+                Token::Pipe,
+                Token::Name("prime".to_string()),
             ]
         );
     }
@@ -102,7 +106,7 @@ mod tests {
     #[test]
     fn lexes_alias_tokens_named_argument_delimiters_and_predicates() {
         let tokens: Vec<_> = Lexer::new(
-            r#"(.x.) [| |] :{.left.} {.mid.} {.right.}: := :=> :-> :~> is via is? is_not? \: :/"#,
+            r#"(.x.) [| |] :|left| |mid| |right|: :|both|: := :=> :-> :~> is via is? is_not? \: :/"#,
         )
         .map(|item| item.expect("expected valid token").1)
         .collect();
@@ -118,6 +122,7 @@ mod tests {
                 Token::LeftNamedOperator("left".to_string()),
                 Token::NamedOperator("mid".to_string()),
                 Token::RightNamedOperator("right".to_string()),
+                Token::BothNamedOperator("both".to_string()),
                 Token::Declare,
                 Token::ExpressionAlias,
                 Token::SpecOperatorAlias,

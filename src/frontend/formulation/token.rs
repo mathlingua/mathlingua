@@ -32,17 +32,22 @@ pub enum Token {
     #[token(":/")]
     InfixCommandEnd,
     #[regex(
-        r":\{\.[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\.\}",
+        r":\|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\|:",
+        both_named_operator
+    )]
+    BothNamedOperator(String),
+    #[regex(
+        r":\|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\|",
         left_named_operator
     )]
     LeftNamedOperator(String),
     #[regex(
-        r"\{\.[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\.\}:",
+        r"\|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\|:",
         right_named_operator
     )]
     RightNamedOperator(String),
     #[regex(
-        r"\{\.[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\.\}",
+        r"\|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\|",
         plain_named_operator
     )]
     NamedOperator(String),
@@ -117,17 +122,22 @@ pub enum Token {
 
 fn plain_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
     let slice = lex.slice();
+    slice[1..slice.len() - 1].to_owned()
+}
+
+fn both_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
+    let slice = lex.slice();
     slice[2..slice.len() - 2].to_owned()
 }
 
 fn left_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
     let slice = lex.slice();
-    slice[3..slice.len() - 2].to_owned()
+    slice[2..slice.len() - 1].to_owned()
 }
 
 fn right_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
     let slice = lex.slice();
-    slice[2..slice.len() - 3].to_owned()
+    slice[1..slice.len() - 2].to_owned()
 }
 
 fn parse_label(lex: &mut logos::Lexer<'_, Token>) -> Vec<String> {

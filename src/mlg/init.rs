@@ -6,35 +6,35 @@ use std::path::Path;
 
 const DEFAULT_CONFIG: &str = "{}\n";
 
-pub fn init(root: &Path, diagnostics: &mut DiagnosticTracker) -> io::Result<()> {
+pub fn init(root: &Path, tracker: &mut DiagnosticTracker) -> io::Result<()> {
     let config_path = root.join(CONFIG_FILE);
     if config_path.exists() {
-        diagnostics.log(format!("Skipping {CONFIG_FILE}; it already exists"));
+        tracker.log(format!("Skipping {CONFIG_FILE}; it already exists"));
     } else {
         if let Err(error) = fs::write(&config_path, DEFAULT_CONFIG) {
-            diagnostics.path_error(
+            tracker.path_error(
                 config_path,
                 format!("Failed to write {CONFIG_FILE}: {error}"),
             );
             return Err(error);
         }
 
-        diagnostics.log(format!("Created {CONFIG_FILE}"));
+        tracker.log(format!("Created {CONFIG_FILE}"));
     }
 
     let content_path = root.join(CONTENT_DIR);
     if content_path.exists() {
-        diagnostics.log(format!("Skipping {CONTENT_DIR}/; it already exists"));
+        tracker.log(format!("Skipping {CONTENT_DIR}/; it already exists"));
     } else {
         if let Err(error) = fs::create_dir(&content_path) {
-            diagnostics.path_error(
+            tracker.path_error(
                 content_path,
                 format!("Failed to create {CONTENT_DIR}/: {error}"),
             );
             return Err(error);
         }
 
-        diagnostics.log(format!("Created {CONTENT_DIR}/"));
+        tracker.log(format!("Created {CONTENT_DIR}/"));
     }
 
     Ok(())
@@ -53,12 +53,12 @@ mod tests {
     #[test]
     fn init_creates_missing_config_and_content_directory() {
         let temp_dir = TestDir::new();
-        let mut diagnostics = DiagnosticTracker::new();
+        let mut tracker = DiagnosticTracker::new();
 
-        init(temp_dir.path(), &mut diagnostics).expect("init should succeed");
+        init(temp_dir.path(), &mut tracker).expect("init should succeed");
 
         assert_eq!(
-            diagnostics.diagnostics(),
+            tracker.diagnostics(),
             vec![
                 Diagnostic::log(format!("Created {CONFIG_FILE}")),
                 Diagnostic::log(format!("Created {CONTENT_DIR}/")),
@@ -76,12 +76,12 @@ mod tests {
         let temp_dir = TestDir::new();
         fs::write(temp_dir.path().join(CONFIG_FILE), DEFAULT_CONFIG).unwrap();
         fs::create_dir(temp_dir.path().join(CONTENT_DIR)).unwrap();
-        let mut diagnostics = DiagnosticTracker::new();
+        let mut tracker = DiagnosticTracker::new();
 
-        init(temp_dir.path(), &mut diagnostics).expect("init should succeed");
+        init(temp_dir.path(), &mut tracker).expect("init should succeed");
 
         assert_eq!(
-            diagnostics.diagnostics(),
+            tracker.diagnostics(),
             vec![
                 Diagnostic::log(format!("Skipping {CONFIG_FILE}; it already exists")),
                 Diagnostic::log(format!("Skipping {CONTENT_DIR}/; it already exists")),

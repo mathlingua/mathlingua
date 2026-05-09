@@ -1,7 +1,7 @@
 use crate::diagnostics::DiagnosticTracker;
 
-pub fn view(diagnostics: &mut DiagnosticTracker) {
-    diagnostics.log("view");
+pub fn view(tracker: &mut DiagnosticTracker) {
+    tracker.log("view");
 }
 
 #[cfg(test)]
@@ -11,10 +11,10 @@ mod tests {
 
     #[test]
     fn returns_placeholder_view_output() {
-        let mut diagnostics = DiagnosticTracker::new();
+        let mut tracker = DiagnosticTracker::new();
 
-        view(&mut diagnostics);
+        view(&mut tracker);
 
-        assert_eq!(diagnostics.diagnostics(), [Diagnostic::log("view")]);
+        assert_eq!(tracker.diagnostics(), [Diagnostic::log("view")]);
     }
 }

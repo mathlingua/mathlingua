@@ -6,19 +6,19 @@ use std::process;
 
 fn main() {
     let cli = Cli::parse();
-    let mut diagnostics = DiagnosticTracker::new()
+    let mut tracker = DiagnosticTracker::new()
         .with_live(true)
         .with_color_mode(ColorMode::Auto);
 
     let exit_code = match cli.command {
-        Command::Check(args) => run_check(&args.paths, &mut diagnostics),
-        Command::Init => run_init(&mut diagnostics),
+        Command::Check(args) => run_check(&args.paths, &mut tracker),
+        Command::Init => run_init(&mut tracker),
         Command::Version => {
-            mlg::version(&mut diagnostics);
+            mlg::version(&mut tracker);
             0
         }
         Command::View => {
-            mlg::view(&mut diagnostics);
+            mlg::view(&mut tracker);
             0
         }
     };
@@ -28,35 +28,35 @@ fn main() {
     }
 }
 
-fn run_check(paths: &[std::path::PathBuf], diagnostics: &mut DiagnosticTracker) -> i32 {
+fn run_check(paths: &[std::path::PathBuf], tracker: &mut DiagnosticTracker) -> i32 {
     let cwd = match env::current_dir() {
         Ok(cwd) => cwd,
         Err(error) => {
-            diagnostics.global_error(format!(
+            tracker.global_error(format!(
                 "Failed to determine the current working directory: {error}"
             ));
             return 1;
         }
     };
 
-    diagnostics.set_base_path(&cwd);
-    let _ = mlg::check_in(&cwd, paths, diagnostics);
+    tracker.set_base_path(&cwd);
+    let _ = mlg::check_in(&cwd, paths, tracker);
 
-    if diagnostics.has_errors() { 1 } else { 0 }
+    if tracker.has_errors() { 1 } else { 0 }
 }
 
-fn run_init(diagnostics: &mut DiagnosticTracker) -> i32 {
+fn run_init(tracker: &mut DiagnosticTracker) -> i32 {
     let cwd = match env::current_dir() {
         Ok(cwd) => cwd,
         Err(error) => {
-            diagnostics.global_error(format!(
+            tracker.global_error(format!(
                 "Failed to determine the current working directory: {error}"
             ));
             return 1;
         }
     };
 
-    if mlg::init(&cwd, diagnostics).is_err() || diagnostics.has_errors() {
+    if mlg::init(&cwd, tracker).is_err() || tracker.has_errors() {
         1
     } else {
         0

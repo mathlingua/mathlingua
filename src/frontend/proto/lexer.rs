@@ -5,15 +5,15 @@ use crate::diagnostics::DiagnosticTracker;
 pub struct Lexer<'a> {
     lines: Vec<Line>,
     cursor: usize,
-    diagnostics: &'a mut DiagnosticTracker,
+    tracker: &'a mut DiagnosticTracker,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(input: &str, diagnostics: &'a mut DiagnosticTracker) -> Self {
+    pub fn new(input: &str, tracker: &'a mut DiagnosticTracker) -> Self {
         Self {
             lines: text_to_lines(input),
             cursor: 0,
-            diagnostics,
+            tracker,
         }
     }
 
@@ -22,7 +22,7 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn error(&mut self, row: usize, message: impl Into<String>) {
-        self.diagnostics.error(row, message);
+        self.tracker.error(row, message);
     }
 }
 

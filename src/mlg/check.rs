@@ -12,30 +12,30 @@ pub struct CheckResult {
     pub files_checked: usize,
 }
 
-pub fn check(paths: &[PathBuf], diagnostics: &mut DiagnosticTracker) -> io::Result<CheckResult> {
+pub fn check(paths: &[PathBuf], tracker: &mut DiagnosticTracker) -> io::Result<CheckResult> {
     let cwd = match env::current_dir() {
         Ok(cwd) => cwd,
         Err(error) => {
-            diagnostics.global_error(format!(
+            tracker.global_error(format!(
                 "Failed to determine the current working directory: {error}"
             ));
             return Err(error);
         }
     };
 
-    Ok(check_in(&cwd, paths, diagnostics))
+    Ok(check_in(&cwd, paths, tracker))
 }
 
-pub fn check_in(cwd: &Path, paths: &[PathBuf], diagnostics: &mut DiagnosticTracker) -> CheckResult {
-    let starting_diagnostic_count = diagnostics.diagnostics().len();
-    let files = resolve_source_files(cwd, paths, diagnostics);
+pub fn check_in(cwd: &Path, paths: &[PathBuf], tracker: &mut DiagnosticTracker) -> CheckResult {
+    let starting_diagnostic_count = tracker.diagnostics().len();
+    let files = resolve_source_files(cwd, paths, tracker);
     let files_checked = files.len();
 
     for file in files {
-        parse_source_file(&file, diagnostics);
+        parse_source_file(&file, tracker);
     }
 
-    let new_diagnostics = &diagnostics.diagnostics()[starting_diagnostic_count..];
+    let new_diagnostics = &tracker.diagnostics()[starting_diagnostic_count..];
     let has_new_errors = new_diagnostics
         .iter()
         .any(|diagnostic| diagnostic.level == Level::Error);
@@ -45,12 +45,12 @@ pub fn check_in(cwd: &Path, paths: &[PathBuf], diagnostics: &mut DiagnosticTrack
         .count();
 
     if has_new_errors {
-        diagnostics.log(format!(
+        tracker.log(format!(
             "Found {}.",
             format_diagnostic_count(new_issue_count)
         ));
     } else {
-        diagnostics.log(render_check_success(files_checked));
+        tracker.log(render_check_success(files_checked));
     }
 
     CheckResult { files_checked }
@@ -59,24 +59,24 @@ pub fn check_in(cwd: &Path, paths: &[PathBuf], diagnostics: &mut DiagnosticTrack
 fn resolve_source_files(
     cwd: &Path,
     paths: &[PathBuf],
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Vec<PathBuf> {
     let mut files = BTreeSet::new();
 
     if paths.is_empty() {
         let Some(root) = find_collection_root(cwd) else {
-            diagnostics.path_error(
+            tracker.path_error(
                 cwd.to_path_buf(),
                 "Not inside a Mathlingua collection and no paths were provided",
             );
             return Vec::new();
         };
 
-        collect_source_files(root.join(CONTENT_DIR), &mut files, diagnostics);
+        collect_source_files(root.join(CONTENT_DIR), &mut files, tracker);
     } else {
         for path in paths {
-            if let Some(resolved_path) = resolve_input_path(cwd, path, diagnostics) {
-                collect_source_files(resolved_path, &mut files, diagnostics);
+            if let Some(resolved_path) = resolve_input_path(cwd, path, tracker) {
+                collect_source_files(resolved_path, &mut files, tracker);
             }
         }
     }
@@ -84,11 +84,7 @@ fn resolve_source_files(
     files.into_iter().collect()
 }
 
-fn resolve_input_path(
-    cwd: &Path,
-    path: &Path,
-    diagnostics: &mut DiagnosticTracker,
-) -> Option<PathBuf> {
+fn resolve_input_path(cwd: &Path, path: &Path, tracker: &mut DiagnosticTracker) -> Option<PathBuf> {
     let joined = if path.is_absolute() {
         path.to_path_buf()
     } else {
@@ -98,7 +94,7 @@ fn resolve_input_path(
     match joined.canonicalize() {
         Ok(path) => Some(path),
         Err(error) => {
-            diagnostics.path_error(joined, format!("Failed to resolve path: {error}"));
+            tracker.path_error(joined, format!("Failed to resolve path: {error}"));
             None
         }
     }
@@ -114,33 +110,33 @@ fn find_collection_root(start: &Path) -> Option<PathBuf> {
 fn collect_source_files(
     target: PathBuf,
     files: &mut BTreeSet<PathBuf>,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) {
     match fs::metadata(&target) {
         Ok(metadata) if metadata.is_dir() => {
-            collect_directory_source_files(&target, files, diagnostics)
+            collect_directory_source_files(&target, files, tracker)
         }
         Ok(metadata) if metadata.is_file() => {
             if is_mathlingua_source_file(&target) {
                 files.insert(target);
             } else {
-                diagnostics.path_error(target, "Not a .mlg file");
+                tracker.path_error(target, "Not a .mlg file");
             }
         }
-        Ok(_) => diagnostics.path_error(target, "Unsupported filesystem entry"),
-        Err(error) => diagnostics.path_error(target, format!("Failed to read path: {error}")),
+        Ok(_) => tracker.path_error(target, "Unsupported filesystem entry"),
+        Err(error) => tracker.path_error(target, format!("Failed to read path: {error}")),
     }
 }
 
 fn collect_directory_source_files(
     directory: &Path,
     files: &mut BTreeSet<PathBuf>,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) {
     let entries = match read_directory_entries(directory) {
         Ok(entries) => entries,
         Err(error) => {
-            diagnostics.path_error(
+            tracker.path_error(
                 directory.to_path_buf(),
                 format!("Failed to read directory: {error}"),
             );
@@ -152,7 +148,7 @@ fn collect_directory_source_files(
         let path = entry.path();
 
         if path.is_dir() {
-            collect_directory_source_files(&path, files, diagnostics);
+            collect_directory_source_files(&path, files, tracker);
         } else if path.is_file() && is_mathlingua_source_file(&path) {
             files.insert(path);
         }
@@ -172,11 +168,11 @@ fn is_mathlingua_source_file(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-fn parse_source_file(path: &Path, diagnostics: &mut DiagnosticTracker) {
+fn parse_source_file(path: &Path, tracker: &mut DiagnosticTracker) {
     let source = match fs::read_to_string(path) {
         Ok(source) => source,
         Err(error) => {
-            diagnostics.path_error(path.to_path_buf(), format!("Failed to read file: {error}"));
+            tracker.path_error(path.to_path_buf(), format!("Failed to read file: {error}"));
             return;
         }
     };
@@ -185,7 +181,7 @@ fn parse_source_file(path: &Path, diagnostics: &mut DiagnosticTracker) {
     let _ = parse_document(&source, &mut file_diagnostics);
 
     for diagnostic in file_diagnostics.diagnostics() {
-        diagnostics.push(diagnostic.clone().with_path(path.to_path_buf()));
+        tracker.push(diagnostic.clone().with_path(path.to_path_buf()));
     }
 }
 
@@ -231,34 +227,31 @@ mod tests {
         fs::write(root.join("content/sets.mlg"), "Title: \"Sets\"\n").unwrap();
         fs::write(nested_cwd.join("groups.mlg"), "Title: \"Groups\"\n").unwrap();
 
-        let mut diagnostics = DiagnosticTracker::new();
-        let result = check_in(&nested_cwd, &[], &mut diagnostics);
+        let mut tracker = DiagnosticTracker::new();
+        let result = check_in(&nested_cwd, &[], &mut tracker);
 
         assert_eq!(result.files_checked, 2);
-        assert_eq!(
-            diagnostics.diagnostics(),
-            [Diagnostic::log("Checked 2 files")]
-        );
+        assert_eq!(tracker.diagnostics(), [Diagnostic::log("Checked 2 files")]);
     }
 
     #[test]
     fn check_without_arguments_errors_when_not_in_a_collection() {
         let temp_dir = TestDir::new();
 
-        let mut diagnostics = DiagnosticTracker::new();
-        let result = check_in(temp_dir.path(), &[], &mut diagnostics);
+        let mut tracker = DiagnosticTracker::new();
+        let result = check_in(temp_dir.path(), &[], &mut tracker);
 
         assert_eq!(result.files_checked, 0);
-        assert_eq!(diagnostics.issue_count(), 1);
+        assert_eq!(tracker.issue_count(), 1);
         assert_eq!(
-            diagnostics.diagnostics()[0].message,
+            tracker.diagnostics()[0].message,
             "Not inside a Mathlingua collection and no paths were provided"
         );
         assert_eq!(
-            diagnostics.diagnostics()[1],
+            tracker.diagnostics()[1],
             Diagnostic::log("Found 1 diagnostic.")
         );
-        assert!(diagnostics.has_errors());
+        assert!(tracker.has_errors());
     }
 
     #[test]
@@ -270,14 +263,11 @@ mod tests {
         fs::write(docs.join("intro.mlg"), "Title: \"Intro\"\n").unwrap();
         fs::write(docs.join("notes.txt"), "ignore me").unwrap();
 
-        let mut diagnostics = DiagnosticTracker::new();
-        let result = check_in(temp_dir.path(), &[PathBuf::from("docs")], &mut diagnostics);
+        let mut tracker = DiagnosticTracker::new();
+        let result = check_in(temp_dir.path(), &[PathBuf::from("docs")], &mut tracker);
 
         assert_eq!(result.files_checked, 1);
-        assert_eq!(
-            diagnostics.diagnostics(),
-            [Diagnostic::log("Checked 1 file")]
-        );
+        assert_eq!(tracker.diagnostics(), [Diagnostic::log("Checked 1 file")]);
     }
 
     #[test]
@@ -288,14 +278,11 @@ mod tests {
         fs::create_dir_all(root.join("content")).unwrap();
         fs::write(root.join("mlg.json"), "{}\n").unwrap();
 
-        let mut diagnostics = DiagnosticTracker::new();
-        let result = check_in(&root, &[], &mut diagnostics);
+        let mut tracker = DiagnosticTracker::new();
+        let result = check_in(&root, &[], &mut tracker);
 
         assert_eq!(result.files_checked, 0);
-        assert_eq!(
-            diagnostics.diagnostics(),
-            [Diagnostic::log("Checked 0 files")]
-        );
+        assert_eq!(tracker.diagnostics(), [Diagnostic::log("Checked 0 files")]);
     }
 
     #[test]
@@ -305,13 +292,13 @@ mod tests {
 
         fs::write(&file, "Defines: 'f(x_)'\n").unwrap();
 
-        let mut diagnostics = DiagnosticTracker::new();
+        let mut tracker = DiagnosticTracker::new();
         let result = check_in(
             temp_dir.path(),
             &[PathBuf::from("broken.mlg")],
-            &mut diagnostics,
+            &mut tracker,
         );
-        let diagnostics = diagnostics.diagnostics();
+        let diagnostics = tracker.diagnostics();
 
         assert_eq!(result.files_checked, 1);
         assert!(
@@ -347,13 +334,13 @@ mod tests {
 
         fs::write(&file, "[\\function]\nDefines: x |plus|\n").unwrap();
 
-        let mut diagnostics = DiagnosticTracker::new();
+        let mut tracker = DiagnosticTracker::new();
         let result = check_in(
             temp_dir.path(),
             &[PathBuf::from("broken-structural.mlg")],
-            &mut diagnostics,
+            &mut tracker,
         );
-        let diagnostics = diagnostics.diagnostics();
+        let diagnostics = tracker.diagnostics();
 
         assert_eq!(result.files_checked, 1);
         assert!(
@@ -391,13 +378,9 @@ mod tests {
 
         fs::write(&file, "not mathlingua").unwrap();
 
-        let mut diagnostics = DiagnosticTracker::new();
-        let result = check_in(
-            temp_dir.path(),
-            &[PathBuf::from("notes.txt")],
-            &mut diagnostics,
-        );
-        let diagnostics = diagnostics.diagnostics();
+        let mut tracker = DiagnosticTracker::new();
+        let result = check_in(temp_dir.path(), &[PathBuf::from("notes.txt")], &mut tracker);
+        let diagnostics = tracker.diagnostics();
 
         assert_eq!(result.files_checked, 0);
         assert_eq!(diagnostics.len(), 2);
@@ -420,14 +403,14 @@ mod tests {
         fs::write(nested.join("b.mlg"), "Defines: B\n").unwrap();
         fs::write(&extra, "Defines: C\n").unwrap();
 
-        let mut diagnostics = DiagnosticTracker::new();
+        let mut tracker = DiagnosticTracker::new();
         let files = resolve_source_files(
             temp_dir.path(),
             &[PathBuf::from("docs"), PathBuf::from("extra.mlg")],
-            &mut diagnostics,
+            &mut tracker,
         );
 
-        assert!(diagnostics.diagnostics().is_empty());
+        assert!(tracker.diagnostics().is_empty());
         assert_eq!(files.len(), 3);
     }
 

@@ -11,9 +11,9 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(input: &str, diagnostics: &'a mut DiagnosticTracker) -> Self {
+    pub fn new(input: &str, tracker: &'a mut DiagnosticTracker) -> Self {
         Self {
-            lexer: Lexer::new(input, diagnostics),
+            lexer: Lexer::new(input, tracker),
         }
     }
 

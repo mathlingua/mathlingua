@@ -15,15 +15,15 @@ use crate::frontend::proto::ast::{
 
 use super::ast::*;
 
-pub fn parse_document(input: &str, diagnostics: &mut DiagnosticTracker) -> Document {
+pub fn parse_document(input: &str, tracker: &mut DiagnosticTracker) -> Document {
     let groups = {
-        let mut proto_parser = ProtoParser::new(input, diagnostics);
+        let mut proto_parser = ProtoParser::new(input, tracker);
         proto_parser.parse()
     };
 
     let mut items = Vec::new();
     for group in &groups {
-        if let Some(item) = parse_top_level_group(group, diagnostics) {
+        if let Some(item) = parse_top_level_group(group, tracker) {
             items.push(item);
         }
     }
@@ -35,28 +35,28 @@ pub fn parse_document(input: &str, diagnostics: &mut DiagnosticTracker) -> Docum
 
 fn parse_top_level_group(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<TopLevelItem> {
     let label = first_section_label(group)?;
     match label {
-        "Title" => parse_title(group, diagnostics).map(TopLevelItem::Title),
-        "Section" => parse_section(group, diagnostics).map(TopLevelItem::Section),
-        "Subsection" => parse_subsection(group, diagnostics).map(TopLevelItem::Subsection),
-        "Subsubsection" => parse_subsubsection(group, diagnostics).map(TopLevelItem::Subsubsection),
-        "Describes" => parse_describes(group, diagnostics).map(TopLevelItem::Describes),
-        "Defines" => parse_defines(group, diagnostics).map(TopLevelItem::Defines),
-        "Refines" => parse_refines(group, diagnostics).map(TopLevelItem::Refines),
-        "States" => parse_states(group, diagnostics).map(TopLevelItem::States),
-        "Axiom" => parse_axiom(group, diagnostics).map(TopLevelItem::Axiom),
-        "Theorem" => parse_theorem(group, diagnostics).map(TopLevelItem::Theorem),
-        "Corollary" => parse_corollary(group, diagnostics).map(TopLevelItem::Corollary),
-        "Lemma" => parse_lemma(group, diagnostics).map(TopLevelItem::Lemma),
-        "Conjecture" => parse_conjecture(group, diagnostics).map(TopLevelItem::Conjecture),
-        "Person" => parse_person(group, diagnostics).map(TopLevelItem::Person),
-        "Resource" => parse_resource(group, diagnostics).map(TopLevelItem::Resource),
-        "Specify" => parse_specify(group, diagnostics).map(TopLevelItem::Specify),
+        "Title" => parse_title(group, tracker).map(TopLevelItem::Title),
+        "Section" => parse_section(group, tracker).map(TopLevelItem::Section),
+        "Subsection" => parse_subsection(group, tracker).map(TopLevelItem::Subsection),
+        "Subsubsection" => parse_subsubsection(group, tracker).map(TopLevelItem::Subsubsection),
+        "Describes" => parse_describes(group, tracker).map(TopLevelItem::Describes),
+        "Defines" => parse_defines(group, tracker).map(TopLevelItem::Defines),
+        "Refines" => parse_refines(group, tracker).map(TopLevelItem::Refines),
+        "States" => parse_states(group, tracker).map(TopLevelItem::States),
+        "Axiom" => parse_axiom(group, tracker).map(TopLevelItem::Axiom),
+        "Theorem" => parse_theorem(group, tracker).map(TopLevelItem::Theorem),
+        "Corollary" => parse_corollary(group, tracker).map(TopLevelItem::Corollary),
+        "Lemma" => parse_lemma(group, tracker).map(TopLevelItem::Lemma),
+        "Conjecture" => parse_conjecture(group, tracker).map(TopLevelItem::Conjecture),
+        "Person" => parse_person(group, tracker).map(TopLevelItem::Person),
+        "Resource" => parse_resource(group, tracker).map(TopLevelItem::Resource),
+        "Specify" => parse_specify(group, tracker).map(TopLevelItem::Specify),
         other => {
-            diagnostics.error(
+            tracker.error(
                 group.metadata.row,
                 format!("Unexpected top-level group `{other}`"),
             );
@@ -65,42 +65,38 @@ fn parse_top_level_group(
     }
 }
 
-fn parse_title(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<TitleGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("Title", &group.sections, diagnostics, &["Title"])?;
+fn parse_title(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<TitleGroup> {
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("Title", &group.sections, tracker, &["Title"])?;
     Some(TitleGroup {
         title: TitleSection {
-            argument: parse_required_open_text(section(&sections, "Title")?, "Title", diagnostics)?,
+            argument: parse_required_open_text(section(&sections, "Title")?, "Title", tracker)?,
         },
     })
 }
 
-fn parse_section(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<SectionGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("Section", &group.sections, diagnostics, &["Section"])?;
+fn parse_section(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<SectionGroup> {
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("Section", &group.sections, tracker, &["Section"])?;
     Some(SectionGroup {
         section: SectionSection {
-            argument: parse_required_open_text(
-                section(&sections, "Section")?,
-                "Section",
-                diagnostics,
-            )?,
+            argument: parse_required_open_text(section(&sections, "Section")?, "Section", tracker)?,
         },
     })
 }
 
 fn parse_subsection(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<SubsectionGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("Subsection", &group.sections, diagnostics, &["Subsection"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("Subsection", &group.sections, tracker, &["Subsection"])?;
     Some(SubsectionGroup {
         subsection: SubsectionSection {
             argument: parse_required_open_text(
                 section(&sections, "Subsection")?,
                 "Subsection",
-                diagnostics,
+                tracker,
             )?,
         },
     })
@@ -108,13 +104,13 @@ fn parse_subsection(
 
 fn parse_subsubsection(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<SubsubsectionGroup> {
-    ensure_no_heading(group, diagnostics)?;
+    ensure_no_heading(group, tracker)?;
     let sections = identify_sections(
         "Subsubsection",
         &group.sections,
-        diagnostics,
+        tracker,
         &["Subsubsection"],
     )?;
     Some(SubsubsectionGroup {
@@ -122,21 +118,18 @@ fn parse_subsubsection(
             argument: parse_required_open_text(
                 section(&sections, "Subsubsection")?,
                 "Subsubsection",
-                diagnostics,
+                tracker,
             )?,
         },
     })
 }
 
-fn parse_describes(
-    group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
-) -> Option<DescribesGroup> {
-    let heading = parse_required_command_heading(group, diagnostics)?;
+fn parse_describes(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<DescribesGroup> {
+    let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
         "Describes",
         &group.sections,
-        diagnostics,
+        tracker,
         &[
             "Describes",
             "using?",
@@ -159,73 +152,63 @@ fn parse_describes(
             argument: parse_required_formulation(
                 section(&sections, "Describes")?,
                 "Describes",
-                diagnostics,
+                tracker,
                 parse_form_or_declaration,
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", diagnostics, parse_is_or_spec)
+            parse_required_formulations(section, "using", tracker, parse_is_or_spec)
                 .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
-            parse_required_clauses(section, "when", diagnostics)
+            parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
         extends: sections.get("extends").copied().and_then(|section| {
-            parse_required_formulation(section, "extends", diagnostics, parse_is_or_via_item)
+            parse_required_formulation(section, "extends", tracker, parse_is_or_via_item)
                 .map(|argument| ExtendsSection { argument })
         }),
         specifies: sections.get("specifies").copied().and_then(|section| {
-            parse_required_formulations(section, "specifies", diagnostics, parse_is_or_via_item)
+            parse_required_formulations(section, "specifies", tracker, parse_is_or_via_item)
                 .map(|arguments| DescribesSpecifiesSection { arguments })
         }),
         satisfies: sections.get("satisfies").copied().and_then(|section| {
-            parse_required_clauses(section, "satisfies", diagnostics)
+            parse_required_clauses(section, "satisfies", tracker)
                 .map(|arguments| SatisfiesSection { arguments })
         }),
         provides: sections.get("Provides").copied().and_then(|section| {
-            parse_required_groups(section, "Provides", diagnostics, parse_provides_item_group)
+            parse_required_groups(section, "Provides", tracker, parse_provides_item_group)
                 .map(|arguments| ProvidesSection { arguments })
         }),
         justified: sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justified",
-                diagnostics,
-                parse_justified_item_group,
-            )
-            .map(|arguments| JustifiedSection { arguments })
+            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
+                .map(|arguments| JustifiedSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Documented",
-                diagnostics,
-                parse_documented_item_group,
-            )
-            .map(|arguments| DocumentedSection { arguments })
+            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
+                .map(|arguments| DocumentedSection { arguments })
         }),
         aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", diagnostics, parse_alias_item_group)
+            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
         references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", diagnostics, parse_resource_header)
+            parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", diagnostics, parse_metadata_item_group)
+            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
                 .map(|arguments| MetadataSection { arguments })
         }),
     })
 }
 
-fn parse_defines(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<DefinesGroup> {
-    let heading = parse_required_command_heading(group, diagnostics)?;
+fn parse_defines(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<DefinesGroup> {
+    let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
         "Defines",
         &group.sections,
-        diagnostics,
+        tracker,
         &[
             "Defines",
             "using?",
@@ -246,65 +229,55 @@ fn parse_defines(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Opt
             argument: parse_required_formulation(
                 section(&sections, "Defines")?,
                 "Defines",
-                diagnostics,
+                tracker,
                 parse_is_or_spec,
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", diagnostics, parse_is_or_spec)
+            parse_required_formulations(section, "using", tracker, parse_is_or_spec)
                 .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
-            parse_required_clauses(section, "when", diagnostics)
+            parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
         expresses: sections.get("expresses").copied().and_then(|section| {
-            parse_required_clause(section, "expresses", diagnostics)
+            parse_required_clause(section, "expresses", tracker)
                 .map(|argument| ExpressesSection { argument })
         }),
         provides: sections.get("Provides").copied().and_then(|section| {
-            parse_required_groups(section, "Provides", diagnostics, parse_provides_item_group)
+            parse_required_groups(section, "Provides", tracker, parse_provides_item_group)
                 .map(|arguments| ProvidesSection { arguments })
         }),
         justified: sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justified",
-                diagnostics,
-                parse_justified_item_group,
-            )
-            .map(|arguments| JustifiedSection { arguments })
+            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
+                .map(|arguments| JustifiedSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Documented",
-                diagnostics,
-                parse_documented_item_group,
-            )
-            .map(|arguments| DocumentedSection { arguments })
+            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
+                .map(|arguments| DocumentedSection { arguments })
         }),
         aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", diagnostics, parse_alias_item_group)
+            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
         references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", diagnostics, parse_resource_header)
+            parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", diagnostics, parse_metadata_item_group)
+            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
                 .map(|arguments| MetadataSection { arguments })
         }),
     })
 }
 
-fn parse_refines(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<RefinesGroup> {
-    let heading = parse_required_command_heading(group, diagnostics)?;
+fn parse_refines(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<RefinesGroup> {
+    let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
         "Refines",
         &group.sections,
-        diagnostics,
+        tracker,
         &[
             "Refines",
             "using?",
@@ -326,74 +299,64 @@ fn parse_refines(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Opt
             argument: parse_required_formulation(
                 section(&sections, "Refines")?,
                 "Refines",
-                diagnostics,
+                tracker,
                 parse_is_or_refined_statement_spec,
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", diagnostics, parse_is_or_spec)
+            parse_required_formulations(section, "using", tracker, parse_is_or_spec)
                 .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
-            parse_required_clauses(section, "when", diagnostics)
+            parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
         specifies: sections.get("specifies").copied().and_then(|section| {
             parse_required_formulation(
                 section,
                 "specifies",
-                diagnostics,
+                tracker,
                 parse_is_or_refined_statement_spec,
             )
             .map(|argument| RefinesSpecifiesSection { argument })
         }),
         satisfies: sections.get("satisfies").copied().and_then(|section| {
-            parse_required_clauses(section, "satisfies", diagnostics)
+            parse_required_clauses(section, "satisfies", tracker)
                 .map(|arguments| SatisfiesSection { arguments })
         }),
         provides: sections.get("Provides").copied().and_then(|section| {
-            parse_required_groups(section, "Provides", diagnostics, parse_provides_item_group)
+            parse_required_groups(section, "Provides", tracker, parse_provides_item_group)
                 .map(|arguments| ProvidesSection { arguments })
         }),
         justified: sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justified",
-                diagnostics,
-                parse_justified_item_group,
-            )
-            .map(|arguments| JustifiedSection { arguments })
+            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
+                .map(|arguments| JustifiedSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Documented",
-                diagnostics,
-                parse_documented_item_group,
-            )
-            .map(|arguments| DocumentedSection { arguments })
+            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
+                .map(|arguments| DocumentedSection { arguments })
         }),
         aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", diagnostics, parse_alias_item_group)
+            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
         references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", diagnostics, parse_resource_header)
+            parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", diagnostics, parse_metadata_item_group)
+            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
                 .map(|arguments| MetadataSection { arguments })
         }),
     })
 }
 
-fn parse_states(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<StatesGroup> {
-    let heading = parse_required_command_heading(group, diagnostics)?;
+fn parse_states(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<StatesGroup> {
+    let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
         "States",
         &group.sections,
-        diagnostics,
+        tracker,
         &[
             "States",
             "using?",
@@ -411,58 +374,48 @@ fn parse_states(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Opti
     Some(StatesGroup {
         heading,
         states: StatesSection {
-            arguments: parse_optional_open_texts(sections.get("States").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("States").copied(), tracker),
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", diagnostics, parse_is_or_spec)
+            parse_required_formulations(section, "using", tracker, parse_is_or_spec)
                 .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
-            parse_required_clauses(section, "when", diagnostics)
+            parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
         that: ThatSection {
-            arguments: parse_required_clauses(section(&sections, "that")?, "that", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "that")?, "that", tracker)?,
         },
         provides: sections.get("Provides").copied().and_then(|section| {
-            parse_required_groups(section, "Provides", diagnostics, parse_provides_item_group)
+            parse_required_groups(section, "Provides", tracker, parse_provides_item_group)
                 .map(|arguments| ProvidesSection { arguments })
         }),
         justified: sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justified",
-                diagnostics,
-                parse_justified_item_group,
-            )
-            .map(|arguments| JustifiedSection { arguments })
+            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
+                .map(|arguments| JustifiedSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Documented",
-                diagnostics,
-                parse_documented_item_group,
-            )
-            .map(|arguments| DocumentedSection { arguments })
+            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
+                .map(|arguments| DocumentedSection { arguments })
         }),
         aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", diagnostics, parse_alias_item_group)
+            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
         references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", diagnostics, parse_resource_header)
+            parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", diagnostics, parse_metadata_item_group)
+            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
                 .map(|arguments| MetadataSection { arguments })
         }),
     })
 }
 
-fn parse_axiom(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<AxiomGroup> {
-    parse_argument_theorem_like(group, diagnostics, "Axiom").map(
+fn parse_axiom(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<AxiomGroup> {
+    parse_argument_theorem_like(group, tracker, "Axiom").map(
         |(
             heading,
             text,
@@ -493,8 +446,8 @@ fn parse_axiom(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Optio
     )
 }
 
-fn parse_theorem(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<TheoremGroup> {
-    parse_argument_theorem_like(group, diagnostics, "Theorem").map(
+fn parse_theorem(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<TheoremGroup> {
+    parse_argument_theorem_like(group, tracker, "Theorem").map(
         |(
             heading,
             text,
@@ -525,8 +478,8 @@ fn parse_theorem(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Opt
     )
 }
 
-fn parse_lemma(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<LemmaGroup> {
-    parse_argument_theorem_like(group, diagnostics, "Lemma").map(
+fn parse_lemma(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<LemmaGroup> {
+    parse_argument_theorem_like(group, tracker, "Lemma").map(
         |(
             heading,
             text,
@@ -559,9 +512,9 @@ fn parse_lemma(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Optio
 
 fn parse_conjecture(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ConjectureGroup> {
-    parse_argument_theorem_like(group, diagnostics, "Conjecture").map(
+    parse_argument_theorem_like(group, tracker, "Conjecture").map(
         |(
             heading,
             text,
@@ -595,7 +548,7 @@ fn parse_conjecture(
 #[allow(clippy::type_complexity)]
 fn parse_argument_theorem_like(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
     name: &str,
 ) -> Option<(
     Option<crate::frontend::formulation::ast::CommandHeader>,
@@ -610,12 +563,12 @@ fn parse_argument_theorem_like(
     Option<ReferencesSection>,
     Option<MetadataSection>,
 )> {
-    let heading = parse_optional_command_heading(group, diagnostics)?;
+    let heading = parse_optional_command_heading(group, tracker)?;
     let section_name = name;
     let sections = identify_sections(
         name,
         &group.sections,
-        diagnostics,
+        tracker,
         &[
             section_name,
             "given?",
@@ -632,64 +585,51 @@ fn parse_argument_theorem_like(
 
     Some((
         heading,
-        parse_optional_open_texts(sections.get(section_name).copied(), diagnostics),
+        parse_optional_open_texts(sections.get(section_name).copied(), tracker),
         sections.get("given").copied().and_then(|section| {
-            parse_required_formulations(section, "given", diagnostics, parse_is_or_spec)
+            parse_required_formulations(section, "given", tracker, parse_is_or_spec)
                 .map(|arguments| GivenSection { arguments })
         }),
         sections.get("where").copied().and_then(|section| {
-            parse_required_clauses(section, "where", diagnostics)
+            parse_required_clauses(section, "where", tracker)
                 .map(|arguments| WhereSection { arguments })
         }),
         ThenSection {
-            arguments: parse_required_clauses(section(&sections, "then")?, "then", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
         },
         sections.get("iff").copied().and_then(|section| {
-            parse_required_clauses(section, "iff", diagnostics)
+            parse_required_clauses(section, "iff", tracker)
                 .map(|arguments| IffSection { arguments })
         }),
         sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justified",
-                diagnostics,
-                parse_justified_item_group,
-            )
-            .map(|arguments| JustifiedSection { arguments })
+            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
+                .map(|arguments| JustifiedSection { arguments })
         }),
         sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Documented",
-                diagnostics,
-                parse_documented_item_group,
-            )
-            .map(|arguments| DocumentedSection { arguments })
+            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
+                .map(|arguments| DocumentedSection { arguments })
         }),
         sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", diagnostics, parse_alias_item_group)
+            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
         sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", diagnostics, parse_resource_header)
+            parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", diagnostics, parse_metadata_item_group)
+            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
                 .map(|arguments| MetadataSection { arguments })
         }),
     ))
 }
 
-fn parse_corollary(
-    group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
-) -> Option<CorollaryGroup> {
-    let heading = parse_optional_command_heading(group, diagnostics)?;
+fn parse_corollary(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<CorollaryGroup> {
+    let heading = parse_optional_command_heading(group, tracker)?;
     let sections = identify_sections(
         "Corollary",
         &group.sections,
-        diagnostics,
+        tracker,
         &[
             "Corollary",
             "of",
@@ -708,92 +648,79 @@ fn parse_corollary(
     Some(CorollaryGroup {
         heading,
         corollary: CorollarySection {
-            arguments: parse_optional_open_texts(sections.get("Corollary").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("Corollary").copied(), tracker),
         },
         of: OfSection {
-            arguments: parse_optional_open_texts(sections.get("of").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("of").copied(), tracker),
         },
         given: sections.get("given").copied().and_then(|section| {
-            parse_required_formulations(section, "given", diagnostics, parse_is_or_spec)
+            parse_required_formulations(section, "given", tracker, parse_is_or_spec)
                 .map(|arguments| GivenSection { arguments })
         }),
         where_: sections.get("where").copied().and_then(|section| {
-            parse_required_clauses(section, "where", diagnostics)
+            parse_required_clauses(section, "where", tracker)
                 .map(|arguments| WhereSection { arguments })
         }),
         then: ThenSection {
-            arguments: parse_required_clauses(section(&sections, "then")?, "then", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
         },
         iff: sections.get("iff").copied().and_then(|section| {
-            parse_required_clauses(section, "iff", diagnostics)
+            parse_required_clauses(section, "iff", tracker)
                 .map(|arguments| IffSection { arguments })
         }),
         justified: sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Justified",
-                diagnostics,
-                parse_justified_item_group,
-            )
-            .map(|arguments| JustifiedSection { arguments })
+            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
+                .map(|arguments| JustifiedSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(
-                section,
-                "Documented",
-                diagnostics,
-                parse_documented_item_group,
-            )
-            .map(|arguments| DocumentedSection { arguments })
+            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
+                .map(|arguments| DocumentedSection { arguments })
         }),
         aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", diagnostics, parse_alias_item_group)
+            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
         references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", diagnostics, parse_resource_header)
+            parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", diagnostics, parse_metadata_item_group)
+            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
                 .map(|arguments| MetadataSection { arguments })
         }),
     })
 }
 
-fn parse_person(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<PersonGroup> {
-    let heading = parse_required_author_heading(group, diagnostics)?;
+fn parse_person(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<PersonGroup> {
+    let heading = parse_required_author_heading(group, tracker)?;
     let sections = identify_sections(
         "Person",
         &group.sections,
-        diagnostics,
+        tracker,
         &["Person", "name", "biography"],
     )?;
 
     Some(PersonGroup {
         heading,
         person: PersonSection {
-            arguments: parse_optional_open_texts(sections.get("Person").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("Person").copied(), tracker),
         },
         name: NameSection {
-            arguments: parse_required_open_texts(section(&sections, "name")?, "name", diagnostics)?,
+            arguments: parse_required_open_texts(section(&sections, "name")?, "name", tracker)?,
         },
         biography: BiographySection {
             argument: parse_required_open_text(
                 section(&sections, "biography")?,
                 "biography",
-                diagnostics,
+                tracker,
             )?,
         },
     })
 }
 
-fn parse_resource(
-    group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
-) -> Option<ResourceGroup> {
-    let heading = parse_required_resource_heading(group, diagnostics)?;
-    let sections = identify_sections("Resource", &group.sections, diagnostics, &["Resource"])?;
+fn parse_resource(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<ResourceGroup> {
+    let heading = parse_required_resource_heading(group, tracker)?;
+    let sections = identify_sections("Resource", &group.sections, tracker, &["Resource"])?;
 
     Some(ResourceGroup {
         heading,
@@ -801,76 +728,63 @@ fn parse_resource(
             arguments: parse_required_groups(
                 section(&sections, "Resource")?,
                 "Resource",
-                diagnostics,
+                tracker,
                 parse_resource_item_group,
             )?,
         },
     })
 }
 
-fn parse_specify(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<SpecifyGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("Specify", &group.sections, diagnostics, &["Specify"])?;
+fn parse_specify(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<SpecifyGroup> {
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("Specify", &group.sections, tracker, &["Specify"])?;
     Some(SpecifyGroup {
         specify: SpecifySection {
             arguments: parse_required_groups(
                 section(&sections, "Specify")?,
                 "Specify",
-                diagnostics,
+                tracker,
                 parse_specify_item_group,
             )?,
         },
     })
 }
 
-fn parse_alias_group(
-    group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
-) -> Option<AliasGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections(
-        "alias",
-        &group.sections,
-        diagnostics,
-        &["alias", "written?"],
-    )?;
+fn parse_alias_group(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<AliasGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("alias", &group.sections, tracker, &["alias", "written?"])?;
     Some(AliasGroup {
         heading,
         alias: AliasSection {
             argument: parse_required_formulation(
                 section(&sections, "alias")?,
                 "alias",
-                diagnostics,
+                tracker,
                 parse_alias_kind,
             )?,
         },
         written: sections.get("written").copied().and_then(|section| {
-            parse_required_written_texts(section, diagnostics)
+            parse_required_written_texts(section, tracker)
                 .map(|arguments| WrittenSection { arguments })
         }),
     })
 }
 
-fn parse_symbol(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<SymbolGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections(
-        "symbol",
-        &group.sections,
-        diagnostics,
-        &["symbol", "written?"],
-    )?;
+fn parse_symbol(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<SymbolGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("symbol", &group.sections, tracker, &["symbol", "written?"])?;
     Some(SymbolGroup {
         heading,
         symbol: SymbolSection {
             argument: parse_required_formulation(
                 section(&sections, "symbol")?,
                 "symbol",
-                diagnostics,
+                tracker,
                 parse_alias_kind,
             )?,
         },
         written: sections.get("written").copied().and_then(|section| {
-            parse_required_written_texts(section, diagnostics)
+            parse_required_written_texts(section, tracker)
                 .map(|arguments| WrittenSection { arguments })
         }),
     })
@@ -878,13 +792,13 @@ fn parse_symbol(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Opti
 
 fn parse_connection(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ConnectionGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
+    let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "connection",
         &group.sections,
-        diagnostics,
+        tracker,
         &[
             "connection",
             "to",
@@ -899,108 +813,105 @@ fn parse_connection(
     Some(ConnectionGroup {
         heading,
         connection: ConnectionSection {
-            arguments: parse_optional_open_texts(sections.get("connection").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("connection").copied(), tracker),
         },
         to: ToSection {
-            arguments: parse_optional_open_texts(sections.get("to").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("to").copied(), tracker),
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", diagnostics, parse_is_or_spec)
+            parse_required_formulations(section, "using", tracker, parse_is_or_spec)
                 .map(|arguments| UsingSection { arguments })
         }),
         means: MeansSection {
-            arguments: parse_optional_open_texts(sections.get("means").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("means").copied(), tracker),
         },
         signifies: sections
             .get("signifies")
             .copied()
             .map(|section| SignifiesSection {
-                arguments: parse_optional_open_texts(Some(section), diagnostics),
+                arguments: parse_optional_open_texts(Some(section), tracker),
             }),
         viewable: sections
             .get("viewable")
             .copied()
             .map(|section| ViewableSection {
-                arguments: parse_optional_open_texts(Some(section), diagnostics),
+                arguments: parse_optional_open_texts(Some(section), tracker),
             }),
         through: sections
             .get("through")
             .copied()
             .map(|section| ThroughSection {
-                arguments: parse_optional_open_texts(Some(section), diagnostics),
+                arguments: parse_optional_open_texts(Some(section), tracker),
             }),
     })
 }
 
-fn parse_written(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<WrittenGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("written", &group.sections, diagnostics, &["written"])?;
+fn parse_written(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<WrittenGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("written", &group.sections, tracker, &["written"])?;
     Some(WrittenGroup {
         heading,
         written: WrittenSection {
-            arguments: parse_required_written_texts(section(&sections, "written")?, diagnostics)?,
+            arguments: parse_required_written_texts(section(&sections, "written")?, tracker)?,
         },
     })
 }
 
-fn parse_called(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<CalledGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("called", &group.sections, diagnostics, &["called"])?;
+fn parse_called(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<CalledGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("called", &group.sections, tracker, &["called"])?;
     Some(CalledGroup {
         heading,
         called: CalledSection {
-            arguments: parse_required_called_texts(section(&sections, "called")?, diagnostics)?,
+            arguments: parse_required_called_texts(section(&sections, "called")?, tracker)?,
         },
     })
 }
 
-fn parse_writing(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<WritingGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("writing", &group.sections, diagnostics, &["writing", "as"])?;
+fn parse_writing(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<WritingGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("writing", &group.sections, tracker, &["writing", "as"])?;
     Some(WritingGroup {
         heading,
         writing: WritingSection {
             argument: parse_required_formulation(
                 section(&sections, "writing")?,
                 "writing",
-                diagnostics,
+                tracker,
                 parse_writing_alias,
             )?,
         },
         as_: AsSection {
-            arguments: parse_required_writing_texts(section(&sections, "as")?, diagnostics)?,
+            arguments: parse_required_writing_texts(section(&sections, "as")?, tracker)?,
         },
     })
 }
 
-fn parse_overview(
-    group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
-) -> Option<OverviewGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("overview", &group.sections, diagnostics, &["overview"])?;
+fn parse_overview(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<OverviewGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("overview", &group.sections, tracker, &["overview"])?;
     Some(OverviewGroup {
         heading,
         overview: OverviewSection {
             argument: parse_required_open_text(
                 section(&sections, "overview")?,
                 "overview",
-                diagnostics,
+                tracker,
             )?,
         },
     })
 }
 
-fn parse_related(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<RelatedGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("related", &group.sections, diagnostics, &["related"])?;
+fn parse_related(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<RelatedGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("related", &group.sections, tracker, &["related"])?;
     Some(RelatedGroup {
         heading,
         related: RelatedSection {
             arguments: parse_required_open_texts(
                 section(&sections, "related")?,
                 "related",
-                diagnostics,
+                tracker,
             )?,
         },
     })
@@ -1008,272 +919,252 @@ fn parse_related(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Opt
 
 fn parse_discoverer(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<DiscovererGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("discoverer", &group.sections, diagnostics, &["discoverer"])?;
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("discoverer", &group.sections, tracker, &["discoverer"])?;
     Some(DiscovererGroup {
         heading,
         discoverer: DiscovererSection {
-            arguments: parse_optional_open_texts(sections.get("discoverer").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("discoverer").copied(), tracker),
         },
     })
 }
 
-fn parse_label_note(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<LabelGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
+fn parse_label_note(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<LabelGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "label",
         &group.sections,
-        diagnostics,
+        tracker,
         &["label", "by", "comment"],
     )?;
     Some(LabelGroup {
         heading,
         label: LabelSection {
-            arguments: parse_optional_open_texts(sections.get("label").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("label").copied(), tracker),
         },
         by: BySection {
-            arguments: parse_optional_open_texts(sections.get("by").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("by").copied(), tracker),
         },
         comment: CommentSection {
-            argument: parse_required_open_text(
-                section(&sections, "comment")?,
-                "comment",
-                diagnostics,
-            )?,
+            argument: parse_required_open_text(section(&sections, "comment")?, "comment", tracker)?,
         },
     })
 }
 
-fn parse_by_note(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<ByGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("by", &group.sections, diagnostics, &["by", "comment"])?;
+fn parse_by_note(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<ByGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("by", &group.sections, tracker, &["by", "comment"])?;
     Some(ByGroup {
         heading,
         by: BySection {
-            arguments: parse_optional_open_texts(sections.get("by").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("by").copied(), tracker),
         },
         comment: CommentSection {
-            argument: parse_required_open_text(
-                section(&sections, "comment")?,
-                "comment",
-                diagnostics,
-            )?,
+            argument: parse_required_open_text(section(&sections, "comment")?, "comment", tracker)?,
         },
     })
 }
 
-fn parse_id(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<IdGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("id", &group.sections, diagnostics, &["id"])?;
+fn parse_id(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<IdGroup> {
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("id", &group.sections, tracker, &["id"])?;
     Some(IdGroup {
         id: IdSection {
-            argument: parse_required_open_text(section(&sections, "id")?, "id", diagnostics)?,
+            argument: parse_required_open_text(section(&sections, "id")?, "id", tracker)?,
         },
     })
 }
 
-fn parse_version(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<VersionGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("version", &group.sections, diagnostics, &["version"])?;
+fn parse_version(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<VersionGroup> {
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("version", &group.sections, tracker, &["version"])?;
     Some(VersionGroup {
         version: VersionSection {
-            argument: parse_required_open_text(
-                section(&sections, "version")?,
-                "version",
-                diagnostics,
-            )?,
+            argument: parse_required_open_text(section(&sections, "version")?, "version", tracker)?,
         },
     })
 }
 
 fn parse_positive_int(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<PositiveIntGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
+    let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "positive_int",
         &group.sections,
-        diagnostics,
+        tracker,
         &["positive", "int", "is"],
     )?;
     Some(PositiveIntGroup {
         heading,
         positive: PositiveSection {
-            arguments: parse_optional_open_texts(sections.get("positive").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("positive").copied(), tracker),
         },
         int: IntSection {
-            arguments: parse_optional_open_texts(sections.get("int").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("int").copied(), tracker),
         },
         is_: IsSection {
-            arguments: parse_optional_open_texts(sections.get("is").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("is").copied(), tracker),
         },
     })
 }
 
 fn parse_negative_int(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<NegativeIntGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
+    let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "negative_int",
         &group.sections,
-        diagnostics,
+        tracker,
         &["negative", "int", "is"],
     )?;
     Some(NegativeIntGroup {
         heading,
         negative: NegativeSection {
-            arguments: parse_optional_open_texts(sections.get("negative").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("negative").copied(), tracker),
         },
         int: IntSection {
-            arguments: parse_optional_open_texts(sections.get("int").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("int").copied(), tracker),
         },
         is_: IsSection {
-            arguments: parse_optional_open_texts(sections.get("is").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("is").copied(), tracker),
         },
     })
 }
 
-fn parse_zero(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<ZeroGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("zero", &group.sections, diagnostics, &["zero", "is"])?;
+fn parse_zero(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<ZeroGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("zero", &group.sections, tracker, &["zero", "is"])?;
     Some(ZeroGroup {
         heading,
         zero: ZeroSection {
-            arguments: parse_optional_open_texts(sections.get("zero").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("zero").copied(), tracker),
         },
         is_: IsSection {
-            arguments: parse_optional_open_texts(sections.get("is").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("is").copied(), tracker),
         },
     })
 }
 
 fn parse_positive_decimal(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<PositiveDecimalGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
+    let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "positive_decimal",
         &group.sections,
-        diagnostics,
+        tracker,
         &["positive", "decimal", "is"],
     )?;
     Some(PositiveDecimalGroup {
         heading,
         positive: PositiveSection {
-            arguments: parse_optional_open_texts(sections.get("positive").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("positive").copied(), tracker),
         },
         decimal: DecimalSection {
-            arguments: parse_optional_open_texts(sections.get("decimal").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("decimal").copied(), tracker),
         },
         is_: IsSection {
-            arguments: parse_optional_open_texts(sections.get("is").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("is").copied(), tracker),
         },
     })
 }
 
 fn parse_negative_decimal(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<NegativeDecimalGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
+    let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "negative_decimal",
         &group.sections,
-        diagnostics,
+        tracker,
         &["negative", "decimal", "is"],
     )?;
     Some(NegativeDecimalGroup {
         heading,
         negative: NegativeSection {
-            arguments: parse_optional_open_texts(sections.get("negative").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("negative").copied(), tracker),
         },
         decimal: DecimalSection {
-            arguments: parse_optional_open_texts(sections.get("decimal").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("decimal").copied(), tracker),
         },
         is_: IsSection {
-            arguments: parse_optional_open_texts(sections.get("is").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("is").copied(), tracker),
         },
     })
 }
 
 fn parse_resource_title(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceTitleGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("title", &group.sections, diagnostics, &["title"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("title", &group.sections, tracker, &["title"])?;
     Some(ResourceTitleGroup {
         title: ResourceTitleSection {
-            argument: parse_required_open_text(section(&sections, "title")?, "title", diagnostics)?,
+            argument: parse_required_open_text(section(&sections, "title")?, "title", tracker)?,
         },
     })
 }
 
 fn parse_resource_author(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceAuthorGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("author", &group.sections, diagnostics, &["author"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("author", &group.sections, tracker, &["author"])?;
     Some(ResourceAuthorGroup {
         author: ResourceAuthorSection {
-            arguments: parse_required_open_texts(
-                section(&sections, "author")?,
-                "author",
-                diagnostics,
-            )?,
+            arguments: parse_required_open_texts(section(&sections, "author")?, "author", tracker)?,
         },
     })
 }
 
 fn parse_resource_offset(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceOffsetGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("offset", &group.sections, diagnostics, &["offset"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("offset", &group.sections, tracker, &["offset"])?;
     Some(ResourceOffsetGroup {
         offset: ResourceOffsetSection {
-            argument: parse_required_open_text(
-                section(&sections, "offset")?,
-                "offset",
-                diagnostics,
-            )?,
+            argument: parse_required_open_text(section(&sections, "offset")?, "offset", tracker)?,
         },
     })
 }
 
 fn parse_resource_url(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceUrlGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("url", &group.sections, diagnostics, &["url"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("url", &group.sections, tracker, &["url"])?;
     Some(ResourceUrlGroup {
         url: ResourceUrlSection {
-            argument: parse_required_open_text(section(&sections, "url")?, "url", diagnostics)?,
+            argument: parse_required_open_text(section(&sections, "url")?, "url", tracker)?,
         },
     })
 }
 
 fn parse_resource_homepage(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceHomepageGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("homepage", &group.sections, diagnostics, &["homepage"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("homepage", &group.sections, tracker, &["homepage"])?;
     Some(ResourceHomepageGroup {
         homepage: ResourceHomepageSection {
             argument: parse_required_open_text(
                 section(&sections, "homepage")?,
                 "homepage",
-                diagnostics,
+                tracker,
             )?,
         },
     })
@@ -1281,68 +1172,55 @@ fn parse_resource_homepage(
 
 fn parse_resource_type(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceTypeGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("type", &group.sections, diagnostics, &["type"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("type", &group.sections, tracker, &["type"])?;
     Some(ResourceTypeGroup {
         type_: ResourceTypeSection {
-            argument: parse_required_open_text(section(&sections, "type")?, "type", diagnostics)?,
+            argument: parse_required_open_text(section(&sections, "type")?, "type", tracker)?,
         },
     })
 }
 
 fn parse_resource_edition(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceEditionGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("edition", &group.sections, diagnostics, &["edition"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("edition", &group.sections, tracker, &["edition"])?;
     Some(ResourceEditionGroup {
         edition: ResourceEditionSection {
-            argument: parse_required_open_text(
-                section(&sections, "edition")?,
-                "edition",
-                diagnostics,
-            )?,
+            argument: parse_required_open_text(section(&sections, "edition")?, "edition", tracker)?,
         },
     })
 }
 
 fn parse_resource_editor(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceEditorGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("editor", &group.sections, diagnostics, &["editor"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("editor", &group.sections, tracker, &["editor"])?;
     Some(ResourceEditorGroup {
         editor: ResourceEditorSection {
-            argument: parse_required_open_text(
-                section(&sections, "editor")?,
-                "editor",
-                diagnostics,
-            )?,
+            argument: parse_required_open_text(section(&sections, "editor")?, "editor", tracker)?,
         },
     })
 }
 
 fn parse_resource_institution(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceInstitutionGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections(
-        "institution",
-        &group.sections,
-        diagnostics,
-        &["institution"],
-    )?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("institution", &group.sections, tracker, &["institution"])?;
     Some(ResourceInstitutionGroup {
         institution: ResourceInstitutionSection {
             argument: parse_required_open_text(
                 section(&sections, "institution")?,
                 "institution",
-                diagnostics,
+                tracker,
             )?,
         },
     })
@@ -1350,33 +1228,29 @@ fn parse_resource_institution(
 
 fn parse_resource_journal(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceJournalGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("journal", &group.sections, diagnostics, &["journal"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("journal", &group.sections, tracker, &["journal"])?;
     Some(ResourceJournalGroup {
         journal: ResourceJournalSection {
-            argument: parse_required_open_text(
-                section(&sections, "journal")?,
-                "journal",
-                diagnostics,
-            )?,
+            argument: parse_required_open_text(section(&sections, "journal")?, "journal", tracker)?,
         },
     })
 }
 
 fn parse_resource_publisher(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourcePublisherGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("publisher", &group.sections, diagnostics, &["publisher"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("publisher", &group.sections, tracker, &["publisher"])?;
     Some(ResourcePublisherGroup {
         publisher: ResourcePublisherSection {
             argument: parse_required_open_text(
                 section(&sections, "publisher")?,
                 "publisher",
-                diagnostics,
+                tracker,
             )?,
         },
     })
@@ -1384,144 +1258,118 @@ fn parse_resource_publisher(
 
 fn parse_resource_volume(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceVolumeGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("volume", &group.sections, diagnostics, &["volume"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("volume", &group.sections, tracker, &["volume"])?;
     Some(ResourceVolumeGroup {
         volume: ResourceVolumeSection {
-            argument: parse_required_open_text(
-                section(&sections, "volume")?,
-                "volume",
-                diagnostics,
-            )?,
+            argument: parse_required_open_text(section(&sections, "volume")?, "volume", tracker)?,
         },
     })
 }
 
 fn parse_resource_month(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceMonthGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("month", &group.sections, diagnostics, &["month"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("month", &group.sections, tracker, &["month"])?;
     Some(ResourceMonthGroup {
         month: ResourceMonthSection {
-            argument: parse_required_open_text(section(&sections, "month")?, "month", diagnostics)?,
+            argument: parse_required_open_text(section(&sections, "month")?, "month", tracker)?,
         },
     })
 }
 
 fn parse_resource_year(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceYearGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections("year", &group.sections, diagnostics, &["year"])?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("year", &group.sections, tracker, &["year"])?;
     Some(ResourceYearGroup {
         year: ResourceYearSection {
-            argument: parse_required_open_text(section(&sections, "year")?, "year", diagnostics)?,
+            argument: parse_required_open_text(section(&sections, "year")?, "year", tracker)?,
         },
     })
 }
 
 fn parse_resource_description(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceDescriptionGroup> {
-    ensure_no_heading(group, diagnostics)?;
-    let sections = identify_sections(
-        "description",
-        &group.sections,
-        diagnostics,
-        &["description"],
-    )?;
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("description", &group.sections, tracker, &["description"])?;
     Some(ResourceDescriptionGroup {
         description: ResourceDescriptionSection {
             argument: parse_required_open_text(
                 section(&sections, "description")?,
                 "description",
-                diagnostics,
+                tracker,
             )?,
         },
     })
 }
 
-fn parse_not_clause(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<NotGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("not", &group.sections, diagnostics, &["not"])?;
+fn parse_not_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<NotGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("not", &group.sections, tracker, &["not"])?;
     Some(NotGroup {
         heading,
         not: NotSection {
             argument: Box::new(parse_required_clause(
                 section(&sections, "not")?,
                 "not",
-                diagnostics,
+                tracker,
             )?),
         },
     })
 }
 
-fn parse_all_of_clause(
-    group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
-) -> Option<AllOfGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("allOf", &group.sections, diagnostics, &["allOf"])?;
+fn parse_all_of_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<AllOfGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("allOf", &group.sections, tracker, &["allOf"])?;
     Some(AllOfGroup {
         heading,
         all_of: AllOfSection {
-            arguments: parse_required_clauses(section(&sections, "allOf")?, "allOf", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "allOf")?, "allOf", tracker)?,
         },
     })
 }
 
-fn parse_any_of_clause(
-    group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
-) -> Option<AnyOfGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("anyOf", &group.sections, diagnostics, &["anyOf"])?;
+fn parse_any_of_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<AnyOfGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("anyOf", &group.sections, tracker, &["anyOf"])?;
     Some(AnyOfGroup {
         heading,
         any_of: AnyOfSection {
-            arguments: parse_required_clauses(section(&sections, "anyOf")?, "anyOf", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "anyOf")?, "anyOf", tracker)?,
         },
     })
 }
 
-fn parse_one_of_clause(
-    group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
-) -> Option<OneOfGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("oneOf", &group.sections, diagnostics, &["oneOf"])?;
+fn parse_one_of_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<OneOfGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("oneOf", &group.sections, tracker, &["oneOf"])?;
     Some(OneOfGroup {
         heading,
         one_of: OneOfSection {
-            arguments: parse_required_clauses(section(&sections, "oneOf")?, "oneOf", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "oneOf")?, "oneOf", tracker)?,
         },
     })
 }
 
-fn parse_exists_clause(
-    group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
-) -> Option<ExistsGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections(
-        "exists",
-        &group.sections,
-        diagnostics,
-        &["exists", "suchThat"],
-    )?;
+fn parse_exists_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<ExistsGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("exists", &group.sections, tracker, &["exists", "suchThat"])?;
     Some(ExistsGroup {
         heading,
         exists: ExistsSection {
             argument: parse_required_formulation(
                 section(&sections, "exists")?,
                 "exists",
-                diagnostics,
+                tracker,
                 parse_is_or_spec,
             )?,
         },
@@ -1529,7 +1377,7 @@ fn parse_exists_clause(
             arguments: parse_required_clauses(
                 section(&sections, "suchThat")?,
                 "suchThat",
-                diagnostics,
+                tracker,
             )?,
         },
     })
@@ -1537,13 +1385,13 @@ fn parse_exists_clause(
 
 fn parse_exists_unique_clause(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ExistsUniqueGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
+    let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "existsUnique",
         &group.sections,
-        diagnostics,
+        tracker,
         &["existsUnique", "suchThat"],
     )?;
     Some(ExistsUniqueGroup {
@@ -1552,7 +1400,7 @@ fn parse_exists_unique_clause(
             argument: parse_required_formulation(
                 section(&sections, "existsUnique")?,
                 "existsUnique",
-                diagnostics,
+                tracker,
                 parse_is_or_spec,
             )?,
         },
@@ -1560,7 +1408,7 @@ fn parse_exists_unique_clause(
             arguments: parse_required_clauses(
                 section(&sections, "suchThat")?,
                 "suchThat",
-                diagnostics,
+                tracker,
             )?,
         },
     })
@@ -1568,13 +1416,13 @@ fn parse_exists_unique_clause(
 
 fn parse_for_all_clause(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ForAllGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
+    let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "forAll",
         &group.sections,
-        diagnostics,
+        tracker,
         &["forAll", "where?", "then"],
     )?;
     Some(ForAllGroup {
@@ -1583,86 +1431,83 @@ fn parse_for_all_clause(
             argument: parse_required_formulation(
                 section(&sections, "forAll")?,
                 "forAll",
-                diagnostics,
+                tracker,
                 parse_is_or_spec,
             )?,
         },
         where_: sections.get("where").copied().and_then(|section| {
-            parse_required_clauses(section, "where", diagnostics)
+            parse_required_clauses(section, "where", tracker)
                 .map(|arguments| WhereSection { arguments })
         }),
         then: ThenSection {
-            arguments: parse_required_clauses(section(&sections, "then")?, "then", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
         },
     })
 }
 
-fn parse_if_clause(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<IfGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("if", &group.sections, diagnostics, &["if", "then"])?;
+fn parse_if_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<IfGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("if", &group.sections, tracker, &["if", "then"])?;
     Some(IfGroup {
         heading,
         if_: IfSection {
-            arguments: parse_required_clauses(section(&sections, "if")?, "if", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "if")?, "if", tracker)?,
         },
         then: ThenSection {
-            arguments: parse_required_clauses(section(&sections, "then")?, "then", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
         },
     })
 }
 
-fn parse_iff_clause(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<IffGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
-    let sections = identify_sections("iff", &group.sections, diagnostics, &["iff", "then"])?;
+fn parse_iff_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<IffGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("iff", &group.sections, tracker, &["iff", "then"])?;
     Some(IffGroup {
         heading,
         iff: IffSection {
-            arguments: parse_required_clauses(section(&sections, "iff")?, "iff", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "iff")?, "iff", tracker)?,
         },
         then: ThenSection {
-            arguments: parse_required_clauses(section(&sections, "then")?, "then", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
         },
     })
 }
 
 fn parse_piecewise_clause(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<PiecewiseGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
+    let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "piecewise",
         &group.sections,
-        diagnostics,
+        tracker,
         &["piecewise", "if", "then", "else?"],
     )?;
     Some(PiecewiseGroup {
         heading,
         piecewise: PiecewiseSection {
-            arguments: parse_optional_open_texts(sections.get("piecewise").copied(), diagnostics),
+            arguments: parse_optional_open_texts(sections.get("piecewise").copied(), tracker),
         },
         if_: IfSection {
-            arguments: parse_required_clauses(section(&sections, "if")?, "if", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "if")?, "if", tracker)?,
         },
         then: ThenSection {
-            arguments: parse_required_clauses(section(&sections, "then")?, "then", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
         },
         else_: sections.get("else").copied().and_then(|section| {
-            parse_required_clauses(section, "else", diagnostics)
+            parse_required_clauses(section, "else", tracker)
                 .map(|arguments| ElseSection { arguments })
         }),
     })
 }
 
-fn parse_given_clause(
-    group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
-) -> Option<GivenGroup> {
-    let heading = parse_optional_label_heading(group, diagnostics)?;
+fn parse_given_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<GivenGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "given",
         &group.sections,
-        diagnostics,
+        tracker,
         &["given", "where?", "then"],
     )?;
     Some(GivenGroup {
@@ -1671,36 +1516,36 @@ fn parse_given_clause(
             argument: parse_required_formulation(
                 section(&sections, "given")?,
                 "given",
-                diagnostics,
+                tracker,
                 parse_is_or_spec,
             )?,
         },
         where_: sections.get("where").copied().and_then(|section| {
-            parse_required_clauses(section, "where", diagnostics)
+            parse_required_clauses(section, "where", tracker)
                 .map(|arguments| WhereSection { arguments })
         }),
         then: ThenSection {
-            arguments: parse_required_clauses(section(&sections, "then")?, "then", diagnostics)?,
+            arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
         },
     })
 }
 
 fn parse_alias_item_group(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<AliasItem> {
-    parse_alias_group(group, diagnostics).map(AliasItem::Alias)
+    parse_alias_group(group, tracker).map(AliasItem::Alias)
 }
 
 fn parse_provides_item_group(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ProvidesItem> {
     match first_section_label(group)? {
-        "symbol" => parse_symbol(group, diagnostics).map(ProvidesItem::Symbol),
-        "connection" => parse_connection(group, diagnostics).map(ProvidesItem::Connection),
+        "symbol" => parse_symbol(group, tracker).map(ProvidesItem::Symbol),
+        "connection" => parse_connection(group, tracker).map(ProvidesItem::Connection),
         other => {
-            diagnostics.error(
+            tracker.error(
                 group.metadata.row,
                 format!("Unexpected provides group `{other}`"),
             );
@@ -1711,17 +1556,17 @@ fn parse_provides_item_group(
 
 fn parse_documented_item_group(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<DocumentedItem> {
     match first_section_label(group)? {
-        "written" => parse_written(group, diagnostics).map(DocumentedItem::Written),
-        "called" => parse_called(group, diagnostics).map(DocumentedItem::Called),
-        "writing" => parse_writing(group, diagnostics).map(DocumentedItem::Writing),
-        "overview" => parse_overview(group, diagnostics).map(DocumentedItem::Overview),
-        "related" => parse_related(group, diagnostics).map(DocumentedItem::Related),
-        "discoverer" => parse_discoverer(group, diagnostics).map(DocumentedItem::Discoverer),
+        "written" => parse_written(group, tracker).map(DocumentedItem::Written),
+        "called" => parse_called(group, tracker).map(DocumentedItem::Called),
+        "writing" => parse_writing(group, tracker).map(DocumentedItem::Writing),
+        "overview" => parse_overview(group, tracker).map(DocumentedItem::Overview),
+        "related" => parse_related(group, tracker).map(DocumentedItem::Related),
+        "discoverer" => parse_discoverer(group, tracker).map(DocumentedItem::Discoverer),
         other => {
-            diagnostics.error(
+            tracker.error(
                 group.metadata.row,
                 format!("Unexpected documented group `{other}`"),
             );
@@ -1732,13 +1577,13 @@ fn parse_documented_item_group(
 
 fn parse_justified_item_group(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<JustifiedItem> {
     match first_section_label(group)? {
-        "label" => parse_label_note(group, diagnostics).map(JustifiedItem::Label),
-        "by" => parse_by_note(group, diagnostics).map(JustifiedItem::By),
+        "label" => parse_label_note(group, tracker).map(JustifiedItem::Label),
+        "by" => parse_by_note(group, tracker).map(JustifiedItem::By),
         other => {
-            diagnostics.error(
+            tracker.error(
                 group.metadata.row,
                 format!("Unexpected justified group `{other}`"),
             );
@@ -1749,13 +1594,13 @@ fn parse_justified_item_group(
 
 fn parse_metadata_item_group(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<MetadataItem> {
     match first_section_label(group)? {
-        "id" => parse_id(group, diagnostics).map(MetadataItem::Id),
-        "version" => parse_version(group, diagnostics).map(MetadataItem::Version),
+        "id" => parse_id(group, tracker).map(MetadataItem::Id),
+        "version" => parse_version(group, tracker).map(MetadataItem::Version),
         other => {
-            diagnostics.error(
+            tracker.error(
                 group.metadata.row,
                 format!("Unexpected metadata group `{other}`"),
             );
@@ -1766,26 +1611,26 @@ fn parse_metadata_item_group(
 
 fn parse_specify_item_group(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<SpecifyItem> {
     match first_section_label(group)? {
         "positive" => {
             if group.sections.iter().any(|section| section.label == "int") {
-                parse_positive_int(group, diagnostics).map(SpecifyItem::PositiveInt)
+                parse_positive_int(group, tracker).map(SpecifyItem::PositiveInt)
             } else {
-                parse_positive_decimal(group, diagnostics).map(SpecifyItem::PositiveDecimal)
+                parse_positive_decimal(group, tracker).map(SpecifyItem::PositiveDecimal)
             }
         }
         "negative" => {
             if group.sections.iter().any(|section| section.label == "int") {
-                parse_negative_int(group, diagnostics).map(SpecifyItem::NegativeInt)
+                parse_negative_int(group, tracker).map(SpecifyItem::NegativeInt)
             } else {
-                parse_negative_decimal(group, diagnostics).map(SpecifyItem::NegativeDecimal)
+                parse_negative_decimal(group, tracker).map(SpecifyItem::NegativeDecimal)
             }
         }
-        "zero" => parse_zero(group, diagnostics).map(SpecifyItem::Zero),
+        "zero" => parse_zero(group, tracker).map(SpecifyItem::Zero),
         other => {
-            diagnostics.error(
+            tracker.error(
                 group.metadata.row,
                 format!("Unexpected specify group `{other}`"),
             );
@@ -1796,30 +1641,26 @@ fn parse_specify_item_group(
 
 fn parse_resource_item_group(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<ResourceItem> {
     match first_section_label(group)? {
-        "title" => parse_resource_title(group, diagnostics).map(ResourceItem::Title),
-        "author" => parse_resource_author(group, diagnostics).map(ResourceItem::Author),
-        "offset" => parse_resource_offset(group, diagnostics).map(ResourceItem::Offset),
-        "url" => parse_resource_url(group, diagnostics).map(ResourceItem::Url),
-        "homepage" => parse_resource_homepage(group, diagnostics).map(ResourceItem::Homepage),
-        "type" => parse_resource_type(group, diagnostics).map(ResourceItem::Type),
-        "edition" => parse_resource_edition(group, diagnostics).map(ResourceItem::Edition),
-        "editor" => parse_resource_editor(group, diagnostics).map(ResourceItem::Editor),
-        "institution" => {
-            parse_resource_institution(group, diagnostics).map(ResourceItem::Institution)
-        }
-        "journal" => parse_resource_journal(group, diagnostics).map(ResourceItem::Journal),
-        "publisher" => parse_resource_publisher(group, diagnostics).map(ResourceItem::Publisher),
-        "volume" => parse_resource_volume(group, diagnostics).map(ResourceItem::Volume),
-        "month" => parse_resource_month(group, diagnostics).map(ResourceItem::Month),
-        "year" => parse_resource_year(group, diagnostics).map(ResourceItem::Year),
-        "description" => {
-            parse_resource_description(group, diagnostics).map(ResourceItem::Description)
-        }
+        "title" => parse_resource_title(group, tracker).map(ResourceItem::Title),
+        "author" => parse_resource_author(group, tracker).map(ResourceItem::Author),
+        "offset" => parse_resource_offset(group, tracker).map(ResourceItem::Offset),
+        "url" => parse_resource_url(group, tracker).map(ResourceItem::Url),
+        "homepage" => parse_resource_homepage(group, tracker).map(ResourceItem::Homepage),
+        "type" => parse_resource_type(group, tracker).map(ResourceItem::Type),
+        "edition" => parse_resource_edition(group, tracker).map(ResourceItem::Edition),
+        "editor" => parse_resource_editor(group, tracker).map(ResourceItem::Editor),
+        "institution" => parse_resource_institution(group, tracker).map(ResourceItem::Institution),
+        "journal" => parse_resource_journal(group, tracker).map(ResourceItem::Journal),
+        "publisher" => parse_resource_publisher(group, tracker).map(ResourceItem::Publisher),
+        "volume" => parse_resource_volume(group, tracker).map(ResourceItem::Volume),
+        "month" => parse_resource_month(group, tracker).map(ResourceItem::Month),
+        "year" => parse_resource_year(group, tracker).map(ResourceItem::Year),
+        "description" => parse_resource_description(group, tracker).map(ResourceItem::Description),
         other => {
-            diagnostics.error(
+            tracker.error(
                 group.metadata.row,
                 format!("Unexpected resource group `{other}`"),
             );
@@ -1828,21 +1669,21 @@ fn parse_resource_item_group(
     }
 }
 
-fn parse_clause_group(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<Clause> {
+fn parse_clause_group(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<Clause> {
     match first_section_label(group)? {
-        "not" => parse_not_clause(group, diagnostics).map(Clause::Not),
-        "allOf" => parse_all_of_clause(group, diagnostics).map(Clause::AllOf),
-        "anyOf" => parse_any_of_clause(group, diagnostics).map(Clause::AnyOf),
-        "oneOf" => parse_one_of_clause(group, diagnostics).map(Clause::OneOf),
-        "exists" => parse_exists_clause(group, diagnostics).map(Clause::Exists),
-        "existsUnique" => parse_exists_unique_clause(group, diagnostics).map(Clause::ExistsUnique),
-        "forAll" => parse_for_all_clause(group, diagnostics).map(Clause::ForAll),
-        "if" => parse_if_clause(group, diagnostics).map(Clause::If),
-        "iff" => parse_iff_clause(group, diagnostics).map(Clause::Iff),
-        "piecewise" => parse_piecewise_clause(group, diagnostics).map(Clause::Piecewise),
-        "given" => parse_given_clause(group, diagnostics).map(Clause::Given),
+        "not" => parse_not_clause(group, tracker).map(Clause::Not),
+        "allOf" => parse_all_of_clause(group, tracker).map(Clause::AllOf),
+        "anyOf" => parse_any_of_clause(group, tracker).map(Clause::AnyOf),
+        "oneOf" => parse_one_of_clause(group, tracker).map(Clause::OneOf),
+        "exists" => parse_exists_clause(group, tracker).map(Clause::Exists),
+        "existsUnique" => parse_exists_unique_clause(group, tracker).map(Clause::ExistsUnique),
+        "forAll" => parse_for_all_clause(group, tracker).map(Clause::ForAll),
+        "if" => parse_if_clause(group, tracker).map(Clause::If),
+        "iff" => parse_iff_clause(group, tracker).map(Clause::Iff),
+        "piecewise" => parse_piecewise_clause(group, tracker).map(Clause::Piecewise),
+        "given" => parse_given_clause(group, tracker).map(Clause::Given),
         other => {
-            diagnostics.error(
+            tracker.error(
                 group.metadata.row,
                 format!("Unexpected clause group `{other}`"),
             );
@@ -1867,16 +1708,16 @@ fn parse_is_or_via_item(input: &str) -> Result<IsOrViaItem, FormulationParseErro
 
 fn parse_required_command_heading(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<crate::frontend::formulation::ast::CommandHeader> {
     let Some(heading) = group.heading.as_deref() else {
-        diagnostics.error(group.metadata.row, "Expected command heading");
+        tracker.error(group.metadata.row, "Expected command heading");
         return None;
     };
     match parse_command_header(heading) {
         Ok(heading) => Some(heading),
         Err(error) => {
-            diagnostics.error(
+            tracker.error(
                 group.metadata.row,
                 format!("Invalid command heading: {error}"),
             );
@@ -1887,13 +1728,13 @@ fn parse_required_command_heading(
 
 fn parse_optional_command_heading(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<Option<crate::frontend::formulation::ast::CommandHeader>> {
     match group.heading.as_deref() {
         Some(heading) => match parse_command_header(heading) {
             Ok(heading) => Some(Some(heading)),
             Err(error) => {
-                diagnostics.error(
+                tracker.error(
                     group.metadata.row,
                     format!("Invalid command heading: {error}"),
                 );
@@ -1906,13 +1747,13 @@ fn parse_optional_command_heading(
 
 fn parse_optional_label_heading(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<Option<crate::frontend::formulation::ast::LabelHeader>> {
     match group.heading.as_deref() {
         Some(heading) => match parse_label_header(heading) {
             Ok(heading) => Some(Some(heading)),
             Err(error) => {
-                diagnostics.error(
+                tracker.error(
                     group.metadata.row,
                     format!("Invalid label heading: {error}"),
                 );
@@ -1925,16 +1766,16 @@ fn parse_optional_label_heading(
 
 fn parse_required_author_heading(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<crate::frontend::formulation::ast::AuthorHeader> {
     let Some(heading) = group.heading.as_deref() else {
-        diagnostics.error(group.metadata.row, "Expected author heading");
+        tracker.error(group.metadata.row, "Expected author heading");
         return None;
     };
     match parse_author_header(heading) {
         Ok(heading) => Some(heading),
         Err(error) => {
-            diagnostics.error(
+            tracker.error(
                 group.metadata.row,
                 format!("Invalid author heading: {error}"),
             );
@@ -1945,16 +1786,16 @@ fn parse_required_author_heading(
 
 fn parse_required_resource_heading(
     group: &ProtoGroup,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<crate::frontend::formulation::ast::ResourceHeader> {
     let Some(heading) = group.heading.as_deref() else {
-        diagnostics.error(group.metadata.row, "Expected resource heading");
+        tracker.error(group.metadata.row, "Expected resource heading");
         return None;
     };
     match parse_resource_header(heading) {
         Ok(heading) => Some(heading),
         Err(error) => {
-            diagnostics.error(
+            tracker.error(
                 group.metadata.row,
                 format!("Invalid resource heading: {error}"),
             );
@@ -1963,9 +1804,9 @@ fn parse_required_resource_heading(
     }
 }
 
-fn ensure_no_heading(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) -> Option<()> {
+fn ensure_no_heading(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<()> {
     if let Some(heading) = &group.heading {
-        diagnostics.error(
+        tracker.error(
             group.metadata.row,
             format!("Unexpected heading `{heading}`"),
         );
@@ -1978,12 +1819,12 @@ fn ensure_no_heading(group: &ProtoGroup, diagnostics: &mut DiagnosticTracker) ->
 fn parse_required_formulation<T>(
     section: &ProtoSection,
     label: &str,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
     parser: fn(&str) -> Result<T, FormulationParseError>,
 ) -> Option<T> {
-    let items = parse_optional_formulations(Some(section), label, diagnostics, parser);
+    let items = parse_optional_formulations(Some(section), label, tracker, parser);
     if items.is_empty() {
-        diagnostics.error(
+        tracker.error(
             section.metadata.row,
             format!("Expected a {label} formulation"),
         );
@@ -1996,12 +1837,12 @@ fn parse_required_formulation<T>(
 fn parse_required_formulations<T>(
     section: &ProtoSection,
     label: &str,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
     parser: fn(&str) -> Result<T, FormulationParseError>,
 ) -> Option<OneOrMore<T>> {
-    let items = parse_optional_formulations(Some(section), label, diagnostics, parser);
+    let items = parse_optional_formulations(Some(section), label, tracker, parser);
     one_or_more(items, || {
-        diagnostics.error(
+        tracker.error(
             section.metadata.row,
             format!("Expected {label} formulations"),
         );
@@ -2011,7 +1852,7 @@ fn parse_required_formulations<T>(
 fn parse_optional_formulations<T>(
     section: Option<&ProtoSection>,
     label: &str,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
     parser: fn(&str) -> Result<T, FormulationParseError>,
 ) -> ZeroOrMore<T> {
     let Some(section) = section else {
@@ -2025,15 +1866,15 @@ fn parse_optional_formulations<T>(
                 match parser(text) {
                     Ok(value) => result.push(value),
                     Err(error) => {
-                        diagnostics.error(row, format!("Invalid {label} formulation: {error}"))
+                        tracker.error(row, format!("Invalid {label} formulation: {error}"))
                     }
                 }
             }
             SectionEntry::Text { row, .. } => {
-                diagnostics.error(row, format!("Expected formulation in section `{label}`"));
+                tracker.error(row, format!("Expected formulation in section `{label}`"));
             }
             SectionEntry::Group { row, .. } => {
-                diagnostics.error(row, format!("Expected formulation in section `{label}`"));
+                tracker.error(row, format!("Expected formulation in section `{label}`"));
             }
         }
     }
@@ -2044,11 +1885,11 @@ fn parse_optional_formulations<T>(
 fn parse_required_clause(
     section: &ProtoSection,
     label: &str,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<Clause> {
-    let clauses = parse_optional_clauses(Some(section), label, diagnostics);
+    let clauses = parse_optional_clauses(Some(section), label, tracker);
     if clauses.is_empty() {
-        diagnostics.error(
+        tracker.error(
             section.metadata.row,
             format!("Expected a clause in `{label}`"),
         );
@@ -2061,11 +1902,11 @@ fn parse_required_clause(
 fn parse_required_clauses(
     section: &ProtoSection,
     label: &str,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<OneOrMore<Clause>> {
-    let clauses = parse_optional_clauses(Some(section), label, diagnostics);
+    let clauses = parse_optional_clauses(Some(section), label, tracker);
     one_or_more(clauses, || {
-        diagnostics.error(
+        tracker.error(
             section.metadata.row,
             format!("Expected clauses in `{label}`"),
         );
@@ -2075,7 +1916,7 @@ fn parse_required_clauses(
 fn parse_optional_clauses(
     section: Option<&ProtoSection>,
     label: &str,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> ZeroOrMore<Clause> {
     let Some(section) = section else {
         return ZeroOrMore::default();
@@ -2087,19 +1928,19 @@ fn parse_optional_clauses(
             SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
                 match parse_expression(text) {
                     Ok(expression) => result.push(Clause::Expression(expression)),
-                    Err(error) => diagnostics.error(
+                    Err(error) => tracker.error(
                         row,
                         format!("Invalid clause expression in `{label}`: {error}"),
                     ),
                 }
             }
             SectionEntry::Group { group, .. } => {
-                if let Some(clause) = parse_clause_group(group, diagnostics) {
+                if let Some(clause) = parse_clause_group(group, tracker) {
                     result.push(clause);
                 }
             }
             SectionEntry::Text { row, .. } => {
-                diagnostics.error(row, format!("Expected clause in section `{label}`"));
+                tracker.error(row, format!("Expected clause in section `{label}`"));
             }
         }
     }
@@ -2110,12 +1951,12 @@ fn parse_optional_clauses(
 fn parse_required_groups<T>(
     section: &ProtoSection,
     label: &str,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
     parser: fn(&ProtoGroup, &mut DiagnosticTracker) -> Option<T>,
 ) -> Option<OneOrMore<T>> {
-    let items = parse_optional_groups(Some(section), label, diagnostics, parser);
+    let items = parse_optional_groups(Some(section), label, tracker, parser);
     one_or_more(items, || {
-        diagnostics.error(
+        tracker.error(
             section.metadata.row,
             format!("Expected nested groups in `{label}`"),
         );
@@ -2125,7 +1966,7 @@ fn parse_required_groups<T>(
 fn parse_optional_groups<T>(
     section: Option<&ProtoSection>,
     label: &str,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
     parser: fn(&ProtoGroup, &mut DiagnosticTracker) -> Option<T>,
 ) -> ZeroOrMore<T> {
     let Some(section) = section else {
@@ -2136,14 +1977,14 @@ fn parse_optional_groups<T>(
     for entry in section_entries(section) {
         match entry {
             SectionEntry::Group { group, .. } => {
-                if let Some(item) = parser(group, diagnostics) {
+                if let Some(item) = parser(group, tracker) {
                     items.push(item);
                 }
             }
             SectionEntry::Inline { row, .. }
             | SectionEntry::Formulation { row, .. }
             | SectionEntry::Text { row, .. } => {
-                diagnostics.error(row, format!("Expected nested group in section `{label}`"));
+                tracker.error(row, format!("Expected nested group in section `{label}`"));
             }
         }
     }
@@ -2154,11 +1995,11 @@ fn parse_optional_groups<T>(
 fn parse_required_open_text(
     section: &ProtoSection,
     label: &str,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<OpenText> {
-    let texts = parse_optional_open_texts(Some(section), diagnostics);
+    let texts = parse_optional_open_texts(Some(section), tracker);
     if texts.is_empty() {
-        diagnostics.error(section.metadata.row, format!("Expected text in `{label}`"));
+        tracker.error(section.metadata.row, format!("Expected text in `{label}`"));
         None
     } else {
         Some(texts.into_iter().next().expect("non-empty texts"))
@@ -2168,11 +2009,11 @@ fn parse_required_open_text(
 fn parse_required_open_texts(
     section: &ProtoSection,
     label: &str,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<OneOrMore<OpenText>> {
-    let texts = parse_optional_open_texts(Some(section), diagnostics);
+    let texts = parse_optional_open_texts(Some(section), tracker);
     one_or_more(texts, || {
-        diagnostics.error(
+        tracker.error(
             section.metadata.row,
             format!("Expected text entries in `{label}`"),
         );
@@ -2181,44 +2022,44 @@ fn parse_required_open_texts(
 
 fn parse_optional_open_texts(
     section: Option<&ProtoSection>,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> ZeroOrMore<OpenText> {
-    parse_optional_texts(section, diagnostics, OpenText)
+    parse_optional_texts(section, tracker, OpenText)
 }
 
 fn parse_required_written_texts(
     section: &ProtoSection,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<OneOrMore<WrittenText>> {
-    let texts = parse_optional_texts(Some(section), diagnostics, WrittenText);
+    let texts = parse_optional_texts(Some(section), tracker, WrittenText);
     one_or_more(texts, || {
-        diagnostics.error(section.metadata.row, "Expected written text");
+        tracker.error(section.metadata.row, "Expected written text");
     })
 }
 
 fn parse_required_called_texts(
     section: &ProtoSection,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<OneOrMore<CalledText>> {
-    let texts = parse_optional_texts(Some(section), diagnostics, CalledText);
+    let texts = parse_optional_texts(Some(section), tracker, CalledText);
     one_or_more(texts, || {
-        diagnostics.error(section.metadata.row, "Expected called text");
+        tracker.error(section.metadata.row, "Expected called text");
     })
 }
 
 fn parse_required_writing_texts(
     section: &ProtoSection,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
 ) -> Option<OneOrMore<WritingText>> {
-    let texts = parse_optional_texts(Some(section), diagnostics, WritingText);
+    let texts = parse_optional_texts(Some(section), tracker, WritingText);
     one_or_more(texts, || {
-        diagnostics.error(section.metadata.row, "Expected writing text");
+        tracker.error(section.metadata.row, "Expected writing text");
     })
 }
 
 fn parse_optional_texts<T>(
     section: Option<&ProtoSection>,
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
     wrap: fn(String) -> T,
 ) -> ZeroOrMore<T> {
     let Some(section) = section else {
@@ -2232,14 +2073,14 @@ fn parse_optional_texts<T>(
                 if let Some(value) = strip_quoted_text(text) {
                     result.push(wrap(value));
                 } else {
-                    diagnostics.error(row, format!("Expected quoted text, found `{text}`"));
+                    tracker.error(row, format!("Expected quoted text, found `{text}`"));
                 }
             }
             SectionEntry::Formulation { row, .. } => {
-                diagnostics.error(row, "Expected text, found formulation");
+                tracker.error(row, "Expected text, found formulation");
             }
             SectionEntry::Group { row, .. } => {
-                diagnostics.error(row, "Expected text, found nested group");
+                tracker.error(row, "Expected text, found nested group");
             }
         }
     }
@@ -2277,7 +2118,7 @@ fn section<'a>(
 fn identify_sections<'a>(
     name: &str,
     sections: &'a [ProtoSection],
-    diagnostics: &mut DiagnosticTracker,
+    tracker: &mut DiagnosticTracker,
     expected: &[&str],
 ) -> Option<HashMap<String, &'a ProtoSection>> {
     let mut section_queue: VecDeque<&ProtoSection> = sections.iter().collect();
@@ -2304,7 +2145,7 @@ fn identify_sections<'a>(
         } else if is_optional {
             expected_queue.pop_front();
         } else {
-            diagnostics.error(
+            tracker.error(
                 next_section.metadata.row,
                 format!(
                     "For {name} pattern:\n\n{pattern}\n\nExpected `{true_name}` but found `{}`",
@@ -2316,7 +2157,7 @@ fn identify_sections<'a>(
     }
 
     if let Some(unexpected) = section_queue.front() {
-        diagnostics.error(
+        tracker.error(
             unexpected.metadata.row,
             format!(
                 "For {name} pattern:\n\n{pattern}\n\nUnexpected section `{}`",
@@ -2335,7 +2176,7 @@ fn identify_sections<'a>(
             .first()
             .map(|section| section.metadata.row)
             .unwrap_or(0);
-        diagnostics.error(
+        tracker.error(
             row,
             format!(
                 "For {name} pattern:\n\n{pattern}\n\nExpected section `{}`",
@@ -2417,17 +2258,13 @@ mod tests {
     }
 
     fn render_proto_groups(text: &str) -> String {
-        let mut diagnostics = DiagnosticTracker::new();
+        let mut tracker = DiagnosticTracker::new();
         let groups = {
-            let mut parser = ProtoParser::new(text, &mut diagnostics);
+            let mut parser = ProtoParser::new(text, &mut tracker);
             parser.parse()
         };
 
-        assert!(
-            !diagnostics.has_errors(),
-            "{:#?}",
-            diagnostics.diagnostics()
-        );
+        assert!(!tracker.has_errors(), "{:#?}", tracker.diagnostics());
 
         groups
             .iter()
@@ -2437,22 +2274,18 @@ mod tests {
     }
 
     fn parse_ok(text: &str) -> Document {
-        let mut diagnostics = DiagnosticTracker::new();
-        let document = parse_document(text, &mut diagnostics);
+        let mut tracker = DiagnosticTracker::new();
+        let document = parse_document(text, &mut tracker);
 
-        assert!(
-            !diagnostics.has_errors(),
-            "{:#?}",
-            diagnostics.diagnostics()
-        );
+        assert!(!tracker.has_errors(), "{:#?}", tracker.diagnostics());
 
         document
     }
 
     fn parse_with_diagnostics(text: &str) -> (Document, Vec<Diagnostic>) {
-        let mut diagnostics = DiagnosticTracker::new();
-        let document = parse_document(text, &mut diagnostics);
-        let messages = diagnostics.diagnostics().to_vec();
+        let mut tracker = DiagnosticTracker::new();
+        let document = parse_document(text, &mut tracker);
+        let messages = tracker.diagnostics().to_vec();
 
         (document, messages)
     }
@@ -2496,14 +2329,10 @@ Resource:
 . title: "Elements"
 "#;
 
-        let mut diagnostics = DiagnosticTracker::new();
-        let document = parse_document(text, &mut diagnostics);
+        let mut tracker = DiagnosticTracker::new();
+        let document = parse_document(text, &mut tracker);
 
-        assert!(
-            !diagnostics.has_errors(),
-            "{:#?}",
-            diagnostics.diagnostics()
-        );
+        assert!(!tracker.has_errors(), "{:#?}", tracker.diagnostics());
         assert_eq!(document.items.len(), 4);
         assert!(matches!(document.items[0], TopLevelItem::Describes(_)));
         assert!(matches!(document.items[1], TopLevelItem::States(_)));
@@ -2522,10 +2351,10 @@ that:
 Title: "Valid Title"
 "#;
 
-        let mut diagnostics = DiagnosticTracker::new();
-        let document = parse_document(text, &mut diagnostics);
+        let mut tracker = DiagnosticTracker::new();
+        let document = parse_document(text, &mut tracker);
 
-        assert!(diagnostics.has_errors());
+        assert!(tracker.has_errors());
         assert_eq!(document.items.len(), 1);
         assert!(matches!(document.items[0], TopLevelItem::Title(_)));
     }
@@ -2541,14 +2370,10 @@ that:
   . x = x
 "#;
 
-        let mut diagnostics = DiagnosticTracker::new();
-        let document = parse_document(text, &mut diagnostics);
+        let mut tracker = DiagnosticTracker::new();
+        let document = parse_document(text, &mut tracker);
 
-        assert!(
-            !diagnostics.has_errors(),
-            "{:#?}",
-            diagnostics.diagnostics()
-        );
+        assert!(!tracker.has_errors(), "{:#?}", tracker.diagnostics());
         match &document.items[0] {
             TopLevelItem::States(states) => {
                 assert!(matches!(states.that.arguments[0], Clause::Exists(_)));
@@ -3481,9 +3306,9 @@ Section: "Recovered"
         assert!(!entries.is_empty(), "expected structural golden entries");
 
         for (index, entry) in entries.iter().enumerate() {
-            let mut diagnostics = DiagnosticTracker::new();
+            let mut tracker = DiagnosticTracker::new();
             let parse_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                parse_document(entry, &mut diagnostics)
+                parse_document(entry, &mut tracker)
             }));
 
             if let Err(payload) = parse_result {
@@ -3503,11 +3328,11 @@ Section: "Recovered"
             }
 
             assert!(
-                !diagnostics.has_errors(),
+                !tracker.has_errors(),
                 "failed to parse structural golden case {}:\n{}\n\n{:#?}",
                 index + 1,
                 entry,
-                diagnostics.diagnostics()
+                tracker.diagnostics()
             );
 
             let rendered = render_proto_groups(entry);

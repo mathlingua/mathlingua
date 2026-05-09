@@ -3,8 +3,8 @@ use crate::diagnostics::DiagnosticTracker;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const NAME: &str = env!("CARGO_PKG_NAME");
 
-pub fn version(diagnostics: &mut DiagnosticTracker) {
-    diagnostics.log(format!("{NAME}: {VERSION}"));
+pub fn version(tracker: &mut DiagnosticTracker) {
+    tracker.log(format!("{NAME}: {VERSION}"));
 }
 
 #[cfg(test)]
@@ -14,12 +14,12 @@ mod tests {
 
     #[test]
     fn includes_package_name_and_version() {
-        let mut diagnostics = DiagnosticTracker::new();
+        let mut tracker = DiagnosticTracker::new();
 
-        version(&mut diagnostics);
+        version(&mut tracker);
 
         assert_eq!(
-            diagnostics.diagnostics(),
+            tracker.diagnostics(),
             [Diagnostic::log(format!(
                 "{}: {}",
                 env!("CARGO_PKG_NAME"),

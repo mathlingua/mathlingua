@@ -311,6 +311,9 @@ PrefixOperator: UnaryOperator = {
 
 EqualityOperator: BinaryOperator = {
     <l:@L> "=" <r:@R> => BinaryOperator::Equality(ast::Operator::new(Span::new(l, r), "=")),
+    <l:@L> <operator:"special_operator"> <r:@R> => {
+        BinaryOperator::Special(ast::Operator::new(Span::new(l, r), operator))
+    },
 };
 
 AdditiveOperator: BinaryOperator = {

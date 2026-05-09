@@ -6,7 +6,8 @@ use super::ast::{
     AuthorHeader, Chain, ChainPart, CommandExpressionTailPart, CommandHeader, CommandHeaderNode,
     CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs, Expression, ExpressionAlias,
     ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
-    InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsViaStatement,
+    InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject,
+    IsSubjectForm, IsSubjectKind, IsViaStatement,
     LabelHeader, Operator, ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm,
     PlaceholderFormKind, PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
     RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, SpecOperatorAlias,
@@ -208,7 +209,7 @@ pub fn parse_resource_header(input: &str) -> Result<ResourceHeader, ParseError> 
 fn parse_is_statement(input: &str, allow_refined: bool) -> Result<IsStatement, ParseError> {
     let index = find_top_level_substring(input, " is ")
         .ok_or_else(|| ParseError::custom("expected top-level ` is `"))?;
-    let subject = parse_spec_subject(&input[..index])?;
+    let subject = parse_is_subject(&input[..index])?;
     let ty = parse_type_expression(&input[index + 4..], allow_refined)?;
 
     Ok(IsStatement {
@@ -265,6 +266,30 @@ fn parse_type_expression(input: &str, allow_refined: bool) -> Result<TypeExpress
     }
 }
 
+fn parse_is_subject(input: &str) -> Result<IsSubject, ParseError> {
+    let input = input.trim();
+
+    if find_first_top_level_char(input, ',').is_some() {
+        return parse_is_subject_form_list(input).map(|forms| IsSubject {
+            span: span_all(input),
+            kind: IsSubjectKind::Forms(forms),
+        });
+    }
+
+    if let Ok(form) = parse_is_subject_form(input) {
+        return Ok(IsSubject {
+            span: span_all(input),
+            kind: IsSubjectKind::Forms(vec![form]),
+        });
+    }
+
+    let operator = parse_operator(input)?;
+    Ok(IsSubject {
+        span: span_all(input),
+        kind: IsSubjectKind::Operator(operator),
+    })
+}
+
 fn parse_spec_subject(input: &str) -> Result<SpecSubject, ParseError> {
     let input = input.trim();
     if let Ok(form) = parse_form_or_declaration(input) {
@@ -300,6 +325,27 @@ fn parse_tuple_form(input: &str) -> Result<TupleForm, ParseError> {
             "expected tuple form, found {other:?}"
         ))),
     }
+}
+
+fn parse_is_subject_form(input: &str) -> Result<IsSubjectForm, ParseError> {
+    if let Ok(form) = parse_form_or_declaration(input) {
+        return Ok(IsSubjectForm::Form(form));
+    }
+
+    parse_placeholder_form(input).map(IsSubjectForm::PlaceholderForm)
+}
+
+fn parse_is_subject_form_list(input: &str) -> Result<Vec<IsSubjectForm>, ParseError> {
+    let forms = split_top_level(input, ',')?
+        .into_iter()
+        .map(parse_is_subject_form)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    if forms.is_empty() {
+        return Err(ParseError::custom("expected at least one form"));
+    }
+
+    Ok(forms)
 }
 
 fn parse_placeholder_form(input: &str) -> Result<PlaceholderForm, ParseError> {
@@ -1062,8 +1108,9 @@ mod tests {
     use crate::frontend::formulation::ast::{
         BinaryOperator, ChainPart, CommandHeader, CommandHeaderNode, Expression,
         ExpressionAliasLhs, ExpressionKind, FormOrDeclarationKind,
-        FunctionNamedExpressionElementLhs, IsOrRefinedStatementSpec, IsOrSpec, NamedOperatorKind,
-        PlaceholderFormKind, RefinedTail, SpecSubjectKind, SubsetCall, TypeExpression,
+        FormOrDeclaration, FunctionNamedExpressionElementLhs, IsOrRefinedStatementSpec,
+        IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind, PlaceholderFormKind,
+        RefinedTail, SpecSubjectKind, SubsetCall, TypeExpression,
     };
 
     fn split_golden_entries(text: &str) -> Vec<String> {
@@ -1156,6 +1203,30 @@ mod tests {
     }
 
     #[test]
+    fn parses_special_operator_expressions() {
+        let expression = parse_expression("x > y + z").expect("expected special operator");
+
+        match expression.kind {
+            ExpressionKind::Binary {
+                operator: BinaryOperator::Special(operator),
+                left,
+                right,
+            } => {
+                assert_eq!(operator.text, ">");
+                assert!(matches!(left.kind, ExpressionKind::Name(ref name) if name == "x"));
+                assert!(matches!(
+                    right.kind,
+                    ExpressionKind::Binary {
+                        operator: BinaryOperator::Add(_),
+                        ..
+                    }
+                ));
+            }
+            other => panic!("expected special operator expression, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn parses_labeled_grouped_expressions() {
         let expression =
             parse_expression("(x + 1)[:some.label:]").expect("expected labeled expression");
@@ -1244,12 +1315,29 @@ mod tests {
 
     #[test]
     fn parses_is_or_spec_statements() {
-        let item = parse_is_or_spec(r#"f(x_) is \function:on{A}:to{B}"#)
+        let item = parse_is_or_spec(r#"f(x_), y_ is \function:on{A}:to{B}"#)
             .expect("expected is-or-spec statement");
 
         match item {
             IsOrSpec::Is(statement) => {
                 assert!(matches!(statement.ty, TypeExpression::Command(_)));
+                match statement.subject.kind {
+                    IsSubjectKind::Forms(forms) => {
+                        assert_eq!(forms.len(), 2);
+                        assert!(matches!(
+                            forms[0],
+                            IsSubjectForm::Form(FormOrDeclaration {
+                                kind: FormOrDeclarationKind::FunctionDeclaration { ref name, .. },
+                                ..
+                            }) if name.is_none()
+                        ));
+                        assert!(matches!(
+                            forms[1],
+                            IsSubjectForm::PlaceholderForm(_)
+                        ));
+                    }
+                    other => panic!("expected forms subject, got {other:?}"),
+                }
             }
             other => panic!("expected is statement, got {other:?}"),
         }
@@ -1257,20 +1345,28 @@ mod tests {
 
     #[test]
     fn parses_is_via_statements() {
-        let item = parse_is_via_statement(r#"x is \type{A} via (x, y)"#)
+        let item = parse_is_via_statement(r#"x_, y_ is \type{A} via (x, y)"#)
             .expect("expected is-via statement");
 
+        assert!(matches!(
+            item.is_statement.subject.kind,
+            IsSubjectKind::Forms(ref forms) if forms.len() == 2
+        ));
         assert_eq!(item.tuple_form.elements.len(), 2);
     }
 
     #[test]
     fn parses_refined_is_statements() {
-        let item = parse_is_or_refined_statement_spec(r#"x is \(f)::[[g]]"#)
+        let item = parse_is_or_refined_statement_spec(r#"x_, y_ is \(f)::[[g]]"#)
             .expect("expected refined is statement");
 
         match item {
             IsOrRefinedStatementSpec::Is(statement) => {
                 assert!(matches!(statement.ty, TypeExpression::RefinedCommand(_)));
+                assert!(matches!(
+                    statement.subject.kind,
+                    IsSubjectKind::Forms(ref forms) if forms.len() == 2
+                ));
             }
             other => panic!("expected refined is statement, got {other:?}"),
         }
@@ -1757,6 +1853,21 @@ mod tests {
                 ));
             }
             other => panic!("expected spec statement, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_operator_is_statements() {
+        let item = parse_is_or_spec(r#"+ is \operator"#).expect("expected operator is statement");
+
+        match item {
+            IsOrSpec::Is(statement) => {
+                assert!(matches!(
+                    statement.subject.kind,
+                    IsSubjectKind::Operator(ref operator) if operator.text == "+"
+                ));
+            }
+            other => panic!("expected is statement, got {other:?}"),
         }
     }
 

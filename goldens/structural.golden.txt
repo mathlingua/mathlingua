@@ -10,14 +10,14 @@ Subsubsection: "Examples"
 [\structure]
 Describes: S := (X, *)
 using:
-. X is \set
+. X, Y is \set
 . X "contains" Element
 when:
 . [logic.`set.ops`.when]
   allOf:
   . x = x
   . y = y
-extends: X is \set via (X, Y)
+extends: X, Y is \set via (X, Y)
 specifies:
 . Y is \set via (X, Y)
 . y "contains" Y

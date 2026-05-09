@@ -212,6 +212,7 @@ impl UnaryOperator {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BinaryOperator {
     Equality(Operator),
+    Special(Operator),
     Add(Operator),
     Subtract(Operator),
     Multiply(Operator),
@@ -364,9 +365,27 @@ pub enum SpecSubjectKind {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IsSubject {
+    pub span: Span,
+    pub kind: IsSubjectKind,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum IsSubjectForm {
+    Form(FormOrDeclaration),
+    PlaceholderForm(PlaceholderForm),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum IsSubjectKind {
+    Forms(Vec<IsSubjectForm>),
+    Operator(Operator),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IsStatement {
     pub span: Span,
-    pub subject: SpecSubject,
+    pub subject: IsSubject,
     pub ty: TypeExpression,
 }
 

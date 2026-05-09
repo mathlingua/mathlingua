@@ -25,7 +25,7 @@ The formulation subsystem does not have one single root grammar. It exposes seve
 | --- | --- |
 | `parse_expression` | general expressions |
 | `parse_form_or_declaration` | forms and declarations |
-| `parse_is_or_spec` | `<subject> is <command-type>` or `<subject> "op" Name` |
+| `parse_is_or_spec` | `<is-subject> is <command-type>` or `<subject> "op" Name` |
 | `parse_is_or_refined_statement_spec` | same as above, but `is` may target a refined command expression |
 | `parse_is_via_statement` | `<is-statement> via <tuple-form>` |
 | `parse_command_header` | simple, infix, or refined command headers |
@@ -198,7 +198,7 @@ Because these are tokenized before ordinary names, exact spellings like `is` and
 From lowest precedence to highest:
 
 1. spec and predicate forms
-2. equality `=`
+2. equality `=` and special binary operators such as `<`, `>`, `<=`, `>=`
 3. additive `+ -`
 4. multiplicative `* /`
 5. power `^`
@@ -227,7 +227,7 @@ SpecOrPredicateExpression ::=
   | EqualityExpression
 
 EqualityExpression ::=
-    EqualityExpression "=" AdditiveExpression
+    EqualityExpression ("=" | SpecialOperator) AdditiveExpression
   | AdditiveExpression
 
 AdditiveExpression ::=
@@ -456,15 +456,19 @@ Accepted shapes:
 
 ```text
 IsOrSpec ::= IsStatement | SubjectSpecStatement
-IsStatement ::= SpecSubject " is " TypeExpression
+IsStatement ::= IsSubject " is " TypeExpression
 SubjectSpecStatement ::= SpecSubject TopLevelQuotedOperator Name
+IsSubject ::= IsSubjectFormList | OperatorText
 SpecSubject ::= FormOrDeclaration | OperatorText
+IsSubjectForm ::= FormOrDeclaration | PlaceholderForm
+IsSubjectFormList ::= IsSubjectForm ("," IsSubjectForm)*
 TypeExpression ::= CommandExpression
 ```
 
 Notes:
 
 - the parser looks for the exact top-level substring ` is ` with spaces around it
+- the left-hand side of `is` may be a single form, a single placeholder form, a comma-separated list mixing those, or an operator
 - the right-hand side of `is` must parse as a command expression, not a general expression
 - if no top-level ` is ` is found, the parser falls back to the quoted-operator spec form
 - the quoted operator is extracted by raw scanning, so it may contain spaces or punctuation
@@ -472,6 +476,7 @@ Notes:
 Examples:
 
 - `f(x_) is \function:on{A}:to{B}`
+- `f(x_), y_ is \function:on{A}:to{B}`
 - `+ is \operator`
 - `x "in" A`
 - `x "less than" A`
@@ -778,7 +783,7 @@ SpecOrPredicateExpression ::=
   | EqualityExpression
 
 EqualityExpression ::=
-    EqualityExpression "=" AdditiveExpression
+    EqualityExpression ("=" | SpecialOperator) AdditiveExpression
   | AdditiveExpression
 
 AdditiveExpression ::=
@@ -851,16 +856,19 @@ InfixCommand ::= "\:" Chain CurlyExpressionArgs* CommandExpressionTail ":/"
 These forms are parsed by `src/frontend/formulation/parser.rs`, not by the LALRPOP expression grammar.
 
 ```text
+IsSubject ::= IsSubjectFormList | OperatorText
 SpecSubject ::= FormOrDeclaration | OperatorText
+IsSubjectForm ::= FormOrDeclaration | PlaceholderForm
+IsSubjectFormList ::= IsSubjectForm ("," IsSubjectForm)*
 TopLevelQuotedOperator ::= a top-level double-quoted string found by raw scanning
 
-IsStatement ::= SpecSubject " is " CommandExpression
+IsStatement ::= IsSubject " is " CommandExpression
 SubjectSpecStatement ::= SpecSubject TopLevelQuotedOperator Name
 PlaceholderSpecStatement ::= PlaceholderForm TopLevelQuotedOperator Name
 
 IsOrSpec ::= IsStatement | SubjectSpecStatement
 
-IsOrRefinedStatement ::= SpecSubject " is " (CommandExpression | RefinedCommandExpression)
+IsOrRefinedStatement ::= IsSubject " is " (CommandExpression | RefinedCommandExpression)
 IsOrRefinedStatementSpec ::= IsOrRefinedStatement | SubjectSpecStatement
 
 IsViaStatement ::= IsStatement " via " TupleForm

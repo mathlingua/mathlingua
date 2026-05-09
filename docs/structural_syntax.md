@@ -462,6 +462,8 @@ The structural parser delegates section content to formulation parsers as follow
 
 Clause formulation arguments use `parse_expression`, not `parse_is_or_spec`.
 
+`parse_is_or_spec` and `parse_is_via_statement` accept comma-separated form lists on the left of `is`, including placeholder forms, for example `f(x_), y_ is \set`.
+
 ## Compact AST Schema
 
 This section is intentionally dense. It is the closest thing in this file to the old `old_docs/structural_ast.md`, but updated to reflect the current Rust implementation and naming.

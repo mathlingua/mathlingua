@@ -1,56 +1,24 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
-use crate::diagnostics::{ColorMode, DiagnosticFormatter, DiagnosticTracker};
+use crate::diagnostics::DiagnosticTracker;
 use crate::frontend::structural::parse_document;
 use std::collections::BTreeSet;
 use std::env;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::process;
-
-pub fn run(paths: &[PathBuf]) {
-    let cwd = match env::current_dir() {
-        Ok(cwd) => cwd,
-        Err(error) => {
-            eprintln!("Failed to determine the current working directory: {error}");
-            process::exit(1);
-        }
-    };
-
-    let result = run_in(&cwd, paths);
-
-    let rendered = DiagnosticFormatter::new()
-        .with_base_path(&cwd)
-        .with_color_mode(ColorMode::Auto)
-        .format_all(result.diagnostics.diagnostics());
-
-    if !rendered.is_empty() {
-        eprintln!("{rendered}");
-    }
-
-    if result.diagnostics.has_errors() {
-        eprintln!(
-            "Found {}.",
-            format_diagnostic_count(result.diagnostics.diagnostics().len())
-        );
-        process::exit(1);
-    }
-
-    println!("{}", render_success(&result.summary));
-}
 
 #[derive(Debug)]
-struct CheckRunResult {
-    summary: CheckSummary,
-    diagnostics: DiagnosticTracker,
+pub struct CheckResult {
+    pub files_checked: usize,
+    pub diagnostics: DiagnosticTracker,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-struct CheckSummary {
-    files_checked: usize,
+pub fn check(paths: &[PathBuf]) -> io::Result<CheckResult> {
+    let cwd = env::current_dir()?;
+    Ok(check_in(&cwd, paths))
 }
 
-fn run_in(cwd: &Path, paths: &[PathBuf]) -> CheckRunResult {
+pub fn check_in(cwd: &Path, paths: &[PathBuf]) -> CheckResult {
     let mut diagnostics = DiagnosticTracker::new();
     let files = resolve_source_files(cwd, paths, &mut diagnostics);
     let files_checked = files.len();
@@ -59,8 +27,8 @@ fn run_in(cwd: &Path, paths: &[PathBuf]) -> CheckRunResult {
         parse_source_file(&file, &mut diagnostics);
     }
 
-    CheckRunResult {
-        summary: CheckSummary { files_checked },
+    CheckResult {
+        files_checked,
         diagnostics,
     }
 }
@@ -198,27 +166,11 @@ fn parse_source_file(path: &Path, diagnostics: &mut DiagnosticTracker) {
     }
 }
 
-fn render_success(summary: &CheckSummary) -> String {
-    if summary.files_checked == 1 {
-        "Checked 1 file".to_string()
-    } else {
-        format!("Checked {} files", summary.files_checked)
-    }
-}
-
-fn format_diagnostic_count(diagnostic_count: usize) -> String {
-    if diagnostic_count == 1 {
-        "1 diagnostic".to_string()
-    } else {
-        format!("{diagnostic_count} diagnostics")
-    }
-}
-
 // =============================================================================
 
 #[cfg(test)]
 mod tests {
-    use super::{find_collection_root, resolve_source_files, run_in};
+    use super::{check_in, find_collection_root, resolve_source_files};
     use crate::diagnostics::{
         ColorMode, Diagnostic, DiagnosticFormatter, DiagnosticTracker, Location, Severity,
     };
@@ -240,9 +192,9 @@ mod tests {
         fs::write(root.join("content/sets.mlg"), "Title: \"Sets\"\n").unwrap();
         fs::write(nested_cwd.join("groups.mlg"), "Title: \"Groups\"\n").unwrap();
 
-        let result = run_in(&nested_cwd, &[]);
+        let result = check_in(&nested_cwd, &[]);
 
-        assert_eq!(result.summary.files_checked, 2);
+        assert_eq!(result.files_checked, 2);
         assert!(result.diagnostics.diagnostics().is_empty());
     }
 
@@ -250,7 +202,7 @@ mod tests {
     fn check_without_arguments_errors_when_not_in_a_collection() {
         let temp_dir = TestDir::new();
 
-        let result = run_in(temp_dir.path(), &[]);
+        let result = check_in(temp_dir.path(), &[]);
 
         assert_eq!(result.diagnostics.diagnostics().len(), 1);
         assert_eq!(
@@ -269,9 +221,9 @@ mod tests {
         fs::write(docs.join("intro.mlg"), "Title: \"Intro\"\n").unwrap();
         fs::write(docs.join("notes.txt"), "ignore me").unwrap();
 
-        let result = run_in(temp_dir.path(), &[PathBuf::from("docs")]);
+        let result = check_in(temp_dir.path(), &[PathBuf::from("docs")]);
 
-        assert_eq!(result.summary.files_checked, 1);
+        assert_eq!(result.files_checked, 1);
         assert!(result.diagnostics.diagnostics().is_empty());
     }
 
@@ -283,9 +235,9 @@ mod tests {
         fs::create_dir_all(root.join("content")).unwrap();
         fs::write(root.join("mlg.json"), "{}\n").unwrap();
 
-        let result = run_in(&root, &[]);
+        let result = check_in(&root, &[]);
 
-        assert_eq!(result.summary.files_checked, 0);
+        assert_eq!(result.files_checked, 0);
         assert!(result.diagnostics.diagnostics().is_empty());
     }
 
@@ -296,7 +248,7 @@ mod tests {
 
         fs::write(&file, "Defines: 'f(x_)'\n").unwrap();
 
-        let result = run_in(temp_dir.path(), &[PathBuf::from("broken.mlg")]);
+        let result = check_in(temp_dir.path(), &[PathBuf::from("broken.mlg")]);
         let diagnostics = result.diagnostics.diagnostics();
 
         assert!(diagnostics.len() >= 1);
@@ -317,7 +269,7 @@ mod tests {
 
         fs::write(&file, "[\\function]\nDefines: x |plus|\n").unwrap();
 
-        let result = run_in(temp_dir.path(), &[PathBuf::from("broken-structural.mlg")]);
+        let result = check_in(temp_dir.path(), &[PathBuf::from("broken-structural.mlg")]);
         let diagnostics = result.diagnostics.diagnostics();
 
         assert!(diagnostics.len() >= 1);
@@ -337,7 +289,7 @@ mod tests {
 
         fs::write(&file, "not mathlingua").unwrap();
 
-        let result = run_in(temp_dir.path(), &[PathBuf::from("notes.txt")]);
+        let result = check_in(temp_dir.path(), &[PathBuf::from("notes.txt")]);
         let diagnostics = result.diagnostics.diagnostics();
 
         assert_eq!(diagnostics.len(), 1);

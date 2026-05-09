@@ -1,29 +1,11 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
-use std::env;
 use std::fs;
 use std::io;
 use std::path::Path;
-use std::process;
 
 const DEFAULT_CONFIG: &str = "{}\n";
 
-pub fn run() {
-    let cwd = env::current_dir().expect("failed to determine the current directory");
-
-    match init_in(&cwd) {
-        Ok(messages) => {
-            for message in messages {
-                println!("{message}");
-            }
-        }
-        Err(error) => {
-            eprintln!("Failed to initialize Mathlingua collection: {error}");
-            process::exit(1);
-        }
-    }
-}
-
-fn init_in(root: &Path) -> io::Result<Vec<String>> {
+pub fn init(root: &Path) -> io::Result<Vec<String>> {
     let mut messages = Vec::new();
 
     let config_path = root.join(CONFIG_FILE);
@@ -49,7 +31,7 @@ fn init_in(root: &Path) -> io::Result<Vec<String>> {
 
 #[cfg(test)]
 mod tests {
-    use super::{CONFIG_FILE, CONTENT_DIR, DEFAULT_CONFIG, init_in};
+    use super::{CONFIG_FILE, CONTENT_DIR, DEFAULT_CONFIG, init};
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -58,7 +40,7 @@ mod tests {
     fn init_creates_missing_config_and_content_directory() {
         let temp_dir = TestDir::new();
 
-        let messages = init_in(temp_dir.path()).expect("init should succeed");
+        let messages = init(temp_dir.path()).expect("init should succeed");
 
         assert_eq!(
             messages,
@@ -80,7 +62,7 @@ mod tests {
         fs::write(temp_dir.path().join(CONFIG_FILE), DEFAULT_CONFIG).unwrap();
         fs::create_dir(temp_dir.path().join(CONTENT_DIR)).unwrap();
 
-        let messages = init_in(temp_dir.path()).expect("init should succeed");
+        let messages = init(temp_dir.path()).expect("init should succeed");
 
         assert_eq!(
             messages,

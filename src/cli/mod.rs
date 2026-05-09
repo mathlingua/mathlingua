@@ -1,5 +1,3 @@
-mod commands;
-
 use clap::{Args, Parser, Subcommand};
 use std::path::PathBuf;
 
@@ -29,10 +27,6 @@ pub struct CheckArgs {
     /// Directories or .mlg files to check. Defaults to the collection's content directory.
     #[arg(value_name = "PATH")]
     pub paths: Vec<PathBuf>,
-}
-
-pub fn run(command: Command) {
-    commands::run(command);
 }
 
 // =============================================================================

@@ -1,8 +1,8 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
 use crate::diagnostics::{DiagnosticTracker, Level};
+use crate::environment::current_working_directory;
 use crate::frontend::structural::parse_document;
 use std::collections::BTreeSet;
-use std::env;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -13,14 +13,10 @@ pub struct CheckResult {
 }
 
 pub fn check(paths: &[PathBuf], tracker: &mut DiagnosticTracker) -> io::Result<CheckResult> {
-    let cwd = match env::current_dir() {
-        Ok(cwd) => cwd,
-        Err(error) => {
-            tracker.global_error(format!(
-                "Failed to determine the current working directory: {error}"
-            ));
-            return Err(error);
-        }
+    let Some(cwd) = current_working_directory(tracker) else {
+        return Err(io::Error::other(
+            "Failed to determine the current working directory",
+        ));
     };
 
     Ok(check_in(&cwd, paths, tracker))

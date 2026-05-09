@@ -1,7 +1,7 @@
 use clap::Parser;
 use mlg::cli::{Cli, Command};
 use mlg::diagnostics::{ColorMode, DiagnosticTracker};
-use std::env;
+use mlg::environment::current_working_directory;
 use std::process;
 
 fn main() {
@@ -29,14 +29,8 @@ fn main() {
 }
 
 fn run_check(paths: &[std::path::PathBuf], tracker: &mut DiagnosticTracker) -> i32 {
-    let cwd = match env::current_dir() {
-        Ok(cwd) => cwd,
-        Err(error) => {
-            tracker.global_error(format!(
-                "Failed to determine the current working directory: {error}"
-            ));
-            return 1;
-        }
+    let Some(cwd) = current_working_directory(tracker) else {
+        return 1;
     };
 
     tracker.set_base_path(&cwd);
@@ -46,14 +40,8 @@ fn run_check(paths: &[std::path::PathBuf], tracker: &mut DiagnosticTracker) -> i
 }
 
 fn run_init(tracker: &mut DiagnosticTracker) -> i32 {
-    let cwd = match env::current_dir() {
-        Ok(cwd) => cwd,
-        Err(error) => {
-            tracker.global_error(format!(
-                "Failed to determine the current working directory: {error}"
-            ));
-            return 1;
-        }
+    let Some(cwd) = current_working_directory(tracker) else {
+        return 1;
     };
 
     if mlg::init(&cwd, tracker).is_err() || tracker.has_errors() {

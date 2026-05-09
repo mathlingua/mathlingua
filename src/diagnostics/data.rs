@@ -2,9 +2,10 @@ use std::fmt;
 use std::path::PathBuf;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Severity {
+pub enum Level {
     Error,
     Warning,
+    Log,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -34,47 +35,55 @@ impl Location {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Diagnostic {
     pub message: String,
-    pub severity: Severity,
+    pub level: Level,
     pub location: Location,
 }
 
 impl Diagnostic {
-    pub fn new(message: impl Into<String>, severity: Severity, location: Location) -> Self {
+    pub fn new(message: impl Into<String>, level: Level, location: Location) -> Self {
         Self {
             message: message.into(),
-            severity,
+            level,
             location,
         }
     }
 
     pub fn error(row: usize, message: impl Into<String>) -> Self {
-        Self::new(message, Severity::Error, Location::at_row(row))
+        Self::new(message, Level::Error, Location::at_row(row))
     }
 
     pub fn warning(row: usize, message: impl Into<String>) -> Self {
-        Self::new(message, Severity::Warning, Location::at_row(row))
+        Self::new(message, Level::Warning, Location::at_row(row))
+    }
+
+    pub fn global_error(message: impl Into<String>) -> Self {
+        Self::new(message, Level::Error, Location::default())
+    }
+
+    pub fn global_warning(message: impl Into<String>) -> Self {
+        Self::new(message, Level::Warning, Location::default())
+    }
+
+    pub fn log(message: impl Into<String>) -> Self {
+        Self::new(message, Level::Log, Location::default())
     }
 
     pub fn path_error(path: impl Into<PathBuf>, message: impl Into<String>) -> Self {
-        Self::new(message, Severity::Error, Location::at_path(path))
+        Self::new(message, Level::Error, Location::at_path(path))
     }
 
     pub fn path_warning(path: impl Into<PathBuf>, message: impl Into<String>) -> Self {
-        Self::new(message, Severity::Warning, Location::at_path(path))
+        Self::new(message, Level::Warning, Location::at_path(path))
     }
 
     pub fn file_error(path: impl Into<PathBuf>, row: usize, message: impl Into<String>) -> Self {
-        Self::new(
-            message,
-            Severity::Error,
-            Location::at_path_and_row(path, row),
-        )
+        Self::new(message, Level::Error, Location::at_path_and_row(path, row))
     }
 
     pub fn file_warning(path: impl Into<PathBuf>, row: usize, message: impl Into<String>) -> Self {
         Self::new(
             message,
-            Severity::Warning,
+            Level::Warning,
             Location::at_path_and_row(path, row),
         )
     }
@@ -87,24 +96,29 @@ impl Diagnostic {
 
 impl fmt::Display for Diagnostic {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let severity = match self.severity {
-            Severity::Error => "error",
-            Severity::Warning => "warning",
+        if self.level == Level::Log {
+            return write!(f, "{}", self.message);
+        }
+
+        let level = match self.level {
+            Level::Error => "error",
+            Level::Warning => "warning",
+            Level::Log => unreachable!("log diagnostics return early"),
         };
 
         match (&self.location.path, self.location.row) {
             (Some(path), Some(row)) => {
                 write!(
                     f,
-                    "{severity} at {}:{}: {}",
+                    "{level} at {}:{}: {}",
                     path.display(),
                     row + 1,
                     self.message
                 )
             }
-            (Some(path), None) => write!(f, "{severity} at {}: {}", path.display(), self.message),
-            (None, Some(row)) => write!(f, "{severity} at line {}: {}", row + 1, self.message),
-            (None, None) => write!(f, "{severity}: {}", self.message),
+            (Some(path), None) => write!(f, "{level} at {}: {}", path.display(), self.message),
+            (None, Some(row)) => write!(f, "{level} at line {}: {}", row + 1, self.message),
+            (None, None) => write!(f, "{level}: {}", self.message),
         }
     }
 }
@@ -140,5 +154,12 @@ mod tests {
             diagnostic.to_string(),
             "warning at content: directory skipped"
         );
+    }
+
+    #[test]
+    fn renders_log_diagnostics_as_plain_messages() {
+        let diagnostic = Diagnostic::log("Created content/");
+
+        assert_eq!(diagnostic.to_string(), "Created content/");
     }
 }

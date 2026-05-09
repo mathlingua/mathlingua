@@ -1,30 +1,43 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
+use crate::diagnostics::DiagnosticTracker;
 use std::fs;
 use std::io;
 use std::path::Path;
 
 const DEFAULT_CONFIG: &str = "{}\n";
 
-pub fn init(root: &Path) -> io::Result<Vec<String>> {
-    let mut messages = Vec::new();
-
+pub fn init(root: &Path, diagnostics: &mut DiagnosticTracker) -> io::Result<()> {
     let config_path = root.join(CONFIG_FILE);
     if config_path.exists() {
-        messages.push(format!("Skipping {CONFIG_FILE}; it already exists"));
+        diagnostics.log(format!("Skipping {CONFIG_FILE}; it already exists"));
     } else {
-        fs::write(&config_path, DEFAULT_CONFIG)?;
-        messages.push(format!("Created {CONFIG_FILE}"));
+        if let Err(error) = fs::write(&config_path, DEFAULT_CONFIG) {
+            diagnostics.path_error(
+                config_path,
+                format!("Failed to write {CONFIG_FILE}: {error}"),
+            );
+            return Err(error);
+        }
+
+        diagnostics.log(format!("Created {CONFIG_FILE}"));
     }
 
     let content_path = root.join(CONTENT_DIR);
     if content_path.exists() {
-        messages.push(format!("Skipping {CONTENT_DIR}/; it already exists"));
+        diagnostics.log(format!("Skipping {CONTENT_DIR}/; it already exists"));
     } else {
-        fs::create_dir(&content_path)?;
-        messages.push(format!("Created {CONTENT_DIR}/"));
+        if let Err(error) = fs::create_dir(&content_path) {
+            diagnostics.path_error(
+                content_path,
+                format!("Failed to create {CONTENT_DIR}/: {error}"),
+            );
+            return Err(error);
+        }
+
+        diagnostics.log(format!("Created {CONTENT_DIR}/"));
     }
 
-    Ok(messages)
+    Ok(())
 }
 
 // =============================================================================
@@ -32,6 +45,7 @@ pub fn init(root: &Path) -> io::Result<Vec<String>> {
 #[cfg(test)]
 mod tests {
     use super::{CONFIG_FILE, CONTENT_DIR, DEFAULT_CONFIG, init};
+    use crate::diagnostics::{Diagnostic, DiagnosticTracker};
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -39,14 +53,15 @@ mod tests {
     #[test]
     fn init_creates_missing_config_and_content_directory() {
         let temp_dir = TestDir::new();
+        let mut diagnostics = DiagnosticTracker::new();
 
-        let messages = init(temp_dir.path()).expect("init should succeed");
+        init(temp_dir.path(), &mut diagnostics).expect("init should succeed");
 
         assert_eq!(
-            messages,
+            diagnostics.diagnostics(),
             vec![
-                format!("Created {CONFIG_FILE}"),
-                format!("Created {CONTENT_DIR}/"),
+                Diagnostic::log(format!("Created {CONFIG_FILE}")),
+                Diagnostic::log(format!("Created {CONTENT_DIR}/")),
             ]
         );
         assert_eq!(
@@ -61,14 +76,15 @@ mod tests {
         let temp_dir = TestDir::new();
         fs::write(temp_dir.path().join(CONFIG_FILE), DEFAULT_CONFIG).unwrap();
         fs::create_dir(temp_dir.path().join(CONTENT_DIR)).unwrap();
+        let mut diagnostics = DiagnosticTracker::new();
 
-        let messages = init(temp_dir.path()).expect("init should succeed");
+        init(temp_dir.path(), &mut diagnostics).expect("init should succeed");
 
         assert_eq!(
-            messages,
+            diagnostics.diagnostics(),
             vec![
-                format!("Skipping {CONFIG_FILE}; it already exists"),
-                format!("Skipping {CONTENT_DIR}/; it already exists"),
+                Diagnostic::log(format!("Skipping {CONFIG_FILE}; it already exists")),
+                Diagnostic::log(format!("Skipping {CONTENT_DIR}/; it already exists")),
             ]
         );
     }

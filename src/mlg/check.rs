@@ -1,5 +1,5 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
-use crate::diagnostics::DiagnosticTracker;
+use crate::diagnostics::{DiagnosticTracker, Level};
 use crate::frontend::structural::parse_document;
 use std::collections::BTreeSet;
 use std::env;
@@ -10,27 +10,50 @@ use std::path::{Path, PathBuf};
 #[derive(Debug)]
 pub struct CheckResult {
     pub files_checked: usize,
-    pub diagnostics: DiagnosticTracker,
 }
 
-pub fn check(paths: &[PathBuf]) -> io::Result<CheckResult> {
-    let cwd = env::current_dir()?;
-    Ok(check_in(&cwd, paths))
+pub fn check(paths: &[PathBuf], diagnostics: &mut DiagnosticTracker) -> io::Result<CheckResult> {
+    let cwd = match env::current_dir() {
+        Ok(cwd) => cwd,
+        Err(error) => {
+            diagnostics.global_error(format!(
+                "Failed to determine the current working directory: {error}"
+            ));
+            return Err(error);
+        }
+    };
+
+    Ok(check_in(&cwd, paths, diagnostics))
 }
 
-pub fn check_in(cwd: &Path, paths: &[PathBuf]) -> CheckResult {
-    let mut diagnostics = DiagnosticTracker::new();
-    let files = resolve_source_files(cwd, paths, &mut diagnostics);
+pub fn check_in(cwd: &Path, paths: &[PathBuf], diagnostics: &mut DiagnosticTracker) -> CheckResult {
+    let starting_diagnostic_count = diagnostics.diagnostics().len();
+    let files = resolve_source_files(cwd, paths, diagnostics);
     let files_checked = files.len();
 
     for file in files {
-        parse_source_file(&file, &mut diagnostics);
+        parse_source_file(&file, diagnostics);
     }
 
-    CheckResult {
-        files_checked,
-        diagnostics,
+    let new_diagnostics = &diagnostics.diagnostics()[starting_diagnostic_count..];
+    let has_new_errors = new_diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.level == Level::Error);
+    let new_issue_count = new_diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.level != Level::Log)
+        .count();
+
+    if has_new_errors {
+        diagnostics.log(format!(
+            "Found {}.",
+            format_diagnostic_count(new_issue_count)
+        ));
+    } else {
+        diagnostics.log(render_check_success(files_checked));
     }
+
+    CheckResult { files_checked }
 }
 
 fn resolve_source_files(
@@ -166,13 +189,29 @@ fn parse_source_file(path: &Path, diagnostics: &mut DiagnosticTracker) {
     }
 }
 
+fn render_check_success(files_checked: usize) -> String {
+    if files_checked == 1 {
+        "Checked 1 file".to_string()
+    } else {
+        format!("Checked {files_checked} files")
+    }
+}
+
+fn format_diagnostic_count(diagnostic_count: usize) -> String {
+    if diagnostic_count == 1 {
+        "1 diagnostic".to_string()
+    } else {
+        format!("{diagnostic_count} diagnostics")
+    }
+}
+
 // =============================================================================
 
 #[cfg(test)]
 mod tests {
     use super::{check_in, find_collection_root, resolve_source_files};
     use crate::diagnostics::{
-        ColorMode, Diagnostic, DiagnosticFormatter, DiagnosticTracker, Location, Severity,
+        ColorMode, Diagnostic, DiagnosticFormatter, DiagnosticTracker, Level, Location,
     };
     use std::fs;
     use std::path::{Path, PathBuf};
@@ -192,24 +231,34 @@ mod tests {
         fs::write(root.join("content/sets.mlg"), "Title: \"Sets\"\n").unwrap();
         fs::write(nested_cwd.join("groups.mlg"), "Title: \"Groups\"\n").unwrap();
 
-        let result = check_in(&nested_cwd, &[]);
+        let mut diagnostics = DiagnosticTracker::new();
+        let result = check_in(&nested_cwd, &[], &mut diagnostics);
 
         assert_eq!(result.files_checked, 2);
-        assert!(result.diagnostics.diagnostics().is_empty());
+        assert_eq!(
+            diagnostics.diagnostics(),
+            [Diagnostic::log("Checked 2 files")]
+        );
     }
 
     #[test]
     fn check_without_arguments_errors_when_not_in_a_collection() {
         let temp_dir = TestDir::new();
 
-        let result = check_in(temp_dir.path(), &[]);
+        let mut diagnostics = DiagnosticTracker::new();
+        let result = check_in(temp_dir.path(), &[], &mut diagnostics);
 
-        assert_eq!(result.diagnostics.diagnostics().len(), 1);
+        assert_eq!(result.files_checked, 0);
+        assert_eq!(diagnostics.issue_count(), 1);
         assert_eq!(
-            result.diagnostics.diagnostics()[0].message,
+            diagnostics.diagnostics()[0].message,
             "Not inside a Mathlingua collection and no paths were provided"
         );
-        assert!(result.diagnostics.has_errors());
+        assert_eq!(
+            diagnostics.diagnostics()[1],
+            Diagnostic::log("Found 1 diagnostic.")
+        );
+        assert!(diagnostics.has_errors());
     }
 
     #[test]
@@ -221,10 +270,14 @@ mod tests {
         fs::write(docs.join("intro.mlg"), "Title: \"Intro\"\n").unwrap();
         fs::write(docs.join("notes.txt"), "ignore me").unwrap();
 
-        let result = check_in(temp_dir.path(), &[PathBuf::from("docs")]);
+        let mut diagnostics = DiagnosticTracker::new();
+        let result = check_in(temp_dir.path(), &[PathBuf::from("docs")], &mut diagnostics);
 
         assert_eq!(result.files_checked, 1);
-        assert!(result.diagnostics.diagnostics().is_empty());
+        assert_eq!(
+            diagnostics.diagnostics(),
+            [Diagnostic::log("Checked 1 file")]
+        );
     }
 
     #[test]
@@ -235,10 +288,14 @@ mod tests {
         fs::create_dir_all(root.join("content")).unwrap();
         fs::write(root.join("mlg.json"), "{}\n").unwrap();
 
-        let result = check_in(&root, &[]);
+        let mut diagnostics = DiagnosticTracker::new();
+        let result = check_in(&root, &[], &mut diagnostics);
 
         assert_eq!(result.files_checked, 0);
-        assert!(result.diagnostics.diagnostics().is_empty());
+        assert_eq!(
+            diagnostics.diagnostics(),
+            [Diagnostic::log("Checked 0 files")]
+        );
     }
 
     #[test]
@@ -248,18 +305,39 @@ mod tests {
 
         fs::write(&file, "Defines: 'f(x_)'\n").unwrap();
 
-        let result = check_in(temp_dir.path(), &[PathBuf::from("broken.mlg")]);
-        let diagnostics = result.diagnostics.diagnostics();
+        let mut diagnostics = DiagnosticTracker::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("broken.mlg")],
+            &mut diagnostics,
+        );
+        let diagnostics = diagnostics.diagnostics();
 
-        assert!(diagnostics.len() >= 1);
-        assert!(diagnostics.iter().all(|diagnostic| {
-            diagnostic.location.path == Some(file.canonicalize().unwrap())
-        }));
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            diagnostics
+                .iter()
+                .filter(|diagnostic| diagnostic.level != Level::Log)
+                .all(|diagnostic| {
+                    diagnostic.location.path == Some(file.canonicalize().unwrap())
+                })
+        );
         assert!(diagnostics.iter().any(|diagnostic| {
             diagnostic.location.row == Some(0)
                 && diagnostic.message == "Single-quoted formulations are not allowed"
         }));
-        assert!(result.diagnostics.has_errors());
+        let issue_count = diagnostics
+            .iter()
+            .filter(|diagnostic| diagnostic.level != Level::Log)
+            .count();
+        assert_eq!(
+            diagnostics.last(),
+            Some(&Diagnostic::log(format!(
+                "Found {} diagnostic{}.",
+                issue_count,
+                if issue_count == 1 { "" } else { "s" }
+            )))
+        );
     }
 
     #[test]
@@ -269,17 +347,41 @@ mod tests {
 
         fs::write(&file, "[\\function]\nDefines: x |plus|\n").unwrap();
 
-        let result = check_in(temp_dir.path(), &[PathBuf::from("broken-structural.mlg")]);
-        let diagnostics = result.diagnostics.diagnostics();
+        let mut diagnostics = DiagnosticTracker::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("broken-structural.mlg")],
+            &mut diagnostics,
+        );
+        let diagnostics = diagnostics.diagnostics();
 
-        assert!(diagnostics.len() >= 1);
-        assert!(diagnostics.iter().all(|diagnostic| {
-            diagnostic.location.path == Some(file.canonicalize().unwrap())
-        }));
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            diagnostics
+                .iter()
+                .filter(|diagnostic| diagnostic.level != Level::Log)
+                .all(|diagnostic| {
+                    diagnostic.location.path == Some(file.canonicalize().unwrap())
+                })
+        );
         assert!(diagnostics.iter().any(|diagnostic| {
-            diagnostic.message.starts_with("Invalid Defines formulation:")
+            diagnostic
+                .message
+                .starts_with("Invalid Defines formulation:")
         }));
-        assert!(result.diagnostics.has_errors());
+        let issue_count = diagnostics
+            .iter()
+            .filter(|diagnostic| diagnostic.level != Level::Log)
+            .count();
+        assert!(diagnostics.iter().any(|diagnostic| {
+            diagnostic.level == Level::Log
+                && diagnostic.message
+                    == format!(
+                        "Found {} diagnostic{}.",
+                        issue_count,
+                        if issue_count == 1 { "" } else { "s" }
+                    )
+        }));
     }
 
     #[test]
@@ -289,15 +391,21 @@ mod tests {
 
         fs::write(&file, "not mathlingua").unwrap();
 
-        let result = check_in(temp_dir.path(), &[PathBuf::from("notes.txt")]);
-        let diagnostics = result.diagnostics.diagnostics();
+        let mut diagnostics = DiagnosticTracker::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("notes.txt")],
+            &mut diagnostics,
+        );
+        let diagnostics = diagnostics.diagnostics();
 
-        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(result.files_checked, 0);
+        assert_eq!(diagnostics.len(), 2);
         assert_eq!(
             diagnostics[0],
             Diagnostic::path_error(file.canonicalize().unwrap(), "Not a .mlg file")
         );
-        assert!(result.diagnostics.has_errors());
+        assert_eq!(diagnostics[1], Diagnostic::log("Found 1 diagnostic."));
     }
 
     #[test]
@@ -345,7 +453,7 @@ mod tests {
             .with_color_mode(ColorMode::Never);
         let diagnostic = Diagnostic {
             message: "Unexpected header: [duplicate]".to_string(),
-            severity: Severity::Error,
+            level: Level::Error,
             location: Location::at_path_and_row("/repo/content/example.mlg", 3),
         };
 

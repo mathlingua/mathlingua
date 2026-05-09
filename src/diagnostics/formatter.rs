@@ -1,6 +1,6 @@
-use super::data::{Diagnostic, Severity};
+use super::data::{Diagnostic, Level};
 use std::io::IsTerminal;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ColorMode {
@@ -10,25 +10,33 @@ pub enum ColorMode {
     Never,
 }
 
-#[derive(Clone, Copy, Debug, Default)]
-pub struct DiagnosticFormatter<'a> {
-    base_path: Option<&'a Path>,
+#[derive(Clone, Debug, Default)]
+pub struct DiagnosticFormatter {
+    base_path: Option<PathBuf>,
     color_mode: ColorMode,
 }
 
-impl<'a> DiagnosticFormatter<'a> {
+impl DiagnosticFormatter {
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn with_base_path(mut self, base_path: &'a Path) -> Self {
-        self.base_path = Some(base_path);
+    pub fn with_base_path(mut self, base_path: impl Into<PathBuf>) -> Self {
+        self.base_path = Some(base_path.into());
         self
     }
 
     pub fn with_color_mode(mut self, color_mode: ColorMode) -> Self {
         self.color_mode = color_mode;
         self
+    }
+
+    pub fn set_base_path(&mut self, base_path: impl Into<PathBuf>) {
+        self.base_path = Some(base_path.into());
+    }
+
+    pub fn set_color_mode(&mut self, color_mode: ColorMode) {
+        self.color_mode = color_mode;
     }
 
     pub fn format(&self, diagnostic: &Diagnostic) -> String {
@@ -46,34 +54,40 @@ impl<'a> DiagnosticFormatter<'a> {
     }
 
     fn format_with_color(&self, diagnostic: &Diagnostic, use_color: bool) -> String {
-        let severity = match diagnostic.severity {
-            Severity::Error => style_label("error", Style::Red, use_color),
-            Severity::Warning => style_label("warning", Style::Yellow, use_color),
+        if diagnostic.level == Level::Log {
+            return diagnostic.message.clone();
+        }
+
+        let level = match diagnostic.level {
+            Level::Error => style_label("error", Style::Red, use_color),
+            Level::Warning => style_label("warning", Style::Yellow, use_color),
+            Level::Log => unreachable!("log diagnostics return early"),
         };
 
         match (&diagnostic.location.path, diagnostic.location.row) {
             (Some(path), Some(row)) => format!(
-                "{}:{}: {severity}: {}",
+                "{}:{}: {level}: {}",
                 style_label(&self.display_path(path), Style::Cyan, use_color),
                 style_label(&(row + 1).to_string(), Style::Dim, use_color),
                 diagnostic.message
             ),
             (Some(path), None) => format!(
-                "{}: {severity}: {}",
+                "{}: {level}: {}",
                 style_label(&self.display_path(path), Style::Cyan, use_color),
                 diagnostic.message
             ),
             (None, Some(row)) => format!(
-                "line {}: {severity}: {}",
+                "line {}: {level}: {}",
                 style_label(&(row + 1).to_string(), Style::Dim, use_color),
                 diagnostic.message
             ),
-            (None, None) => format!("{severity}: {}", diagnostic.message),
+            (None, None) => format!("{level}: {}", diagnostic.message),
         }
     }
 
     fn display_path(&self, path: &Path) -> String {
         self.base_path
+            .as_deref()
             .and_then(|base| path.strip_prefix(base).ok())
             .map(|relative| {
                 if relative.as_os_str().is_empty() {
@@ -122,7 +136,7 @@ fn style_label(text: &str, style: Style, use_color: bool) -> String {
 #[cfg(test)]
 mod tests {
     use super::{ColorMode, DiagnosticFormatter};
-    use crate::diagnostics::{Diagnostic, Location, Severity};
+    use crate::diagnostics::{Diagnostic, Level, Location};
     use std::path::Path;
 
     #[test]
@@ -132,7 +146,7 @@ mod tests {
             .with_color_mode(ColorMode::Never);
         let diagnostic = Diagnostic {
             message: "Unexpected header: [duplicate]".to_string(),
-            severity: Severity::Error,
+            level: Level::Error,
             location: Location::at_path_and_row("/repo/content/example.mlg", 3),
         };
 
@@ -167,6 +181,18 @@ mod tests {
     }
 
     #[test]
+    fn formats_log_diagnostics_without_location_or_color() {
+        let formatter = DiagnosticFormatter::new().with_color_mode(ColorMode::Always);
+        let diagnostic = Diagnostic::new(
+            "Checked 2 files",
+            Level::Log,
+            Location::at_path_and_row("/repo/content/example.mlg", 3),
+        );
+
+        assert_eq!(formatter.format(&diagnostic), "Checked 2 files");
+    }
+
+    #[test]
     fn adds_ansi_colors_when_enabled() {
         let formatter = DiagnosticFormatter::new()
             .with_base_path(Path::new("/repo"))
@@ -185,12 +211,13 @@ mod tests {
         let formatter = DiagnosticFormatter::new().with_color_mode(ColorMode::Never);
         let diagnostics = [
             Diagnostic::error(0, "Unexpected token"),
+            Diagnostic::log("Checked 1 file"),
             Diagnostic::warning(1, "Unused statement"),
         ];
 
         assert_eq!(
             formatter.format_all(&diagnostics),
-            "line 1: error: Unexpected token\nline 2: warning: Unused statement"
+            "line 1: error: Unexpected token\nChecked 1 file\nline 2: warning: Unused statement"
         );
     }
 }

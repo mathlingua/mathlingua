@@ -6,12 +6,12 @@ use super::ast::{
     AuthorHeader, Chain, ChainPart, CommandExpressionTailPart, CommandHeader, CommandHeaderNode,
     CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs, Expression, ExpressionAlias,
     ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
-    InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject,
-    IsSubjectForm, IsSubjectKind, IsViaStatement,
-    LabelHeader, Operator, ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm,
-    PlaceholderFormKind, PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
-    RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, SpecOperatorAlias,
-    SpecSubject, SpecSubjectKind, SubjectSpecStatement, TupleForm, TypeExpression, WritingAlias,
+    InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm,
+    IsSubjectKind, IsViaStatement, LabelHeader, Operator, ParenExpressionArgs, ParenHeadingArgs,
+    Placeholder, PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement,
+    RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart,
+    RefinedTail, ResourceHeader, SpecOperatorAlias, SpecSubject, SpecSubjectKind,
+    SubjectSpecStatement, TupleForm, TypeExpression, WritingAlias,
 };
 use super::grammar;
 use super::lexer::Lexer;
@@ -1107,10 +1107,10 @@ mod tests {
     };
     use crate::frontend::formulation::ast::{
         BinaryOperator, ChainPart, CommandHeader, CommandHeaderNode, Expression,
-        ExpressionAliasLhs, ExpressionKind, FormOrDeclarationKind,
-        FormOrDeclaration, FunctionNamedExpressionElementLhs, IsOrRefinedStatementSpec,
-        IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind, PlaceholderFormKind,
-        RefinedTail, SpecSubjectKind, SubsetCall, TypeExpression,
+        ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
+        FunctionNamedExpressionElementLhs, IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm,
+        IsSubjectKind, NamedOperatorKind, PlaceholderFormKind, RefinedTail, SpecSubjectKind,
+        SubsetCall, TypeExpression,
     };
 
     fn split_golden_entries(text: &str) -> Vec<String> {
@@ -1331,10 +1331,7 @@ mod tests {
                                 ..
                             }) if name.is_none()
                         ));
-                        assert!(matches!(
-                            forms[1],
-                            IsSubjectForm::PlaceholderForm(_)
-                        ));
+                        assert!(matches!(forms[1], IsSubjectForm::PlaceholderForm(_)));
                     }
                     other => panic!("expected forms subject, got {other:?}"),
                 }

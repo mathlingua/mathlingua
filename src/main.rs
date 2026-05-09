@@ -1,86 +1,64 @@
 use clap::Parser;
 use mlg::cli::{Cli, Command};
-use mlg::diagnostics::{ColorMode, DiagnosticFormatter};
+use mlg::diagnostics::{ColorMode, DiagnosticTracker};
 use std::env;
-use std::path::PathBuf;
 use std::process;
 
 fn main() {
     let cli = Cli::parse();
+    let mut diagnostics = DiagnosticTracker::new()
+        .with_live(true)
+        .with_color_mode(ColorMode::Auto);
 
-    match cli.command {
-        Command::Check(args) => run_check(&args.paths),
-        Command::Init => run_init(),
-        Command::Version => println!("{}", mlg::version()),
-        Command::View => println!("{}", mlg::view()),
-    }
-}
-
-fn run_check(paths: &[PathBuf]) {
-    let cwd = match env::current_dir() {
-        Ok(cwd) => cwd,
-        Err(error) => {
-            eprintln!("Failed to determine the current working directory: {error}");
-            process::exit(1);
+    let exit_code = match cli.command {
+        Command::Check(args) => run_check(&args.paths, &mut diagnostics),
+        Command::Init => run_init(&mut diagnostics),
+        Command::Version => {
+            mlg::version(&mut diagnostics);
+            0
+        }
+        Command::View => {
+            mlg::view(&mut diagnostics);
+            0
         }
     };
 
-    let result = mlg::check_in(&cwd, paths);
-
-    let rendered = DiagnosticFormatter::new()
-        .with_base_path(&cwd)
-        .with_color_mode(ColorMode::Auto)
-        .format_all(result.diagnostics.diagnostics());
-
-    if !rendered.is_empty() {
-        eprintln!("{rendered}");
+    if exit_code != 0 {
+        process::exit(exit_code);
     }
-
-    if result.diagnostics.has_errors() {
-        eprintln!(
-            "Found {}.",
-            format_diagnostic_count(result.diagnostics.diagnostics().len())
-        );
-        process::exit(1);
-    }
-
-    println!("{}", render_check_success(result.files_checked));
 }
 
-fn run_init() {
+fn run_check(paths: &[std::path::PathBuf], diagnostics: &mut DiagnosticTracker) -> i32 {
     let cwd = match env::current_dir() {
         Ok(cwd) => cwd,
         Err(error) => {
-            eprintln!("Failed to determine the current working directory: {error}");
-            process::exit(1);
+            diagnostics.global_error(format!(
+                "Failed to determine the current working directory: {error}"
+            ));
+            return 1;
         }
     };
 
-    match mlg::init(&cwd) {
-        Ok(messages) => {
-            for message in messages {
-                println!("{message}");
-            }
-        }
+    diagnostics.set_base_path(&cwd);
+    let _ = mlg::check_in(&cwd, paths, diagnostics);
+
+    if diagnostics.has_errors() { 1 } else { 0 }
+}
+
+fn run_init(diagnostics: &mut DiagnosticTracker) -> i32 {
+    let cwd = match env::current_dir() {
+        Ok(cwd) => cwd,
         Err(error) => {
-            eprintln!("Failed to initialize Mathlingua collection: {error}");
-            process::exit(1);
+            diagnostics.global_error(format!(
+                "Failed to determine the current working directory: {error}"
+            ));
+            return 1;
         }
-    }
-}
+    };
 
-fn render_check_success(files_checked: usize) -> String {
-    if files_checked == 1 {
-        "Checked 1 file".to_string()
+    if mlg::init(&cwd, diagnostics).is_err() || diagnostics.has_errors() {
+        1
     } else {
-        format!("Checked {files_checked} files")
-    }
-}
-
-fn format_diagnostic_count(diagnostic_count: usize) -> String {
-    if diagnostic_count == 1 {
-        "1 diagnostic".to_string()
-    } else {
-        format!("{diagnostic_count} diagnostics")
+        0
     }
 }

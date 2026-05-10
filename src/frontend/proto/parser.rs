@@ -1,19 +1,18 @@
 use super::ast::{Argument, Formulation, Group, Section, TextLiteral};
 use super::lexer::Lexer;
-use crate::diagnostics::DiagnosticTracker;
+use crate::events::EventLog;
 
 const MULTILINE_FORMULATION_DELIMITERS: [(&str, &str); 4] =
     [("(", ")"), ("[", "]"), ("{", "}"), ("(.", ".)")];
 
-#[derive(Debug)]
 pub struct Parser<'a> {
     lexer: Lexer<'a>,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(input: &str, tracker: &'a mut DiagnosticTracker) -> Self {
+    pub fn new(input: &str, event_log: &'a mut EventLog) -> Self {
         Self {
-            lexer: Lexer::new(input, tracker),
+            lexer: Lexer::new(input, event_log),
         }
     }
 
@@ -321,17 +320,17 @@ fn is_single_quoted_formulation(text: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{Parser, is_single_quoted_formulation, multiline_formulation_close};
-    use crate::diagnostics::{Diagnostic, DiagnosticTracker};
+    use crate::events::{Event, EventLog};
     use crate::frontend::proto::ast::{Argument, Group};
 
-    fn parse_input(input: &str) -> (Vec<Group>, Vec<Diagnostic>) {
-        let mut tracker = DiagnosticTracker::new();
+    fn parse_input(input: &str) -> (Vec<Group>, Vec<Event>) {
+        let mut event_log = EventLog::new();
         let groups = {
-            let mut parser = Parser::new(input, &mut tracker);
+            let mut parser = Parser::new(input, &mut event_log);
             parser.parse()
         };
 
-        (groups, tracker.diagnostics().to_vec())
+        (groups, event_log.events().to_vec())
     }
 
     #[test]
@@ -349,13 +348,13 @@ then:
   suchThat:
   . "abc"
 "#;
-        let mut tracker = DiagnosticTracker::new();
+        let mut event_log = EventLog::new();
         let groups = {
-            let mut parser = Parser::new(input, &mut tracker);
+            let mut parser = Parser::new(input, &mut event_log);
             parser.parse()
         };
 
-        assert!(tracker.diagnostics().is_empty());
+        assert!(event_log.events().is_empty());
         assert_eq!(groups.len(), 1);
 
         let group = &groups[0];
@@ -399,16 +398,19 @@ then:
 [duplicate]
 Defines: f(x_)
 "#;
-        let mut tracker = DiagnosticTracker::new();
+        let mut event_log = EventLog::new();
         let groups = {
-            let mut parser = Parser::new(input, &mut tracker);
+            let mut parser = Parser::new(input, &mut event_log);
             parser.parse()
         };
-        let diagnostics = tracker.diagnostics();
+        let events = event_log.events();
 
         assert_eq!(groups.len(), 1);
-        assert_eq!(diagnostics.len(), 1);
-        assert_eq!(diagnostics[0].message, "Unexpected header: [duplicate]");
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0].as_message().unwrap().message,
+            "Unexpected header: [duplicate]"
+        );
     }
 
     #[test]
@@ -419,13 +421,13 @@ Defines: f(x_)
 -- another comment
 . y
 "#;
-        let mut tracker = DiagnosticTracker::new();
+        let mut event_log = EventLog::new();
         let groups = {
-            let mut parser = Parser::new(input, &mut tracker);
+            let mut parser = Parser::new(input, &mut event_log);
             parser.parse()
         };
 
-        assert!(tracker.diagnostics().is_empty());
+        assert!(event_log.events().is_empty());
         assert_eq!(groups.len(), 1);
         assert_eq!(groups[0].sections[0].arguments.len(), 2);
     }
@@ -435,19 +437,19 @@ Defines: f(x_)
         let input = r#"broken section
 Defines: f(x_)
 "#;
-        let mut tracker = DiagnosticTracker::new();
+        let mut event_log = EventLog::new();
         let groups = {
-            let mut parser = Parser::new(input, &mut tracker);
+            let mut parser = Parser::new(input, &mut event_log);
             parser.parse()
         };
-        let diagnostics = tracker.diagnostics();
+        let events = event_log.events();
 
         assert_eq!(groups.len(), 1);
         assert_eq!(groups[0].sections.len(), 2);
         assert_eq!(groups[0].sections[0].label, "broken section");
-        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(events.len(), 1);
         assert_eq!(
-            diagnostics[0].message,
+            events[0].as_message().unwrap().message,
             "Expected ':' in section line: broken section"
         );
     }
@@ -455,17 +457,17 @@ Defines: f(x_)
     #[test]
     fn reports_unexpected_indentation_in_arguments() {
         let input = "when:\n    x\n";
-        let mut tracker = DiagnosticTracker::new();
+        let mut event_log = EventLog::new();
         let groups = {
-            let mut parser = Parser::new(input, &mut tracker);
+            let mut parser = Parser::new(input, &mut event_log);
             parser.parse()
         };
-        let diagnostics = tracker.diagnostics();
+        let events = event_log.events();
 
         assert_eq!(groups.len(), 1);
         assert_eq!(groups[0].sections[0].arguments.len(), 1);
-        assert_eq!(diagnostics.len(), 1);
-        assert_eq!(diagnostics[0].message, "Unexpected indent");
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].as_message().unwrap().message, "Unexpected indent");
     }
 
     #[test]
@@ -480,13 +482,13 @@ when:
     x "in" A
   )
 "#;
-        let mut tracker = DiagnosticTracker::new();
+        let mut event_log = EventLog::new();
         let groups = {
-            let mut parser = Parser::new(input, &mut tracker);
+            let mut parser = Parser::new(input, &mut event_log);
             parser.parse()
         };
 
-        assert!(tracker.diagnostics().is_empty());
+        assert!(event_log.events().is_empty());
         assert_eq!(groups.len(), 1);
         assert_eq!(
             groups[0].sections[0].inline_argument.as_deref(),
@@ -505,13 +507,13 @@ when:
     #[test]
     fn parses_dot_delimited_multiline_formulations() {
         let input = "when:\n. (.\n    x + y\n  .)\n";
-        let mut tracker = DiagnosticTracker::new();
+        let mut event_log = EventLog::new();
         let groups = {
-            let mut parser = Parser::new(input, &mut tracker);
+            let mut parser = Parser::new(input, &mut event_log);
             parser.parse()
         };
 
-        assert!(tracker.diagnostics().is_empty());
+        assert!(event_log.events().is_empty());
         assert!(matches!(
             &groups[0].sections[0].arguments[0],
             Argument::Formulation(item) if item.text == "(.\n    x + y\n  .)"
@@ -521,21 +523,21 @@ when:
     #[test]
     fn reports_single_quoted_formulations_as_invalid() {
         let input = "Defines: 'f(x_)'\nwhen:\n. 'x in A'\n";
-        let mut tracker = DiagnosticTracker::new();
+        let mut event_log = EventLog::new();
         let groups = {
-            let mut parser = Parser::new(input, &mut tracker);
+            let mut parser = Parser::new(input, &mut event_log);
             parser.parse()
         };
-        let diagnostics = tracker.diagnostics();
+        let events = event_log.events();
 
         assert_eq!(groups.len(), 1);
-        assert_eq!(diagnostics.len(), 2);
+        assert_eq!(events.len(), 2);
         assert_eq!(
-            diagnostics[0].message,
+            events[0].as_message().unwrap().message,
             "Single-quoted formulations are not allowed"
         );
         assert_eq!(
-            diagnostics[1].message,
+            events[1].as_message().unwrap().message,
             "Single-quoted formulations are not allowed"
         );
     }
@@ -543,18 +545,18 @@ when:
     #[test]
     fn reports_unterminated_multiline_formulations() {
         let input = "when:\n. (\n    x in A\n";
-        let mut tracker = DiagnosticTracker::new();
+        let mut event_log = EventLog::new();
         let groups = {
-            let mut parser = Parser::new(input, &mut tracker);
+            let mut parser = Parser::new(input, &mut event_log);
             parser.parse()
         };
-        let diagnostics = tracker.diagnostics();
+        let events = event_log.events();
 
         assert_eq!(groups.len(), 1);
         assert_eq!(groups[0].sections[0].arguments.len(), 1);
-        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(events.len(), 1);
         assert_eq!(
-            diagnostics[0].message,
+            events[0].as_message().unwrap().message,
             "Unterminated formulation block starting with ("
         );
     }
@@ -600,7 +602,10 @@ that:
         assert_eq!(groups.len(), 1);
         assert_eq!(groups[0].sections[0].label, "Defines");
         assert_eq!(diagnostics.len(), 1);
-        assert_eq!(diagnostics[0].message, "Unexpected line: orphan");
+        assert_eq!(
+            diagnostics[0].as_message().unwrap().message,
+            "Unexpected line: orphan"
+        );
     }
 
     #[test]
@@ -629,8 +634,14 @@ that:
             Argument::Formulation(item) if item.text == "x"
         ));
         assert_eq!(diagnostics.len(), 2);
-        assert_eq!(diagnostics[0].message, "Unexpected indent");
-        assert_eq!(diagnostics[1].message, "Expected an argument");
+        assert_eq!(
+            diagnostics[0].as_message().unwrap().message,
+            "Unexpected indent"
+        );
+        assert_eq!(
+            diagnostics[1].as_message().unwrap().message,
+            "Expected an argument"
+        );
     }
 
     #[test]

@@ -1,19 +1,20 @@
 use super::ast::{Line, Metadata};
-use crate::diagnostics::DiagnosticTracker;
+use crate::events::EventLog;
 
-#[derive(Debug)]
+const ORIGIN: &str = "proto_lexer";
+
 pub struct Lexer<'a> {
     lines: Vec<Line>,
     cursor: usize,
-    tracker: &'a mut DiagnosticTracker,
+    event_log: &'a mut EventLog,
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(input: &str, tracker: &'a mut DiagnosticTracker) -> Self {
+    pub fn new(input: &str, event_log: &'a mut EventLog) -> Self {
         Self {
             lines: text_to_lines(input),
             cursor: 0,
-            tracker,
+            event_log,
         }
     }
 
@@ -22,7 +23,7 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn error(&mut self, row: usize, message: impl Into<String>) {
-        self.tracker.error(row, message);
+        self.event_log.user_error_at_row(Some(ORIGIN), row, message);
     }
 }
 
@@ -69,12 +70,12 @@ fn text_to_lines(input: &str) -> Vec<Line> {
 #[cfg(test)]
 mod tests {
     use super::Lexer;
-    use crate::diagnostics::DiagnosticTracker;
+    use crate::events::EventLog;
 
     #[test]
     fn lexes_indent_and_dot_prefixes() {
-        let mut tracker = DiagnosticTracker::new();
-        let lexer = Lexer::new("  . x", &mut tracker);
+        let mut event_log = EventLog::new();
+        let lexer = Lexer::new("  . x", &mut event_log);
         let line = lexer.peek().expect("expected one lexed line");
 
         assert_eq!(line.text, "x");
@@ -86,8 +87,8 @@ mod tests {
 
     #[test]
     fn identifies_blank_lines_after_trimming_leading_whitespace() {
-        let mut tracker = DiagnosticTracker::new();
-        let lexer = Lexer::new("   \n-- comment", &mut tracker);
+        let mut event_log = EventLog::new();
+        let lexer = Lexer::new("   \n-- comment", &mut event_log);
         let blank = lexer.peek().expect("expected first line");
 
         assert!(blank.is_blank());
@@ -95,8 +96,8 @@ mod tests {
 
     #[test]
     fn peeks_and_iterates_through_multiple_lines_in_order() {
-        let mut tracker = DiagnosticTracker::new();
-        let mut lexer = Lexer::new("alpha\n  . beta\n", &mut tracker);
+        let mut event_log = EventLog::new();
+        let mut lexer = Lexer::new("alpha\n  . beta\n", &mut event_log);
 
         let first = lexer.peek().cloned().expect("expected first line");
         assert_eq!(first.text, "alpha");
@@ -122,8 +123,8 @@ mod tests {
 
     #[test]
     fn only_treats_dot_followed_by_space_as_a_dot_prefix() {
-        let mut tracker = DiagnosticTracker::new();
-        let mut lexer = Lexer::new("  .x", &mut tracker);
+        let mut event_log = EventLog::new();
+        let mut lexer = Lexer::new("  .x", &mut event_log);
         let line = lexer.next().expect("expected one line");
 
         assert_eq!(line.text, ".x");
@@ -134,8 +135,8 @@ mod tests {
 
     #[test]
     fn preserves_trailing_whitespace_after_trimming_leading_whitespace() {
-        let mut tracker = DiagnosticTracker::new();
-        let mut lexer = Lexer::new("  value  ", &mut tracker);
+        let mut event_log = EventLog::new();
+        let mut lexer = Lexer::new("  value  ", &mut event_log);
         let line = lexer.next().expect("expected one line");
 
         assert_eq!(line.text, "value  ");

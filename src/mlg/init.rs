@@ -1,40 +1,54 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
-use crate::diagnostics::DiagnosticTracker;
+use crate::events::EventLog;
 use std::fs;
 use std::io;
 use std::path::Path;
 
 const DEFAULT_CONFIG: &str = "{}\n";
+const ORIGIN: &str = "mlg_init";
 
-pub fn init(root: &Path, tracker: &mut DiagnosticTracker) -> io::Result<()> {
+pub fn init(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
+    event_log.system_debug(
+        Some(ORIGIN),
+        format!("Initializing collection at {}", root.display()),
+    );
+
     let config_path = root.join(CONFIG_FILE);
     if config_path.exists() {
-        tracker.log(format!("Skipping {CONFIG_FILE}; it already exists"));
+        event_log.user_log(
+            Some(ORIGIN),
+            format!("Skipping {CONFIG_FILE}; it already exists"),
+        );
     } else {
         if let Err(error) = fs::write(&config_path, DEFAULT_CONFIG) {
-            tracker.path_error(
+            event_log.user_error_at_path(
+                Some(ORIGIN),
                 config_path,
                 format!("Failed to write {CONFIG_FILE}: {error}"),
             );
             return Err(error);
         }
 
-        tracker.log(format!("Created {CONFIG_FILE}"));
+        event_log.user_log(Some(ORIGIN), format!("Created {CONFIG_FILE}"));
     }
 
     let content_path = root.join(CONTENT_DIR);
     if content_path.exists() {
-        tracker.log(format!("Skipping {CONTENT_DIR}/; it already exists"));
+        event_log.user_log(
+            Some(ORIGIN),
+            format!("Skipping {CONTENT_DIR}/; it already exists"),
+        );
     } else {
         if let Err(error) = fs::create_dir(&content_path) {
-            tracker.path_error(
+            event_log.user_error_at_path(
+                Some(ORIGIN),
                 content_path,
                 format!("Failed to create {CONTENT_DIR}/: {error}"),
             );
             return Err(error);
         }
 
-        tracker.log(format!("Created {CONTENT_DIR}/"));
+        event_log.user_log(Some(ORIGIN), format!("Created {CONTENT_DIR}/"));
     }
 
     Ok(())
@@ -45,7 +59,7 @@ pub fn init(root: &Path, tracker: &mut DiagnosticTracker) -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::{CONFIG_FILE, CONTENT_DIR, DEFAULT_CONFIG, init};
-    use crate::diagnostics::{Diagnostic, DiagnosticTracker};
+    use crate::events::{Event, EventLog};
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -53,15 +67,20 @@ mod tests {
     #[test]
     fn init_creates_missing_config_and_content_directory() {
         let temp_dir = TestDir::new();
-        let mut tracker = DiagnosticTracker::new();
+        let mut event_log = EventLog::new();
 
-        init(temp_dir.path(), &mut tracker).expect("init should succeed");
+        init(temp_dir.path(), &mut event_log).expect("init should succeed");
 
         assert_eq!(
-            tracker.diagnostics(),
+            event_log.events(),
             vec![
-                Diagnostic::log(format!("Created {CONFIG_FILE}")),
-                Diagnostic::log(format!("Created {CONTENT_DIR}/")),
+                Event::system_debug(format!(
+                    "Initializing collection at {}",
+                    temp_dir.path().display()
+                ))
+                .with_origin("mlg_init"),
+                Event::user_log(format!("Created {CONFIG_FILE}")).with_origin("mlg_init"),
+                Event::user_log(format!("Created {CONTENT_DIR}/")).with_origin("mlg_init"),
             ]
         );
         assert_eq!(
@@ -76,15 +95,22 @@ mod tests {
         let temp_dir = TestDir::new();
         fs::write(temp_dir.path().join(CONFIG_FILE), DEFAULT_CONFIG).unwrap();
         fs::create_dir(temp_dir.path().join(CONTENT_DIR)).unwrap();
-        let mut tracker = DiagnosticTracker::new();
+        let mut event_log = EventLog::new();
 
-        init(temp_dir.path(), &mut tracker).expect("init should succeed");
+        init(temp_dir.path(), &mut event_log).expect("init should succeed");
 
         assert_eq!(
-            tracker.diagnostics(),
+            event_log.events(),
             vec![
-                Diagnostic::log(format!("Skipping {CONFIG_FILE}; it already exists")),
-                Diagnostic::log(format!("Skipping {CONTENT_DIR}/; it already exists")),
+                Event::system_debug(format!(
+                    "Initializing collection at {}",
+                    temp_dir.path().display()
+                ))
+                .with_origin("mlg_init"),
+                Event::user_log(format!("Skipping {CONFIG_FILE}; it already exists"))
+                    .with_origin("mlg_init"),
+                Event::user_log(format!("Skipping {CONTENT_DIR}/; it already exists"))
+                    .with_origin("mlg_init"),
             ]
         );
     }

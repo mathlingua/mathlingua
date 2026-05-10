@@ -1,6 +1,8 @@
 use std::collections::{HashMap, VecDeque};
 
-use crate::diagnostics::DiagnosticTracker;
+use crate::events::EventLog;
+
+const ORIGIN: &str = "structural_parser";
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
     parse_expression, parse_expression_alias, parse_form_or_declaration,
@@ -15,7 +17,7 @@ use crate::frontend::proto::ast::{
 
 use super::ast::*;
 
-pub fn parse_document(input: &str, tracker: &mut DiagnosticTracker) -> Document {
+pub fn parse_document(input: &str, tracker: &mut EventLog) -> Document {
     let groups = {
         let mut proto_parser = ProtoParser::new(input, tracker);
         proto_parser.parse()
@@ -33,10 +35,7 @@ pub fn parse_document(input: &str, tracker: &mut DiagnosticTracker) -> Document 
     }
 }
 
-fn parse_top_level_group(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<TopLevelItem> {
+fn parse_top_level_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TopLevelItem> {
     let label = first_section_label(group)?;
     match label {
         "Title" => parse_title(group, tracker).map(TopLevelItem::Title),
@@ -56,7 +55,8 @@ fn parse_top_level_group(
         "Resource" => parse_resource(group, tracker).map(TopLevelItem::Resource),
         "Specify" => parse_specify(group, tracker).map(TopLevelItem::Specify),
         other => {
-            tracker.error(
+            tracker.user_error_at_row(
+                Some(ORIGIN),
                 group.metadata.row,
                 format!("Unexpected top-level group `{other}`"),
             );
@@ -65,7 +65,7 @@ fn parse_top_level_group(
     }
 }
 
-fn parse_title(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<TitleGroup> {
+fn parse_title(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TitleGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Title", &group.sections, tracker, &["Title"])?;
     Some(TitleGroup {
@@ -75,7 +75,7 @@ fn parse_title(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<Ti
     })
 }
 
-fn parse_section(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<SectionGroup> {
+fn parse_section(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SectionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Section", &group.sections, tracker, &["Section"])?;
     Some(SectionGroup {
@@ -85,10 +85,7 @@ fn parse_section(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<
     })
 }
 
-fn parse_subsection(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<SubsectionGroup> {
+fn parse_subsection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SubsectionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Subsection", &group.sections, tracker, &["Subsection"])?;
     Some(SubsectionGroup {
@@ -102,10 +99,7 @@ fn parse_subsection(
     })
 }
 
-fn parse_subsubsection(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<SubsubsectionGroup> {
+fn parse_subsubsection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SubsubsectionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections(
         "Subsubsection",
@@ -124,7 +118,7 @@ fn parse_subsubsection(
     })
 }
 
-fn parse_describes(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<DescribesGroup> {
+fn parse_describes(group: &ProtoGroup, tracker: &mut EventLog) -> Option<DescribesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
         "Describes",
@@ -203,7 +197,7 @@ fn parse_describes(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Optio
     })
 }
 
-fn parse_defines(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<DefinesGroup> {
+fn parse_defines(group: &ProtoGroup, tracker: &mut EventLog) -> Option<DefinesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
         "Defines",
@@ -272,7 +266,7 @@ fn parse_defines(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<
     })
 }
 
-fn parse_refines(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<RefinesGroup> {
+fn parse_refines(group: &ProtoGroup, tracker: &mut EventLog) -> Option<RefinesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
         "Refines",
@@ -351,7 +345,7 @@ fn parse_refines(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<
     })
 }
 
-fn parse_states(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<StatesGroup> {
+fn parse_states(group: &ProtoGroup, tracker: &mut EventLog) -> Option<StatesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
         "States",
@@ -414,7 +408,7 @@ fn parse_states(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<S
     })
 }
 
-fn parse_axiom(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<AxiomGroup> {
+fn parse_axiom(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AxiomGroup> {
     parse_argument_theorem_like(group, tracker, "Axiom").map(
         |(
             heading,
@@ -446,7 +440,7 @@ fn parse_axiom(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<Ax
     )
 }
 
-fn parse_theorem(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<TheoremGroup> {
+fn parse_theorem(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TheoremGroup> {
     parse_argument_theorem_like(group, tracker, "Theorem").map(
         |(
             heading,
@@ -478,7 +472,7 @@ fn parse_theorem(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<
     )
 }
 
-fn parse_lemma(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<LemmaGroup> {
+fn parse_lemma(group: &ProtoGroup, tracker: &mut EventLog) -> Option<LemmaGroup> {
     parse_argument_theorem_like(group, tracker, "Lemma").map(
         |(
             heading,
@@ -510,10 +504,7 @@ fn parse_lemma(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<Le
     )
 }
 
-fn parse_conjecture(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<ConjectureGroup> {
+fn parse_conjecture(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ConjectureGroup> {
     parse_argument_theorem_like(group, tracker, "Conjecture").map(
         |(
             heading,
@@ -548,7 +539,7 @@ fn parse_conjecture(
 #[allow(clippy::type_complexity)]
 fn parse_argument_theorem_like(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
     name: &str,
 ) -> Option<(
     Option<crate::frontend::formulation::ast::CommandHeader>,
@@ -624,7 +615,7 @@ fn parse_argument_theorem_like(
     ))
 }
 
-fn parse_corollary(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<CorollaryGroup> {
+fn parse_corollary(group: &ProtoGroup, tracker: &mut EventLog) -> Option<CorollaryGroup> {
     let heading = parse_optional_command_heading(group, tracker)?;
     let sections = identify_sections(
         "Corollary",
@@ -691,7 +682,7 @@ fn parse_corollary(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Optio
     })
 }
 
-fn parse_person(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<PersonGroup> {
+fn parse_person(group: &ProtoGroup, tracker: &mut EventLog) -> Option<PersonGroup> {
     let heading = parse_required_author_heading(group, tracker)?;
     let sections = identify_sections(
         "Person",
@@ -718,7 +709,7 @@ fn parse_person(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<P
     })
 }
 
-fn parse_resource(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<ResourceGroup> {
+fn parse_resource(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceGroup> {
     let heading = parse_required_resource_heading(group, tracker)?;
     let sections = identify_sections("Resource", &group.sections, tracker, &["Resource"])?;
 
@@ -735,7 +726,7 @@ fn parse_resource(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option
     })
 }
 
-fn parse_specify(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<SpecifyGroup> {
+fn parse_specify(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SpecifyGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Specify", &group.sections, tracker, &["Specify"])?;
     Some(SpecifyGroup {
@@ -750,7 +741,7 @@ fn parse_specify(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<
     })
 }
 
-fn parse_alias_group(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<AliasGroup> {
+fn parse_alias_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AliasGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("alias", &group.sections, tracker, &["alias", "written?"])?;
     Some(AliasGroup {
@@ -770,7 +761,7 @@ fn parse_alias_group(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Opt
     })
 }
 
-fn parse_symbol(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<SymbolGroup> {
+fn parse_symbol(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SymbolGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("symbol", &group.sections, tracker, &["symbol", "written?"])?;
     Some(SymbolGroup {
@@ -790,10 +781,7 @@ fn parse_symbol(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<S
     })
 }
 
-fn parse_connection(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<ConnectionGroup> {
+fn parse_connection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ConnectionGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "connection",
@@ -846,7 +834,7 @@ fn parse_connection(
     })
 }
 
-fn parse_written(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<WrittenGroup> {
+fn parse_written(group: &ProtoGroup, tracker: &mut EventLog) -> Option<WrittenGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("written", &group.sections, tracker, &["written"])?;
     Some(WrittenGroup {
@@ -857,7 +845,7 @@ fn parse_written(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<
     })
 }
 
-fn parse_called(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<CalledGroup> {
+fn parse_called(group: &ProtoGroup, tracker: &mut EventLog) -> Option<CalledGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("called", &group.sections, tracker, &["called"])?;
     Some(CalledGroup {
@@ -868,7 +856,7 @@ fn parse_called(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<C
     })
 }
 
-fn parse_writing(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<WritingGroup> {
+fn parse_writing(group: &ProtoGroup, tracker: &mut EventLog) -> Option<WritingGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("writing", &group.sections, tracker, &["writing", "as"])?;
     Some(WritingGroup {
@@ -887,7 +875,7 @@ fn parse_writing(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<
     })
 }
 
-fn parse_overview(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<OverviewGroup> {
+fn parse_overview(group: &ProtoGroup, tracker: &mut EventLog) -> Option<OverviewGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("overview", &group.sections, tracker, &["overview"])?;
     Some(OverviewGroup {
@@ -902,7 +890,7 @@ fn parse_overview(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option
     })
 }
 
-fn parse_related(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<RelatedGroup> {
+fn parse_related(group: &ProtoGroup, tracker: &mut EventLog) -> Option<RelatedGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("related", &group.sections, tracker, &["related"])?;
     Some(RelatedGroup {
@@ -917,10 +905,7 @@ fn parse_related(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<
     })
 }
 
-fn parse_discoverer(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<DiscovererGroup> {
+fn parse_discoverer(group: &ProtoGroup, tracker: &mut EventLog) -> Option<DiscovererGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("discoverer", &group.sections, tracker, &["discoverer"])?;
     Some(DiscovererGroup {
@@ -931,7 +916,7 @@ fn parse_discoverer(
     })
 }
 
-fn parse_label_note(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<LabelGroup> {
+fn parse_label_note(group: &ProtoGroup, tracker: &mut EventLog) -> Option<LabelGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "label",
@@ -953,7 +938,7 @@ fn parse_label_note(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Opti
     })
 }
 
-fn parse_by_note(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<ByGroup> {
+fn parse_by_note(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ByGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("by", &group.sections, tracker, &["by", "comment"])?;
     Some(ByGroup {
@@ -967,7 +952,7 @@ fn parse_by_note(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<
     })
 }
 
-fn parse_id(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<IdGroup> {
+fn parse_id(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IdGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("id", &group.sections, tracker, &["id"])?;
     Some(IdGroup {
@@ -977,7 +962,7 @@ fn parse_id(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<IdGro
     })
 }
 
-fn parse_version(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<VersionGroup> {
+fn parse_version(group: &ProtoGroup, tracker: &mut EventLog) -> Option<VersionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("version", &group.sections, tracker, &["version"])?;
     Some(VersionGroup {
@@ -987,10 +972,7 @@ fn parse_version(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<
     })
 }
 
-fn parse_positive_int(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<PositiveIntGroup> {
+fn parse_positive_int(group: &ProtoGroup, tracker: &mut EventLog) -> Option<PositiveIntGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "positive_int",
@@ -1012,10 +994,7 @@ fn parse_positive_int(
     })
 }
 
-fn parse_negative_int(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<NegativeIntGroup> {
+fn parse_negative_int(group: &ProtoGroup, tracker: &mut EventLog) -> Option<NegativeIntGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "negative_int",
@@ -1037,7 +1016,7 @@ fn parse_negative_int(
     })
 }
 
-fn parse_zero(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<ZeroGroup> {
+fn parse_zero(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ZeroGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("zero", &group.sections, tracker, &["zero", "is"])?;
     Some(ZeroGroup {
@@ -1053,7 +1032,7 @@ fn parse_zero(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<Zer
 
 fn parse_positive_decimal(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<PositiveDecimalGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
@@ -1078,7 +1057,7 @@ fn parse_positive_decimal(
 
 fn parse_negative_decimal(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<NegativeDecimalGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
@@ -1101,10 +1080,7 @@ fn parse_negative_decimal(
     })
 }
 
-fn parse_resource_title(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<ResourceTitleGroup> {
+fn parse_resource_title(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceTitleGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("title", &group.sections, tracker, &["title"])?;
     Some(ResourceTitleGroup {
@@ -1116,7 +1092,7 @@ fn parse_resource_title(
 
 fn parse_resource_author(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<ResourceAuthorGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("author", &group.sections, tracker, &["author"])?;
@@ -1129,7 +1105,7 @@ fn parse_resource_author(
 
 fn parse_resource_offset(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<ResourceOffsetGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("offset", &group.sections, tracker, &["offset"])?;
@@ -1140,10 +1116,7 @@ fn parse_resource_offset(
     })
 }
 
-fn parse_resource_url(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<ResourceUrlGroup> {
+fn parse_resource_url(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceUrlGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("url", &group.sections, tracker, &["url"])?;
     Some(ResourceUrlGroup {
@@ -1155,7 +1128,7 @@ fn parse_resource_url(
 
 fn parse_resource_homepage(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<ResourceHomepageGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("homepage", &group.sections, tracker, &["homepage"])?;
@@ -1170,10 +1143,7 @@ fn parse_resource_homepage(
     })
 }
 
-fn parse_resource_type(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<ResourceTypeGroup> {
+fn parse_resource_type(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceTypeGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("type", &group.sections, tracker, &["type"])?;
     Some(ResourceTypeGroup {
@@ -1185,7 +1155,7 @@ fn parse_resource_type(
 
 fn parse_resource_edition(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<ResourceEditionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("edition", &group.sections, tracker, &["edition"])?;
@@ -1198,7 +1168,7 @@ fn parse_resource_edition(
 
 fn parse_resource_editor(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<ResourceEditorGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("editor", &group.sections, tracker, &["editor"])?;
@@ -1211,7 +1181,7 @@ fn parse_resource_editor(
 
 fn parse_resource_institution(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<ResourceInstitutionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("institution", &group.sections, tracker, &["institution"])?;
@@ -1228,7 +1198,7 @@ fn parse_resource_institution(
 
 fn parse_resource_journal(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<ResourceJournalGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("journal", &group.sections, tracker, &["journal"])?;
@@ -1241,7 +1211,7 @@ fn parse_resource_journal(
 
 fn parse_resource_publisher(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<ResourcePublisherGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("publisher", &group.sections, tracker, &["publisher"])?;
@@ -1258,7 +1228,7 @@ fn parse_resource_publisher(
 
 fn parse_resource_volume(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<ResourceVolumeGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("volume", &group.sections, tracker, &["volume"])?;
@@ -1269,10 +1239,7 @@ fn parse_resource_volume(
     })
 }
 
-fn parse_resource_month(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<ResourceMonthGroup> {
+fn parse_resource_month(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceMonthGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("month", &group.sections, tracker, &["month"])?;
     Some(ResourceMonthGroup {
@@ -1282,10 +1249,7 @@ fn parse_resource_month(
     })
 }
 
-fn parse_resource_year(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<ResourceYearGroup> {
+fn parse_resource_year(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceYearGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("year", &group.sections, tracker, &["year"])?;
     Some(ResourceYearGroup {
@@ -1297,7 +1261,7 @@ fn parse_resource_year(
 
 fn parse_resource_description(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<ResourceDescriptionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("description", &group.sections, tracker, &["description"])?;
@@ -1312,7 +1276,7 @@ fn parse_resource_description(
     })
 }
 
-fn parse_not_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<NotGroup> {
+fn parse_not_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<NotGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("not", &group.sections, tracker, &["not"])?;
     Some(NotGroup {
@@ -1327,7 +1291,7 @@ fn parse_not_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Opti
     })
 }
 
-fn parse_all_of_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<AllOfGroup> {
+fn parse_all_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AllOfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("allOf", &group.sections, tracker, &["allOf"])?;
     Some(AllOfGroup {
@@ -1338,7 +1302,7 @@ fn parse_all_of_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> O
     })
 }
 
-fn parse_any_of_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<AnyOfGroup> {
+fn parse_any_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AnyOfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("anyOf", &group.sections, tracker, &["anyOf"])?;
     Some(AnyOfGroup {
@@ -1349,7 +1313,7 @@ fn parse_any_of_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> O
     })
 }
 
-fn parse_one_of_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<OneOfGroup> {
+fn parse_one_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<OneOfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("oneOf", &group.sections, tracker, &["oneOf"])?;
     Some(OneOfGroup {
@@ -1360,7 +1324,7 @@ fn parse_one_of_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> O
     })
 }
 
-fn parse_exists_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<ExistsGroup> {
+fn parse_exists_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ExistsGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("exists", &group.sections, tracker, &["exists", "suchThat"])?;
     Some(ExistsGroup {
@@ -1385,7 +1349,7 @@ fn parse_exists_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> O
 
 fn parse_exists_unique_clause(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<ExistsUniqueGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
@@ -1414,10 +1378,7 @@ fn parse_exists_unique_clause(
     })
 }
 
-fn parse_for_all_clause(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<ForAllGroup> {
+fn parse_for_all_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ForAllGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "forAll",
@@ -1445,7 +1406,7 @@ fn parse_for_all_clause(
     })
 }
 
-fn parse_if_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<IfGroup> {
+fn parse_if_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("if", &group.sections, tracker, &["if", "then"])?;
     Some(IfGroup {
@@ -1459,7 +1420,7 @@ fn parse_if_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Optio
     })
 }
 
-fn parse_iff_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<IffGroup> {
+fn parse_iff_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IffGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("iff", &group.sections, tracker, &["iff", "then"])?;
     Some(IffGroup {
@@ -1473,10 +1434,7 @@ fn parse_iff_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Opti
     })
 }
 
-fn parse_piecewise_clause(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<PiecewiseGroup> {
+fn parse_piecewise_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<PiecewiseGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "piecewise",
@@ -1502,7 +1460,7 @@ fn parse_piecewise_clause(
     })
 }
 
-fn parse_given_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<GivenGroup> {
+fn parse_given_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<GivenGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "given",
@@ -1530,22 +1488,17 @@ fn parse_given_clause(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Op
     })
 }
 
-fn parse_alias_item_group(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<AliasItem> {
+fn parse_alias_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AliasItem> {
     parse_alias_group(group, tracker).map(AliasItem::Alias)
 }
 
-fn parse_provides_item_group(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<ProvidesItem> {
+fn parse_provides_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ProvidesItem> {
     match first_section_label(group)? {
         "symbol" => parse_symbol(group, tracker).map(ProvidesItem::Symbol),
         "connection" => parse_connection(group, tracker).map(ProvidesItem::Connection),
         other => {
-            tracker.error(
+            tracker.user_error_at_row(
+                Some(ORIGIN),
                 group.metadata.row,
                 format!("Unexpected provides group `{other}`"),
             );
@@ -1556,7 +1509,7 @@ fn parse_provides_item_group(
 
 fn parse_documented_item_group(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<DocumentedItem> {
     match first_section_label(group)? {
         "written" => parse_written(group, tracker).map(DocumentedItem::Written),
@@ -1566,7 +1519,8 @@ fn parse_documented_item_group(
         "related" => parse_related(group, tracker).map(DocumentedItem::Related),
         "discoverer" => parse_discoverer(group, tracker).map(DocumentedItem::Discoverer),
         other => {
-            tracker.error(
+            tracker.user_error_at_row(
+                Some(ORIGIN),
                 group.metadata.row,
                 format!("Unexpected documented group `{other}`"),
             );
@@ -1575,15 +1529,13 @@ fn parse_documented_item_group(
     }
 }
 
-fn parse_justified_item_group(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<JustifiedItem> {
+fn parse_justified_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<JustifiedItem> {
     match first_section_label(group)? {
         "label" => parse_label_note(group, tracker).map(JustifiedItem::Label),
         "by" => parse_by_note(group, tracker).map(JustifiedItem::By),
         other => {
-            tracker.error(
+            tracker.user_error_at_row(
+                Some(ORIGIN),
                 group.metadata.row,
                 format!("Unexpected justified group `{other}`"),
             );
@@ -1592,15 +1544,13 @@ fn parse_justified_item_group(
     }
 }
 
-fn parse_metadata_item_group(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<MetadataItem> {
+fn parse_metadata_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<MetadataItem> {
     match first_section_label(group)? {
         "id" => parse_id(group, tracker).map(MetadataItem::Id),
         "version" => parse_version(group, tracker).map(MetadataItem::Version),
         other => {
-            tracker.error(
+            tracker.user_error_at_row(
+                Some(ORIGIN),
                 group.metadata.row,
                 format!("Unexpected metadata group `{other}`"),
             );
@@ -1609,10 +1559,7 @@ fn parse_metadata_item_group(
     }
 }
 
-fn parse_specify_item_group(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<SpecifyItem> {
+fn parse_specify_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SpecifyItem> {
     match first_section_label(group)? {
         "positive" => {
             if group.sections.iter().any(|section| section.label == "int") {
@@ -1630,7 +1577,8 @@ fn parse_specify_item_group(
         }
         "zero" => parse_zero(group, tracker).map(SpecifyItem::Zero),
         other => {
-            tracker.error(
+            tracker.user_error_at_row(
+                Some(ORIGIN),
                 group.metadata.row,
                 format!("Unexpected specify group `{other}`"),
             );
@@ -1639,10 +1587,7 @@ fn parse_specify_item_group(
     }
 }
 
-fn parse_resource_item_group(
-    group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
-) -> Option<ResourceItem> {
+fn parse_resource_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceItem> {
     match first_section_label(group)? {
         "title" => parse_resource_title(group, tracker).map(ResourceItem::Title),
         "author" => parse_resource_author(group, tracker).map(ResourceItem::Author),
@@ -1660,7 +1605,8 @@ fn parse_resource_item_group(
         "year" => parse_resource_year(group, tracker).map(ResourceItem::Year),
         "description" => parse_resource_description(group, tracker).map(ResourceItem::Description),
         other => {
-            tracker.error(
+            tracker.user_error_at_row(
+                Some(ORIGIN),
                 group.metadata.row,
                 format!("Unexpected resource group `{other}`"),
             );
@@ -1669,7 +1615,7 @@ fn parse_resource_item_group(
     }
 }
 
-fn parse_clause_group(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<Clause> {
+fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Clause> {
     match first_section_label(group)? {
         "not" => parse_not_clause(group, tracker).map(Clause::Not),
         "allOf" => parse_all_of_clause(group, tracker).map(Clause::AllOf),
@@ -1683,7 +1629,8 @@ fn parse_clause_group(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Op
         "piecewise" => parse_piecewise_clause(group, tracker).map(Clause::Piecewise),
         "given" => parse_given_clause(group, tracker).map(Clause::Given),
         other => {
-            tracker.error(
+            tracker.user_error_at_row(
+                Some(ORIGIN),
                 group.metadata.row,
                 format!("Unexpected clause group `{other}`"),
             );
@@ -1708,16 +1655,17 @@ fn parse_is_or_via_item(input: &str) -> Result<IsOrViaItem, FormulationParseErro
 
 fn parse_required_command_heading(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<crate::frontend::formulation::ast::CommandHeader> {
     let Some(heading) = group.heading.as_deref() else {
-        tracker.error(group.metadata.row, "Expected command heading");
+        tracker.user_error_at_row(Some(ORIGIN), group.metadata.row, "Expected command heading");
         return None;
     };
     match parse_command_header(heading) {
         Ok(heading) => Some(heading),
         Err(error) => {
-            tracker.error(
+            tracker.user_error_at_row(
+                Some(ORIGIN),
                 group.metadata.row,
                 format!("Invalid command heading: {error}"),
             );
@@ -1728,13 +1676,14 @@ fn parse_required_command_heading(
 
 fn parse_optional_command_heading(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<Option<crate::frontend::formulation::ast::CommandHeader>> {
     match group.heading.as_deref() {
         Some(heading) => match parse_command_header(heading) {
             Ok(heading) => Some(Some(heading)),
             Err(error) => {
-                tracker.error(
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
                     group.metadata.row,
                     format!("Invalid command heading: {error}"),
                 );
@@ -1747,13 +1696,14 @@ fn parse_optional_command_heading(
 
 fn parse_optional_label_heading(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<Option<crate::frontend::formulation::ast::LabelHeader>> {
     match group.heading.as_deref() {
         Some(heading) => match parse_label_header(heading) {
             Ok(heading) => Some(Some(heading)),
             Err(error) => {
-                tracker.error(
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
                     group.metadata.row,
                     format!("Invalid label heading: {error}"),
                 );
@@ -1766,16 +1716,17 @@ fn parse_optional_label_heading(
 
 fn parse_required_author_heading(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<crate::frontend::formulation::ast::AuthorHeader> {
     let Some(heading) = group.heading.as_deref() else {
-        tracker.error(group.metadata.row, "Expected author heading");
+        tracker.user_error_at_row(Some(ORIGIN), group.metadata.row, "Expected author heading");
         return None;
     };
     match parse_author_header(heading) {
         Ok(heading) => Some(heading),
         Err(error) => {
-            tracker.error(
+            tracker.user_error_at_row(
+                Some(ORIGIN),
                 group.metadata.row,
                 format!("Invalid author heading: {error}"),
             );
@@ -1786,16 +1737,21 @@ fn parse_required_author_heading(
 
 fn parse_required_resource_heading(
     group: &ProtoGroup,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<crate::frontend::formulation::ast::ResourceHeader> {
     let Some(heading) = group.heading.as_deref() else {
-        tracker.error(group.metadata.row, "Expected resource heading");
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            group.metadata.row,
+            "Expected resource heading",
+        );
         return None;
     };
     match parse_resource_header(heading) {
         Ok(heading) => Some(heading),
         Err(error) => {
-            tracker.error(
+            tracker.user_error_at_row(
+                Some(ORIGIN),
                 group.metadata.row,
                 format!("Invalid resource heading: {error}"),
             );
@@ -1804,9 +1760,10 @@ fn parse_required_resource_heading(
     }
 }
 
-fn ensure_no_heading(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Option<()> {
+fn ensure_no_heading(group: &ProtoGroup, tracker: &mut EventLog) -> Option<()> {
     if let Some(heading) = &group.heading {
-        tracker.error(
+        tracker.user_error_at_row(
+            Some(ORIGIN),
             group.metadata.row,
             format!("Unexpected heading `{heading}`"),
         );
@@ -1819,15 +1776,19 @@ fn ensure_no_heading(group: &ProtoGroup, tracker: &mut DiagnosticTracker) -> Opt
 fn parse_required_formulation<T>(
     section: &ProtoSection,
     label: &str,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
     parser: fn(&str) -> Result<T, FormulationParseError>,
 ) -> Option<T> {
+    let starting_issue_count = tracker.issue_count();
     let items = parse_optional_formulations(Some(section), label, tracker, parser);
     if items.is_empty() {
-        tracker.error(
-            section.metadata.row,
-            format!("Expected a {label} formulation"),
-        );
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                format!("Expected a {label} formulation"),
+            );
+        }
         None
     } else {
         Some(items.into_iter().next().expect("non-empty formulations"))
@@ -1837,22 +1798,26 @@ fn parse_required_formulation<T>(
 fn parse_required_formulations<T>(
     section: &ProtoSection,
     label: &str,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
     parser: fn(&str) -> Result<T, FormulationParseError>,
 ) -> Option<OneOrMore<T>> {
+    let starting_issue_count = tracker.issue_count();
     let items = parse_optional_formulations(Some(section), label, tracker, parser);
     one_or_more(items, || {
-        tracker.error(
-            section.metadata.row,
-            format!("Expected {label} formulations"),
-        );
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                format!("Expected {label} formulations"),
+            );
+        }
     })
 }
 
 fn parse_optional_formulations<T>(
     section: Option<&ProtoSection>,
     label: &str,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
     parser: fn(&str) -> Result<T, FormulationParseError>,
 ) -> ZeroOrMore<T> {
     let Some(section) = section else {
@@ -1865,16 +1830,26 @@ fn parse_optional_formulations<T>(
             SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
                 match parser(text) {
                     Ok(value) => result.push(value),
-                    Err(error) => {
-                        tracker.error(row, format!("Invalid {label} formulation: {error}"))
-                    }
+                    Err(error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid {label} formulation: {error}"),
+                    ),
                 }
             }
             SectionEntry::Text { row, .. } => {
-                tracker.error(row, format!("Expected formulation in section `{label}`"));
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    format!("Expected formulation in section `{label}`"),
+                );
             }
             SectionEntry::Group { row, .. } => {
-                tracker.error(row, format!("Expected formulation in section `{label}`"));
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    format!("Expected formulation in section `{label}`"),
+                );
             }
         }
     }
@@ -1885,14 +1860,18 @@ fn parse_optional_formulations<T>(
 fn parse_required_clause(
     section: &ProtoSection,
     label: &str,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<Clause> {
+    let starting_issue_count = tracker.issue_count();
     let clauses = parse_optional_clauses(Some(section), label, tracker);
     if clauses.is_empty() {
-        tracker.error(
-            section.metadata.row,
-            format!("Expected a clause in `{label}`"),
-        );
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                format!("Expected a clause in `{label}`"),
+            );
+        }
         None
     } else {
         Some(clauses.into_iter().next().expect("non-empty clauses"))
@@ -1902,21 +1881,25 @@ fn parse_required_clause(
 fn parse_required_clauses(
     section: &ProtoSection,
     label: &str,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<OneOrMore<Clause>> {
+    let starting_issue_count = tracker.issue_count();
     let clauses = parse_optional_clauses(Some(section), label, tracker);
     one_or_more(clauses, || {
-        tracker.error(
-            section.metadata.row,
-            format!("Expected clauses in `{label}`"),
-        );
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                format!("Expected clauses in `{label}`"),
+            );
+        }
     })
 }
 
 fn parse_optional_clauses(
     section: Option<&ProtoSection>,
     label: &str,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> ZeroOrMore<Clause> {
     let Some(section) = section else {
         return ZeroOrMore::default();
@@ -1928,7 +1911,8 @@ fn parse_optional_clauses(
             SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
                 match parse_expression(text) {
                     Ok(expression) => result.push(Clause::Expression(expression)),
-                    Err(error) => tracker.error(
+                    Err(error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
                         row,
                         format!("Invalid clause expression in `{label}`: {error}"),
                     ),
@@ -1940,7 +1924,11 @@ fn parse_optional_clauses(
                 }
             }
             SectionEntry::Text { row, .. } => {
-                tracker.error(row, format!("Expected clause in section `{label}`"));
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    format!("Expected clause in section `{label}`"),
+                );
             }
         }
     }
@@ -1951,23 +1939,27 @@ fn parse_optional_clauses(
 fn parse_required_groups<T>(
     section: &ProtoSection,
     label: &str,
-    tracker: &mut DiagnosticTracker,
-    parser: fn(&ProtoGroup, &mut DiagnosticTracker) -> Option<T>,
+    tracker: &mut EventLog,
+    parser: fn(&ProtoGroup, &mut EventLog) -> Option<T>,
 ) -> Option<OneOrMore<T>> {
+    let starting_issue_count = tracker.issue_count();
     let items = parse_optional_groups(Some(section), label, tracker, parser);
     one_or_more(items, || {
-        tracker.error(
-            section.metadata.row,
-            format!("Expected nested groups in `{label}`"),
-        );
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                format!("Expected nested groups in `{label}`"),
+            );
+        }
     })
 }
 
 fn parse_optional_groups<T>(
     section: Option<&ProtoSection>,
     label: &str,
-    tracker: &mut DiagnosticTracker,
-    parser: fn(&ProtoGroup, &mut DiagnosticTracker) -> Option<T>,
+    tracker: &mut EventLog,
+    parser: fn(&ProtoGroup, &mut EventLog) -> Option<T>,
 ) -> ZeroOrMore<T> {
     let Some(section) = section else {
         return ZeroOrMore::default();
@@ -1984,7 +1976,11 @@ fn parse_optional_groups<T>(
             SectionEntry::Inline { row, .. }
             | SectionEntry::Formulation { row, .. }
             | SectionEntry::Text { row, .. } => {
-                tracker.error(row, format!("Expected nested group in section `{label}`"));
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    format!("Expected nested group in section `{label}`"),
+                );
             }
         }
     }
@@ -1995,11 +1991,18 @@ fn parse_optional_groups<T>(
 fn parse_required_open_text(
     section: &ProtoSection,
     label: &str,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<OpenText> {
+    let starting_issue_count = tracker.issue_count();
     let texts = parse_optional_open_texts(Some(section), tracker);
     if texts.is_empty() {
-        tracker.error(section.metadata.row, format!("Expected text in `{label}`"));
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                format!("Expected text in `{label}`"),
+            );
+        }
         None
     } else {
         Some(texts.into_iter().next().expect("non-empty texts"))
@@ -2009,57 +2012,70 @@ fn parse_required_open_text(
 fn parse_required_open_texts(
     section: &ProtoSection,
     label: &str,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<OneOrMore<OpenText>> {
+    let starting_issue_count = tracker.issue_count();
     let texts = parse_optional_open_texts(Some(section), tracker);
     one_or_more(texts, || {
-        tracker.error(
-            section.metadata.row,
-            format!("Expected text entries in `{label}`"),
-        );
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                format!("Expected text entries in `{label}`"),
+            );
+        }
     })
 }
 
 fn parse_optional_open_texts(
     section: Option<&ProtoSection>,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> ZeroOrMore<OpenText> {
     parse_optional_texts(section, tracker, OpenText)
 }
 
 fn parse_required_written_texts(
     section: &ProtoSection,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<OneOrMore<WrittenText>> {
+    let starting_issue_count = tracker.issue_count();
     let texts = parse_optional_texts(Some(section), tracker, WrittenText);
     one_or_more(texts, || {
-        tracker.error(section.metadata.row, "Expected written text");
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(Some(ORIGIN), section.metadata.row, "Expected written text");
+        }
     })
 }
 
 fn parse_required_called_texts(
     section: &ProtoSection,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<OneOrMore<CalledText>> {
+    let starting_issue_count = tracker.issue_count();
     let texts = parse_optional_texts(Some(section), tracker, CalledText);
     one_or_more(texts, || {
-        tracker.error(section.metadata.row, "Expected called text");
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(Some(ORIGIN), section.metadata.row, "Expected called text");
+        }
     })
 }
 
 fn parse_required_writing_texts(
     section: &ProtoSection,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
 ) -> Option<OneOrMore<WritingText>> {
+    let starting_issue_count = tracker.issue_count();
     let texts = parse_optional_texts(Some(section), tracker, WritingText);
     one_or_more(texts, || {
-        tracker.error(section.metadata.row, "Expected writing text");
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(Some(ORIGIN), section.metadata.row, "Expected writing text");
+        }
     })
 }
 
 fn parse_optional_texts<T>(
     section: Option<&ProtoSection>,
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
     wrap: fn(String) -> T,
 ) -> ZeroOrMore<T> {
     let Some(section) = section else {
@@ -2073,14 +2089,18 @@ fn parse_optional_texts<T>(
                 if let Some(value) = strip_quoted_text(text) {
                     result.push(wrap(value));
                 } else {
-                    tracker.error(row, format!("Expected quoted text, found `{text}`"));
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Expected quoted text, found `{text}`"),
+                    );
                 }
             }
             SectionEntry::Formulation { row, .. } => {
-                tracker.error(row, "Expected text, found formulation");
+                tracker.user_error_at_row(Some(ORIGIN), row, "Expected text, found formulation");
             }
             SectionEntry::Group { row, .. } => {
-                tracker.error(row, "Expected text, found nested group");
+                tracker.user_error_at_row(Some(ORIGIN), row, "Expected text, found nested group");
             }
         }
     }
@@ -2118,7 +2138,7 @@ fn section<'a>(
 fn identify_sections<'a>(
     name: &str,
     sections: &'a [ProtoSection],
-    tracker: &mut DiagnosticTracker,
+    tracker: &mut EventLog,
     expected: &[&str],
 ) -> Option<HashMap<String, &'a ProtoSection>> {
     let mut section_queue: VecDeque<&ProtoSection> = sections.iter().collect();
@@ -2145,7 +2165,8 @@ fn identify_sections<'a>(
         } else if is_optional {
             expected_queue.pop_front();
         } else {
-            tracker.error(
+            tracker.user_error_at_row(
+                Some(ORIGIN),
                 next_section.metadata.row,
                 format!(
                     "For {name} pattern:\n\n{pattern}\n\nExpected `{true_name}` but found `{}`",
@@ -2157,7 +2178,8 @@ fn identify_sections<'a>(
     }
 
     if let Some(unexpected) = section_queue.front() {
-        tracker.error(
+        tracker.user_error_at_row(
+            Some(ORIGIN),
             unexpected.metadata.row,
             format!(
                 "For {name} pattern:\n\n{pattern}\n\nUnexpected section `{}`",
@@ -2176,7 +2198,8 @@ fn identify_sections<'a>(
             .first()
             .map(|section| section.metadata.row)
             .unwrap_or(0);
-        tracker.error(
+        tracker.user_error_at_row(
+            Some(ORIGIN),
             row,
             format!(
                 "For {name} pattern:\n\n{pattern}\n\nExpected section `{}`",
@@ -2236,7 +2259,7 @@ mod tests {
     use std::fs;
 
     use super::parse_document;
-    use crate::diagnostics::{Diagnostic, DiagnosticTracker};
+    use crate::events::{Event, EventLog};
     use crate::frontend::proto::Parser as ProtoParser;
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, Document, DocumentedItem, IsOrViaItem, JustifiedItem,
@@ -2258,13 +2281,13 @@ mod tests {
     }
 
     fn render_proto_groups(text: &str) -> String {
-        let mut tracker = DiagnosticTracker::new();
+        let mut tracker = EventLog::new();
         let groups = {
             let mut parser = ProtoParser::new(text, &mut tracker);
             parser.parse()
         };
 
-        assert!(!tracker.has_errors(), "{:#?}", tracker.diagnostics());
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
 
         groups
             .iter()
@@ -2274,18 +2297,18 @@ mod tests {
     }
 
     fn parse_ok(text: &str) -> Document {
-        let mut tracker = DiagnosticTracker::new();
+        let mut tracker = EventLog::new();
         let document = parse_document(text, &mut tracker);
 
-        assert!(!tracker.has_errors(), "{:#?}", tracker.diagnostics());
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
 
         document
     }
 
-    fn parse_with_diagnostics(text: &str) -> (Document, Vec<Diagnostic>) {
-        let mut tracker = DiagnosticTracker::new();
+    fn parse_with_diagnostics(text: &str) -> (Document, Vec<Event>) {
+        let mut tracker = EventLog::new();
         let document = parse_document(text, &mut tracker);
-        let messages = tracker.diagnostics().to_vec();
+        let messages = tracker.events().to_vec();
 
         (document, messages)
     }
@@ -2329,10 +2352,10 @@ Resource:
 . title: "Elements"
 "#;
 
-        let mut tracker = DiagnosticTracker::new();
+        let mut tracker = EventLog::new();
         let document = parse_document(text, &mut tracker);
 
-        assert!(!tracker.has_errors(), "{:#?}", tracker.diagnostics());
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
         assert_eq!(document.items.len(), 4);
         assert!(matches!(document.items[0], TopLevelItem::Describes(_)));
         assert!(matches!(document.items[1], TopLevelItem::States(_)));
@@ -2351,7 +2374,7 @@ that:
 Title: "Valid Title"
 "#;
 
-        let mut tracker = DiagnosticTracker::new();
+        let mut tracker = EventLog::new();
         let document = parse_document(text, &mut tracker);
 
         assert!(tracker.has_errors());
@@ -2370,10 +2393,10 @@ that:
   . x = x
 "#;
 
-        let mut tracker = DiagnosticTracker::new();
+        let mut tracker = EventLog::new();
         let document = parse_document(text, &mut tracker);
 
-        assert!(!tracker.has_errors(), "{:#?}", tracker.diagnostics());
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
         match &document.items[0] {
             TopLevelItem::States(states) => {
                 assert!(matches!(states.that.arguments[0], Clause::Exists(_)));
@@ -3293,6 +3316,8 @@ Section: "Recovered"
         assert_eq!(diagnostics.len(), 1);
         assert!(
             diagnostics[0]
+                .as_message()
+                .expect("expected message event")
                 .message
                 .contains("Expected `that` but found `References`")
         );
@@ -3306,7 +3331,7 @@ Section: "Recovered"
         assert!(!entries.is_empty(), "expected structural golden entries");
 
         for (index, entry) in entries.iter().enumerate() {
-            let mut tracker = DiagnosticTracker::new();
+            let mut tracker = EventLog::new();
             let parse_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 parse_document(entry, &mut tracker)
             }));
@@ -3332,7 +3357,7 @@ Section: "Recovered"
                 "failed to parse structural golden case {}:\n{}\n\n{:#?}",
                 index + 1,
                 entry,
-                tracker.diagnostics()
+                tracker.events()
             );
 
             let rendered = render_proto_groups(entry);

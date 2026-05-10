@@ -1,24 +1,27 @@
 use clap::Parser;
 use mlg::cli::{Cli, Command};
-use mlg::diagnostics::{ColorMode, DiagnosticTracker};
 use mlg::environment::current_working_directory;
+use mlg::events::{ColorMode, EventConsoleWriter, EventFilter, EventLog};
+use std::path::{Path, PathBuf};
 use std::process;
 
 fn main() {
     let cli = Cli::parse();
-    let mut tracker = DiagnosticTracker::new()
-        .with_live(true)
-        .with_color_mode(ColorMode::Auto);
+    let filter = cli.event_filter();
+    let mut event_log = EventLog::new();
+    let base_path = std::env::current_dir().ok();
+
+    attach_console_writer(&mut event_log, &filter, base_path.as_deref());
 
     let exit_code = match cli.command {
-        Command::Check(args) => run_check(&args.paths, &mut tracker),
-        Command::Init => run_init(&mut tracker),
+        Command::Check(args) => run_check(&args.paths, &mut event_log),
+        Command::Init => run_init(&mut event_log),
         Command::Version => {
-            mlg::version(&mut tracker);
+            let _ = mlg::version(&mut event_log);
             0
         }
         Command::View => {
-            mlg::view(&mut tracker);
+            let _ = mlg::view(&mut event_log);
             0
         }
     };
@@ -28,25 +31,42 @@ fn main() {
     }
 }
 
-fn run_check(paths: &[std::path::PathBuf], tracker: &mut DiagnosticTracker) -> i32 {
-    let Some(cwd) = current_working_directory(tracker) else {
+fn run_check(paths: &[PathBuf], event_log: &mut EventLog) -> i32 {
+    let cwd = current_working_directory(event_log);
+
+    let Some(cwd) = cwd else {
         return 1;
     };
 
-    tracker.set_base_path(&cwd);
-    let _ = mlg::check_in(&cwd, paths, tracker);
+    let _ = mlg::check_in(&cwd, paths, event_log);
 
-    if tracker.has_errors() { 1 } else { 0 }
+    if event_log.has_errors() { 1 } else { 0 }
 }
 
-fn run_init(tracker: &mut DiagnosticTracker) -> i32 {
-    let Some(cwd) = current_working_directory(tracker) else {
+fn run_init(event_log: &mut EventLog) -> i32 {
+    let cwd = current_working_directory(event_log);
+
+    let Some(cwd) = cwd else {
         return 1;
     };
 
-    if mlg::init(&cwd, tracker).is_err() || tracker.has_errors() {
+    if mlg::init(&cwd, event_log).is_err() || event_log.has_errors() {
         1
     } else {
         0
     }
+}
+
+fn attach_console_writer(event_log: &mut EventLog, filter: &EventFilter, base_path: Option<&Path>) {
+    let writer = match base_path {
+        Some(base_path) => EventConsoleWriter::new()
+            .with_filter(filter.clone())
+            .with_color_mode(ColorMode::Auto)
+            .with_base_path(base_path),
+        None => EventConsoleWriter::new()
+            .with_filter(filter.clone())
+            .with_color_mode(ColorMode::Auto),
+    };
+
+    event_log.add_listener(writer);
 }

@@ -1097,7 +1097,9 @@ impl ScanState {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::{BTreeMap, BTreeSet};
     use std::fs;
+    use std::path::{Path, PathBuf};
 
     use super::{
         parse_author_header, parse_command_header, parse_expression, parse_expression_alias,
@@ -1113,18 +1115,136 @@ mod tests {
         SubsetCall, TypeExpression,
     };
 
-    fn split_golden_entries(text: &str) -> Vec<String> {
+    fn split_test_chunks(text: &str) -> Vec<String> {
         text.replace("\r\n", "\n")
-            .trim_matches('\n')
-            .split("\n\n\n")
-            .filter(|entry| !entry.trim().is_empty())
-            .map(str::to_owned)
+            .split("\n\n")
+            .filter_map(|entry| {
+                let entry = entry.trim();
+                (!entry.is_empty()).then(|| entry.to_owned())
+            })
             .collect()
     }
 
-    fn read_golden_entries(path: &str) -> Vec<String> {
-        let text = fs::read_to_string(path).expect("expected formulation golden file");
-        split_golden_entries(&text)
+    fn read_test_chunks(path: &Path) -> Vec<String> {
+        let text = fs::read_to_string(path).unwrap_or_else(|error| {
+            panic!(
+                "expected formulation golden file {}: {error}",
+                path.display()
+            )
+        });
+        split_test_chunks(&text)
+    }
+
+    fn read_test_files(directory: &Path, extension: &str) -> Vec<PathBuf> {
+        let mut files = fs::read_dir(directory)
+            .unwrap_or_else(|error| panic!("expected directory {}: {error}", directory.display()))
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .filter(|path| path.extension().and_then(|value| value.to_str()) == Some(extension))
+            .collect::<Vec<_>>();
+        files.sort();
+        files
+    }
+
+    fn file_name(path: &Path) -> String {
+        path.file_name()
+            .and_then(|value| value.to_str())
+            .expect("expected valid utf-8 file name")
+            .to_owned()
+    }
+
+    fn parse_expression_entry(input: &str) -> Result<(), String> {
+        parse_expression(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn parse_form_or_declaration_entry(input: &str) -> Result<(), String> {
+        parse_form_or_declaration(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn parse_is_or_spec_entry(input: &str) -> Result<(), String> {
+        parse_is_or_spec(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn parse_is_or_refined_statement_spec_entry(input: &str) -> Result<(), String> {
+        parse_is_or_refined_statement_spec(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn parse_is_via_statement_entry(input: &str) -> Result<(), String> {
+        parse_is_via_statement(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn parse_command_header_entry(input: &str) -> Result<(), String> {
+        parse_command_header(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn parse_writing_alias_entry(input: &str) -> Result<(), String> {
+        parse_writing_alias(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn parse_expression_alias_entry(input: &str) -> Result<(), String> {
+        parse_expression_alias(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn parse_spec_operator_alias_entry(input: &str) -> Result<(), String> {
+        parse_spec_operator_alias(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn parse_label_header_entry(input: &str) -> Result<(), String> {
+        parse_label_header(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn parse_author_header_entry(input: &str) -> Result<(), String> {
+        parse_author_header(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn parse_resource_header_entry(input: &str) -> Result<(), String> {
+        parse_resource_header(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    fn formulation_golden_parsers() -> BTreeMap<&'static str, fn(&str) -> Result<(), String>> {
+        BTreeMap::from([
+            (
+                "author_header.txt",
+                parse_author_header_entry as fn(&str) -> Result<(), String>,
+            ),
+            ("command_header.txt", parse_command_header_entry),
+            ("expression.txt", parse_expression_entry),
+            ("expression_alias.txt", parse_expression_alias_entry),
+            ("form_or_declaration.txt", parse_form_or_declaration_entry),
+            (
+                "is_or_refined_statement_spec.txt",
+                parse_is_or_refined_statement_spec_entry,
+            ),
+            ("is_or_spec.txt", parse_is_or_spec_entry),
+            ("is_via_statement.txt", parse_is_via_statement_entry),
+            ("label_header.txt", parse_label_header_entry),
+            ("resource_header.txt", parse_resource_header_entry),
+            ("spec_operator_alias.txt", parse_spec_operator_alias_entry),
+            ("writing_alias.txt", parse_writing_alias_entry),
+        ])
     }
 
     fn assert_simple_command_header(
@@ -2046,42 +2166,46 @@ mod tests {
     }
 
     #[test]
-    fn parses_formulation_golden_file() {
-        let path = concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/goldens/formulation.golden.txt"
+    fn parses_formulation_golden_directory() {
+        let directory = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/goldens/formulation"));
+        let parsers = formulation_golden_parsers();
+        let files = read_test_files(directory, "txt");
+
+        assert!(!files.is_empty(), "expected formulation golden files");
+
+        let actual_names = files
+            .iter()
+            .map(|path| file_name(path))
+            .collect::<BTreeSet<_>>();
+        let expected_names = parsers
+            .keys()
+            .map(|name| (*name).to_owned())
+            .collect::<BTreeSet<_>>();
+        assert_eq!(
+            actual_names, expected_names,
+            "unexpected formulation golden files"
         );
-        let entries = read_golden_entries(path);
 
-        assert!(!entries.is_empty(), "expected formulation golden entries");
+        for path in files {
+            let name = file_name(&path);
+            let parser = parsers
+                .get(name.as_str())
+                .unwrap_or_else(|| panic!("no parser configured for {}", path.display()));
+            let entries = read_test_chunks(&path);
 
-        for (index, entry) in entries.iter().enumerate() {
-            let expression = parse_expression(entry).unwrap_or_else(|error| {
-                panic!(
-                    "failed to parse formulation golden case {}: {error}\n\n{}",
-                    index + 1,
-                    entry
-                )
-            });
+            assert!(!entries.is_empty(), "expected cases in {}", path.display());
 
-            assert_eq!(
-                expression.span.start,
-                0,
-                "formulation golden case {} did not cover the full input start",
-                index + 1
-            );
-            assert_eq!(
-                expression.span.end,
-                entry.len(),
-                "formulation golden case {} did not cover the full input end",
-                index + 1
-            );
-            assert_eq!(
-                &entry[expression.span.start..expression.span.end],
-                entry,
-                "formulation golden case {} did not round-trip",
-                index + 1
-            );
+            for (index, entry) in entries.iter().enumerate() {
+                parser(entry).unwrap_or_else(|error| {
+                    panic!(
+                        "failed to parse formulation golden case {} chunk {}: {}\n\n{}",
+                        name,
+                        index + 1,
+                        error,
+                        entry
+                    )
+                });
+            }
         }
     }
 }

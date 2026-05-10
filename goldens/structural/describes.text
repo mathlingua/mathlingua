@@ -1,0 +1,105 @@
+[\structure]
+Describes: S := (X, *)
+using:
+. X, Y is \set
+. X "contains" Element
+when:
+. [logic.`set.ops`.when]
+  allOf:
+  . x = x
+  . y = y
+extends: X, Y is \set via (X, Y)
+specifies:
+. Y is \set via (X, Y)
+. y "contains" Y
+satisfies:
+. [logic.satisfies]
+  not:
+  . x = y
+Provides:
+. [symbol.plus]
+  symbol: plus(x_, y_) :=> x + y
+  written:
+  . "+"
+Justified:
+. [proof.label]
+  label:
+  . "Closure"
+  by:
+  . "Definition"
+  comment: "standard"
+Documented:
+. [docs.written]
+  written:
+  . "plus"
+Aliases:
+. [alias.expr]
+  alias: plus(x_, y_) :=> x + y
+  written:
+  . "+"
+References:
+. $book.plus
+Metadata:
+. id: "desc-1"
+
+[\structure.connection]
+Describes: T
+Provides:
+. [conn.plus]
+  connection:
+  . "addition"
+  to:
+  . "binary operation"
+  using:
+  . X is \set
+  means:
+  . "adds elements"
+  signifies:
+  . "closure"
+  viewable:
+  . "as a table"
+  through:
+  . "worked examples"
+Justified:
+. [proof.by]
+  by:
+  . "Convention"
+  comment: "accepted"
+Documented:
+. [docs.called]
+  called:
+  . "addition"
+Aliases:
+. [alias.spec]
+  alias: x_ "in" X :-> x is \element
+Metadata:
+. version: "1.0"
+
+[\structure.writing]
+Describes: W
+Documented:
+. [docs.`inline.notation`]
+  writing: plus(x_, y_) :~> x + y
+  as:
+  . "inline notation"
+
+[\structure.overview]
+Describes: O
+Documented:
+. [docs.overview]
+  overview: "Binary operation on X"
+
+[\structure.related]
+Describes: R
+Documented:
+. [docs.related]
+  related:
+  . "group"
+  . "ring"
+
+[\structure.discoverer]
+Describes: D
+Documented:
+. [docs.discoverer]
+  discoverer:
+  . "Gauss"

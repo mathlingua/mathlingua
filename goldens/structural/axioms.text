@@ -1,0 +1,37 @@
+[\axiom]
+Axiom:
+. "Every element equals itself"
+given:
+. X is \set
+where:
+. [logic.not]
+  not:
+  . x = y
+then:
+. [logic.if]
+  if:
+  . x = x
+  then:
+  . y = y
+iff:
+. [logic.iff]
+  iff:
+  . x = x
+  then:
+  . y = y
+Justified:
+. [axiom.justified]
+  by:
+  . "Definition"
+  comment: "classical"
+Documented:
+. [axiom.written]
+  written:
+  . "axiom"
+Aliases:
+. [axiom.alias]
+  alias: axiom(x_) :=> x
+References:
+. $axiom.ref
+Metadata:
+. id: "ax-1"

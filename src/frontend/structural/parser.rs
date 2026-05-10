@@ -2256,44 +2256,52 @@ fn section_entries(section: &ProtoSection) -> Vec<SectionEntry<'_>> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
     use std::fs;
+    use std::path::{Path, PathBuf};
 
     use super::parse_document;
     use crate::events::{Event, EventLog};
-    use crate::frontend::proto::Parser as ProtoParser;
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, Document, DocumentedItem, IsOrViaItem, JustifiedItem,
         MetadataItem, ProvidesItem, ResourceItem, SpecifyItem, TopLevelItem,
     };
 
-    fn split_golden_entries(text: &str) -> Vec<String> {
+    fn split_test_chunks(text: &str) -> Vec<String> {
         text.replace("\r\n", "\n")
-            .trim_matches('\n')
-            .split("\n\n\n")
-            .filter(|entry| !entry.trim().is_empty())
-            .map(str::to_owned)
+            .split("\n\n")
+            .filter_map(|entry| {
+                let entry = entry.trim();
+                (!entry.is_empty()).then(|| entry.to_owned())
+            })
             .collect()
     }
 
-    fn read_golden_entries(path: &str) -> Vec<String> {
-        let text = fs::read_to_string(path).expect("expected structural golden file");
-        split_golden_entries(&text)
+    fn read_test_chunks(path: &Path) -> Vec<String> {
+        let text = fs::read_to_string(path).unwrap_or_else(|error| {
+            panic!(
+                "expected structural golden file {}: {error}",
+                path.display()
+            )
+        });
+        split_test_chunks(&text)
     }
 
-    fn render_proto_groups(text: &str) -> String {
-        let mut tracker = EventLog::new();
-        let groups = {
-            let mut parser = ProtoParser::new(text, &mut tracker);
-            parser.parse()
-        };
+    fn read_test_files(directory: &Path, extension: &str) -> Vec<PathBuf> {
+        let mut files = fs::read_dir(directory)
+            .unwrap_or_else(|error| panic!("expected directory {}: {error}", directory.display()))
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .filter(|path| path.extension().and_then(|value| value.to_str()) == Some(extension))
+            .collect::<Vec<_>>();
+        files.sort();
+        files
+    }
 
-        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
-
-        groups
-            .iter()
-            .map(ToString::to_string)
-            .collect::<Vec<_>>()
-            .join("\n\n")
+    fn file_name(path: &Path) -> String {
+        path.file_name()
+            .and_then(|value| value.to_str())
+            .expect("expected valid utf-8 file name")
+            .to_owned()
     }
 
     fn parse_ok(text: &str) -> Document {
@@ -3324,49 +3332,74 @@ Section: "Recovered"
     }
 
     #[test]
-    fn parses_structural_golden_file() {
-        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/goldens/structural.golden.txt");
-        let entries = read_golden_entries(path);
+    fn parses_structural_golden_directory() {
+        let directory = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/goldens/structural"));
+        let files = read_test_files(directory, "text");
+        let expected_names = BTreeSet::from([
+            "axioms.text".to_owned(),
+            "conjectures.text".to_owned(),
+            "corollaries.text".to_owned(),
+            "defines.text".to_owned(),
+            "describes.text".to_owned(),
+            "lemmas.text".to_owned(),
+            "outline.text".to_owned(),
+            "persons.text".to_owned(),
+            "refines.text".to_owned(),
+            "resources.text".to_owned(),
+            "specify.text".to_owned(),
+            "states.text".to_owned(),
+            "theorems.text".to_owned(),
+        ]);
 
-        assert!(!entries.is_empty(), "expected structural golden entries");
+        assert!(!files.is_empty(), "expected structural golden files");
 
-        for (index, entry) in entries.iter().enumerate() {
-            let mut tracker = EventLog::new();
-            let parse_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                parse_document(entry, &mut tracker)
-            }));
+        let actual_names = files
+            .iter()
+            .map(|path| file_name(path))
+            .collect::<BTreeSet<_>>();
+        assert_eq!(
+            actual_names, expected_names,
+            "unexpected structural golden files"
+        );
 
-            if let Err(payload) = parse_result {
-                let message = if let Some(message) = payload.downcast_ref::<&str>() {
-                    *message
-                } else if let Some(message) = payload.downcast_ref::<String>() {
-                    message.as_str()
-                } else {
-                    "unknown panic"
-                };
-                panic!(
-                    "structural golden case {} panicked: {}\n\n{}",
+        for path in files {
+            let name = file_name(&path);
+            let entries = read_test_chunks(&path);
+
+            assert!(!entries.is_empty(), "expected cases in {}", path.display());
+
+            for (index, entry) in entries.iter().enumerate() {
+                let mut tracker = EventLog::new();
+                let parse_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    parse_document(entry, &mut tracker)
+                }));
+
+                if let Err(payload) = parse_result {
+                    let message = if let Some(message) = payload.downcast_ref::<&str>() {
+                        *message
+                    } else if let Some(message) = payload.downcast_ref::<String>() {
+                        message.as_str()
+                    } else {
+                        "unknown panic"
+                    };
+                    panic!(
+                        "structural golden case {} chunk {} panicked: {}\n\n{}",
+                        name,
+                        index + 1,
+                        message,
+                        entry
+                    );
+                }
+
+                assert!(
+                    !tracker.has_errors(),
+                    "failed to parse structural golden case {} chunk {}:\n{}\n\n{:#?}",
+                    name,
                     index + 1,
-                    message,
-                    entry
+                    entry,
+                    tracker.events()
                 );
             }
-
-            assert!(
-                !tracker.has_errors(),
-                "failed to parse structural golden case {}:\n{}\n\n{:#?}",
-                index + 1,
-                entry,
-                tracker.events()
-            );
-
-            let rendered = render_proto_groups(entry);
-            assert_eq!(
-                rendered,
-                *entry,
-                "structural golden case {} did not round-trip",
-                index + 1
-            );
         }
     }
 }

@@ -1,0 +1,7 @@
+\set
+
+\function:on{A}:to{B}(f(x_))
+
+\(f)::[[g]]
+
+\logic.$prefix.(f:on{A}, g:to{B})::target.$tail{C}:via{D}(E, F)

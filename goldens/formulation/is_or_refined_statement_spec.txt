@@ -1,0 +1,5 @@
+x_, y_ is \(f)::[[g]]
+
+x is \logic.$prefix.(f:on{x}, g:to{y})::target.$tail{z}:via{w}(u, v)
+
++ "on" Nat

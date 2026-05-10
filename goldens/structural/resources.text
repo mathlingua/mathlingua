@@ -1,0 +1,61 @@
+[$book.`chapter.1`]
+Resource:
+. title: "Elements"
+
+[$book.author]
+Resource:
+. author:
+  . "Euclid"
+  . "Translator"
+
+[$book.offset]
+Resource:
+. offset: "Book I"
+
+[$book.url]
+Resource:
+. url: "https://example.com/elements"
+
+[$book.homepage]
+Resource:
+. homepage: "https://example.com"
+
+[$book.type]
+Resource:
+. type: "book"
+
+[$book.edition]
+Resource:
+. edition: "second"
+
+[$book.editor]
+Resource:
+. editor: "Editor Name"
+
+[$book.institution]
+Resource:
+. institution: "Library"
+
+[$book.journal]
+Resource:
+. journal: "Journal Name"
+
+[$book.publisher]
+Resource:
+. publisher: "Publisher Name"
+
+[$book.volume]
+Resource:
+. volume: "I"
+
+[$book.month]
+Resource:
+. month: "January"
+
+[$book.year]
+Resource:
+. year: "300BC"
+
+[$book.description]
+Resource:
+. description: "Classic text"

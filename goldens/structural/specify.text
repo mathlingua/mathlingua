@@ -1,0 +1,42 @@
+Specify:
+. [numbers.positive.int]
+  positive:
+  . "positive"
+  int:
+  . "integer"
+  is:
+  . "greater than zero"
+
+Specify:
+. [numbers.negative.int]
+  negative:
+  . "negative"
+  int:
+  . "integer"
+  is:
+  . "less than zero"
+
+Specify:
+. [numbers.zero]
+  zero:
+  . "zero"
+  is:
+  . "additive identity"
+
+Specify:
+. [numbers.positive.decimal]
+  positive:
+  . "positive"
+  decimal:
+  . "decimal"
+  is:
+  . "greater than zero"
+
+Specify:
+. [numbers.negative.decimal]
+  negative:
+  . "negative"
+  decimal:
+  . "decimal"
+  is:
+  . "less than zero"

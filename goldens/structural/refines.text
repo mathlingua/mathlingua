@@ -1,0 +1,17 @@
+[\transform]
+Refines: x is \logic.$prefix.(f:on{x}, g:to{y})::target.$tail{z}:via{w}(u, v)
+using:
+. X is \set
+when:
+. [logic.exists]
+  existsUnique: x is \element
+  suchThat:
+  . x = x
+specifies: y is \(f)::[[g]]
+satisfies:
+. [logic.given]
+  given: x is \element
+  where:
+  . x = x
+  then:
+  . y = y

@@ -1,0 +1,7 @@
+f(x_), y_ is \function:on{A}:to{B}
+
+x, y is \foo
+
++ "on" Nat
+
++ is \operator

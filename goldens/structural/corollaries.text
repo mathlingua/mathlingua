@@ -1,0 +1,10 @@
+[\corollary]
+Corollary:
+. "Immediate consequence"
+of:
+. "Previous theorem"
+then:
+. [logic.one]
+  oneOf:
+  . x = x
+  . y = y

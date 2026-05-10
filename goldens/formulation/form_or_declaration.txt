@@ -1,0 +1,23 @@
+Value
+
+g := f(x_, y_)
+
+pair := (x, +, y)
+
+Set := {f_(x_, y_)}
+
+-x_
+
+x_ !
+
+neg| x_
+
+x_ |prime
+
+x_ |plus| y_
+
+x_ :|before| y_
+
+x_ |after|: y_
+
+x_ :|around|: y_

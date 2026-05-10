@@ -1,0 +1,18 @@
+[\statement]
+States:
+. "Closure law"
+. "Associativity"
+using:
+. X is \set
+that:
+. [logic.exists]
+  exists: y is \element
+  suchThat:
+  . y = y
+
+[\statement.expr]
+States:
+that:
+. (
+    y = y
+  )

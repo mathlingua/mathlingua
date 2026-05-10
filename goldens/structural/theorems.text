@@ -1,0 +1,14 @@
+Theorem:
+then:
+. [logic.any]
+  anyOf:
+  . x = x
+  . y = y
+
+[\theorem]
+Theorem:
+. "Binary operation preserves equality"
+given:
+. X is \set
+then:
+. x = x

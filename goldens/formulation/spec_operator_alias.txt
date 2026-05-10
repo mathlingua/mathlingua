@@ -1,0 +1,3 @@
+x_ "in" X :-> x is \type{A}
+
+x_ "in" X :-> + "on" Nat

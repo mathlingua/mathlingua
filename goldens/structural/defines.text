@@ -1,0 +1,14 @@
+[\constant]
+Defines: zero is \element
+using:
+. X is \set
+expresses:
+. [logic.expr]
+  piecewise:
+  . "choose a representative"
+  if:
+  . x = x
+  then:
+  . x = x
+  else:
+  . y = y

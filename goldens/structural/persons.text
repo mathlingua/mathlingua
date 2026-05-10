@@ -1,0 +1,13 @@
+[@`isaac.newton`]
+Person:
+. "Natural philosopher"
+name:
+. "Isaac Newton"
+. "I. Newton"
+biography: "Worked on calculus and mechanics"
+
+[@euclid]
+Person:
+name:
+. "Euclid"
+biography: "Greek mathematician"

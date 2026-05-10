@@ -1,4 +1,4 @@
-use super::data::{
+use super::{
     Audience, Event, EventLocation, Level, MarkerEvent, MarkerId, MarkerPhase, MarkerRange,
 };
 use std::path::PathBuf;

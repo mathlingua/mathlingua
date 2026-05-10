@@ -1,10 +1,19 @@
+mod audience;
 mod console_writer;
-mod data;
+mod event;
+mod filter;
+mod level;
+mod location;
 mod log;
+mod marker;
+mod message;
 
-pub use console_writer::{ColorMode, EventConsoleWriter, EventFilter};
-pub use data::{
-    Audience, Event, EventLocation, EventPosition, EventSpan, Level, MarkerEvent, MarkerId,
-    MarkerPhase, MarkerRange, MessageEvent,
-};
+pub use audience::Audience;
+pub use console_writer::EventConsoleWriter;
+pub use event::Event;
+pub use filter::{ColorMode, EventFilter};
+pub use level::Level;
+pub use location::{EventLocation, EventPosition, EventSpan};
 pub use log::{EventLog, EventLogListener};
+pub use marker::{MarkerEvent, MarkerId, MarkerPhase, MarkerRange};
+pub use message::MessageEvent;

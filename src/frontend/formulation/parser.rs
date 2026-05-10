@@ -1247,6 +1247,34 @@ mod tests {
         ])
     }
 
+    fn formulation_golden_directory() -> &'static Path {
+        Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/goldens/formulation"))
+    }
+
+    fn run_formulation_golden(filename: &str) {
+        let directory = formulation_golden_directory();
+        let parsers = formulation_golden_parsers();
+        let path = directory.join(filename);
+        let parser = parsers
+            .get(filename)
+            .unwrap_or_else(|| panic!("no parser configured for {}", path.display()));
+        let entries = read_test_chunks(&path);
+
+        assert!(!entries.is_empty(), "expected cases in {}", path.display());
+
+        for (index, entry) in entries.iter().enumerate() {
+            parser(entry).unwrap_or_else(|error| {
+                panic!(
+                    "failed to parse formulation golden case {} chunk {}: {}\n\n{}",
+                    filename,
+                    index + 1,
+                    error,
+                    entry
+                )
+            });
+        }
+    }
+
     fn assert_simple_command_header(
         input: &str,
         expected_chain_parts: &[&str],
@@ -2166,8 +2194,8 @@ mod tests {
     }
 
     #[test]
-    fn parses_formulation_golden_directory() {
-        let directory = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/goldens/formulation"));
+    fn formulation_golden_files_match_parsers() {
+        let directory = formulation_golden_directory();
         let parsers = formulation_golden_parsers();
         let files = read_test_files(directory, "txt");
 
@@ -2185,27 +2213,65 @@ mod tests {
             actual_names, expected_names,
             "unexpected formulation golden files"
         );
+    }
 
-        for path in files {
-            let name = file_name(&path);
-            let parser = parsers
-                .get(name.as_str())
-                .unwrap_or_else(|| panic!("no parser configured for {}", path.display()));
-            let entries = read_test_chunks(&path);
+    #[test]
+    fn formulation_golden_author_header() {
+        run_formulation_golden("author_header.txt");
+    }
 
-            assert!(!entries.is_empty(), "expected cases in {}", path.display());
+    #[test]
+    fn formulation_golden_command_header() {
+        run_formulation_golden("command_header.txt");
+    }
 
-            for (index, entry) in entries.iter().enumerate() {
-                parser(entry).unwrap_or_else(|error| {
-                    panic!(
-                        "failed to parse formulation golden case {} chunk {}: {}\n\n{}",
-                        name,
-                        index + 1,
-                        error,
-                        entry
-                    )
-                });
-            }
-        }
+    #[test]
+    fn formulation_golden_expression() {
+        run_formulation_golden("expression.txt");
+    }
+
+    #[test]
+    fn formulation_golden_expression_alias() {
+        run_formulation_golden("expression_alias.txt");
+    }
+
+    #[test]
+    fn formulation_golden_form_or_declaration() {
+        run_formulation_golden("form_or_declaration.txt");
+    }
+
+    #[test]
+    fn formulation_golden_is_or_refined_statement_spec() {
+        run_formulation_golden("is_or_refined_statement_spec.txt");
+    }
+
+    #[test]
+    fn formulation_golden_is_or_spec() {
+        run_formulation_golden("is_or_spec.txt");
+    }
+
+    #[test]
+    fn formulation_golden_is_via_statement() {
+        run_formulation_golden("is_via_statement.txt");
+    }
+
+    #[test]
+    fn formulation_golden_label_header() {
+        run_formulation_golden("label_header.txt");
+    }
+
+    #[test]
+    fn formulation_golden_resource_header() {
+        run_formulation_golden("resource_header.txt");
+    }
+
+    #[test]
+    fn formulation_golden_spec_operator_alias() {
+        run_formulation_golden("spec_operator_alias.txt");
+    }
+
+    #[test]
+    fn formulation_golden_writing_alias() {
+        run_formulation_golden("writing_alias.txt");
     }
 }

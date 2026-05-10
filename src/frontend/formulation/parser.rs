@@ -1016,7 +1016,7 @@ fn is_name_text(input: &str) -> bool {
     }
 
     if input.starts_with('`') && input.ends_with('`') && input.len() >= 2 {
-        return true;
+        return is_operator_text(&input[1..input.len() - 1]);
     }
 
     let mut chars = input.chars();
@@ -2135,27 +2135,38 @@ mod tests {
     }
 
     #[test]
-    fn parses_header_variants_with_backtick_segments() {
-        let label =
-            parse_label_header(r#"logic.`set.ops`.ref"#).expect("expected dotted label header");
-        let author =
-            parse_author_header(r#"@`isaac.newton`"#).expect("expected backtick author header");
-        let resource =
-            parse_resource_header(r#"$book.`chapter.1`"#).expect("expected resource header");
+    fn parses_header_variants_with_stropped_operator_segments() {
+        let label = parse_label_header(r#"logic.`*`.ref"#).expect("expected dotted label header");
+        let author = parse_author_header(r#"@`*+`"#).expect("expected stropped author header");
+        let resource = parse_resource_header(r#"$book.`*+`"#).expect("expected resource header");
 
         assert_eq!(
             label.parts,
-            vec![
-                "logic".to_string(),
-                "`set.ops`".to_string(),
-                "ref".to_string(),
-            ]
+            vec!["logic".to_string(), "`*`".to_string(), "ref".to_string(),]
         );
-        assert_eq!(author.parts, vec!["`isaac.newton`".to_string()]);
-        assert_eq!(
-            resource.parts,
-            vec!["book".to_string(), "`chapter.1`".to_string()]
+        assert_eq!(author.parts, vec!["`*+`".to_string()]);
+        assert_eq!(resource.parts, vec!["book".to_string(), "`*+`".to_string()]);
+    }
+
+    #[test]
+    fn rejects_non_operator_text_in_stropped_names() {
+        let expression = parse_expression(r#"`some.thing`"#)
+            .expect_err("expected invalid stropped expression name to fail");
+        let label = parse_label_header(r#"logic.`set.ops`.ref"#)
+            .expect_err("expected invalid stropped label part to fail");
+        let author = parse_author_header(r#"@`isaac.newton`"#)
+            .expect_err("expected invalid stropped author part to fail");
+        let resource = parse_resource_header(r#"$book.`chapter.1`"#)
+            .expect_err("expected invalid stropped resource part to fail");
+
+        assert!(
+            expression.to_string().contains("InvalidToken"),
+            "expected invalid token error, got {}",
+            expression
         );
+        assert_eq!(label.to_string(), "invalid name ``set.ops``");
+        assert_eq!(author.to_string(), "invalid name ``isaac.newton``");
+        assert_eq!(resource.to_string(), "invalid name ``chapter.1``");
     }
 
     #[test]

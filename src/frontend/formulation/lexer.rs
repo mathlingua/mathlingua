@@ -138,18 +138,27 @@ mod tests {
     }
 
     #[test]
-    fn lexes_backtick_names_without_splitting_on_internal_punctuation() {
-        let tokens: Vec<_> = Lexer::new(r#"`value.with.dots` `has spaces`"#)
+    fn lexes_stropped_operator_names() {
+        let tokens: Vec<_> = Lexer::new(r#"`*` `*+`"#)
             .map(|item| item.expect("expected valid token").1)
             .collect();
 
         assert_eq!(
             tokens,
             vec![
-                Token::Name("`value.with.dots`".to_string()),
-                Token::Name("`has spaces`".to_string()),
+                Token::Name("`*`".to_string()),
+                Token::Name("`*+`".to_string()),
             ]
         );
+    }
+
+    #[test]
+    fn rejects_invalid_stropped_names() {
+        let mut lexer = Lexer::new(r#"`some.thing`"#);
+
+        let token = lexer.next().expect("expected one token result");
+
+        assert_eq!(token, Err(LexicalError::InvalidToken));
     }
 
     #[test]

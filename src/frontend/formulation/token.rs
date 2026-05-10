@@ -78,7 +78,10 @@ pub enum Token {
     MagneticPlaceholder(String),
     #[regex(r"[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?_", parse_placeholder)]
     Placeholder(String),
-    #[regex(r"`[^`]*`|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?", parse_name)]
+    #[regex(
+        r"`[-~!#%^&*\\+=|<>/]+`|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?",
+        parse_name
+    )]
     Name(String),
     #[regex(r"(?:[-~!#%^&*+=|<>/]{2,}|[~!#%&<>])", parse_special_operator)]
     SpecialOperator(String),

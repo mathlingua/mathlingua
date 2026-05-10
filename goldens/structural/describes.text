@@ -4,7 +4,7 @@ using:
 . X, Y is \set
 . X "contains" Element
 when:
-. [logic.`set.ops`.when]
+. [logic.set.ops.when]
   allOf:
   . x = x
   . y = y
@@ -78,7 +78,7 @@ Metadata:
 [\structure.writing]
 Describes: W
 Documented:
-. [docs.`inline.notation`]
+. [docs.inline.notation]
   writing: plus(x_, y_) :~> x + y
   as:
   . "inline notation"

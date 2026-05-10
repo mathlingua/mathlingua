@@ -4,7 +4,7 @@ mod log;
 
 pub use console_writer::{ColorMode, EventConsoleWriter, EventFilter};
 pub use data::{
-    Event, EventAudience, EventLevel, EventLocation, EventMarkerId, EventMarkerPhase,
-    EventPosition, EventRange, EventSpan, MarkerEvent, MessageEvent,
+    Audience, Event, EventLocation, EventPosition, EventSpan, Level, MarkerEvent, MarkerId,
+    MarkerPhase, MarkerRange, MessageEvent,
 };
 pub use log::{EventLog, EventLogListener};

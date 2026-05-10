@@ -1,6 +1,5 @@
 use super::data::{
-    Event, EventAudience, EventLevel, EventLocation, EventMarkerPhase, EventSpan, MarkerEvent,
-    MessageEvent,
+    Audience, Event, EventLocation, EventSpan, Level, MarkerEvent, MarkerPhase, MessageEvent,
 };
 use super::log::EventLogListener;
 use std::io::{self, IsTerminal, Write};
@@ -16,16 +15,16 @@ pub enum ColorMode {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EventFilter {
-    audiences: Vec<EventAudience>,
-    levels: Vec<EventLevel>,
+    audiences: Vec<Audience>,
+    levels: Vec<Level>,
     include_markers: bool,
 }
 
 impl Default for EventFilter {
     fn default() -> Self {
         Self {
-            audiences: vec![EventAudience::User],
-            levels: EventLevel::all().to_vec(),
+            audiences: vec![Audience::User],
+            levels: Level::all().to_vec(),
             include_markers: false,
         }
     }
@@ -36,12 +35,12 @@ impl EventFilter {
         Self::default()
     }
 
-    pub fn with_audiences(mut self, audiences: Vec<EventAudience>) -> Self {
+    pub fn with_audiences(mut self, audiences: Vec<Audience>) -> Self {
         self.audiences = audiences;
         self
     }
 
-    pub fn with_levels(mut self, levels: Vec<EventLevel>) -> Self {
+    pub fn with_levels(mut self, levels: Vec<Level>) -> Self {
         self.levels = levels;
         self
     }
@@ -110,14 +109,13 @@ impl EventConsoleWriter {
 
     fn render_message(&self, event: &MessageEvent) -> RenderedEvent {
         let use_color = self.should_use_color();
-        let destination = if event.audience == EventAudience::User && event.level == EventLevel::Log
-        {
+        let destination = if event.audience == Audience::User && event.level == Level::Log {
             ConsoleDestination::Stdout
         } else {
             ConsoleDestination::Stderr
         };
 
-        let text = if event.audience == EventAudience::User && event.level == EventLevel::Log {
+        let text = if event.audience == Audience::User && event.level == Level::Log {
             event.message.clone()
         } else {
             let prefix = self.render_prefix(event, use_color);
@@ -132,8 +130,8 @@ impl EventConsoleWriter {
 
     fn render_marker(&self, marker: &MarkerEvent) -> RenderedEvent {
         let phase = match marker.phase {
-            EventMarkerPhase::Begin => "begin",
-            EventMarkerPhase::End => "end",
+            MarkerPhase::Begin => "begin",
+            MarkerPhase::End => "end",
         };
         let origin = marker
             .origin
@@ -149,15 +147,15 @@ impl EventConsoleWriter {
 
     fn render_prefix(&self, event: &MessageEvent, use_color: bool) -> String {
         let level = match event.level {
-            EventLevel::Log => style_label("log", Style::Blue, use_color),
-            EventLevel::Warning => style_label("warning", Style::Yellow, use_color),
-            EventLevel::Error => style_label("error", Style::Red, use_color),
-            EventLevel::Debug => style_label("debug", Style::Magenta, use_color),
+            Level::Log => style_label("log", Style::Blue, use_color),
+            Level::Warning => style_label("warning", Style::Yellow, use_color),
+            Level::Error => style_label("error", Style::Red, use_color),
+            Level::Debug => style_label("debug", Style::Magenta, use_color),
         };
 
         match event.audience {
-            EventAudience::User => level,
-            EventAudience::System => {
+            Audience::User => level,
+            Audience::System => {
                 let origin = event
                     .origin
                     .as_deref()
@@ -332,7 +330,7 @@ fn write_line(mut writer: impl Write, message: &str) -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::{ColorMode, EventConsoleWriter, EventFilter};
-    use crate::events::{Event, EventAudience, EventLevel, EventLocation, EventSpan};
+    use crate::events::{Audience, Event, EventLocation, EventSpan, Level};
     use std::path::Path;
 
     #[test]
@@ -352,8 +350,8 @@ mod tests {
             .render(
                 &Event::message(
                     "Unexpected header: [duplicate]",
-                    EventLevel::Error,
-                    EventAudience::User,
+                    Level::Error,
+                    Audience::User,
                     Some(EventLocation::file(
                         "/repo/content/example.mlg",
                         Some(EventSpan::row(3)),
@@ -372,7 +370,7 @@ mod tests {
     #[test]
     fn renders_system_events_with_origin_information() {
         let writer = EventConsoleWriter::new()
-            .with_filter(EventFilter::new().with_audiences(vec![EventAudience::System]))
+            .with_filter(EventFilter::new().with_audiences(vec![Audience::System]))
             .with_color_mode(ColorMode::Never);
         let rendered = writer
             .render(&Event::system_debug("Parsing file").with_origin("mlg_check"))
@@ -384,7 +382,7 @@ mod tests {
     #[test]
     fn filters_out_non_matching_audiences() {
         let writer = EventConsoleWriter::new()
-            .with_filter(EventFilter::new().with_audiences(vec![EventAudience::System]));
+            .with_filter(EventFilter::new().with_audiences(vec![Audience::System]));
 
         assert!(writer.render(&Event::user_log("Checked 1 file")).is_none());
     }

@@ -1,6 +1,5 @@
 use super::data::{
-    Event, EventAudience, EventLevel, EventLocation, EventMarkerId, EventMarkerPhase, EventRange,
-    MarkerEvent,
+    Audience, Event, EventLocation, Level, MarkerEvent, MarkerId, MarkerPhase, MarkerRange,
 };
 use std::path::PathBuf;
 
@@ -43,7 +42,7 @@ impl EventLog {
         self.events.iter().any(|event| {
             event
                 .as_message()
-                .is_some_and(|message| message.level == EventLevel::Error)
+                .is_some_and(|message| message.level == Level::Error)
         })
     }
 
@@ -51,9 +50,7 @@ impl EventLog {
         self.events
             .iter()
             .filter_map(Event::as_message)
-            .filter(|message| {
-                message.audience == EventAudience::User && message.level != EventLevel::Log
-            })
+            .filter(|message| message.audience == Audience::User && message.level != Level::Log)
             .count()
     }
 
@@ -132,13 +129,12 @@ impl EventLog {
     pub fn user_event(
         &mut self,
         origin: Option<&str>,
-        level: EventLevel,
+        level: Level,
         location: Option<EventLocation>,
         message: impl Into<String>,
     ) {
         self.push(
-            Event::message(message, level, EventAudience::User, location)
-                .with_origin_option(origin),
+            Event::message(message, level, Audience::User, location).with_origin_option(origin),
         );
     }
 
@@ -160,9 +156,9 @@ impl EventLog {
 
     pub fn begin_marker(&mut self, label: impl Into<String>, origin: Option<&str>) -> MarkerEvent {
         let marker = MarkerEvent::new(
-            EventMarkerId::new(),
+            MarkerId::new(),
             label,
-            EventMarkerPhase::Begin,
+            MarkerPhase::Begin,
             origin.map(str::to_owned),
         );
         self.push(Event::Marker(marker.clone()));
@@ -173,17 +169,17 @@ impl EventLog {
         let marker = MarkerEvent::new(
             begin.id.clone(),
             begin.label.clone(),
-            EventMarkerPhase::End,
+            MarkerPhase::End,
             origin.map(str::to_owned),
         );
         self.push(Event::Marker(marker.clone()));
         marker
     }
 
-    pub fn range(&mut self, label: impl Into<String>, origin: Option<&str>) -> EventRange {
+    pub fn range(&mut self, label: impl Into<String>, origin: Option<&str>) -> MarkerRange {
         let begin = self.begin_marker(label, origin);
         let end = self.end_marker(&begin, origin);
-        EventRange::new(begin, end)
+        MarkerRange::new(begin, end)
     }
 
     pub fn events_between<'a>(
@@ -191,9 +187,7 @@ impl EventLog {
         begin: &MarkerEvent,
         end: &MarkerEvent,
     ) -> Option<Vec<&'a Event>> {
-        if begin.phase != EventMarkerPhase::Begin
-            || end.phase != EventMarkerPhase::End
-            || begin.id != end.id
+        if begin.phase != MarkerPhase::Begin || end.phase != MarkerPhase::End || begin.id != end.id
         {
             return None;
         }

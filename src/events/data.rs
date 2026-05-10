@@ -6,20 +6,20 @@ use std::time::{SystemTime, UNIX_EPOCH};
 static NEXT_MARKER_ID: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum EventAudience {
+pub enum Audience {
     User,
     System,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum EventLevel {
+pub enum Level {
     Log,
     Warning,
     Error,
     Debug,
 }
 
-impl EventLevel {
+impl Level {
     pub const fn all() -> [Self; 4] {
         [Self::Log, Self::Warning, Self::Error, Self::Debug]
     }
@@ -140,9 +140,9 @@ impl EventLocation {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct EventMarkerId(String);
+pub struct MarkerId(String);
 
-impl EventMarkerId {
+impl MarkerId {
     pub fn new() -> Self {
         let mut bytes = [0u8; 16];
         let now = SystemTime::now()
@@ -164,14 +164,14 @@ impl EventMarkerId {
     }
 }
 
-impl fmt::Display for EventMarkerId {
+impl fmt::Display for MarkerId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.0)
     }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EventMarkerPhase {
+pub enum MarkerPhase {
     Begin,
     End,
 }
@@ -180,16 +180,16 @@ pub enum EventMarkerPhase {
 pub struct MessageEvent {
     pub message: String,
     pub location: Option<EventLocation>,
-    pub level: EventLevel,
-    pub audience: EventAudience,
+    pub level: Level,
+    pub audience: Audience,
     pub origin: Option<String>,
 }
 
 impl MessageEvent {
     pub fn new(
         message: impl Into<String>,
-        level: EventLevel,
-        audience: EventAudience,
+        level: Level,
+        audience: Audience,
         location: Option<EventLocation>,
         origin: Option<String>,
     ) -> Self {
@@ -223,17 +223,17 @@ impl MessageEvent {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MarkerEvent {
-    pub id: EventMarkerId,
+    pub id: MarkerId,
     pub label: String,
-    pub phase: EventMarkerPhase,
+    pub phase: MarkerPhase,
     pub origin: Option<String>,
 }
 
 impl MarkerEvent {
     pub fn new(
-        id: EventMarkerId,
+        id: MarkerId,
         label: impl Into<String>,
-        phase: EventMarkerPhase,
+        phase: MarkerPhase,
         origin: Option<String>,
     ) -> Self {
         Self {
@@ -259,34 +259,34 @@ pub enum Event {
 impl Event {
     pub fn message(
         message: impl Into<String>,
-        level: EventLevel,
-        audience: EventAudience,
+        level: Level,
+        audience: Audience,
         location: Option<EventLocation>,
     ) -> Self {
         Self::Message(MessageEvent::new(message, level, audience, location, None))
     }
 
     pub fn user_log(message: impl Into<String>) -> Self {
-        Self::message(message, EventLevel::Log, EventAudience::User, None)
+        Self::message(message, Level::Log, Audience::User, None)
     }
 
     pub fn user_warning(message: impl Into<String>) -> Self {
-        Self::message(message, EventLevel::Warning, EventAudience::User, None)
+        Self::message(message, Level::Warning, Audience::User, None)
     }
 
     pub fn user_error(message: impl Into<String>) -> Self {
-        Self::message(message, EventLevel::Error, EventAudience::User, None)
+        Self::message(message, Level::Error, Audience::User, None)
     }
 
     pub fn user_debug(message: impl Into<String>) -> Self {
-        Self::message(message, EventLevel::Debug, EventAudience::User, None)
+        Self::message(message, Level::Debug, Audience::User, None)
     }
 
     pub fn user_warning_at_row(row: usize, message: impl Into<String>) -> Self {
         Self::message(
             message,
-            EventLevel::Warning,
-            EventAudience::User,
+            Level::Warning,
+            Audience::User,
             Some(EventLocation::in_memory_row(row)),
         )
     }
@@ -294,8 +294,8 @@ impl Event {
     pub fn user_error_at_row(row: usize, message: impl Into<String>) -> Self {
         Self::message(
             message,
-            EventLevel::Error,
-            EventAudience::User,
+            Level::Error,
+            Audience::User,
             Some(EventLocation::in_memory_row(row)),
         )
     }
@@ -303,8 +303,8 @@ impl Event {
     pub fn user_path_warning(path: impl Into<PathBuf>, message: impl Into<String>) -> Self {
         Self::message(
             message,
-            EventLevel::Warning,
-            EventAudience::User,
+            Level::Warning,
+            Audience::User,
             Some(EventLocation::file_path(path)),
         )
     }
@@ -312,8 +312,8 @@ impl Event {
     pub fn user_path_error(path: impl Into<PathBuf>, message: impl Into<String>) -> Self {
         Self::message(
             message,
-            EventLevel::Error,
-            EventAudience::User,
+            Level::Error,
+            Audience::User,
             Some(EventLocation::file_path(path)),
         )
     }
@@ -325,8 +325,8 @@ impl Event {
     ) -> Self {
         Self::message(
             message,
-            EventLevel::Warning,
-            EventAudience::User,
+            Level::Warning,
+            Audience::User,
             Some(EventLocation::file_row(path, row)),
         )
     }
@@ -338,32 +338,32 @@ impl Event {
     ) -> Self {
         Self::message(
             message,
-            EventLevel::Error,
-            EventAudience::User,
+            Level::Error,
+            Audience::User,
             Some(EventLocation::file_row(path, row)),
         )
     }
 
     pub fn system_log(message: impl Into<String>) -> Self {
-        Self::message(message, EventLevel::Log, EventAudience::System, None)
+        Self::message(message, Level::Log, Audience::System, None)
     }
 
     pub fn system_warning(message: impl Into<String>) -> Self {
-        Self::message(message, EventLevel::Warning, EventAudience::System, None)
+        Self::message(message, Level::Warning, Audience::System, None)
     }
 
     pub fn system_error(message: impl Into<String>) -> Self {
-        Self::message(message, EventLevel::Error, EventAudience::System, None)
+        Self::message(message, Level::Error, Audience::System, None)
     }
 
     pub fn system_debug(message: impl Into<String>) -> Self {
-        Self::message(message, EventLevel::Debug, EventAudience::System, None)
+        Self::message(message, Level::Debug, Audience::System, None)
     }
 
     pub fn marker(
-        id: EventMarkerId,
+        id: MarkerId,
         label: impl Into<String>,
-        phase: EventMarkerPhase,
+        phase: MarkerPhase,
         origin: Option<&str>,
     ) -> Self {
         Self::Marker(MarkerEvent::new(
@@ -415,12 +415,12 @@ impl Event {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct EventRange {
+pub struct MarkerRange {
     pub begin: MarkerEvent,
     pub end: MarkerEvent,
 }
 
-impl EventRange {
+impl MarkerRange {
     pub fn new(begin: MarkerEvent, end: MarkerEvent) -> Self {
         Self { begin, end }
     }
@@ -458,8 +458,7 @@ fn format_uuid(bytes: [u8; 16]) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        Event, EventAudience, EventLevel, EventLocation, EventMarkerId, EventMarkerPhase,
-        EventPosition, EventSpan,
+        Audience, Event, EventLocation, EventPosition, EventSpan, Level, MarkerId, MarkerPhase,
     };
 
     #[test]
@@ -478,7 +477,7 @@ mod tests {
 
     #[test]
     fn creates_uuid_shaped_marker_ids() {
-        let id = EventMarkerId::new().to_string();
+        let id = MarkerId::new().to_string();
 
         assert_eq!(id.len(), 36);
         assert_eq!(&id[8..9], "-");
@@ -490,15 +489,15 @@ mod tests {
     #[test]
     fn stores_marker_metadata() {
         let marker = Event::marker(
-            EventMarkerId::new(),
+            MarkerId::new(),
             "parse_document",
-            EventMarkerPhase::Begin,
+            MarkerPhase::Begin,
             Some("structural_parser"),
         );
         let marker = marker.as_marker().expect("expected marker event");
 
         assert_eq!(marker.label, "parse_document");
-        assert_eq!(marker.phase, EventMarkerPhase::Begin);
+        assert_eq!(marker.phase, MarkerPhase::Begin);
         assert_eq!(marker.origin.as_deref(), Some("structural_parser"));
     }
 
@@ -506,8 +505,8 @@ mod tests {
     fn preserves_explicit_locations() {
         let event = Event::message(
             "Bad token",
-            EventLevel::Error,
-            EventAudience::User,
+            Level::Error,
+            Audience::User,
             Some(EventLocation::InMemory {
                 name: Some("snippet".to_string()),
                 span: Some(EventSpan::new(

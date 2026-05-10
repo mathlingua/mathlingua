@@ -1,6 +1,6 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
 use crate::environment::current_working_directory;
-use crate::events::{Event, EventAudience, EventLevel, EventLog, EventRange};
+use crate::events::{Audience, Event, EventLog, Level, MarkerRange};
 use crate::frontend::structural::parse_document;
 use std::collections::BTreeSet;
 use std::fs;
@@ -12,7 +12,7 @@ const ORIGIN: &str = "mlg_check";
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CheckResult {
     pub files_checked: usize,
-    pub event_range: EventRange,
+    pub marker_range: MarkerRange,
 }
 
 pub fn check(paths: &[PathBuf], event_log: &mut EventLog) -> io::Result<CheckResult> {
@@ -47,13 +47,13 @@ pub fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> Chec
             .iter()
             .filter_map(Event::as_message)
             .any(|event| {
-                event.audience == EventAudience::User
-                    && matches!(event.level, EventLevel::Error | EventLevel::Debug)
+                event.audience == Audience::User
+                    && matches!(event.level, Level::Error | Level::Debug)
             });
     let new_user_issue_count = new_events
         .iter()
         .filter_map(Event::as_message)
-        .filter(|event| event.audience == EventAudience::User && event.level != EventLevel::Log)
+        .filter(|event| event.audience == Audience::User && event.level != Level::Log)
         .count();
 
     if has_new_blocking_user_issues {
@@ -69,7 +69,7 @@ pub fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> Chec
 
     CheckResult {
         files_checked,
-        event_range: EventRange::new(begin, end),
+        marker_range: MarkerRange::new(begin, end),
     }
 }
 
@@ -238,7 +238,7 @@ fn format_issue_count(issue_count: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::{check_in, find_collection_root, resolve_source_files};
-    use crate::events::{Event, EventAudience, EventLevel, EventLog};
+    use crate::events::{Audience, Event, EventLog, Level};
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -251,9 +251,9 @@ mod tests {
             .events()
             .iter()
             .filter_map(|event| {
-                event.as_message().and_then(|message| {
-                    (message.audience == EventAudience::User).then(|| event.clone())
-                })
+                event
+                    .as_message()
+                    .and_then(|message| (message.audience == Audience::User).then(|| event.clone()))
             })
             .collect()
     }
@@ -279,7 +279,7 @@ mod tests {
         );
         assert!(
             event_log
-                .events_between(&result.event_range.begin, &result.event_range.end)
+                .events_between(&result.marker_range.begin, &result.marker_range.end)
                 .is_some()
         );
     }
@@ -487,14 +487,14 @@ mod tests {
         let mut event_log = EventLog::new();
         let result = check_in(&root, &[], &mut event_log);
         let range_events = event_log
-            .events_between(&result.event_range.begin, &result.event_range.end)
+            .events_between(&result.marker_range.begin, &result.marker_range.end)
             .expect("expected event range");
 
         assert!(
             range_events
                 .iter()
                 .filter_map(|event| event.as_message())
-                .any(|event| event.level == EventLevel::Log && event.message == "Checked 0 files")
+                .any(|event| event.level == Level::Log && event.message == "Checked 0 files")
         );
     }
 

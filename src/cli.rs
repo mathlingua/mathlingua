@@ -1,4 +1,4 @@
-use crate::events::{EventAudience, EventFilter, EventLevel};
+use crate::events::{Audience, EventFilter, Level};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
@@ -32,7 +32,7 @@ pub struct Cli {
 impl Cli {
     pub fn event_filter(&self) -> EventFilter {
         let audiences = if self.event_audiences.is_empty() {
-            vec![EventAudience::User]
+            vec![Audience::User]
         } else {
             self.event_audiences
                 .iter()
@@ -41,7 +41,7 @@ impl Cli {
                 .collect()
         };
         let levels = if self.event_levels.is_empty() {
-            EventLevel::all().to_vec()
+            Level::all().to_vec()
         } else {
             self.event_levels.iter().copied().map(Into::into).collect()
         };
@@ -59,11 +59,11 @@ pub enum CliEventAudience {
     System,
 }
 
-impl From<CliEventAudience> for EventAudience {
+impl From<CliEventAudience> for Audience {
     fn from(value: CliEventAudience) -> Self {
         match value {
-            CliEventAudience::User => EventAudience::User,
-            CliEventAudience::System => EventAudience::System,
+            CliEventAudience::User => Audience::User,
+            CliEventAudience::System => Audience::System,
         }
     }
 }
@@ -76,13 +76,13 @@ pub enum CliEventLevel {
     Debug,
 }
 
-impl From<CliEventLevel> for EventLevel {
+impl From<CliEventLevel> for Level {
     fn from(value: CliEventLevel) -> Self {
         match value {
-            CliEventLevel::Log => EventLevel::Log,
-            CliEventLevel::Warning => EventLevel::Warning,
-            CliEventLevel::Error => EventLevel::Error,
-            CliEventLevel::Debug => EventLevel::Debug,
+            CliEventLevel::Log => Level::Log,
+            CliEventLevel::Warning => Level::Warning,
+            CliEventLevel::Error => Level::Error,
+            CliEventLevel::Debug => Level::Debug,
         }
     }
 }

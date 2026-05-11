@@ -1,5 +1,5 @@
 use clap::Parser;
-use mlg::cli::{Cli, Command};
+use mlg::cli::{Cli, Command, ViewArgs};
 use mlg::environment::current_working_directory;
 use mlg::events::{ColorMode, EventConsoleWriter, EventFilter, EventLog};
 use std::path::{Path, PathBuf};
@@ -20,10 +20,7 @@ fn main() {
             let _ = mlg::version(&mut event_log);
             0
         }
-        Command::View => {
-            let _ = mlg::view(&mut event_log);
-            0
-        }
+        Command::View(args) => run_view(&args, &mut event_log),
     };
 
     if exit_code != 0 {
@@ -51,6 +48,20 @@ fn run_init(event_log: &mut EventLog) -> i32 {
     };
 
     if mlg::init(&cwd, event_log).is_err() || event_log.has_errors() {
+        1
+    } else {
+        0
+    }
+}
+
+fn run_view(args: &ViewArgs, event_log: &mut EventLog) -> i32 {
+    let cwd = current_working_directory(event_log);
+
+    let Some(cwd) = cwd else {
+        return 1;
+    };
+
+    if mlg::view_in(&cwd, args.port, event_log).is_err() || event_log.has_errors() {
         1
     } else {
         0

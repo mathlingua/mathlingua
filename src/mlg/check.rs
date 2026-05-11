@@ -1,8 +1,7 @@
-use crate::constants::{CONFIG_FILE, CONTENT_DIR};
 use crate::environment::current_working_directory;
 use crate::events::{Audience, Event, EventLog, Level, MarkerRange};
 use crate::frontend::structural::parse_document;
-use std::collections::BTreeSet;
+use crate::mlg::collection::resolve_source_files;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -34,7 +33,7 @@ pub fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> Chec
         format!("Checking {} explicit path(s)", paths.len()),
     );
 
-    let files = resolve_source_files(cwd, paths, event_log);
+    let files = resolve_source_files(cwd, paths, event_log, ORIGIN);
     let files_checked = files.len();
 
     for file in files {
@@ -71,127 +70,6 @@ pub fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> Chec
         files_checked,
         marker_range: MarkerRange::new(begin, end),
     }
-}
-
-fn resolve_source_files(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> Vec<PathBuf> {
-    let mut files = BTreeSet::new();
-
-    if paths.is_empty() {
-        let Some(root) = find_collection_root(cwd) else {
-            event_log.user_error_at_path(
-                Some(ORIGIN),
-                cwd.to_path_buf(),
-                "Not inside a Mathlingua collection and no paths were provided",
-            );
-            return Vec::new();
-        };
-
-        event_log.system_debug(
-            Some(ORIGIN),
-            format!(
-                "Using collection content directory {}",
-                root.join(CONTENT_DIR).display()
-            ),
-        );
-        collect_source_files(root.join(CONTENT_DIR), &mut files, event_log);
-    } else {
-        for path in paths {
-            if let Some(resolved_path) = resolve_input_path(cwd, path, event_log) {
-                collect_source_files(resolved_path, &mut files, event_log);
-            }
-        }
-    }
-
-    files.into_iter().collect()
-}
-
-fn resolve_input_path(cwd: &Path, path: &Path, event_log: &mut EventLog) -> Option<PathBuf> {
-    let joined = if path.is_absolute() {
-        path.to_path_buf()
-    } else {
-        cwd.join(path)
-    };
-
-    match joined.canonicalize() {
-        Ok(path) => Some(path),
-        Err(error) => {
-            event_log.user_error_at_path(
-                Some(ORIGIN),
-                joined,
-                format!("Failed to resolve path: {error}"),
-            );
-            None
-        }
-    }
-}
-
-fn find_collection_root(start: &Path) -> Option<PathBuf> {
-    start
-        .ancestors()
-        .find(|directory| directory.join(CONFIG_FILE).is_file())
-        .map(Path::to_path_buf)
-}
-
-fn collect_source_files(target: PathBuf, files: &mut BTreeSet<PathBuf>, event_log: &mut EventLog) {
-    match fs::metadata(&target) {
-        Ok(metadata) if metadata.is_dir() => {
-            collect_directory_source_files(&target, files, event_log)
-        }
-        Ok(metadata) if metadata.is_file() => {
-            if is_mathlingua_source_file(&target) {
-                files.insert(target);
-            } else {
-                event_log.user_error_at_path(Some(ORIGIN), target, "Not a .mlg file");
-            }
-        }
-        Ok(_) => event_log.user_error_at_path(Some(ORIGIN), target, "Unsupported filesystem entry"),
-        Err(error) => event_log.user_error_at_path(
-            Some(ORIGIN),
-            target,
-            format!("Failed to read path: {error}"),
-        ),
-    }
-}
-
-fn collect_directory_source_files(
-    directory: &Path,
-    files: &mut BTreeSet<PathBuf>,
-    event_log: &mut EventLog,
-) {
-    let entries = match read_directory_entries(directory) {
-        Ok(entries) => entries,
-        Err(error) => {
-            event_log.user_error_at_path(
-                Some(ORIGIN),
-                directory.to_path_buf(),
-                format!("Failed to read directory: {error}"),
-            );
-            return;
-        }
-    };
-
-    for entry in entries {
-        let path = entry.path();
-
-        if path.is_dir() {
-            collect_directory_source_files(&path, files, event_log);
-        } else if path.is_file() && is_mathlingua_source_file(&path) {
-            files.insert(path);
-        }
-    }
-}
-
-fn read_directory_entries(directory: &Path) -> io::Result<Vec<fs::DirEntry>> {
-    let mut entries = fs::read_dir(directory)?.collect::<Result<Vec<_>, io::Error>>()?;
-    entries.sort_by(|left, right| left.path().cmp(&right.path()));
-    Ok(entries)
-}
-
-fn is_mathlingua_source_file(path: &Path) -> bool {
-    path.extension()
-        .and_then(|value| value.to_str())
-        .map(|extension| extension.eq_ignore_ascii_case("mlg"))
-        .unwrap_or(false)
 }
 
 fn parse_source_file(path: &Path, event_log: &mut EventLog) {
@@ -237,8 +115,9 @@ fn format_issue_count(issue_count: usize) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{check_in, find_collection_root, resolve_source_files};
+    use super::check_in;
     use crate::events::{Audience, Event, EventLog, Level};
+    use crate::mlg::collection::{find_collection_root, resolve_source_files};
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -456,6 +335,7 @@ mod tests {
             temp_dir.path(),
             &[PathBuf::from("docs"), PathBuf::from("extra.mlg")],
             &mut event_log,
+            "mlg_check",
         );
 
         assert!(user_events(&event_log).is_empty());

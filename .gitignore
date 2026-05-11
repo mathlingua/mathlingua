@@ -4,3 +4,5 @@
 .vscode
 /target
 /testbed
+/web/.next
+/web/node_modules

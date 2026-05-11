@@ -1,4 +1,4 @@
-pub use mlg::{CheckResult, check, check_in, init, version, view};
+pub use mlg::{CheckResult, check, check_in, init, version, view, view_in};
 
 pub mod backend;
 pub mod cli;

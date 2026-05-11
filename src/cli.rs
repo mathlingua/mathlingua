@@ -96,7 +96,7 @@ pub enum Command {
     /// Print version information and quit
     Version,
     /// View rendered Mathlingua files
-    View,
+    View(ViewArgs),
 }
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
@@ -106,11 +106,18 @@ pub struct CheckArgs {
     pub paths: Vec<PathBuf>,
 }
 
+#[derive(Clone, Debug, Args, PartialEq, Eq)]
+pub struct ViewArgs {
+    /// The local port used for the rendered viewer.
+    #[arg(long, default_value_t = 3000)]
+    pub port: u16,
+}
+
 // =============================================================================
 
 #[cfg(test)]
 mod tests {
-    use super::{CheckArgs, Cli, CliEventAudience, CliEventLevel, Command};
+    use super::{CheckArgs, Cli, CliEventAudience, CliEventLevel, Command, ViewArgs};
     use clap::{CommandFactory, Parser};
     use std::path::PathBuf;
 
@@ -161,5 +168,15 @@ mod tests {
             vec![CliEventLevel::Warning, CliEventLevel::Error]
         );
         assert!(cli.event_markers);
+    }
+
+    #[test]
+    fn parses_view_with_a_custom_port() {
+        let cli = Cli::parse_from(["mlg", "view", "--port", "4000"]);
+
+        assert!(matches!(
+            cli.command,
+            Command::View(ViewArgs { port: 4000 })
+        ));
     }
 }

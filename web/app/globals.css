@@ -252,7 +252,7 @@ code {
   display: grid;
   grid-template-columns: 0.5rem minmax(0, 1fr);
   align-items: center;
-  gap: 0.18rem;
+  gap: 0.26rem;
 }
 
 .argument-item--group {

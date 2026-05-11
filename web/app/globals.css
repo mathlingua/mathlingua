@@ -250,17 +250,27 @@ code {
 
 .argument-item {
   display: grid;
-  grid-template-columns: 0.9rem minmax(0, 1fr);
+  grid-template-columns: 0.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.18rem;
+}
+
+.argument-item--group {
   align-items: start;
-  gap: 0.32rem;
 }
 
 .argument-item::before {
   content: "•";
   color: var(--ink);
   font-size: 0.8rem;
-  line-height: 1.35;
-  transform: translateY(0.18rem);
+  line-height: 1;
+  justify-self: start;
+  align-self: center;
+}
+
+.argument-item--group::before {
+  align-self: start;
+  transform: translateY(0.28rem);
 }
 
 .text-line {

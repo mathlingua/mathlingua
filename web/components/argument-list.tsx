@@ -8,7 +8,10 @@ export function ArgumentList({ arguments: items }: ArgumentListProps) {
   return (
     <ul className="argument-list">
       {items.map((argument, index) => (
-        <li className="argument-item" key={`${argument.kind}-${index}`}>
+        <li
+          className={`argument-item argument-item--${argument.kind}`}
+          key={`${argument.kind}-${index}`}
+        >
           {argument.kind === "formulation" ? (
             <code className="formulation-line">{argument.text}</code>
           ) : null}

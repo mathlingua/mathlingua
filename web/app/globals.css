@@ -148,14 +148,22 @@ code {
   margin-top: 0.85rem;
 }
 
-.outline-list a {
+.outline-link {
   display: inline-block;
+  padding: 0;
+  border: none;
+  background: none;
   color: var(--ink);
   font-size: 1.28rem;
-  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
 }
 
-.outline-list a:hover {
+.outline-link:hover {
+  color: var(--accent);
+}
+
+.outline-link--active {
   color: var(--accent);
 }
 
@@ -355,7 +363,7 @@ code {
     font-size: 1.45rem;
   }
 
-  .outline-list a {
+  .outline-link {
     font-size: 1.05rem;
   }
 

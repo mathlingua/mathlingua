@@ -103,3 +103,16 @@ Documented:
 . [docs.discoverer]
   discoverer:
   . "Gauss"
+
+[\function:on{A}:to{B}]
+Describes: f(x__)
+when:
+. A, B is \set
+satisfies:
+. forAll: x "in" A
+  then:
+  . existsUnique: y "in" B
+    suchThat:
+    . f(x) = y
+Documented:
+. called: "Function on $A?$ to $B?$"

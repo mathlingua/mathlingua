@@ -192,6 +192,7 @@ pub enum Clause {
     Iff(IffGroup),
     Piecewise(PiecewiseGroup),
     Given(GivenGroup),
+    IsOrSpec(IsOrSpec),
     Expression(Expression),
 }
 

@@ -1911,11 +1911,16 @@ fn parse_optional_clauses(
             SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
                 match parse_expression(text) {
                     Ok(expression) => result.push(Clause::Expression(expression)),
-                    Err(error) => tracker.user_error_at_row(
-                        Some(ORIGIN),
-                        row,
-                        format!("Invalid clause expression in `{label}`: {error}"),
-                    ),
+                    Err(expression_error) => match parse_is_or_spec(text) {
+                        Ok(spec) => result.push(Clause::IsOrSpec(spec)),
+                        Err(_) => tracker.user_error_at_row(
+                            Some(ORIGIN),
+                            row,
+                            format!(
+                                "Invalid clause expression in `{label}`: {expression_error}"
+                            ),
+                        ),
+                    },
                 }
             }
             SectionEntry::Group { group, .. } => {
@@ -2410,6 +2415,40 @@ that:
                 assert!(matches!(states.that.arguments[0], Clause::Exists(_)));
             }
             other => panic!("expected states item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_is_statements_as_inline_clauses() {
+        let text = r#"
+[\function:on{A}:to{B}]
+Describes: f(x__)
+when:
+. A, B is \set
+satisfies:
+. forAll: x "in" A
+  then:
+  . existsUnique: y "in" B
+    suchThat:
+    . f(x) = y
+"#;
+
+        let mut tracker = EventLog::new();
+        let document = parse_document(text, &mut tracker);
+
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
+        match &document.items[0] {
+            TopLevelItem::Describes(group) => {
+                assert!(matches!(
+                    group.when.as_ref().expect("expected when").arguments[0],
+                    Clause::IsOrSpec(_)
+                ));
+                assert!(matches!(
+                    group.satisfies.as_ref().expect("expected satisfies").arguments[0],
+                    Clause::ForAll(_)
+                ));
+            }
+            other => panic!("expected describes item, got {other:?}"),
         }
     }
 

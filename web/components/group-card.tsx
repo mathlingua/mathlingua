@@ -1,5 +1,5 @@
 import { ArgumentList } from "./argument-list";
-import { formatGroupTitle } from "../lib/presenter";
+import { formatGroupHeading } from "../lib/presenter";
 import { GroupView } from "../lib/types";
 
 type GroupCardProps = {
@@ -11,14 +11,7 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
   return (
     <section className="group-card" id={anchorId}>
       <header className="group-header">
-        <div>
-          <p className="group-kind">{group.kind}</p>
-          <h3>{formatGroupTitle(group)}</h3>
-          {group.heading ? <p className="group-heading-meta">{group.heading}</p> : null}
-        </div>
-        <span aria-hidden="true" className="group-menu">
-          ≡
-        </span>
+        <h3 className="group-heading">{formatGroupHeading(group)}</h3>
       </header>
       <div className="section-stack">
         {group.sections.map((section, index) => (

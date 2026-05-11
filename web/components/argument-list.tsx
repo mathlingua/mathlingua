@@ -18,7 +18,7 @@ export function ArgumentList({ arguments: items }: ArgumentListProps) {
           {argument.kind === "group" ? (
             <div className="nested-group">
               {argument.heading ? (
-                <p className="nested-heading">{argument.heading}</p>
+                <p className="nested-heading">[{argument.heading}]</p>
               ) : null}
               {argument.sections.map((section, sectionIndex) => (
                 <section

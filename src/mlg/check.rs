@@ -1,3 +1,4 @@
+use crate::backend::semantic::{check_documents, ParsedSourceFile};
 use crate::constants::CONFIG_FILE;
 use crate::environment::current_working_directory;
 use crate::events::{Audience, Event, EventLog, Level, MarkerRange};
@@ -42,9 +43,13 @@ pub fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> Chec
     let files = resolve_source_files(cwd, paths, event_log, ORIGIN);
     let files_checked = files.len();
 
+    let mut parsed_files = Vec::new();
     for file in files {
-        parse_source_file(&file, event_log);
+        if let Some(parsed_file) = parse_source_file(&file, event_log) {
+            parsed_files.push(parsed_file);
+        }
     }
+    check_documents(&parsed_files, event_log);
 
     let new_events = &event_log.events()[starting_event_count..];
     let has_new_blocking_user_issues =
@@ -78,7 +83,7 @@ pub fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> Chec
     }
 }
 
-fn parse_source_file(path: &Path, event_log: &mut EventLog) {
+fn parse_source_file(path: &Path, event_log: &mut EventLog) -> Option<ParsedSourceFile> {
     event_log.system_debug(Some(ORIGIN), format!("Parsing {}", path.display()));
 
     let source = match fs::read_to_string(path) {
@@ -89,16 +94,22 @@ fn parse_source_file(path: &Path, event_log: &mut EventLog) {
                 path.to_path_buf(),
                 format!("Failed to read file: {error}"),
             );
-            return;
+            return None;
         }
     };
 
     let mut file_event_log = EventLog::new();
-    let _ = parse_document(&source, &mut file_event_log);
+    let document = parse_document(&source, &mut file_event_log);
 
     for event in file_event_log.events() {
         event_log.push(event.clone().with_file_path(path.to_path_buf()));
     }
+
+    Some(ParsedSourceFile {
+        path: path.to_path_buf(),
+        source,
+        document,
+    })
 }
 
 fn render_check_success(files_checked: usize) -> String {
@@ -144,6 +155,33 @@ mod tests {
             .collect()
     }
 
+    fn has_user_error_at(
+        event_log: &EventLog,
+        path: &Path,
+        row: usize,
+        column: usize,
+        message: &str,
+    ) -> bool {
+        event_log
+            .events()
+            .iter()
+            .filter_map(Event::as_message)
+            .any(|event| {
+                event.message == message
+                    && event.location.as_ref().is_some_and(|location| {
+                        matches!(
+                            location,
+                            crate::events::EventLocation::File {
+                                path: event_path,
+                                span: Some(span)
+                            } if event_path == path
+                                && span.start.row == Some(row)
+                                && span.start.column == Some(column)
+                        )
+                    })
+            })
+    }
+
     #[test]
     fn check_without_arguments_uses_collection_content_from_a_nested_directory() {
         let temp_dir = TestDir::new();
@@ -163,11 +201,9 @@ mod tests {
             user_events(&event_log),
             [Event::user_log("Checked 2 files").with_origin("mlg_check")]
         );
-        assert!(
-            event_log
-                .events_between(&result.marker_range.begin, &result.marker_range.end)
-                .is_some()
-        );
+        assert!(event_log
+            .events_between(&result.marker_range.begin, &result.marker_range.end)
+            .is_some());
     }
 
     #[test]
@@ -305,24 +341,163 @@ mod tests {
         );
 
         assert_eq!(result.files_checked, 1);
-        assert!(
-            event_log
-                .events()
-                .iter()
-                .filter_map(Event::as_message)
-                .any(|event| {
-                    event.location.as_ref().is_some_and(|location| {
-                        matches!(
-                            location,
-                            crate::events::EventLocation::File { path, .. }
-                                if *path == file.canonicalize().unwrap()
-                        )
-                    }) && event.message.starts_with("Invalid Defines formulation:")
-                })
-        );
+        assert!(event_log
+            .events()
+            .iter()
+            .filter_map(Event::as_message)
+            .any(|event| {
+                event.location.as_ref().is_some_and(|location| {
+                    matches!(
+                        location,
+                        crate::events::EventLocation::File { path, .. }
+                            if *path == file.canonicalize().unwrap()
+                    )
+                }) && event.message.starts_with("Invalid Defines formulation:")
+            }));
         assert!(user_events(&event_log).last().is_some_and(
             |event| event == &Event::user_log("Found 1 issue.").with_origin("mlg_check")
         ));
+    }
+
+    #[test]
+    fn check_reports_duplicate_command_signatures_across_definition_kinds() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("duplicates.mlg");
+
+        fs::write(
+            &file,
+            r#"[\function{A, B}]
+Defines: A "defines" B
+
+[\function{A}]
+Theorem:
+then:
+. A = A
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("duplicates.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let canonical_file = file.canonicalize().unwrap();
+        assert!(has_user_error_at(
+            &event_log,
+            &canonical_file,
+            3,
+            1,
+            &format!(
+                "Duplicate command signature `\\function` in Theorem; previously defined as Defines in {}:1:2",
+                canonical_file.display()
+            )
+        ));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_reports_references_to_undefined_command_signatures() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("undefined.mlg");
+
+        fs::write(
+            &file,
+            r#"[\function:on{A}:to{B}]
+Defines: A "defines" B
+
+Theorem:
+then:
+. x is \function{A, B}
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("undefined.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(has_user_error_at(
+            &event_log,
+            &file.canonicalize().unwrap(),
+            5,
+            7,
+            "Undefined command signature `\\function`"
+        ));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_reports_command_argument_shape_mismatches() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("arity.mlg");
+
+        fs::write(
+            &file,
+            r#"[\foo{A, B}(x)]
+Defines: A "defines" B
+
+Theorem:
+then:
+. y is \foo{A}(x, z)
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("arity.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(has_user_error_at(
+            &event_log,
+            &file.canonicalize().unwrap(),
+            5,
+            7,
+            "Command signature `\\foo` expects argument shape `{2}(1)` but found `{1}(2)`"
+        ));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_accepts_defined_command_references_with_matching_argument_shape() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("valid-reference.mlg");
+
+        fs::write(
+            &file,
+            r#"[\foo{A, B}(x)]
+Defines: A "defines" B
+
+Theorem:
+then:
+. y is \foo{C, D}(z)
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("valid-reference.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
     }
 
     #[test]
@@ -405,12 +580,10 @@ mod tests {
             .events_between(&result.marker_range.begin, &result.marker_range.end)
             .expect("expected event range");
 
-        assert!(
-            range_events
-                .iter()
-                .filter_map(|event| event.as_message())
-                .any(|event| event.level == Level::Log && event.message == "Checked 0 files")
-        );
+        assert!(range_events
+            .iter()
+            .filter_map(|event| event.as_message())
+            .any(|event| event.level == Level::Log && event.message == "Checked 0 files"));
     }
 
     struct TestDir {

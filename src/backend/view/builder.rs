@@ -1,7 +1,9 @@
 use super::model::{ArgumentView, CollectionView, FileView, GroupView, SectionView};
+use super::render::{build_render_registry, render_formulation_latex, RenderRegistry};
+use crate::backend::semantic::{check_documents, ParsedSourceFile};
 use crate::events::{Audience, Event, EventLog, Level};
-use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{Argument, Group, Section};
+use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::structural::parse_document;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -13,31 +15,39 @@ pub fn build_collection_view(
     files: &[PathBuf],
     event_log: &mut EventLog,
 ) -> Option<CollectionView> {
-    let mut rendered_files = Vec::new();
+    let mut parsed_files = Vec::new();
     let mut has_blocking_issues = false;
 
     for file in files {
-        match build_file_view(collection_root, file, event_log) {
-            Some(file_view) => rendered_files.push(file_view),
+        match parse_file_for_view(file, event_log) {
+            Some(parsed_file) => parsed_files.push(parsed_file),
             None => has_blocking_issues = true,
         }
     }
 
     if has_blocking_issues {
-        None
-    } else {
-        Some(CollectionView {
-            title: collection_title(collection_root),
-            files: rendered_files,
-        })
+        return None;
     }
+
+    let semantic_start = event_log.events().len();
+    check_documents(&parsed_files, event_log);
+    if has_blocking_user_issues(&event_log.events()[semantic_start..]) {
+        return None;
+    }
+
+    let registry = build_render_registry(&parsed_files);
+    let rendered_files = parsed_files
+        .iter()
+        .map(|file| build_file_view(collection_root, file, &registry, event_log))
+        .collect::<Option<Vec<_>>>()?;
+
+    Some(CollectionView {
+        title: collection_title(collection_root),
+        files: rendered_files,
+    })
 }
 
-fn build_file_view(
-    collection_root: &Path,
-    file: &Path,
-    event_log: &mut EventLog,
-) -> Option<FileView> {
+fn parse_file_for_view(file: &Path, event_log: &mut EventLog) -> Option<ParsedSourceFile> {
     event_log.system_debug(Some(ORIGIN), format!("Rendering {}", file.display()));
 
     let source = match fs::read_to_string(file) {
@@ -53,33 +63,51 @@ fn build_file_view(
     };
 
     let mut validation_log = EventLog::new();
-    let _ = parse_document(&source, &mut validation_log);
+    let document = parse_document(&source, &mut validation_log);
 
     for event in validation_log.events() {
         event_log.push(event.clone().with_file_path(file.to_path_buf()));
     }
 
-    if has_blocking_user_issues(&validation_log) {
+    if has_blocking_user_issues(validation_log.events()) {
         return None;
     }
 
-    let mut proto_log = EventLog::new();
-    let groups = ProtoParser::new(&source, &mut proto_log).parse();
-
-    Some(FileView {
-        path: relative_path(collection_root, file),
-        items: groups.into_iter().map(group_view).collect(),
+    Some(ParsedSourceFile {
+        path: file.to_path_buf(),
+        source,
+        document,
     })
 }
 
-fn has_blocking_user_issues(event_log: &EventLog) -> bool {
-    event_log
-        .events()
-        .iter()
-        .filter_map(Event::as_message)
-        .any(|event| {
-            event.audience == Audience::User && matches!(event.level, Level::Error | Level::Debug)
-        })
+fn build_file_view(
+    collection_root: &Path,
+    file: &ParsedSourceFile,
+    registry: &RenderRegistry,
+    event_log: &mut EventLog,
+) -> Option<FileView> {
+    let mut proto_log = EventLog::new();
+    let groups = ProtoParser::new(&file.source, &mut proto_log).parse();
+    for event in proto_log.events() {
+        event_log.push(event.clone().with_file_path(file.path.clone()));
+    }
+    if has_blocking_user_issues(proto_log.events()) {
+        return None;
+    }
+
+    Some(FileView {
+        path: relative_path(collection_root, &file.path),
+        items: groups
+            .into_iter()
+            .map(|group| group_view(group, registry))
+            .collect(),
+    })
+}
+
+fn has_blocking_user_issues(events: &[Event]) -> bool {
+    events.iter().filter_map(Event::as_message).any(|event| {
+        event.audience == Audience::User && matches!(event.level, Level::Error | Level::Debug)
+    })
 }
 
 fn collection_title(collection_root: &Path) -> String {
@@ -98,7 +126,7 @@ fn relative_path(collection_root: &Path, file: &Path) -> String {
         .to_string()
 }
 
-fn group_view(group: Group) -> GroupView {
+fn group_view(group: Group, registry: &RenderRegistry) -> GroupView {
     let kind = group
         .sections
         .first()
@@ -108,27 +136,46 @@ fn group_view(group: Group) -> GroupView {
     GroupView {
         kind,
         heading: group.heading,
-        sections: group.sections.into_iter().map(section_view).collect(),
+        sections: group
+            .sections
+            .into_iter()
+            .map(|section| section_view(section, registry))
+            .collect(),
     }
 }
 
-fn section_view(section: Section) -> SectionView {
+fn section_view(section: Section, registry: &RenderRegistry) -> SectionView {
+    let inline_latex = section
+        .inline_argument
+        .as_deref()
+        .and_then(|text| render_formulation_latex(text, registry));
+
     SectionView {
         label: section.label,
         inline_argument: section.inline_argument,
-        arguments: section.arguments.into_iter().map(argument_view).collect(),
+        inline_latex,
+        arguments: section
+            .arguments
+            .into_iter()
+            .map(|argument| argument_view(argument, registry))
+            .collect(),
     }
 }
 
-fn argument_view(argument: Argument) -> ArgumentView {
+fn argument_view(argument: Argument, registry: &RenderRegistry) -> ArgumentView {
     match argument {
         Argument::Formulation(formulation) => ArgumentView::Formulation {
+            latex: render_formulation_latex(&formulation.text, registry),
             text: formulation.text,
         },
         Argument::Text(text) => ArgumentView::Text { text: text.text },
         Argument::Group(group) => ArgumentView::Group {
             heading: group.heading,
-            sections: group.sections.into_iter().map(section_view).collect(),
+            sections: group
+                .sections
+                .into_iter()
+                .map(|section| section_view(section, registry))
+                .collect(),
         },
     }
 }

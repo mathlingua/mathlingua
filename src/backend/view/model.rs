@@ -23,6 +23,7 @@ pub struct GroupView {
 pub struct SectionView {
     pub label: String,
     pub inline_argument: Option<String>,
+    pub inline_latex: Option<String>,
     pub arguments: Vec<ArgumentView>,
 }
 
@@ -31,6 +32,7 @@ pub struct SectionView {
 pub enum ArgumentView {
     Formulation {
         text: String,
+        latex: Option<String>,
     },
     Text {
         text: String,

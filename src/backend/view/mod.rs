@@ -3,3 +3,4 @@ pub use model::{ArgumentView, CollectionView, FileView, GroupView, SectionView};
 
 mod builder;
 mod model;
+mod render;

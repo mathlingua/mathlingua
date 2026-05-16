@@ -17,6 +17,7 @@ export type GroupView = {
 export type SectionView = {
   label: string;
   inline_argument: string | null;
+  inline_latex: string | null;
   arguments: ArgumentView[];
 };
 
@@ -24,6 +25,7 @@ export type ArgumentView =
   | {
       kind: "formulation";
       text: string;
+      latex: string | null;
     }
   | {
       kind: "text";

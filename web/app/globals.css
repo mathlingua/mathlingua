@@ -248,6 +248,20 @@ code {
   line-height: 1.35;
 }
 
+.inline-argument--latex,
+.formulation-line--latex {
+  font-family: var(--font-body);
+}
+
+.latex-renderer {
+  font-size: 1.04rem;
+}
+
+.katex .mathnormal,
+.katex .textrm {
+  font-size: 90%;
+}
+
 .argument-list {
   list-style: none;
   margin: 0.05rem 0 0;

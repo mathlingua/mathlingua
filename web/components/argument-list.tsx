@@ -1,4 +1,5 @@
 import { ArgumentView } from "../lib/types";
+import { LatexRenderer } from "./latex-renderer";
 
 type ArgumentListProps = {
   arguments: ArgumentView[];
@@ -13,7 +14,13 @@ export function ArgumentList({ arguments: items }: ArgumentListProps) {
           key={`${argument.kind}-${index}`}
         >
           {argument.kind === "formulation" ? (
-            <code className="formulation-line">{argument.text}</code>
+            argument.latex ? (
+              <span className="formulation-line formulation-line--latex">
+                <LatexRenderer latex={argument.latex} />
+              </span>
+            ) : (
+              <code className="formulation-line">{argument.text}</code>
+            )
           ) : null}
           {argument.kind === "text" ? (
             <p className="text-line">{argument.text}</p>
@@ -31,9 +38,15 @@ export function ArgumentList({ arguments: items }: ArgumentListProps) {
                   <div className="section-label-row">
                     <span className="section-label">{section.label}</span>
                     {section.inline_argument ? (
-                      <code className="inline-argument">
-                        {section.inline_argument}
-                      </code>
+                      section.inline_latex ? (
+                        <span className="inline-argument inline-argument--latex">
+                          <LatexRenderer latex={section.inline_latex} />
+                        </span>
+                      ) : (
+                        <code className="inline-argument">
+                          {section.inline_argument}
+                        </code>
+                      )
                     ) : null}
                   </div>
                   {section.arguments.length > 0 ? (

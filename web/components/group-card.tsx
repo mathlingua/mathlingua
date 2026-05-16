@@ -1,6 +1,7 @@
 import { ArgumentList } from "./argument-list";
 import { formatGroupHeading } from "../lib/presenter";
 import { GroupView } from "../lib/types";
+import { LatexRenderer } from "./latex-renderer";
 
 type GroupCardProps = {
   anchorId: string;
@@ -19,7 +20,15 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
             <div className="section-label-row">
               <span className="section-label">{section.label}</span>
               {section.inline_argument ? (
-                <code className="inline-argument">{section.inline_argument}</code>
+                section.inline_latex ? (
+                  <span className="inline-argument inline-argument--latex">
+                    <LatexRenderer latex={section.inline_latex} />
+                  </span>
+                ) : (
+                  <code className="inline-argument">
+                    {section.inline_argument}
+                  </code>
+                )
               ) : null}
             </div>
             {section.arguments.length > 0 ? (

@@ -1,4 +1,4 @@
-use crate::backend::view::{CollectionView, build_collection_view};
+use crate::backend::view::{build_collection_view, CollectionView};
 use crate::environment::current_working_directory;
 use crate::events::EventLog;
 use crate::mlg::collection::resolve_collection_content_files;
@@ -327,6 +327,7 @@ mod tests {
                     sections: vec![SectionView {
                         label: "Title".to_string(),
                         inline_argument: Some("\"Example\"".to_string()),
+                        inline_latex: None,
                         arguments: vec![],
                     }],
                 }],

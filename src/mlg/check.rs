@@ -517,6 +517,120 @@ then:
     }
 
     #[test]
+    fn check_accepts_command_references_that_omit_defined_paren_arguments() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("optional-parens.mlg");
+
+        fs::write(
+            &file,
+            r#"[\some.function{A}(x, y)]
+Defines: A "defines" B
+Documented:
+. [docs.called]
+  called:
+  . "some function"
+
+Theorem:
+then:
+. f is \some.function{X}
+. g is \some.function{X}(a, b)
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("optional-parens.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_command_references_with_wrong_curly_argument_count() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("wrong-curly-count.mlg");
+
+        fs::write(
+            &file,
+            r#"[\some.function{A}(x, y)]
+Defines: A "defines" B
+Documented:
+. [docs.called]
+  called:
+  . "some function"
+
+Theorem:
+then:
+. f is \some.function{A, B}(x, y)
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("wrong-curly-count.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(has_user_error_at(
+            &event_log,
+            &file.canonicalize().unwrap(),
+            9,
+            7,
+            "Command signature `\\some.function` expects argument shape `{1}(2)` but found `{2}(2)`"
+        ));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_reports_command_references_with_wrong_paren_argument_count() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("wrong-paren-count.mlg");
+
+        fs::write(
+            &file,
+            r#"[\some.function{A}(x, y)]
+Defines: A "defines" B
+Documented:
+. [docs.called]
+  called:
+  . "some function"
+
+Theorem:
+then:
+. f is \some.function{A}(x, y, z)
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("wrong-paren-count.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(has_user_error_at(
+            &event_log,
+            &file.canonicalize().unwrap(),
+            9,
+            7,
+            "Command signature `\\some.function` expects argument shape `{1}(2)` but found `{1}(3)`"
+        ));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
     fn check_requires_defines_describes_and_refines_to_have_documented_called() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("documented-called.mlg");

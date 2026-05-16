@@ -261,7 +261,7 @@ fn validate_reference_shape(
         return;
     };
 
-    if definition.shape.arg_groups != shape.arg_groups {
+    if !argument_groups_match(&definition.shape.arg_groups, &shape.arg_groups) {
         emit_error(
             event_log,
             path,
@@ -274,6 +274,21 @@ fn validate_reference_shape(
             ),
         );
     }
+}
+
+fn argument_groups_match(expected: &[ArgGroupShape], actual: &[ArgGroupShape]) -> bool {
+    if expected == actual {
+        return true;
+    }
+
+    let Some(remaining_expected) = expected.strip_prefix(actual) else {
+        return false;
+    };
+
+    !remaining_expected.is_empty()
+        && remaining_expected
+            .iter()
+            .all(|group| group.delimiter == ArgDelimiter::Paren)
 }
 
 fn shape_for_header(header: &CommandHeader) -> SignatureShape {

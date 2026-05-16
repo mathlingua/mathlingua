@@ -1,7 +1,9 @@
+use crate::constants::CONFIG_FILE;
 use crate::environment::current_working_directory;
 use crate::events::{Audience, Event, EventLog, Level, MarkerRange};
 use crate::frontend::structural::parse_document;
-use crate::mlg::collection::resolve_source_files;
+use crate::mlg::collection::{find_collection_root, resolve_source_files};
+use crate::mlg::config::validate_config_file;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -32,6 +34,10 @@ pub fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> Chec
         Some(ORIGIN),
         format!("Checking {} explicit path(s)", paths.len()),
     );
+
+    if let Some(root) = find_collection_root(cwd) {
+        validate_config_file(&root.join(CONFIG_FILE), event_log, ORIGIN);
+    }
 
     let files = resolve_source_files(cwd, paths, event_log, ORIGIN);
     let files_checked = files.len();
@@ -118,6 +124,7 @@ mod tests {
     use super::check_in;
     use crate::events::{Audience, Event, EventLog, Level};
     use crate::mlg::collection::{find_collection_root, resolve_source_files};
+    use crate::mlg::config::default_config_contents;
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -144,7 +151,7 @@ mod tests {
         let nested_cwd = root.join("content/algebra");
 
         fs::create_dir_all(&nested_cwd).unwrap();
-        fs::write(root.join("mlg.json"), "{}\n").unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
         fs::write(root.join("content/sets.mlg"), "Title: \"Sets\"\n").unwrap();
         fs::write(nested_cwd.join("groups.mlg"), "Title: \"Groups\"\n").unwrap();
 
@@ -209,7 +216,7 @@ mod tests {
         let root = temp_dir.path().join("repo");
 
         fs::create_dir_all(root.join("content")).unwrap();
-        fs::write(root.join("mlg.json"), "{}\n").unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
 
         let mut event_log = EventLog::new();
         let result = check_in(&root, &[], &mut event_log);
@@ -219,6 +226,34 @@ mod tests {
             user_events(&event_log),
             [Event::user_log("Checked 0 files").with_origin("mlg_check")]
         );
+    }
+
+    #[test]
+    fn check_reports_config_validation_errors() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        fs::create_dir_all(root.join("content")).unwrap();
+        fs::write(root.join("mlg.json"), r#"{"name": 5}"#).unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(&root, &[], &mut event_log);
+
+        assert_eq!(result.files_checked, 0);
+        let messages: Vec<&str> = event_log
+            .events()
+            .iter()
+            .filter_map(Event::as_message)
+            .filter(|message| message.audience == Audience::User && message.level == Level::Error)
+            .map(|message| message.message.as_str())
+            .collect();
+        assert_eq!(
+            messages,
+            vec![
+                "mlg.json field \"name\" must be a string",
+                "mlg.json is missing required field \"version\"",
+            ]
+        );
+        assert!(event_log.has_errors());
     }
 
     #[test]
@@ -349,7 +384,7 @@ mod tests {
         let nested = root.join("content/logic");
 
         fs::create_dir_all(&nested).unwrap();
-        fs::write(root.join("mlg.json"), "{}\n").unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
 
         let discovered = find_collection_root(&nested).expect("expected collection root");
 
@@ -362,7 +397,7 @@ mod tests {
         let root = temp_dir.path().join("repo");
 
         fs::create_dir_all(root.join("content")).unwrap();
-        fs::write(root.join("mlg.json"), "{}\n").unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
 
         let mut event_log = EventLog::new();
         let result = check_in(&root, &[], &mut event_log);

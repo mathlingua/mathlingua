@@ -1,10 +1,10 @@
 use crate::constants::{CONFIG_FILE, CONTENT_DIR};
 use crate::events::EventLog;
+use crate::mlg::config::default_config_contents;
 use std::fs;
 use std::io;
 use std::path::Path;
 
-const DEFAULT_CONFIG: &str = "{}\n";
 const ORIGIN: &str = "mlg_init";
 
 pub fn init(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
@@ -20,7 +20,7 @@ pub fn init(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
             format!("Skipping {CONFIG_FILE}; it already exists"),
         );
     } else {
-        if let Err(error) = fs::write(&config_path, DEFAULT_CONFIG) {
+        if let Err(error) = fs::write(&config_path, default_config_contents()) {
             event_log.user_error_at_path(
                 Some(ORIGIN),
                 config_path,
@@ -58,7 +58,7 @@ pub fn init(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{CONFIG_FILE, CONTENT_DIR, DEFAULT_CONFIG, init};
+    use super::{CONFIG_FILE, CONTENT_DIR, default_config_contents, init};
     use crate::events::{Event, EventLog};
     use std::fs;
     use std::path::{Path, PathBuf};
@@ -85,7 +85,7 @@ mod tests {
         );
         assert_eq!(
             fs::read_to_string(temp_dir.path().join(CONFIG_FILE)).unwrap(),
-            DEFAULT_CONFIG
+            default_config_contents()
         );
         assert!(temp_dir.path().join(CONTENT_DIR).is_dir());
     }
@@ -93,7 +93,7 @@ mod tests {
     #[test]
     fn init_skips_existing_config_and_content_directory() {
         let temp_dir = TestDir::new();
-        fs::write(temp_dir.path().join(CONFIG_FILE), DEFAULT_CONFIG).unwrap();
+        fs::write(temp_dir.path().join(CONFIG_FILE), default_config_contents()).unwrap();
         fs::create_dir(temp_dir.path().join(CONTENT_DIR)).unwrap();
         let mut event_log = EventLog::new();
 

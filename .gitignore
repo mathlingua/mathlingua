@@ -2,6 +2,7 @@
 .idea
 .gitpod.yml
 .vscode
+.claude
 /target
 /testbed
 /web/.next

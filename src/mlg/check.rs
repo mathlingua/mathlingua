@@ -368,6 +368,10 @@ mod tests {
             &file,
             r#"[\function{A, B}]
 Defines: A "defines" B
+Documented:
+. [docs.called]
+  called:
+  . "function"
 
 [\function{A}]
 Theorem:
@@ -389,7 +393,7 @@ then:
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
-            3,
+            7,
             1,
             &format!(
                 "Duplicate command signature `\\function` in Theorem; previously defined as Defines in {}:1:2",
@@ -408,6 +412,10 @@ then:
             &file,
             r#"[\function:on{A}:to{B}]
 Defines: A "defines" B
+Documented:
+. [docs.called]
+  called:
+  . "function"
 
 Theorem:
 then:
@@ -427,7 +435,7 @@ then:
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            5,
+            9,
             7,
             "Undefined command signature `\\function`"
         ));
@@ -443,6 +451,10 @@ then:
             &file,
             r#"[\foo{A, B}(x)]
 Defines: A "defines" B
+Documented:
+. [docs.called]
+  called:
+  . "foo"
 
 Theorem:
 then:
@@ -462,7 +474,7 @@ then:
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            5,
+            9,
             7,
             "Command signature `\\foo` expects argument shape `{2}(1)` but found `{1}(2)`"
         ));
@@ -478,6 +490,10 @@ then:
             &file,
             r#"[\foo{A, B}(x)]
 Defines: A "defines" B
+Documented:
+. [docs.called]
+  called:
+  . "foo"
 
 Theorem:
 then:
@@ -490,6 +506,102 @@ then:
         let result = check_in(
             temp_dir.path(),
             &[PathBuf::from("valid-reference.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_requires_defines_describes_and_refines_to_have_documented_called() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("documented-called.mlg");
+
+        fs::write(
+            &file,
+            r#"[\missing.called]
+Defines: A "defines" B
+
+[\written.only]
+Describes: A
+Documented:
+. [docs.written]
+  written:
+  . "written only"
+
+[\refines.missing]
+Refines: A is \missing.called
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("documented-called.mlg")],
+            &mut event_log,
+        );
+        let canonical_file = file.canonicalize().unwrap();
+
+        assert_eq!(result.files_checked, 1);
+        assert!(has_user_error_at(
+            &event_log,
+            &canonical_file,
+            0,
+            1,
+            "Defines entries must include a `called:` item in `Documented:`"
+        ));
+        assert!(has_user_error_at(
+            &event_log,
+            &canonical_file,
+            3,
+            1,
+            "Describes entries must include a `called:` item in `Documented:`"
+        ));
+        assert!(has_user_error_at(
+            &event_log,
+            &canonical_file,
+            10,
+            1,
+            "Refines entries must include a `called:` item in `Documented:`"
+        ));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_accepts_documented_called_with_or_without_written() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("documented-valid.mlg");
+
+        fs::write(
+            &file,
+            r#"[\called.only]
+Defines: A "defines" B
+Documented:
+. [docs.called]
+  called:
+  . "called only"
+
+[\called.and.written]
+Describes: A
+Documented:
+. [docs.called]
+  called:
+  . "called and written"
+  written:
+  . "written"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("documented-valid.mlg")],
             &mut event_log,
         );
 

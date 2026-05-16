@@ -99,11 +99,13 @@ fn collect_document_definitions(
 ) {
     let mut locator = SourceLocator::new(&file.source);
     for item in &file.document.items {
-        let Some((kind, heading)) = definition_heading(item) else {
+        let Some(definition) = definition_item(item) else {
             continue;
         };
-        let shape = shape_for_header(heading);
+        let kind = definition.kind;
+        let shape = shape_for_header(definition.heading);
         let position = locator.locate_heading(&shape);
+        check_documented_rendering(file, kind, definition.documented, position, event_log);
         if let Some(previous) = registry.definitions.get(&shape.signature) {
             emit_error(
                 event_log,
@@ -132,26 +134,94 @@ fn collect_document_definitions(
     }
 }
 
-fn definition_heading(item: &TopLevelItem) -> Option<(DefinitionKind, &CommandHeader)> {
+struct DefinitionItem<'a> {
+    kind: DefinitionKind,
+    heading: &'a CommandHeader,
+    documented: Option<&'a DocumentedSection>,
+}
+
+fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>> {
     match item {
-        TopLevelItem::Describes(group) => Some((DefinitionKind::Describes, &group.heading)),
-        TopLevelItem::Defines(group) => Some((DefinitionKind::Defines, &group.heading)),
-        TopLevelItem::Refines(group) => Some((DefinitionKind::Refines, &group.heading)),
-        TopLevelItem::States(group) => Some((DefinitionKind::States, &group.heading)),
-        TopLevelItem::Axiom(group) => group.heading.as_ref().map(|h| (DefinitionKind::Axiom, h)),
-        TopLevelItem::Theorem(group) => {
-            group.heading.as_ref().map(|h| (DefinitionKind::Theorem, h))
-        }
-        TopLevelItem::Corollary(group) => group
-            .heading
-            .as_ref()
-            .map(|h| (DefinitionKind::Corollary, h)),
-        TopLevelItem::Lemma(group) => group.heading.as_ref().map(|h| (DefinitionKind::Lemma, h)),
-        TopLevelItem::Conjecture(group) => group
-            .heading
-            .as_ref()
-            .map(|h| (DefinitionKind::Conjecture, h)),
+        TopLevelItem::Describes(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Describes,
+            heading: &group.heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Defines(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Defines,
+            heading: &group.heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Refines(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Refines,
+            heading: &group.heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::States(group) => Some(DefinitionItem {
+            kind: DefinitionKind::States,
+            heading: &group.heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Axiom(group) => group.heading.as_ref().map(|heading| DefinitionItem {
+            kind: DefinitionKind::Axiom,
+            heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Theorem(group) => group.heading.as_ref().map(|heading| DefinitionItem {
+            kind: DefinitionKind::Theorem,
+            heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Corollary(group) => group.heading.as_ref().map(|heading| DefinitionItem {
+            kind: DefinitionKind::Corollary,
+            heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Lemma(group) => group.heading.as_ref().map(|heading| DefinitionItem {
+            kind: DefinitionKind::Lemma,
+            heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Conjecture(group) => group.heading.as_ref().map(|heading| DefinitionItem {
+            kind: DefinitionKind::Conjecture,
+            heading,
+            documented: group.documented.as_ref(),
+        }),
         _ => None,
+    }
+}
+
+fn check_documented_rendering(
+    file: &ParsedSourceFile,
+    kind: DefinitionKind,
+    documented: Option<&DocumentedSection>,
+    position: Option<SourcePosition>,
+    event_log: &mut EventLog,
+) {
+    if !matches!(
+        kind,
+        DefinitionKind::Describes | DefinitionKind::Defines | DefinitionKind::Refines
+    ) {
+        return;
+    }
+
+    let has_called = documented.is_some_and(|section| {
+        section
+            .arguments
+            .iter()
+            .any(|item| matches!(item, DocumentedItem::Called(_)))
+    });
+
+    if !has_called {
+        emit_error(
+            event_log,
+            &file.path,
+            position,
+            format!(
+                "{} entries must include a `called:` item in `Documented:`",
+                kind.label()
+            ),
+        );
     }
 }
 

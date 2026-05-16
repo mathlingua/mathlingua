@@ -4,16 +4,16 @@ use crate::events::EventLog;
 
 const ORIGIN: &str = "structural_parser";
 use crate::frontend::formulation::{
-    ParseError as FormulationParseError, parse_author_header, parse_command_header,
-    parse_expression, parse_expression_alias, parse_form_or_declaration,
-    parse_is_or_refined_statement_spec, parse_is_or_spec, parse_is_via_statement,
-    parse_label_header, parse_resource_header, parse_spec_operator_alias, parse_writing_alias,
+    parse_author_header, parse_command_header, parse_expression, parse_expression_alias,
+    parse_form_or_declaration, parse_is_or_refined_statement_spec, parse_is_or_spec,
+    parse_is_via_statement, parse_label_header, parse_resource_header, parse_spec_operator_alias,
+    parse_writing_alias, ParseError as FormulationParseError,
 };
-use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{
     Argument as ProtoArgument, Formulation as ProtoFormulation, Group as ProtoGroup,
     Section as ProtoSection, TextLiteral as ProtoText,
 };
+use crate::frontend::proto::Parser as ProtoParser;
 
 use super::ast::*;
 
@@ -847,12 +847,16 @@ fn parse_written(group: &ProtoGroup, tracker: &mut EventLog) -> Option<WrittenGr
 
 fn parse_called(group: &ProtoGroup, tracker: &mut EventLog) -> Option<CalledGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections("called", &group.sections, tracker, &["called"])?;
+    let sections = identify_sections("called", &group.sections, tracker, &["called", "written?"])?;
     Some(CalledGroup {
         heading,
         called: CalledSection {
             arguments: parse_required_called_texts(section(&sections, "called")?, tracker)?,
         },
+        written: sections.get("written").copied().and_then(|section| {
+            parse_required_written_texts(section, tracker)
+                .map(|arguments| WrittenSection { arguments })
+        }),
     })
 }
 
@@ -1916,9 +1920,7 @@ fn parse_optional_clauses(
                         Err(_) => tracker.user_error_at_row(
                             Some(ORIGIN),
                             row,
-                            format!(
-                                "Invalid clause expression in `{label}`: {expression_error}"
-                            ),
+                            format!("Invalid clause expression in `{label}`: {expression_error}"),
                         ),
                     },
                 }
@@ -2444,7 +2446,11 @@ satisfies:
                     Clause::IsOrSpec(_)
                 ));
                 assert!(matches!(
-                    group.satisfies.as_ref().expect("expected satisfies").arguments[0],
+                    group
+                        .satisfies
+                        .as_ref()
+                        .expect("expected satisfies")
+                        .arguments[0],
                     Clause::ForAll(_)
                 ));
             }
@@ -3361,13 +3367,11 @@ Section: "Recovered"
         assert_eq!(document.items.len(), 1);
         assert!(matches!(document.items[0], TopLevelItem::Section(_)));
         assert_eq!(diagnostics.len(), 1);
-        assert!(
-            diagnostics[0]
-                .as_message()
-                .expect("expected message event")
-                .message
-                .contains("Expected `that` but found `References`")
-        );
+        assert!(diagnostics[0]
+            .as_message()
+            .expect("expected message event")
+            .message
+            .contains("Expected `that` but found `References`"));
     }
 
     #[test]

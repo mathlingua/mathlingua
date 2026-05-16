@@ -555,6 +555,7 @@ pub struct WrittenGroup {
 pub struct CalledGroup {
     pub heading: Option<LabelHeader>,
     pub called: CalledSection,
+    pub written: Option<WrittenSection>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

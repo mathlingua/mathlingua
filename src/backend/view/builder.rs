@@ -1,11 +1,11 @@
 use super::model::{ArgumentView, CollectionView, FileView, GroupView, SectionView};
 use super::render::{
-    build_render_registry, render_formulation_latex, render_group_heading_latex, RenderRegistry,
+    RenderRegistry, build_render_registry, render_formulation_latex, render_group_heading_latex,
 };
-use crate::backend::semantic::{check_documents, ParsedSourceFile};
+use crate::backend::semantic::{ParsedSourceFile, check_documents};
 use crate::events::{Audience, Event, EventLog, Level};
-use crate::frontend::proto::ast::{Argument, Group, Section};
 use crate::frontend::proto::Parser as ProtoParser;
+use crate::frontend::proto::ast::{Argument, Group, Section};
 use crate::frontend::structural::parse_document;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -216,7 +216,7 @@ mod tests {
         assert_eq!(view.files[0].items[0].kind, "Describes");
         assert_eq!(
             view.files[0].items[0].heading_latex,
-            Some(r#"\textrm{Set}"#.to_string())
+            Some(r#"\textrm{set}"#.to_string())
         );
         assert!(event_log.has_errors().not());
     }

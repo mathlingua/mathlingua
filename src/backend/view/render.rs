@@ -61,31 +61,7 @@ pub(super) fn render_group_heading_latex(
     let render = registry.commands.get(&command_header_signature(&header))?;
     let substitutions = command_header_substitutions(&header, registry);
 
-    Some(render_called_template(
-        &capitalize_first_plain_text_word(&render.called),
-        &substitutions,
-    ))
-}
-
-fn capitalize_first_plain_text_word(template: &str) -> String {
-    let mut result = String::with_capacity(template.len());
-    let mut in_math = false;
-    let mut changed = false;
-
-    for ch in template.chars() {
-        if ch == '$' {
-            in_math = !in_math;
-        }
-
-        if !changed && !in_math && ch.is_ascii_alphabetic() {
-            result.push(ch.to_ascii_uppercase());
-            changed = true;
-        } else {
-            result.push(ch);
-        }
-    }
-
-    result
+    Some(render_called_template(&render.called, &substitutions))
 }
 
 fn render_parsed_formulation_latex(text: &str, registry: &RenderRegistry) -> Option<String> {
@@ -1331,12 +1307,12 @@ Documented:
 
         assert_eq!(
             render_group_heading_latex("Describes", Some(r#"\function:on{A}:to{B}"#), &registry),
-            Some(r#"\textrm{Function on }A\textrm{ to }B"#.to_string())
+            Some(r#"\textrm{function on }A\textrm{ to }B"#.to_string())
         );
     }
 
     #[test]
-    fn capitalizes_definition_group_heading_called_text() {
+    fn renders_definition_group_heading_called_text_without_capitalizing() {
         let registry = registry_for(
             r#"[\set]
 Describes: X
@@ -1347,7 +1323,7 @@ Documented:
 
         assert_eq!(
             render_group_heading_latex("Describes", Some(r#"\set"#), &registry),
-            Some(r#"\textrm{Set}"#.to_string())
+            Some(r#"\textrm{set}"#.to_string())
         );
         assert_eq!(
             render_formulation_latex(r#"X is \set"#, &registry),

@@ -1,4 +1,4 @@
-use crate::backend::semantic::{check_documents, ParsedSourceFile};
+use crate::backend::semantic::{ParsedSourceFile, check_documents};
 use crate::constants::CONFIG_FILE;
 use crate::environment::current_working_directory;
 use crate::events::{Audience, Event, EventLog, Level, MarkerRange};
@@ -201,9 +201,11 @@ mod tests {
             user_events(&event_log),
             [Event::user_log("Checked 2 files").with_origin("mlg_check")]
         );
-        assert!(event_log
-            .events_between(&result.marker_range.begin, &result.marker_range.end)
-            .is_some());
+        assert!(
+            event_log
+                .events_between(&result.marker_range.begin, &result.marker_range.end)
+                .is_some()
+        );
     }
 
     #[test]
@@ -341,19 +343,21 @@ mod tests {
         );
 
         assert_eq!(result.files_checked, 1);
-        assert!(event_log
-            .events()
-            .iter()
-            .filter_map(Event::as_message)
-            .any(|event| {
-                event.location.as_ref().is_some_and(|location| {
-                    matches!(
-                        location,
-                        crate::events::EventLocation::File { path, .. }
-                            if *path == file.canonicalize().unwrap()
-                    )
-                }) && event.message.starts_with("Invalid Defines formulation:")
-            }));
+        assert!(
+            event_log
+                .events()
+                .iter()
+                .filter_map(Event::as_message)
+                .any(|event| {
+                    event.location.as_ref().is_some_and(|location| {
+                        matches!(
+                            location,
+                            crate::events::EventLocation::File { path, .. }
+                                if *path == file.canonicalize().unwrap()
+                        )
+                    }) && event.message.starts_with("Invalid Defines formulation:")
+                })
+        );
         assert!(user_events(&event_log).last().is_some_and(
             |event| event == &Event::user_log("Found 1 issue.").with_origin("mlg_check")
         ));
@@ -855,10 +859,12 @@ Documented:
             .events_between(&result.marker_range.begin, &result.marker_range.end)
             .expect("expected event range");
 
-        assert!(range_events
-            .iter()
-            .filter_map(|event| event.as_message())
-            .any(|event| event.level == Level::Log && event.message == "Checked 0 files"));
+        assert!(
+            range_events
+                .iter()
+                .filter_map(|event| event.as_message())
+                .any(|event| event.level == Level::Log && event.message == "Checked 0 files")
+        );
     }
 
     struct TestDir {

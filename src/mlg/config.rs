@@ -142,11 +142,7 @@ mod tests {
     fn validate_accepts_extra_fields() {
         let dir = TestDir::new();
         let path = dir.path().join("mlg.json");
-        fs::write(
-            &path,
-            r#"{"name": "thing", "version": "1", "extra": true}"#,
-        )
-        .unwrap();
+        fs::write(&path, r#"{"name": "thing", "version": "1", "extra": true}"#).unwrap();
 
         let mut event_log = EventLog::new();
         validate_config_file(&path, &mut event_log, ORIGIN);

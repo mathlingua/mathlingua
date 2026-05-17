@@ -1,4 +1,4 @@
-use crate::backend::view::{build_collection_view, CollectionView};
+use crate::backend::view::{CollectionView, build_collection_view};
 use crate::environment::current_working_directory;
 use crate::events::EventLog;
 use crate::mlg::collection::resolve_collection_content_files;

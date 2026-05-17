@@ -14,6 +14,9 @@ type GroupCardProps = {
 export function GroupCard({ anchorId, group }: GroupCardProps) {
   const [showDocumented, setShowDocumented] = useState(false);
   const headingTooltip = group.heading ?? undefined;
+  const headingLatex = group.heading_latex
+    ? capitalizeFirstRenderedLatexWord(group.heading_latex)
+    : null;
   const hasDocumented = group.sections.some(isDocumentedSection);
   const visibleSections = showDocumented
     ? group.sections
@@ -23,11 +26,11 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
     <section className="group-card" id={anchorId}>
       <header className="group-header">
         <h3
-          className={`group-heading${group.heading_latex ? " group-heading--latex" : ""}`}
+          className={`group-heading${headingLatex ? " group-heading--latex" : ""}`}
           title={headingTooltip}
         >
-          {group.heading_latex ? (
-            <LatexRenderer latex={group.heading_latex} />
+          {headingLatex ? (
+            <LatexRenderer latex={headingLatex} />
           ) : (
             formatGroupHeading(group)
           )}
@@ -82,4 +85,91 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
 
 function isDocumentedSection(section: SectionView): boolean {
   return section.label === "Documented";
+}
+
+function capitalizeFirstRenderedLatexWord(latex: string): string {
+  for (let index = 0; index < latex.length; index += 1) {
+    const textCommand = latexTextCommandAt(latex, index);
+
+    if (!textCommand) {
+      continue;
+    }
+
+    const scan = scanLatexTextGroup(latex, index + textCommand.length);
+
+    if (scan.letterIndex !== null) {
+      const letter = latex[scan.letterIndex].toUpperCase();
+
+      return `${latex.slice(0, scan.letterIndex)}${letter}${latex.slice(scan.letterIndex + 1)}`;
+    }
+
+    index = scan.endIndex;
+  }
+
+  return latex;
+}
+
+function latexTextCommandAt(latex: string, index: number): string | null {
+  for (const command of ["\\textrm{", "\\text{"]) {
+    if (latex.startsWith(command, index)) {
+      return command;
+    }
+  }
+
+  return null;
+}
+
+function scanLatexTextGroup(
+  latex: string,
+  startIndex: number,
+): { letterIndex: number | null; endIndex: number } {
+  let depth = 1;
+
+  for (let index = startIndex; index < latex.length; index += 1) {
+    const char = latex[index];
+
+    if (char === "\\") {
+      index = skipLatexCommand(latex, index);
+      continue;
+    }
+
+    if (char === "{") {
+      depth += 1;
+      continue;
+    }
+
+    if (char === "}") {
+      depth -= 1;
+
+      if (depth === 0) {
+        return { letterIndex: null, endIndex: index };
+      }
+
+      continue;
+    }
+
+    if (isAsciiLetter(char)) {
+      return { letterIndex: index, endIndex: index };
+    }
+  }
+
+  return { letterIndex: null, endIndex: latex.length };
+}
+
+function skipLatexCommand(latex: string, startIndex: number): number {
+  let index = startIndex + 1;
+
+  if (index >= latex.length || !isAsciiLetter(latex[index])) {
+    return index;
+  }
+
+  while (index + 1 < latex.length && isAsciiLetter(latex[index + 1])) {
+    index += 1;
+  }
+
+  return index;
+}
+
+function isAsciiLetter(value: string): boolean {
+  return /^[A-Za-z]$/.test(value);
 }

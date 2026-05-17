@@ -252,12 +252,12 @@ fn render_expression(expression: &Expression, registry: &RenderRegistry) -> Stri
         ExpressionKind::IsPredicate { subject, command } => format!(
             "{} \\textrm{{ is }} {}",
             render_expression(subject, registry),
-            render_command_expression(command, registry)
+            render_predicate_command_expression(command, registry)
         ),
         ExpressionKind::IsNotPredicate { subject, command } => format!(
             "{} \\textrm{{ is not }} {}",
             render_expression(subject, registry),
-            render_command_expression(command, registry)
+            render_predicate_command_expression(command, registry)
         ),
         ExpressionKind::IsType { subject, ty } => match ty {
             TypeExpression::Command(command) => render_is_command(subject, command, registry),
@@ -554,6 +554,29 @@ fn render_command_expression(command: &CommandExpression, registry: &RenderRegis
         Some(written) => substitute_math_template(written, &substitutions),
         None => render_called_template(&render.called, &substitutions),
     }
+}
+
+fn render_predicate_command_expression(
+    command: &CommandExpression,
+    registry: &RenderRegistry,
+) -> String {
+    let signature = command_expression_signature(command);
+    let Some(render) = registry.commands.get(&signature) else {
+        return render_command_like(&command.chain, registry);
+    };
+    let substitutions = command_substitutions(command, render, None, registry);
+
+    if let Some(written) = &render.written {
+        let includes_subject = render
+            .subject_variable
+            .as_ref()
+            .is_some_and(|name| template_contains_placeholder(written, name));
+        if !includes_subject {
+            return substitute_math_template(written, &substitutions);
+        }
+    }
+
+    render_called_template(&render.called, &substitutions)
 }
 
 fn render_refined_command_called(
@@ -1172,6 +1195,23 @@ Documented:
         assert_eq!(
             render_formulation_latex(r#"f is \function:on{A}:to{B}"#, &registry),
             Some(r#"f : A \rightarrow B"#.to_string())
+        );
+    }
+
+    #[test]
+    fn renders_is_predicates_with_called_when_written_contains_subject() {
+        let registry = registry_for(
+            r#"[\function:on{A}:to{B}]
+Describes: f(x__)
+Documented:
+. called: "function on $A?$ to $B?$"
+. written: "f? : A? \rightarrow B?"
+"#,
+        );
+
+        assert_eq!(
+            render_formulation_latex(r#"f is? \function:on{A}:to{B}"#, &registry),
+            Some(r#"f \textrm{ is } \textrm{function on }A\textrm{ to }B"#.to_string())
         );
     }
 

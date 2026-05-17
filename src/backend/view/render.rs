@@ -142,6 +142,11 @@ fn render_entry_from_parts(
         DocumentedItem::Called(group) => Some(group),
         _ => None,
     })?;
+    let documented_written = documented.arguments.iter().find_map(|item| match item {
+        DocumentedItem::Written(group) => Some(&group.written),
+        _ => None,
+    });
+    let written = called.written.as_ref().or(documented_written);
 
     Some(RenderEntry {
         signature,
@@ -149,7 +154,7 @@ fn render_entry_from_parts(
             subject_variable,
             parameters,
             called: join_called_text(&called.called),
-            written: called.written.as_ref().map(join_written_text),
+            written: written.map(join_written_text),
         },
     })
 }
@@ -1150,6 +1155,23 @@ Documented:
         assert_eq!(
             render_formulation_latex(r#"g is \function:on{X}:to{Y}"#, &registry),
             Some(r#"g \: : \: X \rightarrow Y"#.to_string())
+        );
+    }
+
+    #[test]
+    fn renders_top_level_written_templates_without_repeating_subject() {
+        let registry = registry_for(
+            r#"[\function:on{A}:to{B}]
+Describes: f(x__)
+Documented:
+. called: "function on $A?$ to $B?$"
+. written: "f? : A? \rightarrow B?"
+"#,
+        );
+
+        assert_eq!(
+            render_formulation_latex(r#"f is \function:on{A}:to{B}"#, &registry),
+            Some(r#"f : A \rightarrow B"#.to_string())
         );
     }
 

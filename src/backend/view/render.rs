@@ -2,14 +2,16 @@ use std::collections::HashMap;
 
 use crate::backend::semantic::ParsedSourceFile;
 use crate::frontend::formulation::ast::{
-    BinaryOperator, Chain, ChainPart, CommandExpression, CommandHeader, CommandHeaderNode,
-    Expression, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, InfixCommandHeader,
-    IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind,
-    RefinedCommandHeader, SetExpression, SpecStatement, SpecSubject, SpecSubjectKind,
+    BinaryOperator, Chain, ChainPart, CommandExpression, CommandExpressionTailPart, CommandHeader,
+    CommandHeaderNode, Expression, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
+    InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm,
+    IsSubjectKind, RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart,
+    RefinedTail, SetExpression, SpecStatement, SpecSubject, SpecSubjectKind,
     TupleExpressionElement, TupleFormElement, TypeExpression, UnaryOperator,
 };
 use crate::frontend::formulation::{
-    parse_command_header, parse_expression, parse_form_or_declaration, parse_is_or_spec,
+    parse_command_header, parse_expression, parse_form_or_declaration,
+    parse_is_or_refined_statement_spec,
 };
 use crate::frontend::structural::ast::*;
 
@@ -91,8 +93,8 @@ fn render_parsed_formulation_latex(text: &str, registry: &RenderRegistry) -> Opt
         return Some(render_expression(&expression, registry));
     }
 
-    if let Ok(spec) = parse_is_or_spec(text) {
-        return Some(render_is_or_spec(&spec, registry));
+    if let Ok(spec) = parse_is_or_refined_statement_spec(text) {
+        return Some(render_is_or_refined_spec(&spec, registry));
     }
 
     parse_form_or_declaration(text)
@@ -254,10 +256,9 @@ fn render_expression(expression: &Expression, registry: &RenderRegistry) -> Stri
         ),
         ExpressionKind::IsType { subject, ty } => match ty {
             TypeExpression::Command(command) => render_is_command(subject, command, registry),
-            TypeExpression::RefinedCommand(_) => format!(
-                "{} \\textrm{{ is }} \\textrm{{refined command}}",
-                render_expression(subject, registry)
-            ),
+            TypeExpression::RefinedCommand(command) => {
+                render_is_refined_command(subject, command, registry)
+            }
         },
     }
 }
@@ -346,10 +347,10 @@ fn split_once_top_level(input: &str, delimiter: char) -> Option<(&str, &str)> {
     None
 }
 
-fn render_is_or_spec(spec: &IsOrSpec, registry: &RenderRegistry) -> String {
+fn render_is_or_refined_spec(spec: &IsOrRefinedStatementSpec, registry: &RenderRegistry) -> String {
     match spec {
-        IsOrSpec::Is(statement) => render_is_statement(statement, registry),
-        IsOrSpec::Spec(statement) => format!(
+        IsOrRefinedStatementSpec::Is(statement) => render_is_statement(statement, registry),
+        IsOrRefinedStatementSpec::Spec(statement) => format!(
             "{} {} {}",
             render_spec_subject(&statement.subject, registry),
             render_quoted_operator(&statement.operator),
@@ -364,8 +365,8 @@ fn render_is_statement(statement: &IsStatement, registry: &RenderRegistry) -> St
         TypeExpression::Command(command) => {
             render_is_command_with_subject_latex(subject_latex, command, registry)
         }
-        TypeExpression::RefinedCommand(_) => {
-            format!("{subject_latex} \\textrm{{ is }} \\textrm{{refined command}}")
+        TypeExpression::RefinedCommand(command) => {
+            render_is_refined_command_with_subject_latex(subject_latex, command, registry)
         }
     }
 }
@@ -479,6 +480,15 @@ fn render_is_command(
     render_is_command_with_subject_latex(subject_latex, command, registry)
 }
 
+fn render_is_refined_command(
+    subject: &Expression,
+    command: &RefinedCommandExpression,
+    registry: &RenderRegistry,
+) -> String {
+    let subject_latex = render_expression(subject, registry);
+    render_is_refined_command_with_subject_latex(subject_latex, command, registry)
+}
+
 fn render_is_command_with_subject_latex(
     subject_latex: String,
     command: &CommandExpression,
@@ -516,6 +526,18 @@ fn render_is_command_with_subject_latex(
     }
 }
 
+fn render_is_refined_command_with_subject_latex(
+    subject_latex: String,
+    command: &RefinedCommandExpression,
+    registry: &RenderRegistry,
+) -> String {
+    format!(
+        "{} \\textrm{{ is }} {}",
+        subject_latex,
+        render_refined_command_called(command, registry)
+    )
+}
+
 fn render_command_expression(command: &CommandExpression, registry: &RenderRegistry) -> String {
     let signature = command_expression_signature(command);
     let Some(render) = registry.commands.get(&signature) else {
@@ -527,6 +549,49 @@ fn render_command_expression(command: &CommandExpression, registry: &RenderRegis
         Some(written) => substitute_math_template(written, &substitutions),
         None => render_called_template(&render.called, &substitutions),
     }
+}
+
+fn render_refined_command_called(
+    command: &RefinedCommandExpression,
+    registry: &RenderRegistry,
+) -> String {
+    let mut refinement_templates = Vec::new();
+    let mut substitutions = HashMap::new();
+
+    let base_signature = refined_command_base_signature(command);
+    if let Some(render) = registry.commands.get(&base_signature) {
+        substitutions.extend(command_substitutions_for_names(
+            &render.parameters,
+            refined_command_base_argument_values(command, registry),
+        ));
+    }
+
+    for part in &command.parts {
+        let signature = refined_command_part_signature(command, part);
+        if let Some(render) = registry.commands.get(&signature) {
+            refinement_templates.push(render.called.clone());
+            substitutions.extend(command_substitutions_for_names(
+                &render.parameters,
+                refined_command_part_argument_values(command, part, registry),
+            ));
+        } else {
+            refinement_templates.push(format_chain(&part.chain));
+        }
+    }
+
+    let base_template = if let Some(render) = registry.commands.get(&base_signature) {
+        render.called.clone()
+    } else {
+        refined_tail_signature(&command.refined_tail)
+    };
+
+    let template = if refinement_templates.is_empty() {
+        base_template
+    } else {
+        format!("{} {}", refinement_templates.join(", "), base_template)
+    };
+
+    render_called_template(&template, &substitutions)
 }
 
 fn command_substitutions(
@@ -550,6 +615,13 @@ fn command_substitutions(
     }
 
     substitutions
+}
+
+fn command_substitutions_for_names(
+    names: &[String],
+    values: Vec<String>,
+) -> HashMap<String, String> {
+    names.iter().cloned().zip(values).collect()
 }
 
 fn command_header_substitutions(
@@ -624,6 +696,42 @@ fn refined_command_header_forms(header: &RefinedCommandHeader) -> Vec<&FormOrDec
     forms
 }
 
+fn refined_command_base_argument_values(
+    command: &RefinedCommandExpression,
+    registry: &RenderRegistry,
+) -> Vec<String> {
+    command
+        .head_args
+        .iter()
+        .flat_map(|args| args.expressions.iter())
+        .chain(
+            command
+                .tail
+                .iter()
+                .flat_map(|part| part.args.iter())
+                .flat_map(|args| args.expressions.iter()),
+        )
+        .chain(
+            command
+                .paren_args
+                .iter()
+                .flat_map(|args| args.expressions.iter()),
+        )
+        .map(|expression| render_expression(expression, registry))
+        .collect()
+}
+
+fn refined_command_part_argument_values(
+    command: &RefinedCommandExpression,
+    part: &RefinedExpressionPart,
+    registry: &RenderRegistry,
+) -> Vec<String> {
+    refined_command_base_argument_values(command, registry)
+        .into_iter()
+        .chain(expression_tail_argument_values(&part.tail, registry))
+        .collect()
+}
+
 fn command_argument_values(command: &CommandExpression, registry: &RenderRegistry) -> Vec<String> {
     command
         .head_args
@@ -642,6 +750,17 @@ fn command_argument_values(command: &CommandExpression, registry: &RenderRegistr
                 .iter()
                 .flat_map(|args| args.expressions.iter()),
         )
+        .map(|expression| render_expression(expression, registry))
+        .collect()
+}
+
+fn expression_tail_argument_values(
+    tail: &[CommandExpressionTailPart],
+    registry: &RenderRegistry,
+) -> Vec<String> {
+    tail.iter()
+        .flat_map(|part| part.args.iter())
+        .flat_map(|args| args.expressions.iter())
         .map(|expression| render_expression(expression, registry))
         .collect()
 }
@@ -865,48 +984,97 @@ fn command_header_signature(header: &crate::frontend::formulation::ast::CommandH
     match header {
         crate::frontend::formulation::ast::CommandHeader::Command(command) => {
             let mut signature = format!("\\{}", format_chain(&command.chain));
-            for part in &command.tail {
-                signature.push(':');
-                signature.push_str(&format_chain(&part.chain));
-            }
+            add_header_tail_signature(&mut signature, &command.tail);
             signature
         }
         crate::frontend::formulation::ast::CommandHeader::Infix(command) => {
             format!("\\:{}:/", format_chain(&command.chain))
         }
-        crate::frontend::formulation::ast::CommandHeader::Refined(_) => "\\refined".to_string(),
+        crate::frontend::formulation::ast::CommandHeader::Refined(command) => {
+            refined_command_header_signature(command)
+        }
     }
 }
 
 fn command_header_parameters(
     header: &crate::frontend::formulation::ast::CommandHeader,
 ) -> Vec<String> {
-    match header {
-        crate::frontend::formulation::ast::CommandHeader::Command(command) => command
-            .head_args
-            .iter()
-            .flat_map(|args| args.forms.iter())
-            .chain(
-                command
-                    .tail
-                    .iter()
-                    .flat_map(|part| part.args.iter())
-                    .flat_map(|args| args.forms.iter()),
-            )
-            .chain(command.paren_args.iter().flat_map(|args| args.forms.iter()))
-            .filter_map(primary_form_name)
-            .collect(),
-        _ => Vec::new(),
-    }
+    command_header_forms(header)
+        .into_iter()
+        .filter_map(primary_form_name)
+        .collect()
 }
 
 fn command_expression_signature(command: &CommandExpression) -> String {
     let mut signature = format!("\\{}", format_chain(&command.chain));
-    for part in &command.tail {
+    add_expression_tail_signature(&mut signature, &command.tail);
+    signature
+}
+
+fn refined_command_header_signature(command: &RefinedCommandHeader) -> String {
+    let mut signature = "\\".to_string();
+    if let Some(prefix) = &command.prefix_chain {
+        signature.push_str(&format_chain(prefix));
+        signature.push_str("::");
+    }
+    for (index, part) in command.parts.iter().enumerate() {
+        if index > 0 {
+            signature.push_str("::");
+        }
+        signature.push_str(&format_chain(&part.chain));
+        add_header_tail_signature(&mut signature, &part.tail);
+    }
+    signature.push_str("::");
+    signature.push_str(&refined_tail_signature(&command.refined_tail));
+    add_header_tail_signature(&mut signature, &command.tail);
+    signature
+}
+
+fn refined_command_base_signature(command: &RefinedCommandExpression) -> String {
+    let mut signature = format!("\\{}", refined_tail_signature(&command.refined_tail));
+    add_expression_tail_signature(&mut signature, &command.tail);
+    signature
+}
+
+fn refined_command_part_signature(
+    command: &RefinedCommandExpression,
+    part: &RefinedExpressionPart,
+) -> String {
+    let mut signature = "\\".to_string();
+    if let Some(prefix) = &command.prefix_chain {
+        signature.push_str(&format_chain(prefix));
+        signature.push_str("::");
+    }
+    signature.push_str(&format_chain(&part.chain));
+    add_expression_tail_signature(&mut signature, &part.tail);
+    signature.push_str("::");
+    signature.push_str(&refined_tail_signature(&command.refined_tail));
+    add_expression_tail_signature(&mut signature, &command.tail);
+    signature
+}
+
+fn add_header_tail_signature(
+    signature: &mut String,
+    tail: &[crate::frontend::formulation::ast::CommandHeaderTailPart],
+) {
+    for part in tail {
         signature.push(':');
         signature.push_str(&format_chain(&part.chain));
     }
-    signature
+}
+
+fn add_expression_tail_signature(signature: &mut String, tail: &[CommandExpressionTailPart]) {
+    for part in tail {
+        signature.push(':');
+        signature.push_str(&format_chain(&part.chain));
+    }
+}
+
+fn refined_tail_signature(tail: &RefinedTail) -> String {
+    match tail {
+        RefinedTail::Chain(chain) => format_chain(chain),
+        RefinedTail::Name { name, .. } => name.clone(),
+    }
 }
 
 fn format_chain(chain: &Chain) -> String {
@@ -1044,6 +1212,48 @@ Documented:
         assert_eq!(
             render_formulation_latex(r#"G is \field:over{X}"#, &registry),
             Some(r#"G \textrm{ is } \textrm{field over }X"#.to_string())
+        );
+    }
+
+    #[test]
+    fn renders_refined_command_types_from_called_templates() {
+        let registry = registry_for(
+            r#"[\function:on{A}:to{B}]
+Describes: f(x__)
+Documented:
+. called: "function on $A?$ to $B?$"
+  written:
+  . "f? \: : \: A? \rightarrow B?"
+
+[\(bounded)::function:on{A}:to{B}]
+Refines: f(x__) is \function:on{A}:to{B}
+Documented:
+. called: "bounded"
+  written:
+  . "\operatorname{Bounded}"
+
+[\(continuous)::function:on{A}:to{B}]
+Refines: f(x__) is \function:on{A}:to{B}
+Documented:
+. called: "continuous"
+  written:
+  . "\operatorname{Continuous}"
+"#,
+        );
+
+        assert_eq!(
+            render_formulation_latex(r#"g is \function:on{X}:to{Y}"#, &registry),
+            Some(r#"g \: : \: X \rightarrow Y"#.to_string())
+        );
+        assert_eq!(
+            render_formulation_latex(
+                r#"g is \(bounded, continuous)::function:on{X}:to{Y}"#,
+                &registry
+            ),
+            Some(
+                r#"g \textrm{ is } \textrm{bounded, continuous function on }X\textrm{ to }Y"#
+                    .to_string()
+            )
         );
     }
 

@@ -16,6 +16,7 @@ pub struct FileView {
 pub struct GroupView {
     pub kind: String,
     pub heading: Option<String>,
+    pub heading_latex: Option<String>,
     pub sections: Vec<SectionView>,
 }
 

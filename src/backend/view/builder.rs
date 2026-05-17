@@ -1,5 +1,7 @@
 use super::model::{ArgumentView, CollectionView, FileView, GroupView, SectionView};
-use super::render::{build_render_registry, render_formulation_latex, RenderRegistry};
+use super::render::{
+    build_render_registry, render_formulation_latex, render_group_heading_latex, RenderRegistry,
+};
 use crate::backend::semantic::{check_documents, ParsedSourceFile};
 use crate::events::{Audience, Event, EventLog, Level};
 use crate::frontend::proto::ast::{Argument, Group, Section};
@@ -134,6 +136,7 @@ fn group_view(group: Group, registry: &RenderRegistry) -> GroupView {
         .unwrap_or_else(|| "Group".to_string());
 
     GroupView {
+        heading_latex: render_group_heading_latex(&kind, group.heading.as_deref(), registry),
         kind,
         heading: group.heading,
         sections: group
@@ -211,6 +214,10 @@ mod tests {
         assert_eq!(view.files.len(), 1);
         assert_eq!(view.files[0].path, "content/sets.mlg");
         assert_eq!(view.files[0].items[0].kind, "Describes");
+        assert_eq!(
+            view.files[0].items[0].heading_latex,
+            Some(r#"\textrm{set}"#.to_string())
+        );
         assert!(event_log.has_errors().not());
     }
 

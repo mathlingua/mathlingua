@@ -324,6 +324,7 @@ mod tests {
                 items: vec![GroupView {
                     kind: "Title".to_string(),
                     heading: None,
+                    heading_latex: None,
                     sections: vec![SectionView {
                         label: "Title".to_string(),
                         inline_argument: Some("\"Example\"".to_string()),

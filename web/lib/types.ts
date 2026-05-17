@@ -11,6 +11,7 @@ export type FileView = {
 export type GroupView = {
   kind: string;
   heading: string | null;
+  heading_latex: string | null;
   sections: SectionView[];
 };
 

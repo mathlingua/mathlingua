@@ -2,12 +2,15 @@ use std::collections::HashMap;
 
 use crate::backend::semantic::ParsedSourceFile;
 use crate::frontend::formulation::ast::{
-    BinaryOperator, Chain, ChainPart, CommandExpression, Expression, ExpressionKind,
-    FormOrDeclaration, FormOrDeclarationKind, IsOrRefinedStatementSpec, IsOrSpec, IsStatement,
-    IsSubject, IsSubjectForm, IsSubjectKind, SetExpression, SpecStatement, SpecSubject,
-    SpecSubjectKind, TupleExpressionElement, TupleFormElement, TypeExpression, UnaryOperator,
+    BinaryOperator, Chain, ChainPart, CommandExpression, CommandHeader, CommandHeaderNode,
+    Expression, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, InfixCommandHeader,
+    IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind,
+    RefinedCommandHeader, SetExpression, SpecStatement, SpecSubject, SpecSubjectKind,
+    TupleExpressionElement, TupleFormElement, TypeExpression, UnaryOperator,
 };
-use crate::frontend::formulation::{parse_expression, parse_form_or_declaration, parse_is_or_spec};
+use crate::frontend::formulation::{
+    parse_command_header, parse_expression, parse_form_or_declaration, parse_is_or_spec,
+};
 use crate::frontend::structural::ast::*;
 
 #[derive(Clone, Debug, Default)]
@@ -41,6 +44,22 @@ pub(super) fn build_render_registry(files: &[ParsedSourceFile]) -> RenderRegistr
 pub(super) fn render_formulation_latex(text: &str, registry: &RenderRegistry) -> Option<String> {
     render_parsed_formulation_latex(text, registry)
         .or_else(|| render_simple_set_spec_latex(text, registry))
+}
+
+pub(super) fn render_group_heading_latex(
+    kind: &str,
+    heading: Option<&str>,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    if !matches!(kind, "Defines" | "Describes" | "Refines") {
+        return None;
+    }
+
+    let header = parse_command_header(heading?).ok()?;
+    let render = registry.commands.get(&command_header_signature(&header))?;
+    let substitutions = command_header_substitutions(&header, registry);
+
+    Some(render_called_template(&render.called, &substitutions))
 }
 
 fn render_parsed_formulation_latex(text: &str, registry: &RenderRegistry) -> Option<String> {
@@ -509,6 +528,78 @@ fn command_substitutions(
     substitutions
 }
 
+fn command_header_substitutions(
+    header: &CommandHeader,
+    registry: &RenderRegistry,
+) -> HashMap<String, String> {
+    let mut substitutions = HashMap::new();
+
+    for form in command_header_forms(header) {
+        if let Some(name) = primary_form_name(form) {
+            substitutions.insert(name, render_form_or_declaration(form, registry));
+        }
+    }
+
+    substitutions
+}
+
+fn command_header_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
+    match header {
+        CommandHeader::Command(header) => simple_command_header_forms(header),
+        CommandHeader::Infix(header) => infix_command_header_forms(header),
+        CommandHeader::Refined(header) => refined_command_header_forms(header),
+    }
+}
+
+fn simple_command_header_forms(header: &CommandHeaderNode) -> Vec<&FormOrDeclaration> {
+    let mut forms = Vec::new();
+    forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
+    forms.extend(
+        header
+            .tail
+            .iter()
+            .flat_map(|part| part.args.iter())
+            .flat_map(|args| args.forms.iter()),
+    );
+    forms.extend(header.paren_args.iter().flat_map(|args| args.forms.iter()));
+    forms
+}
+
+fn infix_command_header_forms(header: &InfixCommandHeader) -> Vec<&FormOrDeclaration> {
+    let mut forms = Vec::new();
+    forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
+    forms.extend(
+        header
+            .tail
+            .iter()
+            .flat_map(|part| part.args.iter())
+            .flat_map(|args| args.forms.iter()),
+    );
+    forms
+}
+
+fn refined_command_header_forms(header: &RefinedCommandHeader) -> Vec<&FormOrDeclaration> {
+    let mut forms = Vec::new();
+    forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
+    forms.extend(
+        header
+            .tail
+            .iter()
+            .flat_map(|part| part.args.iter())
+            .flat_map(|args| args.forms.iter()),
+    );
+    forms.extend(header.paren_args.iter().flat_map(|args| args.forms.iter()));
+    forms.extend(
+        header
+            .parts
+            .iter()
+            .flat_map(|part| part.tail.iter())
+            .flat_map(|tail_part| tail_part.args.iter())
+            .flat_map(|args| args.forms.iter()),
+    );
+    forms
+}
+
 fn command_argument_values(command: &CommandExpression, registry: &RenderRegistry) -> Vec<String> {
     command
         .head_args
@@ -835,7 +926,7 @@ fn escape_latex_text(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{build_render_registry, render_formulation_latex};
+    use super::{build_render_registry, render_formulation_latex, render_group_heading_latex};
     use crate::backend::semantic::ParsedSourceFile;
     use crate::events::EventLog;
     use crate::frontend::structural::parse_document;
@@ -929,6 +1020,22 @@ Documented:
         assert_eq!(
             render_formulation_latex(r#"G is \field:over{X}"#, &registry),
             Some(r#"G \textrm{ is } \textrm{field over }X"#.to_string())
+        );
+    }
+
+    #[test]
+    fn renders_definition_group_headings_from_called_text() {
+        let registry = registry_for(
+            r#"[\function:on{A}:to{B}]
+Describes: f(x__)
+Documented:
+. called: "function on $A?$ to $B?$"
+"#,
+        );
+
+        assert_eq!(
+            render_group_heading_latex("Describes", Some(r#"\function:on{A}:to{B}"#), &registry),
+            Some(r#"\textrm{function on }A\textrm{ to }B"#.to_string())
         );
     }
 

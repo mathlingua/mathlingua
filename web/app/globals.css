@@ -209,6 +209,11 @@ code {
   line-height: 1.2;
 }
 
+.group-heading--latex {
+  font-family: var(--font-body);
+  font-size: 1.08rem;
+}
+
 .section-stack {
   display: grid;
   gap: 0.18rem;

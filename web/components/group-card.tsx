@@ -9,10 +9,21 @@ type GroupCardProps = {
 };
 
 export function GroupCard({ anchorId, group }: GroupCardProps) {
+  const headingTooltip = group.heading ?? undefined;
+
   return (
     <section className="group-card" id={anchorId}>
       <header className="group-header">
-        <h3 className="group-heading">{formatGroupHeading(group)}</h3>
+        <h3
+          className={`group-heading${group.heading_latex ? " group-heading--latex" : ""}`}
+          title={headingTooltip}
+        >
+          {group.heading_latex ? (
+            <LatexRenderer latex={group.heading_latex} />
+          ) : (
+            formatGroupHeading(group)
+          )}
+        </h3>
       </header>
       <div className="section-stack">
         {group.sections.map((section, index) => (

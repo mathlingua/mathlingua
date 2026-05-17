@@ -134,9 +134,18 @@ fn group_view(group: Group, registry: &RenderRegistry) -> GroupView {
         .first()
         .map(|section| section.label.clone())
         .unwrap_or_else(|| "Group".to_string());
+    let primary_inline_argument = group
+        .sections
+        .first()
+        .and_then(|section| section.inline_argument.as_deref());
 
     GroupView {
-        heading_latex: render_group_heading_latex(&kind, group.heading.as_deref(), registry),
+        heading_latex: render_group_heading_latex(
+            &kind,
+            group.heading.as_deref(),
+            primary_inline_argument,
+            registry,
+        ),
         kind,
         heading: group.heading,
         sections: group

@@ -51,6 +51,7 @@ pub(super) fn render_formulation_latex(text: &str, registry: &RenderRegistry) ->
 pub(super) fn render_group_heading_latex(
     kind: &str,
     heading: Option<&str>,
+    primary_inline_argument: Option<&str>,
     registry: &RenderRegistry,
 ) -> Option<String> {
     if !matches!(kind, "Defines" | "Describes" | "Refines") {
@@ -59,9 +60,34 @@ pub(super) fn render_group_heading_latex(
 
     let header = parse_command_header(heading?).ok()?;
     let render = registry.commands.get(&command_header_signature(&header))?;
+
+    if kind == "Refines" {
+        if let Some(latex) =
+            render_refines_group_heading_latex(&header, primary_inline_argument, render, registry)
+        {
+            return Some(latex);
+        }
+    }
+
     let substitutions = command_header_substitutions(&header, registry);
 
     Some(render_called_template(&render.called, &substitutions))
+}
+
+fn render_refines_group_heading_latex(
+    header: &CommandHeader,
+    refines_argument: Option<&str>,
+    refinement_render: &CommandRender,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let spec = parse_is_or_refined_statement_spec(refines_argument?).ok()?;
+    let target = refines_target_type(&spec)?;
+    let target_called = type_expression_called_template(target, registry)?;
+    let mut substitutions = target_called.substitutions;
+    substitutions.extend(command_header_substitutions(header, registry));
+    let template = format!("{} {}", refinement_render.called, target_called.template);
+
+    Some(render_called_template(&template, &substitutions))
 }
 
 fn render_parsed_formulation_latex(text: &str, registry: &RenderRegistry) -> Option<String> {
@@ -559,6 +585,45 @@ fn render_refined_command_called(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
 ) -> String {
+    let called = refined_command_called_template(command, registry);
+    render_called_template(&called.template, &called.substitutions)
+}
+
+#[derive(Clone, Debug)]
+struct CalledTemplate {
+    template: String,
+    substitutions: HashMap<String, String>,
+}
+
+fn type_expression_called_template(
+    ty: &TypeExpression,
+    registry: &RenderRegistry,
+) -> Option<CalledTemplate> {
+    match ty {
+        TypeExpression::Command(command) => command_called_template(command, registry),
+        TypeExpression::RefinedCommand(command) => {
+            Some(refined_command_called_template(command, registry))
+        }
+    }
+}
+
+fn command_called_template(
+    command: &CommandExpression,
+    registry: &RenderRegistry,
+) -> Option<CalledTemplate> {
+    let render = registry
+        .commands
+        .get(&command_expression_signature(command))?;
+    Some(CalledTemplate {
+        template: render.called.clone(),
+        substitutions: command_substitutions(command, render, None, registry),
+    })
+}
+
+fn refined_command_called_template(
+    command: &RefinedCommandExpression,
+    registry: &RenderRegistry,
+) -> CalledTemplate {
     let mut refinement_templates = Vec::new();
     let mut substitutions = HashMap::new();
 
@@ -595,7 +660,17 @@ fn render_refined_command_called(
         format!("{} {}", refinement_templates.join(", "), base_template)
     };
 
-    render_called_template(&template, &substitutions)
+    CalledTemplate {
+        template,
+        substitutions,
+    }
+}
+
+fn refines_target_type(spec: &IsOrRefinedStatementSpec) -> Option<&TypeExpression> {
+    match spec {
+        IsOrRefinedStatementSpec::Is(statement) => Some(&statement.ty),
+        IsOrRefinedStatementSpec::Spec(_) => None,
+    }
 }
 
 fn command_substitutions(
@@ -1306,7 +1381,12 @@ Documented:
         );
 
         assert_eq!(
-            render_group_heading_latex("Describes", Some(r#"\function:on{A}:to{B}"#), &registry),
+            render_group_heading_latex(
+                "Describes",
+                Some(r#"\function:on{A}:to{B}"#),
+                None,
+                &registry
+            ),
             Some(r#"\textrm{function on }A\textrm{ to }B"#.to_string())
         );
     }
@@ -1322,12 +1402,38 @@ Documented:
         );
 
         assert_eq!(
-            render_group_heading_latex("Describes", Some(r#"\set"#), &registry),
+            render_group_heading_latex("Describes", Some(r#"\set"#), None, &registry),
             Some(r#"\textrm{set}"#.to_string())
         );
         assert_eq!(
             render_formulation_latex(r#"X is \set"#, &registry),
             Some(r#"X \textrm{ is } \textrm{set}"#.to_string())
+        );
+    }
+
+    #[test]
+    fn renders_refines_group_headings_from_refinement_and_refined_called_text() {
+        let registry = registry_for(
+            r#"[\function:on{A}:to{B}]
+Describes: f(x__)
+Documented:
+. called: "function on $A?$ to $B?$"
+
+[\(continuous)::function:on{A}:to{B}]
+Refines: f is \function:on{A}:to{B}
+Documented:
+. called: "continuous"
+"#,
+        );
+
+        assert_eq!(
+            render_group_heading_latex(
+                "Refines",
+                Some(r#"\(continuous)::function:on{A}:to{B}"#),
+                Some(r#"f is \function:on{A}:to{B}"#),
+                &registry
+            ),
+            Some(r#"\textrm{continuous function on }A\textrm{ to }B"#.to_string())
         );
     }
 

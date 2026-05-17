@@ -1,6 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import { ArgumentList } from "./argument-list";
 import { formatGroupHeading } from "../lib/presenter";
-import { GroupView } from "../lib/types";
+import type { GroupView, SectionView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
 
 type GroupCardProps = {
@@ -9,7 +12,12 @@ type GroupCardProps = {
 };
 
 export function GroupCard({ anchorId, group }: GroupCardProps) {
+  const [showDocumented, setShowDocumented] = useState(false);
   const headingTooltip = group.heading ?? undefined;
+  const hasDocumented = group.sections.some(isDocumentedSection);
+  const visibleSections = showDocumented
+    ? group.sections
+    : group.sections.filter((section) => !isDocumentedSection(section));
 
   return (
     <section className="group-card" id={anchorId}>
@@ -26,7 +34,7 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
         </h3>
       </header>
       <div className="section-stack">
-        {group.sections.map((section, index) => (
+        {visibleSections.map((section, index) => (
           <section className="section-block" key={`${section.label}-${index}`}>
             <div className="section-label-row">
               <span className="section-label">{section.label}</span>
@@ -48,6 +56,30 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
           </section>
         ))}
       </div>
+      {hasDocumented ? (
+        <button
+          aria-expanded={showDocumented}
+          aria-label={
+            showDocumented
+              ? "Hide documented section"
+              : "Show documented section"
+          }
+          className="documented-toggle"
+          onClick={() => setShowDocumented((value) => !value)}
+          title={
+            showDocumented
+              ? "Hide documented section"
+              : "Show documented section"
+          }
+          type="button"
+        >
+          <span className="documented-toggle__chevron" aria-hidden="true" />
+        </button>
+      ) : null}
     </section>
   );
+}
+
+function isDocumentedSection(section: SectionView): boolean {
+  return section.label === "Documented";
 }

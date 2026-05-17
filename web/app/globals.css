@@ -220,6 +220,39 @@ code {
   margin-top: 0.6rem;
 }
 
+.documented-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.25rem;
+  margin: 0.55rem auto -0.55rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.documented-toggle:hover {
+  background: var(--surface-alt);
+  color: var(--muted-strong);
+}
+
+.documented-toggle__chevron {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: translateY(-0.08rem) rotate(45deg);
+  transition: transform 140ms ease;
+}
+
+.documented-toggle[aria-expanded="true"] .documented-toggle__chevron {
+  transform: translateY(0.08rem) rotate(225deg);
+}
+
 .section-block,
 .nested-section {
   padding-top: 0;

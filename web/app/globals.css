@@ -220,6 +220,10 @@ code {
   margin-top: 0.6rem;
 }
 
+.section-stack--flush {
+  margin-top: 0;
+}
+
 .documented-toggle {
   display: flex;
   align-items: center;

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ArgumentList } from "./argument-list";
-import { formatGroupHeading } from "../lib/presenter";
 import type { GroupView, SectionView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
 
@@ -17,6 +16,7 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
   const headingLatex = group.heading_latex
     ? capitalizeFirstRenderedLatexWord(group.heading_latex)
     : null;
+  const hasHeading = headingLatex !== null;
   const hasDocumented = group.sections.some(isDocumentedSection);
   const visibleSections = showDocumented
     ? group.sections
@@ -24,19 +24,19 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
 
   return (
     <section className="group-card" id={anchorId}>
-      <header className="group-header">
-        <h3
-          className={`group-heading${headingLatex ? " group-heading--latex" : ""}`}
-          title={headingTooltip}
-        >
-          {headingLatex ? (
+      {hasHeading ? (
+        <header className="group-header">
+          <h3
+            className="group-heading group-heading--latex"
+            title={headingTooltip}
+          >
             <LatexRenderer latex={headingLatex} />
-          ) : (
-            formatGroupHeading(group)
-          )}
-        </h3>
-      </header>
-      <div className="section-stack">
+          </h3>
+        </header>
+      ) : null}
+      <div
+        className={`section-stack${hasHeading ? "" : " section-stack--flush"}`}
+      >
         {visibleSections.map((section, index) => (
           <section className="section-block" key={`${section.label}-${index}`}>
             <div className="section-label-row">

@@ -553,6 +553,55 @@ then:
     }
 
     #[test]
+    fn check_accepts_composed_refined_command_references_in_given_sections() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("refined-list.mlg");
+
+        fs::write(
+            &file,
+            r#"[\set]
+Describes: X
+Documented:
+. called: "set"
+
+[\function:on{A}:to{B}]
+Describes: f(x__)
+when: A, B is \set
+Documented:
+. called: "Function on $A?$ to $B?$"
+
+[\(bounded)::function:on{A}:to{B}]
+Refines: f(x__) is \function:on{A}:to{B}
+Documented:
+. called: "bounded"
+
+[\(continuous)::function:on{A}:to{B}]
+Refines: f(x__) is \function:on{A}:to{B}
+Documented:
+. called: "continuous"
+
+Theorem:
+given: f is \(continuous, bounded)::function:on{A}:to{B}
+then: f is? \function:on{A}:to{B}
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("refined-list.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_reports_command_references_with_wrong_curly_argument_count() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("wrong-curly-count.mlg");

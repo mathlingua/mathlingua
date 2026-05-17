@@ -7,8 +7,8 @@ use crate::frontend::formulation::ast::{
     CommandHeaderNode, CommandHeaderTailPart, Expression, ExpressionKind, FormOrDeclaration,
     FormOrDeclarationKind, InfixCommand, InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec,
     IsStatement, IsSubject, IsSubjectForm, IsSubjectKind, PlaceholderForm, PlaceholderFormKind,
-    RefinedCommandExpression, RefinedCommandHeader, RefinedTail, SpecSubject, SpecSubjectKind,
-    TupleExpressionElement, TupleFormElement, TypeExpression,
+    RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedTail,
+    SpecSubject, SpecSubjectKind, TupleExpressionElement, TupleFormElement, TypeExpression,
 };
 use crate::frontend::structural::ast::*;
 
@@ -25,6 +25,7 @@ pub struct ParsedSourceFile {
 struct SignatureShape {
     signature: String,
     arg_groups: Vec<ArgGroupShape>,
+    fallback_shapes: Vec<SignatureShape>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -252,6 +253,12 @@ fn validate_reference_shape(
     event_log: &mut EventLog,
 ) {
     let Some(definition) = registry.definitions.get(&shape.signature) else {
+        if !shape.fallback_shapes.is_empty() {
+            for fallback in &shape.fallback_shapes {
+                validate_reference_shape(path, position, fallback, registry, event_log);
+            }
+            return;
+        }
         emit_error(
             event_log,
             path,
@@ -313,6 +320,7 @@ fn shape_for_command_header_node(command: &CommandHeaderNode) -> SignatureShape 
     SignatureShape {
         signature,
         arg_groups,
+        fallback_shapes: Vec::new(),
     }
 }
 
@@ -325,6 +333,7 @@ fn shape_for_infix_command_header(command: &InfixCommandHeader) -> SignatureShap
     SignatureShape {
         signature,
         arg_groups,
+        fallback_shapes: Vec::new(),
     }
 }
 
@@ -355,6 +364,7 @@ fn shape_for_refined_command_header(command: &RefinedCommandHeader) -> Signature
     SignatureShape {
         signature,
         arg_groups,
+        fallback_shapes: Vec::new(),
     }
 }
 
@@ -372,6 +382,7 @@ fn shape_for_command_expression(command: &CommandExpression) -> SignatureShape {
     SignatureShape {
         signature,
         arg_groups,
+        fallback_shapes: Vec::new(),
     }
 }
 
@@ -384,6 +395,7 @@ fn shape_for_infix_command(command: &InfixCommand) -> SignatureShape {
     SignatureShape {
         signature,
         arg_groups,
+        fallback_shapes: Vec::new(),
     }
 }
 
@@ -411,9 +423,62 @@ fn shape_for_refined_command_expression(command: &RefinedCommandExpression) -> S
             count: args.expressions.len(),
         });
     }
+    let mut shape = SignatureShape {
+        signature,
+        arg_groups,
+        fallback_shapes: Vec::new(),
+    };
+    shape.fallback_shapes = fallback_shapes_for_refined_command_expression(command);
+    shape
+}
+
+fn fallback_shapes_for_refined_command_expression(
+    command: &RefinedCommandExpression,
+) -> Vec<SignatureShape> {
+    let mut shapes = vec![shape_for_refined_command_base(command)];
+    shapes.extend(
+        command
+            .parts
+            .iter()
+            .map(|part| shape_for_refined_command_part(command, part)),
+    );
+    shapes
+}
+
+fn shape_for_refined_command_base(command: &RefinedCommandExpression) -> SignatureShape {
+    let mut signature = format!("\\{}", format_refined_tail(&command.refined_tail));
+    let mut arg_groups = Vec::new();
+    add_expression_curly_groups(&mut arg_groups, &command.head_args);
+    add_expression_tail(&mut signature, &mut arg_groups, &command.tail);
+    add_expression_paren_groups(&mut arg_groups, &command.paren_args);
     SignatureShape {
         signature,
         arg_groups,
+        fallback_shapes: Vec::new(),
+    }
+}
+
+fn shape_for_refined_command_part(
+    command: &RefinedCommandExpression,
+    part: &RefinedExpressionPart,
+) -> SignatureShape {
+    let mut signature = "\\".to_string();
+    if let Some(prefix) = &command.prefix_chain {
+        signature.push_str(&format_chain(prefix));
+        signature.push_str("::");
+    }
+    signature.push_str(&format_chain(&part.chain));
+    let mut arg_groups = Vec::new();
+    add_expression_tail(&mut signature, &mut arg_groups, &part.tail);
+    signature.push_str("::");
+    signature.push_str(&format_refined_tail(&command.refined_tail));
+    add_expression_curly_groups(&mut arg_groups, &command.head_args);
+    add_expression_tail(&mut signature, &mut arg_groups, &command.tail);
+    add_expression_paren_groups(&mut arg_groups, &command.paren_args);
+    SignatureShape {
+        signature,
+        arg_groups,
+        fallback_shapes: Vec::new(),
     }
 }
 
@@ -436,6 +501,18 @@ fn add_expression_curly_groups(
     for args in groups {
         arg_groups.push(ArgGroupShape {
             delimiter: ArgDelimiter::Curly,
+            count: args.expressions.len(),
+        });
+    }
+}
+
+fn add_expression_paren_groups(
+    arg_groups: &mut Vec<ArgGroupShape>,
+    groups: &[crate::frontend::formulation::ast::ParenExpressionArgs],
+) {
+    for args in groups {
+        arg_groups.push(ArgGroupShape {
+            delimiter: ArgDelimiter::Paren,
             count: args.expressions.len(),
         });
     }
@@ -826,7 +903,7 @@ fn walk_theorem_like(
 ) {
     if let Some(section) = given {
         for spec in &section.arguments {
-            walk_is_or_spec(spec, visit);
+            walk_is_or_refined_spec(spec, visit);
         }
     }
     if let Some(section) = where_ {
@@ -1085,7 +1162,7 @@ fn walk_clause(clause: &Clause, visit: &mut impl FnMut(&SignatureShape)) {
             }
         }
         Clause::Given(group) => {
-            walk_is_or_spec(&group.given.argument, visit);
+            walk_is_or_refined_spec(&group.given.argument, visit);
             if let Some(section) = &group.where_ {
                 for clause in &section.arguments {
                     walk_clause(clause, visit);

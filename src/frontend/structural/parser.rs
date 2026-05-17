@@ -578,8 +578,13 @@ fn parse_argument_theorem_like(
         heading,
         parse_optional_open_texts(sections.get(section_name).copied(), tracker),
         sections.get("given").copied().and_then(|section| {
-            parse_required_formulations(section, "given", tracker, parse_is_or_spec)
-                .map(|arguments| GivenSection { arguments })
+            parse_required_formulations(
+                section,
+                "given",
+                tracker,
+                parse_is_or_refined_statement_spec,
+            )
+            .map(|arguments| GivenSection { arguments })
         }),
         sections.get("where").copied().and_then(|section| {
             parse_required_clauses(section, "where", tracker)
@@ -645,8 +650,13 @@ fn parse_corollary(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Corolla
             arguments: parse_optional_open_texts(sections.get("of").copied(), tracker),
         },
         given: sections.get("given").copied().and_then(|section| {
-            parse_required_formulations(section, "given", tracker, parse_is_or_spec)
-                .map(|arguments| GivenSection { arguments })
+            parse_required_formulations(
+                section,
+                "given",
+                tracker,
+                parse_is_or_refined_statement_spec,
+            )
+            .map(|arguments| GivenSection { arguments })
         }),
         where_: sections.get("where").copied().and_then(|section| {
             parse_required_clauses(section, "where", tracker)
@@ -1479,7 +1489,7 @@ fn parse_given_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Give
                 section(&sections, "given")?,
                 "given",
                 tracker,
-                parse_is_or_spec,
+                parse_is_or_refined_statement_spec,
             )?,
         },
         where_: sections.get("where").copied().and_then(|section| {

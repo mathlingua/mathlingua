@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { FileList } from "./file-list";
 import { ViewerChrome } from "./viewer-chrome";
 import { FileView } from "../lib/types";
-import { makeFileAnchor } from "../lib/presenter";
+import { fileDirectory, makeFileAnchor } from "../lib/presenter";
 
 type ViewerShellProps = {
   files: FileView[];
@@ -12,12 +12,15 @@ type ViewerShellProps = {
 
 export function ViewerShell({ files }: ViewerShellProps) {
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
+  const [currentDirectory, setCurrentDirectory] = useState("");
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
 
   useEffect(() => {
     const syncSelectedFileFromHash = () => {
       const index = parseSelectedFileIndex(window.location.hash, files.length);
-      setSelectedFileIndex(index ?? 0);
+      const nextIndex = index ?? 0;
+      setSelectedFileIndex(nextIndex);
+      setCurrentDirectory(index === null ? "" : fileDirectory(files[nextIndex]?.path ?? ""));
     };
 
     syncSelectedFileFromHash();
@@ -26,10 +29,11 @@ export function ViewerShell({ files }: ViewerShellProps) {
     return () => {
       window.removeEventListener("hashchange", syncSelectedFileFromHash);
     };
-  }, [files.length]);
+  }, [files]);
 
   const handleSelectFile = (fileIndex: number) => {
     setSelectedFileIndex(fileIndex);
+    setCurrentDirectory(fileDirectory(files[fileIndex]?.path ?? ""));
     window.history.replaceState(null, "", `#${makeFileAnchor(fileIndex)}`);
   };
 
@@ -41,8 +45,10 @@ export function ViewerShell({ files }: ViewerShellProps) {
       />
       <main className="page-shell">
         <FileList
+          currentDirectory={currentDirectory}
           files={files}
           isOutlineOpen={isOutlineOpen}
+          onNavigateDirectory={setCurrentDirectory}
           onSelectFile={handleSelectFile}
           selectedFileIndex={selectedFileIndex}
         />

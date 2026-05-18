@@ -1,21 +1,28 @@
 import { GroupCard } from "./group-card";
 import {
+  buildFileBrowserEntries,
   formatFileLabel,
+  formatPathSegment,
   makeFileAnchor,
   makeGroupAnchor,
+  parentDirectory,
 } from "../lib/presenter";
 import { FileView } from "../lib/types";
 
 type FileListProps = {
+  currentDirectory: string;
   files: FileView[];
   isOutlineOpen: boolean;
+  onNavigateDirectory: (directory: string) => void;
   onSelectFile: (fileIndex: number) => void;
   selectedFileIndex: number;
 };
 
 export function FileList({
+  currentDirectory,
   files,
   isOutlineOpen,
+  onNavigateDirectory,
   onSelectFile,
   selectedFileIndex,
 }: FileListProps) {
@@ -29,6 +36,7 @@ export function FileList({
   }
 
   const selectedFile = files[selectedFileIndex] ?? files[0];
+  const entries = buildFileBrowserEntries(files, currentDirectory);
 
   return (
     <div
@@ -39,22 +47,45 @@ export function FileList({
       }
     >
       <aside className="outline-panel">
-        <p className="outline-title">Outline</p>
+        {currentDirectory ? (
+          <button
+            className="outline-back"
+            onClick={() => onNavigateDirectory(parentDirectory(currentDirectory))}
+            type="button"
+          >
+            <span aria-hidden="true" className="outline-back__chevron" />
+            {formatPathSegment(currentDirectory.split("/").at(-1) ?? "")}
+          </button>
+        ) : null}
         <nav>
           <ul className="outline-list">
-            {files.map((file, fileIndex) => (
-              <li key={file.path}>
-                <button
-                  className={
-                    fileIndex === selectedFileIndex
-                      ? "outline-link outline-link--active"
-                      : "outline-link"
-                  }
-                  onClick={() => onSelectFile(fileIndex)}
-                  type="button"
-                >
-                  {formatFileLabel(file.path)}
-                </button>
+            {entries.map((entry) => (
+              <li key={`${entry.kind}-${entry.path}`}>
+                {entry.kind === "directory" ? (
+                  <button
+                    className="outline-link outline-link--directory"
+                    onClick={() => onNavigateDirectory(entry.path)}
+                    type="button"
+                  >
+                    <span>{entry.label}</span>
+                    <span
+                      aria-hidden="true"
+                      className="outline-link__chevron"
+                    />
+                  </button>
+                ) : (
+                  <button
+                    className={
+                      entry.fileIndex === selectedFileIndex
+                        ? "outline-link outline-link--active"
+                        : "outline-link"
+                    }
+                    onClick={() => onSelectFile(entry.fileIndex)}
+                    type="button"
+                  >
+                    {formatFileLabel(entry.path)}
+                  </button>
+                )}
               </li>
             ))}
           </ul>

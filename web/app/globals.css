@@ -141,6 +141,43 @@ code {
     letter-spacing: -0.02em;
 }
 
+.outline-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1.1rem;
+    padding: 0.25rem 0;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1.28rem;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.outline-back:hover {
+    color: var(--accent);
+}
+
+.outline-back__chevron,
+.outline-link__chevron {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-color: currentColor;
+    border-style: solid;
+    border-width: 0 1.5px 1.5px 0;
+}
+
+.outline-back__chevron {
+    transform: rotate(135deg);
+}
+
+.outline-link__chevron {
+    margin-left: 0.35rem;
+    transform: rotate(-45deg);
+}
+
 .outline-list {
     list-style: none;
     margin: 0;
@@ -152,7 +189,10 @@ code {
 }
 
 .outline-link {
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 2rem;
     padding: 0;
     border: none;
     background: none;
@@ -167,6 +207,23 @@ code {
 }
 
 .outline-link--active {
+    color: var(--accent);
+}
+
+.outline-link--directory {
+    justify-content: flex-start;
+    gap: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1.22rem;
+    font-weight: 400;
+}
+
+.outline-link--directory:hover {
+    background: transparent;
     color: var(--accent);
 }
 

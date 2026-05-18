@@ -50,7 +50,9 @@ export function FileList({
         {currentDirectory ? (
           <button
             className="outline-back"
-            onClick={() => onNavigateDirectory(parentDirectory(currentDirectory))}
+            onClick={() =>
+              onNavigateDirectory(parentDirectory(currentDirectory))
+            }
             type="button"
           >
             <span aria-hidden="true" className="outline-back__chevron" />

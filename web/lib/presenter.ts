@@ -111,13 +111,39 @@ export function fileDirectory(path: string): string {
 }
 
 export function makeFileAnchor(path: string): string {
+  return encodeRoutePath(fileRoutePath(path));
+}
+
+export function fileRoute(path: string): string {
+  const routePath = fileRoutePath(path);
+  return routePath ? `/${encodeRoutePath(routePath)}` : "/";
+}
+
+export function fileRoutePath(path: string): string {
   const withoutExtension = contentRelativePath(path).replace(/\.mlg$/i, "");
-  const withUnderscores = withoutExtension
+
+  return normalizeRoutePath(withoutExtension);
+}
+
+export function routePathFromPathname(pathname: string): string {
+  return normalizeRoutePath(decodeRoutePath(pathname));
+}
+
+export function directoryRoute(directory: string): string {
+  const routePath = directoryRoutePath(directory);
+  return routePath ? `/${encodeRoutePath(routePath)}` : "/";
+}
+
+export function directoryRoutePath(directory: string): string {
+  return normalizeRoutePath(directory);
+}
+
+function normalizeRoutePath(path: string): string {
+  return path
     .trim()
     .replace(/\s+/g, "_")
-    .replace(/\/+/g, "/");
-
-  return encodeURIComponent(withUnderscores || "untitled");
+    .replace(/\/+/g, "/")
+    .replace(/^\/+|\/+$/g, "");
 }
 
 export function makeGroupAnchor(fileIndex: number, groupIndex: number): string {
@@ -137,6 +163,17 @@ function contentRelativePath(path: string): string {
   return normalized.startsWith("content/")
     ? normalized.slice("content/".length)
     : normalized;
+}
+
+function encodeRoutePath(path: string): string {
+  return path.split("/").map(encodeURIComponent).join("/");
+}
+
+function decodeRoutePath(path: string): string {
+  return path
+    .split("/")
+    .map((segment) => decodeURIComponent(segment))
+    .join("/");
 }
 
 function isInsideDirectory(

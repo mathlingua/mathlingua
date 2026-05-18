@@ -1,4 +1,4 @@
-import ViewerPage from "./viewer-page";
+import ViewerPage from "../viewer-page";
 
 export const dynamic = "force-dynamic";
 

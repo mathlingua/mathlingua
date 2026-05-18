@@ -5,9 +5,13 @@ import { FileList } from "./file-list";
 import { ViewerChrome } from "./viewer-chrome";
 import { FileView } from "../lib/types";
 import {
+  directoryRoute,
+  directoryRoutePath,
   fileDirectory,
+  fileRoute,
+  fileRoutePath,
   firstFileIndexInDirectory,
-  makeFileAnchor,
+  routePathFromPathname,
 } from "../lib/presenter";
 
 type ViewerShellProps = {
@@ -20,29 +24,24 @@ export function ViewerShell({ files }: ViewerShellProps) {
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
 
   useEffect(() => {
-    const syncSelectedFileFromHash = () => {
-      const index = parseSelectedFileIndex(window.location.hash, files);
-      const nextIndex = index ?? 0;
-      setSelectedFileIndex(nextIndex);
-      setCurrentDirectory(index === null ? "" : fileDirectory(files[nextIndex]?.path ?? ""));
+    const syncSelectedFileFromPath = () => {
+      const selection = resolveRouteSelection(window.location.pathname, files);
+      setSelectedFileIndex(selection.fileIndex);
+      setCurrentDirectory(selection.directory);
     };
 
-    syncSelectedFileFromHash();
-    window.addEventListener("hashchange", syncSelectedFileFromHash);
+    syncSelectedFileFromPath();
+    window.addEventListener("popstate", syncSelectedFileFromPath);
 
     return () => {
-      window.removeEventListener("hashchange", syncSelectedFileFromHash);
+      window.removeEventListener("popstate", syncSelectedFileFromPath);
     };
   }, [files]);
 
   const handleSelectFile = (fileIndex: number) => {
     setSelectedFileIndex(fileIndex);
     setCurrentDirectory(fileDirectory(files[fileIndex]?.path ?? ""));
-    window.history.replaceState(
-      null,
-      "",
-      `#${makeFileAnchor(files[fileIndex]?.path ?? "")}`,
-    );
+    window.history.pushState(null, "", fileRoute(files[fileIndex]?.path ?? ""));
   };
 
   const handleNavigateDirectory = (directory: string) => {
@@ -50,15 +49,12 @@ export function ViewerShell({ files }: ViewerShellProps) {
 
     const fileIndex = firstFileIndexInDirectory(files, directory);
     if (fileIndex === null) {
+      window.history.pushState(null, "", directoryRoute(directory));
       return;
     }
 
     setSelectedFileIndex(fileIndex);
-    window.history.replaceState(
-      null,
-      "",
-      `#${makeFileAnchor(files[fileIndex]?.path ?? "")}`,
-    );
+    window.history.pushState(null, "", fileRoute(files[fileIndex]?.path ?? ""));
   };
 
   return (
@@ -81,26 +77,54 @@ export function ViewerShell({ files }: ViewerShellProps) {
   );
 }
 
-function parseSelectedFileIndex(hash: string, files: FileView[]): number | null {
-  const rawAnchor = hash.replace(/^#/, "");
-  if (!rawAnchor) {
-    return null;
+type RouteSelection = {
+  directory: string;
+  fileIndex: number;
+};
+
+function resolveRouteSelection(
+  pathname: string,
+  files: FileView[],
+): RouteSelection {
+  const routePath = routePathFromPathname(pathname);
+  if (!routePath) {
+    return { directory: "", fileIndex: 0 };
   }
 
-  const legacyMatch = /^file-(\d+)$/.exec(rawAnchor);
-  if (legacyMatch) {
-    const legacyIndex = Number.parseInt(legacyMatch[1], 10);
-    return Number.isNaN(legacyIndex) ||
-      legacyIndex < 0 ||
-      legacyIndex >= files.length
-      ? null
-      : legacyIndex;
-  }
-
-  const anchor = decodeURIComponent(rawAnchor);
-  const index = files.findIndex(
-    (file) => decodeURIComponent(makeFileAnchor(file.path)) === anchor,
+  const fileIndex = files.findIndex(
+    (file) => fileRoutePath(file.path) === routePath,
   );
+  if (fileIndex >= 0) {
+    return {
+      directory: fileDirectory(files[fileIndex]?.path ?? ""),
+      fileIndex,
+    };
+  }
 
-  return index < 0 ? null : index;
+  const directory = findDirectoryForRoutePath(routePath, files);
+  const directoryFileIndex =
+    directory === null ? null : firstFileIndexInDirectory(files, directory);
+  if (directoryFileIndex !== null) {
+    return {
+      directory: directory ?? "",
+      fileIndex: directoryFileIndex,
+    };
+  }
+
+  return { directory: "", fileIndex: 0 };
+}
+
+function findDirectoryForRoutePath(
+  routePath: string,
+  files: FileView[],
+): string | null {
+  const directories = new Set(files.map((file) => fileDirectory(file.path)));
+
+  for (const directory of directories) {
+    if (directoryRoutePath(directory) === routePath) {
+      return directory;
+    }
+  }
+
+  return null;
 }

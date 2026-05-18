@@ -89,7 +89,7 @@ pub(super) fn render_placeholder_form(
                 .collect::<Vec<_>>()
                 .join(", ");
             format!(
-                "{}\\left({arguments}\\right)",
+                "{}({arguments})",
                 render_form_placeholder_name(&placeholder.name)
             )
         }

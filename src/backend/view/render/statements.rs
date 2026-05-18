@@ -79,7 +79,7 @@ pub(super) fn render_form_or_declaration(
             if args.is_empty() {
                 escape_math_identifier(name)
             } else {
-                format!("{}\\left({}\\right)", escape_math_identifier(name), args)
+                format!("{}({})", escape_math_identifier(name), args)
             }
         }
         FormOrDeclarationKind::TupleDeclaration { name, form } => {

@@ -13,7 +13,7 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 .map(|argument| render_expression(argument, registry))
                 .collect::<Vec<_>>()
                 .join(", ");
-            format!("{}\\left({}\\right)", escape_math_identifier(name), args)
+            format!("{}({})", escape_math_identifier(name), args)
         }
         ExpressionKind::FunctionNamedCall { name, elements } => {
             let args = elements
@@ -21,7 +21,7 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 .map(|element| render_expression(&element.expression, registry))
                 .collect::<Vec<_>>()
                 .join(", ");
-            format!("{}\\left({}\\right)", escape_math_identifier(name), args)
+            format!("{}({})", escape_math_identifier(name), args)
         }
         ExpressionKind::Tuple(elements) => {
             let values = elements

@@ -244,11 +244,15 @@ fn renders_function_forms_with_placeholder_suffixes_hidden() {
 
     assert_eq!(
         render_formulation_latex("f(x_)", &registry),
-        Some(r#"f\left(x\right)"#.to_string())
+        Some(r#"f(x)"#.to_string())
     );
     assert_eq!(
         render_formulation_latex("f(x__)", &registry),
-        Some(r#"f\left(x\right)"#.to_string())
+        Some(r#"f(x)"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("f(x)", &registry),
+        Some(r#"f(x)"#.to_string())
     );
 }
 
@@ -272,6 +276,6 @@ fn renders_set_builder_specs() {
     );
     assert_eq!(
         render_formulation_latex(r#"{x "in" X : f_(a_, b_) | z}"#, &registry),
-        Some(r#"\left\{ f\left(a, b\right) \: : \: x \in X \: | \: z \right\}"#.to_string())
+        Some(r#"\left\{ f(a, b) \: : \: x \in X \: | \: z \right\}"#.to_string())
     );
 }

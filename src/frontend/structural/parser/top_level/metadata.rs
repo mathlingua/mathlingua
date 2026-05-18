@@ -1,8 +1,13 @@
+use super::*;
+
 /// Parses a `Person:` metadata group.
 ///
 /// Person groups require an author-style heading and carry required `name:` and
 /// `biography:` sections, with optional prose on the leading `Person:` section.
-fn parse_person(group: &ProtoGroup, tracker: &mut EventLog) -> Option<PersonGroup> {
+pub(in crate::frontend::structural::parser) fn parse_person(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<PersonGroup> {
     let heading = parse_required_author_heading(group, tracker)?;
     let sections = identify_sections(
         "Person",
@@ -33,7 +38,10 @@ fn parse_person(group: &ProtoGroup, tracker: &mut EventLog) -> Option<PersonGrou
 ///
 /// Resource groups require a resource heading and then delegate each nested
 /// resource field to [`parse_resource_item_group`].
-fn parse_resource(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceGroup> {
+pub(in crate::frontend::structural::parser) fn parse_resource(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ResourceGroup> {
     let heading = parse_required_resource_heading(group, tracker)?;
     let sections = identify_sections("Resource", &group.sections, tracker, &["Resource"])?;
 
@@ -54,7 +62,10 @@ fn parse_resource(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Resource
 ///
 /// Specify groups do not take headings and contain nested numeric-domain
 /// specification items.
-fn parse_specify(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SpecifyGroup> {
+pub(in crate::frontend::structural::parser) fn parse_specify(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<SpecifyGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Specify", &group.sections, tracker, &["Specify"])?;
     Some(SpecifyGroup {
@@ -68,4 +79,3 @@ fn parse_specify(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SpecifyGr
         },
     })
 }
-

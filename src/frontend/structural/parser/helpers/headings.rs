@@ -1,9 +1,13 @@
+use super::*;
+
 /// Parses an alias body into the supported alias variants.
 ///
 /// Expression aliases are attempted first because their left-hand side grammar
 /// is broader; if that fails the body is parsed as a specification-operator
 /// alias.
-fn parse_alias_kind(input: &str) -> Result<AliasKind, FormulationParseError> {
+pub(in crate::frontend::structural::parser) fn parse_alias_kind(
+    input: &str,
+) -> Result<AliasKind, FormulationParseError> {
     if let Ok(alias) = parse_expression_alias(input) {
         return Ok(AliasKind::Expression(alias));
     }
@@ -14,7 +18,9 @@ fn parse_alias_kind(input: &str) -> Result<AliasKind, FormulationParseError> {
 ///
 /// `is ... via ...` is more specific, so it is attempted before the broader
 /// `is`/spec parser.
-fn parse_is_or_via_item(input: &str) -> Result<IsOrViaItem, FormulationParseError> {
+pub(in crate::frontend::structural::parser) fn parse_is_or_via_item(
+    input: &str,
+) -> Result<IsOrViaItem, FormulationParseError> {
     if let Ok(item) = parse_is_via_statement(input) {
         return Ok(IsOrViaItem::IsVia(item));
     }
@@ -25,7 +31,7 @@ fn parse_is_or_via_item(input: &str) -> Result<IsOrViaItem, FormulationParseErro
 ///
 /// Missing or malformed headings are reported at the group row because headings
 /// live on the group header line rather than in a section body.
-fn parse_required_command_heading(
+pub(in crate::frontend::structural::parser) fn parse_required_command_heading(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<crate::frontend::formulation::ast::CommandHeader> {
@@ -50,7 +56,7 @@ fn parse_required_command_heading(
 ///
 /// `None` means the group has no heading; an invalid present heading prevents
 /// construction of the enclosing structural group.
-fn parse_optional_command_heading(
+pub(in crate::frontend::structural::parser) fn parse_optional_command_heading(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<Option<crate::frontend::formulation::ast::CommandHeader>> {
@@ -74,7 +80,7 @@ fn parse_optional_command_heading(
 ///
 /// Label headings are used for local documentation/proof notes and are
 /// syntactically distinct from command headings.
-fn parse_optional_label_heading(
+pub(in crate::frontend::structural::parser) fn parse_optional_label_heading(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<Option<crate::frontend::formulation::ast::LabelHeader>> {
@@ -95,7 +101,7 @@ fn parse_optional_label_heading(
 }
 
 /// Parses a required author heading from a `Person:` group.
-fn parse_required_author_heading(
+pub(in crate::frontend::structural::parser) fn parse_required_author_heading(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<crate::frontend::formulation::ast::AuthorHeader> {
@@ -117,7 +123,7 @@ fn parse_required_author_heading(
 }
 
 /// Parses a required resource heading from a `Resource:` group.
-fn parse_required_resource_heading(
+pub(in crate::frontend::structural::parser) fn parse_required_resource_heading(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<crate::frontend::formulation::ast::ResourceHeader> {
@@ -146,7 +152,10 @@ fn parse_required_resource_heading(
 ///
 /// Outline and metadata groups derive their identity from sections only; a
 /// heading on those groups is almost certainly an authoring mistake.
-fn ensure_no_heading(group: &ProtoGroup, tracker: &mut EventLog) -> Option<()> {
+pub(in crate::frontend::structural::parser) fn ensure_no_heading(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<()> {
     if let Some(heading) = &group.heading {
         tracker.user_error_at_row(
             Some(ORIGIN),
@@ -158,4 +167,3 @@ fn ensure_no_heading(group: &ProtoGroup, tracker: &mut EventLog) -> Option<()> {
         Some(())
     }
 }
-

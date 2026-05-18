@@ -1,10 +1,12 @@
+use super::*;
+
 /// Parses a non-infix, non-refined command header.
 ///
 /// Command headers consist of a chain, optional head argument groups, optional
 /// colon tail parts, and optional parenthesized argument groups.  The contents
 /// of header argument groups are forms/declarations because headings describe
 /// definition shapes rather than concrete expression references.
-fn parse_simple_command_header(input: &str) -> Result<CommandHeaderNode, ParseError> {
+pub(super) fn parse_simple_command_header(input: &str) -> Result<CommandHeaderNode, ParseError> {
     let mut rest = input
         .trim()
         .strip_prefix('\\')
@@ -37,7 +39,7 @@ fn parse_simple_command_header(input: &str) -> Result<CommandHeaderNode, ParseEr
 ///
 /// Infix headers share most command-tail syntax with ordinary command headers
 /// but intentionally omit parenthesized invocation arguments at the end.
-fn parse_infix_command_header(input: &str) -> Result<InfixCommandHeader, ParseError> {
+pub(super) fn parse_infix_command_header(input: &str) -> Result<InfixCommandHeader, ParseError> {
     let input = input.trim();
     let mut rest = input
         .strip_prefix("\\:")
@@ -72,7 +74,9 @@ fn parse_infix_command_header(input: &str) -> Result<InfixCommandHeader, ParseEr
 /// The left side lists refinement parts, optionally prefixed by a dotted chain.
 /// The right side is parsed as the refined target tail plus the same argument
 /// and colon-tail shape used by ordinary command headers.
-fn parse_refined_command_header(input: &str) -> Result<RefinedCommandHeader, ParseError> {
+pub(super) fn parse_refined_command_header(
+    input: &str,
+) -> Result<RefinedCommandHeader, ParseError> {
     let input = input.trim();
     let after_slash = input
         .strip_prefix('\\')
@@ -137,7 +141,7 @@ fn parse_refined_command_header(input: &str) -> Result<RefinedCommandHeader, Par
 ///
 /// Each part is a command chain plus optional colon-tail header arguments.  The
 /// caller is responsible for splitting the comma-separated part list safely.
-fn parse_refined_header_part(input: &str) -> Result<RefinedHeaderPart, ParseError> {
+pub(super) fn parse_refined_header_part(input: &str) -> Result<RefinedHeaderPart, ParseError> {
     let input = input.trim();
     let (chain_text, rest) = split_prefix_by_delimiters(input, &[':']);
     let chain = parse_chain(chain_text)?;
@@ -159,7 +163,9 @@ fn parse_refined_header_part(input: &str) -> Result<RefinedHeaderPart, ParseErro
 ///
 /// This mirrors refined command header parsing, but argument groups contain
 /// expressions instead of forms because use sites supply concrete values.
-fn parse_refined_command_expression(input: &str) -> Result<RefinedCommandExpression, ParseError> {
+pub(super) fn parse_refined_command_expression(
+    input: &str,
+) -> Result<RefinedCommandExpression, ParseError> {
     let input = input.trim();
     let after_slash = input
         .strip_prefix('\\')
@@ -225,7 +231,9 @@ fn parse_refined_command_expression(input: &str) -> Result<RefinedCommandExpress
 /// Expression parts use expression-valued command tails, which lets references
 /// provide concrete command arguments while keeping the same chain syntax as
 /// refined headers.
-fn parse_refined_expression_part(input: &str) -> Result<RefinedExpressionPart, ParseError> {
+pub(super) fn parse_refined_expression_part(
+    input: &str,
+) -> Result<RefinedExpressionPart, ParseError> {
     let input = input.trim();
     let (chain_text, rest) = split_prefix_by_delimiters(input, &[':']);
     let chain = parse_chain(chain_text)?;
@@ -248,7 +256,7 @@ fn parse_refined_expression_part(input: &str) -> Result<RefinedExpressionPart, P
 /// The tail can be either a bracketed name, written as `[[name]]`, or a command
 /// chain.  The function returns both the parsed tail and the unconsumed suffix
 /// so callers can continue parsing argument groups and colon tails.
-fn parse_refined_tail(input: &str) -> Result<(RefinedTail, &str), ParseError> {
+pub(super) fn parse_refined_tail(input: &str) -> Result<(RefinedTail, &str), ParseError> {
     let input = input.trim_start();
     if let Some(rest) = input.strip_prefix("[[") {
         let end = rest
@@ -273,7 +281,9 @@ fn parse_refined_tail(input: &str) -> Result<(RefinedTail, &str), ParseError> {
 ///
 /// Header argument groups contain forms/declarations because command headings
 /// define arity and placeholder names, not concrete use-site expressions.
-fn parse_curly_heading_args(mut input: &str) -> Result<(Vec<CurlyHeadingArgs>, &str), ParseError> {
+pub(super) fn parse_curly_heading_args(
+    mut input: &str,
+) -> Result<(Vec<CurlyHeadingArgs>, &str), ParseError> {
     let mut args = Vec::new();
     while input.trim_start().starts_with('{') {
         input = input.trim_start();
@@ -293,7 +303,9 @@ fn parse_curly_heading_args(mut input: &str) -> Result<(Vec<CurlyHeadingArgs>, &
 /// Parenthesized header groups describe invocation arguments for callable
 /// definitions.  They are optional at use sites but still part of the definition
 /// shape when present in a heading.
-fn parse_paren_heading_args(mut input: &str) -> Result<(Vec<ParenHeadingArgs>, &str), ParseError> {
+pub(super) fn parse_paren_heading_args(
+    mut input: &str,
+) -> Result<(Vec<ParenHeadingArgs>, &str), ParseError> {
     let mut args = Vec::new();
     while input.trim_start().starts_with('(') {
         input = input.trim_start();
@@ -313,7 +325,7 @@ fn parse_paren_heading_args(mut input: &str) -> Result<(Vec<ParenHeadingArgs>, &
 /// A tail part must include at least one `{...}` group, which prevents bare
 /// punctuation like `:to` from being accepted without the argument shape that
 /// gives the part semantic content.
-fn parse_command_header_tail(
+pub(super) fn parse_command_header_tail(
     mut input: &str,
 ) -> Result<(Vec<CommandHeaderTailPart>, &str), ParseError> {
     let mut parts = Vec::new();
@@ -348,7 +360,7 @@ fn parse_command_header_tail(
 /// Expression argument groups carry concrete expression ASTs and therefore use
 /// the expression list parser rather than the form/declaration list parser used
 /// for command headers.
-fn parse_curly_expression_args(
+pub(super) fn parse_curly_expression_args(
     mut input: &str,
 ) -> Result<(Vec<CurlyExpressionArgs>, &str), ParseError> {
     let mut args = Vec::new();
@@ -370,7 +382,7 @@ fn parse_curly_expression_args(
 /// These groups represent invocation at a use site.  Semantic checking later
 /// verifies whether the referenced definition allows the supplied parenthesized
 /// arity.
-fn parse_paren_expression_args(
+pub(super) fn parse_paren_expression_args(
     mut input: &str,
 ) -> Result<(Vec<ParenExpressionArgs>, &str), ParseError> {
     let mut args = Vec::new();
@@ -391,7 +403,7 @@ fn parse_paren_expression_args(
 ///
 /// Each tail part must provide at least one `{...}` expression argument group so
 /// reference signatures retain the same required shape as their definitions.
-fn parse_command_expression_tail(
+pub(super) fn parse_command_expression_tail(
     mut input: &str,
 ) -> Result<(Vec<CommandExpressionTailPart>, &str), ParseError> {
     let mut parts = Vec::new();
@@ -420,4 +432,3 @@ fn parse_command_expression_tail(
 
     Ok((parts, input))
 }
-

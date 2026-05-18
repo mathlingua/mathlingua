@@ -1,5 +1,7 @@
+use super::*;
+
 /// Traverses an optional `using:` section containing `is` or `spec` entries.
-fn walk_optional_is_or_specs(
+pub(in crate::backend::semantic) fn walk_optional_is_or_specs(
     section: &Option<UsingSection>,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
@@ -11,8 +13,10 @@ fn walk_optional_is_or_specs(
 }
 
 /// Traverses any optional section that stores a list of logical clauses.
-fn walk_optional_clauses<T>(section: &Option<T>, visit: &mut impl FnMut(&SignatureShape))
-where
+pub(in crate::backend::semantic) fn walk_optional_clauses<T>(
+    section: &Option<T>,
+    visit: &mut impl FnMut(&SignatureShape),
+) where
     T: ClauseSection,
 {
     if let Some(section) = section {
@@ -23,7 +27,7 @@ where
 }
 
 /// Adapter trait for structural sections whose payload is a slice of clauses.
-trait ClauseSection {
+pub(in crate::backend::semantic) trait ClauseSection {
     /// Returns the clauses contained by the section.
     fn clauses(&self) -> &[Clause];
 }
@@ -46,7 +50,7 @@ impl ClauseSection for SatisfiesSection {
 ///
 /// Symbols can contain aliases that reference forms or commands, and connection
 /// groups can introduce `using:` requirements that must also be validated.
-fn walk_optional_provides(
+pub(in crate::backend::semantic) fn walk_optional_provides(
     section: &Option<ProvidesSection>,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
@@ -67,7 +71,7 @@ fn walk_optional_provides(
 }
 
 /// Traverses references that appear inside an optional `aliases:` section.
-fn walk_optional_aliases(
+pub(in crate::backend::semantic) fn walk_optional_aliases(
     section: &Option<AliasesSection>,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
@@ -85,7 +89,10 @@ fn walk_optional_aliases(
 /// Expression aliases may introduce forms or command headers that reference
 /// existing signatures.  Spec-operator aliases are currently pure declarations
 /// for this checker and do not contain command references.
-fn walk_alias_kind(kind: &AliasKind, visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_alias_kind(
+    kind: &AliasKind,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
     match kind {
         AliasKind::Expression(alias) => match &alias.lhs {
             crate::frontend::formulation::ast::ExpressionAliasLhs::Form(form) => {
@@ -105,7 +112,10 @@ fn walk_alias_kind(kind: &AliasKind, visit: &mut impl FnMut(&SignatureShape)) {
 }
 
 /// Traverses one `Specify` item for command references.
-fn walk_specify_item(item: &SpecifyItem, visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_specify_item(
+    item: &SpecifyItem,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
     match item {
         SpecifyItem::PositiveInt(group) => walk_open_text_clauses(&group.is_, visit),
         SpecifyItem::NegativeInt(group) => walk_open_text_clauses(&group.is_, visit),
@@ -119,5 +129,8 @@ fn walk_specify_item(item: &SpecifyItem, visit: &mut impl FnMut(&SignatureShape)
 ///
 /// Open text is not parsed into formulation AST nodes yet, so there are no
 /// semantic command references to validate here.
-fn walk_open_text_clauses(_section: &IsSection, _visit: &mut impl FnMut(&SignatureShape)) {}
-
+pub(in crate::backend::semantic) fn walk_open_text_clauses(
+    _section: &IsSection,
+    _visit: &mut impl FnMut(&SignatureShape),
+) {
+}

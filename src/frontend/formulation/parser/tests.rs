@@ -15,9 +15,11 @@ use crate::frontend::formulation::ast::{
     PlaceholderFormKind, RefinedTail, SpecSubjectKind, SubsetCall, TypeExpression,
 };
 
-include!("tests/support.rs");
-include!("tests/operators.rs");
-include!("tests/commands.rs");
-include!("tests/expressions.rs");
-include!("tests/refinements.rs");
-include!("tests/golden.rs");
+mod commands;
+mod expressions;
+mod golden;
+mod operators;
+mod refinements;
+mod support;
+
+use support::*;

@@ -1,9 +1,14 @@
+use super::*;
+
 /// Parses a subject/type `is` statement.
 ///
 /// The `allow_refined` flag controls whether the right-hand side may use the
 /// refined command expression grammar.  This keeps ordinary definition checks
 /// stricter while theorem assumptions can reference refined definitions.
-fn parse_is_statement(input: &str, allow_refined: bool) -> Result<IsStatement, ParseError> {
+pub(super) fn parse_is_statement(
+    input: &str,
+    allow_refined: bool,
+) -> Result<IsStatement, ParseError> {
     let index = find_top_level_substring(input, " is ")
         .ok_or_else(|| ParseError::custom("expected top-level ` is `"))?;
     let subject = parse_is_subject(&input[..index])?;
@@ -21,7 +26,9 @@ fn parse_is_statement(input: &str, allow_refined: bool) -> Result<IsStatement, P
 /// Specifications use a quoted operator between the subject and target name,
 /// for example `x "in" A`.  The quoted operator is discovered at top level so
 /// nested formulation constructs remain intact.
-fn parse_subject_spec_statement(input: &str) -> Result<SubjectSpecStatement, ParseError> {
+pub(super) fn parse_subject_spec_statement(
+    input: &str,
+) -> Result<SubjectSpecStatement, ParseError> {
     let (subject_text, operator, name_text) =
         split_subject_operator_name(input).ok_or_else(|| {
             ParseError::custom("expected specification of the form `<subject> \"op\" Name`")
@@ -41,7 +48,9 @@ fn parse_subject_spec_statement(input: &str) -> Result<SubjectSpecStatement, Par
 ///
 /// This mirrors [`parse_subject_spec_statement`] but requires the subject side
 /// to be placeholder syntax such as `x_` or `f_(x_)`.
-fn parse_placeholder_spec_statement(input: &str) -> Result<PlaceholderSpecStatement, ParseError> {
+pub(super) fn parse_placeholder_spec_statement(
+    input: &str,
+) -> Result<PlaceholderSpecStatement, ParseError> {
     let (placeholder_text, operator, name_text) =
         split_subject_operator_name(input).ok_or_else(|| {
             ParseError::custom("expected placeholder specification of the form `x_ \"op\" X`")
@@ -63,7 +72,10 @@ fn parse_placeholder_spec_statement(input: &str) -> Result<PlaceholderSpecStatem
 /// MathLingua type references are command-backed definitions.  When enabled,
 /// refined command expressions are accepted before falling back to ordinary
 /// command expressions.
-fn parse_type_expression(input: &str, allow_refined: bool) -> Result<TypeExpression, ParseError> {
+pub(super) fn parse_type_expression(
+    input: &str,
+    allow_refined: bool,
+) -> Result<TypeExpression, ParseError> {
     let input = input.trim();
     if allow_refined && contains_top_level(input, "::") {
         return parse_refined_command_expression(input).map(TypeExpression::RefinedCommand);
@@ -83,7 +95,7 @@ fn parse_type_expression(input: &str, allow_refined: bool) -> Result<TypeExpress
 /// A comma at top level indicates a list of forms/placeholders.  Otherwise the
 /// parser first attempts a single form-like subject and then falls back to an
 /// operator subject for statements about operators themselves.
-fn parse_is_subject(input: &str) -> Result<IsSubject, ParseError> {
+pub(super) fn parse_is_subject(input: &str) -> Result<IsSubject, ParseError> {
     let input = input.trim();
 
     if find_first_top_level_char(input, ',').is_some() {
@@ -111,7 +123,7 @@ fn parse_is_subject(input: &str) -> Result<IsSubject, ParseError> {
 ///
 /// Specification subjects accept ordinary forms when possible, with operator
 /// subjects as the fallback so definitions can describe named operators.
-fn parse_spec_subject(input: &str) -> Result<SpecSubject, ParseError> {
+pub(super) fn parse_spec_subject(input: &str) -> Result<SpecSubject, ParseError> {
     let input = input.trim();
     if let Ok(form) = parse_form_or_declaration(input) {
         return Ok(SpecSubject {
@@ -131,7 +143,7 @@ fn parse_spec_subject(input: &str) -> Result<SpecSubject, ParseError> {
 ///
 /// Operators are kept as text rather than grammar tokens here because the
 /// higher-level specification syntax extracts them from quoted strings.
-fn parse_operator(input: &str) -> Result<Operator, ParseError> {
+pub(super) fn parse_operator(input: &str) -> Result<Operator, ParseError> {
     let input = input.trim();
     if !is_operator_text(input) {
         return Err(ParseError::custom(format!(
@@ -147,7 +159,7 @@ fn parse_operator(input: &str) -> Result<Operator, ParseError> {
 /// The generated form parser can recognize many form variants; this helper
 /// narrows the accepted result to an unnamed tuple declaration because `via`
 /// introduces tuple-shaped witness data.
-fn parse_tuple_form(input: &str) -> Result<TupleForm, ParseError> {
+pub(super) fn parse_tuple_form(input: &str) -> Result<TupleForm, ParseError> {
     let input = input.trim();
     match parse_form_or_declaration(input)?.kind {
         FormOrDeclarationKind::TupleDeclaration { name: None, form } => Ok(form),
@@ -161,7 +173,7 @@ fn parse_tuple_form(input: &str) -> Result<TupleForm, ParseError> {
 ///
 /// Full forms are preferred, then placeholder forms are accepted for cases such
 /// as theorem schemata that bind placeholder-shaped subjects.
-fn parse_is_subject_form(input: &str) -> Result<IsSubjectForm, ParseError> {
+pub(super) fn parse_is_subject_form(input: &str) -> Result<IsSubjectForm, ParseError> {
     if let Ok(form) = parse_form_or_declaration(input) {
         return Ok(IsSubjectForm::Form(form));
     }
@@ -173,7 +185,7 @@ fn parse_is_subject_form(input: &str) -> Result<IsSubjectForm, ParseError> {
 ///
 /// Empty lists are rejected after splitting so callers can emit a precise
 /// subject error instead of accepting an empty subject set.
-fn parse_is_subject_form_list(input: &str) -> Result<Vec<IsSubjectForm>, ParseError> {
+pub(super) fn parse_is_subject_form_list(input: &str) -> Result<Vec<IsSubjectForm>, ParseError> {
     let forms = split_top_level(input, ',')?
         .into_iter()
         .map(parse_is_subject_form)
@@ -191,7 +203,7 @@ fn parse_is_subject_form_list(input: &str) -> Result<Vec<IsSubjectForm>, ParseEr
 /// Function placeholder arguments must themselves be simple placeholders.  The
 /// balanced-prefix scanner prevents commas inside nested syntax from confusing
 /// the argument list splitter.
-fn parse_placeholder_form(input: &str) -> Result<PlaceholderForm, ParseError> {
+pub(super) fn parse_placeholder_form(input: &str) -> Result<PlaceholderForm, ParseError> {
     let input = input.trim();
     if let Some(open_index) = find_first_top_level_char(input, '(') {
         let (inside, rest) = consume_balanced_prefix(&input[open_index..], '(', ')')?;
@@ -224,7 +236,7 @@ fn parse_placeholder_form(input: &str) -> Result<PlaceholderForm, ParseError> {
 ///
 /// Double-underscore markers are reserved for form declarations like `f(x__)`,
 /// so placeholder syntax explicitly rejects names ending in `__`.
-fn parse_placeholder(input: &str) -> Result<Placeholder, ParseError> {
+pub(super) fn parse_placeholder(input: &str) -> Result<Placeholder, ParseError> {
     let input = input.trim();
     if !input.ends_with('_') || input.ends_with("__") {
         return Err(ParseError::custom(format!(
@@ -246,7 +258,7 @@ fn parse_placeholder(input: &str) -> Result<Placeholder, ParseError> {
 ///
 /// The split is top-level aware so future placeholder syntax with grouping does
 /// not accidentally create extra list entries.
-fn parse_placeholder_list(input: &str) -> Result<Vec<Placeholder>, ParseError> {
+pub(super) fn parse_placeholder_list(input: &str) -> Result<Vec<Placeholder>, ParseError> {
     let mut placeholders = Vec::new();
     for item in split_top_level(input, ',')? {
         placeholders.push(parse_placeholder(item)?);
@@ -258,4 +270,3 @@ fn parse_placeholder_list(input: &str) -> Result<Vec<Placeholder>, ParseError> {
 
     Ok(placeholders)
 }
-

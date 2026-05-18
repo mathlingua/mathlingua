@@ -1,3 +1,5 @@
+use super::*;
+
 /// Parses a standalone expression.
 ///
 /// This is the entry point used for theorem clauses and other places where the
@@ -210,4 +212,3 @@ pub fn parse_resource_header(input: &str) -> Result<ResourceHeader, ParseError> 
         parts,
     })
 }
-

@@ -1,5 +1,10 @@
+use super::*;
+
 /// Traverses command references that can occur inside a form or declaration.
-fn walk_form_or_declaration(form: &FormOrDeclaration, visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_form_or_declaration(
+    form: &FormOrDeclaration,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
     match &form.kind {
         FormOrDeclarationKind::Name(_) => {}
         FormOrDeclarationKind::FunctionDeclaration { .. } => {}
@@ -14,7 +19,7 @@ fn walk_form_or_declaration(form: &FormOrDeclaration, visit: &mut impl FnMut(&Si
 }
 
 /// Traverses nested forms inside a tuple form declaration.
-fn walk_tuple_form(
+pub(in crate::backend::semantic) fn walk_tuple_form(
     form: &crate::frontend::formulation::ast::TupleForm,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
@@ -29,10 +34,12 @@ fn walk_tuple_form(
 ///
 /// Placeholder forms currently contain only local placeholder names, so this is a
 /// structural no-op kept for symmetry with other walk helpers and future growth.
-fn walk_placeholder_form(form: &PlaceholderForm, _visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_placeholder_form(
+    form: &PlaceholderForm,
+    _visit: &mut impl FnMut(&SignatureShape),
+) {
     match &form.kind {
         PlaceholderFormKind::Placeholder(_) => {}
         PlaceholderFormKind::Function { .. } => {}
     }
 }
-

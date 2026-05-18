@@ -1,4 +1,6 @@
-fn split_test_chunks(text: &str) -> Vec<String> {
+use super::*;
+
+pub(super) fn split_test_chunks(text: &str) -> Vec<String> {
     text.replace("\r\n", "\n")
         .split("\n\n")
         .filter_map(|entry| {
@@ -8,7 +10,7 @@ fn split_test_chunks(text: &str) -> Vec<String> {
         .collect()
 }
 
-fn read_test_chunks(path: &Path) -> Vec<String> {
+pub(super) fn read_test_chunks(path: &Path) -> Vec<String> {
     let text = fs::read_to_string(path).unwrap_or_else(|error| {
         panic!(
             "expected formulation golden file {}: {error}",
@@ -18,7 +20,7 @@ fn read_test_chunks(path: &Path) -> Vec<String> {
     split_test_chunks(&text)
 }
 
-fn read_test_files(directory: &Path, extension: &str) -> Vec<PathBuf> {
+pub(super) fn read_test_files(directory: &Path, extension: &str) -> Vec<PathBuf> {
     let mut files = fs::read_dir(directory)
         .unwrap_or_else(|error| panic!("expected directory {}: {error}", directory.display()))
         .filter_map(|entry| entry.ok().map(|entry| entry.path()))
@@ -28,86 +30,87 @@ fn read_test_files(directory: &Path, extension: &str) -> Vec<PathBuf> {
     files
 }
 
-fn file_name(path: &Path) -> String {
+pub(super) fn file_name(path: &Path) -> String {
     path.file_name()
         .and_then(|value| value.to_str())
         .expect("expected valid utf-8 file name")
         .to_owned()
 }
 
-fn parse_expression_entry(input: &str) -> Result<(), String> {
+pub(super) fn parse_expression_entry(input: &str) -> Result<(), String> {
     parse_expression(input)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
 
-fn parse_form_or_declaration_entry(input: &str) -> Result<(), String> {
+pub(super) fn parse_form_or_declaration_entry(input: &str) -> Result<(), String> {
     parse_form_or_declaration(input)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
 
-fn parse_is_or_spec_entry(input: &str) -> Result<(), String> {
+pub(super) fn parse_is_or_spec_entry(input: &str) -> Result<(), String> {
     parse_is_or_spec(input)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
 
-fn parse_is_or_refined_statement_spec_entry(input: &str) -> Result<(), String> {
+pub(super) fn parse_is_or_refined_statement_spec_entry(input: &str) -> Result<(), String> {
     parse_is_or_refined_statement_spec(input)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
 
-fn parse_is_via_statement_entry(input: &str) -> Result<(), String> {
+pub(super) fn parse_is_via_statement_entry(input: &str) -> Result<(), String> {
     parse_is_via_statement(input)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
 
-fn parse_command_header_entry(input: &str) -> Result<(), String> {
+pub(super) fn parse_command_header_entry(input: &str) -> Result<(), String> {
     parse_command_header(input)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
 
-fn parse_writing_alias_entry(input: &str) -> Result<(), String> {
+pub(super) fn parse_writing_alias_entry(input: &str) -> Result<(), String> {
     parse_writing_alias(input)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
 
-fn parse_expression_alias_entry(input: &str) -> Result<(), String> {
+pub(super) fn parse_expression_alias_entry(input: &str) -> Result<(), String> {
     parse_expression_alias(input)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
 
-fn parse_spec_operator_alias_entry(input: &str) -> Result<(), String> {
+pub(super) fn parse_spec_operator_alias_entry(input: &str) -> Result<(), String> {
     parse_spec_operator_alias(input)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
 
-fn parse_label_header_entry(input: &str) -> Result<(), String> {
+pub(super) fn parse_label_header_entry(input: &str) -> Result<(), String> {
     parse_label_header(input)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
 
-fn parse_author_header_entry(input: &str) -> Result<(), String> {
+pub(super) fn parse_author_header_entry(input: &str) -> Result<(), String> {
     parse_author_header(input)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
 
-fn parse_resource_header_entry(input: &str) -> Result<(), String> {
+pub(super) fn parse_resource_header_entry(input: &str) -> Result<(), String> {
     parse_resource_header(input)
         .map(|_| ())
         .map_err(|error| error.to_string())
 }
 
-fn formulation_golden_parsers() -> BTreeMap<&'static str, fn(&str) -> Result<(), String>> {
+pub(super) fn formulation_golden_parsers() -> BTreeMap<&'static str, fn(&str) -> Result<(), String>>
+{
     BTreeMap::from([
         (
             "author_header.txt",
@@ -130,11 +133,11 @@ fn formulation_golden_parsers() -> BTreeMap<&'static str, fn(&str) -> Result<(),
     ])
 }
 
-fn formulation_golden_directory() -> &'static Path {
+pub(super) fn formulation_golden_directory() -> &'static Path {
     Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/goldens/formulation"))
 }
 
-fn run_formulation_golden(filename: &str) {
+pub(super) fn run_formulation_golden(filename: &str) {
     let directory = formulation_golden_directory();
     let parsers = formulation_golden_parsers();
     let path = directory.join(filename);
@@ -158,7 +161,7 @@ fn run_formulation_golden(filename: &str) {
     }
 }
 
-fn assert_simple_command_header(
+pub(super) fn assert_simple_command_header(
     input: &str,
     expected_chain_parts: &[&str],
     expected_head_args: usize,
@@ -187,7 +190,7 @@ fn assert_simple_command_header(
     }
 }
 
-fn assert_command_expression(
+pub(super) fn assert_command_expression(
     input: &str,
     expected_chain_parts: &[&str],
     expected_head_args: usize,
@@ -209,4 +212,3 @@ fn assert_command_expression(
         other => panic!("expected command expression, got {other:?}"),
     }
 }
-

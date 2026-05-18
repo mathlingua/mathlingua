@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn parses_mixed_structural_document() {
     let text = r#"
@@ -165,4 +167,3 @@ Subsubsection: "Examples"
         other => panic!("expected subsubsection group, got {other:?}"),
     }
 }
-

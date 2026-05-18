@@ -1,3 +1,5 @@
+use super::*;
+
 /// Root AST node for a mathematical expression formulation.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Expression {
@@ -191,4 +193,3 @@ pub enum SubsetCall {
         inner_target: String,
     },
 }
-

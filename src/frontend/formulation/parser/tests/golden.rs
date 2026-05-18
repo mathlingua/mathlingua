@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn formulation_golden_files_match_parsers() {
     let directory = formulation_golden_directory();
@@ -79,4 +81,3 @@ fn formulation_golden_spec_operator_alias() {
 fn formulation_golden_writing_alias() {
     run_formulation_golden("writing_alias.txt");
 }
-

@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn check_without_arguments_uses_collection_content_from_a_nested_directory() {
     let temp_dir = TestDir::new();
@@ -143,4 +145,3 @@ fn check_reports_proto_events_for_invalid_files() {
         Event::user_log("Found 2 issues.").with_origin("mlg_check")
     );
 }
-

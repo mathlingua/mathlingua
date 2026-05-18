@@ -15,9 +15,18 @@ use crate::frontend::structural::ast::*;
 /// Event origin used for all diagnostics produced by the semantic checker.
 const ORIGIN: &str = "semantic_check";
 
-include!("semantic/types.rs");
-include!("semantic/check.rs");
-include!("semantic/validation.rs");
-include!("semantic/shapes.rs");
-include!("semantic/locator.rs");
-include!("semantic/walk.rs");
+mod check;
+mod locator;
+mod shapes;
+mod types;
+mod validation;
+mod walk;
+
+pub use check::check_documents;
+pub use types::ParsedSourceFile;
+
+use locator::*;
+use shapes::*;
+use types::*;
+use validation::*;
+use walk::*;

@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn parses_definition_like_groups_with_nested_sections_and_items() {
     let document = parse_ok(
@@ -392,4 +394,3 @@ that:
         other => panic!("expected states group, got {other:?}"),
     }
 }
-

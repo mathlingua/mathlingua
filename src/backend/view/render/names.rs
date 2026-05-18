@@ -1,5 +1,7 @@
+use super::*;
+
 /// Extracts the primary subject name from a `Defines:`-compatible specification.
-fn primary_is_or_spec_name(spec: &IsOrSpec) -> Option<String> {
+pub(super) fn primary_is_or_spec_name(spec: &IsOrSpec) -> Option<String> {
     match spec {
         IsOrSpec::Is(statement) => primary_is_statement_name(statement),
         IsOrSpec::Spec(statement) => primary_spec_subject_name(&statement.subject),
@@ -7,7 +9,7 @@ fn primary_is_or_spec_name(spec: &IsOrSpec) -> Option<String> {
 }
 
 /// Extracts the primary subject name from a `Refines:`-compatible specification.
-fn primary_is_or_refined_spec_name(spec: &IsOrRefinedStatementSpec) -> Option<String> {
+pub(super) fn primary_is_or_refined_spec_name(spec: &IsOrRefinedStatementSpec) -> Option<String> {
     match spec {
         IsOrRefinedStatementSpec::Is(statement) => primary_is_statement_name(statement),
         IsOrRefinedStatementSpec::Spec(statement) => primary_spec_subject_name(&statement.subject),
@@ -15,12 +17,12 @@ fn primary_is_or_refined_spec_name(spec: &IsOrRefinedStatementSpec) -> Option<St
 }
 
 /// Extracts the primary subject name from an `is` statement.
-fn primary_is_statement_name(statement: &IsStatement) -> Option<String> {
+pub(super) fn primary_is_statement_name(statement: &IsStatement) -> Option<String> {
     primary_is_subject_name(&statement.subject)
 }
 
 /// Extracts the first usable name from an `is` subject.
-fn primary_is_subject_name(subject: &IsSubject) -> Option<String> {
+pub(super) fn primary_is_subject_name(subject: &IsSubject) -> Option<String> {
     match &subject.kind {
         IsSubjectKind::Forms(forms) => forms.iter().find_map(|form| match form {
             IsSubjectForm::Form(form) => primary_form_name(form),
@@ -31,7 +33,7 @@ fn primary_is_subject_name(subject: &IsSubject) -> Option<String> {
 }
 
 /// Extracts the primary name from a spec subject.
-fn primary_spec_subject_name(subject: &SpecSubject) -> Option<String> {
+pub(super) fn primary_spec_subject_name(subject: &SpecSubject) -> Option<String> {
     match &subject.kind {
         SpecSubjectKind::Form(form) => primary_form_name(form),
         SpecSubjectKind::Operator(_) => None,
@@ -42,7 +44,7 @@ fn primary_spec_subject_name(subject: &SpecSubject) -> Option<String> {
 ///
 /// The result is used as a substitution key for `written:` templates and group
 /// heading rendering.
-fn primary_form_name(form: &FormOrDeclaration) -> Option<String> {
+pub(super) fn primary_form_name(form: &FormOrDeclaration) -> Option<String> {
     match &form.kind {
         FormOrDeclarationKind::Name(name) => Some(name.clone()),
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
@@ -57,7 +59,7 @@ fn primary_form_name(form: &FormOrDeclaration) -> Option<String> {
 }
 
 /// Extracts the primary name from a placeholder form.
-fn primary_placeholder_form_name(
+pub(super) fn primary_placeholder_form_name(
     form: &crate::frontend::formulation::ast::PlaceholderForm,
 ) -> Option<String> {
     match &form.kind {
@@ -69,4 +71,3 @@ fn primary_placeholder_form_name(
         } => Some(placeholder.name.clone()),
     }
 }
-

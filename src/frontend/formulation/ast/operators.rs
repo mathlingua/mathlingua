@@ -1,3 +1,5 @@
+use super::*;
+
 /// Operator token with source span.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Operator {
@@ -86,4 +88,3 @@ pub enum NamedOperatorKind {
     /// Both left and right colon markers.
     BothColon,
 }
-

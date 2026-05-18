@@ -1,9 +1,14 @@
+use super::*;
+
 /// Parses an `alias:` nested group.
 ///
 /// Aliases may optionally include a label heading and a `written:` rendering
 /// section.  The alias body accepts either expression or specification-operator
 /// alias syntax.
-fn parse_alias_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AliasGroup> {
+pub(in crate::frontend::structural::parser) fn parse_alias_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<AliasGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("alias", &group.sections, tracker, &["alias", "written?"])?;
     Some(AliasGroup {
@@ -27,7 +32,10 @@ fn parse_alias_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Alias
 ///
 /// Symbols reuse alias-kind parsing because provided symbols can stand for
 /// expression aliases or specification-operator aliases.
-fn parse_symbol(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SymbolGroup> {
+pub(in crate::frontend::structural::parser) fn parse_symbol(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<SymbolGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("symbol", &group.sections, tracker, &["symbol", "written?"])?;
     Some(SymbolGroup {
@@ -51,7 +59,10 @@ fn parse_symbol(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SymbolGrou
 ///
 /// Connection groups capture prose and optional formulation constraints that
 /// describe how one documented concept connects to another.
-fn parse_connection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ConnectionGroup> {
+pub(in crate::frontend::structural::parser) fn parse_connection(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ConnectionGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "connection",
@@ -108,7 +119,10 @@ fn parse_connection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Connec
 ///
 /// The text entries are stored as math-mode rendering templates and validated
 /// only for quoted-text shape at this structural layer.
-fn parse_written(group: &ProtoGroup, tracker: &mut EventLog) -> Option<WrittenGroup> {
+pub(in crate::frontend::structural::parser) fn parse_written(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<WrittenGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("written", &group.sections, tracker, &["written"])?;
     Some(WrittenGroup {
@@ -123,7 +137,10 @@ fn parse_written(group: &ProtoGroup, tracker: &mut EventLog) -> Option<WrittenGr
 ///
 /// A `called:` group may bundle an optional `written:` section, which lets a
 /// definition provide both prose and math-mode renderings in one nested group.
-fn parse_called(group: &ProtoGroup, tracker: &mut EventLog) -> Option<CalledGroup> {
+pub(in crate::frontend::structural::parser) fn parse_called(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<CalledGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("called", &group.sections, tracker, &["called", "written?"])?;
     Some(CalledGroup {
@@ -142,7 +159,10 @@ fn parse_called(group: &ProtoGroup, tracker: &mut EventLog) -> Option<CalledGrou
 ///
 /// The `writing:` section defines the alias and the `as:` section stores the
 /// quoted rendering text associated with that alias.
-fn parse_writing(group: &ProtoGroup, tracker: &mut EventLog) -> Option<WritingGroup> {
+pub(in crate::frontend::structural::parser) fn parse_writing(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<WritingGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("writing", &group.sections, tracker, &["writing", "as"])?;
     Some(WritingGroup {
@@ -162,7 +182,10 @@ fn parse_writing(group: &ProtoGroup, tracker: &mut EventLog) -> Option<WritingGr
 }
 
 /// Parses an `overview:` documentation group.
-fn parse_overview(group: &ProtoGroup, tracker: &mut EventLog) -> Option<OverviewGroup> {
+pub(in crate::frontend::structural::parser) fn parse_overview(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<OverviewGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("overview", &group.sections, tracker, &["overview"])?;
     Some(OverviewGroup {
@@ -181,7 +204,10 @@ fn parse_overview(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Overview
 ///
 /// Related groups require at least one quoted text entry so empty related
 /// sections are reported as authoring mistakes.
-fn parse_related(group: &ProtoGroup, tracker: &mut EventLog) -> Option<RelatedGroup> {
+pub(in crate::frontend::structural::parser) fn parse_related(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<RelatedGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("related", &group.sections, tracker, &["related"])?;
     Some(RelatedGroup {
@@ -200,7 +226,10 @@ fn parse_related(group: &ProtoGroup, tracker: &mut EventLog) -> Option<RelatedGr
 ///
 /// Discoverer text is optional/open because the section may be used as a marker
 /// before richer metadata is available.
-fn parse_discoverer(group: &ProtoGroup, tracker: &mut EventLog) -> Option<DiscovererGroup> {
+pub(in crate::frontend::structural::parser) fn parse_discoverer(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<DiscovererGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("discoverer", &group.sections, tracker, &["discoverer"])?;
     Some(DiscovererGroup {
@@ -210,4 +239,3 @@ fn parse_discoverer(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Discov
         },
     })
 }
-

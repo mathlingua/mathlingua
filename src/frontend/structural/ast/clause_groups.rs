@@ -1,3 +1,5 @@
+use super::*;
+
 /// Clause group representing logical negation.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NotGroup {
@@ -118,4 +120,3 @@ pub struct GivenGroup {
     /// Required consequence clauses.
     pub then: ThenSection,
 }
-

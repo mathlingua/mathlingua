@@ -1,8 +1,13 @@
+use super::*;
+
 /// Traverses an expression tree for command references.
 ///
 /// Command-like expressions are visited as signature shapes, and their argument
 /// expressions are traversed recursively so nested references are also checked.
-fn walk_expression(expression: &Expression, visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_expression(
+    expression: &Expression,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
     match &expression.kind {
         ExpressionKind::Name(_) => {}
         ExpressionKind::FunctionCall { arguments, .. } => {
@@ -70,7 +75,7 @@ fn walk_expression(expression: &Expression, visit: &mut impl FnMut(&SignatureSha
 }
 
 /// Traverses all expression arguments supplied to a normal command expression.
-fn walk_command_expression_arguments(
+pub(in crate::backend::semantic) fn walk_command_expression_arguments(
     command: &CommandExpression,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
@@ -94,7 +99,10 @@ fn walk_command_expression_arguments(
 }
 
 /// Traverses all expression arguments supplied to an infix command expression.
-fn walk_infix_command_arguments(command: &InfixCommand, visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_infix_command_arguments(
+    command: &InfixCommand,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
     for args in &command.head_args {
         for expression in &args.expressions {
             walk_expression(expression, visit);
@@ -113,7 +121,7 @@ fn walk_infix_command_arguments(command: &InfixCommand, visit: &mut impl FnMut(&
 ///
 /// This includes arguments attached to refinement parts, base command arguments,
 /// tail arguments, and optional parenthesized invocation arguments.
-fn walk_refined_command_expression_arguments(
+pub(in crate::backend::semantic) fn walk_refined_command_expression_arguments(
     command: &RefinedCommandExpression,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
@@ -144,4 +152,3 @@ fn walk_refined_command_expression_arguments(
         }
     }
 }
-

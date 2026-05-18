@@ -1,8 +1,10 @@
+use super::*;
+
 /// Renders a parsed expression as inline LaTeX.
 ///
 /// Command expressions consult the render registry; ordinary expression forms
 /// are rendered structurally with conservative escaping.
-fn render_expression(expression: &Expression, registry: &RenderRegistry) -> String {
+pub(super) fn render_expression(expression: &Expression, registry: &RenderRegistry) -> String {
     match &expression.kind {
         ExpressionKind::Name(name) => escape_math_identifier(name),
         ExpressionKind::FunctionCall { name, arguments } => {
@@ -94,7 +96,7 @@ fn render_expression(expression: &Expression, registry: &RenderRegistry) -> Stri
 }
 
 /// Renders a set-builder expression as LaTeX with scalable braces.
-fn render_set_expression(set: &SetExpression, registry: &RenderRegistry) -> String {
+pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegistry) -> String {
     let target = render_placeholder_form(&set.target);
     let spec = render_spec_statement(&set.spec, registry);
 
@@ -108,7 +110,10 @@ fn render_set_expression(set: &SetExpression, registry: &RenderRegistry) -> Stri
 }
 
 /// Renders an inline specification statement such as `x "in" X`.
-fn render_spec_statement(statement: &SpecStatement, registry: &RenderRegistry) -> String {
+pub(super) fn render_spec_statement(
+    statement: &SpecStatement,
+    registry: &RenderRegistry,
+) -> String {
     format!(
         "{} {} {}",
         render_expression(&statement.subject, registry),
@@ -122,7 +127,10 @@ fn render_spec_statement(statement: &SpecStatement, registry: &RenderRegistry) -
 /// This fallback supports inputs that are set specs in shape but are not yet
 /// accepted by the full formulation parser.  It respects top-level delimiters so
 /// nested tuples, groups, and quoted operators do not split the set body.
-fn render_simple_set_spec_latex(text: &str, registry: &RenderRegistry) -> Option<String> {
+pub(super) fn render_simple_set_spec_latex(
+    text: &str,
+    registry: &RenderRegistry,
+) -> Option<String> {
     let trimmed = text.trim();
     let inner = trimmed.strip_prefix('{')?.strip_suffix('}')?;
     let (head, predicate) = match split_once_top_level(inner, '|') {
@@ -149,13 +157,13 @@ fn render_simple_set_spec_latex(text: &str, registry: &RenderRegistry) -> Option
 }
 
 /// Renders a small fragment of math text or escapes it as raw math if parsing fails.
-fn render_latex_fragment(text: &str, registry: &RenderRegistry) -> String {
+pub(super) fn render_latex_fragment(text: &str, registry: &RenderRegistry) -> String {
     render_parsed_formulation_latex(text, registry)
         .unwrap_or_else(|| escape_latex_math(text.trim()))
 }
 
 /// Splits a string at the first delimiter that is not nested or quoted.
-fn split_once_top_level(input: &str, delimiter: char) -> Option<(&str, &str)> {
+pub(super) fn split_once_top_level(input: &str, delimiter: char) -> Option<(&str, &str)> {
     let mut paren_depth = 0usize;
     let mut brace_depth = 0usize;
     let mut bracket_depth = 0usize;
@@ -185,4 +193,3 @@ fn split_once_top_level(input: &str, delimiter: char) -> Option<(&str, &str)> {
 
     None
 }
-

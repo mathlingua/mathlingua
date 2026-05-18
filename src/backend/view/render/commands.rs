@@ -1,8 +1,13 @@
+use super::*;
+
 /// Renders a standalone normal command expression.
 ///
 /// Written templates are preferred for standalone command expressions; otherwise
 /// the plain-text `called:` template is rendered in text mode.
-fn render_command_expression(command: &CommandExpression, registry: &RenderRegistry) -> String {
+pub(super) fn render_command_expression(
+    command: &CommandExpression,
+    registry: &RenderRegistry,
+) -> String {
     let signature = command_expression_signature(command);
     let Some(render) = registry.commands.get(&signature) else {
         return render_command_like(&command.chain, registry);
@@ -20,7 +25,7 @@ fn render_command_expression(command: &CommandExpression, registry: &RenderRegis
 /// Predicate rendering deliberately falls back to `called:` when a `written:`
 /// template contains the subject placeholder, because predicate syntax supplies
 /// the subject separately.
-fn render_predicate_command_expression(
+pub(super) fn render_predicate_command_expression(
     command: &CommandExpression,
     registry: &RenderRegistry,
 ) -> String {
@@ -44,7 +49,7 @@ fn render_predicate_command_expression(
 }
 
 /// Renders the called-text form of a refined command expression.
-fn render_refined_command_called(
+pub(super) fn render_refined_command_called(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
 ) -> String {
@@ -54,15 +59,15 @@ fn render_refined_command_called(
 
 /// Unrendered called-template text paired with all substitutions needed for it.
 #[derive(Clone, Debug)]
-struct CalledTemplate {
+pub(super) struct CalledTemplate {
     /// Plain-LaTeX-mode template, usually assembled from `called:` text.
-    template: String,
+    pub(super) template: String,
     /// Placeholder substitutions rendered as math-mode LaTeX.
-    substitutions: HashMap<String, String>,
+    pub(super) substitutions: HashMap<String, String>,
 }
 
 /// Extracts a called-template representation from any type expression.
-fn type_expression_called_template(
+pub(super) fn type_expression_called_template(
     ty: &TypeExpression,
     registry: &RenderRegistry,
 ) -> Option<CalledTemplate> {
@@ -75,7 +80,7 @@ fn type_expression_called_template(
 }
 
 /// Extracts a called-template representation from a normal command expression.
-fn command_called_template(
+pub(super) fn command_called_template(
     command: &CommandExpression,
     registry: &RenderRegistry,
 ) -> Option<CalledTemplate> {
@@ -93,7 +98,7 @@ fn command_called_template(
 /// The resulting template concatenates refinement labels with the base command's
 /// called text and gathers substitutions from both the refinement parts and the
 /// base command.
-fn refined_command_called_template(
+pub(super) fn refined_command_called_template(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
 ) -> CalledTemplate {
@@ -143,7 +148,7 @@ fn refined_command_called_template(
 ///
 /// `Refines:` can also parse as a spec statement; those do not identify a type
 /// command and therefore cannot enrich a card heading.
-fn refines_target_type(spec: &IsOrRefinedStatementSpec) -> Option<&TypeExpression> {
+pub(super) fn refines_target_type(spec: &IsOrRefinedStatementSpec) -> Option<&TypeExpression> {
     match spec {
         IsOrRefinedStatementSpec::Is(statement) => Some(&statement.ty),
         IsOrRefinedStatementSpec::Spec(_) => None,
@@ -154,7 +159,7 @@ fn refines_target_type(spec: &IsOrRefinedStatementSpec) -> Option<&TypeExpressio
 ///
 /// The optional subject is inserted under the defining subject variable so
 /// templates like `f? : A? \to B?` can render complete statements.
-fn command_substitutions(
+pub(super) fn command_substitutions(
     command: &CommandExpression,
     render: &CommandRender,
     subject_latex: Option<String>,
@@ -178,7 +183,7 @@ fn command_substitutions(
 }
 
 /// Builds a substitution map from explicit parameter names and rendered values.
-fn command_substitutions_for_names(
+pub(super) fn command_substitutions_for_names(
     names: &[String],
     values: Vec<String>,
 ) -> HashMap<String, String> {
@@ -189,7 +194,7 @@ fn command_substitutions_for_names(
 ///
 /// Heading substitutions are used for group card titles where the source heading
 /// itself provides concrete parameter names such as `{A}` and `{B}`.
-fn command_header_substitutions(
+pub(super) fn command_header_substitutions(
     header: &CommandHeader,
     registry: &RenderRegistry,
 ) -> HashMap<String, String> {
@@ -205,7 +210,7 @@ fn command_header_substitutions(
 }
 
 /// Collects all forms that appear in any kind of command header.
-fn command_header_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
+pub(super) fn command_header_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
     match header {
         CommandHeader::Command(header) => simple_command_header_forms(header),
         CommandHeader::Infix(header) => infix_command_header_forms(header),
@@ -214,7 +219,7 @@ fn command_header_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
 }
 
 /// Collects forms from a normal prefix command header.
-fn simple_command_header_forms(header: &CommandHeaderNode) -> Vec<&FormOrDeclaration> {
+pub(super) fn simple_command_header_forms(header: &CommandHeaderNode) -> Vec<&FormOrDeclaration> {
     let mut forms = Vec::new();
     forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
     forms.extend(
@@ -229,7 +234,7 @@ fn simple_command_header_forms(header: &CommandHeaderNode) -> Vec<&FormOrDeclara
 }
 
 /// Collects forms from an infix command header.
-fn infix_command_header_forms(header: &InfixCommandHeader) -> Vec<&FormOrDeclaration> {
+pub(super) fn infix_command_header_forms(header: &InfixCommandHeader) -> Vec<&FormOrDeclaration> {
     let mut forms = Vec::new();
     forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
     forms.extend(
@@ -246,7 +251,9 @@ fn infix_command_header_forms(header: &InfixCommandHeader) -> Vec<&FormOrDeclara
 ///
 /// Refined headers can place arguments on the base command, the base tail, and
 /// refinement parts, so all of those locations are included.
-fn refined_command_header_forms(header: &RefinedCommandHeader) -> Vec<&FormOrDeclaration> {
+pub(super) fn refined_command_header_forms(
+    header: &RefinedCommandHeader,
+) -> Vec<&FormOrDeclaration> {
     let mut forms = Vec::new();
     forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
     forms.extend(
@@ -269,7 +276,7 @@ fn refined_command_header_forms(header: &RefinedCommandHeader) -> Vec<&FormOrDec
 }
 
 /// Renders argument values that belong to the base command in a refined expression.
-fn refined_command_base_argument_values(
+pub(super) fn refined_command_base_argument_values(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
 ) -> Vec<String> {
@@ -298,7 +305,7 @@ fn refined_command_base_argument_values(
 ///
 /// A refinement part can refer both to the base command arguments and to any
 /// arguments attached directly to that part.
-fn refined_command_part_argument_values(
+pub(super) fn refined_command_part_argument_values(
     command: &RefinedCommandExpression,
     part: &RefinedExpressionPart,
     registry: &RenderRegistry,
@@ -310,7 +317,10 @@ fn refined_command_part_argument_values(
 }
 
 /// Renders all argument values supplied to a normal command expression.
-fn command_argument_values(command: &CommandExpression, registry: &RenderRegistry) -> Vec<String> {
+pub(super) fn command_argument_values(
+    command: &CommandExpression,
+    registry: &RenderRegistry,
+) -> Vec<String> {
     command
         .head_args
         .iter()
@@ -333,7 +343,7 @@ fn command_argument_values(command: &CommandExpression, registry: &RenderRegistr
 }
 
 /// Renders all argument values attached to command tail segments.
-fn expression_tail_argument_values(
+pub(super) fn expression_tail_argument_values(
     tail: &[CommandExpressionTailPart],
     registry: &RenderRegistry,
 ) -> Vec<String> {
@@ -343,4 +353,3 @@ fn expression_tail_argument_values(
         .map(|expression| render_expression(expression, registry))
         .collect()
 }
-

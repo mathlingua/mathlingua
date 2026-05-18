@@ -1,7 +1,12 @@
+use super::*;
+
 /// Parses an `Axiom:` group using the shared theorem-like parser.
 ///
 /// The returned shared tuple is adapted to the axiom-specific section wrapper.
-fn parse_axiom(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AxiomGroup> {
+pub(in crate::frontend::structural::parser) fn parse_axiom(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<AxiomGroup> {
     parse_argument_theorem_like(group, tracker, "Axiom").map(
         |(
             heading,
@@ -34,7 +39,10 @@ fn parse_axiom(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AxiomGroup>
 }
 
 /// Parses a `Theorem:` group using the shared theorem-like parser.
-fn parse_theorem(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TheoremGroup> {
+pub(in crate::frontend::structural::parser) fn parse_theorem(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<TheoremGroup> {
     parse_argument_theorem_like(group, tracker, "Theorem").map(
         |(
             heading,
@@ -67,7 +75,10 @@ fn parse_theorem(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TheoremGr
 }
 
 /// Parses a `Lemma:` group using the shared theorem-like parser.
-fn parse_lemma(group: &ProtoGroup, tracker: &mut EventLog) -> Option<LemmaGroup> {
+pub(in crate::frontend::structural::parser) fn parse_lemma(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<LemmaGroup> {
     parse_argument_theorem_like(group, tracker, "Lemma").map(
         |(
             heading,
@@ -100,7 +111,10 @@ fn parse_lemma(group: &ProtoGroup, tracker: &mut EventLog) -> Option<LemmaGroup>
 }
 
 /// Parses a `Conjecture:` group using the shared theorem-like parser.
-fn parse_conjecture(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ConjectureGroup> {
+pub(in crate::frontend::structural::parser) fn parse_conjecture(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ConjectureGroup> {
     parse_argument_theorem_like(group, tracker, "Conjecture").map(
         |(
             heading,
@@ -140,7 +154,7 @@ fn parse_conjecture(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Conjec
 /// and the same auxiliary documentation/reference sections.  Returning a tuple
 /// keeps each concrete wrapper parser small while preserving exact section
 /// types at the call site.
-fn parse_argument_theorem_like(
+pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
     group: &ProtoGroup,
     tracker: &mut EventLog,
     name: &str,
@@ -227,7 +241,10 @@ fn parse_argument_theorem_like(
 ///
 /// Corollaries mostly share theorem-like structure but additionally require an
 /// `of:` section that records what theorem or statement they follow from.
-fn parse_corollary(group: &ProtoGroup, tracker: &mut EventLog) -> Option<CorollaryGroup> {
+pub(in crate::frontend::structural::parser) fn parse_corollary(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<CorollaryGroup> {
     let heading = parse_optional_command_heading(group, tracker)?;
     let sections = identify_sections(
         "Corollary",
@@ -298,4 +315,3 @@ fn parse_corollary(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Corolla
         }),
     })
 }
-

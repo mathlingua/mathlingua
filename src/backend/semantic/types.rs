@@ -1,3 +1,5 @@
+use super::*;
+
 /// A source file after the frontend has parsed it into a structural document.
 ///
 /// Backend passes operate on this type instead of repeatedly reading or
@@ -22,13 +24,13 @@ pub struct ParsedSourceFile {
 /// `fallback_shapes` records secondary shapes that a composed refined command
 /// may legally refer to.
 #[derive(Clone, Debug, PartialEq, Eq)]
-struct SignatureShape {
+pub(super) struct SignatureShape {
     /// Canonical signature text, such as `\function:on:to`.
-    signature: String,
+    pub(super) signature: String,
     /// Ordered argument groups that must be supplied for this signature.
-    arg_groups: Vec<ArgGroupShape>,
+    pub(super) arg_groups: Vec<ArgGroupShape>,
     /// Alternate shapes to validate when a combined refined command is absent.
-    fallback_shapes: Vec<SignatureShape>,
+    pub(super) fallback_shapes: Vec<SignatureShape>,
 }
 
 /// Delimiter used by one command argument group.
@@ -37,7 +39,7 @@ struct SignatureShape {
 /// groups are optional for use sites because they represent invocation of an
 /// already-described callable object.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum ArgDelimiter {
+pub(super) enum ArgDelimiter {
     /// A required `{...}` argument group.
     Curly,
     /// An optional-at-use-site `(...)` argument group.
@@ -49,11 +51,11 @@ enum ArgDelimiter {
 /// Only the delimiter and arity are tracked here.  The semantic checker does not
 /// yet type-check the individual argument expressions.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct ArgGroupShape {
+pub(super) struct ArgGroupShape {
     /// Whether the group was written with `{}` or `()`.
-    delimiter: ArgDelimiter,
+    pub(super) delimiter: ArgDelimiter,
     /// Number of comma-separated arguments inside the group.
-    count: usize,
+    pub(super) count: usize,
 }
 
 /// Registered definition metadata for one unique command signature.
@@ -61,15 +63,15 @@ struct ArgGroupShape {
 /// This is the source of truth used to detect duplicate signatures and to check
 /// references for undefined commands or argument-shape mismatches.
 #[derive(Clone, Debug)]
-struct DefinitionEntry {
+pub(super) struct DefinitionEntry {
     /// Structural kind that introduced the signature.
-    kind: DefinitionKind,
+    pub(super) kind: DefinitionKind,
     /// Canonical signature and expected argument shape.
-    shape: SignatureShape,
+    pub(super) shape: SignatureShape,
     /// Source path where the definition was found.
-    path: PathBuf,
+    pub(super) path: PathBuf,
     /// Best-effort source location of the command in the original file.
-    position: Option<SourcePosition>,
+    pub(super) position: Option<SourcePosition>,
 }
 
 /// Top-level structural groups that can introduce a command signature.
@@ -77,7 +79,7 @@ struct DefinitionEntry {
 /// The uniqueness rule is global across these kinds: the same signature cannot
 /// be reused merely because it appears in a different group type.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum DefinitionKind {
+pub(super) enum DefinitionKind {
     /// A `Describes` group.
     Describes,
     /// A `Defines` group.
@@ -100,7 +102,7 @@ enum DefinitionKind {
 
 impl DefinitionKind {
     /// Returns the user-facing label used in diagnostics for this definition kind.
-    fn label(self) -> &'static str {
+    pub(super) fn label(self) -> &'static str {
         match self {
             Self::Describes => "Describes",
             Self::Defines => "Defines",
@@ -121,8 +123,7 @@ impl DefinitionKind {
 /// currently supported, one entry per signature is sufficient and duplicates can
 /// be reported immediately during collection.
 #[derive(Default)]
-struct SignatureRegistry {
+pub(super) struct SignatureRegistry {
     /// Map from canonical command signature to the definition that owns it.
-    definitions: HashMap<String, DefinitionEntry>,
+    pub(super) definitions: HashMap<String, DefinitionEntry>,
 }
-

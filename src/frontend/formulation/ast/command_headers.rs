@@ -1,3 +1,5 @@
+use super::*;
+
 /// Curly argument group supplied in a command header.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CurlyHeadingArgs {
@@ -134,4 +136,3 @@ pub struct RefinedCommandExpression {
     /// Parenthesized invocation groups attached to the base command.
     pub paren_args: Vec<ParenExpressionArgs>,
 }
-

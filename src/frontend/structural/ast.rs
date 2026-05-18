@@ -4,10 +4,18 @@ use crate::frontend::formulation::ast::{
     SpecOperatorAlias, WritingAlias,
 };
 
-include!("ast/repeated.rs");
-include!("ast/sections.rs");
-include!("ast/items.rs");
-include!("ast/definition_groups.rs");
-include!("ast/support_groups.rs");
-include!("ast/metadata_resource_groups.rs");
-include!("ast/clause_groups.rs");
+mod clause_groups;
+mod definition_groups;
+mod items;
+mod metadata_resource_groups;
+mod repeated;
+mod sections;
+mod support_groups;
+
+pub use clause_groups::*;
+pub use definition_groups::*;
+pub use items::*;
+pub use metadata_resource_groups::*;
+pub use repeated::*;
+pub use sections::*;
+pub use support_groups::*;

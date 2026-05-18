@@ -1,8 +1,10 @@
+use super::*;
+
 /// Parses a `not:` clause group.
 ///
 /// The nested `not:` section must contain exactly one clause, which is boxed to
 /// avoid making the recursive [`Clause`] enum infinitely sized.
-fn parse_not_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<NotGroup> {
+pub(super) fn parse_not_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<NotGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("not", &group.sections, tracker, &["not"])?;
     Some(NotGroup {
@@ -18,7 +20,10 @@ fn parse_not_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<NotGro
 }
 
 /// Parses an `allOf:` clause group.
-fn parse_all_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AllOfGroup> {
+pub(super) fn parse_all_of_clause(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<AllOfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("allOf", &group.sections, tracker, &["allOf"])?;
     Some(AllOfGroup {
@@ -30,7 +35,10 @@ fn parse_all_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<All
 }
 
 /// Parses an `anyOf:` clause group.
-fn parse_any_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AnyOfGroup> {
+pub(super) fn parse_any_of_clause(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<AnyOfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("anyOf", &group.sections, tracker, &["anyOf"])?;
     Some(AnyOfGroup {
@@ -42,7 +50,10 @@ fn parse_any_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Any
 }
 
 /// Parses a `oneOf:` clause group.
-fn parse_one_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<OneOfGroup> {
+pub(super) fn parse_one_of_clause(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<OneOfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("oneOf", &group.sections, tracker, &["oneOf"])?;
     Some(OneOfGroup {
@@ -57,7 +68,10 @@ fn parse_one_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<One
 ///
 /// The bound value is parsed as `is`/spec syntax and the required `suchThat:`
 /// section supplies predicate clauses.
-fn parse_exists_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ExistsGroup> {
+pub(super) fn parse_exists_clause(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ExistsGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("exists", &group.sections, tracker, &["exists", "suchThat"])?;
     Some(ExistsGroup {
@@ -81,7 +95,7 @@ fn parse_exists_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Exi
 }
 
 /// Parses an `existsUnique:` clause group.
-fn parse_exists_unique_clause(
+pub(super) fn parse_exists_unique_clause(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ExistsUniqueGroup> {
@@ -116,7 +130,10 @@ fn parse_exists_unique_clause(
 ///
 /// The optional `where:` section acts as a guard and the required `then:`
 /// section carries the quantified conclusion.
-fn parse_for_all_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ForAllGroup> {
+pub(super) fn parse_for_all_clause(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ForAllGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "forAll",
@@ -145,7 +162,7 @@ fn parse_for_all_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Fo
 }
 
 /// Parses an `if:` clause group.
-fn parse_if_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IfGroup> {
+pub(super) fn parse_if_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("if", &group.sections, tracker, &["if", "then"])?;
     Some(IfGroup {
@@ -160,7 +177,7 @@ fn parse_if_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IfGroup
 }
 
 /// Parses an `iff:` clause group.
-fn parse_iff_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IffGroup> {
+pub(super) fn parse_iff_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IffGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("iff", &group.sections, tracker, &["iff", "then"])?;
     Some(IffGroup {
@@ -178,7 +195,10 @@ fn parse_iff_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IffGro
 ///
 /// The leading section may hold descriptive text while `if:` and `then:` are
 /// required and `else:` is optional.
-fn parse_piecewise_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<PiecewiseGroup> {
+pub(super) fn parse_piecewise_clause(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<PiecewiseGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "piecewise",
@@ -208,7 +228,7 @@ fn parse_piecewise_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<
 ///
 /// This group is used inside clause lists to introduce a local assumption,
 /// optional context, and required consequence.
-fn parse_given_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<GivenGroup> {
+pub(super) fn parse_given_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<GivenGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "given",
@@ -237,12 +257,18 @@ fn parse_given_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Give
 }
 
 /// Adapts an `alias:` group into an [`AliasItem`].
-fn parse_alias_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AliasItem> {
+pub(super) fn parse_alias_item_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<AliasItem> {
     parse_alias_group(group, tracker).map(AliasItem::Alias)
 }
 
 /// Dispatches nested `Provides:` groups to symbol or connection parsers.
-fn parse_provides_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ProvidesItem> {
+pub(super) fn parse_provides_item_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ProvidesItem> {
     match first_section_label(group)? {
         "symbol" => parse_symbol(group, tracker).map(ProvidesItem::Symbol),
         "connection" => parse_connection(group, tracker).map(ProvidesItem::Connection),
@@ -261,7 +287,7 @@ fn parse_provides_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Opti
 ///
 /// Unknown documentation group labels are reported and skipped so other
 /// documentation entries in the same section can still be used.
-fn parse_documented_item_group(
+pub(super) fn parse_documented_item_group(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<DocumentedItem> {
@@ -284,7 +310,10 @@ fn parse_documented_item_group(
 }
 
 /// Dispatches nested `Justified:` groups to justification item parsers.
-fn parse_justified_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<JustifiedItem> {
+pub(super) fn parse_justified_item_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<JustifiedItem> {
     match first_section_label(group)? {
         "label" => parse_label_note(group, tracker).map(JustifiedItem::Label),
         "by" => parse_by_note(group, tracker).map(JustifiedItem::By),
@@ -300,7 +329,10 @@ fn parse_justified_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Opt
 }
 
 /// Dispatches nested `Metadata:` groups to metadata item parsers.
-fn parse_metadata_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<MetadataItem> {
+pub(super) fn parse_metadata_item_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<MetadataItem> {
     match first_section_label(group)? {
         "id" => parse_id(group, tracker).map(MetadataItem::Id),
         "version" => parse_version(group, tracker).map(MetadataItem::Version),
@@ -319,7 +351,10 @@ fn parse_metadata_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Opti
 ///
 /// Positive/negative groups are distinguished by the presence of an `int:`
 /// section; otherwise they are parsed as decimal specification items.
-fn parse_specify_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SpecifyItem> {
+pub(super) fn parse_specify_item_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<SpecifyItem> {
     match first_section_label(group)? {
         "positive" => {
             if group.sections.iter().any(|section| section.label == "int") {
@@ -348,7 +383,10 @@ fn parse_specify_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Optio
 }
 
 /// Dispatches nested `Resource:` groups to resource field parsers.
-fn parse_resource_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceItem> {
+pub(super) fn parse_resource_item_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ResourceItem> {
     match first_section_label(group)? {
         "title" => parse_resource_title(group, tracker).map(ResourceItem::Title),
         "author" => parse_resource_author(group, tracker).map(ResourceItem::Author),
@@ -380,7 +418,7 @@ fn parse_resource_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Opti
 ///
 /// Inline formulation clauses are handled by [`parse_optional_clauses`]; this
 /// function only handles group-shaped clauses.
-fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Clause> {
+pub(super) fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Clause> {
     match first_section_label(group)? {
         "not" => parse_not_clause(group, tracker).map(Clause::Not),
         "allOf" => parse_all_of_clause(group, tracker).map(Clause::AllOf),
@@ -403,4 +441,3 @@ fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Clau
         }
     }
 }
-

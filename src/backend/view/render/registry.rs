@@ -1,12 +1,14 @@
+use super::*;
+
 /// Lookup table of documented rendering metadata by canonical command signature.
 ///
 /// The registry is built once from all parsed files before individual
 /// formulations are rendered.  Rendering can then resolve a command use such as
 /// `\function:on{A}:to{B}` to its `called:` and optional `written:` templates.
 #[derive(Clone, Debug, Default)]
-pub(super) struct RenderRegistry {
+pub(in crate::backend::view) struct RenderRegistry {
     /// Map from canonical command signature to the rendering data for that command.
-    commands: HashMap<String, CommandRender>,
+    pub(super) commands: HashMap<String, CommandRender>,
 }
 
 /// Rendering metadata extracted from a definition-like group.
@@ -15,15 +17,15 @@ pub(super) struct RenderRegistry {
 /// renderable commands.  `written` is optional and is used only when a command
 /// has a math-mode representation.
 #[derive(Clone, Debug)]
-struct CommandRender {
+pub(super) struct CommandRender {
     /// Primary subject variable from the defining form, such as `f` in `f(x__)`.
-    subject_variable: Option<String>,
+    pub(super) subject_variable: Option<String>,
     /// Parameter names supplied in the command header, in substitution order.
-    parameters: Vec<String>,
+    pub(super) parameters: Vec<String>,
     /// Joined plain-LaTeX-mode `called:` template.
-    called: String,
+    pub(super) called: String,
     /// Joined math-LaTeX-mode `written:` template, if provided.
-    written: Option<String>,
+    pub(super) written: Option<String>,
 }
 
 /// Builds the render registry from all parsed source files.
@@ -32,7 +34,9 @@ struct CommandRender {
 /// metadata contribute entries.  Later entries with the same signature replace
 /// earlier ones here; duplicate detection is handled by the semantic checker
 /// before view rendering proceeds.
-pub(super) fn build_render_registry(files: &[ParsedSourceFile]) -> RenderRegistry {
+pub(in crate::backend::view) fn build_render_registry(
+    files: &[ParsedSourceFile],
+) -> RenderRegistry {
     let mut registry = RenderRegistry::default();
 
     for file in files {
@@ -51,7 +55,10 @@ pub(super) fn build_render_registry(files: &[ParsedSourceFile]) -> RenderRegistr
 ///
 /// The renderer first tries full formulation parsers and then falls back to a
 /// small set-spec parser used for legacy/simple set-builder text.
-pub(super) fn render_formulation_latex(text: &str, registry: &RenderRegistry) -> Option<String> {
+pub(in crate::backend::view) fn render_formulation_latex(
+    text: &str,
+    registry: &RenderRegistry,
+) -> Option<String> {
     render_parsed_formulation_latex(text, registry)
         .or_else(|| render_simple_set_spec_latex(text, registry))
 }
@@ -62,7 +69,7 @@ pub(super) fn render_formulation_latex(text: &str, registry: &RenderRegistry) ->
 /// additionally combine the refinement's `called:` template with the called text
 /// of the command being refined, so a card can display titles like
 /// `continuous function on A to B`.
-pub(super) fn render_group_heading_latex(
+pub(in crate::backend::view) fn render_group_heading_latex(
     kind: &str,
     heading: Option<&str>,
     primary_inline_argument: Option<&str>,
@@ -93,7 +100,7 @@ pub(super) fn render_group_heading_latex(
 /// The `Refines:` section tells us what command is being refined.  The heading
 /// combines the refinement label, such as `continuous`, with the target command's
 /// called template, such as `function on A to B`.
-fn render_refines_group_heading_latex(
+pub(super) fn render_refines_group_heading_latex(
     header: &CommandHeader,
     refines_argument: Option<&str>,
     refinement_render: &CommandRender,
@@ -110,7 +117,10 @@ fn render_refines_group_heading_latex(
 }
 
 /// Attempts all supported parsers for a formulation and renders the first match.
-fn render_parsed_formulation_latex(text: &str, registry: &RenderRegistry) -> Option<String> {
+pub(super) fn render_parsed_formulation_latex(
+    text: &str,
+    registry: &RenderRegistry,
+) -> Option<String> {
     if let Ok(expression) = parse_expression(text) {
         return Some(render_expression(&expression, registry));
     }
@@ -125,7 +135,7 @@ fn render_parsed_formulation_latex(text: &str, registry: &RenderRegistry) -> Opt
 }
 
 /// Registry insertion record for one renderable command definition.
-struct RenderEntry {
+pub(super) struct RenderEntry {
     /// Canonical command signature used as the registry key.
     signature: String,
     /// Rendering metadata stored for that signature.
@@ -136,7 +146,7 @@ struct RenderEntry {
 ///
 /// Non-definition-like items are ignored because they do not define reusable
 /// command rendering templates.
-fn render_entry(item: &TopLevelItem) -> Option<RenderEntry> {
+pub(super) fn render_entry(item: &TopLevelItem) -> Option<RenderEntry> {
     match item {
         TopLevelItem::Describes(group) => render_entry_from_parts(
             command_header_signature(&group.heading),
@@ -165,7 +175,7 @@ fn render_entry(item: &TopLevelItem) -> Option<RenderEntry> {
 /// This function centralizes extraction of `called:`, optional `written:`, the
 /// subject variable, and header parameter names across `Defines`, `Describes`,
 /// and `Refines`.
-fn render_entry_from_parts(
+pub(super) fn render_entry_from_parts(
     signature: String,
     parameters: Vec<String>,
     subject_variable: Option<String>,
@@ -194,7 +204,7 @@ fn render_entry_from_parts(
 }
 
 /// Joins all text arguments in a `called:` section into one template string.
-fn join_called_text(section: &CalledSection) -> String {
+pub(super) fn join_called_text(section: &CalledSection) -> String {
     section
         .arguments
         .iter()
@@ -204,7 +214,7 @@ fn join_called_text(section: &CalledSection) -> String {
 }
 
 /// Joins all text arguments in a `written:` section into one template string.
-fn join_written_text(section: &WrittenSection) -> String {
+pub(super) fn join_written_text(section: &WrittenSection) -> String {
     section
         .arguments
         .iter()
@@ -212,4 +222,3 @@ fn join_written_text(section: &WrittenSection) -> String {
         .collect::<Vec<_>>()
         .join(" ")
 }
-

@@ -1,3 +1,5 @@
+use super::*;
+
 /// Writing alias mapping a form to a textual rendering body.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WritingAlias {
@@ -68,4 +70,3 @@ pub struct ResourceHeader {
     /// Header path parts.
     pub parts: Vec<String>,
 }
-

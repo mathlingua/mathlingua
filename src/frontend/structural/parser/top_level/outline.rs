@@ -1,8 +1,13 @@
+use super::*;
+
 /// Parses a top-level `Title:` group.
 ///
 /// Title groups cannot have bracket headings and must contain exactly the
 /// `Title:` section shape.
-fn parse_title(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TitleGroup> {
+pub(in crate::frontend::structural::parser) fn parse_title(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<TitleGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Title", &group.sections, tracker, &["Title"])?;
     Some(TitleGroup {
@@ -16,7 +21,10 @@ fn parse_title(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TitleGroup>
 ///
 /// This represents a first-level document outline heading rather than a
 /// definition or theorem block.
-fn parse_section(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SectionGroup> {
+pub(in crate::frontend::structural::parser) fn parse_section(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<SectionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Section", &group.sections, tracker, &["Section"])?;
     Some(SectionGroup {
@@ -30,7 +38,10 @@ fn parse_section(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SectionGr
 ///
 /// Subsections share the simple outline shape with `Section:` but carry their
 /// own wrapper so rendering can preserve hierarchy.
-fn parse_subsection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SubsectionGroup> {
+pub(in crate::frontend::structural::parser) fn parse_subsection(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<SubsectionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Subsection", &group.sections, tracker, &["Subsection"])?;
     Some(SubsectionGroup {
@@ -48,7 +59,10 @@ fn parse_subsection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Subsec
 ///
 /// The parser enforces the expected section label and rejects accidental command
 /// headings on outline-only groups.
-fn parse_subsubsection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SubsubsectionGroup> {
+pub(in crate::frontend::structural::parser) fn parse_subsubsection(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<SubsubsectionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections(
         "Subsubsection",
@@ -66,4 +80,3 @@ fn parse_subsubsection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Sub
         },
     })
 }
-

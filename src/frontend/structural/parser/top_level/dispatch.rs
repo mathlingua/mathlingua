@@ -1,8 +1,13 @@
+use super::*;
+
 /// Dispatches one proto group to the top-level structural parser matching its first section.
 ///
 /// The first section label determines the group kind.  Unknown labels are
 /// reported at the group start and omitted from the resulting document.
-fn parse_top_level_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TopLevelItem> {
+pub(in crate::frontend::structural::parser) fn parse_top_level_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<TopLevelItem> {
     let label = first_section_label(group)?;
     match label {
         "Title" => parse_title(group, tracker).map(TopLevelItem::Title),
@@ -31,4 +36,3 @@ fn parse_top_level_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<T
         }
     }
 }
-

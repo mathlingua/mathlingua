@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn parses_person_resource_and_specify_variants() {
     let document = parse_ok(
@@ -316,4 +318,3 @@ Specify:
         other => panic!("expected specify group, got {other:?}"),
     }
 }
-

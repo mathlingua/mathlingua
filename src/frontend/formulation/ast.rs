@@ -1,9 +1,17 @@
 use super::span::Span;
 
-include!("ast/expression.rs");
-include!("ast/command_expressions.rs");
-include!("ast/statements.rs");
-include!("ast/operators.rs");
-include!("ast/forms.rs");
-include!("ast/command_headers.rs");
-include!("ast/aliases.rs");
+mod aliases;
+mod command_expressions;
+mod command_headers;
+mod expression;
+mod forms;
+mod operators;
+mod statements;
+
+pub use aliases::*;
+pub use command_expressions::*;
+pub use command_headers::*;
+pub use expression::*;
+pub use forms::*;
+pub use operators::*;
+pub use statements::*;

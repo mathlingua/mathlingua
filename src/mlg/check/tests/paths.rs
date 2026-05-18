@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn check_rejects_non_mlg_files_when_given_explicitly() {
     let temp_dir = TestDir::new();

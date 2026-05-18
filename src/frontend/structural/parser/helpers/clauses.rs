@@ -1,8 +1,10 @@
+use super::*;
+
 /// Parses exactly one required clause from a section.
 ///
 /// This is used for section shapes such as `expresses:` and `not:` where the
 /// language grammar expects one logical clause.
-fn parse_required_clause(
+pub(in crate::frontend::structural::parser) fn parse_required_clause(
     section: &ProtoSection,
     label: &str,
     tracker: &mut EventLog,
@@ -24,7 +26,7 @@ fn parse_required_clause(
 }
 
 /// Parses one or more required clauses from a section.
-fn parse_required_clauses(
+pub(in crate::frontend::structural::parser) fn parse_required_clauses(
     section: &ProtoSection,
     label: &str,
     tracker: &mut EventLog,
@@ -46,7 +48,7 @@ fn parse_required_clauses(
 ///
 /// Inline formulations are parsed first as expressions and then as `is`/spec
 /// statements, while nested groups are dispatched through clause-group parsers.
-fn parse_optional_clauses(
+pub(in crate::frontend::structural::parser) fn parse_optional_clauses(
     section: Option<&ProtoSection>,
     label: &str,
     tracker: &mut EventLog,
@@ -88,4 +90,3 @@ fn parse_optional_clauses(
 
     result.into()
 }
-

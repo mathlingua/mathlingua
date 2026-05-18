@@ -1,16 +1,11 @@
+use super::*;
 
-use super::check_in;
-use crate::events::{Audience, Event, EventLog, Level};
-use crate::mlg::collection::{find_collection_root, resolve_source_files};
-use crate::mlg::config::default_config_contents;
-use std::fs;
-use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-static NEXT_TEST_DIR_ID: AtomicUsize = AtomicUsize::new(0);
+pub(super) static NEXT_TEST_DIR_ID: AtomicUsize = AtomicUsize::new(0);
 
-fn user_events(event_log: &EventLog) -> Vec<Event> {
+pub(super) fn user_events(event_log: &EventLog) -> Vec<Event> {
     event_log
         .events()
         .iter()
@@ -22,7 +17,7 @@ fn user_events(event_log: &EventLog) -> Vec<Event> {
         .collect()
 }
 
-fn has_user_error_at(
+pub(super) fn has_user_error_at(
     event_log: &EventLog,
     path: &Path,
     row: usize,
@@ -49,12 +44,12 @@ fn has_user_error_at(
         })
 }
 
-struct TestDir {
-    path: PathBuf,
+pub(super) struct TestDir {
+    pub(super) path: PathBuf,
 }
 
 impl TestDir {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         let unique = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -70,7 +65,7 @@ impl TestDir {
         Self { path }
     }
 
-    fn path(&self) -> &Path {
+    pub(super) fn path(&self) -> &Path {
         &self.path
     }
 }
@@ -80,4 +75,3 @@ impl Drop for TestDir {
         let _ = fs::remove_dir_all(&self.path);
     }
 }
-

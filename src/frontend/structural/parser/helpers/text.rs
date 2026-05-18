@@ -1,8 +1,10 @@
+use super::*;
+
 /// Parses exactly one required quoted open-text entry.
 ///
 /// Open-text sections accept inline quoted arguments and quoted text arguments,
 /// with quote stripping handled by the shared text parser.
-fn parse_required_open_text(
+pub(in crate::frontend::structural::parser) fn parse_required_open_text(
     section: &ProtoSection,
     label: &str,
     tracker: &mut EventLog,
@@ -24,7 +26,7 @@ fn parse_required_open_text(
 }
 
 /// Parses one or more required quoted open-text entries.
-fn parse_required_open_texts(
+pub(in crate::frontend::structural::parser) fn parse_required_open_texts(
     section: &ProtoSection,
     label: &str,
     tracker: &mut EventLog,
@@ -46,7 +48,7 @@ fn parse_required_open_texts(
 ///
 /// Missing sections become an empty wrapper, which lets callers model optional
 /// prose without conflating it with malformed text in a present section.
-fn parse_optional_open_texts(
+pub(in crate::frontend::structural::parser) fn parse_optional_open_texts(
     section: Option<&ProtoSection>,
     tracker: &mut EventLog,
 ) -> ZeroOrMore<OpenText> {
@@ -57,7 +59,7 @@ fn parse_optional_open_texts(
 ///
 /// The structural parser only validates the quoted text shape; LaTeX mode and
 /// substitution semantics are handled later by the view/backend layers.
-fn parse_required_written_texts(
+pub(in crate::frontend::structural::parser) fn parse_required_written_texts(
     section: &ProtoSection,
     tracker: &mut EventLog,
 ) -> Option<OneOrMore<WrittenText>> {
@@ -74,7 +76,7 @@ fn parse_required_written_texts(
 ///
 /// Called text is plain-text rendering metadata, but at this stage it is just
 /// quote-stripped and wrapped.
-fn parse_required_called_texts(
+pub(in crate::frontend::structural::parser) fn parse_required_called_texts(
     section: &ProtoSection,
     tracker: &mut EventLog,
 ) -> Option<OneOrMore<CalledText>> {
@@ -88,7 +90,7 @@ fn parse_required_called_texts(
 }
 
 /// Parses one or more required `WritingText` entries.
-fn parse_required_writing_texts(
+pub(in crate::frontend::structural::parser) fn parse_required_writing_texts(
     section: &ProtoSection,
     tracker: &mut EventLog,
 ) -> Option<OneOrMore<WritingText>> {
@@ -105,7 +107,7 @@ fn parse_required_writing_texts(
 ///
 /// Inline and text arguments are accepted; formulations and nested groups are
 /// diagnosed because text sections are intentionally non-formula content.
-fn parse_optional_texts<T>(
+pub(in crate::frontend::structural::parser) fn parse_optional_texts<T>(
     section: Option<&ProtoSection>,
     tracker: &mut EventLog,
     wrap: fn(String) -> T,
@@ -144,7 +146,10 @@ fn parse_optional_texts<T>(
 ///
 /// This keeps the "did a more specific error already happen?" logic at the call
 /// site while centralizing the `OneOrMore` conversion.
-fn one_or_more<T>(items: ZeroOrMore<T>, on_empty: impl FnOnce()) -> Option<OneOrMore<T>> {
+pub(in crate::frontend::structural::parser) fn one_or_more<T>(
+    items: ZeroOrMore<T>,
+    on_empty: impl FnOnce(),
+) -> Option<OneOrMore<T>> {
     match OneOrMore::try_from(items) {
         Ok(items) => Some(items),
         Err(_) => {
@@ -159,9 +164,8 @@ fn one_or_more<T>(items: ZeroOrMore<T>, on_empty: impl FnOnce()) -> Option<OneOr
 /// Escapes are not interpreted at this layer; the current structural syntax
 /// treats quoted text as the raw inner substring between the first and last
 /// quote.
-fn strip_quoted_text(input: &str) -> Option<String> {
+pub(in crate::frontend::structural::parser) fn strip_quoted_text(input: &str) -> Option<String> {
     let input = input.trim();
     let inner = input.strip_prefix('"')?.strip_suffix('"')?;
     Some(inner.to_owned())
 }
-

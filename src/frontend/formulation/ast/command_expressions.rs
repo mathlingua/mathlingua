@@ -1,3 +1,5 @@
+use super::*;
+
 /// Dotted chain used for commands, aliases, and named paths.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Chain {
@@ -83,4 +85,3 @@ pub enum TypeExpression {
     /// Refined command type.
     RefinedCommand(RefinedCommandExpression),
 }
-

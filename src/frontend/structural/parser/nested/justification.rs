@@ -1,8 +1,13 @@
+use super::*;
+
 /// Parses a `label:` justification note.
 ///
 /// The note may contain optional label/by prose but must include a comment so
 /// the justification has useful explanatory content.
-fn parse_label_note(group: &ProtoGroup, tracker: &mut EventLog) -> Option<LabelGroup> {
+pub(in crate::frontend::structural::parser) fn parse_label_note(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<LabelGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "label",
@@ -28,7 +33,10 @@ fn parse_label_note(group: &ProtoGroup, tracker: &mut EventLog) -> Option<LabelG
 ///
 /// This mirrors label notes but starts from a `by:` section for author/source
 /// oriented justification entries.
-fn parse_by_note(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ByGroup> {
+pub(in crate::frontend::structural::parser) fn parse_by_note(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ByGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("by", &group.sections, tracker, &["by", "comment"])?;
     Some(ByGroup {
@@ -41,4 +49,3 @@ fn parse_by_note(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ByGroup> 
         },
     })
 }
-

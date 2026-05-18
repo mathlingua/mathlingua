@@ -1,3 +1,5 @@
+use super::*;
+
 /// Top-level document title group.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TitleGroup {

@@ -1,8 +1,13 @@
+use super::*;
+
 /// Parses an `id:` metadata group.
 ///
 /// Metadata groups do not accept headings because their meaning is determined
 /// entirely by the nested section label.
-fn parse_id(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IdGroup> {
+pub(in crate::frontend::structural::parser) fn parse_id(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<IdGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("id", &group.sections, tracker, &["id"])?;
     Some(IdGroup {
@@ -13,7 +18,10 @@ fn parse_id(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IdGroup> {
 }
 
 /// Parses a `version:` metadata group.
-fn parse_version(group: &ProtoGroup, tracker: &mut EventLog) -> Option<VersionGroup> {
+pub(in crate::frontend::structural::parser) fn parse_version(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<VersionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("version", &group.sections, tracker, &["version"])?;
     Some(VersionGroup {
@@ -22,4 +30,3 @@ fn parse_version(group: &ProtoGroup, tracker: &mut EventLog) -> Option<VersionGr
         },
     })
 }
-

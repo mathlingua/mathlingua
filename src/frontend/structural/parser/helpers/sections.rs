@@ -1,8 +1,12 @@
+use super::*;
+
 /// Returns the first section label of a proto group.
 ///
 /// Structural group dispatch is label-first, so groups without sections cannot
 /// be recognized.
-fn first_section_label(group: &ProtoGroup) -> Option<&str> {
+pub(in crate::frontend::structural::parser) fn first_section_label(
+    group: &ProtoGroup,
+) -> Option<&str> {
     group.sections.first().map(|section| section.label.as_str())
 }
 
@@ -10,7 +14,7 @@ fn first_section_label(group: &ProtoGroup) -> Option<&str> {
 ///
 /// The section map stores borrowed proto sections keyed by their normalized
 /// expected label.
-fn section<'a>(
+pub(in crate::frontend::structural::parser) fn section<'a>(
     sections: &'a HashMap<String, &'a ProtoSection>,
     label: &str,
 ) -> Option<&'a ProtoSection> {
@@ -23,7 +27,7 @@ fn section<'a>(
 /// optional.  The returned map contains only sections that were present and
 /// accepted.  Diagnostics include the full expected pattern to make authoring
 /// mistakes easier to repair.
-fn identify_sections<'a>(
+pub(in crate::frontend::structural::parser) fn identify_sections<'a>(
     name: &str,
     sections: &'a [ProtoSection],
     tracker: &mut EventLog,
@@ -105,7 +109,7 @@ fn identify_sections<'a>(
 /// Section entries unify inline arguments with body arguments so helper parsers
 /// can apply the same validation logic regardless of how the author chose to
 /// place the section content.
-enum SectionEntry<'a> {
+pub(in crate::frontend::structural::parser) enum SectionEntry<'a> {
     /// Inline text after the section colon.
     Inline { text: &'a str, row: usize },
     /// A formulation body argument.
@@ -120,7 +124,9 @@ enum SectionEntry<'a> {
 ///
 /// Inline arguments are yielded first using the section row, followed by body
 /// arguments in source order with their own rows.
-fn section_entries(section: &ProtoSection) -> Vec<SectionEntry<'_>> {
+pub(in crate::frontend::structural::parser) fn section_entries(
+    section: &ProtoSection,
+) -> Vec<SectionEntry<'_>> {
     let mut entries = Vec::new();
     if let Some(argument) = section.inline_argument.as_deref() {
         entries.push(SectionEntry::Inline {
@@ -154,4 +160,3 @@ fn section_entries(section: &ProtoSection) -> Vec<SectionEntry<'_>> {
 
     entries
 }
-

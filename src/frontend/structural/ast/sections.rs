@@ -1,3 +1,5 @@
+use super::*;
+
 macro_rules! argument_section {
     ($name:ident, $ty:ty) => {
         /// Structural section wrapper for a section with exactly one parsed argument.

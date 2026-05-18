@@ -1,5 +1,10 @@
+use super::*;
+
 /// Parses a resource `title:` item.
-fn parse_resource_title(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceTitleGroup> {
+pub(in crate::frontend::structural::parser) fn parse_resource_title(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ResourceTitleGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("title", &group.sections, tracker, &["title"])?;
     Some(ResourceTitleGroup {
@@ -12,7 +17,7 @@ fn parse_resource_title(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Re
 /// Parses a resource `author:` item.
 ///
 /// Resource authors require at least one quoted text entry.
-fn parse_resource_author(
+pub(in crate::frontend::structural::parser) fn parse_resource_author(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ResourceAuthorGroup> {
@@ -26,7 +31,7 @@ fn parse_resource_author(
 }
 
 /// Parses a resource `offset:` item.
-fn parse_resource_offset(
+pub(in crate::frontend::structural::parser) fn parse_resource_offset(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ResourceOffsetGroup> {
@@ -40,7 +45,10 @@ fn parse_resource_offset(
 }
 
 /// Parses a resource `url:` item.
-fn parse_resource_url(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceUrlGroup> {
+pub(in crate::frontend::structural::parser) fn parse_resource_url(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ResourceUrlGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("url", &group.sections, tracker, &["url"])?;
     Some(ResourceUrlGroup {
@@ -51,7 +59,7 @@ fn parse_resource_url(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Reso
 }
 
 /// Parses a resource `homepage:` item.
-fn parse_resource_homepage(
+pub(in crate::frontend::structural::parser) fn parse_resource_homepage(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ResourceHomepageGroup> {
@@ -69,7 +77,10 @@ fn parse_resource_homepage(
 }
 
 /// Parses a resource `type:` item.
-fn parse_resource_type(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceTypeGroup> {
+pub(in crate::frontend::structural::parser) fn parse_resource_type(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ResourceTypeGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("type", &group.sections, tracker, &["type"])?;
     Some(ResourceTypeGroup {
@@ -80,7 +91,7 @@ fn parse_resource_type(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Res
 }
 
 /// Parses a resource `edition:` item.
-fn parse_resource_edition(
+pub(in crate::frontend::structural::parser) fn parse_resource_edition(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ResourceEditionGroup> {
@@ -94,7 +105,7 @@ fn parse_resource_edition(
 }
 
 /// Parses a resource `editor:` item.
-fn parse_resource_editor(
+pub(in crate::frontend::structural::parser) fn parse_resource_editor(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ResourceEditorGroup> {
@@ -108,7 +119,7 @@ fn parse_resource_editor(
 }
 
 /// Parses a resource `institution:` item.
-fn parse_resource_institution(
+pub(in crate::frontend::structural::parser) fn parse_resource_institution(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ResourceInstitutionGroup> {
@@ -126,7 +137,7 @@ fn parse_resource_institution(
 }
 
 /// Parses a resource `journal:` item.
-fn parse_resource_journal(
+pub(in crate::frontend::structural::parser) fn parse_resource_journal(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ResourceJournalGroup> {
@@ -140,7 +151,7 @@ fn parse_resource_journal(
 }
 
 /// Parses a resource `publisher:` item.
-fn parse_resource_publisher(
+pub(in crate::frontend::structural::parser) fn parse_resource_publisher(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ResourcePublisherGroup> {
@@ -158,7 +169,7 @@ fn parse_resource_publisher(
 }
 
 /// Parses a resource `volume:` item.
-fn parse_resource_volume(
+pub(in crate::frontend::structural::parser) fn parse_resource_volume(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ResourceVolumeGroup> {
@@ -172,7 +183,10 @@ fn parse_resource_volume(
 }
 
 /// Parses a resource `month:` item.
-fn parse_resource_month(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceMonthGroup> {
+pub(in crate::frontend::structural::parser) fn parse_resource_month(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ResourceMonthGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("month", &group.sections, tracker, &["month"])?;
     Some(ResourceMonthGroup {
@@ -183,7 +197,10 @@ fn parse_resource_month(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Re
 }
 
 /// Parses a resource `year:` item.
-fn parse_resource_year(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceYearGroup> {
+pub(in crate::frontend::structural::parser) fn parse_resource_year(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ResourceYearGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("year", &group.sections, tracker, &["year"])?;
     Some(ResourceYearGroup {
@@ -194,7 +211,7 @@ fn parse_resource_year(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Res
 }
 
 /// Parses a resource `description:` item.
-fn parse_resource_description(
+pub(in crate::frontend::structural::parser) fn parse_resource_description(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ResourceDescriptionGroup> {
@@ -210,4 +227,3 @@ fn parse_resource_description(
         },
     })
 }
-

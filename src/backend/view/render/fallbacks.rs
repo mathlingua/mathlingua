@@ -1,10 +1,12 @@
+use super::*;
+
 /// Renders an unknown command chain in a readable escaped fallback form.
-fn render_command_like(chain: &Chain, _registry: &RenderRegistry) -> String {
+pub(super) fn render_command_like(chain: &Chain, _registry: &RenderRegistry) -> String {
     format!("\\backslash{}", escape_latex_math(&format_chain(chain)))
 }
 
 /// Renders a binary operator as LaTeX.
-fn render_binary_operator(operator: &BinaryOperator) -> String {
+pub(super) fn render_binary_operator(operator: &BinaryOperator) -> String {
     match operator {
         BinaryOperator::Equality(operator)
         | BinaryOperator::Special(operator)
@@ -18,7 +20,7 @@ fn render_binary_operator(operator: &BinaryOperator) -> String {
 }
 
 /// Renders an operator token that is already part of parsed math syntax.
-fn render_operator_text(operator: &str) -> String {
+pub(super) fn render_operator_text(operator: &str) -> String {
     match operator {
         "*" => "\\ast".to_string(),
         _ => escape_latex_math(operator),
@@ -29,13 +31,13 @@ fn render_operator_text(operator: &str) -> String {
 ///
 /// This is a bridge until full type-checking resolves quoted operators
 /// semantically.  For example, `"in"` renders as `\in`.
-fn render_quoted_operator(operator: &str) -> String {
+pub(super) fn render_quoted_operator(operator: &str) -> String {
     // Temporary rendering until full type-checking can resolve quoted operators semantically.
     format!("\\{}", escape_latex_command_name(operator))
 }
 
 /// Renders subset/index-call syntax as bracketed LaTeX.
-fn render_subset_call(call: &crate::frontend::formulation::ast::SubsetCall) -> String {
+pub(super) fn render_subset_call(call: &crate::frontend::formulation::ast::SubsetCall) -> String {
     match call {
         crate::frontend::formulation::ast::SubsetCall::One { target, first, .. } => {
             format!(
@@ -70,7 +72,9 @@ fn render_subset_call(call: &crate::frontend::formulation::ast::SubsetCall) -> S
 }
 
 /// Renders a placeholder form while hiding placeholder suffix markers.
-fn render_placeholder_form(form: &crate::frontend::formulation::ast::PlaceholderForm) -> String {
+pub(super) fn render_placeholder_form(
+    form: &crate::frontend::formulation::ast::PlaceholderForm,
+) -> String {
     match &form.kind {
         crate::frontend::formulation::ast::PlaceholderFormKind::Placeholder(placeholder) => {
             render_form_placeholder_name(&placeholder.name)
@@ -93,7 +97,7 @@ fn render_placeholder_form(form: &crate::frontend::formulation::ast::Placeholder
 }
 
 /// Renders a form placeholder name, trimming trailing placeholder underscores.
-fn render_form_placeholder_name(name: &str) -> String {
+pub(super) fn render_form_placeholder_name(name: &str) -> String {
     let trimmed = name.trim_end_matches('_');
     if trimmed.is_empty() {
         escape_math_identifier(name)
@@ -101,4 +105,3 @@ fn render_form_placeholder_name(name: &str) -> String {
         escape_math_identifier(trimmed)
     }
 }
-

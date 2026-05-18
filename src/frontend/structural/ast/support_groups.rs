@@ -1,3 +1,5 @@
+use super::*;
+
 /// Nested alias group inside an `Aliases:` section.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AliasGroup {
@@ -143,4 +145,3 @@ pub struct SpecifyGroup {
     /// Required specification items.
     pub specify: SpecifySection,
 }
-

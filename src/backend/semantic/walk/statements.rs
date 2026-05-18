@@ -1,5 +1,10 @@
+use super::*;
+
 /// Traverses a value that may be either an `is via` statement or an ordinary spec.
-fn walk_is_or_via_item(item: &IsOrViaItem, visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_is_or_via_item(
+    item: &IsOrViaItem,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
     match item {
         IsOrViaItem::IsVia(statement) => {
             walk_is_statement(&statement.is_statement, visit);
@@ -10,7 +15,10 @@ fn walk_is_or_via_item(item: &IsOrViaItem, visit: &mut impl FnMut(&SignatureShap
 }
 
 /// Traverses an `is` statement or subject specification.
-fn walk_is_or_spec(spec: &IsOrSpec, visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_is_or_spec(
+    spec: &IsOrSpec,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
     match spec {
         IsOrSpec::Is(statement) => walk_is_statement(statement, visit),
         IsOrSpec::Spec(statement) => walk_spec_subject(&statement.subject, visit),
@@ -18,7 +26,7 @@ fn walk_is_or_spec(spec: &IsOrSpec, visit: &mut impl FnMut(&SignatureShape)) {
 }
 
 /// Traverses an `is` statement whose type may be refined, or a subject spec.
-fn walk_is_or_refined_spec(
+pub(in crate::backend::semantic) fn walk_is_or_refined_spec(
     spec: &IsOrRefinedStatementSpec,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
@@ -29,13 +37,19 @@ fn walk_is_or_refined_spec(
 }
 
 /// Traverses the subject and type of an `is` statement.
-fn walk_is_statement(statement: &IsStatement, visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_is_statement(
+    statement: &IsStatement,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
     walk_is_subject(&statement.subject, visit);
     walk_type_expression(&statement.ty, visit);
 }
 
 /// Traverses the subject portion of an `is` statement.
-fn walk_is_subject(subject: &IsSubject, visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_is_subject(
+    subject: &IsSubject,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
     match &subject.kind {
         IsSubjectKind::Forms(forms) => {
             for form in forms {
@@ -50,7 +64,10 @@ fn walk_is_subject(subject: &IsSubject, visit: &mut impl FnMut(&SignatureShape))
 }
 
 /// Traverses the subject portion of a specification statement.
-fn walk_spec_subject(subject: &SpecSubject, visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_spec_subject(
+    subject: &SpecSubject,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
     match &subject.kind {
         SpecSubjectKind::Form(form) => walk_form_or_declaration(form, visit),
         SpecSubjectKind::Operator(_) => {}
@@ -61,7 +78,10 @@ fn walk_spec_subject(subject: &SpecSubject, visit: &mut impl FnMut(&SignatureSha
 ///
 /// The type command itself is visited first, followed by any command references
 /// appearing inside the type's argument expressions.
-fn walk_type_expression(ty: &TypeExpression, visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_type_expression(
+    ty: &TypeExpression,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
     match ty {
         TypeExpression::Command(command) => {
             let shape = shape_for_command_expression(command);
@@ -75,4 +95,3 @@ fn walk_type_expression(ty: &TypeExpression, visit: &mut impl FnMut(&SignatureSh
         }
     }
 }
-

@@ -1,8 +1,13 @@
+use super::*;
+
 /// Traverses a logical clause tree for command references.
 ///
 /// Clause traversal is recursive because quantifiers, conditionals, and grouped
 /// logical constructs can contain nested clauses in multiple sections.
-fn walk_clause(clause: &Clause, visit: &mut impl FnMut(&SignatureShape)) {
+pub(in crate::backend::semantic) fn walk_clause(
+    clause: &Clause,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
     match clause {
         Clause::Not(group) => walk_clause(&group.not.argument, visit),
         Clause::AllOf(group) => {
@@ -87,4 +92,3 @@ fn walk_clause(clause: &Clause, visit: &mut impl FnMut(&SignatureShape)) {
         Clause::Expression(expression) => walk_expression(expression, visit),
     }
 }
-

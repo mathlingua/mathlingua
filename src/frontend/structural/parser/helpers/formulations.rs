@@ -1,9 +1,11 @@
+use super::*;
+
 /// Parses exactly one required formulation from a section.
 ///
 /// The parser function is supplied by the caller so this helper can parse
 /// expressions, command headings, labels, resources, or other formulation
 /// fragments while sharing diagnostics and cardinality checks.
-fn parse_required_formulation<T>(
+pub(in crate::frontend::structural::parser) fn parse_required_formulation<T>(
     section: &ProtoSection,
     label: &str,
     tracker: &mut EventLog,
@@ -29,7 +31,7 @@ fn parse_required_formulation<T>(
 ///
 /// If parsing produced no items and no more specific issue was emitted, this
 /// helper reports a missing-content diagnostic for the whole section.
-fn parse_required_formulations<T>(
+pub(in crate::frontend::structural::parser) fn parse_required_formulations<T>(
     section: &ProtoSection,
     label: &str,
     tracker: &mut EventLog,
@@ -52,7 +54,7 @@ fn parse_required_formulations<T>(
 ///
 /// Inline section arguments and formulation arguments are accepted.  Text and
 /// nested groups are diagnosed because callers requested formulation content.
-fn parse_optional_formulations<T>(
+pub(in crate::frontend::structural::parser) fn parse_optional_formulations<T>(
     section: Option<&ProtoSection>,
     label: &str,
     tracker: &mut EventLog,
@@ -94,4 +96,3 @@ fn parse_optional_formulations<T>(
 
     result.into()
 }
-

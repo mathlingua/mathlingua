@@ -1,6 +1,15 @@
-include!("helpers/headings.rs");
-include!("helpers/formulations.rs");
-include!("helpers/clauses.rs");
-include!("helpers/groups.rs");
-include!("helpers/text.rs");
-include!("helpers/sections.rs");
+use super::*;
+
+mod clauses;
+mod formulations;
+mod groups;
+mod headings;
+mod sections;
+mod text;
+
+pub(in crate::frontend::structural::parser) use clauses::*;
+pub(in crate::frontend::structural::parser) use formulations::*;
+pub(in crate::frontend::structural::parser) use groups::*;
+pub(in crate::frontend::structural::parser) use headings::*;
+pub(in crate::frontend::structural::parser) use sections::*;
+pub(in crate::frontend::structural::parser) use text::*;

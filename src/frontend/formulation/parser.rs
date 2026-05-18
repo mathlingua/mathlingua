@@ -26,7 +26,7 @@ type LalrpopError = LalrpopParseError<usize, Token, LexicalError>;
 
 /// Error produced while parsing MathLingua formulation text.
 ///
-/// `Grammar` carries errors emitted by the generated expression/form grammar.
+/// `Grammar` carries errors emitted by the generated LALRPOP parser.
 /// `Custom` is used by the handwritten splitters and command parsers for syntax
 /// that is easier to recognize after top-level delimiter analysis.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -68,11 +68,18 @@ impl From<LalrpopError> for ParseError {
     }
 }
 
-include!("parser/entrypoints.rs");
-include!("parser/statements.rs");
-include!("parser/commands.rs");
-include!("parser/lists.rs");
-include!("parser/scan.rs");
+mod commands;
+mod entrypoints;
+mod lists;
+mod scan;
+mod statements;
+
+pub use entrypoints::*;
+
+use commands::*;
+use lists::*;
+use scan::*;
+use statements::*;
 
 #[cfg(test)]
 mod tests;

@@ -1,5 +1,10 @@
+use super::*;
+
 /// Renders an `is` statement or refined-capable specification as LaTeX.
-fn render_is_or_refined_spec(spec: &IsOrRefinedStatementSpec, registry: &RenderRegistry) -> String {
+pub(super) fn render_is_or_refined_spec(
+    spec: &IsOrRefinedStatementSpec,
+    registry: &RenderRegistry,
+) -> String {
     match spec {
         IsOrRefinedStatementSpec::Is(statement) => render_is_statement(statement, registry),
         IsOrRefinedStatementSpec::Spec(statement) => format!(
@@ -12,7 +17,7 @@ fn render_is_or_refined_spec(spec: &IsOrRefinedStatementSpec, registry: &RenderR
 }
 
 /// Renders a parsed `is` statement, preserving subject-aware written templates.
-fn render_is_statement(statement: &IsStatement, registry: &RenderRegistry) -> String {
+pub(super) fn render_is_statement(statement: &IsStatement, registry: &RenderRegistry) -> String {
     let subject_latex = render_is_subject(&statement.subject, registry);
     match &statement.ty {
         TypeExpression::Command(command) => {
@@ -25,7 +30,7 @@ fn render_is_statement(statement: &IsStatement, registry: &RenderRegistry) -> St
 }
 
 /// Renders the subject side of an `is` statement.
-fn render_is_subject(subject: &IsSubject, registry: &RenderRegistry) -> String {
+pub(super) fn render_is_subject(subject: &IsSubject, registry: &RenderRegistry) -> String {
     match &subject.kind {
         IsSubjectKind::Forms(forms) => forms
             .iter()
@@ -40,7 +45,7 @@ fn render_is_subject(subject: &IsSubject, registry: &RenderRegistry) -> String {
 }
 
 /// Renders the subject side of a specification statement.
-fn render_spec_subject(subject: &SpecSubject, registry: &RenderRegistry) -> String {
+pub(super) fn render_spec_subject(subject: &SpecSubject, registry: &RenderRegistry) -> String {
     match &subject.kind {
         SpecSubjectKind::Form(form) => render_form_or_declaration(form, registry),
         SpecSubjectKind::Operator(operator) => render_operator_text(&operator.text),
@@ -52,7 +57,10 @@ fn render_spec_subject(subject: &SpecSubject, registry: &RenderRegistry) -> Stri
 /// Definitions can use these forms both as the thing being described and as
 /// command parameters.  Placeholder suffixes are hidden to produce readable math
 /// while preserving enough structure for substitutions.
-fn render_form_or_declaration(form: &FormOrDeclaration, registry: &RenderRegistry) -> String {
+pub(super) fn render_form_or_declaration(
+    form: &FormOrDeclaration,
+    registry: &RenderRegistry,
+) -> String {
     match &form.kind {
         FormOrDeclarationKind::Name(name) => escape_math_identifier(name),
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
@@ -132,7 +140,7 @@ fn render_form_or_declaration(form: &FormOrDeclaration, registry: &RenderRegistr
 }
 
 /// Renders an `is` relationship whose type is a normal command expression.
-fn render_is_command(
+pub(super) fn render_is_command(
     subject: &Expression,
     command: &CommandExpression,
     registry: &RenderRegistry,
@@ -142,7 +150,7 @@ fn render_is_command(
 }
 
 /// Renders an `is` relationship whose type is a refined command expression.
-fn render_is_refined_command(
+pub(super) fn render_is_refined_command(
     subject: &Expression,
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
@@ -156,7 +164,7 @@ fn render_is_refined_command(
 /// If the command has a `written:` template that includes the subject placeholder,
 /// the written template replaces the whole `subject is type` phrase.  Otherwise
 /// the subject is kept and the command is rendered after `is`.
-fn render_is_command_with_subject_latex(
+pub(super) fn render_is_command_with_subject_latex(
     subject_latex: String,
     command: &CommandExpression,
     registry: &RenderRegistry,
@@ -194,7 +202,7 @@ fn render_is_command_with_subject_latex(
 }
 
 /// Renders a refined command type after the subject has already been rendered.
-fn render_is_refined_command_with_subject_latex(
+pub(super) fn render_is_refined_command_with_subject_latex(
     subject_latex: String,
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
@@ -205,4 +213,3 @@ fn render_is_refined_command_with_subject_latex(
         render_refined_command_called(command, registry)
     )
 }
-

@@ -1,3 +1,5 @@
+use super::*;
+
 /// Specification item describing positive integers.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PositiveIntGroup {
@@ -187,4 +189,3 @@ pub struct ResourceDescriptionGroup {
     /// Required description text.
     pub description: ResourceDescriptionSection,
 }
-

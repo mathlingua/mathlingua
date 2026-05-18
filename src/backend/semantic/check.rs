@@ -1,3 +1,5 @@
+use super::*;
+
 /// Runs semantic checks across a set of parsed MathLingua source files.
 ///
 /// This is intentionally a two-pass check.  The first pass collects all command
@@ -20,7 +22,7 @@ pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
 /// During collection this also performs checks that are naturally tied to the
 /// definition itself: duplicate signatures and required documented rendering
 /// metadata for `Defines`, `Describes`, and `Refines`.
-fn collect_document_definitions(
+pub(super) fn collect_document_definitions(
     file: &ParsedSourceFile,
     registry: &mut SignatureRegistry,
     event_log: &mut EventLog,
@@ -67,7 +69,7 @@ fn collect_document_definitions(
 /// Different structural group types store their heading and documented section
 /// under different field names.  This adapter lets the collection pass treat
 /// them uniformly.
-struct DefinitionItem<'a> {
+pub(super) struct DefinitionItem<'a> {
     /// Kind of top-level group that owns this definition.
     kind: DefinitionKind,
     /// Parsed command header that defines the signature.
@@ -80,7 +82,7 @@ struct DefinitionItem<'a> {
 ///
 /// Anonymous theorem-like groups do not define a command signature, so they are
 /// ignored here unless they have an explicit heading.
-fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>> {
+pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>> {
     match item {
         TopLevelItem::Describes(group) => Some(DefinitionItem {
             kind: DefinitionKind::Describes,
@@ -136,7 +138,7 @@ fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>> {
 /// Only `Defines`, `Describes`, and `Refines` currently participate in command
 /// rendering.  Theorem-like groups may have headings for reference purposes but
 /// do not need `Documented:` rendering metadata.
-fn check_documented_rendering(
+pub(super) fn check_documented_rendering(
     file: &ParsedSourceFile,
     kind: DefinitionKind,
     documented: Option<&DocumentedSection>,
@@ -169,4 +171,3 @@ fn check_documented_rendering(
         );
     }
 }
-

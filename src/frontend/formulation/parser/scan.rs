@@ -1,9 +1,11 @@
+use super::*;
+
 /// Splits a quoted-operator specification into subject, operator, and target.
 ///
 /// The scan ignores quotes inside backticks and nested delimiters.  It returns
 /// the first top-level quoted segment because specification syntax contains a
 /// single operator between the subject and target name.
-fn split_subject_operator_name(input: &str) -> Option<(&str, &str, &str)> {
+pub(super) fn split_subject_operator_name(input: &str) -> Option<(&str, &str, &str)> {
     let input = input.trim();
     let mut state = ScanState::default();
     let mut start = None;
@@ -50,7 +52,10 @@ fn split_subject_operator_name(input: &str) -> Option<(&str, &str, &str)> {
 ///
 /// The delimiter remains in the returned suffix, which lets callers dispatch on
 /// the next syntactic marker without losing it.
-fn split_prefix_by_delimiters<'a>(input: &'a str, delimiters: &[char]) -> (&'a str, &'a str) {
+pub(super) fn split_prefix_by_delimiters<'a>(
+    input: &'a str,
+    delimiters: &[char],
+) -> (&'a str, &'a str) {
     if let Some(index) = find_first_top_level_delimiter(input, delimiters) {
         (&input[..index], &input[index..])
     } else {
@@ -62,7 +67,7 @@ fn split_prefix_by_delimiters<'a>(input: &'a str, delimiters: &[char]) -> (&'a s
 ///
 /// Delimiters nested inside parentheses, braces, brackets, quoted strings, or
 /// backticks are ignored so command and alias splitting respects nested syntax.
-fn find_first_top_level_delimiter(input: &str, delimiters: &[char]) -> Option<usize> {
+pub(super) fn find_first_top_level_delimiter(input: &str, delimiters: &[char]) -> Option<usize> {
     let mut state = ScanState::default();
     for (index, ch) in input.char_indices() {
         if state.is_top_level() && delimiters.contains(&ch) {
@@ -78,7 +83,7 @@ fn find_first_top_level_delimiter(input: &str, delimiters: &[char]) -> Option<us
 ///
 /// This is a convenience wrapper around the same scanner used for delimiter
 /// sets when callers need to locate a specific syntactic marker.
-fn find_first_top_level_char(input: &str, target: char) -> Option<usize> {
+pub(super) fn find_first_top_level_char(input: &str, target: char) -> Option<usize> {
     let mut state = ScanState::default();
     for (index, ch) in input.char_indices() {
         if state.is_top_level() && ch == target {
@@ -94,7 +99,7 @@ fn find_first_top_level_char(input: &str, target: char) -> Option<usize> {
 ///
 /// This is used for syntactic dispatch before selecting a more specific parser,
 /// such as distinguishing `is` statements from specifications.
-fn contains_top_level(input: &str, needle: &str) -> bool {
+pub(super) fn contains_top_level(input: &str, needle: &str) -> bool {
     find_top_level_substring(input, needle).is_some()
 }
 
@@ -103,7 +108,7 @@ fn contains_top_level(input: &str, needle: &str) -> bool {
 /// The scan advances by characters but checks substring matches at each byte
 /// index yielded by `char_indices`, which keeps returned indices valid UTF-8
 /// byte offsets into the original input.
-fn find_top_level_substring(input: &str, needle: &str) -> Option<usize> {
+pub(super) fn find_top_level_substring(input: &str, needle: &str) -> Option<usize> {
     let mut state = ScanState::default();
     for (index, ch) in input.char_indices() {
         if state.is_top_level() && input[index..].starts_with(needle) {
@@ -119,7 +124,7 @@ fn find_top_level_substring(input: &str, needle: &str) -> Option<usize> {
 ///
 /// Empty entries are almost always author mistakes in MathLingua lists, so this
 /// helper reports them instead of silently dropping them.
-fn split_top_level(input: &str, delimiter: char) -> Result<Vec<&str>, ParseError> {
+pub(super) fn split_top_level(input: &str, delimiter: char) -> Result<Vec<&str>, ParseError> {
     let mut parts = Vec::new();
     let mut start = 0;
     let mut state = ScanState::default();
@@ -149,7 +154,7 @@ fn split_top_level(input: &str, delimiter: char) -> Result<Vec<&str>, ParseError
 /// The returned tuple contains the block contents without outer delimiters and
 /// the remaining suffix after the closing delimiter.  Quoted and backticked
 /// content is skipped while counting nested delimiter depth.
-fn consume_balanced_prefix<'a>(
+pub(super) fn consume_balanced_prefix<'a>(
     input: &'a str,
     open: char,
     close: char,
@@ -207,7 +212,7 @@ fn consume_balanced_prefix<'a>(
 /// Plain names must begin and end with alphanumeric characters and may contain
 /// underscores internally.  Backtick-wrapped operator text is also accepted so
 /// operator names can be referenced by command/name infrastructure.
-fn is_name_text(input: &str) -> bool {
+pub(super) fn is_name_text(input: &str) -> bool {
     if input.is_empty() {
         return false;
     }
@@ -237,7 +242,7 @@ fn is_name_text(input: &str) -> bool {
 ///
 /// This deliberately uses a narrow ASCII operator alphabet until the language
 /// has a richer token classification for symbolic operators.
-fn is_operator_text(input: &str) -> bool {
+pub(super) fn is_operator_text(input: &str) -> bool {
     if input.is_empty() {
         return false;
     }
@@ -249,7 +254,7 @@ fn is_operator_text(input: &str) -> bool {
 ///
 /// Hand-written parser helpers use this because they currently parse complete
 /// substrings instead of preserving exact source offsets through each split.
-fn span_all(input: &str) -> Span {
+pub(super) fn span_all(input: &str) -> Span {
     Span::new(0, input.trim().len())
 }
 
@@ -259,7 +264,7 @@ fn span_all(input: &str) -> Span {
 /// can safely split formulation text without building a full token stream for
 /// every small dispatch decision.
 #[derive(Clone, Copy, Debug, Default)]
-struct ScanState {
+pub(super) struct ScanState {
     /// Current nesting depth inside `(...)`.
     paren_depth: usize,
     /// Current nesting depth inside `{...}`.
@@ -316,4 +321,3 @@ impl ScanState {
         }
     }
 }
-

@@ -1,5 +1,9 @@
+use super::*;
+
 /// Builds the canonical signature for any command header.
-fn command_header_signature(header: &crate::frontend::formulation::ast::CommandHeader) -> String {
+pub(super) fn command_header_signature(
+    header: &crate::frontend::formulation::ast::CommandHeader,
+) -> String {
     match header {
         crate::frontend::formulation::ast::CommandHeader::Command(command) => {
             let mut signature = format!("\\{}", format_chain(&command.chain));
@@ -16,7 +20,7 @@ fn command_header_signature(header: &crate::frontend::formulation::ast::CommandH
 }
 
 /// Extracts ordered substitution parameter names from a command header.
-fn command_header_parameters(
+pub(super) fn command_header_parameters(
     header: &crate::frontend::formulation::ast::CommandHeader,
 ) -> Vec<String> {
     command_header_forms(header)
@@ -26,14 +30,14 @@ fn command_header_parameters(
 }
 
 /// Builds the canonical signature for a normal command expression.
-fn command_expression_signature(command: &CommandExpression) -> String {
+pub(super) fn command_expression_signature(command: &CommandExpression) -> String {
     let mut signature = format!("\\{}", format_chain(&command.chain));
     add_expression_tail_signature(&mut signature, &command.tail);
     signature
 }
 
 /// Builds the canonical signature for a refined command header.
-fn refined_command_header_signature(command: &RefinedCommandHeader) -> String {
+pub(super) fn refined_command_header_signature(command: &RefinedCommandHeader) -> String {
     let mut signature = "\\".to_string();
     if let Some(prefix) = &command.prefix_chain {
         signature.push_str(&format_chain(prefix));
@@ -53,14 +57,14 @@ fn refined_command_header_signature(command: &RefinedCommandHeader) -> String {
 }
 
 /// Builds the canonical signature for the base command of a refined expression.
-fn refined_command_base_signature(command: &RefinedCommandExpression) -> String {
+pub(super) fn refined_command_base_signature(command: &RefinedCommandExpression) -> String {
     let mut signature = format!("\\{}", refined_tail_signature(&command.refined_tail));
     add_expression_tail_signature(&mut signature, &command.tail);
     signature
 }
 
 /// Builds the canonical signature for one refinement part of a refined expression.
-fn refined_command_part_signature(
+pub(super) fn refined_command_part_signature(
     command: &RefinedCommandExpression,
     part: &RefinedExpressionPart,
 ) -> String {
@@ -78,7 +82,7 @@ fn refined_command_part_signature(
 }
 
 /// Appends header tail labels to a canonical signature string.
-fn add_header_tail_signature(
+pub(super) fn add_header_tail_signature(
     signature: &mut String,
     tail: &[crate::frontend::formulation::ast::CommandHeaderTailPart],
 ) {
@@ -89,7 +93,10 @@ fn add_header_tail_signature(
 }
 
 /// Appends expression tail labels to a canonical signature string.
-fn add_expression_tail_signature(signature: &mut String, tail: &[CommandExpressionTailPart]) {
+pub(super) fn add_expression_tail_signature(
+    signature: &mut String,
+    tail: &[CommandExpressionTailPart],
+) {
     for part in tail {
         signature.push(':');
         signature.push_str(&format_chain(&part.chain));
@@ -97,7 +104,7 @@ fn add_expression_tail_signature(signature: &mut String, tail: &[CommandExpressi
 }
 
 /// Converts a refined-command tail into signature text.
-fn refined_tail_signature(tail: &RefinedTail) -> String {
+pub(super) fn refined_tail_signature(tail: &RefinedTail) -> String {
     match tail {
         RefinedTail::Chain(chain) => format_chain(chain),
         RefinedTail::Name { name, .. } => name.clone(),
@@ -105,7 +112,7 @@ fn refined_tail_signature(tail: &RefinedTail) -> String {
 }
 
 /// Converts a parsed chain into dotted signature text.
-fn format_chain(chain: &Chain) -> String {
+pub(super) fn format_chain(chain: &Chain) -> String {
     chain
         .parts
         .iter()
@@ -117,4 +124,3 @@ fn format_chain(chain: &Chain) -> String {
         .collect::<Vec<_>>()
         .join(".")
 }
-

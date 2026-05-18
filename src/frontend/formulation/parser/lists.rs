@@ -1,8 +1,10 @@
+use super::*;
+
 /// Parses a nonempty comma-separated list of forms/declarations.
 ///
 /// Lists are split only on top-level commas so tuple, set, and command argument
 /// syntax can contain nested commas safely.
-fn parse_form_list(input: &str) -> Result<Vec<FormOrDeclaration>, ParseError> {
+pub(super) fn parse_form_list(input: &str) -> Result<Vec<FormOrDeclaration>, ParseError> {
     let forms = split_top_level(input, ',')?
         .into_iter()
         .map(parse_form_or_declaration)
@@ -17,7 +19,7 @@ fn parse_form_list(input: &str) -> Result<Vec<FormOrDeclaration>, ParseError> {
 ///
 /// This is the expression-valued counterpart to [`parse_form_list`] and is used
 /// for concrete command references and invocation arguments.
-fn parse_expression_list(input: &str) -> Result<Vec<Expression>, ParseError> {
+pub(super) fn parse_expression_list(input: &str) -> Result<Vec<Expression>, ParseError> {
     let expressions = split_top_level(input, ',')?
         .into_iter()
         .map(parse_expression)
@@ -32,7 +34,7 @@ fn parse_expression_list(input: &str) -> Result<Vec<Expression>, ParseError> {
 ///
 /// Chains are used by commands, refined command parts, and namespaced labels.
 /// Each part may be a regular name, an operator token, or an alias reference.
-fn parse_chain(input: &str) -> Result<Chain, ParseError> {
+pub(super) fn parse_chain(input: &str) -> Result<Chain, ParseError> {
     let input = input.trim();
     let parts = split_top_level(input, '.')?
         .into_iter()
@@ -52,7 +54,7 @@ fn parse_chain(input: &str) -> Result<Chain, ParseError> {
 ///
 /// A leading `$` marks an alias reference, operator-only text becomes an
 /// operator segment, and all other segments must satisfy name-token rules.
-fn parse_chain_part(input: &str) -> Result<ChainPart, ParseError> {
+pub(super) fn parse_chain_part(input: &str) -> Result<ChainPart, ParseError> {
     let input = input.trim();
     if let Some(alias) = input.strip_prefix('$') {
         return Ok(ChainPart::Alias(parse_name_token(alias)?));
@@ -69,7 +71,7 @@ fn parse_chain_part(input: &str) -> Result<ChainPart, ParseError> {
 ///
 /// This is used by label, author, and resource headings where aliases and
 /// operator chain segments are not valid.
-fn parse_dotted_parts(input: &str) -> Result<Vec<String>, ParseError> {
+pub(super) fn parse_dotted_parts(input: &str) -> Result<Vec<String>, ParseError> {
     let parts = split_top_level(input, '.')?
         .into_iter()
         .map(parse_name_token)
@@ -84,7 +86,7 @@ fn parse_dotted_parts(input: &str) -> Result<Vec<String>, ParseError> {
 ///
 /// Name tokens may be backtick-wrapped operator text, which allows operator
 /// names to participate in syntax positions that otherwise require identifiers.
-fn parse_name_token(input: &str) -> Result<String, ParseError> {
+pub(super) fn parse_name_token(input: &str) -> Result<String, ParseError> {
     let input = input.trim();
     if !is_name_text(input) {
         return Err(ParseError::custom(format!("invalid name `{input}`")));
@@ -92,4 +94,3 @@ fn parse_name_token(input: &str) -> Result<String, ParseError> {
 
     Ok(input.to_owned())
 }
-

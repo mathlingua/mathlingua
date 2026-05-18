@@ -1,10 +1,15 @@
+use super::*;
+
 /// Parses a command-backed `Describes:` group.
 ///
 /// This enforces the full `Describes` section order and converts each optional
 /// nested section into its typed representation.  Formulation sections are
 /// delegated to the formulation parser while clause/nested sections recurse
 /// through structural helpers.
-fn parse_describes(group: &ProtoGroup, tracker: &mut EventLog) -> Option<DescribesGroup> {
+pub(in crate::frontend::structural::parser) fn parse_describes(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<DescribesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
         "Describes",
@@ -88,7 +93,10 @@ fn parse_describes(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Describ
 /// `Defines` groups introduce command signatures for specification/type-like
 /// statements and support the same auxiliary sections as `Describes`, except
 /// for the `expresses:` clause in place of form-specific sections.
-fn parse_defines(group: &ProtoGroup, tracker: &mut EventLog) -> Option<DefinesGroup> {
+pub(in crate::frontend::structural::parser) fn parse_defines(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<DefinesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
         "Defines",
@@ -162,7 +170,10 @@ fn parse_defines(group: &ProtoGroup, tracker: &mut EventLog) -> Option<DefinesGr
 /// Refines groups define a refined command signature and validate their
 /// `Refines:`/`specifies:` bodies with the parser variant that accepts refined
 /// command references.
-fn parse_refines(group: &ProtoGroup, tracker: &mut EventLog) -> Option<RefinesGroup> {
+pub(in crate::frontend::structural::parser) fn parse_refines(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<RefinesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
         "Refines",
@@ -245,7 +256,10 @@ fn parse_refines(group: &ProtoGroup, tracker: &mut EventLog) -> Option<RefinesGr
 ///
 /// The `that:` section is required and supplies the statement body.  Optional
 /// prose in `States:` is retained for documentation/rendering contexts.
-fn parse_states(group: &ProtoGroup, tracker: &mut EventLog) -> Option<StatesGroup> {
+pub(in crate::frontend::structural::parser) fn parse_states(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<StatesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
         "States",
@@ -307,4 +321,3 @@ fn parse_states(group: &ProtoGroup, tracker: &mut EventLog) -> Option<StatesGrou
         }),
     })
 }
-

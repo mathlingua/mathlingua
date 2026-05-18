@@ -15,15 +15,28 @@ use crate::frontend::formulation::{
 };
 use crate::frontend::structural::ast::*;
 
-include!("render/registry.rs");
-include!("render/expressions.rs");
-include!("render/statements.rs");
-include!("render/commands.rs");
-include!("render/fallbacks.rs");
-include!("render/templates.rs");
-include!("render/names.rs");
-include!("render/signatures.rs");
-include!("render/escaping.rs");
+mod commands;
+mod escaping;
+mod expressions;
+mod fallbacks;
+mod names;
+mod registry;
+mod signatures;
+mod statements;
+mod templates;
+
+use commands::*;
+use escaping::*;
+use expressions::*;
+use fallbacks::*;
+use names::*;
+use registry::*;
+pub(super) use registry::{
+    RenderRegistry, build_render_registry, render_formulation_latex, render_group_heading_latex,
+};
+use signatures::*;
+use statements::*;
+use templates::*;
 
 #[cfg(test)]
 mod tests;

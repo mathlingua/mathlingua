@@ -1,3 +1,5 @@
+use super::*;
+
 /// Root structural AST for one parsed MathLingua document.
 ///
 /// The proto parser has already grouped sections by indentation; this document
@@ -210,4 +212,3 @@ pub enum ResourceItem {
     /// Resource description field.
     Description(ResourceDescriptionGroup),
 }
-

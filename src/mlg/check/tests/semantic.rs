@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn check_reports_structural_and_formulation_events_for_invalid_files() {
     let temp_dir = TestDir::new();
@@ -450,4 +452,3 @@ Documented:
         [Event::user_log("Checked 1 file").with_origin("mlg_check")]
     );
 }
-

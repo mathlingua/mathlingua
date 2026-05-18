@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn parses_command_headers() {
     let header =
@@ -91,4 +93,3 @@ fn parses_header_labels() {
     assert_eq!(author.parts, vec!["euclid".to_string()]);
     assert_eq!(resource.parts, vec!["book".to_string(), "ref".to_string()]);
 }
-

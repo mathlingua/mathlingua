@@ -1,8 +1,10 @@
+use super::*;
+
 /// Parses one or more required nested groups from a section.
 ///
 /// The supplied parser determines which nested group kinds are legal in the
 /// section, letting this helper centralize cardinality and non-group diagnostics.
-fn parse_required_groups<T>(
+pub(in crate::frontend::structural::parser) fn parse_required_groups<T>(
     section: &ProtoSection,
     label: &str,
     tracker: &mut EventLog,
@@ -25,7 +27,7 @@ fn parse_required_groups<T>(
 ///
 /// Non-group entries are reported because this helper is used only for sections
 /// whose grammar requires group-shaped items.
-fn parse_optional_groups<T>(
+pub(in crate::frontend::structural::parser) fn parse_optional_groups<T>(
     section: Option<&ProtoSection>,
     label: &str,
     tracker: &mut EventLog,
@@ -57,4 +59,3 @@ fn parse_optional_groups<T>(
 
     items.into()
 }
-

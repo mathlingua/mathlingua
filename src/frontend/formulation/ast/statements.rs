@@ -1,3 +1,5 @@
+use super::*;
+
 /// Statement of the form `subject "operator" name`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SpecStatement {
@@ -121,4 +123,3 @@ pub struct PlaceholderSpecStatement {
     /// Right-hand name.
     pub name: String,
 }
-

@@ -44,10 +44,15 @@ pub fn parse_document(input: &str, tracker: &mut EventLog) -> Document {
     }
 }
 
-include!("parser/top_level.rs");
-include!("parser/nested.rs");
-include!("parser/clauses.rs");
-include!("parser/helpers.rs");
+mod clauses;
+mod helpers;
+mod nested;
+mod top_level;
+
+use clauses::*;
+use helpers::*;
+use nested::*;
+use top_level::*;
 
 #[cfg(test)]
 mod tests;

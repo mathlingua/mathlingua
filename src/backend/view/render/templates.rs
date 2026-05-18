@@ -1,8 +1,13 @@
+use super::*;
+
 /// Renders a plain-LaTeX-mode `called:` template with math substitutions.
 ///
 /// Text outside `$...$` is wrapped in `\textrm{...}`.  Text inside `$...$` is
 /// treated as math and supports `name?` placeholder substitution.
-fn render_called_template(template: &str, substitutions: &HashMap<String, String>) -> String {
+pub(super) fn render_called_template(
+    template: &str,
+    substitutions: &HashMap<String, String>,
+) -> String {
     let mut result = String::new();
     let mut in_math = false;
 
@@ -19,7 +24,10 @@ fn render_called_template(template: &str, substitutions: &HashMap<String, String
 }
 
 /// Substitutes `name?` placeholders inside a math-mode template.
-fn substitute_math_template(template: &str, substitutions: &HashMap<String, String>) -> String {
+pub(super) fn substitute_math_template(
+    template: &str,
+    substitutions: &HashMap<String, String>,
+) -> String {
     let mut result = String::new();
     let chars = template.chars().collect::<Vec<_>>();
     let mut index = 0;
@@ -50,18 +58,17 @@ fn substitute_math_template(template: &str, substitutions: &HashMap<String, Stri
 }
 
 /// Returns true when a template explicitly references a named placeholder.
-fn template_contains_placeholder(template: &str, name: &str) -> bool {
+pub(super) fn template_contains_placeholder(template: &str, name: &str) -> bool {
     let needle = format!("{name}?");
     template.contains(&needle)
 }
 
 /// Returns true when a character can begin a template placeholder name.
-fn is_placeholder_start(ch: char) -> bool {
+pub(super) fn is_placeholder_start(ch: char) -> bool {
     ch.is_ascii_alphabetic() || ch == '_'
 }
 
 /// Returns true when a character can continue a template placeholder name.
-fn is_placeholder_continue(ch: char) -> bool {
+pub(super) fn is_placeholder_continue(ch: char) -> bool {
     ch.is_ascii_alphanumeric() || ch == '_' || ch == '.'
 }
-

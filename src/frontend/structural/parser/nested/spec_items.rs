@@ -1,8 +1,13 @@
+use super::*;
+
 /// Parses a positive-integer specification item.
 ///
 /// The structural shape is identified by a `positive:` section together with an
 /// `int:` section; all prose fields are open and may be empty.
-fn parse_positive_int(group: &ProtoGroup, tracker: &mut EventLog) -> Option<PositiveIntGroup> {
+pub(in crate::frontend::structural::parser) fn parse_positive_int(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<PositiveIntGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "positive_int",
@@ -25,7 +30,10 @@ fn parse_positive_int(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Posi
 }
 
 /// Parses a negative-integer specification item.
-fn parse_negative_int(group: &ProtoGroup, tracker: &mut EventLog) -> Option<NegativeIntGroup> {
+pub(in crate::frontend::structural::parser) fn parse_negative_int(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<NegativeIntGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "negative_int",
@@ -48,7 +56,10 @@ fn parse_negative_int(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Nega
 }
 
 /// Parses a zero specification item.
-fn parse_zero(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ZeroGroup> {
+pub(in crate::frontend::structural::parser) fn parse_zero(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ZeroGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("zero", &group.sections, tracker, &["zero", "is"])?;
     Some(ZeroGroup {
@@ -63,7 +74,7 @@ fn parse_zero(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ZeroGroup> {
 }
 
 /// Parses a positive-decimal specification item.
-fn parse_positive_decimal(
+pub(in crate::frontend::structural::parser) fn parse_positive_decimal(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<PositiveDecimalGroup> {
@@ -89,7 +100,7 @@ fn parse_positive_decimal(
 }
 
 /// Parses a negative-decimal specification item.
-fn parse_negative_decimal(
+pub(in crate::frontend::structural::parser) fn parse_negative_decimal(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<NegativeDecimalGroup> {
@@ -113,4 +124,3 @@ fn parse_negative_decimal(
         },
     })
 }
-

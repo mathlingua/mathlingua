@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn reports_section_order_errors_and_recovers() {
     let (document, diagnostics) = parse_with_diagnostics(
@@ -96,4 +98,3 @@ fn parses_structural_golden_directory() {
         }
     }
 }
-

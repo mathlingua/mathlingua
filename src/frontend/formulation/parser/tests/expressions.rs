@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn parses_unary_and_dot_grouped_expressions() {
     let expression = parse_expression("-(.x + y.)").expect("expected unary grouped expression");
@@ -399,4 +401,3 @@ fn parses_operator_is_statements() {
         other => panic!("expected is statement, got {other:?}"),
     }
 }
-

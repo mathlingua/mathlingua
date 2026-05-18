@@ -1,3 +1,5 @@
+use super::*;
+
 /// Form or declaration used in definitions, command headers, and subjects.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FormOrDeclaration {
@@ -162,4 +164,3 @@ pub enum PlaceholderFormKind {
         arguments: Vec<Placeholder>,
     },
 }
-

@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn check_result_markers_bound_the_check_events() {
     let temp_dir = TestDir::new();

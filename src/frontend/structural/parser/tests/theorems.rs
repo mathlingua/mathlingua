@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn parses_theorem_like_groups_and_clause_variants() {
     let document = parse_ok(
@@ -136,4 +138,3 @@ then:
         other => panic!("expected conjecture group, got {other:?}"),
     }
 }
-

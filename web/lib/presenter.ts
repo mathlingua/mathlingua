@@ -93,6 +93,17 @@ export function parentDirectory(directory: string): string {
   return segments.join("/");
 }
 
+export function firstFileIndexInDirectory(
+  files: { path: string }[],
+  directory: string,
+): number | null {
+  const firstFile = buildFileBrowserEntries(files, directory).find(
+    (entry) => entry.kind === "file",
+  );
+
+  return firstFile?.kind === "file" ? firstFile.fileIndex : null;
+}
+
 export function fileDirectory(path: string): string {
   const segments = contentRelativePath(path).split("/").filter(Boolean);
   segments.pop();

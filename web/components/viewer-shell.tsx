@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { FileList } from "./file-list";
 import { ViewerChrome } from "./viewer-chrome";
 import { FileView } from "../lib/types";
-import { fileDirectory, makeFileAnchor } from "../lib/presenter";
+import {
+  fileDirectory,
+  firstFileIndexInDirectory,
+  makeFileAnchor,
+} from "../lib/presenter";
 
 type ViewerShellProps = {
   files: FileView[];
@@ -37,6 +41,18 @@ export function ViewerShell({ files }: ViewerShellProps) {
     window.history.replaceState(null, "", `#${makeFileAnchor(fileIndex)}`);
   };
 
+  const handleNavigateDirectory = (directory: string) => {
+    setCurrentDirectory(directory);
+
+    const fileIndex = firstFileIndexInDirectory(files, directory);
+    if (fileIndex === null) {
+      return;
+    }
+
+    setSelectedFileIndex(fileIndex);
+    window.history.replaceState(null, "", `#${makeFileAnchor(fileIndex)}`);
+  };
+
   return (
     <>
       <ViewerChrome
@@ -48,7 +64,7 @@ export function ViewerShell({ files }: ViewerShellProps) {
           currentDirectory={currentDirectory}
           files={files}
           isOutlineOpen={isOutlineOpen}
-          onNavigateDirectory={setCurrentDirectory}
+          onNavigateDirectory={handleNavigateDirectory}
           onSelectFile={handleSelectFile}
           selectedFileIndex={selectedFileIndex}
         />

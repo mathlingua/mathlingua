@@ -15,19 +15,40 @@ use crate::frontend::formulation::{
 };
 use crate::frontend::structural::ast::*;
 
+/// Lookup table of documented rendering metadata by canonical command signature.
+///
+/// The registry is built once from all parsed files before individual
+/// formulations are rendered.  Rendering can then resolve a command use such as
+/// `\function:on{A}:to{B}` to its `called:` and optional `written:` templates.
 #[derive(Clone, Debug, Default)]
 pub(super) struct RenderRegistry {
+    /// Map from canonical command signature to the rendering data for that command.
     commands: HashMap<String, CommandRender>,
 }
 
+/// Rendering metadata extracted from a definition-like group.
+///
+/// `called` is always present because semantic checking requires it for
+/// renderable commands.  `written` is optional and is used only when a command
+/// has a math-mode representation.
 #[derive(Clone, Debug)]
 struct CommandRender {
+    /// Primary subject variable from the defining form, such as `f` in `f(x__)`.
     subject_variable: Option<String>,
+    /// Parameter names supplied in the command header, in substitution order.
     parameters: Vec<String>,
+    /// Joined plain-LaTeX-mode `called:` template.
     called: String,
+    /// Joined math-LaTeX-mode `written:` template, if provided.
     written: Option<String>,
 }
 
+/// Builds the render registry from all parsed source files.
+///
+/// Only `Defines`, `Describes`, and `Refines` groups with documented `called:`
+/// metadata contribute entries.  Later entries with the same signature replace
+/// earlier ones here; duplicate detection is handled by the semantic checker
+/// before view rendering proceeds.
 pub(super) fn build_render_registry(files: &[ParsedSourceFile]) -> RenderRegistry {
     let mut registry = RenderRegistry::default();
 
@@ -43,11 +64,21 @@ pub(super) fn build_render_registry(files: &[ParsedSourceFile]) -> RenderRegistr
     registry
 }
 
+/// Attempts to render one formulation string as inline LaTeX.
+///
+/// The renderer first tries full formulation parsers and then falls back to a
+/// small set-spec parser used for legacy/simple set-builder text.
 pub(super) fn render_formulation_latex(text: &str, registry: &RenderRegistry) -> Option<String> {
     render_parsed_formulation_latex(text, registry)
         .or_else(|| render_simple_set_spec_latex(text, registry))
 }
 
+/// Renders a group card heading as LaTeX when documented metadata is available.
+///
+/// Definition-like groups use their own `called:` template.  `Refines` groups
+/// additionally combine the refinement's `called:` template with the called text
+/// of the command being refined, so a card can display titles like
+/// `continuous function on A to B`.
 pub(super) fn render_group_heading_latex(
     kind: &str,
     heading: Option<&str>,
@@ -74,6 +105,11 @@ pub(super) fn render_group_heading_latex(
     Some(render_called_template(&render.called, &substitutions))
 }
 
+/// Builds the specialized heading for a `Refines` group.
+///
+/// The `Refines:` section tells us what command is being refined.  The heading
+/// combines the refinement label, such as `continuous`, with the target command's
+/// called template, such as `function on A to B`.
 fn render_refines_group_heading_latex(
     header: &CommandHeader,
     refines_argument: Option<&str>,
@@ -90,6 +126,7 @@ fn render_refines_group_heading_latex(
     Some(render_called_template(&template, &substitutions))
 }
 
+/// Attempts all supported parsers for a formulation and renders the first match.
 fn render_parsed_formulation_latex(text: &str, registry: &RenderRegistry) -> Option<String> {
     if let Ok(expression) = parse_expression(text) {
         return Some(render_expression(&expression, registry));
@@ -104,11 +141,18 @@ fn render_parsed_formulation_latex(text: &str, registry: &RenderRegistry) -> Opt
         .map(|form| render_form_or_declaration(&form, registry))
 }
 
+/// Registry insertion record for one renderable command definition.
 struct RenderEntry {
+    /// Canonical command signature used as the registry key.
     signature: String,
+    /// Rendering metadata stored for that signature.
     render: CommandRender,
 }
 
+/// Extracts a render registry entry from a top-level structural item.
+///
+/// Non-definition-like items are ignored because they do not define reusable
+/// command rendering templates.
 fn render_entry(item: &TopLevelItem) -> Option<RenderEntry> {
     match item {
         TopLevelItem::Describes(group) => render_entry_from_parts(
@@ -133,6 +177,11 @@ fn render_entry(item: &TopLevelItem) -> Option<RenderEntry> {
     }
 }
 
+/// Builds a render entry from the common pieces of a definition-like group.
+///
+/// This function centralizes extraction of `called:`, optional `written:`, the
+/// subject variable, and header parameter names across `Defines`, `Describes`,
+/// and `Refines`.
 fn render_entry_from_parts(
     signature: String,
     parameters: Vec<String>,
@@ -161,6 +210,7 @@ fn render_entry_from_parts(
     })
 }
 
+/// Joins all text arguments in a `called:` section into one template string.
 fn join_called_text(section: &CalledSection) -> String {
     section
         .arguments
@@ -170,6 +220,7 @@ fn join_called_text(section: &CalledSection) -> String {
         .join(" ")
 }
 
+/// Joins all text arguments in a `written:` section into one template string.
 fn join_written_text(section: &WrittenSection) -> String {
     section
         .arguments
@@ -179,6 +230,10 @@ fn join_written_text(section: &WrittenSection) -> String {
         .join(" ")
 }
 
+/// Renders a parsed expression as inline LaTeX.
+///
+/// Command expressions consult the render registry; ordinary expression forms
+/// are rendered structurally with conservative escaping.
 fn render_expression(expression: &Expression, registry: &RenderRegistry) -> String {
     match &expression.kind {
         ExpressionKind::Name(name) => escape_math_identifier(name),
@@ -270,6 +325,7 @@ fn render_expression(expression: &Expression, registry: &RenderRegistry) -> Stri
     }
 }
 
+/// Renders a set-builder expression as LaTeX with scalable braces.
 fn render_set_expression(set: &SetExpression, registry: &RenderRegistry) -> String {
     let target = render_placeholder_form(&set.target);
     let spec = render_spec_statement(&set.spec, registry);
@@ -283,6 +339,7 @@ fn render_set_expression(set: &SetExpression, registry: &RenderRegistry) -> Stri
     }
 }
 
+/// Renders an inline specification statement such as `x "in" X`.
 fn render_spec_statement(statement: &SpecStatement, registry: &RenderRegistry) -> String {
     format!(
         "{} {} {}",
@@ -292,6 +349,11 @@ fn render_spec_statement(statement: &SpecStatement, registry: &RenderRegistry) -
     )
 }
 
+/// Parses and renders a simple textual set-builder specification.
+///
+/// This fallback supports inputs that are set specs in shape but are not yet
+/// accepted by the full formulation parser.  It respects top-level delimiters so
+/// nested tuples, groups, and quoted operators do not split the set body.
 fn render_simple_set_spec_latex(text: &str, registry: &RenderRegistry) -> Option<String> {
     let trimmed = text.trim();
     let inner = trimmed.strip_prefix('{')?.strip_suffix('}')?;
@@ -318,11 +380,13 @@ fn render_simple_set_spec_latex(text: &str, registry: &RenderRegistry) -> Option
     }
 }
 
+/// Renders a small fragment of math text or escapes it as raw math if parsing fails.
 fn render_latex_fragment(text: &str, registry: &RenderRegistry) -> String {
     render_parsed_formulation_latex(text, registry)
         .unwrap_or_else(|| escape_latex_math(text.trim()))
 }
 
+/// Splits a string at the first delimiter that is not nested or quoted.
 fn split_once_top_level(input: &str, delimiter: char) -> Option<(&str, &str)> {
     let mut paren_depth = 0usize;
     let mut brace_depth = 0usize;
@@ -354,6 +418,7 @@ fn split_once_top_level(input: &str, delimiter: char) -> Option<(&str, &str)> {
     None
 }
 
+/// Renders an `is` statement or refined-capable specification as LaTeX.
 fn render_is_or_refined_spec(spec: &IsOrRefinedStatementSpec, registry: &RenderRegistry) -> String {
     match spec {
         IsOrRefinedStatementSpec::Is(statement) => render_is_statement(statement, registry),
@@ -366,6 +431,7 @@ fn render_is_or_refined_spec(spec: &IsOrRefinedStatementSpec, registry: &RenderR
     }
 }
 
+/// Renders a parsed `is` statement, preserving subject-aware written templates.
 fn render_is_statement(statement: &IsStatement, registry: &RenderRegistry) -> String {
     let subject_latex = render_is_subject(&statement.subject, registry);
     match &statement.ty {
@@ -378,6 +444,7 @@ fn render_is_statement(statement: &IsStatement, registry: &RenderRegistry) -> St
     }
 }
 
+/// Renders the subject side of an `is` statement.
 fn render_is_subject(subject: &IsSubject, registry: &RenderRegistry) -> String {
     match &subject.kind {
         IsSubjectKind::Forms(forms) => forms
@@ -392,6 +459,7 @@ fn render_is_subject(subject: &IsSubject, registry: &RenderRegistry) -> String {
     }
 }
 
+/// Renders the subject side of a specification statement.
 fn render_spec_subject(subject: &SpecSubject, registry: &RenderRegistry) -> String {
     match &subject.kind {
         SpecSubjectKind::Form(form) => render_form_or_declaration(form, registry),
@@ -399,6 +467,11 @@ fn render_spec_subject(subject: &SpecSubject, registry: &RenderRegistry) -> Stri
     }
 }
 
+/// Renders a form or declaration as math-mode LaTeX.
+///
+/// Definitions can use these forms both as the thing being described and as
+/// command parameters.  Placeholder suffixes are hidden to produce readable math
+/// while preserving enough structure for substitutions.
 fn render_form_or_declaration(form: &FormOrDeclaration, registry: &RenderRegistry) -> String {
     match &form.kind {
         FormOrDeclarationKind::Name(name) => escape_math_identifier(name),
@@ -478,6 +551,7 @@ fn render_form_or_declaration(form: &FormOrDeclaration, registry: &RenderRegistr
     }
 }
 
+/// Renders an `is` relationship whose type is a normal command expression.
 fn render_is_command(
     subject: &Expression,
     command: &CommandExpression,
@@ -487,6 +561,7 @@ fn render_is_command(
     render_is_command_with_subject_latex(subject_latex, command, registry)
 }
 
+/// Renders an `is` relationship whose type is a refined command expression.
 fn render_is_refined_command(
     subject: &Expression,
     command: &RefinedCommandExpression,
@@ -496,6 +571,11 @@ fn render_is_refined_command(
     render_is_refined_command_with_subject_latex(subject_latex, command, registry)
 }
 
+/// Renders a normal command type after the subject has already been rendered.
+///
+/// If the command has a `written:` template that includes the subject placeholder,
+/// the written template replaces the whole `subject is type` phrase.  Otherwise
+/// the subject is kept and the command is rendered after `is`.
 fn render_is_command_with_subject_latex(
     subject_latex: String,
     command: &CommandExpression,
@@ -533,6 +613,7 @@ fn render_is_command_with_subject_latex(
     }
 }
 
+/// Renders a refined command type after the subject has already been rendered.
 fn render_is_refined_command_with_subject_latex(
     subject_latex: String,
     command: &RefinedCommandExpression,
@@ -545,6 +626,10 @@ fn render_is_refined_command_with_subject_latex(
     )
 }
 
+/// Renders a standalone normal command expression.
+///
+/// Written templates are preferred for standalone command expressions; otherwise
+/// the plain-text `called:` template is rendered in text mode.
 fn render_command_expression(command: &CommandExpression, registry: &RenderRegistry) -> String {
     let signature = command_expression_signature(command);
     let Some(render) = registry.commands.get(&signature) else {
@@ -558,6 +643,11 @@ fn render_command_expression(command: &CommandExpression, registry: &RenderRegis
     }
 }
 
+/// Renders a command expression used as an `is`/`is not` predicate.
+///
+/// Predicate rendering deliberately falls back to `called:` when a `written:`
+/// template contains the subject placeholder, because predicate syntax supplies
+/// the subject separately.
 fn render_predicate_command_expression(
     command: &CommandExpression,
     registry: &RenderRegistry,
@@ -581,6 +671,7 @@ fn render_predicate_command_expression(
     render_called_template(&render.called, &substitutions)
 }
 
+/// Renders the called-text form of a refined command expression.
 fn render_refined_command_called(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
@@ -589,12 +680,16 @@ fn render_refined_command_called(
     render_called_template(&called.template, &called.substitutions)
 }
 
+/// Unrendered called-template text paired with all substitutions needed for it.
 #[derive(Clone, Debug)]
 struct CalledTemplate {
+    /// Plain-LaTeX-mode template, usually assembled from `called:` text.
     template: String,
+    /// Placeholder substitutions rendered as math-mode LaTeX.
     substitutions: HashMap<String, String>,
 }
 
+/// Extracts a called-template representation from any type expression.
 fn type_expression_called_template(
     ty: &TypeExpression,
     registry: &RenderRegistry,
@@ -607,6 +702,7 @@ fn type_expression_called_template(
     }
 }
 
+/// Extracts a called-template representation from a normal command expression.
 fn command_called_template(
     command: &CommandExpression,
     registry: &RenderRegistry,
@@ -620,6 +716,11 @@ fn command_called_template(
     })
 }
 
+/// Builds the called-template representation for a refined command expression.
+///
+/// The resulting template concatenates refinement labels with the base command's
+/// called text and gathers substitutions from both the refinement parts and the
+/// base command.
 fn refined_command_called_template(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
@@ -666,6 +767,10 @@ fn refined_command_called_template(
     }
 }
 
+/// Returns the type expression targeted by a `Refines:` statement.
+///
+/// `Refines:` can also parse as a spec statement; those do not identify a type
+/// command and therefore cannot enrich a card heading.
 fn refines_target_type(spec: &IsOrRefinedStatementSpec) -> Option<&TypeExpression> {
     match spec {
         IsOrRefinedStatementSpec::Is(statement) => Some(&statement.ty),
@@ -673,6 +778,10 @@ fn refines_target_type(spec: &IsOrRefinedStatementSpec) -> Option<&TypeExpressio
     }
 }
 
+/// Builds placeholder substitutions for a normal command expression.
+///
+/// The optional subject is inserted under the defining subject variable so
+/// templates like `f? : A? \to B?` can render complete statements.
 fn command_substitutions(
     command: &CommandExpression,
     render: &CommandRender,
@@ -696,6 +805,7 @@ fn command_substitutions(
     substitutions
 }
 
+/// Builds a substitution map from explicit parameter names and rendered values.
 fn command_substitutions_for_names(
     names: &[String],
     values: Vec<String>,
@@ -703,6 +813,10 @@ fn command_substitutions_for_names(
     names.iter().cloned().zip(values).collect()
 }
 
+/// Builds placeholder substitutions from forms supplied in a command header.
+///
+/// Heading substitutions are used for group card titles where the source heading
+/// itself provides concrete parameter names such as `{A}` and `{B}`.
 fn command_header_substitutions(
     header: &CommandHeader,
     registry: &RenderRegistry,
@@ -718,6 +832,7 @@ fn command_header_substitutions(
     substitutions
 }
 
+/// Collects all forms that appear in any kind of command header.
 fn command_header_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
     match header {
         CommandHeader::Command(header) => simple_command_header_forms(header),
@@ -726,6 +841,7 @@ fn command_header_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
     }
 }
 
+/// Collects forms from a normal prefix command header.
 fn simple_command_header_forms(header: &CommandHeaderNode) -> Vec<&FormOrDeclaration> {
     let mut forms = Vec::new();
     forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
@@ -740,6 +856,7 @@ fn simple_command_header_forms(header: &CommandHeaderNode) -> Vec<&FormOrDeclara
     forms
 }
 
+/// Collects forms from an infix command header.
 fn infix_command_header_forms(header: &InfixCommandHeader) -> Vec<&FormOrDeclaration> {
     let mut forms = Vec::new();
     forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
@@ -753,6 +870,10 @@ fn infix_command_header_forms(header: &InfixCommandHeader) -> Vec<&FormOrDeclara
     forms
 }
 
+/// Collects forms from a refined command header.
+///
+/// Refined headers can place arguments on the base command, the base tail, and
+/// refinement parts, so all of those locations are included.
 fn refined_command_header_forms(header: &RefinedCommandHeader) -> Vec<&FormOrDeclaration> {
     let mut forms = Vec::new();
     forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
@@ -775,6 +896,7 @@ fn refined_command_header_forms(header: &RefinedCommandHeader) -> Vec<&FormOrDec
     forms
 }
 
+/// Renders argument values that belong to the base command in a refined expression.
 fn refined_command_base_argument_values(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
@@ -800,6 +922,10 @@ fn refined_command_base_argument_values(
         .collect()
 }
 
+/// Renders argument values available to a single refined-command part.
+///
+/// A refinement part can refer both to the base command arguments and to any
+/// arguments attached directly to that part.
 fn refined_command_part_argument_values(
     command: &RefinedCommandExpression,
     part: &RefinedExpressionPart,
@@ -811,6 +937,7 @@ fn refined_command_part_argument_values(
         .collect()
 }
 
+/// Renders all argument values supplied to a normal command expression.
 fn command_argument_values(command: &CommandExpression, registry: &RenderRegistry) -> Vec<String> {
     command
         .head_args
@@ -833,6 +960,7 @@ fn command_argument_values(command: &CommandExpression, registry: &RenderRegistr
         .collect()
 }
 
+/// Renders all argument values attached to command tail segments.
 fn expression_tail_argument_values(
     tail: &[CommandExpressionTailPart],
     registry: &RenderRegistry,
@@ -844,10 +972,12 @@ fn expression_tail_argument_values(
         .collect()
 }
 
+/// Renders an unknown command chain in a readable escaped fallback form.
 fn render_command_like(chain: &Chain, _registry: &RenderRegistry) -> String {
     format!("\\backslash{}", escape_latex_math(&format_chain(chain)))
 }
 
+/// Renders a binary operator as LaTeX.
 fn render_binary_operator(operator: &BinaryOperator) -> String {
     match operator {
         BinaryOperator::Equality(operator)
@@ -861,6 +991,7 @@ fn render_binary_operator(operator: &BinaryOperator) -> String {
     }
 }
 
+/// Renders an operator token that is already part of parsed math syntax.
 fn render_operator_text(operator: &str) -> String {
     match operator {
         "*" => "\\ast".to_string(),
@@ -868,11 +999,16 @@ fn render_operator_text(operator: &str) -> String {
     }
 }
 
+/// Renders a quoted operator as a temporary LaTeX command.
+///
+/// This is a bridge until full type-checking resolves quoted operators
+/// semantically.  For example, `"in"` renders as `\in`.
 fn render_quoted_operator(operator: &str) -> String {
     // Temporary rendering until full type-checking can resolve quoted operators semantically.
     format!("\\{}", escape_latex_command_name(operator))
 }
 
+/// Renders subset/index-call syntax as bracketed LaTeX.
 fn render_subset_call(call: &crate::frontend::formulation::ast::SubsetCall) -> String {
     match call {
         crate::frontend::formulation::ast::SubsetCall::One { target, first, .. } => {
@@ -907,6 +1043,7 @@ fn render_subset_call(call: &crate::frontend::formulation::ast::SubsetCall) -> S
     }
 }
 
+/// Renders a placeholder form while hiding placeholder suffix markers.
 fn render_placeholder_form(form: &crate::frontend::formulation::ast::PlaceholderForm) -> String {
     match &form.kind {
         crate::frontend::formulation::ast::PlaceholderFormKind::Placeholder(placeholder) => {
@@ -929,6 +1066,7 @@ fn render_placeholder_form(form: &crate::frontend::formulation::ast::Placeholder
     }
 }
 
+/// Renders a form placeholder name, trimming trailing placeholder underscores.
 fn render_form_placeholder_name(name: &str) -> String {
     let trimmed = name.trim_end_matches('_');
     if trimmed.is_empty() {
@@ -938,6 +1076,10 @@ fn render_form_placeholder_name(name: &str) -> String {
     }
 }
 
+/// Renders a plain-LaTeX-mode `called:` template with math substitutions.
+///
+/// Text outside `$...$` is wrapped in `\textrm{...}`.  Text inside `$...$` is
+/// treated as math and supports `name?` placeholder substitution.
 fn render_called_template(template: &str, substitutions: &HashMap<String, String>) -> String {
     let mut result = String::new();
     let mut in_math = false;
@@ -954,6 +1096,7 @@ fn render_called_template(template: &str, substitutions: &HashMap<String, String
     result
 }
 
+/// Substitutes `name?` placeholders inside a math-mode template.
 fn substitute_math_template(template: &str, substitutions: &HashMap<String, String>) -> String {
     let mut result = String::new();
     let chars = template.chars().collect::<Vec<_>>();
@@ -984,19 +1127,23 @@ fn substitute_math_template(template: &str, substitutions: &HashMap<String, Stri
     result
 }
 
+/// Returns true when a template explicitly references a named placeholder.
 fn template_contains_placeholder(template: &str, name: &str) -> bool {
     let needle = format!("{name}?");
     template.contains(&needle)
 }
 
+/// Returns true when a character can begin a template placeholder name.
 fn is_placeholder_start(ch: char) -> bool {
     ch.is_ascii_alphabetic() || ch == '_'
 }
 
+/// Returns true when a character can continue a template placeholder name.
 fn is_placeholder_continue(ch: char) -> bool {
     ch.is_ascii_alphanumeric() || ch == '_' || ch == '.'
 }
 
+/// Extracts the primary subject name from a `Defines:`-compatible specification.
 fn primary_is_or_spec_name(spec: &IsOrSpec) -> Option<String> {
     match spec {
         IsOrSpec::Is(statement) => primary_is_statement_name(statement),
@@ -1004,6 +1151,7 @@ fn primary_is_or_spec_name(spec: &IsOrSpec) -> Option<String> {
     }
 }
 
+/// Extracts the primary subject name from a `Refines:`-compatible specification.
 fn primary_is_or_refined_spec_name(spec: &IsOrRefinedStatementSpec) -> Option<String> {
     match spec {
         IsOrRefinedStatementSpec::Is(statement) => primary_is_statement_name(statement),
@@ -1011,10 +1159,12 @@ fn primary_is_or_refined_spec_name(spec: &IsOrRefinedStatementSpec) -> Option<St
     }
 }
 
+/// Extracts the primary subject name from an `is` statement.
 fn primary_is_statement_name(statement: &IsStatement) -> Option<String> {
     primary_is_subject_name(&statement.subject)
 }
 
+/// Extracts the first usable name from an `is` subject.
 fn primary_is_subject_name(subject: &IsSubject) -> Option<String> {
     match &subject.kind {
         IsSubjectKind::Forms(forms) => forms.iter().find_map(|form| match form {
@@ -1025,6 +1175,7 @@ fn primary_is_subject_name(subject: &IsSubject) -> Option<String> {
     }
 }
 
+/// Extracts the primary name from a spec subject.
 fn primary_spec_subject_name(subject: &SpecSubject) -> Option<String> {
     match &subject.kind {
         SpecSubjectKind::Form(form) => primary_form_name(form),
@@ -1032,6 +1183,10 @@ fn primary_spec_subject_name(subject: &SpecSubject) -> Option<String> {
     }
 }
 
+/// Extracts the primary bindable name from a form or declaration.
+///
+/// The result is used as a substitution key for `written:` templates and group
+/// heading rendering.
 fn primary_form_name(form: &FormOrDeclaration) -> Option<String> {
     match &form.kind {
         FormOrDeclarationKind::Name(name) => Some(name.clone()),
@@ -1046,6 +1201,7 @@ fn primary_form_name(form: &FormOrDeclaration) -> Option<String> {
     }
 }
 
+/// Extracts the primary name from a placeholder form.
 fn primary_placeholder_form_name(
     form: &crate::frontend::formulation::ast::PlaceholderForm,
 ) -> Option<String> {
@@ -1059,6 +1215,7 @@ fn primary_placeholder_form_name(
     }
 }
 
+/// Builds the canonical signature for any command header.
 fn command_header_signature(header: &crate::frontend::formulation::ast::CommandHeader) -> String {
     match header {
         crate::frontend::formulation::ast::CommandHeader::Command(command) => {
@@ -1075,6 +1232,7 @@ fn command_header_signature(header: &crate::frontend::formulation::ast::CommandH
     }
 }
 
+/// Extracts ordered substitution parameter names from a command header.
 fn command_header_parameters(
     header: &crate::frontend::formulation::ast::CommandHeader,
 ) -> Vec<String> {
@@ -1084,12 +1242,14 @@ fn command_header_parameters(
         .collect()
 }
 
+/// Builds the canonical signature for a normal command expression.
 fn command_expression_signature(command: &CommandExpression) -> String {
     let mut signature = format!("\\{}", format_chain(&command.chain));
     add_expression_tail_signature(&mut signature, &command.tail);
     signature
 }
 
+/// Builds the canonical signature for a refined command header.
 fn refined_command_header_signature(command: &RefinedCommandHeader) -> String {
     let mut signature = "\\".to_string();
     if let Some(prefix) = &command.prefix_chain {
@@ -1109,12 +1269,14 @@ fn refined_command_header_signature(command: &RefinedCommandHeader) -> String {
     signature
 }
 
+/// Builds the canonical signature for the base command of a refined expression.
 fn refined_command_base_signature(command: &RefinedCommandExpression) -> String {
     let mut signature = format!("\\{}", refined_tail_signature(&command.refined_tail));
     add_expression_tail_signature(&mut signature, &command.tail);
     signature
 }
 
+/// Builds the canonical signature for one refinement part of a refined expression.
 fn refined_command_part_signature(
     command: &RefinedCommandExpression,
     part: &RefinedExpressionPart,
@@ -1132,6 +1294,7 @@ fn refined_command_part_signature(
     signature
 }
 
+/// Appends header tail labels to a canonical signature string.
 fn add_header_tail_signature(
     signature: &mut String,
     tail: &[crate::frontend::formulation::ast::CommandHeaderTailPart],
@@ -1142,6 +1305,7 @@ fn add_header_tail_signature(
     }
 }
 
+/// Appends expression tail labels to a canonical signature string.
 fn add_expression_tail_signature(signature: &mut String, tail: &[CommandExpressionTailPart]) {
     for part in tail {
         signature.push(':');
@@ -1149,6 +1313,7 @@ fn add_expression_tail_signature(signature: &mut String, tail: &[CommandExpressi
     }
 }
 
+/// Converts a refined-command tail into signature text.
 fn refined_tail_signature(tail: &RefinedTail) -> String {
     match tail {
         RefinedTail::Chain(chain) => format_chain(chain),
@@ -1156,6 +1321,7 @@ fn refined_tail_signature(tail: &RefinedTail) -> String {
     }
 }
 
+/// Converts a parsed chain into dotted signature text.
 fn format_chain(chain: &Chain) -> String {
     chain
         .parts
@@ -1169,10 +1335,12 @@ fn format_chain(chain: &Chain) -> String {
         .join(".")
 }
 
+/// Escapes a value that will be rendered as a math identifier.
 fn escape_math_identifier(value: &str) -> String {
     escape_latex_math(value)
 }
 
+/// Escapes characters that are unsafe in the limited math-mode output we emit.
 fn escape_latex_math(value: &str) -> String {
     value
         .replace('\\', "\\backslash ")
@@ -1181,6 +1349,10 @@ fn escape_latex_math(value: &str) -> String {
         .replace('}', "\\}")
 }
 
+/// Keeps only alphabetic characters for a generated LaTeX command name.
+///
+/// This is used by temporary quoted-operator rendering, where `"in"` becomes
+/// `\in` and punctuation is intentionally discarded.
 fn escape_latex_command_name(value: &str) -> String {
     value
         .chars()
@@ -1188,6 +1360,7 @@ fn escape_latex_command_name(value: &str) -> String {
         .collect()
 }
 
+/// Escapes characters that are unsafe inside rendered text-mode LaTeX.
 fn escape_latex_text(value: &str) -> String {
     value
         .replace('\\', "\\textbackslash{}")

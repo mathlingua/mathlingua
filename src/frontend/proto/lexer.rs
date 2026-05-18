@@ -1,15 +1,33 @@
 use super::ast::{Line, Metadata};
 use crate::events::EventLog;
 
+/// Diagnostic origin attached to errors raised by the proto lexer.
+///
+/// Keeping a distinct origin for this earliest frontend pass makes it easier to
+/// tell whether a malformed document failed during raw line handling or during
+/// later structural/formulation parsing.
 const ORIGIN: &str = "proto_lexer";
 
+/// Line-oriented lexer for the proto MathLingua syntax.
+///
+/// The proto lexer does not tokenize the language deeply.  It normalizes each
+/// physical source line into text plus indentation metadata, while preserving
+/// enough information for parser recovery and row-based diagnostics.
 pub struct Lexer<'a> {
+    /// Preprocessed source lines in original order.
     lines: Vec<Line>,
+    /// Index of the next line that will be returned by iteration.
     cursor: usize,
+    /// Shared diagnostic sink used when higher parser layers need row errors.
     event_log: &'a mut EventLog,
 }
 
 impl<'a> Lexer<'a> {
+    /// Builds a lexer over `input` and records diagnostics in `event_log`.
+    ///
+    /// The whole input is normalized up front because the proto parser needs
+    /// cheap peeking and cloning of lines while deciding whether a block is a
+    /// formulation, text literal, or nested group.
     pub fn new(input: &str, event_log: &'a mut EventLog) -> Self {
         Self {
             lines: text_to_lines(input),
@@ -18,18 +36,33 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    /// Returns the next line without consuming it.
+    ///
+    /// The proto parser relies on this to decide whether indentation still
+    /// belongs to the current section or whether control should return to the
+    /// enclosing group.
     pub fn peek(&self) -> Option<&Line> {
         self.lines.get(self.cursor)
     }
 
+    /// Emits a lexer-originated error at the given zero-based source row.
+    ///
+    /// Higher-level proto parsing code uses this helper so all line-shape
+    /// diagnostics share a consistent origin and row-only location policy.
     pub fn error(&mut self, row: usize, message: impl Into<String>) {
         self.event_log.user_error_at_row(Some(ORIGIN), row, message);
     }
 }
 
 impl Iterator for Lexer<'_> {
+    /// Iterator item yielded for each normalized source line.
     type Item = Line;
 
+    /// Consumes and returns the next normalized line.
+    ///
+    /// Lines are cloned out of the internal buffer so the parser can keep
+    /// previously consumed metadata while still using the lexer as a simple
+    /// forward-only cursor.
     fn next(&mut self) -> Option<Self::Item> {
         let line = self.lines.get(self.cursor)?.clone();
         self.cursor += 1;
@@ -37,6 +70,12 @@ impl Iterator for Lexer<'_> {
     }
 }
 
+/// Converts raw source text into proto lines with indentation metadata.
+///
+/// Leading whitespace is counted as indentation and stripped from the line
+/// text.  A leading `. ` marker is treated as two additional indentation
+/// columns and recorded separately so rendering and diagnostics can reconstruct
+/// the author's proto structure.
 fn text_to_lines(input: &str) -> Vec<Line> {
     input
         .split('\n')

@@ -2,8 +2,13 @@ use crate::events::EventLog;
 use std::env;
 use std::path::PathBuf;
 
+/// Event origin used for diagnostics emitted by environment helpers.
 const ORIGIN: &str = "environment";
 
+/// Returns the process current working directory or emits a user-facing error.
+///
+/// Command entrypoints use this wrapper instead of calling `std::env::current_dir`
+/// directly so failures are routed through the shared event system.
 pub fn current_working_directory(event_log: &mut EventLog) -> Option<PathBuf> {
     match env::current_dir() {
         Ok(cwd) => Some(cwd),

@@ -2,12 +2,19 @@ use std::fmt;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Monotonic counter mixed into marker ids to avoid collisions inside one process.
 static NEXT_MARKER_ID: AtomicU64 = AtomicU64::new(0);
 
+/// Identifier shared by the begin and end marker events of a measured range.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MarkerId(String);
 
 impl MarkerId {
+    /// Creates a new UUID-shaped marker id.
+    ///
+    /// This is not intended to be cryptographically random; it combines current
+    /// time with a process-local counter and sets UUID version/variant bits so it
+    /// is easy to read and group in logs.
     pub fn new() -> Self {
         let mut bytes = [0u8; 16];
         let now = SystemTime::now()
@@ -24,32 +31,43 @@ impl MarkerId {
         Self(format_uuid(bytes))
     }
 
+    /// Returns the id as a string slice.
     pub fn as_str(&self) -> &str {
         &self.0
     }
 }
 
 impl fmt::Display for MarkerId {
+    /// Writes the UUID-shaped marker id.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.0)
     }
 }
 
+/// Phase of an instrumentation marker.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MarkerPhase {
+    /// Beginning of a marked range.
     Begin,
+    /// End of a marked range.
     End,
 }
 
+/// Event emitted when a marked range begins or ends.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MarkerEvent {
+    /// Id shared between matching begin and end marker events.
     pub id: MarkerId,
+    /// Human-readable label for the measured range.
     pub label: String,
+    /// Whether this event begins or ends the range.
     pub phase: MarkerPhase,
+    /// Optional subsystem that emitted the marker.
     pub origin: Option<String>,
 }
 
 impl MarkerEvent {
+    /// Creates a marker event from its components.
     pub fn new(
         id: MarkerId,
         label: impl Into<String>,
@@ -64,24 +82,30 @@ impl MarkerEvent {
         }
     }
 
+    /// Returns a marker event with the given optional origin.
     pub fn with_origin_option(mut self, origin: Option<&str>) -> Self {
         self.origin = origin.map(str::to_owned);
         self
     }
 }
 
+/// Pair of begin and end marker events bounding a range in an event log.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MarkerRange {
+    /// Begin marker event.
     pub begin: MarkerEvent,
+    /// End marker event.
     pub end: MarkerEvent,
 }
 
 impl MarkerRange {
+    /// Creates a marker range from matching begin and end events.
     pub fn new(begin: MarkerEvent, end: MarkerEvent) -> Self {
         Self { begin, end }
     }
 }
 
+/// Formats raw bytes as a UUID-shaped string.
 fn format_uuid(bytes: [u8; 16]) -> String {
     let hex = bytes
         .iter()

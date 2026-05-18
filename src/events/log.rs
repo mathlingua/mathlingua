@@ -3,21 +3,32 @@ use super::{
 };
 use std::path::PathBuf;
 
+/// Listener that receives events as they are pushed into an `EventLog`.
 pub trait EventLogListener {
+    /// Handles one newly emitted event.
     fn on_event(&mut self, event: &Event);
 }
 
+/// Append-only event log with optional live listeners.
+///
+/// The log is the central diagnostic bus for CLI commands.  Callers can inspect
+/// accumulated events after an operation, while listeners can render events as
+/// they are emitted.
 #[derive(Default)]
 pub struct EventLog {
+    /// Events emitted so far, in order.
     events: Vec<Event>,
+    /// Live listeners notified whenever a new event is pushed.
     listeners: Vec<Box<dyn EventLogListener>>,
 }
 
 impl EventLog {
+    /// Creates an empty event log.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Adds a listener and replays already-emitted events to it.
     pub fn add_listener(&mut self, mut listener: impl EventLogListener + 'static) {
         for event in &self.events {
             listener.on_event(event);
@@ -26,6 +37,7 @@ impl EventLog {
         self.listeners.push(Box::new(listener));
     }
 
+    /// Appends an event and notifies all listeners.
     pub fn push(&mut self, event: Event) {
         self.events.push(event.clone());
 
@@ -34,10 +46,12 @@ impl EventLog {
         }
     }
 
+    /// Returns all events emitted so far.
     pub fn events(&self) -> &[Event] {
         &self.events
     }
 
+    /// Returns true when any emitted message is an error.
     pub fn has_errors(&self) -> bool {
         self.events.iter().any(|event| {
             event
@@ -46,6 +60,10 @@ impl EventLog {
         })
     }
 
+    /// Counts user-facing non-log messages.
+    ///
+    /// This is the issue count shown by `mlg check`; system diagnostics and plain
+    /// informational logs are intentionally excluded.
     pub fn issue_count(&self) -> usize {
         self.events
             .iter()
@@ -54,22 +72,27 @@ impl EventLog {
             .count()
     }
 
+    /// Emits a user-facing informational message.
     pub fn user_log(&mut self, origin: Option<&str>, message: impl Into<String>) {
         self.push(Event::user_log(message).with_origin_option(origin));
     }
 
+    /// Emits a user-facing warning message.
     pub fn user_warning(&mut self, origin: Option<&str>, message: impl Into<String>) {
         self.push(Event::user_warning(message).with_origin_option(origin));
     }
 
+    /// Emits a user-facing error message.
     pub fn user_error(&mut self, origin: Option<&str>, message: impl Into<String>) {
         self.push(Event::user_error(message).with_origin_option(origin));
     }
 
+    /// Emits a user-facing debug message.
     pub fn user_debug(&mut self, origin: Option<&str>, message: impl Into<String>) {
         self.push(Event::user_debug(message).with_origin_option(origin));
     }
 
+    /// Emits a user-facing warning at an in-memory row.
     pub fn user_warning_at_row(
         &mut self,
         origin: Option<&str>,
@@ -79,6 +102,7 @@ impl EventLog {
         self.push(Event::user_warning_at_row(row, message).with_origin_option(origin));
     }
 
+    /// Emits a user-facing error at an in-memory row.
     pub fn user_error_at_row(
         &mut self,
         origin: Option<&str>,
@@ -88,6 +112,7 @@ impl EventLog {
         self.push(Event::user_error_at_row(row, message).with_origin_option(origin));
     }
 
+    /// Emits a user-facing warning associated with a file path.
     pub fn user_warning_at_path(
         &mut self,
         origin: Option<&str>,
@@ -97,6 +122,7 @@ impl EventLog {
         self.push(Event::user_path_warning(path, message).with_origin_option(origin));
     }
 
+    /// Emits a user-facing error associated with a file path.
     pub fn user_error_at_path(
         &mut self,
         origin: Option<&str>,
@@ -106,6 +132,7 @@ impl EventLog {
         self.push(Event::user_path_error(path, message).with_origin_option(origin));
     }
 
+    /// Emits a user-facing warning at a file row.
     pub fn user_warning_at_file_row(
         &mut self,
         origin: Option<&str>,
@@ -116,6 +143,7 @@ impl EventLog {
         self.push(Event::user_file_warning(path, row, message).with_origin_option(origin));
     }
 
+    /// Emits a user-facing error at a file row.
     pub fn user_error_at_file_row(
         &mut self,
         origin: Option<&str>,
@@ -126,6 +154,7 @@ impl EventLog {
         self.push(Event::user_file_error(path, row, message).with_origin_option(origin));
     }
 
+    /// Emits a user-facing event with explicit level and optional location.
     pub fn user_event(
         &mut self,
         origin: Option<&str>,
@@ -138,22 +167,27 @@ impl EventLog {
         );
     }
 
+    /// Emits a system informational message.
     pub fn system_log(&mut self, origin: Option<&str>, message: impl Into<String>) {
         self.push(Event::system_log(message).with_origin_option(origin));
     }
 
+    /// Emits a system warning message.
     pub fn system_warning(&mut self, origin: Option<&str>, message: impl Into<String>) {
         self.push(Event::system_warning(message).with_origin_option(origin));
     }
 
+    /// Emits a system error message.
     pub fn system_error(&mut self, origin: Option<&str>, message: impl Into<String>) {
         self.push(Event::system_error(message).with_origin_option(origin));
     }
 
+    /// Emits a system debug message.
     pub fn system_debug(&mut self, origin: Option<&str>, message: impl Into<String>) {
         self.push(Event::system_debug(message).with_origin_option(origin));
     }
 
+    /// Emits and returns a begin marker.
     pub fn begin_marker(&mut self, label: impl Into<String>, origin: Option<&str>) -> MarkerEvent {
         let marker = MarkerEvent::new(
             MarkerId::new(),
@@ -165,6 +199,7 @@ impl EventLog {
         marker
     }
 
+    /// Emits and returns an end marker matching a begin marker.
     pub fn end_marker(&mut self, begin: &MarkerEvent, origin: Option<&str>) -> MarkerEvent {
         let marker = MarkerEvent::new(
             begin.id.clone(),
@@ -176,12 +211,14 @@ impl EventLog {
         marker
     }
 
+    /// Emits an immediate begin/end marker pair and returns the range.
     pub fn range(&mut self, label: impl Into<String>, origin: Option<&str>) -> MarkerRange {
         let begin = self.begin_marker(label, origin);
         let end = self.end_marker(&begin, origin);
         MarkerRange::new(begin, end)
     }
 
+    /// Returns the events between matching begin and end markers, inclusive.
     pub fn events_between<'a>(
         &'a self,
         begin: &MarkerEvent,

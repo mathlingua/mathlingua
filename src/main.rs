@@ -5,6 +5,11 @@ use mlg::events::{ColorMode, EventConsoleWriter, EventFilter, EventLog};
 use std::path::{Path, PathBuf};
 use std::process;
 
+/// Binary entrypoint for the `mlg` executable.
+///
+/// The entrypoint parses CLI arguments, attaches a console event listener, runs
+/// the selected subcommand, and exits with a non-zero code only after all events
+/// have had a chance to render.
 fn main() {
     let cli = Cli::parse();
     let filter = cli.event_filter();
@@ -28,6 +33,7 @@ fn main() {
     }
 }
 
+/// Runs `mlg check` and converts the resulting event state into a process code.
 fn run_check(paths: &[PathBuf], event_log: &mut EventLog) -> i32 {
     let cwd = current_working_directory(event_log);
 
@@ -40,6 +46,7 @@ fn run_check(paths: &[PathBuf], event_log: &mut EventLog) -> i32 {
     if event_log.has_errors() { 1 } else { 0 }
 }
 
+/// Runs `mlg init` in the current working directory.
 fn run_init(event_log: &mut EventLog) -> i32 {
     let cwd = current_working_directory(event_log);
 
@@ -54,6 +61,7 @@ fn run_init(event_log: &mut EventLog) -> i32 {
     }
 }
 
+/// Runs `mlg view` with the configured viewer port.
 fn run_view(args: &ViewArgs, event_log: &mut EventLog) -> i32 {
     let cwd = current_working_directory(event_log);
 
@@ -68,6 +76,10 @@ fn run_view(args: &ViewArgs, event_log: &mut EventLog) -> i32 {
     }
 }
 
+/// Attaches console output to the event log using the selected filter.
+///
+/// A base path is supplied when available so diagnostics can print relative file
+/// paths instead of long absolute paths.
 fn attach_console_writer(event_log: &mut EventLog, filter: &EventFilter, base_path: Option<&Path>) {
     let writer = match base_path {
         Some(base_path) => EventConsoleWriter::new()

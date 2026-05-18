@@ -6,13 +6,18 @@ use super::{
 use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 
+/// Event-log listener that renders events to the process console.
 pub struct EventConsoleWriter {
+    /// Filter deciding which events should be displayed.
     filter: EventFilter,
+    /// Optional base path used to shorten file paths in diagnostics.
     base_path: Option<PathBuf>,
+    /// ANSI color policy for rendered prefixes.
     color_mode: ColorMode,
 }
 
 impl Default for EventConsoleWriter {
+    /// Creates a console writer with the default user-facing filter.
     fn default() -> Self {
         Self {
             filter: EventFilter::default(),
@@ -23,25 +28,30 @@ impl Default for EventConsoleWriter {
 }
 
 impl EventConsoleWriter {
+    /// Creates a new console writer.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Sets the event filter used by this writer.
     pub fn with_filter(mut self, filter: EventFilter) -> Self {
         self.filter = filter;
         self
     }
 
+    /// Sets a base path for relative file-location rendering.
     pub fn with_base_path(mut self, base_path: impl Into<PathBuf>) -> Self {
         self.base_path = Some(base_path.into());
         self
     }
 
+    /// Sets the color mode used for diagnostic prefixes.
     pub fn with_color_mode(mut self, color_mode: ColorMode) -> Self {
         self.color_mode = color_mode;
         self
     }
 
+    /// Renders an event into a console line when it passes the filter.
     fn render(&self, event: &Event) -> Option<RenderedEvent> {
         if !self.filter.matches(event) {
             return None;
@@ -53,6 +63,11 @@ impl EventConsoleWriter {
         }
     }
 
+    /// Renders a message event and chooses stdout or stderr.
+    ///
+    /// User-facing log messages are printed plainly to stdout.  Warnings,
+    /// errors, debug messages, and system messages receive a prefixed diagnostic
+    /// form and go to stderr.
     fn render_message(&self, event: &MessageEvent) -> RenderedEvent {
         let use_color = self.should_use_color();
         let destination = if event.audience == Audience::User && event.level == Level::Log {
@@ -74,6 +89,7 @@ impl EventConsoleWriter {
         RenderedEvent { text, destination }
     }
 
+    /// Renders an instrumentation marker event.
     fn render_marker(&self, marker: &MarkerEvent) -> RenderedEvent {
         let phase = match marker.phase {
             MarkerPhase::Begin => "begin",
@@ -91,6 +107,7 @@ impl EventConsoleWriter {
         }
     }
 
+    /// Renders the severity/audience prefix for a diagnostic message.
     fn render_prefix(&self, event: &MessageEvent, use_color: bool) -> String {
         let level = match event.level {
             Level::Log => style_label("log", Style::Blue, use_color),
@@ -112,6 +129,7 @@ impl EventConsoleWriter {
         }
     }
 
+    /// Renders an optional event location for console output.
     fn render_location(&self, location: Option<&EventLocation>) -> Option<String> {
         match location? {
             EventLocation::File { path, span } => Some(match span {
@@ -127,6 +145,7 @@ impl EventConsoleWriter {
         }
     }
 
+    /// Displays a path relative to the configured base path when possible.
     fn display_path(&self, path: &Path) -> String {
         self.base_path
             .as_deref()
@@ -141,6 +160,7 @@ impl EventConsoleWriter {
             .unwrap_or_else(|| path.display().to_string())
     }
 
+    /// Returns true when ANSI colors should be used for this render.
     fn should_use_color(&self) -> bool {
         match self.color_mode {
             ColorMode::Auto => std::io::stderr().is_terminal(),
@@ -151,6 +171,7 @@ impl EventConsoleWriter {
 }
 
 impl EventLogListener for EventConsoleWriter {
+    /// Renders matching events as they are emitted.
     fn on_event(&mut self, event: &Event) {
         let Some(rendered) = self.render(event) else {
             return;
@@ -163,24 +184,36 @@ impl EventLogListener for EventConsoleWriter {
     }
 }
 
+/// Fully rendered console line plus the stream it should be written to.
 struct RenderedEvent {
+    /// Text to write, without a trailing newline.
     text: String,
+    /// Console stream that should receive the line.
     destination: ConsoleDestination,
 }
 
+/// Output stream for one rendered event.
 enum ConsoleDestination {
+    /// Standard output.
     Stdout,
+    /// Standard error.
     Stderr,
 }
 
+/// ANSI style family for diagnostic prefixes.
 #[derive(Clone, Copy)]
 enum Style {
+    /// Red, used for errors.
     Red,
+    /// Yellow, used for warnings.
     Yellow,
+    /// Blue, used for log messages.
     Blue,
+    /// Magenta, used for debug messages.
     Magenta,
 }
 
+/// Renders a file span in compact compiler-style form.
 fn render_file_span(span: &EventSpan) -> String {
     match (
         &span.start.row,
@@ -218,6 +251,7 @@ fn render_file_span(span: &EventSpan) -> String {
     }
 }
 
+/// Renders an in-memory span in human-readable prose.
 fn render_memory_span(span: &EventSpan) -> String {
     match (
         &span.start.row,
@@ -250,6 +284,7 @@ fn render_memory_span(span: &EventSpan) -> String {
     }
 }
 
+/// Applies an ANSI style to a diagnostic label when color is enabled.
 fn style_label(text: &str, style: Style, use_color: bool) -> String {
     if !use_color {
         return text.to_string();
@@ -265,6 +300,7 @@ fn style_label(text: &str, style: Style, use_color: bool) -> String {
     format!("\x1b[{code}m{text}\x1b[0m")
 }
 
+/// Writes a single line to a console stream and flushes it.
 fn write_line(mut writer: impl Write, message: &str) -> io::Result<()> {
     writer.write_all(message.as_bytes())?;
     writer.write_all(b"\n")?;

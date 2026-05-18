@@ -1,9 +1,13 @@
 use crate::events::EventLog;
 
+/// Package version compiled into the binary.
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+/// Package name compiled into the binary.
 const NAME: &str = env!("CARGO_PKG_NAME");
+/// Event origin used by the version command.
 const ORIGIN: &str = "mlg_version";
 
+/// Emits the current package name and version.
 pub fn version(event_log: &mut EventLog) {
     event_log.system_debug(Some(ORIGIN), "Rendering version information");
     event_log.user_log(Some(ORIGIN), format!("{NAME}: {VERSION}"));

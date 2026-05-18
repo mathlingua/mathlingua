@@ -5,8 +5,13 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
+/// Event origin used by collection initialization.
 const ORIGIN: &str = "mlg_init";
 
+/// Initializes a MathLingua collection at the given root directory.
+///
+/// Existing `mlg.json` and `content/` entries are left untouched.  Missing
+/// entries are created and reported through the event log.
 pub fn init(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
     event_log.system_debug(
         Some(ORIGIN),

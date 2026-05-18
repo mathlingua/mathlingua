@@ -4,19 +4,27 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
+/// Parsed contents of `mlg.json`.
+///
+/// The configuration is intentionally small today, but it is validated explicitly
+/// so user-facing errors can explain malformed or missing fields.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Config {
+    /// Human-readable collection name.
     #[serde(default)]
     pub name: String,
+    /// Collection schema/version string.
     #[serde(default = "default_version")]
     pub version: String,
 }
 
+/// Default version used when deserializing a config that omits `version`.
 fn default_version() -> String {
     "0".to_string()
 }
 
 impl Default for Config {
+    /// Returns the default config used by `mlg init`.
     fn default() -> Self {
         Self {
             name: String::new(),
@@ -25,6 +33,7 @@ impl Default for Config {
     }
 }
 
+/// Returns pretty-printed default `mlg.json` contents with a trailing newline.
 pub fn default_config_contents() -> String {
     let mut contents = serde_json::to_string_pretty(&Config::default())
         .expect("default Config should always serialize");
@@ -32,6 +41,10 @@ pub fn default_config_contents() -> String {
     contents
 }
 
+/// Validates a collection config file and emits user-facing diagnostics.
+///
+/// The validator accepts extra fields for forward compatibility but requires
+/// `name` and `version` to be present and string-valued.
 pub fn validate_config_file(path: &Path, event_log: &mut EventLog, origin: &str) {
     let contents = match fs::read_to_string(path) {
         Ok(contents) => contents,
@@ -70,6 +83,7 @@ pub fn validate_config_file(path: &Path, event_log: &mut EventLog, origin: &str)
     validate_string_field(&object, "version", path, event_log, origin);
 }
 
+/// Validates one required string field in a JSON object.
 fn validate_string_field(
     object: &serde_json::Map<String, serde_json::Value>,
     field: &str,

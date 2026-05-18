@@ -10,8 +10,14 @@ use crate::frontend::structural::parse_document;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Event origin used for diagnostics emitted while building viewer data.
 const ORIGIN: &str = "view_builder";
 
+/// Builds the complete serialized view model for a MathLingua collection.
+///
+/// Files are parsed structurally, semantically checked, indexed for rendering,
+/// and then converted into JSON-friendly view models.  Returning `None` means a
+/// user-facing blocking diagnostic has already been emitted to `event_log`.
 pub fn build_collection_view(
     collection_root: &Path,
     files: &[PathBuf],
@@ -49,6 +55,10 @@ pub fn build_collection_view(
     })
 }
 
+/// Reads and structurally parses one source file for the viewer pipeline.
+///
+/// The original source text is preserved because later rendering and diagnostics
+/// need both parsed structure and raw text.
 fn parse_file_for_view(file: &Path, event_log: &mut EventLog) -> Option<ParsedSourceFile> {
     event_log.system_debug(Some(ORIGIN), format!("Rendering {}", file.display()));
 
@@ -82,6 +92,11 @@ fn parse_file_for_view(file: &Path, event_log: &mut EventLog) -> Option<ParsedSo
     })
 }
 
+/// Builds the view model for one already-parsed source file.
+///
+/// The proto parser is rerun here because the viewer wants to preserve the
+/// source's broad group/section layout, while semantic checks use the stricter
+/// structural AST.
 fn build_file_view(
     collection_root: &Path,
     file: &ParsedSourceFile,
@@ -106,12 +121,17 @@ fn build_file_view(
     })
 }
 
+/// Returns true when any event should stop viewer generation.
+///
+/// Debug-level user messages are treated as blocking here because they represent
+/// parser recovery states that would make the rendered view misleading.
 fn has_blocking_user_issues(events: &[Event]) -> bool {
     events.iter().filter_map(Event::as_message).any(|event| {
         event.audience == Audience::User && matches!(event.level, Level::Error | Level::Debug)
     })
 }
 
+/// Derives the display title for a collection from its root directory name.
 fn collection_title(collection_root: &Path) -> String {
     collection_root
         .file_name()
@@ -121,6 +141,7 @@ fn collection_title(collection_root: &Path) -> String {
         .to_string()
 }
 
+/// Formats a source file path relative to the collection root when possible.
 fn relative_path(collection_root: &Path, file: &Path) -> String {
     file.strip_prefix(collection_root)
         .unwrap_or(file)
@@ -128,6 +149,11 @@ fn relative_path(collection_root: &Path, file: &Path) -> String {
         .to_string()
 }
 
+/// Converts a proto group into the JSON-friendly group view.
+///
+/// The first section label becomes the group kind, and its inline argument is
+/// supplied to heading rendering so `Refines` cards can combine their own
+/// `called:` text with the called text of the thing being refined.
 fn group_view(group: Group, registry: &RenderRegistry) -> GroupView {
     let kind = group
         .sections
@@ -156,6 +182,7 @@ fn group_view(group: Group, registry: &RenderRegistry) -> GroupView {
     }
 }
 
+/// Converts one proto section into a rendered section view.
 fn section_view(section: Section, registry: &RenderRegistry) -> SectionView {
     let inline_latex = section
         .inline_argument
@@ -174,6 +201,10 @@ fn section_view(section: Section, registry: &RenderRegistry) -> SectionView {
     }
 }
 
+/// Converts one proto argument into a rendered argument view.
+///
+/// Formulation arguments are rendered to LaTeX when possible; text arguments are
+/// passed through as display text; nested groups are recursively converted.
 fn argument_view(argument: Argument, registry: &RenderRegistry) -> ArgumentView {
     match argument {
         Argument::Formulation(formulation) => ArgumentView::Formulation {

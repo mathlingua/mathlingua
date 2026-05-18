@@ -5,6 +5,11 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
+/// Resolves the MathLingua source files requested by a command.
+///
+/// When no explicit paths are supplied, the nearest collection root is found by
+/// searching ancestors for `mlg.json`, and all `.mlg` files under `content/` are
+/// collected.  Explicit files and directories are resolved relative to `cwd`.
 pub(crate) fn resolve_source_files(
     cwd: &Path,
     paths: &[PathBuf],
@@ -42,6 +47,7 @@ pub(crate) fn resolve_source_files(
     files.into_iter().collect()
 }
 
+/// Resolves all source files in the current collection content directory.
 pub(crate) fn resolve_collection_content_files(
     cwd: &Path,
     event_log: &mut EventLog,
@@ -50,6 +56,7 @@ pub(crate) fn resolve_collection_content_files(
     resolve_source_files(cwd, &[], event_log, origin)
 }
 
+/// Finds the nearest ancestor directory containing the collection config file.
 pub(crate) fn find_collection_root(start: &Path) -> Option<PathBuf> {
     start
         .ancestors()
@@ -57,6 +64,7 @@ pub(crate) fn find_collection_root(start: &Path) -> Option<PathBuf> {
         .map(Path::to_path_buf)
 }
 
+/// Resolves a user-supplied path against the command working directory.
 fn resolve_input_path(
     cwd: &Path,
     path: &Path,
@@ -82,6 +90,10 @@ fn resolve_input_path(
     }
 }
 
+/// Collects source files from a file or directory target.
+///
+/// Direct file targets must be `.mlg` files.  Directory targets are traversed
+/// recursively and non-`.mlg` files inside them are ignored.
 fn collect_source_files(
     target: PathBuf,
     files: &mut BTreeSet<PathBuf>,
@@ -108,6 +120,7 @@ fn collect_source_files(
     }
 }
 
+/// Recursively collects `.mlg` files from a directory in stable path order.
 fn collect_directory_source_files(
     directory: &Path,
     files: &mut BTreeSet<PathBuf>,
@@ -137,12 +150,14 @@ fn collect_directory_source_files(
     }
 }
 
+/// Reads directory entries and sorts them by path for deterministic traversal.
 fn read_directory_entries(directory: &Path) -> io::Result<Vec<fs::DirEntry>> {
     let mut entries = fs::read_dir(directory)?.collect::<Result<Vec<_>, io::Error>>()?;
     entries.sort_by(|left, right| left.path().cmp(&right.path()));
     Ok(entries)
 }
 
+/// Returns true when a path has the MathLingua source extension.
 fn is_mathlingua_source_file(path: &Path) -> bool {
     path.extension()
         .and_then(|value| value.to_str())

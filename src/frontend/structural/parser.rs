@@ -2,6 +2,10 @@ use std::collections::{HashMap, VecDeque};
 
 use crate::events::EventLog;
 
+/// Diagnostic origin attached to structural parser errors.
+///
+/// This distinguishes section-shape and group-shape diagnostics from lower
+/// proto parsing errors and later backend semantic checks.
 const ORIGIN: &str = "structural_parser";
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
@@ -17,6 +21,11 @@ use crate::frontend::proto::ast::{
 
 use super::ast::*;
 
+/// Parses raw MathLingua source into the strongly typed structural AST.
+///
+/// This function composes the proto parser with structural recognition.  Proto
+/// groups that cannot be recognized are diagnosed and skipped, allowing valid
+/// neighboring groups to continue into backend checks and rendering.
 pub fn parse_document(input: &str, tracker: &mut EventLog) -> Document {
     let groups = {
         let mut proto_parser = ProtoParser::new(input, tracker);
@@ -35,6 +44,10 @@ pub fn parse_document(input: &str, tracker: &mut EventLog) -> Document {
     }
 }
 
+/// Dispatches one proto group to the top-level structural parser matching its first section.
+///
+/// The first section label determines the group kind.  Unknown labels are
+/// reported at the group start and omitted from the resulting document.
 fn parse_top_level_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TopLevelItem> {
     let label = first_section_label(group)?;
     match label {
@@ -65,6 +78,10 @@ fn parse_top_level_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<T
     }
 }
 
+/// Parses a top-level `Title:` group.
+///
+/// Title groups cannot have bracket headings and must contain exactly the
+/// `Title:` section shape.
 fn parse_title(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TitleGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Title", &group.sections, tracker, &["Title"])?;
@@ -75,6 +92,10 @@ fn parse_title(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TitleGroup>
     })
 }
 
+/// Parses a top-level `Section:` group.
+///
+/// This represents a first-level document outline heading rather than a
+/// definition or theorem block.
 fn parse_section(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SectionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Section", &group.sections, tracker, &["Section"])?;
@@ -85,6 +106,10 @@ fn parse_section(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SectionGr
     })
 }
 
+/// Parses a top-level `Subsection:` group.
+///
+/// Subsections share the simple outline shape with `Section:` but carry their
+/// own wrapper so rendering can preserve hierarchy.
 fn parse_subsection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SubsectionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Subsection", &group.sections, tracker, &["Subsection"])?;
@@ -99,6 +124,10 @@ fn parse_subsection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Subsec
     })
 }
 
+/// Parses a top-level `Subsubsection:` group.
+///
+/// The parser enforces the expected section label and rejects accidental command
+/// headings on outline-only groups.
 fn parse_subsubsection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SubsubsectionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections(
@@ -118,6 +147,12 @@ fn parse_subsubsection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Sub
     })
 }
 
+/// Parses a command-backed `Describes:` group.
+///
+/// This enforces the full `Describes` section order and converts each optional
+/// nested section into its typed representation.  Formulation sections are
+/// delegated to the formulation parser while clause/nested sections recurse
+/// through structural helpers.
 fn parse_describes(group: &ProtoGroup, tracker: &mut EventLog) -> Option<DescribesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
@@ -197,6 +232,11 @@ fn parse_describes(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Describ
     })
 }
 
+/// Parses a command-backed `Defines:` group.
+///
+/// `Defines` groups introduce command signatures for specification/type-like
+/// statements and support the same auxiliary sections as `Describes`, except
+/// for the `expresses:` clause in place of form-specific sections.
 fn parse_defines(group: &ProtoGroup, tracker: &mut EventLog) -> Option<DefinesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
@@ -266,6 +306,11 @@ fn parse_defines(group: &ProtoGroup, tracker: &mut EventLog) -> Option<DefinesGr
     })
 }
 
+/// Parses a command-backed `Refines:` group.
+///
+/// Refines groups define a refined command signature and validate their
+/// `Refines:`/`specifies:` bodies with the parser variant that accepts refined
+/// command references.
 fn parse_refines(group: &ProtoGroup, tracker: &mut EventLog) -> Option<RefinesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
@@ -345,6 +390,10 @@ fn parse_refines(group: &ProtoGroup, tracker: &mut EventLog) -> Option<RefinesGr
     })
 }
 
+/// Parses a command-backed `States:` group.
+///
+/// The `that:` section is required and supplies the statement body.  Optional
+/// prose in `States:` is retained for documentation/rendering contexts.
 fn parse_states(group: &ProtoGroup, tracker: &mut EventLog) -> Option<StatesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
@@ -408,6 +457,9 @@ fn parse_states(group: &ProtoGroup, tracker: &mut EventLog) -> Option<StatesGrou
     })
 }
 
+/// Parses an `Axiom:` group using the shared theorem-like parser.
+///
+/// The returned shared tuple is adapted to the axiom-specific section wrapper.
 fn parse_axiom(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AxiomGroup> {
     parse_argument_theorem_like(group, tracker, "Axiom").map(
         |(
@@ -440,6 +492,7 @@ fn parse_axiom(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AxiomGroup>
     )
 }
 
+/// Parses a `Theorem:` group using the shared theorem-like parser.
 fn parse_theorem(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TheoremGroup> {
     parse_argument_theorem_like(group, tracker, "Theorem").map(
         |(
@@ -472,6 +525,7 @@ fn parse_theorem(group: &ProtoGroup, tracker: &mut EventLog) -> Option<TheoremGr
     )
 }
 
+/// Parses a `Lemma:` group using the shared theorem-like parser.
 fn parse_lemma(group: &ProtoGroup, tracker: &mut EventLog) -> Option<LemmaGroup> {
     parse_argument_theorem_like(group, tracker, "Lemma").map(
         |(
@@ -504,6 +558,7 @@ fn parse_lemma(group: &ProtoGroup, tracker: &mut EventLog) -> Option<LemmaGroup>
     )
 }
 
+/// Parses a `Conjecture:` group using the shared theorem-like parser.
 fn parse_conjecture(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ConjectureGroup> {
     parse_argument_theorem_like(group, tracker, "Conjecture").map(
         |(
@@ -537,6 +592,13 @@ fn parse_conjecture(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Conjec
 }
 
 #[allow(clippy::type_complexity)]
+/// Parses the common shape shared by axiom/theorem/lemma/conjecture groups.
+///
+/// These groups all allow optional command headings, optional prose on their
+/// primary section, optional assumptions/context, a required `then:` section,
+/// and the same auxiliary documentation/reference sections.  Returning a tuple
+/// keeps each concrete wrapper parser small while preserving exact section
+/// types at the call site.
 fn parse_argument_theorem_like(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -620,6 +682,10 @@ fn parse_argument_theorem_like(
     ))
 }
 
+/// Parses a `Corollary:` group.
+///
+/// Corollaries mostly share theorem-like structure but additionally require an
+/// `of:` section that records what theorem or statement they follow from.
 fn parse_corollary(group: &ProtoGroup, tracker: &mut EventLog) -> Option<CorollaryGroup> {
     let heading = parse_optional_command_heading(group, tracker)?;
     let sections = identify_sections(
@@ -692,6 +758,10 @@ fn parse_corollary(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Corolla
     })
 }
 
+/// Parses a `Person:` metadata group.
+///
+/// Person groups require an author-style heading and carry required `name:` and
+/// `biography:` sections, with optional prose on the leading `Person:` section.
 fn parse_person(group: &ProtoGroup, tracker: &mut EventLog) -> Option<PersonGroup> {
     let heading = parse_required_author_heading(group, tracker)?;
     let sections = identify_sections(
@@ -719,6 +789,10 @@ fn parse_person(group: &ProtoGroup, tracker: &mut EventLog) -> Option<PersonGrou
     })
 }
 
+/// Parses a `Resource:` metadata group.
+///
+/// Resource groups require a resource heading and then delegate each nested
+/// resource field to [`parse_resource_item_group`].
 fn parse_resource(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceGroup> {
     let heading = parse_required_resource_heading(group, tracker)?;
     let sections = identify_sections("Resource", &group.sections, tracker, &["Resource"])?;
@@ -736,6 +810,10 @@ fn parse_resource(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Resource
     })
 }
 
+/// Parses a top-level `Specify:` group.
+///
+/// Specify groups do not take headings and contain nested numeric-domain
+/// specification items.
 fn parse_specify(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SpecifyGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Specify", &group.sections, tracker, &["Specify"])?;
@@ -751,6 +829,11 @@ fn parse_specify(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SpecifyGr
     })
 }
 
+/// Parses an `alias:` nested group.
+///
+/// Aliases may optionally include a label heading and a `written:` rendering
+/// section.  The alias body accepts either expression or specification-operator
+/// alias syntax.
 fn parse_alias_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AliasGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("alias", &group.sections, tracker, &["alias", "written?"])?;
@@ -771,6 +854,10 @@ fn parse_alias_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Alias
     })
 }
 
+/// Parses a `symbol:` nested group inside `Provides:`.
+///
+/// Symbols reuse alias-kind parsing because provided symbols can stand for
+/// expression aliases or specification-operator aliases.
 fn parse_symbol(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SymbolGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("symbol", &group.sections, tracker, &["symbol", "written?"])?;
@@ -791,6 +878,10 @@ fn parse_symbol(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SymbolGrou
     })
 }
 
+/// Parses a `connection:` nested group inside `Provides:`.
+///
+/// Connection groups capture prose and optional formulation constraints that
+/// describe how one documented concept connects to another.
 fn parse_connection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ConnectionGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
@@ -844,6 +935,10 @@ fn parse_connection(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Connec
     })
 }
 
+/// Parses a `written:` documentation group.
+///
+/// The text entries are stored as math-mode rendering templates and validated
+/// only for quoted-text shape at this structural layer.
 fn parse_written(group: &ProtoGroup, tracker: &mut EventLog) -> Option<WrittenGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("written", &group.sections, tracker, &["written"])?;
@@ -855,6 +950,10 @@ fn parse_written(group: &ProtoGroup, tracker: &mut EventLog) -> Option<WrittenGr
     })
 }
 
+/// Parses a `called:` documentation group.
+///
+/// A `called:` group may bundle an optional `written:` section, which lets a
+/// definition provide both prose and math-mode renderings in one nested group.
 fn parse_called(group: &ProtoGroup, tracker: &mut EventLog) -> Option<CalledGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("called", &group.sections, tracker, &["called", "written?"])?;
@@ -870,6 +969,10 @@ fn parse_called(group: &ProtoGroup, tracker: &mut EventLog) -> Option<CalledGrou
     })
 }
 
+/// Parses a `writing:` documentation group.
+///
+/// The `writing:` section defines the alias and the `as:` section stores the
+/// quoted rendering text associated with that alias.
 fn parse_writing(group: &ProtoGroup, tracker: &mut EventLog) -> Option<WritingGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("writing", &group.sections, tracker, &["writing", "as"])?;
@@ -889,6 +992,7 @@ fn parse_writing(group: &ProtoGroup, tracker: &mut EventLog) -> Option<WritingGr
     })
 }
 
+/// Parses an `overview:` documentation group.
 fn parse_overview(group: &ProtoGroup, tracker: &mut EventLog) -> Option<OverviewGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("overview", &group.sections, tracker, &["overview"])?;
@@ -904,6 +1008,10 @@ fn parse_overview(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Overview
     })
 }
 
+/// Parses a `related:` documentation group.
+///
+/// Related groups require at least one quoted text entry so empty related
+/// sections are reported as authoring mistakes.
 fn parse_related(group: &ProtoGroup, tracker: &mut EventLog) -> Option<RelatedGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("related", &group.sections, tracker, &["related"])?;
@@ -919,6 +1027,10 @@ fn parse_related(group: &ProtoGroup, tracker: &mut EventLog) -> Option<RelatedGr
     })
 }
 
+/// Parses a `discoverer:` documentation group.
+///
+/// Discoverer text is optional/open because the section may be used as a marker
+/// before richer metadata is available.
 fn parse_discoverer(group: &ProtoGroup, tracker: &mut EventLog) -> Option<DiscovererGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("discoverer", &group.sections, tracker, &["discoverer"])?;
@@ -930,6 +1042,10 @@ fn parse_discoverer(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Discov
     })
 }
 
+/// Parses a `label:` justification note.
+///
+/// The note may contain optional label/by prose but must include a comment so
+/// the justification has useful explanatory content.
 fn parse_label_note(group: &ProtoGroup, tracker: &mut EventLog) -> Option<LabelGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
@@ -952,6 +1068,10 @@ fn parse_label_note(group: &ProtoGroup, tracker: &mut EventLog) -> Option<LabelG
     })
 }
 
+/// Parses a `by:` justification note.
+///
+/// This mirrors label notes but starts from a `by:` section for author/source
+/// oriented justification entries.
 fn parse_by_note(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ByGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("by", &group.sections, tracker, &["by", "comment"])?;
@@ -966,6 +1086,10 @@ fn parse_by_note(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ByGroup> 
     })
 }
 
+/// Parses an `id:` metadata group.
+///
+/// Metadata groups do not accept headings because their meaning is determined
+/// entirely by the nested section label.
 fn parse_id(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IdGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("id", &group.sections, tracker, &["id"])?;
@@ -976,6 +1100,7 @@ fn parse_id(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IdGroup> {
     })
 }
 
+/// Parses a `version:` metadata group.
 fn parse_version(group: &ProtoGroup, tracker: &mut EventLog) -> Option<VersionGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("version", &group.sections, tracker, &["version"])?;
@@ -986,6 +1111,10 @@ fn parse_version(group: &ProtoGroup, tracker: &mut EventLog) -> Option<VersionGr
     })
 }
 
+/// Parses a positive-integer specification item.
+///
+/// The structural shape is identified by a `positive:` section together with an
+/// `int:` section; all prose fields are open and may be empty.
 fn parse_positive_int(group: &ProtoGroup, tracker: &mut EventLog) -> Option<PositiveIntGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
@@ -1008,6 +1137,7 @@ fn parse_positive_int(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Posi
     })
 }
 
+/// Parses a negative-integer specification item.
 fn parse_negative_int(group: &ProtoGroup, tracker: &mut EventLog) -> Option<NegativeIntGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
@@ -1030,6 +1160,7 @@ fn parse_negative_int(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Nega
     })
 }
 
+/// Parses a zero specification item.
 fn parse_zero(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ZeroGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("zero", &group.sections, tracker, &["zero", "is"])?;
@@ -1044,6 +1175,7 @@ fn parse_zero(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ZeroGroup> {
     })
 }
 
+/// Parses a positive-decimal specification item.
 fn parse_positive_decimal(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1069,6 +1201,7 @@ fn parse_positive_decimal(
     })
 }
 
+/// Parses a negative-decimal specification item.
 fn parse_negative_decimal(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1094,6 +1227,7 @@ fn parse_negative_decimal(
     })
 }
 
+/// Parses a resource `title:` item.
 fn parse_resource_title(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceTitleGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("title", &group.sections, tracker, &["title"])?;
@@ -1104,6 +1238,9 @@ fn parse_resource_title(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Re
     })
 }
 
+/// Parses a resource `author:` item.
+///
+/// Resource authors require at least one quoted text entry.
 fn parse_resource_author(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1117,6 +1254,7 @@ fn parse_resource_author(
     })
 }
 
+/// Parses a resource `offset:` item.
 fn parse_resource_offset(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1130,6 +1268,7 @@ fn parse_resource_offset(
     })
 }
 
+/// Parses a resource `url:` item.
 fn parse_resource_url(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceUrlGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("url", &group.sections, tracker, &["url"])?;
@@ -1140,6 +1279,7 @@ fn parse_resource_url(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Reso
     })
 }
 
+/// Parses a resource `homepage:` item.
 fn parse_resource_homepage(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1157,6 +1297,7 @@ fn parse_resource_homepage(
     })
 }
 
+/// Parses a resource `type:` item.
 fn parse_resource_type(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceTypeGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("type", &group.sections, tracker, &["type"])?;
@@ -1167,6 +1308,7 @@ fn parse_resource_type(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Res
     })
 }
 
+/// Parses a resource `edition:` item.
 fn parse_resource_edition(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1180,6 +1322,7 @@ fn parse_resource_edition(
     })
 }
 
+/// Parses a resource `editor:` item.
 fn parse_resource_editor(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1193,6 +1336,7 @@ fn parse_resource_editor(
     })
 }
 
+/// Parses a resource `institution:` item.
 fn parse_resource_institution(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1210,6 +1354,7 @@ fn parse_resource_institution(
     })
 }
 
+/// Parses a resource `journal:` item.
 fn parse_resource_journal(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1223,6 +1368,7 @@ fn parse_resource_journal(
     })
 }
 
+/// Parses a resource `publisher:` item.
 fn parse_resource_publisher(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1240,6 +1386,7 @@ fn parse_resource_publisher(
     })
 }
 
+/// Parses a resource `volume:` item.
 fn parse_resource_volume(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1253,6 +1400,7 @@ fn parse_resource_volume(
     })
 }
 
+/// Parses a resource `month:` item.
 fn parse_resource_month(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceMonthGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("month", &group.sections, tracker, &["month"])?;
@@ -1263,6 +1411,7 @@ fn parse_resource_month(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Re
     })
 }
 
+/// Parses a resource `year:` item.
 fn parse_resource_year(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceYearGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("year", &group.sections, tracker, &["year"])?;
@@ -1273,6 +1422,7 @@ fn parse_resource_year(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Res
     })
 }
 
+/// Parses a resource `description:` item.
 fn parse_resource_description(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1290,6 +1440,10 @@ fn parse_resource_description(
     })
 }
 
+/// Parses a `not:` clause group.
+///
+/// The nested `not:` section must contain exactly one clause, which is boxed to
+/// avoid making the recursive [`Clause`] enum infinitely sized.
 fn parse_not_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<NotGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("not", &group.sections, tracker, &["not"])?;
@@ -1305,6 +1459,7 @@ fn parse_not_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<NotGro
     })
 }
 
+/// Parses an `allOf:` clause group.
 fn parse_all_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AllOfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("allOf", &group.sections, tracker, &["allOf"])?;
@@ -1316,6 +1471,7 @@ fn parse_all_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<All
     })
 }
 
+/// Parses an `anyOf:` clause group.
 fn parse_any_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AnyOfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("anyOf", &group.sections, tracker, &["anyOf"])?;
@@ -1327,6 +1483,7 @@ fn parse_any_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Any
     })
 }
 
+/// Parses a `oneOf:` clause group.
 fn parse_one_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<OneOfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("oneOf", &group.sections, tracker, &["oneOf"])?;
@@ -1338,6 +1495,10 @@ fn parse_one_of_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<One
     })
 }
 
+/// Parses an `exists:` clause group.
+///
+/// The bound value is parsed as `is`/spec syntax and the required `suchThat:`
+/// section supplies predicate clauses.
 fn parse_exists_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ExistsGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("exists", &group.sections, tracker, &["exists", "suchThat"])?;
@@ -1361,6 +1522,7 @@ fn parse_exists_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Exi
     })
 }
 
+/// Parses an `existsUnique:` clause group.
 fn parse_exists_unique_clause(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1392,6 +1554,10 @@ fn parse_exists_unique_clause(
     })
 }
 
+/// Parses a `forAll:` clause group.
+///
+/// The optional `where:` section acts as a guard and the required `then:`
+/// section carries the quantified conclusion.
 fn parse_for_all_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ForAllGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
@@ -1420,6 +1586,7 @@ fn parse_for_all_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Fo
     })
 }
 
+/// Parses an `if:` clause group.
 fn parse_if_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("if", &group.sections, tracker, &["if", "then"])?;
@@ -1434,6 +1601,7 @@ fn parse_if_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IfGroup
     })
 }
 
+/// Parses an `iff:` clause group.
 fn parse_iff_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IffGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections("iff", &group.sections, tracker, &["iff", "then"])?;
@@ -1448,6 +1616,10 @@ fn parse_iff_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IffGro
     })
 }
 
+/// Parses a `piecewise:` clause group.
+///
+/// The leading section may hold descriptive text while `if:` and `then:` are
+/// required and `else:` is optional.
 fn parse_piecewise_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<PiecewiseGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
@@ -1474,6 +1646,10 @@ fn parse_piecewise_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<
     })
 }
 
+/// Parses a nested `given:` clause group.
+///
+/// This group is used inside clause lists to introduce a local assumption,
+/// optional context, and required consequence.
 fn parse_given_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<GivenGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
@@ -1502,10 +1678,12 @@ fn parse_given_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Give
     })
 }
 
+/// Adapts an `alias:` group into an [`AliasItem`].
 fn parse_alias_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<AliasItem> {
     parse_alias_group(group, tracker).map(AliasItem::Alias)
 }
 
+/// Dispatches nested `Provides:` groups to symbol or connection parsers.
 fn parse_provides_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ProvidesItem> {
     match first_section_label(group)? {
         "symbol" => parse_symbol(group, tracker).map(ProvidesItem::Symbol),
@@ -1521,6 +1699,10 @@ fn parse_provides_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Opti
     }
 }
 
+/// Dispatches nested `Documented:` groups to documentation item parsers.
+///
+/// Unknown documentation group labels are reported and skipped so other
+/// documentation entries in the same section can still be used.
 fn parse_documented_item_group(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1543,6 +1725,7 @@ fn parse_documented_item_group(
     }
 }
 
+/// Dispatches nested `Justified:` groups to justification item parsers.
 fn parse_justified_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<JustifiedItem> {
     match first_section_label(group)? {
         "label" => parse_label_note(group, tracker).map(JustifiedItem::Label),
@@ -1558,6 +1741,7 @@ fn parse_justified_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Opt
     }
 }
 
+/// Dispatches nested `Metadata:` groups to metadata item parsers.
 fn parse_metadata_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<MetadataItem> {
     match first_section_label(group)? {
         "id" => parse_id(group, tracker).map(MetadataItem::Id),
@@ -1573,6 +1757,10 @@ fn parse_metadata_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Opti
     }
 }
 
+/// Dispatches nested `Specify:` groups to numeric-domain item parsers.
+///
+/// Positive/negative groups are distinguished by the presence of an `int:`
+/// section; otherwise they are parsed as decimal specification items.
 fn parse_specify_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<SpecifyItem> {
     match first_section_label(group)? {
         "positive" => {
@@ -1601,6 +1789,7 @@ fn parse_specify_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Optio
     }
 }
 
+/// Dispatches nested `Resource:` groups to resource field parsers.
 fn parse_resource_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<ResourceItem> {
     match first_section_label(group)? {
         "title" => parse_resource_title(group, tracker).map(ResourceItem::Title),
@@ -1629,6 +1818,10 @@ fn parse_resource_item_group(group: &ProtoGroup, tracker: &mut EventLog) -> Opti
     }
 }
 
+/// Dispatches a nested clause group to the corresponding clause parser.
+///
+/// Inline formulation clauses are handled by [`parse_optional_clauses`]; this
+/// function only handles group-shaped clauses.
 fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Clause> {
     match first_section_label(group)? {
         "not" => parse_not_clause(group, tracker).map(Clause::Not),
@@ -1653,6 +1846,11 @@ fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Clau
     }
 }
 
+/// Parses an alias body into the supported alias variants.
+///
+/// Expression aliases are attempted first because their left-hand side grammar
+/// is broader; if that fails the body is parsed as a specification-operator
+/// alias.
 fn parse_alias_kind(input: &str) -> Result<AliasKind, FormulationParseError> {
     if let Ok(alias) = parse_expression_alias(input) {
         return Ok(AliasKind::Expression(alias));
@@ -1660,6 +1858,10 @@ fn parse_alias_kind(input: &str) -> Result<AliasKind, FormulationParseError> {
     parse_spec_operator_alias(input).map(AliasKind::SpecOperator)
 }
 
+/// Parses an item accepted by `extends:` and related sections.
+///
+/// `is ... via ...` is more specific, so it is attempted before the broader
+/// `is`/spec parser.
 fn parse_is_or_via_item(input: &str) -> Result<IsOrViaItem, FormulationParseError> {
     if let Ok(item) = parse_is_via_statement(input) {
         return Ok(IsOrViaItem::IsVia(item));
@@ -1667,6 +1869,10 @@ fn parse_is_or_via_item(input: &str) -> Result<IsOrViaItem, FormulationParseErro
     parse_is_or_spec(input).map(IsOrViaItem::IsOrSpec)
 }
 
+/// Parses a required command heading from a proto group.
+///
+/// Missing or malformed headings are reported at the group row because headings
+/// live on the group header line rather than in a section body.
 fn parse_required_command_heading(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1688,6 +1894,10 @@ fn parse_required_command_heading(
     }
 }
 
+/// Parses an optional command heading from a proto group.
+///
+/// `None` means the group has no heading; an invalid present heading prevents
+/// construction of the enclosing structural group.
 fn parse_optional_command_heading(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1708,6 +1918,10 @@ fn parse_optional_command_heading(
     }
 }
 
+/// Parses an optional label heading from a nested proto group.
+///
+/// Label headings are used for local documentation/proof notes and are
+/// syntactically distinct from command headings.
 fn parse_optional_label_heading(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1728,6 +1942,7 @@ fn parse_optional_label_heading(
     }
 }
 
+/// Parses a required author heading from a `Person:` group.
 fn parse_required_author_heading(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1749,6 +1964,7 @@ fn parse_required_author_heading(
     }
 }
 
+/// Parses a required resource heading from a `Resource:` group.
 fn parse_required_resource_heading(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1774,6 +1990,10 @@ fn parse_required_resource_heading(
     }
 }
 
+/// Ensures a group has no bracket heading.
+///
+/// Outline and metadata groups derive their identity from sections only; a
+/// heading on those groups is almost certainly an authoring mistake.
 fn ensure_no_heading(group: &ProtoGroup, tracker: &mut EventLog) -> Option<()> {
     if let Some(heading) = &group.heading {
         tracker.user_error_at_row(
@@ -1787,6 +2007,11 @@ fn ensure_no_heading(group: &ProtoGroup, tracker: &mut EventLog) -> Option<()> {
     }
 }
 
+/// Parses exactly one required formulation from a section.
+///
+/// The parser function is supplied by the caller so this helper can parse
+/// expressions, command headings, labels, resources, or other formulation
+/// fragments while sharing diagnostics and cardinality checks.
 fn parse_required_formulation<T>(
     section: &ProtoSection,
     label: &str,
@@ -1809,6 +2034,10 @@ fn parse_required_formulation<T>(
     }
 }
 
+/// Parses one or more required formulations from a section.
+///
+/// If parsing produced no items and no more specific issue was emitted, this
+/// helper reports a missing-content diagnostic for the whole section.
 fn parse_required_formulations<T>(
     section: &ProtoSection,
     label: &str,
@@ -1828,6 +2057,10 @@ fn parse_required_formulations<T>(
     })
 }
 
+/// Parses zero or more formulations from an optional section.
+///
+/// Inline section arguments and formulation arguments are accepted.  Text and
+/// nested groups are diagnosed because callers requested formulation content.
 fn parse_optional_formulations<T>(
     section: Option<&ProtoSection>,
     label: &str,
@@ -1871,6 +2104,10 @@ fn parse_optional_formulations<T>(
     result.into()
 }
 
+/// Parses exactly one required clause from a section.
+///
+/// This is used for section shapes such as `expresses:` and `not:` where the
+/// language grammar expects one logical clause.
 fn parse_required_clause(
     section: &ProtoSection,
     label: &str,
@@ -1892,6 +2129,7 @@ fn parse_required_clause(
     }
 }
 
+/// Parses one or more required clauses from a section.
 fn parse_required_clauses(
     section: &ProtoSection,
     label: &str,
@@ -1910,6 +2148,10 @@ fn parse_required_clauses(
     })
 }
 
+/// Parses zero or more clauses from an optional section.
+///
+/// Inline formulations are parsed first as expressions and then as `is`/spec
+/// statements, while nested groups are dispatched through clause-group parsers.
 fn parse_optional_clauses(
     section: Option<&ProtoSection>,
     label: &str,
@@ -1953,6 +2195,10 @@ fn parse_optional_clauses(
     result.into()
 }
 
+/// Parses one or more required nested groups from a section.
+///
+/// The supplied parser determines which nested group kinds are legal in the
+/// section, letting this helper centralize cardinality and non-group diagnostics.
 fn parse_required_groups<T>(
     section: &ProtoSection,
     label: &str,
@@ -1972,6 +2218,10 @@ fn parse_required_groups<T>(
     })
 }
 
+/// Parses zero or more nested groups from an optional section.
+///
+/// Non-group entries are reported because this helper is used only for sections
+/// whose grammar requires group-shaped items.
 fn parse_optional_groups<T>(
     section: Option<&ProtoSection>,
     label: &str,
@@ -2005,6 +2255,10 @@ fn parse_optional_groups<T>(
     items.into()
 }
 
+/// Parses exactly one required quoted open-text entry.
+///
+/// Open-text sections accept inline quoted arguments and quoted text arguments,
+/// with quote stripping handled by the shared text parser.
 fn parse_required_open_text(
     section: &ProtoSection,
     label: &str,
@@ -2026,6 +2280,7 @@ fn parse_required_open_text(
     }
 }
 
+/// Parses one or more required quoted open-text entries.
 fn parse_required_open_texts(
     section: &ProtoSection,
     label: &str,
@@ -2044,6 +2299,10 @@ fn parse_required_open_texts(
     })
 }
 
+/// Parses zero or more open-text entries from an optional section.
+///
+/// Missing sections become an empty wrapper, which lets callers model optional
+/// prose without conflating it with malformed text in a present section.
 fn parse_optional_open_texts(
     section: Option<&ProtoSection>,
     tracker: &mut EventLog,
@@ -2051,6 +2310,10 @@ fn parse_optional_open_texts(
     parse_optional_texts(section, tracker, OpenText)
 }
 
+/// Parses one or more required `WrittenText` entries.
+///
+/// The structural parser only validates the quoted text shape; LaTeX mode and
+/// substitution semantics are handled later by the view/backend layers.
 fn parse_required_written_texts(
     section: &ProtoSection,
     tracker: &mut EventLog,
@@ -2064,6 +2327,10 @@ fn parse_required_written_texts(
     })
 }
 
+/// Parses one or more required `CalledText` entries.
+///
+/// Called text is plain-text rendering metadata, but at this stage it is just
+/// quote-stripped and wrapped.
 fn parse_required_called_texts(
     section: &ProtoSection,
     tracker: &mut EventLog,
@@ -2077,6 +2344,7 @@ fn parse_required_called_texts(
     })
 }
 
+/// Parses one or more required `WritingText` entries.
 fn parse_required_writing_texts(
     section: &ProtoSection,
     tracker: &mut EventLog,
@@ -2090,6 +2358,10 @@ fn parse_required_writing_texts(
     })
 }
 
+/// Parses quoted text entries from an optional section and wraps them.
+///
+/// Inline and text arguments are accepted; formulations and nested groups are
+/// diagnosed because text sections are intentionally non-formula content.
 fn parse_optional_texts<T>(
     section: Option<&ProtoSection>,
     tracker: &mut EventLog,
@@ -2125,6 +2397,10 @@ fn parse_optional_texts<T>(
     result.into()
 }
 
+/// Converts a repeated wrapper into a nonempty wrapper or emits a caller-supplied error.
+///
+/// This keeps the "did a more specific error already happen?" logic at the call
+/// site while centralizing the `OneOrMore` conversion.
 fn one_or_more<T>(items: ZeroOrMore<T>, on_empty: impl FnOnce()) -> Option<OneOrMore<T>> {
     match OneOrMore::try_from(items) {
         Ok(items) => Some(items),
@@ -2135,16 +2411,29 @@ fn one_or_more<T>(items: ZeroOrMore<T>, on_empty: impl FnOnce()) -> Option<OneOr
     }
 }
 
+/// Strips one layer of double quotes from text.
+///
+/// Escapes are not interpreted at this layer; the current structural syntax
+/// treats quoted text as the raw inner substring between the first and last
+/// quote.
 fn strip_quoted_text(input: &str) -> Option<String> {
     let input = input.trim();
     let inner = input.strip_prefix('"')?.strip_suffix('"')?;
     Some(inner.to_owned())
 }
 
+/// Returns the first section label of a proto group.
+///
+/// Structural group dispatch is label-first, so groups without sections cannot
+/// be recognized.
 fn first_section_label(group: &ProtoGroup) -> Option<&str> {
     group.sections.first().map(|section| section.label.as_str())
 }
 
+/// Looks up an identified section by label.
+///
+/// The section map stores borrowed proto sections keyed by their normalized
+/// expected label.
 fn section<'a>(
     sections: &'a HashMap<String, &'a ProtoSection>,
     label: &str,
@@ -2152,6 +2441,12 @@ fn section<'a>(
     sections.get(label).copied()
 }
 
+/// Validates section order and presence for a structural group.
+///
+/// The `expected` slice is an ordered pattern where labels ending in `?` are
+/// optional.  The returned map contains only sections that were present and
+/// accepted.  Diagnostics include the full expected pattern to make authoring
+/// mistakes easier to repair.
 fn identify_sections<'a>(
     name: &str,
     sections: &'a [ProtoSection],
@@ -2229,13 +2524,26 @@ fn identify_sections<'a>(
     Some(result)
 }
 
+/// One flattened entry from a proto section body.
+///
+/// Section entries unify inline arguments with body arguments so helper parsers
+/// can apply the same validation logic regardless of how the author chose to
+/// place the section content.
 enum SectionEntry<'a> {
+    /// Inline text after the section colon.
     Inline { text: &'a str, row: usize },
+    /// A formulation body argument.
     Formulation { text: &'a str, row: usize },
+    /// A quoted text body argument.
     Text { text: &'a str, row: usize },
+    /// A nested proto group body argument.
     Group { group: &'a ProtoGroup, row: usize },
 }
 
+/// Flattens a section's inline and body arguments into parseable entries.
+///
+/// Inline arguments are yielded first using the section row, followed by body
+/// arguments in source order with their own rows.
 fn section_entries(section: &ProtoSection) -> Vec<SectionEntry<'_>> {
     let mut entries = Vec::new();
     if let Some(argument) = section.inline_argument.as_deref() {

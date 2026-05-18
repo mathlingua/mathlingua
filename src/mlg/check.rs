@@ -9,14 +9,19 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
+/// Event origin used by the check command.
 const ORIGIN: &str = "mlg_check";
 
+/// Summary returned by a completed check run.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CheckResult {
+    /// Number of source files selected for checking.
     pub files_checked: usize,
+    /// Marker range bounding the events emitted by the check run.
     pub marker_range: MarkerRange,
 }
 
+/// Runs `mlg check` from the process current working directory.
 pub fn check(paths: &[PathBuf], event_log: &mut EventLog) -> io::Result<CheckResult> {
     let Some(cwd) = current_working_directory(event_log) else {
         return Err(io::Error::other(
@@ -27,6 +32,11 @@ pub fn check(paths: &[PathBuf], event_log: &mut EventLog) -> io::Result<CheckRes
     Ok(check_in(&cwd, paths, event_log))
 }
 
+/// Runs `mlg check` from an explicit working directory.
+///
+/// The command validates collection configuration, resolves source files,
+/// structurally parses each file, runs backend semantic checks, and emits a
+/// success or issue-count summary.
 pub fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> CheckResult {
     let begin = event_log.begin_marker("check_in", Some(ORIGIN));
     let starting_event_count = event_log.events().len();
@@ -83,6 +93,10 @@ pub fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> Chec
     }
 }
 
+/// Reads and structurally parses one source file for checking.
+///
+/// Parser diagnostics are rewritten with the file path so downstream console
+/// output can report precise file locations.
 fn parse_source_file(path: &Path, event_log: &mut EventLog) -> Option<ParsedSourceFile> {
     event_log.system_debug(Some(ORIGIN), format!("Parsing {}", path.display()));
 
@@ -112,6 +126,7 @@ fn parse_source_file(path: &Path, event_log: &mut EventLog) -> Option<ParsedSour
     })
 }
 
+/// Formats the success summary for a check run.
 fn render_check_success(files_checked: usize) -> String {
     if files_checked == 1 {
         "Checked 1 file".to_string()
@@ -120,6 +135,7 @@ fn render_check_success(files_checked: usize) -> String {
     }
 }
 
+/// Formats a singular or plural issue count.
 fn format_issue_count(issue_count: usize) -> String {
     if issue_count == 1 {
         "1 issue".to_string()

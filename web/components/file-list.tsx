@@ -94,7 +94,7 @@ export function FileList({
       <section className="document-stream">
         <article
           className="file-section"
-          id={makeFileAnchor(selectedFileIndex)}
+          id={makeFileAnchor(selectedFile.path)}
           key={selectedFile.path}
         >
           <div className="group-stream">

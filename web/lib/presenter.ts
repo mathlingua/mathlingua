@@ -110,8 +110,14 @@ export function fileDirectory(path: string): string {
   return segments.join("/");
 }
 
-export function makeFileAnchor(fileIndex: number): string {
-  return `file-${fileIndex}`;
+export function makeFileAnchor(path: string): string {
+  const withoutExtension = contentRelativePath(path).replace(/\.mlg$/i, "");
+  const withUnderscores = withoutExtension
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/\/+/g, "/");
+
+  return encodeURIComponent(withUnderscores || "untitled");
 }
 
 export function makeGroupAnchor(fileIndex: number, groupIndex: number): string {

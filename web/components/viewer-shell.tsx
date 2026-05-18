@@ -21,7 +21,7 @@ export function ViewerShell({ files }: ViewerShellProps) {
 
   useEffect(() => {
     const syncSelectedFileFromHash = () => {
-      const index = parseSelectedFileIndex(window.location.hash, files.length);
+      const index = parseSelectedFileIndex(window.location.hash, files);
       const nextIndex = index ?? 0;
       setSelectedFileIndex(nextIndex);
       setCurrentDirectory(index === null ? "" : fileDirectory(files[nextIndex]?.path ?? ""));
@@ -38,7 +38,11 @@ export function ViewerShell({ files }: ViewerShellProps) {
   const handleSelectFile = (fileIndex: number) => {
     setSelectedFileIndex(fileIndex);
     setCurrentDirectory(fileDirectory(files[fileIndex]?.path ?? ""));
-    window.history.replaceState(null, "", `#${makeFileAnchor(fileIndex)}`);
+    window.history.replaceState(
+      null,
+      "",
+      `#${makeFileAnchor(files[fileIndex]?.path ?? "")}`,
+    );
   };
 
   const handleNavigateDirectory = (directory: string) => {
@@ -50,7 +54,11 @@ export function ViewerShell({ files }: ViewerShellProps) {
     }
 
     setSelectedFileIndex(fileIndex);
-    window.history.replaceState(null, "", `#${makeFileAnchor(fileIndex)}`);
+    window.history.replaceState(
+      null,
+      "",
+      `#${makeFileAnchor(files[fileIndex]?.path ?? "")}`,
+    );
   };
 
   return (
@@ -73,16 +81,26 @@ export function ViewerShell({ files }: ViewerShellProps) {
   );
 }
 
-function parseSelectedFileIndex(hash: string, fileCount: number): number | null {
-  const match = /^#file-(\d+)$/.exec(hash);
-  if (!match) {
+function parseSelectedFileIndex(hash: string, files: FileView[]): number | null {
+  const rawAnchor = hash.replace(/^#/, "");
+  if (!rawAnchor) {
     return null;
   }
 
-  const index = Number.parseInt(match[1], 10);
-  if (Number.isNaN(index) || index < 0 || index >= fileCount) {
-    return null;
+  const legacyMatch = /^file-(\d+)$/.exec(rawAnchor);
+  if (legacyMatch) {
+    const legacyIndex = Number.parseInt(legacyMatch[1], 10);
+    return Number.isNaN(legacyIndex) ||
+      legacyIndex < 0 ||
+      legacyIndex >= files.length
+      ? null
+      : legacyIndex;
   }
 
-  return index;
+  const anchor = decodeURIComponent(rawAnchor);
+  const index = files.findIndex(
+    (file) => decodeURIComponent(makeFileAnchor(file.path)) === anchor,
+  );
+
+  return index < 0 ? null : index;
 }

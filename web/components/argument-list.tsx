@@ -1,5 +1,7 @@
 import { ArgumentView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
+import styles from "./argument-list.module.css";
+import sectionStyles from "./section-content.module.css";
 
 type ArgumentListProps = {
   arguments: ArgumentView[];
@@ -7,43 +9,53 @@ type ArgumentListProps = {
 
 export function ArgumentList({ arguments: items }: ArgumentListProps) {
   return (
-    <ul className="argument-list">
+    <ul className={styles.list}>
       {items.map((argument, index) => (
         <li
-          className={`argument-item argument-item--${argument.kind}`}
+          className={
+            argument.kind === "group"
+              ? `${styles.item} ${styles.itemGroup}`
+              : styles.item
+          }
           key={`${argument.kind}-${index}`}
         >
           {argument.kind === "formulation" ? (
             argument.latex ? (
-              <span className="formulation-line formulation-line--latex">
+              <span
+                className={`${styles.formulationLine} ${styles.formulationLineLatex}`}
+              >
                 <LatexRenderer latex={argument.latex} />
               </span>
             ) : (
-              <code className="formulation-line">{argument.text}</code>
+              <code className={styles.formulationLine}>{argument.text}</code>
             )
           ) : null}
           {argument.kind === "text" ? (
-            <p className="text-line">{argument.text}</p>
+            <p className={styles.textLine}>{argument.text}</p>
           ) : null}
           {argument.kind === "group" ? (
-            <div className="nested-group">
+            <div className={styles.nestedGroup}>
               {argument.heading ? (
-                <p className="nested-heading">[{argument.heading}]</p>
+                <p className={styles.nestedHeading}>[{argument.heading}]</p>
               ) : null}
               {argument.sections.map((section, sectionIndex) => (
                 <section
-                  className="nested-section"
+                  className={styles.nestedSection}
                   key={`${section.label}-${sectionIndex}`}
                 >
-                  <div className="section-label-row">
-                    <span className="section-label">{section.label}</span>
+                  <div className={sectionStyles.sectionLabelRow}>
+                    <span className={sectionStyles.sectionLabel}>
+                      {section.label}
+                    </span>
                     {section.inline_argument ? (
                       section.inline_latex ? (
-                        <span className="inline-argument inline-argument--latex">
+                        <span
+                          className={`${sectionStyles.inlineArgument} ${sectionStyles.inlineArgumentLatex}`}
+                        >
                           <LatexRenderer latex={section.inline_latex} />
                         </span>
                       ) : (
-                        <code className="inline-argument">
+                        <code className={sectionStyles.inlineArgument}>
                           {section.inline_argument}
                         </code>
                       )

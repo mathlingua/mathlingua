@@ -1,0 +1,41 @@
+.chrome {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: center;
+  height: 64px;
+  min-height: 64px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(18px);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--surface-alt);
+}
+
+.spacer {
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .chrome {
+    grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+  }
+}

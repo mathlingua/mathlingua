@@ -1,0 +1,93 @@
+.card {
+  width: min(100%, 31rem);
+  margin: 0 auto;
+  padding: 1.35rem 1.6rem 1.45rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  scroll-margin-top: 7.5rem;
+}
+
+.header {
+  display: block;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.heading {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.98rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.headingLatex {
+  font-family: var(--font-body);
+  font-size: 1.08rem;
+}
+
+.sectionStack {
+  display: grid;
+  gap: 0.18rem;
+  margin-top: 0.6rem;
+}
+
+.sectionStackFlush {
+  margin-top: 0;
+}
+
+.sectionBlock {
+  padding-top: 0;
+}
+
+.documentedToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.25rem;
+  margin: 0.55rem auto -0.55rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.documentedToggle:hover {
+  background: var(--surface-alt);
+  color: var(--muted-strong);
+}
+
+.documentedToggleChevron {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: translateY(-0.08rem) rotate(45deg);
+  transition: transform 140ms ease;
+}
+
+.documentedToggle[aria-expanded="true"] .documentedToggleChevron {
+  transform: translateY(0.08rem) rotate(225deg);
+}
+
+@media (max-width: 860px) {
+  .card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .card {
+    padding: 1.1rem 1rem 1.2rem;
+  }
+
+  .heading {
+    font-size: 0.9rem;
+  }
+}

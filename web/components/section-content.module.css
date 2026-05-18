@@ -1,0 +1,30 @@
+.sectionLabelRow {
+  display: flex;
+  gap: 0.32rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.sectionLabel {
+  color: var(--accent);
+  font-size: 1.05rem;
+}
+
+.sectionLabel::after {
+  content: ":";
+}
+
+.inlineArgument {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ink);
+  white-space: normal;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.inlineArgumentLatex {
+  font-family: var(--font-body);
+}

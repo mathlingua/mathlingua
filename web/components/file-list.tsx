@@ -1,4 +1,5 @@
 import { GroupCard } from "./group-card";
+import styles from "./file-list.module.css";
 import {
   buildFileBrowserEntries,
   formatFileLabel,
@@ -28,7 +29,7 @@ export function FileList({
 }: FileListProps) {
   if (files.length === 0) {
     return (
-      <section className="empty-state">
+      <section className={styles.emptyState}>
         <h2>No renderable files found</h2>
         <p>Add Mathlingua files under your collection content directory.</p>
       </section>
@@ -42,45 +43,45 @@ export function FileList({
     <div
       className={
         isOutlineOpen
-          ? "reader-layout reader-layout--outline-open"
-          : "reader-layout reader-layout--outline-closed"
+          ? `${styles.readerLayout} ${styles.outlineOpen}`
+          : `${styles.readerLayout} ${styles.outlineClosed}`
       }
     >
-      <aside className="outline-panel">
+      <aside className={styles.outlinePanel}>
         {currentDirectory ? (
           <button
-            className="outline-back"
+            className={styles.outlineBack}
             onClick={() =>
               onNavigateDirectory(parentDirectory(currentDirectory))
             }
             type="button"
           >
-            <span aria-hidden="true" className="outline-back__chevron" />
+            <span aria-hidden="true" className={styles.outlineBackChevron} />
             {formatPathSegment(currentDirectory.split("/").at(-1) ?? "")}
           </button>
         ) : null}
         <nav>
-          <ul className="outline-list">
+          <ul className={styles.outlineList}>
             {entries.map((entry) => (
               <li key={`${entry.kind}-${entry.path}`}>
                 {entry.kind === "directory" ? (
                   <button
-                    className="outline-link outline-link--directory"
+                    className={`${styles.outlineLink} ${styles.outlineLinkDirectory}`}
                     onClick={() => onNavigateDirectory(entry.path)}
                     type="button"
                   >
                     <span>{entry.label}</span>
                     <span
                       aria-hidden="true"
-                      className="outline-link__chevron"
+                      className={styles.outlineLinkChevron}
                     />
                   </button>
                 ) : (
                   <button
                     className={
                       entry.fileIndex === selectedFileIndex
-                        ? "outline-link outline-link--active"
-                        : "outline-link"
+                        ? `${styles.outlineLink} ${styles.outlineLinkActive}`
+                        : styles.outlineLink
                     }
                     onClick={() => onSelectFile(entry.fileIndex)}
                     type="button"
@@ -93,13 +94,13 @@ export function FileList({
           </ul>
         </nav>
       </aside>
-      <section className="document-stream">
+      <section className={styles.documentStream}>
         <article
-          className="file-section"
+          className={styles.fileSection}
           id={makeFileAnchor(selectedFile.path)}
           key={selectedFile.path}
         >
-          <div className="group-stream">
+          <div className={styles.groupStream}>
             {selectedFile.items.map((item, itemIndex) => (
               <GroupCard
                 anchorId={makeGroupAnchor(selectedFileIndex, itemIndex)}

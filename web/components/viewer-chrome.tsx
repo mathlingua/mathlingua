@@ -1,3 +1,5 @@
+import styles from "./viewer-chrome.module.css";
+
 type ViewerChromeProps = {
   isOutlineOpen: boolean;
   onToggleOutline: () => void;
@@ -8,11 +10,11 @@ export function ViewerChrome({
   onToggleOutline,
 }: ViewerChromeProps) {
   return (
-    <header className="viewer-chrome">
+    <header className={styles.chrome}>
       <button
         aria-expanded={isOutlineOpen}
         aria-label={isOutlineOpen ? "Close outline" : "Open outline"}
-        className="chrome-button"
+        className={styles.button}
         onClick={onToggleOutline}
         type="button"
       >
@@ -31,7 +33,7 @@ export function ViewerChrome({
           />
         </svg>
       </button>
-      <div className="chrome-spacer" />
+      <div className={styles.spacer} />
     </header>
   );
 }

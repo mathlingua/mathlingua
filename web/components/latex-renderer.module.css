@@ -1,0 +1,8 @@
+.renderer {
+  font-size: 1.04rem;
+}
+
+.renderer :global(.katex .mathnormal),
+.renderer :global(.katex .textrm) {
+  font-size: 90%;
+}

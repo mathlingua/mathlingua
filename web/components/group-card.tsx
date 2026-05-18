@@ -4,6 +4,8 @@ import { useState } from "react";
 import { ArgumentList } from "./argument-list";
 import type { GroupView, SectionView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
+import styles from "./group-card.module.css";
+import sectionStyles from "./section-content.module.css";
 
 type GroupCardProps = {
   anchorId: string;
@@ -23,11 +25,11 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
     : group.sections.filter((section) => !isDocumentedSection(section));
 
   return (
-    <section className="group-card" id={anchorId}>
+    <section className={styles.card} id={anchorId}>
       {hasHeading ? (
-        <header className="group-header">
+        <header className={styles.header}>
           <h3
-            className="group-heading group-heading--latex"
+            className={`${styles.heading} ${styles.headingLatex}`}
             title={headingTooltip}
           >
             <LatexRenderer latex={headingLatex} />
@@ -35,19 +37,30 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
         </header>
       ) : null}
       <div
-        className={`section-stack${hasHeading ? "" : " section-stack--flush"}`}
+        className={
+          hasHeading
+            ? styles.sectionStack
+            : `${styles.sectionStack} ${styles.sectionStackFlush}`
+        }
       >
         {visibleSections.map((section, index) => (
-          <section className="section-block" key={`${section.label}-${index}`}>
-            <div className="section-label-row">
-              <span className="section-label">{section.label}</span>
+          <section
+            className={styles.sectionBlock}
+            key={`${section.label}-${index}`}
+          >
+            <div className={sectionStyles.sectionLabelRow}>
+              <span className={sectionStyles.sectionLabel}>
+                {section.label}
+              </span>
               {section.inline_argument ? (
                 section.inline_latex ? (
-                  <span className="inline-argument inline-argument--latex">
+                  <span
+                    className={`${sectionStyles.inlineArgument} ${sectionStyles.inlineArgumentLatex}`}
+                  >
                     <LatexRenderer latex={section.inline_latex} />
                   </span>
                 ) : (
-                  <code className="inline-argument">
+                  <code className={sectionStyles.inlineArgument}>
                     {section.inline_argument}
                   </code>
                 )
@@ -67,7 +80,7 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
               ? "Hide documented section"
               : "Show documented section"
           }
-          className="documented-toggle"
+          className={styles.documentedToggle}
           onClick={() => setShowDocumented((value) => !value)}
           title={
             showDocumented
@@ -76,7 +89,7 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
           }
           type="button"
         >
-          <span className="documented-toggle__chevron" aria-hidden="true" />
+          <span className={styles.documentedToggleChevron} aria-hidden="true" />
         </button>
       ) : null}
     </section>

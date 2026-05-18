@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { FileList } from "./file-list";
 import { ViewerChrome } from "./viewer-chrome";
+import styles from "./viewer-shell.module.css";
 import { FileView } from "../lib/types";
 import {
   directoryRoute,
@@ -63,7 +64,7 @@ export function ViewerShell({ files }: ViewerShellProps) {
         isOutlineOpen={isOutlineOpen}
         onToggleOutline={() => setIsOutlineOpen((value) => !value)}
       />
-      <main className="page-shell">
+      <main className={styles.pageShell}>
         <FileList
           currentDirectory={currentDirectory}
           files={files}

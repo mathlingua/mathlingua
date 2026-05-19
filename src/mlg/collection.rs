@@ -153,7 +153,7 @@ fn collect_directory_source_files(
 /// Reads directory entries and sorts them by path for deterministic traversal.
 fn read_directory_entries(directory: &Path) -> io::Result<Vec<fs::DirEntry>> {
     let mut entries = fs::read_dir(directory)?.collect::<Result<Vec<_>, io::Error>>()?;
-    entries.sort_by(|left, right| left.path().cmp(&right.path()));
+    entries.sort_by_key(|left| left.path());
     Ok(entries)
 }
 

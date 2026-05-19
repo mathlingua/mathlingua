@@ -82,13 +82,12 @@ pub(in crate::backend::view) fn render_group_heading_latex(
     let header = parse_command_header(heading?).ok()?;
     let render = registry.commands.get(&command_header_signature(&header))?;
 
-    if kind == "Refines" {
-        if let Some(latex) =
+    if kind == "Refines"
+        && let Some(latex) =
             render_refines_group_heading_latex(&header, primary_inline_argument, render, registry)
         {
             return Some(latex);
         }
-    }
 
     let substitutions = command_header_substitutions(&header, registry);
 

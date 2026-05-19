@@ -22,7 +22,7 @@ fn main() {
         Command::Check(args) => run_check(&args.paths, &mut event_log),
         Command::Init => run_init(&mut event_log),
         Command::Version => {
-            let _ = mlg::version(&mut event_log);
+            mlg::version(&mut event_log);
             0
         }
         Command::View(args) => run_view(&args, &mut event_log),

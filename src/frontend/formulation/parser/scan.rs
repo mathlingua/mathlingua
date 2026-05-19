@@ -154,11 +154,11 @@ pub(super) fn split_top_level(input: &str, delimiter: char) -> Result<Vec<&str>,
 /// The returned tuple contains the block contents without outer delimiters and
 /// the remaining suffix after the closing delimiter.  Quoted and backticked
 /// content is skipped while counting nested delimiter depth.
-pub(super) fn consume_balanced_prefix<'a>(
-    input: &'a str,
+pub(super) fn consume_balanced_prefix(
+    input: &str,
     open: char,
     close: char,
-) -> Result<(&'a str, &'a str), ParseError> {
+) -> Result<(&str, &str), ParseError> {
     let input = input.trim_start();
     if !input.starts_with(open) {
         return Err(ParseError::custom(format!("expected `{open}`")));

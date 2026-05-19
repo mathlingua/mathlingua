@@ -10,8 +10,8 @@ use super::ast::{
     IsSubjectKind, IsViaStatement, LabelHeader, Operator, ParenExpressionArgs, ParenHeadingArgs,
     Placeholder, PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement,
     RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart,
-    RefinedTail, ResourceHeader, SpecOperatorAlias, SpecSubject, SpecSubjectKind,
-    SubjectSpecStatement, TupleForm, TypeExpression, WritingAlias,
+    RefinedTail, ResourceHeader, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject,
+    SpecSubjectKind, SubjectSpecStatement, TupleForm, TypeExpression, WritingAlias,
 };
 use super::grammar;
 use super::lexer::Lexer;

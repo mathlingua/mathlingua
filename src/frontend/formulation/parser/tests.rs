@@ -12,7 +12,8 @@ use crate::frontend::formulation::ast::{
     BinaryOperator, ChainPart, CommandHeader, CommandHeaderNode, Expression, ExpressionAliasLhs,
     ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionNamedExpressionElementLhs,
     IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind,
-    PlaceholderFormKind, RefinedTail, SpecSubjectKind, SubsetCall, TypeExpression,
+    PlaceholderFormKind, RefinedTail, SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall,
+    TypeExpression,
 };
 
 mod commands;

@@ -33,6 +33,15 @@ pub struct ExpressionAlias {
     pub expression: Expression,
 }
 
+/// Right-hand side accepted by a specification-operator alias.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SpecOperatorAliasTarget {
+    /// An ordinary `is` statement or subject specification.
+    IsOrSpec(Box<IsOrSpec>),
+    /// A built-in keyword such as `\\abstract`.
+    Builtin(Chain),
+}
+
 /// Spec-operator alias mapping a placeholder spec to a target spec.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SpecOperatorAlias {
@@ -41,7 +50,7 @@ pub struct SpecOperatorAlias {
     /// Placeholder-side spec.
     pub placeholder_spec: PlaceholderSpecStatement,
     /// Target spec.
-    pub target: IsOrSpec,
+    pub target: SpecOperatorAliasTarget,
 }
 
 /// Parsed label header.

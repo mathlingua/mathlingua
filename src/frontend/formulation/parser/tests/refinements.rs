@@ -113,7 +113,24 @@ fn parses_spec_operator_aliases_with_spec_targets() {
         .expect("expected spec operator alias");
 
     assert_eq!(alias.placeholder_spec.operator, "in");
-    assert!(matches!(alias.target, IsOrSpec::Spec(_)));
+    match alias.target {
+        SpecOperatorAliasTarget::IsOrSpec(target) => {
+            assert!(matches!(*target, IsOrSpec::Spec(_)));
+        }
+        other => panic!("expected spec alias target, got {other:?}"),
+    }
+}
+
+#[test]
+fn parses_spec_operator_aliases_with_builtin_targets() {
+    let alias = parse_spec_operator_alias(r#"x_ "in" X :-> \\abstract"#)
+        .expect("expected spec operator alias");
+
+    assert_eq!(alias.placeholder_spec.operator, "in");
+    assert!(matches!(
+        alias.target,
+        SpecOperatorAliasTarget::Builtin(_)
+    ));
 }
 
 #[test]

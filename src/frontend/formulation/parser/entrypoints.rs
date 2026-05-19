@@ -159,13 +159,31 @@ pub fn parse_spec_operator_alias(input: &str) -> Result<SpecOperatorAlias, Parse
     let index = find_top_level_substring(input, ":->")
         .ok_or_else(|| ParseError::custom("expected top-level `:->`"))?;
     let placeholder_spec = parse_placeholder_spec_statement(input[..index].trim())?;
-    let target = parse_is_or_spec(input[index + 3..].trim())?;
+    let target = parse_spec_operator_alias_target(input[index + 3..].trim())?;
 
     Ok(SpecOperatorAlias {
         span: span_all(input),
         placeholder_spec,
         target,
     })
+}
+
+/// Parses the target side of a specification-operator alias.
+///
+/// Besides ordinary `is`/spec targets, this position can name a built-in
+/// keyword by sigil, for example `\\abstract`.
+fn parse_spec_operator_alias_target(
+    input: &str,
+) -> Result<SpecOperatorAliasTarget, ParseError> {
+    let input = input.trim();
+
+    if let Some(builtin) = input.strip_prefix("\\\\") {
+        return parse_chain(builtin).map(SpecOperatorAliasTarget::Builtin);
+    }
+
+    parse_is_or_spec(input)
+        .map(Box::new)
+        .map(SpecOperatorAliasTarget::IsOrSpec)
 }
 
 /// Parses a dot-separated label heading.

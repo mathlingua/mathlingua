@@ -394,3 +394,30 @@ that:
         other => panic!("expected states group, got {other:?}"),
     }
 }
+
+#[test]
+fn parses_provided_symbol_with_builtin_spec_operator_target() {
+    let document = parse_ok(
+        r#"
+[\set]
+Describes: X
+Provides:
+. symbol: x_ "in" X :-> \\abstract
+Documented:
+. called: "set"
+"#,
+    );
+
+    let TopLevelItem::Describes(group) = &document.items[0] else {
+        panic!("expected describes group");
+    };
+
+    assert!(matches!(
+        group
+            .provides
+            .as_ref()
+            .expect("expected provides")
+            .arguments[0],
+        ProvidesItem::Symbol(_)
+    ));
+}

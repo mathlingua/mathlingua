@@ -114,7 +114,7 @@ pub enum AliasItem {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ProvidesItem {
     /// A provided symbol.
-    Symbol(SymbolGroup),
+    Symbol(Box<SymbolGroup>),
     /// A provided connection.
     Connection(ConnectionGroup),
 }

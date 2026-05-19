@@ -270,7 +270,7 @@ pub(super) fn parse_provides_item_group(
     tracker: &mut EventLog,
 ) -> Option<ProvidesItem> {
     match first_section_label(group)? {
-        "symbol" => parse_symbol(group, tracker).map(ProvidesItem::Symbol),
+        "symbol" => parse_symbol(group, tracker).map(Box::new).map(ProvidesItem::Symbol),
         "connection" => parse_connection(group, tracker).map(ProvidesItem::Connection),
         other => {
             tracker.user_error_at_row(

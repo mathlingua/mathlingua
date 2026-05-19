@@ -9,7 +9,7 @@ pub(super) fn render_is_or_refined_spec(
         IsOrRefinedStatementSpec::Is(statement) => render_is_statement(statement, registry),
         IsOrRefinedStatementSpec::Spec(statement) => format!(
             "{} {} {}",
-            render_spec_subject(&statement.subject, registry),
+            render_spec_subject(&statement.subject),
             render_quoted_operator(&statement.operator),
             escape_math_identifier(&statement.name)
         ),
@@ -18,7 +18,7 @@ pub(super) fn render_is_or_refined_spec(
 
 /// Renders a parsed `is` statement, preserving subject-aware written templates.
 pub(super) fn render_is_statement(statement: &IsStatement, registry: &RenderRegistry) -> String {
-    let subject_latex = render_is_subject(&statement.subject, registry);
+    let subject_latex = render_is_subject(&statement.subject);
     match &statement.ty {
         TypeExpression::Command(command) => {
             render_is_command_with_subject_latex(subject_latex, command, registry)
@@ -30,12 +30,12 @@ pub(super) fn render_is_statement(statement: &IsStatement, registry: &RenderRegi
 }
 
 /// Renders the subject side of an `is` statement.
-pub(super) fn render_is_subject(subject: &IsSubject, registry: &RenderRegistry) -> String {
+pub(super) fn render_is_subject(subject: &IsSubject) -> String {
     match &subject.kind {
         IsSubjectKind::Forms(forms) => forms
             .iter()
             .map(|form| match form {
-                IsSubjectForm::Form(form) => render_form_or_declaration(form, registry),
+                IsSubjectForm::Form(form) => render_form_or_declaration(form),
                 IsSubjectForm::PlaceholderForm(form) => render_placeholder_form(form),
             })
             .collect::<Vec<_>>()
@@ -45,9 +45,9 @@ pub(super) fn render_is_subject(subject: &IsSubject, registry: &RenderRegistry) 
 }
 
 /// Renders the subject side of a specification statement.
-pub(super) fn render_spec_subject(subject: &SpecSubject, registry: &RenderRegistry) -> String {
+pub(super) fn render_spec_subject(subject: &SpecSubject) -> String {
     match &subject.kind {
-        SpecSubjectKind::Form(form) => render_form_or_declaration(form, registry),
+        SpecSubjectKind::Form(form) => render_form_or_declaration(form),
         SpecSubjectKind::Operator(operator) => render_operator_text(&operator.text),
     }
 }
@@ -57,10 +57,7 @@ pub(super) fn render_spec_subject(subject: &SpecSubject, registry: &RenderRegist
 /// Definitions can use these forms both as the thing being described and as
 /// command parameters.  Placeholder suffixes are hidden to produce readable math
 /// while preserving enough structure for substitutions.
-pub(super) fn render_form_or_declaration(
-    form: &FormOrDeclaration,
-    registry: &RenderRegistry,
-) -> String {
+pub(super) fn render_form_or_declaration(form: &FormOrDeclaration) -> String {
     match &form.kind {
         FormOrDeclarationKind::Name(name) => escape_math_identifier(name),
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
@@ -87,7 +84,7 @@ pub(super) fn render_form_or_declaration(
                 .elements
                 .iter()
                 .map(|element| match element {
-                    TupleFormElement::Form(form) => render_form_or_declaration(form, registry),
+                    TupleFormElement::Form(form) => render_form_or_declaration(form),
                     TupleFormElement::Operator(operator) => render_operator_text(&operator.text),
                 })
                 .collect::<Vec<_>>()

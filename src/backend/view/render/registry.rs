@@ -89,7 +89,7 @@ pub(in crate::backend::view) fn render_group_heading_latex(
             return Some(latex);
         }
 
-    let substitutions = command_header_substitutions(&header, registry);
+    let substitutions = command_header_substitutions(&header);
 
     Some(render_called_template(&render.called, &substitutions))
 }
@@ -109,7 +109,7 @@ pub(super) fn render_refines_group_heading_latex(
     let target = refines_target_type(&spec)?;
     let target_called = type_expression_called_template(target, registry)?;
     let mut substitutions = target_called.substitutions;
-    substitutions.extend(command_header_substitutions(header, registry));
+    substitutions.extend(command_header_substitutions(header));
     let template = format!("{} {}", refinement_render.called, target_called.template);
 
     Some(render_called_template(&template, &substitutions))
@@ -130,7 +130,7 @@ pub(super) fn render_parsed_formulation_latex(
 
     parse_form_or_declaration(text)
         .ok()
-        .map(|form| render_form_or_declaration(&form, registry))
+        .map(|form| render_form_or_declaration(&form))
 }
 
 /// Registry insertion record for one renderable command definition.

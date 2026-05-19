@@ -37,6 +37,12 @@ impl MarkerId {
     }
 }
 
+impl Default for MarkerId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl fmt::Display for MarkerId {
     /// Writes the UUID-shaped marker id.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

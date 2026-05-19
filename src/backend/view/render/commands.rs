@@ -194,15 +194,12 @@ pub(super) fn command_substitutions_for_names(
 ///
 /// Heading substitutions are used for group card titles where the source heading
 /// itself provides concrete parameter names such as `{A}` and `{B}`.
-pub(super) fn command_header_substitutions(
-    header: &CommandHeader,
-    registry: &RenderRegistry,
-) -> HashMap<String, String> {
+pub(super) fn command_header_substitutions(header: &CommandHeader) -> HashMap<String, String> {
     let mut substitutions = HashMap::new();
 
     for form in command_header_forms(header) {
         if let Some(name) = primary_form_name(form) {
-            substitutions.insert(name, render_form_or_declaration(form, registry));
+            substitutions.insert(name, render_form_or_declaration(form));
         }
     }
 

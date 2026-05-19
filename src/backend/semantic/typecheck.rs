@@ -176,6 +176,8 @@ fn validate_top_level_item_types(
     match item {
         TopLevelItem::Describes(group) => {
             let mut context = TypeContext::default();
+            declare_header_parameters(&group.heading, &mut context);
+            declare_form_or_declaration(&group.describes.argument, &mut context);
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -203,6 +205,8 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::Defines(group) => {
             let mut context = TypeContext::default();
+            declare_header_parameters(&group.heading, &mut context);
+            declare_names_from_is_or_spec(&group.defines.argument, &mut context);
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -232,6 +236,8 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::Refines(group) => {
             let mut context = TypeContext::default();
+            declare_header_parameters(&group.heading, &mut context);
+            declare_names_from_is_or_refined_spec_subject(&group.refines.argument, &mut context);
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -259,6 +265,7 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::States(group) => {
             let mut context = TypeContext::default();
+            declare_header_parameters(&group.heading, &mut context);
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -281,6 +288,7 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::Axiom(group) => validate_theorem_like(
             TheoremLikeSections::new(
+                group.heading.as_ref(),
                 group.given.as_ref(),
                 group.where_.as_ref(),
                 &group.then,
@@ -293,6 +301,7 @@ fn validate_top_level_item_types(
         ),
         TopLevelItem::Theorem(group) => validate_theorem_like(
             TheoremLikeSections::new(
+                group.heading.as_ref(),
                 group.given.as_ref(),
                 group.where_.as_ref(),
                 &group.then,
@@ -305,6 +314,7 @@ fn validate_top_level_item_types(
         ),
         TopLevelItem::Corollary(group) => validate_theorem_like(
             TheoremLikeSections::new(
+                group.heading.as_ref(),
                 group.given.as_ref(),
                 group.where_.as_ref(),
                 &group.then,
@@ -317,6 +327,7 @@ fn validate_top_level_item_types(
         ),
         TopLevelItem::Lemma(group) => validate_theorem_like(
             TheoremLikeSections::new(
+                group.heading.as_ref(),
                 group.given.as_ref(),
                 group.where_.as_ref(),
                 &group.then,
@@ -329,6 +340,7 @@ fn validate_top_level_item_types(
         ),
         TopLevelItem::Conjecture(group) => validate_theorem_like(
             TheoremLikeSections::new(
+                group.heading.as_ref(),
                 group.given.as_ref(),
                 group.where_.as_ref(),
                 &group.then,
@@ -350,6 +362,7 @@ fn validate_top_level_item_types(
 }
 
 struct TheoremLikeSections<'a> {
+    heading: Option<&'a CommandHeader>,
     given: Option<&'a GivenSection>,
     where_: Option<&'a WhereSection>,
     then: &'a ThenSection,
@@ -358,12 +371,14 @@ struct TheoremLikeSections<'a> {
 
 impl<'a> TheoremLikeSections<'a> {
     fn new(
+        heading: Option<&'a CommandHeader>,
         given: Option<&'a GivenSection>,
         where_: Option<&'a WhereSection>,
         then: &'a ThenSection,
         iff: Option<&'a IffSection>,
     ) -> Self {
         Self {
+            heading,
             given,
             where_,
             then,
@@ -380,10 +395,13 @@ fn validate_theorem_like(
     event_log: &mut EventLog,
 ) {
     let mut context = TypeContext::default();
+    if let Some(heading) = sections.heading {
+        declare_header_parameters(heading, &mut context);
+    }
 
     if let Some(given) = sections.given {
         for spec in &given.arguments {
-            check_is_or_refined_spec(spec, &context, path, locator, registry, event_log);
+            assume_is_or_refined_spec(spec, &mut context, path, locator, registry, event_log);
             for fact in facts_from_is_or_refined_spec(spec) {
                 context.add_fact(fact);
             }
@@ -417,7 +435,7 @@ fn assume_optional_using(
 ) {
     if let Some(using) = using {
         for spec in &using.arguments {
-            check_is_or_spec(spec, context, path, locator, registry, event_log);
+            assume_is_or_spec(spec, context, path, locator, registry, event_log);
             for fact in facts_from_is_or_spec(spec) {
                 context.add_fact(fact);
             }
@@ -467,8 +485,37 @@ fn assume_clause(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    check_clause(clause, context, path, locator, registry, event_log);
-    collect_clause_assumptions(clause, context);
+    match clause {
+        Clause::Binding(binding) => {
+            declare_names_from_expression(&binding.left, context);
+            declare_names_from_expression(&binding.right, context);
+            context.add_substitution(
+                key_for_expression(&binding.left),
+                key_for_expression(&binding.right),
+            );
+        }
+        Clause::IsOrSpec(spec) => {
+            assume_is_or_spec(spec, context, path, locator, registry, event_log);
+            for fact in facts_from_is_or_spec(spec) {
+                context.add_fact(fact);
+            }
+        }
+        Clause::Expression(expression) if fact_from_expression(expression).is_some() => {
+            assume_fact_expression(expression, context, path, locator, registry, event_log);
+            if let Some(fact) = fact_from_expression(expression) {
+                context.add_fact(fact);
+            }
+        }
+        Clause::AllOf(group) => {
+            for clause in &group.all_of.arguments {
+                assume_clause(clause, context, path, locator, registry, event_log);
+            }
+        }
+        _ => {
+            check_clause(clause, context, path, locator, registry, event_log);
+            collect_clause_assumptions(clause, context);
+        }
+    }
 }
 
 fn check_clause(
@@ -627,15 +674,15 @@ fn assume_binding_or_spec(
 ) {
     match item {
         BindingOrSpec::Binding(binding) => {
-            check_expression(&binding.left, context, path, locator, registry, event_log);
-            check_expression(&binding.right, context, path, locator, registry, event_log);
+            declare_names_from_expression(&binding.left, context);
+            declare_names_from_expression(&binding.right, context);
             context.add_substitution(
                 key_for_expression(&binding.left),
                 key_for_expression(&binding.right),
             );
         }
         BindingOrSpec::IsOrSpec(spec) => {
-            check_is_or_spec(spec, context, path, locator, registry, event_log);
+            assume_is_or_spec(spec, context, path, locator, registry, event_log);
             for fact in facts_from_is_or_spec(spec) {
                 context.add_fact(fact);
             }
@@ -682,7 +729,9 @@ fn check_is_or_spec(
         IsOrSpec::Is(statement) => {
             check_is_statement(statement, context, path, locator, registry, event_log)
         }
-        IsOrSpec::Spec(_) => {}
+        IsOrSpec::Spec(statement) => {
+            check_subject_spec_statement(statement, context, path, locator, event_log);
+        }
     }
 }
 
@@ -698,7 +747,49 @@ fn check_is_or_refined_spec(
         IsOrRefinedStatementSpec::Is(statement) => {
             check_is_statement(statement, context, path, locator, registry, event_log);
         }
-        IsOrRefinedStatementSpec::Spec(_) => {}
+        IsOrRefinedStatementSpec::Spec(statement) => {
+            check_subject_spec_statement(statement, context, path, locator, event_log);
+        }
+    }
+}
+
+fn assume_is_or_spec(
+    spec: &IsOrSpec,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match spec {
+        IsOrSpec::Is(statement) => {
+            check_type_expression(&statement.ty, context, path, locator, registry, event_log);
+            declare_is_subject(&statement.subject, context);
+        }
+        IsOrSpec::Spec(statement) => {
+            check_name(&statement.name, context, path, locator, event_log);
+            declare_spec_subject(&statement.subject, context);
+        }
+    }
+}
+
+fn assume_is_or_refined_spec(
+    spec: &IsOrRefinedStatementSpec,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match spec {
+        IsOrRefinedStatementSpec::Is(statement) => {
+            check_type_expression(&statement.ty, context, path, locator, registry, event_log);
+            declare_is_subject(&statement.subject, context);
+        }
+        IsOrRefinedStatementSpec::Spec(statement) => {
+            check_name(&statement.name, context, path, locator, event_log);
+            declare_spec_subject(&statement.subject, context);
+        }
     }
 }
 
@@ -710,7 +801,19 @@ fn check_is_statement(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    check_is_subject(&statement.subject, context, path, locator, event_log);
     check_type_expression(&statement.ty, context, path, locator, registry, event_log);
+}
+
+fn check_subject_spec_statement(
+    statement: &SubjectSpecStatement,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    check_spec_subject(&statement.subject, context, path, locator, event_log);
+    check_name(&statement.name, context, path, locator, event_log);
 }
 
 fn check_expression(
@@ -722,13 +825,17 @@ fn check_expression(
     event_log: &mut EventLog,
 ) {
     match &expression.kind {
-        ExpressionKind::Name(_) => {}
-        ExpressionKind::FunctionCall { arguments, .. } => {
+        ExpressionKind::Name(name) => {
+            check_name(name, context, path, locator, event_log);
+        }
+        ExpressionKind::FunctionCall { name, arguments } => {
+            check_name(name, context, path, locator, event_log);
             for argument in arguments {
                 check_expression(argument, context, path, locator, registry, event_log);
             }
         }
-        ExpressionKind::FunctionNamedCall { elements, .. } => {
+        ExpressionKind::FunctionNamedCall { name, elements } => {
+            check_name(name, context, path, locator, event_log);
             for element in elements {
                 check_expression(
                     &element.expression,
@@ -748,8 +855,13 @@ fn check_expression(
             }
         }
         ExpressionKind::Set(set) => {
+            let mut child = context.clone();
+            assume_expression_spec_statement(
+                &set.spec, &mut child, path, locator, registry, event_log,
+            );
+            declare_placeholder_form(&set.target, &mut child);
             if let Some(predicate) = &set.predicate {
-                check_expression(predicate, context, path, locator, registry, event_log);
+                check_expression(predicate, &child, path, locator, registry, event_log);
             }
         }
         ExpressionKind::Grouped { expression, .. }
@@ -757,7 +869,9 @@ fn check_expression(
         | ExpressionKind::Prefix { expression, .. } => {
             check_expression(expression, context, path, locator, registry, event_log);
         }
-        ExpressionKind::SubsetCall(_) => {}
+        ExpressionKind::SubsetCall(subset) => {
+            check_subset_call(subset, context, path, locator, event_log);
+        }
         ExpressionKind::Command(command) => {
             check_command_expression(command, context, path, locator, registry, event_log);
             for expression in command_expression_arguments(command) {
@@ -789,11 +903,15 @@ fn check_expression(
                 registry,
                 event_log,
             );
+            check_name(&statement.name, context, path, locator, event_log);
         }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
             check_expression(subject, context, path, locator, registry, event_log);
             check_command_expression(command, context, path, locator, registry, event_log);
+            for expression in command_expression_arguments(command) {
+                check_expression(expression, context, path, locator, registry, event_log);
+            }
         }
         ExpressionKind::IsType { subject, ty } => {
             check_expression(subject, context, path, locator, registry, event_log);
@@ -813,8 +931,16 @@ fn check_type_expression(
     match ty {
         TypeExpression::Command(command) => {
             check_command_expression(command, context, path, locator, registry, event_log);
+            for expression in command_expression_arguments(command) {
+                check_expression(expression, context, path, locator, registry, event_log);
+            }
         }
-        TypeExpression::RefinedCommand(_) => {}
+        TypeExpression::RefinedCommand(command) => {
+            check_refined_command_expression(command, context, path, locator, registry, event_log);
+            for expression in refined_command_expression_arguments(command) {
+                check_expression(expression, context, path, locator, registry, event_log);
+            }
+        }
     }
 }
 
@@ -854,6 +980,31 @@ fn check_infix_command(
     let shape = shape_for_infix_command(command);
     let position = locator.locate_reference(&shape);
     let actuals = infix_command_arguments(command)
+        .into_iter()
+        .map(key_for_expression)
+        .collect::<Vec<_>>();
+    check_command_requirements(
+        &shape.signature,
+        &actuals,
+        context,
+        path,
+        position,
+        registry,
+        event_log,
+    );
+}
+
+fn check_refined_command_expression(
+    command: &RefinedCommandExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let shape = shape_for_refined_command_expression(command);
+    let position = locator.locate_reference(&shape);
+    let actuals = refined_command_expression_arguments(command)
         .into_iter()
         .map(key_for_expression)
         .collect::<Vec<_>>();
@@ -1008,6 +1159,7 @@ fn has_type_signature(subject: &str, signature: &str, context: &TypeContext) -> 
 struct TypeContext {
     facts: Vec<TypeFact>,
     substitutions: Vec<(String, String)>,
+    symbols: HashSet<String>,
 }
 
 impl TypeContext {
@@ -1017,6 +1169,14 @@ impl TypeContext {
 
     fn add_substitution(&mut self, left: String, right: String) {
         self.substitutions.push((left, right));
+    }
+
+    fn declare_name(&mut self, name: impl Into<String>) {
+        self.symbols.insert(name.into());
+    }
+
+    fn has_name(&self, name: &str) -> bool {
+        self.symbols.contains(name)
     }
 
     fn normalize_fact(&self, fact: &TypeFact) -> TypeFact {
@@ -1059,6 +1219,441 @@ impl TypeContext {
             result = next;
         }
         result
+    }
+}
+
+fn check_name(
+    name: &str,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    if is_literal_name(name) || context.has_name(name) {
+        return;
+    }
+
+    emit_error(
+        event_log,
+        path,
+        locator.locate_symbol(name),
+        format!("Unrecognized symbol `{name}`"),
+    );
+}
+
+fn is_literal_name(name: &str) -> bool {
+    name.chars().all(|ch| ch.is_ascii_digit())
+}
+
+fn declare_header_parameters(header: &CommandHeader, context: &mut TypeContext) {
+    for name in header_parameter_names(header) {
+        context.declare_name(name);
+    }
+}
+
+fn declare_names_from_is_or_refined_spec_subject(
+    spec: &IsOrRefinedStatementSpec,
+    context: &mut TypeContext,
+) {
+    match spec {
+        IsOrRefinedStatementSpec::Is(statement) => declare_is_subject(&statement.subject, context),
+        IsOrRefinedStatementSpec::Spec(statement) => {
+            declare_spec_subject(&statement.subject, context);
+        }
+    }
+}
+
+fn declare_names_from_is_or_spec(spec: &IsOrSpec, context: &mut TypeContext) {
+    match spec {
+        IsOrSpec::Is(statement) => {
+            declare_is_subject(&statement.subject, context);
+            declare_names_from_type_expression(&statement.ty, context);
+        }
+        IsOrSpec::Spec(statement) => {
+            declare_spec_subject(&statement.subject, context);
+            context.declare_name(statement.name.clone());
+        }
+    }
+}
+
+fn check_is_subject(
+    subject: &IsSubject,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) => {
+            for form in forms {
+                match form {
+                    IsSubjectForm::Form(form) => {
+                        check_form_or_declaration(form, context, path, locator, event_log);
+                    }
+                    IsSubjectForm::PlaceholderForm(form) => {
+                        check_placeholder_form(form, context, path, locator, event_log);
+                    }
+                }
+            }
+        }
+        IsSubjectKind::Operator(_) => {}
+    }
+}
+
+fn check_spec_subject(
+    subject: &SpecSubject,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    match &subject.kind {
+        SpecSubjectKind::Form(form) => {
+            check_form_or_declaration(form, context, path, locator, event_log);
+        }
+        SpecSubjectKind::Operator(_) => {}
+    }
+}
+
+fn check_form_or_declaration(
+    form: &FormOrDeclaration,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    match &form.kind {
+        FormOrDeclarationKind::Name(name) => {
+            check_name(name, context, path, locator, event_log);
+        }
+        FormOrDeclarationKind::FunctionDeclaration { name, form } => {
+            check_name(
+                name.as_ref().unwrap_or(&form.name),
+                context,
+                path,
+                locator,
+                event_log,
+            );
+        }
+        FormOrDeclarationKind::TupleDeclaration { name, form } => {
+            if let Some(name) = name {
+                check_name(name, context, path, locator, event_log);
+            } else {
+                for element in &form.elements {
+                    if let TupleFormElement::Form(form) = element {
+                        check_form_or_declaration(form, context, path, locator, event_log);
+                    }
+                }
+            }
+        }
+        FormOrDeclarationKind::SetDeclaration { name, form } => {
+            if let Some(name) = name {
+                check_name(name, context, path, locator, event_log);
+            } else {
+                check_placeholder_form(&form.placeholder_form, context, path, locator, event_log);
+            }
+        }
+        FormOrDeclarationKind::InfixOperator { .. }
+        | FormOrDeclarationKind::PrefixOperator { .. }
+        | FormOrDeclarationKind::PostfixOperator { .. } => {}
+    }
+}
+
+fn check_placeholder_form(
+    form: &PlaceholderForm,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    match &form.kind {
+        PlaceholderFormKind::Placeholder(placeholder) => {
+            check_name(&placeholder.name, context, path, locator, event_log);
+        }
+        PlaceholderFormKind::Function {
+            placeholder,
+            arguments,
+        } => {
+            check_name(&placeholder.name, context, path, locator, event_log);
+            for argument in arguments {
+                check_name(&argument.name, context, path, locator, event_log);
+            }
+        }
+    }
+}
+
+fn check_subset_call(
+    subset: &SubsetCall,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    match subset {
+        SubsetCall::One { target, first, .. } => {
+            check_name(target, context, path, locator, event_log);
+            check_name(first, context, path, locator, event_log);
+        }
+        SubsetCall::Two {
+            target,
+            first,
+            second,
+            ..
+        } => {
+            check_name(target, context, path, locator, event_log);
+            check_name(first, context, path, locator, event_log);
+            check_name(second, context, path, locator, event_log);
+        }
+        SubsetCall::Nested {
+            target,
+            outer,
+            inner_target,
+            ..
+        } => {
+            check_name(target, context, path, locator, event_log);
+            check_name(outer, context, path, locator, event_log);
+            check_name(inner_target, context, path, locator, event_log);
+        }
+    }
+}
+
+fn assume_fact_expression(
+    expression: &Expression,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match &expression.kind {
+        ExpressionKind::IsType { subject, ty } => {
+            check_type_expression(ty, context, path, locator, registry, event_log);
+            declare_names_from_expression(subject, context);
+        }
+        ExpressionKind::SpecStatement(statement) => {
+            check_name(&statement.name, context, path, locator, event_log);
+            declare_names_from_expression(&statement.subject, context);
+        }
+        _ => check_expression(expression, context, path, locator, registry, event_log),
+    }
+}
+
+fn assume_expression_spec_statement(
+    statement: &crate::frontend::formulation::ast::SpecStatement,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    check_name(&statement.name, context, path, locator, event_log);
+    declare_names_from_expression(&statement.subject, context);
+    check_expression(
+        &statement.subject,
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
+}
+
+fn declare_is_subject(subject: &IsSubject, context: &mut TypeContext) {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) => {
+            for form in forms {
+                match form {
+                    IsSubjectForm::Form(form) => declare_form_or_declaration(form, context),
+                    IsSubjectForm::PlaceholderForm(form) => declare_placeholder_form(form, context),
+                }
+            }
+        }
+        IsSubjectKind::Operator(_) => {}
+    }
+}
+
+fn declare_spec_subject(subject: &SpecSubject, context: &mut TypeContext) {
+    match &subject.kind {
+        SpecSubjectKind::Form(form) => declare_form_or_declaration(form, context),
+        SpecSubjectKind::Operator(_) => {}
+    }
+}
+
+fn declare_form_or_declaration(form: &FormOrDeclaration, context: &mut TypeContext) {
+    match &form.kind {
+        FormOrDeclarationKind::Name(name) => context.declare_name(name.clone()),
+        FormOrDeclarationKind::FunctionDeclaration { name, form } => {
+            context.declare_name(name.as_ref().unwrap_or(&form.name).clone());
+        }
+        FormOrDeclarationKind::TupleDeclaration { name, form } => {
+            if let Some(name) = name {
+                context.declare_name(name.clone());
+            } else {
+                for element in &form.elements {
+                    if let TupleFormElement::Form(form) = element {
+                        declare_form_or_declaration(form, context);
+                    }
+                }
+            }
+        }
+        FormOrDeclarationKind::SetDeclaration { name, form } => {
+            if let Some(name) = name {
+                context.declare_name(name.clone());
+            } else {
+                declare_placeholder_form(&form.placeholder_form, context);
+            }
+        }
+        FormOrDeclarationKind::InfixOperator { left, right, .. } => {
+            context.declare_name(left.name.clone());
+            context.declare_name(right.name.clone());
+        }
+        FormOrDeclarationKind::PrefixOperator { placeholder, .. }
+        | FormOrDeclarationKind::PostfixOperator { placeholder, .. } => {
+            context.declare_name(placeholder.name.clone());
+        }
+    }
+}
+
+fn declare_placeholder_form(form: &PlaceholderForm, context: &mut TypeContext) {
+    match &form.kind {
+        PlaceholderFormKind::Placeholder(placeholder) => {
+            context.declare_name(placeholder.name.clone());
+        }
+        PlaceholderFormKind::Function {
+            placeholder,
+            arguments,
+        } => {
+            context.declare_name(placeholder.name.clone());
+            for argument in arguments {
+                context.declare_name(argument.name.clone());
+            }
+        }
+    }
+}
+
+fn declare_names_from_expression(expression: &Expression, context: &mut TypeContext) {
+    match &expression.kind {
+        ExpressionKind::Name(name) => context.declare_name(name.clone()),
+        ExpressionKind::FunctionCall { name, arguments } => {
+            context.declare_name(name.clone());
+            for argument in arguments {
+                declare_names_from_expression(argument, context);
+            }
+        }
+        ExpressionKind::FunctionNamedCall { name, elements } => {
+            context.declare_name(name.clone());
+            for element in elements {
+                match &element.lhs {
+                    FunctionNamedExpressionElementLhs::Name(name) => {
+                        context.declare_name(name.clone());
+                    }
+                    FunctionNamedExpressionElementLhs::SubsetCall(subset) => {
+                        declare_subset_call_names(subset, context);
+                    }
+                }
+                declare_names_from_expression(&element.expression, context);
+            }
+        }
+        ExpressionKind::Tuple(elements) => {
+            for element in elements {
+                if let TupleExpressionElement::Expression(expression) = element {
+                    declare_names_from_expression(expression, context);
+                }
+            }
+        }
+        ExpressionKind::Set(set) => {
+            declare_names_from_expression(&set.spec.subject, context);
+            context.declare_name(set.spec.name.clone());
+            declare_placeholder_form(&set.target, context);
+            if let Some(predicate) = &set.predicate {
+                declare_names_from_expression(predicate, context);
+            }
+        }
+        ExpressionKind::Grouped { expression, .. }
+        | ExpressionKind::Labeled { expression, .. }
+        | ExpressionKind::Prefix { expression, .. } => {
+            declare_names_from_expression(expression, context);
+        }
+        ExpressionKind::SubsetCall(subset) => declare_subset_call_names(subset, context),
+        ExpressionKind::Command(command) => {
+            for expression in command_expression_arguments(command) {
+                declare_names_from_expression(expression, context);
+            }
+        }
+        ExpressionKind::InfixCommand {
+            left,
+            command,
+            right,
+        } => {
+            declare_names_from_expression(left, context);
+            for expression in infix_command_arguments(command) {
+                declare_names_from_expression(expression, context);
+            }
+            declare_names_from_expression(right, context);
+        }
+        ExpressionKind::Binary { left, right, .. } => {
+            declare_names_from_expression(left, context);
+            declare_names_from_expression(right, context);
+        }
+        ExpressionKind::SpecStatement(statement) => {
+            declare_names_from_expression(&statement.subject, context);
+            context.declare_name(statement.name.clone());
+        }
+        ExpressionKind::IsPredicate { subject, command }
+        | ExpressionKind::IsNotPredicate { subject, command } => {
+            declare_names_from_expression(subject, context);
+            for expression in command_expression_arguments(command) {
+                declare_names_from_expression(expression, context);
+            }
+        }
+        ExpressionKind::IsType { subject, ty } => {
+            declare_names_from_expression(subject, context);
+            declare_names_from_type_expression(ty, context);
+        }
+    }
+}
+
+fn declare_names_from_type_expression(ty: &TypeExpression, context: &mut TypeContext) {
+    match ty {
+        TypeExpression::Command(command) => {
+            for expression in command_expression_arguments(command) {
+                declare_names_from_expression(expression, context);
+            }
+        }
+        TypeExpression::RefinedCommand(command) => {
+            for expression in refined_command_expression_arguments(command) {
+                declare_names_from_expression(expression, context);
+            }
+        }
+    }
+}
+
+fn declare_subset_call_names(subset: &SubsetCall, context: &mut TypeContext) {
+    match subset {
+        SubsetCall::One { target, first, .. } => {
+            context.declare_name(target.clone());
+            context.declare_name(first.clone());
+        }
+        SubsetCall::Two {
+            target,
+            first,
+            second,
+            ..
+        } => {
+            context.declare_name(target.clone());
+            context.declare_name(first.clone());
+            context.declare_name(second.clone());
+        }
+        SubsetCall::Nested {
+            target,
+            outer,
+            inner_target,
+            ..
+        } => {
+            context.declare_name(target.clone());
+            context.declare_name(outer.clone());
+            context.declare_name(inner_target.clone());
+        }
     }
 }
 
@@ -1486,6 +2081,35 @@ fn infix_command_arguments(command: &InfixCommand) -> Vec<&Expression> {
                 .tail
                 .iter()
                 .flat_map(|tail| tail.args.iter())
+                .flat_map(|args| args.expressions.iter()),
+        )
+        .collect()
+}
+
+fn refined_command_expression_arguments(command: &RefinedCommandExpression) -> Vec<&Expression> {
+    command
+        .parts
+        .iter()
+        .flat_map(|part| part.tail.iter())
+        .flat_map(|tail| tail.args.iter())
+        .flat_map(|args| args.expressions.iter())
+        .chain(
+            command
+                .head_args
+                .iter()
+                .flat_map(|args| args.expressions.iter()),
+        )
+        .chain(
+            command
+                .tail
+                .iter()
+                .flat_map(|tail| tail.args.iter())
+                .flat_map(|args| args.expressions.iter()),
+        )
+        .chain(
+            command
+                .paren_args
+                .iter()
                 .flat_map(|args| args.expressions.iter()),
         )
         .collect()

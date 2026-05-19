@@ -166,7 +166,12 @@ fn check_accepts_defined_command_references_with_matching_argument_shape() {
 
     fs::write(
         &file,
-        r#"[\foo{A, B}(x)]
+        r#"[\thing]
+Describes: value
+Documented:
+. called: "thing"
+
+[\foo{A, B}(x)]
 Defines: A "defines" B
 Documented:
 . [docs.called]
@@ -174,6 +179,8 @@ Documented:
   . "foo"
 
 Theorem:
+given:
+. y, C, D, z is \thing
 then:
 . y is \foo{C, D}(z)
 "#,
@@ -201,7 +208,12 @@ fn check_accepts_command_references_that_omit_defined_paren_arguments() {
 
     fs::write(
         &file,
-        r#"[\some.function{A}(x, y)]
+        r#"[\thing]
+Describes: value
+Documented:
+. called: "thing"
+
+[\some.function{A}(x, y)]
 Defines: A "defines" B
 Documented:
 . [docs.called]
@@ -209,6 +221,8 @@ Documented:
   . "some function"
 
 Theorem:
+given:
+. f, X, g, a, b is \thing
 then:
 . f is \some.function{X}
 . g is \some.function{X}(a, b)
@@ -433,6 +447,52 @@ then:
         24,
         7,
         "Could not prove requirement `x is \\set` for command `\\function:on:to`"
+    ));
+    assert!(event_log.has_errors());
+}
+
+#[test]
+fn check_reports_unrecognized_symbols_in_command_arguments() {
+    let temp_dir = TestDir::new();
+    let file = temp_dir.path().join("unrecognized-symbol.mlg");
+
+    fs::write(
+        &file,
+        r#"[\set]
+Describes: X
+Documented:
+. called: "set"
+
+[\function:on{A}:to{B}]
+Describes: f(x__)
+when: A, B is \set
+Documented:
+. called: "function"
+
+Theorem:
+given:
+. X, Y is \set
+. f is \function:on{X}:to{Y}
+then:
+. f is? \function:on{X}:to{Z}
+"#,
+    )
+    .unwrap();
+
+    let mut event_log = EventLog::new();
+    let result = check_in(
+        temp_dir.path(),
+        &[PathBuf::from("unrecognized-symbol.mlg")],
+        &mut event_log,
+    );
+
+    assert_eq!(result.files_checked, 1);
+    assert!(has_user_error_at(
+        &event_log,
+        &file.canonicalize().unwrap(),
+        16,
+        27,
+        "Unrecognized symbol `Z`"
     ));
     assert!(event_log.has_errors());
 }

@@ -5,11 +5,12 @@ use crate::events::{EventLocation, EventLog, EventPosition, EventSpan, Level};
 use crate::frontend::formulation::ast::{
     Chain, ChainPart, CommandExpression, CommandExpressionTailPart, CommandHeader,
     CommandHeaderNode, CommandHeaderTailPart, CurlyExpressionArgs, Expression, ExpressionKind,
-    FormOrDeclaration, FormOrDeclarationKind, InfixCommand, InfixCommandHeader,
-    IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind,
-    PlaceholderForm, PlaceholderFormKind, RefinedCommandExpression, RefinedCommandHeader,
-    RefinedExpressionPart, RefinedTail, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject,
-    SpecSubjectKind, TupleExpressionElement, TupleFormElement, TypeExpression,
+    FormOrDeclaration, FormOrDeclarationKind, FunctionNamedExpressionElementLhs, InfixCommand,
+    InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm,
+    IsSubjectKind, PlaceholderForm, PlaceholderFormKind, RefinedCommandExpression,
+    RefinedCommandHeader, RefinedExpressionPart, RefinedTail, SpecOperatorAlias,
+    SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement, SubsetCall,
+    TupleExpressionElement, TupleFormElement, TypeExpression,
 };
 use crate::frontend::structural::ast::*;
 

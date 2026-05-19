@@ -22,6 +22,8 @@ pub(super) struct SourceLocator<'a> {
     heading_cursor: usize,
     /// Next byte offset to scan from when locating command references.
     reference_cursor: usize,
+    /// Next byte offset to scan from when locating ordinary symbol names.
+    symbol_cursor: usize,
 }
 
 impl<'a> SourceLocator<'a> {
@@ -31,6 +33,7 @@ impl<'a> SourceLocator<'a> {
             source,
             heading_cursor: 0,
             reference_cursor: 0,
+            symbol_cursor: 0,
         }
     }
 
@@ -55,6 +58,13 @@ impl<'a> SourceLocator<'a> {
             OccurrenceKind::Reference,
         )?;
         self.reference_cursor = offset.saturating_add(1);
+        Some(position_at_offset(self.source, offset))
+    }
+
+    /// Finds the next ordinary symbol occurrence matching a name.
+    pub(super) fn locate_symbol(&mut self, name: &str) -> Option<SourcePosition> {
+        let offset = find_symbol_occurrence(self.source, name, self.symbol_cursor)?;
+        self.symbol_cursor = offset.saturating_add(name.len());
         Some(position_at_offset(self.source, offset))
     }
 }
@@ -147,6 +157,45 @@ pub(super) fn matches_signature_at(source: &str, offset: usize, signature: &str)
         .chars()
         .next()
         .is_some_and(|ch| ch == ':' || ch == '.' || ch == '_' || ch.is_ascii_alphanumeric())
+}
+
+/// Finds the next byte offset where an ordinary symbol name appears.
+pub(super) fn find_symbol_occurrence(source: &str, name: &str, start: usize) -> Option<usize> {
+    if name.is_empty() {
+        return None;
+    }
+
+    for (relative, _) in source.get(start..)?.match_indices(name) {
+        let offset = start + relative;
+        if is_heading_line(source, offset) {
+            continue;
+        }
+        if matches_symbol_at(source, offset, name) {
+            return Some(offset);
+        }
+    }
+
+    None
+}
+
+/// Checks whether a name occurrence is delimited like a variable symbol.
+pub(super) fn matches_symbol_at(source: &str, offset: usize, name: &str) -> bool {
+    let Some(tail) = source.get(offset..) else {
+        return false;
+    };
+    if !tail.starts_with(name) {
+        return false;
+    }
+
+    let before = source[..offset].chars().next_back();
+    let after = source[offset + name.len()..].chars().next();
+
+    let invalid_before = before.is_some_and(|ch| {
+        ch == '\\' || ch == ':' || ch == '.' || ch == '$' || ch.is_ascii_alphanumeric() || ch == '_'
+    });
+    let invalid_after = after.is_some_and(|ch| ch.is_ascii_alphanumeric() || ch == '_');
+
+    !invalid_before && !invalid_after
 }
 
 /// Skips any immediately adjacent balanced `{...}` or `(...)` groups.

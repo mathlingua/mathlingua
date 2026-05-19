@@ -3,9 +3,9 @@
 import katex from "katex";
 import styles from "./latex-renderer.module.css";
 
-type LatexRendererProps = {
+interface LatexRendererProps {
   latex: string;
-};
+}
 
 export function LatexRenderer({ latex }: LatexRendererProps) {
   const html = katex.renderToString(latex, {

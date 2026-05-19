@@ -10,14 +10,14 @@ import {
 } from "../lib/presenter";
 import { FileView } from "../lib/types";
 
-type FileListProps = {
+interface FileListProps {
   currentDirectory: string;
   files: FileView[];
   isOutlineOpen: boolean;
   onNavigateDirectory: (directory: string) => void;
   onSelectFile: (fileIndex: number) => void;
   selectedFileIndex: number;
-};
+}
 
 export function FileList({
   currentDirectory,

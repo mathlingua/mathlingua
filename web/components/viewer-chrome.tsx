@@ -1,9 +1,9 @@
 import styles from "./viewer-chrome.module.css";
 
-type ViewerChromeProps = {
+interface ViewerChromeProps {
   isOutlineOpen: boolean;
   onToggleOutline: () => void;
-};
+}
 
 export function ViewerChrome({
   isOutlineOpen,

@@ -15,9 +15,9 @@ import {
   routePathFromPathname,
 } from "../lib/presenter";
 
-type ViewerShellProps = {
+interface ViewerShellProps {
   files: FileView[];
-};
+}
 
 export function ViewerShell({ files }: ViewerShellProps) {
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
@@ -78,10 +78,10 @@ export function ViewerShell({ files }: ViewerShellProps) {
   );
 }
 
-type RouteSelection = {
+interface RouteSelection {
   directory: string;
   fileIndex: number;
-};
+}
 
 function resolveRouteSelection(
   pathname: string,

@@ -7,10 +7,10 @@ import { LatexRenderer } from "./latex-renderer";
 import styles from "./group-card.module.css";
 import sectionStyles from "./section-content.module.css";
 
-type GroupCardProps = {
+interface GroupCardProps {
   anchorId: string;
   group: GroupView;
-};
+}
 
 export function GroupCard({ anchorId, group }: GroupCardProps) {
   const [showDocumented, setShowDocumented] = useState(false);

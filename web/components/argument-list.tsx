@@ -3,9 +3,9 @@ import { LatexRenderer } from "./latex-renderer";
 import styles from "./argument-list.module.css";
 import sectionStyles from "./section-content.module.css";
 
-type ArgumentListProps = {
+interface ArgumentListProps {
   arguments: ArgumentView[];
-};
+}
 
 export function ArgumentList({ arguments: items }: ArgumentListProps) {
   return (

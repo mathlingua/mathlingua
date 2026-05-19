@@ -4,11 +4,12 @@ use std::path::{Path, PathBuf};
 use crate::events::{EventLocation, EventLog, EventPosition, EventSpan, Level};
 use crate::frontend::formulation::ast::{
     Chain, ChainPart, CommandExpression, CommandExpressionTailPart, CommandHeader,
-    CommandHeaderNode, CommandHeaderTailPart, Expression, ExpressionKind, FormOrDeclaration,
-    FormOrDeclarationKind, InfixCommand, InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec,
-    IsStatement, IsSubject, IsSubjectForm, IsSubjectKind, PlaceholderForm, PlaceholderFormKind,
-    RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedTail,
-    SpecSubject, SpecSubjectKind, TupleExpressionElement, TupleFormElement, TypeExpression,
+    CommandHeaderNode, CommandHeaderTailPart, CurlyExpressionArgs, Expression, ExpressionKind,
+    FormOrDeclaration, FormOrDeclarationKind, InfixCommand, InfixCommandHeader,
+    IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind,
+    PlaceholderForm, PlaceholderFormKind, RefinedCommandExpression, RefinedCommandHeader,
+    RefinedExpressionPart, RefinedTail, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject,
+    SpecSubjectKind, TupleExpressionElement, TupleFormElement, TypeExpression,
 };
 use crate::frontend::structural::ast::*;
 
@@ -18,6 +19,7 @@ const ORIGIN: &str = "semantic_check";
 mod check;
 mod locator;
 mod shapes;
+mod typecheck;
 mod types;
 mod validation;
 mod walk;
@@ -27,6 +29,7 @@ pub use types::ParsedSourceFile;
 
 use locator::*;
 use shapes::*;
+use typecheck::*;
 use types::*;
 use validation::*;
 use walk::*;

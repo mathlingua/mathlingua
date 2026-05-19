@@ -1,5 +1,5 @@
 use crate::frontend::formulation::ast::{
-    AuthorHeader, CommandHeader, Expression, ExpressionAlias, FormOrDeclaration,
+    AuthorHeader, CommandHeader, Expression, ExpressionAlias, ExpressionBinding, FormOrDeclaration,
     IsOrRefinedStatementSpec, IsOrSpec, IsViaStatement, LabelHeader, ResourceHeader,
     SpecOperatorAlias, WritingAlias,
 };

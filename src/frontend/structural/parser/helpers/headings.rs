@@ -27,6 +27,16 @@ pub(in crate::frontend::structural::parser) fn parse_is_or_via_item(
     parse_is_or_spec(input).map(IsOrViaItem::IsOrSpec)
 }
 
+/// Parses a quantifier binding or ordinary specification.
+pub(in crate::frontend::structural::parser) fn parse_binding_or_spec(
+    input: &str,
+) -> Result<BindingOrSpec, FormulationParseError> {
+    if let Ok(binding) = parse_expression_binding(input) {
+        return Ok(BindingOrSpec::Binding(binding));
+    }
+    parse_is_or_spec(input).map(BindingOrSpec::IsOrSpec)
+}
+
 /// Parses a required command heading from a proto group.
 ///
 /// Missing or malformed headings are reported at the group row because headings

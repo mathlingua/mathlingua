@@ -127,10 +127,7 @@ fn parses_spec_operator_aliases_with_builtin_targets() {
         .expect("expected spec operator alias");
 
     assert_eq!(alias.placeholder_spec.operator, "in");
-    assert!(matches!(
-        alias.target,
-        SpecOperatorAliasTarget::Builtin(_)
-    ));
+    assert!(matches!(alias.target, SpecOperatorAliasTarget::Builtin(_)));
 }
 
 #[test]

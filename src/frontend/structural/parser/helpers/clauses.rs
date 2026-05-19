@@ -61,6 +61,11 @@ pub(in crate::frontend::structural::parser) fn parse_optional_clauses(
     for entry in section_entries(section) {
         match entry {
             SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
+                if let Ok(binding) = parse_expression_binding(text) {
+                    result.push(Clause::Binding(binding));
+                    continue;
+                }
+
                 match parse_expression(text) {
                     Ok(expression) => result.push(Clause::Expression(expression)),
                     Err(expression_error) => match parse_is_or_spec(text) {

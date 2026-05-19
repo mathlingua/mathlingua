@@ -11,6 +11,21 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
         .map_err(ParseError::from)
 }
 
+/// Parses a local expression binding of the form `<left> := <right>`.
+pub fn parse_expression_binding(input: &str) -> Result<ExpressionBinding, ParseError> {
+    let input = input.trim();
+    let index = find_top_level_substring(input, ":=")
+        .ok_or_else(|| ParseError::custom("expected top-level `:=`"))?;
+    let left = parse_expression(input[..index].trim())?;
+    let right = parse_expression(input[index + 2..].trim())?;
+
+    Ok(ExpressionBinding {
+        span: span_all(input),
+        left,
+        right,
+    })
+}
+
 /// Parses a form or declaration used in definition-like `Describes` sections.
 ///
 /// The generated grammar handles the detailed expression/form precedence here;
@@ -172,9 +187,7 @@ pub fn parse_spec_operator_alias(input: &str) -> Result<SpecOperatorAlias, Parse
 ///
 /// Besides ordinary `is`/spec targets, this position can name a built-in
 /// keyword by sigil, for example `\\abstract`.
-fn parse_spec_operator_alias_target(
-    input: &str,
-) -> Result<SpecOperatorAliasTarget, ParseError> {
+fn parse_spec_operator_alias_target(input: &str) -> Result<SpecOperatorAliasTarget, ParseError> {
     let input = input.trim();
 
     if let Some(builtin) = input.strip_prefix("\\\\") {

@@ -259,7 +259,9 @@ Documented:
 . called: "continuous"
 
 Theorem:
-given: f is \(continuous, bounded)::function:on{A}:to{B}
+given:
+. A, B is \set
+. f is \(continuous, bounded)::function:on{A}:to{B}
 then: f is? \function:on{A}:to{B}
 "#,
     )
@@ -269,6 +271,340 @@ then: f is? \function:on{A}:to{B}
     let result = check_in(
         temp_dir.path(),
         &[PathBuf::from("refined-list.mlg")],
+        &mut event_log,
+    );
+
+    assert_eq!(result.files_checked, 1);
+    assert_eq!(
+        user_events(&event_log),
+        [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+    );
+}
+
+#[test]
+fn check_accepts_command_when_requirement_from_given_type_fact() {
+    let temp_dir = TestDir::new();
+    let file = temp_dir.path().join("type-fact.mlg");
+
+    fs::write(
+        &file,
+        r#"[\real]
+Describes: x
+Documented:
+. called: "real"
+
+[\foo{s}]
+Describes: x
+when: s is \real
+Documented:
+. called: "foo"
+
+Theorem:
+given: r is \real
+then:
+. \foo{r}
+"#,
+    )
+    .unwrap();
+
+    let mut event_log = EventLog::new();
+    let result = check_in(
+        temp_dir.path(),
+        &[PathBuf::from("type-fact.mlg")],
+        &mut event_log,
+    );
+
+    assert_eq!(result.files_checked, 1);
+    assert_eq!(
+        user_events(&event_log),
+        [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+    );
+}
+
+#[test]
+fn check_reports_command_when_requirement_type_mismatches() {
+    let temp_dir = TestDir::new();
+    let file = temp_dir.path().join("type-mismatch.mlg");
+
+    fs::write(
+        &file,
+        r#"[\real]
+Describes: x
+Documented:
+. called: "real"
+
+[\foo{s}]
+Describes: x
+when: s is \real
+Documented:
+. called: "foo"
+
+Theorem:
+then:
+. \foo{r}
+"#,
+    )
+    .unwrap();
+
+    let mut event_log = EventLog::new();
+    let result = check_in(
+        temp_dir.path(),
+        &[PathBuf::from("type-mismatch.mlg")],
+        &mut event_log,
+    );
+
+    assert_eq!(result.files_checked, 1);
+    assert!(user_events(&event_log).iter().any(|event| {
+        event.as_message().is_some_and(|message| {
+            message.message == "Could not prove requirement `r is \\real` for command `\\foo`"
+        })
+    }));
+    assert!(event_log.has_errors());
+}
+
+#[test]
+fn check_reports_type_argument_mismatches_in_is_statements_and_predicates() {
+    let temp_dir = TestDir::new();
+    let file = temp_dir.path().join("function-argument-types.mlg");
+
+    fs::write(
+        &file,
+        r#"[\set]
+Describes: X
+Provides:
+. symbol: x_ "in" X :-> \\abstract
+Documented:
+. called: "set"
+
+[\function:on{A}:to{B}]
+Describes: f(x__)
+when: A, B is \set
+satisfies:
+. forAll: x "in" A
+  then:
+  . existsUnique: y "in" B
+    suchThat: f(x) = y
+Documented:
+. called: "function on $A?$ to $B?$"
+. written: "f? \: : \: A? \rightarrow B?"
+
+Theorem:
+given:
+. X, Y is \set
+. x "in" X
+. g is \function:on{X}:to{Y}
+. h is \function:on{g}:to{x}
+then:
+. g is? \function:on{X}:to{g}
+"#,
+    )
+    .unwrap();
+
+    let mut event_log = EventLog::new();
+    let result = check_in(
+        temp_dir.path(),
+        &[PathBuf::from("function-argument-types.mlg")],
+        &mut event_log,
+    );
+
+    assert_eq!(result.files_checked, 1);
+    let messages = user_events(&event_log)
+        .iter()
+        .filter_map(Event::as_message)
+        .map(|event| event.message.clone())
+        .collect::<Vec<_>>();
+    assert!(messages.contains(&String::from(
+        "Could not prove requirement `g is \\set` for command `\\function:on:to`"
+    )));
+    assert!(messages.contains(&String::from(
+        "Could not prove requirement `x is \\set` for command `\\function:on:to`"
+    )));
+    let canonical_file = file.canonicalize().unwrap();
+    assert!(has_user_error_at(
+        &event_log,
+        &canonical_file,
+        26,
+        8,
+        "Could not prove requirement `g is \\set` for command `\\function:on:to`"
+    ));
+    assert!(has_user_error_at(
+        &event_log,
+        &canonical_file,
+        24,
+        7,
+        "Could not prove requirement `x is \\set` for command `\\function:on:to`"
+    ));
+    assert!(event_log.has_errors());
+}
+
+#[test]
+fn check_uses_local_bindings_when_matching_types() {
+    let temp_dir = TestDir::new();
+    let file = temp_dir.path().join("type-binding.mlg");
+
+    fs::write(
+        &file,
+        r#"[\real]
+Describes: x
+Documented:
+. called: "real"
+
+[\foo{s}]
+Describes: x
+when: s is \real
+Documented:
+. called: "foo"
+
+Theorem:
+given: A is \real
+where:
+. A := B
+then:
+. \foo{B}
+"#,
+    )
+    .unwrap();
+
+    let mut event_log = EventLog::new();
+    let result = check_in(
+        temp_dir.path(),
+        &[PathBuf::from("type-binding.mlg")],
+        &mut event_log,
+    );
+
+    assert_eq!(result.files_checked, 1);
+    assert_eq!(
+        user_events(&event_log),
+        [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+    );
+}
+
+#[test]
+fn check_uses_quantifier_bindings_when_matching_types() {
+    let temp_dir = TestDir::new();
+    let file = temp_dir.path().join("exists-binding.mlg");
+
+    fs::write(
+        &file,
+        r#"[\real]
+Describes: x
+Documented:
+. called: "real"
+
+[\foo{s}]
+Describes: x
+when: s is \real
+Documented:
+. called: "foo"
+
+Theorem:
+then:
+. exists: A := B
+  suchThat:
+  . A is \real
+  . \foo{B}
+"#,
+    )
+    .unwrap();
+
+    let mut event_log = EventLog::new();
+    let result = check_in(
+        temp_dir.path(),
+        &[PathBuf::from("exists-binding.mlg")],
+        &mut event_log,
+    );
+
+    assert_eq!(result.files_checked, 1);
+    assert_eq!(
+        user_events(&event_log),
+        [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+    );
+}
+
+#[test]
+fn check_reduces_spec_operator_aliases_to_type_facts() {
+    let temp_dir = TestDir::new();
+    let file = temp_dir.path().join("spec-reduction.mlg");
+
+    fs::write(
+        &file,
+        r#"[\real]
+Describes: x
+Documented:
+. called: "real"
+
+[\reals]
+Describes: R
+Provides:
+. symbol: x_ "in" R :-> x is \real
+Documented:
+. called: "reals"
+
+[\foo{s}]
+Describes: x
+when: s is \real
+Documented:
+. called: "foo"
+
+Theorem:
+given:
+. S is \reals
+. r "in" S
+then:
+. \foo{r}
+"#,
+    )
+    .unwrap();
+
+    let mut event_log = EventLog::new();
+    let result = check_in(
+        temp_dir.path(),
+        &[PathBuf::from("spec-reduction.mlg")],
+        &mut event_log,
+    );
+
+    assert_eq!(result.files_checked, 1);
+    assert_eq!(
+        user_events(&event_log),
+        [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+    );
+}
+
+#[test]
+fn check_matches_spec_requirements_without_reducing_to_type_facts() {
+    let temp_dir = TestDir::new();
+    let file = temp_dir.path().join("direct-spec.mlg");
+
+    fs::write(
+        &file,
+        r#"[\group]
+Describes: G
+Documented:
+. called: "group"
+
+[\foo{G}:with{x}]
+Describes: y
+when:
+. G is \group
+. x "in" G
+Documented:
+. called: "foo"
+
+Theorem:
+given:
+. H is \group
+. y "in" H
+. z is \foo{H}:with{y}
+then:
+. z = z
+"#,
+    )
+    .unwrap();
+
+    let mut event_log = EventLog::new();
+    let result = check_in(
+        temp_dir.path(),
+        &[PathBuf::from("direct-spec.mlg")],
         &mut event_log,
     );
 

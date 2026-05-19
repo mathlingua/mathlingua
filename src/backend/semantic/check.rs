@@ -15,6 +15,10 @@ pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
     for file in files {
         validate_document_references(file, &registry, event_log);
     }
+
+    for file in files {
+        validate_document_types(file, &registry, event_log);
+    }
 }
 
 /// Collects every signature-defining top-level item from a single document.
@@ -52,6 +56,7 @@ pub(super) fn collect_document_definitions(
             continue;
         }
 
+        let type_shape = shape.clone();
         registry.definitions.insert(
             shape.signature.clone(),
             DefinitionEntry {
@@ -61,6 +66,7 @@ pub(super) fn collect_document_definitions(
                 position,
             },
         );
+        collect_definition_type_metadata(item, &type_shape, registry);
     }
 }
 

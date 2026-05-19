@@ -14,6 +14,7 @@ pub struct Document {
 ///
 /// Variants correspond to the leading section label of a proto group, with
 /// headings and required sections normalized into strongly typed group structs.
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TopLevelItem {
     /// A document title group.
@@ -79,6 +80,8 @@ pub enum Clause {
     Piecewise(PiecewiseGroup),
     /// Nested given/then clause block.
     Given(GivenGroup),
+    /// Local syntactic equality binding.
+    Binding(ExpressionBinding),
     /// Inline `is` statement or specification.
     IsOrSpec(IsOrSpec),
     /// Inline expression clause.
@@ -90,6 +93,15 @@ pub enum Clause {
 pub enum IsOrViaItem {
     /// A statement with an accompanying `via` tuple.
     IsVia(IsViaStatement),
+    /// A plain `is` statement or specification.
+    IsOrSpec(IsOrSpec),
+}
+
+/// Item accepted by quantifier sections that can bind equality or facts.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum BindingOrSpec {
+    /// Local syntactic equality binding.
+    Binding(ExpressionBinding),
     /// A plain `is` statement or specification.
     IsOrSpec(IsOrSpec),
 }

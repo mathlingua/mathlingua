@@ -81,7 +81,7 @@ pub(super) fn parse_exists_clause(
                 section(&sections, "exists")?,
                 "exists",
                 tracker,
-                parse_is_or_spec,
+                parse_binding_or_spec,
             )?,
         },
         such_that: SuchThatSection {
@@ -113,7 +113,7 @@ pub(super) fn parse_exists_unique_clause(
                 section(&sections, "existsUnique")?,
                 "existsUnique",
                 tracker,
-                parse_is_or_spec,
+                parse_binding_or_spec,
             )?,
         },
         such_that: SuchThatSection {
@@ -148,7 +148,7 @@ pub(super) fn parse_for_all_clause(
                 section(&sections, "forAll")?,
                 "forAll",
                 tracker,
-                parse_is_or_spec,
+                parse_binding_or_spec,
             )?,
         },
         where_: sections.get("where").copied().and_then(|section| {
@@ -270,7 +270,9 @@ pub(super) fn parse_provides_item_group(
     tracker: &mut EventLog,
 ) -> Option<ProvidesItem> {
     match first_section_label(group)? {
-        "symbol" => parse_symbol(group, tracker).map(Box::new).map(ProvidesItem::Symbol),
+        "symbol" => parse_symbol(group, tracker)
+            .map(Box::new)
+            .map(ProvidesItem::Symbol),
         "connection" => parse_connection(group, tracker).map(ProvidesItem::Connection),
         other => {
             tracker.user_error_at_row(

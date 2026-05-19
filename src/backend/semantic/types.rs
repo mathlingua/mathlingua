@@ -74,6 +74,59 @@ pub(super) struct DefinitionEntry {
     pub(super) position: Option<SourcePosition>,
 }
 
+/// Type-checking metadata associated with a command definition.
+#[derive(Clone, Debug)]
+pub(super) struct DefinitionTypeInfo {
+    /// Canonical command signature.
+    pub(super) signature: String,
+    /// Parameter names gathered from the command heading, in argument order.
+    pub(super) parameters: Vec<String>,
+    /// Facts that must be provable when this command is used.
+    pub(super) requirements: Vec<TypeFact>,
+    /// Local substitutions available while matching the requirements.
+    pub(super) substitutions: Vec<(String, String)>,
+    /// Described subject for `Describes:` definitions.
+    pub(super) described: Option<String>,
+}
+
+/// A fact known or required by the type checker.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub(super) enum TypeFact {
+    /// A subject has a command type.
+    Is {
+        /// Subject key.
+        subject: String,
+        /// Full type key.
+        ty: String,
+        /// Canonical command signature for the type.
+        signature: String,
+    },
+    /// A subject participates in a quoted-operator specification.
+    Spec {
+        /// Subject key.
+        subject: String,
+        /// Quoted operator text.
+        operator: String,
+        /// Right-hand target key.
+        target: String,
+    },
+}
+
+/// Type-check-time rewrite rule introduced by `:->`.
+#[derive(Clone, Debug)]
+pub(super) struct SpecOperatorRule {
+    /// Signature of the definition that provides this rule.
+    pub(super) owner_signature: String,
+    /// Subject placeholder on the left-hand side, such as `x`.
+    pub(super) placeholder: String,
+    /// Quoted operator text on the left-hand side.
+    pub(super) operator: String,
+    /// Right-hand target key on the left-hand side.
+    pub(super) target: String,
+    /// Alias target to instantiate when the rule applies.
+    pub(super) target_alias: SpecOperatorAliasTarget,
+}
+
 /// Top-level structural groups that can introduce a command signature.
 ///
 /// The uniqueness rule is global across these kinds: the same signature cannot
@@ -126,4 +179,8 @@ impl DefinitionKind {
 pub(super) struct SignatureRegistry {
     /// Map from canonical command signature to the definition that owns it.
     pub(super) definitions: HashMap<String, DefinitionEntry>,
+    /// Type-checking metadata keyed by canonical command signature.
+    pub(super) type_infos: HashMap<String, DefinitionTypeInfo>,
+    /// Spec-operator rules collected from `Provides:` symbols.
+    pub(super) spec_rules: Vec<SpecOperatorRule>,
 }

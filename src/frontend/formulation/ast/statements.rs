@@ -123,3 +123,14 @@ pub struct PlaceholderSpecStatement {
     /// Right-hand name.
     pub name: String,
 }
+
+/// Local syntactic equality binding used by semantic checks.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExpressionBinding {
+    /// Source span covered by the binding.
+    pub span: Span,
+    /// Left-hand expression.
+    pub left: Expression,
+    /// Right-hand expression.
+    pub right: Expression,
+}

@@ -171,9 +171,10 @@ impl<'a> Parser<'a> {
             );
         }
 
-        let (label, inline_argument) = match first_line.text.split_once(':') {
-            Some((label, rest)) => {
-                let argument = rest.trim();
+        let (label, inline_argument) = match structural_colon_index(&first_line.text) {
+            Some(index) => {
+                let (label, rest) = first_line.text.split_at(index);
+                let argument = rest[1..].trim();
                 (
                     label.to_owned(),
                     self.parse_inline_argument(
@@ -329,8 +330,8 @@ impl<'a> Parser<'a> {
 
     /// Returns whether the next line can start a nested group.
     ///
-    /// Bracketed headings always start groups.  Otherwise, any nontext argument
-    /// containing `:` is treated as a section line and therefore a group start.
+    /// Bracketed headings always start groups.  Otherwise, a nontext argument
+    /// starts a group only when it has a section-shaped label before `:`.
     fn peek_starts_group(&self) -> bool {
         let Some(line) = self.lexer.peek() else {
             return false;
@@ -340,7 +341,7 @@ impl<'a> Parser<'a> {
             return false;
         }
 
-        line.is_header() || line.text.contains(':')
+        line.is_header() || structural_colon_index(&line.text).is_some()
     }
 
     /// Consumes a multiline formulation until its matching closing delimiter.
@@ -375,6 +376,37 @@ impl<'a> Parser<'a> {
             }
         }
     }
+}
+
+/// Finds the colon that separates a section label from its inline argument.
+///
+/// Formulation operators such as `:=`, `:->`, `:=>`, `:~>`, and command tails
+/// such as `\foo{A}:with{B}` can appear in section bodies.  A structural colon
+/// therefore requires a section-label-shaped prefix.
+fn structural_colon_index(text: &str) -> Option<usize> {
+    let index = text.find(':')?;
+    let prefix = text[..index].trim();
+    let rest = &text[index..];
+
+    if matches!(rest, ":=" | ":->" | ":=>" | ":~>" | ":/")
+        || rest.starts_with(":=")
+        || rest.starts_with(":->")
+        || rest.starts_with(":=>")
+        || rest.starts_with(":~>")
+        || rest.starts_with(":/")
+    {
+        return None;
+    }
+
+    if prefix.is_empty()
+        || !prefix
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+    {
+        return None;
+    }
+
+    Some(index)
 }
 
 /// Returns the required closing delimiter when `text` opens a multiline block.

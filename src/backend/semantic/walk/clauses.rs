@@ -26,19 +26,19 @@ pub(in crate::backend::semantic) fn walk_clause(
             }
         }
         Clause::Exists(group) => {
-            walk_is_or_spec(&group.exists.argument, visit);
+            walk_binding_or_spec(&group.exists.argument, visit);
             for clause in &group.such_that.arguments {
                 walk_clause(clause, visit);
             }
         }
         Clause::ExistsUnique(group) => {
-            walk_is_or_spec(&group.exists_unique.argument, visit);
+            walk_binding_or_spec(&group.exists_unique.argument, visit);
             for clause in &group.such_that.arguments {
                 walk_clause(clause, visit);
             }
         }
         Clause::ForAll(group) => {
-            walk_is_or_spec(&group.for_all.argument, visit);
+            walk_binding_or_spec(&group.for_all.argument, visit);
             if let Some(section) = &group.where_ {
                 for clause in &section.arguments {
                     walk_clause(clause, visit);
@@ -88,7 +88,21 @@ pub(in crate::backend::semantic) fn walk_clause(
                 walk_clause(clause, visit);
             }
         }
+        Clause::Binding(binding) => {
+            walk_expression(&binding.left, visit);
+            walk_expression(&binding.right, visit);
+        }
         Clause::IsOrSpec(spec) => walk_is_or_spec(spec, visit),
         Clause::Expression(expression) => walk_expression(expression, visit),
+    }
+}
+
+fn walk_binding_or_spec(item: &BindingOrSpec, visit: &mut impl FnMut(&SignatureShape)) {
+    match item {
+        BindingOrSpec::Binding(binding) => {
+            walk_expression(&binding.left, visit);
+            walk_expression(&binding.right, visit);
+        }
+        BindingOrSpec::IsOrSpec(spec) => walk_is_or_spec(spec, visit),
     }
 }

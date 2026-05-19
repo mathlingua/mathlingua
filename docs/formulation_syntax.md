@@ -494,14 +494,14 @@ TypeExpression ::= CommandExpression | RefinedCommandExpression
 Accepted shape:
 
 ```text
-IsViaStatement ::= IsStatement " via " TupleForm
+IsViaStatement ::= IsStatement " via " FormOrDeclaration
 ```
 
 Notes:
 
 - the parser looks for the exact top-level substring ` via ` with spaces around it
 - the left side must be an `is` statement, not a quoted-operator spec
-- the tuple on the right must be a tuple form, not a tuple expression
+- the right side is a form/declaration such as `X` or `(X, Y)`
 
 ## Refined Command Syntax
 
@@ -871,7 +871,7 @@ IsOrSpec ::= IsStatement | SubjectSpecStatement
 IsOrRefinedStatement ::= IsSubject " is " (CommandExpression | RefinedCommandExpression)
 IsOrRefinedStatementSpec ::= IsOrRefinedStatement | SubjectSpecStatement
 
-IsViaStatement ::= IsStatement " via " TupleForm
+IsViaStatement ::= IsStatement " via " FormOrDeclaration
 ```
 
 ### Refined command helpers

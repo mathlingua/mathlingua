@@ -154,21 +154,6 @@ pub(super) fn parse_operator(input: &str) -> Result<Operator, ParseError> {
     Ok(Operator::new(span_all(input), input))
 }
 
-/// Parses the tuple form after an `is ... via` separator.
-///
-/// The generated form parser can recognize many form variants; this helper
-/// narrows the accepted result to an unnamed tuple declaration because `via`
-/// introduces tuple-shaped witness data.
-pub(super) fn parse_tuple_form(input: &str) -> Result<TupleForm, ParseError> {
-    let input = input.trim();
-    match parse_form_or_declaration(input)?.kind {
-        FormOrDeclarationKind::TupleDeclaration { name: None, form } => Ok(form),
-        other => Err(ParseError::custom(format!(
-            "expected tuple form, found {other:?}"
-        ))),
-    }
-}
-
 /// Parses one subject form allowed on the left of an `is` statement.
 ///
 /// Full forms are preferred, then placeholder forms are accepted for cases such

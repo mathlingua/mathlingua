@@ -170,7 +170,14 @@ fn parses_is_via_statements() {
         item.is_statement.subject.kind,
         IsSubjectKind::Forms(ref forms) if forms.len() == 2
     ));
-    assert_eq!(item.tuple_form.elements.len(), 2);
+    assert!(matches!(
+        item.via.kind,
+        FormOrDeclarationKind::TupleDeclaration { ref form, .. } if form.elements.len() == 2
+    ));
+
+    let item =
+        parse_is_via_statement(r#"G is \set via X"#).expect("expected single-form via statement");
+    assert!(matches!(item.via.kind, FormOrDeclarationKind::Name(ref name) if name == "X"));
 }
 
 #[test]

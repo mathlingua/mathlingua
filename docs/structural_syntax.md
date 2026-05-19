@@ -462,7 +462,7 @@ The structural parser delegates section content to formulation parsers as follow
 
 Clause formulation arguments use `parse_expression`, not `parse_is_or_spec`.
 
-`parse_is_or_spec` and `parse_is_via_statement` accept comma-separated form lists on the left of `is`, including placeholder forms, for example `f(x_), y_ is \set`.
+`parse_is_or_spec` and `parse_is_via_statement` accept comma-separated form lists on the left of `is`, including placeholder forms, for example `f(x_), y_ is \set`. `parse_is_via_statement` accepts any form/declaration after `via`, such as `X` or `(X, Y)`.
 
 ## Compact AST Schema
 

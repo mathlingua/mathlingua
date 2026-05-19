@@ -77,12 +77,12 @@ pub fn parse_is_via_statement(input: &str) -> Result<IsViaStatement, ParseError>
     let index = find_top_level_substring(input, " via ")
         .ok_or_else(|| ParseError::custom("expected top-level ` via `"))?;
     let statement = parse_is_statement(&input[..index], false)?;
-    let tuple_form = parse_tuple_form(&input[index + 5..])?;
+    let via = parse_form_or_declaration(&input[index + 5..])?;
 
     Ok(IsViaStatement {
         span: span_all(input),
         is_statement: statement,
-        tuple_form,
+        via,
     })
 }
 

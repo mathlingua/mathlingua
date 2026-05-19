@@ -127,6 +127,19 @@ pub(super) struct SpecOperatorRule {
     pub(super) target_alias: SpecOperatorAliasTarget,
 }
 
+/// Type-check-time implication introduced by a `Describes` `extends:` section.
+#[derive(Clone, Debug)]
+pub(super) struct TypeExtensionRule {
+    /// Signature of the subtype definition that owns the extension.
+    pub(super) subtype_signature: String,
+    /// Subject variable in the extension fact, such as `G` in `G is \set`.
+    pub(super) subject: String,
+    /// Parameter names from the subtype command heading.
+    pub(super) parameters: Vec<String>,
+    /// Fact implied for values of the subtype.
+    pub(super) target: TypeFact,
+}
+
 /// Top-level structural groups that can introduce a command signature.
 ///
 /// The uniqueness rule is global across these kinds: the same signature cannot
@@ -183,4 +196,6 @@ pub(super) struct SignatureRegistry {
     pub(super) type_infos: HashMap<String, DefinitionTypeInfo>,
     /// Spec-operator rules collected from `Provides:` symbols.
     pub(super) spec_rules: Vec<SpecOperatorRule>,
+    /// Subtype/extension rules collected from `extends:` sections.
+    pub(super) extension_rules: Vec<TypeExtensionRule>,
 }

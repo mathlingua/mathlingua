@@ -107,8 +107,8 @@ pub struct IsViaStatement {
     pub span: Span,
     /// Main `is` statement.
     pub is_statement: IsStatement,
-    /// Tuple form after `via`.
-    pub tuple_form: TupleForm,
+    /// Form used to view the subject as the extended type.
+    pub via: FormOrDeclaration,
 }
 
 /// Specification statement whose subject is a placeholder form.

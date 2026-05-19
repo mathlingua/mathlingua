@@ -5,13 +5,12 @@ use lalrpop_util::ParseError as LalrpopParseError;
 use super::ast::{
     AuthorHeader, Chain, ChainPart, CommandExpressionTailPart, CommandHeader, CommandHeaderNode,
     CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs, Expression, ExpressionAlias,
-    ExpressionAliasLhs, ExpressionBinding, ExpressionKind, FormOrDeclaration,
-    FormOrDeclarationKind, InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement,
-    IsSubject, IsSubjectForm, IsSubjectKind, IsViaStatement, LabelHeader, Operator,
-    ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm, PlaceholderFormKind,
-    PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
-    RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, SpecOperatorAlias,
-    SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement, TupleForm,
+    ExpressionAliasLhs, ExpressionBinding, ExpressionKind, FormOrDeclaration, InfixCommandHeader,
+    IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind,
+    IsViaStatement, LabelHeader, Operator, ParenExpressionArgs, ParenHeadingArgs, Placeholder,
+    PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement, RefinedCommandExpression,
+    RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader,
+    SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement,
     TypeExpression, WritingAlias,
 };
 use super::grammar;

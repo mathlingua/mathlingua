@@ -1,3 +1,5 @@
 x_, y_ is \type{A} via (x, y)
 
 X, Y is \set via (X, Y)
+
+G is \set via X

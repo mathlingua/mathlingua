@@ -11,6 +11,7 @@ pub(super) fn collect_definition_type_metadata(
         return;
     };
 
+    collect_type_extension_rules(item, &info, registry);
     collect_spec_operator_rules(item, &info, registry);
     registry.type_infos.insert(shape.signature.clone(), info);
 }
@@ -142,6 +143,35 @@ fn collect_spec_operator_rules(
     }
 }
 
+fn collect_type_extension_rules(
+    item: &TopLevelItem,
+    info: &DefinitionTypeInfo,
+    registry: &mut SignatureRegistry,
+) {
+    let Some(extends) = extends_item(item) else {
+        return;
+    };
+
+    for fact in facts_from_is_or_via_item(extends) {
+        let subject = match &fact {
+            TypeFact::Is { subject, .. } | TypeFact::Spec { subject, .. } => subject.clone(),
+        };
+        registry.extension_rules.push(TypeExtensionRule {
+            subtype_signature: info.signature.clone(),
+            subject,
+            parameters: info.parameters.clone(),
+            target: fact,
+        });
+    }
+}
+
+fn extends_item(item: &TopLevelItem) -> Option<&IsOrViaItem> {
+    match item {
+        TopLevelItem::Describes(group) => group.extends.as_ref().map(|section| &section.argument),
+        _ => None,
+    }
+}
+
 fn provides_section(item: &TopLevelItem) -> Option<&ProvidesSection> {
     match item {
         TopLevelItem::Describes(group) => group.provides.as_ref(),
@@ -176,7 +206,7 @@ fn validate_top_level_item_types(
     match item {
         TopLevelItem::Describes(group) => {
             let mut context = TypeContext::default();
-            declare_header_parameters(&group.heading, &mut context);
+            declare_header_symbols(&group.heading, &mut context);
             declare_form_or_declaration(&group.describes.argument, &mut context);
             assume_optional_using(
                 &group.using,
@@ -194,6 +224,16 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            if let Some(extends) = &group.extends {
+                check_is_or_via_item(
+                    &extends.argument,
+                    &context,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+            }
             check_optional_clauses(
                 &group.satisfies,
                 &context,
@@ -205,7 +245,7 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::Defines(group) => {
             let mut context = TypeContext::default();
-            declare_header_parameters(&group.heading, &mut context);
+            declare_header_symbols(&group.heading, &mut context);
             declare_names_from_is_or_spec(&group.defines.argument, &mut context);
             assume_optional_using(
                 &group.using,
@@ -236,7 +276,7 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::Refines(group) => {
             let mut context = TypeContext::default();
-            declare_header_parameters(&group.heading, &mut context);
+            declare_header_symbols(&group.heading, &mut context);
             declare_names_from_is_or_refined_spec_subject(&group.refines.argument, &mut context);
             assume_optional_using(
                 &group.using,
@@ -265,7 +305,7 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::States(group) => {
             let mut context = TypeContext::default();
-            declare_header_parameters(&group.heading, &mut context);
+            declare_header_symbols(&group.heading, &mut context);
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -396,7 +436,7 @@ fn validate_theorem_like(
 ) {
     let mut context = TypeContext::default();
     if let Some(heading) = sections.heading {
-        declare_header_parameters(heading, &mut context);
+        declare_header_symbols(heading, &mut context);
     }
 
     if let Some(given) = sections.given {
@@ -753,6 +793,32 @@ fn check_is_or_refined_spec(
     }
 }
 
+fn check_is_or_via_item(
+    item: &IsOrViaItem,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match item {
+        IsOrViaItem::IsVia(statement) => {
+            check_is_statement(
+                &statement.is_statement,
+                context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            check_form_or_declaration(&statement.via, context, path, locator, event_log);
+        }
+        IsOrViaItem::IsOrSpec(spec) => {
+            check_is_or_spec(spec, context, path, locator, registry, event_log);
+        }
+    }
+}
+
 fn assume_is_or_spec(
     spec: &IsOrSpec,
     context: &mut TypeContext,
@@ -1065,27 +1131,76 @@ fn check_command_requirements(
 
 fn prove_fact(required: &TypeFact, context: &TypeContext, registry: &SignatureRegistry) -> bool {
     let required = context.normalize_fact(required);
-    if context
+    let mut seen = HashSet::new();
+    context
         .facts
         .iter()
-        .any(|fact| context.normalize_fact(fact) == required)
-    {
+        .any(|fact| fact_implies(fact, &required, context, registry, &mut seen))
+}
+
+fn fact_implies(
+    fact: &TypeFact,
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> bool {
+    let fact = context.normalize_fact(fact);
+    if &fact == required {
         return true;
     }
+    if !seen.insert(fact.clone()) {
+        return false;
+    }
 
-    let mut seen = HashSet::new();
-    for fact in &context.facts {
-        let TypeFact::Spec { .. } = fact else {
-            continue;
-        };
-        for reduced in reduce_spec_fact(fact, context, registry, &mut seen) {
-            if context.normalize_fact(&reduced) == required {
+    for extended in reduce_extension_fact(&fact, context, registry) {
+        if fact_implies(&extended, required, context, registry, seen) {
+            return true;
+        }
+    }
+
+    if matches!(fact, TypeFact::Spec { .. }) {
+        let mut spec_seen = HashSet::new();
+        for reduced in reduce_spec_fact(&fact, context, registry, &mut spec_seen) {
+            if fact_implies(&reduced, required, context, registry, seen) {
                 return true;
             }
         }
     }
 
     false
+}
+
+fn reduce_extension_fact(
+    fact: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let TypeFact::Is {
+        subject,
+        ty,
+        signature,
+    } = fact
+    else {
+        return Vec::new();
+    };
+
+    let actuals = actuals_for_type_key(signature, ty).unwrap_or_default();
+    registry
+        .extension_rules
+        .iter()
+        .filter(|rule| rule.subtype_signature == *signature)
+        .map(|rule| {
+            let mut substitutions = rule
+                .parameters
+                .iter()
+                .zip(&actuals)
+                .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
+                .collect::<HashMap<_, _>>();
+            substitutions.insert(rule.subject.clone(), subject.clone());
+            context.normalize_fact(&substitute_fact(&rule.target, &substitutions))
+        })
+        .collect()
 }
 
 fn reduce_spec_fact(
@@ -1114,7 +1229,7 @@ fn reduce_spec_fact(
             continue;
         }
 
-        if !has_type_signature(target, &rule.owner_signature, context) {
+        if !has_type_signature(target, &rule.owner_signature, context, registry) {
             continue;
         }
 
@@ -1141,18 +1256,46 @@ fn reduce_spec_fact(
     result
 }
 
-fn has_type_signature(subject: &str, signature: &str, context: &TypeContext) -> bool {
-    context
-        .facts
+fn has_type_signature(
+    subject: &str,
+    signature: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> bool {
+    let subject = context.normalize_key(subject);
+    let mut seen = HashSet::new();
+    context.facts.iter().any(|fact| {
+        fact_has_type_signature(fact, &subject, signature, context, registry, &mut seen)
+    })
+}
+
+fn fact_has_type_signature(
+    fact: &TypeFact,
+    subject: &str,
+    signature: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> bool {
+    let fact = context.normalize_fact(fact);
+    if !seen.insert(fact.clone()) {
+        return false;
+    }
+
+    if matches!(
+        &fact,
+        TypeFact::Is {
+            subject: fact_subject,
+            signature: fact_signature,
+            ..
+        } if fact_subject == subject && fact_signature == signature
+    ) {
+        return true;
+    }
+
+    reduce_extension_fact(&fact, context, registry)
         .iter()
-        .any(|fact| match context.normalize_fact(fact) {
-            TypeFact::Is {
-                subject: fact_subject,
-                signature: fact_signature,
-                ..
-            } => fact_subject == context.normalize_key(subject) && fact_signature == signature,
-            TypeFact::Spec { .. } => false,
-        })
+        .any(|fact| fact_has_type_signature(fact, subject, signature, context, registry, seen))
 }
 
 #[derive(Clone, Default)]
@@ -1245,9 +1388,9 @@ fn is_literal_name(name: &str) -> bool {
     name.chars().all(|ch| ch.is_ascii_digit())
 }
 
-fn declare_header_parameters(header: &CommandHeader, context: &mut TypeContext) {
-    for name in header_parameter_names(header) {
-        context.declare_name(name);
+fn declare_header_symbols(header: &CommandHeader, context: &mut TypeContext) {
+    for form in header_forms(header) {
+        declare_form_or_declaration(form, context);
     }
 }
 
@@ -1484,24 +1627,28 @@ fn declare_form_or_declaration(form: &FormOrDeclaration, context: &mut TypeConte
         FormOrDeclarationKind::Name(name) => context.declare_name(name.clone()),
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
             context.declare_name(name.as_ref().unwrap_or(&form.name).clone());
+            if let Some(placeholder) = &form.magnetic_placeholder {
+                context.declare_name(placeholder.name.clone());
+            }
+            for placeholder in &form.placeholders {
+                context.declare_name(placeholder.name.clone());
+            }
         }
         FormOrDeclarationKind::TupleDeclaration { name, form } => {
             if let Some(name) = name {
                 context.declare_name(name.clone());
-            } else {
-                for element in &form.elements {
-                    if let TupleFormElement::Form(form) = element {
-                        declare_form_or_declaration(form, context);
-                    }
+            }
+            for element in &form.elements {
+                if let TupleFormElement::Form(form) = element {
+                    declare_form_or_declaration(form, context);
                 }
             }
         }
         FormOrDeclarationKind::SetDeclaration { name, form } => {
             if let Some(name) = name {
                 context.declare_name(name.clone());
-            } else {
-                declare_placeholder_form(&form.placeholder_form, context);
             }
+            declare_placeholder_form(&form.placeholder_form, context);
         }
         FormOrDeclarationKind::InfixOperator { left, right, .. } => {
             context.declare_name(left.name.clone());
@@ -1737,6 +1884,13 @@ fn facts_from_is_or_refined_spec(spec: &IsOrRefinedStatementSpec) -> Vec<TypeFac
             operator: statement.operator.clone(),
             target: statement.name.clone(),
         }],
+    }
+}
+
+fn facts_from_is_or_via_item(item: &IsOrViaItem) -> Vec<TypeFact> {
+    match item {
+        IsOrViaItem::IsVia(statement) => facts_from_is_statement(&statement.is_statement),
+        IsOrViaItem::IsOrSpec(spec) => facts_from_is_or_spec(spec),
     }
 }
 
@@ -2115,12 +2269,137 @@ fn refined_command_expression_arguments(command: &RefinedCommandExpression) -> V
         .collect()
 }
 
+fn actuals_for_type_key(signature: &str, ty: &str) -> Option<Vec<String>> {
+    if signature.starts_with("\\:") || signature.contains("::") {
+        return None;
+    }
+
+    let parts = signature.split(':').collect::<Vec<_>>();
+    let first = parts.first()?;
+    let mut rest = ty.strip_prefix(first)?;
+    let mut actuals = Vec::new();
+    collect_adjacent_key_args(&mut rest, &mut actuals)?;
+
+    for part in parts.iter().skip(1) {
+        rest = rest.strip_prefix(':')?;
+        rest = rest.strip_prefix(part)?;
+        collect_adjacent_key_args(&mut rest, &mut actuals)?;
+    }
+
+    rest.is_empty().then_some(actuals)
+}
+
+fn collect_adjacent_key_args<'a>(rest: &mut &'a str, actuals: &mut Vec<String>) -> Option<()> {
+    loop {
+        let Some(open) = rest.chars().next() else {
+            return Some(());
+        };
+        let close = match open {
+            '{' => '}',
+            '(' => ')',
+            _ => return Some(()),
+        };
+        let end = find_balanced_group_end(rest, open, close)?;
+        let inside = &rest[open.len_utf8()..end - close.len_utf8()];
+        actuals.extend(split_key_arg_list(inside));
+        *rest = &rest[end..];
+    }
+}
+
+fn split_key_arg_list(input: &str) -> Vec<String> {
+    let mut args = Vec::new();
+    let mut start = 0;
+    let mut paren_depth = 0usize;
+    let mut brace_depth = 0usize;
+    let mut bracket_depth = 0usize;
+
+    for (index, ch) in input.char_indices() {
+        match ch {
+            ',' if paren_depth == 0 && brace_depth == 0 && bracket_depth == 0 => {
+                let arg = input[start..index].trim();
+                if !arg.is_empty() {
+                    args.push(arg.to_owned());
+                }
+                start = index + ch.len_utf8();
+            }
+            '(' => paren_depth += 1,
+            ')' => paren_depth = paren_depth.saturating_sub(1),
+            '{' => brace_depth += 1,
+            '}' => brace_depth = brace_depth.saturating_sub(1),
+            '[' => bracket_depth += 1,
+            ']' => bracket_depth = bracket_depth.saturating_sub(1),
+            _ => {}
+        }
+    }
+
+    let tail = input[start..].trim();
+    if !tail.is_empty() {
+        args.push(tail.to_owned());
+    }
+    args
+}
+
 fn header_parameter_names(header: &CommandHeader) -> Vec<String> {
     match header {
         CommandHeader::Command(command) => command_header_parameter_names(command),
         CommandHeader::Infix(command) => infix_header_parameter_names(command),
         CommandHeader::Refined(command) => refined_header_parameter_names(command),
     }
+}
+
+fn header_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
+    match header {
+        CommandHeader::Command(command) => command_header_forms(command),
+        CommandHeader::Infix(command) => infix_header_forms(command),
+        CommandHeader::Refined(command) => refined_header_forms(command),
+    }
+}
+
+fn command_header_forms(command: &CommandHeaderNode) -> Vec<&FormOrDeclaration> {
+    command
+        .head_args
+        .iter()
+        .flat_map(|args| args.forms.iter())
+        .chain(
+            command
+                .tail
+                .iter()
+                .flat_map(|tail| tail.args.iter())
+                .flat_map(|args| args.forms.iter()),
+        )
+        .chain(command.paren_args.iter().flat_map(|args| args.forms.iter()))
+        .collect()
+}
+
+fn infix_header_forms(command: &InfixCommandHeader) -> Vec<&FormOrDeclaration> {
+    command
+        .head_args
+        .iter()
+        .flat_map(|args| args.forms.iter())
+        .chain(
+            command
+                .tail
+                .iter()
+                .flat_map(|tail| tail.args.iter())
+                .flat_map(|args| args.forms.iter()),
+        )
+        .collect()
+}
+
+fn refined_header_forms(command: &RefinedCommandHeader) -> Vec<&FormOrDeclaration> {
+    command
+        .head_args
+        .iter()
+        .flat_map(|args| args.forms.iter())
+        .chain(
+            command
+                .tail
+                .iter()
+                .flat_map(|tail| tail.args.iter())
+                .flat_map(|args| args.forms.iter()),
+        )
+        .chain(command.paren_args.iter().flat_map(|args| args.forms.iter()))
+        .collect()
 }
 
 fn command_header_parameter_names(command: &CommandHeaderNode) -> Vec<String> {

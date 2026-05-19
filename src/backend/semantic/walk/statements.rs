@@ -8,7 +8,7 @@ pub(in crate::backend::semantic) fn walk_is_or_via_item(
     match item {
         IsOrViaItem::IsVia(statement) => {
             walk_is_statement(&statement.is_statement, visit);
-            walk_tuple_form(&statement.tuple_form, visit);
+            walk_form_or_declaration(&statement.via, visit);
         }
         IsOrViaItem::IsOrSpec(spec) => walk_is_or_spec(spec, visit),
     }

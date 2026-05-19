@@ -452,6 +452,65 @@ then:
 }
 
 #[test]
+fn check_uses_extends_sections_for_subtype_requirements() {
+    let temp_dir = TestDir::new();
+    let file = temp_dir.path().join("subtype-requirement.mlg");
+
+    fs::write(
+        &file,
+        r#"[\set]
+Describes: X
+Provides:
+. symbol: x_ "in" X :-> \\abstract
+Documented:
+. called: "set"
+
+[\element.of:group{G := (X, *, e)}]
+Describes: x
+when: G is \group
+extends: x "in" X
+Documented:
+. called: "element of group"
+
+[\group]
+Describes: G := (X, *, e)
+extends: G is \set via X
+Provides:
+. symbol: x_ "in" G :-> x_ is \element.of:group{G}
+Documented:
+. called: "group"
+
+[\function:on{A}:to{B}]
+Describes: f(x__)
+when: A, B is \set
+Documented:
+. called: "function"
+
+Theorem:
+given:
+. G is \group
+. f is \function:on{G}:to{G}
+then:
+. f is? \function:on{G}:to{G}
+"#,
+    )
+    .unwrap();
+
+    let mut event_log = EventLog::new();
+    let result = check_in(
+        temp_dir.path(),
+        &[PathBuf::from("subtype-requirement.mlg")],
+        &mut event_log,
+    );
+
+    assert_eq!(result.files_checked, 1);
+    assert_eq!(
+        user_events(&event_log),
+        [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+    );
+}
+
+#[test]
 fn check_reports_unrecognized_symbols_in_command_arguments() {
     let temp_dir = TestDir::new();
     let file = temp_dir.path().join("unrecognized-symbol.mlg");

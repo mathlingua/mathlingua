@@ -81,7 +81,8 @@ becomes:
 
 - blank lines are lines whose text is empty after removing leading spaces
 - comment lines are lines whose trimmed text starts with `--`
-- blank lines and comments are skipped in several parsing positions
+- at the top level, blank lines and comments are skipped before looking for the next group
+- inside groups and sections, comments are skipped but blank lines terminate the current block
 
 ### Headings
 
@@ -111,7 +112,8 @@ No escaping is interpreted at this layer.
 
 ### Sections
 
-A proto section line is a line at the current group indent that contains a `:`.
+A proto section line is a line at the current group indent that contains a
+structural section colon.
 
 Surface shape:
 
@@ -120,7 +122,9 @@ label:
 label: inline argument
 ```
 
-The first `:` splits the label from the optional inline argument.
+The first structural section colon splits the label from the optional inline
+argument. The label prefix must be non-empty and contain only ASCII letters,
+digits, and `_`.
 
 ### Nested arguments
 
@@ -129,12 +133,14 @@ Arguments belonging to a section are expected at indent `section_indent + 2`.
 Each argument line is classified in this order:
 
 1. text literal if the whole line starts and ends with `"`
-2. nested group if the line is a heading line or contains `:`
+2. nested group if the line is a heading line or has a structural section colon
 3. formulation otherwise
 
 Important implementation consequence:
 
-- any non-text argument line containing `:` is parsed as a nested group, not as a formulation
+- a non-text argument line starts a nested group only when the first colon has a section-label-shaped prefix made from ASCII letters, digits, and `_`
+- colons in formulation delimiters `:=`, `:->`, `:=>`, `:~>`, and `:/` do not start nested groups
+- command tails such as `\function:on{X}:to{Y}` are formulations because the text before the first colon is not a section-label-shaped prefix
 
 ### Multiline formulations
 
@@ -152,7 +158,9 @@ The parser then consumes following lines until it finds a line at the same inden
 - `}`
 - `.)`
 
-All lines, including indentation and `. ` markers, are preserved verbatim in the stored formulation text.
+The opening delimiter line is stored as its normalized text. Following consumed
+lines are rendered back with their indentation and `. ` markers in the stored
+formulation text.
 
 ### Single-quoted formulations
 
@@ -173,7 +181,7 @@ Single-quoted formulations are not allowed
 ```text
 Document ::= Group*
 
-Group ::= HeadingLine? Section+
+Group ::= HeadingLine? Section*
 
 HeadingLine ::= "[" RawHeadingText "]"
 
@@ -182,7 +190,9 @@ Section ::= Label ":" InlineArgument? Argument*
 Argument ::= TextLiteral | Group | Formulation
 ```
 
-This is a behavioral summary, not a lexer grammar. In particular, `Argument ::= Group` is selected by the implementation rule "heading line or contains `:`".
+This is a behavioral summary, not a lexer grammar. In particular, `Argument ::= Group` is selected by the implementation rule "heading line or structural section colon".
+The proto parser can produce a heading-only group, but the structural parser
+cannot dispatch it because group kind is chosen by the first section label.
 
 ## Layer 2: Structural AST Construction
 
@@ -234,8 +244,12 @@ All of them use the same surface syntax:
 
 A `Clause` can be either:
 
+- a local expression binding parsed by `parse_expression_binding`, stored as `Clause::Binding`
 - a formulation expression parsed by `parse_expression`, stored as `Clause::Expression`
+- a raw helper statement parsed by `parse_is_or_spec`, stored as `Clause::IsOrSpec`
 - or a nested clause group such as `exists`, `if`, `piecewise`, and so on
+
+Formulation clause entries are tried in that order: binding first, then expression, then `is`/spec fallback.
 
 ## Top-Level Groups
 
@@ -259,11 +273,11 @@ An empty document is supported by the current implementation because `Document.i
 | `Defines` | `DefinesGroup` | command | `Defines: IsOrSpec`, `using?: IsOrSpec+`, `when?: Clause+`, `expresses?: Clause`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Refines` | `RefinesGroup` | command | `Refines: IsOrRefinedStatementSpec`, `using?: IsOrSpec+`, `when?: Clause+`, `specifies?: IsOrRefinedStatementSpec`, `satisfies?: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `States` | `StatesGroup` | command | `States: OpenText*`, `using?: IsOrSpec+`, `when?: Clause+`, `that: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Axiom` | `AxiomGroup` | command? | `Axiom: OpenText*`, `given?: IsOrSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Theorem` | `TheoremGroup` | command? | `Theorem: OpenText*`, `given?: IsOrSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Corollary` | `CorollaryGroup` | command? | `Corollary: OpenText*`, `of: OpenText*`, `given?: IsOrSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Lemma` | `LemmaGroup` | command? | `Lemma: OpenText*`, `given?: IsOrSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Conjecture` | `ConjectureGroup` | command? | `Conjecture: OpenText*`, `given?: IsOrSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Axiom` | `AxiomGroup` | command? | `Axiom: OpenText*`, `given?: IsOrRefinedStatementSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Theorem` | `TheoremGroup` | command? | `Theorem: OpenText*`, `given?: IsOrRefinedStatementSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Corollary` | `CorollaryGroup` | command? | `Corollary: OpenText*`, `of: OpenText*`, `given?: IsOrRefinedStatementSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Lemma` | `LemmaGroup` | command? | `Lemma: OpenText*`, `given?: IsOrRefinedStatementSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Conjecture` | `ConjectureGroup` | command? | `Conjecture: OpenText*`, `given?: IsOrRefinedStatementSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Person` | `PersonGroup` | author | `Person: OpenText*`, `name: OpenText+`, `biography: OpenText` |
 | `Resource` | `ResourceGroup` | resource | `Resource: ResourceItem+` |
 | `Specify` | `SpecifyGroup` | none | `Specify: SpecifyItem+` |
@@ -306,7 +320,7 @@ Used inside `Documented:`.
 | First section label | AST node | Heading | Ordered sections |
 | --- | --- | --- | --- |
 | `written` | `WrittenGroup` | label? | `written: WrittenText+` |
-| `called` | `CalledGroup` | label? | `called: CalledText+` |
+| `called` | `CalledGroup` | label? | `called: CalledText+`, `written?: WrittenText+` |
 | `writing` | `WritingGroup` | label? | `writing: WritingAlias`, `as: WritingText+` |
 | `overview` | `OverviewGroup` | label? | `overview: OpenText` |
 | `related` | `RelatedGroup` | label? | `related: OpenText+` |
@@ -374,7 +388,7 @@ Clause groups are used anywhere a section expects `Clause` values.
 
 If a clause section contains:
 
-- a formulation argument, it is parsed with `parse_expression` and wrapped as `Clause::Expression`
+- a formulation argument, it is first tried as `parse_expression_binding`, then `parse_expression`, then `parse_is_or_spec`
 - a nested group, it is dispatched by its first section label
 
 ### Clause inventory
@@ -385,13 +399,13 @@ If a clause section contains:
 | `allOf` | `AllOfGroup` | label? | `allOf: Clause+` |
 | `anyOf` | `AnyOfGroup` | label? | `anyOf: Clause+` |
 | `oneOf` | `OneOfGroup` | label? | `oneOf: Clause+` |
-| `exists` | `ExistsGroup` | label? | `exists: IsOrSpec`, `suchThat: Clause+` |
-| `existsUnique` | `ExistsUniqueGroup` | label? | `existsUnique: IsOrSpec`, `suchThat: Clause+` |
-| `forAll` | `ForAllGroup` | label? | `forAll: IsOrSpec`, `where?: Clause+`, `then: Clause+` |
+| `exists` | `ExistsGroup` | label? | `exists: BindingOrSpec`, `suchThat: Clause+` |
+| `existsUnique` | `ExistsUniqueGroup` | label? | `existsUnique: BindingOrSpec`, `suchThat: Clause+` |
+| `forAll` | `ForAllGroup` | label? | `forAll: BindingOrSpec`, `where?: Clause+`, `then: Clause+` |
 | `if` | `IfGroup` | label? | `if: Clause+`, `then: Clause+` |
 | `iff` | `IffGroup` | label? | `iff: Clause+`, `then: Clause+` |
 | `piecewise` | `PiecewiseGroup` | label? | `piecewise: OpenText*`, `if: Clause+`, `then: Clause+`, `else?: Clause+` |
-| `given` | `GivenGroup` | label? | `given: IsOrSpec`, `where?: Clause+`, `then: Clause+` |
+| `given` | `GivenGroup` | label? | `given: IsOrRefinedStatementSpec`, `where?: Clause+`, `then: Clause+` |
 
 ## Heading Kinds
 
@@ -455,6 +469,7 @@ The structural parser delegates section content to formulation parsers as follow
 | `IsOrSpec` | `parse_is_or_spec` |
 | `IsOrRefinedStatementSpec` | `parse_is_or_refined_statement_spec` |
 | `IsOrViaItem` | try `parse_is_via_statement`, then `parse_is_or_spec` |
+| `BindingOrSpec` | try `parse_expression_binding`, then `parse_is_or_spec` |
 | `AliasKind` | try `parse_expression_alias`, then `parse_spec_operator_alias` |
 | `WritingAlias` | `parse_writing_alias` |
 | `ResourceHeader` | `parse_resource_header` |
@@ -462,7 +477,7 @@ The structural parser delegates section content to formulation parsers as follow
 | `AuthorHeader` | `parse_author_header` |
 | `LabelHeader` | `parse_label_header` |
 
-Clause formulation arguments use `parse_expression`, not `parse_is_or_spec`.
+Clause formulation arguments are tried as `parse_expression_binding`, then `parse_expression`, then `parse_is_or_spec`. This means expression-compatible facts such as `x is \set` are stored as expressions, while helper-only forms such as comma-separated `is` subjects or quoted operators with spaces fall back to `IsOrSpec`.
 
 `parse_is_or_spec` and `parse_is_via_statement` accept comma-separated form lists on the left of `is`, including placeholder forms, for example `f(x_), y_ is \set`. `parse_is_via_statement` accepts any form/declaration after `via`, such as `X` or `(X, Y)`.
 
@@ -485,6 +500,12 @@ Conventions used below:
 ```union
 IsOrViaItemUnion ::=
     | IsViaStatement
+    | IsOrSpec
+```
+
+```union
+BindingOrSpecUnion ::=
+    | ExpressionBinding
     | IsOrSpec
 ```
 
@@ -568,6 +589,8 @@ ClauseUnion ::=
     | IffGroup
     | PiecewiseGroup
     | GivenGroup
+    | ExpressionBinding
+    | IsOrSpec
     | Expression
 ```
 
@@ -608,7 +631,7 @@ WritingText ::= Text<WritingText>
 ```
 
 ```union
-Root ::= TopLevelItemUnion+
+Root ::= TopLevelItemUnion*
 ```
 
 ### Top-level groups
@@ -691,7 +714,7 @@ Metadata?: <MetadataItemUnion>+
 ```group
 [CommandHeader]?
 Axiom: <OpenText>*
-given?: <IsOrSpec>+
+given?: <IsOrRefinedStatementSpec>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
@@ -705,7 +728,7 @@ Metadata?: <MetadataItemUnion>+
 ```group
 [CommandHeader]?
 Theorem: <OpenText>*
-given?: <IsOrSpec>+
+given?: <IsOrRefinedStatementSpec>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
@@ -720,7 +743,7 @@ Metadata?: <MetadataItemUnion>+
 [CommandHeader]?
 Corollary: <OpenText>*
 of: <OpenText>*
-given?: <IsOrSpec>+
+given?: <IsOrRefinedStatementSpec>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
@@ -734,7 +757,7 @@ Metadata?: <MetadataItemUnion>+
 ```group
 [CommandHeader]?
 Lemma: <OpenText>*
-given?: <IsOrSpec>+
+given?: <IsOrRefinedStatementSpec>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
@@ -748,7 +771,7 @@ Metadata?: <MetadataItemUnion>+
 ```group
 [CommandHeader]?
 Conjecture: <OpenText>*
-given?: <IsOrSpec>+
+given?: <IsOrRefinedStatementSpec>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
@@ -808,6 +831,7 @@ written: <WrittenText>+
 ```group
 [LabelHeader]?
 called: <CalledText>+
+written?: <WrittenText>+
 ```
 
 ```group
@@ -972,19 +996,19 @@ oneOf: <ClauseUnion>+
 
 ```group
 [LabelHeader]?
-exists: <IsOrSpec>
+exists: <BindingOrSpecUnion>
 suchThat: <ClauseUnion>+
 ```
 
 ```group
 [LabelHeader]?
-existsUnique: <IsOrSpec>
+existsUnique: <BindingOrSpecUnion>
 suchThat: <ClauseUnion>+
 ```
 
 ```group
 [LabelHeader]?
-forAll: <IsOrSpec>
+forAll: <BindingOrSpecUnion>
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 ```
@@ -1011,7 +1035,7 @@ else?: <ClauseUnion>+
 
 ```group
 [LabelHeader]?
-given: <IsOrSpec>
+given: <IsOrRefinedStatementSpec>
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 ```
@@ -1021,6 +1045,7 @@ then: <ClauseUnion>+
 ### Top-level and nested group kind is chosen by first section label
 
 The heading does not determine the group type.
+Groups without sections cannot be recognized by the structural parser.
 
 ### Section order is strict
 
@@ -1065,11 +1090,14 @@ Examples of affected sections:
 
 So the stored `OpenText` for `"abc"` is `abc`, but `\"` is not specially handled.
 
-### Any non-text argument line containing `:` becomes a nested group
+### Section-shaped colons start nested groups
 
-This behavior comes from the proto parser. It is one of the biggest current surface-syntax constraints.
+This behavior comes from the proto parser. A non-text argument line starts a
+nested group if it is a heading or if its first colon follows a
+section-label-shaped prefix. Formulation delimiters `:=`, `:->`, `:=>`, `:~>`,
+and `:/` are excluded from this structural-colon rule.
 
-### Clause expressions use `parse_expression`
+### Clause formulation parsing has a fallback order
 
 A clause line like:
 
@@ -1077,7 +1105,7 @@ A clause line like:
 . x is \type{A}
 ```
 
-is parsed as a formulation expression and wrapped as `Clause::Expression`, not as an `IsOrSpec`.
+is parsed as a formulation expression and wrapped as `Clause::Expression`, because `parse_expression` accepts expression-level `is` facts. A helper-only clause, such as a comma-separated `is` subject list or a quoted operator with spaces, falls back to `parse_is_or_spec` and is wrapped as `Clause::IsOrSpec`. A top-level `:=` expression binding is tried before both.
 
 ### Empty-but-required sections are real
 

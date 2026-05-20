@@ -52,8 +52,9 @@ omitted, but if present they must appear in the order defined for that group.
 For example, `using:` must come before `when:`, and `Documented:` must come
 after `Provides:` and `Justified:` in definition groups.
 
-Blank lines and lines whose trimmed text starts with `--` are comments and are
-ignored in normal parse positions.
+Lines whose trimmed text starts with `--` are comments. At the top level, blank
+lines and comments are skipped before the next group; inside a group or section,
+comments are skipped but blank lines terminate the current block.
 
 ## Lines, Sections, and Arguments
 
@@ -82,10 +83,11 @@ Title: "Algebra"
 
 The parser strips the outer quotes and does not interpret escape sequences.
 
-Any non-text argument line containing `:` is treated as a nested structural
-group, not as a formulation. This is important when writing formulas that
-contain command tails. Put such formulas inline where the section parser expects
-formulation text, or use a multiline formulation block when needed.
+A non-text argument line starts a nested structural group when it is a heading
+or when its first colon follows a section-label-shaped prefix. Formulation
+delimiters such as `:=`, `:->`, `:=>`, `:~>`, and `:/` are excluded from that
+structural-colon rule, and command tails such as `\function:on{X}:to{Y}` remain
+formulations because the prefix before the colon is not a section label.
 
 Multiline formulations are started only by a line whose entire text is one of
 `(`, `[`, `{`, or `(.`, and ended by the matching `)`, `]`, `}`, or `.)` at the
@@ -95,17 +97,19 @@ Single-quoted formulations are not accepted.
 
 ## Names and Placeholders
 
-Normal names are either identifier-like names or backtick names.
+Normal names are either identifier-like names or stropped symbolic names.
 
 ```text
 x
 x_1
 123
-`x + y`
+`*`
+`*+`
 ```
 
 Identifier-like names may contain internal underscores, but must start and end
-with an ASCII letter or digit. Backtick names may contain any non-backtick text.
+with an ASCII letter or digit. Stropped symbolic names are wrapped in backticks
+and may contain only operator characters from `-~!#%^&*\+=|<>/`.
 
 Placeholders end in `_`, and magnetic placeholders end in `__`.
 
@@ -179,8 +183,8 @@ The expression precedence, from lowest to highest, is:
 8. atoms
 
 Powers associate to the right. The arithmetic binary levels associate to the
-left. Named-operator and infix-command expressions are single-step; an
-ungrouped chain like `a |f| b |g| c` is not accepted.
+left. Named-operator and infix-command expressions also associate to the left,
+so `a |f| b |g| c` is accepted as a left-associated chain.
 
 Subset expressions are intentionally narrow. The supported forms are:
 
@@ -213,6 +217,10 @@ concepts.
 A command signature is the command shape with concrete arguments removed. Both
 `\function:on{A}:to{B}` and `\function:on{X}:to{Y}` have the signature
 `\function:on:to`.
+
+Argument-group counts are tracked as the command's required shape, but they do
+not disambiguate definitions. Two definitions with the same signature and
+different argument counts are still duplicate command signatures.
 
 Curly argument groups are required where the command definition expects them.
 Trailing parenthesized groups are invocation groups. If a definition includes
@@ -267,8 +275,10 @@ x_, y_ is \set
 ```
 
 The helper parser for `is` statements requires spaces around ` is ` and requires
-the right-hand side to be a command type expression. It is stricter than the
-general expression parser's `x is y` expression form.
+the right-hand side to be a command type expression. The expression parser also
+requires a command expression on the right of expression-level `is`, `is?`, and
+`is_not?`; the helper parser differs mainly in its subject syntax and in the
+refined-command variant used by theorem-style `given:` sections.
 
 A spec statement uses a quoted operator:
 
@@ -314,9 +324,10 @@ These groups may appear at the top level of a document.
 | `Resource` | resource | bibliography or web metadata |
 | `Specify` | none | numeric-domain specification metadata |
 
-Definition-like groups with command headings introduce command signatures.
-Duplicate signatures are rejected across all definition kinds, including named
-theorem-like groups.
+Groups with command headings introduce command signatures: `Describes`,
+`Defines`, `Refines`, `States`, and theorem-like groups that have an optional
+heading. Duplicate signatures are rejected across all of these definition
+kinds.
 
 `Describes`, `Defines`, and `Refines` must include a `called:` item somewhere in
 their `Documented:` section. `States` and theorem-like groups may have
@@ -371,6 +382,10 @@ Documented:
 . called: "continuous"
 ```
 
+`specifies:` sections on `Describes` and `Refines` are parsed and command
+references inside them are validated, but the current type checker does not use
+them as assumptions, requirements, or proof facts.
+
 `States` defines a command-backed statement body:
 
 ```text
@@ -399,15 +414,18 @@ then:
 ```
 
 Items in `given:` introduce available type/spec facts and declared symbols for
-the theorem body. Items in `where:` are local assumptions or bindings available
-while checking `then:` and `iff:`.
+the theorem body. Theorem-like `given:` sections accept refined command type
+expressions. Items in `where:` are local assumptions or bindings available while
+checking `then:` and `iff:`.
 
 If a theorem-like group has a command heading, that heading introduces a
 signature and participates in duplicate-signature and reference checks.
 
 ## Clause Groups
 
-Clause sections accept either inline expressions or nested clause groups.
+Clause sections accept inline formulations or nested clause groups. Inline
+clause formulations are tried as expression bindings first, then ordinary
+expressions, then raw `is`/spec helper statements.
 
 | Clause | Meaning in the checker |
 | --- | --- |
@@ -464,6 +482,10 @@ Quantifier bindings are local to the clause group that introduces them.
 `[$principia]` and contain resource item groups like `title:`, `author:`,
 `url:`, and `year:`.
 
+Open-text fields are retained as prose. Command-looking text inside prose,
+metadata, references, and rendering templates is not parsed as formulation
+syntax for semantic reference checking.
+
 ## Aliases
 
 Expression aliases use `:=>`.
@@ -474,17 +496,25 @@ alias: f(x_) :=> x + x
 
 The alias left-hand side may be a form/declaration, a simple command header, or
 an infix command header. Refined command headers are not accepted on the
-left-hand side.
+left-hand side. The right-hand expression is parsed, but the current semantic
+reference walker does not validate command references inside that expression.
 
 Spec-operator aliases use `:->`.
 
 ```text
 symbol: x_ "in" R :-> x is \real
+symbol: x_ "in" X :-> \\abstract
 ```
 
 When a described command provides a spec-operator alias, the type checker can
 reduce matching spec facts. If the context knows `R is \reals` and `r "in" R`,
 the alias above lets the checker prove `r is \real`.
+
+The target of a spec-operator alias may also be a built-in keyword written with
+two leading backslashes, such as `\\abstract`. Spec-operator aliases are
+currently treated as declarations by the reference walker, so command references
+inside their target are not validated there. Built-in targets are accepted by
+the parser, but the current type-reduction code ignores them.
 
 Writing aliases use `:~>`.
 
@@ -515,6 +545,11 @@ reported as `Unrecognized symbol`. Type requirements are reported as
 `Could not prove requirement ...` when the current context does not imply the
 required fact.
 
+The checker is not a proof checker for theorem conclusions. It checks that
+conclusions are syntactically valid, use declared symbols, reference defined
+commands with the right argument shapes, and satisfy any requirements of those
+commands.
+
 ## Symbol Scope
 
 The checker is intentionally conservative about undeclared variables.
@@ -531,6 +566,10 @@ Symbols are introduced by:
 
 Numeric literal names made only of ASCII digits are accepted without prior
 declaration.
+
+Assumptions are processed in order. In an `is` or spec assumption, the subject
+side introduces names, but command arguments and target names on the right must
+already be known from earlier context.
 
 Symbols used only in a conclusion must already be known. For example:
 
@@ -584,6 +623,17 @@ groups, and expression facts such as `x is \set` or `x "in" X`.
 When command arguments are substituted into requirements, local bindings are
 normalized. If `A := B` is in scope, facts about `A` can satisfy requirements
 about `B`, and vice versa.
+
+Refined command type expressions are accepted in refined-capable statement
+positions and are reference-checked, but the current proof context records type
+facts only for ordinary command type expressions. A fact such as
+`f is \(continuous)::function:on{A}:to{B}` does not currently become a usable
+type fact for proving later requirements.
+
+Refined command fallback shapes are also used for reference validation. If a
+composed refined command is not defined directly, the checker can validate the
+base command and refinement pieces for existence and arity. Requirement proving
+for command use still looks up the exact command signature being used.
 
 ## Subtyping With `extends:`
 
@@ -667,8 +717,9 @@ them.
 - Some singular sections keep only the first valid parsed value and ignore extra
   valid values.
 - Text parsing strips only the outer quotes and does not process escapes.
-- Any non-text argument line containing `:` becomes a nested group.
-- Clause formulation arguments use `parse_expression`, not `parse_is_or_spec`.
+- Section-shaped colons in non-text argument lines start nested groups.
+- Clause formulation arguments are parsed in fallback order: binding,
+  expression, then `is`/spec helper.
 - Empty documents are accepted.
 - Heading-only groups are not valid structural groups.
 - One-element tuples are not supported.

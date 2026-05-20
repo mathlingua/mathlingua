@@ -26,14 +26,15 @@ The formulation subsystem does not have one single root grammar. It exposes seve
 | Parser function | Accepted root syntax |
 | --- | --- |
 | `parse_expression` | general expressions |
+| `parse_expression_binding` | `<expression> := <expression>` |
 | `parse_form_or_declaration` | forms and declarations |
 | `parse_is_or_spec` | `<is-subject> is <command-type>` or `<subject> "op" Name` |
 | `parse_is_or_refined_statement_spec` | same as above, but `is` may target a refined command expression |
-| `parse_is_via_statement` | `<is-statement> via <tuple-form>` |
+| `parse_is_via_statement` | `<is-statement> via <form-or-declaration>` |
 | `parse_command_header` | simple, infix, or refined command headers |
 | `parse_writing_alias` | `<form-or-declaration> :~> <raw body>` |
 | `parse_expression_alias` | `<lhs> :=> <expression>` |
-| `parse_spec_operator_alias` | `<placeholder-spec> :-> <is-or-spec>` |
+| `parse_spec_operator_alias` | `<placeholder-spec> :-> (<is-or-spec> | builtin)` |
 | `parse_label_header` | dotted label header text |
 | `parse_author_header` | `@` followed by dotted parts |
 | `parse_resource_header` | `$` followed by dotted parts |
@@ -62,7 +63,7 @@ This document uses the following notation:
 
 A normal formulation name is either:
 
-- a backtick name: `` `...` `` where anything except a backtick is allowed inside
+- a stropped symbolic name: `` `...` `` where the inside text is non-empty and uses only operator characters from `-~!#%^&*\+=|<>/`
 - an identifier-like name matching:
 
 ```text
@@ -81,7 +82,8 @@ Examples of valid normal names:
 - `x`
 - `x_1`
 - `123`
-- `` `x + y` ``
+- `` `*` ``
+- `` `*+` ``
 
 ### Placeholders
 
@@ -137,12 +139,12 @@ Expression labels use the token form:
 [:part(.part)*:]
 ```
 
-Each `part` uses the same identifier-like rule as normal non-backtick names.
+Each `part` uses the same identifier-like rule as ordinary non-stropped names.
 
 Important distinction:
 
-- expression labels like `[:a.b:]` are lexer tokens and do not support backtick parts
-- structural label headers parsed by `parse_label_header` do support backtick name parts because they use the raw helper parser, not the lexer token
+- expression labels like `[:a.b:]` are lexer tokens and do not support stropped symbolic parts
+- structural label headers parsed by `parse_label_header` do support stropped symbolic name parts because they use the raw helper parser, not the lexer token
 
 ### Named operators
 
@@ -214,7 +216,7 @@ Associativity:
 - `+` and `-` are left-associative
 - `*` and `/` are left-associative
 - `^` is right-associative
-- named-operator and infix-command expressions are not chained by the grammar; only one such operator is accepted at that precedence level without extra grouping
+- named-operator and infix-command expressions are left-associative at their precedence level
 
 ### Grammar
 
@@ -223,9 +225,9 @@ Expression ::= SpecOrPredicateExpression
 
 SpecOrPredicateExpression ::=
     EqualityExpression QuotedName Name
-  | EqualityExpression "is" EqualityExpression
-  | EqualityExpression "is?" EqualityExpression
-  | EqualityExpression "is_not?" EqualityExpression
+  | EqualityExpression "is" CommandExpression
+  | EqualityExpression "is?" CommandExpression
+  | EqualityExpression "is_not?" CommandExpression
   | EqualityExpression
 
 EqualityExpression ::=
@@ -245,12 +247,12 @@ PowerExpression ::=
   | HighPrecedenceExpression
 
 HighPrecedenceExpression ::=
-    PrefixExpression NamedOperator PrefixExpression
-  | PrefixExpression InfixCommand PrefixExpression
-  | PrefixExpression
+    HighPrecedenceExpression NamedOperator UnaryExpression
+  | HighPrecedenceExpression InfixCommand UnaryExpression
+  | UnaryExpression
 
-PrefixExpression ::=
-    ("+" | "-") AtomExpression
+UnaryExpression ::=
+    ("+" | "-") UnaryExpression
   | AtomExpression
 
 AtomExpression ::=
@@ -385,7 +387,9 @@ Many command-related syntaxes use a `Chain`:
 
 ```text
 Chain ::= ChainPart ("." ChainPart)*
-ChainPart ::= Name | "$" Name | OperatorText
+ChainPart ::= Name | "$" Name | SpecialOperator
+RawChain ::= RawChainPart ("." RawChainPart)*
+RawChainPart ::= Name | "$" Name | OperatorText
 ```
 
 Examples:
@@ -394,6 +398,13 @@ Examples:
 - `binary.op`
 - `$alias`
 - `<=`
+
+Raw helper parsers used for command headers, refined commands, and built-in
+spec-alias targets accept the broader `OperatorText` class for chain parts.
+Lexer-driven command expressions accept `SpecialOperator` chain parts. For
+single-character operator command names such as `+`, use a stropped name like
+``\`+\``` in expression syntax, or the raw command-header helper spelling
+where applicable.
 
 Named operators like `|plus|` are not chain parts.
 
@@ -451,6 +462,25 @@ Examples:
 ## Statement-Like Form Parsers
 
 These are not part of `parse_expression`. They are helper parsers built in `src/frontend/formulation/parser.rs`.
+
+### `parse_expression_binding`
+
+Accepted shape:
+
+```text
+ExpressionBinding ::= Expression ":=" Expression
+```
+
+Notes:
+
+- the parser looks for the first top-level `:=`
+- both sides are trimmed and parsed with `parse_expression`
+- nested `:=` inside parentheses, braces, brackets, quotes, or backticks is ignored while finding the split point
+
+Examples:
+
+- `A := B`
+- `f(x) := y + z`
 
 ### `parse_is_or_spec`
 
@@ -515,9 +545,9 @@ Refined command syntax is implemented by custom helper parsers, not by the LALRP
 RefinedCommandExpression ::=
     "\" RefinedLeft "::" RefinedTail CurlyExpressionArgs* CommandExpressionTail* ParenExpressionArgs*
 
-RefinedLeft ::= [Chain "."] "(" RefinedExpressionPart ("," RefinedExpressionPart)* ")"
-RefinedExpressionPart ::= Chain CommandExpressionTail*
-RefinedTail ::= "[[" Name "]]" | Chain
+RefinedLeft ::= [RawChain "."] "(" RefinedExpressionPart ("," RefinedExpressionPart)* ")"
+RefinedExpressionPart ::= RawChain CommandExpressionTail*
+RefinedTail ::= "[[" Name "]]" | RawChain
 ```
 
 Rules:
@@ -541,13 +571,13 @@ Refined command headers follow the same overall idea, but use form arguments ins
 RefinedCommandHeader ::=
     "\" RefinedHeaderLeft "::" RefinedTail CurlyHeadingArgs* CommandHeaderTail* ParenHeadingArgs*
 
-RefinedHeaderLeft ::= [Chain "."] "(" RefinedHeaderPart ("," RefinedHeaderPart)* ")"
-RefinedHeaderPart ::= Chain CommandHeaderTail*
-RefinedTail ::= "[[" Name "]]" | Chain
+RefinedHeaderLeft ::= [RawChain "."] "(" RefinedHeaderPart ("," RefinedHeaderPart)* ")"
+RefinedHeaderPart ::= RawChain CommandHeaderTail*
+RefinedTail ::= "[[" Name "]]" | RawChain
 
 CurlyHeadingArgs ::= "{" FormOrDeclaration ("," FormOrDeclaration)* "}"
 ParenHeadingArgs ::= "(" FormOrDeclaration ("," FormOrDeclaration)* ")"
-CommandHeaderTail ::= ":" Chain CurlyHeadingArgs+
+CommandHeaderTail ::= ":" RawChain CurlyHeadingArgs+
 ```
 
 ## Command Header Syntax
@@ -561,8 +591,8 @@ CommandHeaderTail ::= ":" Chain CurlyHeadingArgs+
 ### Simple command headers
 
 ```text
-SimpleCommandHeader ::= "\" Chain CurlyHeadingArgs* CommandHeaderTail* ParenHeadingArgs*
-CommandHeaderTail ::= ":" Chain CurlyHeadingArgs+
+SimpleCommandHeader ::= "\" RawChain CurlyHeadingArgs* CommandHeaderTail* ParenHeadingArgs*
+CommandHeaderTail ::= ":" RawChain CurlyHeadingArgs+
 ```
 
 Notes:
@@ -579,7 +609,7 @@ Examples:
 ### Infix command headers
 
 ```text
-InfixCommandHeader ::= "\:" Chain CurlyHeadingArgs* CommandHeaderTail* ":/"
+InfixCommandHeader ::= "\:" RawChain CurlyHeadingArgs* CommandHeaderTail* ":/"
 ```
 
 Notes:
@@ -615,11 +645,13 @@ Important implementation detail:
 ### Spec-operator aliases
 
 ```text
-SpecOperatorAlias ::= PlaceholderSpecStatement ":->" IsOrSpec
+SpecOperatorAlias ::= PlaceholderSpecStatement ":->" SpecOperatorAliasTarget
+SpecOperatorAliasTarget ::= IsOrSpec | "\\" RawChain
 PlaceholderSpecStatement ::= PlaceholderForm TopLevelQuotedOperator Name
 ```
 
 As with `parse_is_or_spec`, the quoted operator is extracted by raw scanning and may contain arbitrary text.
+Built-in targets use two leading backslashes, for example `\\abstract`.
 
 ## Header Parsers
 
@@ -647,10 +679,10 @@ ResourceHeader ::= "$" DottedParts
 
 ```text
 DottedParts ::= NamePart ("." NamePart)*
-NamePart ::= identifier-like name | backtick name
+NamePart ::= identifier-like name | stropped symbolic name
 ```
 
-Unlike expression labels, these helper parsers allow backtick parts because they use raw parsing helpers.
+Unlike expression labels, these helper parsers allow stropped symbolic parts because they use raw parsing helpers.
 
 ## Top-Level Scanning Rules Used by Helper Parsers
 
@@ -682,6 +714,7 @@ This section is intentionally dense. It is the closest thing in this file to a p
 
 ```text
 InputExpression ::= Expression
+InputExpressionBinding ::= ExpressionBinding
 InputFormOrDeclaration ::= FormOrDeclaration
 InputIsOrSpec ::= IsOrSpec
 InputIsOrRefinedStatementSpec ::= IsOrRefinedStatementSpec
@@ -699,7 +732,7 @@ InputResourceHeader ::= ResourceHeader
 
 ```text
 IdentifierName ::= [A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?
-BacktickName ::= "`" (anything except "`")* "`"
+BacktickName ::= "`" OperatorText "`"
 Name ::= IdentifierName | BacktickName
 
 Placeholder ::= IdentifierName "_"
@@ -779,9 +812,9 @@ Expression ::= SpecOrPredicateExpression
 
 SpecOrPredicateExpression ::=
     EqualityExpression QuotedName Name
-  | EqualityExpression "is" EqualityExpression
-  | EqualityExpression "is?" EqualityExpression
-  | EqualityExpression "is_not?" EqualityExpression
+  | EqualityExpression "is" CommandExpression
+  | EqualityExpression "is?" CommandExpression
+  | EqualityExpression "is_not?" CommandExpression
   | EqualityExpression
 
 EqualityExpression ::=
@@ -801,12 +834,12 @@ PowerExpression ::=
   | HighPrecedenceExpression
 
 HighPrecedenceExpression ::=
-    PrefixExpression NamedOperator PrefixExpression
-  | PrefixExpression InfixCommand PrefixExpression
-  | PrefixExpression
+    HighPrecedenceExpression NamedOperator UnaryExpression
+  | HighPrecedenceExpression InfixCommand UnaryExpression
+  | UnaryExpression
 
-PrefixExpression ::=
-    ("+" | "-") AtomExpression
+UnaryExpression ::=
+    ("+" | "-") UnaryExpression
   | AtomExpression
 
 AtomExpression ::=
@@ -840,7 +873,9 @@ SubsetExpression ::= SubsetNameCall
 
 ```text
 Chain ::= ChainPart ("." ChainPart)*
-ChainPart ::= Name | "$" Name | OperatorText
+ChainPart ::= Name | "$" Name | SpecialOperator
+RawChain ::= RawChainPart ("." RawChainPart)*
+RawChainPart ::= Name | "$" Name | OperatorText
 
 CurlyExpressionArgs ::= "{" ExpressionList "}"
 ParenExpressionArgs ::= "(" ExpressionList ")"
@@ -853,11 +888,18 @@ CommandExpression ::= "\" Chain CurlyExpressionArgs* CommandExpressionTail Paren
 InfixCommand ::= "\:" Chain CurlyExpressionArgs* CommandExpressionTail ":/"
 ```
 
+`RawChain` is used by scanner-based helpers such as command headers, refined
+commands, and built-in spec-alias targets. Lexer-driven command expressions use
+`Chain`. Label, author, and resource headers use dotted name parts rather than
+full chains.
+
 ### Scanner-based statement helpers
 
 These forms are parsed by `src/frontend/formulation/parser.rs`, not by the LALRPOP expression grammar.
 
 ```text
+ExpressionBinding ::= Expression ":=" Expression
+
 IsSubject ::= IsSubjectFormList | OperatorText
 SpecSubject ::= FormOrDeclaration | OperatorText
 IsSubjectForm ::= FormOrDeclaration | PlaceholderForm
@@ -879,17 +921,17 @@ IsViaStatement ::= IsStatement " via " FormOrDeclaration
 ### Refined command helpers
 
 ```text
-RefinedTail ::= "[[" Name "]]" | Chain
+RefinedTail ::= "[[" Name "]]" | RawChain
 
-RefinedExpressionPart ::= Chain CommandExpressionTail
-RefinedHeaderPart ::= Chain CommandHeaderTail
+RefinedExpressionPart ::= RawChain CommandExpressionTail
+RefinedHeaderPart ::= RawChain CommandHeaderTail
 
 RefinedCommandExpression ::=
-    "\" [Chain "."] "(" RefinedExpressionPart ("," RefinedExpressionPart)* ")" "::"
+    "\" [RawChain "."] "(" RefinedExpressionPart ("," RefinedExpressionPart)* ")" "::"
     RefinedTail CurlyExpressionArgs* CommandExpressionTail ParenExpressionArgs*
 
 RefinedCommandHeader ::=
-    "\" [Chain "."] "(" RefinedHeaderPart ("," RefinedHeaderPart)* ")" "::"
+    "\" [RawChain "."] "(" RefinedHeaderPart ("," RefinedHeaderPart)* ")" "::"
     RefinedTail CurlyHeadingArgs* CommandHeaderTail ParenHeadingArgs*
 ```
 
@@ -907,11 +949,11 @@ CommandHeader ::= SimpleCommandHeader | InfixCommandHeader | RefinedCommandHeade
 CurlyHeadingArgs ::= "{" FormList "}"
 ParenHeadingArgs ::= "(" FormList ")"
 
-CommandHeaderTailPart ::= ":" Chain CurlyHeadingArgs+
+CommandHeaderTailPart ::= ":" RawChain CurlyHeadingArgs+
 CommandHeaderTail ::= CommandHeaderTailPart*
 
-SimpleCommandHeader ::= "\" Chain CurlyHeadingArgs* CommandHeaderTail ParenHeadingArgs*
-InfixCommandHeader ::= "\:" Chain CurlyHeadingArgs* CommandHeaderTail ":/"
+SimpleCommandHeader ::= "\" RawChain CurlyHeadingArgs* CommandHeaderTail ParenHeadingArgs*
+InfixCommandHeader ::= "\:" RawChain CurlyHeadingArgs* CommandHeaderTail ":/"
 ```
 
 ### Aliases and headers
@@ -924,7 +966,8 @@ ExpressionAliasLhs ::= FormOrDeclaration
                      | InfixCommandHeader
 
 ExpressionAlias ::= ExpressionAliasLhs ":=>" Expression
-SpecOperatorAlias ::= PlaceholderSpecStatement ":->" IsOrSpec
+SpecOperatorAlias ::= PlaceholderSpecStatement ":->" SpecOperatorAliasTarget
+SpecOperatorAliasTarget ::= IsOrSpec | "\\" RawChain
 
 DottedParts ::= Name ("." Name)*
 LabelHeader ::= DottedParts
@@ -939,7 +982,7 @@ The old grammar drafts implied several forms that the current code does not acce
 - `parse_expression` does not accept refined command expressions
 - there are no general prefix or postfix non-arithmetic operator expressions
 - infix command expressions are not a separate root form; they only appear through `HighPrecedenceExpression`
-- predicate expressions use general equality expressions on the right-hand side, not just commands
+- expression-level `is`, `is?`, and `is_not?` forms require a command expression on the right-hand side
 
 ## Current Implementation Notes and Footguns
 
@@ -947,11 +990,11 @@ The old grammar drafts implied several forms that the current code does not acce
 
 Refined command expressions are only accepted through `parse_is_or_refined_statement_spec`.
 
-### `is` statements in helper parsers are stricter than `is` expressions
+### Helper `is` statements use different subject syntax than `is` expressions
 
-In ordinary expressions, `x is y` is parsed as a general `TypeBinary` expression whose right-hand side is any equality expression.
+In ordinary expressions, `x is \foo{A}` requires the right-hand side to be a command expression.
 
-In `parse_is_or_spec`, the same surface `is` form requires the right-hand side to be a command expression.
+In `parse_is_or_spec`, the right-hand side is also a command expression, but the left-hand side is parsed with helper syntax that accepts forms, placeholder forms, comma-separated subject lists, and operator subjects. `parse_is_or_refined_statement_spec` additionally accepts refined command expressions on the right-hand side.
 
 ### Quoted operator handling is inconsistent by design in the current code
 
@@ -968,9 +1011,9 @@ Both tuple expressions and tuple forms require at least two elements.
 
 Only the three hard-coded name-only shapes are accepted.
 
-### Named-operator precedence is single-step
+### Named-operator and infix-command precedence is left-associative
 
-The grammar does not allow an ungrouped chain like `a |f| b |g| c`.
+Ungrouped chains like `a |f| b |g| c` are accepted and associate to the left at the named-operator/infix-command precedence level.
 
 ### Tail parts require `{...}`
 

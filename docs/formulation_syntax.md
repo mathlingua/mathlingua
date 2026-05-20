@@ -1,6 +1,8 @@
 # Formulation Syntax
 
 This file describes the formulation language exactly as it is currently implemented in the Rust code.
+For a more readable overview of how formulation syntax fits into the whole
+language, start with [language.md](language.md).
 
 Intended workflow:
 

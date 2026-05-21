@@ -1,3 +1,5 @@
+//! Name extraction helpers used for heading titles and template substitutions.
+
 use super::*;
 
 /// Extracts the primary subject name from a `Defines:`-compatible specification.

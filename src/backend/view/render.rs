@@ -1,3 +1,9 @@
+//! LaTeX rendering support for the serialized collection viewer.
+//!
+//! This module indexes documented `called:` and `written:` templates from
+//! parsed MathLingua sources, then uses that registry to render formulation
+//! fragments and group headings into the LaTeX strings consumed by the web app.
+
 use std::collections::HashMap;
 
 use crate::backend::semantic::ParsedSourceFile;

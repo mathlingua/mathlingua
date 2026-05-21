@@ -7,11 +7,18 @@ import { LatexRenderer } from "./latex-renderer";
 import styles from "./group-card.module.css";
 import sectionStyles from "./section-content.module.css";
 
+/** Props for rendering one top-level MathLingua group card. */
 interface GroupCardProps {
+  /** Stable DOM id used for linking directly to the group. */
   anchorId: string;
+  /** Serialized group data emitted by the Rust view builder. */
   group: GroupView;
 }
 
+/**
+ * Renders one MathLingua group and hides the optional `Documented` section until
+ * the reader asks for it.
+ */
 export function GroupCard({ anchorId, group }: GroupCardProps) {
   const [showDocumented, setShowDocumented] = useState(false);
   const headingTooltip = group.heading ?? undefined;
@@ -96,10 +103,17 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
   );
 }
 
+/** Returns true for the generated section that contains author-facing docs. */
 function isDocumentedSection(section: SectionView): boolean {
   return section.label === "Documented";
 }
 
+/**
+ * Capitalizes the first visible word inside rendered text-mode LaTeX.
+ *
+ * The backend preserves documented `called:` capitalization, while card
+ * headings read better when the first prose word starts uppercase.
+ */
 function capitalizeFirstRenderedLatexWord(latex: string): string {
   for (let index = 0; index < latex.length; index += 1) {
     const textCommand = latexTextCommandAt(latex, index);
@@ -122,6 +136,7 @@ function capitalizeFirstRenderedLatexWord(latex: string): string {
   return latex;
 }
 
+/** Detects a text-mode LaTeX command at the given string index. */
 function latexTextCommandAt(latex: string, index: number): string | null {
   for (const command of ["\\textrm{", "\\text{"]) {
     if (latex.startsWith(command, index)) {
@@ -132,6 +147,7 @@ function latexTextCommandAt(latex: string, index: number): string | null {
   return null;
 }
 
+/** Scans one LaTeX text group for the first renderable ASCII letter. */
 function scanLatexTextGroup(
   latex: string,
   startIndex: number,
@@ -169,6 +185,7 @@ function scanLatexTextGroup(
   return { letterIndex: null, endIndex: latex.length };
 }
 
+/** Skips over a LaTeX command name so nested commands are not capitalized. */
 function skipLatexCommand(latex: string, startIndex: number): number {
   let index = startIndex + 1;
 
@@ -183,6 +200,7 @@ function skipLatexCommand(latex: string, startIndex: number): number {
   return index;
 }
 
+/** Returns true when a string contains exactly one ASCII letter. */
 function isAsciiLetter(value: string): boolean {
   return /^[A-Za-z]$/.test(value);
 }

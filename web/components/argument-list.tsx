@@ -3,10 +3,13 @@ import { LatexRenderer } from "./latex-renderer";
 import styles from "./argument-list.module.css";
 import sectionStyles from "./section-content.module.css";
 
+/** Props for rendering the recursive list of section arguments. */
 interface ArgumentListProps {
+  /** Arguments nested under the current section. */
   arguments: ArgumentView[];
 }
 
+/** Renders formulation, text, and nested-group section arguments. */
 export function ArgumentList({ arguments: items }: ArgumentListProps) {
   return (
     <ul className={styles.list}>

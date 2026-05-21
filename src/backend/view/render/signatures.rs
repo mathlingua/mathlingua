@@ -1,3 +1,5 @@
+//! Canonical signature builders for commands and refined commands.
+
 use super::*;
 
 /// Builds the canonical signature for any command header.

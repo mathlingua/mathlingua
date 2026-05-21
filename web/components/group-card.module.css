@@ -1,3 +1,5 @@
+/* Card-level styling for one rendered top-level MathLingua group. */
+
 .card {
   width: min(100%, 31rem);
   margin: 0 auto;

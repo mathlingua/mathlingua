@@ -1,3 +1,5 @@
+//! Registry construction for documented render templates.
+
 use super::*;
 
 /// Lookup table of documented rendering metadata by canonical command signature.
@@ -85,9 +87,9 @@ pub(in crate::backend::view) fn render_group_heading_latex(
     if kind == "Refines"
         && let Some(latex) =
             render_refines_group_heading_latex(&header, primary_inline_argument, render, registry)
-        {
-            return Some(latex);
-        }
+    {
+        return Some(latex);
+    }
 
     let substitutions = command_header_substitutions(&header);
 

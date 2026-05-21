@@ -1,3 +1,5 @@
+//! Readable fallback rendering for syntax that has no documented template yet.
+
 use super::*;
 
 /// Renders an unknown command chain in a readable escaped fallback form.

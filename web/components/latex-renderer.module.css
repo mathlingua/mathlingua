@@ -1,3 +1,5 @@
+/* KaTeX sizing adjustments for inline MathLingua-rendered fragments. */
+
 .renderer {
   font-size: 1.04rem;
 }

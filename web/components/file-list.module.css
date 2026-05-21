@@ -1,3 +1,5 @@
+/* Two-pane reader layout and outline browser styling. */
+
 .readerLayout {
   display: grid;
   min-height: calc(100vh - 64px);

@@ -1,3 +1,5 @@
+//! Template interpolation helpers for documented `called:` and `written:` text.
+
 use super::*;
 
 /// Renders a plain-LaTeX-mode `called:` template with math substitutions.

@@ -1,3 +1,5 @@
+//! Rendering for `is` statements and related specification forms.
+
 use super::*;
 
 /// Renders an `is` statement or refined-capable specification as LaTeX.

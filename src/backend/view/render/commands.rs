@@ -1,3 +1,5 @@
+//! Rendering for parsed command expressions and command-backed group headings.
+
 use super::*;
 
 /// Renders a standalone normal command expression.

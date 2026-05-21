@@ -15,10 +15,13 @@ import {
   routePathFromPathname,
 } from "../lib/presenter";
 
+/** Props for the client-side viewer state container. */
 interface ViewerShellProps {
+  /** Renderable files for the current collection. */
   files: FileView[];
 }
 
+/** Owns browser history, selected file, outline directory, and chrome state. */
 export function ViewerShell({ files }: ViewerShellProps) {
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
   const [currentDirectory, setCurrentDirectory] = useState("");
@@ -78,11 +81,15 @@ export function ViewerShell({ files }: ViewerShellProps) {
   );
 }
 
+/** Route-derived viewer selection state. */
 interface RouteSelection {
+  /** Directory shown in the outline. */
   directory: string;
+  /** File index shown in the document stream. */
   fileIndex: number;
 }
 
+/** Resolves a browser pathname into the selected file and outline directory. */
 function resolveRouteSelection(
   pathname: string,
   files: FileView[],
@@ -115,6 +122,7 @@ function resolveRouteSelection(
   return { directory: "", fileIndex: 0 };
 }
 
+/** Finds the outline directory represented by a normalized route path. */
 function findDirectoryForRoutePath(
   routePath: string,
   files: FileView[],

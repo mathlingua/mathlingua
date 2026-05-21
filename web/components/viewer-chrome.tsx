@@ -1,10 +1,14 @@
 import styles from "./viewer-chrome.module.css";
 
+/** Props for the sticky viewer toolbar. */
 interface ViewerChromeProps {
+  /** Whether the outline panel is currently open. */
   isOutlineOpen: boolean;
+  /** Toggles the outline panel visibility. */
   onToggleOutline: () => void;
 }
 
+/** Renders the top toolbar for the collection viewer. */
 export function ViewerChrome({
   isOutlineOpen,
   onToggleOutline,

@@ -1,3 +1,5 @@
+//! Rendering for general formulation expressions.
+
 use super::*;
 
 /// Renders a parsed expression as inline LaTeX.

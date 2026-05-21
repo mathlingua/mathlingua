@@ -1,3 +1,5 @@
+//! Escaping helpers for the limited LaTeX dialect emitted by the viewer.
+
 /// Escapes a value that will be rendered as a math identifier.
 pub(super) fn escape_math_identifier(value: &str) -> String {
     escape_latex_math(value)

@@ -10,15 +10,23 @@ import {
 } from "../lib/presenter";
 import { FileView } from "../lib/types";
 
+/** Props for coordinating outline navigation and selected document state. */
 interface FileListProps {
+  /** Directory currently shown by the outline browser. */
   currentDirectory: string;
+  /** Renderable files in the collection. */
   files: FileView[];
+  /** Whether the outline panel is visible. */
   isOutlineOpen: boolean;
+  /** Called when the user drills into or backs out of an outline directory. */
   onNavigateDirectory: (directory: string) => void;
+  /** Called when the user selects a file from the outline. */
   onSelectFile: (fileIndex: number) => void;
+  /** Index of the file currently shown in the document stream. */
   selectedFileIndex: number;
 }
 
+/** Renders the collection outline beside the selected file's group cards. */
 export function FileList({
   currentDirectory,
   files,

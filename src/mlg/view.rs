@@ -200,10 +200,12 @@ fn stream_child_output(
         match receiver.recv_timeout(Duration::from_millis(100)) {
             Ok(line) => {
                 let is_ready = is_ready_line(&line.text);
-                if is_ready && !was_ready
-                    && let Some(url) = ready_url {
-                        event_log.user_log(Some(ORIGIN), format!("Viewer ready at {url}"));
-                    }
+                if is_ready
+                    && !was_ready
+                    && let Some(url) = ready_url
+                {
+                    event_log.user_log(Some(ORIGIN), format!("Viewer ready at {url}"));
+                }
                 was_ready |= is_ready;
                 log_child_output(line, origin, event_log);
             }
@@ -211,10 +213,12 @@ fn stream_child_output(
                 if let Some(status) = child.try_wait()? {
                     while let Ok(line) = receiver.try_recv() {
                         let is_ready = is_ready_line(&line.text);
-                        if is_ready && !was_ready
-                            && let Some(url) = ready_url {
-                                event_log.user_log(Some(ORIGIN), format!("Viewer ready at {url}"));
-                            }
+                        if is_ready
+                            && !was_ready
+                            && let Some(url) = ready_url
+                        {
+                            event_log.user_log(Some(ORIGIN), format!("Viewer ready at {url}"));
+                        }
                         was_ready |= is_ready;
                         log_child_output(line, origin, event_log);
                     }

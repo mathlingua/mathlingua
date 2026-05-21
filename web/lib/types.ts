@@ -1,39 +1,64 @@
+/** Serialized view model emitted by the Rust backend for an entire collection. */
 export type CollectionView = {
+  /** Human-readable collection title derived from the collection root. */
   title: string;
+  /** Renderable source files, already ordered by the backend. */
   files: FileView[];
 };
 
+/** Serialized view model for one MathLingua source file. */
 export type FileView = {
+  /** File path relative to the collection root when possible. */
   path: string;
+  /** Top-level groups rendered from the file. */
   items: GroupView[];
 };
 
+/** Serialized view model for one top-level MathLingua group card. */
 export type GroupView = {
+  /** Structural group kind, such as `Describes`, `Refines`, or `Theorem`. */
   kind: string;
+  /** Raw bracket heading text, if the source group had one. */
   heading: string | null;
+  /** Backend-rendered LaTeX title for the group card, if available. */
   heading_latex: string | null;
+  /** Rendered sections belonging to the group. */
   sections: SectionView[];
 };
 
+/** Serialized view model for one labeled section inside a group. */
 export type SectionView = {
+  /** Section label without the trailing colon. */
   label: string;
+  /** Raw inline argument after the section label, if one was present. */
   inline_argument: string | null;
+  /** Backend-rendered LaTeX for the inline argument, if available. */
   inline_latex: string | null;
+  /** Block arguments nested under this section. */
   arguments: ArgumentView[];
 };
 
+/** Serialized representation of a section argument. */
 export type ArgumentView =
   | {
+      /** Formulation arguments can render as LaTeX or fall back to source text. */
       kind: "formulation";
+      /** Raw formulation text from the source file. */
       text: string;
+      /** Backend-rendered LaTeX when parsing and rendering succeeded. */
       latex: string | null;
     }
   | {
+      /** Plain text arguments render as prose. */
       kind: "text";
+      /** Text content after source quoting has been removed. */
       text: string;
     }
   | {
+      /** Nested group arguments recursively contain rendered sections. */
       kind: "group";
+      /** Raw nested group heading, if present. */
       heading: string | null;
+      /** Rendered sections inside the nested group. */
       sections: SectionView[];
     };

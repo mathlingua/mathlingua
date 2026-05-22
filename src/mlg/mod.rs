@@ -12,9 +12,12 @@ pub use version::version;
 /// Viewer command entrypoints.
 pub use view::{view, view_in};
 
+pub use facade::Mlg;
+
 mod check;
 mod collection;
 mod config;
+mod facade;
 mod init;
 mod version;
 mod view;

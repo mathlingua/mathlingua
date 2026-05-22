@@ -5,7 +5,7 @@
 //! events, and command orchestration.
 
 /// Public command helpers used by the binary and integration callers.
-pub use mlg::{CheckResult, check, check_in, init, version, view, view_in};
+pub use mlg::{CheckResult, Mlg, check, check_in, init, version, view, view_in};
 
 /// Backend semantic checks and viewer model generation.
 pub mod backend;

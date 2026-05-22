@@ -1,8 +1,8 @@
 use clap::Parser;
-use mlg::cli::{Cli, Command, ViewArgs};
-use mlg::environment::current_working_directory;
+use mlg::Mlg;
+use mlg::cli::Cli;
 use mlg::events::{ColorMode, EventConsoleWriter, EventFilter, EventLog};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process;
 
 /// Binary entrypoint for the `mlg` executable.
@@ -13,66 +13,14 @@ use std::process;
 fn main() {
     let cli = Cli::parse();
     let filter = cli.event_filter();
-    let mut event_log = EventLog::new();
-    let base_path = std::env::current_dir().ok();
+    let mut mlg = Mlg::new();
+    let base_path = mlg.working_directory().map(Path::to_path_buf);
 
-    attach_console_writer(&mut event_log, &filter, base_path.as_deref());
+    attach_console_writer(mlg.event_log_mut(), &filter, base_path.as_deref());
 
-    let exit_code = match cli.command {
-        Command::Check(args) => run_check(&args.paths, &mut event_log),
-        Command::Init => run_init(&mut event_log),
-        Command::Version => {
-            mlg::version(&mut event_log);
-            0
-        }
-        Command::View(args) => run_view(&args, &mut event_log),
-    };
-
+    let exit_code = mlg.run(cli.command);
     if exit_code != 0 {
         process::exit(exit_code);
-    }
-}
-
-/// Runs `mlg check` and converts the resulting event state into a process code.
-fn run_check(paths: &[PathBuf], event_log: &mut EventLog) -> i32 {
-    let cwd = current_working_directory(event_log);
-
-    let Some(cwd) = cwd else {
-        return 1;
-    };
-
-    let _ = mlg::check_in(&cwd, paths, event_log);
-
-    if event_log.has_errors() { 1 } else { 0 }
-}
-
-/// Runs `mlg init` in the current working directory.
-fn run_init(event_log: &mut EventLog) -> i32 {
-    let cwd = current_working_directory(event_log);
-
-    let Some(cwd) = cwd else {
-        return 1;
-    };
-
-    if mlg::init(&cwd, event_log).is_err() || event_log.has_errors() {
-        1
-    } else {
-        0
-    }
-}
-
-/// Runs `mlg view` with the configured viewer port.
-fn run_view(args: &ViewArgs, event_log: &mut EventLog) -> i32 {
-    let cwd = current_working_directory(event_log);
-
-    let Some(cwd) = cwd else {
-        return 1;
-    };
-
-    if mlg::view_in(&cwd, args.port, event_log).is_err() || event_log.has_errors() {
-        1
-    } else {
-        0
     }
 }
 

@@ -1,5 +1,5 @@
-use super::filter::{ColorMode, EventFilter};
-use super::log::EventLogListener;
+use super::event_filter::{ColorMode, EventFilter};
+use super::event_log::EventLogListener;
 use super::{
     Audience, Event, EventLocation, EventSpan, Level, MarkerEvent, MarkerPhase, MessageEvent,
 };

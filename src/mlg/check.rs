@@ -153,6 +153,7 @@ mod tests {
     use crate::mlg::collection::{find_collection_root, resolve_source_files};
     use crate::mlg::config::default_config_contents;
     use std::fs;
+    use std::io;
     use std::path::{Path, PathBuf};
 
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -229,6 +230,47 @@ mod tests {
         fn drop(&mut self) {
             let _ = fs::remove_dir_all(&self.path);
         }
+    }
+
+    fn write_mlg_fixture(path: &Path, source: &str) -> io::Result<()> {
+        fs::write(path, unindent_mlg_fixture(source))
+    }
+
+    fn unindent_mlg_fixture(source: &str) -> String {
+        let mut lines = source.lines().collect::<Vec<_>>();
+        while lines.last().is_some_and(|line| line.trim().is_empty()) {
+            lines.pop();
+        }
+
+        let indentation = lines
+            .iter()
+            .skip(1)
+            .filter(|line| !line.trim().is_empty())
+            .map(|line| {
+                line.chars()
+                    .take_while(|ch| matches!(ch, ' ' | '\t'))
+                    .map(char::len_utf8)
+                    .sum::<usize>()
+            })
+            .min()
+            .unwrap_or(0);
+
+        let mut output = String::new();
+        for (index, line) in lines.iter().enumerate() {
+            if index > 0 {
+                output.push('\n');
+            }
+
+            if index == 0 {
+                output.push_str(line);
+            } else if line.trim().is_empty() {
+                continue;
+            } else {
+                output.push_str(&line[indentation..]);
+            }
+        }
+        output.push('\n');
+        output
     }
 
     #[test]
@@ -505,7 +547,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("duplicates.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\function{A, B}]
     Defines: A "defines" B
@@ -549,7 +591,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("undefined.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\function:on{A}:to{B}]
     Defines: A "defines" B
@@ -588,7 +630,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("arity.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\foo{A, B}(x)]
     Defines: A "defines" B
@@ -627,7 +669,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("valid-reference.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\thing]
     Describes: value
@@ -669,7 +711,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("optional-parens.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\thing]
     Describes: value
@@ -712,7 +754,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("refined-list.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\set]
     Describes: X
@@ -763,7 +805,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("type-fact.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\real]
     Describes: x
@@ -803,7 +845,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("type-mismatch.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\real]
     Describes: x
@@ -844,7 +886,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("function-argument-types.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\set]
     Describes: X
@@ -919,7 +961,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("subtype-requirement.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\set]
     Describes: X
@@ -978,7 +1020,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("unrecognized-symbol.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\set]
     Describes: X
@@ -1024,7 +1066,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("type-binding.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\real]
     Describes: x
@@ -1066,7 +1108,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("exists-binding.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\real]
     Describes: x
@@ -1108,7 +1150,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("spec-reduction.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\real]
     Describes: x
@@ -1157,7 +1199,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("direct-spec.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\group]
     Describes: G
@@ -1202,7 +1244,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("wrong-curly-count.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\some.function{A}(x, y)]
     Defines: A "defines" B
@@ -1241,7 +1283,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("wrong-paren-count.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\some.function{A}(x, y)]
     Defines: A "defines" B
@@ -1280,7 +1322,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("documented-called.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\missing.called]
     Defines: A "defines" B
@@ -1336,7 +1378,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("documented-valid.mlg");
 
-        fs::write(
+        write_mlg_fixture(
             &file,
             r#"[\called.only]
     Defines: A "defines" B

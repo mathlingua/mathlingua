@@ -1,5 +1,8 @@
 use super::*;
 
+type GoldenParser = fn(&str) -> Result<(), String>;
+type GoldenParsers = BTreeMap<&'static str, GoldenParser>;
+
 pub(super) fn split_test_chunks(text: &str) -> Vec<String> {
     text.replace("\r\n", "\n")
         .split("\n\n")
@@ -109,8 +112,7 @@ pub(super) fn parse_resource_header_entry(input: &str) -> Result<(), String> {
         .map_err(|error| error.to_string())
 }
 
-pub(super) fn formulation_golden_parsers() -> BTreeMap<&'static str, fn(&str) -> Result<(), String>>
-{
+pub(super) fn formulation_golden_parsers() -> GoldenParsers {
     BTreeMap::from([
         (
             "author_header.txt",

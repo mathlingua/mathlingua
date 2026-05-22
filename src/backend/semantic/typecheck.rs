@@ -2289,7 +2289,7 @@ fn actuals_for_type_key(signature: &str, ty: &str) -> Option<Vec<String>> {
     rest.is_empty().then_some(actuals)
 }
 
-fn collect_adjacent_key_args<'a>(rest: &mut &'a str, actuals: &mut Vec<String>) -> Option<()> {
+fn collect_adjacent_key_args(rest: &mut &str, actuals: &mut Vec<String>) -> Option<()> {
     loop {
         let Some(open) = rest.chars().next() else {
             return Some(());

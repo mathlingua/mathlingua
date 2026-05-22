@@ -102,7 +102,7 @@ fn collect_source_files(
 ) {
     match fs::metadata(&target) {
         Ok(metadata) if metadata.is_dir() => {
-            collect_directory_source_files(&target, files, event_log, origin)
+            collect_directory_source_files(&target, files, event_log, origin);
         }
         Ok(metadata) if metadata.is_file() => {
             if is_mathlingua_source_file(&target) {
@@ -153,14 +153,13 @@ fn collect_directory_source_files(
 /// Reads directory entries and sorts them by path for deterministic traversal.
 fn read_directory_entries(directory: &Path) -> io::Result<Vec<fs::DirEntry>> {
     let mut entries = fs::read_dir(directory)?.collect::<Result<Vec<_>, io::Error>>()?;
-    entries.sort_by_key(|left| left.path());
+    entries.sort_by_key(fs::DirEntry::path);
     Ok(entries)
 }
 
-/// Returns true when a path has the MathLingua source extension.
+/// Returns true when a path has the `MathLingua` source extension.
 fn is_mathlingua_source_file(path: &Path) -> bool {
     path.extension()
         .and_then(|value| value.to_str())
-        .map(|extension| extension.eq_ignore_ascii_case("mlg"))
-        .unwrap_or(false)
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("mlg"))
 }

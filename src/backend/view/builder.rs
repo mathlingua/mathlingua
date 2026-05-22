@@ -256,19 +256,9 @@ mod tests {
         assert_eq!(view.files[0].items[0].kind, "Describes");
         assert_eq!(
             view.files[0].items[0].heading_latex,
-            Some(r#"\textrm{set}"#.to_string())
+            Some(r"\textrm{set}".to_string())
         );
-        assert!(event_log.has_errors().not());
-    }
-
-    trait BoolExt {
-        fn not(self) -> bool;
-    }
-
-    impl BoolExt for bool {
-        fn not(self) -> bool {
-            !self
-        }
+        assert!(!event_log.has_errors());
     }
 
     struct TestDir {

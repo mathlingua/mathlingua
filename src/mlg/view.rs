@@ -45,17 +45,14 @@ pub fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Result<()
         format!("Building a rendered view for {} file(s)", files.len()),
     );
 
-    let collection_view = match build_collection_view(cwd, &files, event_log) {
-        Some(collection_view) => collection_view,
-        None => {
-            event_log.user_error(
-                Some(ORIGIN),
-                "View not started because one or more files could not be rendered",
-            );
-            return Err(io::Error::other(
-                "One or more files could not be rendered for viewing",
-            ));
-        }
+    let Some(collection_view) = build_collection_view(cwd, &files, event_log) else {
+        event_log.user_error(
+            Some(ORIGIN),
+            "View not started because one or more files could not be rendered",
+        );
+        return Err(io::Error::other(
+            "One or more files could not be rendered for viewing",
+        ));
     };
 
     let view_session_dir = create_view_session_dir()?;
@@ -154,11 +151,11 @@ fn run_child(
     let stdout_thread = child
         .stdout
         .take()
-        .map(|stdout| spawn_output_reader(stdout, OutputStream::Stdout, sender.clone()));
+        .map(|stdout| spawn_output_reader(stdout, sender.clone()));
     let stderr_thread = child
         .stderr
         .take()
-        .map(|stderr| spawn_output_reader(stderr, OutputStream::Stderr, sender));
+        .map(|stderr| spawn_output_reader(stderr, sender));
 
     let outcome = stream_child_output(&mut child, receiver, origin, event_log, ready_url);
     join_output_thread(stdout_thread, event_log);
@@ -236,29 +233,19 @@ fn stream_child_output(
 
 /// Re-emits one child-process output line as a system event.
 fn log_child_output(line: OutputLine, origin: &str, event_log: &mut EventLog) {
-    match line.stream {
-        OutputStream::Stdout => event_log.system_log(Some(origin), line.text),
-        OutputStream::Stderr => event_log.system_log(Some(origin), line.text),
-    }
+    event_log.system_log(Some(origin), line.text);
 }
 
 /// Spawns a thread that reads one child-process stream line by line.
 fn spawn_output_reader(
     stream: impl io::Read + Send + 'static,
-    output_stream: OutputStream,
     sender: Sender<OutputLine>,
 ) -> JoinHandle<io::Result<()>> {
     thread::spawn(move || {
         let reader = BufReader::new(stream);
         for line in reader.lines() {
             let line = line?;
-            if sender
-                .send(OutputLine {
-                    stream: output_stream,
-                    text: line,
-                })
-                .is_err()
-            {
+            if sender.send(OutputLine { text: line }).is_err() {
                 break;
             }
         }
@@ -315,19 +302,8 @@ fn is_ready_line(text: &str) -> bool {
     text.contains("Ready in") || text.contains("Local:")
 }
 
-/// Identifies which child stream produced an output line.
-#[derive(Clone, Copy)]
-enum OutputStream {
-    /// Child stdout.
-    Stdout,
-    /// Child stderr.
-    Stderr,
-}
-
 /// One line of output read from the child process.
 struct OutputLine {
-    /// Stream that produced the line.
-    stream: OutputStream,
     /// Text of the line without its trailing newline.
     text: String,
 }

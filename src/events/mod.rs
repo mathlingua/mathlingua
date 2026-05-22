@@ -11,8 +11,10 @@ mod filter;
 mod level;
 mod location;
 mod log;
-mod marker;
-mod message;
+mod marker_event;
+mod marker_id;
+mod marker_range;
+mod message_event;
 
 /// Event audience classification.
 pub use audience::Audience;
@@ -28,7 +30,9 @@ pub use level::Level;
 pub use location::{EventLocation, EventPosition, EventSpan};
 /// Append-only event log and listener trait.
 pub use log::{EventLog, EventLogListener};
+pub use marker_event::{MarkerEvent, MarkerPhase};
+pub use marker_id::MarkerId;
 /// Marker event types for slicing/log instrumentation.
-pub use marker::{MarkerEvent, MarkerId, MarkerPhase, MarkerRange};
+pub use marker_range::MarkerRange;
 /// User/system message event payload.
-pub use message::MessageEvent;
+pub use message_event::MessageEvent;

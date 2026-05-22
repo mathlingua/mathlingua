@@ -50,67 +50,6 @@ impl fmt::Display for MarkerId {
     }
 }
 
-/// Phase of an instrumentation marker.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MarkerPhase {
-    /// Beginning of a marked range.
-    Begin,
-    /// End of a marked range.
-    End,
-}
-
-/// Event emitted when a marked range begins or ends.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MarkerEvent {
-    /// Id shared between matching begin and end marker events.
-    pub id: MarkerId,
-    /// Human-readable label for the measured range.
-    pub label: String,
-    /// Whether this event begins or ends the range.
-    pub phase: MarkerPhase,
-    /// Optional subsystem that emitted the marker.
-    pub origin: Option<String>,
-}
-
-impl MarkerEvent {
-    /// Creates a marker event from its components.
-    pub fn new(
-        id: MarkerId,
-        label: impl Into<String>,
-        phase: MarkerPhase,
-        origin: Option<String>,
-    ) -> Self {
-        Self {
-            id,
-            label: label.into(),
-            phase,
-            origin,
-        }
-    }
-
-    /// Returns a marker event with the given optional origin.
-    pub fn with_origin_option(mut self, origin: Option<&str>) -> Self {
-        self.origin = origin.map(str::to_owned);
-        self
-    }
-}
-
-/// Pair of begin and end marker events bounding a range in an event log.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MarkerRange {
-    /// Begin marker event.
-    pub begin: MarkerEvent,
-    /// End marker event.
-    pub end: MarkerEvent,
-}
-
-impl MarkerRange {
-    /// Creates a marker range from matching begin and end events.
-    pub fn new(begin: MarkerEvent, end: MarkerEvent) -> Self {
-        Self { begin, end }
-    }
-}
-
 /// Formats raw bytes as a UUID-shaped string.
 fn format_uuid(bytes: [u8; 16]) -> String {
     let hex = bytes
@@ -143,10 +82,11 @@ fn format_uuid(bytes: [u8; 16]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{MarkerEvent, MarkerId, MarkerPhase};
+    use super::MarkerId;
+    use std::collections::HashSet;
 
     #[test]
-    fn creates_uuid_shaped_marker_ids() {
+    fn renders_a_uuid_shaped_string() {
         let id = MarkerId::new().to_string();
 
         assert_eq!(id.len(), 36);
@@ -157,16 +97,45 @@ mod tests {
     }
 
     #[test]
-    fn stores_marker_metadata() {
-        let marker = MarkerEvent::new(
-            MarkerId::new(),
-            "parse_document",
-            MarkerPhase::Begin,
-            Some("structural_parser".to_string()),
-        );
+    fn sets_uuid_v4_version_and_variant_bits() {
+        let id = MarkerId::new().to_string();
 
-        assert_eq!(marker.label, "parse_document");
-        assert_eq!(marker.phase, MarkerPhase::Begin);
-        assert_eq!(marker.origin.as_deref(), Some("structural_parser"));
+        // Version nibble at byte index 6 → string index 14.
+        assert_eq!(&id[14..15], "4");
+        // Variant nibble at byte index 8 → string index 19 ∈ {8, 9, a, b}.
+        let variant = id.as_bytes()[19] as char;
+        assert!(
+            matches!(variant, '8' | '9' | 'a' | 'b'),
+            "unexpected variant nibble: {variant}"
+        );
+    }
+
+    #[test]
+    fn as_str_and_display_agree() {
+        let id = MarkerId::new();
+
+        assert_eq!(id.as_str(), id.to_string());
+    }
+
+    #[test]
+    fn default_produces_a_fresh_id() {
+        let a = MarkerId::default();
+        let b = MarkerId::default();
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn successive_ids_are_unique() {
+        let ids: HashSet<_> = (0..256).map(|_| MarkerId::new()).collect();
+
+        assert_eq!(ids.len(), 256);
+    }
+
+    #[test]
+    fn cloned_ids_compare_equal() {
+        let id = MarkerId::new();
+
+        assert_eq!(id.clone(), id);
     }
 }

@@ -1,9 +1,12 @@
-use crate::constants::{CONFIG_FILE, CONTENT_DIR};
 use crate::events::EventLog;
+use crate::mlg::config::CONFIG_FILE;
 use std::collections::BTreeSet;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+
+/// Default directory containing MathLingua source files inside a collection.
+pub const CONTENT_DIR: &str = "content";
 
 /// Resolves the MathLingua source files requested by a command.
 ///

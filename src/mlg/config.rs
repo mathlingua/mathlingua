@@ -1,8 +1,10 @@
-use crate::constants::CONFIG_FILE;
 use crate::events::EventLog;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+
+/// Default MathLingua collection configuration filename.
+pub const CONFIG_FILE: &str = "mlg.json";
 
 /// Parsed contents of `mlg.json`.
 ///

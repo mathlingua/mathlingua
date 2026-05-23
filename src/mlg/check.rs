@@ -1,6 +1,6 @@
 use crate::backend::semantic::{ParsedSourceFile, check_documents};
-use crate::constants::CONFIG_FILE;
 use crate::environment::current_working_directory;
+use crate::mlg::config::CONFIG_FILE;
 use crate::events::{Audience, Event, EventLog, Level, MarkerRange};
 use crate::frontend::structural::parse_document;
 use crate::mlg::collection::{find_collection_root, resolve_source_files};

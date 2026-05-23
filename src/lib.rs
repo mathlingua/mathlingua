@@ -18,5 +18,4 @@ pub mod events;
 /// Frontend lexing, parsing, and structural AST modules.
 pub mod frontend;
 
-mod constants;
 mod mlg;

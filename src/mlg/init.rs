@@ -1,6 +1,6 @@
-use crate::constants::{CONFIG_FILE, CONTENT_DIR};
 use crate::events::EventLog;
-use crate::mlg::config::default_config_contents;
+use crate::mlg::collection::CONTENT_DIR;
+use crate::mlg::config::{CONFIG_FILE, default_config_contents};
 use std::fs;
 use std::io;
 use std::path::Path;

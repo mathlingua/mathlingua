@@ -1,7 +1,7 @@
 use crate::backend::view::{CollectionView, build_collection_view};
-use crate::events::EventLog;
+use crate::events::{EventLog, EventLogListener};
 use crate::mlg::collection::resolve_collection_content_files;
-use crate::mlg::util::current_working_directory;
+use crate::mlg::util::no_errors_since;
 use serde_json::to_writer_pretty;
 use std::fs;
 use std::io::{self, BufRead, BufReader};
@@ -11,22 +11,34 @@ use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-/// Default port used by `mlg view` when the caller does not specify one.
-const DEFAULT_PORT: u16 = 3000;
 /// Event origin assigned to output emitted by the Next.js child process.
 const NEXTJS_ORIGIN: &str = "nextjs";
 /// Event origin used by the viewer command.
 const ORIGIN: &str = "mlg_view";
 
-/// Starts the collection viewer from the process current working directory.
-pub fn view(event_log: &mut EventLog) -> io::Result<()> {
-    let Some(cwd) = current_working_directory(event_log) else {
-        return Err(io::Error::other(
-            "Failed to determine the current working directory",
-        ));
-    };
+/// Result of running [`view`].
+pub struct ViewResult {
+    /// Events emitted while running the viewer.
+    pub event_log: EventLog,
+    /// Whether the viewer ran without errors and exited cleanly.
+    pub successful: bool,
+}
 
-    view_in(&cwd, DEFAULT_PORT, event_log)
+/// Starts the collection viewer for the collection at `cwd`.
+pub fn view(cwd: &Path, port: u16, listener: Option<Box<dyn EventLogListener>>) -> ViewResult {
+    let mut event_log = EventLog::new();
+    if let Some(listener) = listener {
+        event_log.add_boxed_listener(listener);
+    }
+
+    let starting_event_count = event_log.events().len();
+    let io_ok = view_in(cwd, port, &mut event_log).is_ok();
+    let successful = io_ok && no_errors_since(&event_log, starting_event_count);
+
+    ViewResult {
+        event_log,
+        successful,
+    }
 }
 
 /// Builds viewer data for the collection at `cwd` and starts the web viewer.
@@ -34,7 +46,7 @@ pub fn view(event_log: &mut EventLog) -> io::Result<()> {
 /// The backend writes a temporary JSON payload, launches the embedded Next.js
 /// app with `MLG_VIEW_DATA_PATH` pointing at that payload, and keeps streaming
 /// child output until the server exits.
-pub fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Result<()> {
+pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Result<()> {
     let files = resolve_collection_content_files(cwd, event_log, ORIGIN);
     if files.is_empty() {
         return finish_view_setup_with_possible_errors(event_log);

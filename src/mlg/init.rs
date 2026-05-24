@@ -1,6 +1,7 @@
-use crate::events::EventLog;
+use crate::events::{EventLog, EventLogListener};
 use crate::mlg::collection::CONTENT_DIR;
 use crate::mlg::config::{CONFIG_FILE, default_config_contents};
+use crate::mlg::util::no_errors_since;
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -8,11 +9,36 @@ use std::path::Path;
 /// Event origin used by collection initialization.
 const ORIGIN: &str = "mlg_init";
 
-/// Initializes a MathLingua collection at the given root directory.
+/// Result of running [`init`].
+pub struct InitResult {
+    /// Events emitted while initializing the collection.
+    pub event_log: EventLog,
+    /// Whether initialization completed without errors.
+    pub successful: bool,
+}
+
+/// Initializes a MathLingua collection at the given working directory.
 ///
 /// Existing `mlg.json` and `content/` entries are left untouched.  Missing
-/// entries are created and reported through the event log.
-pub fn init(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
+/// entries are created and reported through the returned event log.
+pub fn init(cwd: &Path, listener: Option<Box<dyn EventLogListener>>) -> InitResult {
+    let mut event_log = EventLog::new();
+    if let Some(listener) = listener {
+        event_log.add_boxed_listener(listener);
+    }
+
+    let starting_event_count = event_log.events().len();
+    let io_ok = init_in(cwd, &mut event_log).is_ok();
+    let successful = io_ok && no_errors_since(&event_log, starting_event_count);
+
+    InitResult {
+        event_log,
+        successful,
+    }
+}
+
+/// Pushes initialization events into an existing event log.
+pub(super) fn init_in(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
     event_log.system_debug(
         Some(ORIGIN),
         format!("Initializing collection at {}", root.display()),
@@ -63,7 +89,7 @@ pub fn init(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{CONFIG_FILE, CONTENT_DIR, default_config_contents, init};
+    use super::{CONFIG_FILE, CONTENT_DIR, default_config_contents, init, init_in};
     use crate::events::{Event, EventLog};
     use std::fs;
     use std::path::{Path, PathBuf};
@@ -74,7 +100,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let mut event_log = EventLog::new();
 
-        init(temp_dir.path(), &mut event_log).expect("init should succeed");
+        init_in(temp_dir.path(), &mut event_log).expect("init should succeed");
 
         assert_eq!(
             event_log.events(),
@@ -96,13 +122,25 @@ mod tests {
     }
 
     #[test]
+    fn init_returns_a_successful_result_for_a_fresh_directory() {
+        let temp_dir = TestDir::new();
+
+        let result = init(temp_dir.path(), None);
+
+        assert!(result.successful);
+        assert!(temp_dir.path().join(CONFIG_FILE).is_file());
+        assert!(temp_dir.path().join(CONTENT_DIR).is_dir());
+        assert!(!result.event_log.has_errors());
+    }
+
+    #[test]
     fn init_skips_existing_config_and_content_directory() {
         let temp_dir = TestDir::new();
         fs::write(temp_dir.path().join(CONFIG_FILE), default_config_contents()).unwrap();
         fs::create_dir(temp_dir.path().join(CONTENT_DIR)).unwrap();
         let mut event_log = EventLog::new();
 
-        init(temp_dir.path(), &mut event_log).expect("init should succeed");
+        init_in(temp_dir.path(), &mut event_log).expect("init should succeed");
 
         assert_eq!(
             event_log.events(),

@@ -37,6 +37,15 @@ impl EventLog {
         self.listeners.push(Box::new(listener));
     }
 
+    /// Adds a pre-boxed listener and replays already-emitted events to it.
+    pub fn add_boxed_listener(&mut self, mut listener: Box<dyn EventLogListener>) {
+        for event in &self.events {
+            listener.on_event(event);
+        }
+
+        self.listeners.push(listener);
+    }
+
     /// Appends an event and notifies all listeners.
     pub fn push(&mut self, event: Event) {
         self.events.push(event.clone());

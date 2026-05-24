@@ -1,41 +1,9 @@
-use crate::events::EventLog;
-use std::env;
-use std::path::PathBuf;
+use crate::events::{EventLog, Level};
 
-/// Event origin used for diagnostics emitted by environment helpers.
-const ORIGIN: &str = "environment";
-
-/// Returns the process current working directory or emits a user-facing error.
-///
-/// Command entrypoints use this wrapper instead of calling `std::env::current_dir`
-/// directly so failures are routed through the shared event system.
-pub fn current_working_directory(event_log: &mut EventLog) -> Option<PathBuf> {
-    match env::current_dir() {
-        Ok(cwd) => Some(cwd),
-        Err(error) => {
-            event_log.user_error(
-                Some(ORIGIN),
-                format!("Failed to determine the current working directory: {error}"),
-            );
-            None
-        }
-    }
-}
-
-// =============================================================================
-
-#[cfg(test)]
-mod tests {
-    use super::current_working_directory;
-    use crate::events::EventLog;
-
-    #[test]
-    fn returns_the_current_working_directory_without_emitting_events() {
-        let mut event_log = EventLog::new();
-
-        let cwd = current_working_directory(&mut event_log);
-
-        assert!(cwd.is_some());
-        assert!(event_log.events().is_empty());
-    }
+/// Returns true when no error-level events were emitted after `starting_event_count`.
+pub(super) fn no_errors_since(event_log: &EventLog, starting_event_count: usize) -> bool {
+    !event_log.events()[starting_event_count..]
+        .iter()
+        .filter_map(|event| event.as_message())
+        .any(|message| message.level == Level::Error)
 }

@@ -1,43 +1,69 @@
 use crate::backend::semantic::{ParsedSourceFile, check_documents};
-use crate::events::{Audience, Event, EventLog, Level, MarkerRange};
+use crate::events::{Audience, Event, EventLog, EventLogListener, Level, MarkerRange};
 use crate::frontend::structural::parse_document;
 use crate::mlg::collection::{find_collection_root, resolve_source_files};
 use crate::mlg::config::CONFIG_FILE;
 use crate::mlg::config::validate_config_file;
-use crate::mlg::util::current_working_directory;
+use crate::mlg::util::no_errors_since;
 use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
 
 /// Event origin used by the check command.
 const ORIGIN: &str = "mlg_check";
 
-/// Summary returned by a completed check run.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Result of running [`check`].
 pub struct CheckResult {
+    /// Events emitted while checking.
+    pub event_log: EventLog,
+    /// Whether the run produced no error-level events.
+    pub successful: bool,
     /// Number of source files selected for checking.
     pub files_checked: usize,
     /// Marker range bounding the events emitted by the check run.
     pub marker_range: MarkerRange,
 }
 
-/// Runs `mlg check` from the process current working directory.
-pub fn check(paths: &[PathBuf], event_log: &mut EventLog) -> io::Result<CheckResult> {
-    let Some(cwd) = current_working_directory(event_log) else {
-        return Err(io::Error::other(
-            "Failed to determine the current working directory",
-        ));
-    };
-
-    Ok(check_in(&cwd, paths, event_log))
+/// Summary returned by the internal [`check_in`] helper.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct CheckSummary {
+    /// Number of source files selected for checking.
+    pub files_checked: usize,
+    /// Marker range bounding the events emitted by the check run.
+    pub marker_range: MarkerRange,
 }
 
-/// Runs `mlg check` from an explicit working directory.
+/// Runs `mlg check` from the given working directory.
+///
+/// The returned [`CheckResult`] owns the event log produced by the run, so
+/// callers can inspect events without threading a log through their code.
+pub fn check(
+    cwd: &Path,
+    paths: &[PathBuf],
+    listener: Option<Box<dyn EventLogListener>>,
+) -> CheckResult {
+    let mut event_log = EventLog::new();
+    if let Some(listener) = listener {
+        event_log.add_boxed_listener(listener);
+    }
+
+    let starting_event_count = event_log.events().len();
+    let summary = check_in(cwd, paths, &mut event_log);
+    let successful = no_errors_since(&event_log, starting_event_count);
+
+    CheckResult {
+        event_log,
+        successful,
+        files_checked: summary.files_checked,
+        marker_range: summary.marker_range,
+    }
+}
+
+/// Runs `mlg check` against an existing event log.
 ///
 /// The command validates collection configuration, resolves source files,
 /// structurally parses each file, runs backend semantic checks, and emits a
 /// success or issue-count summary.
-pub fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> CheckResult {
+pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> CheckSummary {
     let begin = event_log.begin_marker("check_in", Some(ORIGIN));
     let starting_event_count = event_log.events().len();
 
@@ -87,7 +113,7 @@ pub fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> Chec
 
     let end = event_log.end_marker(&begin, Some(ORIGIN));
 
-    CheckResult {
+    CheckSummary {
         files_checked,
         marker_range: MarkerRange::new(begin, end),
     }

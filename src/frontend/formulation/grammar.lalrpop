@@ -1,5 +1,4 @@
-use crate::frontend::formulation::ast::{self, BinaryOperator, ExpressionKind, FormOrDeclarationKind, HighPrecedenceInfix, NamedOperatorKind, PlaceholderFormKind, TupleExpressionElement, TupleFormElement, UnaryOperator};
-use crate::frontend::formulation::span::Span;
+use crate::frontend::formulation::ast::{self, BinaryOperator, ExpressionKind, FormOrDeclarationKind, HighPrecedenceInfix, NamedOperatorKind, PlaceholderFormKind, Span, TupleExpressionElement, TupleFormElement, UnaryOperator};
 use crate::frontend::formulation::token::{LexicalError, Token};
 
 grammar;

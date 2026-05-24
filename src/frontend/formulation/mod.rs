@@ -9,8 +9,6 @@ pub mod ast;
 pub mod lexer;
 /// Public parser helpers for each supported formulation grammar entrypoint.
 pub mod parser;
-/// Source span type used by formulation AST nodes.
-pub mod span;
 /// Token definitions for the formulation lexer.
 pub mod token;
 

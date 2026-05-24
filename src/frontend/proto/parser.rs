@@ -708,7 +708,9 @@ that:
 
     #[test]
     fn reports_unexpected_top_level_lines_and_recovers() {
-        let input = "  orphan\nDefines: f(x_)\n";
+        let input = r#"  orphan
+Defines: f(x_)
+"#;
 
         let (groups, diagnostics) = parse_input(input);
 
@@ -723,7 +725,9 @@ that:
 
     #[test]
     fn treats_text_with_colons_as_text_arguments_instead_of_groups() {
-        let input = "when:\n. \"label: value\"\n";
+        let input = r#"when:
+. "label: value"
+"#;
 
         let (groups, diagnostics) = parse_input(input);
 
@@ -736,7 +740,9 @@ that:
 
     #[test]
     fn reports_group_like_arguments_with_too_much_indent_and_continues() {
-        let input = "when:\n    child: value\n. x\n";
+        let input = r#"when:
+    child: value
+. x"#;
 
         let (groups, diagnostics) = parse_input(input);
 
@@ -759,7 +765,14 @@ that:
 
     #[test]
     fn parses_bracket_and_brace_multiline_formulations() {
-        let input = "Defines: [\n  f(x_)\n]\nwhen:\n. {\n    x in A\n  }\n";
+        let input = r#"Defines: [
+  f(x_)
+]
+when:
+. {
+    x in A
+  }
+"#;
 
         let (groups, diagnostics) = parse_input(input);
 
@@ -776,7 +789,12 @@ that:
 
     #[test]
     fn requires_matching_indent_to_close_multiline_formulations() {
-        let input = "when:\n. (\n    x in A\n    )\n  )\n";
+        let input = r#"when:
+. (
+    x in A
+    )
+  )
+"#;
 
         let (groups, diagnostics) = parse_input(input);
 

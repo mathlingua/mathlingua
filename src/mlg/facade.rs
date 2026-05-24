@@ -1,7 +1,7 @@
 use super::{CheckResult, check_in, init as init_collection, version as emit_version, view_in};
 use crate::cli::Command;
-use crate::environment::current_working_directory;
 use crate::events::{EventLog, Level};
+use crate::mlg::util::current_working_directory;
 use std::io;
 use std::path::{Path, PathBuf};
 

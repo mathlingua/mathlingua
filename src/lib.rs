@@ -11,8 +11,6 @@ pub use mlg::{CheckResult, Mlg, check, check_in, init, version, view, view_in};
 pub mod backend;
 /// Command-line argument definitions.
 pub mod cli;
-/// Environment helpers for command execution.
-pub mod environment;
 /// Event model and console rendering infrastructure.
 pub mod events;
 /// Frontend lexing, parsing, and structural AST modules.

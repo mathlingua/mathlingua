@@ -1,7 +1,7 @@
 use crate::backend::view::{CollectionView, build_collection_view};
-use crate::environment::current_working_directory;
 use crate::events::EventLog;
 use crate::mlg::collection::resolve_collection_content_files;
+use crate::mlg::util::current_working_directory;
 use serde_json::to_writer_pretty;
 use std::fs;
 use std::io::{self, BufRead, BufReader};

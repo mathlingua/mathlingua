@@ -19,5 +19,6 @@ mod collection;
 mod config;
 mod facade;
 mod init;
+mod util;
 mod version;
 mod view;

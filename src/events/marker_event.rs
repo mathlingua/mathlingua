@@ -45,7 +45,7 @@ impl MarkerEvent {
     }
 }
 
-// =============================================================================
+// ===============================[ tests ]=====================================
 
 #[cfg(test)]
 mod tests {
@@ -70,12 +70,8 @@ mod tests {
     #[test]
     fn accepts_label_as_string_slice_or_owned() {
         let from_slice = MarkerEvent::new(MarkerId::new(), "scan", MarkerPhase::End, None);
-        let from_owned = MarkerEvent::new(
-            MarkerId::new(),
-            "scan".to_string(),
-            MarkerPhase::End,
-            None,
-        );
+        let from_owned =
+            MarkerEvent::new(MarkerId::new(), "scan".to_string(), MarkerPhase::End, None);
 
         assert_eq!(from_slice.label, from_owned.label);
     }

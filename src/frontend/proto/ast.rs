@@ -100,6 +100,8 @@ pub struct Group {
     pub metadata: Metadata,
 }
 
+// =======================[ Display implementations ]===========================
+
 /// Writes indentation and dot-prefix text for display round-tripping.
 fn write_prefix(f: &mut fmt::Formatter<'_>, metadata: &Metadata) -> fmt::Result {
     let indent_width = if metadata.has_dot {
@@ -191,7 +193,7 @@ impl fmt::Display for Group {
     }
 }
 
-// =============================================================================
+// ===============================[ tests ]=====================================
 
 #[cfg(test)]
 mod tests {

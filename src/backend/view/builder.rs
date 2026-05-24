@@ -223,7 +223,7 @@ fn argument_view(argument: Argument, registry: &RenderRegistry) -> ArgumentView 
     }
 }
 
-// =============================================================================
+// ===============================[ tests ]=====================================
 
 #[cfg(test)]
 mod tests {

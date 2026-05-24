@@ -1,9 +1,9 @@
 use crate::backend::semantic::{ParsedSourceFile, check_documents};
 use crate::environment::current_working_directory;
-use crate::mlg::config::CONFIG_FILE;
 use crate::events::{Audience, Event, EventLog, Level, MarkerRange};
 use crate::frontend::structural::parse_document;
 use crate::mlg::collection::{find_collection_root, resolve_source_files};
+use crate::mlg::config::CONFIG_FILE;
 use crate::mlg::config::validate_config_file;
 use std::fs;
 use std::io;

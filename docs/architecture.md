@@ -305,8 +305,9 @@ viewer model generation.
 ```text
 src/backend/
 ├── collection.rs
-├── semantic.rs
 ├── semantic/
+│   ├── mod.rs
+│   └── ...
 └── view/
 ```
 
@@ -317,7 +318,7 @@ viewer can then run the collection's optional view-model generation pass.
 
 ### Semantic Checker
 
-Location: `src/backend/semantic.rs` and `src/backend/semantic/`
+Location: `src/backend/semantic/`
 
 The semantic checker runs after structural parsing. It does not mutate the AST;
 it walks parsed documents and emits events.

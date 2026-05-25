@@ -20,7 +20,7 @@ pub(in crate::backend::semantic) fn walk_form_or_declaration(
 
 /// Traverses nested forms inside a tuple form declaration.
 pub(in crate::backend::semantic) fn walk_tuple_form(
-    form: &crate::frontend::formulation::ast::TupleForm,
+    form: &TupleForm,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
     for element in &form.elements {

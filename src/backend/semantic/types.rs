@@ -1,21 +1,5 @@
 use super::*;
 
-/// A source file after the frontend has parsed it into a structural document.
-///
-/// Backend passes operate on this type instead of repeatedly reading or
-/// reparsing files.  It keeps the original source text for diagnostic location
-/// lookup, the filesystem path for reporting, and the parsed structural AST for
-/// semantic traversal.
-#[derive(Clone, Debug)]
-pub struct ParsedSourceFile {
-    /// Path of the file on disk, used in diagnostics and duplicate reports.
-    pub path: PathBuf,
-    /// Original file contents, used to recover line and column information.
-    pub source: String,
-    /// Structural representation produced by the frontend parser.
-    pub document: Document,
-}
-
 /// Canonical command signature plus the argument groups required by that form.
 ///
 /// The signature intentionally strips concrete `{...}` and `(...)` contents, so

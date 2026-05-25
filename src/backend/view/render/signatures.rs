@@ -3,28 +3,22 @@
 use super::*;
 
 /// Builds the canonical signature for any command header.
-pub(super) fn command_header_signature(
-    header: &crate::frontend::formulation::ast::CommandHeader,
-) -> String {
+pub(super) fn command_header_signature(header: &CommandHeader) -> String {
     match header {
-        crate::frontend::formulation::ast::CommandHeader::Command(command) => {
+        CommandHeader::Command(command) => {
             let mut signature = format!("\\{}", format_chain(&command.chain));
             add_header_tail_signature(&mut signature, &command.tail);
             signature
         }
-        crate::frontend::formulation::ast::CommandHeader::Infix(command) => {
+        CommandHeader::Infix(command) => {
             format!("\\:{}:/", format_chain(&command.chain))
         }
-        crate::frontend::formulation::ast::CommandHeader::Refined(command) => {
-            refined_command_header_signature(command)
-        }
+        CommandHeader::Refined(command) => refined_command_header_signature(command),
     }
 }
 
 /// Extracts ordered substitution parameter names from a command header.
-pub(super) fn command_header_parameters(
-    header: &crate::frontend::formulation::ast::CommandHeader,
-) -> Vec<String> {
+pub(super) fn command_header_parameters(header: &CommandHeader) -> Vec<String> {
     command_header_forms(header)
         .into_iter()
         .filter_map(primary_form_name)
@@ -84,10 +78,7 @@ pub(super) fn refined_command_part_signature(
 }
 
 /// Appends header tail labels to a canonical signature string.
-pub(super) fn add_header_tail_signature(
-    signature: &mut String,
-    tail: &[crate::frontend::formulation::ast::CommandHeaderTailPart],
-) {
+pub(super) fn add_header_tail_signature(signature: &mut String, tail: &[CommandHeaderTailPart]) {
     for part in tail {
         signature.push(':');
         signature.push_str(&format_chain(&part.chain));

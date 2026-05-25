@@ -39,16 +39,16 @@ pub(super) fn render_quoted_operator(operator: &str) -> String {
 }
 
 /// Renders subset/index-call syntax as bracketed LaTeX.
-pub(super) fn render_subset_call(call: &crate::frontend::formulation::ast::SubsetCall) -> String {
+pub(super) fn render_subset_call(call: &SubsetCall) -> String {
     match call {
-        crate::frontend::formulation::ast::SubsetCall::One { target, first, .. } => {
+        SubsetCall::One { target, first, .. } => {
             format!(
                 "{}[{}]",
                 escape_math_identifier(target),
                 escape_math_identifier(first)
             )
         }
-        crate::frontend::formulation::ast::SubsetCall::Two {
+        SubsetCall::Two {
             target,
             first,
             second,
@@ -59,7 +59,7 @@ pub(super) fn render_subset_call(call: &crate::frontend::formulation::ast::Subse
             escape_math_identifier(first),
             escape_math_identifier(second)
         ),
-        crate::frontend::formulation::ast::SubsetCall::Nested {
+        SubsetCall::Nested {
             target,
             outer,
             inner_target,
@@ -74,14 +74,12 @@ pub(super) fn render_subset_call(call: &crate::frontend::formulation::ast::Subse
 }
 
 /// Renders a placeholder form while hiding placeholder suffix markers.
-pub(super) fn render_placeholder_form(
-    form: &crate::frontend::formulation::ast::PlaceholderForm,
-) -> String {
+pub(super) fn render_placeholder_form(form: &PlaceholderForm) -> String {
     match &form.kind {
-        crate::frontend::formulation::ast::PlaceholderFormKind::Placeholder(placeholder) => {
+        PlaceholderFormKind::Placeholder(placeholder) => {
             render_form_placeholder_name(&placeholder.name)
         }
-        crate::frontend::formulation::ast::PlaceholderFormKind::Function {
+        PlaceholderFormKind::Function {
             placeholder,
             arguments,
         } => {

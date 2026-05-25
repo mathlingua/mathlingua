@@ -1582,7 +1582,7 @@ fn assume_fact_expression(
 }
 
 fn assume_expression_spec_statement(
-    statement: &crate::frontend::formulation::ast::SpecStatement,
+    statement: &SpecStatement,
     context: &mut TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
@@ -2070,9 +2070,7 @@ fn key_for_expression(expression: &Expression) -> String {
     }
 }
 
-fn key_for_named_expression_lhs(
-    lhs: &crate::frontend::formulation::ast::FunctionNamedExpressionElementLhs,
-) -> String {
+fn key_for_named_expression_lhs(lhs: &FunctionNamedExpressionElementLhs) -> String {
     format!("{lhs:?}")
 }
 

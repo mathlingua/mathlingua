@@ -95,14 +95,14 @@ pub(in crate::backend::semantic) fn walk_alias_kind(
 ) {
     match kind {
         AliasKind::Expression(alias) => match &alias.lhs {
-            crate::frontend::formulation::ast::ExpressionAliasLhs::Form(form) => {
+            ExpressionAliasLhs::Form(form) => {
                 walk_form_or_declaration(form, visit);
             }
-            crate::frontend::formulation::ast::ExpressionAliasLhs::Command(command) => {
+            ExpressionAliasLhs::Command(command) => {
                 let shape = shape_for_command_header_node(command);
                 visit(&shape);
             }
-            crate::frontend::formulation::ast::ExpressionAliasLhs::InfixCommand(command) => {
+            ExpressionAliasLhs::InfixCommand(command) => {
                 let shape = shape_for_infix_command_header(command);
                 visit(&shape);
             }

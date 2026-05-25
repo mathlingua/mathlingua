@@ -61,15 +61,9 @@ pub(super) fn primary_form_name(form: &FormOrDeclaration) -> Option<String> {
 }
 
 /// Extracts the primary name from a placeholder form.
-pub(super) fn primary_placeholder_form_name(
-    form: &crate::frontend::formulation::ast::PlaceholderForm,
-) -> Option<String> {
+pub(super) fn primary_placeholder_form_name(form: &PlaceholderForm) -> Option<String> {
     match &form.kind {
-        crate::frontend::formulation::ast::PlaceholderFormKind::Placeholder(placeholder) => {
-            Some(placeholder.name.clone())
-        }
-        crate::frontend::formulation::ast::PlaceholderFormKind::Function {
-            placeholder, ..
-        } => Some(placeholder.name.clone()),
+        PlaceholderFormKind::Placeholder(placeholder) => Some(placeholder.name.clone()),
+        PlaceholderFormKind::Function { placeholder, .. } => Some(placeholder.name.clone()),
     }
 }

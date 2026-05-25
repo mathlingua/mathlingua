@@ -1,9 +1,8 @@
-use crate::backend::semantic::{ParsedSourceFile, check_documents};
+use crate::backend::semantic::check_documents;
 use crate::backend::view::{CollectionView, build_collection_view};
 use crate::events::EventLog;
-use crate::frontend::structural::parse_document;
-use std::fs;
-use std::path::{Path, PathBuf};
+use crate::frontend::{ParsedSourceFile, parse_source_file};
+use std::path::PathBuf;
 
 /// A resolved MathLingua file collection as it moves through backend passes.
 ///
@@ -65,41 +64,4 @@ impl MlgFileCollection {
     pub(crate) fn build_view(&self, event_log: &mut EventLog) -> Option<CollectionView> {
         build_collection_view(&self.root, &self.parsed_files, event_log)
     }
-}
-
-/// Reads and structurally parses one source file.
-///
-/// Parser diagnostics are rewritten with the file path so downstream console
-/// output can report precise file locations.
-fn parse_source_file(
-    path: &Path,
-    event_log: &mut EventLog,
-    origin: &str,
-) -> Option<ParsedSourceFile> {
-    event_log.system_debug(Some(origin), format!("Parsing {}", path.display()));
-
-    let source = match fs::read_to_string(path) {
-        Ok(source) => source,
-        Err(error) => {
-            event_log.user_error_at_path(
-                Some(origin),
-                path.to_path_buf(),
-                format!("Failed to read file: {error}"),
-            );
-            return None;
-        }
-    };
-
-    let mut file_event_log = EventLog::new();
-    let document = parse_document(&source, &mut file_event_log);
-
-    for event in file_event_log.events() {
-        event_log.push(event.clone().with_file_path(path.to_path_buf()));
-    }
-
-    Some(ParsedSourceFile {
-        path: path.to_path_buf(),
-        source,
-        document,
-    })
 }

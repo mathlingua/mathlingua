@@ -226,7 +226,7 @@ pub(super) fn shape_for_refined_command_part(
 /// `forms` collection rather than expression values.
 pub(super) fn add_heading_curly_groups(
     arg_groups: &mut Vec<ArgGroupShape>,
-    groups: &[crate::frontend::formulation::ast::CurlyHeadingArgs],
+    groups: &[CurlyHeadingArgs],
 ) {
     for args in groups {
         arg_groups.push(ArgGroupShape {
@@ -239,7 +239,7 @@ pub(super) fn add_heading_curly_groups(
 /// Appends curly argument-group shapes from a command expression.
 pub(super) fn add_expression_curly_groups(
     arg_groups: &mut Vec<ArgGroupShape>,
-    groups: &[crate::frontend::formulation::ast::CurlyExpressionArgs],
+    groups: &[CurlyExpressionArgs],
 ) {
     for args in groups {
         arg_groups.push(ArgGroupShape {
@@ -252,7 +252,7 @@ pub(super) fn add_expression_curly_groups(
 /// Appends parenthesized argument-group shapes from a command expression.
 pub(super) fn add_expression_paren_groups(
     arg_groups: &mut Vec<ArgGroupShape>,
-    groups: &[crate::frontend::formulation::ast::ParenExpressionArgs],
+    groups: &[ParenExpressionArgs],
 ) {
     for args in groups {
         arg_groups.push(ArgGroupShape {

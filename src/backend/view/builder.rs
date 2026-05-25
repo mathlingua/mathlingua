@@ -2,10 +2,8 @@ use super::model::{ArgumentView, CollectionView, FileView, GroupView, SectionVie
 use super::render::{
     RenderRegistry, build_render_registry, render_formulation_latex, render_group_heading_latex,
 };
-use crate::backend::semantic::ParsedSourceFile;
 use crate::events::{Audience, Event, EventLog, Level};
-use crate::frontend::proto::Parser as ProtoParser;
-use crate::frontend::proto::ast::{Argument, Group, Section};
+use crate::frontend::{ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection};
 use std::path::Path;
 
 /// Builds the complete serialized view model for a MathLingua collection.
@@ -93,7 +91,7 @@ fn relative_path(collection_root: &Path, file: &Path) -> String {
 /// The first section label becomes the group kind, and its inline argument is
 /// supplied to heading rendering so `Refines` cards can combine their own
 /// `called:` text with the called text of the thing being refined.
-fn group_view(group: Group, registry: &RenderRegistry) -> GroupView {
+fn group_view(group: ProtoGroup, registry: &RenderRegistry) -> GroupView {
     let kind = group
         .sections
         .first()
@@ -122,7 +120,7 @@ fn group_view(group: Group, registry: &RenderRegistry) -> GroupView {
 }
 
 /// Converts one proto section into a rendered section view.
-fn section_view(section: Section, registry: &RenderRegistry) -> SectionView {
+fn section_view(section: ProtoSection, registry: &RenderRegistry) -> SectionView {
     let inline_latex = section
         .inline_argument
         .as_deref()
@@ -144,14 +142,14 @@ fn section_view(section: Section, registry: &RenderRegistry) -> SectionView {
 ///
 /// Formulation arguments are rendered to LaTeX when possible; text arguments are
 /// passed through as display text; nested groups are recursively converted.
-fn argument_view(argument: Argument, registry: &RenderRegistry) -> ArgumentView {
+fn argument_view(argument: ProtoArgument, registry: &RenderRegistry) -> ArgumentView {
     match argument {
-        Argument::Formulation(formulation) => ArgumentView::Formulation {
+        ProtoArgument::Formulation(formulation) => ArgumentView::Formulation {
             latex: render_formulation_latex(&formulation.text, registry),
             text: formulation.text,
         },
-        Argument::Text(text) => ArgumentView::Text { text: text.text },
-        Argument::Group(group) => ArgumentView::Group {
+        ProtoArgument::Text(text) => ArgumentView::Text { text: text.text },
+        ProtoArgument::Group(group) => ArgumentView::Group {
             heading: group.heading,
             sections: group
                 .sections
@@ -167,9 +165,8 @@ fn argument_view(argument: Argument, registry: &RenderRegistry) -> ArgumentView 
 #[cfg(test)]
 mod tests {
     use super::build_collection_view;
-    use crate::backend::semantic::ParsedSourceFile;
     use crate::events::EventLog;
-    use crate::frontend::structural::parse_document;
+    use crate::frontend::{ParsedSourceFile, parse_document};
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::time::{SystemTime, UNIX_EPOCH};

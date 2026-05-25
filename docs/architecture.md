@@ -212,6 +212,12 @@ formulation snippets
 
 The module root is `src/frontend/mod.rs`.
 
+The frontend root is the API used by the rest of the crate. It exposes
+`parse_document` for in-memory source text, `parse_source_file` for filesystem
+source files, `ParsedSourceFile`, and the structural/formulation AST types.
+Backend code should import from `frontend::...` rather than reaching into
+`frontend::structural` or `frontend::formulation` internals.
+
 ### Proto Layer
 
 Location: `src/frontend/proto/`
@@ -338,8 +344,8 @@ The checker has three broad passes:
 Important files:
 
 - `check.rs` orchestrates the semantic passes.
-- `types.rs` defines checker data structures such as `ParsedSourceFile`,
-  `SignatureRegistry`, `DefinitionEntry`, `TypeFact`, and extension/spec rules.
+- `types.rs` defines checker data structures such as `SignatureRegistry`,
+  `DefinitionEntry`, `TypeFact`, and extension/spec rules.
 - `shapes.rs` computes canonical command signatures and argument shapes.
 - `validation.rs` validates references for existence and argument shape.
 - `typecheck.rs` implements symbol scope, facts, substitutions, requirements,
@@ -433,7 +439,7 @@ main.rs
   -> validate_config_file when a collection root exists
   -> MlgFileCollection::run_check_passes
       -> read each .mlg file
-      -> frontend::structural::parse_document
+      -> frontend::parse_source_file
       -> backend::semantic::check_documents
   -> EventLog summary
 ```
@@ -458,7 +464,7 @@ main.rs
   -> validate_config_file when a collection root exists
   -> MlgFileCollection::run_check_passes
       -> read each .mlg file
-      -> frontend::structural::parse_document
+      -> frontend::parse_source_file
       -> backend::semantic::check_documents
   -> MlgFileCollection::build_view
       -> backend::view::build_collection_view

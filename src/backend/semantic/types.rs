@@ -94,6 +94,34 @@ pub(super) enum TypeFact {
         /// Right-hand target key.
         target: String,
     },
+    /// A subject has a function type from input specs to one output spec.
+    FunctionType {
+        /// Function subject key.
+        subject: String,
+        /// Input specs the call arguments must satisfy.
+        inputs: Vec<FunctionTypeFactSpec>,
+        /// Output spec produced for a valid call.
+        output: FunctionTypeFactSpec,
+    },
+}
+
+/// Spec pattern used inside a function type fact.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub(super) enum FunctionTypeFactSpec {
+    /// Type spec for a parameter or result.
+    Is {
+        /// Full type key.
+        ty: String,
+        /// Canonical command signature for the type.
+        signature: String,
+    },
+    /// Quoted-operator spec for a parameter or result.
+    Spec {
+        /// Quoted operator text.
+        operator: String,
+        /// Right-hand target key.
+        target: String,
+    },
 }
 
 /// Type-check-time rewrite rule introduced by `:->`.

@@ -93,6 +93,11 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             TypeExpression::RefinedCommand(command) => {
                 render_is_refined_command(subject, command, registry)
             }
+            TypeExpression::Function(function_type) => format!(
+                "{} \\textrm{{ is }} {}",
+                render_expression(subject, registry),
+                render_function_type(function_type, registry)
+            ),
         },
     }
 }

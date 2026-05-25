@@ -93,5 +93,21 @@ pub(in crate::backend::semantic) fn walk_type_expression(
             visit(&shape);
             walk_refined_command_expression_arguments(command, visit);
         }
+        TypeExpression::Function(function_type) => {
+            for spec in function_type
+                .inputs
+                .iter()
+                .chain(std::iter::once(&function_type.output))
+            {
+                walk_function_type_spec(spec, visit);
+            }
+        }
+    }
+}
+
+fn walk_function_type_spec(spec: &FunctionTypeSpec, visit: &mut impl FnMut(&SignatureShape)) {
+    match &spec.kind {
+        FunctionTypeSpecKind::Is(ty) => walk_type_expression(ty, visit),
+        FunctionTypeSpecKind::Spec { .. } => {}
     }
 }

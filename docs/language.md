@@ -22,8 +22,8 @@ A MathLingua source file has two syntax layers.
 1. The structural layer is line-oriented. It recognizes groups such as
    `Describes`, `Theorem`, `Documented`, and `forAll`.
 2. The formulation layer is expression-oriented. It recognizes mathematical
-   forms such as `f(x_)`, `x "in" A`, `\function:on{A}:to{B}`, and
-   `G is \set via X`.
+   forms such as `f(x_)`, `x "in" A`, `\function:on{A}:to{B}`,
+   `(_ "in" A) => (_ "in" B)`, and `G is \set via X`.
 
 Most source lines are first parsed structurally. Whenever a section expects a
 formula, command, alias, or header, the structural parser delegates that text to
@@ -664,6 +664,23 @@ extends: x "in" X
 
 That records the corresponding spec fact as an implication for values of the
 owning type.
+
+Function-like types can describe their call behavior with a function type on
+the right-hand side of an `is` statement:
+
+```text
+[\function:on{A}:to{B}]
+Describes: f(x__)
+when: A, B is \set
+extends: f is (_ "in" A) => (_ "in" B)
+Documented:
+. called: "function"
+```
+
+The input side contains one or more specs and the output side contains exactly
+one spec. Both sides must be parenthesized, and each spec parameter must be
+written as `_`. If the checker knows `f is \function:on{A}:to{B}` and
+`y "in" A`, it can validate `f(y)` and prove `f(y) "in" B`.
 
 ## Specification Operators
 

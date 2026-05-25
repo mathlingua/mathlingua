@@ -501,7 +501,12 @@ Notes:
 
 - the parser looks for the exact top-level substring ` is ` with spaces around it
 - the left-hand side of `is` may be a single form, a single placeholder form, a comma-separated list mixing those, or an operator
-- the right-hand side of `is` must parse as a command expression, not a general expression
+- the right-hand side of `is` must parse as a command expression or a function
+  type expression, not a general expression
+- a function type has one parenthesized input spec list and one parenthesized
+  output spec: `(_ "in" A, _ "in" B) => (_ "in" C)`
+- function type specs use `_` as the parameter and may be either `_ is Type` or
+  `_ "operator" Target`
 - if no top-level ` is ` is found, the parser falls back to the quoted-operator spec form
 - the quoted operator is extracted by raw scanning, so it may contain spaces or punctuation
 
@@ -509,6 +514,7 @@ Examples:
 
 - `f(x_) is \function:on{A}:to{B}`
 - `f(x_), y_ is \function:on{A}:to{B}`
+- `f is (_ "in" A) => (_ "in" B)`
 - `+ is \operator`
 - `x "in" A`
 - `x "less than" A`
@@ -518,7 +524,7 @@ Examples:
 Same as `parse_is_or_spec`, except:
 
 ```text
-TypeExpression ::= CommandExpression | RefinedCommandExpression
+TypeExpression ::= CommandExpression | RefinedCommandExpression | FunctionTypeExpression
 ```
 
 ### `parse_is_via_statement`

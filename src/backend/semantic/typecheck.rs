@@ -154,7 +154,9 @@ fn collect_type_extension_rules(
 
     for fact in facts_from_is_or_via_item(extends) {
         let subject = match &fact {
-            TypeFact::Is { subject, .. } | TypeFact::Spec { subject, .. } => subject.clone(),
+            TypeFact::Is { subject, .. }
+            | TypeFact::Spec { subject, .. }
+            | TypeFact::FunctionType { subject, .. } => subject.clone(),
         };
         registry.extension_rules.push(TypeExtensionRule {
             subtype_signature: info.signature.clone(),
@@ -899,6 +901,9 @@ fn check_expression(
             for argument in arguments {
                 check_expression(argument, context, path, locator, registry, event_log);
             }
+            check_function_call_inputs(
+                name, arguments, context, path, locator, registry, event_log,
+            );
         }
         ExpressionKind::FunctionNamedCall { name, elements } => {
             check_name(name, context, path, locator, event_log);
@@ -970,6 +975,7 @@ fn check_expression(
                 event_log,
             );
             check_name(&statement.name, context, path, locator, event_log);
+            check_function_call_spec_result(statement, context, path, locator, registry, event_log);
         }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
@@ -982,6 +988,7 @@ fn check_expression(
         ExpressionKind::IsType { subject, ty } => {
             check_expression(subject, context, path, locator, registry, event_log);
             check_type_expression(ty, context, path, locator, registry, event_log);
+            check_function_call_result(subject, ty, context, path, locator, registry, event_log);
         }
     }
 }
@@ -1007,6 +1014,163 @@ fn check_type_expression(
                 check_expression(expression, context, path, locator, registry, event_log);
             }
         }
+        TypeExpression::Function(function_type) => {
+            for spec in function_type
+                .inputs
+                .iter()
+                .chain(std::iter::once(&function_type.output))
+            {
+                check_function_type_spec(spec, context, path, locator, registry, event_log);
+            }
+        }
+    }
+}
+
+fn check_function_type_spec(
+    spec: &FunctionTypeSpec,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    if spec.subject != "_" {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&spec.subject),
+            "Function type parameters must be `_`",
+        );
+    }
+
+    match &spec.kind {
+        FunctionTypeSpecKind::Is(ty) => {
+            check_type_expression(ty, context, path, locator, registry, event_log);
+        }
+        FunctionTypeSpecKind::Spec { target, .. } => {
+            check_name(target, context, path, locator, event_log);
+        }
+    }
+}
+
+fn check_function_call_inputs(
+    name: &str,
+    arguments: &[Expression],
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let function_types = function_type_facts_for_subject(name, context, registry);
+    for function_type in function_types {
+        let TypeFact::FunctionType {
+            inputs, output: _, ..
+        } = function_type
+        else {
+            continue;
+        };
+        if inputs.len() != arguments.len() {
+            continue;
+        }
+
+        for (input, argument) in inputs.iter().zip(arguments) {
+            let required = instantiate_function_type_spec(input, &key_for_expression(argument));
+            if !prove_fact(&required, context, registry) {
+                emit_error(
+                    event_log,
+                    path,
+                    locator.locate_symbol(name),
+                    format!(
+                        "Could not prove requirement `{}` for function `{name}`",
+                        format_fact(&required)
+                    ),
+                );
+            }
+        }
+    }
+}
+
+fn check_function_call_result(
+    subject: &Expression,
+    ty: &TypeExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let ExpressionKind::FunctionCall { name, .. } = &subject.kind else {
+        return;
+    };
+    let Some(required) = fact_from_type_assertion(subject, ty) else {
+        return;
+    };
+    check_function_call_result_fact(
+        name, subject, required, context, path, locator, registry, event_log,
+    );
+}
+
+fn check_function_call_spec_result(
+    statement: &SpecStatement,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let ExpressionKind::FunctionCall { name, .. } = &statement.subject.kind else {
+        return;
+    };
+    let required = TypeFact::Spec {
+        subject: key_for_expression(&statement.subject),
+        operator: statement.operator.clone(),
+        target: statement.name.clone(),
+    };
+    check_function_call_result_fact(
+        name,
+        &statement.subject,
+        required,
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
+}
+
+fn check_function_call_result_fact(
+    name: &str,
+    subject: &Expression,
+    required: TypeFact,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let function_types = function_type_facts_for_subject(name, context, registry);
+    let mut found_matching_arity = false;
+    for function_type in &function_types {
+        if function_type_call_arity(function_type) == Some(function_call_arity(subject)) {
+            found_matching_arity = true;
+        }
+        let mut seen = HashSet::new();
+        if function_type_implies_required(function_type, &required, context, registry, &mut seen) {
+            return;
+        }
+    }
+
+    if found_matching_arity {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(name),
+            format!(
+                "Could not prove function call result `{}`",
+                format_fact(&required)
+            ),
+        );
     }
 }
 
@@ -1151,6 +1315,10 @@ fn fact_implies(
     }
     if !seen.insert(fact.clone()) {
         return false;
+    }
+
+    if function_type_implies_required(&fact, required, context, registry, seen) {
+        return true;
     }
 
     for extended in reduce_extension_fact(&fact, context, registry) {
@@ -1298,6 +1466,145 @@ fn fact_has_type_signature(
         .any(|fact| fact_has_type_signature(fact, subject, signature, context, registry, seen))
 }
 
+fn function_type_facts_for_subject(
+    subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let subject = context.normalize_key(subject);
+    let mut seen = HashSet::new();
+    let mut result = Vec::new();
+
+    for fact in &context.facts {
+        collect_function_type_facts(fact, &subject, context, registry, &mut seen, &mut result);
+    }
+
+    result
+}
+
+fn collect_function_type_facts(
+    fact: &TypeFact,
+    subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+    result: &mut Vec<TypeFact>,
+) {
+    let fact = context.normalize_fact(fact);
+    if !seen.insert(fact.clone()) {
+        return;
+    }
+
+    if matches!(
+        &fact,
+        TypeFact::FunctionType {
+            subject: fact_subject,
+            ..
+        } if fact_subject == subject
+    ) {
+        result.push(fact.clone());
+    }
+
+    for extended in reduce_extension_fact(&fact, context, registry) {
+        collect_function_type_facts(&extended, subject, context, registry, seen, result);
+    }
+}
+
+fn function_type_implies_required(
+    fact: &TypeFact,
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> bool {
+    let TypeFact::FunctionType {
+        subject,
+        inputs,
+        output,
+    } = fact
+    else {
+        return false;
+    };
+
+    let Some((function_name, arguments)) = function_call_parts_from_fact(required) else {
+        return false;
+    };
+    if context.normalize_key(&function_name) != context.normalize_key(subject)
+        || arguments.len() != inputs.len()
+    {
+        return false;
+    }
+
+    for (input, argument) in inputs.iter().zip(&arguments) {
+        let required_input = instantiate_function_type_spec(input, argument);
+        if !prove_fact(&required_input, context, registry) {
+            return false;
+        }
+    }
+
+    let output_subject = fact_subject(required);
+    let output_fact = instantiate_function_type_spec(output, output_subject);
+    fact_implies(&output_fact, required, context, registry, seen)
+}
+
+fn function_call_parts_from_fact(fact: &TypeFact) -> Option<(String, Vec<String>)> {
+    function_call_parts_from_key(fact_subject(fact))
+}
+
+fn fact_subject(fact: &TypeFact) -> &str {
+    match fact {
+        TypeFact::Is { subject, .. }
+        | TypeFact::Spec { subject, .. }
+        | TypeFact::FunctionType { subject, .. } => subject,
+    }
+}
+
+fn function_call_parts_from_key(key: &str) -> Option<(String, Vec<String>)> {
+    let open_index = key.find('(')?;
+    let name = key[..open_index].trim();
+    if name.is_empty() {
+        return None;
+    }
+
+    let rest = &key[open_index..];
+    let end = find_balanced_group_end(rest, '(', ')')?;
+    if end != rest.len() {
+        return None;
+    }
+
+    let inside = &rest['('.len_utf8()..end - ')'.len_utf8()];
+    Some((name.to_owned(), split_key_arg_list(inside)))
+}
+
+fn function_type_call_arity(fact: &TypeFact) -> Option<usize> {
+    match fact {
+        TypeFact::FunctionType { inputs, .. } => Some(inputs.len()),
+        _ => None,
+    }
+}
+
+fn function_call_arity(expression: &Expression) -> usize {
+    match &expression.kind {
+        ExpressionKind::FunctionCall { arguments, .. } => arguments.len(),
+        _ => 0,
+    }
+}
+
+fn instantiate_function_type_spec(spec: &FunctionTypeFactSpec, subject: &str) -> TypeFact {
+    match spec {
+        FunctionTypeFactSpec::Is { ty, signature } => TypeFact::Is {
+            subject: subject.to_owned(),
+            ty: ty.clone(),
+            signature: signature.clone(),
+        },
+        FunctionTypeFactSpec::Spec { operator, target } => TypeFact::Spec {
+            subject: subject.to_owned(),
+            operator: operator.clone(),
+            target: target.clone(),
+        },
+    }
+}
+
 #[derive(Clone, Default)]
 struct TypeContext {
     facts: Vec<TypeFact>,
@@ -1339,6 +1646,31 @@ impl TypeContext {
                 target,
             } => TypeFact::Spec {
                 subject: self.normalize_key(subject),
+                operator: operator.clone(),
+                target: self.normalize_key(target),
+            },
+            TypeFact::FunctionType {
+                subject,
+                inputs,
+                output,
+            } => TypeFact::FunctionType {
+                subject: self.normalize_key(subject),
+                inputs: inputs
+                    .iter()
+                    .map(|spec| self.normalize_function_type_spec(spec))
+                    .collect(),
+                output: self.normalize_function_type_spec(output),
+            },
+        }
+    }
+
+    fn normalize_function_type_spec(&self, spec: &FunctionTypeFactSpec) -> FunctionTypeFactSpec {
+        match spec {
+            FunctionTypeFactSpec::Is { ty, signature } => FunctionTypeFactSpec::Is {
+                ty: self.normalize_key(ty),
+                signature: signature.clone(),
+            },
+            FunctionTypeFactSpec::Spec { operator, target } => FunctionTypeFactSpec::Spec {
                 operator: operator.clone(),
                 target: self.normalize_key(target),
             },
@@ -1772,6 +2104,22 @@ fn declare_names_from_type_expression(ty: &TypeExpression, context: &mut TypeCon
                 declare_names_from_expression(expression, context);
             }
         }
+        TypeExpression::Function(function_type) => {
+            for spec in function_type
+                .inputs
+                .iter()
+                .chain(std::iter::once(&function_type.output))
+            {
+                declare_names_from_function_type_spec(spec, context);
+            }
+        }
+    }
+}
+
+fn declare_names_from_function_type_spec(spec: &FunctionTypeSpec, context: &mut TypeContext) {
+    match &spec.kind {
+        FunctionTypeSpecKind::Is(ty) => declare_names_from_type_expression(ty, context),
+        FunctionTypeSpecKind::Spec { target, .. } => context.declare_name(target.clone()),
     }
 }
 
@@ -1821,6 +2169,34 @@ fn substitute_fact(fact: &TypeFact, substitutions: &HashMap<String, String>) -> 
             target,
         } => TypeFact::Spec {
             subject: substitute_key(subject, substitutions),
+            operator: operator.clone(),
+            target: substitute_key(target, substitutions),
+        },
+        TypeFact::FunctionType {
+            subject,
+            inputs,
+            output,
+        } => TypeFact::FunctionType {
+            subject: substitute_key(subject, substitutions),
+            inputs: inputs
+                .iter()
+                .map(|spec| substitute_function_type_spec(spec, substitutions))
+                .collect(),
+            output: substitute_function_type_spec(output, substitutions),
+        },
+    }
+}
+
+fn substitute_function_type_spec(
+    spec: &FunctionTypeFactSpec,
+    substitutions: &HashMap<String, String>,
+) -> FunctionTypeFactSpec {
+    match spec {
+        FunctionTypeFactSpec::Is { ty, signature } => FunctionTypeFactSpec::Is {
+            ty: substitute_key(ty, substitutions),
+            signature: signature.clone(),
+        },
+        FunctionTypeFactSpec::Spec { operator, target } => FunctionTypeFactSpec::Spec {
             operator: operator.clone(),
             target: substitute_key(target, substitutions),
         },
@@ -1906,6 +2282,23 @@ fn facts_from_is_or_spec(spec: &IsOrSpec) -> Vec<TypeFact> {
 }
 
 fn facts_from_is_statement(statement: &IsStatement) -> Vec<TypeFact> {
+    if let TypeExpression::Function(function_type) = &statement.ty {
+        let (Some(inputs), Some(output)) = (
+            function_type_inputs_as_facts(function_type),
+            function_type_spec_as_fact(&function_type.output),
+        ) else {
+            return Vec::new();
+        };
+        return subject_keys_for_is_subject(&statement.subject)
+            .into_iter()
+            .map(|subject| TypeFact::FunctionType {
+                subject,
+                inputs: inputs.clone(),
+                output: output.clone(),
+            })
+            .collect();
+    }
+
     let Some((ty, signature)) = key_for_type_expression(&statement.ty) else {
         return Vec::new();
     };
@@ -1921,20 +2314,55 @@ fn facts_from_is_statement(statement: &IsStatement) -> Vec<TypeFact> {
 
 fn fact_from_expression(expression: &Expression) -> Option<TypeFact> {
     match &expression.kind {
-        ExpressionKind::IsType { subject, ty } => {
-            let (ty, signature) = key_for_type_expression(ty)?;
-            Some(TypeFact::Is {
-                subject: key_for_expression(subject),
-                ty,
-                signature,
-            })
-        }
+        ExpressionKind::IsType { subject, ty } => fact_from_type_assertion(subject, ty),
         ExpressionKind::SpecStatement(statement) => Some(TypeFact::Spec {
             subject: key_for_expression(&statement.subject),
             operator: statement.operator.clone(),
             target: statement.name.clone(),
         }),
         _ => None,
+    }
+}
+
+fn fact_from_type_assertion(subject: &Expression, ty: &TypeExpression) -> Option<TypeFact> {
+    if let TypeExpression::Function(function_type) = ty {
+        let inputs = function_type_inputs_as_facts(function_type)?;
+        let output = function_type_spec_as_fact(&function_type.output)?;
+        return Some(TypeFact::FunctionType {
+            subject: key_for_expression(subject),
+            inputs,
+            output,
+        });
+    }
+
+    let (ty, signature) = key_for_type_expression(ty)?;
+    Some(TypeFact::Is {
+        subject: key_for_expression(subject),
+        ty,
+        signature,
+    })
+}
+
+fn function_type_inputs_as_facts(
+    function_type: &FunctionType,
+) -> Option<Vec<FunctionTypeFactSpec>> {
+    function_type
+        .inputs
+        .iter()
+        .map(function_type_spec_as_fact)
+        .collect()
+}
+
+fn function_type_spec_as_fact(spec: &FunctionTypeSpec) -> Option<FunctionTypeFactSpec> {
+    match &spec.kind {
+        FunctionTypeSpecKind::Is(ty) => {
+            let (ty, signature) = key_for_type_expression(ty)?;
+            Some(FunctionTypeFactSpec::Is { ty, signature })
+        }
+        FunctionTypeSpecKind::Spec { operator, target } => Some(FunctionTypeFactSpec::Spec {
+            operator: operator.clone(),
+            target: target.clone(),
+        }),
     }
 }
 
@@ -1964,7 +2392,7 @@ fn key_for_type_expression(ty: &TypeExpression) -> Option<(String, String)> {
             key_for_command_expression(command),
             shape_for_command_expression(command).signature,
         )),
-        TypeExpression::RefinedCommand(_) => None,
+        TypeExpression::RefinedCommand(_) | TypeExpression::Function(_) => None,
     }
 }
 
@@ -2065,7 +2493,27 @@ fn key_for_expression(expression: &Expression) -> String {
             key_for_expression(subject),
             key_for_type_expression(ty)
                 .map(|(key, _)| key)
-                .unwrap_or_else(|| "<refined>".to_owned())
+                .unwrap_or_else(|| key_for_non_command_type_expression(ty))
+        ),
+    }
+}
+
+fn key_for_non_command_type_expression(ty: &TypeExpression) -> String {
+    match ty {
+        TypeExpression::Command(command) => key_for_command_expression(command),
+        TypeExpression::RefinedCommand(_) => "<refined>".to_owned(),
+        TypeExpression::Function(function_type) => format_function_type(
+            &function_type
+                .inputs
+                .iter()
+                .filter_map(function_type_spec_as_fact)
+                .collect::<Vec<_>>(),
+            &function_type_spec_as_fact(&function_type.output).unwrap_or(
+                FunctionTypeFactSpec::Spec {
+                    operator: "?".to_owned(),
+                    target: "?".to_owned(),
+                },
+            ),
         ),
     }
 }
@@ -2479,5 +2927,29 @@ fn format_fact(fact: &TypeFact) -> String {
             operator,
             target,
         } => format!("{subject} \"{operator}\" {target}"),
+        TypeFact::FunctionType {
+            subject,
+            inputs,
+            output,
+        } => format!("{subject} is {}", format_function_type(inputs, output)),
+    }
+}
+
+fn format_function_type(inputs: &[FunctionTypeFactSpec], output: &FunctionTypeFactSpec) -> String {
+    format!(
+        "({}) => ({})",
+        inputs
+            .iter()
+            .map(format_function_type_spec)
+            .collect::<Vec<_>>()
+            .join(", "),
+        format_function_type_spec(output)
+    )
+}
+
+fn format_function_type_spec(spec: &FunctionTypeFactSpec) -> String {
+    match spec {
+        FunctionTypeFactSpec::Is { ty, .. } => format!("_ is {ty}"),
+        FunctionTypeFactSpec::Spec { operator, target } => format!("_ \"{operator}\" {target}"),
     }
 }

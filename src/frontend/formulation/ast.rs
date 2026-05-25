@@ -184,6 +184,44 @@ pub enum TypeExpression {
     Command(CommandExpression),
     /// Refined command type.
     RefinedCommand(RefinedCommandExpression),
+    /// Function type from input specs to one output spec.
+    Function(FunctionType),
+}
+
+/// Function type expression such as `(_ "in" A) => (_ "in" B)`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FunctionType {
+    /// Source span covered by the function type.
+    pub span: Span,
+    /// Input specifications accepted by the function.
+    pub inputs: Vec<FunctionTypeSpec>,
+    /// Output specification produced by the function.
+    pub output: FunctionTypeSpec,
+}
+
+/// One spec inside a function type.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FunctionTypeSpec {
+    /// Source span covered by the spec.
+    pub span: Span,
+    /// Parameter text. The semantic checker requires this to be `_`.
+    pub subject: String,
+    /// Spec shape attached to the parameter.
+    pub kind: FunctionTypeSpecKind,
+}
+
+/// Function type spec variants.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum FunctionTypeSpecKind {
+    /// Type spec of the form `_ is \type`.
+    Is(Box<TypeExpression>),
+    /// Quoted-operator spec of the form `_ "operator" Target`.
+    Spec {
+        /// Quoted operator text.
+        operator: String,
+        /// Right-hand target name.
+        target: String,
+    },
 }
 
 // ===============================[ command headers ]=====================================

@@ -28,6 +28,11 @@ pub(super) fn render_is_statement(statement: &IsStatement, registry: &RenderRegi
         TypeExpression::RefinedCommand(command) => {
             render_is_refined_command_with_subject_latex(subject_latex, command, registry)
         }
+        TypeExpression::Function(function_type) => format!(
+            "{} \\textrm{{ is }} {}",
+            subject_latex,
+            render_function_type(function_type, registry)
+        ),
     }
 }
 
@@ -211,4 +216,45 @@ pub(super) fn render_is_refined_command_with_subject_latex(
         subject_latex,
         render_refined_command_called(command, registry)
     )
+}
+
+/// Renders a function type expression.
+pub(super) fn render_function_type(
+    function_type: &FunctionType,
+    registry: &RenderRegistry,
+) -> String {
+    format!(
+        "\\left({}\\right) \\Rightarrow \\left({}\\right)",
+        function_type
+            .inputs
+            .iter()
+            .map(|spec| render_function_type_spec(spec, registry))
+            .collect::<Vec<_>>()
+            .join(", "),
+        render_function_type_spec(&function_type.output, registry)
+    )
+}
+
+fn render_function_type_spec(spec: &FunctionTypeSpec, registry: &RenderRegistry) -> String {
+    match &spec.kind {
+        FunctionTypeSpecKind::Is(ty) => {
+            format!(
+                "\\_ \\textrm{{ is }} {}",
+                render_type_expression(ty, registry)
+            )
+        }
+        FunctionTypeSpecKind::Spec { operator, target } => format!(
+            "\\_ {} {}",
+            render_quoted_operator(operator),
+            escape_math_identifier(target)
+        ),
+    }
+}
+
+fn render_type_expression(ty: &TypeExpression, registry: &RenderRegistry) -> String {
+    match ty {
+        TypeExpression::Command(command) => render_command_expression(command, registry),
+        TypeExpression::RefinedCommand(command) => render_refined_command_called(command, registry),
+        TypeExpression::Function(function_type) => render_function_type(function_type, registry),
+    }
 }

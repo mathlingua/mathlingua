@@ -979,6 +979,175 @@ mod tests {
     }
 
     #[test]
+    fn check_uses_function_type_extends_for_function_calls() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("function-type.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\function:on{A}:to{B}]
+    Describes: f(x__)
+    when: A, B is \set
+    extends: f is (_ "in" A) => (_ "in" B)
+    Documented:
+    . called: "function"
+
+    Theorem:
+    given:
+    . A, B is \set
+    . f is \function:on{A}:to{B}
+    . y "in" A
+    then:
+    . f(y) "in" B
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("function-type.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_function_type_result_mismatches() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("function-type-result.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\function:on{A}:to{B}]
+    Describes: f(x__)
+    when: A, B is \set
+    extends: f is (_ "in" A) => (_ "in" B)
+    Documented:
+    . called: "function"
+
+    Theorem:
+    given:
+    . A, B, C is \set
+    . f is \function:on{A}:to{B}
+    . y "in" A
+    then:
+    . f(y) "in" C
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("function-type-result.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message == "Could not prove function call result `f(y) \"in\" C`"
+            })
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_uses_function_type_is_specs_for_function_calls() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("function-type-is-specs.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: x
+    Documented:
+    . called: "real"
+
+    [\integer]
+    Describes: x
+    Documented:
+    . called: "integer"
+
+    Theorem:
+    given:
+    . f is (_ is \real) => (_ is \integer)
+    . y is \real
+    then:
+    . f(y) is \integer
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("function-type-is-specs.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_named_function_type_parameters() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("function-type-parameters.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\function:on{A}:to{B}]
+    Describes: f(x__)
+    when: A, B is \set
+    extends: f is (x "in" A) => (_ "in" B)
+    Documented:
+    . called: "function"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("function-type-parameters.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event
+                .as_message()
+                .is_some_and(|message| message.message == "Function type parameters must be `_`")
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
     fn check_reports_unrecognized_symbols_in_command_arguments() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("unrecognized-symbol.mlg");

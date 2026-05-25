@@ -5,13 +5,14 @@ use lalrpop_util::ParseError as LalrpopParseError;
 use super::ast::{
     AuthorHeader, Chain, ChainPart, CommandExpressionTailPart, CommandHeader, CommandHeaderNode,
     CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs, Expression, ExpressionAlias,
-    ExpressionAliasLhs, ExpressionBinding, ExpressionKind, FormOrDeclaration, InfixCommandHeader,
-    IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind,
-    IsViaStatement, LabelHeader, Operator, ParenExpressionArgs, ParenHeadingArgs, Placeholder,
-    PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement, RefinedCommandExpression,
-    RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader,
-    Span, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind,
-    SubjectSpecStatement, TypeExpression, WritingAlias,
+    ExpressionAliasLhs, ExpressionBinding, ExpressionKind, FormOrDeclaration, FunctionType,
+    FunctionTypeSpec, FunctionTypeSpecKind, InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec,
+    IsStatement, IsSubject, IsSubjectForm, IsSubjectKind, IsViaStatement, LabelHeader, Operator,
+    ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm, PlaceholderFormKind,
+    PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
+    RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, Span, SpecOperatorAlias,
+    SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement, TypeExpression,
+    WritingAlias,
 };
 use super::grammar;
 use super::lexer::Lexer;
@@ -905,6 +906,10 @@ pub(super) fn parse_type_expression(
     allow_refined: bool,
 ) -> Result<TypeExpression, ParseError> {
     let input = input.trim();
+    if contains_top_level(input, "=>") {
+        return parse_function_type_expression(input, allow_refined).map(TypeExpression::Function);
+    }
+
     if allow_refined && contains_top_level(input, "::") {
         return parse_refined_command_expression(input).map(TypeExpression::RefinedCommand);
     }
@@ -916,6 +921,105 @@ pub(super) fn parse_type_expression(
             "expected command expression for type, found {other:?}"
         ))),
     }
+}
+
+/// Parses a function type from parenthesized input specs to one output spec.
+fn parse_function_type_expression(
+    input: &str,
+    allow_refined: bool,
+) -> Result<FunctionType, ParseError> {
+    let arrow_index = find_top_level_substring(input, "=>")
+        .ok_or_else(|| ParseError::custom("expected top-level `=>`"))?;
+    let inputs = parse_function_type_spec_group(&input[..arrow_index], allow_refined)?;
+    let mut outputs = parse_function_type_spec_group(&input[arrow_index + 2..], allow_refined)?;
+
+    if inputs.is_empty() {
+        return Err(ParseError::custom(
+            "function type requires at least one input spec",
+        ));
+    }
+    if outputs.len() != 1 {
+        return Err(ParseError::custom(
+            "function type requires exactly one output spec",
+        ));
+    }
+
+    Ok(FunctionType {
+        span: span_all(input),
+        inputs,
+        output: outputs.remove(0),
+    })
+}
+
+/// Parses a parenthesized comma-separated group of function type specs.
+fn parse_function_type_spec_group(
+    input: &str,
+    allow_refined: bool,
+) -> Result<Vec<FunctionTypeSpec>, ParseError> {
+    let input = input.trim();
+    let (inside, rest) = consume_balanced_prefix(input, '(', ')')?;
+    if !rest.trim().is_empty() {
+        return Err(ParseError::custom(
+            "unexpected trailing text after function type spec group",
+        ));
+    }
+
+    split_top_level(inside, ',')?
+        .into_iter()
+        .map(|spec| parse_function_type_spec(spec, allow_refined))
+        .collect()
+}
+
+/// Parses one function type spec with a raw parameter subject.
+fn parse_function_type_spec(
+    input: &str,
+    allow_refined: bool,
+) -> Result<FunctionTypeSpec, ParseError> {
+    let input = input.trim();
+    if let Some(index) = find_top_level_substring(input, " is ") {
+        let subject = parse_function_type_spec_subject(&input[..index])?;
+        let ty = parse_type_expression(&input[index + 4..], allow_refined)?;
+        return Ok(FunctionTypeSpec {
+            span: span_all(input),
+            subject,
+            kind: FunctionTypeSpecKind::Is(Box::new(ty)),
+        });
+    }
+
+    let (subject_text, operator, target_text) =
+        split_subject_operator_name(input).ok_or_else(|| {
+            ParseError::custom(
+                "expected function type spec of the form `_ is Type` or `_ \"op\" Name`",
+            )
+        })?;
+    let subject = parse_function_type_spec_subject(subject_text)?;
+    let target = parse_name_token(target_text)?;
+    if operator.is_empty() {
+        return Err(ParseError::custom(
+            "function type spec operator cannot be empty",
+        ));
+    }
+
+    Ok(FunctionTypeSpec {
+        span: span_all(input),
+        subject,
+        kind: FunctionTypeSpecKind::Spec {
+            operator: operator.to_owned(),
+            target,
+        },
+    })
+}
+
+/// Parses the parameter token of a function type spec.
+fn parse_function_type_spec_subject(input: &str) -> Result<String, ParseError> {
+    let input = input.trim();
+    if input.is_empty() {
+        return Err(ParseError::custom(
+            "function type spec requires a parameter",
+        ));
+    }
+
+    Ok(input.to_owned())
 }
 
 /// Parses the subject on the left side of an `is` statement.
@@ -1444,9 +1548,9 @@ mod tests {
     use crate::frontend::formulation::ast::{
         BinaryOperator, ChainPart, CommandHeader, CommandHeaderNode, Expression,
         ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
-        FunctionNamedExpressionElementLhs, IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm,
-        IsSubjectKind, NamedOperatorKind, PlaceholderFormKind, RefinedTail,
-        SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression,
+        FunctionNamedExpressionElementLhs, FunctionTypeSpecKind, IsOrRefinedStatementSpec,
+        IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind, PlaceholderFormKind,
+        RefinedTail, SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression,
     };
 
     // ===============================[ support ]=====================================
@@ -2414,6 +2518,50 @@ mod tests {
             }
             other => panic!("expected is statement, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn parses_function_type_as_is_statement_rhs() {
+        let item = parse_is_or_spec(r#"f is (_ "in" A, _ is \real) => (_ "in" B)"#)
+            .expect("expected function type statement");
+
+        match item {
+            IsOrSpec::Is(statement) => match statement.ty {
+                TypeExpression::Function(function_type) => {
+                    assert_eq!(function_type.inputs.len(), 2);
+                    assert_eq!(function_type.inputs[0].subject, "_");
+                    assert_eq!(function_type.output.subject, "_");
+                    assert!(matches!(
+                        function_type.inputs[0].kind,
+                        FunctionTypeSpecKind::Spec {
+                            ref operator,
+                            ref target
+                        } if operator == "in" && target == "A"
+                    ));
+                    assert!(matches!(
+                        function_type.inputs[1].kind,
+                        FunctionTypeSpecKind::Is(_)
+                    ));
+                    assert!(matches!(
+                        function_type.output.kind,
+                        FunctionTypeSpecKind::Spec {
+                            ref operator,
+                            ref target
+                        } if operator == "in" && target == "B"
+                    ));
+                }
+                other => panic!("expected function type, got {other:?}"),
+            },
+            other => panic!("expected is statement, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn rejects_unparenthesized_function_type_sides() {
+        let error = parse_is_or_spec(r#"f is _ "in" A => (_ "in" B)"#)
+            .expect_err("expected function type parse error");
+
+        assert!(error.to_string().contains("expected `(`"));
     }
 
     #[test]

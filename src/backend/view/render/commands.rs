@@ -78,6 +78,7 @@ pub(super) fn type_expression_called_template(
         TypeExpression::RefinedCommand(command) => {
             Some(refined_command_called_template(command, registry))
         }
+        TypeExpression::Function(_) => None,
     }
 }
 

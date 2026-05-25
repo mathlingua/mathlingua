@@ -1,8 +1,6 @@
-use crate::backend::collection::MlgFileCollection;
+use crate::backend::collection::SourceCollection;
 use crate::backend::view::CollectionView;
 use crate::events::{EventLog, EventLogListener};
-use crate::mlg::collection::{find_collection_root, resolve_collection_content_files};
-use crate::mlg::config::{CONFIG_FILE, validate_config_file};
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since};
 use serde_json::to_writer_pretty;
 use std::fs;
@@ -50,13 +48,8 @@ pub fn view(cwd: &Path, port: u16, listener: Option<Box<dyn EventLogListener>>) 
 /// child output until the server exits.
 pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Result<()> {
     let starting_event_count = event_log.events().len();
-    let collection_root = find_collection_root(cwd);
-    if let Some(root) = &collection_root {
-        validate_config_file(&root.join(CONFIG_FILE), event_log, ORIGIN);
-    }
-
-    let files = resolve_collection_content_files(cwd, event_log, ORIGIN);
-    if files.is_empty() {
+    let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
+    if collection.source_files().is_empty() {
         return finish_view_setup_with_possible_errors(event_log);
     }
 
@@ -64,12 +57,10 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
         Some(ORIGIN),
         format!(
             "Checking collection before rendering {} file(s)",
-            files.len()
+            collection.source_files().len()
         ),
     );
 
-    let mut collection =
-        MlgFileCollection::new(collection_root.unwrap_or_else(|| cwd.to_path_buf()), files);
     collection.run_check_passes(event_log, ORIGIN);
 
     if has_blocking_user_issues_since(event_log, starting_event_count) {

@@ -1,6 +1,6 @@
+use crate::backend::collection::CONTENT_DIR;
+use crate::backend::config::{CONFIG_FILE, default_config_contents};
 use crate::events::{EventLog, EventLogListener};
-use crate::mlg::collection::CONTENT_DIR;
-use crate::mlg::config::{CONFIG_FILE, default_config_contents};
 use crate::mlg::util::no_errors_since;
 use std::fs;
 use std::io;

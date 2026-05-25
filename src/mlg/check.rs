@@ -1,8 +1,5 @@
-use crate::backend::collection::MlgFileCollection;
+use crate::backend::collection::SourceCollection;
 use crate::events::{EventLog, EventLogListener, MarkerRange};
-use crate::mlg::collection::{find_collection_root, resolve_source_files};
-use crate::mlg::config::CONFIG_FILE;
-use crate::mlg::config::validate_config_file;
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since, user_issue_count_since};
 use std::path::{Path, PathBuf};
 
@@ -15,7 +12,7 @@ pub struct CheckResult {
     pub event_log: EventLog,
     /// Whether the run produced no error-level events.
     pub successful: bool,
-    /// Number of source files selected for checking.
+    /// Number of source files selected for diagnostic reporting.
     pub files_checked: usize,
     /// Marker range bounding the events emitted by the check run.
     pub marker_range: MarkerRange,
@@ -24,7 +21,7 @@ pub struct CheckResult {
 /// Summary returned by the internal [`check_in`] helper.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct CheckSummary {
-    /// Number of source files selected for checking.
+    /// Number of source files selected for diagnostic reporting.
     pub files_checked: usize,
     /// Marker range bounding the events emitted by the check run.
     pub marker_range: MarkerRange,
@@ -58,9 +55,8 @@ pub fn check(
 
 /// Runs `mlg check` against an existing event log.
 ///
-/// The command validates collection configuration, resolves source files,
-/// structurally parses each file, runs backend semantic checks, and emits a
-/// success or issue-count summary.
+/// The command builds a backend source collection, runs its check passes, and
+/// emits a success or issue-count summary.
 pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> CheckSummary {
     let begin = event_log.begin_marker("check_in", Some(ORIGIN));
     let starting_event_count = event_log.events().len();
@@ -70,17 +66,11 @@ pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) 
         format!("Checking {} explicit path(s)", paths.len()),
     );
 
-    let collection_root = find_collection_root(cwd);
-    if let Some(root) = &collection_root {
-        validate_config_file(&root.join(CONFIG_FILE), event_log, ORIGIN);
-    }
+    let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
+    let diagnostic_filter = collection.diagnostic_filter(cwd, paths, event_log, ORIGIN);
+    let files_checked = diagnostic_filter.selected_file_count(&collection);
 
-    let files = resolve_source_files(cwd, paths, event_log, ORIGIN);
-    let mut collection =
-        MlgFileCollection::new(collection_root.unwrap_or_else(|| cwd.to_path_buf()), files);
-    let files_checked = collection.source_files().len();
-
-    collection.run_check_passes(event_log, ORIGIN);
+    collection.run_check_passes_filtered(event_log, ORIGIN, &diagnostic_filter);
 
     let has_new_blocking_user_issues =
         has_blocking_user_issues_since(event_log, starting_event_count);
@@ -126,9 +116,8 @@ fn format_issue_count(issue_count: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::check_in;
+    use crate::backend::config::default_config_contents;
     use crate::events::{Audience, Event, EventLog, Level};
-    use crate::mlg::collection::{find_collection_root, resolve_source_files};
-    use crate::mlg::config::default_config_contents;
     use std::fs;
     use std::io;
     use std::path::{Path, PathBuf};
@@ -251,7 +240,7 @@ mod tests {
     }
 
     #[test]
-    fn check_without_arguments_uses_collection_content_from_a_nested_directory() {
+    fn check_without_arguments_uses_collection_root_from_a_nested_directory() {
         let temp_dir = TestDir::new();
         let root = temp_dir.path().join("repo");
         let nested_cwd = root.join("content/algebra");
@@ -277,24 +266,17 @@ mod tests {
     }
 
     #[test]
-    fn check_without_arguments_errors_when_not_in_a_collection() {
+    fn check_without_arguments_uses_command_root_when_not_in_a_collection() {
         let temp_dir = TestDir::new();
 
         let mut event_log = EventLog::new();
         let result = check_in(temp_dir.path(), &[], &mut event_log);
-        let user_events = user_events(&event_log);
 
         assert_eq!(result.files_checked, 0);
-        assert_eq!(event_log.issue_count(), 1);
         assert_eq!(
-            user_events[0].as_message().unwrap().message,
-            "Not inside a Mathlingua collection and no paths were provided"
+            user_events(&event_log),
+            [Event::user_log("Checked 0 files").with_origin("mlg_check")]
         );
-        assert_eq!(
-            user_events[1],
-            Event::user_log("Found 1 issue.").with_origin("mlg_check")
-        );
-        assert!(event_log.has_errors());
     }
 
     #[test]
@@ -397,6 +379,48 @@ mod tests {
     }
 
     #[test]
+    fn check_with_explicit_file_processes_collection_but_filters_diagnostics() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let selected = root.join("selected.mlg");
+        let hidden = root.join("hidden.mlg");
+
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
+        write_mlg_fixture(
+            &selected,
+            r#"Theorem:
+    given: x is \thing
+    then:
+    . x = x
+    "#,
+        )
+        .unwrap();
+        write_mlg_fixture(
+            &hidden,
+            r#"[\thing]
+    Describes: value
+    Documented:
+    . called: "thing"
+
+    Theorem:
+    then:
+    . y is \missing
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(&root, &[PathBuf::from("selected.mlg")], &mut event_log);
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_result_markers_bound_the_check_events() {
         let temp_dir = TestDir::new();
         let root = temp_dir.path().join("repo");
@@ -444,44 +468,6 @@ mod tests {
             user_events[1],
             Event::user_log("Found 1 issue.").with_origin("mlg_check")
         );
-    }
-
-    #[test]
-    fn resolve_source_files_collects_explicit_files_and_directories() {
-        let temp_dir = TestDir::new();
-        let docs = temp_dir.path().join("docs");
-        let nested = docs.join("nested");
-        let extra = temp_dir.path().join("extra.mlg");
-
-        fs::create_dir_all(&nested).unwrap();
-        fs::write(docs.join("a.mlg"), "Defines: A\n").unwrap();
-        fs::write(nested.join("b.mlg"), "Defines: B\n").unwrap();
-        fs::write(&extra, "Defines: C\n").unwrap();
-
-        let mut event_log = EventLog::new();
-        let files = resolve_source_files(
-            temp_dir.path(),
-            &[PathBuf::from("docs"), PathBuf::from("extra.mlg")],
-            &mut event_log,
-            "mlg_check",
-        );
-
-        assert!(user_events(&event_log).is_empty());
-        assert_eq!(files.len(), 3);
-    }
-
-    #[test]
-    fn finds_collection_root_in_ancestor_directories() {
-        let temp_dir = TestDir::new();
-        let root = temp_dir.path().join("repo");
-        let nested = root.join("content/logic");
-
-        fs::create_dir_all(&nested).unwrap();
-        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
-
-        let discovered = find_collection_root(&nested).expect("expected collection root");
-
-        assert_eq!(discovered, root);
     }
 
     #[test]

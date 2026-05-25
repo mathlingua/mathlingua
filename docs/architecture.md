@@ -30,16 +30,16 @@ The main runtime paths are:
 ```text
 mlg check
   CLI
-  -> collection/file resolution
-  -> MlgFileCollection check passes
+  -> SourceCollection::load
+  -> SourceCollection check passes
       -> structural parsing
       -> semantic checking
   -> event output
 
 mlg view
   CLI
-  -> collection/file resolution
-  -> MlgFileCollection check passes
+  -> SourceCollection::load
+  -> SourceCollection check passes
       -> structural parsing
       -> semantic checking
   -> view-model generation pass
@@ -111,7 +111,8 @@ Responsibilities:
 - `src/constants.rs` defines shared constants such as collection filenames.
 - `src/events/` is the shared diagnostic and logging system.
 - `src/frontend/` contains lexing and parsing.
-- `src/backend/` contains semantic checking and viewer model generation.
+- `src/backend/` contains collection loading, semantic checking, and viewer
+  model generation.
 - `src/mlg/` contains command orchestration for `check`, `init`, `version`, and
   `view`.
 
@@ -135,24 +136,27 @@ The implemented top-level commands are:
 
 ### Collection Resolution
 
-Collection and source-file resolution lives in `src/mlg/collection.rs`.
+Collection and source-file resolution lives in `src/backend/collection.rs`.
 
 Rules:
 
 - A MathLingua collection root is the nearest ancestor containing `mlg.json`.
-- If `mlg check` receives no explicit paths, it checks `.mlg` files under the
-  collection `content/` directory.
-- Once paths are resolved, `backend::collection::MlgFileCollection` represents
-  the selected source files and owns the shared check-pass sequence used by
-  both `mlg check` and `mlg view`.
-- Explicit paths are resolved relative to the current working directory.
+- If no `mlg.json` is found, the current working directory is treated as an
+  ad-hoc collection root.
+- `backend::collection::SourceCollection` owns collection-root discovery,
+  config validation, source-file collection, and the shared check-pass sequence
+  used by both `mlg check` and `mlg view`.
+- `SourceCollection::load` accepts only a root path and collects every `.mlg`
+  file under the resolved collection root in deterministic path order.
+- Explicit `mlg check` paths are resolved relative to the current working
+  directory and become a diagnostic filter. The full collection is still parsed
+  and checked; only diagnostics located in selected files are shown.
 - File targets must have the `.mlg` extension.
 - Directory targets are traversed recursively.
-- Source files are collected in deterministic path order.
 
 ### Config Handling
 
-Collection config handling lives in `src/mlg/config.rs`.
+Collection config handling lives in `src/backend/config.rs`.
 
 The current config file is `mlg.json`. The config model is intentionally small:
 
@@ -311,16 +315,22 @@ viewer model generation.
 ```text
 src/backend/
 ├── collection.rs
+├── config.rs
 ├── semantic/
 │   ├── mod.rs
 │   └── ...
 └── view/
 ```
 
-`collection.rs` defines `MlgFileCollection`, the shared checked-collection
-entity used after command-level path resolution. Its check-pass sequence reads
-source files, structurally parses them, and then runs semantic checks. The
-viewer can then run the collection's optional view-model generation pass.
+`collection.rs` defines `SourceCollection`, the shared checked-collection
+entity that owns root resolution, source discovery, structural parsing, and
+semantic checking. `mlg check` can add a `SourceFileFilter` so path-specific
+runs still check the whole collection while reporting only diagnostics from the
+requested files. The viewer can then run the collection's optional view-model
+generation pass.
+
+`config.rs` owns `mlg.json` constants, default contents, and validation used by
+collection loading and initialization.
 
 ### Semantic Checker
 
@@ -390,7 +400,7 @@ of exposing frontend AST internals to TypeScript. This keeps the web viewer
 stable when Rust AST internals change.
 
 Structural parsing and semantic checking happen before the view builder through
-the shared `MlgFileCollection` passes in `src/backend/collection.rs`. The
+the shared `SourceCollection` passes in `src/backend/collection.rs`. The
 builder is therefore a rendering pass, not a second private checker.
 
 ## Web Viewer Architecture
@@ -435,12 +445,15 @@ not parse `.mlg` files and does not run semantic checks.
 main.rs
   -> Cli::parse
   -> mlg::check_in
-  -> find_collection_root / resolve_source_files
-  -> validate_config_file when a collection root exists
-  -> MlgFileCollection::run_check_passes
-      -> read each .mlg file
-      -> frontend::parse_source_file
+  -> SourceCollection::load
+      -> find collection root
+      -> validate mlg.json when a collection root exists
+      -> collect collection .mlg files
+  -> SourceCollection::diagnostic_filter for explicit PATH arguments
+  -> SourceCollection::run_check_passes_filtered
+      -> frontend::parse_source_file for each .mlg file
       -> backend::semantic::check_documents
+      -> replay diagnostics accepted by the filter
   -> EventLog summary
 ```
 
@@ -460,13 +473,14 @@ in the command event log.
 main.rs
   -> Cli::parse
   -> mlg::view_in
-  -> find_collection_root / resolve_collection_content_files
-  -> validate_config_file when a collection root exists
-  -> MlgFileCollection::run_check_passes
-      -> read each .mlg file
-      -> frontend::parse_source_file
+  -> SourceCollection::load
+      -> find collection root
+      -> validate mlg.json when a collection root exists
+      -> collect collection .mlg files
+  -> SourceCollection::run_check_passes
+      -> frontend::parse_source_file for each .mlg file
       -> backend::semantic::check_documents
-  -> MlgFileCollection::build_view
+  -> SourceCollection::build_view
       -> backend::view::build_collection_view
           -> build render registry
           -> rerun proto parser for display layout

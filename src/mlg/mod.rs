@@ -13,8 +13,6 @@ pub use version::{VersionResult, version};
 pub use view::{ViewResult, view};
 
 mod check;
-mod collection;
-mod config;
 mod init;
 mod util;
 mod version;

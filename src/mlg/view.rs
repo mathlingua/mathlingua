@@ -1,7 +1,9 @@
-use crate::backend::view::{CollectionView, build_collection_view};
+use crate::backend::collection::MlgFileCollection;
+use crate::backend::view::CollectionView;
 use crate::events::{EventLog, EventLogListener};
-use crate::mlg::collection::resolve_collection_content_files;
-use crate::mlg::util::no_errors_since;
+use crate::mlg::collection::{find_collection_root, resolve_collection_content_files};
+use crate::mlg::config::{CONFIG_FILE, validate_config_file};
+use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since};
 use serde_json::to_writer_pretty;
 use std::fs;
 use std::io::{self, BufRead, BufReader};
@@ -47,6 +49,12 @@ pub fn view(cwd: &Path, port: u16, listener: Option<Box<dyn EventLogListener>>) 
 /// app with `MLG_VIEW_DATA_PATH` pointing at that payload, and keeps streaming
 /// child output until the server exits.
 pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Result<()> {
+    let starting_event_count = event_log.events().len();
+    let collection_root = find_collection_root(cwd);
+    if let Some(root) = &collection_root {
+        validate_config_file(&root.join(CONFIG_FILE), event_log, ORIGIN);
+    }
+
     let files = resolve_collection_content_files(cwd, event_log, ORIGIN);
     if files.is_empty() {
         return finish_view_setup_with_possible_errors(event_log);
@@ -54,10 +62,35 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
 
     event_log.system_debug(
         Some(ORIGIN),
-        format!("Building a rendered view for {} file(s)", files.len()),
+        format!(
+            "Checking collection before rendering {} file(s)",
+            files.len()
+        ),
     );
 
-    let Some(collection_view) = build_collection_view(cwd, &files, event_log) else {
+    let mut collection =
+        MlgFileCollection::new(collection_root.unwrap_or_else(|| cwd.to_path_buf()), files);
+    collection.run_check_passes(event_log, ORIGIN);
+
+    if has_blocking_user_issues_since(event_log, starting_event_count) {
+        event_log.user_error(
+            Some(ORIGIN),
+            "View not started because one or more files could not be rendered",
+        );
+        return Err(io::Error::other(
+            "One or more files could not be rendered for viewing",
+        ));
+    }
+
+    event_log.system_debug(
+        Some(ORIGIN),
+        format!(
+            "Building a rendered view for {} file(s)",
+            collection.parsed_files().len()
+        ),
+    );
+
+    let Some(collection_view) = collection.build_view(event_log) else {
         event_log.user_error(
             Some(ORIGIN),
             "View not started because one or more files could not be rendered",

@@ -2,48 +2,24 @@ use super::model::{ArgumentView, CollectionView, FileView, GroupView, SectionVie
 use super::render::{
     RenderRegistry, build_render_registry, render_formulation_latex, render_group_heading_latex,
 };
-use crate::backend::semantic::{ParsedSourceFile, check_documents};
+use crate::backend::semantic::ParsedSourceFile;
 use crate::events::{Audience, Event, EventLog, Level};
 use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{Argument, Group, Section};
-use crate::frontend::structural::parse_document;
-use std::fs;
-use std::path::{Path, PathBuf};
-
-/// Event origin used for diagnostics emitted while building viewer data.
-const ORIGIN: &str = "view_builder";
+use std::path::Path;
 
 /// Builds the complete serialized view model for a MathLingua collection.
 ///
-/// Files are parsed structurally, semantically checked, indexed for rendering,
-/// and then converted into JSON-friendly view models.  Returning `None` means a
-/// user-facing blocking diagnostic has already been emitted to `event_log`.
+/// Files must already have passed the shared structural and semantic checking
+/// passes.  This pass indexes the checked files for rendering and converts them
+/// into JSON-friendly view models.  Returning `None` means a user-facing
+/// blocking diagnostic has already been emitted to `event_log`.
 pub fn build_collection_view(
     collection_root: &Path,
-    files: &[PathBuf],
+    parsed_files: &[ParsedSourceFile],
     event_log: &mut EventLog,
 ) -> Option<CollectionView> {
-    let mut parsed_files = Vec::new();
-    let mut has_blocking_issues = false;
-
-    for file in files {
-        match parse_file_for_view(file, event_log) {
-            Some(parsed_file) => parsed_files.push(parsed_file),
-            None => has_blocking_issues = true,
-        }
-    }
-
-    if has_blocking_issues {
-        return None;
-    }
-
-    let semantic_start = event_log.events().len();
-    check_documents(&parsed_files, event_log);
-    if has_blocking_user_issues(&event_log.events()[semantic_start..]) {
-        return None;
-    }
-
-    let registry = build_render_registry(&parsed_files);
+    let registry = build_render_registry(parsed_files);
     let rendered_files = parsed_files
         .iter()
         .map(|file| build_file_view(collection_root, file, &registry, event_log))
@@ -52,43 +28,6 @@ pub fn build_collection_view(
     Some(CollectionView {
         title: collection_title(collection_root),
         files: rendered_files,
-    })
-}
-
-/// Reads and structurally parses one source file for the viewer pipeline.
-///
-/// The original source text is preserved because later rendering and diagnostics
-/// need both parsed structure and raw text.
-fn parse_file_for_view(file: &Path, event_log: &mut EventLog) -> Option<ParsedSourceFile> {
-    event_log.system_debug(Some(ORIGIN), format!("Rendering {}", file.display()));
-
-    let source = match fs::read_to_string(file) {
-        Ok(source) => source,
-        Err(error) => {
-            event_log.user_error_at_path(
-                Some(ORIGIN),
-                file.to_path_buf(),
-                format!("Failed to read file: {error}"),
-            );
-            return None;
-        }
-    };
-
-    let mut validation_log = EventLog::new();
-    let document = parse_document(&source, &mut validation_log);
-
-    for event in validation_log.events() {
-        event_log.push(event.clone().with_file_path(file.to_path_buf()));
-    }
-
-    if has_blocking_user_issues(validation_log.events()) {
-        return None;
-    }
-
-    Some(ParsedSourceFile {
-        path: file.to_path_buf(),
-        source,
-        document,
     })
 }
 
@@ -228,7 +167,9 @@ fn argument_view(argument: Argument, registry: &RenderRegistry) -> ArgumentView 
 #[cfg(test)]
 mod tests {
     use super::build_collection_view;
+    use crate::backend::semantic::ParsedSourceFile;
     use crate::events::EventLog;
+    use crate::frontend::structural::parse_document;
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -239,16 +180,21 @@ mod tests {
         let root = temp_dir.path().join("repo");
         let content = root.join("content");
         let file = content.join("sets.mlg");
+        let source = "[\\set]\nDescribes: S\nDocumented:\n. called:\n  . \"set\"\n";
 
         fs::create_dir_all(&content).unwrap();
-        fs::write(
-            &file,
-            "[\\set]\nDescribes: S\nDocumented:\n. called:\n  . \"set\"\n",
-        )
-        .unwrap();
+        fs::write(&file, source).unwrap();
 
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+        };
         let mut event_log = EventLog::new();
-        let view = build_collection_view(&root, &[file], &mut event_log).expect("expected view");
+        let view =
+            build_collection_view(&root, &[parsed_file], &mut event_log).expect("expected view");
 
         assert_eq!(view.title, "repo");
         assert_eq!(view.files.len(), 1);

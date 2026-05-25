@@ -1,11 +1,9 @@
-use crate::backend::semantic::{ParsedSourceFile, check_documents};
-use crate::events::{Audience, Event, EventLog, EventLogListener, Level, MarkerRange};
-use crate::frontend::structural::parse_document;
+use crate::backend::collection::MlgFileCollection;
+use crate::events::{EventLog, EventLogListener, MarkerRange};
 use crate::mlg::collection::{find_collection_root, resolve_source_files};
 use crate::mlg::config::CONFIG_FILE;
 use crate::mlg::config::validate_config_file;
-use crate::mlg::util::no_errors_since;
-use std::fs;
+use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since, user_issue_count_since};
 use std::path::{Path, PathBuf};
 
 /// Event origin used by the check command.
@@ -72,35 +70,21 @@ pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) 
         format!("Checking {} explicit path(s)", paths.len()),
     );
 
-    if let Some(root) = find_collection_root(cwd) {
+    let collection_root = find_collection_root(cwd);
+    if let Some(root) = &collection_root {
         validate_config_file(&root.join(CONFIG_FILE), event_log, ORIGIN);
     }
 
     let files = resolve_source_files(cwd, paths, event_log, ORIGIN);
-    let files_checked = files.len();
+    let mut collection =
+        MlgFileCollection::new(collection_root.unwrap_or_else(|| cwd.to_path_buf()), files);
+    let files_checked = collection.source_files().len();
 
-    let mut parsed_files = Vec::new();
-    for file in files {
-        if let Some(parsed_file) = parse_source_file(&file, event_log) {
-            parsed_files.push(parsed_file);
-        }
-    }
-    check_documents(&parsed_files, event_log);
+    collection.run_check_passes(event_log, ORIGIN);
 
-    let new_events = &event_log.events()[starting_event_count..];
     let has_new_blocking_user_issues =
-        new_events
-            .iter()
-            .filter_map(Event::as_message)
-            .any(|event| {
-                event.audience == Audience::User
-                    && matches!(event.level, Level::Error | Level::Debug)
-            });
-    let new_user_issue_count = new_events
-        .iter()
-        .filter_map(Event::as_message)
-        .filter(|event| event.audience == Audience::User && event.level != Level::Log)
-        .count();
+        has_blocking_user_issues_since(event_log, starting_event_count);
+    let new_user_issue_count = user_issue_count_since(event_log, starting_event_count);
 
     if has_new_blocking_user_issues {
         event_log.user_log(
@@ -117,39 +101,6 @@ pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) 
         files_checked,
         marker_range: MarkerRange::new(begin, end),
     }
-}
-
-/// Reads and structurally parses one source file for checking.
-///
-/// Parser diagnostics are rewritten with the file path so downstream console
-/// output can report precise file locations.
-fn parse_source_file(path: &Path, event_log: &mut EventLog) -> Option<ParsedSourceFile> {
-    event_log.system_debug(Some(ORIGIN), format!("Parsing {}", path.display()));
-
-    let source = match fs::read_to_string(path) {
-        Ok(source) => source,
-        Err(error) => {
-            event_log.user_error_at_path(
-                Some(ORIGIN),
-                path.to_path_buf(),
-                format!("Failed to read file: {error}"),
-            );
-            return None;
-        }
-    };
-
-    let mut file_event_log = EventLog::new();
-    let document = parse_document(&source, &mut file_event_log);
-
-    for event in file_event_log.events() {
-        event_log.push(event.clone().with_file_path(path.to_path_buf()));
-    }
-
-    Some(ParsedSourceFile {
-        path: path.to_path_buf(),
-        source,
-        document,
-    })
 }
 
 /// Formats the success summary for a check run.

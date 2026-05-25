@@ -31,16 +31,20 @@ The main runtime paths are:
 mlg check
   CLI
   -> collection/file resolution
-  -> structural parsing
-  -> semantic checking
+  -> MlgFileCollection check passes
+      -> structural parsing
+      -> semantic checking
   -> event output
 
 mlg view
   CLI
   -> collection/file resolution
-  -> structural parsing
-  -> semantic checking
-  -> render registry and view-model generation
+  -> MlgFileCollection check passes
+      -> structural parsing
+      -> semantic checking
+  -> view-model generation pass
+      -> render registry
+      -> proto parser for display layout
   -> temporary collection.json
   -> Next.js viewer
 ```
@@ -138,6 +142,9 @@ Rules:
 - A MathLingua collection root is the nearest ancestor containing `mlg.json`.
 - If `mlg check` receives no explicit paths, it checks `.mlg` files under the
   collection `content/` directory.
+- Once paths are resolved, `backend::collection::MlgFileCollection` represents
+  the selected source files and owns the shared check-pass sequence used by
+  both `mlg check` and `mlg view`.
 - Explicit paths are resolved relative to the current working directory.
 - File targets must have the `.mlg` extension.
 - Directory targets are traversed recursively.
@@ -292,14 +299,21 @@ fallback order documented in [structural_syntax.md](structural_syntax.md).
 
 ## Backend Architecture
 
-The backend is split into semantic checking and viewer model generation.
+The backend is split into collection pass orchestration, semantic checking, and
+viewer model generation.
 
 ```text
 src/backend/
+├── collection.rs
 ├── semantic.rs
 ├── semantic/
 └── view/
 ```
+
+`collection.rs` defines `MlgFileCollection`, the shared checked-collection
+entity used after command-level path resolution. Its check-pass sequence reads
+source files, structurally parses them, and then runs semantic checks. The
+viewer can then run the collection's optional view-model generation pass.
 
 ### Semantic Checker
 
@@ -353,7 +367,7 @@ Main files:
 
 - `model.rs` defines `CollectionView`, `FileView`, `GroupView`, `SectionView`,
   and `ArgumentView`.
-- `builder.rs` parses source files, runs semantic checks, builds a render
+- `builder.rs` receives checked `ParsedSourceFile` values, builds a render
   registry, reruns the proto parser for source layout, and creates the JSON
   view model.
 - `render.rs` wires together rendering internals.
@@ -367,6 +381,10 @@ Main files:
 The view builder deliberately emits a presentation-oriented JSON model instead
 of exposing frontend AST internals to TypeScript. This keeps the web viewer
 stable when Rust AST internals change.
+
+Structural parsing and semantic checking happen before the view builder through
+the shared `MlgFileCollection` passes in `src/backend/collection.rs`. The
+builder is therefore a rendering pass, not a second private checker.
 
 ## Web Viewer Architecture
 
@@ -412,9 +430,10 @@ main.rs
   -> mlg::check_in
   -> find_collection_root / resolve_source_files
   -> validate_config_file when a collection root exists
-  -> read each .mlg file
-  -> frontend::structural::parse_document
-  -> backend::semantic::check_documents
+  -> MlgFileCollection::run_check_passes
+      -> read each .mlg file
+      -> frontend::structural::parse_document
+      -> backend::semantic::check_documents
   -> EventLog summary
 ```
 
@@ -434,13 +453,17 @@ in the command event log.
 main.rs
   -> Cli::parse
   -> mlg::view_in
-  -> resolve_collection_content_files
-  -> backend::view::build_collection_view
-      -> parse files structurally
-      -> semantic check
-      -> build render registry
-      -> rerun proto parser for display layout
-      -> create CollectionView
+  -> find_collection_root / resolve_collection_content_files
+  -> validate_config_file when a collection root exists
+  -> MlgFileCollection::run_check_passes
+      -> read each .mlg file
+      -> frontend::structural::parse_document
+      -> backend::semantic::check_documents
+  -> MlgFileCollection::build_view
+      -> backend::view::build_collection_view
+          -> build render registry
+          -> rerun proto parser for display layout
+          -> create CollectionView
   -> write temporary collection.json
   -> ensure web dependencies
   -> npm run dev with MLG_VIEW_DATA_PATH

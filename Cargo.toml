@@ -1,0 +1,7 @@
+[package]
+name = "mlg"
+version = "0.1.0"
+edition = "2024"
+description = "Mathlingua command-line interface"
+
+[dependencies]

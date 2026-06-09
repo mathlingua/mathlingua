@@ -1,9 +1,0 @@
-.DS_Store
-.idea
-.gitpod.yml
-.vscode
-/bin
-/mlg
-/release
-/temp
-/testbed

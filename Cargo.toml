@@ -5,3 +5,4 @@ edition = "2024"
 description = "Mathlingua command-line interface"
 
 [dependencies]
+uuid = { version = "1.23.3", features = ["v4"] }

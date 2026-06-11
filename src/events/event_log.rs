@@ -208,3 +208,70 @@ impl EventLog {
         Some(self.events[start..=finish].iter().collect())
     }
 }
+
+// ===============================[ tests ]=====================================
+
+#[cfg(test)]
+mod tests {
+    use crate::events::{Event, EventLog, EventLogListener};
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    #[derive(Clone)]
+    struct RecordingListener {
+        events: Rc<RefCell<Vec<Event>>>,
+    }
+
+    impl EventLogListener for RecordingListener {
+        fn on_event(&mut self, event: &Event) {
+            self.events.borrow_mut().push(event.clone());
+        }
+    }
+
+    #[test]
+    fn replays_existing_events_to_new_listeners() {
+        let mut log = EventLog::new();
+        log.user_log(Some("mlg_check"), "Checked 1 file");
+
+        let events = Rc::new(RefCell::new(Vec::new()));
+        log.add_listener(RecordingListener {
+            events: Rc::clone(&events),
+        });
+
+        assert_eq!(
+            events.borrow().as_slice(),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn supports_markers_and_slicing_events_between_them() {
+        let mut log = EventLog::new();
+        let begin = log.begin_marker("check_in", Some("mlg_check"));
+        log.system_debug(Some("mlg_check"), "Parsing file");
+        log.user_error(Some("mlg_check"), "Unexpected token");
+        let end = log.end_marker(&begin, Some("mlg_check"));
+
+        let events = log
+            .events_between(&begin, &end)
+            .expect("expected marker range");
+
+        assert_eq!(events.len(), 4);
+        assert_eq!(
+            events[1],
+            &Event::system_debug("Parsing file").with_origin("mlg_check")
+        );
+    }
+
+    #[test]
+    fn counts_only_user_facing_non_log_messages_as_issues() {
+        let mut log = EventLog::new();
+        log.user_log(Some("mlg_check"), "Checked 1 file");
+        log.user_warning(Some("mlg_check"), "Unused statement");
+        log.system_error(Some("mlg_check"), "trace");
+        log.user_debug(Some("mlg_check"), "Report this bug");
+
+        assert!(log.has_errors());
+        assert_eq!(log.issue_count(), 2);
+    }
+}

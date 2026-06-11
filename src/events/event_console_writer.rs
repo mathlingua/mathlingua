@@ -278,3 +278,68 @@ fn write_line(mut writer: impl Write, message: &str) -> io::Result<()> {
     writer.write_all(b"\n")?;
     writer.flush()
 }
+
+// ===============================[ tests ]=====================================
+
+#[cfg(test)]
+mod tests {
+    use crate::events::{
+        Audience, ColorMode, Event, EventConsoleWriter, EventFilter, EventLocation, EventSpan,
+        Level,
+    };
+    use std::path::Path;
+
+    #[test]
+    fn renders_user_logs_as_plain_messages() {
+        let writer = EventConsoleWriter::new().with_color_mode(ColorMode::Never);
+        let rendered = writer.render(&Event::user_log("Checked 2 files")).unwrap();
+
+        assert_eq!(rendered.text, "Checked 2 files");
+    }
+
+    #[test]
+    fn renders_user_errors_relative_to_the_base_path() {
+        let writer = EventConsoleWriter::new()
+            .with_base_path(Path::new("/repo"))
+            .with_color_mode(ColorMode::Never);
+        let rendered = writer
+            .render(
+                &Event::message(
+                    "Unexpected header: [duplicate]",
+                    Level::Error,
+                    Audience::User,
+                    Some(EventLocation::file(
+                        "/repo/content/example.mlg",
+                        Some(EventSpan::row(3)),
+                    )),
+                )
+                .with_origin("structural_parser"),
+            )
+            .unwrap();
+
+        assert_eq!(
+            rendered.text,
+            "content/example.mlg:4: ERROR: Unexpected header: [duplicate]"
+        );
+    }
+
+    #[test]
+    fn renders_system_events_with_origin_information() {
+        let writer = EventConsoleWriter::new()
+            .with_filter(EventFilter::new().with_audiences(vec![Audience::System]))
+            .with_color_mode(ColorMode::Never);
+        let rendered = writer
+            .render(&Event::system_debug("Parsing file").with_origin("mlg_check"))
+            .unwrap();
+
+        assert_eq!(rendered.text, "system DEBUG [mlg_check]: Parsing file");
+    }
+
+    #[test]
+    fn filters_out_non_matching_audiences() {
+        let writer = EventConsoleWriter::new()
+            .with_filter(EventFilter::new().with_audiences(vec![Audience::System]));
+
+        assert!(writer.render(&Event::user_log("Checked 1 file")).is_none());
+    }
+}

@@ -418,3 +418,219 @@ impl Event {
         }
     }
 }
+
+// ===============================[ tests ]=====================================
+
+#[cfg(test)]
+mod tests {
+    use crate::events::{
+        Audience, Event, EventLocation, EventPosition, EventSpan, Level, MarkerEvent, MarkerId,
+        MarkerPhase, MarkerRange,
+    };
+    use std::collections::HashSet;
+
+    fn begin_end_pair(label: &str) -> (MarkerEvent, MarkerEvent) {
+        let id = MarkerId::new();
+        let begin = MarkerEvent::new(id.clone(), label, MarkerPhase::Begin, None);
+        let end = MarkerEvent::new(id, label, MarkerPhase::End, None);
+        (begin, end)
+    }
+
+    #[test]
+    fn attaches_a_file_path_to_in_memory_events() {
+        let event = Event::user_error_at_row(2, "unexpected token")
+            .with_origin("proto_parser")
+            .with_file_path("content/example.mlg");
+
+        let message = event.as_message().expect("expected message event");
+        assert_eq!(message.origin.as_deref(), Some("proto_parser"));
+        assert_eq!(
+            message.location,
+            Some(EventLocation::file_row("content/example.mlg", 2))
+        );
+    }
+
+    #[test]
+    fn preserves_explicit_locations() {
+        let event = Event::message(
+            "Bad token",
+            Level::Error,
+            Audience::User,
+            Some(EventLocation::InMemory {
+                name: Some("snippet".to_string()),
+                span: Some(EventSpan::new(
+                    EventPosition::at_row_and_column(3, 4),
+                    Some(EventPosition::at_row_and_column(3, 7)),
+                )),
+            }),
+        );
+
+        let message = event.as_message().expect("expected message event");
+        assert_eq!(
+            message.location.as_ref().unwrap(),
+            &EventLocation::InMemory {
+                name: Some("snippet".to_string()),
+                span: Some(EventSpan::new(
+                    EventPosition::at_row_and_column(3, 4),
+                    Some(EventPosition::at_row_and_column(3, 7)),
+                )),
+            }
+        );
+    }
+
+    #[test]
+    fn stores_marker_metadata() {
+        let id = MarkerId::new();
+        let marker = MarkerEvent::new(
+            id.clone(),
+            "parse_document",
+            MarkerPhase::Begin,
+            Some("structural_parser".to_string()),
+        );
+
+        assert_eq!(marker.id, id);
+        assert_eq!(marker.label, "parse_document");
+        assert_eq!(marker.phase, MarkerPhase::Begin);
+        assert_eq!(marker.origin.as_deref(), Some("structural_parser"));
+    }
+
+    #[test]
+    fn accepts_label_as_string_slice_or_owned() {
+        let from_slice = MarkerEvent::new(MarkerId::new(), "scan", MarkerPhase::End, None);
+        let from_owned =
+            MarkerEvent::new(MarkerId::new(), "scan".to_string(), MarkerPhase::End, None);
+
+        assert_eq!(from_slice.label, from_owned.label);
+    }
+
+    #[test]
+    fn with_origin_option_replaces_existing_origin() {
+        let marker = MarkerEvent::new(
+            MarkerId::new(),
+            "typecheck",
+            MarkerPhase::Begin,
+            Some("old".to_string()),
+        )
+        .with_origin_option(Some("new"));
+
+        assert_eq!(marker.origin.as_deref(), Some("new"));
+    }
+
+    #[test]
+    fn with_origin_option_clears_origin_when_none() {
+        let marker = MarkerEvent::new(
+            MarkerId::new(),
+            "typecheck",
+            MarkerPhase::End,
+            Some("old".to_string()),
+        )
+        .with_origin_option(None);
+
+        assert!(marker.origin.is_none());
+    }
+
+    #[test]
+    fn phases_are_distinct() {
+        assert_ne!(MarkerPhase::Begin, MarkerPhase::End);
+    }
+
+    #[test]
+    fn cloned_marker_events_compare_equal() {
+        let marker = MarkerEvent::new(MarkerId::new(), "load", MarkerPhase::Begin, None);
+
+        assert_eq!(marker.clone(), marker);
+    }
+
+    #[test]
+    fn renders_a_uuid_shaped_string() {
+        let id = MarkerId::new().to_string();
+
+        assert_eq!(id.len(), 36);
+        assert_eq!(&id[8..9], "-");
+        assert_eq!(&id[13..14], "-");
+        assert_eq!(&id[18..19], "-");
+        assert_eq!(&id[23..24], "-");
+    }
+
+    #[test]
+    fn sets_uuid_v4_version_and_variant_bits() {
+        let id = MarkerId::new().to_string();
+
+        // Version nibble at byte index 6 → string index 14.
+        assert_eq!(&id[14..15], "4");
+        // Variant nibble at byte index 8 → string index 19 ∈ {8, 9, a, b}.
+        let variant = id.as_bytes()[19] as char;
+        assert!(
+            matches!(variant, '8' | '9' | 'a' | 'b'),
+            "unexpected variant nibble: {variant}"
+        );
+    }
+
+    #[test]
+    fn as_str_and_display_agree() {
+        let id = MarkerId::new();
+
+        assert_eq!(id.as_str(), id.to_string());
+    }
+
+    #[test]
+    fn default_produces_a_fresh_id() {
+        let a = MarkerId::default();
+        let b = MarkerId::default();
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn successive_ids_are_unique() {
+        let ids: HashSet<_> = (0..256).map(|_| MarkerId::new()).collect();
+
+        assert_eq!(ids.len(), 256);
+    }
+
+    #[test]
+    fn cloned_ids_compare_equal() {
+        let id = MarkerId::new();
+
+        assert_eq!(id.clone(), id);
+    }
+
+    #[test]
+    fn stores_begin_and_end_events() {
+        let (begin, end) = begin_end_pair("parse");
+        let range = MarkerRange::new(begin.clone(), end.clone());
+
+        assert_eq!(range.begin, begin);
+        assert_eq!(range.end, end);
+    }
+
+    #[test]
+    fn matching_pairs_share_marker_ids() {
+        let (begin, end) = begin_end_pair("parse");
+        let range = MarkerRange::new(begin, end);
+
+        assert_eq!(range.begin.id, range.end.id);
+        assert_eq!(range.begin.phase, MarkerPhase::Begin);
+        assert_eq!(range.end.phase, MarkerPhase::End);
+    }
+
+    #[test]
+    fn ranges_with_same_events_compare_equal() {
+        let (begin, end) = begin_end_pair("scan");
+        let a = MarkerRange::new(begin.clone(), end.clone());
+        let b = MarkerRange::new(begin, end);
+
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn ranges_with_different_ids_compare_unequal() {
+        let (begin_a, end_a) = begin_end_pair("scan");
+        let (begin_b, end_b) = begin_end_pair("scan");
+
+        assert_ne!(
+            MarkerRange::new(begin_a, end_a),
+            MarkerRange::new(begin_b, end_b)
+        );
+    }
+}

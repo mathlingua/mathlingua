@@ -18,12 +18,11 @@ impl EventLog {
         Self::default()
     }
 
-    pub fn add_listener(&mut self, mut listener: impl EventLogListener + 'static) {
+    pub fn add_listener(&mut self, mut listener: Box<dyn EventLogListener + 'static>) {
         for event in &self.events {
             listener.on_event(event);
         }
-
-        self.listeners.push(Box::new(listener));
+        self.listeners.push(listener);
     }
 
     pub fn push(&mut self, event: Event) {

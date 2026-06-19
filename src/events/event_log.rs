@@ -7,6 +7,18 @@ pub trait EventLogListener {
     fn on_event(&mut self, event: &Event);
 }
 
+pub struct NoopEventLogListener {}
+
+impl NoopEventLogListener {
+    pub fn new() -> Self {
+        NoopEventLogListener {}
+    }
+}
+
+impl EventLogListener for NoopEventLogListener {
+    fn on_event(&mut self, _: &Event) {}
+}
+
 #[derive(Default)]
 pub struct EventLog {
     events: Vec<Event>,
@@ -233,9 +245,9 @@ mod tests {
         log.user_log(Some("mlg_check"), "Checked 1 file");
 
         let events = Rc::new(RefCell::new(Vec::new()));
-        log.add_listener(RecordingListener {
+        log.add_listener(Box::new(RecordingListener {
             events: Rc::clone(&events),
-        });
+        }));
 
         assert_eq!(
             events.borrow().as_slice(),

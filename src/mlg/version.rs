@@ -1,4 +1,4 @@
-use crate::events::{EventLog, EventLogListener};
+use crate::events::{EventLog, EventLogListener, NoopEventLogListener};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const NAME: &str = env!("CARGO_PKG_NAME");
@@ -26,7 +26,6 @@ pub fn version(listener: Box<dyn EventLogListener>) -> VersionResult {
     }
 }
 
-/// Pushes the version banner events into an existing event log.
 pub(super) fn emit_version(event_log: &mut EventLog) {
     event_log.system_debug(Some(ORIGIN), "Rendering version information");
     event_log.user_log(Some(ORIGIN), format!("{NAME}: {VERSION}"));
@@ -37,7 +36,7 @@ pub(super) fn emit_version(event_log: &mut EventLog) {
 #[cfg(test)]
 mod tests {
     use super::{emit_version, version};
-    use crate::events::{Event, EventLog};
+    use crate::events::{Event, EventLog, NoopEventLogListener};
 
     #[test]
     fn includes_package_name_and_version() {
@@ -61,7 +60,7 @@ mod tests {
 
     #[test]
     fn version_returns_a_successful_result() {
-        let result = version(None);
+        let result = version(Box::new(NoopEventLogListener::new()));
 
         assert!(result.successful);
         assert_eq!(result.name, env!("CARGO_PKG_NAME"));

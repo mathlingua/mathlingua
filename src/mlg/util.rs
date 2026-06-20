@@ -7,6 +7,7 @@ pub(super) fn no_errors_since(event_log: &EventLog, starting_event_count: usize)
         .any(|message| message.level == Level::Error)
 }
 
+#[allow(dead_code)]
 pub(super) fn has_blocking_user_issues_since(
     event_log: &EventLog,
     starting_event_count: usize,
@@ -19,6 +20,7 @@ pub(super) fn has_blocking_user_issues_since(
         })
 }
 
+#[allow(dead_code)]
 pub(super) fn user_issue_count_since(event_log: &EventLog, starting_event_count: usize) -> usize {
     event_log.events()[starting_event_count..]
         .iter()

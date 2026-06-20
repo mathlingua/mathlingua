@@ -7,18 +7,6 @@ pub trait EventLogListener {
     fn on_event(&mut self, event: &Event);
 }
 
-pub struct NoopEventLogListener {}
-
-impl NoopEventLogListener {
-    pub fn new() -> Self {
-        NoopEventLogListener {}
-    }
-}
-
-impl EventLogListener for NoopEventLogListener {
-    fn on_event(&mut self, _: &Event) {}
-}
-
 #[derive(Default)]
 pub struct EventLog {
     events: Vec<Event>,

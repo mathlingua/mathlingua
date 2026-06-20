@@ -2,55 +2,6 @@ use crate::events::{Audience, EventFilter, Level};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
-#[derive(Debug, Parser)]
-#[command(name = "mlg")]
-#[command(version, about, long_about = None)]
-#[command(arg_required_else_help = true)]
-pub struct Cli {
-    #[arg(
-        long = "event-audience",
-        visible_alias = "event-scope",
-        value_enum,
-        value_delimiter = ',',
-        global = true
-    )]
-    pub event_audiences: Vec<CliEventAudience>,
-
-    #[arg(long = "event-level", value_enum, value_delimiter = ',', global = true)]
-    pub event_levels: Vec<CliEventLevel>,
-
-    #[arg(long = "event-markers", global = true, default_value_t = false)]
-    pub event_markers: bool,
-
-    #[command(subcommand)]
-    pub command: Command,
-}
-
-impl Cli {
-    pub fn event_filter(&self) -> EventFilter {
-        let audiences = if self.event_audiences.is_empty() {
-            vec![Audience::User]
-        } else {
-            self.event_audiences
-                .iter()
-                .copied()
-                .map(Into::into)
-                .collect()
-        };
-
-        let levels = if self.event_levels.is_empty() {
-            Level::all().to_vec()
-        } else {
-            self.event_levels.iter().copied().map(Into::into).collect()
-        };
-
-        EventFilter::new()
-            .with_audiences(audiences)
-            .with_levels(levels)
-            .include_markers(self.event_markers)
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum CliEventAudience {
     User,
@@ -103,6 +54,55 @@ pub struct CheckArgs {
 pub struct ViewArgs {
     #[arg(long, default_value_t = 3000)]
     pub port: u16,
+}
+
+#[derive(Debug, Parser)]
+#[command(name = "mlg")]
+#[command(version, about, long_about = None)]
+#[command(arg_required_else_help = true)]
+pub struct Cli {
+    #[arg(
+        long = "event-audience",
+        visible_alias = "event-scope",
+        value_enum,
+        value_delimiter = ',',
+        global = true
+    )]
+    pub event_audiences: Vec<CliEventAudience>,
+
+    #[arg(long = "event-level", value_enum, value_delimiter = ',', global = true)]
+    pub event_levels: Vec<CliEventLevel>,
+
+    #[arg(long = "event-markers", global = true, default_value_t = false)]
+    pub event_markers: bool,
+
+    #[command(subcommand)]
+    pub command: Command,
+}
+
+impl Cli {
+    pub fn event_filter(&self) -> EventFilter {
+        let audiences = if self.event_audiences.is_empty() {
+            vec![Audience::User]
+        } else {
+            self.event_audiences
+                .iter()
+                .copied()
+                .map(Into::into)
+                .collect()
+        };
+
+        let levels = if self.event_levels.is_empty() {
+            Level::all().to_vec()
+        } else {
+            self.event_levels.iter().copied().map(Into::into).collect()
+        };
+
+        EventFilter::new()
+            .with_audiences(audiences)
+            .with_levels(levels)
+            .include_markers(self.event_markers)
+    }
 }
 
 // ===============================[ tests ]=====================================

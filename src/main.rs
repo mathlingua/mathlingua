@@ -1,8 +1,7 @@
 use clap::Parser;
 use mlg::cli::{Cli, Command};
 use mlg::events::{ColorMode, EventConsoleWriter, EventLogListener};
-use mlg::mlg::init;
-use mlg::mlg::version;
+use mlg::mlg::{check, init, version};
 use std::{env, process};
 
 fn main() {
@@ -17,7 +16,7 @@ fn main() {
     ));
 
     let successful = match cli.command {
-        Command::Check(_) => true,
+        Command::Check(args) => check(&cwd, &args.paths, listener).successful,
         Command::Init => init(&cwd, listener).successful,
         Command::Version => version(listener).successful,
         Command::View(_) => true,

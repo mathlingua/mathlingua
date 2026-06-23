@@ -2,17 +2,13 @@ use logos::{Logos, SpannedIter};
 
 use super::token::{LexicalError, Token};
 
-/// Spanned token item type expected by LALRPOP.
 pub type Spanned<Tok, Loc, Error> = Result<(Loc, Tok, Loc), Error>;
 
-/// Iterator over formulation tokens with byte-span locations.
 pub struct Lexer<'input> {
-    /// Logos spanned token iterator.
     tokens: SpannedIter<'input, Token>,
 }
 
 impl<'input> Lexer<'input> {
-    /// Creates a lexer for formulation source text.
     pub fn new(input: &'input str) -> Self {
         Self {
             tokens: Token::lexer(input).spanned(),
@@ -21,16 +17,16 @@ impl<'input> Lexer<'input> {
 }
 
 impl<'input> Iterator for Lexer<'input> {
-    /// Token item emitted to the generated parser.
     type Item = Spanned<Token, usize, LexicalError>;
 
-    /// Returns the next token with start/end byte offsets.
     fn next(&mut self) -> Option<Self::Item> {
         self.tokens
             .next()
             .map(|(token, span)| token.map(|token| (span.start, token, span.end)))
     }
 }
+
+// ===============================[ tests ]=====================================
 
 #[cfg(test)]
 mod tests {

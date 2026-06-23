@@ -1,10 +1,5 @@
 use super::*;
 
-/// Traverses every command reference that can appear inside a top-level item.
-///
-/// The visitor receives only signature shapes; it does not need to know the
-/// structural context that produced each reference.  This keeps registry
-/// validation separate from AST traversal.
 pub(in crate::backend::semantic) fn walk_top_level_item(
     item: &TopLevelItem,
     visit: &mut impl FnMut(&SignatureShape),
@@ -120,11 +115,6 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
     }
 }
 
-/// Traverses the common sections shared by theorem-like groups.
-///
-/// `Axiom`, `Theorem`, `Corollary`, `Lemma`, and `Conjecture` all expose the
-/// same logical proof/result sections, so this helper centralizes reference
-/// discovery for those group kinds.
 pub(in crate::backend::semantic) fn walk_theorem_like(
     given: Option<&GivenSection>,
     where_: Option<&WhereSection>,

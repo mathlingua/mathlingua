@@ -1,11 +1,5 @@
 use super::*;
 
-/// Runs semantic checks across a set of parsed MathLingua source files.
-///
-/// This is intentionally a two-pass check.  The first pass collects all command
-/// definitions so cross-file references can be resolved independent of file
-/// order.  The second pass walks every expression/specification and validates
-/// command existence plus argument shape.
 pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
     let mut registry = SignatureRegistry::default();
     for file in files {
@@ -21,11 +15,6 @@ pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
     }
 }
 
-/// Collects every signature-defining top-level item from a single document.
-///
-/// During collection this also performs checks that are naturally tied to the
-/// definition itself: duplicate signatures and required documented rendering
-/// metadata for `Defines`, `Describes`, and `Refines`.
 pub(super) fn collect_document_definitions(
     file: &ParsedSourceFile,
     registry: &mut SignatureRegistry,
@@ -70,24 +59,12 @@ pub(super) fn collect_document_definitions(
     }
 }
 
-/// Borrowed view of the definition-relevant pieces of a top-level item.
-///
-/// Different structural group types store their heading and documented section
-/// under different field names.  This adapter lets the collection pass treat
-/// them uniformly.
 pub(super) struct DefinitionItem<'a> {
-    /// Kind of top-level group that owns this definition.
     kind: DefinitionKind,
-    /// Parsed command header that defines the signature.
     heading: &'a CommandHeader,
-    /// Optional documented section for rendering metadata checks.
     documented: Option<&'a DocumentedSection>,
 }
 
-/// Extracts definition metadata from top-level items that introduce signatures.
-///
-/// Anonymous theorem-like groups do not define a command signature, so they are
-/// ignored here unless they have an explicit heading.
 pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>> {
     match item {
         TopLevelItem::Describes(group) => Some(DefinitionItem {
@@ -139,11 +116,6 @@ pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>>
     }
 }
 
-/// Verifies that renderable definition groups provide a documented `called:` item.
-///
-/// Only `Defines`, `Describes`, and `Refines` currently participate in command
-/// rendering.  Theorem-like groups may have headings for reference purposes but
-/// do not need `Documented:` rendering metadata.
 pub(super) fn check_documented_rendering(
     file: &ParsedSourceFile,
     kind: DefinitionKind,

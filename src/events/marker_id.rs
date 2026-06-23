@@ -2,19 +2,12 @@ use std::fmt;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// Monotonic counter mixed into marker ids to avoid collisions inside one process.
 static NEXT_MARKER_ID: AtomicU64 = AtomicU64::new(0);
 
-/// Identifier shared by the begin and end marker events of a measured range.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct MarkerId(String);
 
 impl MarkerId {
-    /// Creates a new UUID-shaped marker id.
-    ///
-    /// This is not intended to be cryptographically random; it combines current
-    /// time with a process-local counter and sets UUID version/variant bits so it
-    /// is easy to read and group in logs.
     pub fn new() -> Self {
         let mut bytes = [0u8; 16];
         let now = SystemTime::now()
@@ -31,7 +24,6 @@ impl MarkerId {
         Self(format_uuid(bytes))
     }
 
-    /// Returns the id as a string slice.
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -50,7 +42,6 @@ impl fmt::Display for MarkerId {
     }
 }
 
-/// Formats raw bytes as a UUID-shaped string.
 fn format_uuid(bytes: [u8; 16]) -> String {
     let hex = bytes
         .iter()

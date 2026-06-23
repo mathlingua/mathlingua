@@ -1,11 +1,5 @@
-//! Template interpolation helpers for documented `called:` and `written:` text.
-
 use super::*;
 
-/// Renders a plain-LaTeX-mode `called:` template with math substitutions.
-///
-/// Text outside `$...$` is wrapped in `\textrm{...}`.  Text inside `$...$` is
-/// treated as math and supports `name?` placeholder substitution.
 pub(super) fn render_called_template(
     template: &str,
     substitutions: &HashMap<String, String>,
@@ -25,7 +19,6 @@ pub(super) fn render_called_template(
     result
 }
 
-/// Substitutes `name?` placeholders inside a math-mode template.
 pub(super) fn substitute_math_template(
     template: &str,
     substitutions: &HashMap<String, String>,
@@ -59,18 +52,15 @@ pub(super) fn substitute_math_template(
     result
 }
 
-/// Returns true when a template explicitly references a named placeholder.
 pub(super) fn template_contains_placeholder(template: &str, name: &str) -> bool {
     let needle = format!("{name}?");
     template.contains(&needle)
 }
 
-/// Returns true when a character can begin a template placeholder name.
 pub(super) fn is_placeholder_start(ch: char) -> bool {
     ch.is_ascii_alphabetic() || ch == '_'
 }
 
-/// Returns true when a character can continue a template placeholder name.
 pub(super) fn is_placeholder_continue(ch: char) -> bool {
     ch.is_ascii_alphanumeric() || ch == '_' || ch == '.'
 }

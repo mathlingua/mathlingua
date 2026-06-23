@@ -1,6 +1,5 @@
 use super::*;
 
-/// Traverses a value that may be either an `is via` statement or an ordinary spec.
 pub(in crate::backend::semantic) fn walk_is_or_via_item(
     item: &IsOrViaItem,
     visit: &mut impl FnMut(&SignatureShape),
@@ -14,7 +13,6 @@ pub(in crate::backend::semantic) fn walk_is_or_via_item(
     }
 }
 
-/// Traverses an `is` statement or subject specification.
 pub(in crate::backend::semantic) fn walk_is_or_spec(
     spec: &IsOrSpec,
     visit: &mut impl FnMut(&SignatureShape),
@@ -25,7 +23,6 @@ pub(in crate::backend::semantic) fn walk_is_or_spec(
     }
 }
 
-/// Traverses an `is` statement whose type may be refined, or a subject spec.
 pub(in crate::backend::semantic) fn walk_is_or_refined_spec(
     spec: &IsOrRefinedStatementSpec,
     visit: &mut impl FnMut(&SignatureShape),
@@ -36,7 +33,6 @@ pub(in crate::backend::semantic) fn walk_is_or_refined_spec(
     }
 }
 
-/// Traverses the subject and type of an `is` statement.
 pub(in crate::backend::semantic) fn walk_is_statement(
     statement: &IsStatement,
     visit: &mut impl FnMut(&SignatureShape),
@@ -45,7 +41,6 @@ pub(in crate::backend::semantic) fn walk_is_statement(
     walk_type_expression(&statement.ty, visit);
 }
 
-/// Traverses the subject portion of an `is` statement.
 pub(in crate::backend::semantic) fn walk_is_subject(
     subject: &IsSubject,
     visit: &mut impl FnMut(&SignatureShape),
@@ -63,7 +58,6 @@ pub(in crate::backend::semantic) fn walk_is_subject(
     }
 }
 
-/// Traverses the subject portion of a specification statement.
 pub(in crate::backend::semantic) fn walk_spec_subject(
     subject: &SpecSubject,
     visit: &mut impl FnMut(&SignatureShape),
@@ -74,10 +68,6 @@ pub(in crate::backend::semantic) fn walk_spec_subject(
     }
 }
 
-/// Traverses a type expression and the arguments nested inside it.
-///
-/// The type command itself is visited first, followed by any command references
-/// appearing inside the type's argument expressions.
 pub(in crate::backend::semantic) fn walk_type_expression(
     ty: &TypeExpression,
     visit: &mut impl FnMut(&SignatureShape),

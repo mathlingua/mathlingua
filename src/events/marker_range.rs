@@ -1,16 +1,12 @@
 use super::MarkerEvent;
 
-/// Pair of begin and end marker events bounding a range in an event log.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MarkerRange {
-    /// Begin marker event.
     pub begin: MarkerEvent,
-    /// End marker event.
     pub end: MarkerEvent,
 }
 
 impl MarkerRange {
-    /// Creates a marker range from matching begin and end events.
     pub fn new(begin: MarkerEvent, end: MarkerEvent) -> Self {
         Self { begin, end }
     }

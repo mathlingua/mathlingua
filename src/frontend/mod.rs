@@ -1,18 +1,9 @@
-//! Frontend parsing pipeline for MathLingua source text.
-//!
-//! The frontend has three layers: proto parsing for indentation/group structure,
-//! formulation parsing for mathematical expressions, and structural parsing that
-//! maps proto groups into typed MathLingua document groups.
-
 use crate::events::EventLog;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Formula/expression lexer, parser, and AST.
 pub(crate) mod formulation;
-/// Indentation-sensitive proto lexer/parser and AST.
 pub(crate) mod proto;
-/// Typed structural document parser and AST.
 pub(crate) mod structural;
 
 pub use formulation::ast::*;
@@ -28,26 +19,13 @@ pub(crate) use proto::ast::{
     Argument as ProtoArgument, Group as ProtoGroup, Section as ProtoSection,
 };
 
-/// A source file after the frontend has parsed it into a structural document.
-///
-/// Backend passes operate on this type instead of repeatedly reading or
-/// reparsing files. It keeps the original source text for diagnostic location
-/// lookup, the filesystem path for reporting, and the parsed structural AST for
-/// semantic traversal.
 #[derive(Clone, Debug)]
 pub struct ParsedSourceFile {
-    /// Path of the file on disk, used in diagnostics and duplicate reports.
     pub path: PathBuf,
-    /// Original file contents, used to recover line and column information.
     pub source: String,
-    /// Structural representation produced by the frontend parser.
     pub document: Document,
 }
 
-/// Reads and structurally parses one source file.
-///
-/// Parser diagnostics are rewritten with the file path so downstream console
-/// output can report precise file locations.
 pub fn parse_source_file(
     path: &Path,
     event_log: &mut EventLog,

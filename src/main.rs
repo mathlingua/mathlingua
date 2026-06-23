@@ -4,11 +4,6 @@ use mlg::events::{ColorMode, EventConsoleWriter, EventLogListener};
 use mlg::{check, init, version, view};
 use std::process;
 
-/// Binary entrypoint for the `mlg` executable.
-///
-/// The entrypoint parses CLI arguments, resolves the current working directory,
-/// dispatches to the selected subcommand with a console event listener attached,
-/// and exits with a non-zero code when the command reports failure.
 fn main() {
     let cli = Cli::parse();
     let filter = cli.event_filter();

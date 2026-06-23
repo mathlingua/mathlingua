@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 use crate::events::{EventLocation, EventLog, EventPosition, EventSpan, Level};
 use crate::frontend::*;
 
-/// Event origin used for all diagnostics produced by the semantic checker.
 const ORIGIN: &str = "semantic_check";
 
 mod check;

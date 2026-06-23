@@ -1,6 +1,5 @@
 use super::*;
 
-/// Builds the canonical signature shape for any definition command header.
 pub(super) fn shape_for_header(header: &CommandHeader) -> SignatureShape {
     match header {
         CommandHeader::Command(command) => shape_for_command_header_node(command),
@@ -9,10 +8,6 @@ pub(super) fn shape_for_header(header: &CommandHeader) -> SignatureShape {
     }
 }
 
-/// Builds a signature shape for a normal prefix command header.
-///
-/// The resulting signature preserves the command chain and tail labels while
-/// replacing each argument group with only its delimiter and argument count.
 pub(super) fn shape_for_command_header_node(command: &CommandHeaderNode) -> SignatureShape {
     let mut signature = format!("\\{}", format_chain(&command.chain));
     let mut arg_groups = Vec::new();
@@ -31,10 +26,6 @@ pub(super) fn shape_for_command_header_node(command: &CommandHeaderNode) -> Sign
     }
 }
 
-/// Builds a signature shape for an infix command header.
-///
-/// Infix commands are wrapped in `\:...:/` so they cannot collide with ordinary
-/// prefix command signatures.
 pub(super) fn shape_for_infix_command_header(command: &InfixCommandHeader) -> SignatureShape {
     let mut signature = format!("\\:{}", format_chain(&command.chain));
     let mut arg_groups = Vec::new();
@@ -48,11 +39,6 @@ pub(super) fn shape_for_infix_command_header(command: &InfixCommandHeader) -> Si
     }
 }
 
-/// Builds a signature shape for a refined command definition header.
-///
-/// Refined headers combine optional prefixes, one or more refinement parts, and
-/// the refined tail into a single signature such as
-/// `\(continuous)::function:on:to`.
 pub(super) fn shape_for_refined_command_header(command: &RefinedCommandHeader) -> SignatureShape {
     let mut signature = "\\".to_string();
     if let Some(prefix) = &command.prefix_chain {
@@ -84,10 +70,6 @@ pub(super) fn shape_for_refined_command_header(command: &RefinedCommandHeader) -
     }
 }
 
-/// Builds a signature shape for a normal command expression use.
-///
-/// This mirrors `shape_for_command_header_node` but counts expression arguments
-/// instead of declaration/form arguments.
 pub(super) fn shape_for_command_expression(command: &CommandExpression) -> SignatureShape {
     let mut signature = format!("\\{}", format_chain(&command.chain));
     let mut arg_groups = Vec::new();
@@ -106,7 +88,6 @@ pub(super) fn shape_for_command_expression(command: &CommandExpression) -> Signa
     }
 }
 
-/// Builds a signature shape for an infix command expression use.
 pub(super) fn shape_for_infix_command(command: &InfixCommand) -> SignatureShape {
     let mut signature = format!("\\:{}", format_chain(&command.chain));
     let mut arg_groups = Vec::new();
@@ -120,11 +101,6 @@ pub(super) fn shape_for_infix_command(command: &InfixCommand) -> SignatureShape 
     }
 }
 
-/// Builds a signature shape for a refined command expression use.
-///
-/// The primary shape represents the full composed command.  Additional fallback
-/// shapes are attached so a combined use can be accepted when the base command
-/// and each refinement piece are defined separately.
 pub(super) fn shape_for_refined_command_expression(
     command: &RefinedCommandExpression,
 ) -> SignatureShape {
@@ -160,10 +136,6 @@ pub(super) fn shape_for_refined_command_expression(
     shape
 }
 
-/// Produces fallback validation shapes for a refined command expression.
-///
-/// The first fallback is the refined base command; subsequent fallbacks represent
-/// individual refinement pieces applied to that same base.
 pub(super) fn fallback_shapes_for_refined_command_expression(
     command: &RefinedCommandExpression,
 ) -> Vec<SignatureShape> {
@@ -177,7 +149,6 @@ pub(super) fn fallback_shapes_for_refined_command_expression(
     shapes
 }
 
-/// Builds the fallback shape for the base command of a refined expression.
 pub(super) fn shape_for_refined_command_base(command: &RefinedCommandExpression) -> SignatureShape {
     let mut signature = format!("\\{}", format_refined_tail(&command.refined_tail));
     let mut arg_groups = Vec::new();
@@ -191,11 +162,6 @@ pub(super) fn shape_for_refined_command_base(command: &RefinedCommandExpression)
     }
 }
 
-/// Builds the fallback shape for one refinement part applied to a base command.
-///
-/// For a use such as `\(continuous)::function:on{A}:to{B}`, this constructs the
-/// piece signature `\(continuous)::function:on:to` and attaches the argument
-/// shape needed to validate that specific refinement definition.
 pub(super) fn shape_for_refined_command_part(
     command: &RefinedCommandExpression,
     part: &RefinedExpressionPart,
@@ -220,10 +186,6 @@ pub(super) fn shape_for_refined_command_part(
     }
 }
 
-/// Appends curly argument-group shapes from a command header.
-///
-/// Header groups contain forms/declarations, so their arity is counted from the
-/// `forms` collection rather than expression values.
 pub(super) fn add_heading_curly_groups(
     arg_groups: &mut Vec<ArgGroupShape>,
     groups: &[CurlyHeadingArgs],
@@ -236,7 +198,6 @@ pub(super) fn add_heading_curly_groups(
     }
 }
 
-/// Appends curly argument-group shapes from a command expression.
 pub(super) fn add_expression_curly_groups(
     arg_groups: &mut Vec<ArgGroupShape>,
     groups: &[CurlyExpressionArgs],
@@ -249,7 +210,6 @@ pub(super) fn add_expression_curly_groups(
     }
 }
 
-/// Appends parenthesized argument-group shapes from a command expression.
 pub(super) fn add_expression_paren_groups(
     arg_groups: &mut Vec<ArgGroupShape>,
     groups: &[ParenExpressionArgs],
@@ -262,10 +222,6 @@ pub(super) fn add_expression_paren_groups(
     }
 }
 
-/// Extends a header signature with tail labels and their argument shapes.
-///
-/// Tail labels contribute to the canonical signature as `:label` segments, while
-/// their argument lists contribute only arity metadata.
 pub(super) fn add_header_tail(
     signature: &mut String,
     arg_groups: &mut Vec<ArgGroupShape>,
@@ -278,7 +234,6 @@ pub(super) fn add_header_tail(
     }
 }
 
-/// Extends an expression signature with tail labels and their argument shapes.
 pub(super) fn add_expression_tail(
     signature: &mut String,
     arg_groups: &mut Vec<ArgGroupShape>,
@@ -291,7 +246,6 @@ pub(super) fn add_expression_tail(
     }
 }
 
-/// Converts a parsed command/name chain into its canonical dotted text form.
 pub(super) fn format_chain(chain: &Chain) -> String {
     chain
         .parts
@@ -301,7 +255,6 @@ pub(super) fn format_chain(chain: &Chain) -> String {
         .join(".")
 }
 
-/// Converts one chain part into the text used in canonical signatures.
 pub(super) fn format_chain_part(part: &ChainPart) -> String {
     match part {
         ChainPart::Name(name) => name.clone(),
@@ -310,7 +263,6 @@ pub(super) fn format_chain_part(part: &ChainPart) -> String {
     }
 }
 
-/// Converts the base portion of a refined command into canonical signature text.
 pub(super) fn format_refined_tail(tail: &RefinedTail) -> String {
     match tail {
         RefinedTail::Chain(chain) => format_chain(chain),
@@ -318,11 +270,6 @@ pub(super) fn format_refined_tail(tail: &RefinedTail) -> String {
     }
 }
 
-/// Formats an argument-shape list for user-facing diagnostics.
-///
-/// Examples are `none`, `{2}`, `{1}(2)`, or `{1}:...` depending on the groups
-/// present.  Only delimiter kind and count are displayed because semantic type
-/// information is not available at this layer yet.
 pub(super) fn format_arg_groups(groups: &[ArgGroupShape]) -> String {
     if groups.is_empty() {
         return "none".to_string();

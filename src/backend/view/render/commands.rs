@@ -1,11 +1,5 @@
-//! Rendering for parsed command expressions and command-backed group headings.
-
 use super::*;
 
-/// Renders a standalone normal command expression.
-///
-/// Written templates are preferred for standalone command expressions; otherwise
-/// the plain-text `called:` template is rendered in text mode.
 pub(super) fn render_command_expression(
     command: &CommandExpression,
     registry: &RenderRegistry,
@@ -22,11 +16,6 @@ pub(super) fn render_command_expression(
     }
 }
 
-/// Renders a command expression used as an `is`/`is not` predicate.
-///
-/// Predicate rendering deliberately falls back to `called:` when a `written:`
-/// template contains the subject placeholder, because predicate syntax supplies
-/// the subject separately.
 pub(super) fn render_predicate_command_expression(
     command: &CommandExpression,
     registry: &RenderRegistry,
@@ -50,7 +39,6 @@ pub(super) fn render_predicate_command_expression(
     render_called_template(&render.called, &substitutions)
 }
 
-/// Renders the called-text form of a refined command expression.
 pub(super) fn render_refined_command_called(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
@@ -59,16 +47,12 @@ pub(super) fn render_refined_command_called(
     render_called_template(&called.template, &called.substitutions)
 }
 
-/// Unrendered called-template text paired with all substitutions needed for it.
 #[derive(Clone, Debug)]
 pub(super) struct CalledTemplate {
-    /// Plain-LaTeX-mode template, usually assembled from `called:` text.
     pub(super) template: String,
-    /// Placeholder substitutions rendered as math-mode LaTeX.
     pub(super) substitutions: HashMap<String, String>,
 }
 
-/// Extracts a called-template representation from any type expression.
 pub(super) fn type_expression_called_template(
     ty: &TypeExpression,
     registry: &RenderRegistry,
@@ -82,7 +66,6 @@ pub(super) fn type_expression_called_template(
     }
 }
 
-/// Extracts a called-template representation from a normal command expression.
 pub(super) fn command_called_template(
     command: &CommandExpression,
     registry: &RenderRegistry,
@@ -96,11 +79,6 @@ pub(super) fn command_called_template(
     })
 }
 
-/// Builds the called-template representation for a refined command expression.
-///
-/// The resulting template concatenates refinement labels with the base command's
-/// called text and gathers substitutions from both the refinement parts and the
-/// base command.
 pub(super) fn refined_command_called_template(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
@@ -147,10 +125,6 @@ pub(super) fn refined_command_called_template(
     }
 }
 
-/// Returns the type expression targeted by a `Refines:` statement.
-///
-/// `Refines:` can also parse as a spec statement; those do not identify a type
-/// command and therefore cannot enrich a card heading.
 pub(super) fn refines_target_type(spec: &IsOrRefinedStatementSpec) -> Option<&TypeExpression> {
     match spec {
         IsOrRefinedStatementSpec::Is(statement) => Some(&statement.ty),
@@ -158,10 +132,6 @@ pub(super) fn refines_target_type(spec: &IsOrRefinedStatementSpec) -> Option<&Ty
     }
 }
 
-/// Builds placeholder substitutions for a normal command expression.
-///
-/// The optional subject is inserted under the defining subject variable so
-/// templates like `f? : A? \to B?` can render complete statements.
 pub(super) fn command_substitutions(
     command: &CommandExpression,
     render: &CommandRender,
@@ -185,7 +155,6 @@ pub(super) fn command_substitutions(
     substitutions
 }
 
-/// Builds a substitution map from explicit parameter names and rendered values.
 pub(super) fn command_substitutions_for_names(
     names: &[String],
     values: Vec<String>,
@@ -193,10 +162,6 @@ pub(super) fn command_substitutions_for_names(
     names.iter().cloned().zip(values).collect()
 }
 
-/// Builds placeholder substitutions from forms supplied in a command header.
-///
-/// Heading substitutions are used for group card titles where the source heading
-/// itself provides concrete parameter names such as `{A}` and `{B}`.
 pub(super) fn command_header_substitutions(header: &CommandHeader) -> HashMap<String, String> {
     let mut substitutions = HashMap::new();
 
@@ -209,7 +174,6 @@ pub(super) fn command_header_substitutions(header: &CommandHeader) -> HashMap<St
     substitutions
 }
 
-/// Collects all forms that appear in any kind of command header.
 pub(super) fn command_header_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
     match header {
         CommandHeader::Command(header) => simple_command_header_forms(header),
@@ -218,7 +182,6 @@ pub(super) fn command_header_forms(header: &CommandHeader) -> Vec<&FormOrDeclara
     }
 }
 
-/// Collects forms from a normal prefix command header.
 pub(super) fn simple_command_header_forms(header: &CommandHeaderNode) -> Vec<&FormOrDeclaration> {
     let mut forms = Vec::new();
     forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
@@ -233,7 +196,6 @@ pub(super) fn simple_command_header_forms(header: &CommandHeaderNode) -> Vec<&Fo
     forms
 }
 
-/// Collects forms from an infix command header.
 pub(super) fn infix_command_header_forms(header: &InfixCommandHeader) -> Vec<&FormOrDeclaration> {
     let mut forms = Vec::new();
     forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
@@ -247,10 +209,6 @@ pub(super) fn infix_command_header_forms(header: &InfixCommandHeader) -> Vec<&Fo
     forms
 }
 
-/// Collects forms from a refined command header.
-///
-/// Refined headers can place arguments on the base command, the base tail, and
-/// refinement parts, so all of those locations are included.
 pub(super) fn refined_command_header_forms(
     header: &RefinedCommandHeader,
 ) -> Vec<&FormOrDeclaration> {
@@ -275,7 +233,6 @@ pub(super) fn refined_command_header_forms(
     forms
 }
 
-/// Renders argument values that belong to the base command in a refined expression.
 pub(super) fn refined_command_base_argument_values(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
@@ -301,10 +258,6 @@ pub(super) fn refined_command_base_argument_values(
         .collect()
 }
 
-/// Renders argument values available to a single refined-command part.
-///
-/// A refinement part can refer both to the base command arguments and to any
-/// arguments attached directly to that part.
 pub(super) fn refined_command_part_argument_values(
     command: &RefinedCommandExpression,
     part: &RefinedExpressionPart,
@@ -316,7 +269,6 @@ pub(super) fn refined_command_part_argument_values(
         .collect()
 }
 
-/// Renders all argument values supplied to a normal command expression.
 pub(super) fn command_argument_values(
     command: &CommandExpression,
     registry: &RenderRegistry,
@@ -342,7 +294,6 @@ pub(super) fn command_argument_values(
         .collect()
 }
 
-/// Renders all argument values attached to command tail segments.
 pub(super) fn expression_tail_argument_values(
     tail: &[CommandExpressionTailPart],
     registry: &RenderRegistry,

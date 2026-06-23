@@ -1,7 +1,6 @@
 use super::*;
 use std::collections::{HashMap, HashSet};
 
-/// Collects type-checking metadata for a definition item.
 pub(super) fn collect_definition_type_metadata(
     item: &TopLevelItem,
     shape: &SignatureShape,
@@ -16,7 +15,6 @@ pub(super) fn collect_definition_type_metadata(
     registry.type_infos.insert(shape.signature.clone(), info);
 }
 
-/// Runs dependent type checks across one parsed source file.
 pub(super) fn validate_document_types(
     file: &ParsedSourceFile,
     registry: &SignatureRegistry,

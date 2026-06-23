@@ -6,21 +6,13 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-/// Event origin used by collection initialization.
 const ORIGIN: &str = "mlg_init";
 
-/// Result of running [`init`].
 pub struct InitResult {
-    /// Events emitted while initializing the collection.
     pub event_log: EventLog,
-    /// Whether initialization completed without errors.
     pub successful: bool,
 }
 
-/// Initializes a MathLingua collection at the given working directory.
-///
-/// Existing `mlg.json` and `content/` entries are left untouched.  Missing
-/// entries are created and reported through the returned event log.
 pub fn init(cwd: &Path, listener: Option<Box<dyn EventLogListener>>) -> InitResult {
     let mut event_log = EventLog::new();
     if let Some(listener) = listener {
@@ -37,7 +29,6 @@ pub fn init(cwd: &Path, listener: Option<Box<dyn EventLogListener>>) -> InitResu
     }
 }
 
-/// Pushes initialization events into an existing event log.
 pub(super) fn init_in(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
     event_log.system_debug(
         Some(ORIGIN),

@@ -1,11 +1,5 @@
-//! Rendering for general formulation expressions.
-
 use super::*;
 
-/// Renders a parsed expression as inline LaTeX.
-///
-/// Command expressions consult the render registry; ordinary expression forms
-/// are rendered structurally with conservative escaping.
 pub(super) fn render_expression(expression: &Expression, registry: &RenderRegistry) -> String {
     match &expression.kind {
         ExpressionKind::Name(name) => escape_math_identifier(name),
@@ -102,7 +96,6 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
     }
 }
 
-/// Renders a set-builder expression as LaTeX with scalable braces.
 pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegistry) -> String {
     let target = render_placeholder_form(&set.target);
     let spec = render_spec_statement(&set.spec, registry);
@@ -116,7 +109,6 @@ pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegist
     }
 }
 
-/// Renders an inline specification statement such as `x "in" X`.
 pub(super) fn render_spec_statement(
     statement: &SpecStatement,
     registry: &RenderRegistry,
@@ -129,11 +121,6 @@ pub(super) fn render_spec_statement(
     )
 }
 
-/// Parses and renders a simple textual set-builder specification.
-///
-/// This fallback supports inputs that are set specs in shape but are not yet
-/// accepted by the full formulation parser.  It respects top-level delimiters so
-/// nested tuples, groups, and quoted operators do not split the set body.
 pub(super) fn render_simple_set_spec_latex(
     text: &str,
     registry: &RenderRegistry,
@@ -163,13 +150,11 @@ pub(super) fn render_simple_set_spec_latex(
     }
 }
 
-/// Renders a small fragment of math text or escapes it as raw math if parsing fails.
 pub(super) fn render_latex_fragment(text: &str, registry: &RenderRegistry) -> String {
     render_parsed_formulation_latex(text, registry)
         .unwrap_or_else(|| escape_latex_math(text.trim()))
 }
 
-/// Splits a string at the first delimiter that is not nested or quoted.
 pub(super) fn split_once_top_level(input: &str, delimiter: char) -> Option<(&str, &str)> {
     let mut paren_depth = 0usize;
     let mut brace_depth = 0usize;

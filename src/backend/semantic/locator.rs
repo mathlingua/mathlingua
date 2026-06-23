@@ -1,33 +1,19 @@
 use super::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-/// Zero-based source position used internally before converting to event spans.
 pub(super) struct SourcePosition {
-    /// Zero-based row in the source file.
     row: usize,
-    /// Zero-based Unicode scalar column in the row.
     column: usize,
 }
 
-/// Incremental source locator for matching parsed signatures back to raw text.
-///
-/// The frontend AST currently does not carry exact spans for every backend
-/// diagnostic, so this locator scans the original source in order.  Separate
-/// cursors are maintained for definitions and references to avoid repeatedly
-/// reporting the first matching occurrence.
 pub(super) struct SourceLocator<'a> {
-    /// Complete original source text for the file being checked.
     source: &'a str,
-    /// Next byte offset to scan from when locating definition headings.
     heading_cursor: usize,
-    /// Next byte offset to scan from when locating command references.
     reference_cursor: usize,
-    /// Next byte offset to scan from when locating ordinary symbol names.
     symbol_cursor: usize,
 }
 
 impl<'a> SourceLocator<'a> {
-    /// Creates a locator for one source file.
     pub(super) fn new(source: &'a str) -> Self {
         Self {
             source,
@@ -37,7 +23,6 @@ impl<'a> SourceLocator<'a> {
         }
     }
 
-    /// Finds the next heading occurrence matching a signature shape.
     pub(super) fn locate_heading(&mut self, shape: &SignatureShape) -> Option<SourcePosition> {
         let offset = find_signature_occurrence(
             self.source,
@@ -49,7 +34,6 @@ impl<'a> SourceLocator<'a> {
         Some(position_at_offset(self.source, offset))
     }
 
-    /// Finds the next non-heading occurrence matching a signature shape.
     pub(super) fn locate_reference(&mut self, shape: &SignatureShape) -> Option<SourcePosition> {
         let offset = find_signature_occurrence(
             self.source,
@@ -61,7 +45,6 @@ impl<'a> SourceLocator<'a> {
         Some(position_at_offset(self.source, offset))
     }
 
-    /// Finds the next ordinary symbol occurrence matching a name.
     pub(super) fn locate_symbol(&mut self, name: &str) -> Option<SourcePosition> {
         let offset = find_symbol_occurrence(self.source, name, self.symbol_cursor)?;
         self.symbol_cursor = offset.saturating_add(name.len());
@@ -70,20 +53,11 @@ impl<'a> SourceLocator<'a> {
 }
 
 #[derive(Clone, Copy)]
-/// Kind of source occurrence the locator should search for.
 pub(super) enum OccurrenceKind {
-    /// Match command signatures inside bracketed headings.
     Heading,
-    /// Match command signatures anywhere outside bracketed headings.
     Reference,
 }
 
-/// Finds the next byte offset where a signature shape appears in raw source text.
-///
-/// This scanner is deliberately conservative: it starts only at backslash tokens,
-/// separates headings from references, and delegates argument skipping so
-/// signatures such as `\function:on:to` can match text like
-/// `\function:on{A}:to{B}`.
 pub(super) fn find_signature_occurrence(
     source: &str,
     shape: &SignatureShape,
@@ -105,7 +79,6 @@ pub(super) fn find_signature_occurrence(
     None
 }
 
-/// Returns true when a byte offset belongs to a bracketed command heading line.
 pub(super) fn is_heading_line(source: &str, offset: usize) -> bool {
     let line_start = source[..offset].rfind('\n').map(|i| i + 1).unwrap_or(0);
     let line_end = source[offset..]
@@ -116,12 +89,6 @@ pub(super) fn is_heading_line(source: &str, offset: usize) -> bool {
     line.starts_with('[') && line.ends_with(']')
 }
 
-/// Checks whether a canonical signature matches source text at a byte offset.
-///
-/// Normal command signatures skip over concrete argument groups between tail
-/// labels.  Refined and infix signatures are currently matched as direct text
-/// because their canonical text contains enough punctuation to avoid prefix
-/// ambiguity.
 pub(super) fn matches_signature_at(source: &str, offset: usize, signature: &str) -> bool {
     if signature.starts_with("\\:") || signature.contains("::") {
         return source
@@ -159,7 +126,6 @@ pub(super) fn matches_signature_at(source: &str, offset: usize, signature: &str)
         .is_some_and(|ch| ch == ':' || ch == '.' || ch == '_' || ch.is_ascii_alphanumeric())
 }
 
-/// Finds the next byte offset where an ordinary symbol name appears.
 pub(super) fn find_symbol_occurrence(source: &str, name: &str, start: usize) -> Option<usize> {
     if name.is_empty() {
         return None;
@@ -178,7 +144,6 @@ pub(super) fn find_symbol_occurrence(source: &str, name: &str, start: usize) -> 
     None
 }
 
-/// Checks whether a name occurrence is delimited like a variable symbol.
 pub(super) fn matches_symbol_at(source: &str, offset: usize, name: &str) -> bool {
     let Some(tail) = source.get(offset..) else {
         return false;
@@ -198,7 +163,6 @@ pub(super) fn matches_symbol_at(source: &str, offset: usize, name: &str) -> bool
     !invalid_before && !invalid_after
 }
 
-/// Skips any immediately adjacent balanced `{...}` or `(...)` groups.
 pub(super) fn skip_argument_groups(mut input: &str) -> &str {
     loop {
         let Some(open) = input.chars().next() else {
@@ -216,10 +180,6 @@ pub(super) fn skip_argument_groups(mut input: &str) -> &str {
     }
 }
 
-/// Returns the byte index just after a balanced delimiter group.
-///
-/// Nested groups of the same delimiter are handled so a command argument can
-/// contain structured expressions without breaking signature matching.
 pub(super) fn find_balanced_group_end(input: &str, open: char, close: char) -> Option<usize> {
     let mut depth = 0usize;
     for (index, ch) in input.char_indices() {
@@ -235,7 +195,6 @@ pub(super) fn find_balanced_group_end(input: &str, open: char, close: char) -> O
     None
 }
 
-/// Converts a byte offset into a zero-based row and column position.
 pub(super) fn position_at_offset(source: &str, offset: usize) -> SourcePosition {
     let mut row = 0usize;
     let mut line_start = 0usize;
@@ -255,7 +214,6 @@ pub(super) fn position_at_offset(source: &str, offset: usize) -> SourcePosition 
     }
 }
 
-/// Formats a definition location for duplicate-signature diagnostics.
 pub(super) fn display_definition_location(entry: &DefinitionEntry) -> String {
     match entry.position {
         Some(position) => format!(
@@ -268,10 +226,6 @@ pub(super) fn display_definition_location(entry: &DefinitionEntry) -> String {
     }
 }
 
-/// Emits a user-facing semantic error at an optional source position.
-///
-/// When a position is unavailable, the diagnostic still points at the owning
-/// file so command-line output remains actionable.
 pub(super) fn emit_error(
     event_log: &mut EventLog,
     path: &Path,

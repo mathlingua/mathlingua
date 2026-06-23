@@ -2,16 +2,11 @@ use crate::events::{Audience, EventFilter, Level};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
-/// Parsed command-line interface for the `mlg` executable.
-///
-/// Global event flags are collected here and converted into an `EventFilter`
-/// before the selected subcommand is executed.
 #[derive(Debug, Parser)]
 #[command(name = "mlg")]
 #[command(version, about, long_about = None)]
 #[command(arg_required_else_help = true)]
 pub struct Cli {
-    /// Which event audiences should be printed to the console.
     #[arg(
         long = "event-audience",
         visible_alias = "event-scope",
@@ -21,21 +16,17 @@ pub struct Cli {
     )]
     pub event_audiences: Vec<CliEventAudience>,
 
-    /// Which event levels should be printed to the console.
     #[arg(long = "event-level", value_enum, value_delimiter = ',', global = true)]
     pub event_levels: Vec<CliEventLevel>,
 
-    /// Whether marker events should be printed to the console.
     #[arg(long = "event-markers", global = true, default_value_t = false)]
     pub event_markers: bool,
 
-    /// Subcommand requested by the user.
     #[command(subcommand)]
     pub command: Command,
 }
 
 impl Cli {
-    /// Converts CLI event flags into the filter used by console event output.
     pub fn event_filter(&self) -> EventFilter {
         let audiences = if self.event_audiences.is_empty() {
             vec![Audience::User]
@@ -59,17 +50,13 @@ impl Cli {
     }
 }
 
-/// CLI representation of event audiences accepted by `--event-audience`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum CliEventAudience {
-    /// User-facing messages.
     User,
-    /// Internal/system messages.
     System,
 }
 
 impl From<CliEventAudience> for Audience {
-    /// Converts the CLI audience enum into the shared event audience enum.
     fn from(value: CliEventAudience) -> Self {
         match value {
             CliEventAudience::User => Audience::User,
@@ -78,21 +65,15 @@ impl From<CliEventAudience> for Audience {
     }
 }
 
-/// CLI representation of event levels accepted by `--event-level`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
 pub enum CliEventLevel {
-    /// Informational messages.
     Log,
-    /// Warning diagnostics.
     Warning,
-    /// Error diagnostics.
     Error,
-    /// Debug diagnostics.
     Debug,
 }
 
 impl From<CliEventLevel> for Level {
-    /// Converts the CLI level enum into the shared event level enum.
     fn from(value: CliEventLevel) -> Self {
         match value {
             CliEventLevel::Log => Level::Log,
@@ -103,31 +84,22 @@ impl From<CliEventLevel> for Level {
     }
 }
 
-/// Top-level subcommands supported by `mlg`.
 #[derive(Clone, Debug, Subcommand)]
 pub enum Command {
-    /// Check Mathlingua files for errors
     Check(CheckArgs),
-    /// Initialize a Mathlingua collection
     Init,
-    /// Print version information and quit
     Version,
-    /// View rendered Mathlingua files
     View(ViewArgs),
 }
 
-/// Arguments for `mlg check`.
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
 pub struct CheckArgs {
-    /// Directories or .mlg files to check. Defaults to the collection's content directory.
     #[arg(value_name = "PATH")]
     pub paths: Vec<PathBuf>,
 }
 
-/// Arguments for `mlg view`.
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
 pub struct ViewArgs {
-    /// The local port used for the rendered viewer.
     #[arg(long, default_value_t = 3000)]
     pub port: u16,
 }

@@ -8,32 +8,20 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-/// Default directory containing MathLingua source files inside a collection.
 pub(crate) const CONTENT_DIR: &str = "content";
 
-/// A MathLingua source collection as it moves through backend passes.
-///
-/// The collection owns config validation, source-file discovery, structural
-/// parsing, semantic checking, and optional viewer rendering.
 pub(crate) struct SourceCollection {
-    /// Root used for collection-relative output such as viewer file paths.
     root: PathBuf,
-    /// Stable list of MathLingua source files in the collection.
     source_files: Vec<PathBuf>,
-    /// Files successfully read and parsed by the structural parser pass.
     parsed_files: Vec<ParsedSourceFile>,
 }
 
-/// Selects which source-file diagnostics should be shown after a full pass run.
 pub(crate) enum SourceFileFilter {
-    /// Show diagnostics from every file in the collection.
     All,
-    /// Show diagnostics only when they point at one of these source files.
     Only(BTreeSet<PathBuf>),
 }
 
 impl SourceFileFilter {
-    /// Returns the number of collection files selected by this filter.
     pub(crate) fn selected_file_count(&self, collection: &SourceCollection) -> usize {
         match self {
             Self::All => collection.source_files.len(),
@@ -45,7 +33,6 @@ impl SourceFileFilter {
         }
     }
 
-    /// Returns true when an event should be replayed for this filter.
     fn allows(&self, event: &Event) -> bool {
         match self {
             Self::All => true,
@@ -57,7 +44,6 @@ impl SourceFileFilter {
 }
 
 impl SourceCollection {
-    /// Discovers every MathLingua source file in the collection rooted at `root`.
     pub(crate) fn load(root: &Path, event_log: &mut EventLog, origin: &str) -> Self {
         let root = normalize_path(root);
         let root = match find_collection_root(&root) {
@@ -77,7 +63,6 @@ impl SourceCollection {
         Self::new(root, source_files)
     }
 
-    /// Creates a collection from already-resolved source files.
     fn new(root: PathBuf, source_files: Vec<PathBuf>) -> Self {
         Self {
             root,
@@ -86,23 +71,19 @@ impl SourceCollection {
         }
     }
 
-    /// Returns the collection source files.
     pub(crate) fn source_files(&self) -> &[PathBuf] {
         &self.source_files
     }
 
-    /// Returns the structurally parsed source files.
     pub(crate) fn parsed_files(&self) -> &[ParsedSourceFile] {
         &self.parsed_files
     }
 
-    /// Runs the common checking passes in their intended order.
     pub(crate) fn run_check_passes(&mut self, event_log: &mut EventLog, origin: &str) {
         self.parse_structural(event_log, origin);
         self.check_semantics(event_log);
     }
 
-    /// Runs the common checking passes, replaying only diagnostics accepted by a filter.
     pub(crate) fn run_check_passes_filtered(
         &mut self,
         event_log: &mut EventLog,
@@ -124,7 +105,6 @@ impl SourceCollection {
         }
     }
 
-    /// Builds a filter from command paths without changing the collection.
     pub(crate) fn diagnostic_filter(
         &self,
         root: &Path,
@@ -157,7 +137,6 @@ impl SourceCollection {
         SourceFileFilter::Only(selected_files)
     }
 
-    /// Reads each source file and parses it into the structural AST.
     fn parse_structural(&mut self, event_log: &mut EventLog, origin: &str) {
         self.parsed_files.clear();
 
@@ -168,17 +147,14 @@ impl SourceCollection {
         }
     }
 
-    /// Runs backend semantic checks across all parsed files.
     fn check_semantics(&self, event_log: &mut EventLog) {
         check_documents(&self.parsed_files, event_log);
     }
 
-    /// Runs the optional view-model generation pass.
     pub(crate) fn build_view(&self, event_log: &mut EventLog) -> Option<CollectionView> {
         build_collection_view(&self.root, &self.parsed_files, event_log)
     }
 
-    /// Returns normalized source file paths for path-filter comparisons.
     fn normalized_source_files(&self) -> BTreeSet<PathBuf> {
         self.source_files
             .iter()
@@ -187,7 +163,6 @@ impl SourceCollection {
     }
 }
 
-/// Resolves every MathLingua source file under a collection root.
 fn resolve_collection_source_files(
     root: &Path,
     event_log: &mut EventLog,
@@ -198,7 +173,6 @@ fn resolve_collection_source_files(
     files.into_iter().collect()
 }
 
-/// Resolves source files referenced by command paths for diagnostic filtering.
 fn resolve_filter_source_files(
     root: &Path,
     paths: &[PathBuf],
@@ -216,7 +190,6 @@ fn resolve_filter_source_files(
     files.into_iter().collect()
 }
 
-/// Finds the nearest ancestor directory containing the collection config file.
 pub(crate) fn find_collection_root(start: &Path) -> Option<PathBuf> {
     start
         .ancestors()
@@ -224,7 +197,6 @@ pub(crate) fn find_collection_root(start: &Path) -> Option<PathBuf> {
         .map(Path::to_path_buf)
 }
 
-/// Resolves a user-supplied path against the command root.
 fn resolve_input_path(
     root: &Path,
     path: &Path,
@@ -250,10 +222,6 @@ fn resolve_input_path(
     }
 }
 
-/// Collects source files from a file or directory target.
-///
-/// Direct file targets must be `.mlg` files. Directory targets are traversed
-/// recursively and non-`.mlg` files inside them are ignored.
 fn collect_source_files(
     target: PathBuf,
     files: &mut BTreeSet<PathBuf>,
@@ -280,7 +248,6 @@ fn collect_source_files(
     }
 }
 
-/// Recursively collects `.mlg` files from a directory in stable path order.
 fn collect_directory_source_files(
     directory: &Path,
     files: &mut BTreeSet<PathBuf>,
@@ -310,26 +277,22 @@ fn collect_directory_source_files(
     }
 }
 
-/// Reads directory entries and sorts them by path for deterministic traversal.
 fn read_directory_entries(directory: &Path) -> io::Result<Vec<fs::DirEntry>> {
     let mut entries = fs::read_dir(directory)?.collect::<Result<Vec<_>, io::Error>>()?;
     entries.sort_by_key(fs::DirEntry::path);
     Ok(entries)
 }
 
-/// Returns true when a path has the `MathLingua` source extension.
 fn is_mathlingua_source_file(path: &Path) -> bool {
     path.extension()
         .and_then(|value| value.to_str())
         .is_some_and(|extension| extension.eq_ignore_ascii_case("mlg"))
 }
 
-/// Returns a stable absolute path when possible.
 fn normalize_path(path: &Path) -> PathBuf {
     path.canonicalize().unwrap_or_else(|_| path.to_path_buf())
 }
 
-/// Returns the file path attached to a message event.
 fn event_file_path(event: &Event) -> Option<&Path> {
     event
         .as_message()
@@ -338,6 +301,8 @@ fn event_file_path(event: &Event) -> Option<&Path> {
             EventLocation::InMemory { .. } => None,
         })
 }
+
+// ===============================[ tests ]=====================================
 
 #[cfg(test)]
 mod tests {

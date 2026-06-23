@@ -1,10 +1,3 @@
-//! Structural parser for typed MathLingua documents.
-//!
-//! This module composes the proto parser with structural recognition that maps
-//! groups onto the strongly typed AST in [`super::ast`].  Unrecognized proto
-//! groups are diagnosed and skipped so neighboring valid groups continue to
-//! flow through the rest of the pipeline.
-
 use std::collections::{HashMap, VecDeque};
 
 use crate::events::EventLog;
@@ -22,10 +15,6 @@ use crate::frontend::proto::ast::{
 
 use super::ast::*;
 
-/// Diagnostic origin attached to structural parser errors.
-///
-/// This distinguishes section-shape and group-shape diagnostics from lower
-/// proto parsing errors and later backend semantic checks.
 const ORIGIN: &str = "structural_parser";
 
 /// Parses raw MathLingua source into the strongly typed structural AST.

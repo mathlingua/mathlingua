@@ -3,34 +3,21 @@ use crate::events::{EventLog, EventLogListener, MarkerRange};
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since, user_issue_count_since};
 use std::path::{Path, PathBuf};
 
-/// Event origin used by the check command.
 const ORIGIN: &str = "mlg_check";
 
-/// Result of running [`check`].
 pub struct CheckResult {
-    /// Events emitted while checking.
     pub event_log: EventLog,
-    /// Whether the run produced no error-level events.
     pub successful: bool,
-    /// Number of source files selected for diagnostic reporting.
     pub files_checked: usize,
-    /// Marker range bounding the events emitted by the check run.
     pub marker_range: MarkerRange,
 }
 
-/// Summary returned by the internal [`check_in`] helper.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct CheckSummary {
-    /// Number of source files selected for diagnostic reporting.
     pub files_checked: usize,
-    /// Marker range bounding the events emitted by the check run.
     pub marker_range: MarkerRange,
 }
 
-/// Runs `mlg check` from the given working directory.
-///
-/// The returned [`CheckResult`] owns the event log produced by the run, so
-/// callers can inspect events without threading a log through their code.
 pub fn check(
     cwd: &Path,
     paths: &[PathBuf],
@@ -53,10 +40,6 @@ pub fn check(
     }
 }
 
-/// Runs `mlg check` against an existing event log.
-///
-/// The command builds a backend source collection, runs its check passes, and
-/// emits a success or issue-count summary.
 pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> CheckSummary {
     let begin = event_log.begin_marker("check_in", Some(ORIGIN));
     let starting_event_count = event_log.events().len();
@@ -93,7 +76,6 @@ pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) 
     }
 }
 
-/// Formats the success summary for a check run.
 fn render_check_success(files_checked: usize) -> String {
     if files_checked == 1 {
         "Checked 1 file".to_string()
@@ -102,7 +84,6 @@ fn render_check_success(files_checked: usize) -> String {
     }
 }
 
-/// Formats a singular or plural issue count.
 fn format_issue_count(issue_count: usize) -> String {
     if issue_count == 1 {
         "1 issue".to_string()

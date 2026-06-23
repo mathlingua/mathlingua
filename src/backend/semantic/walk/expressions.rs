@@ -1,9 +1,5 @@
 use super::*;
 
-/// Traverses an expression tree for command references.
-///
-/// Command-like expressions are visited as signature shapes, and their argument
-/// expressions are traversed recursively so nested references are also checked.
 pub(in crate::backend::semantic) fn walk_expression(
     expression: &Expression,
     visit: &mut impl FnMut(&SignatureShape),
@@ -74,7 +70,6 @@ pub(in crate::backend::semantic) fn walk_expression(
     }
 }
 
-/// Traverses all expression arguments supplied to a normal command expression.
 pub(in crate::backend::semantic) fn walk_command_expression_arguments(
     command: &CommandExpression,
     visit: &mut impl FnMut(&SignatureShape),
@@ -98,7 +93,6 @@ pub(in crate::backend::semantic) fn walk_command_expression_arguments(
     }
 }
 
-/// Traverses all expression arguments supplied to an infix command expression.
 pub(in crate::backend::semantic) fn walk_infix_command_arguments(
     command: &InfixCommand,
     visit: &mut impl FnMut(&SignatureShape),
@@ -117,10 +111,6 @@ pub(in crate::backend::semantic) fn walk_infix_command_arguments(
     }
 }
 
-/// Traverses all expression arguments supplied to a refined command expression.
-///
-/// This includes arguments attached to refinement parts, base command arguments,
-/// tail arguments, and optional parenthesized invocation arguments.
 pub(in crate::backend::semantic) fn walk_refined_command_expression_arguments(
     command: &RefinedCommandExpression,
     visit: &mut impl FnMut(&SignatureShape),

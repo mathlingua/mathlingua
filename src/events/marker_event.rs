@@ -1,29 +1,20 @@
 use super::MarkerId;
 
-/// Phase of an instrumentation marker.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MarkerPhase {
-    /// Beginning of a marked range.
     Begin,
-    /// End of a marked range.
     End,
 }
 
-/// Event emitted when a marked range begins or ends.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MarkerEvent {
-    /// Id shared between matching begin and end marker events.
     pub id: MarkerId,
-    /// Human-readable label for the measured range.
     pub label: String,
-    /// Whether this event begins or ends the range.
     pub phase: MarkerPhase,
-    /// Optional subsystem that emitted the marker.
     pub origin: Option<String>,
 }
 
 impl MarkerEvent {
-    /// Creates a marker event from its components.
     pub fn new(
         id: MarkerId,
         label: impl Into<String>,
@@ -38,7 +29,6 @@ impl MarkerEvent {
         }
     }
 
-    /// Returns a marker event with the given optional origin.
     pub fn with_origin_option(mut self, origin: Option<&str>) -> Self {
         self.origin = origin.map(str::to_owned);
         self

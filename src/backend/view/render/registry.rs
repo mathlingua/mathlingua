@@ -1,41 +1,19 @@
-//! Registry construction for documented render templates.
-
 use super::*;
 
-/// Lookup table of documented rendering metadata by canonical command signature.
-///
-/// The registry is built once from all parsed files before individual
-/// formulations are rendered.  Rendering can then resolve a command use such as
-/// `\function:on{A}:to{B}` to its `called:` and optional `written:` templates.
 #[derive(Clone, Debug, Default)]
 pub(in crate::backend::view) struct RenderRegistry {
     /// Map from canonical command signature to the rendering data for that command.
     pub(super) commands: HashMap<String, CommandRender>,
 }
 
-/// Rendering metadata extracted from a definition-like group.
-///
-/// `called` is always present because semantic checking requires it for
-/// renderable commands.  `written` is optional and is used only when a command
-/// has a math-mode representation.
 #[derive(Clone, Debug)]
 pub(super) struct CommandRender {
-    /// Primary subject variable from the defining form, such as `f` in `f(x__)`.
     pub(super) subject_variable: Option<String>,
-    /// Parameter names supplied in the command header, in substitution order.
     pub(super) parameters: Vec<String>,
-    /// Joined plain-LaTeX-mode `called:` template.
     pub(super) called: String,
-    /// Joined math-LaTeX-mode `written:` template, if provided.
     pub(super) written: Option<String>,
 }
 
-/// Builds the render registry from all parsed source files.
-///
-/// Only `Defines`, `Describes`, and `Refines` groups with documented `called:`
-/// metadata contribute entries.  Later entries with the same signature replace
-/// earlier ones here; duplicate detection is handled by the semantic checker
-/// before view rendering proceeds.
 pub(in crate::backend::view) fn build_render_registry(
     files: &[ParsedSourceFile],
 ) -> RenderRegistry {
@@ -53,10 +31,6 @@ pub(in crate::backend::view) fn build_render_registry(
     registry
 }
 
-/// Attempts to render one formulation string as inline LaTeX.
-///
-/// The renderer first tries full formulation parsers and then falls back to a
-/// small set-spec parser used for legacy/simple set-builder text.
 pub(in crate::backend::view) fn render_formulation_latex(
     text: &str,
     registry: &RenderRegistry,
@@ -65,12 +39,6 @@ pub(in crate::backend::view) fn render_formulation_latex(
         .or_else(|| render_simple_set_spec_latex(text, registry))
 }
 
-/// Renders a group card heading as LaTeX when documented metadata is available.
-///
-/// Definition-like groups use their own `called:` template.  `Refines` groups
-/// additionally combine the refinement's `called:` template with the called text
-/// of the command being refined, so a card can display titles like
-/// `continuous function on A to B`.
 pub(in crate::backend::view) fn render_group_heading_latex(
     kind: &str,
     heading: Option<&str>,
@@ -96,11 +64,6 @@ pub(in crate::backend::view) fn render_group_heading_latex(
     Some(render_called_template(&render.called, &substitutions))
 }
 
-/// Builds the specialized heading for a `Refines` group.
-///
-/// The `Refines:` section tells us what command is being refined.  The heading
-/// combines the refinement label, such as `continuous`, with the target command's
-/// called template, such as `function on A to B`.
 pub(super) fn render_refines_group_heading_latex(
     header: &CommandHeader,
     refines_argument: Option<&str>,
@@ -117,7 +80,6 @@ pub(super) fn render_refines_group_heading_latex(
     Some(render_called_template(&template, &substitutions))
 }
 
-/// Attempts all supported parsers for a formulation and renders the first match.
 pub(super) fn render_parsed_formulation_latex(
     text: &str,
     registry: &RenderRegistry,
@@ -135,7 +97,6 @@ pub(super) fn render_parsed_formulation_latex(
         .map(|form| render_form_or_declaration(&form))
 }
 
-/// Registry insertion record for one renderable command definition.
 pub(super) struct RenderEntry {
     /// Canonical command signature used as the registry key.
     signature: String,
@@ -143,10 +104,6 @@ pub(super) struct RenderEntry {
     render: CommandRender,
 }
 
-/// Extracts a render registry entry from a top-level structural item.
-///
-/// Non-definition-like items are ignored because they do not define reusable
-/// command rendering templates.
 pub(super) fn render_entry(item: &TopLevelItem) -> Option<RenderEntry> {
     match item {
         TopLevelItem::Describes(group) => render_entry_from_parts(
@@ -171,11 +128,6 @@ pub(super) fn render_entry(item: &TopLevelItem) -> Option<RenderEntry> {
     }
 }
 
-/// Builds a render entry from the common pieces of a definition-like group.
-///
-/// This function centralizes extraction of `called:`, optional `written:`, the
-/// subject variable, and header parameter names across `Defines`, `Describes`,
-/// and `Refines`.
 pub(super) fn render_entry_from_parts(
     signature: String,
     parameters: Vec<String>,
@@ -204,7 +156,6 @@ pub(super) fn render_entry_from_parts(
     })
 }
 
-/// Joins all text arguments in a `called:` section into one template string.
 pub(super) fn join_called_text(section: &CalledSection) -> String {
     section
         .arguments
@@ -214,7 +165,6 @@ pub(super) fn join_called_text(section: &CalledSection) -> String {
         .join(" ")
 }
 
-/// Joins all text arguments in a `written:` section into one template string.
 pub(super) fn join_written_text(section: &WrittenSection) -> String {
     section
         .arguments

@@ -2,41 +2,20 @@ use super::ast::{Argument, Formulation, Group, Section, TextLiteral};
 use super::lexer::Lexer;
 use crate::events::EventLog;
 
-/// Opening and closing delimiters that create multiline formulation blocks.
-///
-/// A line containing exactly one opening delimiter starts a block.  The block
-/// closes only when the matching delimiter appears at the same indentation,
-/// which lets inner formulation text contain delimiter-shaped lines safely.
 const MULTILINE_FORMULATION_DELIMITERS: [(&str, &str); 4] =
     [("(", ")"), ("[", "]"), ("{", "}"), ("(.", ".)")];
 
-/// Parser for the proto MathLingua document shape.
-///
-/// This pass recognizes groups, sections, text literals, and raw formulation
-/// strings without interpreting mathematical grammar.  It is deliberately
-/// recovery-oriented: malformed lines are reported and skipped where possible
-/// so later diagnostics can still be produced from the rest of the file.
 pub struct Parser<'a> {
-    /// Line lexer that provides normalized source lines and row diagnostics.
     lexer: Lexer<'a>,
 }
 
 impl<'a> Parser<'a> {
-    /// Creates a parser for a raw MathLingua source string.
-    ///
-    /// Diagnostics are emitted into the supplied event log by both this parser
-    /// and the underlying proto lexer.
     pub fn new(input: &str, event_log: &'a mut EventLog) -> Self {
         Self {
             lexer: Lexer::new(input, event_log),
         }
     }
 
-    /// Parses the whole source into top-level proto groups.
-    ///
-    /// Blank lines and comments may separate groups.  Unexpected top-level
-    /// lines are reported and consumed one at a time so the parser can continue
-    /// looking for subsequent well-formed groups.
     pub fn parse(&mut self) -> Vec<Group> {
         let mut groups = Vec::new();
 
@@ -62,33 +41,18 @@ impl<'a> Parser<'a> {
         groups
     }
 
-    /// Consumes all blank lines and comments at the current cursor.
-    ///
-    /// This is used between top-level groups where both blank space and comment
-    /// lines are structural separators.
     fn skip_blank_lines_and_comments(&mut self) {
         while matches!(self.lexer.peek(), Some(line) if line.is_blank_or_comment()) {
             let _ = self.lexer.next();
         }
     }
 
-    /// Consumes only comments at the current cursor.
-    ///
-    /// Inside groups and sections, blank lines are meaningful block terminators
-    /// while comments are ignored, so this helper intentionally leaves blanks in
-    /// place for the caller to observe.
     fn skip_comments(&mut self) {
         while matches!(self.lexer.peek(), Some(line) if line.is_comment()) {
             let _ = self.lexer.next();
         }
     }
 
-    /// Parses one group at the requested indentation level.
-    ///
-    /// A group may start with a bracketed heading, such as `[\set]`, or with a
-    /// section line at the current indentation.  The returned group keeps the
-    /// metadata from its first physical line so structural diagnostics can point
-    /// back to the group start.
     fn parse_group(&mut self, indent: usize) -> Option<Group> {
         self.skip_comments();
 
@@ -148,11 +112,6 @@ impl<'a> Parser<'a> {
         })
     }
 
-    /// Parses a single section and all of its arguments.
-    ///
-    /// Section bodies are expected two spaces deeper than the section line.
-    /// Over-indented arguments are diagnosed but still parsed so a single
-    /// spacing issue does not discard the rest of the section.
     fn parse_section(&mut self, indent: usize) -> Option<Section> {
         self.skip_comments();
 
@@ -228,12 +187,6 @@ impl<'a> Parser<'a> {
         })
     }
 
-    /// Parses an inline section argument that appears after `:`.
-    ///
-    /// Inline text may be the opening line of a multiline formulation block.  A
-    /// fully single-quoted inline formulation is accepted as text for recovery
-    /// purposes but reported because the current syntax only allows double
-    /// quoted text literals.
     fn parse_inline_argument(
         &mut self,
         argument: &str,
@@ -255,12 +208,6 @@ impl<'a> Parser<'a> {
         Some(text)
     }
 
-    /// Parses one raw formulation argument at the current cursor.
-    ///
-    /// Formulations are any nonblank, noncomment, nonheader, nontext argument
-    /// lines.  This function preserves the formulation text verbatim, including
-    /// multiline delimiter blocks, so the formulation parser can later handle
-    /// the mathematical syntax.
     fn parse_formulation(&mut self) -> Option<Formulation> {
         if !matches!(
             self.lexer.peek(),
@@ -294,11 +241,6 @@ impl<'a> Parser<'a> {
         })
     }
 
-    /// Parses one double-quoted text literal argument.
-    ///
-    /// Text literals stay quoted at the proto layer.  Structural parsing strips
-    /// the quotes later once it knows which section-specific text wrapper is
-    /// being populated.
     fn parse_text(&mut self) -> Option<TextLiteral> {
         if !matches!(self.lexer.peek(), Some(line) if line.is_text()) {
             return None;
@@ -311,11 +253,6 @@ impl<'a> Parser<'a> {
         })
     }
 
-    /// Parses the next section argument using text, group, then formulation order.
-    ///
-    /// Text lines are recognized first because quoted strings may contain
-    /// characters that look like formulations.  Group detection happens before
-    /// formulation parsing so nested section blocks remain structured.
     fn parse_argument(&mut self, indent: usize) -> Option<Argument> {
         if let Some(text) = self.parse_text() {
             return Some(Argument::Text(text));
@@ -328,10 +265,6 @@ impl<'a> Parser<'a> {
         self.parse_formulation().map(Argument::Formulation)
     }
 
-    /// Returns whether the next line can start a nested group.
-    ///
-    /// Bracketed headings always start groups.  Otherwise, a nontext argument
-    /// starts a group only when it has a section-shaped label before `:`.
     fn peek_starts_group(&self) -> bool {
         let Some(line) = self.lexer.peek() else {
             return false;
@@ -344,11 +277,6 @@ impl<'a> Parser<'a> {
         line.is_header() || structural_colon_index(&line.text).is_some()
     }
 
-    /// Consumes a multiline formulation until its matching closing delimiter.
-    ///
-    /// Closing must occur on a line with the same indentation as the opener.
-    /// If the source ends first, the partial block is returned so downstream
-    /// parsing can still inspect it after the unterminated-block diagnostic.
     fn consume_multiline_formulation(
         &mut self,
         opening_line: String,
@@ -409,10 +337,6 @@ fn structural_colon_index(text: &str) -> Option<usize> {
     Some(index)
 }
 
-/// Returns the required closing delimiter when `text` opens a multiline block.
-///
-/// The match is exact by design: delimiters only have block meaning when they
-/// occupy the whole proto line after indentation stripping.
 fn multiline_formulation_close(text: &str) -> Option<&'static str> {
     MULTILINE_FORMULATION_DELIMITERS
         .iter()

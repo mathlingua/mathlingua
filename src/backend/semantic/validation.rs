@@ -1,11 +1,5 @@
 use super::*;
 
-/// Walks a document and validates every command-like reference against the registry.
-///
-/// The traversal produces signature shapes for commands wherever they can appear:
-/// formulas, clauses, type expressions, aliases, and theorem-like statements.
-/// Source locations are recovered separately from the original text so errors can
-/// point at the actual reference token.
 pub(super) fn validate_document_references(
     file: &ParsedSourceFile,
     registry: &SignatureRegistry,
@@ -25,12 +19,6 @@ pub(super) fn validate_document_references(
     }
 }
 
-/// Validates a single reference shape for definition existence and argument arity.
-///
-/// Refined commands can have fallback shapes.  When a composed refined command is
-/// not defined directly, those fallbacks allow the checker to validate the base
-/// command and individual refinement pieces instead of reporting a premature
-/// undefined-signature error.
 pub(super) fn validate_reference_shape(
     path: &Path,
     position: Option<SourcePosition>,
@@ -69,12 +57,6 @@ pub(super) fn validate_reference_shape(
     }
 }
 
-/// Compares expected and actual argument groups, honoring optional invocation groups.
-///
-/// Exact equality is accepted.  A use site may also omit trailing parenthesized
-/// groups, because definitions such as `\some.function{A}(x, y)` can be referred
-/// to either as the function object `\some.function{A}` or as the invocation
-/// `\some.function{A}(x, y)`.
 pub(super) fn argument_groups_match(expected: &[ArgGroupShape], actual: &[ArgGroupShape]) -> bool {
     if expected == actual {
         return true;

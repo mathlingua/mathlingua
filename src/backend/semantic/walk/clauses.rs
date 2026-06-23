@@ -1,9 +1,5 @@
 use super::*;
 
-/// Traverses a logical clause tree for command references.
-///
-/// Clause traversal is recursive because quantifiers, conditionals, and grouped
-/// logical constructs can contain nested clauses in multiple sections.
 pub(in crate::backend::semantic) fn walk_clause(
     clause: &Clause,
     visit: &mut impl FnMut(&SignatureShape),

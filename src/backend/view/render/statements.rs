@@ -1,8 +1,5 @@
-//! Rendering for `is` statements and related specification forms.
-
 use super::*;
 
-/// Renders an `is` statement or refined-capable specification as LaTeX.
 pub(super) fn render_is_or_refined_spec(
     spec: &IsOrRefinedStatementSpec,
     registry: &RenderRegistry,
@@ -18,7 +15,6 @@ pub(super) fn render_is_or_refined_spec(
     }
 }
 
-/// Renders a parsed `is` statement, preserving subject-aware written templates.
 pub(super) fn render_is_statement(statement: &IsStatement, registry: &RenderRegistry) -> String {
     let subject_latex = render_is_subject(&statement.subject);
     match &statement.ty {
@@ -36,7 +32,6 @@ pub(super) fn render_is_statement(statement: &IsStatement, registry: &RenderRegi
     }
 }
 
-/// Renders the subject side of an `is` statement.
 pub(super) fn render_is_subject(subject: &IsSubject) -> String {
     match &subject.kind {
         IsSubjectKind::Forms(forms) => forms
@@ -51,7 +46,6 @@ pub(super) fn render_is_subject(subject: &IsSubject) -> String {
     }
 }
 
-/// Renders the subject side of a specification statement.
 pub(super) fn render_spec_subject(subject: &SpecSubject) -> String {
     match &subject.kind {
         SpecSubjectKind::Form(form) => render_form_or_declaration(form),
@@ -59,11 +53,6 @@ pub(super) fn render_spec_subject(subject: &SpecSubject) -> String {
     }
 }
 
-/// Renders a form or declaration as math-mode LaTeX.
-///
-/// Definitions can use these forms both as the thing being described and as
-/// command parameters.  Placeholder suffixes are hidden to produce readable math
-/// while preserving enough structure for substitutions.
 pub(super) fn render_form_or_declaration(form: &FormOrDeclaration) -> String {
     match &form.kind {
         FormOrDeclarationKind::Name(name) => escape_math_identifier(name),
@@ -143,7 +132,6 @@ pub(super) fn render_form_or_declaration(form: &FormOrDeclaration) -> String {
     }
 }
 
-/// Renders an `is` relationship whose type is a normal command expression.
 pub(super) fn render_is_command(
     subject: &Expression,
     command: &CommandExpression,
@@ -153,7 +141,6 @@ pub(super) fn render_is_command(
     render_is_command_with_subject_latex(subject_latex, command, registry)
 }
 
-/// Renders an `is` relationship whose type is a refined command expression.
 pub(super) fn render_is_refined_command(
     subject: &Expression,
     command: &RefinedCommandExpression,
@@ -163,11 +150,6 @@ pub(super) fn render_is_refined_command(
     render_is_refined_command_with_subject_latex(subject_latex, command, registry)
 }
 
-/// Renders a normal command type after the subject has already been rendered.
-///
-/// If the command has a `written:` template that includes the subject placeholder,
-/// the written template replaces the whole `subject is type` phrase.  Otherwise
-/// the subject is kept and the command is rendered after `is`.
 pub(super) fn render_is_command_with_subject_latex(
     subject_latex: String,
     command: &CommandExpression,
@@ -205,7 +187,6 @@ pub(super) fn render_is_command_with_subject_latex(
     }
 }
 
-/// Renders a refined command type after the subject has already been rendered.
 pub(super) fn render_is_refined_command_with_subject_latex(
     subject_latex: String,
     command: &RefinedCommandExpression,
@@ -218,7 +199,6 @@ pub(super) fn render_is_refined_command_with_subject_latex(
     )
 }
 
-/// Renders a function type expression.
 pub(super) fn render_function_type(
     function_type: &FunctionType,
     registry: &RenderRegistry,

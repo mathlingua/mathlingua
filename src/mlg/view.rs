@@ -11,20 +11,14 @@ use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-/// Event origin assigned to output emitted by the Next.js child process.
 const NEXTJS_ORIGIN: &str = "nextjs";
-/// Event origin used by the viewer command.
 const ORIGIN: &str = "mlg_view";
 
-/// Result of running [`view`].
 pub struct ViewResult {
-    /// Events emitted while running the viewer.
     pub event_log: EventLog,
-    /// Whether the viewer ran without errors and exited cleanly.
     pub successful: bool,
 }
 
-/// Starts the collection viewer for the collection at `cwd`.
 pub fn view(cwd: &Path, port: u16, listener: Option<Box<dyn EventLogListener>>) -> ViewResult {
     let mut event_log = EventLog::new();
     if let Some(listener) = listener {
@@ -41,11 +35,6 @@ pub fn view(cwd: &Path, port: u16, listener: Option<Box<dyn EventLogListener>>) 
     }
 }
 
-/// Builds viewer data for the collection at `cwd` and starts the web viewer.
-///
-/// The backend writes a temporary JSON payload, launches the embedded Next.js
-/// app with `MLG_VIEW_DATA_PATH` pointing at that payload, and keeps streaming
-/// child output until the server exits.
 pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Result<()> {
     let starting_event_count = event_log.events().len();
     let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
@@ -105,7 +94,6 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
     result
 }
 
-/// Handles the case where no renderable files were found.
 fn finish_view_setup_with_possible_errors(event_log: &mut EventLog) -> io::Result<()> {
     if event_log.has_errors() {
         Err(io::Error::other("Unable to start the viewer"))
@@ -115,7 +103,6 @@ fn finish_view_setup_with_possible_errors(event_log: &mut EventLog) -> io::Resul
     }
 }
 
-/// Installs web viewer dependencies when `web/node_modules` is absent.
 fn ensure_web_dependencies(event_log: &mut EventLog) -> io::Result<()> {
     let web_dir = web_app_directory();
     if web_dir.join("node_modules").is_dir() {
@@ -137,7 +124,6 @@ fn ensure_web_dependencies(event_log: &mut EventLog) -> io::Result<()> {
     Ok(())
 }
 
-/// Starts the embedded Next.js development server for a generated view payload.
 fn run_next_server(
     view_data_path: &Path,
     port: u16,
@@ -160,10 +146,6 @@ fn run_next_server(
     run_child(command, NEXTJS_ORIGIN, event_log, Some(url))
 }
 
-/// Runs a child process while streaming stdout/stderr into the event log.
-///
-/// When `ready_url` is supplied, the child must print a known Next.js ready line
-/// before exiting or the run is treated as a startup failure.
 fn run_child(
     mut command: Command,
     origin: &str,
@@ -219,7 +201,6 @@ fn run_child(
     }
 }
 
-/// Streams child-process output until the child exits.
 fn stream_child_output(
     child: &mut Child,
     receiver: Receiver<OutputLine>,
@@ -267,12 +248,10 @@ fn stream_child_output(
     }
 }
 
-/// Re-emits one child-process output line as a system event.
 fn log_child_output(line: OutputLine, origin: &str, event_log: &mut EventLog) {
     event_log.system_log(Some(origin), line.text);
 }
 
-/// Spawns a thread that reads one child-process stream line by line.
 fn spawn_output_reader(
     stream: impl io::Read + Send + 'static,
     sender: Sender<OutputLine>,
@@ -290,7 +269,6 @@ fn spawn_output_reader(
     })
 }
 
-/// Joins an output-reader thread and reports any reader failures.
 fn join_output_thread(thread: Option<JoinHandle<io::Result<()>>>, event_log: &mut EventLog) {
     let Some(thread) = thread else {
         return;
@@ -310,14 +288,12 @@ fn join_output_thread(thread: Option<JoinHandle<io::Result<()>>>, event_log: &mu
     }
 }
 
-/// Writes the collection view JSON consumed by the web app.
 fn write_collection_view_data(path: &Path, collection_view: &CollectionView) -> io::Result<()> {
     let file = fs::File::create(path)?;
     to_writer_pretty(file, collection_view)
         .map_err(|error| io::Error::other(format!("Failed to write view data: {error}")))
 }
 
-/// Creates a unique temporary directory for one viewer session.
 fn create_view_session_dir() -> io::Result<PathBuf> {
     let unique = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -328,27 +304,20 @@ fn create_view_session_dir() -> io::Result<PathBuf> {
     Ok(path)
 }
 
-/// Returns the embedded web app directory inside this crate.
 fn web_app_directory() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("web")
 }
 
-/// Detects Next.js startup readiness lines.
 fn is_ready_line(text: &str) -> bool {
     text.contains("Ready in") || text.contains("Local:")
 }
 
-/// One line of output read from the child process.
 struct OutputLine {
-    /// Text of the line without its trailing newline.
     text: String,
 }
 
-/// Final state of a child process after its output has been streamed.
 struct ChildOutcome {
-    /// Exit status returned by the child.
     status: ExitStatus,
-    /// Whether a readiness line was seen before exit.
     was_ready: bool,
 }
 

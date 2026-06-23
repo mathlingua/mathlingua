@@ -1,9 +1,3 @@
-//! Event reporting infrastructure shared by parsers, checks, and CLI commands.
-//!
-//! Events carry audience, level, origin, and optional location metadata.  The
-//! command layer wires an `EventConsoleWriter` listener to an `EventLog` so each
-//! operation can emit diagnostics without depending directly on stdout/stderr.
-
 mod event;
 mod event_console_writer;
 mod event_filter;

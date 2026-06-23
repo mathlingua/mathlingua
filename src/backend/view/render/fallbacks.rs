@@ -1,13 +1,9 @@
-//! Readable fallback rendering for syntax that has no documented template yet.
-
 use super::*;
 
-/// Renders an unknown command chain in a readable escaped fallback form.
 pub(super) fn render_command_like(chain: &Chain, _registry: &RenderRegistry) -> String {
     format!("\\backslash{}", escape_latex_math(&format_chain(chain)))
 }
 
-/// Renders a binary operator as LaTeX.
 pub(super) fn render_binary_operator(operator: &BinaryOperator) -> String {
     match operator {
         BinaryOperator::Equality(operator)
@@ -21,7 +17,6 @@ pub(super) fn render_binary_operator(operator: &BinaryOperator) -> String {
     }
 }
 
-/// Renders an operator token that is already part of parsed math syntax.
 pub(super) fn render_operator_text(operator: &str) -> String {
     match operator {
         "*" => "\\ast".to_string(),
@@ -29,16 +24,11 @@ pub(super) fn render_operator_text(operator: &str) -> String {
     }
 }
 
-/// Renders a quoted operator as a temporary LaTeX command.
-///
-/// This is a bridge until full type-checking resolves quoted operators
-/// semantically.  For example, `"in"` renders as `\in`.
 pub(super) fn render_quoted_operator(operator: &str) -> String {
     // Temporary rendering until full type-checking can resolve quoted operators semantically.
     format!("\\{}", escape_latex_command_name(operator))
 }
 
-/// Renders subset/index-call syntax as bracketed LaTeX.
 pub(super) fn render_subset_call(call: &SubsetCall) -> String {
     match call {
         SubsetCall::One { target, first, .. } => {
@@ -73,7 +63,6 @@ pub(super) fn render_subset_call(call: &SubsetCall) -> String {
     }
 }
 
-/// Renders a placeholder form while hiding placeholder suffix markers.
 pub(super) fn render_placeholder_form(form: &PlaceholderForm) -> String {
     match &form.kind {
         PlaceholderFormKind::Placeholder(placeholder) => {
@@ -96,7 +85,6 @@ pub(super) fn render_placeholder_form(form: &PlaceholderForm) -> String {
     }
 }
 
-/// Renders a form placeholder name, trimming trailing placeholder underscores.
 pub(super) fn render_form_placeholder_name(name: &str) -> String {
     let trimmed = name.trim_end_matches('_');
     if trimmed.is_empty() {

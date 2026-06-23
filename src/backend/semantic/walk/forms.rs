@@ -1,6 +1,5 @@
 use super::*;
 
-/// Traverses command references that can occur inside a form or declaration.
 pub(in crate::backend::semantic) fn walk_form_or_declaration(
     form: &FormOrDeclaration,
     visit: &mut impl FnMut(&SignatureShape),
@@ -18,7 +17,6 @@ pub(in crate::backend::semantic) fn walk_form_or_declaration(
     }
 }
 
-/// Traverses nested forms inside a tuple form declaration.
 pub(in crate::backend::semantic) fn walk_tuple_form(
     form: &TupleForm,
     visit: &mut impl FnMut(&SignatureShape),
@@ -30,10 +28,6 @@ pub(in crate::backend::semantic) fn walk_tuple_form(
     }
 }
 
-/// Traverses a placeholder form.
-///
-/// Placeholder forms currently contain only local placeholder names, so this is a
-/// structural no-op kept for symmetry with other walk helpers and future growth.
 pub(in crate::backend::semantic) fn walk_placeholder_form(
     form: &PlaceholderForm,
     _visit: &mut impl FnMut(&SignatureShape),

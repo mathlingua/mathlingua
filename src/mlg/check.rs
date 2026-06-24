@@ -1382,7 +1382,7 @@ mod tests {
     }
 
     #[test]
-    fn check_accepts_dotted_infix_command_heading_operands() {
+    fn check_accepts_states_that_sections_with_multiple_group_clauses() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("dotted-infix-heading.mlg");
 
@@ -1390,6 +1390,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
@@ -1397,7 +1399,10 @@ mod tests {
     States:
     when: X, Y is \set
     that:
-    . X = Y
+    . forAll: Z "in" X
+      then: Z "in" Y
+    . forAll: Z "in" Y
+      then: Z "in" X
     Documented:
     . written: "X? = Y?"
 

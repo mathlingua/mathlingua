@@ -62,6 +62,7 @@ impl<'a> Parser<'a> {
         }
 
         let metadata = first_line.metadata.clone();
+        let is_dotted_argument_group = metadata.has_dot;
         let heading = if first_line.is_header() {
             let _ = self.lexer.next();
             Some(first_line.text[1..first_line.text.len() - 1].to_owned())
@@ -93,6 +94,10 @@ impl<'a> Parser<'a> {
             };
 
             if line.is_blank() || line.metadata.indent != indent {
+                break;
+            }
+
+            if is_dotted_argument_group && !sections.is_empty() && line.metadata.has_dot {
                 break;
             }
 
@@ -427,6 +432,32 @@ then:
                 ));
             }
             other => panic!("expected nested group, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_repeated_dotted_nested_groups_as_siblings() {
+        let input = r#"that:
+. forAll: Z "in" X
+  then: Z "in" Y
+. forAll: Z "in" Y
+  then: Z "in" X
+"#;
+        let (groups, diagnostics) = parse_input(input);
+
+        assert!(diagnostics.is_empty());
+        let arguments = &groups[0].sections[0].arguments;
+        assert_eq!(arguments.len(), 2);
+
+        for argument in arguments {
+            match argument {
+                Argument::Group(group) => {
+                    assert_eq!(group.sections.len(), 2);
+                    assert_eq!(group.sections[0].label, "forAll");
+                    assert_eq!(group.sections[1].label, "then");
+                }
+                other => panic!("expected nested forAll group, got {other:?}"),
+            }
         }
     }
 

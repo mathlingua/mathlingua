@@ -925,6 +925,7 @@ mod tests {
 
     [\group]
     Describes: G ::= (X, *, e)
+    when: X is \set
     extends: G is \set via X
     Provides:
     . symbol: x_ "in" G :-> x_ is \element.of:group{G}
@@ -1521,6 +1522,218 @@ mod tests {
             })
         }));
         assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_uses_nominal_typing_for_describes_type_requirements() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("nominal-describes-type.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__)
+    Documented:
+    . called: "function"
+
+    [\group]
+    Describes: G ::= (X, *, e)
+    when:
+    . X is \set
+    . * is \function:on{X}:to{X}
+    . e "in" G
+    Provides:
+    . symbol: x_ "in" G :-> x_ is \element.of:group{G}
+    Documented:
+    . called: "group"
+
+    [\element.of:group{G}]
+    Describes: x
+    when: G is \group
+    Documented:
+    . called: "element of group $G?$"
+    . written: "x? \in G?"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("nominal-describes-type.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_validates_describes_type_expression_arguments() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir
+            .path()
+            .join("describes-type-expression-arguments.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\thing]
+    Describes: value
+    Documented:
+    . called: "thing"
+
+    [\element.of:group{G}]
+    Describes: x
+    when: G is \set
+    Documented:
+    . called: "element of group $G?$"
+
+    Theorem:
+    given: A, x is \thing
+    then:
+    . x is \element.of:group{A}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("describes-type-expression-arguments.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message
+                    == "Could not prove requirement `A is \\set` for command `\\element.of:group`"
+            })
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_validates_spec_operator_alias_target_requirements() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("spec-alias-target-requirement.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__)
+    Documented:
+    . called: "function"
+
+    [\group]
+    Describes: G ::= (X, *, e)
+    when:
+    . X is \set
+    . * is \function:on{X}:to{X}
+    . e "in" G
+    Provides:
+    . symbol: x_ "in" G :-> x_ is \element.of:group{G}
+    Documented:
+    . called: "group"
+
+    [\element.of:group{G}]
+    Describes: x
+    when: G is \set
+    Documented:
+    . called: "element of group $G?$"
+    . written: "x? \in G?"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("spec-alias-target-requirement.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message
+                    == "Could not prove requirement `G is \\set` for command `\\element.of:group`"
+            })
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_accepts_spec_operator_alias_target_requirements_via_extends() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir
+            .path()
+            .join("spec-alias-target-requirement-extends.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__)
+    Documented:
+    . called: "function"
+
+    [\group]
+    Describes: G ::= (X, *, e)
+    when:
+    . X is \set
+    . * is \function:on{X}:to{X}
+    . e "in" G
+    extends: G is \set
+    Provides:
+    . symbol: x_ "in" G :-> x_ is \element.of:group{G}
+    Documented:
+    . called: "group"
+
+    [\element.of:group{G}]
+    Describes: x
+    when: G is \set
+    Documented:
+    . called: "element of group $G?$"
+    . written: "x? \in G?"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("spec-alias-target-requirement-extends.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
     }
 
     #[test]

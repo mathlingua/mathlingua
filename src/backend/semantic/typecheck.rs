@@ -240,6 +240,14 @@ fn validate_top_level_item_types(
                     event_log,
                 );
             }
+            validate_optional_provides(
+                &group.provides,
+                &context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             check_optional_clauses(
                 &group.satisfies,
                 &context,
@@ -1060,7 +1068,7 @@ fn check_expression(
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
             check_expression(subject, context, path, locator, registry, event_log);
-            check_command_expression(command, context, path, locator, registry, event_log);
+            check_command_predicate(command, context, path, locator, registry, event_log);
             for expression in command_expression_arguments(command) {
                 check_expression(expression, context, path, locator, registry, event_log);
             }
@@ -1083,13 +1091,15 @@ fn check_type_expression(
 ) {
     match ty {
         TypeExpression::Command(command) => {
-            check_command_expression(command, context, path, locator, registry, event_log);
+            check_command_type_expression(command, context, path, locator, registry, event_log);
             for expression in command_expression_arguments(command) {
                 check_expression(expression, context, path, locator, registry, event_log);
             }
         }
         TypeExpression::RefinedCommand(command) => {
-            check_refined_command_expression(command, context, path, locator, registry, event_log);
+            check_refined_command_type_expression(
+                command, context, path, locator, registry, event_log,
+            );
             for expression in refined_command_expression_arguments(command) {
                 check_expression(expression, context, path, locator, registry, event_log);
             }
@@ -1279,6 +1289,45 @@ fn check_command_expression(
     );
 }
 
+fn check_command_type_expression(
+    command: &CommandExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let shape = shape_for_command_expression(command);
+    let position = locator.locate_reference(&shape);
+    let actuals = command_expression_arguments(command)
+        .into_iter()
+        .map(key_for_expression)
+        .collect::<Vec<_>>();
+    if command_type_is_nominal_without_arguments(&shape.signature, &actuals, registry) {
+        return;
+    }
+    check_command_requirements(
+        &shape.signature,
+        &actuals,
+        context,
+        path,
+        position,
+        registry,
+        event_log,
+    );
+}
+
+fn check_command_predicate(
+    command: &CommandExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    check_command_expression(command, context, path, locator, registry, event_log);
+}
+
 fn check_infix_command(
     command: &InfixCommand,
     context: &TypeContext,
@@ -1293,6 +1342,34 @@ fn check_infix_command(
         .into_iter()
         .map(key_for_expression)
         .collect::<Vec<_>>();
+    check_command_requirements(
+        &shape.signature,
+        &actuals,
+        context,
+        path,
+        position,
+        registry,
+        event_log,
+    );
+}
+
+fn check_refined_command_type_expression(
+    command: &RefinedCommandExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let shape = shape_for_refined_command_expression(command);
+    let position = locator.locate_reference(&shape);
+    let actuals = refined_command_expression_arguments(command)
+        .into_iter()
+        .map(key_for_expression)
+        .collect::<Vec<_>>();
+    if command_type_is_nominal_without_arguments(&shape.signature, &actuals, registry) {
+        return;
+    }
     check_command_requirements(
         &shape.signature,
         &actuals,
@@ -1327,6 +1404,135 @@ fn check_refined_command_expression(
         registry,
         event_log,
     );
+}
+
+fn command_type_is_nominal_without_arguments(
+    signature: &str,
+    actuals: &[String],
+    registry: &SignatureRegistry,
+) -> bool {
+    actuals.is_empty()
+        && registry
+            .definitions
+            .get(signature)
+            .is_some_and(|definition| definition.kind == DefinitionKind::Describes)
+}
+
+fn validate_optional_provides(
+    provides: &Option<ProvidesSection>,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let Some(provides) = provides else {
+        return;
+    };
+
+    for item in &provides.arguments {
+        let ProvidesItem::Symbol(group) = item else {
+            continue;
+        };
+        let AliasKind::SpecOperator(alias) = &group.symbol.argument else {
+            continue;
+        };
+        validate_spec_operator_alias(alias, context, path, locator, registry, event_log);
+    }
+}
+
+fn validate_spec_operator_alias(
+    alias: &SpecOperatorAlias,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    check_name(
+        &alias.placeholder_spec.name,
+        context,
+        path,
+        locator,
+        event_log,
+    );
+
+    let mut child = context.clone();
+    declare_placeholder_form(&alias.placeholder_spec.placeholder_form, &mut child);
+
+    if let SpecOperatorAliasTarget::IsOrSpec(target) = &alias.target {
+        check_is_or_spec_alias_target(target, &child, path, locator, registry, event_log);
+    }
+}
+
+fn check_is_or_spec_alias_target(
+    target: &IsOrSpec,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match target {
+        IsOrSpec::Is(statement) => {
+            check_is_subject(&statement.subject, context, path, locator, event_log);
+            check_type_expression_requirements(
+                &statement.ty,
+                context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+        }
+        IsOrSpec::Spec(statement) => {
+            check_spec_subject(&statement.subject, context, path, locator, event_log);
+            check_name(&statement.name, context, path, locator, event_log);
+            for fact in facts_from_is_or_spec(target) {
+                check_spec_fact_supported(
+                    &fact,
+                    context,
+                    path,
+                    locator.locate_symbol(&statement.name),
+                    registry,
+                    event_log,
+                );
+            }
+        }
+    }
+}
+
+fn check_type_expression_requirements(
+    ty: &TypeExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match ty {
+        TypeExpression::Command(command) => {
+            check_command_expression(command, context, path, locator, registry, event_log);
+            for expression in command_expression_arguments(command) {
+                check_expression(expression, context, path, locator, registry, event_log);
+            }
+        }
+        TypeExpression::RefinedCommand(command) => {
+            check_refined_command_expression(command, context, path, locator, registry, event_log);
+            for expression in refined_command_expression_arguments(command) {
+                check_expression(expression, context, path, locator, registry, event_log);
+            }
+        }
+        TypeExpression::Function(function_type) => {
+            for spec in function_type
+                .inputs
+                .iter()
+                .chain(std::iter::once(&function_type.output))
+            {
+                check_function_type_spec(spec, context, path, locator, registry, event_log);
+            }
+        }
+    }
 }
 
 fn check_command_requirements(
@@ -1827,6 +2033,21 @@ fn check_is_subject(
             }
         }
         IsSubjectKind::Operator(_) => {}
+    }
+}
+
+fn check_spec_subject(
+    subject: &SpecSubject,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    match &subject.kind {
+        SpecSubjectKind::Form(form) => {
+            check_form_or_declaration(form, context, path, locator, event_log);
+        }
+        SpecSubjectKind::Operator(_) => {}
     }
 }
 

@@ -615,7 +615,9 @@ symbol.
 ## Type Facts and Requirements
 
 A command definition may declare requirements through `using:` and `when:`.
-Those requirements must be provable whenever the command is used.
+Those requirements must be provable whenever the command is used as an
+expression or predicate, and whenever a parameterized command type expression is
+used in an `is` statement.
 
 ```text
 [\function:on{A}:to{B}]
@@ -625,8 +627,10 @@ Documented:
 . called: "function"
 ```
 
-A later reference to `\function:on{G}:to{G}` requires the checker to prove
-`G is \set`.
+A later reference to `\function:on{G}:to{G}` in either an expression or a type
+assertion requires the checker to prove `G is \set`. Type assertions for
+no-argument `Describes` commands are nominal: `G is \group` records that fact
+without expanding the internal `\group` requirements at the assertion site.
 
 The checker understands two fact kinds:
 
@@ -714,6 +718,12 @@ Documented:
 
 If the context contains `R is \reals` and `r "in" R`, the checker can reduce the
 spec fact through the provided symbol and prove `r is \real`.
+
+The alias target must satisfy the requirements of any command type it uses in
+the provider's context. For example, if `\element.of:group{G}` requires
+`G is \set`, then a provider on `\group` may alias membership to
+`\element.of:group{G}` only when `G is \set` is available, commonly through an
+`extends: G is \set` subtype declaration on `\group`.
 
 Direct spec requirements are also supported once the target type provides the
 operator. If `\group` provides `x_ "in" G` and a command requires `x "in" G`,

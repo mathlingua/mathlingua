@@ -198,6 +198,9 @@ pub(super) fn simple_command_header_forms(header: &CommandHeaderNode) -> Vec<&Fo
 
 pub(super) fn infix_command_header_forms(header: &InfixCommandHeader) -> Vec<&FormOrDeclaration> {
     let mut forms = Vec::new();
+    if let Some(left) = &header.left {
+        forms.push(left);
+    }
     forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
     forms.extend(
         header
@@ -206,6 +209,9 @@ pub(super) fn infix_command_header_forms(header: &InfixCommandHeader) -> Vec<&Fo
             .flat_map(|part| part.args.iter())
             .flat_map(|args| args.forms.iter()),
     );
+    if let Some(right) = &header.right {
+        forms.push(right);
+    }
     forms
 }
 

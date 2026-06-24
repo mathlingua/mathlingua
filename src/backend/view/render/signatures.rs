@@ -8,7 +8,7 @@ pub(super) fn command_header_signature(header: &CommandHeader) -> String {
             signature
         }
         CommandHeader::Infix(command) => {
-            format!("\\:{}:/", format_chain(&command.chain))
+            format!("\\.{}./", format_chain(&command.chain))
         }
         CommandHeader::Refined(command) => refined_command_header_signature(command),
     }
@@ -52,16 +52,19 @@ pub(super) fn simple_command_header_signatures(
 pub(super) fn infix_command_header_signatures(
     command: &InfixCommandHeader,
 ) -> Vec<CommandHeaderSignature> {
-    let base_signature = format!("\\:{}", format_chain(&command.chain));
-    let base_parameters = heading_group_parameters(&command.head_args);
+    let base_signature = format!("\\.{}", format_chain(&command.chain));
+    let mut base_parameters = infix_operand_parameters(command.left.as_ref());
+    base_parameters.extend(heading_group_parameters(&command.head_args));
+    let right_parameters = infix_operand_parameters(command.right.as_ref());
 
     header_tail_variants(&command.tail)
         .into_iter()
         .map(|variant| {
             let mut parameters = base_parameters.clone();
             parameters.extend(variant.parameters);
+            parameters.extend(right_parameters.clone());
             CommandHeaderSignature {
-                signature: format!("{base_signature}{}:/", variant.signature_suffix),
+                signature: format!("{base_signature}{}./", variant.signature_suffix),
                 parameters,
             }
         })
@@ -257,6 +260,10 @@ fn paren_heading_group_parameters(groups: &[ParenHeadingArgs]) -> Vec<String> {
         .flat_map(|args| args.forms.iter())
         .filter_map(primary_form_name)
         .collect()
+}
+
+fn infix_operand_parameters(operand: Option<&FormOrDeclaration>) -> Vec<String> {
+    operand.and_then(primary_form_name).into_iter().collect()
 }
 
 pub(super) fn add_expression_tail_signature(

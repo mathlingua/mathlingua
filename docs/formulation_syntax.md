@@ -187,8 +187,8 @@ The lexer has dedicated tokens for:
 - `:->`
 - `:~>`
 - `\`
-- `\:`
-- `:/`
+- `\.`
+- `./`
 - `(.`
 - `.)`
 - `[|`
@@ -378,7 +378,7 @@ Examples:
 #### Infix commands
 
 ```text
-InfixCommand ::= "\:" Chain CurlyExpressionArgs* CommandExpressionTail* ":/"
+InfixCommand ::= "\." Chain CurlyExpressionArgs* CommandExpressionTail* "./"
 ```
 
 This syntax is only produced inside higher-precedence binary expressions and certain command-header contexts.
@@ -389,7 +389,7 @@ Many command-related syntaxes use a `Chain`:
 
 ```text
 Chain ::= ChainPart ("." ChainPart)*
-ChainPart ::= Name | "$" Name | SpecialOperator
+ChainPart ::= Name | "$" Name | SpecialOperator | "="
 RawChain ::= RawChainPart ("." RawChainPart)*
 RawChainPart ::= Name | "$" Name | OperatorText
 ```
@@ -608,7 +608,7 @@ CommandHeaderTail ::= (":" | ":?") RawChain CurlyHeadingArgs+
 
 `parse_command_header` chooses among three cases in this order:
 
-1. input starts with `\:` -> infix command header
+1. input contains top-level `\.` -> infix command header
 2. otherwise input contains top-level `::` -> refined command header
 3. otherwise -> simple command header
 
@@ -637,13 +637,14 @@ Examples:
 ### Infix command headers
 
 ```text
-InfixCommandHeader ::= "\:" RawChain CurlyHeadingArgs* CommandHeaderTail* ":/"
+InfixCommandHeader ::= FormOrDeclaration? "\." RawChain CurlyHeadingArgs* CommandHeaderTail* "./" FormOrDeclaration?
 ```
 
 Notes:
 
 - infix command headers cannot have trailing `(...)` argument blocks
-- the spelling must start with `\:` and end with `:/`
+- the command core must start with `\.` and end with `./`
+- a left operand requires a matching right operand, and vice versa
 
 ## Alias Syntax
 
@@ -904,7 +905,7 @@ SubsetExpression ::= SubsetNameCall
 
 ```text
 Chain ::= ChainPart ("." ChainPart)*
-ChainPart ::= Name | "$" Name | SpecialOperator
+ChainPart ::= Name | "$" Name | SpecialOperator | "="
 RawChain ::= RawChainPart ("." RawChainPart)*
 RawChainPart ::= Name | "$" Name | OperatorText
 
@@ -916,7 +917,7 @@ CommandExpressionTail ::= CommandExpressionTailPart*
 
 CommandExpression ::= "\" Chain CurlyExpressionArgs* CommandExpressionTail ParenExpressionArgs*
 
-InfixCommand ::= "\:" Chain CurlyExpressionArgs* CommandExpressionTail ":/"
+InfixCommand ::= "\." Chain CurlyExpressionArgs* CommandExpressionTail "./"
 ```
 
 `RawChain` is used by scanner-based helpers such as command headers, refined
@@ -992,7 +993,7 @@ CommandHeaderTailPart ::= (":" | ":?") RawChain CurlyHeadingArgs+
 CommandHeaderTail ::= CommandHeaderTailPart*
 
 SimpleCommandHeader ::= "\" RawChain CurlyHeadingArgs* CommandHeaderTail ParenHeadingArgs*
-InfixCommandHeader ::= "\:" RawChain CurlyHeadingArgs* CommandHeaderTail ":/"
+InfixCommandHeader ::= FormOrDeclaration? "\." RawChain CurlyHeadingArgs* CommandHeaderTail "./" FormOrDeclaration?
 ```
 
 ### Aliases and headers

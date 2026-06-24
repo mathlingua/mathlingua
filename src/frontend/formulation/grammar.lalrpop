@@ -13,8 +13,8 @@ extern {
         "..." => Token::Ellipsis,
         "[|" => Token::LNamedArguments,
         "|]" => Token::RNamedArguments,
-        "\\:" => Token::InfixCommandStart,
-        ":/" => Token::InfixCommandEnd,
+        "\\." => Token::InfixCommandStart,
+        "./" => Token::InfixCommandEnd,
         "both_named_operator" => Token::BothNamedOperator(<String>),
         "named_operator" => Token::NamedOperator(<String>),
         "left_named_operator" => Token::LeftNamedOperator(<String>),
@@ -435,6 +435,7 @@ ChainPart: ast::ChainPart = {
     <name:Name> => ast::ChainPart::Name(name),
     "$" <name:Name> => ast::ChainPart::Alias(name),
     <operator:"special_operator"> => ast::ChainPart::Operator(operator),
+    "=" => ast::ChainPart::Operator("=".to_owned()),
 };
 
 Chain: ast::Chain = {
@@ -524,7 +525,7 @@ CommandExpression: ast::CommandExpression = {
 };
 
 InfixCommand: ast::InfixCommand = {
-    <l:@L> "\\:" <chain:Chain> <head_args:CurlyExpressionArgsOpt> <tail:CommandExpressionTailOpt> ":/" <r:@R> => ast::InfixCommand {
+    <l:@L> "\\." <chain:Chain> <head_args:CurlyExpressionArgsOpt> <tail:CommandExpressionTailOpt> "./" <r:@R> => ast::InfixCommand {
         span: Span::new(l, r),
         chain,
         head_args,

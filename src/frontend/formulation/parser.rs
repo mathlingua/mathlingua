@@ -455,18 +455,37 @@ pub(super) fn parse_simple_command_header(input: &str) -> Result<CommandHeaderNo
     })
 }
 
-/// Parses an infix command header delimited by `\:` and `:/`.
+/// Parses an infix command header delimited by `\.` and `./`.
 ///
 /// Infix headers share most command-tail syntax with ordinary command headers
 /// but intentionally omit parenthesized invocation arguments at the end.
 pub(super) fn parse_infix_command_header(input: &str) -> Result<InfixCommandHeader, ParseError> {
     let input = input.trim();
-    let mut rest = input
-        .strip_prefix("\\:")
-        .ok_or_else(|| ParseError::custom("infix command headers must start with `\\:`"))?;
-    rest = rest
-        .strip_suffix(":/")
-        .ok_or_else(|| ParseError::custom("infix command headers must end with `:/`"))?;
+    let start = find_top_level_substring(input, "\\.")
+        .ok_or_else(|| ParseError::custom("infix command headers must contain `\\.`"))?;
+    let left_text = input[..start].trim();
+    let left = if left_text.is_empty() {
+        None
+    } else {
+        Some(parse_form_or_declaration(left_text)?)
+    };
+
+    let after_start = &input[start + "\\.".len()..];
+    let end = find_top_level_substring(after_start, "./")
+        .ok_or_else(|| ParseError::custom("infix command headers must end with `./`"))?;
+    let mut rest = &after_start[..end];
+    let right_text = after_start[end + "./".len()..].trim();
+    let right = if right_text.is_empty() {
+        None
+    } else {
+        Some(parse_form_or_declaration(right_text)?)
+    };
+
+    if left.is_some() != right.is_some() {
+        return Err(ParseError::custom(
+            "infix command headers must include both left and right operands",
+        ));
+    }
 
     let (chain_text, remaining) = split_prefix_by_delimiters(rest, &['{', ':']);
     let chain = parse_chain(chain_text)?;
@@ -483,9 +502,11 @@ pub(super) fn parse_infix_command_header(input: &str) -> Result<InfixCommandHead
 
     Ok(InfixCommandHeader {
         span: span_all(input),
+        left,
         chain,
         head_args,
         tail,
+        right,
     })
 }
 
@@ -751,7 +772,7 @@ pub(super) fn parse_command_header_tail(
     let mut parts = Vec::new();
     loop {
         input = input.trim_start();
-        if !input.starts_with(':') || input.starts_with(":/") || input.starts_with("::") {
+        if !input.starts_with(':') || input.starts_with("::") {
             break;
         }
 
@@ -835,7 +856,7 @@ pub(super) fn parse_command_expression_tail(
     let mut parts = Vec::new();
     loop {
         input = input.trim_start();
-        if !input.starts_with(':') || input.starts_with(":/") || input.starts_with("::") {
+        if !input.starts_with(':') || input.starts_with("::") {
             break;
         }
 
@@ -1565,16 +1586,16 @@ pub fn parse_is_via_statement(input: &str) -> Result<IsViaStatement, ParseError>
 /// Parses any command header form used in bracketed group headings.
 ///
 /// This dispatches among ordinary commands, infix command headers, and refined
-/// command headers.  All variants must begin with `\`, which keeps heading
-/// parsing distinct from label, author, and resource headings.
+/// command headers.  Infix command headers may include left and right operands
+/// around their `\.`...`./` command core.
 pub fn parse_command_header(input: &str) -> Result<CommandHeader, ParseError> {
     let input = input.trim();
-    if !input.starts_with('\\') {
-        return Err(ParseError::custom("command header must start with `\\`"));
+    if input.starts_with("\\.") || find_top_level_substring(input, "\\.").is_some() {
+        return parse_infix_command_header(input).map(CommandHeader::Infix);
     }
 
-    if input.starts_with("\\:") {
-        return parse_infix_command_header(input).map(CommandHeader::Infix);
+    if !input.starts_with('\\') {
+        return Err(ParseError::custom("command header must start with `\\`"));
     }
 
     if contains_top_level(input, "::") {
@@ -1617,7 +1638,7 @@ pub fn parse_expression_alias(input: &str) -> Result<ExpressionAlias, ParseError
     let lhs_text = input[..index].trim();
     let expression = parse_expression(input[index + 3..].trim())?;
 
-    let lhs = if lhs_text.starts_with("\\:") {
+    let lhs = if find_top_level_substring(lhs_text, "\\.").is_some() {
         let header = parse_infix_command_header(lhs_text)?;
         reject_optional_header_tails(&CommandHeader::Infix(header.clone()))?;
         ExpressionAliasLhs::InfixCommand(header)
@@ -2296,7 +2317,7 @@ mod tests {
 
     #[test]
     fn parses_infix_command_expressions_with_alias_and_operator_chain_parts() {
-        let expression = parse_expression(r#"x \:map.$alias.=={A}:to{B}:/ y"#)
+        let expression = parse_expression(r#"x \.map.$alias.=={A}:to{B}./ y"#)
             .expect("expected infix command expression");
 
         match expression.kind {
@@ -2972,7 +2993,7 @@ mod tests {
     #[test]
     fn parses_expression_aliases_for_form_and_infix_command_lhs_values() {
         let form_alias = parse_expression_alias(r#"f(x_) :=> x + y"#).expect("expected form alias");
-        let infix_alias = parse_expression_alias(r#"\:apply:on{A}:/ :=> x"#)
+        let infix_alias = parse_expression_alias(r#"\.apply:on{A}./ :=> x"#)
             .expect("expected infix command alias");
 
         assert!(matches!(form_alias.lhs, ExpressionAliasLhs::Form(_)));
@@ -2986,6 +3007,28 @@ mod tests {
         assert!(matches!(
             infix_alias.lhs,
             ExpressionAliasLhs::InfixCommand(_)
+        ));
+    }
+
+    #[test]
+    fn parses_infix_command_headers_with_operands() {
+        let header = parse_command_header(r#"X \.set.=./ Y"#).expect("expected infix header");
+
+        let CommandHeader::Infix(header) = header else {
+            panic!("expected infix command header");
+        };
+
+        assert!(matches!(
+            header.left.as_ref().map(|form| &form.kind),
+            Some(FormOrDeclarationKind::Name(name)) if name == "X"
+        ));
+        assert!(matches!(
+            header.chain.parts.last(),
+            Some(ChainPart::Operator(operator)) if operator == "="
+        ));
+        assert!(matches!(
+            header.right.as_ref().map(|form| &form.kind),
+            Some(FormOrDeclarationKind::Name(name)) if name == "Y"
         ));
     }
 

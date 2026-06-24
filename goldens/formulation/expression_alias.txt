@@ -1,5 +1,5 @@
 f(x_) :=> x + y
 
-\:apply:on{A}:/ :=> x
+\.apply:on{A}./ :=> x
 
 \function:on{A}:to{B}(f(x_)) :=> x

@@ -121,4 +121,4 @@ x is_not? \odd
   (z)
 
 
-x \:map.$alias.=={A}:to{B}:/ y
+x \.map.$alias.=={A}:to{B}./ y

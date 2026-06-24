@@ -1382,6 +1382,48 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_dotted_infix_command_heading_operands() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("dotted-infix-heading.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [X \.set.=./ Y]
+    States:
+    when: X, Y is \set
+    that:
+    . X = Y
+    Documented:
+    . written: "X? = Y?"
+
+    Theorem:
+    given: A, B is \set
+    then:
+    . A \.set.=./ B
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("dotted-infix-heading.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_reduces_spec_operator_aliases_to_type_facts() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("spec-reduction.mlg");

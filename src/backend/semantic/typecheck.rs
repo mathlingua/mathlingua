@@ -1033,7 +1033,9 @@ fn check_expression(
             right,
         } => {
             check_expression(left, context, path, locator, registry, event_log);
-            check_infix_command(command, context, path, locator, registry, event_log);
+            check_infix_command(
+                left, command, right, context, path, locator, registry, event_log,
+            );
             for expression in infix_command_arguments(command) {
                 check_expression(expression, context, path, locator, registry, event_log);
             }
@@ -1329,7 +1331,9 @@ fn check_command_predicate(
 }
 
 fn check_infix_command(
+    left: &Expression,
     command: &InfixCommand,
+    right: &Expression,
     context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
@@ -1338,10 +1342,14 @@ fn check_infix_command(
 ) {
     let shape = shape_for_infix_command(command);
     let position = locator.locate_reference(&shape);
-    let actuals = infix_command_arguments(command)
-        .into_iter()
-        .map(key_for_expression)
-        .collect::<Vec<_>>();
+    let mut actuals = Vec::new();
+    actuals.push(key_for_expression(left));
+    actuals.extend(
+        infix_command_arguments(command)
+            .into_iter()
+            .map(key_for_expression),
+    );
+    actuals.push(key_for_expression(right));
     check_command_requirements(
         &shape.signature,
         &actuals,
@@ -2975,14 +2983,14 @@ fn key_for_command_expression(command: &CommandExpression) -> String {
 }
 
 fn key_for_infix_command(command: &InfixCommand) -> String {
-    let mut key = format!("\\:{}", format_chain(&command.chain));
+    let mut key = format!("\\.{}", format_chain(&command.chain));
     append_expression_args(&mut key, &command.head_args);
     for tail in &command.tail {
         key.push(':');
         key.push_str(&format_chain(&tail.chain));
         append_expression_args(&mut key, &tail.args);
     }
-    key.push_str(":/");
+    key.push_str("./");
     key
 }
 
@@ -3067,7 +3075,7 @@ fn refined_command_expression_arguments(command: &RefinedCommandExpression) -> V
 }
 
 fn actuals_for_type_key(signature: &str, ty: &str) -> Option<Vec<String>> {
-    if signature.starts_with("\\:") || signature.contains("::") {
+    if signature.starts_with("\\.") || signature.contains("::") {
         return None;
     }
 
@@ -3162,9 +3170,9 @@ fn command_header_forms(command: &CommandHeaderNode) -> Vec<&FormOrDeclaration> 
 
 fn infix_header_forms(command: &InfixCommandHeader) -> Vec<&FormOrDeclaration> {
     command
-        .head_args
+        .left
         .iter()
-        .flat_map(|args| args.forms.iter())
+        .chain(command.head_args.iter().flat_map(|args| args.forms.iter()))
         .chain(
             command
                 .tail
@@ -3172,6 +3180,7 @@ fn infix_header_forms(command: &InfixCommandHeader) -> Vec<&FormOrDeclaration> {
                 .flat_map(|tail| tail.args.iter())
                 .flat_map(|args| args.forms.iter()),
         )
+        .chain(command.right.iter())
         .collect()
 }
 

@@ -73,11 +73,11 @@ pub(super) fn shapes_for_command_header_node(command: &CommandHeaderNode) -> Vec
 }
 
 pub(super) fn shape_for_infix_command_header(command: &InfixCommandHeader) -> SignatureShape {
-    let mut signature = format!("\\:{}", format_chain(&command.chain));
+    let mut signature = format!("\\.{}", format_chain(&command.chain));
     let mut arg_groups = Vec::new();
     add_heading_curly_groups(&mut arg_groups, &command.head_args);
     add_header_tail(&mut signature, &mut arg_groups, &command.tail);
-    signature.push_str(":/");
+    signature.push_str("./");
     SignatureShape {
         signature,
         arg_groups,
@@ -86,12 +86,14 @@ pub(super) fn shape_for_infix_command_header(command: &InfixCommandHeader) -> Si
 }
 
 pub(super) fn shapes_for_infix_command_header(command: &InfixCommandHeader) -> Vec<HeaderShape> {
-    let base_signature = format!("\\:{}", format_chain(&command.chain));
+    let base_signature = format!("\\.{}", format_chain(&command.chain));
     let mut base_type_key = base_signature.clone();
     append_heading_curly_key_groups(&mut base_type_key, &command.head_args);
     let mut base_arg_groups = Vec::new();
     add_heading_curly_groups(&mut base_arg_groups, &command.head_args);
-    let base_parameters = heading_group_parameters(&command.head_args);
+    let mut base_parameters = infix_operand_parameters(command.left.as_ref());
+    base_parameters.extend(heading_group_parameters(&command.head_args));
+    let right_parameters = infix_operand_parameters(command.right.as_ref());
 
     header_tail_variants(&command.tail)
         .into_iter()
@@ -101,15 +103,16 @@ pub(super) fn shapes_for_infix_command_header(command: &InfixCommandHeader) -> V
 
             let mut parameters = base_parameters.clone();
             parameters.extend(variant.parameters);
+            parameters.extend(right_parameters.clone());
 
             HeaderShape {
                 shape: SignatureShape {
-                    signature: format!("{base_signature}{}:/", variant.signature_suffix),
+                    signature: format!("{base_signature}{}./", variant.signature_suffix),
                     arg_groups,
                     fallback_shapes: Vec::new(),
                 },
                 parameters,
-                type_key: format!("{base_type_key}{}:/", variant.type_key_suffix),
+                type_key: format!("{base_type_key}{}./", variant.type_key_suffix),
             }
         })
         .collect()
@@ -245,11 +248,11 @@ pub(super) fn shape_for_command_expression(command: &CommandExpression) -> Signa
 }
 
 pub(super) fn shape_for_infix_command(command: &InfixCommand) -> SignatureShape {
-    let mut signature = format!("\\:{}", format_chain(&command.chain));
+    let mut signature = format!("\\.{}", format_chain(&command.chain));
     let mut arg_groups = Vec::new();
     add_expression_curly_groups(&mut arg_groups, &command.head_args);
     add_expression_tail(&mut signature, &mut arg_groups, &command.tail);
-    signature.push_str(":/");
+    signature.push_str("./");
     SignatureShape {
         signature,
         arg_groups,
@@ -494,6 +497,10 @@ fn paren_heading_group_parameters(groups: &[ParenHeadingArgs]) -> Vec<String> {
         .flat_map(|args| args.forms.iter())
         .filter_map(primary_form_name)
         .collect()
+}
+
+fn infix_operand_parameters(operand: Option<&FormOrDeclaration>) -> Vec<String> {
+    operand.and_then(primary_form_name).into_iter().collect()
 }
 
 fn heading_group_key_suffix(groups: &[CurlyHeadingArgs]) -> String {

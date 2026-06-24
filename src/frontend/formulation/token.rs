@@ -29,9 +29,9 @@ pub enum Token {
     LNamedArguments,
     #[token("|]")]
     RNamedArguments,
-    #[token("\\:")]
+    #[token("\\.")]
     InfixCommandStart,
-    #[token(":/")]
+    #[token("./")]
     InfixCommandEnd,
     #[regex(
         r":\|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\|:",

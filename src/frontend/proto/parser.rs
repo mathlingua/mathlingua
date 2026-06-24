@@ -316,14 +316,13 @@ fn structural_colon_index(text: &str) -> Option<usize> {
     let prefix = text[..index].trim();
     let rest = &text[index..];
 
-    if matches!(rest, "::=" | ":=" | ":?" | ":->" | ":=>" | ":~>" | ":/")
+    if matches!(rest, "::=" | ":=" | ":?" | ":->" | ":=>" | ":~>")
         || rest.starts_with("::=")
         || rest.starts_with(":=")
         || rest.starts_with(":?")
         || rest.starts_with(":->")
         || rest.starts_with(":=>")
         || rest.starts_with(":~>")
-        || rest.starts_with(":/")
     {
         return None;
     }

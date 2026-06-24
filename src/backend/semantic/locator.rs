@@ -90,7 +90,7 @@ pub(super) fn is_heading_line(source: &str, offset: usize) -> bool {
 }
 
 pub(super) fn matches_signature_at(source: &str, offset: usize, signature: &str) -> bool {
-    if signature.starts_with("\\:") || signature.contains("::") {
+    if signature.starts_with("\\.") || signature.contains("::") {
         return source
             .get(offset..)
             .is_some_and(|tail| tail.starts_with(signature));

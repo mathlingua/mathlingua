@@ -85,7 +85,7 @@ The parser strips the outer quotes and does not interpret escape sequences.
 
 A non-text argument line starts a nested structural group when it is a heading
 or when its first colon follows a section-label-shaped prefix. Formulation
-delimiters such as `:=`, `:->`, `:=>`, `:~>`, and `:/` are excluded from that
+delimiters such as `:=`, `:->`, `:=>`, and `:~>` are excluded from that
 structural-colon rule, and command tails such as `\function:on{X}:to{Y}` remain
 formulations because the prefix before the colon is not a section label.
 
@@ -257,11 +257,11 @@ from the heading, so `[\foo:?baz{A}:?bar{B}]` accepts `\foo`,
 The `:?` spelling is only for command declaration headings; expressions use
 plain `:baz` or `:bar` for the optional parts they include.
 
-Infix commands use `\:` and `:/`:
+Infix commands use `\.` and `./`:
 
 ```text
-x \:divides:/ y
-[\:divides:/]
+x \.divides./ y
+[X \.set.=./ Y]
 ```
 
 Refined commands use `::` and a parenthesized refinement list:

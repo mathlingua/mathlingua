@@ -176,9 +176,11 @@ pub struct CommandHeaderNode {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InfixCommandHeader {
     pub span: Span,
+    pub left: Option<FormOrDeclaration>,
     pub chain: Chain,
     pub head_args: Vec<CurlyHeadingArgs>,
     pub tail: Vec<CommandHeaderTailPart>,
+    pub right: Option<FormOrDeclaration>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

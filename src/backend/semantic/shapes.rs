@@ -8,6 +8,14 @@ pub(super) fn shape_for_header(header: &CommandHeader) -> SignatureShape {
     }
 }
 
+pub(super) fn shapes_for_header(header: &CommandHeader) -> Vec<HeaderShape> {
+    match header {
+        CommandHeader::Command(command) => shapes_for_command_header_node(command),
+        CommandHeader::Infix(command) => shapes_for_infix_command_header(command),
+        CommandHeader::Refined(command) => shapes_for_refined_command_header(command),
+    }
+}
+
 pub(super) fn shape_for_command_header_node(command: &CommandHeaderNode) -> SignatureShape {
     let mut signature = format!("\\{}", format_chain(&command.chain));
     let mut arg_groups = Vec::new();
@@ -26,6 +34,37 @@ pub(super) fn shape_for_command_header_node(command: &CommandHeaderNode) -> Sign
     }
 }
 
+pub(super) fn shapes_for_command_header_node(command: &CommandHeaderNode) -> Vec<HeaderShape> {
+    let base_signature = format!("\\{}", format_chain(&command.chain));
+    let mut base_arg_groups = Vec::new();
+    add_heading_curly_groups(&mut base_arg_groups, &command.head_args);
+    let base_parameters = heading_group_parameters(&command.head_args);
+    let paren_arg_groups = paren_heading_group_shapes(&command.paren_args);
+    let paren_parameters = paren_heading_group_parameters(&command.paren_args);
+
+    header_tail_variants(&command.tail)
+        .into_iter()
+        .map(|variant| {
+            let mut arg_groups = base_arg_groups.clone();
+            arg_groups.extend(variant.arg_groups);
+            arg_groups.extend(paren_arg_groups.clone());
+
+            let mut parameters = base_parameters.clone();
+            parameters.extend(variant.parameters);
+            parameters.extend(paren_parameters.clone());
+
+            HeaderShape {
+                shape: SignatureShape {
+                    signature: format!("{base_signature}{}", variant.signature_suffix),
+                    arg_groups,
+                    fallback_shapes: Vec::new(),
+                },
+                parameters,
+            }
+        })
+        .collect()
+}
+
 pub(super) fn shape_for_infix_command_header(command: &InfixCommandHeader) -> SignatureShape {
     let mut signature = format!("\\:{}", format_chain(&command.chain));
     let mut arg_groups = Vec::new();
@@ -37,6 +76,33 @@ pub(super) fn shape_for_infix_command_header(command: &InfixCommandHeader) -> Si
         arg_groups,
         fallback_shapes: Vec::new(),
     }
+}
+
+pub(super) fn shapes_for_infix_command_header(command: &InfixCommandHeader) -> Vec<HeaderShape> {
+    let base_signature = format!("\\:{}", format_chain(&command.chain));
+    let mut base_arg_groups = Vec::new();
+    add_heading_curly_groups(&mut base_arg_groups, &command.head_args);
+    let base_parameters = heading_group_parameters(&command.head_args);
+
+    header_tail_variants(&command.tail)
+        .into_iter()
+        .map(|variant| {
+            let mut arg_groups = base_arg_groups.clone();
+            arg_groups.extend(variant.arg_groups);
+
+            let mut parameters = base_parameters.clone();
+            parameters.extend(variant.parameters);
+
+            HeaderShape {
+                shape: SignatureShape {
+                    signature: format!("{base_signature}{}:/", variant.signature_suffix),
+                    arg_groups,
+                    fallback_shapes: Vec::new(),
+                },
+                parameters,
+            }
+        })
+        .collect()
 }
 
 pub(super) fn shape_for_refined_command_header(command: &RefinedCommandHeader) -> SignatureShape {
@@ -68,6 +134,71 @@ pub(super) fn shape_for_refined_command_header(command: &RefinedCommandHeader) -
         arg_groups,
         fallback_shapes: Vec::new(),
     }
+}
+
+pub(super) fn shapes_for_refined_command_header(
+    command: &RefinedCommandHeader,
+) -> Vec<HeaderShape> {
+    let mut variants = vec![HeaderVariant::default()];
+    let prefix = if let Some(prefix) = &command.prefix_chain {
+        format!("\\{}::", format_chain(prefix))
+    } else {
+        "\\".to_string()
+    };
+
+    for (index, part) in command.parts.iter().enumerate() {
+        let part_prefix = if index == 0 {
+            format!("{prefix}{}", format_chain(&part.chain))
+        } else {
+            format!("::{}", format_chain(&part.chain))
+        };
+        let part_tail_variants = header_tail_variants(&part.tail);
+        variants = combine_header_variants(variants, &part_tail_variants, |variant| {
+            format!("{part_prefix}{}", variant.signature_suffix)
+        });
+    }
+
+    let refined_tail = format!("::{}", format_refined_tail(&command.refined_tail));
+    let head_arg_groups = heading_group_shapes(&command.head_args);
+    let head_parameters = heading_group_parameters(&command.head_args);
+    let tail_variants = header_tail_variants(&command.tail);
+    let paren_arg_groups = paren_heading_group_shapes(&command.paren_args);
+    let paren_parameters = paren_heading_group_parameters(&command.paren_args);
+
+    variants
+        .into_iter()
+        .flat_map(|prefix_variant| {
+            let head_arg_groups = head_arg_groups.clone();
+            let head_parameters = head_parameters.clone();
+            let paren_arg_groups = paren_arg_groups.clone();
+            let paren_parameters = paren_parameters.clone();
+            let refined_tail = refined_tail.clone();
+            tail_variants.iter().map(move |tail_variant| {
+                let mut signature = prefix_variant.signature_suffix.clone();
+                signature.push_str(&refined_tail);
+                signature.push_str(&tail_variant.signature_suffix);
+
+                let mut arg_groups = prefix_variant.arg_groups.clone();
+                arg_groups.extend(head_arg_groups.clone());
+                arg_groups.extend(tail_variant.arg_groups.clone());
+                arg_groups.extend(paren_arg_groups.clone());
+
+                let mut parameters = prefix_variant.parameters.clone();
+                parameters.extend(head_parameters.clone());
+                parameters.extend(tail_variant.parameters.clone());
+                parameters.extend(paren_parameters.clone());
+
+                HeaderShape {
+                    shape: SignatureShape {
+                        signature,
+                        arg_groups,
+                        fallback_shapes: Vec::new(),
+                    },
+                    parameters,
+                }
+            })
+        })
+        .collect()
 }
 
 pub(super) fn shape_for_command_expression(command: &CommandExpression) -> SignatureShape {
@@ -219,6 +350,129 @@ pub(super) fn add_expression_paren_groups(
             delimiter: ArgDelimiter::Paren,
             count: args.expressions.len(),
         });
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+struct HeaderVariant {
+    signature_suffix: String,
+    arg_groups: Vec<ArgGroupShape>,
+    parameters: Vec<String>,
+}
+
+fn header_tail_variants(tail: &[CommandHeaderTailPart]) -> Vec<HeaderVariant> {
+    let mut variants = vec![HeaderVariant::default()];
+
+    for part in tail {
+        let included = variants
+            .iter()
+            .map(|variant| {
+                let mut next = variant.clone();
+                append_header_tail_part_variant(&mut next, part);
+                next
+            })
+            .collect::<Vec<_>>();
+
+        if part.optional {
+            variants.extend(included);
+        } else {
+            variants = included;
+        }
+    }
+
+    deduplicate_header_variants(variants)
+}
+
+fn append_header_tail_part_variant(variant: &mut HeaderVariant, part: &CommandHeaderTailPart) {
+    variant.signature_suffix.push(':');
+    variant
+        .signature_suffix
+        .push_str(&format_chain(&part.chain));
+    variant.arg_groups.extend(heading_group_shapes(&part.args));
+    variant
+        .parameters
+        .extend(heading_group_parameters(&part.args));
+}
+
+fn combine_header_variants(
+    prefixes: Vec<HeaderVariant>,
+    suffixes: &[HeaderVariant],
+    render_suffix: impl Fn(&HeaderVariant) -> String,
+) -> Vec<HeaderVariant> {
+    let mut combined = Vec::new();
+    for prefix in prefixes {
+        for suffix in suffixes {
+            let mut next = prefix.clone();
+            next.signature_suffix.push_str(&render_suffix(suffix));
+            next.arg_groups.extend(suffix.arg_groups.clone());
+            next.parameters.extend(suffix.parameters.clone());
+            combined.push(next);
+        }
+    }
+    deduplicate_header_variants(combined)
+}
+
+fn deduplicate_header_variants(variants: Vec<HeaderVariant>) -> Vec<HeaderVariant> {
+    let mut deduped = Vec::new();
+    for variant in variants {
+        if deduped.iter().any(|existing: &HeaderVariant| {
+            existing.signature_suffix == variant.signature_suffix
+                && existing.arg_groups == variant.arg_groups
+        }) {
+            continue;
+        }
+        deduped.push(variant);
+    }
+    deduped
+}
+
+fn heading_group_shapes(groups: &[CurlyHeadingArgs]) -> Vec<ArgGroupShape> {
+    groups
+        .iter()
+        .map(|args| ArgGroupShape {
+            delimiter: ArgDelimiter::Curly,
+            count: args.forms.len(),
+        })
+        .collect()
+}
+
+fn paren_heading_group_shapes(groups: &[ParenHeadingArgs]) -> Vec<ArgGroupShape> {
+    groups
+        .iter()
+        .map(|args| ArgGroupShape {
+            delimiter: ArgDelimiter::Paren,
+            count: args.forms.len(),
+        })
+        .collect()
+}
+
+fn heading_group_parameters(groups: &[CurlyHeadingArgs]) -> Vec<String> {
+    groups
+        .iter()
+        .flat_map(|args| args.forms.iter())
+        .filter_map(primary_form_name)
+        .collect()
+}
+
+fn paren_heading_group_parameters(groups: &[ParenHeadingArgs]) -> Vec<String> {
+    groups
+        .iter()
+        .flat_map(|args| args.forms.iter())
+        .filter_map(primary_form_name)
+        .collect()
+}
+
+fn primary_form_name(form: &FormOrDeclaration) -> Option<String> {
+    match &form.kind {
+        FormOrDeclarationKind::Name(name) => Some(name.clone()),
+        FormOrDeclarationKind::FunctionDeclaration { name, form } => {
+            Some(name.as_ref().unwrap_or(&form.name).clone())
+        }
+        FormOrDeclarationKind::TupleDeclaration { name, .. }
+        | FormOrDeclarationKind::SetDeclaration { name, .. } => name.clone(),
+        FormOrDeclarationKind::InfixOperator { .. }
+        | FormOrDeclarationKind::PrefixOperator { .. }
+        | FormOrDeclarationKind::PostfixOperator { .. } => None,
     }
 }
 

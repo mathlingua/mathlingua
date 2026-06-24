@@ -69,7 +69,7 @@ Documented:
 #[test]
 fn renders_called_templates_as_text_when_written_is_missing() {
     let registry = registry_for(
-r#"[\group]
+        r#"[\group]
 Describes: G ::= (X, *, e)
 Documented:
 . called: "group"

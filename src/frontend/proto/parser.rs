@@ -308,7 +308,7 @@ impl<'a> Parser<'a> {
 
 /// Finds the colon that separates a section label from its inline argument.
 ///
-/// Formulation operators such as `::=`, `:=`, `:->`, `:=>`, `:~>`, and command tails
+/// Formulation operators such as `::=`, `:=`, `:?`, `:->`, `:=>`, `:~>`, and command tails
 /// such as `\foo{A}:with{B}` can appear in section bodies.  A structural colon
 /// therefore requires a section-label-shaped prefix.
 fn structural_colon_index(text: &str) -> Option<usize> {
@@ -316,9 +316,10 @@ fn structural_colon_index(text: &str) -> Option<usize> {
     let prefix = text[..index].trim();
     let rest = &text[index..];
 
-    if matches!(rest, "::=" | ":=" | ":->" | ":=>" | ":~>" | ":/")
+    if matches!(rest, "::=" | ":=" | ":?" | ":->" | ":=>" | ":~>" | ":/")
         || rest.starts_with("::=")
         || rest.starts_with(":=")
+        || rest.starts_with(":?")
         || rest.starts_with(":->")
         || rest.starts_with(":=>")
         || rest.starts_with(":~>")

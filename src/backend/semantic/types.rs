@@ -7,6 +7,12 @@ pub(super) struct SignatureShape {
     pub(super) fallback_shapes: Vec<SignatureShape>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) struct HeaderShape {
+    pub(super) shape: SignatureShape,
+    pub(super) parameters: Vec<String>,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum ArgDelimiter {
     Curly,

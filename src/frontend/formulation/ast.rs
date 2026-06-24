@@ -161,6 +161,7 @@ pub struct CommandHeaderTailPart {
     pub span: Span,
     pub chain: Chain,
     pub args: Vec<CurlyHeadingArgs>,
+    pub optional: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

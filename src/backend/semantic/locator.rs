@@ -113,10 +113,11 @@ pub(super) fn matches_signature_at(source: &str, offset: usize, signature: &str)
         let Some(after_colon) = remaining.strip_prefix(':') else {
             return false;
         };
-        if !after_colon.starts_with(part) {
+        let after_marker = after_colon.strip_prefix('?').unwrap_or(after_colon);
+        if !after_marker.starts_with(part) {
             return false;
         }
-        remaining = &after_colon[part.len()..];
+        remaining = &after_marker[part.len()..];
         remaining = skip_argument_groups(remaining);
     }
 

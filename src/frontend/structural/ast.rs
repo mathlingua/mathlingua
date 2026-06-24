@@ -1,6 +1,7 @@
 use crate::frontend::formulation::ast::{
     AuthorHeader, CommandHeader, DeclarationStatement, Expression, ExpressionAlias,
-    FormOrDeclaration, IsViaStatement, LabelHeader, ResourceHeader, SpecOperatorAlias, WritingAlias,
+    FormOrDeclaration, IsViaStatement, LabelHeader, ResourceHeader, SpecOperatorAlias,
+    WritingAlias,
 };
 
 // ===============================[ repeated ]=====================================

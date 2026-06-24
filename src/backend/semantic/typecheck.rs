@@ -3,16 +3,18 @@ use std::collections::{HashMap, HashSet};
 
 pub(super) fn collect_definition_type_metadata(
     item: &TopLevelItem,
-    shape: &SignatureShape,
+    header_shape: &HeaderShape,
     registry: &mut SignatureRegistry,
 ) {
-    let Some(info) = definition_type_info(item, shape) else {
+    let Some(info) = definition_type_info(item, header_shape) else {
         return;
     };
 
     collect_type_extension_rules(item, &info, registry);
     collect_spec_operator_rules(item, &info, registry);
-    registry.type_infos.insert(shape.signature.clone(), info);
+    registry
+        .type_infos
+        .insert(header_shape.shape.signature.clone(), info);
 }
 
 pub(super) fn validate_document_types(
@@ -26,31 +28,34 @@ pub(super) fn validate_document_types(
     }
 }
 
-fn definition_type_info(item: &TopLevelItem, shape: &SignatureShape) -> Option<DefinitionTypeInfo> {
+fn definition_type_info(
+    item: &TopLevelItem,
+    header_shape: &HeaderShape,
+) -> Option<DefinitionTypeInfo> {
     match item {
         TopLevelItem::Describes(group) => Some(type_info_from_parts(
-            shape,
+            header_shape,
             &group.heading,
             group.using.as_ref(),
             group.when.as_ref(),
             Some(&group.describes.argument),
         )),
         TopLevelItem::Defines(group) => Some(type_info_from_parts(
-            shape,
+            header_shape,
             &group.heading,
             group.using.as_ref(),
             group.when.as_ref(),
             None,
         )),
         TopLevelItem::Refines(group) => Some(type_info_from_parts(
-            shape,
+            header_shape,
             &group.heading,
             group.using.as_ref(),
             group.when.as_ref(),
             None,
         )),
         TopLevelItem::States(group) => Some(type_info_from_parts(
-            shape,
+            header_shape,
             &group.heading,
             group.using.as_ref(),
             group.when.as_ref(),
@@ -59,30 +64,30 @@ fn definition_type_info(item: &TopLevelItem, shape: &SignatureShape) -> Option<D
         TopLevelItem::Axiom(group) => group
             .heading
             .as_ref()
-            .map(|heading| type_info_from_parts(shape, heading, None, None, None)),
+            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None)),
         TopLevelItem::Theorem(group) => group
             .heading
             .as_ref()
-            .map(|heading| type_info_from_parts(shape, heading, None, None, None)),
+            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None)),
         TopLevelItem::Corollary(group) => group
             .heading
             .as_ref()
-            .map(|heading| type_info_from_parts(shape, heading, None, None, None)),
+            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None)),
         TopLevelItem::Lemma(group) => group
             .heading
             .as_ref()
-            .map(|heading| type_info_from_parts(shape, heading, None, None, None)),
+            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None)),
         TopLevelItem::Conjecture(group) => group
             .heading
             .as_ref()
-            .map(|heading| type_info_from_parts(shape, heading, None, None, None)),
+            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None)),
         _ => None,
     }
 }
 
 fn type_info_from_parts(
-    shape: &SignatureShape,
-    heading: &CommandHeader,
+    header_shape: &HeaderShape,
+    _heading: &CommandHeader,
     using: Option<&UsingSection>,
     when: Option<&WhenSection>,
     described: Option<&FormOrDeclaration>,
@@ -110,8 +115,8 @@ fn type_info_from_parts(
         .collect();
 
     DefinitionTypeInfo {
-        signature: shape.signature.clone(),
-        parameters: header_parameter_names(heading),
+        signature: header_shape.shape.signature.clone(),
+        parameters: header_shape.parameters.clone(),
         requirements,
         substitutions: context.substitutions,
         described: described.map(key_for_form_or_declaration),
@@ -455,7 +460,14 @@ fn validate_theorem_like(
 
     if let Some(given) = sections.given {
         for statement in &given.arguments {
-            assume_declaration_statement(statement, &mut context, path, locator, registry, event_log);
+            assume_declaration_statement(
+                statement,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
         }
     }
 
@@ -2361,9 +2373,9 @@ fn primary_subject_key(subject: &IsSubject) -> String {
         IsSubjectKind::Forms(forms) => forms
             .iter()
             .find_map(|form| match form {
-                IsSubjectForm::Form(form) => {
-                    Some(primary_form_name(form).unwrap_or_else(|| key_for_form_or_declaration(form)))
-                }
+                IsSubjectForm::Form(form) => Some(
+                    primary_form_name(form).unwrap_or_else(|| key_for_form_or_declaration(form)),
+                ),
                 IsSubjectForm::PlaceholderForm(form) => Some(key_for_placeholder_form(form)),
             })
             .unwrap_or_default(),
@@ -2800,14 +2812,6 @@ fn split_key_arg_list(input: &str) -> Vec<String> {
     args
 }
 
-fn header_parameter_names(header: &CommandHeader) -> Vec<String> {
-    match header {
-        CommandHeader::Command(command) => command_header_parameter_names(command),
-        CommandHeader::Infix(command) => infix_header_parameter_names(command),
-        CommandHeader::Refined(command) => refined_header_parameter_names(command),
-    }
-}
-
 fn header_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
     match header {
         CommandHeader::Command(command) => command_header_forms(command),
@@ -2860,56 +2864,6 @@ fn refined_header_forms(command: &RefinedCommandHeader) -> Vec<&FormOrDeclaratio
                 .flat_map(|args| args.forms.iter()),
         )
         .chain(command.paren_args.iter().flat_map(|args| args.forms.iter()))
-        .collect()
-}
-
-fn command_header_parameter_names(command: &CommandHeaderNode) -> Vec<String> {
-    command
-        .head_args
-        .iter()
-        .flat_map(|args| args.forms.iter())
-        .chain(
-            command
-                .tail
-                .iter()
-                .flat_map(|tail| tail.args.iter())
-                .flat_map(|args| args.forms.iter()),
-        )
-        .chain(command.paren_args.iter().flat_map(|args| args.forms.iter()))
-        .filter_map(primary_form_name)
-        .collect()
-}
-
-fn infix_header_parameter_names(command: &InfixCommandHeader) -> Vec<String> {
-    command
-        .head_args
-        .iter()
-        .flat_map(|args| args.forms.iter())
-        .chain(
-            command
-                .tail
-                .iter()
-                .flat_map(|tail| tail.args.iter())
-                .flat_map(|args| args.forms.iter()),
-        )
-        .filter_map(primary_form_name)
-        .collect()
-}
-
-fn refined_header_parameter_names(command: &RefinedCommandHeader) -> Vec<String> {
-    command
-        .head_args
-        .iter()
-        .flat_map(|args| args.forms.iter())
-        .chain(
-            command
-                .tail
-                .iter()
-                .flat_map(|tail| tail.args.iter())
-                .flat_map(|args| args.forms.iter()),
-        )
-        .chain(command.paren_args.iter().flat_map(|args| args.forms.iter()))
-        .filter_map(primary_form_name)
         .collect()
 }
 

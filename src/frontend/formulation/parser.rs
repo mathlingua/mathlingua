@@ -10,10 +10,10 @@ use super::ast::{
     FunctionTypeSpecKind, InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement,
     IsSubject, IsSubjectForm, IsSubjectKind, IsViaStatement, LabelHeader, Operator,
     ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm, PlaceholderFormKind,
-    PlaceholderSpecStatement,
-    RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart,
-    RefinedTail, ResourceHeader, Span, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject,
-    SpecSubjectKind, SubjectSpecStatement, TypeExpression, WritingAlias,
+    PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
+    RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, Span, SpecOperatorAlias,
+    SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement, TypeExpression,
+    WritingAlias,
 };
 use super::grammar;
 use super::lexer::Lexer;
@@ -755,7 +755,12 @@ pub(super) fn parse_command_header_tail(
             break;
         }
 
-        let (chain_text, rest) = split_prefix_by_delimiters(&input[1..], &['{']);
+        let (optional, tail_body) = if let Some(rest) = input.strip_prefix(":?") {
+            (true, rest)
+        } else {
+            (false, &input[1..])
+        };
+        let (chain_text, rest) = split_prefix_by_delimiters(tail_body, &['{']);
         let chain = parse_chain(chain_text)?;
         let (args, remaining) = parse_curly_heading_args(rest)?;
         if args.is_empty() {
@@ -768,6 +773,7 @@ pub(super) fn parse_command_header_tail(
             span: span_all(&input[..input.len() - remaining.len()]),
             chain,
             args,
+            optional,
         });
         input = remaining;
     }
@@ -934,9 +940,7 @@ pub fn parse_declaration_statement(
     let (body, relation) = parse_declaration_relation(input, allow_refined_type)?;
     let (subject_text, expansion_text, definition) = parse_declaration_body(body)?;
     let subject = parse_is_subject(subject_text)?;
-    let expansion = expansion_text
-        .map(parse_is_subject)
-        .transpose()?;
+    let expansion = expansion_text.map(parse_is_subject).transpose()?;
 
     validate_declaration_expansion(&subject, expansion.as_ref())?;
 
@@ -950,12 +954,16 @@ pub fn parse_declaration_statement(
 }
 
 /// Parses a declaration statement that only accepts ordinary type expressions.
-pub fn parse_ordinary_declaration_statement(input: &str) -> Result<DeclarationStatement, ParseError> {
+pub fn parse_ordinary_declaration_statement(
+    input: &str,
+) -> Result<DeclarationStatement, ParseError> {
     parse_declaration_statement(input, false)
 }
 
 /// Parses a declaration statement whose `is` relation may use refined commands.
-pub fn parse_refined_declaration_statement(input: &str) -> Result<DeclarationStatement, ParseError> {
+pub fn parse_refined_declaration_statement(
+    input: &str,
+) -> Result<DeclarationStatement, ParseError> {
     parse_declaration_statement(input, true)
 }
 
@@ -990,7 +998,9 @@ fn parse_declaration_body(
         let subject = input[..index].trim();
         let rest = input[index + 3..].trim();
         if subject.is_empty() || rest.is_empty() {
-            return Err(ParseError::custom("`::=` requires declaration text on both sides"));
+            return Err(ParseError::custom(
+                "`::=` requires declaration text on both sides",
+            ));
         }
 
         if let Some(definition_index) = find_top_level_definition(rest) {
@@ -1608,11 +1618,19 @@ pub fn parse_expression_alias(input: &str) -> Result<ExpressionAlias, ParseError
     let expression = parse_expression(input[index + 3..].trim())?;
 
     let lhs = if lhs_text.starts_with("\\:") {
-        ExpressionAliasLhs::InfixCommand(parse_infix_command_header(lhs_text)?)
+        let header = parse_infix_command_header(lhs_text)?;
+        reject_optional_header_tails(&CommandHeader::Infix(header.clone()))?;
+        ExpressionAliasLhs::InfixCommand(header)
     } else if lhs_text.starts_with('\\') {
         match parse_command_header(lhs_text)? {
-            CommandHeader::Command(header) => ExpressionAliasLhs::Command(header),
-            CommandHeader::Infix(header) => ExpressionAliasLhs::InfixCommand(header),
+            CommandHeader::Command(header) => {
+                reject_optional_header_tails(&CommandHeader::Command(header.clone()))?;
+                ExpressionAliasLhs::Command(header)
+            }
+            CommandHeader::Infix(header) => {
+                reject_optional_header_tails(&CommandHeader::Infix(header.clone()))?;
+                ExpressionAliasLhs::InfixCommand(header)
+            }
             CommandHeader::Refined(_) => {
                 return Err(ParseError::custom(
                     "refined command headers are not valid expression alias lhs values",
@@ -1628,6 +1646,30 @@ pub fn parse_expression_alias(input: &str) -> Result<ExpressionAlias, ParseError
         lhs,
         expression,
     })
+}
+
+fn reject_optional_header_tails(header: &CommandHeader) -> Result<(), ParseError> {
+    if command_header_has_optional_tail(header) {
+        return Err(ParseError::custom(
+            "optional command tail parts are only valid in bracketed command declarations",
+        ));
+    }
+    Ok(())
+}
+
+fn command_header_has_optional_tail(header: &CommandHeader) -> bool {
+    match header {
+        CommandHeader::Command(header) => header.tail.iter().any(|part| part.optional),
+        CommandHeader::Infix(header) => header.tail.iter().any(|part| part.optional),
+        CommandHeader::Refined(header) => {
+            header.tail.iter().any(|part| part.optional)
+                || header
+                    .parts
+                    .iter()
+                    .flat_map(|part| part.tail.iter())
+                    .any(|part| part.optional)
+        }
+    }
 }
 
 /// Parses a specification-operator alias of the form `<placeholder spec> :-> <target>`.
@@ -1726,11 +1768,10 @@ mod tests {
     };
     use crate::frontend::formulation::ast::{
         BinaryOperator, ChainPart, CommandHeader, CommandHeaderNode, DeclarationRelation,
-        Expression, ExpressionAliasLhs, ExpressionKind, FormOrDeclaration,
-        FormOrDeclarationKind, FunctionNamedExpressionElementLhs, FunctionTypeSpecKind,
-        IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind,
-        PlaceholderFormKind, RefinedTail, SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall,
-        TypeExpression,
+        Expression, ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
+        FunctionNamedExpressionElementLhs, FunctionTypeSpecKind, IsOrRefinedStatementSpec,
+        IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind, PlaceholderFormKind,
+        RefinedTail, SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression,
     };
 
     // ===============================[ support ]=====================================
@@ -1963,6 +2004,31 @@ mod tests {
             }) => {
                 assert_eq!(tail.len(), 2);
                 assert_eq!(paren_args.len(), 1);
+            }
+            other => panic!("expected command header, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_optional_command_header_tail_parts() {
+        let header = parse_command_header(r#"\function:on{A}:?to{B}"#)
+            .expect("expected command header with optional tail");
+
+        match header {
+            CommandHeader::Command(CommandHeaderNode { tail, .. }) => {
+                assert_eq!(tail.len(), 2);
+                assert!(!tail[0].optional);
+                assert!(tail[1].optional);
+            }
+            other => panic!("expected command header, got {other:?}"),
+        }
+
+        let header = parse_command_header(r#"\foo:?baz{A}:?bar{B}"#)
+            .expect("expected command header with optional tails");
+        match header {
+            CommandHeader::Command(CommandHeaderNode { tail, .. }) => {
+                assert_eq!(tail.len(), 2);
+                assert!(tail.iter().all(|part| part.optional));
             }
             other => panic!("expected command header, got {other:?}"),
         }
@@ -2636,8 +2702,7 @@ mod tests {
 
     #[test]
     fn parses_function_form_declarations() {
-        let form =
-            parse_form_or_declaration("g ::= f(x_, y_)").expect("expected form declaration");
+        let form = parse_form_or_declaration("g ::= f(x_, y_)").expect("expected form declaration");
 
         match form.kind {
             FormOrDeclarationKind::FunctionDeclaration { name, form } => {
@@ -2706,18 +2771,15 @@ mod tests {
 
     #[test]
     fn parses_unified_declaration_statements() {
-        let tuple = parse_ordinary_declaration_statement(
-            r#"G ::= (X, *, e) := (a, b, c) is \foo"#,
-        )
-        .expect("expected tuple declaration statement");
+        let tuple = parse_ordinary_declaration_statement(r#"G ::= (X, *, e) := (a, b, c) is \foo"#)
+            .expect("expected tuple declaration statement");
         assert!(tuple.expansion.is_some());
         assert!(tuple.definition.is_some());
         assert!(matches!(tuple.relation, Some(DeclarationRelation::Is(_))));
 
-        let function = parse_ordinary_declaration_statement(
-            r#"f(x_, y_) ::= z_ := x_ + y_ is \function"#,
-        )
-        .expect("expected function declaration statement");
+        let function =
+            parse_ordinary_declaration_statement(r#"f(x_, y_) ::= z_ := x_ + y_ is \function"#)
+                .expect("expected function declaration statement");
         assert!(matches!(
             function.expansion.as_ref().map(|subject| &subject.kind),
             Some(IsSubjectKind::Forms(forms))
@@ -2725,10 +2787,9 @@ mod tests {
         ));
         assert!(function.definition.is_some());
 
-        let spec = parse_ordinary_declaration_statement(
-            r#"f(x_) "in" \some.collection.of.functions"#,
-        )
-        .expect("expected spec declaration statement");
+        let spec =
+            parse_ordinary_declaration_statement(r#"f(x_) "in" \some.collection.of.functions"#)
+                .expect("expected spec declaration statement");
         assert!(matches!(
             spec.relation,
             Some(DeclarationRelation::Spec { target, .. })
@@ -2741,9 +2802,11 @@ mod tests {
         let error = parse_ordinary_declaration_statement(r#"f(x_, y_) ::= y is \function"#)
             .expect_err("expected non-placeholder output to fail");
 
-        assert!(error
-            .to_string()
-            .contains("function declaration `::=` output must be a placeholder"));
+        assert!(
+            error
+                .to_string()
+                .contains("function declaration `::=` output must be a placeholder")
+        );
     }
 
     #[test]
@@ -3027,6 +3090,25 @@ mod tests {
         assert_eq!(
             error.to_string(),
             "header tail parts require at least one `{...}` argument list"
+        );
+    }
+
+    #[test]
+    fn rejects_optional_command_tail_parts_outside_headers() {
+        let expression = parse_expression(r#"\foo:?baz{A}"#)
+            .expect_err("expected optional tail in expression to fail");
+        assert!(
+            expression.to_string().contains("InvalidToken")
+                || expression.to_string().contains("invalid"),
+            "expected invalid expression error, got {expression}"
+        );
+
+        let alias = parse_expression_alias(r#"\foo:?baz{A} :=> A"#)
+            .expect_err("expected optional tail in expression alias lhs to fail");
+        assert!(
+            alias
+                .to_string()
+                .contains("optional command tail parts are only valid")
         );
     }
 }

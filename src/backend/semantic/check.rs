@@ -26,36 +26,38 @@ pub(super) fn collect_document_definitions(
             continue;
         };
         let kind = definition.kind;
-        let shape = shape_for_header(definition.heading);
-        let position = locator.locate_heading(&shape);
+        let full_shape = shape_for_header(definition.heading);
+        let position = locator.locate_heading(&full_shape);
         check_documented_rendering(file, kind, definition.documented, position, event_log);
-        if let Some(previous) = registry.definitions.get(&shape.signature) {
-            emit_error(
-                event_log,
-                &file.path,
-                position,
-                format!(
-                    "Duplicate command signature `{}` in {}; previously defined as {} in {}",
-                    shape.signature,
-                    kind.label(),
-                    previous.kind.label(),
-                    display_definition_location(previous)
-                ),
-            );
-            continue;
-        }
+        for header_shape in shapes_for_header(definition.heading) {
+            if let Some(previous) = registry.definitions.get(&header_shape.shape.signature) {
+                emit_error(
+                    event_log,
+                    &file.path,
+                    position,
+                    format!(
+                        "Duplicate command signature `{}` in {}; previously defined as {} in {}",
+                        header_shape.shape.signature,
+                        kind.label(),
+                        previous.kind.label(),
+                        display_definition_location(previous)
+                    ),
+                );
+                continue;
+            }
 
-        let type_shape = shape.clone();
-        registry.definitions.insert(
-            shape.signature.clone(),
-            DefinitionEntry {
-                kind,
-                shape,
-                path: file.path.clone(),
-                position,
-            },
-        );
-        collect_definition_type_metadata(item, &type_shape, registry);
+            let type_shape = header_shape.clone();
+            registry.definitions.insert(
+                header_shape.shape.signature.clone(),
+                DefinitionEntry {
+                    kind,
+                    shape: header_shape.shape,
+                    path: file.path.clone(),
+                    position,
+                },
+            );
+            collect_definition_type_metadata(item, &type_shape, registry);
+        }
     }
 }
 

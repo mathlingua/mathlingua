@@ -601,7 +601,7 @@ RefinedTail ::= "[[" Name "]]" | RawChain
 
 CurlyHeadingArgs ::= "{" FormOrDeclaration ("," FormOrDeclaration)* "}"
 ParenHeadingArgs ::= "(" FormOrDeclaration ("," FormOrDeclaration)* ")"
-CommandHeaderTail ::= ":" RawChain CurlyHeadingArgs+
+CommandHeaderTail ::= (":" | ":?") RawChain CurlyHeadingArgs+
 ```
 
 ## Command Header Syntax
@@ -616,18 +616,22 @@ CommandHeaderTail ::= ":" RawChain CurlyHeadingArgs+
 
 ```text
 SimpleCommandHeader ::= "\" RawChain CurlyHeadingArgs* CommandHeaderTail* ParenHeadingArgs*
-CommandHeaderTail ::= ":" RawChain CurlyHeadingArgs+
+CommandHeaderTail ::= (":" | ":?") RawChain CurlyHeadingArgs+
 ```
 
 Notes:
 
 - each tail part must have at least one `{...}` block
+- `:?` marks a command-header tail part as optional; it is accepted only in command headers, not in command expressions
+- optional tail parts expand to all ordered concrete signatures that include or omit that part
 - zero or more parenthesized form-argument blocks may appear at the end
 
 Examples:
 
 - `\function`
 - `\function:on{A}:to{B}`
+- `\function:on{A}:?to{B}`
+- `\foo:?baz{A}:?bar{B}`
 - `\function:on{A}:to{B}(f(x_))`
 
 ### Infix command headers
@@ -984,7 +988,7 @@ CommandHeader ::= SimpleCommandHeader | InfixCommandHeader | RefinedCommandHeade
 CurlyHeadingArgs ::= "{" FormList "}"
 ParenHeadingArgs ::= "(" FormList ")"
 
-CommandHeaderTailPart ::= ":" RawChain CurlyHeadingArgs+
+CommandHeaderTailPart ::= (":" | ":?") RawChain CurlyHeadingArgs+
 CommandHeaderTail ::= CommandHeaderTailPart*
 
 SimpleCommandHeader ::= "\" RawChain CurlyHeadingArgs* CommandHeaderTail ParenHeadingArgs*
@@ -1058,4 +1062,4 @@ Ungrouped chains like `a |f| b |g| c` are accepted and associate to the left at 
 
 ### Tail parts require `{...}`
 
-For both command headers and command expressions, each `:tail` part must include at least one curly argument list.
+For both command headers and command expressions, each `:tail` part must include at least one curly argument list. Command headers may spell a tail as `:?tail` to make that tail optional at reference sites; command expressions still use plain `:tail` for whichever optional parts are present.

@@ -1294,6 +1294,87 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_optional_command_header_tail_combinations_in_order() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("optional-command-tails.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\foo:?baz{A}:?bar{B}]
+    Defines: A ::= B "defines" B
+    Documented:
+    . [docs.called]
+      called:
+      . "foo"
+
+    Theorem:
+    then:
+    . \foo
+    . \foo:baz{1}
+    . \foo:bar{2}
+    . \foo:baz{1}:bar{2}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("optional-command-tails.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_optional_command_header_tail_references_out_of_order() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir
+            .path()
+            .join("optional-command-tails-out-of-order.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\foo:?baz{A}:?bar{B}]
+    Defines: A ::= B "defines" B
+    Documented:
+    . [docs.called]
+      called:
+      . "foo"
+
+    Theorem:
+    then:
+    . \foo:bar{2}:baz{1}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("optional-command-tails-out-of-order.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            event_log
+                .events()
+                .iter()
+                .filter_map(Event::as_message)
+                .any(|event| event
+                    .message
+                    .contains("Undefined command signature `\\foo:bar:baz`"))
+        );
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
     fn check_reduces_spec_operator_aliases_to_type_facts() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("spec-reduction.mlg");

@@ -1379,8 +1379,13 @@ pub(in crate::frontend::structural::parser) fn parse_connection(
             arguments: parse_optional_open_texts(sections.get("to").copied(), tracker),
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", tracker, parse_ordinary_declaration_statement)
-                .map(|arguments| UsingSection { arguments })
+            parse_required_formulations(
+                section,
+                "using",
+                tracker,
+                parse_ordinary_declaration_statement,
+            )
+            .map(|arguments| UsingSection { arguments })
         }),
         means: MeansSection {
             arguments: parse_optional_open_texts(sections.get("means").copied(), tracker),
@@ -2108,8 +2113,13 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", tracker, parse_ordinary_declaration_statement)
-                .map(|arguments| UsingSection { arguments })
+            parse_required_formulations(
+                section,
+                "using",
+                tracker,
+                parse_ordinary_declaration_statement,
+            )
+            .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
@@ -2193,8 +2203,13 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", tracker, parse_ordinary_declaration_statement)
-                .map(|arguments| UsingSection { arguments })
+            parse_required_formulations(
+                section,
+                "using",
+                tracker,
+                parse_ordinary_declaration_statement,
+            )
+            .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
@@ -2271,8 +2286,13 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", tracker, parse_ordinary_declaration_statement)
-                .map(|arguments| UsingSection { arguments })
+            parse_required_formulations(
+                section,
+                "using",
+                tracker,
+                parse_ordinary_declaration_statement,
+            )
+            .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
@@ -2351,8 +2371,13 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             arguments: parse_optional_open_texts(sections.get("States").copied(), tracker),
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", tracker, parse_ordinary_declaration_statement)
-                .map(|arguments| UsingSection { arguments })
+            parse_required_formulations(
+                section,
+                "using",
+                tracker,
+                parse_ordinary_declaration_statement,
+            )
+            .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
@@ -3222,7 +3247,9 @@ that:
             TopLevelItem::Refines(group) => {
                 assert!(matches!(
                     &group.refines.argument.relation,
-                    Some(crate::frontend::formulation::ast::DeclarationRelation::Is(_))
+                    Some(crate::frontend::formulation::ast::DeclarationRelation::Is(
+                        _
+                    ))
                 ));
                 assert!(group.specifies.is_some());
                 assert!(matches!(

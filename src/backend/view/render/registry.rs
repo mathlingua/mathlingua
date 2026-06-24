@@ -21,10 +21,9 @@ pub(in crate::backend::view) fn build_render_registry(
 
     for file in files {
         for item in &file.document.items {
-            let Some(entry) = render_entry(item) else {
-                continue;
-            };
-            registry.commands.insert(entry.signature, entry.render);
+            for entry in render_entries(item) {
+                registry.commands.insert(entry.signature, entry.render);
+            }
         }
     }
 
@@ -104,56 +103,59 @@ pub(super) struct RenderEntry {
     render: CommandRender,
 }
 
-pub(super) fn render_entry(item: &TopLevelItem) -> Option<RenderEntry> {
+pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
     match item {
-        TopLevelItem::Describes(group) => render_entry_from_parts(
-            command_header_signature(&group.heading),
-            command_header_parameters(&group.heading),
+        TopLevelItem::Describes(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
             primary_form_name(&group.describes.argument),
             group.documented.as_ref(),
         ),
-        TopLevelItem::Defines(group) => render_entry_from_parts(
-            command_header_signature(&group.heading),
-            command_header_parameters(&group.heading),
+        TopLevelItem::Defines(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
             primary_declaration_statement_name(&group.defines.argument),
             group.documented.as_ref(),
         ),
-        TopLevelItem::Refines(group) => render_entry_from_parts(
-            command_header_signature(&group.heading),
-            command_header_parameters(&group.heading),
+        TopLevelItem::Refines(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
             primary_declaration_statement_name(&group.refines.argument),
             group.documented.as_ref(),
         ),
-        _ => None,
+        _ => Vec::new(),
     }
 }
 
-pub(super) fn render_entry_from_parts(
-    signature: String,
-    parameters: Vec<String>,
+pub(super) fn render_entries_from_parts(
+    signatures: Vec<CommandHeaderSignature>,
     subject_variable: Option<String>,
     documented: Option<&DocumentedSection>,
-) -> Option<RenderEntry> {
-    let documented = documented?;
-    let called = documented.arguments.iter().find_map(|item| match item {
+) -> Vec<RenderEntry> {
+    let Some(documented) = documented else {
+        return Vec::new();
+    };
+    let Some(called) = documented.arguments.iter().find_map(|item| match item {
         DocumentedItem::Called(group) => Some(group),
         _ => None,
-    })?;
+    }) else {
+        return Vec::new();
+    };
     let documented_written = documented.arguments.iter().find_map(|item| match item {
         DocumentedItem::Written(group) => Some(&group.written),
         _ => None,
     });
     let written = called.written.as_ref().or(documented_written);
 
-    Some(RenderEntry {
-        signature,
-        render: CommandRender {
-            subject_variable,
-            parameters,
-            called: join_called_text(&called.called),
-            written: written.map(join_written_text),
-        },
-    })
+    signatures
+        .into_iter()
+        .map(|signature| RenderEntry {
+            signature: signature.signature,
+            render: CommandRender {
+                subject_variable: subject_variable.clone(),
+                parameters: signature.parameters,
+                called: join_called_text(&called.called),
+                written: written.map(join_written_text),
+            },
+        })
+        .collect()
 }
 
 pub(super) fn join_called_text(section: &CalledSection) -> String {

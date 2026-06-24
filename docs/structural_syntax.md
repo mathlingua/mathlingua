@@ -139,7 +139,7 @@ Each argument line is classified in this order:
 Important implementation consequence:
 
 - a non-text argument line starts a nested group only when the first colon has a section-label-shaped prefix made from ASCII letters, digits, and `_`
-- colons in formulation delimiters `::=`, `:=`, `:->`, `:=>`, `:~>`, and `:/` do not start nested groups
+- colons in formulation delimiters `::=`, `:=`, `:?`, `:->`, `:=>`, `:~>`, and `:/` do not start nested groups
 - command tails such as `\function:on{X}:to{Y}` are formulations because the text before the first colon is not a section-label-shaped prefix
 
 ### Multiline formulations
@@ -1091,7 +1091,7 @@ So the stored `OpenText` for `"abc"` is `abc`, but `\"` is not specially handled
 
 This behavior comes from the proto parser. A non-text argument line starts a
 nested group if it is a heading or if its first colon follows a
-section-label-shaped prefix. Formulation delimiters `::=`, `:=`, `:->`,
+section-label-shaped prefix. Formulation delimiters `::=`, `:=`, `:?`, `:->`,
 `:=>`, `:~>`, and `:/` are excluded from this structural-colon rule.
 
 ### Clause formulation parsing has a fallback order

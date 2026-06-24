@@ -243,6 +243,20 @@ may be referenced as either:
 Every command tail such as `:to` or `:from` must include at least one curly
 argument group.
 
+In command declaration headings, a tail may be written with `:?` to make that
+tail optional at reference sites:
+
+```text
+[\function:on{A}:?to{B}]
+```
+
+This declares both `\function:on` and `\function:on:to`. Multiple optional
+tails may be independently omitted as long as the remaining tails keep the order
+from the heading, so `[\foo:?baz{A}:?bar{B}]` accepts `\foo`,
+`\foo:baz`, `\foo:bar`, and `\foo:baz:bar`, but not `\foo:bar:baz`.
+The `:?` spelling is only for command declaration headings; expressions use
+plain `:baz` or `:bar` for the optional parts they include.
+
 Infix commands use `\:` and `:/`:
 
 ```text

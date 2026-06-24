@@ -125,10 +125,10 @@ pub(super) fn refined_command_called_template(
     }
 }
 
-pub(super) fn refines_target_type(spec: &IsOrRefinedStatementSpec) -> Option<&TypeExpression> {
-    match spec {
-        IsOrRefinedStatementSpec::Is(statement) => Some(&statement.ty),
-        IsOrRefinedStatementSpec::Spec(_) => None,
+pub(super) fn refines_target_type(statement: &DeclarationStatement) -> Option<&TypeExpression> {
+    match &statement.relation {
+        Some(DeclarationRelation::Is(ty)) => Some(ty),
+        _ => None,
     }
 }
 

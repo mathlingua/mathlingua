@@ -90,8 +90,8 @@ fn type_info_from_parts(
     let mut context = TypeContext::default();
 
     if let Some(using) = using {
-        for spec in &using.arguments {
-            for fact in facts_from_is_or_spec(spec) {
+        for statement in &using.arguments {
+            for fact in facts_from_declaration_statement(statement) {
                 context.add_fact(fact);
             }
         }
@@ -246,7 +246,14 @@ fn validate_top_level_item_types(
         TopLevelItem::Defines(group) => {
             let mut context = TypeContext::default();
             declare_header_symbols(&group.heading, &mut context);
-            declare_names_from_is_or_spec(&group.defines.argument, &mut context);
+            introduce_declaration_statement(
+                &group.defines.argument,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -277,7 +284,14 @@ fn validate_top_level_item_types(
         TopLevelItem::Refines(group) => {
             let mut context = TypeContext::default();
             declare_header_symbols(&group.heading, &mut context);
-            declare_names_from_is_or_refined_spec_subject(&group.refines.argument, &mut context);
+            introduce_declaration_statement(
+                &group.refines.argument,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -440,11 +454,8 @@ fn validate_theorem_like(
     }
 
     if let Some(given) = sections.given {
-        for spec in &given.arguments {
-            assume_is_or_refined_spec(spec, &mut context, path, locator, registry, event_log);
-            for fact in facts_from_is_or_refined_spec(spec) {
-                context.add_fact(fact);
-            }
+        for statement in &given.arguments {
+            assume_declaration_statement(statement, &mut context, path, locator, registry, event_log);
         }
     }
 
@@ -474,11 +485,8 @@ fn assume_optional_using(
     event_log: &mut EventLog,
 ) {
     if let Some(using) = using {
-        for spec in &using.arguments {
-            assume_is_or_spec(spec, context, path, locator, registry, event_log);
-            for fact in facts_from_is_or_spec(spec) {
-                context.add_fact(fact);
-            }
+        for statement in &using.arguments {
+            assume_declaration_statement(statement, context, path, locator, registry, event_log);
         }
     }
 }
@@ -526,19 +534,8 @@ fn assume_clause(
     event_log: &mut EventLog,
 ) {
     match clause {
-        Clause::Binding(binding) => {
-            declare_names_from_expression(&binding.left, context);
-            declare_names_from_expression(&binding.right, context);
-            context.add_substitution(
-                key_for_expression(&binding.left),
-                key_for_expression(&binding.right),
-            );
-        }
-        Clause::IsOrSpec(spec) => {
-            assume_is_or_spec(spec, context, path, locator, registry, event_log);
-            for fact in facts_from_is_or_spec(spec) {
-                context.add_fact(fact);
-            }
+        Clause::Declaration(statement) => {
+            assume_declaration_statement(statement, context, path, locator, registry, event_log);
         }
         Clause::Expression(expression) if fact_from_expression(expression).is_some() => {
             assume_fact_expression(expression, context, path, locator, registry, event_log);
@@ -671,17 +668,14 @@ fn check_clause(
         }
         Clause::Given(group) => {
             let mut child = context.clone();
-            check_is_or_refined_spec(
+            assume_declaration_statement(
                 &group.given.argument,
-                &child,
+                &mut child,
                 path,
                 locator,
                 registry,
                 event_log,
             );
-            for fact in facts_from_is_or_refined_spec(&group.given.argument) {
-                child.add_fact(fact);
-            }
             if let Some(where_) = &group.where_ {
                 for clause in &where_.arguments {
                     assume_clause(clause, &mut child, path, locator, registry, event_log);
@@ -691,12 +685,8 @@ fn check_clause(
                 check_clause(clause, &child, path, locator, registry, event_log);
             }
         }
-        Clause::Binding(binding) => {
-            check_expression(&binding.left, context, path, locator, registry, event_log);
-            check_expression(&binding.right, context, path, locator, registry, event_log);
-        }
-        Clause::IsOrSpec(spec) => {
-            check_is_or_spec(spec, context, path, locator, registry, event_log)
+        Clause::Declaration(statement) => {
+            check_declaration_statement(statement, context, path, locator, registry, event_log);
         }
         Clause::Expression(expression) => {
             check_expression(expression, context, path, locator, registry, event_log)
@@ -713,34 +703,20 @@ fn assume_binding_or_spec(
     event_log: &mut EventLog,
 ) {
     match item {
-        BindingOrSpec::Binding(binding) => {
-            declare_names_from_expression(&binding.left, context);
-            declare_names_from_expression(&binding.right, context);
-            context.add_substitution(
-                key_for_expression(&binding.left),
-                key_for_expression(&binding.right),
-            );
-        }
-        BindingOrSpec::IsOrSpec(spec) => {
-            assume_is_or_spec(spec, context, path, locator, registry, event_log);
-            for fact in facts_from_is_or_spec(spec) {
-                context.add_fact(fact);
-            }
+        BindingOrSpec::Declaration(statement) => {
+            assume_declaration_statement(statement, context, path, locator, registry, event_log);
         }
     }
 }
 
 fn collect_clause_assumptions(clause: &Clause, context: &mut TypeContext) {
     match clause {
-        Clause::Binding(binding) => {
-            context.add_substitution(
-                key_for_expression(&binding.left),
-                key_for_expression(&binding.right),
-            );
-        }
-        Clause::IsOrSpec(spec) => {
-            for fact in facts_from_is_or_spec(spec) {
+        Clause::Declaration(statement) => {
+            for fact in facts_from_declaration_statement(statement) {
                 context.add_fact(fact);
+            }
+            if let Some((left, right)) = declaration_substitution(statement) {
+                context.add_substitution(left, right);
             }
         }
         Clause::Expression(expression) => {
@@ -757,38 +733,89 @@ fn collect_clause_assumptions(clause: &Clause, context: &mut TypeContext) {
     }
 }
 
-fn check_is_or_spec(
-    spec: &IsOrSpec,
+fn check_declaration_statement(
+    statement: &DeclarationStatement,
     context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    match spec {
-        IsOrSpec::Is(statement) => {
-            check_is_statement(statement, context, path, locator, registry, event_log)
-        }
-        IsOrSpec::Spec(statement) => {
-            check_subject_spec_statement(statement, context, path, locator, event_log);
-        }
+    check_is_subject(&statement.subject, context, path, locator, event_log);
+    if let Some(expansion) = &statement.expansion {
+        check_is_subject(expansion, context, path, locator, event_log);
+    }
+    if let Some(definition) = &statement.definition {
+        check_expression(definition, context, path, locator, registry, event_log);
+    }
+    if let Some(relation) = &statement.relation {
+        check_declaration_relation(relation, context, path, locator, registry, event_log);
     }
 }
 
-fn check_is_or_refined_spec(
-    spec: &IsOrRefinedStatementSpec,
+fn assume_declaration_statement(
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    declare_is_subject(&statement.subject, context);
+    if let Some(expansion) = &statement.expansion {
+        declare_is_subject(expansion, context);
+    }
+    if let Some(relation) = &statement.relation {
+        check_declaration_relation(relation, context, path, locator, registry, event_log);
+    }
+    if let Some(definition) = &statement.definition {
+        check_expression(definition, context, path, locator, registry, event_log);
+    }
+    if let Some((left, right)) = declaration_substitution(statement) {
+        context.add_substitution(left, right);
+    }
+    for fact in facts_from_declaration_statement(statement) {
+        context.add_fact(fact);
+    }
+}
+
+fn introduce_declaration_statement(
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    declare_is_subject(&statement.subject, context);
+    if let Some(expansion) = &statement.expansion {
+        declare_is_subject(expansion, context);
+    }
+    if let Some(definition) = &statement.definition {
+        check_expression(definition, context, path, locator, registry, event_log);
+    }
+    if let Some((left, right)) = declaration_substitution(statement) {
+        context.add_substitution(left, right);
+    }
+    for fact in facts_from_declaration_statement(statement) {
+        context.add_fact(fact);
+    }
+}
+
+fn check_declaration_relation(
+    relation: &DeclarationRelation,
     context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    match spec {
-        IsOrRefinedStatementSpec::Is(statement) => {
-            check_is_statement(statement, context, path, locator, registry, event_log);
+    match relation {
+        DeclarationRelation::Is(ty) => {
+            check_type_expression(ty, context, path, locator, registry, event_log);
         }
-        IsOrRefinedStatementSpec::Spec(statement) => {
-            check_subject_spec_statement(statement, context, path, locator, event_log);
+        DeclarationRelation::Spec { target, .. } => {
+            check_expression(target, context, path, locator, registry, event_log);
         }
     }
 }
@@ -813,48 +840,8 @@ fn check_is_or_via_item(
             );
             check_form_or_declaration(&statement.via, context, path, locator, event_log);
         }
-        IsOrViaItem::IsOrSpec(spec) => {
-            check_is_or_spec(spec, context, path, locator, registry, event_log);
-        }
-    }
-}
-
-fn assume_is_or_spec(
-    spec: &IsOrSpec,
-    context: &mut TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    match spec {
-        IsOrSpec::Is(statement) => {
-            check_type_expression(&statement.ty, context, path, locator, registry, event_log);
-            declare_is_subject(&statement.subject, context);
-        }
-        IsOrSpec::Spec(statement) => {
-            check_name(&statement.name, context, path, locator, event_log);
-            declare_spec_subject(&statement.subject, context);
-        }
-    }
-}
-
-fn assume_is_or_refined_spec(
-    spec: &IsOrRefinedStatementSpec,
-    context: &mut TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    match spec {
-        IsOrRefinedStatementSpec::Is(statement) => {
-            check_type_expression(&statement.ty, context, path, locator, registry, event_log);
-            declare_is_subject(&statement.subject, context);
-        }
-        IsOrRefinedStatementSpec::Spec(statement) => {
-            check_name(&statement.name, context, path, locator, event_log);
-            declare_spec_subject(&statement.subject, context);
+        IsOrViaItem::Declaration(statement) => {
+            check_declaration_statement(statement, context, path, locator, registry, event_log);
         }
     }
 }
@@ -869,17 +856,6 @@ fn check_is_statement(
 ) {
     check_is_subject(&statement.subject, context, path, locator, event_log);
     check_type_expression(&statement.ty, context, path, locator, registry, event_log);
-}
-
-fn check_subject_spec_statement(
-    statement: &SubjectSpecStatement,
-    context: &TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    event_log: &mut EventLog,
-) {
-    check_spec_subject(&statement.subject, context, path, locator, event_log);
-    check_name(&statement.name, context, path, locator, event_log);
 }
 
 fn check_expression(
@@ -925,10 +901,11 @@ fn check_expression(
         }
         ExpressionKind::Set(set) => {
             let mut child = context.clone();
-            assume_expression_spec_statement(
-                &set.spec, &mut child, path, locator, registry, event_log,
-            );
             declare_placeholder_form(&set.target, &mut child);
+            assume_fact_expression(&set.spec, &mut child, path, locator, registry, event_log);
+            if let Some(fact) = fact_from_expression(&set.spec) {
+                child.add_fact(fact);
+            }
             if let Some(predicate) = &set.predicate {
                 check_expression(predicate, &child, path, locator, registry, event_log);
             }
@@ -1724,31 +1701,6 @@ fn declare_header_symbols(header: &CommandHeader, context: &mut TypeContext) {
     }
 }
 
-fn declare_names_from_is_or_refined_spec_subject(
-    spec: &IsOrRefinedStatementSpec,
-    context: &mut TypeContext,
-) {
-    match spec {
-        IsOrRefinedStatementSpec::Is(statement) => declare_is_subject(&statement.subject, context),
-        IsOrRefinedStatementSpec::Spec(statement) => {
-            declare_spec_subject(&statement.subject, context);
-        }
-    }
-}
-
-fn declare_names_from_is_or_spec(spec: &IsOrSpec, context: &mut TypeContext) {
-    match spec {
-        IsOrSpec::Is(statement) => {
-            declare_is_subject(&statement.subject, context);
-            declare_names_from_type_expression(&statement.ty, context);
-        }
-        IsOrSpec::Spec(statement) => {
-            declare_spec_subject(&statement.subject, context);
-            context.declare_name(statement.name.clone());
-        }
-    }
-}
-
 fn check_is_subject(
     subject: &IsSubject,
     context: &TypeContext,
@@ -1770,21 +1722,6 @@ fn check_is_subject(
             }
         }
         IsSubjectKind::Operator(_) => {}
-    }
-}
-
-fn check_spec_subject(
-    subject: &SpecSubject,
-    context: &TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    event_log: &mut EventLog,
-) {
-    match &subject.kind {
-        SpecSubjectKind::Form(form) => {
-            check_form_or_declaration(form, context, path, locator, event_log);
-        }
-        SpecSubjectKind::Operator(_) => {}
     }
 }
 
@@ -1911,26 +1848,6 @@ fn assume_fact_expression(
     }
 }
 
-fn assume_expression_spec_statement(
-    statement: &SpecStatement,
-    context: &mut TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    check_name(&statement.name, context, path, locator, event_log);
-    declare_names_from_expression(&statement.subject, context);
-    check_expression(
-        &statement.subject,
-        context,
-        path,
-        locator,
-        registry,
-        event_log,
-    );
-}
-
 fn declare_is_subject(subject: &IsSubject, context: &mut TypeContext) {
     match &subject.kind {
         IsSubjectKind::Forms(forms) => {
@@ -1942,13 +1859,6 @@ fn declare_is_subject(subject: &IsSubject, context: &mut TypeContext) {
             }
         }
         IsSubjectKind::Operator(_) => {}
-    }
-}
-
-fn declare_spec_subject(subject: &SpecSubject, context: &mut TypeContext) {
-    match &subject.kind {
-        SpecSubjectKind::Form(form) => declare_form_or_declaration(form, context),
-        SpecSubjectKind::Operator(_) => {}
     }
 }
 
@@ -2039,9 +1949,8 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
             }
         }
         ExpressionKind::Set(set) => {
-            declare_names_from_expression(&set.spec.subject, context);
-            context.declare_name(set.spec.name.clone());
             declare_placeholder_form(&set.target, context);
+            declare_names_from_expression(&set.spec, context);
             if let Some(predicate) = &set.predicate {
                 declare_names_from_expression(predicate, context);
             }
@@ -2250,21 +2159,10 @@ fn is_name_boundary(text: &str, index: usize, after: bool) -> bool {
     }
 }
 
-fn facts_from_is_or_refined_spec(spec: &IsOrRefinedStatementSpec) -> Vec<TypeFact> {
-    match spec {
-        IsOrRefinedStatementSpec::Is(statement) => facts_from_is_statement(statement),
-        IsOrRefinedStatementSpec::Spec(statement) => vec![TypeFact::Spec {
-            subject: key_for_spec_subject(&statement.subject),
-            operator: statement.operator.clone(),
-            target: statement.name.clone(),
-        }],
-    }
-}
-
 fn facts_from_is_or_via_item(item: &IsOrViaItem) -> Vec<TypeFact> {
     match item {
         IsOrViaItem::IsVia(statement) => facts_from_is_statement(&statement.is_statement),
-        IsOrViaItem::IsOrSpec(spec) => facts_from_is_or_spec(spec),
+        IsOrViaItem::Declaration(statement) => facts_from_declaration_statement(statement),
     }
 }
 
@@ -2277,6 +2175,72 @@ fn facts_from_is_or_spec(spec: &IsOrSpec) -> Vec<TypeFact> {
             target: statement.name.clone(),
         }],
     }
+}
+
+fn facts_from_declaration_statement(statement: &DeclarationStatement) -> Vec<TypeFact> {
+    let Some(relation) = &statement.relation else {
+        return Vec::new();
+    };
+
+    match relation {
+        DeclarationRelation::Is(ty) => facts_from_declaration_is(statement, ty),
+        DeclarationRelation::Spec { operator, target } => declaration_subject_keys(statement)
+            .into_iter()
+            .map(|subject| TypeFact::Spec {
+                subject,
+                operator: operator.clone(),
+                target: key_for_expression(target),
+            })
+            .collect(),
+    }
+}
+
+fn facts_from_declaration_is(
+    statement: &DeclarationStatement,
+    ty: &TypeExpression,
+) -> Vec<TypeFact> {
+    if let TypeExpression::Function(function_type) = ty {
+        let (Some(inputs), Some(output)) = (
+            function_type_inputs_as_facts(function_type),
+            function_type_spec_as_fact(&function_type.output),
+        ) else {
+            return Vec::new();
+        };
+        return declaration_subject_keys(statement)
+            .into_iter()
+            .map(|subject| TypeFact::FunctionType {
+                subject,
+                inputs: inputs.clone(),
+                output: output.clone(),
+            })
+            .collect();
+    }
+
+    let Some((ty, signature)) = key_for_type_expression(ty) else {
+        return Vec::new();
+    };
+    declaration_subject_keys(statement)
+        .into_iter()
+        .map(|subject| TypeFact::Is {
+            subject,
+            ty: ty.clone(),
+            signature: signature.clone(),
+        })
+        .collect()
+}
+
+fn declaration_substitution(statement: &DeclarationStatement) -> Option<(String, String)> {
+    let definition = statement.definition.as_ref()?;
+    let left = if is_single_function_declaration(&statement.subject) {
+        statement
+            .expansion
+            .as_ref()
+            .and_then(single_placeholder_subject_key)
+            .unwrap_or_else(|| primary_subject_key(&statement.subject))
+    } else {
+        primary_subject_key(&statement.subject)
+    };
+    Some((left, key_for_expression(definition)))
 }
 
 fn facts_from_is_statement(statement: &IsStatement) -> Vec<TypeFact> {
@@ -2377,6 +2341,59 @@ fn subject_keys_for_is_subject(subject: &IsSubject) -> Vec<String> {
     }
 }
 
+fn declaration_subject_keys(statement: &DeclarationStatement) -> Vec<String> {
+    match &statement.subject.kind {
+        IsSubjectKind::Forms(forms) => forms
+            .iter()
+            .map(|form| match form {
+                IsSubjectForm::Form(form) => {
+                    primary_form_name(form).unwrap_or_else(|| key_for_form_or_declaration(form))
+                }
+                IsSubjectForm::PlaceholderForm(form) => key_for_placeholder_form(form),
+            })
+            .collect(),
+        IsSubjectKind::Operator(operator) => vec![operator.text.clone()],
+    }
+}
+
+fn primary_subject_key(subject: &IsSubject) -> String {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) => forms
+            .iter()
+            .find_map(|form| match form {
+                IsSubjectForm::Form(form) => {
+                    Some(primary_form_name(form).unwrap_or_else(|| key_for_form_or_declaration(form)))
+                }
+                IsSubjectForm::PlaceholderForm(form) => Some(key_for_placeholder_form(form)),
+            })
+            .unwrap_or_default(),
+        IsSubjectKind::Operator(operator) => operator.text.clone(),
+    }
+}
+
+fn single_placeholder_subject_key(subject: &IsSubject) -> Option<String> {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) if forms.len() == 1 => match &forms[0] {
+            IsSubjectForm::PlaceholderForm(form) => Some(key_for_placeholder_form(form)),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+fn is_single_function_declaration(subject: &IsSubject) -> bool {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) if forms.len() == 1 => matches!(
+            &forms[0],
+            IsSubjectForm::Form(FormOrDeclaration {
+                kind: FormOrDeclarationKind::FunctionDeclaration { .. },
+                ..
+            })
+        ),
+        _ => false,
+    }
+}
+
 fn key_for_spec_subject(subject: &SpecSubject) -> String {
     match &subject.kind {
         SpecSubjectKind::Form(form) => key_for_form_or_declaration(form),
@@ -2437,8 +2454,8 @@ fn key_for_expression(expression: &Expression) -> String {
         ),
         ExpressionKind::Set(set) => format!(
             "{{{}:{}}}",
-            set.spec.name,
-            key_for_placeholder_form(&set.target)
+            key_for_placeholder_form(&set.target),
+            key_for_expression(&set.spec)
         ),
         ExpressionKind::Grouped { expression, .. } => key_for_expression(expression),
         ExpressionKind::Labeled { expression, .. } => key_for_expression(expression),

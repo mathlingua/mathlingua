@@ -1,7 +1,6 @@
 use crate::frontend::formulation::ast::{
-    AuthorHeader, CommandHeader, Expression, ExpressionAlias, ExpressionBinding, FormOrDeclaration,
-    IsOrRefinedStatementSpec, IsOrSpec, IsViaStatement, LabelHeader, ResourceHeader,
-    SpecOperatorAlias, WritingAlias,
+    AuthorHeader, CommandHeader, DeclarationStatement, Expression, ExpressionAlias,
+    FormOrDeclaration, IsViaStatement, LabelHeader, ResourceHeader, SpecOperatorAlias, WritingAlias,
 };
 
 // ===============================[ repeated ]=====================================
@@ -167,7 +166,7 @@ pub struct CalledText(pub String);
 pub struct WritingText(pub String);
 
 argument_section!(DescribesSection, FormOrDeclaration);
-arguments_section!(UsingSection, IsOrSpec);
+arguments_section!(UsingSection, DeclarationStatement);
 arguments_section!(WhenSection, Clause);
 argument_section!(ExtendsSection, IsOrViaItem);
 arguments_section!(DescribesSpecifiesSection, IsOrViaItem);
@@ -178,10 +177,10 @@ arguments_section!(DocumentedSection, DocumentedItem);
 arguments_section!(AliasesSection, AliasItem);
 arguments_section!(ReferencesSection, ResourceHeader);
 arguments_section!(MetadataSection, MetadataItem);
-argument_section!(DefinesSection, IsOrSpec);
+argument_section!(DefinesSection, DeclarationStatement);
 argument_section!(ExpressesSection, Clause);
-argument_section!(RefinesSection, IsOrRefinedStatementSpec);
-argument_section!(RefinesSpecifiesSection, IsOrRefinedStatementSpec);
+argument_section!(RefinesSection, DeclarationStatement);
+argument_section!(RefinesSpecifiesSection, DeclarationStatement);
 zero_or_more_arguments_section!(StatesSection, OpenText);
 arguments_section!(ThatSection, Clause);
 zero_or_more_arguments_section!(AxiomSection, OpenText);
@@ -190,7 +189,7 @@ zero_or_more_arguments_section!(CorollarySection, OpenText);
 zero_or_more_arguments_section!(OfSection, OpenText);
 zero_or_more_arguments_section!(LemmaSection, OpenText);
 zero_or_more_arguments_section!(ConjectureSection, OpenText);
-arguments_section!(GivenSection, IsOrRefinedStatementSpec);
+arguments_section!(GivenSection, DeclarationStatement);
 arguments_section!(WhereSection, Clause);
 arguments_section!(ThenSection, Clause);
 arguments_section!(IffSection, Clause);
@@ -251,7 +250,7 @@ argument_section!(ForAllSection, BindingOrSpec);
 arguments_section!(IfSection, Clause);
 zero_or_more_arguments_section!(PiecewiseSection, OpenText);
 arguments_section!(ElseSection, Clause);
-argument_section!(GivenClauseSection, IsOrRefinedStatementSpec);
+argument_section!(GivenClauseSection, DeclarationStatement);
 argument_section!(TitleSection, OpenText);
 argument_section!(SectionSection, OpenText);
 argument_section!(SubsectionSection, OpenText);
@@ -298,21 +297,19 @@ pub enum Clause {
     Iff(IffGroup),
     Piecewise(PiecewiseGroup),
     Given(GivenGroup),
-    Binding(ExpressionBinding),
-    IsOrSpec(IsOrSpec),
+    Declaration(DeclarationStatement),
     Expression(Expression),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum IsOrViaItem {
     IsVia(IsViaStatement),
-    IsOrSpec(IsOrSpec),
+    Declaration(DeclarationStatement),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BindingOrSpec {
-    Binding(ExpressionBinding),
-    IsOrSpec(IsOrSpec),
+    Declaration(DeclarationStatement),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

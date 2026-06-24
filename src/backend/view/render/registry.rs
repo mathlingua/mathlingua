@@ -70,8 +70,8 @@ pub(super) fn render_refines_group_heading_latex(
     refinement_render: &CommandRender,
     registry: &RenderRegistry,
 ) -> Option<String> {
-    let spec = parse_is_or_refined_statement_spec(refines_argument?).ok()?;
-    let target = refines_target_type(&spec)?;
+    let statement = parse_refined_declaration_statement(refines_argument?).ok()?;
+    let target = refines_target_type(&statement)?;
     let target_called = type_expression_called_template(target, registry)?;
     let mut substitutions = target_called.substitutions;
     substitutions.extend(command_header_substitutions(header));
@@ -88,8 +88,8 @@ pub(super) fn render_parsed_formulation_latex(
         return Some(render_expression(&expression, registry));
     }
 
-    if let Ok(spec) = parse_is_or_refined_statement_spec(text) {
-        return Some(render_is_or_refined_spec(&spec, registry));
+    if let Ok(statement) = parse_refined_declaration_statement(text) {
+        return Some(render_declaration_statement(&statement, registry));
     }
 
     parse_form_or_declaration(text)
@@ -115,13 +115,13 @@ pub(super) fn render_entry(item: &TopLevelItem) -> Option<RenderEntry> {
         TopLevelItem::Defines(group) => render_entry_from_parts(
             command_header_signature(&group.heading),
             command_header_parameters(&group.heading),
-            primary_is_or_spec_name(&group.defines.argument),
+            primary_declaration_statement_name(&group.defines.argument),
             group.documented.as_ref(),
         ),
         TopLevelItem::Refines(group) => render_entry_from_parts(
             command_header_signature(&group.heading),
             command_header_parameters(&group.heading),
-            primary_is_or_refined_spec_name(&group.refines.argument),
+            primary_declaration_statement_name(&group.refines.argument),
             group.documented.as_ref(),
         ),
         _ => None,

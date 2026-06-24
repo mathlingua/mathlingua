@@ -10,6 +10,7 @@ extern {
     enum Token {
         "(." => Token::DotLParen,
         ".)" => Token::DotRParen,
+        "..." => Token::Ellipsis,
         "[|" => Token::LNamedArguments,
         "|]" => Token::RNamedArguments,
         "\\:" => Token::InfixCommandStart,
@@ -19,6 +20,7 @@ extern {
         "left_named_operator" => Token::LeftNamedOperator(<String>),
         "right_named_operator" => Token::RightNamedOperator(<String>),
         "label" => Token::Label(<Vec<String>>),
+        "::=" => Token::Introduce,
         ":=" => Token::Declare,
         "is_not?" => Token::IsNotPredicate,
         "is?" => Token::IsPredicate,
@@ -217,11 +219,17 @@ SetForm: ast::SetForm = {
     <l:@L> "{" <placeholder_form:PlaceholderForm> "}" <r:@R> => ast::SetForm {
         span: Span::new(l, r),
         placeholder_form,
+        has_condition_placeholder: false,
+    },
+    <l:@L> "{" <placeholder_form:PlaceholderForm> ":" "..." "}" <r:@R> => ast::SetForm {
+        span: Span::new(l, r),
+        placeholder_form,
+        has_condition_placeholder: true,
     },
 };
 
 FunctionFormOrDeclaration: ast::FormOrDeclaration = {
-    <l:@L> <name:Name> ":=" <form:FunctionForm> <r:@R> => ast::FormOrDeclaration::new(
+    <l:@L> <name:Name> "::=" <form:FunctionForm> <r:@R> => ast::FormOrDeclaration::new(
         Span::new(l, r),
         FormOrDeclarationKind::FunctionDeclaration {
             name: Some(name),
@@ -238,7 +246,7 @@ FunctionFormOrDeclaration: ast::FormOrDeclaration = {
 };
 
 TupleFormOrDeclaration: ast::FormOrDeclaration = {
-    <l:@L> <name:Name> ":=" <form:TupleForm> <r:@R> => ast::FormOrDeclaration::new(
+    <l:@L> <name:Name> "::=" <form:TupleForm> <r:@R> => ast::FormOrDeclaration::new(
         Span::new(l, r),
         FormOrDeclarationKind::TupleDeclaration {
             name: Some(name),
@@ -255,7 +263,7 @@ TupleFormOrDeclaration: ast::FormOrDeclaration = {
 };
 
 SetFormOrDeclaration: ast::FormOrDeclaration = {
-    <l:@L> <name:Name> ":=" <form:SetForm> <r:@R> => ast::FormOrDeclaration::new(
+    <l:@L> <name:Name> "::=" <form:SetForm> <r:@R> => ast::FormOrDeclaration::new(
         Span::new(l, r),
         FormOrDeclarationKind::SetDeclaration {
             name: Some(name),
@@ -534,12 +542,12 @@ ExpressionSpec: ast::SpecStatement = {
 };
 
 SetExpression: ast::Expression = {
-    <l:@L> "{" <spec:ExpressionSpec> ":" <target:PlaceholderForm> <predicate:("|" <SpecOrPredicateExpression>)?> "}" <r:@R> => ast::Expression::new(
+    <l:@L> "{" <target:PlaceholderForm> ":" <spec:SpecOrPredicateExpression> <predicate:("|" <SpecOrPredicateExpression>)?> "}" <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::Set(ast::SetExpression {
             span: Span::new(l, r),
-            spec,
             target,
+            spec: Box::new(spec),
             predicate: predicate.map(Box::new),
         }),
     ),
@@ -562,6 +570,10 @@ PrimaryExpression: ast::Expression = {
         ast::Expression::new(Span::new(l, r), ExpressionKind::Tuple(elements))
     },
     <expression:SetExpression> => expression,
+    <l:@L> <placeholder:Placeholder> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Name(placeholder.name),
+    ),
     <l:@L> <subset:SubsetNameCall> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::SubsetCall(subset),

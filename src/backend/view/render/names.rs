@@ -1,20 +1,8 @@
 use super::*;
 
-pub(super) fn primary_is_or_spec_name(spec: &IsOrSpec) -> Option<String> {
-    match spec {
-        IsOrSpec::Is(statement) => primary_is_statement_name(statement),
-        IsOrSpec::Spec(statement) => primary_spec_subject_name(&statement.subject),
-    }
-}
-
-pub(super) fn primary_is_or_refined_spec_name(spec: &IsOrRefinedStatementSpec) -> Option<String> {
-    match spec {
-        IsOrRefinedStatementSpec::Is(statement) => primary_is_statement_name(statement),
-        IsOrRefinedStatementSpec::Spec(statement) => primary_spec_subject_name(&statement.subject),
-    }
-}
-
-pub(super) fn primary_is_statement_name(statement: &IsStatement) -> Option<String> {
+pub(super) fn primary_declaration_statement_name(
+    statement: &DeclarationStatement,
+) -> Option<String> {
     primary_is_subject_name(&statement.subject)
 }
 
@@ -25,13 +13,6 @@ pub(super) fn primary_is_subject_name(subject: &IsSubject) -> Option<String> {
             IsSubjectForm::PlaceholderForm(form) => primary_placeholder_form_name(form),
         }),
         IsSubjectKind::Operator(_) => None,
-    }
-}
-
-pub(super) fn primary_spec_subject_name(subject: &SpecSubject) -> Option<String> {
-    match &subject.kind {
-        SpecSubjectKind::Form(form) => primary_form_name(form),
-        SpecSubjectKind::Operator(_) => None,
     }
 }
 

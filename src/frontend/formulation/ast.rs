@@ -304,8 +304,8 @@ pub enum TupleExpressionElement {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SetExpression {
     pub span: Span,
-    pub spec: SpecStatement,
     pub target: PlaceholderForm,
+    pub spec: Box<Expression>,
     pub predicate: Option<Box<Expression>>,
 }
 
@@ -417,6 +417,7 @@ pub enum TupleFormElement {
 pub struct SetForm {
     pub span: Span,
     pub placeholder_form: PlaceholderForm,
+    pub has_condition_placeholder: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -589,6 +590,24 @@ pub enum IsOrSpec {
 pub enum IsOrRefinedStatementSpec {
     Is(IsStatement),
     Spec(SubjectSpecStatement),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DeclarationStatement {
+    pub span: Span,
+    pub subject: IsSubject,
+    pub expansion: Option<IsSubject>,
+    pub definition: Option<Expression>,
+    pub relation: Option<DeclarationRelation>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DeclarationRelation {
+    Is(TypeExpression),
+    Spec {
+        operator: String,
+        target: Box<Expression>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

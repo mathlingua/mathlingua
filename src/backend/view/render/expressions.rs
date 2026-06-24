@@ -98,7 +98,7 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
 
 pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegistry) -> String {
     let target = render_placeholder_form(&set.target);
-    let spec = render_spec_statement(&set.spec, registry);
+    let spec = render_expression(&set.spec, registry);
 
     match &set.predicate {
         Some(predicate) => format!(

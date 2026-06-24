@@ -1,34 +1,40 @@
 use super::*;
 
-pub(super) fn render_is_or_refined_spec(
-    spec: &IsOrRefinedStatementSpec,
+pub(super) fn render_declaration_statement(
+    statement: &DeclarationStatement,
     registry: &RenderRegistry,
 ) -> String {
-    match spec {
-        IsOrRefinedStatementSpec::Is(statement) => render_is_statement(statement, registry),
-        IsOrRefinedStatementSpec::Spec(statement) => format!(
-            "{} {} {}",
-            render_spec_subject(&statement.subject),
-            render_quoted_operator(&statement.operator),
-            escape_math_identifier(&statement.name)
-        ),
+    let mut rendered = render_is_subject(&statement.subject);
+    if let Some(expansion) = &statement.expansion {
+        rendered.push_str(" ::= ");
+        rendered.push_str(&render_is_subject(expansion));
     }
+    if let Some(definition) = &statement.definition {
+        rendered.push_str(" := ");
+        rendered.push_str(&render_expression(definition, registry));
+    }
+    if let Some(relation) = &statement.relation {
+        rendered.push(' ');
+        rendered.push_str(&render_declaration_relation(relation, registry));
+    }
+    rendered
 }
 
-pub(super) fn render_is_statement(statement: &IsStatement, registry: &RenderRegistry) -> String {
-    let subject_latex = render_is_subject(&statement.subject);
-    match &statement.ty {
-        TypeExpression::Command(command) => {
-            render_is_command_with_subject_latex(subject_latex, command, registry)
+fn render_declaration_relation(
+    relation: &DeclarationRelation,
+    registry: &RenderRegistry,
+) -> String {
+    match relation {
+        DeclarationRelation::Is(ty) => {
+            format!("\\textrm{{ is }} {}", render_type_expression(ty, registry))
         }
-        TypeExpression::RefinedCommand(command) => {
-            render_is_refined_command_with_subject_latex(subject_latex, command, registry)
+        DeclarationRelation::Spec { operator, target } => {
+            format!(
+                "{} {}",
+                render_quoted_operator(operator),
+                render_expression(target, registry)
+            )
         }
-        TypeExpression::Function(function_type) => format!(
-            "{} \\textrm{{ is }} {}",
-            subject_latex,
-            render_function_type(function_type, registry)
-        ),
     }
 }
 
@@ -43,13 +49,6 @@ pub(super) fn render_is_subject(subject: &IsSubject) -> String {
             .collect::<Vec<_>>()
             .join(", "),
         IsSubjectKind::Operator(operator) => render_operator_text(&operator.text),
-    }
-}
-
-pub(super) fn render_spec_subject(subject: &SpecSubject) -> String {
-    match &subject.kind {
-        SpecSubjectKind::Form(form) => render_form_or_declaration(form),
-        SpecSubjectKind::Operator(operator) => render_operator_text(&operator.text),
     }
 }
 
@@ -87,19 +86,21 @@ pub(super) fn render_form_or_declaration(form: &FormOrDeclaration) -> String {
                 .join(", ");
             match name {
                 Some(name) => format!(
-                    "{} := \\left({rendered}\\right)",
+                    "{} ::= \\left({rendered}\\right)",
                     escape_math_identifier(name)
                 ),
                 None => format!("\\left({rendered}\\right)"),
             }
         }
         FormOrDeclarationKind::SetDeclaration { name, form } => {
-            let rendered = format!(
-                "\\left\\{{{}\\right\\}}",
-                render_placeholder_form(&form.placeholder_form)
-            );
+            let placeholder = render_placeholder_form(&form.placeholder_form);
+            let rendered = if form.has_condition_placeholder {
+                format!("\\left\\{{{} \\: : \\: \\ldots\\right\\}}", placeholder)
+            } else {
+                format!("\\left\\{{{}\\right\\}}", placeholder)
+            };
             match name {
-                Some(name) => format!("{} := {rendered}", escape_math_identifier(name)),
+                Some(name) => format!("{} ::= {rendered}", escape_math_identifier(name)),
                 None => rendered,
             }
         }

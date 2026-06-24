@@ -9,27 +9,23 @@ pub(in crate::backend::semantic) fn walk_is_or_via_item(
             walk_is_statement(&statement.is_statement, visit);
             walk_form_or_declaration(&statement.via, visit);
         }
-        IsOrViaItem::IsOrSpec(spec) => walk_is_or_spec(spec, visit),
+        IsOrViaItem::Declaration(statement) => walk_declaration_statement(statement, visit),
     }
 }
 
-pub(in crate::backend::semantic) fn walk_is_or_spec(
-    spec: &IsOrSpec,
+pub(in crate::backend::semantic) fn walk_declaration_statement(
+    statement: &DeclarationStatement,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
-    match spec {
-        IsOrSpec::Is(statement) => walk_is_statement(statement, visit),
-        IsOrSpec::Spec(statement) => walk_spec_subject(&statement.subject, visit),
+    walk_is_subject(&statement.subject, visit);
+    if let Some(expansion) = &statement.expansion {
+        walk_is_subject(expansion, visit);
     }
-}
-
-pub(in crate::backend::semantic) fn walk_is_or_refined_spec(
-    spec: &IsOrRefinedStatementSpec,
-    visit: &mut impl FnMut(&SignatureShape),
-) {
-    match spec {
-        IsOrRefinedStatementSpec::Is(statement) => walk_is_statement(statement, visit),
-        IsOrRefinedStatementSpec::Spec(statement) => walk_spec_subject(&statement.subject, visit),
+    if let Some(definition) = &statement.definition {
+        walk_expression(definition, visit);
+    }
+    if let Some(DeclarationRelation::Is(ty)) = &statement.relation {
+        walk_type_expression(ty, visit);
     }
 }
 
@@ -55,16 +51,6 @@ pub(in crate::backend::semantic) fn walk_is_subject(
             }
         }
         IsSubjectKind::Operator(_) => {}
-    }
-}
-
-pub(in crate::backend::semantic) fn walk_spec_subject(
-    subject: &SpecSubject,
-    visit: &mut impl FnMut(&SignatureShape),
-) {
-    match &subject.kind {
-        SpecSubjectKind::Form(form) => walk_form_or_declaration(form, visit),
-        SpecSubjectKind::Operator(_) => {}
     }
 }
 

@@ -4,15 +4,16 @@ use lalrpop_util::ParseError as LalrpopParseError;
 
 use super::ast::{
     AuthorHeader, Chain, ChainPart, CommandExpressionTailPart, CommandHeader, CommandHeaderNode,
-    CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs, Expression, ExpressionAlias,
-    ExpressionAliasLhs, ExpressionBinding, ExpressionKind, FormOrDeclaration, FunctionType,
-    FunctionTypeSpec, FunctionTypeSpecKind, InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec,
-    IsStatement, IsSubject, IsSubjectForm, IsSubjectKind, IsViaStatement, LabelHeader, Operator,
+    CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs, DeclarationRelation,
+    DeclarationStatement, Expression, ExpressionAlias, ExpressionAliasLhs, ExpressionBinding,
+    ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionType, FunctionTypeSpec,
+    FunctionTypeSpecKind, InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement,
+    IsSubject, IsSubjectForm, IsSubjectKind, IsViaStatement, LabelHeader, Operator,
     ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm, PlaceholderFormKind,
-    PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
-    RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, Span, SpecOperatorAlias,
-    SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement, TypeExpression,
-    WritingAlias,
+    PlaceholderSpecStatement,
+    RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart,
+    RefinedTail, ResourceHeader, Span, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject,
+    SpecSubjectKind, SubjectSpecStatement, TypeExpression, WritingAlias,
 };
 use super::grammar;
 use super::lexer::Lexer;
@@ -182,6 +183,31 @@ pub(super) fn find_top_level_substring(input: &str, needle: &str) -> Option<usiz
     let mut state = ScanState::default();
     for (index, ch) in input.char_indices() {
         if state.is_top_level() && input[index..].starts_with(needle) {
+            return Some(index);
+        }
+        state.advance(ch);
+    }
+
+    None
+}
+
+/// Finds the first top-level `::=` declaration marker.
+pub(super) fn find_top_level_introduce(input: &str) -> Option<usize> {
+    find_top_level_substring(input, "::=")
+}
+
+/// Finds the first top-level `:=` definition marker.
+///
+/// This deliberately ignores `::=` and `:=>` so declaration statements and
+/// expression aliases do not get split as value definitions.
+pub(super) fn find_top_level_definition(input: &str) -> Option<usize> {
+    let mut state = ScanState::default();
+    for (index, ch) in input.char_indices() {
+        if state.is_top_level()
+            && input[index..].starts_with(":=")
+            && !input[index..].starts_with("::=")
+            && !input[index..].starts_with(":=>")
+        {
             return Some(index);
         }
         state.advance(ch);
@@ -895,6 +921,157 @@ pub(super) fn parse_placeholder_spec_statement(
     })
 }
 
+/// Parses the unified declaration statement syntax.
+///
+/// `::=` introduces additional declaration-side symbols, while top-level `:=`
+/// introduces an expression definition whose right side is checked later
+/// against the symbols declared by the left side.
+pub fn parse_declaration_statement(
+    input: &str,
+    allow_refined_type: bool,
+) -> Result<DeclarationStatement, ParseError> {
+    let input = input.trim();
+    let (body, relation) = parse_declaration_relation(input, allow_refined_type)?;
+    let (subject_text, expansion_text, definition) = parse_declaration_body(body)?;
+    let subject = parse_is_subject(subject_text)?;
+    let expansion = expansion_text
+        .map(parse_is_subject)
+        .transpose()?;
+
+    validate_declaration_expansion(&subject, expansion.as_ref())?;
+
+    Ok(DeclarationStatement {
+        span: span_all(input),
+        subject,
+        expansion,
+        definition,
+        relation,
+    })
+}
+
+/// Parses a declaration statement that only accepts ordinary type expressions.
+pub fn parse_ordinary_declaration_statement(input: &str) -> Result<DeclarationStatement, ParseError> {
+    parse_declaration_statement(input, false)
+}
+
+/// Parses a declaration statement whose `is` relation may use refined commands.
+pub fn parse_refined_declaration_statement(input: &str) -> Result<DeclarationStatement, ParseError> {
+    parse_declaration_statement(input, true)
+}
+
+fn parse_declaration_relation(
+    input: &str,
+    allow_refined_type: bool,
+) -> Result<(&str, Option<DeclarationRelation>), ParseError> {
+    if let Some(index) = find_top_level_substring(input, " is ") {
+        let ty = parse_type_expression(&input[index + 4..], allow_refined_type)?;
+        return Ok((&input[..index], Some(DeclarationRelation::Is(ty))));
+    }
+
+    if let Some((body, operator, name_text)) = split_subject_operator_name(input) {
+        let target = parse_expression(name_text)?;
+        return Ok((
+            body,
+            Some(DeclarationRelation::Spec {
+                operator: operator.to_owned(),
+                target: Box::new(target),
+            }),
+        ));
+    }
+
+    Ok((input, None))
+}
+
+fn parse_declaration_body(
+    input: &str,
+) -> Result<(&str, Option<&str>, Option<Expression>), ParseError> {
+    let input = input.trim();
+    if let Some(index) = find_top_level_introduce(input) {
+        let subject = input[..index].trim();
+        let rest = input[index + 3..].trim();
+        if subject.is_empty() || rest.is_empty() {
+            return Err(ParseError::custom("`::=` requires declaration text on both sides"));
+        }
+
+        if let Some(definition_index) = find_top_level_definition(rest) {
+            let expansion = rest[..definition_index].trim();
+            let definition_text = rest[definition_index + 2..].trim();
+            if expansion.is_empty() || definition_text.is_empty() {
+                return Err(ParseError::custom(
+                    "`:=` requires declaration text before it and an expression after it",
+                ));
+            }
+            return Ok((
+                subject,
+                Some(expansion),
+                Some(parse_expression(definition_text)?),
+            ));
+        }
+
+        return Ok((subject, Some(rest), None));
+    }
+
+    if let Some(index) = find_top_level_definition(input) {
+        let subject = input[..index].trim();
+        let definition_text = input[index + 2..].trim();
+        if subject.is_empty() || definition_text.is_empty() {
+            return Err(ParseError::custom(
+                "`:=` requires declaration text before it and an expression after it",
+            ));
+        }
+        return Ok((subject, None, Some(parse_expression(definition_text)?)));
+    }
+
+    if input.is_empty() {
+        return Err(ParseError::custom("expected declaration statement"));
+    }
+
+    Ok((input, None, None))
+}
+
+fn validate_declaration_expansion(
+    subject: &IsSubject,
+    expansion: Option<&IsSubject>,
+) -> Result<(), ParseError> {
+    if !is_single_function_declaration_subject(subject) {
+        return Ok(());
+    }
+
+    let Some(expansion) = expansion else {
+        return Ok(());
+    };
+
+    if is_single_placeholder_subject(expansion) {
+        Ok(())
+    } else {
+        Err(ParseError::custom(
+            "function declaration `::=` output must be a placeholder",
+        ))
+    }
+}
+
+fn is_single_function_declaration_subject(subject: &IsSubject) -> bool {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) if forms.len() == 1 => matches!(
+            &forms[0],
+            IsSubjectForm::Form(FormOrDeclaration {
+                kind: FormOrDeclarationKind::FunctionDeclaration { .. },
+                ..
+            })
+        ),
+        _ => false,
+    }
+}
+
+fn is_single_placeholder_subject(subject: &IsSubject) -> bool {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) if forms.len() == 1 => {
+            matches!(&forms[0], IsSubjectForm::PlaceholderForm(_))
+        }
+        _ => false,
+    }
+}
+
 /// Parses the type side of an `is` statement.
 ///
 /// Type expressions are intentionally restricted to command expressions because
@@ -1299,6 +1476,7 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
 }
 
 /// Parses a local expression binding of the form `<left> := <right>`.
+#[allow(dead_code)]
 pub fn parse_expression_binding(input: &str) -> Result<ExpressionBinding, ParseError> {
     let input = input.trim();
     let index = find_top_level_substring(input, ":=")
@@ -1341,8 +1519,9 @@ pub fn parse_is_or_spec(input: &str) -> Result<IsOrSpec, ParseError> {
 /// Parses an `is` statement that may use refined command syntax, or a spec.
 ///
 /// This variant is used in theorem-style contexts where `\(a, b)::command`
-/// references are legal.  Definition contexts still use [`parse_is_or_spec`]
-/// when refined type expressions should not be accepted.
+/// references are legal.  Declaration contexts should use
+/// [`parse_declaration_statement`] instead.
+#[allow(dead_code)]
 pub fn parse_is_or_refined_statement_spec(
     input: &str,
 ) -> Result<IsOrRefinedStatementSpec, ParseError> {
@@ -1542,15 +1721,16 @@ mod tests {
     use super::{
         parse_author_header, parse_command_header, parse_expression, parse_expression_alias,
         parse_form_or_declaration, parse_is_or_refined_statement_spec, parse_is_or_spec,
-        parse_is_via_statement, parse_label_header, parse_resource_header,
-        parse_spec_operator_alias, parse_writing_alias,
+        parse_is_via_statement, parse_label_header, parse_ordinary_declaration_statement,
+        parse_resource_header, parse_spec_operator_alias, parse_writing_alias,
     };
     use crate::frontend::formulation::ast::{
-        BinaryOperator, ChainPart, CommandHeader, CommandHeaderNode, Expression,
-        ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
-        FunctionNamedExpressionElementLhs, FunctionTypeSpecKind, IsOrRefinedStatementSpec,
-        IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind, PlaceholderFormKind,
-        RefinedTail, SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression,
+        BinaryOperator, ChainPart, CommandHeader, CommandHeaderNode, DeclarationRelation,
+        Expression, ExpressionAliasLhs, ExpressionKind, FormOrDeclaration,
+        FormOrDeclarationKind, FunctionNamedExpressionElementLhs, FunctionTypeSpecKind,
+        IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind,
+        PlaceholderFormKind, RefinedTail, SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall,
+        TypeExpression,
     };
 
     // ===============================[ support ]=====================================
@@ -1952,13 +2132,16 @@ mod tests {
 
     #[test]
     fn parses_set_expressions_with_predicates_and_placeholder_function_targets() {
-        let expression = parse_expression(r#"{x "in" X : f_(a_, b_) | y is \type{A}}"#)
+        let expression = parse_expression(r#"{f_(a_, b_) : x_ "in" X | y is \type{A}}"#)
             .expect("expected set expression");
 
         match expression.kind {
             ExpressionKind::Set(set) => {
-                assert_eq!(set.spec.operator, "in");
-                assert_eq!(set.spec.name, "X");
+                assert!(matches!(
+                    &set.spec.kind,
+                    ExpressionKind::SpecStatement(statement)
+                        if statement.operator == "in" && statement.name == "X"
+                ));
                 match set.target.kind {
                     PlaceholderFormKind::Function {
                         placeholder,
@@ -2134,9 +2317,9 @@ mod tests {
         let magnetic_function =
             parse_form_or_declaration("f(x__)").expect("expected magnetic function form");
         let tuple_declaration =
-            parse_form_or_declaration("pair := (x, +, y)").expect("expected tuple declaration");
+            parse_form_or_declaration("pair ::= (x, +, y)").expect("expected tuple declaration");
         let set_declaration =
-            parse_form_or_declaration("Set := {f_(x_, y_)}").expect("expected set declaration");
+            parse_form_or_declaration("Set ::= {f_(x_, y_)}").expect("expected set declaration");
 
         assert!(matches!(
             name_form.kind,
@@ -2453,7 +2636,8 @@ mod tests {
 
     #[test]
     fn parses_function_form_declarations() {
-        let form = parse_form_or_declaration("g := f(x_, y_)").expect("expected form declaration");
+        let form =
+            parse_form_or_declaration("g ::= f(x_, y_)").expect("expected form declaration");
 
         match form.kind {
             FormOrDeclarationKind::FunctionDeclaration { name, form } => {
@@ -2518,6 +2702,48 @@ mod tests {
             }
             other => panic!("expected is statement, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn parses_unified_declaration_statements() {
+        let tuple = parse_ordinary_declaration_statement(
+            r#"G ::= (X, *, e) := (a, b, c) is \foo"#,
+        )
+        .expect("expected tuple declaration statement");
+        assert!(tuple.expansion.is_some());
+        assert!(tuple.definition.is_some());
+        assert!(matches!(tuple.relation, Some(DeclarationRelation::Is(_))));
+
+        let function = parse_ordinary_declaration_statement(
+            r#"f(x_, y_) ::= z_ := x_ + y_ is \function"#,
+        )
+        .expect("expected function declaration statement");
+        assert!(matches!(
+            function.expansion.as_ref().map(|subject| &subject.kind),
+            Some(IsSubjectKind::Forms(forms))
+                if matches!(forms.as_slice(), [IsSubjectForm::PlaceholderForm(_)])
+        ));
+        assert!(function.definition.is_some());
+
+        let spec = parse_ordinary_declaration_statement(
+            r#"f(x_) "in" \some.collection.of.functions"#,
+        )
+        .expect("expected spec declaration statement");
+        assert!(matches!(
+            spec.relation,
+            Some(DeclarationRelation::Spec { target, .. })
+                if matches!(target.kind, ExpressionKind::Command(_))
+        ));
+    }
+
+    #[test]
+    fn rejects_non_placeholder_function_declaration_outputs() {
+        let error = parse_ordinary_declaration_statement(r#"f(x_, y_) ::= y is \function"#)
+            .expect_err("expected non-placeholder output to fail");
+
+        assert!(error
+            .to_string()
+            .contains("function declaration `::=` output must be a placeholder"));
     }
 
     #[test]

@@ -74,7 +74,7 @@ pub(in crate::backend::semantic) fn walk_clause(
             }
         }
         Clause::Given(group) => {
-            walk_is_or_refined_spec(&group.given.argument, visit);
+            walk_declaration_statement(&group.given.argument, visit);
             if let Some(section) = &group.where_ {
                 for clause in &section.arguments {
                     walk_clause(clause, visit);
@@ -84,21 +84,13 @@ pub(in crate::backend::semantic) fn walk_clause(
                 walk_clause(clause, visit);
             }
         }
-        Clause::Binding(binding) => {
-            walk_expression(&binding.left, visit);
-            walk_expression(&binding.right, visit);
-        }
-        Clause::IsOrSpec(spec) => walk_is_or_spec(spec, visit),
+        Clause::Declaration(statement) => walk_declaration_statement(statement, visit),
         Clause::Expression(expression) => walk_expression(expression, visit),
     }
 }
 
 fn walk_binding_or_spec(item: &BindingOrSpec, visit: &mut impl FnMut(&SignatureShape)) {
     match item {
-        BindingOrSpec::Binding(binding) => {
-            walk_expression(&binding.left, visit);
-            walk_expression(&binding.right, visit);
-        }
-        BindingOrSpec::IsOrSpec(spec) => walk_is_or_spec(spec, visit),
+        BindingOrSpec::Declaration(statement) => walk_declaration_statement(statement, visit),
     }
 }

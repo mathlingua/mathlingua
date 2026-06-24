@@ -60,11 +60,11 @@ nested[outer[inner]]
 f[|value := x, Pair[left, right] := y, nested[outer[inner]] := z|]
 
 
-{x "in" X : f_(a_, b_) | y is \type{A}}
+{f_(a_, b_) : x_ "in" X | y is \type{A}}
 
 
 {
-  x "in" X : f_(a_, b_)
+  f_(a_, b_) : x_ "in" X
   | y is \type{A}
 }
 

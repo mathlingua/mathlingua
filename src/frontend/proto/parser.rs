@@ -308,7 +308,7 @@ impl<'a> Parser<'a> {
 
 /// Finds the colon that separates a section label from its inline argument.
 ///
-/// Formulation operators such as `:=`, `:->`, `:=>`, `:~>`, and command tails
+/// Formulation operators such as `::=`, `:=`, `:->`, `:=>`, `:~>`, and command tails
 /// such as `\foo{A}:with{B}` can appear in section bodies.  A structural colon
 /// therefore requires a section-label-shaped prefix.
 fn structural_colon_index(text: &str) -> Option<usize> {
@@ -316,7 +316,8 @@ fn structural_colon_index(text: &str) -> Option<usize> {
     let prefix = text[..index].trim();
     let rest = &text[index..];
 
-    if matches!(rest, ":=" | ":->" | ":=>" | ":~>" | ":/")
+    if matches!(rest, "::=" | ":=" | ":->" | ":=>" | ":~>" | ":/")
+        || rest.starts_with("::=")
         || rest.starts_with(":=")
         || rest.starts_with(":->")
         || rest.starts_with(":=>")
@@ -651,6 +652,7 @@ Defines: f(x_)
     fn treats_text_with_colons_as_text_arguments_instead_of_groups() {
         let input = r#"when:
 . "label: value"
+. A ::= B := B
 "#;
 
         let (groups, diagnostics) = parse_input(input);
@@ -659,6 +661,10 @@ Defines: f(x_)
         assert!(matches!(
             &groups[0].sections[0].arguments[0],
             Argument::Text(item) if item.text == "\"label: value\""
+        ));
+        assert!(matches!(
+            &groups[0].sections[0].arguments[1],
+            Argument::Formulation(item) if item.text == "A ::= B := B"
         ));
     }
 

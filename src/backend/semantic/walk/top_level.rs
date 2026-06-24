@@ -22,7 +22,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_aliases(&group.aliases, visit);
         }
         TopLevelItem::Defines(group) => {
-            walk_is_or_spec(&group.defines.argument, visit);
+            walk_declaration_statement(&group.defines.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
             if let Some(section) = &group.expresses {
@@ -32,11 +32,11 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_aliases(&group.aliases, visit);
         }
         TopLevelItem::Refines(group) => {
-            walk_is_or_refined_spec(&group.refines.argument, visit);
+            walk_declaration_statement(&group.refines.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
             if let Some(section) = &group.specifies {
-                walk_is_or_refined_spec(&section.argument, visit);
+                walk_declaration_statement(&section.argument, visit);
             }
             walk_optional_clauses(&group.satisfies, visit);
             walk_optional_provides(&group.provides, visit);
@@ -123,8 +123,8 @@ pub(in crate::backend::semantic) fn walk_theorem_like(
     visit: &mut impl FnMut(&SignatureShape),
 ) {
     if let Some(section) = given {
-        for spec in &section.arguments {
-            walk_is_or_refined_spec(spec, visit);
+        for statement in &section.arguments {
+            walk_declaration_statement(statement, visit);
         }
     }
     if let Some(section) = where_ {

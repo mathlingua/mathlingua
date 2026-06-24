@@ -494,7 +494,7 @@ mod tests {
         write_mlg_fixture(
             &file,
             r#"[\function{A, B}]
-    Defines: A "defines" B
+    Defines: A ::= B "defines" B
     Documented:
     . [docs.called]
       called:
@@ -538,7 +538,7 @@ mod tests {
         write_mlg_fixture(
             &file,
             r#"[\function:on{A}:to{B}]
-    Defines: A "defines" B
+    Defines: A ::= B "defines" B
     Documented:
     . [docs.called]
       called:
@@ -914,7 +914,7 @@ mod tests {
     Documented:
     . called: "set"
 
-    [\element.of:group{G := (X, *, e)}]
+    [\element.of:group{G ::= (X, *, e)}]
     Describes: x
     when: G is \group
     extends: x "in" X
@@ -922,7 +922,7 @@ mod tests {
     . called: "element of group"
 
     [\group]
-    Describes: G := (X, *, e)
+    Describes: G ::= (X, *, e)
     extends: G is \set via X
     Provides:
     . symbol: x_ "in" G :-> x_ is \element.of:group{G}
@@ -1195,7 +1195,7 @@ mod tests {
     Theorem:
     given: A is \real
     where:
-    . A := B
+    . A ::= B := B
     then:
     . \foo{B}
     "#,
@@ -1214,6 +1214,41 @@ mod tests {
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
+    }
+
+    #[test]
+    fn check_rejects_unintroduced_definition_rhs_symbols() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("definition-rhs-scope.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: x
+    Documented:
+    . called: "real"
+
+    Theorem:
+    given: x := y
+    then: x = x
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("definition-rhs-scope.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event
+                .as_message()
+                .is_some_and(|message| message.message == "Unrecognized symbol `y`")
+        }));
+        assert!(event_log.has_errors());
     }
 
     #[test]
@@ -1236,7 +1271,7 @@ mod tests {
 
     Theorem:
     then:
-    . exists: A := B
+    . exists: A ::= B := B
       suchThat:
       . A is \real
       . \foo{B}

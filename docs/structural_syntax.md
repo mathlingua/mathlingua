@@ -139,7 +139,7 @@ Each argument line is classified in this order:
 Important implementation consequence:
 
 - a non-text argument line starts a nested group only when the first colon has a section-label-shaped prefix made from ASCII letters, digits, and `_`
-- colons in formulation delimiters `:=`, `:->`, `:=>`, `:~>`, and `:/` do not start nested groups
+- colons in formulation delimiters `::=`, `:=`, `:->`, `:=>`, `:~>`, and `:/` do not start nested groups
 - command tails such as `\function:on{X}:to{Y}` are formulations because the text before the first colon is not a section-label-shaped prefix
 
 ### Multiline formulations
@@ -244,12 +244,11 @@ All of them use the same surface syntax:
 
 A `Clause` can be either:
 
-- a local expression binding parsed by `parse_expression_binding`, stored as `Clause::Binding`
+- a declaration statement parsed by `parse_ordinary_declaration_statement`, stored as `Clause::Declaration`
 - a formulation expression parsed by `parse_expression`, stored as `Clause::Expression`
-- a raw helper statement parsed by `parse_is_or_spec`, stored as `Clause::IsOrSpec`
 - or a nested clause group such as `exists`, `if`, `piecewise`, and so on
 
-Formulation clause entries are tried in that order: binding first, then expression, then `is`/spec fallback.
+Formulation clause entries are tried in that order: declaration statement first, then expression.
 
 ## Top-Level Groups
 
@@ -269,15 +268,15 @@ An empty document is supported by the current implementation because `Document.i
 | `Section` | `SectionGroup` | none | `Section: OpenText` |
 | `Subsection` | `SubsectionGroup` | none | `Subsection: OpenText` |
 | `Subsubsection` | `SubsubsectionGroup` | none | `Subsubsection: OpenText` |
-| `Describes` | `DescribesGroup` | command | `Describes: FormOrDeclaration`, `using?: IsOrSpec+`, `when?: Clause+`, `extends?: IsOrViaItem`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Defines` | `DefinesGroup` | command | `Defines: IsOrSpec`, `using?: IsOrSpec+`, `when?: Clause+`, `expresses?: Clause`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Refines` | `RefinesGroup` | command | `Refines: IsOrRefinedStatementSpec`, `using?: IsOrSpec+`, `when?: Clause+`, `specifies?: IsOrRefinedStatementSpec`, `satisfies?: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `States` | `StatesGroup` | command | `States: OpenText*`, `using?: IsOrSpec+`, `when?: Clause+`, `that: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Axiom` | `AxiomGroup` | command? | `Axiom: OpenText*`, `given?: IsOrRefinedStatementSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Theorem` | `TheoremGroup` | command? | `Theorem: OpenText*`, `given?: IsOrRefinedStatementSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Corollary` | `CorollaryGroup` | command? | `Corollary: OpenText*`, `of: OpenText*`, `given?: IsOrRefinedStatementSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Lemma` | `LemmaGroup` | command? | `Lemma: OpenText*`, `given?: IsOrRefinedStatementSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Conjecture` | `ConjectureGroup` | command? | `Conjecture: OpenText*`, `given?: IsOrRefinedStatementSpec+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Describes` | `DescribesGroup` | command | `Describes: FormOrDeclaration`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: IsOrViaItem`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Defines` | `DefinesGroup` | command | `Defines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Refines` | `RefinesGroup` | command | `Refines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: DeclarationStatement`, `satisfies?: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `States` | `StatesGroup` | command | `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Axiom` | `AxiomGroup` | command? | `Axiom: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Theorem` | `TheoremGroup` | command? | `Theorem: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Corollary` | `CorollaryGroup` | command? | `Corollary: OpenText*`, `of: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Lemma` | `LemmaGroup` | command? | `Lemma: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Conjecture` | `ConjectureGroup` | command? | `Conjecture: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Person` | `PersonGroup` | author | `Person: OpenText*`, `name: OpenText+`, `biography: OpenText` |
 | `Resource` | `ResourceGroup` | resource | `Resource: ResourceItem+` |
 | `Specify` | `SpecifyGroup` | none | `Specify: SpecifyItem+` |
@@ -311,7 +310,7 @@ Used inside `Provides:`.
 | First section label | AST node | Heading | Ordered sections |
 | --- | --- | --- | --- |
 | `symbol` | `SymbolGroup` | label? | `symbol: AliasKind`, `written?: WrittenText+` |
-| `connection` | `ConnectionGroup` | label? | `connection: OpenText*`, `to: OpenText*`, `using?: IsOrSpec+`, `means: OpenText*`, `signifies?: OpenText*`, `viewable?: OpenText*`, `through?: OpenText*` |
+| `connection` | `ConnectionGroup` | label? | `connection: OpenText*`, `to: OpenText*`, `using?: DeclarationStatement+`, `means: OpenText*`, `signifies?: OpenText*`, `viewable?: OpenText*`, `through?: OpenText*` |
 
 ### Documented items
 
@@ -388,7 +387,7 @@ Clause groups are used anywhere a section expects `Clause` values.
 
 If a clause section contains:
 
-- a formulation argument, it is first tried as `parse_expression_binding`, then `parse_expression`, then `parse_is_or_spec`
+- a formulation argument, it is first tried as `parse_ordinary_declaration_statement`, then `parse_expression`
 - a nested group, it is dispatched by its first section label
 
 ### Clause inventory
@@ -405,7 +404,7 @@ If a clause section contains:
 | `if` | `IfGroup` | label? | `if: Clause+`, `then: Clause+` |
 | `iff` | `IffGroup` | label? | `iff: Clause+`, `then: Clause+` |
 | `piecewise` | `PiecewiseGroup` | label? | `piecewise: OpenText*`, `if: Clause+`, `then: Clause+`, `else?: Clause+` |
-| `given` | `GivenGroup` | label? | `given: IsOrRefinedStatementSpec`, `where?: Clause+`, `then: Clause+` |
+| `given` | `GivenGroup` | label? | `given: RefinedDeclarationStatement`, `where?: Clause+`, `then: Clause+` |
 
 ## Heading Kinds
 
@@ -466,10 +465,10 @@ The structural parser delegates section content to formulation parsers as follow
 | Structural content kind | Parser used |
 | --- | --- |
 | `FormOrDeclaration` | `parse_form_or_declaration` |
-| `IsOrSpec` | `parse_is_or_spec` |
-| `IsOrRefinedStatementSpec` | `parse_is_or_refined_statement_spec` |
-| `IsOrViaItem` | try `parse_is_via_statement`, then `parse_is_or_spec` |
-| `BindingOrSpec` | try `parse_expression_binding`, then `parse_is_or_spec` |
+| `DeclarationStatement` | `parse_ordinary_declaration_statement` |
+| `RefinedDeclarationStatement` | `parse_refined_declaration_statement` |
+| `IsOrViaItem` | try `parse_is_via_statement`, then `parse_ordinary_declaration_statement` |
+| `BindingOrSpec` | `parse_ordinary_declaration_statement` |
 | `AliasKind` | try `parse_expression_alias`, then `parse_spec_operator_alias` |
 | `WritingAlias` | `parse_writing_alias` |
 | `ResourceHeader` | `parse_resource_header` |
@@ -477,9 +476,9 @@ The structural parser delegates section content to formulation parsers as follow
 | `AuthorHeader` | `parse_author_header` |
 | `LabelHeader` | `parse_label_header` |
 
-Clause formulation arguments are tried as `parse_expression_binding`, then `parse_expression`, then `parse_is_or_spec`. This means expression-compatible facts such as `x is \set` are stored as expressions, while helper-only forms such as comma-separated `is` subjects or quoted operators with spaces fall back to `IsOrSpec`.
+Clause formulation arguments are tried as `parse_ordinary_declaration_statement`, then `parse_expression`. This means helper-only forms such as comma-separated `is` subjects or quoted operators with spaces are represented as declaration statements, while expression-compatible facts can still be parsed as declaration statements when they appear in clause position.
 
-`parse_is_or_spec` and `parse_is_via_statement` accept comma-separated form lists on the left of `is`, including placeholder forms, for example `f(x_), y_ is \set`. `parse_is_via_statement` accepts any form/declaration after `via`, such as `X` or `(X, Y)`.
+Declaration statements and `parse_is_via_statement` accept comma-separated form lists on the left of `is`, including placeholder forms, for example `f(x_), y_ is \set`. `parse_is_via_statement` accepts any form/declaration after `via`, such as `X` or `(X, Y)`.
 
 ## Compact AST Schema
 
@@ -500,13 +499,12 @@ Conventions used below:
 ```union
 IsOrViaItemUnion ::=
     | IsViaStatement
-    | IsOrSpec
+    | DeclarationStatement
 ```
 
 ```union
 BindingOrSpecUnion ::=
-    | ExpressionBinding
-    | IsOrSpec
+    | DeclarationStatement
 ```
 
 ```union
@@ -589,8 +587,7 @@ ClauseUnion ::=
     | IffGroup
     | PiecewiseGroup
     | GivenGroup
-    | ExpressionBinding
-    | IsOrSpec
+    | DeclarationStatement
     | Expression
 ```
 
@@ -655,7 +652,7 @@ Subsubsection: <OpenText>
 ```group
 [CommandHeader]
 Describes: <FormOrDeclaration>
-using?: <IsOrSpec>+
+using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 extends?: <IsOrViaItemUnion>
 specifies?: <IsOrViaItemUnion>+
@@ -670,8 +667,8 @@ Metadata?: <MetadataItemUnion>+
 
 ```group
 [CommandHeader]
-Defines: <IsOrSpec>
-using?: <IsOrSpec>+
+Defines: <DeclarationStatement>
+using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 expresses?: <ClauseUnion>
 Provides?: <ProvidesItemUnion>+
@@ -684,10 +681,10 @@ Metadata?: <MetadataItemUnion>+
 
 ```group
 [CommandHeader]
-Refines: <IsOrRefinedStatementSpec>
-using?: <IsOrSpec>+
+Refines: <RefinedDeclarationStatement>
+using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
-specifies?: <IsOrRefinedStatementSpec>
+specifies?: <RefinedDeclarationStatement>
 satisfies?: <ClauseUnion>+
 Provides?: <ProvidesItemUnion>+
 Justified?: <JustifiedItemUnion>+
@@ -700,7 +697,7 @@ Metadata?: <MetadataItemUnion>+
 ```group
 [CommandHeader]
 States: <OpenText>*
-using?: <IsOrSpec>+
+using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 that: <ClauseUnion>+
 Provides?: <ProvidesItemUnion>+
@@ -714,7 +711,7 @@ Metadata?: <MetadataItemUnion>+
 ```group
 [CommandHeader]?
 Axiom: <OpenText>*
-given?: <IsOrRefinedStatementSpec>+
+given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
@@ -728,7 +725,7 @@ Metadata?: <MetadataItemUnion>+
 ```group
 [CommandHeader]?
 Theorem: <OpenText>*
-given?: <IsOrRefinedStatementSpec>+
+given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
@@ -743,7 +740,7 @@ Metadata?: <MetadataItemUnion>+
 [CommandHeader]?
 Corollary: <OpenText>*
 of: <OpenText>*
-given?: <IsOrRefinedStatementSpec>+
+given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
@@ -757,7 +754,7 @@ Metadata?: <MetadataItemUnion>+
 ```group
 [CommandHeader]?
 Lemma: <OpenText>*
-given?: <IsOrRefinedStatementSpec>+
+given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
@@ -771,7 +768,7 @@ Metadata?: <MetadataItemUnion>+
 ```group
 [CommandHeader]?
 Conjecture: <OpenText>*
-given?: <IsOrRefinedStatementSpec>+
+given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
@@ -816,7 +813,7 @@ written?: <WrittenText>+
 [LabelHeader]?
 connection: <OpenText>*
 to: <OpenText>*
-using?: <IsOrSpec>+
+using?: <DeclarationStatement>+
 means: <OpenText>*
 signifies?: <OpenText>*
 viewable?: <OpenText>*
@@ -1035,7 +1032,7 @@ else?: <ClauseUnion>+
 
 ```group
 [LabelHeader]?
-given: <IsOrRefinedStatementSpec>
+given: <RefinedDeclarationStatement>
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 ```
@@ -1094,8 +1091,8 @@ So the stored `OpenText` for `"abc"` is `abc`, but `\"` is not specially handled
 
 This behavior comes from the proto parser. A non-text argument line starts a
 nested group if it is a heading or if its first colon follows a
-section-label-shaped prefix. Formulation delimiters `:=`, `:->`, `:=>`, `:~>`,
-and `:/` are excluded from this structural-colon rule.
+section-label-shaped prefix. Formulation delimiters `::=`, `:=`, `:->`,
+`:=>`, `:~>`, and `:/` are excluded from this structural-colon rule.
 
 ### Clause formulation parsing has a fallback order
 
@@ -1105,7 +1102,10 @@ A clause line like:
 . x is \type{A}
 ```
 
-is parsed as a formulation expression and wrapped as `Clause::Expression`, because `parse_expression` accepts expression-level `is` facts. A helper-only clause, such as a comma-separated `is` subject list or a quoted operator with spaces, falls back to `parse_is_or_spec` and is wrapped as `Clause::IsOrSpec`. A top-level `:=` expression binding is tried before both.
+is parsed as a declaration statement and wrapped as `Clause::Declaration`,
+because declaration statements accept `is` facts, comma-separated subjects, and
+quoted operators. If a line is not a declaration statement, it is then tried as
+a formulation expression.
 
 ### Empty-but-required sections are real
 

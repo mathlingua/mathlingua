@@ -25,10 +25,10 @@ pub(in crate::backend::semantic) fn walk_expression(
         }
         ExpressionKind::Set(set) => {
             walk_placeholder_form(&set.target, visit);
+            walk_expression(&set.spec, visit);
             if let Some(predicate) = &set.predicate {
                 walk_expression(predicate, visit);
             }
-            walk_expression(&set.spec.subject, visit);
         }
         ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
             walk_expression(expression, visit);

@@ -134,11 +134,11 @@ name those forms.
 ```text
 x
 f(x_)
-g := f(x_, y_)
+g ::= f(x_, y_)
 (x_, y_)
-Pair := (x_, y_)
-{x_}
-Set := {x_}
+Pair ::= (x_, y_)
+{x_ : ...}
+Set ::= {x_ : ...}
 x_ |plus| y_
 neg| x_
 x_ |prime
@@ -150,10 +150,10 @@ placeholders. Mixed magnetic and ordinary placeholders are not accepted.
 Tuple forms require at least two elements. One-element tuples are not currently
 supported.
 
-Set forms contain a placeholder form, such as `{x_}` or `{x_(i_)}`.
+Set forms contain a placeholder form, such as `{x_ : ...}` or `{x_(i_) : ...}`.
 
 When a declaration is used in a defining context, the declared names become
-available to later checks. For example, `G := (X, *, e)` declares `G`, `X`, and
+available to later checks. For example, `G ::= (X, *, e)` declares `G`, `X`, and
 `e`; operators in tuple elements are not declared as ordinary symbols.
 
 ## Expressions
@@ -165,7 +165,7 @@ x + y
 f(x, y)
 map[| key := x, value := y |]
 (x, y)
-{x "in" A : x_ | x = y}
+{x_ : x_ "in" A | x_ = y}
 F[A]
 \function:on{A}:to{B}(x)
 x is? \set
@@ -415,8 +415,8 @@ then:
 
 Items in `given:` introduce available type/spec facts and declared symbols for
 the theorem body. Theorem-like `given:` sections accept refined command type
-expressions. Items in `where:` are local assumptions or bindings available while
-checking `then:` and `iff:`.
+expressions. Items in `where:` are local assumptions or declarations available
+while checking `then:` and `iff:`.
 
 If a theorem-like group has a command heading, that heading introduces a
 signature and participates in duplicate-signature and reference checks.
@@ -424,8 +424,8 @@ signature and participates in duplicate-signature and reference checks.
 ## Clause Groups
 
 Clause sections accept inline formulations or nested clause groups. Inline
-clause formulations are tried as expression bindings first, then ordinary
-expressions, then raw `is`/spec helper statements.
+clause formulations are tried as declaration statements first, then ordinary
+expressions.
 
 | Clause | Meaning in the checker |
 | --- | --- |
@@ -433,7 +433,7 @@ expressions, then raw `is`/spec helper statements.
 | `allOf` | checks all children; when assumed, gathers facts from children |
 | `anyOf` | checks all children |
 | `oneOf` | checks all children |
-| `exists` | creates a child context from its binding/spec and assumes `suchThat:` |
+| `exists` | creates a child context from its declaration and assumes `suchThat:` |
 | `existsUnique` | same as `exists`, with unique-existence intent |
 | `forAll` | creates a child context, assumes `where:`, checks `then:` |
 | `if` | assumes `if:`, checks `then:` |
@@ -441,19 +441,20 @@ expressions, then raw `is`/spec helper statements.
 | `piecewise` | assumes `if:`, checks `then:`; `else:` is checked in the outer context |
 | `given` | assumes one refined-capable given statement, then checks `then:` |
 
-Bindings are written with `:=` and create local syntactic substitutions.
+Declarations can combine `::=` with `:=` to introduce symbols and create local
+syntactic substitutions.
 
 ```text
 where:
-. A := B
+. A ::= B := B
 then:
 . \foo{B}
 ```
 
 If the context knows `A is \real`, then `\foo{B}` may satisfy a requirement for
-`\real` because `A := B` makes the two keys normalize together.
+`\real` because `A ::= B := B` makes the two keys normalize together.
 
-Quantifier bindings are local to the clause group that introduces them.
+Quantifier declarations are local to the clause group that introduces them.
 
 ## Support Sections
 
@@ -559,7 +560,7 @@ Symbols are introduced by:
 - command header forms in definition and named theorem-like groups
 - the main `Describes:`, `Defines:`, and `Refines:` subjects
 - assumptions in `using:`, `when:`, theorem `given:`, and local clause groups
-- local bindings such as `A := B`
+- local declarations such as `A ::= B := B`
 - subject forms in assumed `is` or spec facts
 - names inside forms, tuples, set declarations, function declarations, and
   placeholder forms
@@ -567,9 +568,10 @@ Symbols are introduced by:
 Numeric literal names made only of ASCII digits are accepted without prior
 declaration.
 
-Assumptions are processed in order. In an `is` or spec assumption, the subject
-side introduces names, but command arguments and target names on the right must
-already be known from earlier context.
+Assumptions are processed in order. In a declaration statement, the subject and
+optional `::=` expansion introduce names before any `:=` right-hand expression
+is checked. Command arguments, spec targets, and names used only on the right
+side of `:=` must already be known from earlier context.
 
 Symbols used only in a conclusion must already be known. For example:
 
@@ -589,7 +591,7 @@ Declaration forms introduce their nested names. In:
 
 ```text
 [\group]
-Describes: G := (X, *, e)
+Describes: G ::= (X, *, e)
 extends: G is \set via X
 ```
 
@@ -620,9 +622,9 @@ The checker understands two fact kinds:
 Facts can be introduced by `given:`, `where:`, `when:`, `using:`, assumed clause
 groups, and expression facts such as `x is \set` or `x "in" X`.
 
-When command arguments are substituted into requirements, local bindings are
-normalized. If `A := B` is in scope, facts about `A` can satisfy requirements
-about `B`, and vice versa.
+When command arguments are substituted into requirements, local definitions are
+normalized. If `A ::= B := B` is in scope, facts about `A` can satisfy
+requirements about `B`, and vice versa.
 
 Refined command type expressions are accepted in refined-capable statement
 positions and are reference-checked, but the current proof context records type
@@ -642,7 +644,7 @@ definitions.
 
 ```text
 [\group]
-Describes: G := (X, *, e)
+Describes: G ::= (X, *, e)
 extends: G is \set via X
 Documented:
 . called: "group"
@@ -735,8 +737,8 @@ them.
   valid values.
 - Text parsing strips only the outer quotes and does not process escapes.
 - Section-shaped colons in non-text argument lines start nested groups.
-- Clause formulation arguments are parsed in fallback order: binding,
-  expression, then `is`/spec helper.
+- Clause formulation arguments are parsed in fallback order: declaration
+  statement, then expression.
 - Empty documents are accepted.
 - Heading-only groups are not valid structural groups.
 - One-element tuples are not supported.

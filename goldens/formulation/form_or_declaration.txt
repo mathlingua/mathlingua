@@ -1,10 +1,10 @@
 Value
 
-g := f(x_, y_)
+g ::= f(x_, y_)
 
-pair := (x, +, y)
+pair ::= (x, +, y)
 
-Set := {f_(x_, y_)}
+Set ::= {f_(x_, y_)}
 
 -x_
 

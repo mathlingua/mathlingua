@@ -23,6 +23,8 @@ pub enum Token {
     DotLParen,
     #[token(".)")]
     DotRParen,
+    #[token("...")]
+    Ellipsis,
     #[token("[|")]
     LNamedArguments,
     #[token("|]")]
@@ -59,6 +61,8 @@ pub enum Token {
     SpecOperatorAlias,
     #[token(":~>")]
     WritingAlias,
+    #[token("::=")]
+    Introduce,
     #[token(":=")]
     Declare,
     #[token("is_not?")]

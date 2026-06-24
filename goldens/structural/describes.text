@@ -1,5 +1,5 @@
 [\structure]
-Describes: S := (X, *)
+Describes: S ::= (X, *)
 using:
 . X, Y is \set
 . X "contains" Element

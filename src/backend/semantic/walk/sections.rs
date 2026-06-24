@@ -5,8 +5,8 @@ pub(in crate::backend::semantic) fn walk_optional_is_or_specs(
     visit: &mut impl FnMut(&SignatureShape),
 ) {
     if let Some(section) = section {
-        for spec in &section.arguments {
-            walk_is_or_spec(spec, visit);
+        for statement in &section.arguments {
+            walk_declaration_statement(statement, visit);
         }
     }
 }
@@ -53,8 +53,8 @@ pub(in crate::backend::semantic) fn walk_optional_provides(
                 ProvidesItem::Symbol(group) => walk_alias_kind(&group.symbol.argument, visit),
                 ProvidesItem::Connection(group) => {
                     if let Some(using) = &group.using {
-                        for spec in &using.arguments {
-                            walk_is_or_spec(spec, visit);
+                        for statement in &using.arguments {
+                            walk_declaration_statement(statement, visit);
                         }
                     }
                 }

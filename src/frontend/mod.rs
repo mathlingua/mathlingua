@@ -12,7 +12,7 @@ pub use structural::parse_document;
 
 pub(crate) use formulation::{
     parse_command_header, parse_expression, parse_form_or_declaration,
-    parse_is_or_refined_statement_spec,
+    parse_refined_declaration_statement,
 };
 pub(crate) use proto::Parser as ProtoParser;
 pub(crate) use proto::ast::{

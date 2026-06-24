@@ -69,8 +69,8 @@ Documented:
 #[test]
 fn renders_called_templates_as_text_when_written_is_missing() {
     let registry = registry_for(
-        r#"[\group]
-Describes: G := (X, *, e)
+r#"[\group]
+Describes: G ::= (X, *, e)
 Documented:
 . called: "group"
 "#,
@@ -260,8 +260,8 @@ fn renders_tuple_declarations_with_operator_symbols() {
     let registry = registry_for("");
 
     assert_eq!(
-        render_formulation_latex("G := (X, *, e)", &registry),
-        Some(r#"G := \left(X, \ast, e\right)"#.to_string())
+        render_formulation_latex("G ::= (X, *, e)", &registry),
+        Some(r#"G ::= \left(X, \ast, e\right)"#.to_string())
     );
 }
 
@@ -274,7 +274,7 @@ fn renders_set_builder_specs() {
         Some(r#"\left\{ x \: : \: y \: | \: z \right\}"#.to_string())
     );
     assert_eq!(
-        render_formulation_latex(r#"{x "in" X : f_(a_, b_) | z}"#, &registry),
+        render_formulation_latex(r#"{f_(a_, b_) : x_ "in" X | z}"#, &registry),
         Some(r#"\left\{ f(a, b) \: : \: x \in X \: | \: z \right\}"#.to_string())
     );
 }

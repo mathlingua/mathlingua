@@ -26,10 +26,10 @@ The formulation subsystem does not have one single root grammar. It exposes seve
 | Parser function | Accepted root syntax |
 | --- | --- |
 | `parse_expression` | general expressions |
-| `parse_expression_binding` | `<expression> := <expression>` |
+| `parse_declaration_statement` | unified declarations and definitions using `::=`, `:=`, `is`, or a quoted spec operator |
 | `parse_form_or_declaration` | forms and declarations |
-| `parse_is_or_spec` | `<is-subject> is <command-type>` or `<subject> "op" Name` |
-| `parse_is_or_refined_statement_spec` | same as above, but `is` may target a refined command expression |
+| `parse_is_or_spec` | legacy/internal `<is-subject> is <command-type>` or `<subject> "op" Name` helper |
+| `parse_is_or_refined_statement_spec` | legacy/internal variant where `is` may target a refined command expression |
 | `parse_is_via_statement` | `<is-statement> via <form-or-declaration>` |
 | `parse_command_header` | simple, infix, or refined command headers |
 | `parse_writing_alias` | `<form-or-declaration> :~> <raw body>` |
@@ -126,10 +126,10 @@ These are not valid there:
 Important implementation distinction:
 
 - expression parsing uses this strict `QuotedName` token
-- `parse_is_or_spec` and `parse_spec_operator_alias` do not use that token for the quoted operator
+- declaration statement parsing, `parse_is_or_spec`, and `parse_spec_operator_alias` do not use that token for the quoted operator
 - those helper parsers accept any top-level `"..."`
 
-So `x "less than" A` is rejected by `parse_expression`, but accepted by `parse_is_or_spec`.
+So `x "less than" A` is rejected by `parse_expression`, but accepted by `parse_declaration_statement` and the legacy spec helper.
 
 ### Labels inside expressions
 
@@ -180,7 +180,9 @@ The lexer has dedicated tokens for:
 - `is?`
 - `is_not?`
 - `via`
+- `::=`
 - `:=`
+- `...`
 - `:=>`
 - `:->`
 - `:~>`
@@ -263,6 +265,7 @@ AtomExpression ::=
   | SetExpression
   | SubsetExpression
   | CommandExpression
+  | Placeholder
   | Name
 ```
 
@@ -322,14 +325,13 @@ Operators may appear as tuple elements, for example `(+, x)`.
 #### Set expressions
 
 ```text
-SetExpression ::= "{" ExpressionSpec ":" PlaceholderForm ("|" Expression)? "}"
-ExpressionSpec ::= EqualityExpression QuotedName Name
+SetExpression ::= "{" PlaceholderForm ":" Expression ("|" Expression)? "}"
 ```
 
 Examples:
 
-- `{x "in" A : x_}`
-- `{x "in" A : x_ | x = y}`
+- `{x_ : x_ is \real}`
+- `{x_ : x_ is \real | x_ = y}`
 
 #### Subset expressions
 
@@ -422,16 +424,16 @@ FormOrDeclaration ::=
   | PrefixFormOperator Placeholder
   | Placeholder PostfixFormOperator
 
-FunctionFormOrDeclaration ::= [Name ":="] FunctionForm
+FunctionFormOrDeclaration ::= [Name "::="] FunctionForm
 FunctionForm ::= Name "(" MagneticPlaceholder ")"
                | Name "(" Placeholder ("," Placeholder)* ")"
 
-TupleFormOrDeclaration ::= [Name ":="] TupleForm
+TupleFormOrDeclaration ::= [Name "::="] TupleForm
 TupleForm ::= "(" TupleFormElement "," TupleFormElement ("," TupleFormElement)* ")"
 TupleFormElement ::= FormOrDeclaration | Operator
 
-SetFormOrDeclaration ::= [Name ":="] SetForm
-SetForm ::= "{" PlaceholderForm "}"
+SetFormOrDeclaration ::= [Name "::="] SetForm
+SetForm ::= "{" PlaceholderForm [":" "..."] "}"
 
 PlaceholderForm ::= Placeholder
                   | Placeholder "(" Placeholder ("," Placeholder)* ")"
@@ -450,11 +452,11 @@ Examples:
 
 - `x`
 - `f(x_)`
-- `g := f(x_, y_)`
+- `g ::= f(x_, y_)`
 - `(x_, y_)`
-- `Pair := (x_, y_)`
-- `{x_}`
-- `Set := {x_}`
+- `Pair ::= (x_, y_)`
+- `{x_ : ...}`
+- `Set ::= {x_ : ...}`
 - `x_ |plus| y_`
 - `neg| x_`
 - `x_ |prime`
@@ -463,24 +465,40 @@ Examples:
 
 These are not part of `parse_expression`. They are helper parsers built in `src/frontend/formulation/parser.rs`.
 
-### `parse_expression_binding`
+### `parse_declaration_statement`
 
 Accepted shape:
 
 ```text
-ExpressionBinding ::= Expression ":=" Expression
+DeclarationStatement ::= DeclarationBody DeclarationRelation?
+
+DeclarationBody ::=
+    IsSubject
+  | IsSubject "::=" IsSubject
+  | IsSubject ":=" Expression
+  | IsSubject "::=" IsSubject ":=" Expression
+
+DeclarationRelation ::=
+    " is " TypeExpression
+  | TopLevelQuotedOperator Expression
 ```
 
 Notes:
 
-- the parser looks for the first top-level `:=`
-- both sides are trimmed and parsed with `parse_expression`
-- nested `:=` inside parentheses, braces, brackets, quotes, or backticks is ignored while finding the split point
+- `::=` is the only declaration-side expansion marker
+- the subject and optional `::=` expansion introduce symbols
+- a top-level `:=` introduces a value definition; its right-hand side is parsed as an expression and does not introduce new names
+- when the subject is a function declaration such as `f(x_, y_)`, the `::=` expansion must be a single placeholder output such as `z_`
+- nested `:=` inside expression syntax, such as named function calls, remains expression syntax
 
 Examples:
 
-- `A := B`
-- `f(x) := y + z`
+- `G ::= (X, *, e)`
+- `G ::= (X, *, e) := (a, b, c) is \foo`
+- `f(x_, y_) ::= z_ := x_ + y_ is \function`
+- `f(x_) := x_ + 1 is \real.function`
+- `{x_ : ...} := {x_ : x_ is \real} is \set`
+- `X ::= {x_ : ...} "in" \some.collection.of.sets`
 
 ### `parse_is_or_spec`
 
@@ -705,6 +723,8 @@ This top-level scanning is used for:
 - ` is `
 - ` via `
 - `::`
+- `::=`
+- `:=`
 - `:=>`
 - `:->`
 - `:~>`
@@ -720,7 +740,7 @@ This section is intentionally dense. It is the closest thing in this file to a p
 
 ```text
 InputExpression ::= Expression
-InputExpressionBinding ::= ExpressionBinding
+InputDeclarationStatement ::= DeclarationStatement
 InputFormOrDeclaration ::= FormOrDeclaration
 InputIsOrSpec ::= IsOrSpec
 InputIsOrRefinedStatementSpec ::= IsOrRefinedStatementSpec
@@ -757,6 +777,7 @@ PostfixFormNamedOperator ::= "|" IdentifierName
 
 SpecialOperator ::= token matched by (?:[-~!#%^&*+=|<>/]{2,}|[~!#%&<>])
 OperatorText ::= non-empty raw string whose characters are all in -~!#%^&*\+=|<>/
+Ellipsis ::= "..."
 ```
 
 ### Operators and reusable pieces
@@ -792,20 +813,20 @@ FormOrDeclaration ::=
   | Placeholder PostfixFormOperator
 
 FunctionFormOrDeclaration ::= FunctionForm
-                            | Name ":=" FunctionForm
+                            | Name "::=" FunctionForm
 
 FunctionForm ::= Name "(" MagneticPlaceholder ")"
                | Name "(" PlaceholderList ")"
 
 TupleFormOrDeclaration ::= TupleForm
-                         | Name ":=" TupleForm
+                         | Name "::=" TupleForm
 
 TupleForm ::= "(" TupleFormElement "," TupleFormElement ("," TupleFormElement)* ")"
 
 SetFormOrDeclaration ::= SetForm
-                       | Name ":=" SetForm
+                       | Name "::=" SetForm
 
-SetForm ::= "{" PlaceholderForm "}"
+SetForm ::= "{" PlaceholderForm [":" Ellipsis] "}"
 
 PlaceholderForm ::= Placeholder
                   | Placeholder "(" PlaceholderList ")"
@@ -856,6 +877,7 @@ AtomExpression ::=
   | SetExpression
   | SubsetExpression
   | CommandExpression
+  | Placeholder
   | Name
 
 GroupedExpression ::= "(" Expression ")"
@@ -869,8 +891,7 @@ FunctionNamedExpressionElementLhs ::= Name | SubsetNameCall
 
 TupleExpression ::= "(" TupleExpressionElement "," TupleExpressionElement ("," TupleExpressionElement)* ")"
 
-SetExpression ::= "{" ExpressionSpec ":" PlaceholderForm ("|" Expression)? "}"
-ExpressionSpec ::= EqualityExpression QuotedName Name
+SetExpression ::= "{" PlaceholderForm ":" Expression ("|" Expression)? "}"
 
 SubsetExpression ::= SubsetNameCall
 ```
@@ -904,13 +925,21 @@ full chains.
 These forms are parsed by `src/frontend/formulation/parser.rs`, not by the LALRPOP expression grammar.
 
 ```text
-ExpressionBinding ::= Expression ":=" Expression
-
 IsSubject ::= IsSubjectFormList | OperatorText
 SpecSubject ::= FormOrDeclaration | OperatorText
 IsSubjectForm ::= FormOrDeclaration | PlaceholderForm
 IsSubjectFormList ::= IsSubjectForm ("," IsSubjectForm)*
 TopLevelQuotedOperator ::= a top-level double-quoted string found by raw scanning
+
+DeclarationStatement ::= DeclarationBody DeclarationRelation?
+DeclarationBody ::=
+    IsSubject
+  | IsSubject "::=" IsSubject
+  | IsSubject ":=" Expression
+  | IsSubject "::=" IsSubject ":=" Expression
+DeclarationRelation ::= " is " TypeExpression | TopLevelQuotedOperator Expression
+
+ExpressionBinding ::= Expression ":=" Expression
 
 IsStatement ::= IsSubject " is " CommandExpression
 SubjectSpecStatement ::= SpecSubject TopLevelQuotedOperator Name
@@ -994,13 +1023,19 @@ The old grammar drafts implied several forms that the current code does not acce
 
 ### `parse_expression` does not parse refined command expressions
 
-Refined command expressions are only accepted through `parse_is_or_refined_statement_spec`.
+Refined command expressions are accepted through refined declaration statements
+and the legacy `parse_is_or_refined_statement_spec` helper.
 
 ### Helper `is` statements use different subject syntax than `is` expressions
 
 In ordinary expressions, `x is \foo{A}` requires the right-hand side to be a command expression.
 
-In `parse_is_or_spec`, the right-hand side is also a command expression, but the left-hand side is parsed with helper syntax that accepts forms, placeholder forms, comma-separated subject lists, and operator subjects. `parse_is_or_refined_statement_spec` additionally accepts refined command expressions on the right-hand side.
+In declaration statements and `parse_is_or_spec`, the right-hand side of `is`
+is also a command expression, but the left-hand side is parsed with helper
+syntax that accepts forms, placeholder forms, comma-separated subject lists, and
+operator subjects. Refined declaration statements and
+`parse_is_or_refined_statement_spec` additionally accept refined command
+expressions on the right-hand side.
 
 ### Quoted operator handling is inconsistent by design in the current code
 

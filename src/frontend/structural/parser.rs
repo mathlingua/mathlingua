@@ -3,9 +3,9 @@ use std::collections::{HashMap, VecDeque};
 use crate::events::EventLog;
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
-    parse_expression, parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
-    parse_is_or_refined_statement_spec, parse_is_or_spec, parse_is_via_statement,
-    parse_label_header, parse_resource_header, parse_spec_operator_alias, parse_writing_alias,
+    parse_expression, parse_expression_alias, parse_form_or_declaration, parse_is_via_statement,
+    parse_label_header, parse_ordinary_declaration_statement, parse_refined_declaration_statement,
+    parse_resource_header, parse_spec_operator_alias, parse_writing_alias,
 };
 use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{
@@ -291,17 +291,14 @@ pub(in crate::frontend::structural::parser) fn parse_is_or_via_item(
     if let Ok(item) = parse_is_via_statement(input) {
         return Ok(IsOrViaItem::IsVia(item));
     }
-    parse_is_or_spec(input).map(IsOrViaItem::IsOrSpec)
+    parse_ordinary_declaration_statement(input).map(IsOrViaItem::Declaration)
 }
 
 /// Parses a quantifier binding or ordinary specification.
 pub(in crate::frontend::structural::parser) fn parse_binding_or_spec(
     input: &str,
 ) -> Result<BindingOrSpec, FormulationParseError> {
-    if let Ok(binding) = parse_expression_binding(input) {
-        return Ok(BindingOrSpec::Binding(binding));
-    }
-    parse_is_or_spec(input).map(BindingOrSpec::IsOrSpec)
+    parse_ordinary_declaration_statement(input).map(BindingOrSpec::Declaration)
 }
 
 /// Parses a required command heading from a proto group.
@@ -493,8 +490,8 @@ pub(in crate::frontend::structural::parser) fn parse_required_clauses(
 
 /// Parses zero or more clauses from an optional section.
 ///
-/// Inline formulations are parsed first as expressions and then as `is`/spec
-/// statements, while nested groups are dispatched through clause-group parsers.
+/// Inline formulations are parsed first as declaration statements, then as
+/// expressions, while nested groups are dispatched through clause-group parsers.
 pub(in crate::frontend::structural::parser) fn parse_optional_clauses(
     section: Option<&ProtoSection>,
     label: &str,
@@ -508,21 +505,18 @@ pub(in crate::frontend::structural::parser) fn parse_optional_clauses(
     for entry in section_entries(section) {
         match entry {
             SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
-                if let Ok(binding) = parse_expression_binding(text) {
-                    result.push(Clause::Binding(binding));
+                if let Ok(statement) = parse_ordinary_declaration_statement(text) {
+                    result.push(Clause::Declaration(statement));
                     continue;
                 }
 
                 match parse_expression(text) {
                     Ok(expression) => result.push(Clause::Expression(expression)),
-                    Err(expression_error) => match parse_is_or_spec(text) {
-                        Ok(spec) => result.push(Clause::IsOrSpec(spec)),
-                        Err(_) => tracker.user_error_at_row(
-                            Some(ORIGIN),
-                            row,
-                            format!("Invalid clause expression in `{label}`: {expression_error}"),
-                        ),
-                    },
+                    Err(expression_error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid clause expression in `{label}`: {expression_error}"),
+                    ),
                 }
             }
             SectionEntry::Group { group, .. } => {
@@ -1059,7 +1053,7 @@ pub(super) fn parse_given_clause(group: &ProtoGroup, tracker: &mut EventLog) -> 
                 section(&sections, "given")?,
                 "given",
                 tracker,
-                parse_is_or_refined_statement_spec,
+                parse_refined_declaration_statement,
             )?,
         },
         where_: sections.get("where").copied().and_then(|section| {
@@ -1385,7 +1379,7 @@ pub(in crate::frontend::structural::parser) fn parse_connection(
             arguments: parse_optional_open_texts(sections.get("to").copied(), tracker),
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", tracker, parse_is_or_spec)
+            parse_required_formulations(section, "using", tracker, parse_ordinary_declaration_statement)
                 .map(|arguments| UsingSection { arguments })
         }),
         means: MeansSection {
@@ -2114,7 +2108,7 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", tracker, parse_is_or_spec)
+            parse_required_formulations(section, "using", tracker, parse_ordinary_declaration_statement)
                 .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
@@ -2195,11 +2189,11 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
                 section(&sections, "Defines")?,
                 "Defines",
                 tracker,
-                parse_is_or_spec,
+                parse_ordinary_declaration_statement,
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", tracker, parse_is_or_spec)
+            parse_required_formulations(section, "using", tracker, parse_ordinary_declaration_statement)
                 .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
@@ -2273,11 +2267,11 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
                 section(&sections, "Refines")?,
                 "Refines",
                 tracker,
-                parse_is_or_refined_statement_spec,
+                parse_refined_declaration_statement,
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", tracker, parse_is_or_spec)
+            parse_required_formulations(section, "using", tracker, parse_ordinary_declaration_statement)
                 .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
@@ -2289,7 +2283,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
                 section,
                 "specifies",
                 tracker,
-                parse_is_or_refined_statement_spec,
+                parse_refined_declaration_statement,
             )
             .map(|argument| RefinesSpecifiesSection { argument })
         }),
@@ -2357,7 +2351,7 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             arguments: parse_optional_open_texts(sections.get("States").copied(), tracker),
         },
         using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(section, "using", tracker, parse_is_or_spec)
+            parse_required_formulations(section, "using", tracker, parse_ordinary_declaration_statement)
                 .map(|arguments| UsingSection { arguments })
         }),
         when: sections.get("when").copied().and_then(|section| {
@@ -2595,7 +2589,7 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
                 section,
                 "given",
                 tracker,
-                parse_is_or_refined_statement_spec,
+                parse_refined_declaration_statement,
             )
             .map(|arguments| GivenSection { arguments })
         }),
@@ -2674,7 +2668,7 @@ pub(in crate::frontend::structural::parser) fn parse_corollary(
                 section,
                 "given",
                 tracker,
-                parse_is_or_refined_statement_spec,
+                parse_refined_declaration_statement,
             )
             .map(|arguments| GivenSection { arguments })
         }),
@@ -2875,7 +2869,7 @@ mod tests {
         let document = parse_ok(
             r#"
 [\structure]
-Describes: S := (X, *)
+Describes: S ::= (X, *)
 using:
 . X is \set
 . X "contains" Element
@@ -3227,8 +3221,8 @@ that:
         match &document.items[7] {
             TopLevelItem::Refines(group) => {
                 assert!(matches!(
-                    group.refines.argument,
-                    crate::frontend::formulation::ast::IsOrRefinedStatementSpec::Is(_)
+                    &group.refines.argument.relation,
+                    Some(crate::frontend::formulation::ast::DeclarationRelation::Is(_))
                 ));
                 assert!(group.specifies.is_some());
                 assert!(matches!(
@@ -3831,7 +3825,7 @@ satisfies:
             TopLevelItem::Describes(group) => {
                 assert!(matches!(
                     group.when.as_ref().expect("expected when").arguments[0],
-                    Clause::IsOrSpec(_)
+                    Clause::Declaration(_)
                 ));
                 assert!(matches!(
                     group

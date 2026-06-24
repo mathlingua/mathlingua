@@ -265,10 +265,9 @@ There is no single formulation root grammar. Different structural sections call
 different parser entrypoints. Examples include:
 
 - `parse_expression`
-- `parse_expression_binding`
+- `parse_declaration_statement`
 - `parse_form_or_declaration`
-- `parse_is_or_spec`
-- `parse_is_or_refined_statement_spec`
+- `parse_refined_declaration_statement`
 - `parse_is_via_statement`
 - `parse_command_header`
 - `parse_expression_alias`

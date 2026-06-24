@@ -916,7 +916,9 @@ mod tests {
 
     [\element.of:group{G ::= (X, *, e)}]
     Describes: x
-    when: G is \group
+    when:
+    . G is \group
+    . X is \set
     extends: x "in" X
     Documented:
     . called: "element of group"
@@ -968,6 +970,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
@@ -1012,6 +1016,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
@@ -1432,6 +1438,8 @@ mod tests {
             &file,
             r#"[\group]
     Describes: G
+    Provides:
+    . symbol: x_ "in" G :-> \\abstract
     Documented:
     . called: "group"
 
@@ -1466,6 +1474,53 @@ mod tests {
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
+    }
+
+    #[test]
+    fn check_rejects_spec_assumption_without_provided_operator() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("missing-spec-provider.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__)
+    Documented:
+    . called: "function"
+
+    [\group]
+    Describes: G ::= (X, *, e)
+    when:
+    . X is \set
+    . * is \function:on{X}:to{X}
+    . e "in" G
+    Documented:
+    . called: "group"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("missing-spec-provider.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message
+                    .message
+                    .contains("Could not validate spec fact `e \"in\" G`")
+            })
+        }));
+        assert!(event_log.has_errors());
     }
 
     #[test]

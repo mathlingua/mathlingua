@@ -213,6 +213,7 @@ fn validate_top_level_item_types(
             let mut context = TypeContext::default();
             declare_header_symbols(&group.heading, &mut context);
             declare_form_or_declaration(&group.describes.argument, &mut context);
+            assume_described_type(&group.heading, &group.describes.argument, &mut context);
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -417,6 +418,23 @@ fn validate_top_level_item_types(
         | TopLevelItem::Subsubsection(_)
         | TopLevelItem::Person(_)
         | TopLevelItem::Resource(_) => {}
+    }
+}
+
+fn assume_described_type(
+    heading: &CommandHeader,
+    described: &FormOrDeclaration,
+    context: &mut TypeContext,
+) {
+    let subject =
+        primary_form_name(described).unwrap_or_else(|| key_for_form_or_declaration(described));
+
+    for header_shape in shapes_for_header(heading) {
+        context.add_fact(TypeFact::Is {
+            subject: subject.clone(),
+            ty: header_shape.type_key,
+            signature: header_shape.shape.signature,
+        });
     }
 }
 
@@ -763,6 +781,7 @@ fn check_declaration_statement(
     if let Some(relation) = &statement.relation {
         check_declaration_relation(relation, context, path, locator, registry, event_log);
     }
+    check_declaration_spec_facts_supported(statement, context, path, locator, registry, event_log);
 }
 
 fn assume_declaration_statement(
@@ -780,6 +799,7 @@ fn assume_declaration_statement(
     if let Some(relation) = &statement.relation {
         check_declaration_relation(relation, context, path, locator, registry, event_log);
     }
+    check_declaration_spec_facts_supported(statement, context, path, locator, registry, event_log);
     if let Some(definition) = &statement.definition {
         check_expression(definition, context, path, locator, registry, event_log);
     }
@@ -829,6 +849,69 @@ fn check_declaration_relation(
         DeclarationRelation::Spec { target, .. } => {
             check_expression(target, context, path, locator, registry, event_log);
         }
+    }
+}
+
+fn check_declaration_spec_facts_supported(
+    statement: &DeclarationStatement,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let position = match &statement.relation {
+        Some(DeclarationRelation::Spec { target, .. }) => spec_target_position(target, locator),
+        _ => None,
+    };
+    for fact in facts_from_declaration_statement(statement) {
+        check_spec_fact_supported(&fact, context, path, position, registry, event_log);
+    }
+}
+
+fn check_spec_fact_supported(
+    fact: &TypeFact,
+    context: &TypeContext,
+    path: &Path,
+    position: Option<SourcePosition>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let TypeFact::Spec {
+        operator, target, ..
+    } = fact
+    else {
+        return;
+    };
+
+    let target = context.normalize_key(target);
+    if registry.spec_rules.iter().any(|rule| {
+        rule.operator == *operator
+            && has_type_signature(&target, &rule.owner_signature, context, registry)
+    }) {
+        return;
+    }
+
+    emit_error(
+        event_log,
+        path,
+        position,
+        format!(
+            "Could not validate spec fact `{}`: no provided spec operator `\"{}\"` is available for `{}`",
+            format_fact(&context.normalize_fact(fact)),
+            operator,
+            target
+        ),
+    );
+}
+
+fn spec_target_position(
+    target: &Expression,
+    locator: &mut SourceLocator<'_>,
+) -> Option<SourcePosition> {
+    match &target.kind {
+        ExpressionKind::Name(name) => locator.locate_symbol(name),
+        _ => None,
     }
 }
 
@@ -963,6 +1046,16 @@ fn check_expression(
             );
             check_name(&statement.name, context, path, locator, event_log);
             check_function_call_spec_result(statement, context, path, locator, registry, event_log);
+            if let Some(fact) = fact_from_expression(expression) {
+                check_spec_fact_supported(
+                    &fact,
+                    context,
+                    path,
+                    locator.locate_symbol(&statement.name),
+                    registry,
+                    event_log,
+                );
+            }
         }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
@@ -1855,6 +1948,16 @@ fn assume_fact_expression(
         ExpressionKind::SpecStatement(statement) => {
             check_name(&statement.name, context, path, locator, event_log);
             declare_names_from_expression(&statement.subject, context);
+            if let Some(fact) = fact_from_expression(expression) {
+                check_spec_fact_supported(
+                    &fact,
+                    context,
+                    path,
+                    locator.locate_symbol(&statement.name),
+                    registry,
+                    event_log,
+                );
+            }
         }
         _ => check_expression(expression, context, path, locator, registry, event_log),
     }

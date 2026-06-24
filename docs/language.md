@@ -715,9 +715,11 @@ Documented:
 If the context contains `R is \reals` and `r "in" R`, the checker can reduce the
 spec fact through the provided symbol and prove `r is \real`.
 
-Direct spec requirements are also supported. If a command requires `x "in" G`,
+Direct spec requirements are also supported once the target type provides the
+operator. If `\group` provides `x_ "in" G` and a command requires `x "in" G`,
 then an exact matching spec fact in the context satisfies that requirement even
-without reducing it to a type fact.
+without reducing it to a type fact. A raw fact such as `x "in" G` is invalid
+when the checker knows `G` has a type that does not provide `"in"`.
 
 ## Rendering Metadata
 

@@ -11,6 +11,7 @@ pub(super) struct SignatureShape {
 pub(super) struct HeaderShape {
     pub(super) shape: SignatureShape,
     pub(super) parameters: Vec<String>,
+    pub(super) type_key: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

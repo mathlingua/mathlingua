@@ -33,6 +33,12 @@ pub enum Token {
     InfixCommandStart,
     #[token("./")]
     InfixCommandEnd,
+    #[token("\\:")]
+    InfixSpecStart,
+    #[token("?:/")]
+    InfixSpecPredicateEnd,
+    #[token(":/")]
+    InfixSpecEnd,
     #[regex(
         r":\|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\|:",
         both_named_operator
@@ -125,6 +131,8 @@ pub enum Token {
     Pipe,
     #[token("$")]
     Dollar,
+    #[token("?")]
+    Question,
 }
 
 fn plain_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {

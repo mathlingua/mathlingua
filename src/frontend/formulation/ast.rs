@@ -116,6 +116,15 @@ pub struct InfixCommand {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InfixSpec {
+    pub span: Span,
+    pub chain: Chain,
+    pub head_args: Vec<CurlyExpressionArgs>,
+    pub tail: Vec<CommandExpressionTailPart>,
+    pub predicate: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypeExpression {
     Command(CommandExpression),
     RefinedCommand(RefinedCommandExpression),
@@ -184,6 +193,16 @@ pub struct InfixCommandHeader {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InfixSpecHeader {
+    pub span: Span,
+    pub left: FormOrDeclaration,
+    pub chain: Chain,
+    pub head_args: Vec<CurlyHeadingArgs>,
+    pub tail: Vec<CommandHeaderTailPart>,
+    pub right: FormOrDeclaration,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RefinedHeaderPart {
     pub span: Span,
     pub chain: Chain,
@@ -211,6 +230,7 @@ pub struct RefinedCommandHeader {
 pub enum CommandHeader {
     Command(CommandHeaderNode),
     Infix(InfixCommandHeader),
+    InfixSpec(InfixSpecHeader),
     Refined(RefinedCommandHeader),
 }
 
@@ -274,6 +294,11 @@ pub enum ExpressionKind {
         command: InfixCommand,
         right: Box<Expression>,
     },
+    InfixSpecStatement {
+        left: Box<Expression>,
+        spec: InfixSpec,
+        right: Box<Expression>,
+    },
     Prefix {
         operator: UnaryOperator,
         expression: Box<Expression>,
@@ -284,6 +309,7 @@ pub enum ExpressionKind {
         right: Box<Expression>,
     },
     SpecStatement(SpecStatement),
+    SpecPredicate(SpecStatement),
     IsPredicate {
         subject: Box<Expression>,
         command: CommandExpression,
@@ -609,6 +635,10 @@ pub enum DeclarationRelation {
     Is(TypeExpression),
     Spec {
         operator: String,
+        target: Box<Expression>,
+    },
+    InfixSpec {
+        spec: InfixSpec,
         target: Box<Expression>,
     },
 }

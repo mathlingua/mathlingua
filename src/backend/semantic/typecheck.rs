@@ -117,6 +117,7 @@ fn type_info_from_parts(
     DefinitionTypeInfo {
         signature: header_shape.shape.signature.clone(),
         parameters: header_shape.parameters.clone(),
+        hidden_parameters: header_shape.hidden_parameters.clone(),
         requirements,
         substitutions: context.substitutions,
         described: described.map(key_for_form_or_declaration),
@@ -159,6 +160,7 @@ fn collect_type_extension_rules(
         let subject = match &fact {
             TypeFact::Is { subject, .. }
             | TypeFact::Spec { subject, .. }
+            | TypeFact::InfixSpec { subject, .. }
             | TypeFact::FunctionType { subject, .. } => subject.clone(),
         };
         registry.extension_rules.push(TypeExtensionRule {
@@ -211,6 +213,13 @@ fn validate_top_level_item_types(
     match item {
         TopLevelItem::Describes(group) => {
             let mut context = TypeContext::default();
+            validate_spec_infix_describes_header(
+                &group.heading,
+                &group.describes.argument,
+                path,
+                locator,
+                event_log,
+            );
             declare_header_symbols(&group.heading, &mut context);
             declare_form_or_declaration(&group.describes.argument, &mut context);
             assume_described_type(&group.heading, &group.describes.argument, &mut context);
@@ -434,6 +443,31 @@ fn assume_described_type(
     described: &FormOrDeclaration,
     context: &mut TypeContext,
 ) {
+    if matches!(heading, CommandHeader::InfixSpec(_)) {
+        for header_shape in shapes_for_header(heading) {
+            let Some((subject, target)) = header_shape
+                .parameters
+                .first()
+                .cloned()
+                .zip(header_shape.parameters.last().cloned())
+            else {
+                continue;
+            };
+            let args = if header_shape.parameters.len() > 2 {
+                header_shape.parameters[1..header_shape.parameters.len() - 1].to_vec()
+            } else {
+                Vec::new()
+            };
+            context.add_fact(TypeFact::InfixSpec {
+                subject,
+                signature: header_shape.shape.signature,
+                args,
+                target,
+            });
+        }
+        return;
+    }
+
     let subject =
         primary_form_name(described).unwrap_or_else(|| key_for_form_or_declaration(described));
 
@@ -444,6 +478,29 @@ fn assume_described_type(
             signature: header_shape.shape.signature,
         });
     }
+}
+
+fn validate_spec_infix_describes_header(
+    heading: &CommandHeader,
+    described: &FormOrDeclaration,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let CommandHeader::InfixSpec(header) = heading else {
+        return;
+    };
+
+    if key_for_form_or_declaration(&header.left) == key_for_form_or_declaration(described) {
+        return;
+    }
+
+    emit_error(
+        event_log,
+        path,
+        locator.locate_heading(&shape_for_infix_spec_header(header)),
+        "Spec-infix Describes heading left operand must match the Describes argument",
+    );
 }
 
 struct TheoremLikeSections<'a> {
@@ -857,6 +914,12 @@ fn check_declaration_relation(
         DeclarationRelation::Spec { target, .. } => {
             check_expression(target, context, path, locator, registry, event_log);
         }
+        DeclarationRelation::InfixSpec { spec, target } => {
+            for expression in infix_spec_arguments(spec) {
+                check_expression(expression, context, path, locator, registry, event_log);
+            }
+            check_expression(target, context, path, locator, registry, event_log);
+        }
     }
 }
 
@@ -870,6 +933,9 @@ fn check_declaration_spec_facts_supported(
 ) {
     let position = match &statement.relation {
         Some(DeclarationRelation::Spec { target, .. }) => spec_target_position(target, locator),
+        Some(DeclarationRelation::InfixSpec { target, .. }) => {
+            spec_target_position(target, locator)
+        }
         _ => None,
     };
     for fact in facts_from_declaration_statement(statement) {
@@ -885,32 +951,74 @@ fn check_spec_fact_supported(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    let TypeFact::Spec {
-        operator, target, ..
-    } = fact
-    else {
-        return;
-    };
+    match fact {
+        TypeFact::Spec {
+            operator, target, ..
+        } => {
+            let target = context.normalize_key(target);
+            if registry.spec_rules.iter().any(|rule| {
+                rule.operator == *operator
+                    && has_type_signature(&target, &rule.owner_signature, context, registry)
+            }) {
+                return;
+            }
 
-    let target = context.normalize_key(target);
-    if registry.spec_rules.iter().any(|rule| {
-        rule.operator == *operator
-            && has_type_signature(&target, &rule.owner_signature, context, registry)
-    }) {
-        return;
+            emit_error(
+                event_log,
+                path,
+                position,
+                format!(
+                    "Could not validate spec fact `{}`: no provided spec operator `\"{}\"` is available for `{}`",
+                    format_fact(&context.normalize_fact(fact)),
+                    operator,
+                    target
+                ),
+            );
+        }
+        TypeFact::InfixSpec {
+            signature,
+            subject,
+            args,
+            target,
+        } => {
+            let Some(definition) = registry.definitions.get(signature) else {
+                emit_error(
+                    event_log,
+                    path,
+                    position,
+                    format!(
+                        "Could not validate spec fact `{}`: undefined spec-infix signature `{}`",
+                        format_fact(&context.normalize_fact(fact)),
+                        signature
+                    ),
+                );
+                return;
+            };
+
+            if definition.kind != DefinitionKind::Describes {
+                emit_error(
+                    event_log,
+                    path,
+                    position,
+                    format!(
+                        "Could not validate spec fact `{}`: spec-infix signature `{}` must be defined by Describes",
+                        format_fact(&context.normalize_fact(fact)),
+                        signature
+                    ),
+                );
+                return;
+            }
+
+            let mut actuals = Vec::with_capacity(args.len() + 2);
+            actuals.push(subject.clone());
+            actuals.extend(args.iter().cloned());
+            actuals.push(target.clone());
+            check_command_requirements(
+                signature, &actuals, context, path, position, registry, event_log,
+            );
+        }
+        _ => {}
     }
-
-    emit_error(
-        event_log,
-        path,
-        position,
-        format!(
-            "Could not validate spec fact `{}`: no provided spec operator `\"{}\"` is available for `{}`",
-            format_fact(&context.normalize_fact(fact)),
-            operator,
-            target
-        ),
-    );
 }
 
 fn spec_target_position(
@@ -1041,6 +1149,23 @@ fn check_expression(
             }
             check_expression(right, context, path, locator, registry, event_log);
         }
+        ExpressionKind::InfixSpecStatement { left, spec, right } => {
+            check_expression(left, context, path, locator, registry, event_log);
+            for expression in infix_spec_arguments(spec) {
+                check_expression(expression, context, path, locator, registry, event_log);
+            }
+            check_expression(right, context, path, locator, registry, event_log);
+            if let Some(fact) = fact_from_infix_spec_statement(left, spec, right) {
+                check_spec_fact_supported(
+                    &fact,
+                    context,
+                    path,
+                    locator.locate_reference(&shape_for_infix_spec(spec)),
+                    registry,
+                    event_log,
+                );
+            }
+        }
         ExpressionKind::Binary { left, right, .. } => {
             check_expression(left, context, path, locator, registry, event_log);
             check_expression(right, context, path, locator, registry, event_log);
@@ -1066,6 +1191,30 @@ fn check_expression(
                     event_log,
                 );
             }
+        }
+        ExpressionKind::SpecPredicate(statement) => {
+            check_expression(
+                &statement.subject,
+                context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            check_name(&statement.name, context, path, locator, event_log);
+            let fact = TypeFact::Spec {
+                subject: key_for_expression(&statement.subject),
+                operator: statement.operator.clone(),
+                target: statement.name.clone(),
+            };
+            check_spec_fact_supported(
+                &fact,
+                context,
+                path,
+                locator.locate_symbol(&statement.name),
+                registry,
+                event_log,
+            );
         }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
@@ -1565,6 +1714,13 @@ fn check_command_requirements(
 
     let mut requirement_context = context.clone();
     for (left, right) in &info.substitutions {
+        if info
+            .hidden_parameters
+            .iter()
+            .any(|name| key_mentions_name(left, name) || key_mentions_name(right, name))
+        {
+            continue;
+        }
         requirement_context.add_substitution(
             substitute_key(left, &substitutions),
             substitute_key(right, &substitutions),
@@ -1572,6 +1728,13 @@ fn check_command_requirements(
     }
 
     for requirement in &info.requirements {
+        if info
+            .hidden_parameters
+            .iter()
+            .any(|name| fact_mentions_name(requirement, name))
+        {
+            continue;
+        }
         let instantiated = substitute_fact(requirement, &substitutions);
         if !prove_fact(&instantiated, &requirement_context, registry) {
             emit_error(
@@ -1584,6 +1747,45 @@ fn check_command_requirements(
                 ),
             );
         }
+    }
+}
+
+fn fact_mentions_name(fact: &TypeFact, name: &str) -> bool {
+    match fact {
+        TypeFact::Is { subject, ty, .. } => {
+            key_mentions_name(subject, name) || key_mentions_name(ty, name)
+        }
+        TypeFact::Spec {
+            subject, target, ..
+        } => key_mentions_name(subject, name) || key_mentions_name(target, name),
+        TypeFact::InfixSpec {
+            subject,
+            args,
+            target,
+            ..
+        } => {
+            key_mentions_name(subject, name)
+                || args.iter().any(|arg| key_mentions_name(arg, name))
+                || key_mentions_name(target, name)
+        }
+        TypeFact::FunctionType {
+            subject,
+            inputs,
+            output,
+        } => {
+            key_mentions_name(subject, name)
+                || inputs
+                    .iter()
+                    .any(|spec| function_type_spec_mentions_name(spec, name))
+                || function_type_spec_mentions_name(output, name)
+        }
+    }
+}
+
+fn function_type_spec_mentions_name(spec: &FunctionTypeFactSpec, name: &str) -> bool {
+    match spec {
+        FunctionTypeFactSpec::Is { ty, .. } => key_mentions_name(ty, name),
+        FunctionTypeFactSpec::Spec { target, .. } => key_mentions_name(target, name),
     }
 }
 
@@ -1638,20 +1840,34 @@ fn reduce_extension_fact(
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> Vec<TypeFact> {
-    let TypeFact::Is {
-        subject,
-        ty,
-        signature,
-    } = fact
-    else {
-        return Vec::new();
+    let (subject, signature, actuals) = match fact {
+        TypeFact::Is {
+            subject,
+            ty,
+            signature,
+        } => (
+            subject.clone(),
+            signature.clone(),
+            actuals_for_type_key(signature, ty).unwrap_or_default(),
+        ),
+        TypeFact::InfixSpec {
+            subject,
+            signature,
+            args,
+            target,
+        } => {
+            let mut actuals = Vec::with_capacity(args.len() + 2);
+            actuals.push(subject.clone());
+            actuals.extend(args.iter().cloned());
+            actuals.push(target.clone());
+            (subject.clone(), signature.clone(), actuals)
+        }
+        _ => return Vec::new(),
     };
-
-    let actuals = actuals_for_type_key(signature, ty).unwrap_or_default();
     registry
         .extension_rules
         .iter()
-        .filter(|rule| rule.subtype_signature == *signature)
+        .filter(|rule| rule.subtype_signature == signature.as_str())
         .map(|rule| {
             let mut substitutions = rule
                 .parameters
@@ -1849,6 +2065,7 @@ fn fact_subject(fact: &TypeFact) -> &str {
     match fact {
         TypeFact::Is { subject, .. }
         | TypeFact::Spec { subject, .. }
+        | TypeFact::InfixSpec { subject, .. }
         | TypeFact::FunctionType { subject, .. } => subject,
     }
 }
@@ -1941,6 +2158,17 @@ impl TypeContext {
             } => TypeFact::Spec {
                 subject: self.normalize_key(subject),
                 operator: operator.clone(),
+                target: self.normalize_key(target),
+            },
+            TypeFact::InfixSpec {
+                subject,
+                signature,
+                args,
+                target,
+            } => TypeFact::InfixSpec {
+                subject: self.normalize_key(subject),
+                signature: signature.clone(),
+                args: args.iter().map(|arg| self.normalize_key(arg)).collect(),
                 target: self.normalize_key(target),
             },
             TypeFact::FunctionType {
@@ -2188,6 +2416,23 @@ fn assume_fact_expression(
                 );
             }
         }
+        ExpressionKind::InfixSpecStatement { left, spec, right } if !spec.predicate => {
+            for expression in infix_spec_arguments(spec) {
+                check_expression(expression, context, path, locator, registry, event_log);
+            }
+            check_expression(right, context, path, locator, registry, event_log);
+            declare_names_from_expression(left, context);
+            if let Some(fact) = fact_from_infix_spec_statement(left, spec, right) {
+                check_spec_fact_supported(
+                    &fact,
+                    context,
+                    path,
+                    locator.locate_reference(&shape_for_infix_spec(spec)),
+                    registry,
+                    event_log,
+                );
+            }
+        }
         _ => check_expression(expression, context, path, locator, registry, event_log),
     }
 }
@@ -2321,11 +2566,22 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
             }
             declare_names_from_expression(right, context);
         }
+        ExpressionKind::InfixSpecStatement { left, spec, right } => {
+            declare_names_from_expression(left, context);
+            for expression in infix_spec_arguments(spec) {
+                declare_names_from_expression(expression, context);
+            }
+            declare_names_from_expression(right, context);
+        }
         ExpressionKind::Binary { left, right, .. } => {
             declare_names_from_expression(left, context);
             declare_names_from_expression(right, context);
         }
         ExpressionKind::SpecStatement(statement) => {
+            declare_names_from_expression(&statement.subject, context);
+            context.declare_name(statement.name.clone());
+        }
+        ExpressionKind::SpecPredicate(statement) => {
             declare_names_from_expression(&statement.subject, context);
             context.declare_name(statement.name.clone());
         }
@@ -2423,6 +2679,20 @@ fn substitute_fact(fact: &TypeFact, substitutions: &HashMap<String, String>) -> 
             operator: operator.clone(),
             target: substitute_key(target, substitutions),
         },
+        TypeFact::InfixSpec {
+            subject,
+            signature,
+            args,
+            target,
+        } => TypeFact::InfixSpec {
+            subject: substitute_key(subject, substitutions),
+            signature: signature.clone(),
+            args: args
+                .iter()
+                .map(|arg| substitute_key(arg, substitutions))
+                .collect(),
+            target: substitute_key(target, substitutions),
+        },
         TypeFact::FunctionType {
             subject,
             inputs,
@@ -2487,6 +2757,16 @@ fn substitute_key(key: &str, substitutions: &HashMap<String, String>) -> String 
     result
 }
 
+fn key_mentions_name(key: &str, name: &str) -> bool {
+    if name.is_empty() {
+        return false;
+    }
+
+    key.match_indices(name).any(|(index, _)| {
+        is_name_boundary(key, index, false) && is_name_boundary(key, index + name.len(), true)
+    })
+}
+
 fn is_name_boundary(text: &str, index: usize, after: bool) -> bool {
     if index == 0 || index == text.len() {
         return true;
@@ -2536,6 +2816,22 @@ fn facts_from_declaration_statement(statement: &DeclarationStatement) -> Vec<Typ
                 target: key_for_expression(target),
             })
             .collect(),
+        DeclarationRelation::InfixSpec { spec, target } => {
+            let shape = shape_for_infix_spec(spec);
+            let args = infix_spec_arguments(spec)
+                .into_iter()
+                .map(key_for_expression)
+                .collect::<Vec<_>>();
+            declaration_subject_keys(statement)
+                .into_iter()
+                .map(|subject| TypeFact::InfixSpec {
+                    subject,
+                    signature: shape.signature.clone(),
+                    args: args.clone(),
+                    target: key_for_expression(target),
+                })
+                .collect()
+        }
     }
 }
 
@@ -2626,8 +2922,28 @@ fn fact_from_expression(expression: &Expression) -> Option<TypeFact> {
             operator: statement.operator.clone(),
             target: statement.name.clone(),
         }),
+        ExpressionKind::InfixSpecStatement { left, spec, right } if !spec.predicate => {
+            fact_from_infix_spec_statement(left, spec, right)
+        }
         _ => None,
     }
+}
+
+fn fact_from_infix_spec_statement(
+    left: &Expression,
+    spec: &InfixSpec,
+    right: &Expression,
+) -> Option<TypeFact> {
+    let shape = shape_for_infix_spec(spec);
+    Some(TypeFact::InfixSpec {
+        subject: key_for_expression(left),
+        signature: shape.signature,
+        args: infix_spec_arguments(spec)
+            .into_iter()
+            .map(key_for_expression)
+            .collect(),
+        target: key_for_expression(right),
+    })
 }
 
 fn fact_from_type_assertion(subject: &Expression, ty: &TypeExpression) -> Option<TypeFact> {
@@ -2815,6 +3131,12 @@ fn key_for_expression(expression: &Expression) -> String {
             key_for_infix_command(command),
             key_for_expression(right)
         ),
+        ExpressionKind::InfixSpecStatement { left, spec, right } => format!(
+            "{}{}{}",
+            key_for_expression(left),
+            key_for_infix_spec(spec),
+            key_for_expression(right)
+        ),
         ExpressionKind::Prefix {
             operator,
             expression,
@@ -2831,6 +3153,12 @@ fn key_for_expression(expression: &Expression) -> String {
         ),
         ExpressionKind::SpecStatement(statement) => format!(
             "{}\"{}\"{}",
+            key_for_expression(&statement.subject),
+            statement.operator,
+            statement.name
+        ),
+        ExpressionKind::SpecPredicate(statement) => format!(
+            "{}\"{}\"?{}",
             key_for_expression(&statement.subject),
             statement.operator,
             statement.name
@@ -2994,6 +3322,22 @@ fn key_for_infix_command(command: &InfixCommand) -> String {
     key
 }
 
+fn key_for_infix_spec(spec: &InfixSpec) -> String {
+    let mut key = format!("\\:{}", format_chain(&spec.chain));
+    append_expression_args(&mut key, &spec.head_args);
+    for tail in &spec.tail {
+        key.push(':');
+        key.push_str(&format_chain(&tail.chain));
+        append_expression_args(&mut key, &tail.args);
+    }
+    if spec.predicate {
+        key.push_str("?:/");
+    } else {
+        key.push_str(":/");
+    }
+    key
+}
+
 fn append_expression_args(key: &mut String, groups: &[CurlyExpressionArgs]) {
     for args in groups {
         key.push('{');
@@ -3038,6 +3382,19 @@ fn infix_command_arguments(command: &InfixCommand) -> Vec<&Expression> {
         .chain(
             command
                 .tail
+                .iter()
+                .flat_map(|tail| tail.args.iter())
+                .flat_map(|args| args.expressions.iter()),
+        )
+        .collect()
+}
+
+fn infix_spec_arguments(spec: &InfixSpec) -> Vec<&Expression> {
+    spec.head_args
+        .iter()
+        .flat_map(|args| args.expressions.iter())
+        .chain(
+            spec.tail
                 .iter()
                 .flat_map(|tail| tail.args.iter())
                 .flat_map(|args| args.expressions.iter()),
@@ -3148,6 +3505,7 @@ fn header_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
     match header {
         CommandHeader::Command(command) => command_header_forms(command),
         CommandHeader::Infix(command) => infix_header_forms(command),
+        CommandHeader::InfixSpec(spec) => infix_spec_header_forms(spec),
         CommandHeader::Refined(command) => refined_header_forms(command),
     }
 }
@@ -3181,6 +3539,19 @@ fn infix_header_forms(command: &InfixCommandHeader) -> Vec<&FormOrDeclaration> {
                 .flat_map(|args| args.forms.iter()),
         )
         .chain(command.right.iter())
+        .collect()
+}
+
+fn infix_spec_header_forms(spec: &InfixSpecHeader) -> Vec<&FormOrDeclaration> {
+    std::iter::once(&spec.left)
+        .chain(spec.head_args.iter().flat_map(|args| args.forms.iter()))
+        .chain(
+            spec.tail
+                .iter()
+                .flat_map(|tail| tail.args.iter())
+                .flat_map(|args| args.forms.iter()),
+        )
+        .chain(std::iter::once(&spec.right))
         .collect()
 }
 
@@ -3229,6 +3600,19 @@ fn format_fact(fact: &TypeFact) -> String {
             operator,
             target,
         } => format!("{subject} \"{operator}\" {target}"),
+        TypeFact::InfixSpec {
+            subject,
+            signature,
+            args,
+            target,
+        } => {
+            let rendered_args = if args.is_empty() {
+                String::new()
+            } else {
+                format!("{{{}}}", args.join(", "))
+            };
+            format!("{subject} {signature}{rendered_args} {target}")
+        }
         TypeFact::FunctionType {
             subject,
             inputs,

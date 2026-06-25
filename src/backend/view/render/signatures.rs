@@ -10,6 +10,12 @@ pub(super) fn command_header_signature(header: &CommandHeader) -> String {
         CommandHeader::Infix(command) => {
             format!("\\.{}./", format_chain(&command.chain))
         }
+        CommandHeader::InfixSpec(spec) => {
+            let mut signature = format!("\\:{}", format_chain(&spec.chain));
+            add_header_tail_signature(&mut signature, &spec.tail);
+            signature.push_str(":/");
+            signature
+        }
         CommandHeader::Refined(command) => refined_command_header_signature(command),
     }
 }
@@ -24,6 +30,7 @@ pub(super) fn command_header_signatures(header: &CommandHeader) -> Vec<CommandHe
     match header {
         CommandHeader::Command(command) => simple_command_header_signatures(command),
         CommandHeader::Infix(command) => infix_command_header_signatures(command),
+        CommandHeader::InfixSpec(spec) => infix_spec_header_signatures(spec),
         CommandHeader::Refined(command) => refined_command_header_signatures(command),
     }
 }
@@ -65,6 +72,26 @@ pub(super) fn infix_command_header_signatures(
             parameters.extend(right_parameters.clone());
             CommandHeaderSignature {
                 signature: format!("{base_signature}{}./", variant.signature_suffix),
+                parameters,
+            }
+        })
+        .collect()
+}
+
+pub(super) fn infix_spec_header_signatures(spec: &InfixSpecHeader) -> Vec<CommandHeaderSignature> {
+    let base_signature = format!("\\:{}", format_chain(&spec.chain));
+    let mut base_parameters = infix_operand_parameters(Some(&spec.left));
+    base_parameters.extend(heading_group_parameters(&spec.head_args));
+    let right_parameters = infix_operand_parameters(Some(&spec.right));
+
+    header_tail_variants(&spec.tail)
+        .into_iter()
+        .map(|variant| {
+            let mut parameters = base_parameters.clone();
+            parameters.extend(variant.parameters);
+            parameters.extend(right_parameters.clone());
+            CommandHeaderSignature {
+                signature: format!("{base_signature}{}:/", variant.signature_suffix),
                 parameters,
             }
         })

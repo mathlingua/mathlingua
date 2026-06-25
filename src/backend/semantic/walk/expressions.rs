@@ -50,12 +50,20 @@ pub(in crate::backend::semantic) fn walk_expression(
             walk_infix_command_arguments(command, visit);
             walk_expression(right, visit);
         }
+        ExpressionKind::InfixSpecStatement { left, spec, right } => {
+            walk_expression(left, visit);
+            let shape = shape_for_infix_spec(spec);
+            visit(&shape);
+            walk_infix_spec_arguments(spec, visit);
+            walk_expression(right, visit);
+        }
         ExpressionKind::Prefix { expression, .. } => walk_expression(expression, visit),
         ExpressionKind::Binary { left, right, .. } => {
             walk_expression(left, visit);
             walk_expression(right, visit);
         }
         ExpressionKind::SpecStatement(statement) => walk_expression(&statement.subject, visit),
+        ExpressionKind::SpecPredicate(statement) => walk_expression(&statement.subject, visit),
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
             walk_expression(subject, visit);
@@ -103,6 +111,24 @@ pub(in crate::backend::semantic) fn walk_infix_command_arguments(
         }
     }
     for tail in &command.tail {
+        for args in &tail.args {
+            for expression in &args.expressions {
+                walk_expression(expression, visit);
+            }
+        }
+    }
+}
+
+pub(in crate::backend::semantic) fn walk_infix_spec_arguments(
+    spec: &InfixSpec,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
+    for args in &spec.head_args {
+        for expression in &args.expressions {
+            walk_expression(expression, visit);
+        }
+    }
+    for tail in &spec.tail {
         for args in &tail.args {
             for expression in &args.expressions {
                 walk_expression(expression, visit);

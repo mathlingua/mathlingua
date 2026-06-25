@@ -35,6 +35,13 @@ fn render_declaration_relation(
                 render_expression(target, registry)
             )
         }
+        DeclarationRelation::InfixSpec { spec, target } => {
+            format!(
+                "{} {}",
+                render_command_like(&spec.chain, registry),
+                render_expression(target, registry)
+            )
+        }
     }
 }
 

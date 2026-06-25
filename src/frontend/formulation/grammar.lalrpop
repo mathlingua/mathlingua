@@ -15,6 +15,9 @@ extern {
         "|]" => Token::RNamedArguments,
         "\\." => Token::InfixCommandStart,
         "./" => Token::InfixCommandEnd,
+        "\\:" => Token::InfixSpecStart,
+        "?:/" => Token::InfixSpecPredicateEnd,
+        ":/" => Token::InfixSpecEnd,
         "both_named_operator" => Token::BothNamedOperator(<String>),
         "named_operator" => Token::NamedOperator(<String>),
         "left_named_operator" => Token::LeftNamedOperator(<String>),
@@ -48,6 +51,7 @@ extern {
         "." => Token::Dot,
         "|" => Token::Pipe,
         "$" => Token::Dollar,
+        "?" => Token::Question,
     }
 }
 
@@ -533,6 +537,21 @@ InfixCommand: ast::InfixCommand = {
     },
 };
 
+InfixSpecEnd: bool = {
+    ":/" => false,
+    "?:/" => true,
+};
+
+InfixSpec: ast::InfixSpec = {
+    <l:@L> "\\:" <chain:Chain> <head_args:CurlyExpressionArgsOpt> <tail:CommandExpressionTailOpt> <predicate:InfixSpecEnd> <r:@R> => ast::InfixSpec {
+        span: Span::new(l, r),
+        chain,
+        head_args,
+        tail,
+        predicate,
+    },
+};
+
 ExpressionSpec: ast::SpecStatement = {
     <l:@L> <subject:EqualityExpression> <operator:QuotedName> <name:Name> <r:@R> => ast::SpecStatement {
         span: Span::new(l, r),
@@ -672,9 +691,26 @@ EqualityExpression: ast::Expression = {
 
 SpecOrPredicateExpression: ast::Expression = {
     <expression:EqualityExpression> => expression,
+    <l:@L> <left:EqualityExpression> <spec:InfixSpec> <right:EqualityExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::InfixSpecStatement {
+            left: Box::new(left),
+            spec,
+            right: Box::new(right),
+        },
+    ),
     <l:@L> <subject:EqualityExpression> <operator:QuotedName> <name:Name> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::SpecStatement(ast::SpecStatement {
+            span: Span::new(l, r),
+            subject: Box::new(subject),
+            operator,
+            name,
+        }),
+    ),
+    <l:@L> <subject:EqualityExpression> <operator:QuotedName> "?" <name:Name> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::SpecPredicate(ast::SpecStatement {
             span: Span::new(l, r),
             subject: Box::new(subject),
             operator,

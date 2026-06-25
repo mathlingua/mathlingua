@@ -51,6 +51,12 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             render_command_like(&command.chain, registry),
             render_expression(right, registry)
         ),
+        ExpressionKind::InfixSpecStatement { left, spec, right } => format!(
+            "{} {} {}",
+            render_expression(left, registry),
+            render_infix_spec_like(spec, registry),
+            render_expression(right, registry)
+        ),
         ExpressionKind::Prefix {
             operator,
             expression,
@@ -71,7 +77,9 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             render_binary_operator(operator),
             render_expression(right, registry)
         ),
-        ExpressionKind::SpecStatement(statement) => render_spec_statement(statement, registry),
+        ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
+            render_spec_statement(statement, registry)
+        }
         ExpressionKind::IsPredicate { subject, command } => format!(
             "{} \\textrm{{ is }} {}",
             render_expression(subject, registry),
@@ -94,6 +102,10 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             ),
         },
     }
+}
+
+fn render_infix_spec_like(spec: &InfixSpec, registry: &RenderRegistry) -> String {
+    render_command_like(&spec.chain, registry)
 }
 
 pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegistry) -> String {

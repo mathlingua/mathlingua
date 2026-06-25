@@ -4,6 +4,7 @@ pub(super) fn shape_for_header(header: &CommandHeader) -> SignatureShape {
     match header {
         CommandHeader::Command(command) => shape_for_command_header_node(command),
         CommandHeader::Infix(command) => shape_for_infix_command_header(command),
+        CommandHeader::InfixSpec(spec) => shape_for_infix_spec_header(spec),
         CommandHeader::Refined(command) => shape_for_refined_command_header(command),
     }
 }
@@ -12,6 +13,7 @@ pub(super) fn shapes_for_header(header: &CommandHeader) -> Vec<HeaderShape> {
     match header {
         CommandHeader::Command(command) => shapes_for_command_header_node(command),
         CommandHeader::Infix(command) => shapes_for_infix_command_header(command),
+        CommandHeader::InfixSpec(spec) => shapes_for_infix_spec_header(spec),
         CommandHeader::Refined(command) => shapes_for_refined_command_header(command),
     }
 }
@@ -63,6 +65,7 @@ pub(super) fn shapes_for_command_header_node(command: &CommandHeaderNode) -> Vec
                     fallback_shapes: Vec::new(),
                 },
                 parameters,
+                hidden_parameters: variant.hidden_parameters.clone(),
                 type_key: format!(
                     "{base_type_key}{}{}",
                     variant.type_key_suffix, paren_type_key_suffix
@@ -112,7 +115,55 @@ pub(super) fn shapes_for_infix_command_header(command: &InfixCommandHeader) -> V
                     fallback_shapes: Vec::new(),
                 },
                 parameters,
+                hidden_parameters: variant.hidden_parameters.clone(),
                 type_key: format!("{base_type_key}{}./", variant.type_key_suffix),
+            }
+        })
+        .collect()
+}
+
+pub(super) fn shape_for_infix_spec_header(spec: &InfixSpecHeader) -> SignatureShape {
+    let mut signature = format!("\\:{}", format_chain(&spec.chain));
+    let mut arg_groups = Vec::new();
+    add_heading_curly_groups(&mut arg_groups, &spec.head_args);
+    add_header_tail(&mut signature, &mut arg_groups, &spec.tail);
+    signature.push_str(":/");
+    SignatureShape {
+        signature,
+        arg_groups,
+        fallback_shapes: Vec::new(),
+    }
+}
+
+pub(super) fn shapes_for_infix_spec_header(spec: &InfixSpecHeader) -> Vec<HeaderShape> {
+    let base_signature = format!("\\:{}", format_chain(&spec.chain));
+    let mut base_type_key = base_signature.clone();
+    append_heading_curly_key_groups(&mut base_type_key, &spec.head_args);
+    let mut base_arg_groups = Vec::new();
+    add_heading_curly_groups(&mut base_arg_groups, &spec.head_args);
+    let mut base_parameters = vec![key_for_form_or_declaration(&spec.left)];
+    base_parameters.extend(heading_group_parameters(&spec.head_args));
+    let right_parameters = vec![key_for_form_or_declaration(&spec.right)];
+
+    header_tail_variants(&spec.tail)
+        .into_iter()
+        .map(|variant| {
+            let mut arg_groups = base_arg_groups.clone();
+            arg_groups.extend(variant.arg_groups);
+
+            let mut parameters = base_parameters.clone();
+            parameters.extend(variant.parameters);
+            parameters.extend(right_parameters.clone());
+
+            HeaderShape {
+                shape: SignatureShape {
+                    signature: format!("{base_signature}{}:/", variant.signature_suffix),
+                    arg_groups,
+                    fallback_shapes: Vec::new(),
+                },
+                parameters,
+                hidden_parameters: variant.hidden_parameters.clone(),
+                type_key: format!("{base_type_key}{}:/", variant.type_key_suffix),
             }
         })
         .collect()
@@ -215,6 +266,11 @@ pub(super) fn shapes_for_refined_command_header(
                         fallback_shapes: Vec::new(),
                     },
                     parameters,
+                    hidden_parameters: {
+                        let mut hidden_parameters = prefix_variant.hidden_parameters.clone();
+                        hidden_parameters.extend(tail_variant.hidden_parameters.clone());
+                        hidden_parameters
+                    },
                     type_key: format!(
                         "{}{}{}{}{}",
                         prefix_variant.type_key_suffix,
@@ -253,6 +309,19 @@ pub(super) fn shape_for_infix_command(command: &InfixCommand) -> SignatureShape 
     add_expression_curly_groups(&mut arg_groups, &command.head_args);
     add_expression_tail(&mut signature, &mut arg_groups, &command.tail);
     signature.push_str("./");
+    SignatureShape {
+        signature,
+        arg_groups,
+        fallback_shapes: Vec::new(),
+    }
+}
+
+pub(super) fn shape_for_infix_spec(spec: &InfixSpec) -> SignatureShape {
+    let mut signature = format!("\\:{}", format_chain(&spec.chain));
+    let mut arg_groups = Vec::new();
+    add_expression_curly_groups(&mut arg_groups, &spec.head_args);
+    add_expression_tail(&mut signature, &mut arg_groups, &spec.tail);
+    signature.push_str(":/");
     SignatureShape {
         signature,
         arg_groups,
@@ -387,6 +456,7 @@ struct HeaderVariant {
     type_key_suffix: String,
     arg_groups: Vec<ArgGroupShape>,
     parameters: Vec<String>,
+    hidden_parameters: Vec<String>,
 }
 
 fn header_tail_variants(tail: &[CommandHeaderTailPart]) -> Vec<HeaderVariant> {
@@ -403,6 +473,10 @@ fn header_tail_variants(tail: &[CommandHeaderTailPart]) -> Vec<HeaderVariant> {
             .collect::<Vec<_>>();
 
         if part.optional {
+            let hidden_parameters = heading_group_parameters(&part.args);
+            for variant in &mut variants {
+                variant.hidden_parameters.extend(hidden_parameters.clone());
+            }
             variants.extend(included);
         } else {
             variants = included;
@@ -442,6 +516,8 @@ fn combine_header_variants(
                 .push_str(&render_type_key_suffix(suffix));
             next.arg_groups.extend(suffix.arg_groups.clone());
             next.parameters.extend(suffix.parameters.clone());
+            next.hidden_parameters
+                .extend(suffix.hidden_parameters.clone());
             combined.push(next);
         }
     }
@@ -455,6 +531,7 @@ fn deduplicate_header_variants(variants: Vec<HeaderVariant>) -> Vec<HeaderVarian
             existing.signature_suffix == variant.signature_suffix
                 && existing.type_key_suffix == variant.type_key_suffix
                 && existing.arg_groups == variant.arg_groups
+                && existing.hidden_parameters == variant.hidden_parameters
         }) {
             continue;
         }

@@ -178,6 +178,7 @@ pub(super) fn command_header_forms(header: &CommandHeader) -> Vec<&FormOrDeclara
     match header {
         CommandHeader::Command(header) => simple_command_header_forms(header),
         CommandHeader::Infix(header) => infix_command_header_forms(header),
+        CommandHeader::InfixSpec(header) => infix_spec_header_forms(header),
         CommandHeader::Refined(header) => refined_command_header_forms(header),
     }
 }
@@ -212,6 +213,21 @@ pub(super) fn infix_command_header_forms(header: &InfixCommandHeader) -> Vec<&Fo
     if let Some(right) = &header.right {
         forms.push(right);
     }
+    forms
+}
+
+pub(super) fn infix_spec_header_forms(header: &InfixSpecHeader) -> Vec<&FormOrDeclaration> {
+    let mut forms = Vec::new();
+    forms.push(&header.left);
+    forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
+    forms.extend(
+        header
+            .tail
+            .iter()
+            .flat_map(|part| part.args.iter())
+            .flat_map(|args| args.forms.iter()),
+    );
+    forms.push(&header.right);
     forms
 }
 

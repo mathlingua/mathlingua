@@ -1019,6 +1019,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
@@ -1139,6 +1141,214 @@ mod tests {
                 message.message == "Could not prove requirement `r is \\real` for command `\\foo`"
             })
         }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_accepts_spec_infix_definitions_predicates_and_extensions() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("spec-infix-valid.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [A \:subset:/ B]
+    Describes: A
+    when: B is \set
+    extends: A is \set
+    satisfies:
+    . forAll: a "in" A
+      then:
+      . a "in"? B
+    Documented:
+    . called: "subset"
+
+    [\needs.set{s}]
+    Describes: x
+    when: s is \set
+    Documented:
+    . called: "needs set"
+
+    Theorem:
+    given: B is \set
+    where:
+    . A \:subset:/ B
+    then:
+    . A \:subset?:/ B
+    . \needs.set{A}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("spec-infix-valid.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_spec_infix_requirement_mismatches() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("spec-infix-requirement.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\thing]
+    Describes: X
+    Documented:
+    . called: "thing"
+
+    [A \:subset:/ B]
+    Describes: A
+    when: B is \set
+    Documented:
+    . called: "subset"
+
+    Theorem:
+    given:
+    . A is \set
+    . B is \thing
+    then:
+    . A \:subset?:/ B
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("spec-infix-requirement.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message
+                    == "Could not prove requirement `B is \\set` for command `\\:subset:/`"
+            })
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_accepts_spec_infix_optional_tail_hidden_witnesses() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("spec-infix-optional-tail.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [A \:subset:?within{U}:/ B]
+    Describes: A
+    when:
+    . U is \set
+    . B \:subset:/ U
+    extends: A is \set
+    satisfies:
+    . forAll: a "in" A
+      then:
+      . a "in"? B
+    Documented:
+    . called: "subset"
+
+    Theorem:
+    given:
+    . U is \set
+    . B \:subset:/ U
+    where:
+    . A \:subset:within{U}:/ B
+    then:
+    . A \:subset?:/ B
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("spec-infix-optional-tail.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_invalid_spec_infix_headings() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("spec-infix-invalid-heading.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [A \:wrong:/ B]
+    Describes: C
+    when: B is \set
+    Documented:
+    . called: "wrong"
+
+    [A \:states:/ B]
+    States:
+    that: A = A
+    Documented:
+    . called: "states"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("spec-infix-invalid-heading.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let messages = user_events(&event_log)
+            .iter()
+            .filter_map(Event::as_message)
+            .map(|event| event.message.clone())
+            .collect::<Vec<_>>();
+        assert!(messages.contains(&String::from(
+            "Spec-infix Describes heading left operand must match the Describes argument"
+        )));
+        assert!(messages.contains(&String::from(
+            "Spec-infix headings may only be used with Describes entries"
+        )));
         assert!(event_log.has_errors());
     }
 

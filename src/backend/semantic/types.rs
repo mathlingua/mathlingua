@@ -11,6 +11,7 @@ pub(super) struct SignatureShape {
 pub(super) struct HeaderShape {
     pub(super) shape: SignatureShape,
     pub(super) parameters: Vec<String>,
+    pub(super) hidden_parameters: Vec<String>,
     pub(super) type_key: String,
 }
 
@@ -38,6 +39,7 @@ pub(super) struct DefinitionEntry {
 pub(super) struct DefinitionTypeInfo {
     pub(super) signature: String,
     pub(super) parameters: Vec<String>,
+    pub(super) hidden_parameters: Vec<String>,
     pub(super) requirements: Vec<TypeFact>,
     pub(super) substitutions: Vec<(String, String)>,
     pub(super) described: Option<String>,
@@ -53,6 +55,12 @@ pub(super) enum TypeFact {
     Spec {
         subject: String,
         operator: String,
+        target: String,
+    },
+    InfixSpec {
+        subject: String,
+        signature: String,
+        args: Vec<String>,
         target: String,
     },
     FunctionType {

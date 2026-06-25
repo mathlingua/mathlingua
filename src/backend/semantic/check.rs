@@ -28,6 +28,17 @@ pub(super) fn collect_document_definitions(
         let kind = definition.kind;
         let full_shape = shape_for_header(definition.heading);
         let position = locator.locate_heading(&full_shape);
+        if matches!(definition.heading, CommandHeader::InfixSpec(_))
+            && kind != DefinitionKind::Describes
+        {
+            emit_error(
+                event_log,
+                &file.path,
+                position,
+                "Spec-infix headings may only be used with Describes entries",
+            );
+            continue;
+        }
         check_documented_rendering(file, kind, definition.documented, position, event_log);
         for header_shape in shapes_for_header(definition.heading) {
             if let Some(previous) = registry.definitions.get(&header_shape.shape.signature) {

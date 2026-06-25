@@ -90,6 +90,10 @@ pub(super) fn is_heading_line(source: &str, offset: usize) -> bool {
 }
 
 pub(super) fn matches_signature_at(source: &str, offset: usize, signature: &str) -> bool {
+    if signature.starts_with("\\:") {
+        return matches_infix_spec_signature_at(source, offset, signature);
+    }
+
     if signature.starts_with("\\.") || signature.contains("::") {
         return source
             .get(offset..)
@@ -125,6 +129,45 @@ pub(super) fn matches_signature_at(source: &str, offset: usize, signature: &str)
         .chars()
         .next()
         .is_some_and(|ch| ch == ':' || ch == '.' || ch == '_' || ch.is_ascii_alphanumeric())
+}
+
+fn matches_infix_spec_signature_at(source: &str, offset: usize, signature: &str) -> bool {
+    let Some(body) = signature
+        .strip_prefix("\\:")
+        .and_then(|text| text.strip_suffix(":/"))
+    else {
+        return false;
+    };
+    let parts: Vec<&str> = body.split(':').collect();
+    let Some(first) = parts.first() else {
+        return false;
+    };
+    let Some(mut remaining) = source.get(offset..) else {
+        return false;
+    };
+    let Some(after_start) = remaining.strip_prefix("\\:") else {
+        return false;
+    };
+    remaining = after_start;
+    if !remaining.starts_with(first) {
+        return false;
+    }
+    remaining = &remaining[first.len()..];
+    remaining = skip_argument_groups(remaining);
+
+    for part in parts.iter().skip(1) {
+        let Some(after_colon) = remaining.strip_prefix(':') else {
+            return false;
+        };
+        let after_marker = after_colon.strip_prefix('?').unwrap_or(after_colon);
+        if !after_marker.starts_with(part) {
+            return false;
+        }
+        remaining = &after_marker[part.len()..];
+        remaining = skip_argument_groups(remaining);
+    }
+
+    remaining.starts_with(":/") || remaining.starts_with("?:/")
 }
 
 pub(super) fn find_symbol_occurrence(source: &str, name: &str, start: usize) -> Option<usize> {

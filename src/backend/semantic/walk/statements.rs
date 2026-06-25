@@ -24,8 +24,16 @@ pub(in crate::backend::semantic) fn walk_declaration_statement(
     if let Some(definition) = &statement.definition {
         walk_expression(definition, visit);
     }
-    if let Some(DeclarationRelation::Is(ty)) = &statement.relation {
-        walk_type_expression(ty, visit);
+    match &statement.relation {
+        Some(DeclarationRelation::Is(ty)) => walk_type_expression(ty, visit),
+        Some(DeclarationRelation::InfixSpec { spec, target }) => {
+            let shape = shape_for_infix_spec(spec);
+            visit(&shape);
+            walk_infix_spec_arguments(spec, visit);
+            walk_expression(target, visit);
+        }
+        Some(DeclarationRelation::Spec { target, .. }) => walk_expression(target, visit),
+        None => {}
     }
 }
 

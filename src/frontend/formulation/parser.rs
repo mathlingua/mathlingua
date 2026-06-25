@@ -7,10 +7,10 @@ use super::ast::{
     CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs, DeclarationRelation,
     DeclarationStatement, Expression, ExpressionAlias, ExpressionAliasLhs, ExpressionBinding,
     ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionType, FunctionTypeSpec,
-    FunctionTypeSpecKind, InfixCommandHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement,
-    IsSubject, IsSubjectForm, IsSubjectKind, IsViaStatement, LabelHeader, Operator,
-    ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm, PlaceholderFormKind,
-    PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
+    FunctionTypeSpecKind, InfixCommandHeader, InfixSpec, InfixSpecHeader, IsOrRefinedStatementSpec,
+    IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind, IsViaStatement, LabelHeader,
+    Operator, ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm,
+    PlaceholderFormKind, PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
     RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, Span, SpecOperatorAlias,
     SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement, TypeExpression,
     WritingAlias,
@@ -114,6 +114,51 @@ pub(super) fn split_subject_operator_name(input: &str) -> Option<(&str, &str, &s
             ']' => state.bracket_depth = state.bracket_depth.saturating_sub(1),
             _ => {}
         }
+    }
+
+    None
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct InfixSpecSplit<'a> {
+    pub left: &'a str,
+    pub body: &'a str,
+    pub predicate: bool,
+    pub right: &'a str,
+}
+
+/// Splits a top-level spec-infix statement around `\:`...`:/`.
+///
+/// The predicate spelling `\:`...`?:/` is accepted at use sites and reports
+/// the same body with `predicate` set, allowing it to share the defining
+/// signature of the ordinary spec form.
+pub(super) fn split_infix_spec_statement(input: &str) -> Option<InfixSpecSplit<'_>> {
+    let input = input.trim();
+    let start = find_top_level_substring(input, "\\:")?;
+    let after_start_index = start + "\\:".len();
+    let after_start = &input[after_start_index..];
+    let mut state = ScanState::default();
+
+    for (relative, ch) in after_start.char_indices() {
+        if state.is_top_level() {
+            if after_start[relative..].starts_with("?:/") {
+                return Some(InfixSpecSplit {
+                    left: input[..start].trim(),
+                    body: after_start[..relative].trim(),
+                    predicate: true,
+                    right: after_start[relative + "?:/".len()..].trim(),
+                });
+            }
+            if after_start[relative..].starts_with(":/") {
+                return Some(InfixSpecSplit {
+                    left: input[..start].trim(),
+                    body: after_start[..relative].trim(),
+                    predicate: false,
+                    right: after_start[relative + ":/".len()..].trim(),
+                });
+            }
+        }
+        state.advance(ch);
     }
 
     None
@@ -507,6 +552,84 @@ pub(super) fn parse_infix_command_header(input: &str) -> Result<InfixCommandHead
         head_args,
         tail,
         right,
+    })
+}
+
+/// Parses a spec-infix header delimited by `\:` and `:/`.
+///
+/// Spec-infix headings define specification operators, so both operands are
+/// required and the predicate spelling `?:/` is reserved for use sites.
+pub(super) fn parse_infix_spec_header(input: &str) -> Result<InfixSpecHeader, ParseError> {
+    let input = input.trim();
+    let split = split_infix_spec_statement(input)
+        .ok_or_else(|| ParseError::custom("spec-infix headers must contain `\\:`...`:/`"))?;
+
+    if split.predicate {
+        return Err(ParseError::custom(
+            "spec-infix headers must be declared with `:/`; use `?:/` only in expressions",
+        ));
+    }
+    if split.left.is_empty() || split.right.is_empty() {
+        return Err(ParseError::custom(
+            "spec-infix headers require both left and right operands",
+        ));
+    }
+
+    let left = parse_form_or_declaration(split.left)?;
+    let (chain, head_args, tail) = parse_infix_spec_header_body(split.body)?;
+    let right = parse_form_or_declaration(split.right)?;
+
+    Ok(InfixSpecHeader {
+        span: span_all(input),
+        left,
+        chain,
+        head_args,
+        tail,
+        right,
+    })
+}
+
+fn parse_infix_spec_header_body(
+    input: &str,
+) -> Result<(Chain, Vec<CurlyHeadingArgs>, Vec<CommandHeaderTailPart>), ParseError> {
+    let mut rest = input.trim();
+    let (chain_text, remaining) = split_prefix_by_delimiters(rest, &['{', ':']);
+    let chain = parse_chain(chain_text)?;
+    rest = remaining;
+
+    let (head_args, remaining) = parse_curly_heading_args(rest)?;
+    rest = remaining;
+    let (tail, remaining) = parse_command_header_tail(rest)?;
+    if !remaining.trim().is_empty() {
+        return Err(ParseError::custom(
+            "unexpected trailing text after spec-infix header body",
+        ));
+    }
+
+    Ok((chain, head_args, tail))
+}
+
+fn parse_infix_spec_expression_body(input: &str, predicate: bool) -> Result<InfixSpec, ParseError> {
+    let mut rest = input.trim();
+    let (chain_text, remaining) = split_prefix_by_delimiters(rest, &['{', ':']);
+    let chain = parse_chain(chain_text)?;
+    rest = remaining;
+
+    let (head_args, remaining) = parse_curly_expression_args(rest)?;
+    rest = remaining;
+    let (tail, remaining) = parse_command_expression_tail(rest)?;
+    if !remaining.trim().is_empty() {
+        return Err(ParseError::custom(
+            "unexpected trailing text after spec-infix expression body",
+        ));
+    }
+
+    Ok(InfixSpec {
+        span: span_all(input),
+        chain,
+        head_args,
+        tail,
+        predicate,
     })
 }
 
@@ -992,6 +1115,28 @@ fn parse_declaration_relation(
     input: &str,
     allow_refined_type: bool,
 ) -> Result<(&str, Option<DeclarationRelation>), ParseError> {
+    if let Some(split) = split_infix_spec_statement(input) {
+        if split.left.is_empty() || split.body.is_empty() || split.right.is_empty() {
+            return Err(ParseError::custom(
+                "spec-infix declarations require a left operand, operator body, and right operand",
+            ));
+        }
+        if split.predicate {
+            return Err(ParseError::custom(
+                "spec-infix predicate syntax is only valid in expressions",
+            ));
+        }
+        let spec = parse_infix_spec_expression_body(split.body, split.predicate)?;
+        let target = parse_expression(split.right)?;
+        return Ok((
+            split.left,
+            Some(DeclarationRelation::InfixSpec {
+                spec,
+                target: Box::new(target),
+            }),
+        ));
+    }
+
     if let Some(index) = find_top_level_substring(input, " is ") {
         let ty = parse_type_expression(&input[index + 4..], allow_refined_type)?;
         return Ok((&input[..index], Some(DeclarationRelation::Is(ty))));
@@ -1590,6 +1735,10 @@ pub fn parse_is_via_statement(input: &str) -> Result<IsViaStatement, ParseError>
 /// around their `\.`...`./` command core.
 pub fn parse_command_header(input: &str) -> Result<CommandHeader, ParseError> {
     let input = input.trim();
+    if input.starts_with("\\:") || find_top_level_substring(input, "\\:").is_some() {
+        return parse_infix_spec_header(input).map(CommandHeader::InfixSpec);
+    }
+
     if input.starts_with("\\.") || find_top_level_substring(input, "\\.").is_some() {
         return parse_infix_command_header(input).map(CommandHeader::Infix);
     }
@@ -1652,6 +1801,11 @@ pub fn parse_expression_alias(input: &str) -> Result<ExpressionAlias, ParseError
                 reject_optional_header_tails(&CommandHeader::Infix(header.clone()))?;
                 ExpressionAliasLhs::InfixCommand(header)
             }
+            CommandHeader::InfixSpec(_) => {
+                return Err(ParseError::custom(
+                    "spec-infix headers are not valid expression alias lhs values",
+                ));
+            }
             CommandHeader::Refined(_) => {
                 return Err(ParseError::custom(
                     "refined command headers are not valid expression alias lhs values",
@@ -1682,6 +1836,7 @@ fn command_header_has_optional_tail(header: &CommandHeader) -> bool {
     match header {
         CommandHeader::Command(header) => header.tail.iter().any(|part| part.optional),
         CommandHeader::Infix(header) => header.tail.iter().any(|part| part.optional),
+        CommandHeader::InfixSpec(header) => header.tail.iter().any(|part| part.optional),
         CommandHeader::Refined(header) => {
             header.tail.iter().any(|part| part.optional)
                 || header
@@ -2300,6 +2455,8 @@ mod tests {
     #[test]
     fn parses_spec_and_predicate_expression_variants() {
         let spec = parse_expression(r#"x "in" X"#).expect("expected spec expression");
+        let spec_predicate =
+            parse_expression(r#"x "in"? X"#).expect("expected spec predicate expression");
         let predicate = parse_expression(r#"x is? \even"#).expect("expected predicate expression");
         let negative = parse_expression(r#"x is_not? \odd"#).expect("expected negative predicate");
 
@@ -2308,11 +2465,47 @@ mod tests {
             ExpressionKind::SpecStatement(ref statement)
                 if statement.operator == "in" && statement.name == "X"
         ));
+        assert!(matches!(
+            spec_predicate.kind,
+            ExpressionKind::SpecPredicate(ref statement)
+                if statement.operator == "in" && statement.name == "X"
+        ));
         assert!(matches!(predicate.kind, ExpressionKind::IsPredicate { .. }));
         assert!(matches!(
             negative.kind,
             ExpressionKind::IsNotPredicate { .. }
         ));
+    }
+
+    #[test]
+    fn parses_spec_infix_headers_and_expressions() {
+        let header = parse_command_header(r#"A \:subset.within{U}:/ B"#)
+            .expect("expected spec-infix header");
+        match header {
+            CommandHeader::InfixSpec(header) => {
+                assert!(
+                    matches!(header.left.kind, FormOrDeclarationKind::Name(ref name) if name == "A")
+                );
+                assert!(
+                    matches!(header.right.kind, FormOrDeclarationKind::Name(ref name) if name == "B")
+                );
+                assert_eq!(header.chain.parts.len(), 2);
+                assert_eq!(header.head_args.len(), 1);
+            }
+            other => panic!("expected spec-infix header, got {other:?}"),
+        }
+
+        let expression = parse_expression(r#"A \:subset.within{U}?:/ B"#)
+            .expect("expected spec-infix predicate expression");
+        match expression.kind {
+            ExpressionKind::InfixSpecStatement { left, spec, right } => {
+                assert!(matches!(left.kind, ExpressionKind::Name(ref name) if name == "A"));
+                assert!(matches!(right.kind, ExpressionKind::Name(ref name) if name == "B"));
+                assert!(spec.predicate);
+                assert_eq!(spec.head_args.len(), 1);
+            }
+            other => panic!("expected spec-infix expression, got {other:?}"),
+        }
     }
 
     #[test]
@@ -3142,6 +3335,7 @@ mod tests {
             .expect_err("expected optional tail in expression to fail");
         assert!(
             expression.to_string().contains("InvalidToken")
+                || expression.to_string().contains("UnrecognizedToken")
                 || expression.to_string().contains("invalid"),
             "expected invalid expression error, got {expression}"
         );

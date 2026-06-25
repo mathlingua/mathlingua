@@ -1304,6 +1304,64 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_spec_operator_support_inherited_through_extensions() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("inherited-spec-operator.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [A \:subset:?within{U}:/ B]
+    Describes: A
+    when:
+    . U is \set
+    . B \:subset:/ U
+    extends: A is \set
+    satisfies:
+    . forAll: a "in" A
+      then:
+      . a "in"? B
+    Documented:
+    . called: "subset"
+
+    [P \.and./ Q]
+    States:
+    when: P, Q is \\statement
+    that: P
+
+    [A \.set.intersect:?within{U}./ B]
+    Defines: C \:subset:/ U
+    when:
+    . A \:subset:/ U
+    . B \:subset:/ U
+    expresses: C := {c_ : c_ "in" U | (.c "in"? A.) \.and./ (.c "in"? B.)}
+    Documented:
+    . called: "intersection"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("inherited-spec-operator.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_builtin_expression_statement_and_specification_requirements() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("builtin-categories.mlg");

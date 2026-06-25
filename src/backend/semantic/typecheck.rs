@@ -2263,9 +2263,71 @@ fn fact_has_type_signature(
         return true;
     }
 
-    reduce_extension_fact(&fact, context, registry)
+    command_requirement_facts(&fact, context, registry)
         .iter()
         .any(|fact| fact_has_type_signature(fact, subject, signature, context, registry, seen))
+        || reduce_extension_fact(&fact, context, registry)
+            .iter()
+            .any(|fact| fact_has_type_signature(fact, subject, signature, context, registry, seen))
+}
+
+fn command_requirement_facts(
+    fact: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let Some((signature, actuals)) = command_fact_signature_and_actuals(fact) else {
+        return Vec::new();
+    };
+    let Some(info) = registry.type_infos.get(&signature) else {
+        return Vec::new();
+    };
+
+    let mut substitutions = info
+        .parameters
+        .iter()
+        .zip(actuals)
+        .map(|(name, actual)| (name.clone(), context.normalize_key(&actual)))
+        .collect::<HashMap<_, _>>();
+    for (index, name) in info.hidden_parameters.iter().enumerate() {
+        substitutions.insert(name.clone(), "#".repeat(index + 1));
+    }
+
+    let mut requirement_context = context.clone();
+    for (left, right) in &info.substitutions {
+        requirement_context.add_substitution(
+            substitute_key(left, &substitutions),
+            substitute_key(right, &substitutions),
+        );
+    }
+
+    info.requirements
+        .iter()
+        .map(|requirement| {
+            requirement_context.normalize_fact(&substitute_fact(requirement, &substitutions))
+        })
+        .collect()
+}
+
+fn command_fact_signature_and_actuals(fact: &TypeFact) -> Option<(String, Vec<String>)> {
+    match fact {
+        TypeFact::Is { ty, signature, .. } => {
+            Some((signature.clone(), actuals_for_type_key(signature, ty)?))
+        }
+        TypeFact::InfixSpec {
+            subject,
+            signature,
+            args,
+            target,
+        } => {
+            let mut actuals = Vec::with_capacity(args.len() + 2);
+            actuals.push(subject.clone());
+            actuals.extend(args.iter().cloned());
+            actuals.push(target.clone());
+            Some((signature.clone(), actuals))
+        }
+        TypeFact::Spec { .. } | TypeFact::FunctionType { .. } => None,
+    }
 }
 
 fn function_type_facts_for_subject(

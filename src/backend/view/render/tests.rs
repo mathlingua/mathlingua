@@ -14,6 +14,8 @@ fn registry_for(source: &str) -> super::RenderRegistry {
     }])
 }
 
+// ===============================[ tests ]=====================================
+
 #[test]
 fn renders_written_templates_with_subject_and_argument_substitutions() {
     let registry = registry_for(

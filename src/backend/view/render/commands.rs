@@ -58,6 +58,7 @@ pub(super) fn type_expression_called_template(
     registry: &RenderRegistry,
 ) -> Option<CalledTemplate> {
     match ty {
+        TypeExpression::Builtin { .. } => None,
         TypeExpression::Command(command) => command_called_template(command, registry),
         TypeExpression::RefinedCommand(command) => {
             Some(refined_command_called_template(command, registry))

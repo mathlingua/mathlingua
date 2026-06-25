@@ -1,5 +1,9 @@
 use super::*;
 
+pub(super) const BUILTIN_EXPRESSION_SIGNATURE: &str = "\\\\expression";
+pub(super) const BUILTIN_STATEMENT_SIGNATURE: &str = "\\\\statement";
+pub(super) const BUILTIN_SPECIFICATION_SIGNATURE: &str = "\\\\specification";
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct SignatureShape {
     pub(super) signature: String,

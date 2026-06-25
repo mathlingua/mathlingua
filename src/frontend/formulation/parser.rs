@@ -1259,6 +1259,10 @@ pub(super) fn parse_type_expression(
     allow_refined: bool,
 ) -> Result<TypeExpression, ParseError> {
     let input = input.trim();
+    if input.starts_with("\\\\") {
+        return parse_builtin_type_expression(input);
+    }
+
     if contains_top_level(input, "=>") {
         return parse_function_type_expression(input, allow_refined).map(TypeExpression::Function);
     }
@@ -1274,6 +1278,17 @@ pub(super) fn parse_type_expression(
             "expected command expression for type, found {other:?}"
         ))),
     }
+}
+
+fn parse_builtin_type_expression(input: &str) -> Result<TypeExpression, ParseError> {
+    let chain_text = input
+        .strip_prefix("\\\\")
+        .ok_or_else(|| ParseError::custom("built-in type expressions must start with `\\\\`"))?;
+    let chain = parse_chain(chain_text)?;
+    Ok(TypeExpression::Builtin {
+        span: span_all(input),
+        chain,
+    })
 }
 
 /// Parses a function type from parenthesized input specs to one output spec.

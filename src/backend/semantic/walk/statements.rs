@@ -67,6 +67,7 @@ pub(in crate::backend::semantic) fn walk_type_expression(
     visit: &mut impl FnMut(&SignatureShape),
 ) {
     match ty {
+        TypeExpression::Builtin { .. } => {}
         TypeExpression::Command(command) => {
             let shape = shape_for_command_expression(command);
             visit(&shape);

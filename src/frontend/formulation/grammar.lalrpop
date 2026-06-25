@@ -528,6 +528,18 @@ CommandExpression: ast::CommandExpression = {
     },
 };
 
+BuiltinTypeExpression: ast::TypeExpression = {
+    <l:@L> "\\" "\\" <chain:Chain> <r:@R> => ast::TypeExpression::Builtin {
+        span: Span::new(l, r),
+        chain,
+    },
+};
+
+PredicateTypeExpression: ast::TypeExpression = {
+    <command:CommandExpression> => ast::TypeExpression::Command(command),
+    <builtin:BuiltinTypeExpression> => builtin,
+};
+
 InfixCommand: ast::InfixCommand = {
     <l:@L> "\\." <chain:Chain> <head_args:CurlyExpressionArgsOpt> <tail:CommandExpressionTailOpt> "./" <r:@R> => ast::InfixCommand {
         span: Span::new(l, r),
@@ -731,11 +743,11 @@ SpecOrPredicateExpression: ast::Expression = {
             command,
         },
     ),
-    <l:@L> <subject:EqualityExpression> "is" <command:CommandExpression> <r:@R> => ast::Expression::new(
+    <l:@L> <subject:EqualityExpression> "is" <ty:PredicateTypeExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::IsType {
             subject: Box::new(subject),
-            ty: ast::TypeExpression::Command(command),
+            ty,
         },
     ),
 };

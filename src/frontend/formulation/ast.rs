@@ -126,6 +126,7 @@ pub struct InfixSpec {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypeExpression {
+    Builtin { span: Span, chain: Chain },
     Command(CommandExpression),
     RefinedCommand(RefinedCommandExpression),
     Function(FunctionType),

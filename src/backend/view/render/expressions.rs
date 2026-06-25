@@ -91,6 +91,11 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             render_predicate_command_expression(command, registry)
         ),
         ExpressionKind::IsType { subject, ty } => match ty {
+            TypeExpression::Builtin { chain, .. } => format!(
+                "{} \\textrm{{ is }} \\\\{}",
+                render_expression(subject, registry),
+                format_chain(chain)
+            ),
             TypeExpression::Command(command) => render_is_command(subject, command, registry),
             TypeExpression::RefinedCommand(command) => {
                 render_is_refined_command(subject, command, registry)

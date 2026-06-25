@@ -1241,6 +1241,7 @@ fn check_type_expression(
     event_log: &mut EventLog,
 ) {
     match ty {
+        TypeExpression::Builtin { .. } => {}
         TypeExpression::Command(command) => {
             check_command_type_expression(command, context, path, locator, registry, event_log);
             for expression in command_expression_arguments(command) {
@@ -1668,6 +1669,7 @@ fn check_type_expression_requirements(
     event_log: &mut EventLog,
 ) {
     match ty {
+        TypeExpression::Builtin { .. } => {}
         TypeExpression::Command(command) => {
             check_command_expression(command, context, path, locator, registry, event_log);
             for expression in command_expression_arguments(command) {
@@ -1791,11 +1793,301 @@ fn function_type_spec_mentions_name(spec: &FunctionTypeFactSpec, name: &str) -> 
 
 fn prove_fact(required: &TypeFact, context: &TypeContext, registry: &SignatureRegistry) -> bool {
     let required = context.normalize_fact(required);
+    if builtin_fact_holds(&required, registry) {
+        return true;
+    }
+
     let mut seen = HashSet::new();
     context
         .facts
         .iter()
         .any(|fact| fact_implies(fact, &required, context, registry, &mut seen))
+}
+
+fn builtin_fact_holds(required: &TypeFact, registry: &SignatureRegistry) -> bool {
+    let TypeFact::Is {
+        subject, signature, ..
+    } = required
+    else {
+        return false;
+    };
+
+    match signature.as_str() {
+        BUILTIN_EXPRESSION_SIGNATURE => true,
+        BUILTIN_STATEMENT_SIGNATURE => key_is_statement(subject, registry),
+        BUILTIN_SPECIFICATION_SIGNATURE => key_is_specification(subject),
+        _ => false,
+    }
+}
+
+fn key_is_statement(key: &str, registry: &SignatureRegistry) -> bool {
+    key_contains_top_level(key, " is? ")
+        || key_contains_top_level(key, " is_not? ")
+        || key_contains_top_level_quoted_spec(key, true)
+        || key_contains_top_level_infix_spec(key, true)
+        || key_is_states_command_reference(key, registry)
+}
+
+fn key_is_specification(key: &str) -> bool {
+    key_contains_top_level(key, " is ")
+        || key_contains_top_level_quoted_spec(key, false)
+        || key_contains_top_level_infix_spec(key, false)
+}
+
+fn key_contains_top_level(key: &str, pattern: &str) -> bool {
+    let mut index = 0;
+    let mut paren_depth = 0usize;
+    let mut brace_depth = 0usize;
+    let mut bracket_depth = 0usize;
+
+    while index < key.len() {
+        let rest = &key[index..];
+        if rest.starts_with(pattern)
+            && paren_depth == 0
+            && brace_depth == 0
+            && bracket_depth == 0
+        {
+            return true;
+        }
+
+        let Some(ch) = rest.chars().next() else {
+            return false;
+        };
+        match ch {
+            '(' => paren_depth += 1,
+            ')' => paren_depth = paren_depth.saturating_sub(1),
+            '{' => brace_depth += 1,
+            '}' => brace_depth = brace_depth.saturating_sub(1),
+            '[' => bracket_depth += 1,
+            ']' => bracket_depth = bracket_depth.saturating_sub(1),
+            _ => {}
+        }
+        index += ch.len_utf8();
+    }
+
+    false
+}
+
+fn key_contains_top_level_quoted_spec(key: &str, predicate: bool) -> bool {
+    let mut search_start = 0;
+    while search_start < key.len() {
+        let Some(relative_start) = key[search_start..].find('"') else {
+            return false;
+        };
+        let start = search_start + relative_start;
+        if !key_is_top_level_at(key, start) {
+            search_start = start + '"'.len_utf8();
+            continue;
+        }
+
+        let after_open = start + '"'.len_utf8();
+        let Some(relative_end) = key[after_open..].find('"') else {
+            return false;
+        };
+        let after_close = after_open + relative_end + '"'.len_utf8();
+        if key[after_close..].starts_with('?') == predicate {
+            return true;
+        }
+
+        search_start = after_close;
+    }
+
+    false
+}
+
+fn key_contains_top_level_infix_spec(key: &str, predicate: bool) -> bool {
+    let mut search_start = 0;
+    while search_start < key.len() {
+        let Some(relative_start) = key[search_start..].find("\\:") else {
+            return false;
+        };
+        let start = search_start + relative_start;
+        if !key_is_top_level_at(key, start) {
+            search_start = start + "\\:".len();
+            continue;
+        }
+
+        let Some((end, is_predicate)) = find_infix_spec_key_end(key, start) else {
+            return false;
+        };
+        if is_predicate == predicate {
+            return true;
+        }
+
+        search_start = end;
+    }
+
+    false
+}
+
+fn key_is_top_level_at(key: &str, target: usize) -> bool {
+    let mut index = 0;
+    let mut paren_depth = 0usize;
+    let mut brace_depth = 0usize;
+    let mut bracket_depth = 0usize;
+
+    while index < target {
+        let Some(ch) = key[index..].chars().next() else {
+            return false;
+        };
+        match ch {
+            '(' => paren_depth += 1,
+            ')' => paren_depth = paren_depth.saturating_sub(1),
+            '{' => brace_depth += 1,
+            '}' => brace_depth = brace_depth.saturating_sub(1),
+            '[' => bracket_depth += 1,
+            ']' => bracket_depth = bracket_depth.saturating_sub(1),
+            _ => {}
+        }
+        index += ch.len_utf8();
+    }
+
+    paren_depth == 0 && brace_depth == 0 && bracket_depth == 0
+}
+
+fn find_infix_spec_key_end(key: &str, start: usize) -> Option<(usize, bool)> {
+    let mut index = start + "\\:".len();
+    let mut paren_depth = 0usize;
+    let mut brace_depth = 0usize;
+    let mut bracket_depth = 0usize;
+
+    while index < key.len() {
+        let rest = &key[index..];
+        if paren_depth == 0 && brace_depth == 0 && bracket_depth == 0 {
+            if rest.starts_with("?:/") {
+                return Some((index + "?:/".len(), true));
+            }
+            if rest.starts_with(":/") {
+                return Some((index + ":/".len(), false));
+            }
+        }
+
+        let ch = rest.chars().next()?;
+        match ch {
+            '(' => paren_depth += 1,
+            ')' => paren_depth = paren_depth.saturating_sub(1),
+            '{' => brace_depth += 1,
+            '}' => brace_depth = brace_depth.saturating_sub(1),
+            '[' => bracket_depth += 1,
+            ']' => bracket_depth = bracket_depth.saturating_sub(1),
+            _ => {}
+        }
+        index += ch.len_utf8();
+    }
+
+    None
+}
+
+fn key_is_states_command_reference(key: &str, registry: &SignatureRegistry) -> bool {
+    command_signature_from_key(key)
+        .as_deref()
+        .is_some_and(|signature| signature_has_kind(signature, DefinitionKind::States, registry))
+        || infix_command_signatures_from_key(key)
+            .iter()
+            .any(|signature| signature_has_kind(signature, DefinitionKind::States, registry))
+}
+
+fn signature_has_kind(signature: &str, kind: DefinitionKind, registry: &SignatureRegistry) -> bool {
+    registry
+        .definitions
+        .get(signature)
+        .is_some_and(|definition| definition.kind == kind)
+}
+
+fn command_signature_from_key(key: &str) -> Option<String> {
+    if !key.starts_with('\\') || key.starts_with("\\.") || key.starts_with("\\:") {
+        return None;
+    }
+
+    let mut signature = String::new();
+    let mut index = 0;
+    while index < key.len() {
+        let rest = &key[index..];
+        if rest.starts_with('{') {
+            index += find_balanced_group_end(rest, '{', '}')?;
+            continue;
+        }
+        if rest.starts_with('(') {
+            index += find_balanced_group_end(rest, '(', ')')?;
+            continue;
+        }
+
+        let ch = rest.chars().next()?;
+        signature.push(ch);
+        index += ch.len_utf8();
+    }
+
+    Some(signature)
+}
+
+fn infix_command_signatures_from_key(key: &str) -> Vec<String> {
+    let mut signatures = Vec::new();
+    let mut search_start = 0;
+
+    while search_start < key.len() {
+        let Some(relative_start) = key[search_start..].find("\\.") else {
+            break;
+        };
+        let start = search_start + relative_start;
+        let Some(end) = find_infix_command_key_end(key, start) else {
+            break;
+        };
+        if let Some(signature) = infix_command_signature_from_key_segment(&key[start..end]) {
+            signatures.push(signature);
+        }
+        search_start = end;
+    }
+
+    signatures
+}
+
+fn find_infix_command_key_end(key: &str, start: usize) -> Option<usize> {
+    let mut index = start + "\\.".len();
+    let mut paren_depth = 0usize;
+    let mut brace_depth = 0usize;
+    let mut bracket_depth = 0usize;
+
+    while index < key.len() {
+        let rest = &key[index..];
+        if rest.starts_with("./") && paren_depth == 0 && brace_depth == 0 && bracket_depth == 0 {
+            return Some(index + "./".len());
+        }
+
+        let ch = rest.chars().next()?;
+        match ch {
+            '(' => paren_depth += 1,
+            ')' => paren_depth = paren_depth.saturating_sub(1),
+            '{' => brace_depth += 1,
+            '}' => brace_depth = brace_depth.saturating_sub(1),
+            '[' => bracket_depth += 1,
+            ']' => bracket_depth = bracket_depth.saturating_sub(1),
+            _ => {}
+        }
+        index += ch.len_utf8();
+    }
+
+    None
+}
+
+fn infix_command_signature_from_key_segment(segment: &str) -> Option<String> {
+    let body = segment.strip_prefix("\\.")?.strip_suffix("./")?;
+    let mut signature = "\\.".to_owned();
+    let mut index = 0;
+
+    while index < body.len() {
+        let rest = &body[index..];
+        if rest.starts_with('{') {
+            index += find_balanced_group_end(rest, '{', '}')?;
+            continue;
+        }
+
+        let ch = rest.chars().next()?;
+        signature.push(ch);
+        index += ch.len_utf8();
+    }
+
+    signature.push_str("./");
+    Some(signature)
 }
 
 fn fact_implies(
@@ -2601,6 +2893,7 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
 
 fn declare_names_from_type_expression(ty: &TypeExpression, context: &mut TypeContext) {
     match ty {
+        TypeExpression::Builtin { .. } => {}
         TypeExpression::Command(command) => {
             for expression in command_expression_arguments(command) {
                 declare_names_from_expression(expression, context);
@@ -3063,6 +3356,10 @@ fn key_for_spec_subject(subject: &SpecSubject) -> String {
 
 fn key_for_type_expression(ty: &TypeExpression) -> Option<(String, String)> {
     match ty {
+        TypeExpression::Builtin { chain, .. } => {
+            let signature = format!("\\\\{}", format_chain(chain));
+            Some((signature.clone(), signature))
+        }
         TypeExpression::Command(command) => Some((
             key_for_command_expression(command),
             shape_for_command_expression(command).signature,
@@ -3187,6 +3484,7 @@ fn key_for_expression(expression: &Expression) -> String {
 
 fn key_for_non_command_type_expression(ty: &TypeExpression) -> String {
     match ty {
+        TypeExpression::Builtin { chain, .. } => format!("\\\\{}", format_chain(chain)),
         TypeExpression::Command(command) => key_for_command_expression(command),
         TypeExpression::RefinedCommand(_) => "<refined>".to_owned(),
         TypeExpression::Function(function_type) => format_function_type(

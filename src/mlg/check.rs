@@ -1304,6 +1304,148 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_builtin_expression_statement_and_specification_requirements() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("builtin-categories.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [A \:subset:/ B]
+    Describes: A
+    when: B is \set
+    extends: A is \set
+    Documented:
+    . called: "subset"
+
+    [A \.same.as./ B]
+    States:
+    when: A, B is \set
+    that:
+    . A is? \set
+
+    [\needs.expression{x}]
+    Describes: y
+    when: x is \\expression
+    Documented:
+    . called: "needs expression"
+
+    [\needs.statement{x}]
+    Describes: y
+    when: x is \\statement
+    Documented:
+    . called: "needs statement"
+
+    [\needs.specification{x}]
+    Describes: y
+    when: x is \\specification
+    Documented:
+    . called: "needs specification"
+
+    Theorem:
+    given:
+    . A, B is \set
+    where:
+    . A \:subset:/ B
+    then:
+    . \needs.expression{A + B}
+    . \needs.statement{A is? \set}
+    . \needs.statement{A "in"? B}
+    . \needs.statement{A \:subset?:/ B}
+    . \needs.statement{A \.same.as./ B}
+    . \needs.specification{A is \set}
+    . \needs.specification{A "in" B}
+    . \needs.specification{A \:subset:/ B}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("builtin-categories.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_builtin_statement_and_specification_mismatches() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("builtin-category-mismatches.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\needs.statement{x}]
+    Describes: y
+    when: x is \\statement
+    Documented:
+    . called: "needs statement"
+
+    [\needs.specification{x}]
+    Describes: y
+    when: x is \\specification
+    Documented:
+    . called: "needs specification"
+
+    [\wrap{x}]
+    Describes: y
+    when: x is \\expression
+    Documented:
+    . called: "wrap"
+
+    Theorem:
+    given: A is \set
+    then:
+    . \needs.statement{A}
+    . \needs.statement{\wrap{A is? \set}}
+    . \needs.specification{A}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("builtin-category-mismatches.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let messages = user_events(&event_log)
+            .iter()
+            .filter_map(Event::as_message)
+            .map(|event| event.message.clone())
+            .collect::<Vec<_>>();
+        assert!(messages.contains(&String::from(
+            "Could not prove requirement `A is \\\\statement` for command `\\needs.statement`"
+        )));
+        assert!(messages.contains(&String::from(
+            "Could not prove requirement `\\wrap{A is? \\set} is \\\\statement` for command `\\needs.statement`"
+        )));
+        assert!(messages.contains(&String::from(
+            "Could not prove requirement `A is \\\\specification` for command `\\needs.specification`"
+        )));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
     fn check_reports_invalid_spec_infix_headings() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("spec-infix-invalid-heading.mlg");

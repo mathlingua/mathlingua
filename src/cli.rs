@@ -88,12 +88,19 @@ impl From<CliEventLevel> for Level {
 pub enum Command {
     Check(CheckArgs),
     Init,
+    Lsp,
     Version,
     View(ViewArgs),
 }
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
 pub struct CheckArgs {
+    #[arg(long, default_value_t = false)]
+    pub json: bool,
+
+    #[arg(long = "diagnostic-schema", default_value_t = false)]
+    pub diagnostic_schema: bool,
+
     #[arg(value_name = "PATH")]
     pub paths: Vec<PathBuf>,
 }
@@ -123,7 +130,11 @@ mod tests {
 
         assert!(matches!(
             cli.command,
-            Command::Check(CheckArgs { paths }) if paths.is_empty()
+            Command::Check(CheckArgs {
+                json: false,
+                diagnostic_schema: false,
+                paths,
+            }) if paths.is_empty()
         ));
     }
 
@@ -133,8 +144,26 @@ mod tests {
 
         assert!(matches!(
             cli.command,
-            Command::Check(CheckArgs { paths })
+            Command::Check(CheckArgs {
+                json: false,
+                diagnostic_schema: false,
+                paths,
+            })
                 if paths == vec![PathBuf::from("content"), PathBuf::from("notes/example.mlg")]
+        ));
+    }
+
+    #[test]
+    fn parses_check_json_flags() {
+        let cli = Cli::parse_from(["mlg", "check", "--json", "--diagnostic-schema"]);
+
+        assert!(matches!(
+            cli.command,
+            Command::Check(CheckArgs {
+                json: true,
+                diagnostic_schema: true,
+                paths,
+            }) if paths.is_empty()
         ));
     }
 

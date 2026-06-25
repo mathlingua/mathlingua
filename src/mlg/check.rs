@@ -1,6 +1,8 @@
 use crate::backend::collection::SourceCollection;
-use crate::events::{EventLog, EventLogListener, MarkerRange};
+use crate::events::{Audience, EventLocation, EventLog, EventLogListener, Level, MarkerRange};
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since, user_issue_count_since};
+use serde::Serialize;
+use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 
 const ORIGIN: &str = "mlg_check";
@@ -84,6 +86,277 @@ fn render_check_success(files_checked: usize) -> String {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckDiagnosticsReport {
+    pub schema_version: u32,
+    pub command: String,
+    pub successful: bool,
+    pub files_checked: usize,
+    pub issue_count: usize,
+    pub diagnostics: Vec<CheckDiagnostic>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckDiagnostic {
+    pub level: String,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<CheckDiagnosticLocation>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckDiagnosticLocation {
+    pub kind: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub absolute_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub span: Option<CheckDiagnosticSpan>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckDiagnosticSpan {
+    pub start: CheckDiagnosticPosition,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<CheckDiagnosticPosition>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckDiagnosticPosition {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub line: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub column: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub offset: Option<usize>,
+}
+
+pub fn check_diagnostics_report(result: &CheckResult, cwd: &Path) -> CheckDiagnosticsReport {
+    let diagnostics = result
+        .event_log
+        .events()
+        .iter()
+        .filter_map(|event| event.as_message())
+        .filter(|event| event.audience == Audience::User && event.level != Level::Log)
+        .map(|event| CheckDiagnostic {
+            level: diagnostic_level(event.level).to_owned(),
+            message: event.message.clone(),
+            origin: event.origin.clone(),
+            location: event
+                .location
+                .as_ref()
+                .map(|location| diagnostic_location(location, cwd)),
+        })
+        .collect::<Vec<_>>();
+
+    CheckDiagnosticsReport {
+        schema_version: 1,
+        command: "check".to_string(),
+        successful: result.successful,
+        files_checked: result.files_checked,
+        issue_count: diagnostics.len(),
+        diagnostics,
+    }
+}
+
+pub fn check_diagnostics_schema() -> Value {
+    json!({
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "MathLingua check diagnostics",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+            "schemaVersion",
+            "command",
+            "successful",
+            "filesChecked",
+            "issueCount",
+            "diagnostics"
+        ],
+        "properties": {
+            "schemaVersion": {
+                "type": "integer",
+                "const": 1
+            },
+            "command": {
+                "type": "string",
+                "const": "check"
+            },
+            "successful": {
+                "type": "boolean",
+                "description": "True when mlg check completed without error-level diagnostics."
+            },
+            "filesChecked": {
+                "type": "integer",
+                "minimum": 0
+            },
+            "issueCount": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "The number of user-facing non-log diagnostics in diagnostics."
+            },
+            "diagnostics": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["level", "message"],
+                    "properties": {
+                        "level": {
+                            "type": "string",
+                            "enum": ["warning", "error", "debug"]
+                        },
+                        "message": {
+                            "type": "string"
+                        },
+                        "origin": {
+                            "type": "string",
+                            "description": "Internal checker component that produced the diagnostic."
+                        },
+                        "location": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["kind"],
+                            "properties": {
+                                "kind": {
+                                    "type": "string",
+                                    "enum": ["file", "memory"]
+                                },
+                                "path": {
+                                    "type": "string",
+                                    "description": "File path relative to the invocation cwd when possible."
+                                },
+                                "absolutePath": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "description": "In-memory source name, when available."
+                                },
+                                "span": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": ["start"],
+                                    "properties": {
+                                        "start": { "$ref": "#/$defs/position" },
+                                        "end": { "$ref": "#/$defs/position" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "$defs": {
+            "position": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "line": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "One-based line number."
+                    },
+                    "column": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "One-based column number."
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Zero-based byte offset when available."
+                    }
+                }
+            }
+        }
+    })
+}
+
+fn diagnostic_level(level: Level) -> &'static str {
+    match level {
+        Level::Log => "log",
+        Level::Warning => "warning",
+        Level::Error => "error",
+        Level::Debug => "debug",
+    }
+}
+
+fn diagnostic_location(location: &EventLocation, cwd: &Path) -> CheckDiagnosticLocation {
+    match location {
+        EventLocation::File { path, span } => CheckDiagnosticLocation {
+            kind: "file".to_string(),
+            path: Some(display_path(path, cwd)),
+            absolute_path: Some(absolute_path(path, cwd)),
+            name: None,
+            span: span.as_ref().map(diagnostic_span),
+        },
+        EventLocation::InMemory { name, span } => CheckDiagnosticLocation {
+            kind: "memory".to_string(),
+            path: None,
+            absolute_path: None,
+            name: name.clone(),
+            span: span.as_ref().map(diagnostic_span),
+        },
+    }
+}
+
+fn diagnostic_span(span: &crate::events::EventSpan) -> CheckDiagnosticSpan {
+    CheckDiagnosticSpan {
+        start: diagnostic_position(&span.start),
+        end: span.end.as_ref().map(diagnostic_position),
+    }
+}
+
+fn diagnostic_position(position: &crate::events::EventPosition) -> CheckDiagnosticPosition {
+    CheckDiagnosticPosition {
+        line: position.row.map(|row| row + 1),
+        column: position.column.map(|column| column + 1),
+        offset: position.offset,
+    }
+}
+
+fn display_path(path: &Path, cwd: &Path) -> String {
+    if let Some(relative) = relative_path(path, cwd) {
+        return relative;
+    }
+    if let Ok(canonical_cwd) = cwd.canonicalize() {
+        if let Some(relative) = relative_path(path, &canonical_cwd) {
+            return relative;
+        }
+    }
+
+    path.display().to_string()
+}
+
+fn relative_path(path: &Path, base: &Path) -> Option<String> {
+    path.strip_prefix(base)
+        .ok()
+        .filter(|relative| !relative.as_os_str().is_empty())
+        .map(|relative| relative.display().to_string())
+}
+
+fn absolute_path(path: &Path, cwd: &Path) -> String {
+    let path = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        cwd.join(path)
+    };
+
+    path.canonicalize().unwrap_or(path).display().to_string()
+}
+
 fn format_issue_count(issue_count: usize) -> String {
     if issue_count == 1 {
         "1 issue".to_string()
@@ -96,7 +369,7 @@ fn format_issue_count(issue_count: usize) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::check_in;
+    use super::{check, check_diagnostics_report, check_diagnostics_schema, check_in};
     use crate::backend::config::default_config_contents;
     use crate::events::{Audience, Event, EventLog, Level};
     use std::fs;
@@ -356,6 +629,50 @@ mod tests {
                 .cloned()
                 .expect("expected summary event"),
             Event::user_log("Found 2 issues.").with_origin("mlg_check")
+        );
+    }
+
+    #[test]
+    fn check_diagnostics_report_contains_structured_user_issues() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("invalid.mlg");
+
+        fs::write(&file, "Defines: 'f(x_)'\n").unwrap();
+
+        let result = check(temp_dir.path(), &[PathBuf::from("invalid.mlg")], None);
+        let report = check_diagnostics_report(&result, temp_dir.path());
+        let value = serde_json::to_value(&report).expect("expected report to serialize");
+
+        assert!(!report.successful);
+        assert_eq!(report.files_checked, 1);
+        assert_eq!(report.issue_count, report.diagnostics.len());
+        assert!(report.issue_count > 0);
+        assert_eq!(value["schemaVersion"], 1);
+        assert_eq!(value["command"], "check");
+        assert_eq!(value["diagnostics"][0]["level"], "error");
+        assert_eq!(value["diagnostics"][0]["location"]["kind"], "file");
+        assert_eq!(value["diagnostics"][0]["location"]["path"], "invalid.mlg");
+        assert!(
+            value["diagnostics"][0]["location"]["absolutePath"]
+                .as_str()
+                .is_some_and(|path| path.ends_with("invalid.mlg"))
+        );
+    }
+
+    #[test]
+    fn check_diagnostics_schema_describes_report_shape() {
+        let schema = check_diagnostics_schema();
+
+        assert_eq!(
+            schema["$schema"],
+            "https://json-schema.org/draft/2020-12/schema"
+        );
+        assert_eq!(schema["properties"]["schemaVersion"]["const"], 1);
+        assert_eq!(schema["properties"]["command"]["const"], "check");
+        assert_eq!(
+            schema["properties"]["diagnostics"]["items"]["properties"]["location"]["properties"]["span"]
+                ["properties"]["start"]["$ref"],
+            "#/$defs/position"
         );
     }
 

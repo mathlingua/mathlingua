@@ -79,6 +79,10 @@ impl SourceCollection {
         &self.parsed_files
     }
 
+    pub(crate) fn root(&self) -> &Path {
+        &self.root
+    }
+
     pub(crate) fn run_check_passes(&mut self, event_log: &mut EventLog, origin: &str) {
         self.parse_structural(event_log, origin);
         self.check_semantics(event_log);

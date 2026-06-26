@@ -1,13 +1,17 @@
 use crate::backend::collection::SourceCollection;
 use crate::backend::view::CollectionView;
-use crate::events::{EventLog, EventLogListener};
+use crate::events::{Event, EventLog, EventLogListener};
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since};
 use serde_json::to_writer_pretty;
 use std::fs;
 use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus, Stdio};
-use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+    mpsc::{self, Receiver, RecvTimeoutError, Sender},
+};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -89,7 +93,17 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
     let url = format!("http://localhost:{port}/");
     event_log.user_log(Some(ORIGIN), format!("Starting viewer at {url}"));
 
-    let result = run_next_server(&view_data_path, port, &url, event_log);
+    let (refresh_sender, refresh_receiver) = mpsc::channel();
+    let stop_refresh = Arc::new(AtomicBool::new(false));
+    let refresh_thread = spawn_view_data_refresher(
+        cwd.to_path_buf(),
+        view_data_path.clone(),
+        Arc::clone(&stop_refresh),
+        refresh_sender,
+    );
+    let result = run_next_server(&view_data_path, port, &url, refresh_receiver, event_log);
+    stop_refresh.store(true, Ordering::Relaxed);
+    join_view_data_refresher(refresh_thread, event_log);
     let _ = fs::remove_dir_all(&view_session_dir);
     result
 }
@@ -119,6 +133,7 @@ fn ensure_web_dependencies(event_log: &mut EventLog) -> io::Result<()> {
         NEXTJS_ORIGIN,
         event_log,
         None,
+        None,
     )?;
 
     Ok(())
@@ -128,6 +143,7 @@ fn run_next_server(
     view_data_path: &Path,
     port: u16,
     url: &str,
+    refresh_receiver: Receiver<Vec<Event>>,
     event_log: &mut EventLog,
 ) -> io::Result<()> {
     let mut command = Command::new("npm");
@@ -143,7 +159,13 @@ fn run_next_server(
         .env("MLG_VIEW_DATA_PATH", view_data_path)
         .env("NEXT_TELEMETRY_DISABLED", "1");
 
-    run_child(command, NEXTJS_ORIGIN, event_log, Some(url))
+    run_child(
+        command,
+        NEXTJS_ORIGIN,
+        event_log,
+        Some(url),
+        Some(refresh_receiver),
+    )
 }
 
 fn run_child(
@@ -151,6 +173,7 @@ fn run_child(
     origin: &str,
     event_log: &mut EventLog,
     ready_url: Option<&str>,
+    refresh_receiver: Option<Receiver<Vec<Event>>>,
 ) -> io::Result<()> {
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
 
@@ -175,7 +198,14 @@ fn run_child(
         .take()
         .map(|stderr| spawn_output_reader(stderr, sender));
 
-    let outcome = stream_child_output(&mut child, receiver, origin, event_log, ready_url);
+    let outcome = stream_child_output(
+        &mut child,
+        receiver,
+        refresh_receiver,
+        origin,
+        event_log,
+        ready_url,
+    );
     join_output_thread(stdout_thread, event_log);
     join_output_thread(stderr_thread, event_log);
     let outcome = outcome?;
@@ -203,7 +233,8 @@ fn run_child(
 
 fn stream_child_output(
     child: &mut Child,
-    receiver: Receiver<OutputLine>,
+    output_receiver: Receiver<OutputLine>,
+    refresh_receiver: Option<Receiver<Vec<Event>>>,
     origin: &str,
     event_log: &mut EventLog,
     ready_url: Option<&str>,
@@ -211,7 +242,9 @@ fn stream_child_output(
     let mut was_ready = false;
 
     loop {
-        match receiver.recv_timeout(Duration::from_millis(100)) {
+        drain_refresh_events(refresh_receiver.as_ref(), event_log);
+
+        match output_receiver.recv_timeout(Duration::from_millis(100)) {
             Ok(line) => {
                 let is_ready = is_ready_line(&line.text);
                 if is_ready
@@ -224,8 +257,9 @@ fn stream_child_output(
                 log_child_output(line, origin, event_log);
             }
             Err(RecvTimeoutError::Timeout) => {
+                drain_refresh_events(refresh_receiver.as_ref(), event_log);
                 if let Some(status) = child.try_wait()? {
-                    while let Ok(line) = receiver.try_recv() {
+                    while let Ok(line) = output_receiver.try_recv() {
                         let is_ready = is_ready_line(&line.text);
                         if is_ready
                             && !was_ready
@@ -236,14 +270,28 @@ fn stream_child_output(
                         was_ready |= is_ready;
                         log_child_output(line, origin, event_log);
                     }
+                    drain_refresh_events(refresh_receiver.as_ref(), event_log);
                     return Ok(ChildOutcome { status, was_ready });
                 }
             }
             Err(RecvTimeoutError::Disconnected) => {
+                drain_refresh_events(refresh_receiver.as_ref(), event_log);
                 return child
                     .wait()
                     .map(|status| ChildOutcome { status, was_ready });
             }
+        }
+    }
+}
+
+fn drain_refresh_events(receiver: Option<&Receiver<Vec<Event>>>, event_log: &mut EventLog) {
+    let Some(receiver) = receiver else {
+        return;
+    };
+
+    while let Ok(events) = receiver.try_recv() {
+        for event in events {
+            event_log.push(event);
         }
     }
 }
@@ -289,9 +337,154 @@ fn join_output_thread(thread: Option<JoinHandle<io::Result<()>>>, event_log: &mu
 }
 
 fn write_collection_view_data(path: &Path, collection_view: &CollectionView) -> io::Result<()> {
-    let file = fs::File::create(path)?;
-    to_writer_pretty(file, collection_view)
-        .map_err(|error| io::Error::other(format!("Failed to write view data: {error}")))
+    let temp_path = temporary_view_data_path(path);
+    let result = (|| {
+        let file = fs::File::create(&temp_path)?;
+        to_writer_pretty(file, collection_view)
+            .map_err(|error| io::Error::other(format!("Failed to write view data: {error}")))?;
+        fs::rename(&temp_path, path)?;
+        Ok(())
+    })();
+
+    if result.is_err() {
+        let _ = fs::remove_file(&temp_path);
+    }
+
+    result
+}
+
+fn temporary_view_data_path(path: &Path) -> PathBuf {
+    let unique = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    path.with_extension(format!("json.tmp-{}-{unique}", std::process::id()))
+}
+
+fn spawn_view_data_refresher(
+    cwd: PathBuf,
+    view_data_path: PathBuf,
+    stop: Arc<AtomicBool>,
+    diagnostics: Sender<Vec<Event>>,
+) -> JoinHandle<io::Result<()>> {
+    thread::spawn(move || {
+        let mut last_fingerprint = view_source_fingerprint(&cwd);
+
+        while !stop.load(Ordering::Relaxed) {
+            thread::sleep(Duration::from_millis(250));
+            let fingerprint = view_source_fingerprint(&cwd);
+            if fingerprint == last_fingerprint {
+                continue;
+            }
+
+            last_fingerprint = fingerprint;
+            match rebuild_collection_view_data(&cwd, &view_data_path) {
+                Ok(ViewDataRefresh::Updated) => {}
+                Ok(ViewDataRefresh::Blocked(events)) => {
+                    if diagnostics.send(events).is_err() {
+                        break;
+                    }
+                }
+                Err(error) => {
+                    let event = Event::user_error(format!(
+                        "Rendered view was not updated because the view data could not be written: {error}"
+                    ))
+                    .with_origin(ORIGIN);
+                    if diagnostics.send(vec![event]).is_err() {
+                        break;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    })
+}
+
+fn join_view_data_refresher(thread: JoinHandle<io::Result<()>>, event_log: &mut EventLog) {
+    match thread.join() {
+        Ok(Ok(())) => {}
+        Ok(Err(error)) => {
+            event_log.system_warning(
+                Some(ORIGIN),
+                format!("Failed to refresh rendered view data: {error}"),
+            );
+        }
+        Err(_) => {
+            event_log.system_warning(Some(ORIGIN), "The rendered view refresher thread panicked");
+        }
+    }
+}
+
+fn rebuild_collection_view_data(cwd: &Path, view_data_path: &Path) -> io::Result<ViewDataRefresh> {
+    let mut event_log = EventLog::new();
+    let starting_event_count = event_log.events().len();
+    let mut collection = SourceCollection::load(cwd, &mut event_log, ORIGIN);
+    collection.run_check_passes(&mut event_log, ORIGIN);
+
+    if has_blocking_user_issues_since(&event_log, starting_event_count) {
+        event_log.user_error(
+            Some(ORIGIN),
+            "Rendered view was not updated because the current MathLingua sources have errors",
+        );
+        return Ok(ViewDataRefresh::Blocked(event_log.events().to_vec()));
+    }
+
+    let Some(collection_view) = collection.build_view(&mut event_log) else {
+        event_log.user_error(
+            Some(ORIGIN),
+            "Rendered view was not updated because one or more files could not be rendered",
+        );
+        return Ok(ViewDataRefresh::Blocked(event_log.events().to_vec()));
+    };
+
+    write_collection_view_data(view_data_path, &collection_view)?;
+    Ok(ViewDataRefresh::Updated)
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum ViewDataRefresh {
+    Updated,
+    Blocked(Vec<Event>),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ViewSourceFingerprint {
+    root: PathBuf,
+    files: Vec<ViewFileFingerprint>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ViewFileFingerprint {
+    path: PathBuf,
+    len: u64,
+    modified: SystemTime,
+}
+
+fn view_source_fingerprint(cwd: &Path) -> ViewSourceFingerprint {
+    let mut event_log = EventLog::new();
+    let collection = SourceCollection::load(cwd, &mut event_log, ORIGIN);
+    let files = collection
+        .source_files()
+        .iter()
+        .map(|path| view_file_fingerprint(path))
+        .collect();
+
+    ViewSourceFingerprint {
+        root: collection.root().to_path_buf(),
+        files,
+    }
+}
+
+fn view_file_fingerprint(path: &Path) -> ViewFileFingerprint {
+    let metadata = fs::metadata(path).ok();
+    ViewFileFingerprint {
+        path: path.to_path_buf(),
+        len: metadata.as_ref().map_or(0, fs::Metadata::len),
+        modified: metadata
+            .and_then(|metadata| metadata.modified().ok())
+            .unwrap_or(UNIX_EPOCH),
+    }
 }
 
 fn create_view_session_dir() -> io::Result<PathBuf> {
@@ -325,7 +518,10 @@ struct ChildOutcome {
 
 #[cfg(test)]
 mod tests {
-    use super::{create_view_session_dir, web_app_directory, write_collection_view_data};
+    use super::{
+        ViewDataRefresh, create_view_session_dir, rebuild_collection_view_data, web_app_directory,
+        write_collection_view_data,
+    };
     use crate::backend::view::{CollectionView, FileView, GroupView, SectionView};
     use std::fs;
 
@@ -363,5 +559,83 @@ mod tests {
     #[test]
     fn points_to_the_embedded_web_app_directory() {
         assert!(web_app_directory().join("package.json").is_file());
+    }
+
+    #[test]
+    fn rebuilds_collection_view_data_from_current_source_files() {
+        let dir = create_view_session_dir().expect("expected temp dir");
+        let root = dir.join("collection");
+        let content = root.join("content");
+        let file = content.join("sets.mlg");
+        let path = dir.join("collection.json");
+
+        fs::create_dir_all(&content).expect("expected content dir");
+        fs::write(
+            &file,
+            "[\\set]\nDescribes: S\nDocumented:\n. called: \"set\"\n",
+        )
+        .expect("expected source file");
+
+        assert_eq!(
+            rebuild_collection_view_data(&root, &path).expect("expected initial view data"),
+            ViewDataRefresh::Updated
+        );
+        let contents = fs::read_to_string(&path).expect("expected initial data");
+        assert!(contents.contains("\\\\textrm{set}"));
+
+        fs::write(
+            &file,
+            "[\\set]\nDescribes: S\nDocumented:\n. called: \"updated set\"\n",
+        )
+        .expect("expected updated source file");
+
+        assert_eq!(
+            rebuild_collection_view_data(&root, &path).expect("expected refreshed view data"),
+            ViewDataRefresh::Updated
+        );
+        let contents = fs::read_to_string(&path).expect("expected refreshed data");
+        assert!(contents.contains("\\\\textrm{updated set}"));
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn reports_refresh_errors_without_replacing_last_good_view_data() {
+        let dir = create_view_session_dir().expect("expected temp dir");
+        let root = dir.join("collection");
+        let content = root.join("content");
+        let file = content.join("sets.mlg");
+        let path = dir.join("collection.json");
+
+        fs::create_dir_all(&content).expect("expected content dir");
+        fs::write(
+            &file,
+            "[\\set]\nDescribes: S\nDocumented:\n. called: \"set\"\n",
+        )
+        .expect("expected source file");
+
+        assert_eq!(
+            rebuild_collection_view_data(&root, &path).expect("expected initial view data"),
+            ViewDataRefresh::Updated
+        );
+
+        fs::write(&file, "[\\set]\nDescribes: S\n").expect("expected invalid source file");
+
+        let outcome =
+            rebuild_collection_view_data(&root, &path).expect("expected blocked refresh result");
+        let ViewDataRefresh::Blocked(events) = outcome else {
+            panic!("expected blocked refresh");
+        };
+        assert!(
+            events
+                .iter()
+                .filter_map(|event| event.as_message())
+                .any(|message| message.message.contains("Rendered view was not updated"))
+        );
+
+        let contents = fs::read_to_string(&path).expect("expected last good data");
+        assert!(contents.contains("\\\\textrm{set}"));
+
+        let _ = fs::remove_dir_all(dir);
     }
 }

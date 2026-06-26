@@ -20,6 +20,7 @@ pub(super) fn render_binary_operator(operator: &BinaryOperator) -> String {
 pub(super) fn render_operator_text(operator: &str) -> String {
     match operator {
         "*" => "\\ast".to_string(),
+        "!=" => "\\ne".to_string(),
         _ => escape_latex_math(operator),
     }
 }

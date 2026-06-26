@@ -17,25 +17,23 @@ fn registry_for(source: &str) -> super::RenderRegistry {
 // ===============================[ tests ]=====================================
 
 #[test]
-fn renders_written_templates_with_subject_and_argument_substitutions() {
+fn renders_command_expressions_from_written_templates() {
     let registry = registry_for(
-        r#"[\function:on{A}:to{B}]
-Describes: f(x__)
+        r#"[\empty.set]
+Defines: X is \set
 Documented:
-. called: "function on $A?$ to $B?$"
-  written:
-  . "f? \: : \: A? \rightarrow B?"
+. written: "\emptyset"
 "#,
     );
 
     assert_eq!(
-        render_formulation_latex(r#"g is \function:on{X}:to{Y}"#, &registry),
-        Some(r#"g \: : \: X \rightarrow Y"#.to_string())
+        render_formulation_latex(r#"\empty.set"#, &registry),
+        Some(r#"\emptyset"#.to_string())
     );
 }
 
 #[test]
-fn renders_top_level_written_templates_without_repeating_subject() {
+fn renders_is_statements_from_called_templates() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
 Describes: f(x__)
@@ -46,8 +44,8 @@ Documented:
     );
 
     assert_eq!(
-        render_formulation_latex(r#"f is \function:on{A}:to{B}"#, &registry),
-        Some(r#"f : A \rightarrow B"#.to_string())
+        render_formulation_latex(r#"g is \function:on{X}:to{Y}"#, &registry),
+        Some(r#"g \textrm{ is } \textrm{function on }X\textrm{ to }Y"#.to_string())
     );
 }
 
@@ -69,7 +67,7 @@ Documented:
 }
 
 #[test]
-fn renders_called_templates_as_text_when_written_is_missing() {
+fn renders_called_templates_as_text_when_called_is_present() {
     let registry = registry_for(
         r#"[\group]
 Describes: G ::= (X, *, e)
@@ -78,6 +76,10 @@ Documented:
 "#,
     );
 
+    assert_eq!(
+        render_formulation_latex(r#"\group"#, &registry),
+        Some(r#"\textrm{group}"#.to_string())
+    );
     assert_eq!(
         render_formulation_latex(r#"G is \group"#, &registry),
         Some(r#"G \textrm{ is } \textrm{group}"#.to_string())
@@ -91,6 +93,7 @@ fn renders_comma_separated_is_or_spec_subjects_with_called_commands() {
 Describes: X
 Documented:
 . called: "set"
+. written: "\operatorname{Set}"
 "#,
     );
 
@@ -133,12 +136,37 @@ fn renders_quoted_operators_as_temporary_latex_commands() {
 }
 
 #[test]
+fn uses_written_as_called_form_when_called_is_missing() {
+    let registry = registry_for(
+        r#"[\empty.set]
+Defines: X is \set
+Documented:
+. written: "\emptyset"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"X != \empty.set"#, &registry),
+        Some(r#"X \ne \emptyset"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"X is \empty.set"#, &registry),
+        Some(r#"X \textrm{ is } \emptyset"#.to_string())
+    );
+    assert_eq!(
+        render_group_heading_latex("Defines", Some(r#"\empty.set"#), None, &registry),
+        Some(r#"\emptyset"#.to_string())
+    );
+}
+
+#[test]
 fn renders_called_templates_with_math_substitutions() {
     let registry = registry_for(
         r#"[\field:over{V}]
 Describes: F
 Documented:
 . called: "field over $V?$"
+. written: "\mathsf{Field}_{V?}"
 "#,
     );
 
@@ -176,7 +204,7 @@ Documented:
 
     assert_eq!(
         render_formulation_latex(r#"g is \function:on{X}:to{Y}"#, &registry),
-        Some(r#"g \: : \: X \rightarrow Y"#.to_string())
+        Some(r#"g \textrm{ is } \textrm{function on }X\textrm{ to }Y"#.to_string())
     );
     assert_eq!(
         render_formulation_latex(
@@ -184,7 +212,7 @@ Documented:
             &registry
         ),
         Some(
-            r#"g \textrm{ is } \textrm{bounded, continuous function on }X\textrm{ to }Y"#
+            r#"g \textrm{ is } \textrm{bounded}\textrm{, }\textrm{continuous}\textrm{ }\textrm{function on }X\textrm{ to }Y"#
                 .to_string()
         )
     );
@@ -197,6 +225,7 @@ fn renders_definition_group_headings_from_called_text() {
 Describes: f(x__)
 Documented:
 . called: "function on $A?$ to $B?$"
+. written: "f? \: : \: A? \rightarrow B?"
 "#,
     );
 
@@ -218,6 +247,7 @@ fn renders_definition_group_heading_called_text_without_capitalizing() {
 Describes: X
 Documented:
 . called: "set"
+. written: "\operatorname{Set}"
 "#,
     );
 
@@ -238,11 +268,13 @@ fn renders_refines_group_headings_from_refinement_and_refined_called_text() {
 Describes: f(x__)
 Documented:
 . called: "function on $A?$ to $B?$"
+. written: "f? \: : \: A? \rightarrow B?"
 
 [\(continuous)::function:on{A}:to{B}]
 Refines: f is \function:on{A}:to{B}
 Documented:
 . called: "continuous"
+. written: "\operatorname{Continuous}"
 "#,
     );
 
@@ -253,7 +285,7 @@ Documented:
             Some(r#"f is \function:on{A}:to{B}"#),
             &registry
         ),
-        Some(r#"\textrm{continuous function on }A\textrm{ to }B"#.to_string())
+        Some(r#"\textrm{continuous}\textrm{ }\textrm{function on }A\textrm{ to }B"#.to_string())
     );
 }
 
@@ -411,16 +443,21 @@ fn renders_conditionals_in_called_templates() {
 Describes: A
 Documented:
 . called: "ambient@[U]{ within $U?$}:{ without ambient}"
+. written: "\operatorname{Ambient}@[U]{_{U?}}"
 "#,
     );
 
     assert_eq!(
         render_formulation_latex(r#"\ambient"#, &registry),
-        Some(r#"\textrm{ambient}\textrm{ without ambient}"#.to_string())
+        Some(r#"\operatorname{Ambient}"#.to_string())
     );
     assert_eq!(
-        render_formulation_latex(r#"\ambient:within{Z}"#, &registry),
-        Some(r#"\textrm{ambient}\textrm{ within }Z"#.to_string())
+        render_formulation_latex(r#"A is \ambient"#, &registry),
+        Some(r#"A \textrm{ is } \textrm{ambient}\textrm{ without ambient}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"A is \ambient:within{Z}"#, &registry),
+        Some(r#"A \textrm{ is } \textrm{ambient}\textrm{ within }Z"#.to_string())
     );
 }
 

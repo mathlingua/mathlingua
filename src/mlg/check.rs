@@ -699,7 +699,7 @@ mod tests {
             r#"[\thing]
     Describes: value
     Documented:
-    . called: "thing"
+    . written: "\operatorname{thing}"
 
     Theorem:
     then:
@@ -814,8 +814,8 @@ mod tests {
     Defines: A ::= B "defines" B
     Documented:
     . [docs.called]
-      called:
-      . "function"
+      written:
+      . "\operatorname{function}"
 
     [\function{A}]
     Theorem:
@@ -858,8 +858,8 @@ mod tests {
     Defines: A ::= B "defines" B
     Documented:
     . [docs.called]
-      called:
-      . "function"
+      written:
+      . "\operatorname{function}"
 
     Theorem:
     then:
@@ -897,8 +897,8 @@ mod tests {
     Defines: A "defines" B
     Documented:
     . [docs.called]
-      called:
-      . "foo"
+      written:
+      . "\operatorname{foo}"
 
     Theorem:
     then:
@@ -935,14 +935,14 @@ mod tests {
             r#"[\thing]
     Describes: value
     Documented:
-    . called: "thing"
+    . written: "\operatorname{thing}"
 
     [\foo{A, B}(x)]
     Defines: A "defines" B
     Documented:
     . [docs.called]
-      called:
-      . "foo"
+      written:
+      . "\operatorname{foo}"
 
     Theorem:
     given:
@@ -977,14 +977,14 @@ mod tests {
             r#"[\thing]
     Describes: value
     Documented:
-    . called: "thing"
+    . written: "\operatorname{thing}"
 
     [\some.function{A}(x, y)]
     Defines: A "defines" B
     Documented:
     . [docs.called]
-      called:
-      . "some function"
+      written:
+      . "\operatorname{someFunction}"
 
     Theorem:
     given:
@@ -1022,23 +1022,23 @@ mod tests {
     Provides:
     . symbol: x_ "in" X :-> \\abstract
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Describes: f(x__)
     when: A, B is \set
     Documented:
-    . called: "Function on $A?$ to $B?$"
+    . written: "A? \to B?"
 
     [\(bounded)::function:on{A}:to{B}]
     Refines: f(x__) is \function:on{A}:to{B}
     Documented:
-    . called: "bounded"
+    . written: "\operatorname{bounded}"
 
     [\(continuous)::function:on{A}:to{B}]
     Refines: f(x__) is \function:on{A}:to{B}
     Documented:
-    . called: "continuous"
+    . written: "\operatorname{continuous}"
 
     Theorem:
     given:
@@ -1073,13 +1073,13 @@ mod tests {
             r#"[\real]
     Describes: x
     Documented:
-    . called: "real"
+    . written: "\operatorname{real}"
 
     [\foo{s}]
     Describes: x
     when: s is \real
     Documented:
-    . called: "foo"
+    . written: "\operatorname{foo}"
 
     Theorem:
     given: r is \real
@@ -1113,13 +1113,13 @@ mod tests {
             r#"[\real]
     Describes: x
     Documented:
-    . called: "real"
+    . written: "\operatorname{real}"
 
     [\foo{s}]
     Describes: x
     when: s is \real
     Documented:
-    . called: "foo"
+    . written: "\operatorname{foo}"
 
     Theorem:
     then:
@@ -1156,7 +1156,7 @@ mod tests {
     Provides:
     . symbol: x_ "in" X :-> \\abstract
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [A \:subset:/ B]
     Describes: A
@@ -1167,13 +1167,13 @@ mod tests {
       then:
       . a "in"? B
     Documented:
-    . called: "subset"
+    . written: "A? \subseteq B?"
 
     [\needs.set{s}]
     Describes: x
     when: s is \set
     Documented:
-    . called: "needs set"
+    . written: "\operatorname{needsSet}"
 
     Theorem:
     given: B is \set
@@ -1210,18 +1210,18 @@ mod tests {
             r#"[\set]
     Describes: X
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\thing]
     Describes: X
     Documented:
-    . called: "thing"
+    . written: "\operatorname{thing}"
 
     [A \:subset:/ B]
     Describes: A
     when: B is \set
     Documented:
-    . called: "subset"
+    . written: "A? \subseteq B?"
 
     Theorem:
     given:
@@ -1262,7 +1262,7 @@ mod tests {
     Provides:
     . symbol: x_ "in" X :-> \\abstract
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [A \:subset:?within{U}:/ B]
     Describes: A
@@ -1275,7 +1275,7 @@ mod tests {
       then:
       . a "in"? B
     Documented:
-    . called: "subset"
+    . written: "A? \subseteq B?"
 
     Theorem:
     given:
@@ -1315,7 +1315,7 @@ mod tests {
     Provides:
     . symbol: x_ "in" X :-> \\abstract
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [A \:subset:?within{U}:/ B]
     Describes: A
@@ -1328,7 +1328,7 @@ mod tests {
       then:
       . a "in"? B
     Documented:
-    . called: "subset"
+    . written: "A? \subseteq B?"
 
     [P \.and./ Q]
     States:
@@ -1342,7 +1342,7 @@ mod tests {
     . B \:subset:/ U
     expresses: C := {c_ : c_ "in" U | (.c "in"? A.) \.and./ (.c "in"? B.)}
     Documented:
-    . called: "intersection"
+    . written: "A? \cap@[U]{_{U?}}:{} B?"
     "#,
         )
         .unwrap();
@@ -1373,14 +1373,14 @@ mod tests {
     Provides:
     . symbol: x_ "in" X :-> \\abstract
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [A \:subset:/ B]
     Describes: A
     when: B is \set
     extends: A is \set
     Documented:
-    . called: "subset"
+    . written: "A? \subseteq B?"
 
     [A \.same.as./ B]
     States:
@@ -1392,19 +1392,19 @@ mod tests {
     Describes: y
     when: x is \\expression
     Documented:
-    . called: "needs expression"
+    . written: "\operatorname{needsExpression}"
 
     [\needs.statement{x}]
     Describes: y
     when: x is \\statement
     Documented:
-    . called: "needs statement"
+    . written: "\operatorname{needsStatement}"
 
     [\needs.specification{x}]
     Describes: y
     when: x is \\specification
     Documented:
-    . called: "needs specification"
+    . written: "\operatorname{needsSpecification}"
 
     Theorem:
     given:
@@ -1448,25 +1448,25 @@ mod tests {
             r#"[\set]
     Describes: X
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\needs.statement{x}]
     Describes: y
     when: x is \\statement
     Documented:
-    . called: "needs statement"
+    . written: "\operatorname{needsStatement}"
 
     [\needs.specification{x}]
     Describes: y
     when: x is \\specification
     Documented:
-    . called: "needs specification"
+    . written: "\operatorname{needsSpecification}"
 
     [\wrap{x}]
     Describes: y
     when: x is \\expression
     Documented:
-    . called: "wrap"
+    . written: "\operatorname{wrap}"
 
     Theorem:
     given: A is \set
@@ -1513,19 +1513,19 @@ mod tests {
             r#"[\set]
     Describes: X
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [A \:wrong:/ B]
     Describes: C
     when: B is \set
     Documented:
-    . called: "wrong"
+    . written: "\operatorname{wrong}"
 
     [A \:states:/ B]
     States:
     that: A = A
     Documented:
-    . called: "states"
+    . written: "\operatorname{states}"
     "#,
         )
         .unwrap();
@@ -1564,7 +1564,7 @@ mod tests {
     Provides:
     . symbol: x_ "in" X :-> \\abstract
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Describes: f(x__)
@@ -1639,7 +1639,7 @@ mod tests {
     Provides:
     . symbol: x_ "in" X :-> \\abstract
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\element.of:group{G ::= (X, *, e)}]
     Describes: x
@@ -1648,7 +1648,7 @@ mod tests {
     . X is \set
     extends: x "in" X
     Documented:
-    . called: "element of group"
+    . written: "x? \in G?"
 
     [\group]
     Describes: G ::= (X, *, e)
@@ -1657,13 +1657,13 @@ mod tests {
     Provides:
     . symbol: x_ "in" G :-> x_ is \element.of:group{G}
     Documented:
-    . called: "group"
+    . written: "\operatorname{group}"
 
     [\function:on{A}:to{B}]
     Describes: f(x__)
     when: A, B is \set
     Documented:
-    . called: "function"
+    . written: "A? \to B?"
 
     Theorem:
     given:
@@ -1701,14 +1701,14 @@ mod tests {
     Provides:
     . symbol: x_ "in" X :-> \\abstract
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Describes: f(x__)
     when: A, B is \set
     extends: f is (_ "in" A) => (_ "in" B)
     Documented:
-    . called: "function"
+    . written: "A? \to B?"
 
     Theorem:
     given:
@@ -1747,14 +1747,14 @@ mod tests {
     Provides:
     . symbol: x_ "in" X :-> \\abstract
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Describes: f(x__)
     when: A, B is \set
     extends: f is (_ "in" A) => (_ "in" B)
     Documented:
-    . called: "function"
+    . written: "A? \to B?"
 
     Theorem:
     given:
@@ -1793,12 +1793,12 @@ mod tests {
             r#"[\real]
     Describes: x
     Documented:
-    . called: "real"
+    . written: "\operatorname{real}"
 
     [\integer]
     Describes: x
     Documented:
-    . called: "integer"
+    . written: "\operatorname{integer}"
 
     Theorem:
     given:
@@ -1834,14 +1834,14 @@ mod tests {
             r#"[\set]
     Describes: X
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Describes: f(x__)
     when: A, B is \set
     extends: f is (x "in" A) => (_ "in" B)
     Documented:
-    . called: "function"
+    . written: "A? \to B?"
     "#,
         )
         .unwrap();
@@ -1872,13 +1872,13 @@ mod tests {
             r#"[\set]
     Describes: X
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
     Describes: f(x__)
     when: A, B is \set
     Documented:
-    . called: "function"
+    . written: "A? \to B?"
 
     Theorem:
     given:
@@ -1918,13 +1918,13 @@ mod tests {
             r#"[\real]
     Describes: x
     Documented:
-    . called: "real"
+    . written: "\operatorname{real}"
 
     [\foo{s}]
     Describes: x
     when: s is \real
     Documented:
-    . called: "foo"
+    . written: "\operatorname{foo}"
 
     Theorem:
     given: A is \real
@@ -1960,7 +1960,7 @@ mod tests {
             r#"[\real]
     Describes: x
     Documented:
-    . called: "real"
+    . written: "\operatorname{real}"
 
     Theorem:
     given: x := y
@@ -1995,13 +1995,13 @@ mod tests {
             r#"[\real]
     Describes: x
     Documented:
-    . called: "real"
+    . written: "\operatorname{real}"
 
     [\foo{s}]
     Describes: x
     when: s is \real
     Documented:
-    . called: "foo"
+    . written: "\operatorname{foo}"
 
     Theorem:
     then:
@@ -2038,8 +2038,8 @@ mod tests {
     Defines: A ::= B "defines" B
     Documented:
     . [docs.called]
-      called:
-      . "foo"
+      written:
+      . "\operatorname{foo}"
 
     Theorem:
     then:
@@ -2078,8 +2078,8 @@ mod tests {
     Defines: A ::= B "defines" B
     Documented:
     . [docs.called]
-      called:
-      . "foo"
+      written:
+      . "\operatorname{foo}"
 
     Theorem:
     then:
@@ -2120,7 +2120,7 @@ mod tests {
     Provides:
     . symbol: x_ "in" X :-> \\abstract
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [X \.set.=./ Y]
     States:
@@ -2165,20 +2165,20 @@ mod tests {
             r#"[\real]
     Describes: x
     Documented:
-    . called: "real"
+    . written: "\operatorname{real}"
 
     [\reals]
     Describes: R
     Provides:
     . symbol: x_ "in" R :-> x is \real
     Documented:
-    . called: "reals"
+    . written: "\operatorname{reals}"
 
     [\foo{s}]
     Describes: x
     when: s is \real
     Documented:
-    . called: "foo"
+    . written: "\operatorname{foo}"
 
     Theorem:
     given:
@@ -2216,7 +2216,7 @@ mod tests {
     Provides:
     . symbol: x_ "in" G :-> \\abstract
     Documented:
-    . called: "group"
+    . written: "\operatorname{group}"
 
     [\foo{G}:with{x}]
     Describes: y
@@ -2224,7 +2224,7 @@ mod tests {
     . G is \group
     . x "in" G
     Documented:
-    . called: "foo"
+    . written: "\operatorname{foo}"
 
     Theorem:
     given:
@@ -2261,12 +2261,12 @@ mod tests {
             r#"[\set]
     Describes: X
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Describes: f(x__)
     Documented:
-    . called: "function"
+    . written: "\operatorname{function}"
 
     [\group]
     Describes: G ::= (X, *, e)
@@ -2275,7 +2275,7 @@ mod tests {
     . * is \function:on{X}:to{X}
     . e "in" G
     Documented:
-    . called: "group"
+    . written: "\operatorname{group}"
     "#,
         )
         .unwrap();
@@ -2308,12 +2308,12 @@ mod tests {
             r#"[\set]
     Describes: X
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Describes: f(x__)
     Documented:
-    . called: "function"
+    . written: "\operatorname{function}"
 
     [\group]
     Describes: G ::= (X, *, e)
@@ -2324,7 +2324,7 @@ mod tests {
     Provides:
     . symbol: x_ "in" G :-> x_ is \element.of:group{G}
     Documented:
-    . called: "group"
+    . written: "\operatorname{group}"
 
     [\element.of:group{G}]
     Describes: x
@@ -2362,18 +2362,18 @@ mod tests {
             r#"[\set]
     Describes: X
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\thing]
     Describes: value
     Documented:
-    . called: "thing"
+    . written: "\operatorname{thing}"
 
     [\element.of:group{G}]
     Describes: x
     when: G is \set
     Documented:
-    . called: "element of group $G?$"
+    . written: "x? \in G?"
 
     Theorem:
     given: A, x is \thing
@@ -2410,12 +2410,12 @@ mod tests {
             r#"[\set]
     Describes: X
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Describes: f(x__)
     Documented:
-    . called: "function"
+    . written: "\operatorname{function}"
 
     [\group]
     Describes: G ::= (X, *, e)
@@ -2426,7 +2426,7 @@ mod tests {
     Provides:
     . symbol: x_ "in" G :-> x_ is \element.of:group{G}
     Documented:
-    . called: "group"
+    . written: "\operatorname{group}"
 
     [\element.of:group{G}]
     Describes: x
@@ -2467,12 +2467,12 @@ mod tests {
             r#"[\set]
     Describes: X
     Documented:
-    . called: "set"
+    . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
     Describes: f(x__)
     Documented:
-    . called: "function"
+    . written: "\operatorname{function}"
 
     [\group]
     Describes: G ::= (X, *, e)
@@ -2484,7 +2484,7 @@ mod tests {
     Provides:
     . symbol: x_ "in" G :-> x_ is \element.of:group{G}
     Documented:
-    . called: "group"
+    . written: "\operatorname{group}"
 
     [\element.of:group{G}]
     Describes: x
@@ -2521,8 +2521,8 @@ mod tests {
     Defines: A "defines" B
     Documented:
     . [docs.called]
-      called:
-      . "some function"
+      written:
+      . "\operatorname{someFunction}"
 
     Theorem:
     then:
@@ -2560,8 +2560,8 @@ mod tests {
     Defines: A "defines" B
     Documented:
     . [docs.called]
-      called:
-      . "some function"
+      written:
+      . "\operatorname{someFunction}"
 
     Theorem:
     then:
@@ -2589,24 +2589,27 @@ mod tests {
     }
 
     #[test]
-    fn check_requires_defines_describes_and_refines_to_have_documented_called() {
+    fn check_requires_defines_describes_and_refines_to_have_documented_called_or_written() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("documented-called.mlg");
+        let file = temp_dir.path().join("documented-rendering.mlg");
 
         write_mlg_fixture(
             &file,
-            r#"[\missing.called]
+            r#"[\missing.rendering]
     Defines: A "defines" B
 
-    [\written.only]
+    [\describes.missing]
+    Describes: A
+
+    [\called.only]
     Describes: A
     Documented:
-    . [docs.written]
-      written:
-      . "written only"
+    . [docs.called]
+      called:
+    . "called only"
 
     [\refines.missing]
-    Refines: A is \missing.called
+    Refines: A is \called.only
     "#,
         )
         .unwrap();
@@ -2614,7 +2617,7 @@ mod tests {
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("documented-called.mlg")],
+            &[PathBuf::from("documented-rendering.mlg")],
             &mut event_log,
         );
         let canonical_file = file.canonicalize().unwrap();
@@ -2625,34 +2628,41 @@ mod tests {
             &canonical_file,
             0,
             1,
-            "Defines entries must include a `called:` item in `Documented:`"
+            "Defines entries must include either a `called:` or `written:` item in `Documented:`"
         ));
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
             3,
             1,
-            "Describes entries must include a `called:` item in `Documented:`"
+            "Describes entries must include either a `called:` or `written:` item in `Documented:`"
         ));
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
-            10,
+            13,
             1,
-            "Refines entries must include a `called:` item in `Documented:`"
+            "Refines entries must include either a `called:` or `written:` item in `Documented:`"
         ));
         assert!(event_log.has_errors());
     }
 
     #[test]
-    fn check_accepts_documented_called_with_or_without_written() {
+    fn check_accepts_documented_called_or_written() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("documented-valid.mlg");
 
         write_mlg_fixture(
             &file,
-            r#"[\called.only]
+            r#"[\written.only]
     Defines: A "defines" B
+    Documented:
+    . [docs.written]
+      written:
+      . "written only"
+
+    [\called.only]
+    Describes: A
     Documented:
     . [docs.called]
       called:

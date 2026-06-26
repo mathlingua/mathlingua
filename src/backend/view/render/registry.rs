@@ -11,7 +11,23 @@ pub(super) struct CommandRender {
     pub(super) subject_variable: Option<String>,
     pub(super) parameters: Vec<String>,
     pub(super) called: String,
+    pub(super) called_source: CalledRenderSource,
     pub(super) written: Option<String>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum CalledRenderSource {
+    Called,
+    Written,
+}
+
+impl CommandRender {
+    pub(super) fn render_called(&self, substitutions: &HashMap<String, String>) -> String {
+        match self.called_source {
+            CalledRenderSource::Called => render_called_template(&self.called, substitutions),
+            CalledRenderSource::Written => substitute_math_template(&self.called, substitutions),
+        }
+    }
 }
 
 pub(in crate::backend::view) fn build_render_registry(
@@ -60,7 +76,7 @@ pub(in crate::backend::view) fn render_group_heading_latex(
 
     let substitutions = command_header_substitutions(&header);
 
-    Some(render_called_template(&render.called, &substitutions))
+    Some(render.render_called(&substitutions))
 }
 
 pub(super) fn render_refines_group_heading_latex(
@@ -72,11 +88,12 @@ pub(super) fn render_refines_group_heading_latex(
     let statement = parse_refined_declaration_statement(refines_argument?).ok()?;
     let target = refines_target_type(&statement)?;
     let target_called = type_expression_called_template(target, registry)?;
-    let mut substitutions = target_called.substitutions;
-    substitutions.extend(command_header_substitutions(header));
-    let template = format!("{} {}", refinement_render.called, target_called.template);
+    let refinement_latex = refinement_render.render_called(&command_header_substitutions(header));
 
-    Some(render_called_template(&template, &substitutions))
+    Some(join_called_latex_parts(vec![
+        refinement_latex,
+        target_called.latex,
+    ]))
 }
 
 pub(super) fn render_parsed_formulation_latex(
@@ -177,7 +194,12 @@ fn render_entries_from_parts_with_fallback(
     let Some(documented) = documented else {
         return fallback_called
             .map(|called| {
-                render_entries_from_signatures(signatures, subject_variable, Some(called), None)
+                render_entries_from_signatures(
+                    signatures,
+                    subject_variable,
+                    Some((called, CalledRenderSource::Called)),
+                    None,
+                )
             })
             .unwrap_or_default();
     };
@@ -197,24 +219,31 @@ fn render_entries_from_parts_with_fallback(
         return Vec::new();
     }
 
-    let called_text = called
-        .map(|called| join_called_text(&called.called))
-        .or(fallback_called);
     let written_text = written.map(join_written_text);
+    let called_text = called
+        .map(|called| (join_called_text(&called.called), CalledRenderSource::Called))
+        .or_else(|| {
+            written_text
+                .clone()
+                .map(|written| (written, CalledRenderSource::Written))
+        })
+        .or_else(|| fallback_called.map(|called| (called, CalledRenderSource::Called)));
     render_entries_from_signatures(signatures, subject_variable, called_text, written_text)
 }
 
 fn render_entries_from_signatures(
     signatures: Vec<CommandHeaderSignature>,
     subject_variable: Option<String>,
-    called: Option<String>,
+    called: Option<(String, CalledRenderSource)>,
     written: Option<String>,
 ) -> Vec<RenderEntry> {
     signatures
         .into_iter()
         .map(|signature| {
             let signature_text = signature.signature;
-            let called_text = called.clone().unwrap_or_else(|| signature_text.clone());
+            let (called_text, called_source) = called
+                .clone()
+                .unwrap_or_else(|| (signature_text.clone(), CalledRenderSource::Called));
 
             RenderEntry {
                 signature: signature_text,
@@ -222,6 +251,7 @@ fn render_entries_from_signatures(
                     subject_variable: subject_variable.clone(),
                     parameters: signature.parameters,
                     called: called_text,
+                    called_source,
                     written: written.clone(),
                 },
             }

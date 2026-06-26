@@ -175,24 +175,11 @@ pub(super) fn render_is_command_with_subject_latex(
     let substitutions =
         command_substitutions(command, render, Some(subject_latex.clone()), registry);
 
-    if let Some(written) = &render.written {
-        let includes_subject = render
-            .subject_variable
-            .as_ref()
-            .is_some_and(|name| template_contains_placeholder(written, name));
-        let rendered = substitute_math_template(written, &substitutions);
-        if includes_subject {
-            rendered
-        } else {
-            format!("{subject_latex} \\textrm{{ is }} {rendered}")
-        }
-    } else {
-        format!(
-            "{} \\textrm{{ is }} {}",
-            subject_latex,
-            render_called_template(&render.called, &substitutions)
-        )
-    }
+    format!(
+        "{} \\textrm{{ is }} {}",
+        subject_latex,
+        render.render_called(&substitutions)
+    )
 }
 
 pub(super) fn render_is_refined_command_with_subject_latex(
@@ -242,7 +229,9 @@ fn render_function_type_spec(spec: &FunctionTypeSpec, registry: &RenderRegistry)
 pub(super) fn render_type_expression(ty: &TypeExpression, registry: &RenderRegistry) -> String {
     match ty {
         TypeExpression::Builtin { chain, .. } => render_builtin_type_chain(chain),
-        TypeExpression::Command(command) => render_command_expression(command, registry),
+        TypeExpression::Command(command) => command_called_template(command, registry)
+            .map(|called| called.latex)
+            .unwrap_or_else(|| render_command_expression(command, registry)),
         TypeExpression::RefinedCommand(command) => render_refined_command_called(command, registry),
         TypeExpression::Function(function_type) => render_function_type(function_type, registry),
     }

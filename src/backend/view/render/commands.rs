@@ -12,7 +12,7 @@ pub(super) fn render_command_expression(
 
     match &render.written {
         Some(written) => substitute_math_template(written, &substitutions),
-        None => render_called_template(&render.called, &substitutions),
+        None => render.render_called(&substitutions),
     }
 }
 
@@ -36,7 +36,7 @@ pub(super) fn render_predicate_command_expression(
         }
     }
 
-    render_called_template(&render.called, &substitutions)
+    render.render_called(&substitutions)
 }
 
 pub(super) fn render_infix_command_expression(
@@ -58,7 +58,7 @@ pub(super) fn render_infix_command_expression(
 
     match &render.written {
         Some(written) => substitute_math_template(written, &substitutions),
-        None => render_called_template(&render.called, &substitutions),
+        None => render.render_called(&substitutions),
     }
 }
 
@@ -81,7 +81,7 @@ pub(super) fn render_infix_spec_expression(
 
     match &render.written {
         Some(written) => substitute_math_template(written, &substitutions),
-        None => render_called_template(&render.called, &substitutions),
+        None => render.render_called(&substitutions),
     }
 }
 
@@ -90,13 +90,12 @@ pub(super) fn render_refined_command_called(
     registry: &RenderRegistry,
 ) -> String {
     let called = refined_command_called_template(command, registry);
-    render_called_template(&called.template, &called.substitutions)
+    called.latex
 }
 
 #[derive(Clone, Debug)]
 pub(super) struct CalledTemplate {
-    pub(super) template: String,
-    pub(super) substitutions: HashMap<String, String>,
+    pub(super) latex: String,
 }
 
 pub(super) fn type_expression_called_template(
@@ -120,9 +119,9 @@ pub(super) fn command_called_template(
     let render = registry
         .commands
         .get(&command_expression_signature(command))?;
+    let substitutions = command_substitutions(command, render, None, registry);
     Some(CalledTemplate {
-        template: render.called.clone(),
-        substitutions: command_substitutions(command, render, None, registry),
+        latex: render.render_called(&substitutions),
     })
 }
 
@@ -131,45 +130,45 @@ pub(super) fn refined_command_called_template(
     registry: &RenderRegistry,
 ) -> CalledTemplate {
     let mut refinement_templates = Vec::new();
-    let mut substitutions = HashMap::new();
 
     let base_signature = refined_command_base_signature(command);
-    if let Some(render) = registry.commands.get(&base_signature) {
-        substitutions.extend(command_substitutions_for_names(
-            &render.parameters,
-            refined_command_base_argument_values(command, registry),
-        ));
-    }
 
     for part in &command.parts {
         let signature = refined_command_part_signature(command, part);
         if let Some(render) = registry.commands.get(&signature) {
-            refinement_templates.push(render.called.clone());
-            substitutions.extend(command_substitutions_for_names(
+            let substitutions = command_substitutions_for_names(
                 &render.parameters,
                 refined_command_part_argument_values(command, part, registry),
-            ));
+            );
+            refinement_templates.push(render.render_called(&substitutions));
         } else {
-            refinement_templates.push(format_chain(&part.chain));
+            refinement_templates.push(render_called_template(
+                &format_chain(&part.chain),
+                &HashMap::new(),
+            ));
         }
     }
 
-    let base_template = if let Some(render) = registry.commands.get(&base_signature) {
-        render.called.clone()
+    let base_latex = if let Some(render) = registry.commands.get(&base_signature) {
+        let substitutions = command_substitutions_for_names(
+            &render.parameters,
+            refined_command_base_argument_values(command, registry),
+        );
+        render.render_called(&substitutions)
     } else {
-        refined_tail_signature(&command.refined_tail)
+        render_called_template(
+            &refined_tail_signature(&command.refined_tail),
+            &HashMap::new(),
+        )
     };
 
-    let template = if refinement_templates.is_empty() {
-        base_template
+    let latex = if refinement_templates.is_empty() {
+        base_latex
     } else {
-        format!("{} {}", refinement_templates.join(", "), base_template)
+        join_called_latex_parts(vec![refinement_templates.join("\\textrm{, }"), base_latex])
     };
 
-    CalledTemplate {
-        template,
-        substitutions,
-    }
+    CalledTemplate { latex }
 }
 
 pub(super) fn refines_target_type(statement: &DeclarationStatement) -> Option<&TypeExpression> {

@@ -40,6 +40,14 @@ pub(super) fn render_called_template(
     result
 }
 
+pub(super) fn join_called_latex_parts(parts: Vec<String>) -> String {
+    parts
+        .into_iter()
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("\\textrm{ }")
+}
+
 fn flush_called_segment(
     result: &mut String,
     segment: &mut String,

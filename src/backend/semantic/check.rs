@@ -143,20 +143,21 @@ pub(super) fn check_documented_rendering(
         return;
     }
 
-    let has_called = documented.is_some_and(|section| {
-        section
-            .arguments
-            .iter()
-            .any(|item| matches!(item, DocumentedItem::Called(_)))
+    let has_rendering = documented.is_some_and(|section| {
+        section.arguments.iter().any(|item| match item {
+            DocumentedItem::Written(_) => true,
+            DocumentedItem::Called(_) => true,
+            _ => false,
+        })
     });
 
-    if !has_called {
+    if !has_rendering {
         emit_error(
             event_log,
             &file.path,
             position,
             format!(
-                "{} entries must include a `called:` item in `Documented:`",
+                "{} entries must include either a `called:` or `written:` item in `Documented:`",
                 kind.label()
             ),
         );

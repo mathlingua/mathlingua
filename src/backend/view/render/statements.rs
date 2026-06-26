@@ -239,11 +239,15 @@ fn render_function_type_spec(spec: &FunctionTypeSpec, registry: &RenderRegistry)
     }
 }
 
-fn render_type_expression(ty: &TypeExpression, registry: &RenderRegistry) -> String {
+pub(super) fn render_type_expression(ty: &TypeExpression, registry: &RenderRegistry) -> String {
     match ty {
-        TypeExpression::Builtin { chain, .. } => format!("\\\\{}", format_chain(chain)),
+        TypeExpression::Builtin { chain, .. } => render_builtin_type_chain(chain),
         TypeExpression::Command(command) => render_command_expression(command, registry),
         TypeExpression::RefinedCommand(command) => render_refined_command_called(command, registry),
         TypeExpression::Function(function_type) => render_function_type(function_type, registry),
     }
+}
+
+pub(super) fn render_builtin_type_chain(chain: &Chain) -> String {
+    format!("\\textrm{{{}}}", escape_latex_text(&format_chain(chain)))
 }

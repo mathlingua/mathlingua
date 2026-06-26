@@ -101,6 +101,24 @@ Documented:
 }
 
 #[test]
+fn renders_builtin_type_expressions_as_plain_text() {
+    let registry = registry_for("");
+
+    assert_eq!(
+        render_formulation_latex(r#"X is \\statement"#, &registry),
+        Some(r#"X \textrm{ is } \textrm{statement}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"X, Y is \\expression"#, &registry),
+        Some(r#"X, Y \textrm{ is } \textrm{expression}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"S is \\specification"#, &registry),
+        Some(r#"S \textrm{ is } \textrm{specification}"#.to_string())
+    );
+}
+
+#[test]
 fn renders_quoted_operators_as_temporary_latex_commands() {
     let registry = registry_for("");
 

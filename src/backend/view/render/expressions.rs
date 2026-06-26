@@ -35,8 +35,16 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             format!("\\left({values}\\right)")
         }
         ExpressionKind::Set(set) => render_set_expression(set, registry),
-        ExpressionKind::Grouped { expression, .. } => {
-            format!("\\left({}\\right)", render_expression(expression, registry))
+        ExpressionKind::Grouped {
+            expression,
+            dot_delimited,
+        } => {
+            let rendered = render_expression(expression, registry);
+            if *dot_delimited {
+                rendered
+            } else {
+                format!("\\left({rendered}\\right)")
+            }
         }
         ExpressionKind::Labeled { expression, .. } => render_expression(expression, registry),
         ExpressionKind::SubsetCall(call) => render_subset_call(call),

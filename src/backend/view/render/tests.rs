@@ -268,6 +268,20 @@ fn renders_tuple_declarations_with_operator_symbols() {
 }
 
 #[test]
+fn renders_dot_delimited_grouped_expressions_without_parentheses() {
+    let registry = registry_for("");
+
+    assert_eq!(
+        render_formulation_latex("(x + y)", &registry),
+        Some(r#"\left(x + y\right)"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("(.x + y.)", &registry),
+        Some(r#"x + y"#.to_string())
+    );
+}
+
+#[test]
 fn renders_set_builder_specs() {
     let registry = registry_for("");
 

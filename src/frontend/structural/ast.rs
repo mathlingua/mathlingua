@@ -271,6 +271,7 @@ pub enum TopLevelItem {
     Section(SectionGroup),
     Subsection(SubsectionGroup),
     Subsubsection(SubsubsectionGroup),
+    Disambiguates(DisambiguatesGroup),
     Describes(DescribesGroup),
     Defines(DefinesGroup),
     Refines(RefinesGroup),
@@ -401,6 +402,27 @@ pub struct SubsectionGroup {
 pub struct SubsubsectionGroup {
     pub subsubsection: SubsubsectionSection,
 }
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DisambiguatesGroup {
+    pub heading: FormOrDeclaration,
+    pub branches: OneOrMore<DisambiguatesBranch>,
+    pub else_: Option<DisambiguatesElseSection>,
+    pub justified: Option<JustifiedSection>,
+    pub documented: Option<DocumentedSection>,
+    pub aliases: Option<AliasesSection>,
+    pub references: Option<ReferencesSection>,
+    pub metadata: Option<MetadataSection>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DisambiguatesBranch {
+    pub when: WhenSection,
+    pub to: DisambiguatesToSection,
+}
+
+argument_section!(DisambiguatesToSection, Expression);
+argument_section!(DisambiguatesElseSection, Expression);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DescribesGroup {

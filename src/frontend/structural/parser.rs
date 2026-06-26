@@ -1,6 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 
 use crate::events::EventLog;
+use crate::frontend::formulation::ast::{FormOrDeclaration, FormOrDeclarationKind};
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
     parse_expression, parse_expression_alias, parse_form_or_declaration, parse_is_via_statement,
@@ -1963,6 +1964,7 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
         "Section" => parse_section(group, tracker).map(TopLevelItem::Section),
         "Subsection" => parse_subsection(group, tracker).map(TopLevelItem::Subsection),
         "Subsubsection" => parse_subsubsection(group, tracker).map(TopLevelItem::Subsubsection),
+        "Disambiguates" => parse_disambiguates(group, tracker).map(TopLevelItem::Disambiguates),
         "Describes" => parse_describes(group, tracker).map(TopLevelItem::Describes),
         "Defines" => parse_defines(group, tracker).map(TopLevelItem::Defines),
         "Refines" => parse_refines(group, tracker).map(TopLevelItem::Refines),
@@ -2070,6 +2072,201 @@ pub(in crate::frontend::structural::parser) fn parse_subsubsection(
 }
 
 // ===============================[ definitions ]=====================================
+
+/// Parses a global operator/function disambiguation table.
+///
+/// Unlike ordinary section patterns, `Disambiguates` permits repeated ordered
+/// `when:`/`to:` pairs, so this parser walks the section list directly.
+pub(in crate::frontend::structural::parser) fn parse_disambiguates(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<DisambiguatesGroup> {
+    let heading = parse_required_disambiguates_heading(group, tracker)?;
+    let first = group.sections.first()?;
+    if first.label != "Disambiguates" {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            first.metadata.row,
+            format!("Expected `Disambiguates` but found `{}`", first.label),
+        );
+        return None;
+    }
+
+    ensure_empty_section(first, "Disambiguates", tracker);
+
+    let mut index = 1;
+    let mut branches = Vec::new();
+    while let Some(section) = group.sections.get(index) {
+        if section.label != "when" {
+            break;
+        }
+
+        let when = parse_required_clauses(section, "when", tracker)
+            .map(|arguments| WhenSection { arguments })?;
+        index += 1;
+
+        let Some(to_section) = group.sections.get(index) else {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                "Expected `to` section after `when`",
+            );
+            return None;
+        };
+        if to_section.label != "to" {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                to_section.metadata.row,
+                format!(
+                    "Expected `to` section after `when` but found `{}`",
+                    to_section.label
+                ),
+            );
+            return None;
+        }
+
+        let to = parse_required_formulation(to_section, "to", tracker, parse_expression)
+            .map(|argument| DisambiguatesToSection { argument })?;
+        branches.push(DisambiguatesBranch { when, to });
+        index += 1;
+    }
+
+    let branches = match OneOrMore::try_from(branches) {
+        Ok(branches) => branches,
+        Err(_) => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                first.metadata.row,
+                "Expected at least one `when`/`to` branch in `Disambiguates`",
+            );
+            return None;
+        }
+    };
+
+    let else_ = match group.sections.get(index) {
+        Some(section) if section.label == "else" => {
+            index += 1;
+            parse_required_formulation(section, "else", tracker, parse_expression)
+                .map(|argument| DisambiguatesElseSection { argument })
+        }
+        _ => None,
+    };
+
+    let trailing = identify_sections(
+        "Disambiguates",
+        &group.sections[index..],
+        tracker,
+        &[
+            "Justified?",
+            "Documented?",
+            "Aliases?",
+            "References?",
+            "Metadata?",
+        ],
+    )?;
+
+    Some(DisambiguatesGroup {
+        heading,
+        branches,
+        else_,
+        justified: trailing.get("Justified").copied().and_then(|section| {
+            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
+                .map(|arguments| JustifiedSection { arguments })
+        }),
+        documented: trailing.get("Documented").copied().and_then(|section| {
+            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
+                .map(|arguments| DocumentedSection { arguments })
+        }),
+        aliases: trailing.get("Aliases").copied().and_then(|section| {
+            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
+                .map(|arguments| AliasesSection { arguments })
+        }),
+        references: trailing.get("References").copied().and_then(|section| {
+            parse_required_formulations(section, "References", tracker, parse_resource_header)
+                .map(|arguments| ReferencesSection { arguments })
+        }),
+        metadata: trailing.get("Metadata").copied().and_then(|section| {
+            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
+                .map(|arguments| MetadataSection { arguments })
+        }),
+    })
+}
+
+fn parse_required_disambiguates_heading(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<FormOrDeclaration> {
+    let Some(raw_heading) = group.heading.as_deref() else {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            group.metadata.row,
+            "Expected disambiguation heading",
+        );
+        return None;
+    };
+
+    if raw_heading.contains(':') {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            group.metadata.row,
+            "Disambiguates headings cannot use colon-directed operators",
+        );
+        return None;
+    }
+
+    let heading = match parse_form_or_declaration(raw_heading) {
+        Ok(heading) => heading,
+        Err(error) => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                format!("Invalid disambiguation heading: {error}"),
+            );
+            return None;
+        }
+    };
+
+    match &heading.kind {
+        FormOrDeclarationKind::FunctionDeclaration { name: None, .. }
+        | FormOrDeclarationKind::InfixOperator { .. }
+        | FormOrDeclarationKind::PrefixOperator { .. }
+        | FormOrDeclarationKind::PostfixOperator { .. } => Some(heading),
+        FormOrDeclarationKind::FunctionDeclaration { name: Some(_), .. } => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                "Disambiguates function headings cannot use declaration aliases",
+            );
+            None
+        }
+        FormOrDeclarationKind::Name(_)
+        | FormOrDeclarationKind::TupleDeclaration { .. }
+        | FormOrDeclarationKind::SetDeclaration { .. } => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                "Disambiguates headings must be operator or function forms",
+            );
+            None
+        }
+    }
+}
+
+fn ensure_empty_section(section: &ProtoSection, label: &str, tracker: &mut EventLog) {
+    for entry in section_entries(section) {
+        let row = match entry {
+            SectionEntry::Inline { row, .. }
+            | SectionEntry::Formulation { row, .. }
+            | SectionEntry::Text { row, .. }
+            | SectionEntry::Group { row, .. } => row,
+        };
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            row,
+            format!("Section `{label}` does not accept content"),
+        );
+    }
+}
 
 /// Parses a command-backed `Describes:` group.
 ///
@@ -2828,6 +3025,7 @@ mod tests {
 
     use super::parse_document;
     use crate::events::{Event, EventLog};
+    use crate::frontend::formulation::ast::FormOrDeclarationKind;
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, Document, DocumentedItem, IsOrViaItem, JustifiedItem,
         MetadataItem, ProvidesItem, ResourceItem, SpecifyItem, TopLevelItem,
@@ -2888,6 +3086,41 @@ mod tests {
     }
 
     // ===============================[ definitions ]=====================================
+
+    #[test]
+    fn parses_disambiguates_groups_with_ordered_branches() {
+        let document = parse_ok(
+            r#"
+[x_ + y_]
+Disambiguates:
+when:
+. x_ is \real
+. y_ is \complex
+to: x_ \.complex.+./ y_
+when:
+. x_ is \real
+. y_ is \integer
+to: x_ \.real.+./ y_
+else: x_
+Documented:
+. written: "x_? + y_?"
+"#,
+        );
+
+        match &document.items[0] {
+            TopLevelItem::Disambiguates(group) => {
+                assert_eq!(group.branches.len(), 2);
+                assert!(group.else_.is_some());
+                assert!(group.documented.is_some());
+                assert!(matches!(
+                    group.heading.kind,
+                    FormOrDeclarationKind::InfixOperator { ref operator, .. }
+                        if operator.text == "+"
+                ));
+            }
+            other => panic!("expected Disambiguates item, got {other:?}"),
+        }
+    }
 
     #[test]
     fn parses_definition_like_groups_with_nested_sections_and_items() {

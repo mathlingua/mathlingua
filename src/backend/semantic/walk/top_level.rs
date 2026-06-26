@@ -5,6 +5,18 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
     visit: &mut impl FnMut(&SignatureShape),
 ) {
     match item {
+        TopLevelItem::Disambiguates(group) => {
+            for branch in &group.branches {
+                for clause in &branch.when.arguments {
+                    walk_clause(clause, visit);
+                }
+                walk_expression(&branch.to.argument, visit);
+            }
+            if let Some(else_) = &group.else_ {
+                walk_expression(&else_.argument, visit);
+            }
+            walk_optional_aliases(&group.aliases, visit);
+        }
         TopLevelItem::Describes(group) => {
             walk_form_or_declaration(&group.describes.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);

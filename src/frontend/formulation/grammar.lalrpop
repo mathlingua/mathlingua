@@ -22,6 +22,8 @@ extern {
         "named_operator" => Token::NamedOperator(<String>),
         "left_named_operator" => Token::LeftNamedOperator(<String>),
         "right_named_operator" => Token::RightNamedOperator(<String>),
+        "prefix_named_operator" => Token::PrefixNamedOperator(<String>),
+        "postfix_named_operator" => Token::PostfixNamedOperator(<String>),
         "label" => Token::Label(<Vec<String>>),
         "::=" => Token::Introduce,
         ":=" => Token::Declare,
@@ -103,12 +105,12 @@ InfixFormOperator: ast::Operator = {
 
 PrefixFormOperator: ast::Operator = {
     <operator:AnyOperator> => operator,
-    <l:@L> <name:Name> "|" <r:@R> => ast::Operator::new(Span::new(l, r), name),
+    <l:@L> <name:"prefix_named_operator"> <r:@R> => ast::Operator::new(Span::new(l, r), name),
 };
 
 PostfixFormOperator: ast::Operator = {
     <operator:AnyOperator> => operator,
-    <l:@L> "|" <name:Name> <r:@R> => ast::Operator::new(Span::new(l, r), name),
+    <l:@L> <name:"postfix_named_operator"> <r:@R> => ast::Operator::new(Span::new(l, r), name),
 };
 
 NamedOperatorToken: ast::NamedOperator = {
@@ -318,6 +320,11 @@ FormOrDeclaration: ast::FormOrDeclaration = {
 PrefixOperator: UnaryOperator = {
     <l:@L> "+" <r:@R> => UnaryOperator::Arithmetic(ast::Operator::new(Span::new(l, r), "+")),
     <l:@L> "-" <r:@R> => UnaryOperator::Arithmetic(ast::Operator::new(Span::new(l, r), "-")),
+    <l:@L> <name:"prefix_named_operator"> <r:@R> => UnaryOperator::Named(ast::Operator::new(Span::new(l, r), name)),
+};
+
+PostfixExpressionOperator: ast::Operator = {
+    <l:@L> <name:"postfix_named_operator"> <r:@R> => ast::Operator::new(Span::new(l, r), name),
 };
 
 EqualityOperator: BinaryOperator = {
@@ -438,8 +445,7 @@ SubsetNameCall: ast::SubsetCall = {
 ChainPart: ast::ChainPart = {
     <name:Name> => ast::ChainPart::Name(name),
     "$" <name:Name> => ast::ChainPart::Alias(name),
-    <operator:"special_operator"> => ast::ChainPart::Operator(operator),
-    "=" => ast::ChainPart::Operator("=".to_owned()),
+    <operator:AnyOperator> => ast::ChainPart::Operator(operator.text),
 };
 
 Chain: ast::Chain = {
@@ -623,6 +629,17 @@ UnaryExpression: ast::Expression = {
         ExpressionKind::Prefix {
             operator,
             expression: Box::new(expression),
+        },
+    ),
+    <expression:PostfixExpression> => expression,
+};
+
+PostfixExpression: ast::Expression = {
+    <expression:PrimaryExpression> <operator:PostfixExpressionOperator> => ast::Expression::new(
+        Span::new(expression.span.start, operator.span.end),
+        ExpressionKind::Postfix {
+            expression: Box::new(expression),
+            operator,
         },
     ),
     <expression:PrimaryExpression> => expression,

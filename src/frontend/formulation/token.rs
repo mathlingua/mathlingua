@@ -59,6 +59,16 @@ pub enum Token {
         plain_named_operator
     )]
     NamedOperator(String),
+    #[regex(
+        r"[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\|[ \t\r\n\f]+",
+        prefix_named_operator
+    )]
+    PrefixNamedOperator(String),
+    #[regex(
+        r"\|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?",
+        postfix_named_operator
+    )]
+    PostfixNamedOperator(String),
     #[regex(r"\[:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?(?:\.[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?)*:\]", parse_label)]
     Label(Vec<String>),
     #[token(":=>")]
@@ -153,6 +163,17 @@ fn left_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
 fn right_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
     let slice = lex.slice();
     slice[1..slice.len() - 2].to_owned()
+}
+
+fn prefix_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
+    let slice = lex.slice();
+    let end = slice.find('|').unwrap_or(slice.len());
+    slice[..end].to_owned()
+}
+
+fn postfix_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
+    let slice = lex.slice();
+    slice[1..].to_owned()
 }
 
 fn parse_label(lex: &mut logos::Lexer<'_, Token>) -> Vec<String> {

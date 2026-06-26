@@ -304,6 +304,10 @@ pub enum ExpressionKind {
         operator: UnaryOperator,
         expression: Box<Expression>,
     },
+    Postfix {
+        expression: Box<Expression>,
+        operator: Operator,
+    },
     Binary {
         left: Box<Expression>,
         operator: BinaryOperator,
@@ -512,12 +516,13 @@ impl Operator {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum UnaryOperator {
     Arithmetic(Operator),
+    Named(Operator),
 }
 
 impl UnaryOperator {
     pub fn span(&self) -> Span {
         match self {
-            Self::Arithmetic(operator) => operator.span,
+            Self::Arithmetic(operator) | Self::Named(operator) => operator.span,
         }
     }
 }

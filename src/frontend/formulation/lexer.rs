@@ -50,10 +50,8 @@ mod tests {
                 Token::RParen,
                 Token::Plus,
                 Token::NamedOperator("op".to_string()),
-                Token::Name("neg".to_string()),
-                Token::Pipe,
-                Token::Pipe,
-                Token::Name("prime".to_string()),
+                Token::PrefixNamedOperator("neg".to_string()),
+                Token::PostfixNamedOperator("prime".to_string()),
             ]
         );
     }

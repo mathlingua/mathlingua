@@ -61,12 +61,20 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             operator,
             expression,
         } => match operator {
-            UnaryOperator::Arithmetic(operator) => format!(
+            UnaryOperator::Arithmetic(operator) | UnaryOperator::Named(operator) => format!(
                 "{}{}",
                 render_operator_text(&operator.text),
                 render_expression(expression, registry)
             ),
         },
+        ExpressionKind::Postfix {
+            expression,
+            operator,
+        } => format!(
+            "{}{}",
+            render_expression(expression, registry),
+            render_operator_text(&operator.text)
+        ),
         ExpressionKind::Binary {
             left,
             operator,

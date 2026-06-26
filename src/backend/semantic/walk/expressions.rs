@@ -57,7 +57,9 @@ pub(in crate::backend::semantic) fn walk_expression(
             walk_infix_spec_arguments(spec, visit);
             walk_expression(right, visit);
         }
-        ExpressionKind::Prefix { expression, .. } => walk_expression(expression, visit),
+        ExpressionKind::Prefix { expression, .. } | ExpressionKind::Postfix { expression, .. } => {
+            walk_expression(expression, visit)
+        }
         ExpressionKind::Binary { left, right, .. } => {
             walk_expression(left, visit);
             walk_expression(right, visit);

@@ -1104,6 +1104,144 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_disambiguated_binary_operator_branches() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("disambiguates-plus.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: R
+    Documented:
+    . written: "\operatorname{real}"
+
+    [\complex]
+    Describes: C
+    Documented:
+    . written: "\operatorname{complex}"
+
+    [\integer]
+    Describes: I
+    Documented:
+    . written: "\operatorname{integer}"
+
+    [a \.complex.+./ b]
+    Defines: c is \complex
+    when:
+    . a is \real
+    . b is \complex
+    Documented:
+    . written: "a? + b?"
+
+    [a \.real.+./ b]
+    Defines: c is \real
+    when:
+    . a is \real
+    . b is \integer
+    Documented:
+    . written: "a? + b?"
+
+    [x_ + y_]
+    Disambiguates:
+    when:
+    . x_ is \real
+    . y_ is \complex
+    to: x_ \.complex.+./ y_
+    when:
+    . x_ is \real
+    . y_ is \integer
+    to: x_ \.real.+./ y_
+    Documented:
+    . written: "x_? + y_?"
+
+    Theorem:
+    given:
+    . r is \real
+    . z is \complex
+    . n is \integer
+    then:
+    . r + z
+    . r + n
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("disambiguates-plus.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_accepts_disambiguated_prefix_and_postfix_operator_branches() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("disambiguates-prefix-postfix.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: R
+    Documented:
+    . written: "\operatorname{real}"
+
+    [\prefix.real{x}]
+    Defines: y is \real
+    when: x is \real
+    Documented:
+    . written: "\operatorname{pre}(x?)"
+
+    [\postfix.real{x}]
+    Defines: y is \real
+    when: x is \real
+    Documented:
+    . written: "\operatorname{post}(x?)"
+
+    [f| x_]
+    Disambiguates:
+    when: x_ is \real
+    to: \prefix.real{x_}
+    Documented:
+    . written: "f| x_?"
+
+    [x_ |f]
+    Disambiguates:
+    when: x_ is \real
+    to: \postfix.real{x_}
+    Documented:
+    . written: "x_? |f"
+
+    Theorem:
+    given: r is \real
+    then:
+    . f| r
+    . r |f
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("disambiguates-prefix-postfix.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_reports_command_when_requirement_type_mismatches() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("type-mismatch.mlg");

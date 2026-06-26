@@ -97,6 +97,29 @@ pub(super) struct TypeExtensionRule {
     pub(super) target: TypeFact,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) enum DisambiguationKey {
+    BinaryOperator(String),
+    Function { name: String, arity: usize },
+    PrefixOperator(String),
+    PostfixOperator(String),
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct DisambiguationRule {
+    pub(super) key: DisambiguationKey,
+    pub(super) parameters: Vec<String>,
+    pub(super) branches: Vec<DisambiguationBranch>,
+    pub(super) else_expression: Option<Expression>,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct DisambiguationBranch {
+    pub(super) requirements: Vec<TypeFact>,
+    pub(super) substitutions: Vec<(String, String)>,
+    pub(super) to: Expression,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DefinitionKind {
     Describes,
@@ -132,4 +155,5 @@ pub(super) struct SignatureRegistry {
     pub(super) type_infos: HashMap<String, DefinitionTypeInfo>,
     pub(super) spec_rules: Vec<SpecOperatorRule>,
     pub(super) extension_rules: Vec<TypeExtensionRule>,
+    pub(super) disambiguations: Vec<DisambiguationRule>,
 }

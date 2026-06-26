@@ -22,6 +22,28 @@ pub(super) fn collect_document_definitions(
 ) {
     let mut locator = SourceLocator::new(&file.source);
     for item in &file.document.items {
+        if let Some(rule) = disambiguation_rule_from_item(item) {
+            let position = None;
+            if registry
+                .disambiguations
+                .iter()
+                .any(|existing| existing.key == rule.key)
+            {
+                emit_error(
+                    event_log,
+                    &file.path,
+                    position,
+                    format!(
+                        "Duplicate disambiguation for `{}`",
+                        format_disambiguation_key(&rule.key)
+                    ),
+                );
+            } else {
+                registry.disambiguations.push(rule);
+            }
+            continue;
+        }
+
         let Some(definition) = definition_item(item) else {
             continue;
         };
@@ -69,6 +91,15 @@ pub(super) fn collect_document_definitions(
             );
             collect_definition_type_metadata(item, &type_shape, registry);
         }
+    }
+}
+
+fn format_disambiguation_key(key: &DisambiguationKey) -> String {
+    match key {
+        DisambiguationKey::BinaryOperator(operator)
+        | DisambiguationKey::PrefixOperator(operator)
+        | DisambiguationKey::PostfixOperator(operator) => operator.clone(),
+        DisambiguationKey::Function { name, arity } => format!("{name}/{arity}"),
     }
 }
 

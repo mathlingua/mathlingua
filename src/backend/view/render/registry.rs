@@ -125,61 +125,21 @@ pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
             None,
             group.documented.as_ref(),
         ),
-        TopLevelItem::Axiom(group) => group
-            .heading
-            .as_ref()
-            .map(|heading| {
-                render_entries_from_parts(
-                    command_header_signatures(heading),
-                    None,
-                    group.documented.as_ref(),
-                )
-            })
-            .unwrap_or_default(),
-        TopLevelItem::Theorem(group) => group
-            .heading
-            .as_ref()
-            .map(|heading| {
-                render_entries_from_parts(
-                    command_header_signatures(heading),
-                    None,
-                    group.documented.as_ref(),
-                )
-            })
-            .unwrap_or_default(),
-        TopLevelItem::Corollary(group) => group
-            .heading
-            .as_ref()
-            .map(|heading| {
-                render_entries_from_parts(
-                    command_header_signatures(heading),
-                    None,
-                    group.documented.as_ref(),
-                )
-            })
-            .unwrap_or_default(),
-        TopLevelItem::Lemma(group) => group
-            .heading
-            .as_ref()
-            .map(|heading| {
-                render_entries_from_parts(
-                    command_header_signatures(heading),
-                    None,
-                    group.documented.as_ref(),
-                )
-            })
-            .unwrap_or_default(),
-        TopLevelItem::Conjecture(group) => group
-            .heading
-            .as_ref()
-            .map(|heading| {
-                render_entries_from_parts(
-                    command_header_signatures(heading),
-                    None,
-                    group.documented.as_ref(),
-                )
-            })
-            .unwrap_or_default(),
+        TopLevelItem::Axiom(group) => {
+            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
+        }
+        TopLevelItem::Theorem(group) => {
+            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
+        }
+        TopLevelItem::Corollary(group) => {
+            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
+        }
+        TopLevelItem::Lemma(group) => {
+            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
+        }
+        TopLevelItem::Conjecture(group) => {
+            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
+        }
         _ => Vec::new(),
     }
 }
@@ -189,8 +149,37 @@ pub(super) fn render_entries_from_parts(
     subject_variable: Option<String>,
     documented: Option<&DocumentedSection>,
 ) -> Vec<RenderEntry> {
-    let Some(documented) = documented else {
+    render_entries_from_parts_with_fallback(signatures, subject_variable, documented, None)
+}
+
+fn render_theorem_like_entries(
+    heading: Option<&CommandHeader>,
+    documented: Option<&DocumentedSection>,
+) -> Vec<RenderEntry> {
+    let Some(heading) = heading else {
         return Vec::new();
+    };
+
+    render_entries_from_parts_with_fallback(
+        command_header_signatures(heading),
+        None,
+        documented,
+        Some(fallback_theorem_like_called_text(heading)),
+    )
+}
+
+fn render_entries_from_parts_with_fallback(
+    signatures: Vec<CommandHeaderSignature>,
+    subject_variable: Option<String>,
+    documented: Option<&DocumentedSection>,
+    fallback_called: Option<String>,
+) -> Vec<RenderEntry> {
+    let Some(documented) = documented else {
+        return fallback_called
+            .map(|called| {
+                render_entries_from_signatures(signatures, subject_variable, Some(called), None)
+            })
+            .unwrap_or_default();
     };
     let called = documented.arguments.iter().find_map(|item| match item {
         DocumentedItem::Called(group) => Some(group),
@@ -204,17 +193,28 @@ pub(super) fn render_entries_from_parts(
         .and_then(|called| called.written.as_ref())
         .or(documented_written);
 
-    if called.is_none() && written.is_none() {
+    if called.is_none() && written.is_none() && fallback_called.is_none() {
         return Vec::new();
     }
 
+    let called_text = called
+        .map(|called| join_called_text(&called.called))
+        .or(fallback_called);
+    let written_text = written.map(join_written_text);
+    render_entries_from_signatures(signatures, subject_variable, called_text, written_text)
+}
+
+fn render_entries_from_signatures(
+    signatures: Vec<CommandHeaderSignature>,
+    subject_variable: Option<String>,
+    called: Option<String>,
+    written: Option<String>,
+) -> Vec<RenderEntry> {
     signatures
         .into_iter()
         .map(|signature| {
             let signature_text = signature.signature;
-            let called_text = called
-                .map(|called| join_called_text(&called.called))
-                .unwrap_or_else(|| signature_text.clone());
+            let called_text = called.clone().unwrap_or_else(|| signature_text.clone());
 
             RenderEntry {
                 signature: signature_text,
@@ -222,11 +222,74 @@ pub(super) fn render_entries_from_parts(
                     subject_variable: subject_variable.clone(),
                     parameters: signature.parameters,
                     called: called_text,
-                    written: written.map(join_written_text),
+                    written: written.clone(),
                 },
             }
         })
         .collect()
+}
+
+fn fallback_theorem_like_called_text(heading: &CommandHeader) -> String {
+    match heading {
+        CommandHeader::Command(header) => title_case_label(&format_chain(&header.chain)),
+        CommandHeader::Infix(header) => title_case_label(&format_chain(&header.chain)),
+        CommandHeader::InfixSpec(header) => title_case_label(&format_chain(&header.chain)),
+        CommandHeader::Refined(header) => title_case_label(&command_header_signature(
+            &CommandHeader::Refined(header.clone()),
+        )),
+    }
+}
+
+fn title_case_label(label: &str) -> String {
+    label
+        .split(|ch: char| !ch.is_ascii_alphanumeric())
+        .filter(|word| !word.is_empty())
+        .enumerate()
+        .map(|(index, word)| title_case_word(word, index == 0))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn title_case_word(word: &str, is_first: bool) -> String {
+    let lower = word.to_ascii_lowercase();
+    if !is_first && is_title_case_stop_word(&lower) {
+        return lower;
+    }
+
+    let mut chars = lower.chars();
+    let Some(first) = chars.next() else {
+        return lower;
+    };
+    format!(
+        "{}{}",
+        first.to_ascii_uppercase(),
+        chars.collect::<String>()
+    )
+}
+
+fn is_title_case_stop_word(word: &str) -> bool {
+    matches!(
+        word,
+        "a" | "an"
+            | "and"
+            | "as"
+            | "at"
+            | "but"
+            | "by"
+            | "for"
+            | "from"
+            | "in"
+            | "into"
+            | "nor"
+            | "of"
+            | "on"
+            | "or"
+            | "over"
+            | "the"
+            | "to"
+            | "via"
+            | "with"
+    )
 }
 
 pub(super) fn join_called_text(section: &CalledSection) -> String {

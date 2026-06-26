@@ -323,6 +323,21 @@ Documented:
 }
 
 #[test]
+fn renders_theorem_like_command_headings_from_label_when_documentation_is_missing() {
+    let registry = registry_for(
+        r#"[\axiom.of.unordered.pair]
+Axiom:
+then: X is \set
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"\axiom.of.unordered.pair"#, &registry),
+        Some(r#"\textrm{Axiom of Unordered Pair}"#.to_string())
+    );
+}
+
+#[test]
 fn renders_conditional_templates_with_fallbacks_multiple_vars_and_nesting() {
     let registry = registry_for(
         r#"[\decorate:?with{U}]

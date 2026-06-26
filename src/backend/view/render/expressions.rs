@@ -53,18 +53,10 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             left,
             command,
             right,
-        } => format!(
-            "{} {} {}",
-            render_expression(left, registry),
-            render_command_like(&command.chain, registry),
-            render_expression(right, registry)
-        ),
-        ExpressionKind::InfixSpecStatement { left, spec, right } => format!(
-            "{} {} {}",
-            render_expression(left, registry),
-            render_infix_spec_like(spec, registry),
-            render_expression(right, registry)
-        ),
+        } => render_infix_command_expression(left, command, right, registry),
+        ExpressionKind::InfixSpecStatement { left, spec, right } => {
+            render_infix_spec_expression(left, spec, right, registry)
+        }
         ExpressionKind::Prefix {
             operator,
             expression,
@@ -117,7 +109,7 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
     }
 }
 
-fn render_infix_spec_like(spec: &InfixSpec, registry: &RenderRegistry) -> String {
+pub(super) fn render_infix_spec_like(spec: &InfixSpec, registry: &RenderRegistry) -> String {
     render_command_like(&spec.chain, registry)
 }
 

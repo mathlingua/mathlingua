@@ -748,6 +748,18 @@ Documented:
 . written: "f? \: : \: A? \rightarrow B?"
 ```
 
+Both `called:` and `written:` templates support conditional fragments:
+
+```text
+@[U]{_{U?}}:{_X}
+@[x, y]{x? + y?}
+```
+
+The first branch is rendered only when every variable listed in `[...]` has a
+substitution value. The optional `:{...}` branch is rendered otherwise. If the
+fallback branch is omitted, the conditional renders nothing when the variables
+are not all present. Conditional fragments may be nested.
+
 The renderer uses these entries to display commands, forms, and definitions.
 The semantic checker only enforces that `Describes`, `Defines`, and `Refines`
 include at least one `called:` item.

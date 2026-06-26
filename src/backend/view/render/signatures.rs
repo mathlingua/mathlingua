@@ -156,6 +156,20 @@ pub(super) fn command_expression_signature(command: &CommandExpression) -> Strin
     signature
 }
 
+pub(super) fn infix_command_signature(command: &InfixCommand) -> String {
+    let mut signature = format!("\\.{}", format_chain(&command.chain));
+    add_expression_tail_signature(&mut signature, &command.tail);
+    signature.push_str("./");
+    signature
+}
+
+pub(super) fn infix_spec_signature(spec: &InfixSpec) -> String {
+    let mut signature = format!("\\:{}", format_chain(&spec.chain));
+    add_expression_tail_signature(&mut signature, &spec.tail);
+    signature.push_str(":/");
+    signature
+}
+
 pub(super) fn refined_command_header_signature(command: &RefinedCommandHeader) -> String {
     let mut signature = "\\".to_string();
     if let Some(prefix) = &command.prefix_chain {

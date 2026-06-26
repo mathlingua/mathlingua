@@ -282,6 +282,96 @@ fn renders_dot_delimited_grouped_expressions_without_parentheses() {
 }
 
 #[test]
+fn renders_conditional_written_templates_for_optional_infix_tail() {
+    let registry = registry_for(
+        r#"[A \.intersect:?within{U}./ B]
+Describes: I
+Documented:
+. called: "intersection"
+. written: "A? \cap@[U]{_{U?}} B?"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"X \.intersect./ Y"#, &registry),
+        Some(r#"X \cap Y"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"X \.intersect:within{Z}./ Y"#, &registry),
+        Some(r#"X \cap_{Z} Y"#.to_string())
+    );
+}
+
+#[test]
+fn renders_conditional_templates_with_fallbacks_multiple_vars_and_nesting() {
+    let registry = registry_for(
+        r#"[\decorate:?with{U}]
+Describes: D
+Documented:
+. called: "decorated"
+. written: "d@[U]{_{U?}}:{_X}"
+
+[\both{x}:?and{y}]
+Describes: B
+Documented:
+. called: "both"
+. written: "@[x, y]{x? + y?}:{missing}"
+
+[\nest{x}:?with{y}]
+Describes: N
+Documented:
+. called: "nested"
+. written: "@[x]{x? + @[y]{y?}:{*}}:{0}"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"\decorate"#, &registry),
+        Some(r#"d_X"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\decorate:with{Z}"#, &registry),
+        Some(r#"d_{Z}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\both{A}"#, &registry),
+        Some(r#"missing"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\both{A}:and{B}"#, &registry),
+        Some(r#"A + B"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\nest{A}"#, &registry),
+        Some(r#"A + *"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\nest{A}:with{B}"#, &registry),
+        Some(r#"A + B"#.to_string())
+    );
+}
+
+#[test]
+fn renders_conditionals_in_called_templates() {
+    let registry = registry_for(
+        r#"[\ambient:?within{U}]
+Describes: A
+Documented:
+. called: "ambient@[U]{ within $U?$}:{ without ambient}"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"\ambient"#, &registry),
+        Some(r#"\textrm{ambient}\textrm{ without ambient}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\ambient:within{Z}"#, &registry),
+        Some(r#"\textrm{ambient}\textrm{ within }Z"#.to_string())
+    );
+}
+
+#[test]
 fn renders_set_builder_specs() {
     let registry = registry_for("");
 

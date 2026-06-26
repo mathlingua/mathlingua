@@ -39,6 +39,52 @@ pub(super) fn render_predicate_command_expression(
     render_called_template(&render.called, &substitutions)
 }
 
+pub(super) fn render_infix_command_expression(
+    left: &Expression,
+    command: &InfixCommand,
+    right: &Expression,
+    registry: &RenderRegistry,
+) -> String {
+    let signature = infix_command_signature(command);
+    let Some(render) = registry.commands.get(&signature) else {
+        return format!(
+            "{} {} {}",
+            render_expression(left, registry),
+            render_command_like(&command.chain, registry),
+            render_expression(right, registry)
+        );
+    };
+    let substitutions = infix_command_substitutions(left, command, right, render, registry);
+
+    match &render.written {
+        Some(written) => substitute_math_template(written, &substitutions),
+        None => render_called_template(&render.called, &substitutions),
+    }
+}
+
+pub(super) fn render_infix_spec_expression(
+    left: &Expression,
+    spec: &InfixSpec,
+    right: &Expression,
+    registry: &RenderRegistry,
+) -> String {
+    let signature = infix_spec_signature(spec);
+    let Some(render) = registry.commands.get(&signature) else {
+        return format!(
+            "{} {} {}",
+            render_expression(left, registry),
+            render_infix_spec_like(spec, registry),
+            render_expression(right, registry)
+        );
+    };
+    let substitutions = infix_spec_substitutions(left, spec, right, render, registry);
+
+    match &render.written {
+        Some(written) => substitute_math_template(written, &substitutions),
+        None => render_called_template(&render.called, &substitutions),
+    }
+}
+
 pub(super) fn render_refined_command_called(
     command: &RefinedCommandExpression,
     registry: &RenderRegistry,
@@ -154,6 +200,32 @@ pub(super) fn command_substitutions(
     }
 
     substitutions
+}
+
+pub(super) fn infix_command_substitutions(
+    left: &Expression,
+    command: &InfixCommand,
+    right: &Expression,
+    render: &CommandRender,
+    registry: &RenderRegistry,
+) -> HashMap<String, String> {
+    command_substitutions_for_names(
+        &render.parameters,
+        infix_argument_values(left, &command.head_args, &command.tail, right, registry),
+    )
+}
+
+pub(super) fn infix_spec_substitutions(
+    left: &Expression,
+    spec: &InfixSpec,
+    right: &Expression,
+    render: &CommandRender,
+    registry: &RenderRegistry,
+) -> HashMap<String, String> {
+    command_substitutions_for_names(
+        &render.parameters,
+        infix_argument_values(left, &spec.head_args, &spec.tail, right, registry),
+    )
 }
 
 pub(super) fn command_substitutions_for_names(
@@ -314,6 +386,25 @@ pub(super) fn command_argument_values(
                 .flat_map(|args| args.expressions.iter()),
         )
         .map(|expression| render_expression(expression, registry))
+        .collect()
+}
+
+pub(super) fn infix_argument_values(
+    left: &Expression,
+    head_args: &[CurlyExpressionArgs],
+    tail: &[CommandExpressionTailPart],
+    right: &Expression,
+    registry: &RenderRegistry,
+) -> Vec<String> {
+    std::iter::once(render_expression(left, registry))
+        .chain(
+            head_args
+                .iter()
+                .flat_map(|args| args.expressions.iter())
+                .map(|expression| render_expression(expression, registry)),
+        )
+        .chain(expression_tail_argument_values(tail, registry))
+        .chain(std::iter::once(render_expression(right, registry)))
         .collect()
 }
 

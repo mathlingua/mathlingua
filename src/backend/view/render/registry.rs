@@ -120,6 +120,66 @@ pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
             primary_declaration_statement_name(&group.refines.argument),
             group.documented.as_ref(),
         ),
+        TopLevelItem::States(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
+            None,
+            group.documented.as_ref(),
+        ),
+        TopLevelItem::Axiom(group) => group
+            .heading
+            .as_ref()
+            .map(|heading| {
+                render_entries_from_parts(
+                    command_header_signatures(heading),
+                    None,
+                    group.documented.as_ref(),
+                )
+            })
+            .unwrap_or_default(),
+        TopLevelItem::Theorem(group) => group
+            .heading
+            .as_ref()
+            .map(|heading| {
+                render_entries_from_parts(
+                    command_header_signatures(heading),
+                    None,
+                    group.documented.as_ref(),
+                )
+            })
+            .unwrap_or_default(),
+        TopLevelItem::Corollary(group) => group
+            .heading
+            .as_ref()
+            .map(|heading| {
+                render_entries_from_parts(
+                    command_header_signatures(heading),
+                    None,
+                    group.documented.as_ref(),
+                )
+            })
+            .unwrap_or_default(),
+        TopLevelItem::Lemma(group) => group
+            .heading
+            .as_ref()
+            .map(|heading| {
+                render_entries_from_parts(
+                    command_header_signatures(heading),
+                    None,
+                    group.documented.as_ref(),
+                )
+            })
+            .unwrap_or_default(),
+        TopLevelItem::Conjecture(group) => group
+            .heading
+            .as_ref()
+            .map(|heading| {
+                render_entries_from_parts(
+                    command_header_signatures(heading),
+                    None,
+                    group.documented.as_ref(),
+                )
+            })
+            .unwrap_or_default(),
         _ => Vec::new(),
     }
 }
@@ -132,28 +192,39 @@ pub(super) fn render_entries_from_parts(
     let Some(documented) = documented else {
         return Vec::new();
     };
-    let Some(called) = documented.arguments.iter().find_map(|item| match item {
+    let called = documented.arguments.iter().find_map(|item| match item {
         DocumentedItem::Called(group) => Some(group),
         _ => None,
-    }) else {
-        return Vec::new();
-    };
+    });
     let documented_written = documented.arguments.iter().find_map(|item| match item {
         DocumentedItem::Written(group) => Some(&group.written),
         _ => None,
     });
-    let written = called.written.as_ref().or(documented_written);
+    let written = called
+        .and_then(|called| called.written.as_ref())
+        .or(documented_written);
+
+    if called.is_none() && written.is_none() {
+        return Vec::new();
+    }
 
     signatures
         .into_iter()
-        .map(|signature| RenderEntry {
-            signature: signature.signature,
-            render: CommandRender {
-                subject_variable: subject_variable.clone(),
-                parameters: signature.parameters,
-                called: join_called_text(&called.called),
-                written: written.map(join_written_text),
-            },
+        .map(|signature| {
+            let signature_text = signature.signature;
+            let called_text = called
+                .map(|called| join_called_text(&called.called))
+                .unwrap_or_else(|| signature_text.clone());
+
+            RenderEntry {
+                signature: signature_text,
+                render: CommandRender {
+                    subject_variable: subject_variable.clone(),
+                    parameters: signature.parameters,
+                    called: called_text,
+                    written: written.map(join_written_text),
+                },
+            }
         })
         .collect()
 }

@@ -303,6 +303,26 @@ Documented:
 }
 
 #[test]
+fn renders_written_templates_from_states_command_headings() {
+    let registry = registry_for(
+        r#"[A \.and./ B]
+States:
+that:
+. allOf:
+  . A
+  . B
+Documented:
+. written: "A? \text{ and } B?"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"(.c "in"? A.) \.and./ (.c "in"? B.)"#, &registry),
+        Some(r#"c \in A \text{ and } c \in B"#.to_string())
+    );
+}
+
+#[test]
 fn renders_conditional_templates_with_fallbacks_multiple_vars_and_nesting() {
     let registry = registry_for(
         r#"[\decorate:?with{U}]

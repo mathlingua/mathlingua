@@ -4,10 +4,9 @@
   max-height: min(34rem, 68vh);
   margin: 0;
   overflow: auto;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: 0.5rem;
-  background: var(--surface-alt);
+  padding: 0.1rem 2.35rem 0.1rem 0;
+  border: none;
+  background: transparent;
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 0.78rem;
@@ -62,7 +61,7 @@
 @media (max-width: 520px) {
   .source {
     max-height: min(30rem, 64vh);
-    padding: 0.75rem 0.8rem;
+    padding-right: 2rem;
     font-size: 0.72rem;
   }
 }

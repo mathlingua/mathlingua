@@ -17,21 +17,21 @@ interface GroupCardProps {
 }
 
 /**
- * Renders one MathLingua group and hides the optional `Documented` section until
- * the reader asks for it.
+ * Renders one MathLingua group and hides optional support sections until the
+ * reader asks for them.
  */
 export function GroupCard({ anchorId, group }: GroupCardProps) {
-  const [showDocumented, setShowDocumented] = useState(false);
+  const [showSupportSections, setShowSupportSections] = useState(false);
   const [showSource, setShowSource] = useState(false);
   const headingTooltip = group.heading ?? undefined;
   const headingLatex = group.heading_latex
     ? capitalizeFirstRenderedLatexWord(group.heading_latex)
     : null;
   const hasHeading = headingLatex !== null;
-  const hasDocumented = group.sections.some(isDocumentedSection);
-  const visibleSections = showDocumented
+  const hasSupportSections = group.sections.some(isSupportSection);
+  const visibleSections = showSupportSections
     ? group.sections
-    : group.sections.filter((section) => !isDocumentedSection(section));
+    : group.sections.filter((section) => !isSupportSection(section));
 
   return (
     <section className={styles.card} id={anchorId}>
@@ -106,21 +106,21 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
               </section>
             ))}
           </div>
-          {hasDocumented ? (
+          {hasSupportSections ? (
             <button
-              aria-expanded={showDocumented}
+              aria-expanded={showSupportSections}
               aria-label={
-                showDocumented
-                  ? "Hide documented section"
-                  : "Show documented section"
+                showSupportSections
+                  ? "Hide supporting sections"
+                  : "Show supporting sections"
               }
               className={styles.documentedToggle}
-              onClick={() => setShowDocumented((value) => !value)}
+              onClick={() => setShowSupportSections((value) => !value)}
               tabIndex={showSource ? -1 : 0}
               title={
-                showDocumented
-                  ? "Hide documented section"
-                  : "Show documented section"
+                showSupportSections
+                  ? "Hide supporting sections"
+                  : "Show supporting sections"
               }
               type="button"
             >
@@ -186,9 +186,9 @@ function CardIcon() {
   );
 }
 
-/** Returns true for the generated section that contains author-facing docs. */
-function isDocumentedSection(section: SectionView): boolean {
-  return section.label === "Documented";
+/** Returns true for support sections hidden behind the card expander. */
+function isSupportSection(section: SectionView): boolean {
+  return section.label === "Documented" || section.label === "Provides";
 }
 
 /**

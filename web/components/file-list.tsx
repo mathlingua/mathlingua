@@ -77,7 +77,9 @@ export function FileList({
 
   const handleCloseDefinition = (rootAnchorId: string, index: number) => {
     setDefinitionTrails((current) => {
-      const nextTrail = (current[rootAnchorId] ?? []).slice(0, index);
+      const nextTrail = (current[rootAnchorId] ?? []).filter(
+        (_, trailIndex) => trailIndex !== index,
+      );
       const next = { ...current };
 
       if (nextTrail.length === 0) {
@@ -86,6 +88,18 @@ export function FileList({
         next[rootAnchorId] = nextTrail;
       }
 
+      return next;
+    });
+  };
+
+  const handleCloseDefinitionTrail = (rootAnchorId: string) => {
+    setDefinitionTrails((current) => {
+      if (!current[rootAnchorId]) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[rootAnchorId];
       return next;
     });
   };
@@ -170,6 +184,15 @@ export function FileList({
                   />
                   {trail.length > 0 ? (
                     <div className={styles.definitionTrail}>
+                      <button
+                        aria-label="Close all definitions"
+                        className={styles.definitionTrailClose}
+                        onClick={() => handleCloseDefinitionTrail(anchorId)}
+                        title="Close all definitions"
+                        type="button"
+                      >
+                        <DefinitionTrailCloseIcon />
+                      </button>
                       {trail.map((referenceKey, trailIndex) => {
                         const definition = definitionIndex.get(referenceKey);
 
@@ -231,4 +254,18 @@ function buildDefinitionIndex(
   }
 
   return definitions;
+}
+
+function DefinitionTrailCloseIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.definitionTrailCloseIcon}
+      focusable="false"
+      viewBox="0 0 24 24"
+    >
+      <path d="M6 6l12 12" />
+      <path d="M18 6 6 18" />
+    </svg>
+  );
 }

@@ -149,11 +149,12 @@
 }
 
 .definitionTrail {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: 1.25rem;
   width: min(100%, 47rem);
-  padding: 2rem clamp(1rem, 4vw, 2.6rem);
+  padding: 2.35rem clamp(1rem, 4vw, 2.6rem) 2rem;
   border: 1px solid var(--line);
   border-radius: 0.8rem;
   background: linear-gradient(180deg, #fbfbfa 0%, #ffffff 100%);
@@ -161,6 +162,45 @@
     inset 0 1px 3px rgba(28, 26, 42, 0.09),
     inset 0 -1px 0 rgba(255, 255, 255, 0.95),
     0 18px 36px rgba(28, 26, 42, 0.04);
+}
+
+.definitionTrailClose {
+  position: absolute;
+  top: 0.62rem;
+  left: 0.72rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.definitionTrailClose:hover {
+  border-color: var(--line);
+  background: var(--surface-alt);
+  color: var(--accent);
+}
+
+.definitionTrailClose:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.definitionTrailCloseIcon {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
 }
 
 .definitionTrailItem {
@@ -218,7 +258,7 @@
 
   .definitionTrail {
     width: 100%;
-    padding: 1.15rem 0.9rem;
+    padding: 2.25rem 0.9rem 1.15rem;
   }
 }
 

@@ -537,6 +537,7 @@ mod tests {
                     kind: "Title".to_string(),
                     heading: None,
                     heading_latex: None,
+                    source: "Title: \"Example\"".to_string(),
                     sections: vec![SectionView {
                         label: "Title".to_string(),
                         inline_argument: Some("\"Example\"".to_string()),

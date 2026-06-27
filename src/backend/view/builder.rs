@@ -44,11 +44,14 @@ fn build_file_view(
         return None;
     }
 
+    let group_sources = source_for_groups(&file.source, &groups);
+
     Some(FileView {
         path: relative_path(collection_root, &file.path),
         items: groups
             .into_iter()
-            .map(|group| group_view(group, registry))
+            .zip(group_sources)
+            .map(|(group, source)| group_view(group, source, registry))
             .collect(),
     })
 }
@@ -75,7 +78,35 @@ fn relative_path(collection_root: &Path, file: &Path) -> String {
         .to_string()
 }
 
-fn group_view(group: ProtoGroup, registry: &RenderRegistry) -> GroupView {
+fn source_for_groups(source: &str, groups: &[ProtoGroup]) -> Vec<String> {
+    let lines = source.split('\n').collect::<Vec<_>>();
+
+    groups
+        .iter()
+        .enumerate()
+        .map(|(index, group)| {
+            let start = group.metadata.row.min(lines.len());
+            let mut end = groups
+                .get(index + 1)
+                .map(|next| next.metadata.row)
+                .unwrap_or(lines.len())
+                .min(lines.len());
+
+            while end > start && is_trailing_source_gap(lines[end - 1]) {
+                end -= 1;
+            }
+
+            lines[start..end].join("\n")
+        })
+        .collect()
+}
+
+fn is_trailing_source_gap(line: &str) -> bool {
+    let trimmed = line.trim_start();
+    trimmed.is_empty() || trimmed.starts_with("--")
+}
+
+fn group_view(group: ProtoGroup, source: String, registry: &RenderRegistry) -> GroupView {
     let kind = group
         .sections
         .first()
@@ -95,6 +126,7 @@ fn group_view(group: ProtoGroup, registry: &RenderRegistry) -> GroupView {
         ),
         kind,
         heading: group.heading,
+        source,
         sections: group
             .sections
             .into_iter()
@@ -176,6 +208,7 @@ mod tests {
         assert_eq!(view.files.len(), 1);
         assert_eq!(view.files[0].path, "content/sets.mlg");
         assert_eq!(view.files[0].items[0].kind, "Describes");
+        assert_eq!(view.files[0].items[0].source, source.trim_end());
         assert_eq!(
             view.files[0].items[0].heading_latex,
             Some(r"\textrm{set}".to_string())

@@ -1,0 +1,68 @@
+/* Lightweight MathLingua source highlighting for card backs. */
+
+.source {
+  max-height: min(34rem, 68vh);
+  margin: 0;
+  overflow: auto;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--surface-alt);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  tab-size: 2;
+  white-space: pre;
+}
+
+.line {
+  min-height: 1.55em;
+}
+
+.plain {
+  color: inherit;
+}
+
+.comment {
+  color: #8b8795;
+  font-style: italic;
+}
+
+.command {
+  color: #315eb9;
+}
+
+.keyword {
+  color: #87602d;
+  font-weight: 600;
+}
+
+.label {
+  color: #7b3f91;
+  font-weight: 650;
+}
+
+.operator {
+  color: #b03d54;
+}
+
+.placeholder {
+  color: #0d7169;
+}
+
+.punctuation {
+  color: #6f6d78;
+}
+
+.string {
+  color: #6f641b;
+}
+
+@media (max-width: 520px) {
+  .source {
+    max-height: min(30rem, 64vh);
+    padding: 0.75rem 0.8rem;
+    font-size: 0.72rem;
+  }
+}

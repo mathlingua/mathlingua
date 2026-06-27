@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ArgumentList } from "./argument-list";
 import type { GroupView, SectionView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
+import { MathLinguaSource } from "./mathlingua-source";
 import styles from "./group-card.module.css";
 import sectionStyles from "./section-content.module.css";
 
@@ -21,6 +22,7 @@ interface GroupCardProps {
  */
 export function GroupCard({ anchorId, group }: GroupCardProps) {
   const [showDocumented, setShowDocumented] = useState(false);
+  const [showSource, setShowSource] = useState(false);
   const headingTooltip = group.heading ?? undefined;
   const headingLatex = group.heading_latex
     ? capitalizeFirstRenderedLatexWord(group.heading_latex)
@@ -33,73 +35,154 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
 
   return (
     <section className={styles.card} id={anchorId}>
-      {hasHeading ? (
-        <header className={styles.header}>
-          <h3
-            className={`${styles.heading} ${styles.headingLatex}`}
-            title={headingTooltip}
-          >
-            <LatexRenderer latex={headingLatex} />
-          </h3>
-        </header>
-      ) : null}
       <div
         className={
-          hasHeading
-            ? styles.sectionStack
-            : `${styles.sectionStack} ${styles.sectionStackFlush}`
+          showSource
+            ? `${styles.cardStage} ${styles.cardStageFlipped}`
+            : styles.cardStage
         }
       >
-        {visibleSections.map((section, index) => (
-          <section
-            className={styles.sectionBlock}
-            key={`${section.label}-${index}`}
-          >
-            <div className={sectionStyles.sectionLabelRow}>
-              <span className={sectionStyles.sectionLabel}>
-                {section.label}
-              </span>
-              {section.inline_argument ? (
-                section.inline_latex ? (
-                  <span
-                    className={`${sectionStyles.inlineArgument} ${sectionStyles.inlineArgumentLatex}`}
-                  >
-                    <LatexRenderer latex={section.inline_latex} />
-                  </span>
-                ) : (
-                  <code className={sectionStyles.inlineArgument}>
-                    {section.inline_argument}
-                  </code>
-                )
-              ) : null}
-            </div>
-            {section.arguments.length > 0 ? (
-              <ArgumentList arguments={section.arguments} />
-            ) : null}
-          </section>
-        ))}
-      </div>
-      {hasDocumented ? (
-        <button
-          aria-expanded={showDocumented}
-          aria-label={
-            showDocumented
-              ? "Hide documented section"
-              : "Show documented section"
+        <article
+          aria-hidden={showSource}
+          className={
+            showSource
+              ? `${styles.cardFace} ${styles.cardFront} ${styles.cardFaceInactive}`
+              : `${styles.cardFace} ${styles.cardFront}`
           }
-          className={styles.documentedToggle}
-          onClick={() => setShowDocumented((value) => !value)}
-          title={
-            showDocumented
-              ? "Hide documented section"
-              : "Show documented section"
-          }
-          type="button"
         >
-          <span className={styles.documentedToggleChevron} aria-hidden="true" />
-        </button>
-      ) : null}
+          <button
+            aria-label="Show MathLingua source"
+            className={styles.sourceToggle}
+            onClick={() => setShowSource(true)}
+            tabIndex={showSource ? -1 : 0}
+            title="Show MathLingua source"
+            type="button"
+          >
+            <CodeIcon />
+          </button>
+          {hasHeading ? (
+            <header className={styles.header}>
+              <h3
+                className={`${styles.heading} ${styles.headingLatex}`}
+                title={headingTooltip}
+              >
+                <LatexRenderer latex={headingLatex} />
+              </h3>
+            </header>
+          ) : null}
+          <div
+            className={
+              hasHeading
+                ? styles.sectionStack
+                : `${styles.sectionStack} ${styles.sectionStackFlush}`
+            }
+          >
+            {visibleSections.map((section, index) => (
+              <section
+                className={styles.sectionBlock}
+                key={`${section.label}-${index}`}
+              >
+                <div className={sectionStyles.sectionLabelRow}>
+                  <span className={sectionStyles.sectionLabel}>
+                    {section.label}
+                  </span>
+                  {section.inline_argument ? (
+                    section.inline_latex ? (
+                      <span
+                        className={`${sectionStyles.inlineArgument} ${sectionStyles.inlineArgumentLatex}`}
+                      >
+                        <LatexRenderer latex={section.inline_latex} />
+                      </span>
+                    ) : (
+                      <code className={sectionStyles.inlineArgument}>
+                        {section.inline_argument}
+                      </code>
+                    )
+                  ) : null}
+                </div>
+                {section.arguments.length > 0 ? (
+                  <ArgumentList arguments={section.arguments} />
+                ) : null}
+              </section>
+            ))}
+          </div>
+          {hasDocumented ? (
+            <button
+              aria-expanded={showDocumented}
+              aria-label={
+                showDocumented
+                  ? "Hide documented section"
+                  : "Show documented section"
+              }
+              className={styles.documentedToggle}
+              onClick={() => setShowDocumented((value) => !value)}
+              tabIndex={showSource ? -1 : 0}
+              title={
+                showDocumented
+                  ? "Hide documented section"
+                  : "Show documented section"
+              }
+              type="button"
+            >
+              <span
+                className={styles.documentedToggleChevron}
+                aria-hidden="true"
+              />
+            </button>
+          ) : null}
+        </article>
+        <article
+          aria-hidden={!showSource}
+          className={
+            showSource
+              ? `${styles.cardFace} ${styles.cardBack}`
+              : `${styles.cardFace} ${styles.cardBack} ${styles.cardFaceInactive}`
+          }
+        >
+          <button
+            aria-label="Show rendered entry"
+            className={styles.sourceToggle}
+            onClick={() => setShowSource(false)}
+            tabIndex={showSource ? 0 : -1}
+            title="Show rendered entry"
+            type="button"
+          >
+            <CardIcon />
+          </button>
+          <MathLinguaSource source={group.source} />
+        </article>
+      </div>
     </section>
+  );
+}
+
+function CodeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.sourceToggleIcon}
+      focusable="false"
+      viewBox="0 0 24 24"
+    >
+      <path d="m9 8-4 4 4 4" />
+      <path d="m15 8 4 4-4 4" />
+      <path d="m13 5-2 14" />
+    </svg>
+  );
+}
+
+function CardIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.sourceToggleIcon}
+      focusable="false"
+      viewBox="0 0 24 24"
+    >
+      <path d="M5 6h14v12H5z" />
+      <path d="M8 10h8" />
+      <path d="M8 14h5" />
+    </svg>
   );
 }
 

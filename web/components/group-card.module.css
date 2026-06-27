@@ -3,16 +3,48 @@
 .card {
   width: min(100%, 31rem);
   margin: 0 auto;
+  perspective: 1400px;
+  scroll-margin-top: 7.5rem;
+}
+
+.cardStage {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 220ms ease;
+}
+
+.cardStageFlipped {
+  transform: rotateY(180deg);
+}
+
+.cardFace {
+  position: relative;
+  width: 100%;
   padding: 1.35rem 1.6rem 1.45rem;
   border: 1px solid var(--line);
   border-radius: 0.75rem;
   background: var(--surface);
+  backface-visibility: hidden;
   box-shadow: var(--shadow);
-  scroll-margin-top: 7.5rem;
+}
+
+.cardFaceInactive {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cardFront {
+  transform: rotateY(0deg);
+}
+
+.cardBack {
+  transform: rotateY(180deg);
 }
 
 .header {
   display: block;
+  padding-right: 2.35rem;
   padding-bottom: 0.55rem;
   border-bottom: 1px solid var(--line);
 }
@@ -35,6 +67,7 @@
   display: grid;
   gap: 0.18rem;
   margin-top: 0.6rem;
+  padding-right: 2.35rem;
 }
 
 .sectionStackFlush {
@@ -43,6 +76,45 @@
 
 .sectionBlock {
   padding-top: 0;
+}
+
+.sourceToggle {
+  position: absolute;
+  top: 0.68rem;
+  right: 0.72rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.sourceToggle:hover {
+  border-color: var(--line);
+  background: var(--surface-alt);
+  color: var(--accent);
+}
+
+.sourceToggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sourceToggleIcon {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
 }
 
 .documentedToggle {
@@ -85,11 +157,31 @@
 }
 
 @media (max-width: 520px) {
-  .card {
+  .cardFace {
     padding: 1.1rem 1rem 1.2rem;
+  }
+
+  .header,
+  .sectionStack {
+    padding-right: 2rem;
   }
 
   .heading {
     font-size: 0.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardStage {
+    transition: none;
+  }
+
+  .cardStageFlipped,
+  .cardBack {
+    transform: none;
+  }
+
+  .cardFaceInactive {
+    display: none;
   }
 }

@@ -22,6 +22,8 @@ export type GroupView = {
   heading: string | null;
   /** Backend-rendered LaTeX title for the group card, if available. */
   heading_latex: string | null;
+  /** Original MathLingua source for this top-level group. */
+  source: string;
   /** Rendered sections belonging to the group. */
   sections: SectionView[];
 };

@@ -17,6 +17,7 @@ pub struct GroupView {
     pub kind: String,
     pub heading: Option<String>,
     pub heading_latex: Option<String>,
+    pub source: String,
     pub sections: Vec<SectionView>,
 }
 

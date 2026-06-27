@@ -1,6 +1,6 @@
 use super::{build_render_registry, render_formulation_latex, render_group_heading_latex};
 use crate::events::EventLog;
-use crate::frontend::{ParsedSourceFile, parse_document};
+use crate::frontend::{parse_document, ParsedSourceFile};
 use std::path::PathBuf;
 
 fn registry_for(source: &str) -> super::RenderRegistry {
@@ -320,6 +320,28 @@ fn renders_function_forms_with_placeholder_suffixes_hidden() {
     assert_eq!(
         render_formulation_latex("f(x)", &registry),
         Some(r#"f(x)"#.to_string())
+    );
+}
+
+#[test]
+fn renders_trailing_digits_in_names_as_subscripts() {
+    let registry = registry_for("");
+
+    assert_eq!(
+        render_formulation_latex("x1", &registry),
+        Some(r#"x_1"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("abc123 + y2", &registry),
+        Some(r#"abc_{123} + y_2"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("f1(x2_)", &registry),
+        Some(r#"f_1(x_2)"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("{x1 : y2 | z3}", &registry),
+        Some(r#"\left\{ x_1 \: : \: y_2 \: | \: z_3 \right\}"#.to_string())
     );
 }
 

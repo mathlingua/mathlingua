@@ -1,4 +1,4 @@
-use crate::frontend::formulation::ast::{self, BinaryOperator, ExpressionKind, FormOrDeclarationKind, HighPrecedenceInfix, NamedOperatorKind, PlaceholderFormKind, Span, TupleExpressionElement, TupleFormElement, UnaryOperator};
+use crate::frontend::formulation::ast::{self, BinaryOperator, ExpressionKind, FormOrDeclarationKind, HighPrecedenceInfix, NamedOperatorKind, PlaceholderFormKind, SetTargetElement, SetTargetKind, Span, TupleExpressionElement, TupleFormElement, UnaryOperator};
 use crate::frontend::formulation::token::{LexicalError, Token};
 
 grammar;
@@ -219,6 +219,50 @@ TupleForm: ast::TupleForm = {
 TupleFormElement: TupleFormElement = {
     <form:FormOrDeclaration> => TupleFormElement::Form(form),
     <operator:AnyOperator> => TupleFormElement::Operator(operator),
+};
+
+SetTargetList: Vec<ast::SetTarget> = {
+    <target:SetTarget> => vec![target],
+    <mut targets:SetTargetList> "," <target:SetTarget> => {
+        targets.push(target);
+        targets
+    },
+};
+
+SetTargetElementList: Vec<SetTargetElement> = {
+    <element:SetTargetElement> => vec![element],
+    <mut elements:SetTargetElementList> "," <element:SetTargetElement> => {
+        elements.push(element);
+        elements
+    },
+};
+
+SetTargetElement: SetTargetElement = {
+    <target:SetTarget> => SetTargetElement::Target(target),
+    <operator:AnyOperator> => SetTargetElement::Operator(operator),
+};
+
+SetTarget: ast::SetTarget = {
+    <form:PlaceholderForm> => ast::SetTarget::new(
+        form.span,
+        SetTargetKind::PlaceholderForm(form),
+    ),
+    <l:@L> <name:Name> "(" <arguments:SetTargetList> ")" <r:@R> => ast::SetTarget::new(
+        Span::new(l, r),
+        SetTargetKind::Function { name, arguments },
+    ),
+    <l:@L> <name:Name> <r:@R> => ast::SetTarget::new(
+        Span::new(l, r),
+        SetTargetKind::Name(name),
+    ),
+    <l:@L> "(" <first:SetTargetElement> "," <rest:SetTargetElementList> ")" <r:@R> => {
+        let mut elements = vec![first];
+        elements.extend(rest);
+        ast::SetTarget::new(
+            Span::new(l, r),
+            SetTargetKind::Tuple(elements),
+        )
+    },
 };
 
 SetForm: ast::SetForm = {
@@ -580,12 +624,12 @@ ExpressionSpec: ast::SpecStatement = {
 };
 
 SetExpression: ast::Expression = {
-    <l:@L> "{" <target:PlaceholderForm> ":" <spec:SpecOrPredicateExpression> <predicate:("|" <SpecOrPredicateExpression>)?> "}" <r:@R> => ast::Expression::new(
+    <l:@L> "{" <target:SetTarget> ":" <specs:ExpressionList> <predicate:("|" <SpecOrPredicateExpression>)?> "}" <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::Set(ast::SetExpression {
             span: Span::new(l, r),
             target,
-            spec: Box::new(spec),
+            specs,
             predicate: predicate.map(Box::new),
         }),
     ),

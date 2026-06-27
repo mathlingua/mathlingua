@@ -1242,6 +1242,44 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_tuple_targets_in_set_builder_definitions() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("set-builder-tuple-target.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \.set.cross./ B]
+    Defines: C := {(a_, b_) : a_ "in" A, b_ "in" B} is \set
+    when: A, B is \set
+    Documented:
+    . called: "Cartesian product of $A?$ and $B?$"
+    . written: "A? \times B?"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("set-builder-tuple-target.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_reports_command_when_requirement_type_mismatches() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("type-mismatch.mlg");

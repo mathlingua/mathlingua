@@ -122,8 +122,13 @@ pub(super) fn render_infix_spec_like(spec: &InfixSpec, registry: &RenderRegistry
 }
 
 pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegistry) -> String {
-    let target = render_placeholder_form(&set.target);
-    let spec = render_expression(&set.spec, registry);
+    let target = render_set_target(&set.target);
+    let spec = set
+        .specs
+        .iter()
+        .map(|spec| render_expression(spec, registry))
+        .collect::<Vec<_>>()
+        .join(", ");
 
     match &set.predicate {
         Some(predicate) => format!(
@@ -131,6 +136,32 @@ pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegist
             render_expression(predicate, registry)
         ),
         None => format!("\\left\\{{ {target} \\: : \\: {spec} \\right\\}}"),
+    }
+}
+
+pub(super) fn render_set_target(target: &SetTarget) -> String {
+    match &target.kind {
+        SetTargetKind::Name(name) => escape_math_identifier(name),
+        SetTargetKind::PlaceholderForm(form) => render_placeholder_form(form),
+        SetTargetKind::Function { name, arguments } => {
+            let arguments = arguments
+                .iter()
+                .map(render_set_target)
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("{}({arguments})", escape_math_identifier(name))
+        }
+        SetTargetKind::Tuple(elements) => {
+            let elements = elements
+                .iter()
+                .map(|element| match element {
+                    SetTargetElement::Target(target) => render_set_target(target),
+                    SetTargetElement::Operator(operator) => render_operator_text(&operator.text),
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("\\left({elements}\\right)")
+        }
     }
 }
 

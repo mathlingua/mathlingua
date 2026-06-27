@@ -1962,7 +1962,8 @@ mod tests {
         Expression, ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
         FunctionNamedExpressionElementLhs, FunctionTypeSpecKind, IsOrRefinedStatementSpec,
         IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind, PlaceholderFormKind,
-        RefinedTail, SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression,
+        RefinedTail, SetTargetElement, SetTargetKind, SpecOperatorAliasTarget, SpecSubjectKind,
+        SubsetCall, TypeExpression,
     };
 
     // ===============================[ support ]=====================================
@@ -2395,18 +2396,21 @@ mod tests {
         match expression.kind {
             ExpressionKind::Set(set) => {
                 assert!(matches!(
-                    &set.spec.kind,
+                    &set.specs[0].kind,
                     ExpressionKind::SpecStatement(statement)
                         if statement.operator == "in" && statement.name == "X"
                 ));
                 match set.target.kind {
-                    PlaceholderFormKind::Function {
-                        placeholder,
-                        arguments,
-                    } => {
-                        assert_eq!(placeholder.name, "f");
-                        assert_eq!(arguments.len(), 2);
-                    }
+                    SetTargetKind::PlaceholderForm(form) => match form.kind {
+                        PlaceholderFormKind::Function {
+                            placeholder,
+                            arguments,
+                        } => {
+                            assert_eq!(placeholder.name, "f");
+                            assert_eq!(arguments.len(), 2);
+                        }
+                        other => panic!("expected placeholder function target, got {other:?}"),
+                    },
                     other => panic!("expected placeholder function target, got {other:?}"),
                 }
                 assert!(matches!(
@@ -2416,6 +2420,28 @@ mod tests {
                         ..
                     })
                 ));
+            }
+            other => panic!("expected set expression, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_set_expressions_with_tuple_targets_and_multiple_specs() {
+        let expression = parse_expression(r#"{(a_, b_) : a_ "in" A, b_ "in" B}"#)
+            .expect("expected set expression");
+
+        match expression.kind {
+            ExpressionKind::Set(set) => {
+                assert_eq!(set.specs.len(), 2);
+                match set.target.kind {
+                    SetTargetKind::Tuple(elements) => {
+                        assert_eq!(elements.len(), 2);
+                        for element in elements {
+                            assert!(matches!(element, SetTargetElement::Target(_)));
+                        }
+                    }
+                    other => panic!("expected tuple set target, got {other:?}"),
+                }
             }
             other => panic!("expected set expression, got {other:?}"),
         }

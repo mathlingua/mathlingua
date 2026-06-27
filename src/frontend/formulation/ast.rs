@@ -338,9 +338,38 @@ pub enum TupleExpressionElement {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SetExpression {
     pub span: Span,
-    pub target: PlaceholderForm,
-    pub spec: Box<Expression>,
+    pub target: SetTarget,
+    pub specs: Vec<Expression>,
     pub predicate: Option<Box<Expression>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SetTarget {
+    pub span: Span,
+    pub kind: SetTargetKind,
+}
+
+impl SetTarget {
+    pub fn new(span: Span, kind: SetTargetKind) -> Self {
+        Self { span, kind }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SetTargetKind {
+    Name(String),
+    PlaceholderForm(PlaceholderForm),
+    Function {
+        name: String,
+        arguments: Vec<SetTarget>,
+    },
+    Tuple(Vec<SetTargetElement>),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SetTargetElement {
+    Target(SetTarget),
+    Operator(Operator),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

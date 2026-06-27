@@ -308,14 +308,7 @@ fn validate_top_level_item_types(
         TopLevelItem::Defines(group) => {
             let mut context = TypeContext::default();
             declare_header_symbols(&group.heading, &mut context);
-            introduce_declaration_statement(
-                &group.defines.argument,
-                &mut context,
-                path,
-                locator,
-                registry,
-                event_log,
-            );
+            declare_declaration_statement_subjects(&group.defines.argument, &mut context);
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -326,6 +319,14 @@ fn validate_top_level_item_types(
             );
             assume_optional_clauses(
                 &group.when,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            complete_introduced_declaration_statement(
+                &group.defines.argument,
                 &mut context,
                 path,
                 locator,
@@ -346,14 +347,7 @@ fn validate_top_level_item_types(
         TopLevelItem::Refines(group) => {
             let mut context = TypeContext::default();
             declare_header_symbols(&group.heading, &mut context);
-            introduce_declaration_statement(
-                &group.refines.argument,
-                &mut context,
-                path,
-                locator,
-                registry,
-                event_log,
-            );
+            declare_declaration_statement_subjects(&group.refines.argument, &mut context);
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -364,6 +358,14 @@ fn validate_top_level_item_types(
             );
             assume_optional_clauses(
                 &group.when,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            complete_introduced_declaration_statement(
+                &group.refines.argument,
                 &mut context,
                 path,
                 locator,
@@ -952,7 +954,17 @@ fn assume_declaration_statement(
     }
 }
 
-fn introduce_declaration_statement(
+fn declare_declaration_statement_subjects(
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+) {
+    declare_is_subject(&statement.subject, context);
+    if let Some(expansion) = &statement.expansion {
+        declare_is_subject(expansion, context);
+    }
+}
+
+fn complete_introduced_declaration_statement(
     statement: &DeclarationStatement,
     context: &mut TypeContext,
     path: &Path,
@@ -960,10 +972,6 @@ fn introduce_declaration_statement(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    declare_is_subject(&statement.subject, context);
-    if let Some(expansion) = &statement.expansion {
-        declare_is_subject(expansion, context);
-    }
     if let Some(definition) = &statement.definition {
         check_expression(definition, context, path, locator, registry, event_log);
     }
@@ -1199,10 +1207,12 @@ fn check_expression(
         }
         ExpressionKind::Set(set) => {
             let mut child = context.clone();
-            declare_placeholder_form(&set.target, &mut child);
-            assume_fact_expression(&set.spec, &mut child, path, locator, registry, event_log);
-            if let Some(fact) = fact_from_expression(&set.spec) {
-                child.add_fact(fact);
+            declare_set_target(&set.target, &mut child);
+            for spec in &set.specs {
+                assume_fact_expression(spec, &mut child, path, locator, registry, event_log);
+                if let Some(fact) = fact_from_expression(spec) {
+                    child.add_fact(fact);
+                }
             }
             if let Some(predicate) = &set.predicate {
                 check_expression(predicate, &child, path, locator, registry, event_log);
@@ -3267,6 +3277,26 @@ fn declare_placeholder_form(form: &PlaceholderForm, context: &mut TypeContext) {
     }
 }
 
+fn declare_set_target(target: &SetTarget, context: &mut TypeContext) {
+    match &target.kind {
+        SetTargetKind::Name(name) => context.declare_name(name.clone()),
+        SetTargetKind::PlaceholderForm(form) => declare_placeholder_form(form, context),
+        SetTargetKind::Function { name, arguments } => {
+            context.declare_name(name.clone());
+            for argument in arguments {
+                declare_set_target(argument, context);
+            }
+        }
+        SetTargetKind::Tuple(elements) => {
+            for element in elements {
+                if let SetTargetElement::Target(target) = element {
+                    declare_set_target(target, context);
+                }
+            }
+        }
+    }
+}
+
 fn declare_names_from_expression(expression: &Expression, context: &mut TypeContext) {
     match &expression.kind {
         ExpressionKind::Name(name) => context.declare_name(name.clone()),
@@ -3298,8 +3328,10 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
             }
         }
         ExpressionKind::Set(set) => {
-            declare_placeholder_form(&set.target, context);
-            declare_names_from_expression(&set.spec, context);
+            declare_set_target(&set.target, context);
+            for spec in &set.specs {
+                declare_names_from_expression(spec, context);
+            }
             if let Some(predicate) = &set.predicate {
                 declare_names_from_expression(predicate, context);
             }
@@ -3880,8 +3912,12 @@ fn key_for_expression(expression: &Expression) -> String {
         ),
         ExpressionKind::Set(set) => format!(
             "{{{}:{}}}",
-            key_for_placeholder_form(&set.target),
-            key_for_expression(&set.spec)
+            key_for_set_target(&set.target),
+            set.specs
+                .iter()
+                .map(key_for_expression)
+                .collect::<Vec<_>>()
+                .join(",")
         ),
         ExpressionKind::Grouped { expression, .. } => key_for_expression(expression),
         ExpressionKind::Labeled { expression, .. } => key_for_expression(expression),
@@ -4119,6 +4155,33 @@ fn key_for_placeholder_form(form: &PlaceholderForm) -> String {
             arguments
                 .iter()
                 .map(|argument| argument.name.clone())
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+    }
+}
+
+fn key_for_set_target(target: &SetTarget) -> String {
+    match &target.kind {
+        SetTargetKind::Name(name) => name.clone(),
+        SetTargetKind::PlaceholderForm(form) => key_for_placeholder_form(form),
+        SetTargetKind::Function { name, arguments } => format!(
+            "{}({})",
+            name,
+            arguments
+                .iter()
+                .map(key_for_set_target)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        SetTargetKind::Tuple(elements) => format!(
+            "({})",
+            elements
+                .iter()
+                .map(|element| match element {
+                    SetTargetElement::Target(target) => key_for_set_target(target),
+                    SetTargetElement::Operator(operator) => operator.text.clone(),
+                })
                 .collect::<Vec<_>>()
                 .join(",")
         ),

@@ -24,10 +24,20 @@ export type GroupView = {
   heading: string | null;
   /** Backend-rendered LaTeX title for the group card, if available. */
   heading_latex: string | null;
+  /** Direct page content for document headings/prose instead of card content. */
+  page: PageView | null;
   /** Original MathLingua source for this top-level group. */
   source: string;
   /** Rendered sections belonging to the group. */
   sections: SectionView[];
+};
+
+/** Direct document-flow item rendered outside cards. */
+export type PageView = {
+  /** Page item kind, such as `Title`, `Section`, or `Text`. */
+  kind: string;
+  /** Quote-stripped text content. */
+  text: string;
 };
 
 /** Serialized view model for one labeled section inside a group. */

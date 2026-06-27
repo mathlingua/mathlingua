@@ -18,8 +18,15 @@ pub struct GroupView {
     pub definition_keys: Vec<String>,
     pub heading: Option<String>,
     pub heading_latex: Option<String>,
+    pub page: Option<PageView>,
     pub source: String,
     pub sections: Vec<SectionView>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct PageView {
+    pub kind: String,
+    pub text: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]

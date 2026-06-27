@@ -27,7 +27,7 @@ impl Line {
     }
 
     pub fn is_text(&self) -> bool {
-        self.text.starts_with('"') && self.text.ends_with('"')
+        self.text.starts_with('"')
     }
 
     pub fn is_header(&self) -> bool {

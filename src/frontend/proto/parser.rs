@@ -203,7 +203,9 @@ impl<'a> Parser<'a> {
         }
 
         let mut text = argument.to_owned();
-        if let Some(close_delimiter) = multiline_formulation_close(argument) {
+        if starts_multiline_text(argument) {
+            text = self.consume_multiline_text(text, row);
+        } else if let Some(close_delimiter) = multiline_formulation_close(argument) {
             text = self.consume_multiline_formulation(text, close_delimiter, row, indent);
         } else if is_single_quoted_formulation(argument) {
             self.lexer
@@ -252,8 +254,14 @@ impl<'a> Parser<'a> {
         }
 
         let line = self.lexer.next()?;
+        let text = if starts_multiline_text(&line.text) {
+            self.consume_multiline_text(line.text, line.metadata.row)
+        } else {
+            line.text
+        };
+
         Some(TextLiteral {
-            text: line.text,
+            text,
             metadata: line.metadata,
         })
     }
@@ -309,6 +317,28 @@ impl<'a> Parser<'a> {
             }
         }
     }
+
+    fn consume_multiline_text(&mut self, opening_line: String, row: usize) -> String {
+        let mut lines = vec![opening_line.clone()];
+
+        loop {
+            let Some(line) = self.lexer.next() else {
+                self.lexer.error(
+                    row,
+                    format!("Unterminated text block starting with {opening_line}"),
+                );
+                return lines.join("\n");
+            };
+
+            let rendered = line.to_string();
+            let is_closing_line = closes_quoted_text(&line.text);
+            lines.push(rendered);
+
+            if is_closing_line {
+                return lines.join("\n");
+            }
+        }
+    }
 }
 
 /// Finds the colon that separates a section label from its inline argument.
@@ -347,6 +377,18 @@ fn multiline_formulation_close(text: &str) -> Option<&'static str> {
     MULTILINE_FORMULATION_DELIMITERS
         .iter()
         .find_map(|(open, close)| (*open == text).then_some(*close))
+}
+
+fn starts_multiline_text(text: &str) -> bool {
+    text.starts_with('"') && !is_complete_quoted_text(text)
+}
+
+fn is_complete_quoted_text(text: &str) -> bool {
+    text.len() >= 2 && text.starts_with('"') && text.ends_with('"')
+}
+
+fn closes_quoted_text(text: &str) -> bool {
+    text.ends_with('"')
 }
 
 /// Detects legacy single-quoted formulation text.
@@ -586,6 +628,24 @@ when:
         assert!(matches!(
             &groups[0].sections[0].arguments[0],
             Argument::Formulation(item) if item.text == "(.\n    x + y\n  .)"
+        ));
+    }
+
+    #[test]
+    fn parses_multiline_text_literals() {
+        let input = "Text: \"First paragraph\n\nSecond paragraph\n\"\n\nStates:\n. \"Claim\nstill claim\n\"\nthat:\n. y\n";
+
+        let (groups, diagnostics) = parse_input(input);
+
+        assert!(diagnostics.is_empty());
+        assert_eq!(groups.len(), 2);
+        assert_eq!(
+            groups[0].sections[0].inline_argument.as_deref(),
+            Some("\"First paragraph\n\nSecond paragraph\n\"")
+        );
+        assert!(matches!(
+            &groups[1].sections[0].arguments[0],
+            Argument::Text(item) if item.text == "\"Claim\nstill claim\n\""
         ));
     }
 

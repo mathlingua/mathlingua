@@ -1964,6 +1964,7 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
         "Section" => parse_section(group, tracker).map(TopLevelItem::Section),
         "Subsection" => parse_subsection(group, tracker).map(TopLevelItem::Subsection),
         "Subsubsection" => parse_subsubsection(group, tracker).map(TopLevelItem::Subsubsection),
+        "Text" => parse_text_group(group, tracker).map(TopLevelItem::Text),
         "Disambiguates" => parse_disambiguates(group, tracker).map(TopLevelItem::Disambiguates),
         "Describes" => parse_describes(group, tracker).map(TopLevelItem::Describes),
         "Defines" => parse_defines(group, tracker).map(TopLevelItem::Defines),
@@ -2067,6 +2068,23 @@ pub(in crate::frontend::structural::parser) fn parse_subsubsection(
                 "Subsubsection",
                 tracker,
             )?,
+        },
+    })
+}
+
+/// Parses a top-level `Text:` group.
+///
+/// Text groups are document prose blocks that render directly in the page
+/// flow, with Markdown/LaTeX interpretation handled by the viewer.
+pub(in crate::frontend::structural::parser) fn parse_text_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<TextGroup> {
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("Text", &group.sections, tracker, &["Text"])?;
+    Some(TextGroup {
+        text: TextSection {
+            argument: parse_required_open_text(section(&sections, "Text")?, "Text", tracker)?,
         },
     })
 }
@@ -4111,10 +4129,14 @@ Section: "Sets"
 Subsection: "Membership"
 
 Subsubsection: "Examples"
+
+Text: "This is prose
+
+with another paragraph."
 "#,
         );
 
-        assert_eq!(document.items.len(), 4);
+        assert_eq!(document.items.len(), 5);
 
         match &document.items[0] {
             TopLevelItem::Title(group) => assert_eq!(group.title.argument.0, "Foundations"),
@@ -4135,6 +4157,15 @@ Subsubsection: "Examples"
                 assert_eq!(group.subsubsection.argument.0, "Examples")
             }
             other => panic!("expected subsubsection group, got {other:?}"),
+        }
+        match &document.items[4] {
+            TopLevelItem::Text(group) => {
+                assert_eq!(
+                    group.text.argument.0,
+                    "This is prose\n\nwith another paragraph."
+                )
+            }
+            other => panic!("expected text group, got {other:?}"),
         }
     }
 

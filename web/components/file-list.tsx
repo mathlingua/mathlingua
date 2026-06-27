@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { GroupCard } from "./group-card";
+import { MarkdownInline, MarkdownText } from "./markdown-text";
 import styles from "./file-list.module.css";
 import {
   buildFileBrowserEntries,
@@ -12,6 +13,7 @@ import {
   parentDirectory,
 } from "../lib/presenter";
 import type { FileView, GroupView } from "../lib/types";
+import type { PageView } from "../lib/types";
 
 /** Props for coordinating outline navigation and selected document state. */
 interface FileListProps {
@@ -170,6 +172,16 @@ export function FileList({
               const anchorId = makeGroupAnchor(selectedFileIndex, itemIndex);
               const trail = definitionTrails[anchorId] ?? [];
 
+              if (item.page) {
+                return (
+                  <PageItem
+                    anchorId={anchorId}
+                    key={`${selectedFile.path}-${item.kind}-${itemIndex}`}
+                    page={item.page}
+                  />
+                );
+              }
+
               return (
                 <div
                   className={styles.definitionStack}
@@ -232,6 +244,57 @@ export function FileList({
       </section>
     </div>
   );
+}
+
+function PageItem({ anchorId, page }: { anchorId: string; page: PageView }) {
+  if (page.kind === "Text") {
+    return (
+      <section
+        className={`${styles.pageItem} ${styles.pageText}`}
+        id={anchorId}
+      >
+        <MarkdownText text={page.text} />
+      </section>
+    );
+  }
+
+  return (
+    <section
+      className={`${styles.pageItem} ${styles[`page${page.kind}`] ?? ""}`}
+      id={anchorId}
+    >
+      <PageHeading kind={page.kind} text={page.text} />
+    </section>
+  );
+}
+
+function PageHeading({ kind, text }: { kind: string; text: string }) {
+  switch (kind) {
+    case "Title":
+      return (
+        <h1>
+          <MarkdownInline text={text} />
+        </h1>
+      );
+    case "Section":
+      return (
+        <h2>
+          <MarkdownInline text={text} />
+        </h2>
+      );
+    case "Subsection":
+      return (
+        <h3>
+          <MarkdownInline text={text} />
+        </h3>
+      );
+    default:
+      return (
+        <h4>
+          <MarkdownInline text={text} />
+        </h4>
+      );
+  }
 }
 
 interface DefinitionIndexEntry {

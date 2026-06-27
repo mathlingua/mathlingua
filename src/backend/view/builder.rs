@@ -1,4 +1,4 @@
-use super::model::{ArgumentView, CollectionView, FileView, GroupView, SectionView};
+use super::model::{ArgumentView, CollectionView, FileView, GroupView, PageView, SectionView};
 use super::render::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
     render_formulation_latex, render_group_heading_latex,
@@ -117,6 +117,7 @@ fn group_view(group: ProtoGroup, source: String, registry: &RenderRegistry) -> G
         .sections
         .first()
         .and_then(|section| section.inline_argument.as_deref());
+    let page = page_view(&kind, &group.sections);
 
     GroupView {
         heading_latex: render_group_heading_latex(
@@ -128,6 +129,7 @@ fn group_view(group: ProtoGroup, source: String, registry: &RenderRegistry) -> G
         definition_keys: definition_reference_keys_for_heading(group.heading.as_deref()),
         kind,
         heading: group.heading,
+        page,
         source,
         sections: group
             .sections
@@ -155,13 +157,54 @@ fn section_view(section: ProtoSection, registry: &RenderRegistry) -> SectionView
     }
 }
 
+fn page_view(kind: &str, sections: &[ProtoSection]) -> Option<PageView> {
+    if !matches!(
+        kind,
+        "Title" | "Section" | "Subsection" | "Subsubsection" | "Text"
+    ) {
+        return None;
+    }
+
+    let text = sections.first().and_then(section_text).unwrap_or_default();
+
+    Some(PageView {
+        kind: kind.to_string(),
+        text,
+    })
+}
+
+fn section_text(section: &ProtoSection) -> Option<String> {
+    if let Some(text) = section.inline_argument.as_deref() {
+        return strip_quoted_text(text);
+    }
+
+    section
+        .arguments
+        .iter()
+        .find_map(|argument| match argument {
+            ProtoArgument::Text(text) => strip_quoted_text(&text.text),
+            _ => None,
+        })
+}
+
+fn strip_quoted_text(input: &str) -> Option<String> {
+    let input = input.trim();
+    if input.len() < 2 || !input.starts_with('"') || !input.ends_with('"') {
+        return None;
+    }
+
+    Some(input[1..input.len() - 1].to_string())
+}
+
 fn argument_view(argument: ProtoArgument, registry: &RenderRegistry) -> ArgumentView {
     match argument {
         ProtoArgument::Formulation(formulation) => ArgumentView::Formulation {
             latex: render_formulation_latex(&formulation.text, registry),
             text: formulation.text,
         },
-        ProtoArgument::Text(text) => ArgumentView::Text { text: text.text },
+        ProtoArgument::Text(text) => ArgumentView::Text {
+            text: strip_quoted_text(&text.text).unwrap_or(text.text),
+        },
         ProtoArgument::Group(group) => ArgumentView::Group {
             heading: group.heading,
             sections: group
@@ -259,6 +302,59 @@ Documented:
             Some(r#"X \textrm{ is } \htmlData{mlg-ref=5c736574}{\textrm{set}}"#.to_string())
         );
         assert!(!event_log.has_errors());
+    }
+
+    #[test]
+    fn builds_page_items_for_outline_and_text_groups() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("intro.mlg");
+        let source = r#"Title: "Foundations"
+
+Section: "Sets"
+
+Text: "First paragraph
+
+Second paragraph with $x \in X$."
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+        };
+        let mut event_log = EventLog::new();
+        let view =
+            build_collection_view(&root, &[parsed_file], &mut event_log).expect("expected view");
+
+        assert!(!event_log.has_errors());
+        assert_eq!(
+            view.files[0].items[0]
+                .page
+                .as_ref()
+                .map(|page| page.text.as_str()),
+            Some("Foundations")
+        );
+        assert_eq!(
+            view.files[0].items[1]
+                .page
+                .as_ref()
+                .map(|page| page.text.as_str()),
+            Some("Sets")
+        );
+        assert_eq!(
+            view.files[0].items[2]
+                .page
+                .as_ref()
+                .map(|page| page.text.as_str()),
+            Some("First paragraph\n\nSecond paragraph with $x \\in X$.")
+        );
     }
 
     struct TestDir {

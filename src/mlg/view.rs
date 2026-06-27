@@ -522,7 +522,7 @@ mod tests {
         ViewDataRefresh, create_view_session_dir, rebuild_collection_view_data, web_app_directory,
         write_collection_view_data,
     };
-    use crate::backend::view::{CollectionView, FileView, GroupView, SectionView};
+    use crate::backend::view::{CollectionView, FileView, GroupView, PageView, SectionView};
     use std::fs;
 
     #[test]
@@ -538,6 +538,10 @@ mod tests {
                     definition_keys: vec![],
                     heading: None,
                     heading_latex: None,
+                    page: Some(PageView {
+                        kind: "Title".to_string(),
+                        text: "Example".to_string(),
+                    }),
                     source: "Title: \"Example\"".to_string(),
                     sections: vec![SectionView {
                         label: "Title".to_string(),

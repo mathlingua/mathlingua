@@ -148,6 +148,50 @@
   width: 100%;
 }
 
+.pageItem {
+  width: min(100%, 47rem);
+  margin: 0 auto;
+  scroll-margin-top: 7.5rem;
+}
+
+.pageItem h1,
+.pageItem h2,
+.pageItem h3,
+.pageItem h4 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.pageTitle h1 {
+  font-size: 3.15rem;
+  line-height: 1.04;
+}
+
+.pageSection h2 {
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 2.05rem;
+  line-height: 1.12;
+}
+
+.pageSubsection h3 {
+  font-size: 1.55rem;
+  line-height: 1.18;
+}
+
+.pageSubsubsection h4 {
+  color: var(--muted-strong);
+  font-size: 1.16rem;
+  line-height: 1.24;
+}
+
+.pageText {
+  margin-top: -0.65rem;
+}
+
 .definitionTrail {
   position: relative;
   display: grid;
@@ -259,6 +303,18 @@
   .definitionTrail {
     width: 100%;
     padding: 2.25rem 0.9rem 1.15rem;
+  }
+
+  .pageTitle h1 {
+    font-size: 2.25rem;
+  }
+
+  .pageSection h2 {
+    font-size: 1.65rem;
+  }
+
+  .pageSubsection h3 {
+    font-size: 1.32rem;
   }
 }
 

@@ -1,0 +1,103 @@
+.markdown {
+  color: var(--ink);
+  font-size: 1.08rem;
+  line-height: 1.62;
+}
+
+.markdown p,
+.markdown ul,
+.markdown ol,
+.markdown pre,
+.markdownBlockMath {
+  margin: 0;
+}
+
+.markdown p + p,
+.markdown p + ul,
+.markdown p + ol,
+.markdown ul + p,
+.markdown ol + p,
+.markdownBlockMath + p,
+.markdown p + .markdownBlockMath,
+.markdown pre + p,
+.markdown p + pre {
+  margin-top: 1rem;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  margin: 1.45rem 0 0.45rem;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: 1.16;
+}
+
+.markdown h1 {
+  font-size: 2rem;
+}
+
+.markdown h2 {
+  font-size: 1.65rem;
+}
+
+.markdown h3 {
+  font-size: 1.35rem;
+}
+
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  font-size: 1.16rem;
+}
+
+.markdown ul,
+.markdown ol {
+  display: grid;
+  gap: 0.22rem;
+  padding-left: 1.35rem;
+}
+
+.markdown code {
+  padding: 0.06rem 0.2rem;
+  border-radius: 0.24rem;
+  background: var(--surface-alt);
+  font-size: 0.9em;
+}
+
+.markdown pre {
+  overflow: auto;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.45rem;
+  background: var(--surface-alt);
+}
+
+.markdown pre code {
+  padding: 0;
+  background: transparent;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.markdown a {
+  color: var(--accent);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.16em;
+}
+
+.markdownInlineMath {
+  white-space: nowrap;
+}
+
+.markdownBlockMath {
+  overflow-x: auto;
+  padding: 0.35rem 0;
+}
+
+.markdownBlockMath :global(.katex-display) {
+  margin: 0;
+}

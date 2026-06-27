@@ -25,7 +25,7 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
   const [showSource, setShowSource] = useState(false);
   const headingTooltip = group.heading ?? undefined;
   const headingLatex = group.heading_latex
-    ? capitalizeFirstRenderedLatexWord(group.heading_latex)
+    ? capitalizeLeadingRenderedLatexWord(group.heading_latex)
     : null;
   const hasHeading = headingLatex !== null;
   const hasSupportSections = group.sections.some(isSupportSection);
@@ -192,28 +192,31 @@ function isSupportSection(section: SectionView): boolean {
 }
 
 /**
- * Capitalizes the first visible word inside rendered text-mode LaTeX.
+ * Capitalizes a heading that starts with rendered text-mode LaTeX.
  *
  * The backend preserves documented `called:` capitalization, while card
- * headings read better when the first prose word starts uppercase.
+ * headings read better when an all-prose title starts uppercase. Mixed
+ * math/prose titles should keep their original prose casing.
  */
-function capitalizeFirstRenderedLatexWord(latex: string): string {
-  for (let index = 0; index < latex.length; index += 1) {
-    const textCommand = latexTextCommandAt(latex, index);
+function capitalizeLeadingRenderedLatexWord(latex: string): string {
+  let index = 0;
 
-    if (!textCommand) {
-      continue;
-    }
+  while (index < latex.length && /\s/.test(latex[index])) {
+    index += 1;
+  }
 
-    const scan = scanLatexTextGroup(latex, index + textCommand.length);
+  const textCommand = latexTextCommandAt(latex, index);
 
-    if (scan.letterIndex !== null) {
-      const letter = latex[scan.letterIndex].toUpperCase();
+  if (!textCommand) {
+    return latex;
+  }
 
-      return `${latex.slice(0, scan.letterIndex)}${letter}${latex.slice(scan.letterIndex + 1)}`;
-    }
+  const scan = scanLatexTextGroup(latex, index + textCommand.length);
 
-    index = scan.endIndex;
+  if (scan.letterIndex !== null) {
+    const letter = latex[scan.letterIndex].toUpperCase();
+
+    return `${latex.slice(0, scan.letterIndex)}${letter}${latex.slice(scan.letterIndex + 1)}`;
   }
 
   return latex;

@@ -61,9 +61,55 @@ fn flush_called_segment(
     if in_math {
         result.push_str(&substitute_math_template(segment, substitutions));
     } else {
-        result.push_str(&format!("\\textrm{{{}}}", escape_latex_text(segment)));
+        result.push_str(&substitute_called_text_segment(segment, substitutions));
     }
     segment.clear();
+}
+
+fn substitute_called_text_segment(
+    segment: &str,
+    substitutions: &HashMap<String, String>,
+) -> String {
+    let mut result = String::new();
+    let mut text = String::new();
+    let chars = segment.chars().collect::<Vec<_>>();
+    let mut index = 0;
+
+    while index < chars.len() {
+        if is_placeholder_start(chars[index]) {
+            let start = index;
+            index += 1;
+            while index < chars.len() && is_placeholder_continue(chars[index]) {
+                index += 1;
+            }
+            if index < chars.len() && chars[index] == '?' {
+                let name = chars[start..index].iter().collect::<String>();
+                if let Some(value) = substitutions.get(&name) {
+                    flush_called_text(&mut result, &mut text);
+                    result.push_str(value);
+                    index += 1;
+                    continue;
+                }
+            }
+            text.extend(chars[start..index].iter());
+        } else {
+            text.push(chars[index]);
+            index += 1;
+        }
+    }
+
+    flush_called_text(&mut result, &mut text);
+
+    result
+}
+
+fn flush_called_text(result: &mut String, text: &mut String) {
+    if text.is_empty() {
+        return;
+    }
+
+    result.push_str(&format!("\\textrm{{{}}}", escape_latex_text(text)));
+    text.clear();
 }
 
 pub(super) fn substitute_math_template(

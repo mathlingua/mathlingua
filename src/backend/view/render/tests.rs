@@ -241,6 +241,22 @@ Documented:
 }
 
 #[test]
+fn renders_plain_called_placeholders_in_group_headings() {
+    let registry = registry_for(
+        r#"[A \:subset:/ B]
+Describes: A
+Documented:
+. called: "A? subset of B?"
+"#,
+    );
+
+    assert_eq!(
+        render_group_heading_latex("Describes", Some(r#"A \:subset:/ B"#), None, &registry),
+        Some(r#"A\textrm{ subset of }B"#.to_string())
+    );
+}
+
+#[test]
 fn renders_definition_group_heading_called_text_without_capitalizing() {
     let registry = registry_for(
         r#"[\set]

@@ -10,10 +10,12 @@ pub(super) fn render_command_expression(
     };
     let substitutions = command_substitutions(command, render, None, registry);
 
-    match &render.written {
+    let latex = match &render.written {
         Some(written) => substitute_math_template(written, &substitutions),
         None => render.render_called(&substitutions),
-    }
+    };
+
+    command_reference_latex(&signature, latex, registry)
 }
 
 pub(super) fn render_predicate_command_expression(
@@ -32,11 +34,15 @@ pub(super) fn render_predicate_command_expression(
             .as_ref()
             .is_some_and(|name| template_contains_placeholder(written, name));
         if !includes_subject {
-            return substitute_math_template(written, &substitutions);
+            return command_reference_latex(
+                &signature,
+                substitute_math_template(written, &substitutions),
+                registry,
+            );
         }
     }
 
-    render.render_called(&substitutions)
+    command_reference_latex(&signature, render.render_called(&substitutions), registry)
 }
 
 pub(super) fn render_infix_command_expression(
@@ -56,10 +62,12 @@ pub(super) fn render_infix_command_expression(
     };
     let substitutions = infix_command_substitutions(left, command, right, render, registry);
 
-    match &render.written {
+    let latex = match &render.written {
         Some(written) => substitute_math_template(written, &substitutions),
         None => render.render_called(&substitutions),
-    }
+    };
+
+    command_reference_latex(&signature, latex, registry)
 }
 
 pub(super) fn render_infix_spec_expression(
@@ -79,10 +87,12 @@ pub(super) fn render_infix_spec_expression(
     };
     let substitutions = infix_spec_substitutions(left, spec, right, render, registry);
 
-    match &render.written {
+    let latex = match &render.written {
         Some(written) => substitute_math_template(written, &substitutions),
         None => render.render_called(&substitutions),
-    }
+    };
+
+    command_reference_latex(&signature, latex, registry)
 }
 
 pub(super) fn render_refined_command_called(
@@ -116,12 +126,11 @@ pub(super) fn command_called_template(
     command: &CommandExpression,
     registry: &RenderRegistry,
 ) -> Option<CalledTemplate> {
-    let render = registry
-        .commands
-        .get(&command_expression_signature(command))?;
+    let signature = command_expression_signature(command);
+    let render = registry.commands.get(&signature)?;
     let substitutions = command_substitutions(command, render, None, registry);
     Some(CalledTemplate {
-        latex: render.render_called(&substitutions),
+        latex: command_reference_latex(&signature, render.render_called(&substitutions), registry),
     })
 }
 
@@ -140,7 +149,11 @@ pub(super) fn refined_command_called_template(
                 &render.parameters,
                 refined_command_part_argument_values(command, part, registry),
             );
-            refinement_templates.push(render.render_called(&substitutions));
+            refinement_templates.push(command_reference_latex(
+                &signature,
+                render.render_called(&substitutions),
+                registry,
+            ));
         } else {
             refinement_templates.push(render_called_template(
                 &format_chain(&part.chain),
@@ -154,7 +167,11 @@ pub(super) fn refined_command_called_template(
             &render.parameters,
             refined_command_base_argument_values(command, registry),
         );
-        render.render_called(&substitutions)
+        command_reference_latex(
+            &base_signature,
+            render.render_called(&substitutions),
+            registry,
+        )
     } else {
         render_called_template(
             &refined_tail_signature(&command.refined_tail),

@@ -7,10 +7,15 @@ import sectionStyles from "./section-content.module.css";
 interface ArgumentListProps {
   /** Arguments nested under the current section. */
   arguments: ArgumentView[];
+  /** Called when rendered math references another definition. */
+  onReferenceClick?: (referenceKey: string) => void;
 }
 
 /** Renders formulation, text, and nested-group section arguments. */
-export function ArgumentList({ arguments: items }: ArgumentListProps) {
+export function ArgumentList({
+  arguments: items,
+  onReferenceClick,
+}: ArgumentListProps) {
   return (
     <ul className={styles.list}>
       {items.map((argument, index) => (
@@ -27,7 +32,10 @@ export function ArgumentList({ arguments: items }: ArgumentListProps) {
               <span
                 className={`${styles.formulationLine} ${styles.formulationLineLatex}`}
               >
-                <LatexRenderer latex={argument.latex} />
+                <LatexRenderer
+                  latex={argument.latex}
+                  onReferenceClick={onReferenceClick}
+                />
               </span>
             ) : (
               <code className={styles.formulationLine}>{argument.text}</code>
@@ -55,7 +63,10 @@ export function ArgumentList({ arguments: items }: ArgumentListProps) {
                         <span
                           className={`${sectionStyles.inlineArgument} ${sectionStyles.inlineArgumentLatex}`}
                         >
-                          <LatexRenderer latex={section.inline_latex} />
+                          <LatexRenderer
+                            latex={section.inline_latex}
+                            onReferenceClick={onReferenceClick}
+                          />
                         </span>
                       ) : (
                         <code className={sectionStyles.inlineArgument}>
@@ -65,7 +76,10 @@ export function ArgumentList({ arguments: items }: ArgumentListProps) {
                     ) : null}
                   </div>
                   {section.arguments.length > 0 ? (
-                    <ArgumentList arguments={section.arguments} />
+                    <ArgumentList
+                      arguments={section.arguments}
+                      onReferenceClick={onReferenceClick}
+                    />
                   ) : null}
                 </section>
               ))}

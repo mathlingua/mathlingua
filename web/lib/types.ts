@@ -18,6 +18,8 @@ export type FileView = {
 export type GroupView = {
   /** Structural group kind, such as `Describes`, `Refines`, or `Theorem`. */
   kind: string;
+  /** Reference keys that resolve to this group when rendered math is clicked. */
+  definition_keys: string[];
   /** Raw bracket heading text, if the source group had one. */
   heading: string | null;
   /** Backend-rendered LaTeX title for the group card, if available. */

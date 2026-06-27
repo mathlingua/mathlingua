@@ -535,6 +535,7 @@ mod tests {
                 path: "content/example.mlg".to_string(),
                 items: vec![GroupView {
                     kind: "Title".to_string(),
+                    definition_keys: vec![],
                     heading: None,
                     heading_latex: None,
                     source: "Title: \"Example\"".to_string(),

@@ -141,6 +141,32 @@
   margin: 0 auto;
 }
 
+.definitionStack {
+  display: grid;
+  justify-items: center;
+  gap: 1.15rem;
+  width: 100%;
+}
+
+.definitionTrail {
+  display: grid;
+  justify-items: center;
+  gap: 1.25rem;
+  width: min(100%, 47rem);
+  padding: 2rem clamp(1rem, 4vw, 2.6rem);
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: linear-gradient(180deg, #fbfbfa 0%, #ffffff 100%);
+  box-shadow:
+    inset 0 1px 3px rgba(28, 26, 42, 0.09),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.95),
+    0 18px 36px rgba(28, 26, 42, 0.04);
+}
+
+.definitionTrailItem {
+  width: min(100%, 31rem);
+}
+
 .emptyState {
   max-width: 42rem;
   margin: 5rem auto;
@@ -188,6 +214,11 @@
 
   .documentStream {
     padding: 2.25rem 0.9rem 4rem;
+  }
+
+  .definitionTrail {
+    width: 100%;
+    padding: 1.15rem 0.9rem;
   }
 }
 

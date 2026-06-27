@@ -1,6 +1,6 @@
 use super::{build_render_registry, render_formulation_latex, render_group_heading_latex};
 use crate::events::EventLog;
-use crate::frontend::{parse_document, ParsedSourceFile};
+use crate::frontend::{ParsedSourceFile, parse_document};
 use std::path::PathBuf;
 
 fn registry_for(source: &str) -> super::RenderRegistry {

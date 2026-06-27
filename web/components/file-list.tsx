@@ -1,3 +1,6 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import { GroupCard } from "./group-card";
 import styles from "./file-list.module.css";
 import {
@@ -8,7 +11,7 @@ import {
   makeGroupAnchor,
   parentDirectory,
 } from "../lib/presenter";
-import { FileView } from "../lib/types";
+import type { FileView, GroupView } from "../lib/types";
 
 /** Props for coordinating outline navigation and selected document state. */
 interface FileListProps {
@@ -35,6 +38,11 @@ export function FileList({
   onSelectFile,
   selectedFileIndex,
 }: FileListProps) {
+  const [definitionTrails, setDefinitionTrails] = useState<
+    Record<string, string[]>
+  >({});
+  const definitionIndex = useMemo(() => buildDefinitionIndex(files), [files]);
+
   if (files.length === 0) {
     return (
       <section className={styles.emptyState}>
@@ -46,6 +54,41 @@ export function FileList({
 
   const selectedFile = files[selectedFileIndex] ?? files[0];
   const entries = buildFileBrowserEntries(files, currentDirectory);
+
+  const handleReferenceClick = (
+    rootAnchorId: string,
+    depth: number,
+    referenceKey: string,
+  ) => {
+    if (!definitionIndex.has(referenceKey)) {
+      return;
+    }
+
+    setDefinitionTrails((current) => {
+      const nextTrail = (current[rootAnchorId] ?? []).slice(0, depth);
+      nextTrail.push(referenceKey);
+
+      return {
+        ...current,
+        [rootAnchorId]: nextTrail,
+      };
+    });
+  };
+
+  const handleCloseDefinition = (rootAnchorId: string, index: number) => {
+    setDefinitionTrails((current) => {
+      const nextTrail = (current[rootAnchorId] ?? []).slice(0, index);
+      const next = { ...current };
+
+      if (nextTrail.length === 0) {
+        delete next[rootAnchorId];
+      } else {
+        next[rootAnchorId] = nextTrail;
+      }
+
+      return next;
+    });
+  };
 
   return (
     <div
@@ -109,16 +152,83 @@ export function FileList({
           key={selectedFile.path}
         >
           <div className={styles.groupStream}>
-            {selectedFile.items.map((item, itemIndex) => (
-              <GroupCard
-                anchorId={makeGroupAnchor(selectedFileIndex, itemIndex)}
-                group={item}
-                key={`${selectedFile.path}-${item.kind}-${itemIndex}`}
-              />
-            ))}
+            {selectedFile.items.map((item, itemIndex) => {
+              const anchorId = makeGroupAnchor(selectedFileIndex, itemIndex);
+              const trail = definitionTrails[anchorId] ?? [];
+
+              return (
+                <div
+                  className={styles.definitionStack}
+                  key={`${selectedFile.path}-${item.kind}-${itemIndex}`}
+                >
+                  <GroupCard
+                    anchorId={anchorId}
+                    group={item}
+                    onReferenceClick={(referenceKey) =>
+                      handleReferenceClick(anchorId, 0, referenceKey)
+                    }
+                  />
+                  {trail.length > 0 ? (
+                    <div className={styles.definitionTrail}>
+                      {trail.map((referenceKey, trailIndex) => {
+                        const definition = definitionIndex.get(referenceKey);
+
+                        if (!definition) {
+                          return null;
+                        }
+
+                        return (
+                          <div
+                            className={styles.definitionTrailItem}
+                            key={`${referenceKey}-${trailIndex}`}
+                          >
+                            <GroupCard
+                              anchorId={`${anchorId}-definition-${trailIndex}`}
+                              group={definition.group}
+                              onClose={() =>
+                                handleCloseDefinition(anchorId, trailIndex)
+                              }
+                              onReferenceClick={(nextReferenceKey) =>
+                                handleReferenceClick(
+                                  anchorId,
+                                  trailIndex + 1,
+                                  nextReferenceKey,
+                                )
+                              }
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </article>
       </section>
     </div>
   );
+}
+
+interface DefinitionIndexEntry {
+  group: GroupView;
+}
+
+function buildDefinitionIndex(
+  files: FileView[],
+): Map<string, DefinitionIndexEntry> {
+  const definitions = new Map<string, DefinitionIndexEntry>();
+
+  for (const file of files) {
+    for (const group of file.items) {
+      for (const key of group.definition_keys ?? []) {
+        if (!definitions.has(key)) {
+          definitions.set(key, { group });
+        }
+      }
+    }
+  }
+
+  return definitions;
 }

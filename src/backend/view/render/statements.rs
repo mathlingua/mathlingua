@@ -178,7 +178,7 @@ pub(super) fn render_is_command_with_subject_latex(
     format!(
         "{} \\textrm{{ is }} {}",
         subject_latex,
-        render.render_called(&substitutions)
+        command_reference_latex(&signature, render.render_called(&substitutions), registry)
     )
 }
 

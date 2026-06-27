@@ -4,6 +4,8 @@ use super::*;
 pub(in crate::backend::view) struct RenderRegistry {
     /// Map from canonical command signature to the rendering data for that command.
     pub(super) commands: HashMap<String, CommandRender>,
+    /// Whether resolved command renderings should carry clickable reference keys.
+    pub(super) link_references: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -46,12 +48,63 @@ pub(in crate::backend::view) fn build_render_registry(
     registry
 }
 
+pub(in crate::backend::view) fn build_linked_render_registry(
+    files: &[ParsedSourceFile],
+) -> RenderRegistry {
+    let mut registry = build_render_registry(files);
+    registry.link_references = true;
+    registry
+}
+
+pub(in crate::backend::view) fn definition_reference_keys_for_heading(
+    heading: Option<&str>,
+) -> Vec<String> {
+    let Some(heading) = heading else {
+        return Vec::new();
+    };
+    let Ok(header) = parse_command_header(heading) else {
+        return Vec::new();
+    };
+
+    command_header_signatures(&header)
+        .into_iter()
+        .map(|signature| reference_key(&signature.signature))
+        .collect()
+}
+
 pub(in crate::backend::view) fn render_formulation_latex(
     text: &str,
     registry: &RenderRegistry,
 ) -> Option<String> {
     render_parsed_formulation_latex(text, registry)
         .or_else(|| render_simple_set_spec_latex(text, registry))
+}
+
+pub(super) fn command_reference_latex(
+    signature: &str,
+    latex: String,
+    registry: &RenderRegistry,
+) -> String {
+    if registry.link_references {
+        format!(
+            "\\htmlData{{mlg-ref={}}}{{{latex}}}",
+            reference_key(signature)
+        )
+    } else {
+        latex
+    }
+}
+
+fn reference_key(signature: &str) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut key = String::with_capacity(signature.len() * 2);
+
+    for byte in signature.bytes() {
+        key.push(HEX[(byte >> 4) as usize] as char);
+        key.push(HEX[(byte & 0x0f) as usize] as char);
+    }
+
+    key
 }
 
 pub(in crate::backend::view) fn render_group_heading_latex(

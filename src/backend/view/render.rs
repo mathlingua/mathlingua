@@ -17,9 +17,12 @@ use escaping::*;
 use expressions::*;
 use fallbacks::*;
 use names::*;
+#[cfg(test)]
+pub(super) use registry::build_render_registry;
 use registry::*;
 pub(super) use registry::{
-    RenderRegistry, build_render_registry, render_formulation_latex, render_group_heading_latex,
+    RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
+    render_formulation_latex, render_group_heading_latex,
 };
 use signatures::*;
 use statements::*;

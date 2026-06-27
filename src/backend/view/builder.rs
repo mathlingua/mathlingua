@@ -1,6 +1,7 @@
 use super::model::{ArgumentView, CollectionView, FileView, GroupView, SectionView};
 use super::render::{
-    RenderRegistry, build_render_registry, render_formulation_latex, render_group_heading_latex,
+    RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
+    render_formulation_latex, render_group_heading_latex,
 };
 use crate::events::{Audience, Event, EventLog, Level};
 use crate::frontend::{ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection};
@@ -17,7 +18,7 @@ pub fn build_collection_view(
     parsed_files: &[ParsedSourceFile],
     event_log: &mut EventLog,
 ) -> Option<CollectionView> {
-    let registry = build_render_registry(parsed_files);
+    let registry = build_linked_render_registry(parsed_files);
     let rendered_files = parsed_files
         .iter()
         .map(|file| build_file_view(collection_root, file, &registry, event_log))
@@ -124,6 +125,7 @@ fn group_view(group: ProtoGroup, source: String, registry: &RenderRegistry) -> G
             primary_inline_argument,
             registry,
         ),
+        definition_keys: definition_reference_keys_for_heading(group.heading.as_deref()),
         kind,
         heading: group.heading,
         source,
@@ -208,10 +210,53 @@ mod tests {
         assert_eq!(view.files.len(), 1);
         assert_eq!(view.files[0].path, "content/sets.mlg");
         assert_eq!(view.files[0].items[0].kind, "Describes");
+        assert_eq!(view.files[0].items[0].definition_keys, vec!["5c736574"]);
         assert_eq!(view.files[0].items[0].source, source.trim_end());
         assert_eq!(
             view.files[0].items[0].heading_latex,
             Some(r"\textrm{set}".to_string())
+        );
+        assert!(!event_log.has_errors());
+    }
+
+    #[test]
+    fn links_resolved_command_references_to_definition_keys() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("sets.mlg");
+        let source = r#"[\set]
+Describes: X
+Documented:
+. called: "set"
+
+
+[\nonempty.set]
+Describes: X
+extends: X is \set
+Documented:
+. called: "non-empty set"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+        };
+        let mut event_log = EventLog::new();
+        let view =
+            build_collection_view(&root, &[parsed_file], &mut event_log).expect("expected view");
+        let extends = &view.files[0].items[1].sections[1];
+
+        assert_eq!(view.files[0].items[0].definition_keys, vec!["5c736574"]);
+        assert_eq!(
+            extends.inline_latex,
+            Some(r#"X \textrm{ is } \htmlData{mlg-ref=5c736574}{\textrm{set}}"#.to_string())
         );
         assert!(!event_log.has_errors());
     }

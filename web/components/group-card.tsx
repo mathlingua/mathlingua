@@ -14,13 +14,22 @@ interface GroupCardProps {
   anchorId: string;
   /** Serialized group data emitted by the Rust view builder. */
   group: GroupView;
+  /** Called when rendered math references another definition. */
+  onReferenceClick?: (referenceKey: string) => void;
+  /** Optional close action shown for inline definition cards. */
+  onClose?: () => void;
 }
 
 /**
  * Renders one MathLingua group and hides optional support sections until the
  * reader asks for them.
  */
-export function GroupCard({ anchorId, group }: GroupCardProps) {
+export function GroupCard({
+  anchorId,
+  group,
+  onReferenceClick,
+  onClose,
+}: GroupCardProps) {
   const [showSupportSections, setShowSupportSections] = useState(false);
   const [showSource, setShowSource] = useState(false);
   const headingTooltip = group.heading ?? undefined;
@@ -29,6 +38,12 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
     : null;
   const hasHeading = headingLatex !== null;
   const hasSupportSections = group.sections.some(isSupportSection);
+  const frontFaceClass = `${styles.cardFace} ${styles.cardFront}${
+    onClose ? ` ${styles.cardFaceClosable}` : ""
+  }${showSource ? ` ${styles.cardFaceInactive}` : ""}`;
+  const backFaceClass = `${styles.cardFace} ${styles.cardBack}${
+    onClose ? ` ${styles.cardFaceClosable}` : ""
+  }${showSource ? "" : ` ${styles.cardFaceInactive}`}`;
   const visibleSections = showSupportSections
     ? group.sections
     : group.sections.filter((section) => !isSupportSection(section));
@@ -42,17 +57,10 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
             : styles.cardStage
         }
       >
-        <article
-          aria-hidden={showSource}
-          className={
-            showSource
-              ? `${styles.cardFace} ${styles.cardFront} ${styles.cardFaceInactive}`
-              : `${styles.cardFace} ${styles.cardFront}`
-          }
-        >
+        <article aria-hidden={showSource} className={frontFaceClass}>
           <button
             aria-label="Show MathLingua source"
-            className={styles.sourceToggle}
+            className={`${styles.iconToggle} ${styles.sourceToggle}`}
             onClick={() => setShowSource(true)}
             tabIndex={showSource ? -1 : 0}
             title="Show MathLingua source"
@@ -60,13 +68,28 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
           >
             <CodeIcon />
           </button>
+          {onClose ? (
+            <button
+              aria-label="Close definition"
+              className={`${styles.iconToggle} ${styles.closeToggle}`}
+              onClick={onClose}
+              tabIndex={showSource ? -1 : 0}
+              title="Close definition"
+              type="button"
+            >
+              <CloseIcon />
+            </button>
+          ) : null}
           {hasHeading ? (
             <header className={styles.header}>
               <h3
                 className={`${styles.heading} ${styles.headingLatex}`}
                 title={headingTooltip}
               >
-                <LatexRenderer latex={headingLatex} />
+                <LatexRenderer
+                  latex={headingLatex}
+                  onReferenceClick={onReferenceClick}
+                />
               </h3>
             </header>
           ) : null}
@@ -91,7 +114,10 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
                       <span
                         className={`${sectionStyles.inlineArgument} ${sectionStyles.inlineArgumentLatex}`}
                       >
-                        <LatexRenderer latex={section.inline_latex} />
+                        <LatexRenderer
+                          latex={section.inline_latex}
+                          onReferenceClick={onReferenceClick}
+                        />
                       </span>
                     ) : (
                       <code className={sectionStyles.inlineArgument}>
@@ -101,7 +127,10 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
                   ) : null}
                 </div>
                 {section.arguments.length > 0 ? (
-                  <ArgumentList arguments={section.arguments} />
+                  <ArgumentList
+                    arguments={section.arguments}
+                    onReferenceClick={onReferenceClick}
+                  />
                 ) : null}
               </section>
             ))}
@@ -131,17 +160,10 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
             </button>
           ) : null}
         </article>
-        <article
-          aria-hidden={!showSource}
-          className={
-            showSource
-              ? `${styles.cardFace} ${styles.cardBack}`
-              : `${styles.cardFace} ${styles.cardBack} ${styles.cardFaceInactive}`
-          }
-        >
+        <article aria-hidden={!showSource} className={backFaceClass}>
           <button
             aria-label="Show rendered entry"
-            className={styles.sourceToggle}
+            className={`${styles.iconToggle} ${styles.sourceToggle}`}
             onClick={() => setShowSource(false)}
             tabIndex={showSource ? 0 : -1}
             title="Show rendered entry"
@@ -149,10 +171,36 @@ export function GroupCard({ anchorId, group }: GroupCardProps) {
           >
             <CardIcon />
           </button>
+          {onClose ? (
+            <button
+              aria-label="Close definition"
+              className={`${styles.iconToggle} ${styles.closeToggle}`}
+              onClick={onClose}
+              tabIndex={showSource ? 0 : -1}
+              title="Close definition"
+              type="button"
+            >
+              <CloseIcon />
+            </button>
+          ) : null}
           <MathLinguaSource source={group.source} />
         </article>
       </div>
     </section>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.sourceToggleIcon}
+      focusable="false"
+      viewBox="0 0 24 24"
+    >
+      <path d="M6 6l12 12" />
+      <path d="M18 6 6 18" />
+    </svg>
   );
 }
 

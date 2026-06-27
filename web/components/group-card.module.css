@@ -28,6 +28,10 @@
   box-shadow: var(--shadow);
 }
 
+.cardFaceClosable {
+  padding-top: 3rem;
+}
+
 .cardFaceInactive {
   position: absolute;
   inset: 0;
@@ -78,10 +82,8 @@
   padding-top: 0;
 }
 
-.sourceToggle {
+.iconToggle {
   position: absolute;
-  top: 0.68rem;
-  right: 0.72rem;
   z-index: 1;
   display: flex;
   align-items: center;
@@ -96,13 +98,23 @@
   cursor: pointer;
 }
 
-.sourceToggle:hover {
+.sourceToggle {
+  top: 0.68rem;
+  right: 0.72rem;
+}
+
+.closeToggle {
+  top: 0.68rem;
+  left: 0.72rem;
+}
+
+.iconToggle:hover {
   border-color: var(--line);
   background: var(--surface-alt);
   color: var(--accent);
 }
 
-.sourceToggle:focus-visible {
+.iconToggle:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -159,6 +171,10 @@
 @media (max-width: 520px) {
   .cardFace {
     padding: 1.1rem 1rem 1.2rem;
+  }
+
+  .cardFaceClosable {
+    padding-top: 2.7rem;
   }
 
   .header,

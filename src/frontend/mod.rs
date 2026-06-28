@@ -24,6 +24,13 @@ pub struct ParsedSourceFile {
     pub path: PathBuf,
     pub source: String,
     pub document: Document,
+    pub view_metadata: SourceFileViewMetadata,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SourceFileViewMetadata {
+    pub hidden: bool,
+    pub title: Option<String>,
 }
 
 pub fn parse_source_file(
@@ -56,5 +63,6 @@ pub fn parse_source_file(
         path: path.to_path_buf(),
         source,
         document,
+        view_metadata: SourceFileViewMetadata::default(),
     })
 }

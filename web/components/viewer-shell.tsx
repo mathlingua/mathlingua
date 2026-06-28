@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { FileList } from "./file-list";
 import { ViewerChrome } from "./viewer-chrome";
 import styles from "./viewer-shell.module.css";
-import { FileView } from "../lib/types";
+import { DirectoryView, FileView } from "../lib/types";
 import {
   directoryRoute,
   directoryRoutePath,
@@ -17,19 +17,25 @@ import {
 
 /** Props for the client-side viewer state container. */
 interface ViewerShellProps {
+  /** Renderable directories for the current collection. */
+  directories: DirectoryView[];
   /** Renderable files for the current collection. */
   files: FileView[];
 }
 
 /** Owns browser history, selected file, outline directory, and chrome state. */
-export function ViewerShell({ files }: ViewerShellProps) {
+export function ViewerShell({ directories, files }: ViewerShellProps) {
   const [isOutlineOpen, setIsOutlineOpen] = useState(true);
   const [currentDirectory, setCurrentDirectory] = useState("");
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
 
   useEffect(() => {
     const syncSelectedFileFromPath = () => {
-      const selection = resolveRouteSelection(window.location.pathname, files);
+      const selection = resolveRouteSelection(
+        window.location.pathname,
+        files,
+        directories,
+      );
       setSelectedFileIndex(selection.fileIndex);
       setCurrentDirectory(selection.directory);
     };
@@ -40,7 +46,7 @@ export function ViewerShell({ files }: ViewerShellProps) {
     return () => {
       window.removeEventListener("popstate", syncSelectedFileFromPath);
     };
-  }, [files]);
+  }, [files, directories]);
 
   const handleSelectFile = (fileIndex: number) => {
     setSelectedFileIndex(fileIndex);
@@ -51,7 +57,7 @@ export function ViewerShell({ files }: ViewerShellProps) {
   const handleNavigateDirectory = (directory: string) => {
     setCurrentDirectory(directory);
 
-    const fileIndex = firstFileIndexInDirectory(files, directory);
+    const fileIndex = firstFileIndexInDirectory(files, directories, directory);
     if (fileIndex === null) {
       window.history.pushState(null, "", directoryRoute(directory));
       return;
@@ -70,6 +76,7 @@ export function ViewerShell({ files }: ViewerShellProps) {
       <main className={styles.pageShell}>
         <FileList
           currentDirectory={currentDirectory}
+          directories={directories}
           files={files}
           isOutlineOpen={isOutlineOpen}
           onNavigateDirectory={handleNavigateDirectory}
@@ -93,6 +100,7 @@ interface RouteSelection {
 function resolveRouteSelection(
   pathname: string,
   files: FileView[],
+  directories: DirectoryView[],
 ): RouteSelection {
   const routePath = routePathFromPathname(pathname);
   if (!routePath) {
@@ -109,9 +117,11 @@ function resolveRouteSelection(
     };
   }
 
-  const directory = findDirectoryForRoutePath(routePath, files);
+  const directory = findDirectoryForRoutePath(routePath, files, directories);
   const directoryFileIndex =
-    directory === null ? null : firstFileIndexInDirectory(files, directory);
+    directory === null
+      ? null
+      : firstFileIndexInDirectory(files, directories, directory);
   if (directoryFileIndex !== null) {
     return {
       directory: directory ?? "",
@@ -126,10 +136,14 @@ function resolveRouteSelection(
 function findDirectoryForRoutePath(
   routePath: string,
   files: FileView[],
+  directories: DirectoryView[],
 ): string | null {
-  const directories = new Set(files.map((file) => fileDirectory(file.path)));
+  const directoryPaths = new Set([
+    ...files.map((file) => fileDirectory(file.path)),
+    ...directories.map((directory) => fileDirectory(`${directory.path}/_`)),
+  ]);
 
-  for (const directory of directories) {
+  for (const directory of directoryPaths) {
     if (directoryRoutePath(directory) === routePath) {
       return directory;
     }

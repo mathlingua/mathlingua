@@ -5,5 +5,10 @@ import { loadCollectionView } from "../lib/data";
 export default async function ViewerPage() {
   const collection = await loadCollectionView();
 
-  return <ViewerShell files={collection.files} />;
+  return (
+    <ViewerShell
+      directories={collection.directories}
+      files={collection.files}
+    />
+  );
 }

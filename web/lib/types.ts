@@ -2,14 +2,26 @@
 export type CollectionView = {
   /** Human-readable collection title derived from the collection root. */
   title: string;
+  /** Renderable directories, already ordered by the backend. */
+  directories: DirectoryView[];
   /** Renderable source files, already ordered by the backend. */
   files: FileView[];
+};
+
+/** Serialized view model for one MathLingua source directory. */
+export type DirectoryView = {
+  /** Directory path relative to the collection root when possible. */
+  path: string;
+  /** Optional display title supplied by a directory toc file. */
+  title: string | null;
 };
 
 /** Serialized view model for one MathLingua source file. */
 export type FileView = {
   /** File path relative to the collection root when possible. */
   path: string;
+  /** Optional display title supplied by a directory toc file. */
+  title: string | null;
   /** Top-level groups rendered from the file. */
   items: GroupView[];
 };

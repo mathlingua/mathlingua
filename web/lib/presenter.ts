@@ -1,4 +1,4 @@
-import { GroupView } from "./types";
+import { DirectoryView, GroupView } from "./types";
 
 /** One row in the outline browser, either a child directory or source file. */
 export type FileBrowserEntry =
@@ -54,11 +54,20 @@ export function formatPathSegment(segment: string): string {
  * hidden until the user navigates into their directory.
  */
 export function buildFileBrowserEntries(
-  files: { path: string }[],
+  files: { path: string; title?: string | null }[],
+  directories: DirectoryView[],
   directory: string,
 ): FileBrowserEntry[] {
   const normalizedDirectory = normalizeDirectory(directory);
-  const directories = new Map<string, FileBrowserEntry>();
+  const directoryLabels = new Map(
+    directories.map((entry) => {
+      const path = contentRelativePath(entry.path);
+      const segment = path.split("/").filter(Boolean).at(-1) ?? path;
+
+      return [path, entry.title ?? formatPathSegment(segment)] as const;
+    }),
+  );
+  const directoryEntries = new Map<string, FileBrowserEntry>();
   const entries: FileBrowserEntry[] = [];
 
   files.forEach((file, fileIndex) => {
@@ -81,7 +90,7 @@ export function buildFileBrowserEntries(
       entries.push({
         kind: "file",
         path,
-        label: formatFileLabel(path),
+        label: file.title ?? formatFileLabel(path),
         fileIndex,
       });
       return;
@@ -89,18 +98,18 @@ export function buildFileBrowserEntries(
 
     const segment = remaining[0];
     const directoryPath = [...directorySegments, segment].join("/");
-    if (!directories.has(directoryPath)) {
-      directories.set(directoryPath, {
+    if (!directoryEntries.has(directoryPath)) {
+      const entry: FileBrowserEntry = {
         kind: "directory",
         path: directoryPath,
-        label: formatPathSegment(segment),
-      });
+        label: directoryLabels.get(directoryPath) ?? formatPathSegment(segment),
+      };
+      directoryEntries.set(directoryPath, entry);
+      entries.push(entry);
     }
   });
 
-  return [...entries, ...directories.values()].sort((left, right) =>
-    left.label.localeCompare(right.label, undefined, { sensitivity: "base" }),
-  );
+  return entries;
 }
 
 /** Returns the parent directory path for outline back-navigation. */
@@ -113,10 +122,11 @@ export function parentDirectory(directory: string): string {
 
 /** Returns the first selectable file inside a directory, if one exists. */
 export function firstFileIndexInDirectory(
-  files: { path: string }[],
+  files: { path: string; title?: string | null }[],
+  directories: DirectoryView[],
   directory: string,
 ): number | null {
-  const firstFile = buildFileBrowserEntries(files, directory).find(
+  const firstFile = buildFileBrowserEntries(files, directories, directory).find(
     (entry) => entry.kind === "file",
   );
 

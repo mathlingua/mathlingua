@@ -6,19 +6,20 @@ import { MarkdownInline, MarkdownText } from "./markdown-text";
 import styles from "./file-list.module.css";
 import {
   buildFileBrowserEntries,
-  formatFileLabel,
   formatPathSegment,
   makeFileAnchor,
   makeGroupAnchor,
   parentDirectory,
 } from "../lib/presenter";
-import type { FileView, GroupView } from "../lib/types";
+import type { DirectoryView, FileView, GroupView } from "../lib/types";
 import type { PageView } from "../lib/types";
 
 /** Props for coordinating outline navigation and selected document state. */
 interface FileListProps {
   /** Directory currently shown by the outline browser. */
   currentDirectory: string;
+  /** Renderable directories in the collection. */
+  directories: DirectoryView[];
   /** Renderable files in the collection. */
   files: FileView[];
   /** Whether the outline panel is visible. */
@@ -34,6 +35,7 @@ interface FileListProps {
 /** Renders the collection outline beside the selected file's group cards. */
 export function FileList({
   currentDirectory,
+  directories,
   files,
   isOutlineOpen,
   onNavigateDirectory,
@@ -55,7 +57,7 @@ export function FileList({
   }
 
   const selectedFile = files[selectedFileIndex] ?? files[0];
-  const entries = buildFileBrowserEntries(files, currentDirectory);
+  const entries = buildFileBrowserEntries(files, directories, currentDirectory);
 
   const handleReferenceClick = (rootAnchorId: string, referenceKey: string) => {
     if (!definitionIndex.has(referenceKey)) {
@@ -152,7 +154,7 @@ export function FileList({
                     onClick={() => onSelectFile(entry.fileIndex)}
                     type="button"
                   >
-                    {formatFileLabel(entry.path)}
+                    {entry.label}
                   </button>
                 )}
               </li>

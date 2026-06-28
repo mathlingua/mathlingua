@@ -467,6 +467,7 @@ fn view_source_fingerprint(cwd: &Path) -> ViewSourceFingerprint {
     let files = collection
         .source_files()
         .iter()
+        .chain(collection.toc_files().iter())
         .map(|path| view_file_fingerprint(path))
         .collect();
 
@@ -523,6 +524,7 @@ mod tests {
         write_collection_view_data,
     };
     use crate::backend::view::{CollectionView, FileView, GroupView, PageView, SectionView};
+    use serde_json::Value;
     use std::fs;
 
     #[test]
@@ -531,8 +533,10 @@ mod tests {
         let path = dir.join("collection.json");
         let collection = CollectionView {
             title: "demo".to_string(),
+            directories: vec![],
             files: vec![FileView {
                 path: "content/example.mlg".to_string(),
+                title: None,
                 items: vec![GroupView {
                     kind: "Title".to_string(),
                     definition_keys: vec![],
@@ -601,6 +605,60 @@ mod tests {
         );
         let contents = fs::read_to_string(&path).expect("expected refreshed data");
         assert!(contents.contains("\\\\textrm{updated set}"));
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn rebuild_collection_view_data_applies_toc_titles_order_and_hidden_files() {
+        let dir = create_view_session_dir().expect("expected temp dir");
+        let root = dir.join("collection");
+        let content = root.join("content");
+        let visible_dir = content.join("visible_dir");
+        let hidden_dir = content.join("hidden_dir");
+        let path = dir.join("collection.json");
+
+        fs::create_dir_all(&visible_dir).expect("expected visible dir");
+        fs::create_dir_all(&hidden_dir).expect("expected hidden dir");
+        fs::write(content.join("alpha_file.mlg"), "Title: \"Alpha\"\n")
+            .expect("expected alpha source file");
+        fs::write(content.join("gamma_file.mlg"), "Title: \"Gamma\"\n")
+            .expect("expected gamma source file");
+        fs::write(content.join("hidden_file.mlg"), "Title: \"Hidden\"\n")
+            .expect("expected hidden source file");
+        fs::write(visible_dir.join("inside.mlg"), "Title: \"Inside\"\n")
+            .expect("expected visible directory source file");
+        fs::write(hidden_dir.join("inside.mlg"), "Title: \"Hidden Inside\"\n")
+            .expect("expected hidden directory source file");
+        fs::write(
+            content.join("toc"),
+            "gamma_file.mlg -> Custom Gamma\nvisible_dir -> Visible Directory\nhidden_dir -> HIDDEN\nhidden_file.mlg -> HIDDEN\nalpha_file.mlg\n",
+        )
+        .expect("expected toc file");
+
+        assert_eq!(
+            rebuild_collection_view_data(&root, &path).expect("expected view data"),
+            ViewDataRefresh::Updated
+        );
+
+        let contents = fs::read_to_string(&path).expect("expected collection data");
+        let json: Value = serde_json::from_str(&contents).expect("expected json");
+        let directories = json["directories"]
+            .as_array()
+            .expect("expected directories");
+        let files = json["files"].as_array().expect("expected files");
+
+        assert_eq!(directories.len(), 1);
+        assert_eq!(directories[0]["path"], "content/visible_dir");
+        assert_eq!(directories[0]["title"], "Visible Directory");
+        assert_eq!(files.len(), 3);
+        assert_eq!(files[0]["path"], "content/gamma_file.mlg");
+        assert_eq!(files[0]["title"], "Custom Gamma");
+        assert_eq!(files[1]["path"], "content/visible_dir/inside.mlg");
+        assert_eq!(files[2]["path"], "content/alpha_file.mlg");
+        assert!(files[2]["title"].is_null());
+        assert!(!contents.contains("hidden_file.mlg"));
+        assert!(!contents.contains("hidden_dir"));
 
         let _ = fs::remove_dir_all(dir);
     }

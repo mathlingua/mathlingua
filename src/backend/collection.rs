@@ -2,8 +2,8 @@ use crate::backend::config::{CONFIG_FILE, validate_config_file};
 use crate::backend::semantic::check_documents;
 use crate::backend::view::{CollectionView, build_collection_view};
 use crate::events::{Event, EventLocation, EventLog};
-use crate::frontend::{ParsedSourceFile, parse_source_file};
-use std::collections::BTreeSet;
+use crate::frontend::{ParsedSourceFile, SourceFileViewMetadata, parse_source_file};
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -13,6 +13,9 @@ pub(crate) const CONTENT_DIR: &str = "content";
 pub(crate) struct SourceCollection {
     root: PathBuf,
     source_files: Vec<PathBuf>,
+    source_file_view_metadata: BTreeMap<PathBuf, SourceFileViewMetadata>,
+    source_directory_view_metadata: Vec<(PathBuf, SourceFileViewMetadata)>,
+    toc_files: Vec<PathBuf>,
     parsed_files: Vec<ParsedSourceFile>,
 }
 
@@ -63,16 +66,23 @@ impl SourceCollection {
         Self::new(root, source_files)
     }
 
-    fn new(root: PathBuf, source_files: Vec<PathBuf>) -> Self {
+    fn new(root: PathBuf, source_files: SourceFileDiscovery) -> Self {
         Self {
             root,
-            source_files,
+            source_files: source_files.source_files,
+            source_file_view_metadata: source_files.view_metadata,
+            source_directory_view_metadata: source_files.directory_metadata,
+            toc_files: source_files.toc_files,
             parsed_files: Vec::new(),
         }
     }
 
     pub(crate) fn source_files(&self) -> &[PathBuf] {
         &self.source_files
+    }
+
+    pub(crate) fn toc_files(&self) -> &[PathBuf] {
+        &self.toc_files
     }
 
     pub(crate) fn parsed_files(&self) -> &[ParsedSourceFile] {
@@ -145,7 +155,12 @@ impl SourceCollection {
         self.parsed_files.clear();
 
         for file in &self.source_files {
-            if let Some(parsed_file) = parse_source_file(file, event_log, origin) {
+            if let Some(mut parsed_file) = parse_source_file(file, event_log, origin) {
+                parsed_file.view_metadata = self
+                    .source_file_view_metadata
+                    .get(&normalize_path(file))
+                    .cloned()
+                    .unwrap_or_default();
                 self.parsed_files.push(parsed_file);
             }
         }
@@ -156,7 +171,12 @@ impl SourceCollection {
     }
 
     pub(crate) fn build_view(&self, event_log: &mut EventLog) -> Option<CollectionView> {
-        build_collection_view(&self.root, &self.parsed_files, event_log)
+        build_collection_view(
+            &self.root,
+            &self.parsed_files,
+            &self.source_directory_view_metadata,
+            event_log,
+        )
     }
 
     fn normalized_source_files(&self) -> BTreeSet<PathBuf> {
@@ -171,10 +191,10 @@ fn resolve_collection_source_files(
     root: &Path,
     event_log: &mut EventLog,
     origin: &str,
-) -> Vec<PathBuf> {
-    let mut files = BTreeSet::new();
-    collect_source_files(root.to_path_buf(), &mut files, event_log, origin);
-    files.into_iter().collect()
+) -> SourceFileDiscovery {
+    let mut discovery = SourceFileDiscovery::default();
+    collect_source_files(root.to_path_buf(), &mut discovery, event_log, origin);
+    discovery
 }
 
 fn resolve_filter_source_files(
@@ -187,7 +207,7 @@ fn resolve_filter_source_files(
 
     for path in paths {
         if let Some(resolved_path) = resolve_input_path(root, path, event_log, origin) {
-            collect_source_files(resolved_path, &mut files, event_log, origin);
+            collect_filter_source_files(resolved_path, &mut files, event_log, origin);
         }
     }
 
@@ -228,13 +248,85 @@ fn resolve_input_path(
 
 fn collect_source_files(
     target: PathBuf,
+    discovery: &mut SourceFileDiscovery,
+    event_log: &mut EventLog,
+    origin: &str,
+) {
+    match fs::metadata(&target) {
+        Ok(metadata) if metadata.is_dir() => {
+            collect_directory_source_files(&target, discovery, event_log, origin, false);
+        }
+        Ok(metadata) if metadata.is_file() => {
+            if is_mathlingua_source_file(&target) {
+                discovery.add_source_file(target, SourceFileViewMetadata::default());
+            } else {
+                event_log.user_error_at_path(Some(origin), target, "Not a .mlg file");
+            }
+        }
+        Ok(_) => event_log.user_error_at_path(Some(origin), target, "Unsupported filesystem entry"),
+        Err(error) => event_log.user_error_at_path(
+            Some(origin),
+            target,
+            format!("Failed to read path: {error}"),
+        ),
+    }
+}
+
+fn collect_directory_source_files(
+    directory: &Path,
+    discovery: &mut SourceFileDiscovery,
+    event_log: &mut EventLog,
+    origin: &str,
+    inherited_hidden: bool,
+) {
+    let entries = match read_directory_entries(directory) {
+        Ok(entries) => entries,
+        Err(error) => {
+            event_log.user_error_at_path(
+                Some(origin),
+                directory.to_path_buf(),
+                format!("Failed to read directory: {error}"),
+            );
+            return;
+        }
+    };
+
+    let mut children = directory_children(entries);
+    if let Some(toc_path) = toc_file_path(&children) {
+        discovery.add_toc_file(toc_path.clone());
+        collect_directory_source_files_from_toc(
+            &toc_path,
+            &children,
+            discovery,
+            event_log,
+            origin,
+            inherited_hidden,
+        );
+        return;
+    }
+
+    children.sort_by(directory_child_order);
+    for child in children {
+        collect_directory_child(
+            child,
+            SourceFileViewMetadata::default(),
+            discovery,
+            event_log,
+            origin,
+            inherited_hidden,
+        );
+    }
+}
+
+fn collect_filter_source_files(
+    target: PathBuf,
     files: &mut BTreeSet<PathBuf>,
     event_log: &mut EventLog,
     origin: &str,
 ) {
     match fs::metadata(&target) {
         Ok(metadata) if metadata.is_dir() => {
-            collect_directory_source_files(&target, files, event_log, origin);
+            collect_filter_directory_source_files(&target, files, event_log, origin);
         }
         Ok(metadata) if metadata.is_file() => {
             if is_mathlingua_source_file(&target) {
@@ -252,7 +344,7 @@ fn collect_source_files(
     }
 }
 
-fn collect_directory_source_files(
+fn collect_filter_directory_source_files(
     directory: &Path,
     files: &mut BTreeSet<PathBuf>,
     event_log: &mut EventLog,
@@ -274,11 +366,338 @@ fn collect_directory_source_files(
         let path = entry.path();
 
         if path.is_dir() {
-            collect_directory_source_files(&path, files, event_log, origin);
+            collect_filter_directory_source_files(&path, files, event_log, origin);
         } else if path.is_file() && is_mathlingua_source_file(&path) {
             files.insert(path);
         }
     }
+}
+
+#[derive(Default)]
+struct SourceFileDiscovery {
+    source_files: Vec<PathBuf>,
+    view_metadata: BTreeMap<PathBuf, SourceFileViewMetadata>,
+    directory_metadata: Vec<(PathBuf, SourceFileViewMetadata)>,
+    toc_files: Vec<PathBuf>,
+    seen_source_files: BTreeSet<PathBuf>,
+    seen_directories: BTreeSet<PathBuf>,
+    seen_toc_files: BTreeSet<PathBuf>,
+}
+
+impl SourceFileDiscovery {
+    fn add_source_file(&mut self, path: PathBuf, metadata: SourceFileViewMetadata) {
+        let normalized = normalize_path(&path);
+        if self.seen_source_files.insert(normalized.clone()) {
+            self.source_files.push(path);
+        }
+        self.view_metadata.insert(normalized, metadata);
+    }
+
+    fn add_toc_file(&mut self, path: PathBuf) {
+        let normalized = normalize_path(&path);
+        if self.seen_toc_files.insert(normalized) {
+            self.toc_files.push(path);
+        }
+    }
+
+    fn add_directory(&mut self, path: PathBuf, metadata: SourceFileViewMetadata) {
+        let normalized = normalize_path(&path);
+        if self.seen_directories.insert(normalized.clone()) {
+            self.directory_metadata.push((path, metadata));
+            return;
+        }
+
+        if let Some((_, existing_metadata)) = self
+            .directory_metadata
+            .iter_mut()
+            .find(|(existing_path, _)| normalize_path(existing_path) == normalized)
+        {
+            *existing_metadata = metadata;
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+enum DirectoryChild {
+    Directory(PathBuf),
+    SourceFile(PathBuf),
+    TocFile(PathBuf),
+    Other,
+}
+
+fn directory_children(entries: Vec<fs::DirEntry>) -> Vec<DirectoryChild> {
+    entries
+        .into_iter()
+        .map(|entry| {
+            let path = entry.path();
+            if path.is_dir() {
+                DirectoryChild::Directory(path)
+            } else if path.is_file() && is_mathlingua_source_file(&path) {
+                DirectoryChild::SourceFile(path)
+            } else if path.is_file() && path.file_name().is_some_and(|name| name == "toc") {
+                DirectoryChild::TocFile(path)
+            } else {
+                DirectoryChild::Other
+            }
+        })
+        .collect()
+}
+
+fn toc_file_path(children: &[DirectoryChild]) -> Option<PathBuf> {
+    children.iter().find_map(|child| match child {
+        DirectoryChild::TocFile(path) => Some(path.clone()),
+        _ => None,
+    })
+}
+
+fn collect_directory_child(
+    child: DirectoryChild,
+    metadata: SourceFileViewMetadata,
+    discovery: &mut SourceFileDiscovery,
+    event_log: &mut EventLog,
+    origin: &str,
+    inherited_hidden: bool,
+) {
+    let metadata = merged_child_metadata(metadata, inherited_hidden);
+
+    match child {
+        DirectoryChild::Directory(path) => {
+            discovery.add_directory(path.clone(), metadata.clone());
+            collect_directory_source_files(&path, discovery, event_log, origin, metadata.hidden);
+        }
+        DirectoryChild::SourceFile(path) => {
+            discovery.add_source_file(path, metadata);
+        }
+        DirectoryChild::TocFile(_) | DirectoryChild::Other => {}
+    }
+}
+
+fn collect_directory_source_files_from_toc(
+    toc_path: &Path,
+    children: &[DirectoryChild],
+    discovery: &mut SourceFileDiscovery,
+    event_log: &mut EventLog,
+    origin: &str,
+    inherited_hidden: bool,
+) {
+    let direct_children = direct_toc_children_by_name(children);
+    let toc_entries = parse_toc_entries(toc_path, event_log, origin);
+    let mut listed_children = BTreeSet::new();
+
+    for entry in toc_entries {
+        if !listed_children.insert(entry.name.clone()) {
+            event_log.user_error_at_file_row(
+                Some(origin),
+                toc_path.to_path_buf(),
+                entry.row,
+                format!("Duplicate toc entry `{}`", entry.name),
+            );
+            continue;
+        }
+
+        let Some(child) = direct_children.get(&entry.name) else {
+            event_log.user_error_at_file_row(
+                Some(origin),
+                toc_path.to_path_buf(),
+                entry.row,
+                format!(
+                    "toc entry `{}` does not match an existing .mlg file or directory",
+                    entry.name
+                ),
+            );
+            continue;
+        };
+
+        collect_directory_child(
+            child.clone(),
+            entry.view_metadata,
+            discovery,
+            event_log,
+            origin,
+            inherited_hidden,
+        );
+    }
+
+    let mut unlisted_children = direct_children
+        .iter()
+        .filter(|(name, _)| !listed_children.contains(*name))
+        .map(|(_, child)| child.clone())
+        .collect::<Vec<_>>();
+    unlisted_children.sort_by(directory_child_order);
+    for child in unlisted_children {
+        event_log.user_error_at_path(
+            Some(origin),
+            toc_path.to_path_buf(),
+            format!("Directory toc is missing entry `{}`", child.name()),
+        );
+        collect_directory_child(
+            child,
+            SourceFileViewMetadata::default(),
+            discovery,
+            event_log,
+            origin,
+            inherited_hidden,
+        );
+    }
+}
+
+fn direct_toc_children_by_name(children: &[DirectoryChild]) -> BTreeMap<String, DirectoryChild> {
+    children
+        .iter()
+        .filter_map(|child| match child {
+            DirectoryChild::Directory(_) | DirectoryChild::SourceFile(_) => {
+                Some((child.name(), child.clone()))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+#[derive(Clone, Debug)]
+struct TocEntry {
+    name: String,
+    row: usize,
+    view_metadata: SourceFileViewMetadata,
+}
+
+fn parse_toc_entries(toc_path: &Path, event_log: &mut EventLog, origin: &str) -> Vec<TocEntry> {
+    let contents = match fs::read_to_string(toc_path) {
+        Ok(contents) => contents,
+        Err(error) => {
+            event_log.user_error_at_path(
+                Some(origin),
+                toc_path.to_path_buf(),
+                format!("Failed to read toc file: {error}"),
+            );
+            return Vec::new();
+        }
+    };
+
+    contents
+        .lines()
+        .enumerate()
+        .filter_map(|(index, line)| parse_toc_line(toc_path, index + 1, line, event_log, origin))
+        .collect()
+}
+
+fn parse_toc_line(
+    toc_path: &Path,
+    row: usize,
+    line: &str,
+    event_log: &mut EventLog,
+    origin: &str,
+) -> Option<TocEntry> {
+    let line = line.trim();
+    if line.is_empty() {
+        return None;
+    }
+
+    let (name, directive) = match line.split_once("->") {
+        Some((name, directive)) => (name.trim(), Some(directive.trim())),
+        None => (line, None),
+    };
+
+    if name.is_empty() {
+        event_log.user_error_at_file_row(
+            Some(origin),
+            toc_path.to_path_buf(),
+            row,
+            "Missing toc file name",
+        );
+        return None;
+    }
+
+    if name.contains('/') || name.contains('\\') {
+        event_log.user_error_at_file_row(
+            Some(origin),
+            toc_path.to_path_buf(),
+            row,
+            "toc entries must be direct .mlg file or directory names",
+        );
+        return None;
+    }
+
+    let view_metadata = match directive {
+        Some("") => {
+            event_log.user_error_at_file_row(
+                Some(origin),
+                toc_path.to_path_buf(),
+                row,
+                "toc entry title cannot be empty",
+            );
+            return None;
+        }
+        Some("HIDDEN") => SourceFileViewMetadata {
+            hidden: true,
+            title: None,
+        },
+        Some(title) => SourceFileViewMetadata {
+            hidden: false,
+            title: Some(title.to_string()),
+        },
+        None => SourceFileViewMetadata::default(),
+    };
+
+    Some(TocEntry {
+        name: name.to_string(),
+        row,
+        view_metadata,
+    })
+}
+
+fn merged_child_metadata(
+    metadata: SourceFileViewMetadata,
+    inherited_hidden: bool,
+) -> SourceFileViewMetadata {
+    SourceFileViewMetadata {
+        hidden: inherited_hidden || metadata.hidden,
+        title: metadata.title,
+    }
+}
+
+impl DirectoryChild {
+    fn name(&self) -> String {
+        match self {
+            DirectoryChild::Directory(path) | DirectoryChild::SourceFile(path) => path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("<unknown>")
+                .to_string(),
+            DirectoryChild::TocFile(_) => "toc".to_string(),
+            DirectoryChild::Other => "<unknown>".to_string(),
+        }
+    }
+}
+
+fn directory_child_order(left: &DirectoryChild, right: &DirectoryChild) -> std::cmp::Ordering {
+    directory_child_sort_key(left).cmp(&directory_child_sort_key(right))
+}
+
+fn directory_child_sort_key(child: &DirectoryChild) -> (String, String) {
+    match child {
+        DirectoryChild::Directory(path) => (
+            display_sort_key(
+                path.file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or(""),
+            ),
+            path.display().to_string(),
+        ),
+        DirectoryChild::SourceFile(path) => (
+            display_sort_key(
+                path.file_stem()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or_default(),
+            ),
+            path.display().to_string(),
+        ),
+        DirectoryChild::TocFile(path) => ("".to_string(), path.display().to_string()),
+        DirectoryChild::Other => ("".to_string(), String::new()),
+    }
+}
+
+fn display_sort_key(segment: &str) -> String {
+    segment.replace('_', " ").to_lowercase()
 }
 
 fn read_directory_entries(directory: &Path) -> io::Result<Vec<fs::DirEntry>> {
@@ -338,6 +757,109 @@ mod tests {
 
         assert!(user_events(&event_log).is_empty());
         assert_eq!(collection.source_files().len(), 3);
+    }
+
+    #[test]
+    fn source_collection_load_uses_toc_order_and_tracks_toc_files() {
+        let temp_dir = TestDir::new();
+        let content = temp_dir.path().join("content");
+        let nested = content.join("nested_folder");
+
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(content.join("alpha_file.mlg"), "Title: \"Alpha\"\n").unwrap();
+        fs::write(content.join("zeta_file.mlg"), "Title: \"Zeta\"\n").unwrap();
+        fs::write(content.join("hidden_file.mlg"), "Title: \"Hidden\"\n").unwrap();
+        fs::write(nested.join("inside.mlg"), "Title: \"Inside\"\n").unwrap();
+        fs::write(
+            content.join("toc"),
+            "zeta_file.mlg -> Zeta Title\nhidden_file.mlg -> HIDDEN\nnested_folder -> Nested Folder\nalpha_file.mlg\n",
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let collection =
+            SourceCollection::load(temp_dir.path(), &mut event_log, "source_collection");
+        let collection_content = collection.root().join("content");
+
+        assert!(user_events(&event_log).is_empty());
+        assert_eq!(
+            collection
+                .source_files()
+                .iter()
+                .map(|path| path
+                    .strip_prefix(&collection_content)
+                    .unwrap_or(path)
+                    .display()
+                    .to_string())
+                .collect::<Vec<_>>(),
+            vec![
+                "zeta_file.mlg",
+                "hidden_file.mlg",
+                "nested_folder/inside.mlg",
+                "alpha_file.mlg",
+            ]
+        );
+        assert_eq!(
+            collection
+                .source_directory_view_metadata
+                .iter()
+                .map(|(path, metadata)| (
+                    path.strip_prefix(&collection_content)
+                        .unwrap_or(path)
+                        .display()
+                        .to_string(),
+                    metadata.title.clone()
+                ))
+                .filter(|(path, _)| !path.is_empty())
+                .collect::<Vec<_>>(),
+            vec![(
+                "nested_folder".to_string(),
+                Some("Nested Folder".to_string())
+            )]
+        );
+        assert_eq!(collection.toc_files(), &[collection_content.join("toc")]);
+    }
+
+    #[test]
+    fn source_collection_load_reports_toc_mismatches() {
+        let temp_dir = TestDir::new();
+        let content = temp_dir.path().join("content");
+        let nested = content.join("extra_dir");
+
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(content.join("extra_file.mlg"), "Title: \"Extra\"\n").unwrap();
+        fs::write(nested.join("inside.mlg"), "Title: \"Inside\"\n").unwrap();
+        fs::write(content.join("toc"), "missing_file.mlg\nmissing_dir\n").unwrap();
+
+        let mut event_log = EventLog::new();
+        let collection =
+            SourceCollection::load(temp_dir.path(), &mut event_log, "source_collection");
+        let messages = user_events(&event_log)
+            .into_iter()
+            .filter_map(|event| event.as_message().map(|message| message.message.clone()))
+            .collect::<Vec<_>>();
+
+        assert_eq!(collection.source_files().len(), 2);
+        assert!(
+            messages
+                .iter()
+                .any(|message| message.contains("missing_file.mlg")
+                    && message.contains("does not match an existing .mlg file or directory"))
+        );
+        assert!(
+            messages
+                .iter()
+                .any(|message| message.contains("missing_dir")
+                    && message.contains("does not match an existing .mlg file or directory"))
+        );
+        assert!(
+            messages
+                .iter()
+                .any(|message| message.contains("extra_file.mlg")
+                    && message.contains("Directory toc is missing entry"))
+        );
+        assert!(messages.iter().any(|message| message.contains("extra_dir")
+            && message.contains("Directory toc is missing entry")));
     }
 
     #[test]

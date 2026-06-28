@@ -3,12 +3,20 @@ use serde::Serialize;
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct CollectionView {
     pub title: String,
+    pub directories: Vec<DirectoryView>,
     pub files: Vec<FileView>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct DirectoryView {
+    pub path: String,
+    pub title: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct FileView {
     pub path: String,
+    pub title: Option<String>,
     pub items: Vec<GroupView>,
 }
 

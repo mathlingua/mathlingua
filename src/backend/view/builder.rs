@@ -1,11 +1,15 @@
-use super::model::{ArgumentView, CollectionView, FileView, GroupView, PageView, SectionView};
+use super::model::{
+    ArgumentView, CollectionView, DirectoryView, FileView, GroupView, PageView, SectionView,
+};
 use super::render::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
     render_formulation_latex, render_group_heading_latex,
 };
 use crate::events::{Audience, Event, EventLog, Level};
-use crate::frontend::{ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection};
-use std::path::Path;
+use crate::frontend::{
+    ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection, SourceFileViewMetadata,
+};
+use std::path::{Path, PathBuf};
 
 /// Builds the complete serialized view model for a MathLingua collection.
 ///
@@ -16,16 +20,33 @@ use std::path::Path;
 pub fn build_collection_view(
     collection_root: &Path,
     parsed_files: &[ParsedSourceFile],
+    directory_metadata: &[(PathBuf, SourceFileViewMetadata)],
     event_log: &mut EventLog,
 ) -> Option<CollectionView> {
     let registry = build_linked_render_registry(parsed_files);
     let rendered_files = parsed_files
         .iter()
+        .filter(|file| !file.view_metadata.hidden)
         .map(|file| build_file_view(collection_root, file, &registry, event_log))
         .collect::<Option<Vec<_>>>()?;
 
     Some(CollectionView {
         title: collection_title(collection_root),
+        directories: directory_metadata
+            .iter()
+            .filter(|(_, metadata)| !metadata.hidden)
+            .filter_map(|(path, metadata)| {
+                let path = relative_path(collection_root, path);
+                if path == "content" {
+                    return None;
+                }
+
+                Some(DirectoryView {
+                    path,
+                    title: metadata.title.clone(),
+                })
+            })
+            .collect(),
         files: rendered_files,
     })
 }
@@ -49,6 +70,7 @@ fn build_file_view(
 
     Some(FileView {
         path: relative_path(collection_root, &file.path),
+        title: file.view_metadata.title.clone(),
         items: groups
             .into_iter()
             .zip(group_sources)
@@ -222,7 +244,7 @@ fn argument_view(argument: ProtoArgument, registry: &RenderRegistry) -> Argument
 mod tests {
     use super::build_collection_view;
     use crate::events::EventLog;
-    use crate::frontend::{ParsedSourceFile, parse_document};
+    use crate::frontend::{ParsedSourceFile, SourceFileViewMetadata, parse_document};
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -244,10 +266,11 @@ mod tests {
             path: file,
             source: source.to_string(),
             document,
+            view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view =
-            build_collection_view(&root, &[parsed_file], &mut event_log).expect("expected view");
+        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+            .expect("expected view");
 
         assert_eq!(view.title, "repo");
         assert_eq!(view.files.len(), 1);
@@ -290,10 +313,11 @@ Documented:
             path: file,
             source: source.to_string(),
             document,
+            view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view =
-            build_collection_view(&root, &[parsed_file], &mut event_log).expect("expected view");
+        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+            .expect("expected view");
         let extends = &view.files[0].items[1].sections[1];
 
         assert_eq!(view.files[0].items[0].definition_keys, vec!["5c736574"]);
@@ -328,10 +352,11 @@ Second paragraph with $x \in X$."
             path: file,
             source: source.to_string(),
             document,
+            view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view =
-            build_collection_view(&root, &[parsed_file], &mut event_log).expect("expected view");
+        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+            .expect("expected view");
 
         assert!(!event_log.has_errors());
         assert_eq!(

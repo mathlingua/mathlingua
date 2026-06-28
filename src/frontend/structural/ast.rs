@@ -418,7 +418,7 @@ pub struct TextGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DisambiguatesGroup {
     pub heading: FormOrDeclaration,
-    pub branches: OneOrMore<DisambiguatesBranch>,
+    pub branches: Vec<DisambiguatesBranch>,
     pub else_: Option<DisambiguatesElseSection>,
     pub justified: Option<JustifiedSection>,
     pub documented: Option<DocumentedSection>,

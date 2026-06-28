@@ -1427,6 +1427,53 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_disambiguates_with_else_only() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("disambiguates-else-only.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ + y_ :=> x_ \.set.+./ y_
+    Documented:
+    . called: "set"
+
+    [A \.set.+./ B]
+    Defines: C is \set
+    when: A, B is \set
+    Documented:
+    . written: "A? + B?"
+
+    [x_ + y_]
+    Disambiguates:
+    else: x_ :+: y_
+    Documented:
+    . written: "x_? + y_?"
+
+    Theorem:
+    given: A, B is \set
+    then: A + B is \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("disambiguates-else-only.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_type_directed_provided_binary_operators() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("type-directed-minus.mlg");
@@ -1527,6 +1574,59 @@ mod tests {
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
+    }
+
+    #[test]
+    fn check_rejects_plain_binary_operators_without_disambiguation() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("unresolved-plain-operators.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
+      written: "x_? \in X?"
+    . symbol: x_ = y_ :=> x_ \.set.=./ y_
+    . symbol: x_ - y_ :=> x_ \.set.minus./ y_
+    Documented:
+    . called: "set"
+
+    Theorem:
+    given: A, B is \set
+    then: A + B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A - B is \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("unresolved-plain-operators.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let messages = event_log
+            .events()
+            .iter()
+            .filter_map(Event::as_message)
+            .filter(|message| message.audience == Audience::User)
+            .map(|message| message.message.as_str())
+            .collect::<Vec<_>>();
+
+        assert!(messages.contains(
+            &"Could not resolve operator `+`: no matching `Disambiguates` entry was found"
+        ));
+        assert!(messages.contains(
+            &"Could not resolve operator `-`: no matching `Disambiguates` entry was found"
+        ));
+        assert_eq!(messages.last(), Some(&"Found 2 issues."));
     }
 
     #[test]
@@ -1947,7 +2047,7 @@ mod tests {
     where:
     . A \:subset:/ B
     then:
-    . \needs.expression{A + B}
+    . \needs.expression{A}
     . \needs.statement{A is? \set}
     . \needs.statement{A "in"? B}
     . \needs.statement{A \:subset?:/ B}

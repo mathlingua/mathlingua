@@ -2160,8 +2160,9 @@ pub(in crate::frontend::structural::parser) fn parse_text_group(
 
 /// Parses a global operator/function disambiguation table.
 ///
-/// Unlike ordinary section patterns, `Disambiguates` permits repeated ordered
-/// `when:`/`to:` pairs, so this parser walks the section list directly.
+/// Unlike ordinary section patterns, `Disambiguates` permits zero or more
+/// ordered `when:`/`to:` pairs plus an optional `else:`, so this parser walks
+/// the section list directly.
 pub(in crate::frontend::structural::parser) fn parse_disambiguates(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -2216,18 +2217,6 @@ pub(in crate::frontend::structural::parser) fn parse_disambiguates(
         index += 1;
     }
 
-    let branches = match OneOrMore::try_from(branches) {
-        Ok(branches) => branches,
-        Err(_) => {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                first.metadata.row,
-                "Expected at least one `when`/`to` branch in `Disambiguates`",
-            );
-            return None;
-        }
-    };
-
     let else_ = match group.sections.get(index) {
         Some(section) if section.label == "else" => {
             index += 1;
@@ -2236,6 +2225,15 @@ pub(in crate::frontend::structural::parser) fn parse_disambiguates(
         }
         _ => None,
     };
+
+    if branches.is_empty() && else_.is_none() {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            first.metadata.row,
+            "Expected at least one `when`/`to` branch or an `else` section in `Disambiguates`",
+        );
+        return None;
+    }
 
     let trailing = identify_sections(
         "Disambiguates",
@@ -3207,6 +3205,28 @@ Documented:
                     FormOrDeclarationKind::InfixOperator { ref operator, .. }
                         if operator.text == "+"
                 ));
+            }
+            other => panic!("expected Disambiguates item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_disambiguates_groups_with_else_only() {
+        let document = parse_ok(
+            r#"
+[x_ + y_]
+Disambiguates:
+else: x_ :-: y_
+Documented:
+. written: "x_? + y_?"
+"#,
+        );
+
+        match &document.items[0] {
+            TopLevelItem::Disambiguates(group) => {
+                assert!(group.branches.is_empty());
+                assert!(group.else_.is_some());
+                assert!(group.documented.is_some());
             }
             other => panic!("expected Disambiguates item, got {other:?}"),
         }

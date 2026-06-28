@@ -1697,10 +1697,7 @@ fn has_function_call_disambiguation(
         name: name.to_owned(),
         arity,
     };
-    registry
-        .disambiguations
-        .iter()
-        .any(|rule| disambiguation_keys_match(&key, &rule.key))
+    has_disambiguation_for_key(&key, registry)
 }
 
 fn check_disambiguated_function_call(
@@ -1751,11 +1748,21 @@ fn check_disambiguated_binary(
     let Some((key, label, symbol)) = disambiguation_key_for_binary_operator(operator) else {
         return;
     };
-    if !registry
-        .disambiguations
-        .iter()
-        .any(|rule| disambiguation_keys_match(&key, &rule.key))
-    {
+    if !has_disambiguation_for_key(&key, registry) {
+        if context
+            .active_disambiguations
+            .iter()
+            .any(|active| disambiguation_keys_match(active, &key))
+        {
+            return;
+        }
+
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&symbol),
+            format!("Could not resolve {label}: no matching `Disambiguates` entry was found"),
+        );
         return;
     }
     let actuals = vec![key_for_expression(left), key_for_expression(right)];
@@ -1799,7 +1806,7 @@ fn check_disambiguated_postfix(
     event_log: &mut EventLog,
 ) {
     let key = DisambiguationKey::PostfixOperator(operator.text.clone());
-    if !registry.disambiguations.iter().any(|rule| rule.key == key) {
+    if !has_disambiguation_for_key(&key, registry) {
         return;
     }
     let actuals = vec![key_for_expression(expression)];
@@ -2127,6 +2134,13 @@ fn disambiguation_keys_match(left: &DisambiguationKey, right: &DisambiguationKey
             .any(|key| key == right)
 }
 
+fn has_disambiguation_for_key(key: &DisambiguationKey, registry: &SignatureRegistry) -> bool {
+    registry
+        .disambiguations
+        .iter()
+        .any(|rule| disambiguation_keys_match(key, &rule.key))
+}
+
 fn equivalent_disambiguation_keys(key: &DisambiguationKey) -> Vec<DisambiguationKey> {
     match key {
         DisambiguationKey::BinaryOperator(operator) => vec![DisambiguationKey::Function {
@@ -2180,8 +2194,7 @@ fn disambiguation_key_for_binary_operator(
     operator: &BinaryOperator,
 ) -> Option<(DisambiguationKey, String, String)> {
     match operator {
-        BinaryOperator::Equality(operator)
-        | BinaryOperator::Special(operator)
+        BinaryOperator::Special(operator)
         | BinaryOperator::Add(operator)
         | BinaryOperator::Subtract(operator)
         | BinaryOperator::Multiply(operator)

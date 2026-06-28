@@ -22,6 +22,7 @@ pub struct FileView {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct GroupView {
+    pub id: String,
     pub kind: String,
     pub definition_keys: Vec<String>,
     pub heading: Option<String>,

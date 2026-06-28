@@ -236,7 +236,11 @@ function CardIcon() {
 
 /** Returns true for support sections hidden behind the card expander. */
 function isSupportSection(section: SectionView): boolean {
-  return section.label === "Documented" || section.label === "Provides";
+  return (
+    section.label === "Documented" ||
+    section.label === "Provides" ||
+    section.label === "Id"
+  );
 }
 
 /**

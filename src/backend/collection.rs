@@ -2,11 +2,15 @@ use crate::backend::config::{CONFIG_FILE, validate_config_file};
 use crate::backend::semantic::check_documents;
 use crate::backend::view::{CollectionView, build_collection_view};
 use crate::events::{Event, EventLocation, EventLog};
-use crate::frontend::{ParsedSourceFile, SourceFileViewMetadata, parse_source_file};
+use crate::frontend::{
+    ParsedSourceFile, ProtoGroup, ProtoParser, SourceFileViewMetadata, parse_source_file,
+    top_level_group_id,
+};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use uuid::Uuid;
 
 pub(crate) const CONTENT_DIR: &str = "content";
 
@@ -63,6 +67,7 @@ impl SourceCollection {
         );
 
         let source_files = resolve_collection_source_files(&root, event_log, origin);
+        ensure_source_file_ids(&source_files.source_files, event_log, origin);
         Self::new(root, source_files)
     }
 
@@ -195,6 +200,141 @@ fn resolve_collection_source_files(
     let mut discovery = SourceFileDiscovery::default();
     collect_source_files(root.to_path_buf(), &mut discovery, event_log, origin);
     discovery
+}
+
+fn ensure_source_file_ids(files: &[PathBuf], event_log: &mut EventLog, origin: &str) {
+    let mut records = Vec::new();
+    let mut used_ids = BTreeSet::new();
+
+    for file in files {
+        let Ok(source) = fs::read_to_string(file) else {
+            continue;
+        };
+        let groups = parse_proto_groups_for_ids(&source);
+        for id in groups.iter().filter_map(top_level_group_id) {
+            used_ids.insert(id);
+        }
+        records.push((file.clone(), source, groups));
+    }
+
+    for (file, source, groups) in records {
+        let Some(updated) = source_with_generated_ids(&source, &groups, &mut used_ids) else {
+            continue;
+        };
+
+        if let Err(error) = fs::write(&file, updated) {
+            event_log.user_error_at_path(
+                Some(origin),
+                file,
+                format!("Failed to write generated Id sections: {error}"),
+            );
+        }
+    }
+}
+
+fn parse_proto_groups_for_ids(source: &str) -> Vec<ProtoGroup> {
+    let mut event_log = EventLog::new();
+    let mut parser = ProtoParser::new(source, &mut event_log);
+    parser.parse()
+}
+
+fn source_with_generated_ids(
+    source: &str,
+    groups: &[ProtoGroup],
+    used_ids: &mut BTreeSet<String>,
+) -> Option<String> {
+    let lines = source.split('\n').collect::<Vec<_>>();
+    let mut output = Vec::new();
+    let mut cursor = 0usize;
+    let mut changed = false;
+
+    for (index, group) in groups.iter().enumerate() {
+        let start = group.metadata.row.min(lines.len());
+        let next_start = groups
+            .get(index + 1)
+            .map(|next| next.metadata.row)
+            .unwrap_or(lines.len())
+            .min(lines.len());
+
+        if start < cursor || next_start < cursor {
+            continue;
+        }
+
+        let mut insertion = next_start;
+        while insertion > start && is_trailing_id_gap(lines[insertion - 1]) {
+            insertion -= 1;
+        }
+
+        output.extend(
+            lines[cursor..insertion]
+                .iter()
+                .map(|line| (*line).to_string()),
+        );
+
+        if is_top_level_item_group(group) && !has_top_level_id_section(group) {
+            output.push(format!("Id: \"{}\"", generate_unique_id(used_ids)));
+            changed = true;
+        }
+
+        output.extend(
+            lines[insertion..next_start]
+                .iter()
+                .map(|line| (*line).to_string()),
+        );
+        cursor = next_start;
+    }
+
+    output.extend(lines[cursor..].iter().map(|line| (*line).to_string()));
+
+    changed.then(|| output.join("\n"))
+}
+
+fn is_trailing_id_gap(line: &str) -> bool {
+    let trimmed = line.trim_start();
+    trimmed.is_empty() || trimmed.starts_with("--")
+}
+
+fn is_top_level_item_group(group: &ProtoGroup) -> bool {
+    group
+        .sections
+        .first()
+        .is_some_and(|section| is_top_level_item_label(&section.label))
+}
+
+fn is_top_level_item_label(label: &str) -> bool {
+    matches!(
+        label,
+        "Title"
+            | "SectionTitle"
+            | "SubsectionTitle"
+            | "Text"
+            | "Disambiguates"
+            | "Describes"
+            | "Defines"
+            | "Refines"
+            | "States"
+            | "Axiom"
+            | "Theorem"
+            | "Corollary"
+            | "Lemma"
+            | "Conjecture"
+            | "Person"
+            | "Resource"
+            | "Specify"
+    )
+}
+
+fn has_top_level_id_section(group: &ProtoGroup) -> bool {
+    group.sections.iter().any(|section| section.label == "Id")
+}
+
+fn generate_unique_id(used_ids: &mut BTreeSet<String>) -> String {
+    loop {
+        let id = Uuid::new_v4().to_string();
+        if used_ids.insert(id.clone()) {
+            return id;
+        }
+    }
 }
 
 fn resolve_filter_source_files(

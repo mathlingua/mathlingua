@@ -2068,7 +2068,7 @@ pub(in crate::frontend::structural::parser) fn parse_title(
     tracker: &mut EventLog,
 ) -> Option<TitleGroup> {
     ensure_no_heading(group, tracker)?;
-    let sections = identify_sections("Title", &group.sections, tracker, &["Title"])?;
+    let sections = identify_sections("Title", &group.sections, tracker, &["Title", "Id?"])?;
     Some(TitleGroup {
         title: TitleSection {
             argument: parse_required_open_text(section(&sections, "Title")?, "Title", tracker)?,
@@ -2085,7 +2085,12 @@ pub(in crate::frontend::structural::parser) fn parse_section_title(
     tracker: &mut EventLog,
 ) -> Option<SectionTitleGroup> {
     ensure_no_heading(group, tracker)?;
-    let sections = identify_sections("SectionTitle", &group.sections, tracker, &["SectionTitle"])?;
+    let sections = identify_sections(
+        "SectionTitle",
+        &group.sections,
+        tracker,
+        &["SectionTitle", "Id?"],
+    )?;
     Some(SectionTitleGroup {
         section_title: SectionTitleSection {
             argument: parse_required_open_text(
@@ -2110,7 +2115,7 @@ pub(in crate::frontend::structural::parser) fn parse_subsection_title(
         "SubsectionTitle",
         &group.sections,
         tracker,
-        &["SubsectionTitle"],
+        &["SubsectionTitle", "Id?"],
     )?;
     Some(SubsectionTitleGroup {
         subsection_title: SubsectionTitleSection {
@@ -2132,7 +2137,7 @@ pub(in crate::frontend::structural::parser) fn parse_text_group(
     tracker: &mut EventLog,
 ) -> Option<TextGroup> {
     ensure_no_heading(group, tracker)?;
-    let sections = identify_sections("Text", &group.sections, tracker, &["Text"])?;
+    let sections = identify_sections("Text", &group.sections, tracker, &["Text", "Id?"])?;
     Some(TextGroup {
         text: TextSection {
             argument: parse_required_open_text(section(&sections, "Text")?, "Text", tracker)?,
@@ -2229,6 +2234,7 @@ pub(in crate::frontend::structural::parser) fn parse_disambiguates(
             "Aliases?",
             "References?",
             "Metadata?",
+            "Id?",
         ],
     )?;
 
@@ -2363,6 +2369,7 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
             "Aliases?",
             "References?",
             "Metadata?",
+            "Id?",
         ],
     )?;
 
@@ -2453,6 +2460,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             "Aliases?",
             "References?",
             "Metadata?",
+            "Id?",
         ],
     )?;
 
@@ -2536,6 +2544,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             "Aliases?",
             "References?",
             "Metadata?",
+            "Id?",
         ],
     )?;
 
@@ -2631,6 +2640,7 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             "Aliases?",
             "References?",
             "Metadata?",
+            "Id?",
         ],
     )?;
 
@@ -2872,6 +2882,7 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
             "Aliases?",
             "References?",
             "Metadata?",
+            "Id?",
         ],
     )?;
 
@@ -2946,6 +2957,7 @@ pub(in crate::frontend::structural::parser) fn parse_corollary(
             "Aliases?",
             "References?",
             "Metadata?",
+            "Id?",
         ],
     )?;
 
@@ -3015,7 +3027,7 @@ pub(in crate::frontend::structural::parser) fn parse_person(
         "Person",
         &group.sections,
         tracker,
-        &["Person", "name", "biography"],
+        &["Person", "name", "biography", "Id?"],
     )?;
 
     Some(PersonGroup {
@@ -3045,7 +3057,7 @@ pub(in crate::frontend::structural::parser) fn parse_resource(
     tracker: &mut EventLog,
 ) -> Option<ResourceGroup> {
     let heading = parse_required_resource_heading(group, tracker)?;
-    let sections = identify_sections("Resource", &group.sections, tracker, &["Resource"])?;
+    let sections = identify_sections("Resource", &group.sections, tracker, &["Resource", "Id?"])?;
 
     Some(ResourceGroup {
         heading,
@@ -3069,7 +3081,7 @@ pub(in crate::frontend::structural::parser) fn parse_specify(
     tracker: &mut EventLog,
 ) -> Option<SpecifyGroup> {
     ensure_no_heading(group, tracker)?;
-    let sections = identify_sections("Specify", &group.sections, tracker, &["Specify"])?;
+    let sections = identify_sections("Specify", &group.sections, tracker, &["Specify", "Id?"])?;
     Some(SpecifyGroup {
         specify: SpecifySection {
             arguments: parse_required_groups(

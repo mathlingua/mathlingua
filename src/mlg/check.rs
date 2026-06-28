@@ -560,6 +560,121 @@ mod tests {
     }
 
     #[test]
+    fn check_generates_missing_top_level_ids_before_checking() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("intro.mlg");
+
+        fs::write(&file, "Title: \"Intro\"\n\nText: \"Body\"\n").unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("intro.mlg")],
+            &mut event_log,
+        );
+        let updated = fs::read_to_string(&file).expect("expected updated source");
+        let ids = updated
+            .lines()
+            .filter_map(|line| {
+                line.strip_prefix("Id: \"")
+                    .and_then(|value| value.strip_suffix('"'))
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(ids.len(), 2);
+        assert_ne!(ids[0], ids[1]);
+        assert!(ids.iter().all(|id| id.len() == 36));
+        assert!(ids.iter().all(|id| &id[14..15] == "4"));
+        assert!(
+            ids.iter()
+                .all(|id| matches!(id.as_bytes()[19] as char, '8' | '9' | 'a' | 'b'))
+        );
+        assert!(!updated.contains("------------------------------------------"));
+        assert!(updated.contains("Title: \"Intro\"\nId: \""));
+        assert!(updated.contains("Text: \"Body\"\nId: \""));
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_duplicate_top_level_ids() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("intro.mlg");
+        let id = "18582990-701a-40d3-8ce3-ae12bd08a561";
+
+        fs::write(
+            &file,
+            format!(
+                "Title: \"One\"\n------------------------------------------\nId: \"{id}\"\n\nTitle: \"Two\"\n------------------------------------------\nId: \"{id}\"\n"
+            ),
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("intro.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            event_log
+                .events()
+                .iter()
+                .filter_map(Event::as_message)
+                .any(|event| event
+                    .message
+                    .starts_with("Duplicate Id `18582990-701a-40d3-8ce3-ae12bd08a561`"))
+        );
+        assert_eq!(
+            user_events(&event_log)
+                .last()
+                .cloned()
+                .expect("expected summary event"),
+            Event::user_log("Found 1 issue.").with_origin("mlg_check")
+        );
+    }
+
+    #[test]
+    fn check_reports_malformed_top_level_ids() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("intro.mlg");
+
+        fs::write(
+            &file,
+            "Title: \"Intro\"\n------------------------------------------\nId: \"not-a-uuid\"\n",
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("intro.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            event_log
+                .events()
+                .iter()
+                .filter_map(Event::as_message)
+                .any(|event| event.message == "`Id:` value `not-a-uuid` must be a UUID")
+        );
+        assert_eq!(
+            user_events(&event_log)
+                .last()
+                .cloned()
+                .expect("expected summary event"),
+            Event::user_log("Found 1 issue.").with_origin("mlg_check")
+        );
+    }
+
+    #[test]
     fn check_with_empty_content_directory_succeeds() {
         let temp_dir = TestDir::new();
         let root = temp_dir.path().join("repo");
@@ -871,7 +986,7 @@ mod tests {
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
-            7,
+            8,
             1,
             &format!(
                 "Duplicate command signature `\\function` in Theorem; previously defined as Defines in {}:1:2",
@@ -913,7 +1028,7 @@ mod tests {
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            9,
+            10,
             7,
             "Undefined command signature `\\function`"
         ));
@@ -952,7 +1067,7 @@ mod tests {
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            9,
+            10,
             7,
             "Command signature `\\foo` expects argument shape `{2}(1)` but found `{1}(2)`"
         ));
@@ -2530,14 +2645,14 @@ mod tests {
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
-            26,
+            28,
             8,
             "Could not establish requirement `g is \\set` for command `\\function:on:to`"
         ));
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
-            24,
+            26,
             7,
             "Could not establish requirement `x is \\set` for command `\\function:on:to`"
         ));
@@ -2818,7 +2933,7 @@ mod tests {
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            16,
+            18,
             27,
             "Unrecognized symbol `Z`"
         ));
@@ -3459,7 +3574,7 @@ mod tests {
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            9,
+            10,
             7,
             "Command signature `\\some.function` expects argument shape `{1}(2)` but found `{2}(2)`"
         ));
@@ -3498,7 +3613,7 @@ mod tests {
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            9,
+            10,
             7,
             "Command signature `\\some.function` expects argument shape `{1}(2)` but found `{1}(3)`"
         ));
@@ -3550,14 +3665,14 @@ mod tests {
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
-            3,
+            4,
             1,
             "Describes entries must include either a `called:` or `written:` item in `Documented:`"
         ));
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
-            13,
+            16,
             1,
             "Refines entries must include an `adjective:` item in `Documented:`"
         ));

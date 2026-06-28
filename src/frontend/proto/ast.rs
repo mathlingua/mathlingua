@@ -22,8 +22,12 @@ impl Line {
         self.text.starts_with("--")
     }
 
+    pub fn is_divider(&self) -> bool {
+        self.text.len() >= 3 && self.text.chars().all(|ch| ch == '-')
+    }
+
     pub fn is_blank_or_comment(&self) -> bool {
-        self.is_blank() || self.is_comment()
+        self.is_blank() || self.is_comment() || self.is_divider()
     }
 
     pub fn is_text(&self) -> bool {

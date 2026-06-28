@@ -48,7 +48,7 @@ impl<'a> Parser<'a> {
     }
 
     fn skip_comments(&mut self) {
-        while matches!(self.lexer.peek(), Some(line) if line.is_comment()) {
+        while matches!(self.lexer.peek(), Some(line) if line.is_comment() || line.is_divider()) {
             let _ = self.lexer.next();
         }
     }

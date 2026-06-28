@@ -183,9 +183,16 @@ function normalizeRoutePath(path: string): string {
     .replace(/^\/+|\/+$/g, "");
 }
 
-/** Builds the stable DOM anchor id for one group within one file. */
-export function makeGroupAnchor(fileIndex: number, groupIndex: number): string {
-  return `group-${fileIndex}-${groupIndex}`;
+/** Builds the stable DOM anchor id for one group from its source UUID. */
+export function makeGroupAnchor(
+  group: Pick<GroupView, "id">,
+  fallbackKey: string,
+): string {
+  return `group-${sanitizeAnchorSegment(group.id || fallbackKey)}`;
+}
+
+function sanitizeAnchorSegment(value: string): string {
+  return value.replace(/[^A-Za-z0-9_-]/g, "-");
 }
 
 /** Normalizes platform-specific file separators into content-style paths. */

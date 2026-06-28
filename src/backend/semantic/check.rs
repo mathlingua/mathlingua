@@ -1,6 +1,8 @@
 use super::*;
 
 pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
+    validate_top_level_item_ids(files, event_log);
+
     let mut registry = SignatureRegistry::default();
     for file in files {
         collect_document_definitions(file, &mut registry, event_log);
@@ -13,6 +15,63 @@ pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
     for file in files {
         validate_document_types(file, &registry, event_log);
     }
+}
+
+fn validate_top_level_item_ids(files: &[ParsedSourceFile], event_log: &mut EventLog) {
+    let mut seen: HashMap<String, (PathBuf, usize)> = HashMap::new();
+
+    for file in files {
+        for id in &file.item_ids {
+            let row = id.id_row.unwrap_or(id.group_row);
+            let Some(value) = id.value.as_ref() else {
+                let message = if id.id_row.is_some() {
+                    "`Id:` section must contain a quoted UUID"
+                } else {
+                    "Top-level item must include an `Id:` section"
+                };
+                event_log.user_error_at_file_row(Some(ORIGIN), file.path.clone(), row, message);
+                continue;
+            };
+
+            if !is_uuid(value) {
+                event_log.user_error_at_file_row(
+                    Some(ORIGIN),
+                    file.path.clone(),
+                    row,
+                    format!("`Id:` value `{value}` must be a UUID"),
+                );
+                continue;
+            }
+
+            if let Some((first_path, first_row)) = seen.get(value) {
+                event_log.user_error_at_file_row(
+                    Some(ORIGIN),
+                    file.path.clone(),
+                    row,
+                    format!(
+                        "Duplicate Id `{value}`; first used at {}:{}",
+                        first_path.display(),
+                        first_row + 1
+                    ),
+                );
+            } else {
+                seen.insert(value.clone(), (file.path.clone(), row));
+            }
+        }
+    }
+}
+
+fn is_uuid(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() == 36
+        && bytes[8] == b'-'
+        && bytes[13] == b'-'
+        && bytes[18] == b'-'
+        && bytes[23] == b'-'
+        && bytes
+            .iter()
+            .enumerate()
+            .all(|(index, byte)| matches!(index, 8 | 13 | 18 | 23) || byte.is_ascii_hexdigit())
 }
 
 pub(super) fn collect_document_definitions(

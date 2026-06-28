@@ -1,6 +1,8 @@
 use super::{build_render_registry, render_formulation_latex, render_group_heading_latex};
 use crate::events::EventLog;
-use crate::frontend::{ParsedSourceFile, SourceFileViewMetadata, parse_document};
+use crate::frontend::{
+    ParsedSourceFile, SourceFileViewMetadata, parse_document, top_level_item_ids,
+};
 use std::path::PathBuf;
 
 fn registry_for(source: &str) -> super::RenderRegistry {
@@ -11,6 +13,7 @@ fn registry_for(source: &str) -> super::RenderRegistry {
         path: PathBuf::from("test.mlg"),
         source: source.to_string(),
         document,
+        item_ids: top_level_item_ids(source),
         view_metadata: SourceFileViewMetadata::default(),
     }])
 }

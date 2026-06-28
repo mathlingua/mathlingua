@@ -190,24 +190,24 @@ export function FileList({
         >
           <div className={styles.groupStream}>
             {selectedFile.items.map((item, itemIndex) => {
-              const anchorId = makeGroupAnchor(selectedFileIndex, itemIndex);
+              const fallbackKey = `${selectedFileIndex}-${itemIndex}`;
+              const anchorId = makeGroupAnchor(item, fallbackKey);
               const trail = definitionTrails[anchorId] ?? [];
+              const itemKey =
+                item.id || `${selectedFile.path}-${item.kind}-${itemIndex}`;
 
               if (item.page) {
                 return (
                   <PageItem
                     anchorId={anchorId}
-                    key={`${selectedFile.path}-${item.kind}-${itemIndex}`}
+                    key={itemKey}
                     page={item.page}
                   />
                 );
               }
 
               return (
-                <div
-                  className={styles.definitionStack}
-                  key={`${selectedFile.path}-${item.kind}-${itemIndex}`}
-                >
+                <div className={styles.definitionStack} key={itemKey}>
                   <GroupCard
                     anchorId={anchorId}
                     group={item}
@@ -239,7 +239,10 @@ export function FileList({
                             key={`${referenceKey}-${trailIndex}`}
                           >
                             <GroupCard
-                              anchorId={`${anchorId}-definition-${trailIndex}`}
+                              anchorId={`${makeGroupAnchor(
+                                definition.group,
+                                `${anchorId}-definition-${trailIndex}`,
+                              )}-definition-${trailIndex}`}
                               group={definition.group}
                               onClose={() =>
                                 handleCloseDefinition(anchorId, trailIndex)

@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus, Stdio};
 use std::sync::{
     Arc,
-    atomic::{AtomicBool, Ordering},
+    atomic::{AtomicBool, AtomicUsize, Ordering},
     mpsc::{self, Receiver, RecvTimeoutError, Sender},
 };
 use std::thread::{self, JoinHandle};
@@ -17,6 +17,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const NEXTJS_ORIGIN: &str = "nextjs";
 const ORIGIN: &str = "mlg_view";
+static NEXT_VIEW_SESSION_DIR_ID: AtomicUsize = AtomicUsize::new(0);
 
 pub struct ViewResult {
     pub event_log: EventLog,
@@ -493,7 +494,9 @@ fn create_view_session_dir() -> io::Result<PathBuf> {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos();
-    let path = std::env::temp_dir().join(format!("mlg-view-{}-{}", std::process::id(), unique));
+    let id = NEXT_VIEW_SESSION_DIR_ID.fetch_add(1, Ordering::Relaxed);
+    let path =
+        std::env::temp_dir().join(format!("mlg-view-{}-{}-{}", std::process::id(), unique, id));
     fs::create_dir(&path)?;
     Ok(path)
 }
@@ -538,6 +541,7 @@ mod tests {
                 path: "content/example.mlg".to_string(),
                 title: None,
                 items: vec![GroupView {
+                    id: "18582990-701a-40d3-8ce3-ae12bd08a561".to_string(),
                     kind: "Title".to_string(),
                     definition_keys: vec![],
                     heading: None,

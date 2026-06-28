@@ -8,6 +8,7 @@ use super::render::{
 use crate::events::{Audience, Event, EventLog, Level};
 use crate::frontend::{
     ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection, SourceFileViewMetadata,
+    top_level_group_id,
 };
 use std::path::{Path, PathBuf};
 
@@ -130,6 +131,7 @@ fn is_trailing_source_gap(line: &str) -> bool {
 }
 
 fn group_view(group: ProtoGroup, source: String, registry: &RenderRegistry) -> GroupView {
+    let id = top_level_group_id(&group).unwrap_or_default();
     let kind = group
         .sections
         .first()
@@ -142,6 +144,7 @@ fn group_view(group: ProtoGroup, source: String, registry: &RenderRegistry) -> G
     let page = page_view(&kind, &group.sections);
 
     GroupView {
+        id,
         heading_latex: render_group_heading_latex(
             &kind,
             group.heading.as_deref(),
@@ -241,7 +244,9 @@ fn argument_view(argument: ProtoArgument, registry: &RenderRegistry) -> Argument
 mod tests {
     use super::build_collection_view;
     use crate::events::EventLog;
-    use crate::frontend::{ParsedSourceFile, SourceFileViewMetadata, parse_document};
+    use crate::frontend::{
+        ParsedSourceFile, SourceFileViewMetadata, parse_document, top_level_item_ids,
+    };
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -263,6 +268,7 @@ mod tests {
             path: file,
             source: source.to_string(),
             document,
+            item_ids: top_level_item_ids(source),
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
@@ -310,6 +316,7 @@ Documented:
             path: file,
             source: source.to_string(),
             document,
+            item_ids: top_level_item_ids(source),
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
@@ -349,6 +356,7 @@ Second paragraph with $x \in X$."
             path: file,
             source: source.to_string(),
             document,
+            item_ids: top_level_item_ids(source),
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();

@@ -57,18 +57,17 @@ export function FileList({
   const selectedFile = files[selectedFileIndex] ?? files[0];
   const entries = buildFileBrowserEntries(files, currentDirectory);
 
-  const handleReferenceClick = (
-    rootAnchorId: string,
-    depth: number,
-    referenceKey: string,
-  ) => {
+  const handleReferenceClick = (rootAnchorId: string, referenceKey: string) => {
     if (!definitionIndex.has(referenceKey)) {
       return;
     }
 
     setDefinitionTrails((current) => {
-      const nextTrail = (current[rootAnchorId] ?? []).slice(0, depth);
-      nextTrail.push(referenceKey);
+      const existingTrail = current[rootAnchorId] ?? [];
+      const nextTrail = [
+        referenceKey,
+        ...existingTrail.filter((key) => key !== referenceKey),
+      ];
 
       return {
         ...current,
@@ -191,7 +190,7 @@ export function FileList({
                     anchorId={anchorId}
                     group={item}
                     onReferenceClick={(referenceKey) =>
-                      handleReferenceClick(anchorId, 0, referenceKey)
+                      handleReferenceClick(anchorId, referenceKey)
                     }
                   />
                   {trail.length > 0 ? (
@@ -224,11 +223,7 @@ export function FileList({
                                 handleCloseDefinition(anchorId, trailIndex)
                               }
                               onReferenceClick={(nextReferenceKey) =>
-                                handleReferenceClick(
-                                  anchorId,
-                                  trailIndex + 1,
-                                  nextReferenceKey,
-                                )
+                                handleReferenceClick(anchorId, nextReferenceKey)
                               }
                             />
                           </div>

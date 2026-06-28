@@ -45,6 +45,7 @@ pub(super) struct DefinitionTypeInfo {
     pub(super) parameters: Vec<String>,
     pub(super) hidden_parameters: Vec<String>,
     pub(super) requirements: Vec<TypeFact>,
+    pub(super) outputs: Vec<TypeFact>,
     pub(super) substitutions: Vec<(String, String)>,
     pub(super) described: Option<String>,
 }

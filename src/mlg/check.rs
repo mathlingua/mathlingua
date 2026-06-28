@@ -1627,6 +1627,80 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_provided_operator_when_operand_is_defined_command_result() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("defined-command-result-provided-operator.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
+      written: "x_? \in X?"
+    . symbol: x_ = y_ :=> x_ \.set.=./ y_
+    . symbol: x_ != y_ :=> \not{x_ = y_}
+    . symbol: x_ - y_ :=> x_ \.set.minus./ y_
+    Documented:
+    . called: "set"
+
+    [X \.set.=./ Y]
+    States:
+    when: X, Y is \set
+    that:
+    . forAll: Z "in" X
+      then: Z "in" Y
+    . forAll: Z "in" Y
+      then: Z "in" X
+    Documented:
+    . written: "X? = Y?"
+
+    [A \.set.minus./ B]
+    Defines: C is \set
+    when: A, B is \set
+    Documented:
+    . written: "A? \backslash B?"
+
+    [\not{P}]
+    Defines: Q is \\statement
+    Documented:
+    . written: "\neg P?"
+
+    [\empty.set]
+    Defines: X is \set
+    expresses:
+    . not:
+      . exists: Y is \set
+        suchThat: Y "in" X
+    Documented:
+    . written: "\emptyset"
+
+    [\nonempty.set]
+    Describes: X
+    extends: X is \set
+    satisfies:
+    . X != \empty.set
+    Documented:
+    . called: "non-empty set"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("defined-command-result-provided-operator.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_rejects_plain_binary_operators_without_disambiguation() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("unresolved-plain-operators.mlg");

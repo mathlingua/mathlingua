@@ -76,6 +76,7 @@ fn definition_type_info(
             &group.heading,
             group.using.as_ref(),
             group.when.as_ref(),
+            None,
             Some(&group.describes.argument),
         )),
         TopLevelItem::Defines(group) => Some(type_info_from_parts(
@@ -83,6 +84,7 @@ fn definition_type_info(
             &group.heading,
             group.using.as_ref(),
             group.when.as_ref(),
+            Some(&group.defines.argument),
             None,
         )),
         TopLevelItem::Refines(group) => Some(type_info_from_parts(
@@ -91,6 +93,7 @@ fn definition_type_info(
             group.using.as_ref(),
             group.when.as_ref(),
             None,
+            None,
         )),
         TopLevelItem::States(group) => Some(type_info_from_parts(
             header_shape,
@@ -98,27 +101,28 @@ fn definition_type_info(
             group.using.as_ref(),
             group.when.as_ref(),
             None,
+            None,
         )),
         TopLevelItem::Axiom(group) => group
             .heading
             .as_ref()
-            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None)),
+            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None, None)),
         TopLevelItem::Theorem(group) => group
             .heading
             .as_ref()
-            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None)),
+            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None, None)),
         TopLevelItem::Corollary(group) => group
             .heading
             .as_ref()
-            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None)),
+            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None, None)),
         TopLevelItem::Lemma(group) => group
             .heading
             .as_ref()
-            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None)),
+            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None, None)),
         TopLevelItem::Conjecture(group) => group
             .heading
             .as_ref()
-            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None)),
+            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None, None)),
         _ => None,
     }
 }
@@ -128,6 +132,7 @@ fn type_info_from_parts(
     _heading: &CommandHeader,
     using: Option<&UsingSection>,
     when: Option<&WhenSection>,
+    defines: Option<&DeclarationStatement>,
     described: Option<&FormOrDeclaration>,
 ) -> DefinitionTypeInfo {
     let mut context = TypeContext::default();
@@ -155,12 +160,21 @@ fn type_info_from_parts(
         .iter()
         .map(|fact| context.normalize_fact(fact))
         .collect();
+    let outputs = defines
+        .map(|statement| {
+            facts_from_declaration_statement_in_context(statement, &context)
+                .into_iter()
+                .map(|fact| context.normalize_fact(&fact))
+                .collect()
+        })
+        .unwrap_or_default();
 
     DefinitionTypeInfo {
         signature: header_shape.shape.signature.clone(),
         parameters: header_shape.parameters.clone(),
         hidden_parameters: header_shape.hidden_parameters.clone(),
         requirements,
+        outputs,
         substitutions: context.substitutions,
         described: described.map(described_subject_key),
     }
@@ -1535,12 +1549,14 @@ fn check_expression(
         } => {
             check_expression(left, context, path, locator, registry, event_log);
             check_expression(right, context, path, locator, registry, event_log);
-            check_disambiguated_binary(
+            let resolved_from_provided = check_provided_binary_operator(
                 left, operator, right, context, path, locator, registry, event_log,
             );
-            check_provided_binary_operator(
-                left, operator, right, context, path, locator, registry, event_log,
-            );
+            if !resolved_from_provided && !binary_operator_uses_provided_by_default(operator) {
+                check_disambiguated_binary(
+                    left, operator, right, context, path, locator, registry, event_log,
+                );
+            }
         }
         ExpressionKind::SpecStatement(statement) => {
             check_expression(
@@ -1862,17 +1878,17 @@ fn check_provided_binary_operator(
     locator: &mut SourceLocator<'_>,
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
-) {
+) -> bool {
     let (symbol, kind) = binary_operator_symbol_and_kind(operator);
-    if kind == NamedOperatorKind::Plain {
-        return;
-    }
+    let Some(kind) = provided_binary_operator_kind(&symbol, kind) else {
+        return false;
+    };
 
     let key = DisambiguationKey::BinaryOperator(symbol.clone());
     let actuals = vec![key_for_expression(left), key_for_expression(right)];
     let Some(rule) = find_provided_symbol_rule(&key, kind, &actuals, context, registry) else {
         if context.defer_unresolved_provided_symbols {
-            return;
+            return false;
         }
 
         emit_error(
@@ -1884,7 +1900,7 @@ fn check_provided_binary_operator(
                 resolution_kind_label(kind)
             ),
         );
-        return;
+        return false;
     };
 
     let owner_actual = provided_symbol_owner_actual(kind, &actuals);
@@ -1898,6 +1914,7 @@ fn check_provided_binary_operator(
         registry,
         event_log,
     );
+    true
 }
 
 fn check_provided_prefix_operator(
@@ -2112,6 +2129,22 @@ fn binary_operator_symbol_and_kind(operator: &BinaryOperator) -> (String, NamedO
         | BinaryOperator::Power(operator) => (operator.text.clone(), operator.kind),
         BinaryOperator::Named(operator) => (operator.name.clone(), operator.kind),
     }
+}
+
+fn provided_binary_operator_kind(
+    symbol: &str,
+    kind: NamedOperatorKind,
+) -> Option<NamedOperatorKind> {
+    match (symbol, kind) {
+        ("!=", NamedOperatorKind::Plain) => Some(NamedOperatorKind::BothColon),
+        (_, NamedOperatorKind::Plain) => None,
+        (_, kind) => Some(kind),
+    }
+}
+
+fn binary_operator_uses_provided_by_default(operator: &BinaryOperator) -> bool {
+    let (symbol, kind) = binary_operator_symbol_and_kind(operator);
+    symbol == "!=" && kind == NamedOperatorKind::Plain
 }
 
 fn resolution_kind_label(kind: NamedOperatorKind) -> &'static str {
@@ -3230,6 +3263,13 @@ fn prove_fact(required: &TypeFact, context: &TypeContext, registry: &SignatureRe
     }
 
     let mut seen = HashSet::new();
+    if defined_output_facts_for_key(fact_subject(&required), context, registry)
+        .iter()
+        .any(|fact| fact_implies(fact, &required, context, registry, &mut seen))
+    {
+        return true;
+    }
+
     context
         .facts
         .iter()
@@ -3856,6 +3896,126 @@ fn reduce_spec_fact(
     result
 }
 
+fn defined_output_facts_for_key(
+    key: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let key = context.normalize_key(key);
+    let mut result = Vec::new();
+
+    if let Some((signature, actuals)) = command_signature_and_actuals_from_key(&key) {
+        result.extend(defined_output_facts_for_signature(
+            &signature, &actuals, &key, context, registry,
+        ));
+    }
+
+    if let Some((signature, actuals)) = infix_command_signature_and_actuals_from_key(&key) {
+        result.extend(defined_output_facts_for_signature(
+            &signature, &actuals, &key, context, registry,
+        ));
+    }
+
+    result
+}
+
+fn defined_output_facts_for_signature(
+    signature: &str,
+    actuals: &[String],
+    key: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let Some(info) = registry.type_infos.get(signature) else {
+        return Vec::new();
+    };
+    if info.outputs.is_empty() {
+        return Vec::new();
+    }
+
+    let mut base_substitutions = info
+        .parameters
+        .iter()
+        .zip(actuals)
+        .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
+        .collect::<HashMap<_, _>>();
+    for (index, name) in info.hidden_parameters.iter().enumerate() {
+        base_substitutions.insert(name.clone(), "#".repeat(index + 1));
+    }
+
+    let mut output_context = context.clone();
+    for (left, right) in &info.substitutions {
+        output_context.add_substitution(
+            substitute_key(left, &base_substitutions),
+            substitute_key(right, &base_substitutions),
+        );
+    }
+
+    info.outputs
+        .iter()
+        .map(|output| {
+            let mut substitutions = base_substitutions.clone();
+            substitutions.insert(fact_subject(output).to_owned(), key.to_owned());
+            output_context.normalize_fact(&substitute_fact(output, &substitutions))
+        })
+        .collect()
+}
+
+fn command_signature_and_actuals_from_key(key: &str) -> Option<(String, Vec<String>)> {
+    let signature = command_signature_from_key(key)?;
+    let actuals = actuals_for_type_key(&signature, key)?;
+    Some((signature, actuals))
+}
+
+fn infix_command_signature_and_actuals_from_key(key: &str) -> Option<(String, Vec<String>)> {
+    let mut search_start = 0;
+
+    while search_start < key.len() {
+        let relative_start = key[search_start..].find("\\.")?;
+        let start = search_start + relative_start;
+        if !key_is_top_level_at(key, start) {
+            search_start = start + "\\.".len();
+            continue;
+        }
+
+        let end = find_infix_command_key_end(key, start)?;
+        let left = key[..start].trim();
+        let right = key[end..].trim();
+        if left.is_empty() || right.is_empty() {
+            return None;
+        }
+
+        let segment = &key[start..end];
+        let signature = infix_command_signature_from_key_segment(segment)?;
+        let mut actuals = Vec::new();
+        actuals.push(left.to_owned());
+        actuals.extend(actuals_for_infix_command_key_segment(&signature, segment)?);
+        actuals.push(right.to_owned());
+        return Some((signature, actuals));
+    }
+
+    None
+}
+
+fn actuals_for_infix_command_key_segment(signature: &str, segment: &str) -> Option<Vec<String>> {
+    let signature_body = signature.strip_prefix("\\.")?.strip_suffix("./")?;
+    let mut rest = segment.strip_prefix("\\.")?.strip_suffix("./")?;
+    let mut actuals = Vec::new();
+    let parts = signature_body.split(':').collect::<Vec<_>>();
+    let first = parts.first()?;
+
+    rest = rest.strip_prefix(first)?;
+    collect_adjacent_key_args(&mut rest, &mut actuals)?;
+
+    for part in parts.iter().skip(1) {
+        rest = rest.strip_prefix(':')?;
+        rest = rest.strip_prefix(part)?;
+        collect_adjacent_key_args(&mut rest, &mut actuals)?;
+    }
+
+    rest.is_empty().then_some(actuals)
+}
+
 fn has_type_signature(
     subject: &str,
     signature: &str,
@@ -3866,7 +4026,11 @@ fn has_type_signature(
     let mut seen = HashSet::new();
     context.facts.iter().any(|fact| {
         fact_has_type_signature(fact, &subject, signature, context, registry, &mut seen)
-    })
+    }) || defined_output_facts_for_key(&subject, context, registry)
+        .iter()
+        .any(|fact| {
+            fact_has_type_signature(fact, &subject, signature, context, registry, &mut seen)
+        })
 }
 
 fn fact_has_type_signature(

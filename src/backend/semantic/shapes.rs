@@ -368,12 +368,14 @@ pub(super) fn fallback_shapes_for_refined_command_expression(
     command: &RefinedCommandExpression,
 ) -> Vec<SignatureShape> {
     let mut shapes = vec![shape_for_refined_command_base(command)];
-    shapes.extend(
-        command
-            .parts
-            .iter()
-            .map(|part| shape_for_refined_command_part(command, part)),
-    );
+    if command.parts.len() > 1 {
+        shapes.extend(
+            command
+                .parts
+                .iter()
+                .map(|part| shape_for_refined_command_part(command, part)),
+        );
+    }
     shapes
 }
 

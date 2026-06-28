@@ -67,6 +67,13 @@ pub(super) enum TypeFact {
         args: Vec<String>,
         target: String,
     },
+    RefinedIs {
+        subject: String,
+        ty: String,
+        signature: String,
+        base_ty: String,
+        base_signature: String,
+    },
     FunctionType {
         subject: String,
         inputs: Vec<FunctionTypeFactSpec>,
@@ -95,6 +102,23 @@ pub(super) struct TypeExtensionRule {
     pub(super) subject: String,
     pub(super) parameters: Vec<String>,
     pub(super) target: TypeFact,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct RefinementExtensionRule {
+    pub(super) subtype_signature: String,
+    pub(super) subject: String,
+    pub(super) parameters: Vec<String>,
+    pub(super) target: RefinementExtensionTarget,
+}
+
+#[derive(Clone, Debug)]
+pub(super) enum RefinementExtensionTarget {
+    Fact(TypeFact),
+    DynamicRefinedIs {
+        subject: String,
+        command: RefinedCommandExpression,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -155,5 +179,6 @@ pub(super) struct SignatureRegistry {
     pub(super) type_infos: HashMap<String, DefinitionTypeInfo>,
     pub(super) spec_rules: Vec<SpecOperatorRule>,
     pub(super) extension_rules: Vec<TypeExtensionRule>,
+    pub(super) refinement_extension_rules: Vec<RefinementExtensionRule>,
     pub(super) disambiguations: Vec<DisambiguationRule>,
 }

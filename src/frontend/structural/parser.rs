@@ -2531,7 +2531,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
 /// Parses a command-backed `Refines:` group.
 ///
 /// Refines groups define a refined command signature and validate their
-/// `Refines:`/`specifies:` bodies with the parser variant that accepts refined
+/// `Refines:`/`extends:` bodies with the parser variant that accepts refined
 /// command references.
 pub(in crate::frontend::structural::parser) fn parse_refines(
     group: &ProtoGroup,
@@ -2546,7 +2546,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             "Refines",
             "using?",
             "when?",
-            "specifies?",
+            "extends?",
             "satisfies?",
             "Provides?",
             "Justified?",
@@ -2580,14 +2580,14 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        specifies: sections.get("specifies").copied().and_then(|section| {
+        extends: sections.get("extends").copied().and_then(|section| {
             parse_required_formulation(
                 section,
-                "specifies",
+                "extends",
                 tracker,
                 parse_refined_declaration_statement,
             )
-            .map(|argument| RefinesSpecifiesSection { argument })
+            .map(|argument| RefinesExtendsSection { argument })
         }),
         satisfies: sections.get("satisfies").copied().and_then(|section| {
             parse_required_clauses(section, "satisfies", tracker)
@@ -3346,7 +3346,7 @@ when:
   existsUnique: x is \element
   suchThat:
   . x = x
-specifies: y is \(f)::[[g]]
+extends: y is \(f)::[[g]]
 satisfies:
 . [logic.given]
   given: x is \element
@@ -3574,7 +3574,7 @@ that:
                         _
                     ))
                 ));
-                assert!(group.specifies.is_some());
+                assert!(group.extends.is_some());
                 assert!(matches!(
                     group.when.as_ref().expect("expected when").arguments[0],
                     Clause::ExistsUnique(_)

@@ -1128,6 +1128,74 @@ mod tests {
     }
 
     #[test]
+    fn check_applies_refines_extends_to_dynamic_refined_base() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("dynamic-refined-base.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function]
+    Describes: f(x__)
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\bounded.function]
+    Describes: f(x__)
+    extends: f is \function
+    Documented:
+    . written: "\operatorname{boundedFunction}"
+
+    [\(injective)::function]
+    Refines: f(x__) is \function
+    Documented:
+    . adjective: "injective"
+
+    [\(surjective)::function]
+    Refines: f(x__) is \function
+    Documented:
+    . adjective: "surjective"
+
+    [\(bijective)::function]
+    Refines: f(x__) is \function
+    extends: f is \(injective, surjective)::[[f]]
+    Documented:
+    . adjective: "bijective"
+
+    [\uses.injective{f}]
+    States:
+    when: f is? \(injective)::bounded.function
+    that: f = f
+    Documented:
+    . written: "\operatorname{usesInjective}"
+
+    Theorem:
+    given: f is \bounded.function
+    where: f is? \(bijective)::bounded.function
+    then: \uses.injective{f}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("dynamic-refined-base.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_omits_optional_expression_tails_when_arguments_are_not_defined() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("optional-expression-tail.mlg");

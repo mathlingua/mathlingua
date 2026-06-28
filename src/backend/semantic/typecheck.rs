@@ -11,6 +11,7 @@ pub(super) fn collect_definition_type_metadata(
     };
 
     collect_type_extension_rules(item, &info, registry);
+    collect_refinement_extension_rules(item, &info, registry);
     collect_spec_operator_rules(item, &info, registry);
     registry
         .type_infos
@@ -201,6 +202,7 @@ fn collect_type_extension_rules(
             TypeFact::Is { subject, .. }
             | TypeFact::Spec { subject, .. }
             | TypeFact::InfixSpec { subject, .. }
+            | TypeFact::RefinedIs { subject, .. }
             | TypeFact::FunctionType { subject, .. } => subject.clone(),
         };
         registry.extension_rules.push(TypeExtensionRule {
@@ -209,6 +211,49 @@ fn collect_type_extension_rules(
             parameters: info.parameters.clone(),
             target: fact,
         });
+    }
+}
+
+fn collect_refinement_extension_rules(
+    item: &TopLevelItem,
+    info: &DefinitionTypeInfo,
+    registry: &mut SignatureRegistry,
+) {
+    let TopLevelItem::Refines(group) = item else {
+        return;
+    };
+    let Some(extends) = &group.extends else {
+        return;
+    };
+
+    for target in refinement_extension_targets_from_declaration(&extends.argument) {
+        registry
+            .refinement_extension_rules
+            .push(RefinementExtensionRule {
+                subtype_signature: info.signature.clone(),
+                subject: primary_subject_key(&extends.argument.subject),
+                parameters: info.parameters.clone(),
+                target,
+            });
+    }
+}
+
+fn refinement_extension_targets_from_declaration(
+    statement: &DeclarationStatement,
+) -> Vec<RefinementExtensionTarget> {
+    match &statement.relation {
+        Some(DeclarationRelation::Is(TypeExpression::RefinedCommand(command)))
+            if matches!(command.refined_tail, RefinedTail::Name { .. }) =>
+        {
+            vec![RefinementExtensionTarget::DynamicRefinedIs {
+                subject: primary_subject_key(&statement.subject),
+                command: command.clone(),
+            }]
+        }
+        _ => facts_from_declaration_statement(statement)
+            .into_iter()
+            .map(RefinementExtensionTarget::Fact)
+            .collect(),
     }
 }
 
@@ -377,6 +422,9 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            if group.extends.is_some() {
+                check_refines_extends(group, &context, path, locator, registry, event_log);
+            }
             check_optional_clauses(
                 &group.satisfies,
                 &context,
@@ -483,6 +531,70 @@ fn validate_top_level_item_types(
         | TopLevelItem::Person(_)
         | TopLevelItem::Resource(_) => {}
     }
+}
+
+fn check_refines_extends(
+    group: &RefinesGroup,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let Some(extends) = &group.extends else {
+        return;
+    };
+    let refines_subject = primary_subject_key(&group.refines.argument.subject);
+    let extends_subject = primary_subject_key(&extends.argument.subject);
+    if extends_subject != refines_subject {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_heading(&shape_for_header(&group.heading)),
+            "`Refines` extends subject must match the `Refines:` subject",
+        );
+    }
+
+    let Some(DeclarationRelation::Is(TypeExpression::RefinedCommand(command))) =
+        &extends.argument.relation
+    else {
+        check_declaration_statement(
+            &extends.argument,
+            context,
+            path,
+            locator,
+            registry,
+            event_log,
+        );
+        return;
+    };
+
+    if let RefinedTail::Name { name, .. } = &command.refined_tail {
+        if name != &refines_subject {
+            emit_error(
+                event_log,
+                path,
+                locator.locate_heading(&shape_for_header(&group.heading)),
+                "`[[...]]` in a `Refines` extends clause must name the `Refines:` subject",
+            );
+        }
+
+        check_is_subject(&extends.argument.subject, context, path, locator, event_log);
+        let active_command = active_refined_command_expression(command, context);
+        for expression in refined_command_expression_arguments(&active_command) {
+            check_expression(expression, context, path, locator, registry, event_log);
+        }
+        return;
+    }
+
+    check_declaration_statement(
+        &extends.argument,
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
 }
 
 fn validate_refines_target_matches_heading(
@@ -2572,6 +2684,16 @@ fn fact_mentions_name(fact: &TypeFact, name: &str) -> bool {
                 || args.iter().any(|arg| key_mentions_name(arg, name))
                 || key_mentions_name(target, name)
         }
+        TypeFact::RefinedIs {
+            subject,
+            ty,
+            base_ty,
+            ..
+        } => {
+            key_mentions_name(subject, name)
+                || key_mentions_name(ty, name)
+                || key_mentions_name(base_ty, name)
+        }
         TypeFact::FunctionType {
             subject,
             inputs,
@@ -2913,6 +3035,12 @@ fn fact_implies(
         }
     }
 
+    for reduced in reduce_refined_fact(&fact, context, registry) {
+        if fact_implies(&reduced, required, context, registry, seen) {
+            return true;
+        }
+    }
+
     if matches!(fact, TypeFact::Spec { .. }) {
         let mut spec_seen = HashSet::new();
         for reduced in reduce_spec_fact(&fact, context, registry, &mut spec_seen) {
@@ -2969,6 +3097,202 @@ fn reduce_extension_fact(
             context.normalize_fact(&substitute_fact(&rule.target, &substitutions))
         })
         .collect()
+}
+
+fn reduce_refined_fact(
+    fact: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let fact = context.normalize_fact(fact);
+    let TypeFact::RefinedIs {
+        subject,
+        ty,
+        signature,
+        base_ty,
+        base_signature,
+    } = &fact
+    else {
+        return Vec::new();
+    };
+
+    let mut result = vec![TypeFact::Is {
+        subject: subject.clone(),
+        ty: base_ty.clone(),
+        signature: base_signature.clone(),
+    }];
+
+    result.extend(refined_part_facts(
+        subject,
+        &ty,
+        &signature,
+        base_ty,
+        base_signature,
+    ));
+    result.extend(reduce_refinement_extension_fact(
+        subject,
+        &ty,
+        &signature,
+        base_ty,
+        base_signature,
+        context,
+        registry,
+    ));
+    result
+}
+
+fn refined_part_facts(
+    subject: &str,
+    ty: &str,
+    signature: &str,
+    base_ty: &str,
+    base_signature: &str,
+) -> Vec<TypeFact> {
+    let (Some(signature_segments), Some(ty_segments)) =
+        (split_refined_key(signature), split_refined_key(ty))
+    else {
+        return Vec::new();
+    };
+    if signature_segments.len() != ty_segments.len() || signature_segments.len() < 3 {
+        return Vec::new();
+    }
+
+    let mut result = Vec::new();
+    let last = signature_segments.len() - 1;
+    for part_index in 0..last {
+        let candidate_signature = format!(
+            "\\{}::{}",
+            signature_segments[part_index], signature_segments[last]
+        );
+        if candidate_signature == signature {
+            continue;
+        }
+
+        result.push(TypeFact::RefinedIs {
+            subject: subject.to_owned(),
+            ty: format!("\\{}::{}", ty_segments[part_index], ty_segments[last]),
+            signature: candidate_signature,
+            base_ty: base_ty.to_owned(),
+            base_signature: base_signature.to_owned(),
+        });
+    }
+    result
+}
+
+fn reduce_refinement_extension_fact(
+    subject: &str,
+    ty: &str,
+    signature: &str,
+    base_ty: &str,
+    base_signature: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let actuals = actuals_for_refined_type_key(signature, ty).unwrap_or_default();
+    registry
+        .refinement_extension_rules
+        .iter()
+        .filter(|rule| {
+            refinement_extension_rule_matches(
+                signature,
+                base_ty,
+                base_signature,
+                rule,
+                context,
+                registry,
+            )
+        })
+        .map(|rule| {
+            let mut substitutions = rule
+                .parameters
+                .iter()
+                .zip(&actuals)
+                .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
+                .collect::<HashMap<_, _>>();
+            substitutions.insert(rule.subject.clone(), subject.to_owned());
+            refinement_extension_target_fact(
+                &rule.target,
+                base_ty,
+                base_signature,
+                &substitutions,
+                context,
+            )
+        })
+        .collect()
+}
+
+fn refinement_extension_rule_matches(
+    signature: &str,
+    base_ty: &str,
+    base_signature: &str,
+    rule: &RefinementExtensionRule,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> bool {
+    if rule.subtype_signature == signature {
+        return true;
+    }
+
+    let (Some(fact_segments), Some(rule_segments)) = (
+        split_refined_key(signature),
+        split_refined_key(&rule.subtype_signature),
+    ) else {
+        return false;
+    };
+    if fact_segments.len() < 2 || rule_segments.len() < 2 {
+        return false;
+    }
+    if fact_segments[..fact_segments.len() - 1] != rule_segments[..rule_segments.len() - 1] {
+        return false;
+    }
+
+    let rule_base_signature = format!("\\{}", rule_segments.last().unwrap());
+    if base_signature == rule_base_signature {
+        return true;
+    }
+
+    let base_fact = TypeFact::Is {
+        subject: "#".to_owned(),
+        ty: base_ty.to_owned(),
+        signature: base_signature.to_owned(),
+    };
+    let required = TypeFact::Is {
+        subject: "#".to_owned(),
+        ty: rule_base_signature.clone(),
+        signature: rule_base_signature,
+    };
+    let mut seen = HashSet::new();
+    fact_implies(&base_fact, &required, context, registry, &mut seen)
+}
+
+fn refinement_extension_target_fact(
+    target: &RefinementExtensionTarget,
+    base_ty: &str,
+    base_signature: &str,
+    substitutions: &HashMap<String, String>,
+    context: &TypeContext,
+) -> TypeFact {
+    match target {
+        RefinementExtensionTarget::Fact(fact) => {
+            context.normalize_fact(&substitute_fact(fact, substitutions))
+        }
+        RefinementExtensionTarget::DynamicRefinedIs { subject, command } => {
+            let subject = substitute_key(subject, substitutions);
+            TypeFact::RefinedIs {
+                subject: context.normalize_key(&subject),
+                ty: context.normalize_key(&substitute_key(
+                    &key_for_refined_command_with_tail(command, base_ty.trim_start_matches('\\')),
+                    substitutions,
+                )),
+                signature: refined_command_signature_with_tail(
+                    command,
+                    base_signature.trim_start_matches('\\'),
+                ),
+                base_ty: context.normalize_key(base_ty),
+                base_signature: base_signature.to_owned(),
+            }
+        }
+    }
 }
 
 fn reduce_spec_fact(
@@ -3060,11 +3384,24 @@ fn fact_has_type_signature(
     ) {
         return true;
     }
+    if matches!(
+        &fact,
+        TypeFact::RefinedIs {
+            subject: fact_subject,
+            signature: fact_signature,
+            ..
+        } if fact_subject == subject && fact_signature == signature
+    ) {
+        return true;
+    }
 
     command_requirement_facts(&fact, context, registry)
         .iter()
         .any(|fact| fact_has_type_signature(fact, subject, signature, context, registry, seen))
         || reduce_extension_fact(&fact, context, registry)
+            .iter()
+            .any(|fact| fact_has_type_signature(fact, subject, signature, context, registry, seen))
+        || reduce_refined_fact(&fact, context, registry)
             .iter()
             .any(|fact| fact_has_type_signature(fact, subject, signature, context, registry, seen))
 }
@@ -3112,6 +3449,10 @@ fn command_fact_signature_and_actuals(fact: &TypeFact) -> Option<(String, Vec<St
         TypeFact::Is { ty, signature, .. } => {
             Some((signature.clone(), actuals_for_type_key(signature, ty)?))
         }
+        TypeFact::RefinedIs { ty, signature, .. } => Some((
+            signature.clone(),
+            actuals_for_refined_type_key(signature, ty)?,
+        )),
         TypeFact::InfixSpec {
             subject,
             signature,
@@ -3218,6 +3559,7 @@ fn fact_subject(fact: &TypeFact) -> &str {
         TypeFact::Is { subject, .. }
         | TypeFact::Spec { subject, .. }
         | TypeFact::InfixSpec { subject, .. }
+        | TypeFact::RefinedIs { subject, .. }
         | TypeFact::FunctionType { subject, .. } => subject,
     }
 }
@@ -3333,6 +3675,19 @@ impl TypeContext {
                 signature: signature.clone(),
                 args: args.iter().map(|arg| self.normalize_key(arg)).collect(),
                 target: self.normalize_key(target),
+            },
+            TypeFact::RefinedIs {
+                subject,
+                ty,
+                signature,
+                base_ty,
+                base_signature,
+            } => TypeFact::RefinedIs {
+                subject: self.normalize_key(subject),
+                ty: self.normalize_key(ty),
+                signature: signature.clone(),
+                base_ty: self.normalize_key(base_ty),
+                base_signature: base_signature.clone(),
             },
             TypeFact::FunctionType {
                 subject,
@@ -3897,6 +4252,19 @@ fn substitute_fact(fact: &TypeFact, substitutions: &HashMap<String, String>) -> 
                 .collect(),
             target: substitute_key(target, substitutions),
         },
+        TypeFact::RefinedIs {
+            subject,
+            ty,
+            signature,
+            base_ty,
+            base_signature,
+        } => TypeFact::RefinedIs {
+            subject: substitute_key(subject, substitutions),
+            ty: substitute_key(ty, substitutions),
+            signature: signature.clone(),
+            base_ty: substitute_key(base_ty, substitutions),
+            base_signature: base_signature.clone(),
+        },
         TypeFact::FunctionType {
             subject,
             inputs,
@@ -4098,6 +4466,13 @@ fn facts_from_declaration_is(
             .collect();
     }
 
+    if let TypeExpression::RefinedCommand(command) = ty {
+        return declaration_subject_keys(statement)
+            .into_iter()
+            .map(|subject| refined_fact_from_command(subject, command))
+            .collect();
+    }
+
     let Some((ty, signature)) = key_for_type_expression(ty) else {
         return Vec::new();
     };
@@ -4130,6 +4505,14 @@ fn facts_from_declaration_is_in_context(
                 inputs: inputs.clone(),
                 output: output.clone(),
             })
+            .collect();
+    }
+
+    if let TypeExpression::RefinedCommand(command) = ty {
+        let active_command = active_refined_command_expression(command, context);
+        return declaration_subject_keys(statement)
+            .into_iter()
+            .map(|subject| refined_fact_from_command(subject, &active_command))
             .collect();
     }
 
@@ -4178,6 +4561,13 @@ fn facts_from_is_statement(statement: &IsStatement) -> Vec<TypeFact> {
             .collect();
     }
 
+    if let TypeExpression::RefinedCommand(command) = &statement.ty {
+        return subject_keys_for_is_subject(&statement.subject)
+            .into_iter()
+            .map(|subject| refined_fact_from_command(subject, command))
+            .collect();
+    }
+
     let Some((ty, signature)) = key_for_type_expression(&statement.ty) else {
         return Vec::new();
     };
@@ -4202,6 +4592,10 @@ fn fact_from_expression(expression: &Expression) -> Option<TypeFact> {
         ExpressionKind::InfixSpecStatement { left, spec, right } if !spec.predicate => {
             fact_from_infix_spec_statement(left, spec, right)
         }
+        ExpressionKind::IsRefinedPredicate { subject, command } => Some(refined_fact_from_command(
+            key_for_expression(subject),
+            command,
+        )),
         _ => None,
     }
 }
@@ -4221,6 +4615,13 @@ fn fact_from_expression_in_context(
         }),
         ExpressionKind::InfixSpecStatement { left, spec, right } if !spec.predicate => {
             fact_from_infix_spec_statement_in_context(left, spec, right, context)
+        }
+        ExpressionKind::IsRefinedPredicate { subject, command } => {
+            let active_command = active_refined_command_expression(command, context);
+            Some(refined_fact_from_command(
+                key_for_expression(subject),
+                &active_command,
+            ))
         }
         _ => None,
     }
@@ -4273,6 +4674,13 @@ fn fact_from_type_assertion(subject: &Expression, ty: &TypeExpression) -> Option
         });
     }
 
+    if let TypeExpression::RefinedCommand(command) = ty {
+        return Some(refined_fact_from_command(
+            key_for_expression(subject),
+            command,
+        ));
+    }
+
     let (ty, signature) = key_for_type_expression(ty)?;
     Some(TypeFact::Is {
         subject: key_for_expression(subject),
@@ -4296,12 +4704,30 @@ fn fact_from_type_assertion_in_context(
         });
     }
 
+    if let TypeExpression::RefinedCommand(command) = ty {
+        let active_command = active_refined_command_expression(command, context);
+        return Some(refined_fact_from_command(
+            key_for_expression(subject),
+            &active_command,
+        ));
+    }
+
     let (ty, signature) = key_for_type_expression_in_context(ty, context)?;
     Some(TypeFact::Is {
         subject: key_for_expression(subject),
         ty,
         signature,
     })
+}
+
+fn refined_fact_from_command(subject: String, command: &RefinedCommandExpression) -> TypeFact {
+    TypeFact::RefinedIs {
+        subject,
+        ty: key_for_refined_command_expression(command),
+        signature: shape_for_refined_command_expression(command).signature,
+        base_ty: key_for_refined_command_base(command),
+        base_signature: shape_for_refined_command_base(command).signature,
+    }
 }
 
 fn function_type_inputs_as_facts(
@@ -4582,7 +5008,7 @@ fn key_for_non_command_type_expression(ty: &TypeExpression) -> String {
     match ty {
         TypeExpression::Builtin { chain, .. } => format!("\\\\{}", format_chain(chain)),
         TypeExpression::Command(command) => key_for_command_expression(command),
-        TypeExpression::RefinedCommand(_) => "<refined>".to_owned(),
+        TypeExpression::RefinedCommand(command) => key_for_refined_command_expression(command),
         TypeExpression::Function(function_type) => format_function_type(
             &function_type
                 .inputs
@@ -4826,6 +5252,95 @@ fn key_for_refined_command_expression(command: &RefinedCommandExpression) -> Str
     key
 }
 
+fn key_for_refined_command_base(command: &RefinedCommandExpression) -> String {
+    let mut key = format!("\\{}", format_refined_tail(&command.refined_tail));
+    append_expression_args(&mut key, &command.head_args);
+    for tail in &command.tail {
+        key.push(':');
+        key.push_str(&format_chain(&tail.chain));
+        append_expression_args(&mut key, &tail.args);
+    }
+    for args in &command.paren_args {
+        key.push('(');
+        key.push_str(
+            &args
+                .expressions
+                .iter()
+                .map(key_for_expression)
+                .collect::<Vec<_>>()
+                .join(","),
+        );
+        key.push(')');
+    }
+    key
+}
+
+fn key_for_refined_command_with_tail(
+    command: &RefinedCommandExpression,
+    tail_text: &str,
+) -> String {
+    let mut key = "\\".to_string();
+    if let Some(prefix) = &command.prefix_chain {
+        key.push_str(&format_chain(prefix));
+        key.push_str("::");
+    }
+    for (index, part) in command.parts.iter().enumerate() {
+        if index > 0 {
+            key.push_str("::");
+        }
+        key.push_str(&format_chain(&part.chain));
+        for tail in &part.tail {
+            key.push(':');
+            key.push_str(&format_chain(&tail.chain));
+            append_expression_args(&mut key, &tail.args);
+        }
+    }
+    key.push_str("::");
+    key.push_str(tail_text);
+    append_expression_args(&mut key, &command.head_args);
+    for tail in &command.tail {
+        key.push(':');
+        key.push_str(&format_chain(&tail.chain));
+        append_expression_args(&mut key, &tail.args);
+    }
+    for args in &command.paren_args {
+        key.push('(');
+        key.push_str(
+            &args
+                .expressions
+                .iter()
+                .map(key_for_expression)
+                .collect::<Vec<_>>()
+                .join(","),
+        );
+        key.push(')');
+    }
+    key
+}
+
+fn refined_command_signature_with_tail(
+    command: &RefinedCommandExpression,
+    tail_text: &str,
+) -> String {
+    let mut signature = "\\".to_string();
+    if let Some(prefix) = &command.prefix_chain {
+        signature.push_str(&format_chain(prefix));
+        signature.push_str("::");
+    }
+    let mut arg_groups = Vec::new();
+    for (index, part) in command.parts.iter().enumerate() {
+        if index > 0 {
+            signature.push_str("::");
+        }
+        signature.push_str(&format_chain(&part.chain));
+        add_expression_tail(&mut signature, &mut arg_groups, &part.tail);
+    }
+    signature.push_str("::");
+    signature.push_str(tail_text);
+    add_expression_tail(&mut signature, &mut arg_groups, &command.tail);
+    signature
+}
+
 fn key_for_infix_command(command: &InfixCommand) -> String {
     let mut key = format!("\\.{}", format_chain(&command.chain));
     append_expression_args(&mut key, &command.head_args);
@@ -4965,6 +5480,74 @@ fn actuals_for_type_key(signature: &str, ty: &str) -> Option<Vec<String>> {
     }
 
     rest.is_empty().then_some(actuals)
+}
+
+fn actuals_for_refined_type_key(signature: &str, ty: &str) -> Option<Vec<String>> {
+    let signature_segments = split_refined_key(signature)?;
+    let ty_segments = split_refined_key(ty)?;
+    if signature_segments.len() != ty_segments.len() {
+        return None;
+    }
+
+    let mut actuals = Vec::new();
+    for (signature_segment, ty_segment) in signature_segments.iter().zip(&ty_segments) {
+        collect_segment_actuals(signature_segment, ty_segment, &mut actuals)?;
+    }
+    Some(actuals)
+}
+
+fn collect_segment_actuals(
+    signature_segment: &str,
+    ty_segment: &str,
+    actuals: &mut Vec<String>,
+) -> Option<()> {
+    let parts = signature_segment.split(':').collect::<Vec<_>>();
+    let first = parts.first()?;
+    let mut rest = ty_segment.strip_prefix(first)?;
+    collect_adjacent_key_args(&mut rest, actuals)?;
+
+    for part in parts.iter().skip(1) {
+        rest = rest.strip_prefix(':')?;
+        rest = rest.strip_prefix(part)?;
+        collect_adjacent_key_args(&mut rest, actuals)?;
+    }
+
+    rest.is_empty().then_some(())
+}
+
+fn split_refined_key(key: &str) -> Option<Vec<String>> {
+    let body = key.strip_prefix('\\')?;
+    let mut segments = Vec::new();
+    let mut start = 0;
+    let mut index = 0;
+    let mut paren_depth = 0usize;
+    let mut brace_depth = 0usize;
+    let mut bracket_depth = 0usize;
+
+    while index < body.len() {
+        let rest = &body[index..];
+        if rest.starts_with("::") && paren_depth == 0 && brace_depth == 0 && bracket_depth == 0 {
+            segments.push(body[start..index].to_owned());
+            index += "::".len();
+            start = index;
+            continue;
+        }
+
+        let ch = rest.chars().next()?;
+        match ch {
+            '(' => paren_depth += 1,
+            ')' => paren_depth = paren_depth.saturating_sub(1),
+            '{' => brace_depth += 1,
+            '}' => brace_depth = brace_depth.saturating_sub(1),
+            '[' => bracket_depth += 1,
+            ']' => bracket_depth = bracket_depth.saturating_sub(1),
+            _ => {}
+        }
+        index += ch.len_utf8();
+    }
+
+    segments.push(body[start..].to_owned());
+    (segments.len() >= 2).then_some(segments)
 }
 
 fn collect_adjacent_key_args(rest: &mut &str, actuals: &mut Vec<String>) -> Option<()> {
@@ -5129,6 +5712,7 @@ fn format_fact(fact: &TypeFact) -> String {
             };
             format!("{subject} {signature}{rendered_args} {target}")
         }
+        TypeFact::RefinedIs { subject, ty, .. } => format!("{subject} is {ty}"),
         TypeFact::FunctionType {
             subject,
             inputs,

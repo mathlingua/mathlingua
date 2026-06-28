@@ -728,6 +728,24 @@ pub(in crate::frontend::structural::parser) fn parse_required_called_texts(
     })
 }
 
+/// Parses one or more required `AdjectiveText` entries.
+pub(in crate::frontend::structural::parser) fn parse_required_adjective_texts(
+    section: &ProtoSection,
+    tracker: &mut EventLog,
+) -> Option<OneOrMore<AdjectiveText>> {
+    let starting_issue_count = tracker.issue_count();
+    let texts = parse_optional_texts(Some(section), tracker, AdjectiveText);
+    one_or_more(texts, || {
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                "Expected adjective text",
+            );
+        }
+    })
+}
+
 /// Parses one or more required `WritingText` entries.
 pub(in crate::frontend::structural::parser) fn parse_required_writing_texts(
     section: &ProtoSection,
@@ -1122,6 +1140,40 @@ pub(super) fn parse_documented_item_group(
     }
 }
 
+/// Dispatches nested `Documented:` groups for `Refines:` entries.
+///
+/// Refinements are named by adjectives, so `called:` is intentionally rejected
+/// here even though it remains valid for ordinary definitions.
+pub(super) fn parse_refines_documented_item_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<DocumentedItem> {
+    match first_section_label(group)? {
+        "written" => parse_written(group, tracker).map(DocumentedItem::Written),
+        "adjective" => parse_adjective(group, tracker).map(DocumentedItem::Adjective),
+        "called" => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                "`Refines` documentation does not accept `called:`; use `adjective:`",
+            );
+            None
+        }
+        "writing" => parse_writing(group, tracker).map(DocumentedItem::Writing),
+        "overview" => parse_overview(group, tracker).map(DocumentedItem::Overview),
+        "related" => parse_related(group, tracker).map(DocumentedItem::Related),
+        "discoverer" => parse_discoverer(group, tracker).map(DocumentedItem::Discoverer),
+        other => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                format!("Unexpected documented group `{other}`"),
+            );
+            None
+        }
+    }
+}
+
 /// Dispatches nested `Justified:` groups to justification item parsers.
 pub(super) fn parse_justified_item_group(
     group: &ProtoGroup,
@@ -1449,6 +1501,21 @@ pub(in crate::frontend::structural::parser) fn parse_called(
             parse_required_written_texts(section, tracker)
                 .map(|arguments| WrittenSection { arguments })
         }),
+    })
+}
+
+/// Parses an `adjective:` documentation group for `Refines:` entries.
+pub(in crate::frontend::structural::parser) fn parse_adjective(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<AdjectiveGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("adjective", &group.sections, tracker, &["adjective"])?;
+    Some(AdjectiveGroup {
+        heading,
+        adjective: AdjectiveSection {
+            arguments: parse_required_adjective_texts(section(&sections, "adjective")?, tracker)?,
+        },
     })
 }
 
@@ -2535,8 +2602,13 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
                 .map(|arguments| JustifiedSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
-                .map(|arguments| DocumentedSection { arguments })
+            parse_required_groups(
+                section,
+                "Documented",
+                tracker,
+                parse_refines_documented_item_group,
+            )
+            .map(|arguments| DocumentedSection { arguments })
         }),
         aliases: sections.get("Aliases").copied().and_then(|section| {
             parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)

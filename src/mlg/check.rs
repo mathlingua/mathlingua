@@ -1033,11 +1033,13 @@ mod tests {
     [\(bounded)::function:on{A}:to{B}]
     Refines: f(x__) is \function:on{A}:to{B}
     Documented:
+    . adjective: "bounded"
     . written: "\operatorname{bounded}"
 
     [\(continuous)::function:on{A}:to{B}]
     Refines: f(x__) is \function:on{A}:to{B}
     Documented:
+    . adjective: "continuous"
     . written: "\operatorname{continuous}"
 
     Theorem:
@@ -1061,6 +1063,167 @@ mod tests {
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
+    }
+
+    #[test]
+    fn check_accepts_refines_adjectives_and_optional_expression_tails() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("refined-adjective.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+    . written: "\operatorname{set}"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__)
+    when: A, B is \set
+    Documented:
+    . called: "function"
+    . written: "f?"
+
+    [\(injective)::function:?on{A}:?to{B}]
+    Refines: f(x__) is \function:?on{A}:?to{B}
+    when: A, B is \set
+    satisfies:
+    . forAll: x1, x2 "in" A
+      then:
+      . if: f(x1) = f(x2)
+        then: x1 = x2
+    Documented:
+    . adjective: "injective"
+    . written: "\operatorname{injective}"
+
+    Theorem:
+    given:
+    . A, B is \set
+    . f is \(injective)::function:?on{A}:?to{B}
+    then: f is? \function:?on{A}:?to{B}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("refined-adjective.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_omits_optional_expression_tails_when_arguments_are_not_defined() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("optional-expression-tail.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\tag:?on{A}]
+    Describes: x
+    when: A is \set
+    Documented:
+    . called: "tag"
+    . written: "\operatorname{tag}"
+
+    Theorem:
+    given: x is \tag:?on{A}
+    then: x is? \tag
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("optional-expression-tail.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_invalid_refined_headings_and_refines_targets() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("invalid-refines.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__)
+    when: A, B is \set
+    Documented:
+    . called: "function"
+    . written: "f?"
+
+    [\(injective)::function:?on{A}:?to{B}]
+    Refines: f(x__) is \function:?on{A}
+    when: A, B is \set
+    Documented:
+    . adjective: "injective"
+
+    [\(surjective)::function:?on{A}:?to{B}]
+    Refines: f(x__) is \function:?on{A}:?to{B}
+    when: A, B is \set
+    Documented:
+    . called: "surjective"
+    . adjective: "surjective"
+
+    [\(bad)::function]
+    Describes: g
+    Documented:
+    . written: "\operatorname{bad}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("invalid-refines.mlg")],
+            &mut event_log,
+        );
+        let messages = user_events(&event_log)
+            .into_iter()
+            .filter_map(|event| event.as_message().map(|message| message.message.clone()))
+            .collect::<Vec<_>>();
+
+        assert_eq!(result.files_checked, 1);
+        assert!(messages.iter().any(|message| message
+            == "Refines target must exactly match the command after `::` in the refined heading"));
+        assert!(
+            messages.iter().any(|message| message
+                == "Refined command headings may only be used with Refines entries")
+        );
+        assert!(messages.iter().any(|message| {
+            message == "`Refines` documentation does not accept `called:`; use `adjective:`"
+        }));
+        assert!(event_log.has_errors());
     }
 
     #[test]
@@ -2818,7 +2981,7 @@ mod tests {
             &canonical_file,
             13,
             1,
-            "Refines entries must include either a `called:` or `written:` item in `Documented:`"
+            "Refines entries must include an `adjective:` item in `Documented:`"
         ));
         assert!(event_log.has_errors());
     }

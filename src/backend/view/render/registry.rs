@@ -185,7 +185,7 @@ pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
             primary_declaration_statement_name(&group.defines.argument),
             group.documented.as_ref(),
         ),
-        TopLevelItem::Refines(group) => render_entries_from_parts(
+        TopLevelItem::Refines(group) => render_refines_entries(
             command_header_signatures(&group.heading),
             primary_declaration_statement_name(&group.refines.argument),
             group.documented.as_ref(),
@@ -220,6 +220,36 @@ pub(super) fn render_entries_from_parts(
     documented: Option<&DocumentedSection>,
 ) -> Vec<RenderEntry> {
     render_entries_from_parts_with_fallback(signatures, subject_variable, documented, None)
+}
+
+pub(super) fn render_refines_entries(
+    signatures: Vec<CommandHeaderSignature>,
+    subject_variable: Option<String>,
+    documented: Option<&DocumentedSection>,
+) -> Vec<RenderEntry> {
+    let Some(documented) = documented else {
+        return Vec::new();
+    };
+
+    let adjective = documented.arguments.iter().find_map(|item| match item {
+        DocumentedItem::Adjective(group) => Some(&group.adjective),
+        _ => None,
+    });
+    let written = documented.arguments.iter().find_map(|item| match item {
+        DocumentedItem::Written(group) => Some(&group.written),
+        _ => None,
+    });
+
+    let Some(adjective) = adjective else {
+        return Vec::new();
+    };
+
+    render_entries_from_signatures(
+        signatures,
+        subject_variable,
+        Some((join_adjective_text(adjective), CalledRenderSource::Called)),
+        written.map(join_written_text),
+    )
 }
 
 fn render_theorem_like_entries(
@@ -376,6 +406,15 @@ fn is_title_case_stop_word(word: &str) -> bool {
 }
 
 pub(super) fn join_called_text(section: &CalledSection) -> String {
+    section
+        .arguments
+        .iter()
+        .map(|text| text.0.as_str())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+pub(super) fn join_adjective_text(section: &AdjectiveSection) -> String {
     section
         .arguments
         .iter()

@@ -61,6 +61,17 @@ pub(super) fn collect_document_definitions(
             );
             continue;
         }
+        if matches!(definition.heading, CommandHeader::Refined(_))
+            && kind != DefinitionKind::Refines
+        {
+            emit_error(
+                event_log,
+                &file.path,
+                position,
+                "Refined command headings may only be used with Refines entries",
+            );
+            continue;
+        }
         check_documented_rendering(file, kind, definition.documented, position, event_log);
         for header_shape in shapes_for_header(definition.heading) {
             if let Some(previous) = registry.definitions.get(&header_shape.shape.signature) {
@@ -171,6 +182,25 @@ pub(super) fn check_documented_rendering(
         kind,
         DefinitionKind::Describes | DefinitionKind::Defines | DefinitionKind::Refines
     ) {
+        return;
+    }
+
+    if kind == DefinitionKind::Refines {
+        let has_adjective = documented.is_some_and(|section| {
+            section
+                .arguments
+                .iter()
+                .any(|item| matches!(item, DocumentedItem::Adjective(_)))
+        });
+
+        if !has_adjective {
+            emit_error(
+                event_log,
+                &file.path,
+                position,
+                "Refines entries must include an `adjective:` item in `Documented:`",
+            );
+        }
         return;
     }
 

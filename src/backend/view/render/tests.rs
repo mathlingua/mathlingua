@@ -189,16 +189,14 @@ Documented:
 [\(bounded)::function:on{A}:to{B}]
 Refines: f(x__) is \function:on{A}:to{B}
 Documented:
-. called: "bounded"
-  written:
-  . "\operatorname{Bounded}"
+. adjective: "bounded"
+. written: "\operatorname{Bounded}"
 
 [\(continuous)::function:on{A}:to{B}]
 Refines: f(x__) is \function:on{A}:to{B}
 Documented:
-. called: "continuous"
-  written:
-  . "\operatorname{Continuous}"
+. adjective: "continuous"
+. written: "\operatorname{Continuous}"
 "#,
     );
 
@@ -289,7 +287,7 @@ Documented:
 [\(continuous)::function:on{A}:to{B}]
 Refines: f is \function:on{A}:to{B}
 Documented:
-. called: "continuous"
+. adjective: "continuous"
 . written: "\operatorname{Continuous}"
 "#,
     );

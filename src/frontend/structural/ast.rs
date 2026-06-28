@@ -164,6 +164,9 @@ pub struct WrittenText(pub String);
 pub struct CalledText(pub String);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AdjectiveText(pub String);
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WritingText(pub String);
 
 argument_section!(DescribesSection, FormOrDeclaration);
@@ -204,6 +207,7 @@ zero_or_more_arguments_section!(SignifiesSection, OpenText);
 zero_or_more_arguments_section!(ViewableSection, OpenText);
 zero_or_more_arguments_section!(ThroughSection, OpenText);
 arguments_section!(CalledSection, CalledText);
+arguments_section!(AdjectiveSection, AdjectiveText);
 argument_section!(WritingSection, WritingAlias);
 arguments_section!(AsSection, WritingText);
 argument_section!(OverviewSection, OpenText);
@@ -337,6 +341,7 @@ pub enum ProvidesItem {
 pub enum DocumentedItem {
     Written(WrittenGroup),
     Called(CalledGroup),
+    Adjective(AdjectiveGroup),
     Writing(WritingGroup),
     Overview(OverviewGroup),
     Related(RelatedGroup),
@@ -688,6 +693,12 @@ pub struct CalledGroup {
     pub heading: Option<LabelHeader>,
     pub called: CalledSection,
     pub written: Option<WrittenSection>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AdjectiveGroup {
+    pub heading: Option<LabelHeader>,
+    pub adjective: AdjectiveSection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

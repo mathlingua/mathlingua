@@ -983,7 +983,12 @@ pub(super) fn parse_command_expression_tail(
             break;
         }
 
-        let (chain_text, rest) = split_prefix_by_delimiters(&input[1..], &['{']);
+        let (optional, tail_body) = if let Some(rest) = input.strip_prefix(":?") {
+            (true, rest)
+        } else {
+            (false, &input[1..])
+        };
+        let (chain_text, rest) = split_prefix_by_delimiters(tail_body, &['{']);
         let chain = parse_chain(chain_text)?;
         let (args, remaining) = parse_curly_expression_args(rest)?;
         if args.is_empty() {
@@ -996,6 +1001,7 @@ pub(super) fn parse_command_expression_tail(
             span: span_all(&input[..input.len() - remaining.len()]),
             chain,
             args,
+            optional,
         });
         input = remaining;
     }
@@ -3371,15 +3377,16 @@ mod tests {
     }
 
     #[test]
-    fn rejects_optional_command_tail_parts_outside_headers() {
-        let expression = parse_expression(r#"\foo:?baz{A}"#)
-            .expect_err("expected optional tail in expression to fail");
-        assert!(
-            expression.to_string().contains("InvalidToken")
-                || expression.to_string().contains("UnrecognizedToken")
-                || expression.to_string().contains("invalid"),
-            "expected invalid expression error, got {expression}"
-        );
+    fn parses_optional_command_tail_parts_in_expressions() {
+        let expression =
+            parse_expression(r#"\foo:?baz{A}"#).expect("expected optional tail in expression");
+        match expression.kind {
+            ExpressionKind::Command(command) => {
+                assert_eq!(command.tail.len(), 1);
+                assert!(command.tail[0].optional);
+            }
+            other => panic!("expected command expression, got {other:?}"),
+        }
 
         let alias = parse_expression_alias(r#"\foo:?baz{A} :=> A"#)
             .expect_err("expected optional tail in expression alias lhs to fail");

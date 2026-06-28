@@ -58,7 +58,7 @@ mod tests {
 
     #[test]
     fn lexes_command_related_tokens() {
-        let tokens: Vec<_> = Lexer::new(r#"\function:on{A}:to{B}(x)"#)
+        let tokens: Vec<_> = Lexer::new(r#"\function:?on{A}:to{B}(x)"#)
             .map(|item| item.expect("expected valid token").1)
             .collect();
 
@@ -67,7 +67,7 @@ mod tests {
             vec![
                 Token::CommandStart,
                 Token::Name("function".to_string()),
-                Token::Colon,
+                Token::OptionalColon,
                 Token::Name("on".to_string()),
                 Token::LBrace,
                 Token::Name("A".to_string()),

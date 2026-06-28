@@ -96,6 +96,7 @@ pub struct CommandExpressionTailPart {
     pub span: Span,
     pub chain: Chain,
     pub args: Vec<CurlyExpressionArgs>,
+    pub optional: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

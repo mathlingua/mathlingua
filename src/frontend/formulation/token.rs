@@ -133,6 +133,8 @@ pub enum Token {
     RBracket,
     #[token(",")]
     Comma,
+    #[token(":?")]
+    OptionalColon,
     #[token(":")]
     Colon,
     #[token(".")]

@@ -49,6 +49,7 @@ extern {
         "[" => Token::LBracket,
         "]" => Token::RBracket,
         "," => Token::Comma,
+        ":?" => Token::OptionalColon,
         ":" => Token::Colon,
         "." => Token::Dot,
         "|" => Token::Pipe,
@@ -552,6 +553,13 @@ CommandExpressionTailPart: ast::CommandExpressionTailPart = {
         span: Span::new(l, r),
         chain,
         args,
+        optional: false,
+    },
+    <l:@L> ":?" <chain:Chain> <args:CurlyExpressionArgsList> <r:@R> => ast::CommandExpressionTailPart {
+        span: Span::new(l, r),
+        chain,
+        args,
+        optional: true,
     },
 };
 

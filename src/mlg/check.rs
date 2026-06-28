@@ -1572,6 +1572,66 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_disambiguated_else_operator_results_as_command_arguments() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir
+            .path()
+            .join("disambiguated-minus-union-arguments.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ - y_ :=> x_ \.set.minus./ y_
+    Documented:
+    . called: "set"
+
+    [A \.set.minus./ B]
+    Defines: C is \set
+    when: A, B is \set
+    Documented:
+    . called: "set difference of $A?$ and $B?$"
+    . written: "A? \backslash B?"
+
+    [A \.set.union./ B]
+    Defines: C is \set
+    when: A, B is \set
+    Documented:
+    . called: "union of $A?$ and $B?$"
+    . written: "A? \cup B?"
+
+    [A \.set.symmetric.difference./ B]
+    Defines: C := (A - B) \.set.union./ (B - A) is \set
+    when: A, B is \set
+    Documented:
+    . called: "symmetric difference of $A?$ and $B?$"
+    . written: "A? \Delta B?"
+
+    [x_ - y_]
+    Disambiguates:
+    else: x_ :-: y_
+    Documented:
+    . written: "x_? - y_?"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("disambiguated-minus-union-arguments.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_provided_expression_symbols_with_owner_context() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("provided-symbol-owner-context.mlg");

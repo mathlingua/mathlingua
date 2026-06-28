@@ -1716,7 +1716,10 @@ fn check_function_call_inputs(
         }
 
         for (input, argument) in inputs.iter().zip(arguments) {
-            let required = instantiate_function_type_spec(input, &key_for_expression(argument));
+            let required = instantiate_function_type_spec(
+                input,
+                &effective_key_for_expression(argument, context, registry),
+            );
             if !prove_fact(&required, context, registry) {
                 emit_error(
                     event_log,
@@ -1764,7 +1767,10 @@ fn check_disambiguated_function_call(
     {
         return;
     }
-    let actuals = arguments.iter().map(key_for_expression).collect::<Vec<_>>();
+    let actuals = arguments
+        .iter()
+        .map(|argument| effective_key_for_expression(argument, context, registry))
+        .collect::<Vec<_>>();
     let position = locator.locate_symbol(name);
     check_disambiguated_expression(
         &key,
@@ -1809,7 +1815,10 @@ fn check_disambiguated_binary(
         );
         return;
     }
-    let actuals = vec![key_for_expression(left), key_for_expression(right)];
+    let actuals = vec![
+        effective_key_for_expression(left, context, registry),
+        effective_key_for_expression(right, context, registry),
+    ];
     let position = locator.locate_symbol(&symbol);
     check_disambiguated_expression(
         &key, &actuals, &label, position, context, path, locator, registry, event_log,
@@ -1833,7 +1842,7 @@ fn check_disambiguated_prefix(
     {
         return;
     }
-    let actuals = vec![key_for_expression(expression)];
+    let actuals = vec![effective_key_for_expression(expression, context, registry)];
     let position = locator.locate_symbol(&symbol);
     check_disambiguated_expression(
         &key, &actuals, &label, position, context, path, locator, registry, event_log,
@@ -1853,7 +1862,7 @@ fn check_disambiguated_postfix(
     if !has_disambiguation_for_key(&key, registry) {
         return;
     }
-    let actuals = vec![key_for_expression(expression)];
+    let actuals = vec![effective_key_for_expression(expression, context, registry)];
     let position = locator.locate_symbol(&operator.text);
     check_disambiguated_expression(
         &key,
@@ -2115,6 +2124,348 @@ fn check_provided_symbol_target(
         );
     }
     check_expression(&rule.target, &child, path, locator, registry, event_log);
+}
+
+fn effective_key_for_expression(
+    expression: &Expression,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> String {
+    let mut resolving = HashSet::new();
+    effective_key_for_expression_inner(expression, context, registry, &mut resolving)
+}
+
+fn effective_key_for_expression_inner(
+    expression: &Expression,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> String {
+    if let ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } =
+        &expression.kind
+    {
+        return effective_key_for_expression_inner(expression, context, registry, resolving);
+    }
+
+    let raw_key = context.normalize_key(&key_for_expression(expression));
+    if !resolving.insert(raw_key.clone()) {
+        return raw_key;
+    }
+
+    let result = match &expression.kind {
+        ExpressionKind::FunctionCall { name, arguments } => {
+            effective_key_for_function_call(name, arguments, context, registry, resolving)
+        }
+        ExpressionKind::MemberCall {
+            owner,
+            name,
+            arguments,
+        } => effective_key_for_member_call(owner, name, arguments, context, registry, resolving),
+        ExpressionKind::MemberAccess { owner, name } => {
+            effective_key_for_member_access(owner, name, context, registry, resolving)
+        }
+        ExpressionKind::Prefix {
+            operator,
+            expression,
+        } => {
+            effective_key_for_prefix_expression(operator, expression, context, registry, resolving)
+        }
+        ExpressionKind::Postfix {
+            expression,
+            operator,
+        } => {
+            effective_key_for_postfix_expression(expression, operator, context, registry, resolving)
+        }
+        ExpressionKind::Binary {
+            left,
+            operator,
+            right,
+        } => {
+            effective_key_for_binary_expression(left, operator, right, context, registry, resolving)
+        }
+        _ => None,
+    }
+    .unwrap_or_else(|| raw_key.clone());
+
+    resolving.remove(&raw_key);
+    result
+}
+
+fn effective_keys_for_expressions(
+    expressions: &[Expression],
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Vec<String> {
+    expressions
+        .iter()
+        .map(|expression| {
+            effective_key_for_expression_inner(expression, context, registry, resolving)
+        })
+        .collect()
+}
+
+fn effective_key_for_function_call(
+    name: &str,
+    arguments: &[Expression],
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Option<String> {
+    let key = DisambiguationKey::Function {
+        name: name.to_owned(),
+        arity: arguments.len(),
+    };
+    let actuals = effective_keys_for_expressions(arguments, context, registry, resolving);
+    effective_key_for_disambiguated_target(&key, &actuals, context, registry, resolving)
+}
+
+fn effective_key_for_member_call(
+    owner: &Expression,
+    name: &str,
+    arguments: &[Expression],
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Option<String> {
+    let key = DisambiguationKey::Function {
+        name: name.to_owned(),
+        arity: arguments.len(),
+    };
+    let owner_actual = effective_key_for_expression_inner(owner, context, registry, resolving);
+    let actuals = effective_keys_for_expressions(arguments, context, registry, resolving);
+    let rule = find_member_provided_symbol_rule(&key, &owner_actual, &actuals, context, registry)?;
+    Some(effective_key_for_provided_symbol_target(
+        rule,
+        &actuals,
+        Some(&owner_actual),
+        context,
+        registry,
+        resolving,
+    ))
+}
+
+fn effective_key_for_member_access(
+    owner: &Expression,
+    name: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Option<String> {
+    effective_key_for_member_call(owner, name, &[], context, registry, resolving)
+}
+
+fn effective_key_for_prefix_expression(
+    operator: &UnaryOperator,
+    expression: &Expression,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Option<String> {
+    let (key, _, _) = disambiguation_key_for_prefix_operator(operator);
+    let actuals = vec![effective_key_for_expression_inner(
+        expression, context, registry, resolving,
+    )];
+    if let Some(key) =
+        effective_key_for_disambiguated_target(&key, &actuals, context, registry, resolving)
+    {
+        return Some(key);
+    }
+
+    let rule = find_provided_symbol_rule(
+        &key,
+        NamedOperatorKind::BothColon,
+        &actuals,
+        context,
+        registry,
+    )?;
+    let owner_actual = provided_symbol_owner_actual(NamedOperatorKind::LeftColon, &actuals);
+    Some(effective_key_for_provided_symbol_target(
+        rule,
+        &actuals,
+        owner_actual.as_deref(),
+        context,
+        registry,
+        resolving,
+    ))
+}
+
+fn effective_key_for_postfix_expression(
+    expression: &Expression,
+    operator: &Operator,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Option<String> {
+    let key = DisambiguationKey::PostfixOperator(operator.text.clone());
+    let actuals = vec![effective_key_for_expression_inner(
+        expression, context, registry, resolving,
+    )];
+    if let Some(key) =
+        effective_key_for_disambiguated_target(&key, &actuals, context, registry, resolving)
+    {
+        return Some(key);
+    }
+
+    let rule = find_provided_symbol_rule(
+        &key,
+        NamedOperatorKind::BothColon,
+        &actuals,
+        context,
+        registry,
+    )?;
+    let owner_actual = provided_symbol_owner_actual(NamedOperatorKind::LeftColon, &actuals);
+    Some(effective_key_for_provided_symbol_target(
+        rule,
+        &actuals,
+        owner_actual.as_deref(),
+        context,
+        registry,
+        resolving,
+    ))
+}
+
+fn effective_key_for_binary_expression(
+    left: &Expression,
+    operator: &BinaryOperator,
+    right: &Expression,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Option<String> {
+    let (symbol, kind) = binary_operator_symbol_and_kind(operator);
+    let actuals = vec![
+        effective_key_for_expression_inner(left, context, registry, resolving),
+        effective_key_for_expression_inner(right, context, registry, resolving),
+    ];
+
+    if let Some(kind) = provided_binary_operator_kind(&symbol, kind) {
+        if let Some(rule) = find_provided_symbol_rule(
+            &DisambiguationKey::BinaryOperator(symbol.clone()),
+            kind,
+            &actuals,
+            context,
+            registry,
+        ) {
+            let owner_actual = provided_symbol_owner_actual(kind, &actuals);
+            return Some(effective_key_for_provided_symbol_target(
+                rule,
+                &actuals,
+                owner_actual.as_deref(),
+                context,
+                registry,
+                resolving,
+            ));
+        }
+    }
+
+    if binary_operator_uses_provided_by_default(operator) {
+        return None;
+    }
+
+    let (key, _, _) = disambiguation_key_for_binary_operator(operator)?;
+    effective_key_for_disambiguated_target(&key, &actuals, context, registry, resolving)
+}
+
+fn effective_key_for_disambiguated_target(
+    key: &DisambiguationKey,
+    actuals: &[String],
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Option<String> {
+    let rule = registry
+        .disambiguations
+        .iter()
+        .find(|rule| disambiguation_keys_match(key, &rule.key))?;
+    if rule.parameters.len() != actuals.len()
+        || context
+            .active_disambiguations
+            .iter()
+            .any(|active| disambiguation_keys_match(active, &rule.key))
+    {
+        return None;
+    }
+
+    for branch in &rule.branches {
+        if disambiguation_branch_matches(rule, branch, actuals, context, registry) {
+            return effective_key_for_disambiguation_target(
+                rule,
+                branch.substitutions.as_slice(),
+                actuals,
+                &branch.to,
+                context,
+                registry,
+                resolving,
+            );
+        }
+    }
+
+    let expression = rule.else_expression.as_ref()?;
+    effective_key_for_disambiguation_target(
+        rule,
+        &[],
+        actuals,
+        expression,
+        context,
+        registry,
+        resolving,
+    )
+}
+
+fn effective_key_for_disambiguation_target(
+    rule: &DisambiguationRule,
+    branch_substitutions: &[(String, String)],
+    actuals: &[String],
+    expression: &Expression,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Option<String> {
+    let mut child = context.activate_disambiguation(&rule.key)?;
+    let substitutions = disambiguation_substitutions(rule, actuals, context);
+    for parameter in &rule.parameters {
+        child.declare_name(parameter.clone());
+    }
+    for (parameter, actual) in rule.parameters.iter().zip(actuals) {
+        child.add_substitution(parameter.clone(), context.normalize_key(actual));
+    }
+    for (left, right) in branch_substitutions {
+        child.add_substitution(
+            substitute_key(left, &substitutions),
+            substitute_key(right, &substitutions),
+        );
+    }
+
+    Some(effective_key_for_expression_inner(
+        expression, &child, registry, resolving,
+    ))
+}
+
+fn effective_key_for_provided_symbol_target(
+    rule: &ProvidedSymbolRule,
+    actuals: &[String],
+    owner_actual: Option<&str>,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> String {
+    let mut child = context.clone();
+    for parameter in &rule.parameters {
+        child.declare_name(parameter.clone());
+    }
+    for (parameter, actual) in rule.parameters.iter().zip(actuals) {
+        child.add_substitution(parameter.clone(), context.normalize_key(actual));
+    }
+    if let Some(owner_actual) = owner_actual {
+        child.declare_name(rule.owner_subject.clone());
+        child.add_substitution(
+            rule.owner_subject.clone(),
+            context.normalize_key(owner_actual),
+        );
+    }
+
+    effective_key_for_expression_inner(&rule.target, &child, registry, resolving)
 }
 
 fn binary_operator_symbol_and_kind(operator: &BinaryOperator) -> (String, NamedOperatorKind) {
@@ -2501,7 +2852,7 @@ fn check_command_expression(
     let position = locator.locate_reference(&shape);
     let actuals = command_expression_arguments(&active_command)
         .into_iter()
-        .map(key_for_expression)
+        .map(|expression| effective_key_for_expression(expression, context, registry))
         .collect::<Vec<_>>();
     check_command_requirements(
         &shape.signature,
@@ -2527,7 +2878,7 @@ fn check_command_type_expression(
     let position = locator.locate_reference(&shape);
     let actuals = command_expression_arguments(&active_command)
         .into_iter()
-        .map(key_for_expression)
+        .map(|expression| effective_key_for_expression(expression, context, registry))
         .collect::<Vec<_>>();
     if command_type_is_nominal_without_arguments(&shape.signature, &actuals, registry) {
         return;
@@ -2568,13 +2919,13 @@ fn check_infix_command(
     let shape = shape_for_infix_command(&active_command);
     let position = locator.locate_reference(&shape);
     let mut actuals = Vec::new();
-    actuals.push(key_for_expression(left));
+    actuals.push(effective_key_for_expression(left, context, registry));
     actuals.extend(
         infix_command_arguments(&active_command)
             .into_iter()
-            .map(key_for_expression),
+            .map(|expression| effective_key_for_expression(expression, context, registry)),
     );
-    actuals.push(key_for_expression(right));
+    actuals.push(effective_key_for_expression(right, context, registry));
     check_command_requirements(
         &shape.signature,
         &actuals,
@@ -2599,7 +2950,7 @@ fn check_refined_command_type_expression(
     let position = locator.locate_reference(&shape);
     let actuals = refined_command_expression_arguments(&active_command)
         .into_iter()
-        .map(key_for_expression)
+        .map(|expression| effective_key_for_expression(expression, context, registry))
         .collect::<Vec<_>>();
     if command_type_is_nominal_without_arguments(&shape.signature, &actuals, registry) {
         return;
@@ -2628,7 +2979,7 @@ fn check_refined_command_expression(
     let position = locator.locate_reference(&shape);
     let actuals = refined_command_expression_arguments(&active_command)
         .into_iter()
-        .map(key_for_expression)
+        .map(|expression| effective_key_for_expression(expression, context, registry))
         .collect::<Vec<_>>();
     check_command_requirements(
         &shape.signature,

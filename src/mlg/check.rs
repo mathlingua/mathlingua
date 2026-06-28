@@ -1629,7 +1629,9 @@ mod tests {
     #[test]
     fn check_accepts_provided_operator_when_operand_is_defined_command_result() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("defined-command-result-provided-operator.mlg");
+        let file = temp_dir
+            .path()
+            .join("defined-command-result-provided-operator.mlg");
 
         write_mlg_fixture(
             &file,
@@ -1689,7 +1691,9 @@ mod tests {
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("defined-command-result-provided-operator.mlg")],
+            &[PathBuf::from(
+                "defined-command-result-provided-operator.mlg",
+            )],
             &mut event_log,
         );
 

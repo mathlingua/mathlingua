@@ -265,9 +265,8 @@ An empty document is supported by the current implementation because `Document.i
 | First section label | AST node | Heading | Ordered sections |
 | --- | --- | --- | --- |
 | `Title` | `TitleGroup` | none | `Title: OpenText` |
-| `Section` | `SectionGroup` | none | `Section: OpenText` |
-| `Subsection` | `SubsectionGroup` | none | `Subsection: OpenText` |
-| `Subsubsection` | `SubsubsectionGroup` | none | `Subsubsection: OpenText` |
+| `SectionTitle` | `SectionTitleGroup` | none | `SectionTitle: OpenText` |
+| `SubsectionTitle` | `SubsectionTitleGroup` | none | `SubsectionTitle: OpenText` |
 | `Describes` | `DescribesGroup` | command | `Describes: FormOrDeclaration`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: IsOrViaItem`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Defines` | `DefinesGroup` | command | `Defines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Refines` | `RefinesGroup` | command | `Refines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: DeclarationStatement`, `satisfies?: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
@@ -594,9 +593,8 @@ ClauseUnion ::=
 ```union
 TopLevelItemUnion ::=
     | TitleGroup
-    | SectionGroup
-    | SubsectionGroup
-    | SubsubsectionGroup
+    | SectionTitleGroup
+    | SubsectionTitleGroup
     | DescribesGroup
     | DefinesGroup
     | RefinesGroup
@@ -638,15 +636,11 @@ Title: <OpenText>
 ```
 
 ```group
-Section: <OpenText>
+SectionTitle: <OpenText>
 ```
 
 ```group
-Subsection: <OpenText>
-```
-
-```group
-Subsubsection: <OpenText>
+SubsectionTitle: <OpenText>
 ```
 
 ```group

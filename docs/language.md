@@ -322,9 +322,8 @@ These groups may appear at the top level of a document.
 | Group | Heading | Required purpose |
 | --- | --- | --- |
 | `Title` | none | document title text |
-| `Section` | none | first-level prose heading |
-| `Subsection` | none | second-level prose heading |
-| `Subsubsection` | none | third-level prose heading |
+| `SectionTitle` | none | first-level prose heading |
+| `SubsectionTitle` | none | second-level prose heading |
 | `Describes` | command | introduces a command for a mathematical form |
 | `Defines` | command | defines a statement, specification, or type fact |
 | `Refines` | command | defines a refined command in terms of another command |

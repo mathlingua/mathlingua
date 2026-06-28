@@ -257,9 +257,8 @@ zero_or_more_arguments_section!(PiecewiseSection, OpenText);
 arguments_section!(ElseSection, Clause);
 argument_section!(GivenClauseSection, DeclarationStatement);
 argument_section!(TitleSection, OpenText);
-argument_section!(SectionSection, OpenText);
-argument_section!(SubsectionSection, OpenText);
-argument_section!(SubsubsectionSection, OpenText);
+argument_section!(SectionTitleSection, OpenText);
+argument_section!(SubsectionTitleSection, OpenText);
 argument_section!(TextSection, OpenText);
 
 // ===============================[ items ]=====================================
@@ -273,9 +272,8 @@ pub struct Document {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TopLevelItem {
     Title(TitleGroup),
-    Section(SectionGroup),
-    Subsection(SubsectionGroup),
-    Subsubsection(SubsubsectionGroup),
+    SectionTitle(SectionTitleGroup),
+    SubsectionTitle(SubsectionTitleGroup),
     Text(TextGroup),
     Disambiguates(DisambiguatesGroup),
     Describes(DescribesGroup),
@@ -396,18 +394,13 @@ pub struct TitleGroup {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SectionGroup {
-    pub section: SectionSection,
+pub struct SectionTitleGroup {
+    pub section_title: SectionTitleSection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SubsectionGroup {
-    pub subsection: SubsectionSection,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SubsubsectionGroup {
-    pub subsubsection: SubsubsectionSection,
+pub struct SubsectionTitleGroup {
+    pub subsection_title: SubsectionTitleSection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

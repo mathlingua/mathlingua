@@ -572,9 +572,8 @@ fn validate_top_level_item_types(
         ),
         TopLevelItem::Specify(_)
         | TopLevelItem::Title(_)
-        | TopLevelItem::Section(_)
-        | TopLevelItem::Subsection(_)
-        | TopLevelItem::Subsubsection(_)
+        | TopLevelItem::SectionTitle(_)
+        | TopLevelItem::SubsectionTitle(_)
         | TopLevelItem::Text(_)
         | TopLevelItem::Person(_)
         | TopLevelItem::Resource(_) => {}

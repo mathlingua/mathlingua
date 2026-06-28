@@ -1,7 +1,5 @@
 Title: "Foundations"
 
-Section: "Sets"
+SectionTitle: "Sets"
 
-Subsection: "Membership"
-
-Subsubsection: "Examples"
+SubsectionTitle: "Membership"

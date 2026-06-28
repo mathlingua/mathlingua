@@ -180,10 +180,7 @@ fn section_view(section: ProtoSection, registry: &RenderRegistry) -> SectionView
 }
 
 fn page_view(kind: &str, sections: &[ProtoSection]) -> Option<PageView> {
-    if !matches!(
-        kind,
-        "Title" | "Section" | "Subsection" | "Subsubsection" | "Text"
-    ) {
+    if !matches!(kind, "Title" | "SectionTitle" | "SubsectionTitle" | "Text") {
         return None;
     }
 
@@ -336,7 +333,7 @@ Documented:
         let file = content.join("intro.mlg");
         let source = r#"Title: "Foundations"
 
-Section: "Sets"
+SectionTitle: "Sets"
 
 Text: "First paragraph
 
@@ -365,6 +362,13 @@ Second paragraph with $x \in X$."
                 .as_ref()
                 .map(|page| page.text.as_str()),
             Some("Foundations")
+        );
+        assert_eq!(
+            view.files[0].items[1]
+                .page
+                .as_ref()
+                .map(|page| page.kind.as_str()),
+            Some("SectionTitle")
         );
         assert_eq!(
             view.files[0].items[1]

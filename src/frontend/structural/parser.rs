@@ -2028,9 +2028,10 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
     let label = first_section_label(group)?;
     match label {
         "Title" => parse_title(group, tracker).map(TopLevelItem::Title),
-        "Section" => parse_section(group, tracker).map(TopLevelItem::Section),
-        "Subsection" => parse_subsection(group, tracker).map(TopLevelItem::Subsection),
-        "Subsubsection" => parse_subsubsection(group, tracker).map(TopLevelItem::Subsubsection),
+        "SectionTitle" => parse_section_title(group, tracker).map(TopLevelItem::SectionTitle),
+        "SubsectionTitle" => {
+            parse_subsection_title(group, tracker).map(TopLevelItem::SubsectionTitle)
+        }
         "Text" => parse_text_group(group, tracker).map(TopLevelItem::Text),
         "Disambiguates" => parse_disambiguates(group, tracker).map(TopLevelItem::Disambiguates),
         "Describes" => parse_describes(group, tracker).map(TopLevelItem::Describes),
@@ -2075,64 +2076,47 @@ pub(in crate::frontend::structural::parser) fn parse_title(
     })
 }
 
-/// Parses a top-level `Section:` group.
+/// Parses a top-level `SectionTitle:` group.
 ///
 /// This represents a first-level document outline heading rather than a
 /// definition or theorem block.
-pub(in crate::frontend::structural::parser) fn parse_section(
+pub(in crate::frontend::structural::parser) fn parse_section_title(
     group: &ProtoGroup,
     tracker: &mut EventLog,
-) -> Option<SectionGroup> {
+) -> Option<SectionTitleGroup> {
     ensure_no_heading(group, tracker)?;
-    let sections = identify_sections("Section", &group.sections, tracker, &["Section"])?;
-    Some(SectionGroup {
-        section: SectionSection {
-            argument: parse_required_open_text(section(&sections, "Section")?, "Section", tracker)?,
-        },
-    })
-}
-
-/// Parses a top-level `Subsection:` group.
-///
-/// Subsections share the simple outline shape with `Section:` but carry their
-/// own wrapper so rendering can preserve hierarchy.
-pub(in crate::frontend::structural::parser) fn parse_subsection(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<SubsectionGroup> {
-    ensure_no_heading(group, tracker)?;
-    let sections = identify_sections("Subsection", &group.sections, tracker, &["Subsection"])?;
-    Some(SubsectionGroup {
-        subsection: SubsectionSection {
+    let sections = identify_sections("SectionTitle", &group.sections, tracker, &["SectionTitle"])?;
+    Some(SectionTitleGroup {
+        section_title: SectionTitleSection {
             argument: parse_required_open_text(
-                section(&sections, "Subsection")?,
-                "Subsection",
+                section(&sections, "SectionTitle")?,
+                "SectionTitle",
                 tracker,
             )?,
         },
     })
 }
 
-/// Parses a top-level `Subsubsection:` group.
+/// Parses a top-level `SubsectionTitle:` group.
 ///
-/// The parser enforces the expected section label and rejects accidental command
-/// headings on outline-only groups.
-pub(in crate::frontend::structural::parser) fn parse_subsubsection(
+/// Subsections share the simple outline shape with `SectionTitle:` but carry their
+/// own wrapper so rendering can preserve hierarchy.
+pub(in crate::frontend::structural::parser) fn parse_subsection_title(
     group: &ProtoGroup,
     tracker: &mut EventLog,
-) -> Option<SubsubsectionGroup> {
+) -> Option<SubsectionTitleGroup> {
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections(
-        "Subsubsection",
+        "SubsectionTitle",
         &group.sections,
         tracker,
-        &["Subsubsection"],
+        &["SubsectionTitle"],
     )?;
-    Some(SubsubsectionGroup {
-        subsubsection: SubsubsectionSection {
+    Some(SubsectionTitleGroup {
+        subsection_title: SubsectionTitleSection {
             argument: parse_required_open_text(
-                section(&sections, "Subsubsection")?,
-                "Subsubsection",
+                section(&sections, "SubsectionTitle")?,
+                "SubsectionTitle",
                 tracker,
             )?,
         },
@@ -3664,12 +3648,12 @@ References:
 that:
 . x = x
 
-Section: "Recovered"
+SectionTitle: "Recovered"
 "#,
         );
 
         assert_eq!(document.items.len(), 1);
-        assert!(matches!(document.items[0], TopLevelItem::Section(_)));
+        assert!(matches!(document.items[0], TopLevelItem::SectionTitle(_)));
         assert_eq!(diagnostics.len(), 1);
         assert!(
             diagnostics[0]
@@ -4211,11 +4195,9 @@ satisfies:
             r#"
 Title: "Foundations"
 
-Section: "Sets"
+SectionTitle: "Sets"
 
-Subsection: "Membership"
-
-Subsubsection: "Examples"
+SubsectionTitle: "Membership"
 
 Text: "This is prose
 
@@ -4223,29 +4205,25 @@ with another paragraph."
 "#,
         );
 
-        assert_eq!(document.items.len(), 5);
+        assert_eq!(document.items.len(), 4);
 
         match &document.items[0] {
             TopLevelItem::Title(group) => assert_eq!(group.title.argument.0, "Foundations"),
             other => panic!("expected title group, got {other:?}"),
         }
         match &document.items[1] {
-            TopLevelItem::Section(group) => assert_eq!(group.section.argument.0, "Sets"),
+            TopLevelItem::SectionTitle(group) => {
+                assert_eq!(group.section_title.argument.0, "Sets")
+            }
             other => panic!("expected section group, got {other:?}"),
         }
         match &document.items[2] {
-            TopLevelItem::Subsection(group) => {
-                assert_eq!(group.subsection.argument.0, "Membership")
+            TopLevelItem::SubsectionTitle(group) => {
+                assert_eq!(group.subsection_title.argument.0, "Membership")
             }
             other => panic!("expected subsection group, got {other:?}"),
         }
         match &document.items[3] {
-            TopLevelItem::Subsubsection(group) => {
-                assert_eq!(group.subsubsection.argument.0, "Examples")
-            }
-            other => panic!("expected subsubsection group, got {other:?}"),
-        }
-        match &document.items[4] {
             TopLevelItem::Text(group) => {
                 assert_eq!(
                     group.text.argument.0,

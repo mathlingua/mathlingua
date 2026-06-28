@@ -1,12 +1,12 @@
-use crate::mlg::check::{check, check_diagnostics_report, CheckDiagnostic};
+use crate::mlg::check::{CheckDiagnostic, check, check_diagnostics_report};
 use lsp_server::{Connection, Message, Notification};
 use lsp_types::{
-    notification::{
-        DidOpenTextDocument, DidSaveTextDocument, Notification as _, PublishDiagnostics,
-    },
     Diagnostic, DiagnosticSeverity, InitializeParams, Position, PublishDiagnosticsParams, Range,
     SaveOptions, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
     TextDocumentSyncOptions, TextDocumentSyncSaveOptions, Url,
+    notification::{
+        DidOpenTextDocument, DidSaveTextDocument, Notification as _, PublishDiagnostics,
+    },
 };
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -92,7 +92,9 @@ impl ServerState {
         };
 
         let Some(uri) = uri else { return };
-        let Ok(file_path) = uri.to_file_path() else { return };
+        let Ok(file_path) = uri.to_file_path() else {
+            return;
+        };
 
         let root = project_root_for(&file_path, self.workspace_root.as_deref());
         self.refresh_diagnostics(connection, &root);
@@ -104,8 +106,13 @@ impl ServerState {
 
         let mut grouped: HashMap<Url, Vec<Diagnostic>> = HashMap::new();
         for diag in report.diagnostics {
-            let Some(uri) = uri_for_diagnostic(&diag, root) else { continue };
-            grouped.entry(uri).or_default().push(to_lsp_diagnostic(diag));
+            let Some(uri) = uri_for_diagnostic(&diag, root) else {
+                continue;
+            };
+            grouped
+                .entry(uri)
+                .or_default()
+                .push(to_lsp_diagnostic(diag));
         }
 
         let new_files: HashSet<Url> = grouped.keys().cloned().collect();

@@ -273,13 +273,13 @@ function PageHeading({ kind, text }: { kind: string; text: string }) {
           <MarkdownInline text={text} />
         </h1>
       );
-    case "Section":
+    case "SectionTitle":
       return (
         <h2>
           <MarkdownInline text={text} />
         </h2>
       );
-    case "Subsection":
+    case "SubsectionTitle":
       return (
         <h3>
           <MarkdownInline text={text} />
@@ -287,9 +287,9 @@ function PageHeading({ kind, text }: { kind: string; text: string }) {
       );
     default:
       return (
-        <h4>
+        <h3>
           <MarkdownInline text={text} />
-        </h4>
+        </h3>
       );
   }
 }

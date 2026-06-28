@@ -46,7 +46,7 @@ export type GroupView = {
 
 /** Direct document-flow item rendered outside cards. */
 export type PageView = {
-  /** Page item kind, such as `Title`, `Section`, or `Text`. */
+  /** Page item kind, such as `Title`, `SectionTitle`, `SubsectionTitle`, or `Text`. */
   kind: string;
   /** Quote-stripped text content. */
   text: string;

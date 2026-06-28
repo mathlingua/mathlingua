@@ -170,21 +170,16 @@
   line-height: 1.04;
 }
 
-.pageSection h2 {
+.pageSectionTitle h2 {
   padding-bottom: 0.35rem;
   border-bottom: 1px solid var(--line);
   font-size: 2.05rem;
   line-height: 1.12;
 }
 
-.pageSubsection h3 {
+.pageSubsectionTitle h3 {
   font-size: 1.55rem;
   line-height: 1.18;
-}
-
-.pageSubsubsection h4 {
-  font-size: 1.16rem;
-  line-height: 1.24;
 }
 
 .pageText {
@@ -308,11 +303,11 @@
     font-size: 2.25rem;
   }
 
-  .pageSection h2 {
+  .pageSectionTitle h2 {
     font-size: 1.65rem;
   }
 
-  .pageSubsection h3 {
+  .pageSubsectionTitle h3 {
     font-size: 1.32rem;
   }
 }

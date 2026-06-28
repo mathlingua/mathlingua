@@ -162,7 +162,7 @@ fn type_info_from_parts(
         hidden_parameters: header_shape.hidden_parameters.clone(),
         requirements,
         substitutions: context.substitutions,
-        described: described.map(key_for_form_or_declaration),
+        described: described.map(described_subject_key),
     }
 }
 
@@ -194,7 +194,7 @@ fn collect_provided_symbol_rules(
     info: &DefinitionTypeInfo,
     registry: &mut SignatureRegistry,
 ) {
-    let (Some(_described), Some(provides)) = (info.described.as_ref(), provides_section(item))
+    let (Some(described), Some(provides)) = (info.described.as_ref(), provides_section(item))
     else {
         return;
     };
@@ -211,6 +211,7 @@ fn collect_provided_symbol_rules(
         };
         registry.provided_symbols.push(ProvidedSymbolRule {
             owner_signature: info.signature.clone(),
+            owner_subject: described.clone(),
             key,
             parameters,
             target: alias.expression.clone(),
@@ -370,6 +371,8 @@ fn validate_top_level_item_types(
             validate_optional_provides(
                 &group.provides,
                 &context,
+                &shapes_for_header(&group.heading),
+                &described_subject_key(&group.describes.argument),
                 path,
                 locator,
                 registry,
@@ -1407,6 +1410,32 @@ fn check_expression(
                 );
             }
         }
+        ExpressionKind::MemberCall {
+            owner,
+            name,
+            arguments,
+        } => {
+            check_expression(owner, context, path, locator, registry, event_log);
+            for argument in arguments {
+                check_expression(argument, context, path, locator, registry, event_log);
+            }
+            check_provided_member(
+                owner, name, arguments, context, path, locator, registry, event_log,
+            );
+        }
+        ExpressionKind::MemberAccess { owner, name } => {
+            check_expression(owner, context, path, locator, registry, event_log);
+            check_provided_member(
+                owner,
+                name,
+                &[],
+                context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+        }
         ExpressionKind::Tuple(elements) => {
             for element in elements {
                 if let TupleExpressionElement::Expression(expression) = element {
@@ -1858,7 +1887,17 @@ fn check_provided_binary_operator(
         return;
     };
 
-    check_provided_symbol_target(rule, &actuals, context, path, locator, registry, event_log);
+    let owner_actual = provided_symbol_owner_actual(kind, &actuals);
+    check_provided_symbol_target(
+        rule,
+        &actuals,
+        owner_actual.as_deref(),
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
 }
 
 fn check_provided_prefix_operator(
@@ -1882,7 +1921,17 @@ fn check_provided_prefix_operator(
         return;
     };
 
-    check_provided_symbol_target(rule, &actuals, context, path, locator, registry, event_log);
+    let owner_actual = provided_symbol_owner_actual(NamedOperatorKind::LeftColon, &actuals);
+    check_provided_symbol_target(
+        rule,
+        &actuals,
+        owner_actual.as_deref(),
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
 }
 
 fn check_provided_postfix_operator(
@@ -1906,7 +1955,68 @@ fn check_provided_postfix_operator(
         return;
     };
 
-    check_provided_symbol_target(rule, &actuals, context, path, locator, registry, event_log);
+    let owner_actual = provided_symbol_owner_actual(NamedOperatorKind::LeftColon, &actuals);
+    check_provided_symbol_target(
+        rule,
+        &actuals,
+        owner_actual.as_deref(),
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
+}
+
+fn check_provided_member(
+    owner: &Expression,
+    name: &str,
+    arguments: &[Expression],
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let key = DisambiguationKey::Function {
+        name: name.to_owned(),
+        arity: arguments.len(),
+    };
+    let owner_actual = key_for_expression(owner);
+    let actuals = arguments.iter().map(key_for_expression).collect::<Vec<_>>();
+    let Some(rule) =
+        find_member_provided_symbol_rule(&key, &owner_actual, &actuals, context, registry)
+    else {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(name),
+            format!(
+                "Could not resolve member `{name}` for `{}`",
+                context.normalize_key(&owner_actual)
+            ),
+        );
+        return;
+    };
+
+    check_provided_symbol_target(
+        rule,
+        &actuals,
+        Some(&owner_actual),
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
+}
+
+fn provided_symbol_owner_actual(kind: NamedOperatorKind, actuals: &[String]) -> Option<String> {
+    match kind {
+        NamedOperatorKind::Plain => None,
+        NamedOperatorKind::LeftColon | NamedOperatorKind::BothColon => actuals.first().cloned(),
+        NamedOperatorKind::RightColon => actuals.last().cloned(),
+    }
 }
 
 fn find_provided_symbol_rule<'a>(
@@ -1926,6 +2036,20 @@ fn find_provided_symbol_rule<'a>(
                 context,
                 registry,
             )
+    })
+}
+
+fn find_member_provided_symbol_rule<'a>(
+    key: &DisambiguationKey,
+    owner_actual: &str,
+    actuals: &[String],
+    context: &TypeContext,
+    registry: &'a SignatureRegistry,
+) -> Option<&'a ProvidedSymbolRule> {
+    registry.provided_symbols.iter().find(|rule| {
+        disambiguation_keys_match(key, &rule.key)
+            && rule.parameters.len() == actuals.len()
+            && has_type_signature(owner_actual, &rule.owner_signature, context, registry)
     })
 }
 
@@ -1953,6 +2077,7 @@ fn provided_symbol_owner_matches(
 fn check_provided_symbol_target(
     rule: &ProvidedSymbolRule,
     actuals: &[String],
+    owner_actual: Option<&str>,
     context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
@@ -1965,6 +2090,13 @@ fn check_provided_symbol_target(
     }
     for (parameter, actual) in rule.parameters.iter().zip(actuals) {
         child.add_substitution(parameter.clone(), context.normalize_key(actual));
+    }
+    if let Some(owner_actual) = owner_actual {
+        child.declare_name(rule.owner_subject.clone());
+        child.add_substitution(
+            rule.owner_subject.clone(),
+            context.normalize_key(owner_actual),
+        );
     }
     check_expression(&rule.target, &child, path, locator, registry, event_log);
 }
@@ -2564,6 +2696,15 @@ fn collect_expression_names(expression: &Expression, names: &mut Vec<String>) {
                 collect_expression_names(&element.expression, names);
             }
         }
+        ExpressionKind::MemberCall {
+            owner, arguments, ..
+        } => {
+            collect_expression_names(owner, names);
+            for argument in arguments {
+                collect_expression_names(argument, names);
+            }
+        }
+        ExpressionKind::MemberAccess { owner, .. } => collect_expression_names(owner, names),
         ExpressionKind::Tuple(elements) => {
             for element in elements {
                 if let TupleExpressionElement::Expression(expression) = element {
@@ -2749,6 +2890,8 @@ fn command_type_is_nominal_without_arguments(
 fn validate_optional_provides(
     provides: &Option<ProvidesSection>,
     context: &TypeContext,
+    owner_shapes: &[HeaderShape],
+    owner_subject: &str,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     registry: &SignatureRegistry,
@@ -2762,16 +2905,33 @@ fn validate_optional_provides(
         let ProvidesItem::Symbol(group) = item else {
             continue;
         };
-        let AliasKind::SpecOperator(alias) = &group.symbol.argument else {
-            continue;
-        };
-        validate_spec_operator_alias(alias, context, path, locator, registry, event_log);
+        match &group.symbol.argument {
+            AliasKind::SpecOperator(alias) => validate_spec_operator_alias(
+                alias,
+                context,
+                owner_subject,
+                path,
+                locator,
+                registry,
+                event_log,
+            ),
+            AliasKind::Expression(alias) => validate_provided_expression_alias(
+                alias,
+                context,
+                owner_shapes,
+                path,
+                locator,
+                registry,
+                event_log,
+            ),
+        }
     }
 }
 
 fn validate_spec_operator_alias(
     alias: &SpecOperatorAlias,
     context: &TypeContext,
+    owner_subject: &str,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     registry: &SignatureRegistry,
@@ -2784,12 +2944,95 @@ fn validate_spec_operator_alias(
         locator,
         event_log,
     );
+    if context.normalize_key(&alias.placeholder_spec.name) != context.normalize_key(owner_subject) {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&alias.placeholder_spec.name),
+            format!(
+                "Provided spec operator target `{}` must be the described item `{}`",
+                alias.placeholder_spec.name, owner_subject
+            ),
+        );
+    }
 
     let mut child = context.clone();
     declare_placeholder_form(&alias.placeholder_spec.placeholder_form, &mut child);
 
     if let SpecOperatorAliasTarget::IsOrSpec(target) = &alias.target {
         check_is_or_spec_alias_target(target, &child, path, locator, registry, event_log);
+    }
+}
+
+fn validate_provided_expression_alias(
+    alias: &ExpressionAlias,
+    context: &TypeContext,
+    owner_shapes: &[HeaderShape],
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let mut child = context.clone();
+    declare_expression_alias_lhs(&alias.lhs, &mut child);
+    assume_provided_expression_alias_lhs_owner_types(&alias.lhs, owner_shapes, &mut child);
+    check_expression(
+        &alias.expression,
+        &child,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
+}
+
+fn declare_expression_alias_lhs(lhs: &ExpressionAliasLhs, context: &mut TypeContext) {
+    match lhs {
+        ExpressionAliasLhs::Form(form) => declare_form_or_declaration(form, context),
+        ExpressionAliasLhs::Command(command) => {
+            for form in command_header_forms(command) {
+                declare_form_or_declaration(form, context);
+            }
+        }
+        ExpressionAliasLhs::InfixCommand(command) => {
+            for form in infix_header_forms(command) {
+                declare_form_or_declaration(form, context);
+            }
+        }
+    }
+}
+
+fn assume_provided_expression_alias_lhs_owner_types(
+    lhs: &ExpressionAliasLhs,
+    owner_shapes: &[HeaderShape],
+    context: &mut TypeContext,
+) {
+    let ExpressionAliasLhs::Form(form) = lhs else {
+        return;
+    };
+    match &form.kind {
+        FormOrDeclarationKind::InfixOperator { left, right, .. } => {
+            assume_owner_type(&left.name, owner_shapes, context);
+            assume_owner_type(&right.name, owner_shapes, context);
+        }
+        FormOrDeclarationKind::PrefixOperator { placeholder, .. }
+        | FormOrDeclarationKind::PostfixOperator { placeholder, .. } => {
+            assume_owner_type(&placeholder.name, owner_shapes, context);
+        }
+        FormOrDeclarationKind::Name(_)
+        | FormOrDeclarationKind::FunctionDeclaration { .. }
+        | FormOrDeclarationKind::TupleDeclaration { .. }
+        | FormOrDeclarationKind::SetDeclaration { .. } => {}
+    }
+}
+
+fn assume_owner_type(subject: &str, owner_shapes: &[HeaderShape], context: &mut TypeContext) {
+    for owner_shape in owner_shapes {
+        context.add_fact(TypeFact::Is {
+            subject: subject.to_owned(),
+            ty: owner_shape.type_key.clone(),
+            signature: owner_shape.shape.signature.clone(),
+        });
     }
 }
 
@@ -2976,6 +3219,13 @@ fn function_type_spec_mentions_name(spec: &FunctionTypeFactSpec, name: &str) -> 
 fn prove_fact(required: &TypeFact, context: &TypeContext, registry: &SignatureRegistry) -> bool {
     let required = context.normalize_fact(required);
     if builtin_fact_holds(&required, registry) {
+        return true;
+    }
+    if context
+        .facts
+        .iter()
+        .any(|fact| context.normalize_fact(fact) == required)
+    {
         return true;
     }
 
@@ -3849,6 +4099,8 @@ fn function_type_call_arity(fact: &TypeFact) -> Option<usize> {
 fn function_call_arity(expression: &Expression) -> usize {
     match &expression.kind {
         ExpressionKind::FunctionCall { arguments, .. } => arguments.len(),
+        ExpressionKind::MemberCall { arguments, .. } => arguments.len(),
+        ExpressionKind::MemberAccess { .. } => 0,
         _ => 0,
     }
 }
@@ -4329,6 +4581,17 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
                 }
                 declare_names_from_expression(&element.expression, context);
             }
+        }
+        ExpressionKind::MemberCall {
+            owner, arguments, ..
+        } => {
+            declare_names_from_expression(owner, context);
+            for argument in arguments {
+                declare_names_from_expression(argument, context);
+            }
+        }
+        ExpressionKind::MemberAccess { owner, .. } => {
+            declare_names_from_expression(owner, context);
         }
         ExpressionKind::Tuple(elements) => {
             for element in elements {
@@ -5148,6 +5411,23 @@ fn key_for_expression(expression: &Expression) -> String {
                     .join(",")
             )
         }
+        ExpressionKind::MemberCall {
+            owner,
+            name,
+            arguments,
+        } => format!(
+            "{}.{}({})",
+            key_for_expression(owner),
+            name,
+            arguments
+                .iter()
+                .map(key_for_expression)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        ExpressionKind::MemberAccess { owner, name } => {
+            format!("{}.{}", key_for_expression(owner), name)
+        }
         ExpressionKind::Tuple(elements) => format!(
             "({})",
             elements
@@ -5395,6 +5675,16 @@ fn provided_symbol_key_and_parameters(
     lhs: &ExpressionAliasLhs,
 ) -> Option<(DisambiguationKey, Vec<String>)> {
     match lhs {
+        ExpressionAliasLhs::Form(FormOrDeclaration {
+            kind: FormOrDeclarationKind::Name(name),
+            ..
+        }) => Some((
+            DisambiguationKey::Function {
+                name: name.clone(),
+                arity: 0,
+            },
+            Vec::new(),
+        )),
         ExpressionAliasLhs::Form(form) => disambiguation_key_and_parameters(form),
         ExpressionAliasLhs::Command(CommandHeaderNode {
             chain, paren_args, ..
@@ -5971,6 +6261,10 @@ fn primary_form_name(form: &FormOrDeclaration) -> Option<String> {
         | FormOrDeclarationKind::PrefixOperator { .. }
         | FormOrDeclarationKind::PostfixOperator { .. } => None,
     }
+}
+
+fn described_subject_key(form: &FormOrDeclaration) -> String {
+    primary_form_name(form).unwrap_or_else(|| key_for_form_or_declaration(form))
 }
 
 fn placeholder_pattern_name(form: &PlaceholderForm) -> Option<String> {

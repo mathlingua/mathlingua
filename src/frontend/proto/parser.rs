@@ -348,6 +348,14 @@ impl<'a> Parser<'a> {
 /// therefore requires a section-label-shaped prefix.
 fn structural_colon_index(text: &str) -> Option<usize> {
     let index = text.find(':')?;
+    if text[..index]
+        .chars()
+        .next_back()
+        .is_some_and(char::is_whitespace)
+    {
+        return None;
+    }
+
     let prefix = text[..index].trim();
     let rest = &text[index..];
 
@@ -744,6 +752,7 @@ Defines: f(x_)
         let input = r#"when:
 . "label: value"
 . A ::= B := B
+. A :!=: B
 "#;
 
         let (groups, diagnostics) = parse_input(input);
@@ -756,6 +765,10 @@ Defines: f(x_)
         assert!(matches!(
             &groups[0].sections[0].arguments[1],
             Argument::Formulation(item) if item.text == "A ::= B := B"
+        ));
+        assert!(matches!(
+            &groups[0].sections[0].arguments[2],
+            Argument::Formulation(item) if item.text == "A :!=: B"
         ));
     }
 

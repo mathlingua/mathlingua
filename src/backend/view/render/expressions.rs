@@ -19,6 +19,28 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 .join(", ");
             format!("{}({})", escape_math_identifier(name), args)
         }
+        ExpressionKind::MemberCall {
+            owner,
+            name,
+            arguments,
+        } => {
+            let args = arguments
+                .iter()
+                .map(|argument| render_expression(argument, registry))
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!(
+                "{}.{}({})",
+                render_expression(owner, registry),
+                escape_math_identifier(name),
+                args
+            )
+        }
+        ExpressionKind::MemberAccess { owner, name } => format!(
+            "{}.{}",
+            render_expression(owner, registry),
+            escape_math_identifier(name)
+        ),
         ExpressionKind::Tuple(elements) => {
             let values = elements
                 .iter()

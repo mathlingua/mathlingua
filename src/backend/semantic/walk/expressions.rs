@@ -16,6 +16,15 @@ pub(in crate::backend::semantic) fn walk_expression(
                 walk_expression(&element.expression, visit);
             }
         }
+        ExpressionKind::MemberCall {
+            owner, arguments, ..
+        } => {
+            walk_expression(owner, visit);
+            for argument in arguments {
+                walk_expression(argument, visit);
+            }
+        }
+        ExpressionKind::MemberAccess { owner, .. } => walk_expression(owner, visit),
         ExpressionKind::Tuple(elements) => {
             for element in elements {
                 if let TupleExpressionElement::Expression(expression) = element {

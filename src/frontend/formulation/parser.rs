@@ -2415,6 +2415,8 @@ mod tests {
     fn parses_function_calls_and_tuple_expressions_with_operator_elements() {
         let function_call =
             parse_expression("f(x, y + z)").expect("expected function call expression");
+        let member_call = parse_expression("X.f(a)").expect("expected member call expression");
+        let member_access = parse_expression("X.a").expect("expected member access expression");
         let tuple = parse_expression("(x, +, y)").expect("expected tuple expression");
 
         match function_call.kind {
@@ -2430,6 +2432,27 @@ mod tests {
                 ));
             }
             other => panic!("expected function call, got {other:?}"),
+        }
+
+        match member_call.kind {
+            ExpressionKind::MemberCall {
+                owner,
+                name,
+                arguments,
+            } => {
+                assert!(matches!(owner.kind, ExpressionKind::Name(ref value) if value == "X"));
+                assert_eq!(name, "f");
+                assert_eq!(arguments.len(), 1);
+            }
+            other => panic!("expected member call, got {other:?}"),
+        }
+
+        match member_access.kind {
+            ExpressionKind::MemberAccess { owner, name } => {
+                assert!(matches!(owner.kind, ExpressionKind::Name(ref value) if value == "X"));
+                assert_eq!(name, "a");
+            }
+            other => panic!("expected member access, got {other:?}"),
         }
 
         match tuple.kind {

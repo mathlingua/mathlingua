@@ -279,6 +279,15 @@ pub enum ExpressionKind {
         name: String,
         elements: Vec<FunctionNamedExpressionElement>,
     },
+    MemberCall {
+        owner: Box<Expression>,
+        name: String,
+        arguments: Vec<Expression>,
+    },
+    MemberAccess {
+        owner: Box<Expression>,
+        name: String,
+    },
     Tuple(Vec<TupleExpressionElement>),
     Set(SetExpression),
     Grouped {

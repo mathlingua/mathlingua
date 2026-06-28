@@ -99,6 +99,7 @@ pub(super) struct SpecOperatorRule {
 #[derive(Clone, Debug)]
 pub(super) struct ProvidedSymbolRule {
     pub(super) owner_signature: String,
+    pub(super) owner_subject: String,
     pub(super) key: DisambiguationKey,
     pub(super) parameters: Vec<String>,
     pub(super) target: Expression,

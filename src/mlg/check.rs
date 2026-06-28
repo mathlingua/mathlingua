@@ -1488,7 +1488,6 @@ mod tests {
     . symbol: x_ +_-* y_ :=> x_ \.set.minus./ y_
     . symbol: x_ *_free y_ :=> x_ \.set.minus./ y_
     . symbol: x_ |minus| y_ :=> x_ \.set.minus./ y_
-    . symbol: minusFn(x_, y_) :=> x_ \.set.minus./ y_
     Documented:
     . called: "set"
 
@@ -1545,10 +1544,6 @@ mod tests {
 
     Theorem:
     given: A, B is \set
-    then: A :|minusFn| B is \set
-
-    Theorem:
-    given: A, B is \set
     then: A - B is \set
 
     [x_ - y_]
@@ -1566,6 +1561,61 @@ mod tests {
         let result = check_in(
             temp_dir.path(),
             &[PathBuf::from("type-directed-minus.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_accepts_provided_expression_symbols_with_owner_context() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("provided-symbol-owner-context.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ != y_ :=> \not{x_ = y_}
+    . symbol: f(x_) :=> \foo{X, x_}
+    . symbol: a :=> \some.value{X}
+    Documented:
+    . called: "set"
+
+    [\not{P}]
+    Defines: Q is \\statement
+    Documented:
+    . written: "\neg P?"
+
+    [\foo{X, x}]
+    Defines: Y is \\expression
+    Documented:
+    . written: "\operatorname{foo}(X?, x?)"
+
+    [\some.value{X}]
+    Defines: Y is \\expression
+    Documented:
+    . written: "\operatorname{someValue}(X?)"
+
+    Theorem:
+    given: A, B is \set
+    then:
+    . A :!=: B
+    . A.f(B)
+    . A.a
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("provided-symbol-owner-context.mlg")],
             &mut event_log,
         );
 

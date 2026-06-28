@@ -79,6 +79,7 @@ export function ViewerShell({ directories, files }: ViewerShellProps) {
           directories={directories}
           files={files}
           isOutlineOpen={isOutlineOpen}
+          onCloseOutline={() => setIsOutlineOpen(false)}
           onNavigateDirectory={handleNavigateDirectory}
           onSelectFile={handleSelectFile}
           selectedFileIndex={selectedFileIndex}

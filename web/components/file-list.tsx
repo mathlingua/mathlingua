@@ -14,6 +14,8 @@ import {
 import type { DirectoryView, FileView, GroupView } from "../lib/types";
 import type { PageView } from "../lib/types";
 
+const NARROW_OUTLINE_MEDIA_QUERY = "(max-width: 860px)";
+
 /** Props for coordinating outline navigation and selected document state. */
 interface FileListProps {
   /** Directory currently shown by the outline browser. */
@@ -24,6 +26,8 @@ interface FileListProps {
   files: FileView[];
   /** Whether the outline panel is visible. */
   isOutlineOpen: boolean;
+  /** Called when the outline drawer should be closed. */
+  onCloseOutline: () => void;
   /** Called when the user drills into or backs out of an outline directory. */
   onNavigateDirectory: (directory: string) => void;
   /** Called when the user selects a file from the outline. */
@@ -38,6 +42,7 @@ export function FileList({
   directories,
   files,
   isOutlineOpen,
+  onCloseOutline,
   onNavigateDirectory,
   onSelectFile,
   selectedFileIndex,
@@ -58,6 +63,15 @@ export function FileList({
 
   const selectedFile = files[selectedFileIndex] ?? files[0];
   const entries = buildFileBrowserEntries(files, directories, currentDirectory);
+
+  const closeOutlineOnNarrowViewport = () => {
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia(NARROW_OUTLINE_MEDIA_QUERY).matches
+    ) {
+      onCloseOutline();
+    }
+  };
 
   const handleReferenceClick = (rootAnchorId: string, referenceKey: string) => {
     if (!definitionIndex.has(referenceKey)) {
@@ -135,7 +149,10 @@ export function FileList({
                 {entry.kind === "directory" ? (
                   <button
                     className={`${styles.outlineLink} ${styles.outlineLinkDirectory}`}
-                    onClick={() => onNavigateDirectory(entry.path)}
+                    onClick={() => {
+                      onNavigateDirectory(entry.path);
+                      closeOutlineOnNarrowViewport();
+                    }}
                     type="button"
                   >
                     <span>{entry.label}</span>
@@ -151,7 +168,10 @@ export function FileList({
                         ? `${styles.outlineLink} ${styles.outlineLinkActive}`
                         : styles.outlineLink
                     }
-                    onClick={() => onSelectFile(entry.fileIndex)}
+                    onClick={() => {
+                      onSelectFile(entry.fileIndex);
+                      closeOutlineOnNarrowViewport();
+                    }}
                     type="button"
                   >
                     {entry.label}

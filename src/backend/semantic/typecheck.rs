@@ -1726,7 +1726,7 @@ fn check_function_call_inputs(
                     path,
                     locator.locate_symbol(name),
                     format!(
-                        "Could not prove requirement `{}` for function `{name}`",
+                        "Could not establish requirement `{}` for function `{name}`",
                         format_fact(&required)
                     ),
                 );
@@ -2832,7 +2832,7 @@ fn check_function_call_result_fact(
             path,
             locator.locate_symbol(name),
             format!(
-                "Could not prove function call result `{}`",
+                "Could not establish function call result `{}`",
                 format_fact(&required)
             ),
         );
@@ -3542,7 +3542,7 @@ fn check_command_requirements(
                 path,
                 position,
                 format!(
-                    "Could not prove requirement `{}` for command `{signature}`",
+                    "Could not establish requirement `{}` for command `{signature}`",
                     format_fact(&instantiated)
                 ),
             );
@@ -6000,9 +6000,9 @@ fn key_for_expression(expression: &Expression) -> String {
             operator,
             right,
         } => format!(
-            "{}{:?}{}",
+            "{} {} {}",
             key_for_expression(left),
-            operator,
+            key_for_binary_operator(operator),
             key_for_expression(right)
         ),
         ExpressionKind::SpecStatement(statement) => format!(
@@ -6054,6 +6054,37 @@ fn key_for_unary_operator(operator: &UnaryOperator) -> String {
         UnaryOperator::Arithmetic(operator) | UnaryOperator::Named(operator) => {
             operator.text.clone()
         }
+    }
+}
+
+fn key_for_binary_operator(operator: &BinaryOperator) -> String {
+    match operator {
+        BinaryOperator::Equality(operator)
+        | BinaryOperator::Special(operator)
+        | BinaryOperator::Add(operator)
+        | BinaryOperator::Subtract(operator)
+        | BinaryOperator::Multiply(operator)
+        | BinaryOperator::Divide(operator)
+        | BinaryOperator::Power(operator) => {
+            key_for_binary_operator_parts(&operator.text, operator.kind, false)
+        }
+        BinaryOperator::Named(operator) => {
+            key_for_binary_operator_parts(&operator.name, operator.kind, true)
+        }
+    }
+}
+
+fn key_for_binary_operator_parts(symbol: &str, kind: NamedOperatorKind, named: bool) -> String {
+    let body = if named {
+        format!("|{symbol}|")
+    } else {
+        symbol.to_owned()
+    };
+    match kind {
+        NamedOperatorKind::Plain => body,
+        NamedOperatorKind::LeftColon => format!(":{body}"),
+        NamedOperatorKind::RightColon => format!("{body}:"),
+        NamedOperatorKind::BothColon => format!(":{body}:"),
     }
 }
 

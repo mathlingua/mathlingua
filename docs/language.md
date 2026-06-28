@@ -556,8 +556,8 @@ when the composed refined signature is not defined directly.
 
 Third, it checks symbol usage and type requirements. Unknown symbols are
 reported as `Unrecognized symbol`. Type requirements are reported as
-`Could not prove requirement ...` when the current context does not imply the
-required fact.
+`Could not establish requirement ...` when the current context does not establish
+the required fact.
 
 The checker is not a proof checker for theorem conclusions. It checks that
 conclusions are syntactically valid, use declared symbols, reference defined

@@ -29,7 +29,8 @@ impl<'a> SourceLocator<'a> {
             shape,
             self.heading_cursor,
             OccurrenceKind::Heading,
-        )?;
+        )
+        .or_else(|| find_signature_occurrence(self.source, shape, 0, OccurrenceKind::Heading))?;
         self.heading_cursor = offset.saturating_add(1);
         Some(position_at_offset(self.source, offset))
     }
@@ -40,13 +41,15 @@ impl<'a> SourceLocator<'a> {
             shape,
             self.reference_cursor,
             OccurrenceKind::Reference,
-        )?;
+        )
+        .or_else(|| find_signature_occurrence(self.source, shape, 0, OccurrenceKind::Reference))?;
         self.reference_cursor = offset.saturating_add(1);
         Some(position_at_offset(self.source, offset))
     }
 
     pub(super) fn locate_symbol(&mut self, name: &str) -> Option<SourcePosition> {
-        let offset = find_symbol_occurrence(self.source, name, self.symbol_cursor)?;
+        let offset = find_symbol_occurrence(self.source, name, self.symbol_cursor)
+            .or_else(|| find_symbol_occurrence(self.source, name, 0))?;
         self.symbol_cursor = offset.saturating_add(name.len());
         Some(position_at_offset(self.source, offset))
     }

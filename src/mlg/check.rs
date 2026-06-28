@@ -1818,6 +1818,65 @@ mod tests {
     }
 
     #[test]
+    fn check_formats_binary_operator_requirement_errors_readably() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("readable-binary-requirement.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [A \.set.union./ B]
+    Defines: C is \set
+    when: A, B is \set
+    Documented:
+    . called: "union of $A?$ and $B?$"
+    . written: "A? \cup B?"
+
+    Theorem:
+    given: A, B is \set
+    then: (A - B) \.set.union./ B
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("readable-binary-requirement.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let expected =
+            "Could not establish requirement `A - B is \\set` for command `\\.set.union./`";
+        let canonical_file = file.canonicalize().unwrap();
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message == expected
+                    && message.location.as_ref().is_some_and(|location| {
+                        matches!(
+                            location,
+                            crate::events::EventLocation::File {
+                                path,
+                                span: Some(_)
+                            } if path == &canonical_file
+                        )
+                    })
+            })
+        }));
+        assert!(!user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message.contains("Operator {") || message.message.contains("Subtract(")
+            })
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
     fn check_accepts_disambiguated_prefix_and_postfix_operator_branches() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("disambiguates-prefix-postfix.mlg");
@@ -1961,7 +2020,8 @@ mod tests {
         assert_eq!(result.files_checked, 1);
         assert!(user_events(&event_log).iter().any(|event| {
             event.as_message().is_some_and(|message| {
-                message.message == "Could not prove requirement `r is \\real` for command `\\foo`"
+                message.message
+                    == "Could not establish requirement `r is \\real` for command `\\foo`"
             })
         }));
         assert!(event_log.has_errors());
@@ -2067,7 +2127,7 @@ mod tests {
         assert!(user_events(&event_log).iter().any(|event| {
             event.as_message().is_some_and(|message| {
                 message.message
-                    == "Could not prove requirement `B is \\set` for command `\\:subset:/`"
+                    == "Could not establish requirement `B is \\set` for command `\\:subset:/`"
             })
         }));
         assert!(event_log.has_errors());
@@ -2315,13 +2375,13 @@ mod tests {
             .map(|event| event.message.clone())
             .collect::<Vec<_>>();
         assert!(messages.contains(&String::from(
-            "Could not prove requirement `A is \\\\statement` for command `\\needs.statement`"
+            "Could not establish requirement `A is \\\\statement` for command `\\needs.statement`"
         )));
         assert!(messages.contains(&String::from(
-            "Could not prove requirement `\\wrap{A is? \\set} is \\\\statement` for command `\\needs.statement`"
+            "Could not establish requirement `\\wrap{A is? \\set} is \\\\statement` for command `\\needs.statement`"
         )));
         assert!(messages.contains(&String::from(
-            "Could not prove requirement `A is \\\\specification` for command `\\needs.specification`"
+            "Could not establish requirement `A is \\\\specification` for command `\\needs.specification`"
         )));
         assert!(event_log.has_errors());
     }
@@ -2427,10 +2487,10 @@ mod tests {
             .map(|event| event.message.clone())
             .collect::<Vec<_>>();
         assert!(messages.contains(&String::from(
-            "Could not prove requirement `g is \\set` for command `\\function:on:to`"
+            "Could not establish requirement `g is \\set` for command `\\function:on:to`"
         )));
         assert!(messages.contains(&String::from(
-            "Could not prove requirement `x is \\set` for command `\\function:on:to`"
+            "Could not establish requirement `x is \\set` for command `\\function:on:to`"
         )));
         let canonical_file = file.canonicalize().unwrap();
         assert!(has_user_error_at(
@@ -2438,14 +2498,14 @@ mod tests {
             &canonical_file,
             26,
             8,
-            "Could not prove requirement `g is \\set` for command `\\function:on:to`"
+            "Could not establish requirement `g is \\set` for command `\\function:on:to`"
         ));
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
             24,
             7,
-            "Could not prove requirement `x is \\set` for command `\\function:on:to`"
+            "Could not establish requirement `x is \\set` for command `\\function:on:to`"
         ));
         assert!(event_log.has_errors());
     }
@@ -2600,7 +2660,7 @@ mod tests {
         assert_eq!(result.files_checked, 1);
         assert!(user_events(&event_log).iter().any(|event| {
             event.as_message().is_some_and(|message| {
-                message.message == "Could not prove function call result `f(y) \"in\" C`"
+                message.message == "Could not establish function call result `f(y) \"in\" C`"
             })
         }));
         assert!(event_log.has_errors());
@@ -3217,7 +3277,7 @@ mod tests {
         assert!(user_events(&event_log).iter().any(|event| {
             event.as_message().is_some_and(|message| {
                 message.message
-                    == "Could not prove requirement `A is \\set` for command `\\element.of:group`"
+                    == "Could not establish requirement `A is \\set` for command `\\element.of:group`"
             })
         }));
         assert!(event_log.has_errors());
@@ -3272,7 +3332,7 @@ mod tests {
         assert!(user_events(&event_log).iter().any(|event| {
             event.as_message().is_some_and(|message| {
                 message.message
-                    == "Could not prove requirement `G is \\set` for command `\\element.of:group`"
+                    == "Could not establish requirement `G is \\set` for command `\\element.of:group`"
             })
         }));
         assert!(event_log.has_errors());

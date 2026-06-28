@@ -344,7 +344,7 @@ fn relative_path(path: &Path, base: &Path) -> Option<String> {
     path.strip_prefix(base)
         .ok()
         .filter(|relative| !relative.as_os_str().is_empty())
-        .map(|relative| relative.display().to_string())
+        .map(display_relative_path)
 }
 
 fn absolute_path(path: &Path, cwd: &Path) -> String {
@@ -355,6 +355,13 @@ fn absolute_path(path: &Path, cwd: &Path) -> String {
     };
 
     path.canonicalize().unwrap_or(path).display().to_string()
+}
+
+fn display_relative_path(path: &Path) -> String {
+    path.strip_prefix("content")
+        .unwrap_or(path)
+        .display()
+        .to_string()
 }
 
 fn format_issue_count(issue_count: usize) -> String {
@@ -656,6 +663,33 @@ mod tests {
             value["diagnostics"][0]["location"]["absolutePath"]
                 .as_str()
                 .is_some_and(|path| path.ends_with("invalid.mlg"))
+        );
+    }
+
+    #[test]
+    fn check_diagnostics_report_omits_content_prefix_from_paths() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content/sets");
+        let file = content.join("invalid.mlg");
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
+        fs::write(&file, "Defines: 'f(x_)'\n").unwrap();
+
+        let result = check(&root, &[], None);
+        let report = check_diagnostics_report(&result, &root);
+        let value = serde_json::to_value(&report).expect("expected report to serialize");
+
+        assert!(!report.successful);
+        assert_eq!(
+            value["diagnostics"][0]["location"]["path"],
+            "sets/invalid.mlg"
+        );
+        assert!(
+            value["diagnostics"][0]["location"]["absolutePath"]
+                .as_str()
+                .is_some_and(|path| path.ends_with("content/sets/invalid.mlg"))
         );
     }
 

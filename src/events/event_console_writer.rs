@@ -131,13 +131,7 @@ impl EventConsoleWriter {
         self.base_path
             .as_deref()
             .and_then(|base| path.strip_prefix(base).ok())
-            .map(|relative| {
-                if relative.as_os_str().is_empty() {
-                    ".".to_string()
-                } else {
-                    relative.display().to_string()
-                }
-            })
+            .map(display_relative_path)
             .unwrap_or_else(|| path.display().to_string())
     }
 
@@ -271,6 +265,15 @@ fn write_line(mut writer: impl Write, message: &str) -> io::Result<()> {
     writer.flush()
 }
 
+fn display_relative_path(path: &Path) -> String {
+    let relative = path.strip_prefix("content").unwrap_or(path);
+    if relative.as_os_str().is_empty() {
+        ".".to_string()
+    } else {
+        relative.display().to_string()
+    }
+}
+
 // ===============================[ tests ]=====================================
 
 #[cfg(test)]
@@ -299,7 +302,7 @@ mod tests {
                     Level::Error,
                     Audience::User,
                     Some(EventLocation::file(
-                        "/repo/content/example.mlg",
+                        "/repo/content/sets/example.mlg",
                         Some(EventSpan::row(3)),
                     )),
                 )
@@ -309,7 +312,7 @@ mod tests {
 
         assert_eq!(
             rendered.text,
-            "content/example.mlg:4: error: Unexpected header: [duplicate]"
+            "sets/example.mlg:4: error: Unexpected header: [duplicate]"
         );
     }
 

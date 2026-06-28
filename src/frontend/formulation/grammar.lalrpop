@@ -39,6 +39,9 @@ extern {
         ":^:" => Token::BothCaret,
         ":^" => Token::LeftCaret,
         "^:" => Token::RightCaret,
+        "both_special_operator" => Token::BothSpecialOperator(<String>),
+        "left_special_operator" => Token::LeftSpecialOperator(<String>),
+        "right_special_operator" => Token::RightSpecialOperator(<String>),
         "is_not?" => Token::IsNotPredicate,
         "is?" => Token::IsPredicate,
         "is" => Token::Is,
@@ -388,6 +391,15 @@ EqualityOperator: BinaryOperator = {
     <l:@L> "=" <r:@R> => BinaryOperator::Equality(ast::Operator::new(Span::new(l, r), "=")),
     <l:@L> <operator:"special_operator"> <r:@R> => {
         BinaryOperator::Special(ast::Operator::new(Span::new(l, r), operator))
+    },
+    <l:@L> <operator:"left_special_operator"> <r:@R> => {
+        BinaryOperator::Special(ast::Operator::with_kind(Span::new(l, r), operator, NamedOperatorKind::LeftColon))
+    },
+    <l:@L> <operator:"right_special_operator"> <r:@R> => {
+        BinaryOperator::Special(ast::Operator::with_kind(Span::new(l, r), operator, NamedOperatorKind::RightColon))
+    },
+    <l:@L> <operator:"both_special_operator"> <r:@R> => {
+        BinaryOperator::Special(ast::Operator::with_kind(Span::new(l, r), operator, NamedOperatorKind::BothColon))
     },
 };
 

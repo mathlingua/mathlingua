@@ -1437,6 +1437,9 @@ mod tests {
     Describes: X
     Provides:
     . symbol: x_ - y_ :=> x_ \.set.minus./ y_
+    . symbol: x_ ** y_ :=> x_ \.set.minus./ y_
+    . symbol: x_ +_-* y_ :=> x_ \.set.minus./ y_
+    . symbol: x_ *_free y_ :=> x_ \.set.minus./ y_
     . symbol: x_ |minus| y_ :=> x_ \.set.minus./ y_
     . symbol: minusFn(x_, y_) :=> x_ \.set.minus./ y_
     Documented:
@@ -1460,6 +1463,26 @@ mod tests {
     Theorem:
     given: A, B is \set
     then: A :-: B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A :** B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A **: B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A :**: B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A :*_free B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A :+_-* B is \set
 
     Theorem:
     given: A, B is \set

@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn lexes_stropped_operator_names() {
-        let tokens: Vec<_> = Lexer::new(r#"`*` `*+`"#)
+        let tokens: Vec<_> = Lexer::new(r#"`*` `*+` `+_-*` `*_free`"#)
             .map(|item| item.expect("expected valid token").1)
             .collect();
 
@@ -152,6 +152,29 @@ mod tests {
             vec![
                 Token::Name("`*`".to_string()),
                 Token::Name("`*+`".to_string()),
+                Token::Name("`+_-*`".to_string()),
+                Token::Name("`*_free`".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn lexes_general_special_operators() {
+        let tokens: Vec<_> = Lexer::new(r#"** +_-* *_1 *_free :** **: :**: :*_free"#)
+            .map(|item| item.expect("expected valid token").1)
+            .collect();
+
+        assert_eq!(
+            tokens,
+            vec![
+                Token::SpecialOperator("**".to_string()),
+                Token::SpecialOperator("+_-*".to_string()),
+                Token::SpecialOperator("*_1".to_string()),
+                Token::SpecialOperator("*_free".to_string()),
+                Token::LeftSpecialOperator("**".to_string()),
+                Token::RightSpecialOperator("**".to_string()),
+                Token::BothSpecialOperator("**".to_string()),
+                Token::LeftSpecialOperator("*_free".to_string()),
             ]
         );
     }

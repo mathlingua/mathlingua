@@ -105,6 +105,24 @@ pub enum Token {
     LeftCaret,
     #[token("^:")]
     RightCaret,
+    #[regex(
+        r":[-~!#%^&*+=|<>/](?:[-~!#%^&*+=|<>/]|_(?:[-~!#%^&*+=|<>/]|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?))*:",
+        both_special_operator,
+        priority = 1
+    )]
+    BothSpecialOperator(String),
+    #[regex(
+        r":[-~!#%^&*+=|<>/](?:[-~!#%^&*+=|<>/]|_(?:[-~!#%^&*+=|<>/]|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?))*",
+        left_special_operator,
+        priority = 1
+    )]
+    LeftSpecialOperator(String),
+    #[regex(
+        r"[-~!#%^&*+=|<>/](?:[-~!#%^&*+=|<>/]|_(?:[-~!#%^&*+=|<>/]|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?))*:",
+        right_special_operator,
+        priority = 1
+    )]
+    RightSpecialOperator(String),
     #[token("is_not?")]
     IsNotPredicate,
     #[token("is?")]
@@ -123,11 +141,14 @@ pub enum Token {
     #[regex(r"[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?_", parse_placeholder)]
     Placeholder(String),
     #[regex(
-        r"`[-~!#%^&*\\+=|<>/]+`|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?",
+        r"`[-~!#%^&*\\+=|<>/](?:[-~!#%^&*\\+=|<>/]|_(?:[-~!#%^&*\\+=|<>/]|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?))*`|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?",
         parse_name
     )]
     Name(String),
-    #[regex(r"(?:[-~!#%^&*+=|<>/]{2,}|[~!#%&<>])", parse_special_operator)]
+    #[regex(
+        r"(?:[-~!#%^&*+=|<>/](?:[-~!#%^&*+=|<>/]|_(?:[-~!#%^&*+=|<>/]|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?))+|[~!#%&<>])",
+        parse_special_operator
+    )]
     SpecialOperator(String),
     #[token("\\")]
     CommandStart,
@@ -189,6 +210,21 @@ fn left_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
 fn right_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
     let slice = lex.slice();
     slice[1..slice.len() - 2].to_owned()
+}
+
+fn both_special_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
+    let slice = lex.slice();
+    slice[1..slice.len() - 1].to_owned()
+}
+
+fn left_special_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
+    let slice = lex.slice();
+    slice[1..].to_owned()
+}
+
+fn right_special_operator(lex: &mut logos::Lexer<'_, Token>) -> String {
+    let slice = lex.slice();
+    slice[..slice.len() - 1].to_owned()
 }
 
 fn prefix_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {

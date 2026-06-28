@@ -2837,6 +2837,59 @@ mod tests {
     }
 
     #[test]
+    fn parses_general_special_operator_expressions() {
+        let plain = parse_expression("x ** y").expect("expected special operator");
+        let left = parse_expression("x :** y").expect("expected left-colon special operator");
+        let right = parse_expression("x **: y").expect("expected right-colon special operator");
+        let both = parse_expression("x :**: y").expect("expected both-colon special operator");
+        let suffixed = parse_expression("x :*_free y").expect("expected suffixed special operator");
+        let mixed = parse_expression("x :+_-* y").expect("expected mixed special operator");
+
+        assert!(matches!(
+            plain.kind,
+            ExpressionKind::Binary {
+                operator: BinaryOperator::Special(ref operator),
+                ..
+            } if operator.kind == NamedOperatorKind::Plain && operator.text == "**"
+        ));
+        assert!(matches!(
+            left.kind,
+            ExpressionKind::Binary {
+                operator: BinaryOperator::Special(ref operator),
+                ..
+            } if operator.kind == NamedOperatorKind::LeftColon && operator.text == "**"
+        ));
+        assert!(matches!(
+            right.kind,
+            ExpressionKind::Binary {
+                operator: BinaryOperator::Special(ref operator),
+                ..
+            } if operator.kind == NamedOperatorKind::RightColon && operator.text == "**"
+        ));
+        assert!(matches!(
+            both.kind,
+            ExpressionKind::Binary {
+                operator: BinaryOperator::Special(ref operator),
+                ..
+            } if operator.kind == NamedOperatorKind::BothColon && operator.text == "**"
+        ));
+        assert!(matches!(
+            suffixed.kind,
+            ExpressionKind::Binary {
+                operator: BinaryOperator::Special(ref operator),
+                ..
+            } if operator.kind == NamedOperatorKind::LeftColon && operator.text == "*_free"
+        ));
+        assert!(matches!(
+            mixed.kind,
+            ExpressionKind::Binary {
+                operator: BinaryOperator::Special(ref operator),
+                ..
+            } if operator.kind == NamedOperatorKind::LeftColon && operator.text == "+_-*"
+        ));
+    }
+
+    #[test]
     fn parses_operator_subject_specs() {
         let item = parse_is_or_spec(r#"+ "on" Nat"#).expect("expected operator spec statement");
 

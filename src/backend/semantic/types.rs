@@ -97,6 +97,14 @@ pub(super) struct SpecOperatorRule {
 }
 
 #[derive(Clone, Debug)]
+pub(super) struct ProvidedSymbolRule {
+    pub(super) owner_signature: String,
+    pub(super) key: DisambiguationKey,
+    pub(super) parameters: Vec<String>,
+    pub(super) target: Expression,
+}
+
+#[derive(Clone, Debug)]
 pub(super) struct TypeExtensionRule {
     pub(super) subtype_signature: String,
     pub(super) subject: String,
@@ -181,4 +189,5 @@ pub(super) struct SignatureRegistry {
     pub(super) extension_rules: Vec<TypeExtensionRule>,
     pub(super) refinement_extension_rules: Vec<RefinementExtensionRule>,
     pub(super) disambiguations: Vec<DisambiguationRule>,
+    pub(super) provided_symbols: Vec<ProvidedSymbolRule>,
 }

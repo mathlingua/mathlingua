@@ -13,6 +13,7 @@ pub(super) fn collect_definition_type_metadata(
     collect_type_extension_rules(item, &info, registry);
     collect_refinement_extension_rules(item, &info, registry);
     collect_spec_operator_rules(item, &info, registry);
+    collect_provided_symbol_rules(item, &info, registry);
     registry
         .type_infos
         .insert(header_shape.shape.signature.clone(), info);
@@ -185,6 +186,35 @@ fn collect_spec_operator_rules(
         if let Some(rule) = spec_operator_rule_from_alias(alias, info) {
             registry.spec_rules.push(rule);
         }
+    }
+}
+
+fn collect_provided_symbol_rules(
+    item: &TopLevelItem,
+    info: &DefinitionTypeInfo,
+    registry: &mut SignatureRegistry,
+) {
+    let (Some(_described), Some(provides)) = (info.described.as_ref(), provides_section(item))
+    else {
+        return;
+    };
+
+    for item in &provides.arguments {
+        let ProvidesItem::Symbol(group) = item else {
+            continue;
+        };
+        let AliasKind::Expression(alias) = &group.symbol.argument else {
+            continue;
+        };
+        let Some((key, parameters)) = provided_symbol_key_and_parameters(&alias.lhs) else {
+            continue;
+        };
+        registry.provided_symbols.push(ProvidedSymbolRule {
+            owner_signature: info.signature.clone(),
+            key,
+            parameters,
+            target: alias.expression.clone(),
+        });
     }
 }
 
@@ -628,6 +658,7 @@ fn validate_disambiguates(
 ) {
     for branch in &group.branches {
         let mut context = TypeContext::default();
+        context.defer_unresolved_provided_symbols = true;
         declare_form_or_declaration(&group.heading, &mut context);
         for clause in &branch.when.arguments {
             assume_clause(clause, &mut context, path, locator, registry, event_log);
@@ -644,6 +675,7 @@ fn validate_disambiguates(
 
     if let Some(else_) = &group.else_ {
         let mut context = TypeContext::default();
+        context.defer_unresolved_provided_symbols = true;
         declare_form_or_declaration(&group.heading, &mut context);
         check_expression(
             &else_.argument,
@@ -1406,6 +1438,9 @@ fn check_expression(
             check_disambiguated_prefix(
                 operator, expression, context, path, locator, registry, event_log,
             );
+            check_provided_prefix_operator(
+                operator, expression, context, path, locator, registry, event_log,
+            );
         }
         ExpressionKind::Postfix {
             expression,
@@ -1413,6 +1448,9 @@ fn check_expression(
         } => {
             check_expression(expression, context, path, locator, registry, event_log);
             check_disambiguated_postfix(
+                expression, operator, context, path, locator, registry, event_log,
+            );
+            check_provided_postfix_operator(
                 expression, operator, context, path, locator, registry, event_log,
             );
         }
@@ -1469,6 +1507,9 @@ fn check_expression(
             check_expression(left, context, path, locator, registry, event_log);
             check_expression(right, context, path, locator, registry, event_log);
             check_disambiguated_binary(
+                left, operator, right, context, path, locator, registry, event_log,
+            );
+            check_provided_binary_operator(
                 left, operator, right, context, path, locator, registry, event_log,
             );
         }
@@ -1652,13 +1693,14 @@ fn has_function_call_disambiguation(
     arity: usize,
     registry: &SignatureRegistry,
 ) -> bool {
-    registry.disambiguations.iter().any(|rule| {
-        rule.key
-            == DisambiguationKey::Function {
-                name: name.to_owned(),
-                arity,
-            }
-    })
+    let key = DisambiguationKey::Function {
+        name: name.to_owned(),
+        arity,
+    };
+    registry
+        .disambiguations
+        .iter()
+        .any(|rule| disambiguation_keys_match(&key, &rule.key))
 }
 
 fn check_disambiguated_function_call(
@@ -1674,7 +1716,11 @@ fn check_disambiguated_function_call(
         name: name.to_owned(),
         arity: arguments.len(),
     };
-    if !registry.disambiguations.iter().any(|rule| rule.key == key) {
+    if !registry
+        .disambiguations
+        .iter()
+        .any(|rule| disambiguation_keys_match(&key, &rule.key))
+    {
         return;
     }
     let actuals = arguments.iter().map(key_for_expression).collect::<Vec<_>>();
@@ -1705,7 +1751,11 @@ fn check_disambiguated_binary(
     let Some((key, label, symbol)) = disambiguation_key_for_binary_operator(operator) else {
         return;
     };
-    if !registry.disambiguations.iter().any(|rule| rule.key == key) {
+    if !registry
+        .disambiguations
+        .iter()
+        .any(|rule| disambiguation_keys_match(&key, &rule.key))
+    {
         return;
     }
     let actuals = vec![key_for_expression(left), key_for_expression(right)];
@@ -1725,7 +1775,11 @@ fn check_disambiguated_prefix(
     event_log: &mut EventLog,
 ) {
     let (key, label, symbol) = disambiguation_key_for_prefix_operator(operator);
-    if !registry.disambiguations.iter().any(|rule| rule.key == key) {
+    if !registry
+        .disambiguations
+        .iter()
+        .any(|rule| disambiguation_keys_match(&key, &rule.key))
+    {
         return;
     }
     let actuals = vec![key_for_expression(expression)];
@@ -1763,6 +1817,173 @@ fn check_disambiguated_postfix(
     );
 }
 
+fn check_provided_binary_operator(
+    left: &Expression,
+    operator: &BinaryOperator,
+    right: &Expression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let (symbol, kind) = binary_operator_symbol_and_kind(operator);
+    if kind == NamedOperatorKind::Plain {
+        return;
+    }
+
+    let key = DisambiguationKey::BinaryOperator(symbol.clone());
+    let actuals = vec![key_for_expression(left), key_for_expression(right)];
+    let Some(rule) = find_provided_symbol_rule(&key, kind, &actuals, context, registry) else {
+        if context.defer_unresolved_provided_symbols {
+            return;
+        }
+
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&symbol),
+            format!(
+                "Could not resolve operator `{symbol}` from {}",
+                resolution_kind_label(kind)
+            ),
+        );
+        return;
+    };
+
+    check_provided_symbol_target(rule, &actuals, context, path, locator, registry, event_log);
+}
+
+fn check_provided_prefix_operator(
+    operator: &UnaryOperator,
+    expression: &Expression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let (key, _, _) = disambiguation_key_for_prefix_operator(operator);
+    let actuals = vec![key_for_expression(expression)];
+    let Some(rule) = find_provided_symbol_rule(
+        &key,
+        NamedOperatorKind::BothColon,
+        &actuals,
+        context,
+        registry,
+    ) else {
+        return;
+    };
+
+    check_provided_symbol_target(rule, &actuals, context, path, locator, registry, event_log);
+}
+
+fn check_provided_postfix_operator(
+    expression: &Expression,
+    operator: &Operator,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let key = DisambiguationKey::PostfixOperator(operator.text.clone());
+    let actuals = vec![key_for_expression(expression)];
+    let Some(rule) = find_provided_symbol_rule(
+        &key,
+        NamedOperatorKind::BothColon,
+        &actuals,
+        context,
+        registry,
+    ) else {
+        return;
+    };
+
+    check_provided_symbol_target(rule, &actuals, context, path, locator, registry, event_log);
+}
+
+fn find_provided_symbol_rule<'a>(
+    key: &DisambiguationKey,
+    kind: NamedOperatorKind,
+    actuals: &[String],
+    context: &TypeContext,
+    registry: &'a SignatureRegistry,
+) -> Option<&'a ProvidedSymbolRule> {
+    registry.provided_symbols.iter().find(|rule| {
+        disambiguation_keys_match(key, &rule.key)
+            && rule.parameters.len() == actuals.len()
+            && provided_symbol_owner_matches(
+                kind,
+                &rule.owner_signature,
+                actuals,
+                context,
+                registry,
+            )
+    })
+}
+
+fn provided_symbol_owner_matches(
+    kind: NamedOperatorKind,
+    owner_signature: &str,
+    actuals: &[String],
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> bool {
+    match kind {
+        NamedOperatorKind::Plain => false,
+        NamedOperatorKind::LeftColon => actuals
+            .first()
+            .is_some_and(|actual| has_type_signature(actual, owner_signature, context, registry)),
+        NamedOperatorKind::RightColon => actuals
+            .last()
+            .is_some_and(|actual| has_type_signature(actual, owner_signature, context, registry)),
+        NamedOperatorKind::BothColon => actuals
+            .iter()
+            .all(|actual| has_type_signature(actual, owner_signature, context, registry)),
+    }
+}
+
+fn check_provided_symbol_target(
+    rule: &ProvidedSymbolRule,
+    actuals: &[String],
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let mut child = context.clone();
+    for parameter in &rule.parameters {
+        child.declare_name(parameter.clone());
+    }
+    for (parameter, actual) in rule.parameters.iter().zip(actuals) {
+        child.add_substitution(parameter.clone(), context.normalize_key(actual));
+    }
+    check_expression(&rule.target, &child, path, locator, registry, event_log);
+}
+
+fn binary_operator_symbol_and_kind(operator: &BinaryOperator) -> (String, NamedOperatorKind) {
+    match operator {
+        BinaryOperator::Equality(operator)
+        | BinaryOperator::Special(operator)
+        | BinaryOperator::Add(operator)
+        | BinaryOperator::Subtract(operator)
+        | BinaryOperator::Multiply(operator)
+        | BinaryOperator::Divide(operator)
+        | BinaryOperator::Power(operator) => (operator.text.clone(), operator.kind),
+        BinaryOperator::Named(operator) => (operator.name.clone(), operator.kind),
+    }
+}
+
+fn resolution_kind_label(kind: NamedOperatorKind) -> &'static str {
+    match kind {
+        NamedOperatorKind::Plain => "the local or global scope",
+        NamedOperatorKind::LeftColon => "the left operand type",
+        NamedOperatorKind::RightColon => "the right operand type",
+        NamedOperatorKind::BothColon => "the common operand type",
+    }
+}
+
 fn check_disambiguated_expression(
     key: &DisambiguationKey,
     actuals: &[String],
@@ -1777,14 +1998,18 @@ fn check_disambiguated_expression(
     let Some(rule) = registry
         .disambiguations
         .iter()
-        .find(|rule| rule.key == *key)
+        .find(|rule| disambiguation_keys_match(key, &rule.key))
     else {
         return;
     };
     if rule.parameters.len() != actuals.len() {
         return;
     }
-    if context.active_disambiguations.contains(key) {
+    if context
+        .active_disambiguations
+        .iter()
+        .any(|active| disambiguation_keys_match(active, &rule.key))
+    {
         return;
     }
 
@@ -1895,6 +2120,62 @@ fn disambiguation_substitutions(
         .collect()
 }
 
+fn disambiguation_keys_match(left: &DisambiguationKey, right: &DisambiguationKey) -> bool {
+    left == right
+        || equivalent_disambiguation_keys(left)
+            .iter()
+            .any(|key| key == right)
+}
+
+fn equivalent_disambiguation_keys(key: &DisambiguationKey) -> Vec<DisambiguationKey> {
+    match key {
+        DisambiguationKey::BinaryOperator(operator) => vec![DisambiguationKey::Function {
+            name: function_name_for_operator(operator),
+            arity: 2,
+        }],
+        DisambiguationKey::Function { name, arity: 2 } => {
+            vec![DisambiguationKey::BinaryOperator(function_operator_name(
+                name,
+            ))]
+        }
+        DisambiguationKey::PrefixOperator(operator)
+        | DisambiguationKey::PostfixOperator(operator) => vec![DisambiguationKey::Function {
+            name: function_name_for_operator(operator),
+            arity: 1,
+        }],
+        DisambiguationKey::Function { name, arity: 1 } => vec![
+            DisambiguationKey::PrefixOperator(function_operator_name(name)),
+            DisambiguationKey::PostfixOperator(function_operator_name(name)),
+        ],
+        DisambiguationKey::Function { .. } => Vec::new(),
+    }
+}
+
+fn function_name_for_operator(operator: &str) -> String {
+    if is_plain_function_name(operator) {
+        operator.to_owned()
+    } else {
+        format!("`{operator}`")
+    }
+}
+
+fn function_operator_name(name: &str) -> String {
+    unstrop_operator_name(name).unwrap_or_else(|| name.to_owned())
+}
+
+fn unstrop_operator_name(name: &str) -> Option<String> {
+    name.strip_prefix('`')
+        .and_then(|rest| rest.strip_suffix('`'))
+        .map(ToOwned::to_owned)
+}
+
+fn is_plain_function_name(value: &str) -> bool {
+    !value.is_empty()
+        && value
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+}
+
 fn disambiguation_key_for_binary_operator(
     operator: &BinaryOperator,
 ) -> Option<(DisambiguationKey, String, String)> {
@@ -1905,11 +2186,22 @@ fn disambiguation_key_for_binary_operator(
         | BinaryOperator::Subtract(operator)
         | BinaryOperator::Multiply(operator)
         | BinaryOperator::Divide(operator)
-        | BinaryOperator::Power(operator) => Some((
-            DisambiguationKey::BinaryOperator(operator.text.clone()),
-            format!("operator `{}`", operator.text),
-            operator.text.clone(),
-        )),
+        | BinaryOperator::Power(operator)
+            if operator.kind == NamedOperatorKind::Plain =>
+        {
+            Some((
+                DisambiguationKey::BinaryOperator(operator.text.clone()),
+                format!("operator `{}`", operator.text),
+                operator.text.clone(),
+            ))
+        }
+        BinaryOperator::Equality(_)
+        | BinaryOperator::Special(_)
+        | BinaryOperator::Add(_)
+        | BinaryOperator::Subtract(_)
+        | BinaryOperator::Multiply(_)
+        | BinaryOperator::Divide(_)
+        | BinaryOperator::Power(_) => None,
         BinaryOperator::Named(operator) if operator.kind == NamedOperatorKind::Plain => Some((
             DisambiguationKey::BinaryOperator(operator.name.clone()),
             format!("operator `|{}|`", operator.name),
@@ -3569,6 +3861,7 @@ struct TypeContext {
     substitutions: Vec<(String, String)>,
     symbols: HashSet<String>,
     active_disambiguations: Vec<DisambiguationKey>,
+    defer_unresolved_provided_symbols: bool,
 }
 
 impl TypeContext {
@@ -5082,6 +5375,36 @@ fn disambiguation_key_and_parameters(
         | FormOrDeclarationKind::FunctionDeclaration { name: Some(_), .. }
         | FormOrDeclarationKind::TupleDeclaration { .. }
         | FormOrDeclarationKind::SetDeclaration { .. } => None,
+    }
+}
+
+fn provided_symbol_key_and_parameters(
+    lhs: &ExpressionAliasLhs,
+) -> Option<(DisambiguationKey, Vec<String>)> {
+    match lhs {
+        ExpressionAliasLhs::Form(form) => disambiguation_key_and_parameters(form),
+        ExpressionAliasLhs::Command(CommandHeaderNode {
+            chain, paren_args, ..
+        }) => {
+            let name = format!("\\{}", format_chain(chain));
+            let parameters = paren_args
+                .first()
+                .map(|args| {
+                    args.forms
+                        .iter()
+                        .map(key_for_form_or_declaration)
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+            Some((
+                DisambiguationKey::Function {
+                    name,
+                    arity: parameters.len(),
+                },
+                parameters,
+            ))
+        }
+        ExpressionAliasLhs::InfixCommand(_) => None,
     }
 }
 

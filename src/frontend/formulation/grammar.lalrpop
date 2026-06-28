@@ -27,6 +27,18 @@ extern {
         "label" => Token::Label(<Vec<String>>),
         "::=" => Token::Introduce,
         ":=" => Token::Declare,
+        ":+:" => Token::BothPlus,
+        ":+" => Token::LeftPlus,
+        "+:" => Token::RightPlus,
+        ":-:" => Token::BothMinus,
+        ":-" => Token::LeftMinus,
+        "-:" => Token::RightMinus,
+        ":*:" => Token::BothStar,
+        ":*" => Token::LeftStar,
+        "*:" => Token::RightStar,
+        ":^:" => Token::BothCaret,
+        ":^" => Token::LeftCaret,
+        "^:" => Token::RightCaret,
         "is_not?" => Token::IsNotPredicate,
         "is?" => Token::IsPredicate,
         "is" => Token::Is,
@@ -381,16 +393,28 @@ EqualityOperator: BinaryOperator = {
 
 AdditiveOperator: BinaryOperator = {
     <l:@L> "+" <r:@R> => BinaryOperator::Add(ast::Operator::new(Span::new(l, r), "+")),
+    <l:@L> ":+" <r:@R> => BinaryOperator::Add(ast::Operator::with_kind(Span::new(l, r), "+", NamedOperatorKind::LeftColon)),
+    <l:@L> "+:" <r:@R> => BinaryOperator::Add(ast::Operator::with_kind(Span::new(l, r), "+", NamedOperatorKind::RightColon)),
+    <l:@L> ":+:" <r:@R> => BinaryOperator::Add(ast::Operator::with_kind(Span::new(l, r), "+", NamedOperatorKind::BothColon)),
     <l:@L> "-" <r:@R> => BinaryOperator::Subtract(ast::Operator::new(Span::new(l, r), "-")),
+    <l:@L> ":-" <r:@R> => BinaryOperator::Subtract(ast::Operator::with_kind(Span::new(l, r), "-", NamedOperatorKind::LeftColon)),
+    <l:@L> "-:" <r:@R> => BinaryOperator::Subtract(ast::Operator::with_kind(Span::new(l, r), "-", NamedOperatorKind::RightColon)),
+    <l:@L> ":-:" <r:@R> => BinaryOperator::Subtract(ast::Operator::with_kind(Span::new(l, r), "-", NamedOperatorKind::BothColon)),
 };
 
 MultiplicativeOperator: BinaryOperator = {
     <l:@L> "*" <r:@R> => BinaryOperator::Multiply(ast::Operator::new(Span::new(l, r), "*")),
+    <l:@L> ":*" <r:@R> => BinaryOperator::Multiply(ast::Operator::with_kind(Span::new(l, r), "*", NamedOperatorKind::LeftColon)),
+    <l:@L> "*:" <r:@R> => BinaryOperator::Multiply(ast::Operator::with_kind(Span::new(l, r), "*", NamedOperatorKind::RightColon)),
+    <l:@L> ":*:" <r:@R> => BinaryOperator::Multiply(ast::Operator::with_kind(Span::new(l, r), "*", NamedOperatorKind::BothColon)),
     <l:@L> "/" <r:@R> => BinaryOperator::Divide(ast::Operator::new(Span::new(l, r), "/")),
 };
 
 PowerOperator: BinaryOperator = {
     <l:@L> "^" <r:@R> => BinaryOperator::Power(ast::Operator::new(Span::new(l, r), "^")),
+    <l:@L> ":^" <r:@R> => BinaryOperator::Power(ast::Operator::with_kind(Span::new(l, r), "^", NamedOperatorKind::LeftColon)),
+    <l:@L> "^:" <r:@R> => BinaryOperator::Power(ast::Operator::with_kind(Span::new(l, r), "^", NamedOperatorKind::RightColon)),
+    <l:@L> ":^:" <r:@R> => BinaryOperator::Power(ast::Operator::with_kind(Span::new(l, r), "^", NamedOperatorKind::BothColon)),
 };
 
 HighPrecedenceInfixOperator: HighPrecedenceInfix = {

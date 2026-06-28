@@ -81,6 +81,30 @@ pub enum Token {
     Introduce,
     #[token(":=")]
     Declare,
+    #[token(":+:")]
+    BothPlus,
+    #[token(":+")]
+    LeftPlus,
+    #[token("+:")]
+    RightPlus,
+    #[token(":-:")]
+    BothMinus,
+    #[token(":-")]
+    LeftMinus,
+    #[token("-:")]
+    RightMinus,
+    #[token(":*:")]
+    BothStar,
+    #[token(":*")]
+    LeftStar,
+    #[token("*:")]
+    RightStar,
+    #[token(":^:")]
+    BothCaret,
+    #[token(":^")]
+    LeftCaret,
+    #[token("^:")]
+    RightCaret,
     #[token("is_not?")]
     IsNotPredicate,
     #[token("is?")]

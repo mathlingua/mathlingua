@@ -1390,6 +1390,15 @@ mod tests {
     Documented:
     . written: "x_? + y_?"
 
+    [op(x_, y_)]
+    Disambiguates:
+    when:
+    . x_ is \real
+    . y_ is \integer
+    to: x_ \.real.+./ y_
+    Documented:
+    . written: "op(x_?, y_?)"
+
     Theorem:
     given:
     . r is \real
@@ -1398,6 +1407,7 @@ mod tests {
     then:
     . r + z
     . r + n
+    . r |op| n
     "#,
         )
         .unwrap();
@@ -1406,6 +1416,86 @@ mod tests {
         let result = check_in(
             temp_dir.path(),
             &[PathBuf::from("disambiguates-plus.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_accepts_type_directed_provided_binary_operators() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("type-directed-minus.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ - y_ :=> x_ \.set.minus./ y_
+    . symbol: x_ |minus| y_ :=> x_ \.set.minus./ y_
+    . symbol: minusFn(x_, y_) :=> x_ \.set.minus./ y_
+    Documented:
+    . called: "set"
+
+    [A \.set.minus./ B]
+    Defines: C := A is \set
+    when: A, B is \set
+    Documented:
+    . called: "set difference of $A?$ and $B?$"
+    . written: "A? \backslash B?"
+
+    Theorem:
+    given: A, B is \set
+    then: A :- B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A -: B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A :-: B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A :|minus| B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A |minus|: B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A :|minus|: B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A :|minusFn| B is \set
+
+    Theorem:
+    given: A, B is \set
+    then: A - B is \set
+
+    [x_ - y_]
+    Disambiguates:
+    when: x_, y_ is \set
+    to: x_ \.set.minus./ y_
+    else: x_ :-: y_
+    Documented:
+    . written: "x_? - y_?"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("type-directed-minus.mlg")],
             &mut event_log,
         );
 
@@ -1454,11 +1544,21 @@ mod tests {
     Documented:
     . written: "x_? |f"
 
+    [g(x_)]
+    Disambiguates:
+    when: x_ is \real
+    to: \prefix.real{x_}
+    Documented:
+    . written: "g(x_?)"
+
     Theorem:
     given: r is \real
     then:
     . f| r
     . r |f
+    . g(r)
+    . g| r
+    . r |g
     "#,
         )
         .unwrap();

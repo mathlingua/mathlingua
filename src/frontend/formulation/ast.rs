@@ -540,6 +540,7 @@ pub enum PlaceholderFormKind {
 pub struct Operator {
     pub span: Span,
     pub text: String,
+    pub kind: NamedOperatorKind,
 }
 
 impl Operator {
@@ -547,6 +548,15 @@ impl Operator {
         Self {
             span,
             text: text.into(),
+            kind: NamedOperatorKind::Plain,
+        }
+    }
+
+    pub fn with_kind(span: Span, text: impl Into<String>, kind: NamedOperatorKind) -> Self {
+        Self {
+            span,
+            text: text.into(),
+            kind,
         }
     }
 }
@@ -590,7 +600,7 @@ pub struct NamedOperator {
     pub kind: NamedOperatorKind,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NamedOperatorKind {
     Plain,
     LeftColon,

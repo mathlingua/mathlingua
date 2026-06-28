@@ -2808,6 +2808,35 @@ mod tests {
     }
 
     #[test]
+    fn parses_left_right_and_both_colon_symbolic_operator_expressions() {
+        let left = parse_expression("x :- y").expect("expected left-colon operator");
+        let right = parse_expression("x -: y").expect("expected right-colon operator");
+        let both = parse_expression("x :-: y").expect("expected both-colon operator");
+
+        assert!(matches!(
+            left.kind,
+            ExpressionKind::Binary {
+                operator: BinaryOperator::Subtract(ref operator),
+                ..
+            } if operator.kind == NamedOperatorKind::LeftColon && operator.text == "-"
+        ));
+        assert!(matches!(
+            right.kind,
+            ExpressionKind::Binary {
+                operator: BinaryOperator::Subtract(ref operator),
+                ..
+            } if operator.kind == NamedOperatorKind::RightColon && operator.text == "-"
+        ));
+        assert!(matches!(
+            both.kind,
+            ExpressionKind::Binary {
+                operator: BinaryOperator::Subtract(ref operator),
+                ..
+            } if operator.kind == NamedOperatorKind::BothColon && operator.text == "-"
+        ));
+    }
+
+    #[test]
     fn parses_operator_subject_specs() {
         let item = parse_is_or_spec(r#"+ "on" Nat"#).expect("expected operator spec statement");
 

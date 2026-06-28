@@ -98,6 +98,16 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             render_expression(subject, registry),
             render_predicate_command_expression(command, registry)
         ),
+        ExpressionKind::IsRefinedPredicate { subject, command } => format!(
+            "{} \\textrm{{ is }} {}",
+            render_expression(subject, registry),
+            render_refined_command_called(command, registry)
+        ),
+        ExpressionKind::IsNotRefinedPredicate { subject, command } => format!(
+            "{} \\textrm{{ is not }} {}",
+            render_expression(subject, registry),
+            render_refined_command_called(command, registry)
+        ),
         ExpressionKind::IsType { subject, ty } => match ty {
             TypeExpression::Builtin { chain, .. } => format!(
                 "{} \\textrm{{ is }} {}",

@@ -90,6 +90,9 @@ fn substitute_called_text_segment(
                     index += 1;
                     continue;
                 }
+                text.push_str(&name);
+                index += 1;
+                continue;
             }
             text.extend(chars[start..index].iter());
         } else {
@@ -142,6 +145,9 @@ pub(super) fn substitute_math_template(
                     index += 1;
                     continue;
                 }
+                result.push_str(&name);
+                index += 1;
+                continue;
             }
             result.extend(chars[start..index].iter());
         } else {

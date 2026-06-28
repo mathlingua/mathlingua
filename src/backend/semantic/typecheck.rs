@@ -1462,6 +1462,15 @@ fn check_expression(
                 check_expression(expression, context, path, locator, registry, event_log);
             }
         }
+        ExpressionKind::IsRefinedPredicate { subject, command }
+        | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
+            check_expression(subject, context, path, locator, registry, event_log);
+            check_refined_command_expression(command, context, path, locator, registry, event_log);
+            let active_command = active_refined_command_expression(command, context);
+            for expression in refined_command_expression_arguments(&active_command) {
+                check_expression(expression, context, path, locator, registry, event_log);
+            }
+        }
         ExpressionKind::IsType { subject, ty } => {
             check_expression(subject, context, path, locator, registry, event_log);
             check_type_expression(ty, context, path, locator, registry, event_log);
@@ -2241,6 +2250,13 @@ fn collect_expression_names(expression: &Expression, names: &mut Vec<String>) {
         | ExpressionKind::IsNotPredicate { subject, command } => {
             collect_expression_names(subject, names);
             for expression in command_expression_arguments(command) {
+                collect_expression_names(expression, names);
+            }
+        }
+        ExpressionKind::IsRefinedPredicate { subject, command }
+        | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
+            collect_expression_names(subject, names);
+            for expression in refined_command_expression_arguments(command) {
                 collect_expression_names(expression, names);
             }
         }
@@ -3769,6 +3785,14 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
                 declare_names_from_expression(expression, context);
             }
         }
+        ExpressionKind::IsRefinedPredicate { subject, command }
+        | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
+            declare_names_from_expression(subject, context);
+            let active_command = active_refined_command_expression(command, context);
+            for expression in refined_command_expression_arguments(&active_command) {
+                declare_names_from_expression(expression, context);
+            }
+        }
         ExpressionKind::IsType { subject, ty } => {
             declare_names_from_expression(subject, context);
             declare_names_from_type_expression(ty, context);
@@ -4526,6 +4550,16 @@ fn key_for_expression(expression: &Expression) -> String {
             key_for_expression(subject),
             key_for_command_expression(command)
         ),
+        ExpressionKind::IsRefinedPredicate { subject, command } => format!(
+            "{} is? {}",
+            key_for_expression(subject),
+            key_for_refined_command_expression(command)
+        ),
+        ExpressionKind::IsNotRefinedPredicate { subject, command } => format!(
+            "{} is_not? {}",
+            key_for_expression(subject),
+            key_for_refined_command_expression(command)
+        ),
         ExpressionKind::IsType { subject, ty } => format!(
             "{} is {}",
             key_for_expression(subject),
@@ -4731,6 +4765,46 @@ fn key_for_set_target(target: &SetTarget) -> String {
 
 fn key_for_command_expression(command: &CommandExpression) -> String {
     let mut key = format!("\\{}", format_chain(&command.chain));
+    append_expression_args(&mut key, &command.head_args);
+    for tail in &command.tail {
+        key.push(':');
+        key.push_str(&format_chain(&tail.chain));
+        append_expression_args(&mut key, &tail.args);
+    }
+    for args in &command.paren_args {
+        key.push('(');
+        key.push_str(
+            &args
+                .expressions
+                .iter()
+                .map(key_for_expression)
+                .collect::<Vec<_>>()
+                .join(","),
+        );
+        key.push(')');
+    }
+    key
+}
+
+fn key_for_refined_command_expression(command: &RefinedCommandExpression) -> String {
+    let mut key = "\\".to_string();
+    if let Some(prefix) = &command.prefix_chain {
+        key.push_str(&format_chain(prefix));
+        key.push_str("::");
+    }
+    for (index, part) in command.parts.iter().enumerate() {
+        if index > 0 {
+            key.push_str("::");
+        }
+        key.push_str(&format_chain(&part.chain));
+        for tail in &part.tail {
+            key.push(':');
+            key.push_str(&format_chain(&tail.chain));
+            append_expression_args(&mut key, &tail.args);
+        }
+    }
+    key.push_str("::");
+    key.push_str(&format_refined_tail(&command.refined_tail));
     append_expression_args(&mut key, &command.head_args);
     for tail in &command.tail {
         key.push(':');

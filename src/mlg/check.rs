@@ -1099,11 +1099,16 @@ mod tests {
     . adjective: "injective"
     . written: "\operatorname{injective}"
 
+    [\(surjective)::function:?on{A}:?to{B}]
+    Refines: f(x__) is \function:?on{A}:?to{B}
+    when: A, B is \set
+    Documented:
+    . adjective: "surjective"
+    . written: "\operatorname{surjective}"
+
     Theorem:
-    given:
-    . A, B is \set
-    . f is \(injective)::function:?on{A}:?to{B}
-    then: f is? \function:?on{A}:?to{B}
+    given: f is \(injective, surjective)::function
+    then: f is? \(injective)::function
     "#,
         )
         .unwrap();

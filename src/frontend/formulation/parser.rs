@@ -1667,9 +1667,59 @@ pub(super) fn parse_name_token(input: &str) -> Result<String, ParseError> {
 /// source must be mathematical expression syntax rather than a declaration or
 /// specification statement.
 pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
+    let input = input.trim();
+    if let Some(expression) = parse_refined_predicate_expression(input) {
+        return expression;
+    }
+
     grammar::InputExpressionParser::new()
         .parse(Lexer::new(input))
         .map_err(ParseError::from)
+}
+
+fn parse_refined_predicate_expression(input: &str) -> Option<Result<Expression, ParseError>> {
+    if let Some(expression) =
+        parse_refined_predicate_expression_with_operator(input, " is_not? ", false)
+    {
+        return Some(expression);
+    }
+
+    parse_refined_predicate_expression_with_operator(input, " is? ", true)
+}
+
+fn parse_refined_predicate_expression_with_operator(
+    input: &str,
+    operator: &str,
+    positive: bool,
+) -> Option<Result<Expression, ParseError>> {
+    let index = find_top_level_substring(input, operator)?;
+    let command_text = input[index + operator.len()..].trim();
+    if !contains_top_level(command_text, "::") {
+        return None;
+    }
+
+    let subject =
+        match grammar::InputExpressionParser::new().parse(Lexer::new(input[..index].trim())) {
+            Ok(subject) => subject,
+            Err(error) => return Some(Err(ParseError::from(error))),
+        };
+    let command = match parse_refined_command_expression(command_text) {
+        Ok(command) => command,
+        Err(error) => return Some(Err(error)),
+    };
+    let kind = if positive {
+        ExpressionKind::IsRefinedPredicate {
+            subject: Box::new(subject),
+            command,
+        }
+    } else {
+        ExpressionKind::IsNotRefinedPredicate {
+            subject: Box::new(subject),
+            command,
+        }
+    };
+
+    Some(Ok(Expression::new(span_all(input), kind)))
 }
 
 /// Parses a local expression binding of the form `<left> := <right>`.
@@ -2506,6 +2556,8 @@ mod tests {
             parse_expression(r#"x "in"? X"#).expect("expected spec predicate expression");
         let predicate = parse_expression(r#"x is? \even"#).expect("expected predicate expression");
         let negative = parse_expression(r#"x is_not? \odd"#).expect("expected negative predicate");
+        let refined_predicate = parse_expression(r#"f is? \(injective)::function"#)
+            .expect("expected refined predicate");
 
         assert!(matches!(
             spec.kind,
@@ -2521,6 +2573,10 @@ mod tests {
         assert!(matches!(
             negative.kind,
             ExpressionKind::IsNotPredicate { .. }
+        ));
+        assert!(matches!(
+            refined_predicate.kind,
+            ExpressionKind::IsRefinedPredicate { .. }
         ));
     }
 

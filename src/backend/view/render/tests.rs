@@ -217,6 +217,35 @@ Documented:
 }
 
 #[test]
+fn renders_refined_predicates_and_missing_placeholders_without_question_marks() {
+    let registry = registry_for(
+        r#"[\function:?on{A}:?to{B}]
+Describes: f(x__)
+Documented:
+. called: "function on $A?$ to $B?$"
+. written: "f? \: : \: A? \rightarrow B?"
+
+[\(injective)::function:?on{A}:?to{B}]
+Refines: f(x__) is \function:?on{A}:?to{B}
+Documented:
+. adjective: "injective"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"f is \function"#, &registry),
+        Some(r#"f \textrm{ is } \textrm{function on }A\textrm{ to }B"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"f is? \(injective)::function"#, &registry),
+        Some(
+            r#"f \textrm{ is } \textrm{injective}\textrm{ }\textrm{function on }A\textrm{ to }B"#
+                .to_string()
+        )
+    );
+}
+
+#[test]
 fn renders_definition_group_headings_from_called_text() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]

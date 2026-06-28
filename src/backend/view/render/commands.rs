@@ -108,20 +108,6 @@ pub(super) struct CalledTemplate {
     pub(super) latex: String,
 }
 
-pub(super) fn type_expression_called_template(
-    ty: &TypeExpression,
-    registry: &RenderRegistry,
-) -> Option<CalledTemplate> {
-    match ty {
-        TypeExpression::Builtin { .. } => None,
-        TypeExpression::Command(command) => command_called_template(command, registry),
-        TypeExpression::RefinedCommand(command) => {
-            Some(refined_command_called_template(command, registry))
-        }
-        TypeExpression::Function(_) => None,
-    }
-}
-
 pub(super) fn command_called_template(
     command: &CommandExpression,
     registry: &RenderRegistry,
@@ -186,13 +172,6 @@ pub(super) fn refined_command_called_template(
     };
 
     CalledTemplate { latex }
-}
-
-pub(super) fn refines_target_type(statement: &DeclarationStatement) -> Option<&TypeExpression> {
-    match &statement.relation {
-        Some(DeclarationRelation::Is(ty)) => Some(ty),
-        _ => None,
-    }
 }
 
 pub(super) fn command_substitutions(

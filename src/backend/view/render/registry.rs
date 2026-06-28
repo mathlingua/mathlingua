@@ -134,18 +134,25 @@ pub(in crate::backend::view) fn render_group_heading_latex(
 
 pub(super) fn render_refines_group_heading_latex(
     header: &CommandHeader,
-    refines_argument: Option<&str>,
+    _refines_argument: Option<&str>,
     refinement_render: &CommandRender,
     registry: &RenderRegistry,
 ) -> Option<String> {
-    let statement = parse_refined_declaration_statement(refines_argument?).ok()?;
-    let target = refines_target_type(&statement)?;
-    let target_called = type_expression_called_template(target, registry)?;
+    let CommandHeader::Refined(refined_header) = header else {
+        return None;
+    };
     let refinement_latex = refinement_render.render_called(&command_header_substitutions(header));
+    let base_signature = refined_command_header_base_signature(refined_header);
+    let target_render = registry.commands.get(&base_signature)?;
+    let target_latex = command_reference_latex(
+        &base_signature,
+        target_render.render_called(&command_header_substitutions(header)),
+        registry,
+    );
 
     Some(join_called_latex_parts(vec![
         refinement_latex,
-        target_called.latex,
+        target_latex,
     ]))
 }
 

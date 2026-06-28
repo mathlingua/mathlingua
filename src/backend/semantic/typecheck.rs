@@ -397,7 +397,7 @@ fn validate_top_level_item_types(
             let mut context = TypeContext::default();
             declare_header_symbols(&group.heading, &mut context);
             declare_declaration_statement_subjects(&group.refines.argument, &mut context);
-            validate_refines_target_matches_heading(group, path, locator, event_log);
+            validate_refines_form_only(group, path, locator, event_log);
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -414,6 +414,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            assume_refines_base_type(&group.heading, &group.refines.argument, &mut context);
             complete_introduced_declaration_statement(
                 &group.refines.argument,
                 &mut context,
@@ -597,29 +598,16 @@ fn check_refines_extends(
     );
 }
 
-fn validate_refines_target_matches_heading(
+fn validate_refines_form_only(
     group: &RefinesGroup,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     event_log: &mut EventLog,
 ) {
-    let CommandHeader::Refined(header) = &group.heading else {
-        return;
-    };
-
-    let Some(DeclarationRelation::Is(TypeExpression::Command(target))) =
-        &group.refines.argument.relation
-    else {
-        emit_error(
-            event_log,
-            path,
-            locator.locate_heading(&shape_for_header(&group.heading)),
-            "Refines entries with refined headings must have the form `Refines: ... is <refined target>`",
-        );
-        return;
-    };
-
-    if refined_header_target_matches_command(header, target) {
+    if group.refines.argument.relation.is_none()
+        && group.refines.argument.expansion.is_none()
+        && group.refines.argument.definition.is_none()
+    {
         return;
     }
 
@@ -627,73 +615,8 @@ fn validate_refines_target_matches_heading(
         event_log,
         path,
         locator.locate_heading(&shape_for_header(&group.heading)),
-        "Refines target must exactly match the command after `::` in the refined heading",
+        "Refines entries must have the form `Refines: <form>`; the refined target is inferred from the heading",
     );
-}
-
-fn refined_header_target_matches_command(
-    header: &RefinedCommandHeader,
-    target: &CommandExpression,
-) -> bool {
-    match &header.refined_tail {
-        RefinedTail::Chain(chain) if chains_match(chain, &target.chain) => {}
-        RefinedTail::Name { name, .. } if name == &format_chain(&target.chain) => {}
-        _ => return false,
-    }
-
-    heading_expression_groups_match(&header.head_args, &target.head_args)
-        && heading_expression_tails_match(&header.tail, &target.tail)
-        && paren_heading_expression_groups_match(&header.paren_args, &target.paren_args)
-}
-
-fn heading_expression_tails_match(
-    heading: &[CommandHeaderTailPart],
-    expression: &[CommandExpressionTailPart],
-) -> bool {
-    heading.len() == expression.len()
-        && heading.iter().zip(expression).all(|(heading, expression)| {
-            chains_match(&heading.chain, &expression.chain)
-                && heading.optional == expression.optional
-                && heading_expression_groups_match(&heading.args, &expression.args)
-        })
-}
-
-fn chains_match(left: &Chain, right: &Chain) -> bool {
-    left.parts == right.parts
-}
-
-fn heading_expression_groups_match(
-    heading: &[CurlyHeadingArgs],
-    expression: &[CurlyExpressionArgs],
-) -> bool {
-    heading.len() == expression.len()
-        && heading.iter().zip(expression).all(|(heading, expression)| {
-            heading.forms.len() == expression.expressions.len()
-                && heading
-                    .forms
-                    .iter()
-                    .zip(&expression.expressions)
-                    .all(|(form, expression)| {
-                        key_for_form_or_declaration(form) == key_for_expression(expression)
-                    })
-        })
-}
-
-fn paren_heading_expression_groups_match(
-    heading: &[ParenHeadingArgs],
-    expression: &[ParenExpressionArgs],
-) -> bool {
-    heading.len() == expression.len()
-        && heading.iter().zip(expression).all(|(heading, expression)| {
-            heading.forms.len() == expression.expressions.len()
-                && heading
-                    .forms
-                    .iter()
-                    .zip(&expression.expressions)
-                    .all(|(form, expression)| {
-                        key_for_form_or_declaration(form) == key_for_expression(expression)
-                    })
-        })
 }
 
 fn validate_disambiguates(
@@ -773,6 +696,36 @@ fn assume_described_type(
             signature: header_shape.shape.signature,
         });
     }
+}
+
+fn assume_refines_base_type(
+    heading: &CommandHeader,
+    refined: &DeclarationStatement,
+    context: &mut TypeContext,
+) {
+    let CommandHeader::Refined(_) = heading else {
+        return;
+    };
+    let subject = primary_subject_key(&refined.subject);
+
+    for header_shape in shapes_for_header(heading) {
+        let Some((ty, signature)) = refined_header_base_type_fact_parts(&header_shape) else {
+            continue;
+        };
+        context.add_fact(TypeFact::Is {
+            subject: subject.clone(),
+            ty,
+            signature,
+        });
+    }
+}
+
+fn refined_header_base_type_fact_parts(header_shape: &HeaderShape) -> Option<(String, String)> {
+    let signature_segments = split_refined_key(&header_shape.shape.signature)?;
+    let type_key_segments = split_refined_key(&header_shape.type_key)?;
+    let signature = format!("\\{}", signature_segments.last()?);
+    let ty = format!("\\{}", type_key_segments.last()?);
+    Some((ty, signature))
 }
 
 fn validate_spec_infix_describes_header(

@@ -3338,7 +3338,7 @@ expresses:
   . y = y
 
 [\transform]
-Refines: x is \(f)::[[g]]
+Refines: x
 using:
 . X is \set
 when:
@@ -3568,12 +3568,7 @@ that:
 
         match &document.items[7] {
             TopLevelItem::Refines(group) => {
-                assert!(matches!(
-                    &group.refines.argument.relation,
-                    Some(crate::frontend::formulation::ast::DeclarationRelation::Is(
-                        _
-                    ))
-                ));
+                assert!(group.refines.argument.relation.is_none());
                 assert!(group.extends.is_some());
                 assert!(matches!(
                     group.when.as_ref().expect("expected when").arguments[0],

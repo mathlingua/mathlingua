@@ -1,5 +1,5 @@
 [\transform]
-Refines: x is \logic.$prefix.(f:on{x}, g:to{y})::target.$tail{z}:via{w}(u, v)
+Refines: x
 using:
 . X is \set
 when:

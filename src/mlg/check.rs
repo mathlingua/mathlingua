@@ -1031,13 +1031,13 @@ mod tests {
     . written: "A? \to B?"
 
     [\(bounded)::function:on{A}:to{B}]
-    Refines: f(x__) is \function:on{A}:to{B}
+    Refines: f(x__)
     Documented:
     . adjective: "bounded"
     . written: "\operatorname{bounded}"
 
     [\(continuous)::function:on{A}:to{B}]
-    Refines: f(x__) is \function:on{A}:to{B}
+    Refines: f(x__)
     Documented:
     . adjective: "continuous"
     . written: "\operatorname{continuous}"
@@ -1088,7 +1088,7 @@ mod tests {
     . written: "f?"
 
     [\(injective)::function:?on{A}:?to{B}]
-    Refines: f(x__) is \function:?on{A}:?to{B}
+    Refines: f(x__)
     when: A, B is \set
     satisfies:
     . forAll: x1, x2 "in" A
@@ -1100,7 +1100,7 @@ mod tests {
     . written: "\operatorname{injective}"
 
     [\(surjective)::function:?on{A}:?to{B}]
-    Refines: f(x__) is \function:?on{A}:?to{B}
+    Refines: f(x__)
     when: A, B is \set
     Documented:
     . adjective: "surjective"
@@ -1151,17 +1151,17 @@ mod tests {
     . written: "\operatorname{boundedFunction}"
 
     [\(injective)::function]
-    Refines: f(x__) is \function
+    Refines: f(x__)
     Documented:
     . adjective: "injective"
 
     [\(surjective)::function]
-    Refines: f(x__) is \function
+    Refines: f(x__)
     Documented:
     . adjective: "surjective"
 
     [\(bijective)::function]
-    Refines: f(x__) is \function
+    Refines: f(x__)
     extends: f is \(injective, surjective)::[[f]]
     Documented:
     . adjective: "bijective"
@@ -1261,7 +1261,7 @@ mod tests {
     . adjective: "injective"
 
     [\(surjective)::function:?on{A}:?to{B}]
-    Refines: f(x__) is \function:?on{A}:?to{B}
+    Refines: f(x__)
     when: A, B is \set
     Documented:
     . called: "surjective"
@@ -1288,7 +1288,7 @@ mod tests {
 
         assert_eq!(result.files_checked, 1);
         assert!(messages.iter().any(|message| message
-            == "Refines target must exactly match the command after `::` in the refined heading"));
+            == "Refines entries must have the form `Refines: <form>`; the refined target is inferred from the heading"));
         assert!(
             messages.iter().any(|message| message
                 == "Refined command headings may only be used with Refines entries")
@@ -3021,7 +3021,7 @@ mod tests {
     . "called only"
 
     [\refines.missing]
-    Refines: A is \called.only
+    Refines: A
     "#,
         )
         .unwrap();

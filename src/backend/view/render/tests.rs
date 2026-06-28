@@ -187,13 +187,13 @@ Documented:
   . "f? \: : \: A? \rightarrow B?"
 
 [\(bounded)::function:on{A}:to{B}]
-Refines: f(x__) is \function:on{A}:to{B}
+Refines: f(x__)
 Documented:
 . adjective: "bounded"
 . written: "\operatorname{Bounded}"
 
 [\(continuous)::function:on{A}:to{B}]
-Refines: f(x__) is \function:on{A}:to{B}
+Refines: f(x__)
 Documented:
 . adjective: "continuous"
 . written: "\operatorname{Continuous}"
@@ -226,7 +226,7 @@ Documented:
 . written: "f? \: : \: A? \rightarrow B?"
 
 [\(injective)::function:?on{A}:?to{B}]
-Refines: f(x__) is \function:?on{A}:?to{B}
+Refines: f(x__)
 Documented:
 . adjective: "injective"
 "#,
@@ -314,7 +314,7 @@ Documented:
 . written: "f? \: : \: A? \rightarrow B?"
 
 [\(continuous)::function:on{A}:to{B}]
-Refines: f is \function:on{A}:to{B}
+Refines: f
 Documented:
 . adjective: "continuous"
 . written: "\operatorname{Continuous}"
@@ -325,7 +325,7 @@ Documented:
         render_group_heading_latex(
             "Refines",
             Some(r#"\(continuous)::function:on{A}:to{B}"#),
-            Some(r#"f is \function:on{A}:to{B}"#),
+            Some(r#"f"#),
             &registry
         ),
         Some(r#"\textrm{continuous}\textrm{ }\textrm{function on }A\textrm{ to }B"#.to_string())

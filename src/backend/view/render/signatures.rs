@@ -189,6 +189,12 @@ pub(super) fn refined_command_header_signature(command: &RefinedCommandHeader) -
     signature
 }
 
+pub(super) fn refined_command_header_base_signature(command: &RefinedCommandHeader) -> String {
+    let mut signature = format!("\\{}", refined_tail_signature(&command.refined_tail));
+    add_header_tail_signature(&mut signature, &command.tail);
+    signature
+}
+
 pub(super) fn refined_command_base_signature(command: &RefinedCommandExpression) -> String {
     let mut signature = format!("\\{}", refined_tail_signature(&command.refined_tail));
     add_expression_tail_signature(&mut signature, &command.tail);

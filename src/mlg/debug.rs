@@ -479,7 +479,7 @@ fn parse_formulation_text(input: &str) -> String {
         .map(|attempt| format!("- {}", attempt.name))
         .collect::<Vec<_>>();
 
-    let mut output = format!("Parsed as {}\n\n{:#?}", success.name, success.tree);
+    let mut output = format!("Parsed as {}\n\n{}", success.name, success.tree);
     if !also_parses_as.is_empty() {
         output.push_str("\n\nAlso parses as:\n");
         output.push_str(&also_parses_as.join("\n"));
@@ -637,7 +637,8 @@ mod tests {
         let output = parse_text(DebugMode::Formulation, "x + y");
 
         assert!(output.contains("Parsed as expression"));
-        assert!(output.contains("Expression"));
+        assert!(output.contains("Expression {\n"));
+        assert!(!output.contains("\\n"));
     }
 
     #[test]

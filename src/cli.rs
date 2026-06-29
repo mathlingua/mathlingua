@@ -87,6 +87,8 @@ impl From<CliEventLevel> for Level {
 #[derive(Clone, Debug, Subcommand)]
 pub enum Command {
     Check(CheckArgs),
+    #[command(hide = true)]
+    Debug,
     Init,
     Lsp,
     Version,
@@ -165,6 +167,27 @@ mod tests {
                 paths,
             }) if paths.is_empty()
         ));
+    }
+
+    #[test]
+    fn parses_hidden_debug_command() {
+        let cli = Cli::parse_from(["mlg", "debug"]);
+
+        assert!(matches!(cli.command, Command::Debug));
+    }
+
+    #[test]
+    fn help_does_not_show_debug_command() {
+        let mut command = Cli::command();
+        let mut help = Vec::new();
+        command.write_long_help(&mut help).unwrap();
+        let help = String::from_utf8(help).unwrap();
+
+        assert!(
+            !help
+                .lines()
+                .any(|line| line.trim_start().starts_with("debug"))
+        );
     }
 
     #[test]

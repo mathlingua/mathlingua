@@ -1,6 +1,6 @@
 pub use mlg::{
-    CheckResult, InitResult, LspResult, VersionResult, ViewResult, check, check_diagnostics_report,
-    check_diagnostics_schema, init, lsp, version, view,
+    CheckResult, DebugResult, InitResult, LspResult, VersionResult, ViewResult, check,
+    check_diagnostics_report, check_diagnostics_schema, debug, init, lsp, version, view,
 };
 pub mod backend;
 pub mod cli;

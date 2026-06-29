@@ -15,6 +15,8 @@ import {
   routePathFromPathname,
 } from "../lib/presenter";
 
+const NARROW_OUTLINE_MEDIA_QUERY = "(max-width: 860px)";
+
 /** Props for the client-side viewer state container. */
 interface ViewerShellProps {
   /** Renderable directories for the current collection. */
@@ -25,9 +27,13 @@ interface ViewerShellProps {
 
 /** Owns browser history, selected file, outline directory, and chrome state. */
 export function ViewerShell({ directories, files }: ViewerShellProps) {
-  const [isOutlineOpen, setIsOutlineOpen] = useState(true);
+  const [isOutlineOpen, setIsOutlineOpen] = useState(false);
   const [currentDirectory, setCurrentDirectory] = useState("");
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
+
+  useEffect(() => {
+    setIsOutlineOpen(!window.matchMedia(NARROW_OUTLINE_MEDIA_QUERY).matches);
+  }, []);
 
   useEffect(() => {
     const syncSelectedFileFromPath = () => {

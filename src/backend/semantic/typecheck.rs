@@ -78,6 +78,7 @@ fn definition_type_info(
             group.when.as_ref(),
             None,
             Some(&group.describes.argument),
+            group.specifies.as_ref(),
         )),
         TopLevelItem::Defines(group) => Some(type_info_from_parts(
             header_shape,
@@ -86,12 +87,14 @@ fn definition_type_info(
             group.when.as_ref(),
             Some(&group.defines.argument),
             None,
+            None,
         )),
         TopLevelItem::Refines(group) => Some(type_info_from_parts(
             header_shape,
             &group.heading,
             group.using.as_ref(),
             group.when.as_ref(),
+            None,
             None,
             None,
         )),
@@ -102,27 +105,23 @@ fn definition_type_info(
             group.when.as_ref(),
             None,
             None,
+            None,
         )),
-        TopLevelItem::Axiom(group) => group
-            .heading
-            .as_ref()
-            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None, None)),
-        TopLevelItem::Theorem(group) => group
-            .heading
-            .as_ref()
-            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None, None)),
-        TopLevelItem::Corollary(group) => group
-            .heading
-            .as_ref()
-            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None, None)),
-        TopLevelItem::Lemma(group) => group
-            .heading
-            .as_ref()
-            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None, None)),
-        TopLevelItem::Conjecture(group) => group
-            .heading
-            .as_ref()
-            .map(|heading| type_info_from_parts(header_shape, heading, None, None, None, None)),
+        TopLevelItem::Axiom(group) => group.heading.as_ref().map(|heading| {
+            type_info_from_parts(header_shape, heading, None, None, None, None, None)
+        }),
+        TopLevelItem::Theorem(group) => group.heading.as_ref().map(|heading| {
+            type_info_from_parts(header_shape, heading, None, None, None, None, None)
+        }),
+        TopLevelItem::Corollary(group) => group.heading.as_ref().map(|heading| {
+            type_info_from_parts(header_shape, heading, None, None, None, None, None)
+        }),
+        TopLevelItem::Lemma(group) => group.heading.as_ref().map(|heading| {
+            type_info_from_parts(header_shape, heading, None, None, None, None, None)
+        }),
+        TopLevelItem::Conjecture(group) => group.heading.as_ref().map(|heading| {
+            type_info_from_parts(header_shape, heading, None, None, None, None, None)
+        }),
         _ => None,
     }
 }
@@ -133,7 +132,8 @@ fn type_info_from_parts(
     using: Option<&UsingSection>,
     when: Option<&WhenSection>,
     defines: Option<&DeclarationStatement>,
-    described: Option<&FormOrDeclaration>,
+    described: Option<&DescribesTarget>,
+    describes_specifies: Option<&DescribesSpecifiesSection>,
 ) -> DefinitionTypeInfo {
     let mut context = TypeContext::default();
 
@@ -160,7 +160,7 @@ fn type_info_from_parts(
         .iter()
         .map(|fact| context.normalize_fact(fact))
         .collect();
-    let outputs = defines
+    let mut outputs: Vec<TypeFact> = defines
         .map(|statement| {
             facts_from_declaration_statement_in_context(statement, &context)
                 .into_iter()
@@ -168,6 +168,14 @@ fn type_info_from_parts(
                 .collect()
         })
         .unwrap_or_default();
+    if let Some(fact) = described
+        .zip(describes_specifies)
+        .and_then(|(target, specifies)| {
+            function_type_fact_from_describes_specifies(target, specifies, &context)
+        })
+    {
+        outputs.push(context.normalize_fact(&fact));
+    }
 
     DefinitionTypeInfo {
         signature: header_shape.shape.signature.clone(),
@@ -176,7 +184,7 @@ fn type_info_from_parts(
         requirements,
         outputs,
         substitutions: context.substitutions,
-        described: described.map(described_subject_key),
+        described: described.map(described_target_subject_key),
     }
 }
 
@@ -354,8 +362,16 @@ fn validate_top_level_item_types(
                 event_log,
             );
             declare_header_symbols(&group.heading, &mut context);
-            declare_form_or_declaration(&group.describes.argument, &mut context);
+            declare_describes_target(&group.describes.argument, &mut context);
             assume_described_type(&group.heading, &group.describes.argument, &mut context);
+            check_describes_target(
+                &group.describes.argument,
+                &context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -372,6 +388,19 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            assume_optional_specifies(
+                &group.specifies,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            assume_describes_function_type(
+                &group.describes.argument,
+                &group.specifies,
+                &mut context,
+            );
             if let Some(extends) = &group.extends {
                 check_is_or_via_item(
                     &extends.argument,
@@ -386,7 +415,7 @@ fn validate_top_level_item_types(
                 &group.provides,
                 &context,
                 &shapes_for_header(&group.heading),
-                &described_subject_key(&group.describes.argument),
+                &described_target_subject_key(&group.describes.argument),
                 path,
                 locator,
                 registry,
@@ -706,7 +735,7 @@ fn validate_disambiguates(
 
 fn assume_described_type(
     heading: &CommandHeader,
-    described: &FormOrDeclaration,
+    described: &DescribesTarget,
     context: &mut TypeContext,
 ) {
     if matches!(heading, CommandHeader::InfixSpec(_)) {
@@ -734,8 +763,7 @@ fn assume_described_type(
         return;
     }
 
-    let subject =
-        primary_form_name(described).unwrap_or_else(|| key_for_form_or_declaration(described));
+    let subject = described_target_subject_key(described);
 
     for header_shape in shapes_for_header(heading) {
         context.add_fact(TypeFact::Is {
@@ -778,7 +806,7 @@ fn refined_header_base_type_fact_parts(header_shape: &HeaderShape) -> Option<(St
 
 fn validate_spec_infix_describes_header(
     heading: &CommandHeader,
-    described: &FormOrDeclaration,
+    described: &DescribesTarget,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     event_log: &mut EventLog,
@@ -787,7 +815,7 @@ fn validate_spec_infix_describes_header(
         return;
     };
 
-    if key_for_form_or_declaration(&header.left) == key_for_form_or_declaration(described) {
+    if key_for_form_or_declaration(&header.left) == described_target_subject_key(described) {
         return;
     }
 
@@ -879,6 +907,91 @@ fn assume_optional_using(
         for statement in &using.arguments {
             assume_declaration_statement(statement, context, path, locator, registry, event_log);
         }
+    }
+}
+
+fn assume_optional_specifies(
+    specifies: &Option<DescribesSpecifiesSection>,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    if let Some(specifies) = specifies {
+        for item in &specifies.arguments {
+            assume_is_or_via_item(item, context, path, locator, registry, event_log);
+        }
+    }
+}
+
+fn assume_is_or_via_item(
+    item: &IsOrViaItem,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match item {
+        IsOrViaItem::IsVia(statement) => {
+            declare_is_subject(&statement.is_statement.subject, context);
+            check_is_statement(
+                &statement.is_statement,
+                context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            check_form_or_declaration(&statement.via, context, path, locator, event_log);
+            for fact in facts_from_is_statement(&statement.is_statement) {
+                context.add_fact(fact);
+            }
+        }
+        IsOrViaItem::Declaration(statement) => {
+            assume_declaration_statement(statement, context, path, locator, registry, event_log);
+        }
+    }
+}
+
+fn declare_describes_target(target: &DescribesTarget, context: &mut TypeContext) {
+    match target {
+        DescribesTarget::Form(form) => declare_form_or_declaration(form, context),
+        DescribesTarget::Declaration(statement) => {
+            declare_declaration_statement_subjects(statement, context)
+        }
+    }
+}
+
+fn check_describes_target(
+    target: &DescribesTarget,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match target {
+        DescribesTarget::Form(form) => {
+            check_form_or_declaration(form, context, path, locator, event_log);
+        }
+        DescribesTarget::Declaration(statement) => {
+            check_declaration_statement(statement, context, path, locator, registry, event_log);
+        }
+    }
+}
+
+fn assume_describes_function_type(
+    target: &DescribesTarget,
+    specifies: &Option<DescribesSpecifiesSection>,
+    context: &mut TypeContext,
+) {
+    let Some(specifies) = specifies else {
+        return;
+    };
+    if let Some(fact) = function_type_fact_from_describes_specifies(target, specifies, context) {
+        context.add_fact(fact);
     }
 }
 
@@ -1704,22 +1817,31 @@ fn check_function_call_inputs(
     event_log: &mut EventLog,
 ) {
     let function_types = function_type_facts_for_subject(name, context, registry);
+    let mut matched_arity = false;
     for function_type in function_types {
         let TypeFact::FunctionType {
-            inputs, output: _, ..
+            inputs,
+            output: _,
+            variadic_tuple_input,
+            ..
         } = function_type
         else {
             continue;
         };
-        if inputs.len() != arguments.len() {
+        let argument_subjects = function_type_argument_subjects_from_expressions(
+            inputs.len(),
+            variadic_tuple_input,
+            arguments,
+            context,
+            registry,
+        );
+        let Some(argument_subjects) = argument_subjects else {
             continue;
-        }
+        };
+        matched_arity = true;
 
-        for (input, argument) in inputs.iter().zip(arguments) {
-            let required = instantiate_function_type_spec(
-                input,
-                &effective_key_for_expression(argument, context, registry),
-            );
+        for (input, argument_subject) in inputs.iter().zip(argument_subjects) {
+            let required = instantiate_function_type_spec(input, &argument_subject);
             if !prove_fact(&required, context, registry) {
                 emit_error(
                     event_log,
@@ -1732,6 +1854,18 @@ fn check_function_call_inputs(
                 );
             }
         }
+    }
+
+    if !matched_arity {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(name),
+            format!(
+                "Could not match function `{name}` with {} argument(s)",
+                arguments.len()
+            ),
+        );
     }
 }
 
@@ -2817,7 +2951,7 @@ fn check_function_call_result_fact(
     let function_types = function_type_facts_for_subject(name, context, registry);
     let mut found_matching_arity = false;
     for function_type in &function_types {
-        if function_type_call_arity(function_type) == Some(function_call_arity(subject)) {
+        if function_type_matches_call_arity(function_type, function_call_arity(subject)) {
             found_matching_arity = true;
         }
         let mut seen = HashSet::new();
@@ -3582,6 +3716,7 @@ fn fact_mentions_name(fact: &TypeFact, name: &str) -> bool {
             subject,
             inputs,
             output,
+            ..
         } => {
             key_mentions_name(subject, name)
                 || inputs
@@ -4546,6 +4681,7 @@ fn function_type_implies_required(
         subject,
         inputs,
         output,
+        variadic_tuple_input,
     } = fact
     else {
         return false;
@@ -4554,14 +4690,18 @@ fn function_type_implies_required(
     let Some((function_name, arguments)) = function_call_parts_from_fact(required) else {
         return false;
     };
-    if context.normalize_key(&function_name) != context.normalize_key(subject)
-        || arguments.len() != inputs.len()
-    {
+    if context.normalize_key(&function_name) != context.normalize_key(subject) {
         return false;
     }
 
-    for (input, argument) in inputs.iter().zip(&arguments) {
-        let required_input = instantiate_function_type_spec(input, argument);
+    let Some(argument_subjects) =
+        function_type_argument_subjects_from_keys(inputs.len(), *variadic_tuple_input, &arguments)
+    else {
+        return false;
+    };
+
+    for (input, argument) in inputs.iter().zip(argument_subjects) {
+        let required_input = instantiate_function_type_spec(input, &argument);
         if !prove_fact(&required_input, context, registry) {
             return false;
         }
@@ -4603,10 +4743,61 @@ fn function_call_parts_from_key(key: &str) -> Option<(String, Vec<String>)> {
     Some((name.to_owned(), split_key_arg_list(inside)))
 }
 
-fn function_type_call_arity(fact: &TypeFact) -> Option<usize> {
+fn function_type_matches_call_arity(fact: &TypeFact, arity: usize) -> bool {
     match fact {
-        TypeFact::FunctionType { inputs, .. } => Some(inputs.len()),
-        _ => None,
+        TypeFact::FunctionType {
+            inputs,
+            variadic_tuple_input,
+            ..
+        } => {
+            if *variadic_tuple_input {
+                arity > 0 && inputs.len() == 1
+            } else {
+                inputs.len() == arity
+            }
+        }
+        _ => false,
+    }
+}
+
+fn function_type_argument_subjects_from_expressions(
+    input_count: usize,
+    variadic_tuple_input: bool,
+    arguments: &[Expression],
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<Vec<String>> {
+    let argument_keys = arguments
+        .iter()
+        .map(|argument| effective_key_for_expression(argument, context, registry))
+        .collect::<Vec<_>>();
+    function_type_argument_subjects_from_keys(input_count, variadic_tuple_input, &argument_keys)
+}
+
+fn function_type_argument_subjects_from_keys(
+    input_count: usize,
+    variadic_tuple_input: bool,
+    arguments: &[String],
+) -> Option<Vec<String>> {
+    if variadic_tuple_input {
+        if input_count == 1 && !arguments.is_empty() {
+            return Some(vec![tuple_key_for_function_arguments(arguments)]);
+        }
+        return None;
+    }
+
+    if input_count == arguments.len() {
+        Some(arguments.to_vec())
+    } else {
+        None
+    }
+}
+
+fn tuple_key_for_function_arguments(arguments: &[String]) -> String {
+    if arguments.len() == 1 {
+        arguments[0].clone()
+    } else {
+        format!("({})", arguments.join(","))
     }
 }
 
@@ -4718,6 +4909,7 @@ impl TypeContext {
                 subject,
                 inputs,
                 output,
+                variadic_tuple_input,
             } => TypeFact::FunctionType {
                 subject: self.normalize_key(subject),
                 inputs: inputs
@@ -4725,6 +4917,7 @@ impl TypeContext {
                     .map(|spec| self.normalize_function_type_spec(spec))
                     .collect(),
                 output: self.normalize_function_type_spec(output),
+                variadic_tuple_input: *variadic_tuple_input,
             },
         }
     }
@@ -5305,6 +5498,7 @@ fn substitute_fact(fact: &TypeFact, substitutions: &HashMap<String, String>) -> 
             subject,
             inputs,
             output,
+            variadic_tuple_input,
         } => TypeFact::FunctionType {
             subject: substitute_key(subject, substitutions),
             inputs: inputs
@@ -5312,6 +5506,7 @@ fn substitute_fact(fact: &TypeFact, substitutions: &HashMap<String, String>) -> 
                 .map(|spec| substitute_function_type_spec(spec, substitutions))
                 .collect(),
             output: substitute_function_type_spec(output, substitutions),
+            variadic_tuple_input: *variadic_tuple_input,
         },
     }
 }
@@ -5395,6 +5590,128 @@ fn facts_from_is_or_via_item(item: &IsOrViaItem) -> Vec<TypeFact> {
     match item {
         IsOrViaItem::IsVia(statement) => facts_from_is_statement(&statement.is_statement),
         IsOrViaItem::Declaration(statement) => facts_from_declaration_statement(statement),
+    }
+}
+
+fn facts_from_is_or_via_item_in_context(
+    item: &IsOrViaItem,
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    match item {
+        IsOrViaItem::IsVia(statement) => facts_from_is_statement(&statement.is_statement),
+        IsOrViaItem::Declaration(statement) => {
+            facts_from_declaration_statement_in_context(statement, context)
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+struct DescribedFunctionTarget {
+    subject: String,
+    inputs: Vec<String>,
+    output: String,
+    variadic_tuple_input: bool,
+}
+
+fn function_type_fact_from_describes_specifies(
+    target: &DescribesTarget,
+    specifies: &DescribesSpecifiesSection,
+    context: &TypeContext,
+) -> Option<TypeFact> {
+    let target = described_function_target(target)?;
+    let specs = function_type_specs_from_describes_specifies(specifies, context);
+    let inputs = target
+        .inputs
+        .iter()
+        .map(|name| specs.get(name).cloned())
+        .collect::<Option<Vec<_>>>()?;
+    let output = specs.get(&target.output).cloned()?;
+
+    Some(TypeFact::FunctionType {
+        subject: target.subject,
+        inputs,
+        output,
+        variadic_tuple_input: target.variadic_tuple_input,
+    })
+}
+
+fn described_function_target(target: &DescribesTarget) -> Option<DescribedFunctionTarget> {
+    let DescribesTarget::Declaration(statement) = target else {
+        return None;
+    };
+
+    let IsSubjectKind::Forms(forms) = &statement.subject.kind else {
+        return None;
+    };
+    let [
+        IsSubjectForm::Form(FormOrDeclaration {
+            kind: FormOrDeclarationKind::FunctionDeclaration { name, form },
+            ..
+        }),
+    ] = forms.as_slice()
+    else {
+        return None;
+    };
+
+    let output = statement
+        .expansion
+        .as_ref()
+        .and_then(single_placeholder_subject_key)?;
+    let inputs = function_form_parameters(form);
+    if inputs.is_empty() {
+        return None;
+    }
+
+    Some(DescribedFunctionTarget {
+        subject: name.clone().unwrap_or_else(|| form.name.clone()),
+        inputs,
+        output,
+        variadic_tuple_input: form.magnetic_placeholder.is_some(),
+    })
+}
+
+fn function_type_specs_from_describes_specifies(
+    specifies: &DescribesSpecifiesSection,
+    context: &TypeContext,
+) -> HashMap<String, FunctionTypeFactSpec> {
+    let mut specs = HashMap::new();
+    for item in &specifies.arguments {
+        for fact in facts_from_is_or_via_item_in_context(item, context) {
+            if let Some((subject, spec)) = function_type_spec_from_fact(&fact) {
+                specs.insert(subject, spec);
+            }
+        }
+    }
+    specs
+}
+
+fn function_type_spec_from_fact(fact: &TypeFact) -> Option<(String, FunctionTypeFactSpec)> {
+    match fact {
+        TypeFact::Is {
+            subject,
+            ty,
+            signature,
+        } => Some((
+            subject.clone(),
+            FunctionTypeFactSpec::Is {
+                ty: ty.clone(),
+                signature: signature.clone(),
+            },
+        )),
+        TypeFact::Spec {
+            subject,
+            operator,
+            target,
+        } => Some((
+            subject.clone(),
+            FunctionTypeFactSpec::Spec {
+                operator: operator.clone(),
+                target: target.clone(),
+            },
+        )),
+        TypeFact::InfixSpec { .. } | TypeFact::RefinedIs { .. } | TypeFact::FunctionType { .. } => {
+            None
+        }
     }
 }
 
@@ -5498,6 +5815,7 @@ fn facts_from_declaration_is(
                 subject,
                 inputs: inputs.clone(),
                 output: output.clone(),
+                variadic_tuple_input: false,
             })
             .collect();
     }
@@ -5540,6 +5858,7 @@ fn facts_from_declaration_is_in_context(
                 subject,
                 inputs: inputs.clone(),
                 output: output.clone(),
+                variadic_tuple_input: false,
             })
             .collect();
     }
@@ -5593,6 +5912,7 @@ fn facts_from_is_statement(statement: &IsStatement) -> Vec<TypeFact> {
                 subject,
                 inputs: inputs.clone(),
                 output: output.clone(),
+                variadic_tuple_input: false,
             })
             .collect();
     }
@@ -5707,6 +6027,7 @@ fn fact_from_type_assertion(subject: &Expression, ty: &TypeExpression) -> Option
             subject: key_for_expression(subject),
             inputs,
             output,
+            variadic_tuple_input: false,
         });
     }
 
@@ -5737,6 +6058,7 @@ fn fact_from_type_assertion_in_context(
             subject: key_for_expression(subject),
             inputs,
             output,
+            variadic_tuple_input: false,
         });
     }
 
@@ -6808,8 +7130,13 @@ fn primary_form_name(form: &FormOrDeclaration) -> Option<String> {
     }
 }
 
-fn described_subject_key(form: &FormOrDeclaration) -> String {
-    primary_form_name(form).unwrap_or_else(|| key_for_form_or_declaration(form))
+fn described_target_subject_key(target: &DescribesTarget) -> String {
+    match target {
+        DescribesTarget::Form(form) => {
+            primary_form_name(form).unwrap_or_else(|| key_for_form_or_declaration(form))
+        }
+        DescribesTarget::Declaration(statement) => primary_subject_key(&statement.subject),
+    }
 }
 
 fn placeholder_pattern_name(form: &PlaceholderForm) -> Option<String> {
@@ -6845,6 +7172,7 @@ fn format_fact(fact: &TypeFact) -> String {
             subject,
             inputs,
             output,
+            ..
         } => format!("{subject} is {}", format_function_type(inputs, output)),
     }
 }

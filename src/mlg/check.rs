@@ -1277,6 +1277,80 @@ mod tests {
     }
 
     #[test]
+    fn check_uses_describes_function_signature_specifies() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("function-signature-specifies.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__) ::= y_
+    when: A, B is \set
+    specifies:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . called: "function"
+    . written: "f?"
+
+    [\ternary.function:?on{A}:?to{B}]
+    Describes: g(x_, y_, z_) ::= w_
+    when: A, B is \set
+    specifies:
+    . x_ "in" A
+    . y_ "in" A
+    . z_ "in" A
+    . w_ "in" B
+    Documented:
+    . called: "ternary function"
+    . written: "g?"
+
+    Theorem:
+    given:
+    . A, B is \set
+    . x "in" A
+    . f is \function:on{A}:to{B}
+    then: f(x) "in" B
+
+    Theorem:
+    given:
+    . A, B is \set
+    . (a, b) "in" A
+    . f is \function:on{A}:to{B}
+    then: f(a, b) "in" B
+
+    Theorem:
+    given:
+    . A, B is \set
+    . a, b, c "in" A
+    . g is \ternary.function:on{A}:to{B}
+    then: g(a, b, c) "in" B
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("function-signature-specifies.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_applies_refines_extends_to_dynamic_refined_base() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("dynamic-refined-base.mlg");

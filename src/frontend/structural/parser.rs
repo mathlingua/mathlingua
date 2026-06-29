@@ -295,6 +295,14 @@ pub(in crate::frontend::structural::parser) fn parse_is_or_via_item(
     parse_ordinary_declaration_statement(input).map(IsOrViaItem::Declaration)
 }
 
+fn parse_describes_target(input: &str) -> Result<DescribesTarget, FormulationParseError> {
+    if let Ok(form) = parse_form_or_declaration(input) {
+        return Ok(DescribesTarget::Form(form));
+    }
+
+    parse_ordinary_declaration_statement(input).map(DescribesTarget::Declaration)
+}
+
 /// Parses a quantifier binding or ordinary specification.
 pub(in crate::frontend::structural::parser) fn parse_binding_or_spec(
     input: &str,
@@ -2380,7 +2388,7 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
                 section(&sections, "Describes")?,
                 "Describes",
                 tracker,
-                parse_form_or_declaration,
+                parse_describes_target,
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
@@ -3109,10 +3117,12 @@ mod tests {
 
     use super::parse_document;
     use crate::events::{Event, EventLog};
-    use crate::frontend::formulation::ast::FormOrDeclarationKind;
+    use crate::frontend::formulation::ast::{
+        FormOrDeclaration, FormOrDeclarationKind, IsSubjectForm, IsSubjectKind,
+    };
     use crate::frontend::structural::ast::{
-        AliasItem, AliasKind, Clause, Document, DocumentedItem, IsOrViaItem, JustifiedItem,
-        MetadataItem, ProvidesItem, ResourceItem, SpecifyItem, TopLevelItem,
+        AliasItem, AliasKind, Clause, DescribesTarget, Document, DocumentedItem, IsOrViaItem,
+        JustifiedItem, MetadataItem, ProvidesItem, ResourceItem, SpecifyItem, TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -4196,6 +4206,53 @@ satisfies:
                         .arguments[0],
                     Clause::ForAll(_)
                 ));
+            }
+            other => panic!("expected describes item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_describes_function_declaration_target_with_specifies() {
+        let text = r#"
+[\function:on{A}:to{B}]
+Describes: f(x__) ::= y_
+when:
+. A, B is \set
+specifies:
+. x__ "in" A
+. y_ "in" B
+"#;
+
+        let mut tracker = EventLog::new();
+        let document = parse_document(text, &mut tracker);
+
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
+        match &document.items[0] {
+            TopLevelItem::Describes(group) => {
+                let DescribesTarget::Declaration(statement) = &group.describes.argument else {
+                    panic!("expected declaration target");
+                };
+                assert!(statement.expansion.is_some());
+                assert!(matches!(
+                    statement.subject.kind,
+                    IsSubjectKind::Forms(ref forms)
+                        if matches!(
+                            forms.as_slice(),
+                            [IsSubjectForm::Form(FormOrDeclaration {
+                                kind: FormOrDeclarationKind::FunctionDeclaration { form, .. },
+                                ..
+                            })] if form.magnetic_placeholder.is_some()
+                        )
+                ));
+                assert_eq!(
+                    group
+                        .specifies
+                        .as_ref()
+                        .expect("expected specifies")
+                        .arguments
+                        .len(),
+                    2
+                );
             }
             other => panic!("expected describes item, got {other:?}"),
         }

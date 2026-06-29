@@ -1469,7 +1469,32 @@ pub(super) fn parse_is_subject_form(input: &str) -> Result<IsSubjectForm, ParseE
         return Ok(IsSubjectForm::Form(form));
     }
 
-    parse_placeholder_form(input).map(IsSubjectForm::PlaceholderForm)
+    if let Ok(form) = parse_placeholder_form(input) {
+        return Ok(IsSubjectForm::PlaceholderForm(form));
+    }
+
+    parse_magnetic_placeholder_subject_form(input).map(IsSubjectForm::PlaceholderForm)
+}
+
+fn parse_magnetic_placeholder_subject_form(input: &str) -> Result<PlaceholderForm, ParseError> {
+    let input = input.trim();
+    if !input.ends_with("__") {
+        return Err(ParseError::custom(format!(
+            "expected magnetic placeholder ending with `__`, found `{input}`"
+        )));
+    }
+
+    let name = &input[..input.len() - 2];
+    if !is_name_text(name) {
+        return Err(ParseError::custom(format!(
+            "invalid magnetic placeholder name `{name}`"
+        )));
+    }
+
+    Ok(PlaceholderForm::new(
+        span_all(input),
+        PlaceholderFormKind::Placeholder(Placeholder::new(span_all(input), name)),
+    ))
 }
 
 /// Parses a comma-separated top-level list of `is` subject forms.

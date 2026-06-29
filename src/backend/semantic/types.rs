@@ -79,6 +79,7 @@ pub(super) enum TypeFact {
         subject: String,
         inputs: Vec<FunctionTypeFactSpec>,
         output: FunctionTypeFactSpec,
+        variadic_tuple_input: bool,
     },
 }
 

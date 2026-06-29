@@ -169,7 +169,13 @@ pub struct AdjectiveText(pub String);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WritingText(pub String);
 
-argument_section!(DescribesSection, FormOrDeclaration);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DescribesTarget {
+    Form(FormOrDeclaration),
+    Declaration(DeclarationStatement),
+}
+
+argument_section!(DescribesSection, DescribesTarget);
 arguments_section!(UsingSection, DeclarationStatement);
 arguments_section!(WhenSection, Clause);
 argument_section!(ExtendsSection, IsOrViaItem);

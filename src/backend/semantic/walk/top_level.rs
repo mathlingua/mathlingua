@@ -18,7 +18,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_aliases(&group.aliases, visit);
         }
         TopLevelItem::Describes(group) => {
-            walk_form_or_declaration(&group.describes.argument, visit);
+            walk_describes_target(&group.describes.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
             if let Some(section) = &group.extends {
@@ -126,6 +126,13 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
         | TopLevelItem::Text(_)
         | TopLevelItem::Person(_)
         | TopLevelItem::Resource(_) => {}
+    }
+}
+
+fn walk_describes_target(target: &DescribesTarget, visit: &mut impl FnMut(&SignatureShape)) {
+    match target {
+        DescribesTarget::Form(form) => walk_form_or_declaration(form, visit),
+        DescribesTarget::Declaration(statement) => walk_declaration_statement(statement, visit),
     }
 }
 

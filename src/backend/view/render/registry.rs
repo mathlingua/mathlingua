@@ -184,7 +184,7 @@ pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
     match item {
         TopLevelItem::Describes(group) => render_entries_from_parts(
             command_header_signatures(&group.heading),
-            primary_form_name(&group.describes.argument),
+            primary_describes_target_name(&group.describes.argument),
             group.documented.as_ref(),
         ),
         TopLevelItem::Defines(group) => render_entries_from_parts(
@@ -218,6 +218,13 @@ pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
             render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
         }
         _ => Vec::new(),
+    }
+}
+
+fn primary_describes_target_name(target: &DescribesTarget) -> Option<String> {
+    match target {
+        DescribesTarget::Form(form) => primary_form_name(form),
+        DescribesTarget::Declaration(statement) => primary_declaration_statement_name(statement),
     }
 }
 

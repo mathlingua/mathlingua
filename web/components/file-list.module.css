@@ -186,6 +186,83 @@
   margin-top: -0.65rem;
 }
 
+.pageNavigation {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 47rem);
+  margin: 2.4rem auto 0;
+  padding: 0.8rem 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.pageNavButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  max-width: min(48%, 18rem);
+  min-width: 0;
+  min-height: 2.55rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted-strong);
+  font-family: var(--font-ui);
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pageNavButton:hover:not(:disabled) {
+  border-color: var(--line);
+  background: var(--surface-alt);
+  color: var(--accent);
+}
+
+.pageNavButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pageNavButton:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.pageNavButtonNext {
+  margin-left: auto;
+  text-align: right;
+}
+
+.pageNavIcon {
+  flex: 0 0 auto;
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.pageNavText {
+  display: grid;
+  min-width: 0;
+}
+
+.pageNavTitle {
+  overflow: hidden;
+  color: var(--ink);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pageNavButton:hover:not(:disabled) .pageNavTitle {
+  color: inherit;
+}
+
 .definitionTrail {
   position: relative;
   display: grid;
@@ -315,5 +392,15 @@
 @media (max-width: 520px) {
   .outlineLink {
     font-size: 1.05rem;
+  }
+
+  .pageNavigation {
+    gap: 0.45rem;
+  }
+
+  .pageNavButton {
+    flex: 1 1 0;
+    max-width: none;
+    padding: 0.35rem 0.4rem;
   }
 }

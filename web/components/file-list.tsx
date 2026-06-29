@@ -6,6 +6,7 @@ import { MarkdownInline, MarkdownText } from "./markdown-text";
 import styles from "./file-list.module.css";
 import {
   buildFileBrowserEntries,
+  formatFileLabel,
   formatPathSegment,
   makeFileAnchor,
   makeGroupAnchor,
@@ -61,8 +62,22 @@ export function FileList({
     );
   }
 
-  const selectedFile = files[selectedFileIndex] ?? files[0];
+  const activeFileIndex = files[selectedFileIndex] ? selectedFileIndex : 0;
+  const selectedFile = files[activeFileIndex] ?? files[0];
   const entries = buildFileBrowserEntries(files, directories, currentDirectory);
+  const previousFileIndex = activeFileIndex > 0 ? activeFileIndex - 1 : null;
+  const nextFileIndex =
+    activeFileIndex < files.length - 1 ? activeFileIndex + 1 : null;
+
+  const handleSelectPage = (fileIndex: number) => {
+    onSelectFile(fileIndex);
+
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+  };
 
   const closeOutlineOnNarrowViewport = () => {
     if (
@@ -164,7 +179,7 @@ export function FileList({
                 ) : (
                   <button
                     className={
-                      entry.fileIndex === selectedFileIndex
+                      entry.fileIndex === activeFileIndex
                         ? `${styles.outlineLink} ${styles.outlineLinkActive}`
                         : styles.outlineLink
                     }
@@ -190,7 +205,7 @@ export function FileList({
         >
           <div className={styles.groupStream}>
             {selectedFile.items.map((item, itemIndex) => {
-              const fallbackKey = `${selectedFileIndex}-${itemIndex}`;
+              const fallbackKey = `${activeFileIndex}-${itemIndex}`;
               const anchorId = makeGroupAnchor(item, fallbackKey);
               const trail = definitionTrails[anchorId] ?? [];
               const itemKey =
@@ -260,6 +275,24 @@ export function FileList({
               );
             })}
           </div>
+          {files.length > 1 ? (
+            <PageNavigation
+              nextFile={nextFileIndex === null ? null : files[nextFileIndex]}
+              onNext={() => {
+                if (nextFileIndex !== null) {
+                  handleSelectPage(nextFileIndex);
+                }
+              }}
+              onPrevious={() => {
+                if (previousFileIndex !== null) {
+                  handleSelectPage(previousFileIndex);
+                }
+              }}
+              previousFile={
+                previousFileIndex === null ? null : files[previousFileIndex]
+              }
+            />
+          ) : null}
         </article>
       </section>
     </div>
@@ -315,6 +348,74 @@ function PageHeading({ kind, text }: { kind: string; text: string }) {
         </h3>
       );
   }
+}
+
+function PageNavigation({
+  nextFile,
+  onNext,
+  onPrevious,
+  previousFile,
+}: {
+  nextFile: FileView | null;
+  onNext: () => void;
+  onPrevious: () => void;
+  previousFile: FileView | null;
+}) {
+  return (
+    <nav aria-label="Page navigation" className={styles.pageNavigation}>
+      {previousFile ? (
+        <button
+          aria-label={`Previous page: ${pageNavigationLabel(previousFile)}`}
+          className={styles.pageNavButton}
+          onClick={onPrevious}
+          title={`Previous: ${pageNavigationLabel(previousFile)}`}
+          type="button"
+        >
+          <PageNavigationIcon direction="previous" />
+          <span className={styles.pageNavText}>
+            <span className={styles.pageNavTitle}>
+              {pageNavigationLabel(previousFile)}
+            </span>
+          </span>
+        </button>
+      ) : null}
+      {nextFile ? (
+        <button
+          aria-label={`Next page: ${pageNavigationLabel(nextFile)}`}
+          className={`${styles.pageNavButton} ${styles.pageNavButtonNext}`}
+          onClick={onNext}
+          title={`Next: ${pageNavigationLabel(nextFile)}`}
+          type="button"
+        >
+          <span className={styles.pageNavText}>
+            <span className={styles.pageNavTitle}>
+              {pageNavigationLabel(nextFile)}
+            </span>
+          </span>
+          <PageNavigationIcon direction="next" />
+        </button>
+      ) : null}
+    </nav>
+  );
+}
+
+function pageNavigationLabel(file: FileView): string {
+  return file.title ?? formatFileLabel(file.path);
+}
+
+function PageNavigationIcon({ direction }: { direction: "next" | "previous" }) {
+  const path = direction === "next" ? "M8 5l7 7-7 7" : "M16 5l-7 7 7 7";
+
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.pageNavIcon}
+      focusable="false"
+      viewBox="0 0 24 24"
+    >
+      <path d={path} />
+    </svg>
+  );
 }
 
 interface DefinitionIndexEntry {

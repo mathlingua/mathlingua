@@ -734,6 +734,10 @@ PrimaryExpression: ast::Expression = {
         Span::new(l, r),
         ExpressionKind::Name(placeholder.name),
     ),
+    <l:@L> <placeholder:MagneticPlaceholder> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Name(placeholder.name),
+    ),
     <l:@L> <subset:SubsetNameCall> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::SubsetCall(subset),

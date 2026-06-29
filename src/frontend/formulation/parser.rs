@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::fmt;
 
 use lalrpop_util::ParseError as LalrpopParseError;
@@ -50,15 +51,167 @@ impl ParseError {
 
 impl fmt::Display for ParseError {
     /// Formats parse errors for user-facing diagnostics.
-    ///
-    /// Generated grammar errors are printed with debug formatting because the
-    /// LALRPOP error type includes structured token information that is more
-    /// useful than its terse display form.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Grammar(error) => write!(f, "{error:?}"),
+            Self::Grammar(error) => write!(f, "{}", format_grammar_error(error)),
             Self::Custom(message) => write!(f, "{message}"),
         }
+    }
+}
+
+fn format_grammar_error(error: &LalrpopError) -> String {
+    match error {
+        LalrpopParseError::InvalidToken { .. } => "invalid token".to_owned(),
+        LalrpopParseError::UnrecognizedEof { expected, .. } => {
+            format!(
+                "unexpected end of input; expected {}",
+                format_expected(expected)
+            )
+        }
+        LalrpopParseError::UnrecognizedToken {
+            token: (_, token, _),
+            expected,
+        } => {
+            format!(
+                "unexpected {}; expected {}",
+                token_description(token),
+                format_expected(expected)
+            )
+        }
+        LalrpopParseError::ExtraToken {
+            token: (_, token, _),
+        } => {
+            format!("unexpected extra {}", token_description(token))
+        }
+        LalrpopParseError::User { error } => error.to_string(),
+    }
+}
+
+fn format_expected(expected: &[String]) -> String {
+    if expected.is_empty() {
+        return "another token".to_owned();
+    }
+
+    let labels = expected
+        .iter()
+        .map(|item| expected_description(item))
+        .collect::<BTreeSet<_>>();
+    let mut labels = labels.into_iter().collect::<Vec<_>>();
+    let remaining = labels.len().saturating_sub(6);
+    labels.truncate(6);
+
+    match (labels.as_slice(), remaining) {
+        ([one], 0) => one.clone(),
+        (_, 0) => labels.join(", "),
+        _ => format!("{} or {remaining} more", labels.join(", ")),
+    }
+}
+
+fn expected_description(item: &str) -> String {
+    let item = item.trim_matches('"').replace("\\\\", "\\");
+    match item.as_str() {
+        "name" => "a name".to_owned(),
+        "placeholder" => "a placeholder like `x_`".to_owned(),
+        "magnetic_placeholder" => "a placeholder like `x__`".to_owned(),
+        "quoted_name" => "a quoted name like `\"in\"`".to_owned(),
+        "prefix_named_operator" => "a named prefix operator".to_owned(),
+        "\\" => "a command".to_owned(),
+        "$" => "an alias marker `$`".to_owned(),
+        other if other.is_empty() => "another token".to_owned(),
+        other => format!("`{other}`"),
+    }
+}
+
+fn token_description(token: &Token) -> String {
+    match token {
+        Token::Name(name) => format!("name `{name}`"),
+        Token::Placeholder(name) => format!("placeholder `{name}_`"),
+        Token::MagneticPlaceholder(name) => format!("placeholder `{name}__`"),
+        Token::QuotedName(name) => format!("quoted name `\"{name}\"`"),
+        Token::SpecialOperator(operator) => format!("operator `{operator}`"),
+        Token::NamedOperator(name) => format!("operator `|{name}|`"),
+        Token::LeftNamedOperator(name) => format!("operator `:|{name}|`"),
+        Token::RightNamedOperator(name) => format!("operator `|{name}|:`"),
+        Token::BothNamedOperator(name) => format!("operator `:|{name}|:`"),
+        Token::PrefixNamedOperator(name) => format!("prefix operator `{name}|`"),
+        Token::PostfixNamedOperator(name) => format!("postfix operator `|{name}`"),
+        Token::BothSpecialOperator(operator)
+        | Token::LeftSpecialOperator(operator)
+        | Token::RightSpecialOperator(operator) => format!("operator `{operator}`"),
+        Token::Label(parts) => format!("label `[:{}:]`", parts.join(".")),
+        other => format!("`{}`", token_literal(other)),
+    }
+}
+
+fn token_literal(token: &Token) -> &'static str {
+    match token {
+        Token::DotLParen => "(.",
+        Token::DotRParen => ".)",
+        Token::Ellipsis => "...",
+        Token::LNamedArguments => "[|",
+        Token::RNamedArguments => "|]",
+        Token::InfixCommandStart => "\\.",
+        Token::InfixCommandEnd => "./",
+        Token::InfixSpecStart => "\\:",
+        Token::InfixSpecPredicateEnd => "?:/",
+        Token::InfixSpecEnd => ":/",
+        Token::ExpressionAlias => ":=>",
+        Token::SpecOperatorAlias => ":->",
+        Token::WritingAlias => ":~>",
+        Token::Introduce => "::=",
+        Token::Declare => ":=",
+        Token::BothPlus => ":+:",
+        Token::LeftPlus => ":+",
+        Token::RightPlus => "+:",
+        Token::BothMinus => ":-:",
+        Token::LeftMinus => ":-",
+        Token::RightMinus => "-:",
+        Token::BothStar => ":*:",
+        Token::LeftStar => ":*",
+        Token::RightStar => "*:",
+        Token::BothCaret => ":^:",
+        Token::LeftCaret => ":^",
+        Token::RightCaret => "^:",
+        Token::IsNotPredicate => "is_not?",
+        Token::IsPredicate => "is?",
+        Token::Is => "is",
+        Token::Via => "via",
+        Token::MemberOf => "member_of",
+        Token::CommandStart => "\\",
+        Token::Plus => "+",
+        Token::Minus => "-",
+        Token::Star => "*",
+        Token::Slash => "/",
+        Token::Equals => "=",
+        Token::Caret => "^",
+        Token::LParen => "(",
+        Token::RParen => ")",
+        Token::LBrace => "{",
+        Token::RBrace => "}",
+        Token::LBracket => "[",
+        Token::RBracket => "]",
+        Token::Comma => ",",
+        Token::OptionalColon => ":?",
+        Token::Colon => ":",
+        Token::Dot => ".",
+        Token::Pipe => "|",
+        Token::Dollar => "$",
+        Token::Question => "?",
+        Token::Name(_)
+        | Token::Placeholder(_)
+        | Token::MagneticPlaceholder(_)
+        | Token::QuotedName(_)
+        | Token::SpecialOperator(_)
+        | Token::NamedOperator(_)
+        | Token::LeftNamedOperator(_)
+        | Token::RightNamedOperator(_)
+        | Token::BothNamedOperator(_)
+        | Token::PrefixNamedOperator(_)
+        | Token::PostfixNamedOperator(_)
+        | Token::BothSpecialOperator(_)
+        | Token::LeftSpecialOperator(_)
+        | Token::RightSpecialOperator(_)
+        | Token::Label(_) => "token",
     }
 }
 
@@ -1302,9 +1455,7 @@ pub(super) fn parse_type_expression(
     let expression = parse_expression(input)?;
     match expression.kind {
         ExpressionKind::Command(command) => Ok(TypeExpression::Command(command)),
-        other => Err(ParseError::custom(format!(
-            "expected command expression for type, found {other:?}"
-        ))),
+        _ => Err(ParseError::custom("expected command expression for type")),
     }
 }
 
@@ -1312,9 +1463,7 @@ fn parse_set_expression_literal(input: &str) -> Result<SetExpression, ParseError
     let expression = parse_expression(input)?;
     match expression.kind {
         ExpressionKind::Set(set) => Ok(set),
-        other => Err(ParseError::custom(format!(
-            "expected set literal after `@`, found {other:?}"
-        ))),
+        _ => Err(ParseError::custom("expected set literal after `@`")),
     }
 }
 
@@ -2478,6 +2627,8 @@ mod tests {
     fn parses_function_calls_and_tuple_expressions_with_operator_elements() {
         let function_call =
             parse_expression("f(x, y + z)").expect("expected function call expression");
+        let magnetic_call =
+            parse_expression("f(g(x__))").expect("expected magnetic placeholder call expression");
         let member_call = parse_expression("X.f(a)").expect("expected member call expression");
         let member_access = parse_expression("X.a").expect("expected member access expression");
         let tuple = parse_expression("(x, +, y)").expect("expected tuple expression");
@@ -2493,6 +2644,27 @@ mod tests {
                         ..
                     }
                 ));
+            }
+            other => panic!("expected function call, got {other:?}"),
+        }
+
+        match magnetic_call.kind {
+            ExpressionKind::FunctionCall { name, arguments } => {
+                assert_eq!(name, "f");
+                assert_eq!(arguments.len(), 1);
+                match &arguments[0].kind {
+                    ExpressionKind::FunctionCall { name, arguments } => {
+                        assert_eq!(name, "g");
+                        assert!(matches!(
+                            arguments.as_slice(),
+                            [Expression {
+                                kind: ExpressionKind::Name(name),
+                                ..
+                            }] if name == "x"
+                        ));
+                    }
+                    other => panic!("expected nested function call, got {other:?}"),
+                }
             }
             other => panic!("expected function call, got {other:?}"),
         }
@@ -3328,6 +3500,15 @@ mod tests {
             defined_coerced_collection.relation,
             Some(DeclarationRelation::Is(TypeExpression::Coercion { .. }))
         ));
+
+        let composition =
+            parse_ordinary_declaration_statement(r#"h(x__) := f(g(x__)) is \function:on{A}:to{C}"#)
+                .expect("expected magnetic placeholder expression in definition");
+        assert!(composition.definition.is_some());
+        assert!(matches!(
+            composition.relation,
+            Some(DeclarationRelation::Is(TypeExpression::Command(_)))
+        ));
     }
 
     #[test]
@@ -3603,11 +3784,7 @@ mod tests {
         let resource = parse_resource_header(r#"$book.`chapter.1`"#)
             .expect_err("expected invalid stropped resource part to fail");
 
-        assert!(
-            expression.to_string().contains("InvalidToken"),
-            "expected invalid token error, got {}",
-            expression
-        );
+        assert_eq!(expression.to_string(), "invalid token");
         assert_eq!(label.to_string(), "invalid name ``set.ops``");
         assert_eq!(author.to_string(), "invalid name ``isaac.newton``");
         assert_eq!(resource.to_string(), "invalid name ``chapter.1``");
@@ -3646,6 +3823,16 @@ mod tests {
             error.to_string(),
             "header tail parts require at least one `{...}` argument list"
         );
+    }
+
+    #[test]
+    fn formats_generated_parse_errors_for_users() {
+        let error = parse_expression("x |plus|").expect_err("expected invalid expression");
+        let message = error.to_string();
+
+        assert!(message.starts_with("unexpected"));
+        assert!(!message.contains("UnrecognizedToken"));
+        assert!(!message.contains("token:"));
     }
 
     #[test]

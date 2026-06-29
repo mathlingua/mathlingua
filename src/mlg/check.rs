@@ -947,6 +947,14 @@ mod tests {
                     }) && event.message.starts_with("Invalid Defines formulation:")
                 })
         );
+        assert!(
+            event_log
+                .events()
+                .iter()
+                .filter_map(Event::as_message)
+                .all(|event| !event.message.contains("UnrecognizedToken")
+                    && !event.message.contains("token:"))
+        );
         assert!(user_events(&event_log).last().is_some_and(
             |event| event == &Event::user_log("Found 1 issue.").with_origin("mlg_check")
         ));
@@ -1311,6 +1319,16 @@ mod tests {
     Documented:
     . called: "ternary function"
     . written: "g?"
+
+    [f \.function.compose./ g]
+    Defines: h(x__) := f(g(x__)) is \function:on{A}:to{C}
+    using: A, B, C is \set
+    when:
+    . g is \function:on{A}:to{B}
+    . f is \function:on{B}:to{C}
+    Documented:
+    . written: "f? \circ g?"
+    . called: "function composition"
 
     Theorem:
     given:

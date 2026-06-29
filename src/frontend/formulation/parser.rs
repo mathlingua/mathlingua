@@ -11,9 +11,9 @@ use super::ast::{
     IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind, IsViaStatement, LabelHeader,
     Operator, ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm,
     PlaceholderFormKind, PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
-    RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, Span, SpecOperatorAlias,
-    SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement, TypeExpression,
-    WritingAlias,
+    RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, SetExpression, Span,
+    SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement,
+    TypeExpression, WritingAlias,
 };
 use super::grammar;
 use super::lexer::Lexer;
@@ -1148,6 +1148,18 @@ fn parse_declaration_relation(
         return Ok((&input[..index], Some(DeclarationRelation::Is(ty))));
     }
 
+    if let Some(index) = find_top_level_definition(input) {
+        let subject = input[..index].trim();
+        let definition_text = input[index + 2..].trim();
+        if !subject.is_empty()
+            && !definition_text.is_empty()
+            && let Ok(ty @ TypeExpression::Coercion { .. }) =
+                parse_type_expression(definition_text, allow_refined_type)
+        {
+            return Ok((subject, Some(DeclarationRelation::Is(ty))));
+        }
+    }
+
     if let Some((body, operator, name_text)) = split_subject_operator_name(input) {
         let target = parse_expression(name_text)?;
         return Ok((
@@ -1265,6 +1277,16 @@ pub(super) fn parse_type_expression(
     allow_refined: bool,
 ) -> Result<TypeExpression, ParseError> {
     let input = input.trim();
+    if let Some(index) = find_first_top_level_char(input, '@') {
+        let ty = parse_type_expression(input[..index].trim(), allow_refined)?;
+        let literal = parse_set_expression_literal(input[index + 1..].trim())?;
+        return Ok(TypeExpression::Coercion {
+            span: span_all(input),
+            ty: Box::new(ty),
+            literal,
+        });
+    }
+
     if input.starts_with("\\\\") {
         return parse_builtin_type_expression(input);
     }
@@ -1282,6 +1304,16 @@ pub(super) fn parse_type_expression(
         ExpressionKind::Command(command) => Ok(TypeExpression::Command(command)),
         other => Err(ParseError::custom(format!(
             "expected command expression for type, found {other:?}"
+        ))),
+    }
+}
+
+fn parse_set_expression_literal(input: &str) -> Result<SetExpression, ParseError> {
+    let expression = parse_expression(input)?;
+    match expression.kind {
+        ExpressionKind::Set(set) => Ok(set),
+        other => Err(ParseError::custom(format!(
+            "expected set literal after `@`, found {other:?}"
         ))),
     }
 }
@@ -1974,6 +2006,12 @@ fn parse_spec_operator_alias_target(input: &str) -> Result<SpecOperatorAliasTarg
         return parse_chain(builtin).map(SpecOperatorAliasTarget::Builtin);
     }
 
+    if let Ok(expression) = parse_expression(input)
+        && matches!(expression.kind, ExpressionKind::MemberOf { .. })
+    {
+        return Ok(SpecOperatorAliasTarget::MemberOf(Box::new(expression)));
+    }
+
     parse_is_or_spec(input)
         .map(Box::new)
         .map(SpecOperatorAliasTarget::IsOrSpec)
@@ -2548,6 +2586,37 @@ mod tests {
                 }
             }
             other => panic!("expected set expression, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_collection_form_declarations_and_member_of_expressions() {
+        let form = parse_form_or_declaration("X ::= {x__ : ...}")
+            .expect("expected collection form declaration");
+        let expression = parse_expression("x member_of X").expect("expected member_of expression");
+
+        match form.kind {
+            FormOrDeclarationKind::SetDeclaration { name, form } => {
+                assert_eq!(name.as_deref(), Some("X"));
+                assert!(form.has_condition_placeholder);
+                assert!(form.variadic_tuple_target);
+                assert!(matches!(
+                    form.placeholder_form.kind,
+                    PlaceholderFormKind::Placeholder(ref placeholder) if placeholder.name == "x"
+                ));
+            }
+            other => panic!("expected set declaration, got {other:?}"),
+        }
+
+        match expression.kind {
+            ExpressionKind::MemberOf {
+                subject,
+                collection,
+            } => {
+                assert!(matches!(subject.kind, ExpressionKind::Name(ref name) if name == "x"));
+                assert!(matches!(collection.kind, ExpressionKind::Name(ref name) if name == "X"));
+            }
+            other => panic!("expected member_of expression, got {other:?}"),
         }
     }
 
@@ -3241,6 +3310,23 @@ mod tests {
             spec.relation,
             Some(DeclarationRelation::Spec { target, .. })
                 if matches!(target.kind, ExpressionKind::Command(_))
+        ));
+
+        let coerced_collection =
+            parse_ordinary_declaration_statement(r#"A is \set@{x_ : x_ is \real}"#)
+                .expect("expected collection coercion declaration statement");
+        assert!(matches!(
+            coerced_collection.relation,
+            Some(DeclarationRelation::Is(TypeExpression::Coercion { .. }))
+        ));
+
+        let defined_coerced_collection =
+            parse_ordinary_declaration_statement(r#"B := \set@{x_ : x_ is \real}"#)
+                .expect("expected defined collection coercion declaration statement");
+        assert!(defined_coerced_collection.definition.is_none());
+        assert!(matches!(
+            defined_coerced_collection.relation,
+            Some(DeclarationRelation::Is(TypeExpression::Coercion { .. }))
         ));
     }
 

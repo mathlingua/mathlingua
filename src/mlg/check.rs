@@ -3311,6 +3311,115 @@ mod tests {
     }
 
     #[test]
+    fn check_reduces_collection_membership_to_literal_element_type() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("collection-membership.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    [\set]
+    Describes: X ::= {x__ : ...}
+    Provides:
+    . symbol: x_ "in" X :-> x_ member_of X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\needs.real{x}]
+    Describes: y
+    when: x is \real
+    Documented:
+    . written: "\operatorname{needsReal}(x?)"
+
+    Theorem:
+    given:
+    . A is \set@{x_ : x_ is \real}
+    . x "in" A
+    then: \needs.real{x}
+
+    Theorem:
+    given:
+    . B := {b_ : b_ is \real} is \set
+    . y "in" B
+    then: \needs.real{y}
+
+    Theorem:
+    given:
+    . C := \set@{c_ : c_ is \real}
+    . z "in" C
+    then: \needs.real{z}
+
+    Theorem:
+    given: X := \set@{x_ : x_ is \set}
+    then:
+    . forAll: x "in" X
+      then: x is \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("collection-membership.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_treats_membership_in_unstructured_collection_as_unknown() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("collection-membership-unknown.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X ::= {x__ : ...}
+    Provides:
+    . symbol: x_ "in" X :-> x_ member_of X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\needs.unknown{x}]
+    Describes: y
+    when: x is \\unknown
+    Documented:
+    . written: "\operatorname{needsUnknown}(x?)"
+
+    Theorem:
+    given:
+    . A is \set
+    . x "in" A
+    then: \needs.unknown{x}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("collection-membership-unknown.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_matches_spec_requirements_without_reducing_to_type_facts() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("direct-spec.mlg");

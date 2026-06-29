@@ -36,6 +36,7 @@ pub struct ExpressionAlias {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SpecOperatorAliasTarget {
     IsOrSpec(Box<IsOrSpec>),
+    MemberOf(Box<Expression>),
     Builtin(Chain),
 }
 
@@ -127,10 +128,18 @@ pub struct InfixSpec {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypeExpression {
-    Builtin { span: Span, chain: Chain },
+    Builtin {
+        span: Span,
+        chain: Chain,
+    },
     Command(CommandExpression),
     RefinedCommand(RefinedCommandExpression),
     Function(FunctionType),
+    Coercion {
+        span: Span,
+        ty: Box<TypeExpression>,
+        literal: SetExpression,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -345,6 +354,10 @@ pub enum ExpressionKind {
         subject: Box<Expression>,
         ty: TypeExpression,
     },
+    MemberOf {
+        subject: Box<Expression>,
+        collection: Box<Expression>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -377,6 +390,10 @@ impl SetTarget {
 pub enum SetTargetKind {
     Name(String),
     PlaceholderForm(PlaceholderForm),
+    Alias {
+        name: String,
+        target: Box<SetTarget>,
+    },
     Function {
         name: String,
         arguments: Vec<SetTarget>,
@@ -499,6 +516,7 @@ pub struct SetForm {
     pub span: Span,
     pub placeholder_form: PlaceholderForm,
     pub has_condition_placeholder: bool,
+    pub variadic_tuple_target: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

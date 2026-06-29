@@ -14,9 +14,42 @@ pub(super) fn collect_definition_type_metadata(
     collect_refinement_extension_rules(item, &info, registry);
     collect_spec_operator_rules(item, &info, registry);
     collect_provided_symbol_rules(item, &info, registry);
+    collect_collection_type_signature(item, &info, registry);
     registry
         .type_infos
         .insert(header_shape.shape.signature.clone(), info);
+}
+
+fn collect_collection_type_signature(
+    item: &TopLevelItem,
+    info: &DefinitionTypeInfo,
+    registry: &mut SignatureRegistry,
+) {
+    let TopLevelItem::Describes(group) = item else {
+        return;
+    };
+    if !describes_target_is_collection(&group.describes.argument) {
+        return;
+    }
+    if !registry
+        .collection_type_signatures
+        .iter()
+        .any(|signature| signature == &info.signature)
+    {
+        registry
+            .collection_type_signatures
+            .push(info.signature.clone());
+    }
+}
+
+fn describes_target_is_collection(target: &DescribesTarget) -> bool {
+    matches!(
+        target,
+        DescribesTarget::Form(FormOrDeclaration {
+            kind: FormOrDeclarationKind::SetDeclaration { .. },
+            ..
+        })
+    )
 }
 
 pub(super) fn disambiguation_rule_from_item(item: &TopLevelItem) -> Option<DisambiguationRule> {
@@ -256,6 +289,7 @@ fn collect_type_extension_rules(
             | TypeFact::Spec { subject, .. }
             | TypeFact::InfixSpec { subject, .. }
             | TypeFact::RefinedIs { subject, .. }
+            | TypeFact::MemberOf { subject, .. }
             | TypeFact::FunctionType { subject, .. } => subject.clone(),
         };
         registry.extension_rules.push(TypeExtensionRule {
@@ -1283,6 +1317,7 @@ fn assume_declaration_statement(
     if let Some(definition) = &statement.definition {
         check_expression(definition, context, path, locator, registry, event_log);
     }
+    register_declaration_collection_literal(statement, context);
     if let Some((left, right)) = declaration_substitution(statement) {
         context.add_substitution(left, right);
     }
@@ -1312,12 +1347,54 @@ fn complete_introduced_declaration_statement(
     if let Some(definition) = &statement.definition {
         check_expression(definition, context, path, locator, registry, event_log);
     }
+    register_declaration_collection_literal(statement, context);
     if let Some((left, right)) = declaration_substitution(statement) {
         context.add_substitution(left, right);
     }
     for fact in facts_from_declaration_statement_in_context(statement, context) {
         context.add_fact(fact);
     }
+}
+
+fn register_declaration_collection_literal(
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+) {
+    if let Some(Expression {
+        kind: ExpressionKind::Set(set),
+        ..
+    }) = &statement.definition
+    {
+        for subject in declaration_subject_keys(statement) {
+            context.add_collection_literal(subject, set.clone());
+        }
+    }
+
+    if let Some(DeclarationRelation::Is(TypeExpression::Coercion { literal, .. })) =
+        &statement.relation
+    {
+        for subject in declaration_subject_keys(statement) {
+            context.add_collection_literal(subject, literal.clone());
+        }
+    }
+}
+
+fn register_coerced_collection_literal(
+    subject: &Expression,
+    ty: &TypeExpression,
+    context: &mut TypeContext,
+) {
+    let TypeExpression::Coercion { literal, .. } = ty else {
+        return;
+    };
+    context.add_collection_literal(key_for_expression(subject), literal.clone());
+}
+
+fn register_expression_collection_literal(expression: &Expression, context: &mut TypeContext) {
+    let ExpressionKind::Set(set) = &expression.kind else {
+        return;
+    };
+    context.add_collection_literal(key_for_expression(expression), set.clone());
 }
 
 fn check_declaration_relation(
@@ -1716,6 +1793,13 @@ fn check_expression(
                 event_log,
             );
         }
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => {
+            check_expression(subject, context, path, locator, registry, event_log);
+            check_expression(collection, context, path, locator, registry, event_log);
+        }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
             check_expression(subject, context, path, locator, registry, event_log);
@@ -1777,6 +1861,31 @@ fn check_type_expression(
                 check_function_type_spec(spec, context, path, locator, registry, event_log);
             }
         }
+        TypeExpression::Coercion { ty, literal, .. } => {
+            check_type_expression(ty, context, path, locator, registry, event_log);
+            check_set_literal(literal, context, path, locator, registry, event_log);
+        }
+    }
+}
+
+fn check_set_literal(
+    set: &SetExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let mut child = context.clone();
+    declare_set_target(&set.target, &mut child);
+    for spec in &set.specs {
+        assume_fact_expression(spec, &mut child, path, locator, registry, event_log);
+        if let Some(fact) = fact_from_expression_in_context(spec, &child) {
+            child.add_fact(fact);
+        }
+    }
+    if let Some(predicate) = &set.predicate {
+        check_expression(predicate, &child, path, locator, registry, event_log);
     }
 }
 
@@ -3274,6 +3383,13 @@ fn collect_expression_names(expression: &Expression, names: &mut Vec<String>) {
             collect_expression_names(&statement.subject, names);
             names.push(statement.name.clone());
         }
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => {
+            collect_expression_names(subject, names);
+            collect_expression_names(collection, names);
+        }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
             collect_expression_names(subject, names);
@@ -3317,6 +3433,16 @@ fn collect_type_expression_names(ty: &TypeExpression, names: &mut Vec<String>) {
                 collect_function_type_spec_names(spec, names);
             }
         }
+        TypeExpression::Coercion { ty, literal, .. } => {
+            collect_type_expression_names(ty, names);
+            collect_set_target_names(&literal.target, names);
+            for spec in &literal.specs {
+                collect_expression_names(spec, names);
+            }
+            if let Some(predicate) = &literal.predicate {
+                collect_expression_names(predicate, names);
+            }
+        }
     }
 }
 
@@ -3331,6 +3457,10 @@ fn collect_set_target_names(target: &SetTarget, names: &mut Vec<String>) {
     match &target.kind {
         SetTargetKind::Name(name) => names.push(name.clone()),
         SetTargetKind::PlaceholderForm(form) => collect_placeholder_form_names(form, names),
+        SetTargetKind::Alias { name, target } => {
+            names.push(name.clone());
+            collect_set_target_names(target, names);
+        }
         SetTargetKind::Function {
             name: function_name,
             arguments,
@@ -3476,8 +3606,14 @@ fn validate_spec_operator_alias(
     let mut child = context.clone();
     declare_placeholder_form(&alias.placeholder_spec.placeholder_form, &mut child);
 
-    if let SpecOperatorAliasTarget::IsOrSpec(target) = &alias.target {
-        check_is_or_spec_alias_target(target, &child, path, locator, registry, event_log);
+    match &alias.target {
+        SpecOperatorAliasTarget::IsOrSpec(target) => {
+            check_is_or_spec_alias_target(target, &child, path, locator, registry, event_log);
+        }
+        SpecOperatorAliasTarget::MemberOf(expression) => {
+            check_expression(expression, &child, path, locator, registry, event_log);
+        }
+        SpecOperatorAliasTarget::Builtin(_) => {}
     }
 }
 
@@ -3623,6 +3759,10 @@ fn check_type_expression_requirements(
                 check_function_type_spec(spec, context, path, locator, registry, event_log);
             }
         }
+        TypeExpression::Coercion { ty, literal, .. } => {
+            check_type_expression_requirements(ty, context, path, locator, registry, event_log);
+            check_set_literal(literal, context, path, locator, registry, event_log);
+        }
     }
 }
 
@@ -3712,6 +3852,10 @@ fn fact_mentions_name(fact: &TypeFact, name: &str) -> bool {
                 || key_mentions_name(ty, name)
                 || key_mentions_name(base_ty, name)
         }
+        TypeFact::MemberOf {
+            subject,
+            collection,
+        } => key_mentions_name(subject, name) || key_mentions_name(collection, name),
         TypeFact::FunctionType {
             subject,
             inputs,
@@ -4074,9 +4218,9 @@ fn fact_implies(
         }
     }
 
-    if matches!(fact, TypeFact::Spec { .. }) {
+    if matches!(fact, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
         let mut spec_seen = HashSet::new();
-        for reduced in reduce_spec_fact(&fact, context, registry, &mut spec_seen) {
+        for reduced in reduce_spec_or_member_fact(&fact, context, registry, &mut spec_seen) {
             if fact_implies(&reduced, required, context, registry, seen) {
                 return true;
             }
@@ -4370,8 +4514,18 @@ fn reduce_spec_fact(
                     let next = substitute_fact(&next, &substitutions);
                     let next = context.normalize_fact(&next);
                     result.push(next.clone());
-                    if matches!(next, TypeFact::Spec { .. }) {
-                        result.extend(reduce_spec_fact(&next, context, registry, seen));
+                    if matches!(next, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
+                        result.extend(reduce_spec_or_member_fact(&next, context, registry, seen));
+                    }
+                }
+            }
+            SpecOperatorAliasTarget::MemberOf(target_alias) => {
+                if let Some(next) = fact_from_expression(target_alias) {
+                    let next = substitute_fact(&next, &substitutions);
+                    let next = context.normalize_fact(&next);
+                    result.push(next.clone());
+                    if matches!(next, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
+                        result.extend(reduce_spec_or_member_fact(&next, context, registry, seen));
                     }
                 }
             }
@@ -4379,6 +4533,108 @@ fn reduce_spec_fact(
     }
 
     result
+}
+
+fn reduce_spec_or_member_fact(
+    fact: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> Vec<TypeFact> {
+    match fact {
+        TypeFact::Spec { .. } => reduce_spec_fact(fact, context, registry, seen),
+        TypeFact::MemberOf { .. } => reduce_member_of_fact(fact, context, registry, seen),
+        _ => Vec::new(),
+    }
+}
+
+fn reduce_member_of_fact(
+    fact: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> Vec<TypeFact> {
+    let fact = context.normalize_fact(fact);
+    if !seen.insert(fact.clone()) {
+        return Vec::new();
+    }
+
+    let TypeFact::MemberOf {
+        subject,
+        collection,
+    } = &fact
+    else {
+        return Vec::new();
+    };
+
+    if let Some(literal) = context.collection_literal(collection) {
+        let facts = facts_from_collection_literal_membership(subject, literal, context);
+        if !facts.is_empty() {
+            return facts;
+        }
+    }
+
+    if collection_has_registered_collection_type(collection, context, registry) {
+        return vec![unknown_type_fact(subject)];
+    }
+
+    Vec::new()
+}
+
+fn facts_from_collection_literal_membership(
+    subject: &str,
+    literal: &SetExpression,
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    let Some(pattern) = collection_literal_member_pattern(&literal.target) else {
+        return Vec::new();
+    };
+
+    let mut child = context.clone();
+    declare_set_target(&literal.target, &mut child);
+
+    let substitutions = HashMap::from([(pattern.clone(), subject.to_owned())]);
+    let mut result = Vec::new();
+    for spec in &literal.specs {
+        let Some(fact) = fact_from_expression_in_context(spec, &child) else {
+            continue;
+        };
+        child.add_fact(fact.clone());
+        if child.normalize_key(fact_subject(&fact)) == child.normalize_key(&pattern) {
+            result.push(child.normalize_fact(&substitute_fact(&fact, &substitutions)));
+        }
+    }
+    result
+}
+
+fn collection_literal_member_pattern(target: &SetTarget) -> Option<String> {
+    match &target.kind {
+        SetTargetKind::Name(name) => Some(name.clone()),
+        SetTargetKind::PlaceholderForm(form) => Some(key_for_placeholder_form(form)),
+        SetTargetKind::Alias { name, .. } => Some(name.clone()),
+        SetTargetKind::Function { .. } | SetTargetKind::Tuple(_) => {
+            Some(key_for_set_target(target))
+        }
+    }
+}
+
+fn collection_has_registered_collection_type(
+    collection: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> bool {
+    registry
+        .collection_type_signatures
+        .iter()
+        .any(|signature| has_type_signature(collection, signature, context, registry))
+}
+
+fn unknown_type_fact(subject: &str) -> TypeFact {
+    TypeFact::Is {
+        subject: subject.to_owned(),
+        ty: BUILTIN_UNKNOWN_SIGNATURE.to_owned(),
+        signature: BUILTIN_UNKNOWN_SIGNATURE.to_owned(),
+    }
 }
 
 fn defined_output_facts_for_key(
@@ -4622,7 +4878,7 @@ fn command_fact_signature_and_actuals(fact: &TypeFact) -> Option<(String, Vec<St
             actuals.push(target.clone());
             Some((signature.clone(), actuals))
         }
-        TypeFact::Spec { .. } | TypeFact::FunctionType { .. } => None,
+        TypeFact::Spec { .. } | TypeFact::MemberOf { .. } | TypeFact::FunctionType { .. } => None,
     }
 }
 
@@ -4722,6 +4978,7 @@ fn fact_subject(fact: &TypeFact) -> &str {
         | TypeFact::Spec { subject, .. }
         | TypeFact::InfixSpec { subject, .. }
         | TypeFact::RefinedIs { subject, .. }
+        | TypeFact::MemberOf { subject, .. }
         | TypeFact::FunctionType { subject, .. } => subject,
     }
 }
@@ -4829,6 +5086,7 @@ fn instantiate_function_type_spec(spec: &FunctionTypeFactSpec, subject: &str) ->
 struct TypeContext {
     facts: Vec<TypeFact>,
     substitutions: Vec<(String, String)>,
+    collection_literals: HashMap<String, SetExpression>,
     symbols: HashSet<String>,
     active_disambiguations: Vec<DisambiguationKey>,
     defer_unresolved_provided_symbols: bool,
@@ -4841,6 +5099,19 @@ impl TypeContext {
 
     fn add_substitution(&mut self, left: String, right: String) {
         self.substitutions.push((left, right));
+    }
+
+    fn add_collection_literal(&mut self, subject: String, literal: SetExpression) {
+        self.collection_literals
+            .insert(subject.clone(), literal.clone());
+        let normalized = self.normalize_key(&subject);
+        self.collection_literals.insert(normalized, literal);
+    }
+
+    fn collection_literal(&self, subject: &str) -> Option<&SetExpression> {
+        self.collection_literals
+            .get(subject)
+            .or_else(|| self.collection_literals.get(&self.normalize_key(subject)))
     }
 
     fn declare_name(&mut self, name: impl Into<String>) {
@@ -4904,6 +5175,13 @@ impl TypeContext {
                 signature: signature.clone(),
                 base_ty: self.normalize_key(base_ty),
                 base_signature: base_signature.clone(),
+            },
+            TypeFact::MemberOf {
+                subject,
+                collection,
+            } => TypeFact::MemberOf {
+                subject: self.normalize_key(subject),
+                collection: self.normalize_key(collection),
             },
             TypeFact::FunctionType {
                 subject,
@@ -5137,6 +5415,7 @@ fn assume_fact_expression(
         ExpressionKind::IsType { subject, ty } => {
             check_type_expression(ty, context, path, locator, registry, event_log);
             declare_names_from_expression(subject, context);
+            register_coerced_collection_literal(subject, ty, context);
         }
         ExpressionKind::SpecStatement(statement) => {
             check_name(&statement.name, context, path, locator, event_log);
@@ -5151,6 +5430,14 @@ fn assume_fact_expression(
                     event_log,
                 );
             }
+        }
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => {
+            declare_names_from_expression(subject, context);
+            declare_names_from_expression(collection, context);
+            register_expression_collection_literal(collection, context);
         }
         ExpressionKind::InfixSpecStatement { left, spec, right } if !spec.predicate => {
             let active_spec = active_infix_spec(spec, context);
@@ -5250,6 +5537,10 @@ fn declare_set_target(target: &SetTarget, context: &mut TypeContext) {
     match &target.kind {
         SetTargetKind::Name(name) => context.declare_name(name.clone()),
         SetTargetKind::PlaceholderForm(form) => declare_placeholder_form(form, context),
+        SetTargetKind::Alias { name, target } => {
+            context.declare_name(name.clone());
+            declare_set_target(target, context);
+        }
         SetTargetKind::Function { name, arguments } => {
             context.declare_name(name.clone());
             for argument in arguments {
@@ -5361,6 +5652,13 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
             declare_names_from_expression(&statement.subject, context);
             context.declare_name(statement.name.clone());
         }
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => {
+            declare_names_from_expression(subject, context);
+            declare_names_from_expression(collection, context);
+        }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
             declare_names_from_expression(subject, context);
@@ -5406,6 +5704,16 @@ fn declare_names_from_type_expression(ty: &TypeExpression, context: &mut TypeCon
                 .chain(std::iter::once(&function_type.output))
             {
                 declare_names_from_function_type_spec(spec, context);
+            }
+        }
+        TypeExpression::Coercion { ty, literal, .. } => {
+            declare_names_from_type_expression(ty, context);
+            declare_set_target(&literal.target, context);
+            for spec in &literal.specs {
+                declare_names_from_expression(spec, context);
+            }
+            if let Some(predicate) = &literal.predicate {
+                declare_names_from_expression(predicate, context);
             }
         }
     }
@@ -5493,6 +5801,13 @@ fn substitute_fact(fact: &TypeFact, substitutions: &HashMap<String, String>) -> 
             signature: signature.clone(),
             base_ty: substitute_key(base_ty, substitutions),
             base_signature: base_signature.clone(),
+        },
+        TypeFact::MemberOf {
+            subject,
+            collection,
+        } => TypeFact::MemberOf {
+            subject: substitute_key(subject, substitutions),
+            collection: substitute_key(collection, substitutions),
         },
         TypeFact::FunctionType {
             subject,
@@ -5709,9 +6024,10 @@ fn function_type_spec_from_fact(fact: &TypeFact) -> Option<(String, FunctionType
                 target: target.clone(),
             },
         )),
-        TypeFact::InfixSpec { .. } | TypeFact::RefinedIs { .. } | TypeFact::FunctionType { .. } => {
-            None
-        }
+        TypeFact::InfixSpec { .. }
+        | TypeFact::RefinedIs { .. }
+        | TypeFact::MemberOf { .. }
+        | TypeFact::FunctionType { .. } => None,
     }
 }
 
@@ -5948,6 +6264,13 @@ fn fact_from_expression(expression: &Expression) -> Option<TypeFact> {
         ExpressionKind::InfixSpecStatement { left, spec, right } if !spec.predicate => {
             fact_from_infix_spec_statement(left, spec, right)
         }
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => Some(TypeFact::MemberOf {
+            subject: key_for_expression(subject),
+            collection: key_for_expression(collection),
+        }),
         ExpressionKind::IsRefinedPredicate { subject, command } => Some(refined_fact_from_command(
             key_for_expression(subject),
             command,
@@ -5972,6 +6295,13 @@ fn fact_from_expression_in_context(
         ExpressionKind::InfixSpecStatement { left, spec, right } if !spec.predicate => {
             fact_from_infix_spec_statement_in_context(left, spec, right, context)
         }
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => Some(TypeFact::MemberOf {
+            subject: context.normalize_key(&key_for_expression(subject)),
+            collection: context.normalize_key(&key_for_expression(collection)),
+        }),
         ExpressionKind::IsRefinedPredicate { subject, command } => {
             let active_command = active_refined_command_expression(command, context);
             Some(refined_fact_from_command(
@@ -6194,6 +6524,7 @@ fn key_for_type_expression(ty: &TypeExpression) -> Option<(String, String)> {
             key_for_command_expression(command),
             shape_for_command_expression(command).signature,
         )),
+        TypeExpression::Coercion { ty, .. } => key_for_type_expression(ty),
         TypeExpression::RefinedCommand(_) | TypeExpression::Function(_) => None,
     }
 }
@@ -6214,6 +6545,7 @@ fn key_for_type_expression_in_context(
                 shape_for_command_expression(&active_command).signature,
             ))
         }
+        TypeExpression::Coercion { ty, .. } => key_for_type_expression_in_context(ty, context),
         TypeExpression::RefinedCommand(_) | TypeExpression::Function(_) => None,
     }
 }
@@ -6276,15 +6608,7 @@ fn key_for_expression(expression: &Expression) -> String {
                 .collect::<Vec<_>>()
                 .join(",")
         ),
-        ExpressionKind::Set(set) => format!(
-            "{{{}:{}}}",
-            key_for_set_target(&set.target),
-            set.specs
-                .iter()
-                .map(key_for_expression)
-                .collect::<Vec<_>>()
-                .join(",")
-        ),
+        ExpressionKind::Set(set) => key_for_set_expression(set),
         ExpressionKind::Grouped { expression, .. } => key_for_expression(expression),
         ExpressionKind::Labeled { expression, .. } => key_for_expression(expression),
         ExpressionKind::SubsetCall(subset) => format!("{subset:?}"),
@@ -6332,6 +6656,14 @@ fn key_for_expression(expression: &Expression) -> String {
             key_for_expression(&statement.subject),
             statement.operator,
             statement.name
+        ),
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => format!(
+            "{} member_of {}",
+            key_for_expression(subject),
+            key_for_expression(collection)
         ),
         ExpressionKind::SpecPredicate(statement) => format!(
             "{}\"{}\"?{}",
@@ -6428,6 +6760,13 @@ fn key_for_non_command_type_expression(ty: &TypeExpression) -> String {
                 },
             ),
         ),
+        TypeExpression::Coercion { ty, literal, .. } => {
+            format!(
+                "{}@{}",
+                key_for_non_command_type_expression(ty),
+                key_for_set_expression(literal)
+            )
+        }
     }
 }
 
@@ -6612,6 +6951,9 @@ fn key_for_set_target(target: &SetTarget) -> String {
     match &target.kind {
         SetTargetKind::Name(name) => name.clone(),
         SetTargetKind::PlaceholderForm(form) => key_for_placeholder_form(form),
+        SetTargetKind::Alias { name, target } => {
+            format!("{name}:={}", key_for_set_target(target))
+        }
         SetTargetKind::Function { name, arguments } => format!(
             "{}({})",
             name,
@@ -6633,6 +6975,23 @@ fn key_for_set_target(target: &SetTarget) -> String {
                 .join(",")
         ),
     }
+}
+
+fn key_for_set_expression(set: &SetExpression) -> String {
+    let mut key = format!(
+        "{{{}:{}}}",
+        key_for_set_target(&set.target),
+        set.specs
+            .iter()
+            .map(key_for_expression)
+            .collect::<Vec<_>>()
+            .join(",")
+    );
+    if let Some(predicate) = &set.predicate {
+        key.push('|');
+        key.push_str(&key_for_expression(predicate));
+    }
+    key
 }
 
 fn key_for_command_expression(command: &CommandExpression) -> String {
@@ -7168,6 +7527,10 @@ fn format_fact(fact: &TypeFact) -> String {
             format!("{subject} {signature}{rendered_args} {target}")
         }
         TypeFact::RefinedIs { subject, ty, .. } => format!("{subject} is {ty}"),
+        TypeFact::MemberOf {
+            subject,
+            collection,
+        } => format!("{subject} member_of {collection}"),
         TypeFact::FunctionType {
             subject,
             inputs,

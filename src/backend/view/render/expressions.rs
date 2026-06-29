@@ -110,6 +110,14 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
         ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
             render_spec_statement(statement, registry)
         }
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => format!(
+            "{} \\textrm{{ member of }} {}",
+            render_expression(subject, registry),
+            render_expression(collection, registry)
+        ),
         ExpressionKind::IsPredicate { subject, command } => format!(
             "{} \\textrm{{ is }} {}",
             render_expression(subject, registry),
@@ -145,6 +153,12 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 render_expression(subject, registry),
                 render_function_type(function_type, registry)
             ),
+            TypeExpression::Coercion { ty, literal, .. } => format!(
+                "{} \\textrm{{ is }} {}@{}",
+                render_expression(subject, registry),
+                render_type_expression(ty, registry),
+                render_set_expression(literal, registry)
+            ),
         },
     }
 }
@@ -175,6 +189,13 @@ pub(super) fn render_set_target(target: &SetTarget) -> String {
     match &target.kind {
         SetTargetKind::Name(name) => escape_math_identifier(name),
         SetTargetKind::PlaceholderForm(form) => render_placeholder_form(form),
+        SetTargetKind::Alias { name, target } => {
+            format!(
+                "{} := {}",
+                escape_math_identifier(name),
+                render_set_target(target)
+            )
+        }
         SetTargetKind::Function { name, arguments } => {
             let arguments = arguments
                 .iter()

@@ -234,6 +234,11 @@ pub(super) fn render_type_expression(ty: &TypeExpression, registry: &RenderRegis
             .unwrap_or_else(|| render_command_expression(command, registry)),
         TypeExpression::RefinedCommand(command) => render_refined_command_called(command, registry),
         TypeExpression::Function(function_type) => render_function_type(function_type, registry),
+        TypeExpression::Coercion { ty, literal, .. } => format!(
+            "{}@{}",
+            render_type_expression(ty, registry),
+            render_set_expression(literal, registry)
+        ),
     }
 }
 

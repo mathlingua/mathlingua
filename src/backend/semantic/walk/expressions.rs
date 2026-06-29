@@ -33,6 +33,7 @@ pub(in crate::backend::semantic) fn walk_expression(
             }
         }
         ExpressionKind::Set(set) => {
+            walk_set_target(&set.target, visit);
             for spec in &set.specs {
                 walk_expression(spec, visit);
             }
@@ -74,6 +75,13 @@ pub(in crate::backend::semantic) fn walk_expression(
             walk_expression(left, visit);
             walk_expression(right, visit);
         }
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => {
+            walk_expression(subject, visit);
+            walk_expression(collection, visit);
+        }
         ExpressionKind::SpecStatement(statement) => walk_expression(&statement.subject, visit),
         ExpressionKind::SpecPredicate(statement) => walk_expression(&statement.subject, visit),
         ExpressionKind::IsPredicate { subject, command }
@@ -93,6 +101,25 @@ pub(in crate::backend::semantic) fn walk_expression(
         ExpressionKind::IsType { subject, ty } => {
             walk_expression(subject, visit);
             walk_type_expression(ty, visit);
+        }
+    }
+}
+
+fn walk_set_target(target: &SetTarget, visit: &mut impl FnMut(&SignatureShape)) {
+    match &target.kind {
+        SetTargetKind::Name(_) | SetTargetKind::PlaceholderForm(_) => {}
+        SetTargetKind::Alias { target, .. } => walk_set_target(target, visit),
+        SetTargetKind::Function { arguments, .. } => {
+            for argument in arguments {
+                walk_set_target(argument, visit);
+            }
+        }
+        SetTargetKind::Tuple(elements) => {
+            for element in elements {
+                if let SetTargetElement::Target(target) = element {
+                    walk_set_target(target, visit);
+                }
+            }
         }
     }
 }

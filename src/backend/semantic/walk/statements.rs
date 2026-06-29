@@ -87,6 +87,35 @@ pub(in crate::backend::semantic) fn walk_type_expression(
                 walk_function_type_spec(spec, visit);
             }
         }
+        TypeExpression::Coercion { ty, literal, .. } => {
+            walk_type_expression(ty, visit);
+            walk_set_target(&literal.target, visit);
+            for spec in &literal.specs {
+                walk_expression(spec, visit);
+            }
+            if let Some(predicate) = &literal.predicate {
+                walk_expression(predicate, visit);
+            }
+        }
+    }
+}
+
+fn walk_set_target(target: &SetTarget, visit: &mut impl FnMut(&SignatureShape)) {
+    match &target.kind {
+        SetTargetKind::Name(_) | SetTargetKind::PlaceholderForm(_) => {}
+        SetTargetKind::Alias { target, .. } => walk_set_target(target, visit),
+        SetTargetKind::Function { arguments, .. } => {
+            for argument in arguments {
+                walk_set_target(argument, visit);
+            }
+        }
+        SetTargetKind::Tuple(elements) => {
+            for element in elements {
+                if let SetTargetElement::Target(target) = element {
+                    walk_set_target(target, visit);
+                }
+            }
+        }
     }
 }
 

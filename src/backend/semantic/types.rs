@@ -3,6 +3,7 @@ use super::*;
 pub(super) const BUILTIN_EXPRESSION_SIGNATURE: &str = "\\\\expression";
 pub(super) const BUILTIN_STATEMENT_SIGNATURE: &str = "\\\\statement";
 pub(super) const BUILTIN_SPECIFICATION_SIGNATURE: &str = "\\\\specification";
+pub(super) const BUILTIN_UNKNOWN_SIGNATURE: &str = "\\\\unknown";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct SignatureShape {
@@ -74,6 +75,10 @@ pub(super) enum TypeFact {
         signature: String,
         base_ty: String,
         base_signature: String,
+    },
+    MemberOf {
+        subject: String,
+        collection: String,
     },
     FunctionType {
         subject: String,
@@ -193,4 +198,5 @@ pub(super) struct SignatureRegistry {
     pub(super) refinement_extension_rules: Vec<RefinementExtensionRule>,
     pub(super) disambiguations: Vec<DisambiguationRule>,
     pub(super) provided_symbols: Vec<ProvidedSymbolRule>,
+    pub(super) collection_type_signatures: Vec<String>,
 }

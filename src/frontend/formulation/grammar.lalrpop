@@ -45,6 +45,7 @@ extern {
         "is_not?" => Token::IsNotPredicate,
         "is?" => Token::IsPredicate,
         "is" => Token::Is,
+        "member_of" => Token::MemberOf,
         "quoted_name" => Token::QuotedName(<String>),
         "magnetic_placeholder" => Token::MagneticPlaceholder(<String>),
         "placeholder" => Token::Placeholder(<String>),
@@ -259,6 +260,13 @@ SetTargetElement: SetTargetElement = {
 };
 
 SetTarget: ast::SetTarget = {
+    <l:@L> <name:Name> ":=" <target:SetTarget> <r:@R> => ast::SetTarget::new(
+        Span::new(l, r),
+        SetTargetKind::Alias {
+            name,
+            target: Box::new(target),
+        },
+    ),
     <form:PlaceholderForm> => ast::SetTarget::new(
         form.span,
         SetTargetKind::PlaceholderForm(form),
@@ -286,11 +294,22 @@ SetForm: ast::SetForm = {
         span: Span::new(l, r),
         placeholder_form,
         has_condition_placeholder: false,
+        variadic_tuple_target: false,
     },
     <l:@L> "{" <placeholder_form:PlaceholderForm> ":" "..." "}" <r:@R> => ast::SetForm {
         span: Span::new(l, r),
         placeholder_form,
         has_condition_placeholder: true,
+        variadic_tuple_target: false,
+    },
+    <l:@L> "{" <placeholder:MagneticPlaceholder> ":" "..." "}" <r:@R> => ast::SetForm {
+        span: Span::new(l, r),
+        placeholder_form: ast::PlaceholderForm::new(
+            placeholder.span,
+            PlaceholderFormKind::Placeholder(ast::Placeholder::new(placeholder.span, placeholder.name)),
+        ),
+        has_condition_placeholder: true,
+        variadic_tuple_target: true,
     },
 };
 
@@ -868,6 +887,13 @@ SpecOrPredicateExpression: ast::Expression = {
         ExpressionKind::IsType {
             subject: Box::new(subject),
             ty,
+        },
+    ),
+    <l:@L> <subject:EqualityExpression> "member_of" <collection:EqualityExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::MemberOf {
+            subject: Box::new(subject),
+            collection: Box::new(collection),
         },
     ),
 };

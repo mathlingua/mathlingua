@@ -131,6 +131,8 @@ pub enum Token {
     Is,
     #[token("via")]
     Via,
+    #[token("member_of")]
+    MemberOf,
     #[regex(r#""[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?""#, parse_quoted_name)]
     QuotedName(String),
     #[regex(

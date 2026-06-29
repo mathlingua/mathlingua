@@ -7,7 +7,8 @@
   background: var(--surface);
 }
 
-.outlineOpen {
+.outlineOpen,
+.outlineAuto {
   grid-template-columns: 20rem minmax(0, 1fr);
 }
 
@@ -345,7 +346,8 @@
     transition: none;
   }
 
-  .outlineOpen {
+  .outlineOpen,
+  .outlineAuto {
     grid-template-columns: 16rem minmax(0, 1fr);
   }
 }
@@ -365,6 +367,15 @@
 
   .outlineClosed .outlinePanel {
     transform: translateX(-100%);
+  }
+
+  .outlineAuto .outlinePanel {
+    opacity: 0;
+    transform: translateX(-100%);
+    pointer-events: none;
+    padding-left: 0;
+    padding-right: 0;
+    border-right-color: transparent;
   }
 
   .documentStream {

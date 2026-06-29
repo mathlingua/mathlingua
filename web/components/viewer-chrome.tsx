@@ -1,23 +1,27 @@
+import type { OutlineState } from "./outline-state";
 import styles from "./viewer-chrome.module.css";
 
 /** Props for the sticky viewer toolbar. */
 interface ViewerChromeProps {
-  /** Whether the outline panel is currently open. */
-  isOutlineOpen: boolean;
   /** Toggles the outline panel visibility. */
   onToggleOutline: () => void;
+  /** Current outline visibility mode. */
+  outlineState: OutlineState;
 }
 
 /** Renders the top toolbar for the collection viewer. */
 export function ViewerChrome({
-  isOutlineOpen,
   onToggleOutline,
+  outlineState,
 }: ViewerChromeProps) {
+  const expanded =
+    outlineState === "auto" ? undefined : outlineState === "open";
+
   return (
     <header className={styles.chrome}>
       <button
-        aria-expanded={isOutlineOpen}
-        aria-label={isOutlineOpen ? "Close outline" : "Open outline"}
+        aria-expanded={expanded}
+        aria-label={outlineButtonLabel(outlineState)}
         className={styles.button}
         onClick={onToggleOutline}
         type="button"
@@ -40,4 +44,15 @@ export function ViewerChrome({
       <div className={styles.spacer} />
     </header>
   );
+}
+
+function outlineButtonLabel(outlineState: OutlineState): string {
+  switch (outlineState) {
+    case "open":
+      return "Close outline";
+    case "closed":
+      return "Open outline";
+    case "auto":
+      return "Toggle outline";
+  }
 }

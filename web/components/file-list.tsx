@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { GroupCard } from "./group-card";
 import { MarkdownInline, MarkdownText } from "./markdown-text";
+import type { OutlineState } from "./outline-state";
 import styles from "./file-list.module.css";
 import {
   buildFileBrowserEntries,
@@ -25,14 +26,14 @@ interface FileListProps {
   directories: DirectoryView[];
   /** Renderable files in the collection. */
   files: FileView[];
-  /** Whether the outline panel is visible. */
-  isOutlineOpen: boolean;
   /** Called when the outline drawer should be closed. */
   onCloseOutline: () => void;
   /** Called when the user drills into or backs out of an outline directory. */
   onNavigateDirectory: (directory: string) => void;
   /** Called when the user selects a file from the outline. */
   onSelectFile: (fileIndex: number) => void;
+  /** Current outline visibility mode. */
+  outlineState: OutlineState;
   /** Index of the file currently shown in the document stream. */
   selectedFileIndex: number;
 }
@@ -42,10 +43,10 @@ export function FileList({
   currentDirectory,
   directories,
   files,
-  isOutlineOpen,
   onCloseOutline,
   onNavigateDirectory,
   onSelectFile,
+  outlineState,
   selectedFileIndex,
 }: FileListProps) {
   const [definitionTrails, setDefinitionTrails] = useState<
@@ -139,9 +140,11 @@ export function FileList({
   return (
     <div
       className={
-        isOutlineOpen
-          ? `${styles.readerLayout} ${styles.outlineOpen}`
-          : `${styles.readerLayout} ${styles.outlineClosed}`
+        outlineState === "auto"
+          ? `${styles.readerLayout} ${styles.outlineAuto}`
+          : outlineState === "open"
+            ? `${styles.readerLayout} ${styles.outlineOpen}`
+            : `${styles.readerLayout} ${styles.outlineClosed}`
       }
     >
       <aside className={styles.outlinePanel}>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FileList } from "./file-list";
+import type { OutlineState } from "./outline-state";
 import { ViewerChrome } from "./viewer-chrome";
 import styles from "./viewer-shell.module.css";
 import { DirectoryView, FileView } from "../lib/types";
@@ -23,17 +24,28 @@ interface ViewerShellProps {
   directories: DirectoryView[];
   /** Renderable files for the current collection. */
   files: FileView[];
+  /** Initial browser pathname supplied by the server route. */
+  initialPathname: string;
 }
 
 /** Owns browser history, selected file, outline directory, and chrome state. */
-export function ViewerShell({ directories, files }: ViewerShellProps) {
-  const [isOutlineOpen, setIsOutlineOpen] = useState(false);
-  const [currentDirectory, setCurrentDirectory] = useState("");
-  const [selectedFileIndex, setSelectedFileIndex] = useState(0);
-
-  useEffect(() => {
-    setIsOutlineOpen(!window.matchMedia(NARROW_OUTLINE_MEDIA_QUERY).matches);
-  }, []);
+export function ViewerShell({
+  directories,
+  files,
+  initialPathname,
+}: ViewerShellProps) {
+  const initialSelection = resolveRouteSelection(
+    initialPathname,
+    files,
+    directories,
+  );
+  const [outlineState, setOutlineState] = useState<OutlineState>("auto");
+  const [currentDirectory, setCurrentDirectory] = useState(
+    initialSelection.directory,
+  );
+  const [selectedFileIndex, setSelectedFileIndex] = useState(
+    initialSelection.fileIndex,
+  );
 
   useEffect(() => {
     const syncSelectedFileFromPath = () => {
@@ -73,21 +85,32 @@ export function ViewerShell({ directories, files }: ViewerShellProps) {
     window.history.pushState(null, "", fileRoute(files[fileIndex]?.path ?? ""));
   };
 
+  const handleToggleOutline = () => {
+    setOutlineState((current) => {
+      const isOpen =
+        current === "auto"
+          ? !window.matchMedia(NARROW_OUTLINE_MEDIA_QUERY).matches
+          : current === "open";
+
+      return isOpen ? "closed" : "open";
+    });
+  };
+
   return (
     <>
       <ViewerChrome
-        isOutlineOpen={isOutlineOpen}
-        onToggleOutline={() => setIsOutlineOpen((value) => !value)}
+        onToggleOutline={handleToggleOutline}
+        outlineState={outlineState}
       />
       <main className={styles.pageShell}>
         <FileList
           currentDirectory={currentDirectory}
           directories={directories}
           files={files}
-          isOutlineOpen={isOutlineOpen}
-          onCloseOutline={() => setIsOutlineOpen(false)}
+          onCloseOutline={() => setOutlineState("closed")}
           onNavigateDirectory={handleNavigateDirectory}
           onSelectFile={handleSelectFile}
+          outlineState={outlineState}
           selectedFileIndex={selectedFileIndex}
         />
       </main>

@@ -4,4 +4,6 @@ import ViewerPage from "./viewer-page";
 export const dynamic = "force-dynamic";
 
 /** Root viewer route. */
-export default ViewerPage;
+export default function RootViewerPage() {
+  return <ViewerPage initialPathname="/" />;
+}

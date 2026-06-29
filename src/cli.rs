@@ -93,6 +93,8 @@ pub enum Command {
     Lsp,
     Version,
     View(ViewArgs),
+    #[command(name = "whte_rbt.obj", hide = true)]
+    WhteRbtObj,
 }
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
@@ -177,7 +179,14 @@ mod tests {
     }
 
     #[test]
-    fn help_does_not_show_debug_command() {
+    fn parses_hidden_whte_rbt_obj_command() {
+        let cli = Cli::parse_from(["mlg", "whte_rbt.obj"]);
+
+        assert!(matches!(cli.command, Command::WhteRbtObj));
+    }
+
+    #[test]
+    fn help_does_not_show_hidden_commands() {
         let mut command = Cli::command();
         let mut help = Vec::new();
         command.write_long_help(&mut help).unwrap();
@@ -188,6 +197,7 @@ mod tests {
                 .lines()
                 .any(|line| line.trim_start().starts_with("debug"))
         );
+        assert!(!help.contains("whte_rbt.obj"));
     }
 
     #[test]

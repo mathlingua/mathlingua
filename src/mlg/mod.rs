@@ -4,6 +4,7 @@ pub use init::{InitResult, init};
 pub use lsp::{LspResult, lsp};
 pub use version::{VersionResult, version};
 pub use view::{ViewResult, view};
+pub use whte_rbt_obj::{WhteRbtObjResult, whte_rbt_obj};
 
 mod check;
 mod debug;
@@ -12,3 +13,4 @@ mod lsp;
 mod util;
 mod version;
 mod view;
+mod whte_rbt_obj;

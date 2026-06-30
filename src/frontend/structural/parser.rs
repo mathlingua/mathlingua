@@ -1,7 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 
 use crate::events::EventLog;
-use crate::frontend::formulation::ast::{FormOrDeclaration, FormOrDeclarationKind};
+use crate::frontend::formulation::ast::{ExpressionKind, FormOrDeclaration, FormOrDeclarationKind};
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
     parse_expression, parse_expression_alias, parse_form_or_declaration, parse_is_via_statement,
@@ -1101,6 +1101,29 @@ pub(super) fn parse_alias_item_group(
     parse_alias_group(group, tracker).map(AliasItem::Alias)
 }
 
+/// Dispatches nested `Requires:` groups to capability or definition parsers.
+pub(super) fn parse_requires_item_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<RequiresItem> {
+    match first_section_label(group)? {
+        "capability" => parse_capability(group, tracker)
+            .map(Box::new)
+            .map(RequiresItem::Capability),
+        "definition" => {
+            parse_definition_requirement_group(group, tracker).map(RequiresItem::Definition)
+        }
+        other => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                format!("Unexpected requires group `{other}`"),
+            );
+            None
+        }
+    }
+}
+
 /// Dispatches nested `Enables:` groups to capability or connection parsers.
 pub(super) fn parse_enables_item_group(
     group: &ProtoGroup,
@@ -1410,6 +1433,43 @@ pub(in crate::frontend::structural::parser) fn parse_capability(
                 .map(|arguments| WrittenSection { arguments })
         }),
     })
+}
+
+/// Parses a `definition:` nested group inside `Requires:`.
+pub(in crate::frontend::structural::parser) fn parse_definition_requirement_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<DefinitionGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("definition", &group.sections, tracker, &["definition"])?;
+    Some(DefinitionGroup {
+        heading,
+        definition: DefinitionSection {
+            argument: parse_required_formulation(
+                section(&sections, "definition")?,
+                "definition",
+                tracker,
+                parse_definition_requirement,
+            )?,
+        },
+    })
+}
+
+fn parse_definition_requirement(
+    input: &str,
+) -> Result<DefinitionRequirement, FormulationParseError> {
+    let expression = parse_expression(input)?;
+    let ExpressionKind::IsType { subject, ty } = expression.kind else {
+        return Err(FormulationParseError::Custom(
+            "`definition:` must have the form `\\command is <spec>`".to_owned(),
+        ));
+    };
+    let ExpressionKind::Command(command) = subject.kind else {
+        return Err(FormulationParseError::Custom(
+            "`definition:` subject must be a command expression".to_owned(),
+        ));
+    };
+    Ok(DefinitionRequirement { command, ty })
 }
 
 /// Parses a `connection:` nested group inside `Enables:`.
@@ -2376,6 +2436,7 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
             "extends?",
             "specifies?",
             "satisfies?",
+            "Requires?",
             "Enables?",
             "Justified?",
             "Documented?",
@@ -2420,6 +2481,10 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
         satisfies: sections.get("satisfies").copied().and_then(|section| {
             parse_required_clauses(section, "satisfies", tracker)
                 .map(|arguments| SatisfiesSection { arguments })
+        }),
+        requires: sections.get("Requires").copied().and_then(|section| {
+            parse_required_groups(section, "Requires", tracker, parse_requires_item_group)
+                .map(|arguments| RequiresSection { arguments })
         }),
         enables: sections.get("Enables").copied().and_then(|section| {
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
@@ -2467,6 +2532,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             "using?",
             "when?",
             "expresses?",
+            "Requires?",
             "Enables?",
             "Justified?",
             "Documented?",
@@ -2503,6 +2569,10 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
         expresses: sections.get("expresses").copied().and_then(|section| {
             parse_required_clause(section, "expresses", tracker)
                 .map(|argument| ExpressesSection { argument })
+        }),
+        requires: sections.get("Requires").copied().and_then(|section| {
+            parse_required_groups(section, "Requires", tracker, parse_requires_item_group)
+                .map(|arguments| RequiresSection { arguments })
         }),
         enables: sections.get("Enables").copied().and_then(|section| {
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
@@ -2551,6 +2621,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             "when?",
             "extends?",
             "satisfies?",
+            "Requires?",
             "Enables?",
             "Justified?",
             "Documented?",
@@ -2596,6 +2667,10 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
         satisfies: sections.get("satisfies").copied().and_then(|section| {
             parse_required_clauses(section, "satisfies", tracker)
                 .map(|arguments| SatisfiesSection { arguments })
+        }),
+        requires: sections.get("Requires").copied().and_then(|section| {
+            parse_required_groups(section, "Requires", tracker, parse_requires_item_group)
+                .map(|arguments| RequiresSection { arguments })
         }),
         enables: sections.get("Enables").copied().and_then(|section| {
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
@@ -2647,6 +2722,7 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             "using?",
             "when?",
             "that",
+            "Requires?",
             "Enables?",
             "Justified?",
             "Documented?",
@@ -2678,6 +2754,10 @@ pub(in crate::frontend::structural::parser) fn parse_states(
         that: ThatSection {
             arguments: parse_required_clauses(section(&sections, "that")?, "that", tracker)?,
         },
+        requires: sections.get("Requires").copied().and_then(|section| {
+            parse_required_groups(section, "Requires", tracker, parse_requires_item_group)
+                .map(|arguments| RequiresSection { arguments })
+        }),
         enables: sections.get("Enables").copied().and_then(|section| {
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
                 .map(|arguments| EnablesSection { arguments })
@@ -3126,8 +3206,9 @@ mod tests {
         FormOrDeclaration, FormOrDeclarationKind, IsSubjectForm, IsSubjectKind,
     };
     use crate::frontend::structural::ast::{
-        AliasItem, AliasKind, Clause, DescribesTarget, Document, DocumentedItem, IsOrViaItem,
-        JustifiedItem, MetadataItem, EnablesItem, ResourceItem, SpecifyItem, TopLevelItem,
+        AliasItem, AliasKind, Clause, DescribesTarget, Document, DocumentedItem, EnablesItem,
+        IsOrViaItem, JustifiedItem, MetadataItem, RequiresItem, ResourceItem, SpecifyItem,
+        TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -3240,6 +3321,32 @@ Documented:
                 assert!(group.documented.is_some());
             }
             other => panic!("expected Disambiguates item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_requires_capabilities_and_definitions() {
+        let document = parse_ok(
+            r#"
+[\natural]
+Describes: n
+Requires:
+. capability: n_ + m_ :=> n_ \.natural.+./ m_
+. definition: \natural.0 is \natural
+Documented:
+. called: "natural"
+"#,
+        );
+
+        assert_eq!(document.items.len(), 1);
+        match &document.items[0] {
+            TopLevelItem::Describes(group) => {
+                let requires = group.requires.as_ref().expect("expected Requires section");
+                assert_eq!(requires.arguments.len(), 2);
+                assert!(matches!(requires.arguments[0], RequiresItem::Capability(_)));
+                assert!(matches!(requires.arguments[1], RequiresItem::Definition(_)));
+            }
+            other => panic!("expected Describes item, got {other:?}"),
         }
     }
 
@@ -3444,11 +3551,7 @@ that:
                     Clause::Not(_)
                 ));
                 assert!(matches!(
-                    group
-                        .enables
-                        .as_ref()
-                        .expect("expected enables")
-                        .arguments[0],
+                    group.enables.as_ref().expect("expected enables").arguments[0],
                     EnablesItem::Capability(_)
                 ));
                 assert!(matches!(
@@ -3487,11 +3590,7 @@ that:
         match &document.items[1] {
             TopLevelItem::Describes(group) => {
                 assert!(matches!(
-                    group
-                        .enables
-                        .as_ref()
-                        .expect("expected enables")
-                        .arguments[0],
+                    group.enables.as_ref().expect("expected enables").arguments[0],
                     EnablesItem::Connection(_)
                 ));
                 assert!(matches!(
@@ -3653,11 +3752,7 @@ Documented:
         };
 
         assert!(matches!(
-            group
-                .enables
-                .as_ref()
-                .expect("expected enables")
-                .arguments[0],
+            group.enables.as_ref().expect("expected enables").arguments[0],
             EnablesItem::Capability(_)
         ));
     }

@@ -91,6 +91,11 @@ pub(in crate::backend::semantic) fn walk_expression(
             visit(&shape);
             walk_command_expression_arguments(command, visit);
         }
+        ExpressionKind::IsBuiltinPredicate { subject, ty }
+        | ExpressionKind::IsNotBuiltinPredicate { subject, ty } => {
+            walk_expression(subject, visit);
+            walk_type_expression(ty, visit);
+        }
         ExpressionKind::IsRefinedPredicate { subject, command }
         | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
             walk_expression(subject, visit);

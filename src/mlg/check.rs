@@ -1435,6 +1435,120 @@ mod tests {
     }
 
     #[test]
+    fn check_uses_requires_capabilities_for_type_provided_specs() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("requires-capability.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+      written: "x_? \in X?"
+    Documented:
+    . written: "\operatorname{set}"
+
+    Theorem:
+    given:
+    . X is \set
+    . x is \\unknown
+    then: x "in" X
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("requires-capability.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_validates_requires_definition_against_defines_outputs() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("requires-definition.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\natural]
+    Describes: n
+    Requires:
+    . definition: \natural.0 is \natural
+    Documented:
+    . written: "\mathbb{N}"
+
+    [\natural.0]
+    Defines: n is \natural
+    Documented:
+    . written: "0"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("requires-definition.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_builtin_type_predicate_recognizes_describes_only() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("builtin-type.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\sqrt]
+    Defines: y is \set
+    Documented:
+    . written: "\sqrt{}"
+
+    Theorem:
+    then: \set is? \\type
+
+    Theorem:
+    then: \sqrt is_not? \\type
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("builtin-type.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_omits_optional_expression_tails_when_arguments_are_not_defined() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("optional-expression-tail.mlg");

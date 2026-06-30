@@ -227,10 +227,15 @@ Expression ::= SpecOrPredicateExpression
 
 SpecOrPredicateExpression ::=
     EqualityExpression QuotedName Name
-  | EqualityExpression "is" CommandExpression
+  | EqualityExpression "is" PredicateTypeExpression
+  | EqualityExpression "is?" BuiltinTypeExpression
+  | EqualityExpression "is_not?" BuiltinTypeExpression
   | EqualityExpression "is?" CommandExpression
   | EqualityExpression "is_not?" CommandExpression
   | EqualityExpression
+
+PredicateTypeExpression ::= CommandExpression | BuiltinTypeExpression
+BuiltinTypeExpression ::= "\\" "\\" Chain
 
 EqualityExpression ::=
     EqualityExpression ("=" | SpecialOperator) AdditiveExpression
@@ -512,15 +517,16 @@ IsSubject ::= IsSubjectFormList | OperatorText
 SpecSubject ::= FormOrDeclaration | OperatorText
 IsSubjectForm ::= FormOrDeclaration | PlaceholderForm
 IsSubjectFormList ::= IsSubjectForm ("," IsSubjectForm)*
-TypeExpression ::= CommandExpression
+TypeExpression ::= CommandExpression | BuiltinTypeExpression | FunctionTypeExpression
+BuiltinTypeExpression ::= "\\" "\\" Chain
 ```
 
 Notes:
 
 - the parser looks for the exact top-level substring ` is ` with spaces around it
 - the left-hand side of `is` may be a single form, a single placeholder form, a comma-separated list mixing those, or an operator
-- the right-hand side of `is` must parse as a command expression or a function
-  type expression, not a general expression
+- the right-hand side of `is` must parse as a command expression, a built-in
+  type expression, or a function type expression, not a general expression
 - a function type has one parenthesized input spec list and one parenthesized
   output spec: `(_ "in" A, _ "in" B) => (_ "in" C)`
 - function type specs use `_` as the parameter and may be either `_ is Type` or
@@ -542,7 +548,7 @@ Examples:
 Same as `parse_is_or_spec`, except:
 
 ```text
-TypeExpression ::= CommandExpression | RefinedCommandExpression | FunctionTypeExpression
+TypeExpression ::= CommandExpression | BuiltinTypeExpression | RefinedCommandExpression | FunctionTypeExpression
 ```
 
 ### `parse_is_via_statement`
@@ -844,10 +850,15 @@ Expression ::= SpecOrPredicateExpression
 
 SpecOrPredicateExpression ::=
     EqualityExpression QuotedName Name
-  | EqualityExpression "is" CommandExpression
+  | EqualityExpression "is" PredicateTypeExpression
+  | EqualityExpression "is?" BuiltinTypeExpression
+  | EqualityExpression "is_not?" BuiltinTypeExpression
   | EqualityExpression "is?" CommandExpression
   | EqualityExpression "is_not?" CommandExpression
   | EqualityExpression
+
+PredicateTypeExpression ::= CommandExpression | BuiltinTypeExpression
+BuiltinTypeExpression ::= "\\" "\\" Chain
 
 EqualityExpression ::=
     EqualityExpression ("=" | SpecialOperator) AdditiveExpression
@@ -1022,7 +1033,7 @@ The old grammar drafts implied several forms that the current code does not acce
 - `parse_expression` does not accept refined command expressions
 - there are no general prefix or postfix non-arithmetic operator expressions
 - infix command expressions are not a separate root form; they only appear through `HighPrecedenceExpression`
-- expression-level `is`, `is?`, and `is_not?` forms require a command expression on the right-hand side
+- expression-level `is` accepts ordinary command and built-in type expressions, while `is?` and `is_not?` accept ordinary command predicates or built-in type predicates
 
 ## Current Implementation Notes and Footguns
 

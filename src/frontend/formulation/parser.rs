@@ -2845,6 +2845,10 @@ mod tests {
             parse_expression(r#"x "in"? X"#).expect("expected spec predicate expression");
         let predicate = parse_expression(r#"x is? \even"#).expect("expected predicate expression");
         let negative = parse_expression(r#"x is_not? \odd"#).expect("expected negative predicate");
+        let builtin_predicate =
+            parse_expression(r#"\function is? \\type"#).expect("expected builtin predicate");
+        let negative_builtin_predicate = parse_expression(r#"\sqrt is_not? \\type"#)
+            .expect("expected negative builtin predicate");
         let refined_predicate = parse_expression(r#"f is? \(injective)::function"#)
             .expect("expected refined predicate");
 
@@ -2862,6 +2866,14 @@ mod tests {
         assert!(matches!(
             negative.kind,
             ExpressionKind::IsNotPredicate { .. }
+        ));
+        assert!(matches!(
+            builtin_predicate.kind,
+            ExpressionKind::IsBuiltinPredicate { .. }
+        ));
+        assert!(matches!(
+            negative_builtin_predicate.kind,
+            ExpressionKind::IsNotBuiltinPredicate { .. }
         ));
         assert!(matches!(
             refined_predicate.kind,

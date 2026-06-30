@@ -323,8 +323,8 @@ Type-directed operator forms are supported.
 - If both operands have the same type, `x :-: y` resolves from that type.
 - The same rule applies to named operators, for example `x :|op| y`,
   `x |op|: y`, and `x :|op|: y`.
-- Resolution searches the `Enables:` capabilities on the selected type and its
-  parent types.
+- Resolution searches the `Requires:` and `Enables:` capabilities on the
+  selected type and its parent types.
 - It is an error if the operator is not enabled by the selected type hierarchy.
 - It is an error if the resolved operator's requirements do not match the
   operands.
@@ -342,9 +342,29 @@ Plain operators such as `x - y` use scope and disambiguation.
 - If no definition or applicable disambiguation is found, the operator is an
   error.
 
-### `Enables:` Capability Rules
+### `Requires:` And `Enables:`
 
-`Enables:` capabilities define type-specific notation.
+Types can now separate definitional requirements from additional capabilities.
+
+- `Requires:` is accepted on command-backed top-level entries that support
+  `Enables:`.
+- `Requires:` must appear before `Enables:` when both are present.
+- `Requires:` accepts `capability:` groups.
+- `Requires:` accepts `definition:` groups of the form `\command is <spec>`.
+- Capabilities from `Requires:` and `Enables:` are unioned for type checking.
+- `Requires:` is intended for operations that are part of the definition of a
+  construct.
+- `Enables:` is intended for additional supported operations that come from
+  other definitions.
+- A `Requires.definition:` item succeeds only when the referenced command is a
+  top-level `Defines:` item and that definition's output facts establish the
+  requested `is <spec>` fact.
+- A `Requires.definition:` item fails if the referenced command is undefined,
+  is not a `Defines:` entry, or does not establish the requested fact.
+
+### Capability Rules
+
+`Requires:` and `Enables:` capabilities define type-specific notation.
 
 Rules for `:=>`:
 
@@ -365,8 +385,18 @@ Function and value capabilities:
 - A function capability such as `f(x_) :=> \foo{X, x_}` is used as `X.f(a)`.
 - Arguments of such function capabilities do not receive an implicit type.
 - A bare capability such as `a :=> \some.value{X}` is used as `X.a`.
-- All enabled capabilities have access to the subject of the item being
+- All capabilities have access to the subject of the item being
   described.
+
+### Built-In `\\type`
+
+The checker supports the built-in type predicate `\\type`.
+
+- `\foo is? \\type` succeeds when `\foo` is a top-level `Describes:` entry.
+- `\foo is? \\type` fails when `\foo` is a `Defines:` entry.
+- `\foo is_not? \\type` succeeds when `\foo` is not a described type.
+- Ordinary built-in type facts share the same fact-checking path as
+  `\\statement`, `\\expression`, and `\\specification`.
 
 ## Rendering And View
 

@@ -50,13 +50,36 @@ pub(in crate::backend::semantic) fn walk_optional_enables(
     if let Some(section) = section {
         for item in &section.arguments {
             match item {
-                EnablesItem::Capability(group) => walk_alias_kind(&group.capability.argument, visit),
+                EnablesItem::Capability(group) => {
+                    walk_alias_kind(&group.capability.argument, visit)
+                }
                 EnablesItem::Connection(group) => {
                     if let Some(using) = &group.using {
                         for statement in &using.arguments {
                             walk_declaration_statement(statement, visit);
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+pub(in crate::backend::semantic) fn walk_optional_requires(
+    section: &Option<RequiresSection>,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
+    if let Some(section) = section {
+        for item in &section.arguments {
+            match item {
+                RequiresItem::Capability(group) => {
+                    walk_alias_kind(&group.capability.argument, visit)
+                }
+                RequiresItem::Definition(group) => {
+                    let shape = shape_for_command_expression(&group.definition.argument.command);
+                    visit(&shape);
+                    walk_command_expression_arguments(&group.definition.argument.command, visit);
+                    walk_type_expression(&group.definition.argument.ty, visit);
                 }
             }
         }

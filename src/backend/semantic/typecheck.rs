@@ -226,16 +226,12 @@ fn collect_spec_operator_rules(
     info: &DefinitionTypeInfo,
     registry: &mut SignatureRegistry,
 ) {
-    let (Some(_described), Some(enables)) = (info.described.as_ref(), enables_section(item))
-    else {
+    let Some(_described) = info.described.as_ref() else {
         return;
     };
 
-    for item in &enables.arguments {
-        let EnablesItem::Capability(group) = item else {
-            continue;
-        };
-        let AliasKind::SpecOperator(alias) = &group.capability.argument else {
+    for capability in capability_aliases(item) {
+        let AliasKind::SpecOperator(alias) = capability else {
             continue;
         };
         if let Some(rule) = spec_operator_rule_from_alias(alias, info) {
@@ -249,16 +245,12 @@ fn collect_provided_symbol_rules(
     info: &DefinitionTypeInfo,
     registry: &mut SignatureRegistry,
 ) {
-    let (Some(described), Some(enables)) = (info.described.as_ref(), enables_section(item))
-    else {
+    let Some(described) = info.described.as_ref() else {
         return;
     };
 
-    for item in &enables.arguments {
-        let EnablesItem::Capability(group) = item else {
-            continue;
-        };
-        let AliasKind::Expression(alias) = &group.capability.argument else {
+    for capability in capability_aliases(item) {
+        let AliasKind::Expression(alias) = capability else {
             continue;
         };
         let Some((key, parameters)) = provided_symbol_key_and_parameters(&alias.lhs) else {
@@ -361,6 +353,33 @@ fn enables_section(item: &TopLevelItem) -> Option<&EnablesSection> {
     }
 }
 
+fn requires_section(item: &TopLevelItem) -> Option<&RequiresSection> {
+    match item {
+        TopLevelItem::Describes(group) => group.requires.as_ref(),
+        TopLevelItem::Defines(group) => group.requires.as_ref(),
+        TopLevelItem::Refines(group) => group.requires.as_ref(),
+        TopLevelItem::States(group) => group.requires.as_ref(),
+        _ => None,
+    }
+}
+
+fn capability_aliases(item: &TopLevelItem) -> Vec<&AliasKind> {
+    let mut result = Vec::new();
+    if let Some(requires) = requires_section(item) {
+        result.extend(requires.arguments.iter().filter_map(|item| match item {
+            RequiresItem::Capability(group) => Some(&group.capability.argument),
+            RequiresItem::Definition(_) => None,
+        }));
+    }
+    if let Some(enables) = enables_section(item) {
+        result.extend(enables.arguments.iter().filter_map(|item| match item {
+            EnablesItem::Capability(group) => Some(&group.capability.argument),
+            EnablesItem::Connection(_) => None,
+        }));
+    }
+    result
+}
+
 fn spec_operator_rule_from_alias(
     alias: &SpecOperatorAlias,
     info: &DefinitionTypeInfo,
@@ -452,6 +471,16 @@ fn validate_top_level_item_types(
                     event_log,
                 );
             }
+            validate_optional_requires(
+                &group.requires,
+                &context,
+                Some(&shapes_for_header(&group.heading)),
+                Some(&described_target_subject_key(&group.describes.argument)),
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             validate_optional_enables(
                 &group.enables,
                 &context,
@@ -501,6 +530,16 @@ fn validate_top_level_item_types(
             complete_introduced_declaration_statement(
                 &group.defines.argument,
                 &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            validate_optional_requires(
+                &group.requires,
+                &context,
+                None,
+                None,
                 path,
                 locator,
                 registry,
@@ -557,6 +596,16 @@ fn validate_top_level_item_types(
             if group.extends.is_some() {
                 check_refines_extends(group, &context, path, locator, registry, event_log);
             }
+            validate_optional_requires(
+                &group.requires,
+                &context,
+                None,
+                None,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             check_optional_clauses(
                 &group.satisfies,
                 &context,
@@ -595,6 +644,16 @@ fn validate_top_level_item_types(
             for clause in &group.that.arguments {
                 check_clause(clause, &context, path, locator, registry, event_log);
             }
+            validate_optional_requires(
+                &group.requires,
+                &context,
+                None,
+                None,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
         }
         TopLevelItem::Axiom(group) => validate_theorem_like(
             TheoremLikeSections::new(
@@ -2017,6 +2076,16 @@ fn check_expression(
                 check_expression(expression, context, path, locator, registry, event_log);
             }
         }
+        ExpressionKind::IsBuiltinPredicate { subject, ty } => {
+            check_builtin_type_predicate(
+                subject, ty, false, context, path, locator, registry, event_log,
+            );
+        }
+        ExpressionKind::IsNotBuiltinPredicate { subject, ty } => {
+            check_builtin_type_predicate(
+                subject, ty, true, context, path, locator, registry, event_log,
+            );
+        }
         ExpressionKind::IsRefinedPredicate { subject, command }
         | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
             check_expression(subject, context, path, locator, registry, event_log);
@@ -2094,6 +2163,57 @@ fn check_set_literal(
     }
     if let Some(predicate) = &set.predicate {
         check_expression(predicate, &child, path, locator, registry, event_log);
+    }
+}
+
+fn check_builtin_type_predicate(
+    subject: &Expression,
+    ty: &TypeExpression,
+    negated: bool,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let position = builtin_predicate_position(subject, context, locator);
+    check_expression(subject, context, path, locator, registry, event_log);
+    check_type_expression(ty, context, path, locator, registry, event_log);
+    let Some(required) = fact_from_type_assertion_in_context(subject, ty, context) else {
+        return;
+    };
+    let holds = prove_fact(&required, context, registry);
+    if (!negated && holds) || (negated && !holds) {
+        return;
+    }
+
+    let predicate = if negated { "is_not?" } else { "is?" };
+    emit_error(
+        event_log,
+        path,
+        position,
+        format!(
+            "Could not establish predicate `{} {predicate} {}`",
+            key_for_expression(subject),
+            key_for_type_expression_in_context(ty, context)
+                .map(|(key, _)| key)
+                .unwrap_or_else(|| key_for_non_command_type_expression(ty))
+        ),
+    );
+}
+
+fn builtin_predicate_position(
+    subject: &Expression,
+    context: &TypeContext,
+    locator: &mut SourceLocator<'_>,
+) -> Option<SourcePosition> {
+    match &subject.kind {
+        ExpressionKind::Command(command) => {
+            let active_command = active_command_expression(command, context);
+            locator.locate_reference(&shape_for_command_expression(&active_command))
+        }
+        ExpressionKind::Name(name) => locator.locate_symbol(name),
+        _ => None,
     }
 }
 
@@ -3605,6 +3725,11 @@ fn collect_expression_names(expression: &Expression, names: &mut Vec<String>) {
                 collect_expression_names(expression, names);
             }
         }
+        ExpressionKind::IsBuiltinPredicate { subject, ty }
+        | ExpressionKind::IsNotBuiltinPredicate { subject, ty } => {
+            collect_expression_names(subject, names);
+            collect_type_expression_names(ty, names);
+        }
         ExpressionKind::IsRefinedPredicate { subject, command }
         | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
             collect_expression_names(subject, names);
@@ -3760,20 +3885,52 @@ fn validate_optional_enables(
         let EnablesItem::Capability(group) = item else {
             continue;
         };
-        match &group.capability.argument {
-            AliasKind::SpecOperator(alias) => validate_spec_operator_alias(
-                alias,
+        validate_capability_alias(
+            &group.capability.argument,
+            context,
+            owner_shapes,
+            owner_subject,
+            path,
+            locator,
+            registry,
+            event_log,
+        );
+    }
+}
+
+fn validate_optional_requires(
+    requires: &Option<RequiresSection>,
+    context: &TypeContext,
+    owner_shapes: Option<&[HeaderShape]>,
+    owner_subject: Option<&str>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let Some(requires) = requires else {
+        return;
+    };
+
+    for item in &requires.arguments {
+        match item {
+            RequiresItem::Capability(group) => {
+                if let (Some(owner_shapes), Some(owner_subject)) = (owner_shapes, owner_subject) {
+                    validate_capability_alias(
+                        &group.capability.argument,
+                        context,
+                        owner_shapes,
+                        owner_subject,
+                        path,
+                        locator,
+                        registry,
+                        event_log,
+                    );
+                }
+            }
+            RequiresItem::Definition(group) => validate_definition_requirement(
+                &group.definition.argument,
                 context,
-                owner_subject,
-                path,
-                locator,
-                registry,
-                event_log,
-            ),
-            AliasKind::Expression(alias) => validate_provided_expression_alias(
-                alias,
-                context,
-                owner_shapes,
                 path,
                 locator,
                 registry,
@@ -3781,6 +3938,108 @@ fn validate_optional_enables(
             ),
         }
     }
+}
+
+fn validate_capability_alias(
+    capability: &AliasKind,
+    context: &TypeContext,
+    owner_shapes: &[HeaderShape],
+    owner_subject: &str,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match capability {
+        AliasKind::SpecOperator(alias) => validate_spec_operator_alias(
+            alias,
+            context,
+            owner_subject,
+            path,
+            locator,
+            registry,
+            event_log,
+        ),
+        AliasKind::Expression(alias) => validate_provided_expression_alias(
+            alias,
+            context,
+            owner_shapes,
+            path,
+            locator,
+            registry,
+            event_log,
+        ),
+    }
+}
+
+fn validate_definition_requirement(
+    requirement: &DefinitionRequirement,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let active_command = active_command_expression(&requirement.command, context);
+    let shape = shape_for_command_expression(&active_command);
+    let position = locator.locate_reference(&shape);
+    let actuals = command_expression_arguments(&active_command)
+        .into_iter()
+        .map(|expression| {
+            check_expression(expression, context, path, locator, registry, event_log);
+            effective_key_for_expression(expression, context, registry)
+        })
+        .collect::<Vec<_>>();
+    check_command_requirements(
+        &shape.signature,
+        &actuals,
+        context,
+        path,
+        position,
+        registry,
+        event_log,
+    );
+    check_type_expression(&requirement.ty, context, path, locator, registry, event_log);
+
+    if !signature_has_kind(&shape.signature, DefinitionKind::Defines, registry) {
+        emit_error(
+            event_log,
+            path,
+            position,
+            format!(
+                "Required definition `{}` must reference a `Defines:` entry",
+                key_for_command_expression(&active_command)
+            ),
+        );
+        return;
+    }
+
+    let subject = key_for_command_expression(&active_command);
+    let Some(required) = fact_from_type_key_assertion(subject.clone(), &requirement.ty, context)
+    else {
+        return;
+    };
+    let required = context.normalize_fact(&required);
+    let established = defined_output_facts_for_key(&subject, context, registry)
+        .iter()
+        .any(|fact| {
+            let mut seen = HashSet::new();
+            fact_implies(fact, &required, context, registry, &mut seen)
+        });
+    if established {
+        return;
+    }
+
+    emit_error(
+        event_log,
+        path,
+        position,
+        format!(
+            "Required definition `{}` does not establish `{}`",
+            subject,
+            format_fact(&required)
+        ),
+    );
 }
 
 fn validate_spec_operator_alias(
@@ -4125,8 +4384,18 @@ fn builtin_fact_holds(required: &TypeFact, registry: &SignatureRegistry) -> bool
         BUILTIN_EXPRESSION_SIGNATURE => true,
         BUILTIN_STATEMENT_SIGNATURE => key_is_statement(subject, registry),
         BUILTIN_SPECIFICATION_SIGNATURE => key_is_specification(subject),
+        BUILTIN_TYPE_SIGNATURE => key_is_type(subject, registry),
         _ => false,
     }
+}
+
+fn key_is_type(key: &str, registry: &SignatureRegistry) -> bool {
+    command_signature_from_key(key)
+        .as_deref()
+        .is_some_and(|signature| signature_has_kind(signature, DefinitionKind::Describes, registry))
+        || infix_command_signatures_from_key(key)
+            .iter()
+            .any(|signature| signature_has_kind(signature, DefinitionKind::Describes, registry))
 }
 
 fn key_is_statement(key: &str, registry: &SignatureRegistry) -> bool {
@@ -5875,6 +6144,11 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
                 declare_names_from_expression(expression, context);
             }
         }
+        ExpressionKind::IsBuiltinPredicate { subject, ty }
+        | ExpressionKind::IsNotBuiltinPredicate { subject, ty } => {
+            declare_names_from_expression(subject, context);
+            declare_names_from_type_expression(ty, context);
+        }
         ExpressionKind::IsRefinedPredicate { subject, command }
         | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
             declare_names_from_expression(subject, context);
@@ -6616,6 +6890,35 @@ fn fact_from_type_assertion_in_context(
     })
 }
 
+fn fact_from_type_key_assertion(
+    subject: String,
+    ty: &TypeExpression,
+    context: &TypeContext,
+) -> Option<TypeFact> {
+    if let TypeExpression::Function(function_type) = ty {
+        let inputs = function_type_inputs_as_facts(function_type)?;
+        let output = function_type_spec_as_fact(&function_type.output)?;
+        return Some(TypeFact::FunctionType {
+            subject,
+            inputs,
+            output,
+            variadic_tuple_input: false,
+        });
+    }
+
+    if let TypeExpression::RefinedCommand(command) = ty {
+        let active_command = active_refined_command_expression(command, context);
+        return Some(refined_fact_from_command(subject, &active_command));
+    }
+
+    let (ty, signature) = key_for_type_expression_in_context(ty, context)?;
+    Some(TypeFact::Is {
+        subject,
+        ty,
+        signature,
+    })
+}
+
 fn refined_fact_from_command(subject: String, command: &RefinedCommandExpression) -> TypeFact {
     TypeFact::RefinedIs {
         subject,
@@ -7066,6 +7369,20 @@ fn key_for_expression(expression: &Expression) -> String {
             "{} is_not? {}",
             key_for_expression(subject),
             key_for_command_expression(command)
+        ),
+        ExpressionKind::IsBuiltinPredicate { subject, ty } => format!(
+            "{} is? {}",
+            key_for_expression(subject),
+            key_for_type_expression(ty)
+                .map(|(key, _)| key)
+                .unwrap_or_else(|| key_for_non_command_type_expression(ty))
+        ),
+        ExpressionKind::IsNotBuiltinPredicate { subject, ty } => format!(
+            "{} is_not? {}",
+            key_for_expression(subject),
+            key_for_type_expression(ty)
+                .map(|(key, _)| key)
+                .unwrap_or_else(|| key_for_non_command_type_expression(ty))
         ),
         ExpressionKind::IsRefinedPredicate { subject, command } => format!(
             "{} is? {}",

@@ -342,6 +342,14 @@ pub enum ExpressionKind {
         subject: Box<Expression>,
         command: CommandExpression,
     },
+    IsBuiltinPredicate {
+        subject: Box<Expression>,
+        ty: TypeExpression,
+    },
+    IsNotBuiltinPredicate {
+        subject: Box<Expression>,
+        ty: TypeExpression,
+    },
     IsRefinedPredicate {
         subject: Box<Expression>,
         command: RefinedCommandExpression,

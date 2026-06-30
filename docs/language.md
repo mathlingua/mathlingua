@@ -169,6 +169,7 @@ map[| key := x, value := y |]
 F[A]
 \function:on{A}:to{B}(x)
 x is? \set
+\set is? \\type
 ```
 
 The expression precedence, from lowest to highest, is:
@@ -288,11 +289,12 @@ f(x_) is \function:on{A}:to{B}
 x_, y_ is \set
 ```
 
-The helper parser for `is` statements requires spaces around ` is ` and requires
-the right-hand side to be a command type expression. The expression parser also
-requires a command expression on the right of expression-level `is`, `is?`, and
-`is_not?`; the helper parser differs mainly in its subject syntax and in the
-refined-command variant used by theorem-style `given:` sections.
+The helper parser for `is` statements requires spaces around ` is `. The
+right-hand side can be an ordinary command type expression or a supported
+built-in type expression. Expression-level `is?` and `is_not?` accept command,
+refined-command, and supported built-in type predicates; the helper parser
+differs mainly in its subject syntax and in the refined-command variant used by
+theorem-style `given:` sections.
 
 A spec statement uses a quoted operator:
 
@@ -471,11 +473,25 @@ Quantifier declarations are local to the clause group that introduces them.
 
 ## Support Sections
 
+`Requires:` accepts:
+
+- `capability:` groups, which define notation that is part of the construct's
+  definition
+- `definition:` groups of the form `\command is <spec>`, which require the
+  referenced command to be a top-level `Defines:` entry whose definition
+  establishes the requested fact
+
 `Enables:` accepts:
 
-- `capability:` groups, which usually define aliases or specification operators
+- `capability:` groups, which define additional notation made available by the
+  construct
 - `connection:` groups, which contain prose fields such as `to:`, `means:`,
   `signifies:`, `viewable:`, and `through:`
+
+For type checking, capabilities from `Requires:` and `Enables:` are combined.
+The separate sections are for communication: `Requires:` describes what the
+construct has by definition, while `Enables:` describes further operations that
+the construct supports.
 
 `Documented:` accepts:
 
@@ -631,10 +647,15 @@ assertion requires the checker to prove `G is \set`. Type assertions for
 no-argument `Describes` commands are nominal: `G is \group` records that fact
 without expanding the internal `\group` requirements at the assertion site.
 
-The checker understands two fact kinds:
+The checker understands these fact kinds:
 
 - type facts, such as `G is \set`
 - spec facts, such as `x "in" G`
+
+It also has built-in types for meta-level checks. In particular, `\\type`
+holds for command references whose top-level entry is a `Describes:` item.
+Thus `\set is? \\type` succeeds when `\set` is described, while
+`\sqrt is? \\type` fails when `\sqrt` is a `Defines:` item.
 
 Facts can be introduced by `given:`, `where:`, `when:`, `using:`, assumed clause
 groups, and expression facts such as `x is \set` or `x "in" X`.
@@ -703,29 +724,29 @@ written as `_`. If the checker knows `f is \function:on{A}:to{B}` and
 
 ## Specification Operators
 
-Enabled specification capabilities connect notation such as membership to type
-facts or other spec facts.
+Required and enabled specification capabilities connect notation such as
+membership to type facts or other spec facts.
 
 ```text
 [\reals]
 Describes: R
-Enables:
+Requires:
 . capability: x_ "in" R :-> x is \real
 Documented:
 . called: "reals"
 ```
 
 If the context contains `R is \reals` and `r "in" R`, the checker can reduce the
-spec fact through the enabled capability and establish `r is \real`.
+spec fact through the capability and establish `r is \real`.
 
 The alias target must satisfy the requirements of any command type it uses in
-the enabling context. For example, if `\element.of:group{G}` requires
-`G is \set`, then an enabled capability on `\group` may alias membership to
+the owning context. For example, if `\element.of:group{G}` requires
+`G is \set`, then a capability on `\group` may alias membership to
 `\element.of:group{G}` only when `G is \set` is available, commonly through an
 `extends: G is \set` subtype declaration on `\group`.
 
-Direct spec requirements are also supported once the target type enables the
-operator. If `\group` enables `x_ "in" G` and a command requires `x "in" G`,
+Direct spec requirements are also supported once the target type requires or
+enables the operator. If `\group` has `x_ "in" G` as a capability and a command requires `x "in" G`,
 then an exact matching spec fact in the context satisfies that requirement even
 without reducing it to a type fact. A raw fact such as `x "in" G` is invalid
 when the checker knows `G` has a type that does not enable `"in"`.

@@ -1,7 +1,7 @@
 use crate::frontend::formulation::ast::{
-    AuthorHeader, CommandHeader, DeclarationStatement, Expression, ExpressionAlias,
-    FormOrDeclaration, IsViaStatement, LabelHeader, ResourceHeader, SpecOperatorAlias,
-    WritingAlias,
+    AuthorHeader, CommandExpression, CommandHeader, DeclarationStatement, Expression,
+    ExpressionAlias, FormOrDeclaration, IsViaStatement, LabelHeader, ResourceHeader,
+    SpecOperatorAlias, TypeExpression, WritingAlias,
 };
 
 // ===============================[ repeated ]=====================================
@@ -181,6 +181,7 @@ arguments_section!(WhenSection, Clause);
 argument_section!(ExtendsSection, IsOrViaItem);
 arguments_section!(DescribesSpecifiesSection, IsOrViaItem);
 arguments_section!(SatisfiesSection, Clause);
+arguments_section!(RequiresSection, RequiresItem);
 arguments_section!(EnablesSection, EnablesItem);
 arguments_section!(JustifiedSection, JustifiedItem);
 arguments_section!(DocumentedSection, DocumentedItem);
@@ -206,6 +207,7 @@ arguments_section!(IffSection, Clause);
 argument_section!(AliasSection, AliasKind);
 arguments_section!(WrittenSection, WrittenText);
 argument_section!(CapabilitySection, AliasKind);
+argument_section!(DefinitionSection, DefinitionRequirement);
 zero_or_more_arguments_section!(ConnectionSection, OpenText);
 zero_or_more_arguments_section!(ToSection, OpenText);
 zero_or_more_arguments_section!(MeansSection, OpenText);
@@ -336,6 +338,12 @@ pub enum AliasItem {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RequiresItem {
+    Capability(Box<CapabilityGroup>),
+    Definition(DefinitionGroup),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum EnablesItem {
     Capability(Box<CapabilityGroup>),
     Connection(ConnectionGroup),
@@ -444,6 +452,7 @@ pub struct DescribesGroup {
     pub extends: Option<ExtendsSection>,
     pub specifies: Option<DescribesSpecifiesSection>,
     pub satisfies: Option<SatisfiesSection>,
+    pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
     pub justified: Option<JustifiedSection>,
     pub documented: Option<DocumentedSection>,
@@ -459,6 +468,7 @@ pub struct DefinesGroup {
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub expresses: Option<ExpressesSection>,
+    pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
     pub justified: Option<JustifiedSection>,
     pub documented: Option<DocumentedSection>,
@@ -475,6 +485,7 @@ pub struct RefinesGroup {
     pub when: Option<WhenSection>,
     pub extends: Option<RefinesExtendsSection>,
     pub satisfies: Option<SatisfiesSection>,
+    pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
     pub justified: Option<JustifiedSection>,
     pub documented: Option<DocumentedSection>,
@@ -490,6 +501,7 @@ pub struct StatesGroup {
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub that: ThatSection,
+    pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
     pub justified: Option<JustifiedSection>,
     pub documented: Option<DocumentedSection>,
@@ -667,6 +679,18 @@ pub struct CapabilityGroup {
     pub heading: Option<LabelHeader>,
     pub capability: CapabilitySection,
     pub written: Option<WrittenSection>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DefinitionRequirement {
+    pub command: CommandExpression,
+    pub ty: TypeExpression,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DefinitionGroup {
+    pub heading: Option<LabelHeader>,
+    pub definition: DefinitionSection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -604,14 +604,14 @@ pub struct OneOfGroup {
 pub struct ExistsGroup {
     pub heading: Option<LabelHeader>,
     pub exists: ExistsSection,
-    pub such_that: SuchThatSection,
+    pub such_that: Option<SuchThatSection>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExistsUniqueGroup {
     pub heading: Option<LabelHeader>,
     pub exists_unique: ExistsUniqueSection,
-    pub such_that: SuchThatSection,
+    pub such_that: Option<SuchThatSection>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

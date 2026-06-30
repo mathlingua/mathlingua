@@ -903,14 +903,20 @@ pub(super) fn parse_one_of_clause(
 
 /// Parses an `exists:` clause group.
 ///
-/// The bound value is parsed as `is`/spec syntax and the required `suchThat:`
+/// The bound value is parsed as `is`/spec syntax and the optional `suchThat:`
 /// section supplies predicate clauses.
 pub(super) fn parse_exists_clause(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<ExistsGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections("exists", &group.sections, tracker, &["exists", "suchThat"])?;
+    let sections = identify_sections("exists", &group.sections, tracker, &["exists", "suchThat?"])?;
+    let such_that = match section(&sections, "suchThat") {
+        Some(section) => Some(SuchThatSection {
+            arguments: parse_required_clauses(section, "suchThat", tracker)?,
+        }),
+        None => None,
+    };
     Some(ExistsGroup {
         heading,
         exists: ExistsSection {
@@ -921,13 +927,7 @@ pub(super) fn parse_exists_clause(
                 parse_binding_or_spec,
             )?,
         },
-        such_that: SuchThatSection {
-            arguments: parse_required_clauses(
-                section(&sections, "suchThat")?,
-                "suchThat",
-                tracker,
-            )?,
-        },
+        such_that,
     })
 }
 
@@ -941,8 +941,14 @@ pub(super) fn parse_exists_unique_clause(
         "existsUnique",
         &group.sections,
         tracker,
-        &["existsUnique", "suchThat"],
+        &["existsUnique", "suchThat?"],
     )?;
+    let such_that = match section(&sections, "suchThat") {
+        Some(section) => Some(SuchThatSection {
+            arguments: parse_required_clauses(section, "suchThat", tracker)?,
+        }),
+        None => None,
+    };
     Some(ExistsUniqueGroup {
         heading,
         exists_unique: ExistsUniqueSection {
@@ -953,13 +959,7 @@ pub(super) fn parse_exists_unique_clause(
                 parse_binding_or_spec,
             )?,
         },
-        such_that: SuchThatSection {
-            arguments: parse_required_clauses(
-                section(&sections, "suchThat")?,
-                "suchThat",
-                tracker,
-            )?,
-        },
+        such_that,
     })
 }
 
@@ -4168,6 +4168,35 @@ that:
         match &document.items[0] {
             TopLevelItem::States(states) => {
                 assert!(matches!(states.that.arguments[0], Clause::Exists(_)));
+            }
+            other => panic!("expected states item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_exists_groups_without_such_that_sections() {
+        let text = r#"
+[\property]
+States:
+that:
+. exists: x is \type{A}
+. existsUnique: y is \type{A}
+"#;
+
+        let mut tracker = EventLog::new();
+        let document = parse_document(text, &mut tracker);
+
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
+        match &document.items[0] {
+            TopLevelItem::States(states) => {
+                match &states.that.arguments[0] {
+                    Clause::Exists(group) => assert!(group.such_that.is_none()),
+                    other => panic!("expected exists clause, got {other:?}"),
+                }
+                match &states.that.arguments[1] {
+                    Clause::ExistsUnique(group) => assert!(group.such_that.is_none()),
+                    other => panic!("expected existsUnique clause, got {other:?}"),
+                }
             }
             other => panic!("expected states item, got {other:?}"),
         }

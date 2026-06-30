@@ -1341,8 +1341,10 @@ fn check_clause(
                 registry,
                 event_log,
             );
-            for clause in &group.such_that.arguments {
-                assume_clause(clause, &mut child, path, locator, registry, event_log);
+            if let Some(section) = &group.such_that {
+                for clause in &section.arguments {
+                    assume_clause(clause, &mut child, path, locator, registry, event_log);
+                }
             }
         }
         Clause::ExistsUnique(group) => {
@@ -1355,8 +1357,10 @@ fn check_clause(
                 registry,
                 event_log,
             );
-            for clause in &group.such_that.arguments {
-                assume_clause(clause, &mut child, path, locator, registry, event_log);
+            if let Some(section) = &group.such_that {
+                for clause in &section.arguments {
+                    assume_clause(clause, &mut child, path, locator, registry, event_log);
+                }
             }
         }
         Clause::ForAll(group) => {

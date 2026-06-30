@@ -250,6 +250,18 @@ Rules:
 - Assignments, definitions, and arbitrary expressions are not valid `when:`
   clauses.
 
+### Existential Clauses
+
+Existential clause groups support optional predicates.
+
+- `exists: x is \real` is valid without a `suchThat:` section.
+- `existsUnique: x is \real` is valid without a `suchThat:` section.
+- If `suchThat:` is present, it must contain one or more clauses.
+- A present `suchThat:` section is checked the same way as before.
+- If `suchThat:` is omitted, the clause still introduces the existential
+  binding inside the existential's child context, but has no predicate clauses
+  to assume.
+
 ### Type Facts And Extensions
 
 The checker uses simple type facts and extension facts.
@@ -493,4 +505,3 @@ The testbed content was expanded to exercise the implemented behavior.
 - Analysis includes starter entries for real sequences, convergent sequences,
   limits, and continuous functions.
 - The testbed `toc` was updated to include the new pages in a stable order.
-

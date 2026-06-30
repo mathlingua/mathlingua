@@ -446,7 +446,7 @@ expressions.
 | `allOf` | checks all children; when assumed, gathers facts from children |
 | `anyOf` | checks all children |
 | `oneOf` | checks all children |
-| `exists` | creates a child context from its declaration and assumes `suchThat:` |
+| `exists` | creates a child context from its declaration and assumes optional `suchThat:` clauses |
 | `existsUnique` | same as `exists`, with unique-existence intent |
 | `forAll` | creates a child context, assumes `where:`, checks `then:` |
 | `if` | assumes `if:`, checks `then:` |

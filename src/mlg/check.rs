@@ -3299,6 +3299,40 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_exists_without_such_that_sections() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("exists-without-such-that.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: x
+    Documented:
+    . written: "\operatorname{real}"
+
+    Theorem:
+    then:
+    . exists: x is \real
+    . existsUnique: y is \real
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("exists-without-such-that.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_optional_command_header_tail_combinations_in_order() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("optional-command-tails.mlg");

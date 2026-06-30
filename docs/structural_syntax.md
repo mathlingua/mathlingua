@@ -397,8 +397,8 @@ If a clause section contains:
 | `allOf` | `AllOfGroup` | label? | `allOf: Clause+` |
 | `anyOf` | `AnyOfGroup` | label? | `anyOf: Clause+` |
 | `oneOf` | `OneOfGroup` | label? | `oneOf: Clause+` |
-| `exists` | `ExistsGroup` | label? | `exists: BindingOrSpec`, `suchThat: Clause+` |
-| `existsUnique` | `ExistsUniqueGroup` | label? | `existsUnique: BindingOrSpec`, `suchThat: Clause+` |
+| `exists` | `ExistsGroup` | label? | `exists: BindingOrSpec`, `suchThat?: Clause+` |
+| `existsUnique` | `ExistsUniqueGroup` | label? | `existsUnique: BindingOrSpec`, `suchThat?: Clause+` |
 | `forAll` | `ForAllGroup` | label? | `forAll: BindingOrSpec`, `where?: Clause+`, `then: Clause+` |
 | `if` | `IfGroup` | label? | `if: Clause+`, `then: Clause+` |
 | `iff` | `IffGroup` | label? | `iff: Clause+`, `then: Clause+` |
@@ -988,13 +988,13 @@ oneOf: <ClauseUnion>+
 ```group
 [LabelHeader]?
 exists: <BindingOrSpecUnion>
-suchThat: <ClauseUnion>+
+suchThat?: <ClauseUnion>+
 ```
 
 ```group
 [LabelHeader]?
 existsUnique: <BindingOrSpecUnion>
-suchThat: <ClauseUnion>+
+suchThat?: <ClauseUnion>+
 ```
 
 ```group

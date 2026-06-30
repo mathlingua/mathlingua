@@ -226,16 +226,16 @@ fn collect_spec_operator_rules(
     info: &DefinitionTypeInfo,
     registry: &mut SignatureRegistry,
 ) {
-    let (Some(_described), Some(provides)) = (info.described.as_ref(), provides_section(item))
+    let (Some(_described), Some(enables)) = (info.described.as_ref(), enables_section(item))
     else {
         return;
     };
 
-    for item in &provides.arguments {
-        let ProvidesItem::Symbol(group) = item else {
+    for item in &enables.arguments {
+        let EnablesItem::Capability(group) = item else {
             continue;
         };
-        let AliasKind::SpecOperator(alias) = &group.symbol.argument else {
+        let AliasKind::SpecOperator(alias) = &group.capability.argument else {
             continue;
         };
         if let Some(rule) = spec_operator_rule_from_alias(alias, info) {
@@ -249,16 +249,16 @@ fn collect_provided_symbol_rules(
     info: &DefinitionTypeInfo,
     registry: &mut SignatureRegistry,
 ) {
-    let (Some(described), Some(provides)) = (info.described.as_ref(), provides_section(item))
+    let (Some(described), Some(enables)) = (info.described.as_ref(), enables_section(item))
     else {
         return;
     };
 
-    for item in &provides.arguments {
-        let ProvidesItem::Symbol(group) = item else {
+    for item in &enables.arguments {
+        let EnablesItem::Capability(group) = item else {
             continue;
         };
-        let AliasKind::Expression(alias) = &group.symbol.argument else {
+        let AliasKind::Expression(alias) = &group.capability.argument else {
             continue;
         };
         let Some((key, parameters)) = provided_symbol_key_and_parameters(&alias.lhs) else {
@@ -351,12 +351,12 @@ fn extends_item(item: &TopLevelItem) -> Option<&IsOrViaItem> {
     }
 }
 
-fn provides_section(item: &TopLevelItem) -> Option<&ProvidesSection> {
+fn enables_section(item: &TopLevelItem) -> Option<&EnablesSection> {
     match item {
-        TopLevelItem::Describes(group) => group.provides.as_ref(),
-        TopLevelItem::Defines(group) => group.provides.as_ref(),
-        TopLevelItem::Refines(group) => group.provides.as_ref(),
-        TopLevelItem::States(group) => group.provides.as_ref(),
+        TopLevelItem::Describes(group) => group.enables.as_ref(),
+        TopLevelItem::Defines(group) => group.enables.as_ref(),
+        TopLevelItem::Refines(group) => group.enables.as_ref(),
+        TopLevelItem::States(group) => group.enables.as_ref(),
         _ => None,
     }
 }
@@ -452,8 +452,8 @@ fn validate_top_level_item_types(
                     event_log,
                 );
             }
-            validate_optional_provides(
-                &group.provides,
+            validate_optional_enables(
+                &group.enables,
                 &context,
                 &shapes_for_header(&group.heading),
                 &described_target_subject_key(&group.describes.argument),
@@ -3742,8 +3742,8 @@ fn command_type_is_nominal_without_arguments(
             .is_some_and(|definition| definition.kind == DefinitionKind::Describes)
 }
 
-fn validate_optional_provides(
-    provides: &Option<ProvidesSection>,
+fn validate_optional_enables(
+    enables: &Option<EnablesSection>,
     context: &TypeContext,
     owner_shapes: &[HeaderShape],
     owner_subject: &str,
@@ -3752,15 +3752,15 @@ fn validate_optional_provides(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    let Some(provides) = provides else {
+    let Some(enables) = enables else {
         return;
     };
 
-    for item in &provides.arguments {
-        let ProvidesItem::Symbol(group) = item else {
+    for item in &enables.arguments {
+        let EnablesItem::Capability(group) = item else {
             continue;
         };
-        match &group.symbol.argument {
+        match &group.capability.argument {
             AliasKind::SpecOperator(alias) => validate_spec_operator_alias(
                 alias,
                 context,

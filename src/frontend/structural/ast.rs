@@ -181,7 +181,7 @@ arguments_section!(WhenSection, Clause);
 argument_section!(ExtendsSection, IsOrViaItem);
 arguments_section!(DescribesSpecifiesSection, IsOrViaItem);
 arguments_section!(SatisfiesSection, Clause);
-arguments_section!(ProvidesSection, ProvidesItem);
+arguments_section!(EnablesSection, EnablesItem);
 arguments_section!(JustifiedSection, JustifiedItem);
 arguments_section!(DocumentedSection, DocumentedItem);
 arguments_section!(AliasesSection, AliasItem);
@@ -205,7 +205,7 @@ arguments_section!(ThenSection, Clause);
 arguments_section!(IffSection, Clause);
 argument_section!(AliasSection, AliasKind);
 arguments_section!(WrittenSection, WrittenText);
-argument_section!(SymbolSection, AliasKind);
+argument_section!(CapabilitySection, AliasKind);
 zero_or_more_arguments_section!(ConnectionSection, OpenText);
 zero_or_more_arguments_section!(ToSection, OpenText);
 zero_or_more_arguments_section!(MeansSection, OpenText);
@@ -336,8 +336,8 @@ pub enum AliasItem {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum ProvidesItem {
-    Symbol(Box<SymbolGroup>),
+pub enum EnablesItem {
+    Capability(Box<CapabilityGroup>),
     Connection(ConnectionGroup),
 }
 
@@ -444,7 +444,7 @@ pub struct DescribesGroup {
     pub extends: Option<ExtendsSection>,
     pub specifies: Option<DescribesSpecifiesSection>,
     pub satisfies: Option<SatisfiesSection>,
-    pub provides: Option<ProvidesSection>,
+    pub enables: Option<EnablesSection>,
     pub justified: Option<JustifiedSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
@@ -459,7 +459,7 @@ pub struct DefinesGroup {
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub expresses: Option<ExpressesSection>,
-    pub provides: Option<ProvidesSection>,
+    pub enables: Option<EnablesSection>,
     pub justified: Option<JustifiedSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
@@ -475,7 +475,7 @@ pub struct RefinesGroup {
     pub when: Option<WhenSection>,
     pub extends: Option<RefinesExtendsSection>,
     pub satisfies: Option<SatisfiesSection>,
-    pub provides: Option<ProvidesSection>,
+    pub enables: Option<EnablesSection>,
     pub justified: Option<JustifiedSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
@@ -490,7 +490,7 @@ pub struct StatesGroup {
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub that: ThatSection,
-    pub provides: Option<ProvidesSection>,
+    pub enables: Option<EnablesSection>,
     pub justified: Option<JustifiedSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
@@ -663,9 +663,9 @@ pub struct AliasGroup {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SymbolGroup {
+pub struct CapabilityGroup {
     pub heading: Option<LabelHeader>,
-    pub symbol: SymbolSection,
+    pub capability: CapabilitySection,
     pub written: Option<WrittenSection>,
 }
 

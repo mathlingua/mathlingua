@@ -30,7 +30,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
                 }
             }
             walk_optional_clauses(&group.satisfies, visit);
-            walk_optional_provides(&group.provides, visit);
+            walk_optional_enables(&group.enables, visit);
             walk_optional_aliases(&group.aliases, visit);
         }
         TopLevelItem::Defines(group) => {
@@ -40,7 +40,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             if let Some(section) = &group.expresses {
                 walk_clause(&section.argument, visit);
             }
-            walk_optional_provides(&group.provides, visit);
+            walk_optional_enables(&group.enables, visit);
             walk_optional_aliases(&group.aliases, visit);
         }
         TopLevelItem::Refines(group) => {
@@ -53,7 +53,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
                 walk_declaration_statement(&section.argument, visit);
             }
             walk_optional_clauses(&group.satisfies, visit);
-            walk_optional_provides(&group.provides, visit);
+            walk_optional_enables(&group.enables, visit);
             walk_optional_aliases(&group.aliases, visit);
         }
         TopLevelItem::States(group) => {
@@ -62,7 +62,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             for clause in &group.that.arguments {
                 walk_clause(clause, visit);
             }
-            walk_optional_provides(&group.provides, visit);
+            walk_optional_enables(&group.enables, visit);
             walk_optional_aliases(&group.aliases, visit);
         }
         TopLevelItem::Axiom(group) => {

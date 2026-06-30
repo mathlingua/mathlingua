@@ -206,7 +206,7 @@ Collection targets:
   may have any arity and are treated as a tuple.
 - `Describes: X ::= {x_ : ...}` describes a collection shape accepting a single
   value, where that value may itself have any expression shape.
-- `member_of` is a keyword used by provided membership operators.
+- `member_of` is a keyword used by enabled membership capabilities.
 - `x member_of X` is valid only when `X` is a collection literal or has a
   collection literal attached by coercion.
 - `\set@{x_ : x_ is \real}` coerces a collection literal to the described type.
@@ -270,8 +270,8 @@ The checker uses simple type facts and extension facts.
   a set is required.
 - `extends: G is \set via X` records the extension through the given structural
   component.
-- Facts introduced by `given:`, `when:`, `extends:`, `specifies:`, and provided
-  membership operators are available while checking dependent statements.
+- Facts introduced by `given:`, `when:`, `extends:`, `specifies:`, and enabled
+  membership capabilities are available while checking dependent statements.
 - This is type establishment, not theorem proving.
 
 ### `Defines:` And `Describes:` Usage
@@ -323,9 +323,9 @@ Type-directed operator forms are supported.
 - If both operands have the same type, `x :-: y` resolves from that type.
 - The same rule applies to named operators, for example `x :|op| y`,
   `x |op|: y`, and `x :|op|: y`.
-- Resolution searches the `Provides:` symbols on the selected type and its
+- Resolution searches the `Enables:` capabilities on the selected type and its
   parent types.
-- It is an error if the operator is not provided by the selected type hierarchy.
+- It is an error if the operator is not enabled by the selected type hierarchy.
 - It is an error if the resolved operator's requirements do not match the
   operands.
 
@@ -342,30 +342,31 @@ Plain operators such as `x - y` use scope and disambiguation.
 - If no definition or applicable disambiguation is found, the operator is an
   error.
 
-### `Provides:` Symbol Rules
+### `Enables:` Capability Rules
 
-`Provides:` symbols define type-specific notation.
+`Enables:` capabilities define type-specific notation.
 
 Rules for `:=>`:
 
-- In an infix symbol such as `x_ - y_ :=> ...`, both operands are treated as
+- In an infix capability such as `x_ - y_ :=> ...`, both operands are treated as
   values of the type currently being described.
-- In prefix or postfix symbols, the single operand is treated as a value of the
-  type currently being described.
-- The right-hand side may use the described subject and the symbol operands.
+- In prefix or postfix capabilities, the single operand is treated as a value
+  of the type currently being described.
+- The right-hand side may use the described subject and the capability operands.
 
 Rules for `:->`:
 
-- The right-hand side must be the item being defined by the symbol.
+- The right-hand side must be the item being defined by the capability.
 - The left-hand side does not receive an implicit type from the described item.
 - This is used for specification operators such as membership.
 
-Function and value symbols:
+Function and value capabilities:
 
-- A function symbol such as `f(x_) :=> \foo{X, x_}` is used as `X.f(a)`.
-- Arguments of such function symbols do not receive an implicit type.
-- A bare symbol such as `a :=> \some.value{X}` is used as `X.a`.
-- All provided symbols have access to the subject of the item being described.
+- A function capability such as `f(x_) :=> \foo{X, x_}` is used as `X.f(a)`.
+- Arguments of such function capabilities do not receive an implicit type.
+- A bare capability such as `a :=> \some.value{X}` is used as `X.a`.
+- All enabled capabilities have access to the subject of the item being
+  described.
 
 ## Rendering And View
 
@@ -398,7 +399,7 @@ The card view includes source and detail controls.
   appears directly on the card.
 - Source view margins and padding are compact.
 - `Documented:` is hidden behind the card expander.
-- `Provides:` is also hidden behind the card expander.
+- `Enables:` is also hidden behind the card expander.
 - The item `Id:` appears in the hidden details area.
 
 ### Definition Drilldown

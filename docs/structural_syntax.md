@@ -201,7 +201,7 @@ The structural parser identifies a group by its first section label, not by its 
 Examples:
 
 - a top-level group whose first section is `Describes:` is parsed as `DescribesGroup`
-- a nested group inside `Provides:` whose first section is `symbol:` is parsed as `SymbolGroup`
+- a nested group inside `Enables:` whose first section is `capability:` is parsed as `CapabilityGroup`
 - a clause group whose first section is `if:` is parsed as `IfGroup`
 
 The heading is then validated according to that group kind.
@@ -267,10 +267,10 @@ An empty document is supported by the current implementation because `Document.i
 | `Title` | `TitleGroup` | none | `Title: OpenText` |
 | `SectionTitle` | `SectionTitleGroup` | none | `SectionTitle: OpenText` |
 | `SubsectionTitle` | `SubsectionTitleGroup` | none | `SubsectionTitle: OpenText` |
-| `Describes` | `DescribesGroup` | command | `Describes: FormOrDeclaration`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: IsOrViaItem`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Defines` | `DefinesGroup` | command | `Defines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Refines` | `RefinesGroup` | command | `Refines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: DeclarationStatement`, `satisfies?: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `States` | `StatesGroup` | command | `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Provides?: ProvidesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Describes` | `DescribesGroup` | command | `Describes: FormOrDeclaration`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: IsOrViaItem`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Defines` | `DefinesGroup` | command | `Defines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Refines` | `RefinesGroup` | command | `Refines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: DeclarationStatement`, `satisfies?: Clause+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `States` | `StatesGroup` | command | `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Axiom` | `AxiomGroup` | command? | `Axiom: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Theorem` | `TheoremGroup` | command? | `Theorem: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Corollary` | `CorollaryGroup` | command? | `Corollary: OpenText*`, `of: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
@@ -302,13 +302,13 @@ Used inside `Aliases:`.
 - `ExpressionAlias`
 - `SpecOperatorAlias`
 
-### Provides items
+### Enables items
 
-Used inside `Provides:`.
+Used inside `Enables:`.
 
 | First section label | AST node | Heading | Ordered sections |
 | --- | --- | --- | --- |
-| `symbol` | `SymbolGroup` | label? | `symbol: AliasKind`, `written?: WrittenText+` |
+| `capability` | `CapabilityGroup` | label? | `capability: AliasKind`, `written?: WrittenText+` |
 | `connection` | `ConnectionGroup` | label? | `connection: OpenText*`, `to: OpenText*`, `using?: DeclarationStatement+`, `means: OpenText*`, `signifies?: OpenText*`, `viewable?: OpenText*`, `through?: OpenText*` |
 
 ### Documented items
@@ -433,7 +433,7 @@ These headings must parse with `parse_command_header`.
 Optional on:
 
 - alias items
-- provides items
+- enables items
 - documented items
 - justified items
 - specify items
@@ -518,8 +518,8 @@ AliasItemUnion ::=
 ```
 
 ```union
-ProvidesItemUnion ::=
-    | SymbolGroup
+EnablesItemUnion ::=
+    | CapabilityGroup
     | ConnectionGroup
 ```
 
@@ -651,7 +651,7 @@ when?: <ClauseUnion>+
 extends?: <IsOrViaItemUnion>
 specifies?: <IsOrViaItemUnion>+
 satisfies?: <ClauseUnion>+
-Provides?: <ProvidesItemUnion>+
+Enables?: <EnablesItemUnion>+
 Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
 Aliases?: <AliasItemUnion>+
@@ -665,7 +665,7 @@ Defines: <DeclarationStatement>
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 expresses?: <ClauseUnion>
-Provides?: <ProvidesItemUnion>+
+Enables?: <EnablesItemUnion>+
 Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
 Aliases?: <AliasItemUnion>+
@@ -680,7 +680,7 @@ using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 specifies?: <RefinedDeclarationStatement>
 satisfies?: <ClauseUnion>+
-Provides?: <ProvidesItemUnion>+
+Enables?: <EnablesItemUnion>+
 Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
 Aliases?: <AliasItemUnion>+
@@ -694,7 +694,7 @@ States: <OpenText>*
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 that: <ClauseUnion>+
-Provides?: <ProvidesItemUnion>+
+Enables?: <EnablesItemUnion>+
 Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
 Aliases?: <AliasItemUnion>+
@@ -799,7 +799,7 @@ written?: <WrittenText>+
 
 ```group
 [LabelHeader]?
-symbol: <AliasKindUnion>
+capability: <AliasKindUnion>
 written?: <WrittenText>+
 ```
 
@@ -1047,7 +1047,7 @@ For each group kind, sections must appear in the declared order shown in this do
 Examples:
 
 - `using:` is lowercase
-- `Provides:` is capitalized
+- `Enables:` is capitalized
 - `Metadata:` is capitalized
 - `that:` is lowercase
 

@@ -1101,21 +1101,21 @@ pub(super) fn parse_alias_item_group(
     parse_alias_group(group, tracker).map(AliasItem::Alias)
 }
 
-/// Dispatches nested `Provides:` groups to symbol or connection parsers.
-pub(super) fn parse_provides_item_group(
+/// Dispatches nested `Enables:` groups to capability or connection parsers.
+pub(super) fn parse_enables_item_group(
     group: &ProtoGroup,
     tracker: &mut EventLog,
-) -> Option<ProvidesItem> {
+) -> Option<EnablesItem> {
     match first_section_label(group)? {
-        "symbol" => parse_symbol(group, tracker)
+        "capability" => parse_capability(group, tracker)
             .map(Box::new)
-            .map(ProvidesItem::Symbol),
-        "connection" => parse_connection(group, tracker).map(ProvidesItem::Connection),
+            .map(EnablesItem::Capability),
+        "connection" => parse_connection(group, tracker).map(EnablesItem::Connection),
         other => {
             tracker.user_error_at_row(
                 Some(ORIGIN),
                 group.metadata.row,
-                format!("Unexpected provides group `{other}`"),
+                format!("Unexpected enables group `{other}`"),
             );
             None
         }
@@ -1380,22 +1380,27 @@ pub(in crate::frontend::structural::parser) fn parse_alias_group(
     })
 }
 
-/// Parses a `symbol:` nested group inside `Provides:`.
+/// Parses a `capability:` nested group inside `Enables:`.
 ///
-/// Symbols reuse alias-kind parsing because provided symbols can stand for
+/// Capabilities reuse alias-kind parsing because enabled capabilities can stand for
 /// expression aliases or specification-operator aliases.
-pub(in crate::frontend::structural::parser) fn parse_symbol(
+pub(in crate::frontend::structural::parser) fn parse_capability(
     group: &ProtoGroup,
     tracker: &mut EventLog,
-) -> Option<SymbolGroup> {
+) -> Option<CapabilityGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections("symbol", &group.sections, tracker, &["symbol", "written?"])?;
-    Some(SymbolGroup {
+    let sections = identify_sections(
+        "capability",
+        &group.sections,
+        tracker,
+        &["capability", "written?"],
+    )?;
+    Some(CapabilityGroup {
         heading,
-        symbol: SymbolSection {
+        capability: CapabilitySection {
             argument: parse_required_formulation(
-                section(&sections, "symbol")?,
-                "symbol",
+                section(&sections, "capability")?,
+                "capability",
                 tracker,
                 parse_alias_kind,
             )?,
@@ -1407,7 +1412,7 @@ pub(in crate::frontend::structural::parser) fn parse_symbol(
     })
 }
 
-/// Parses a `connection:` nested group inside `Provides:`.
+/// Parses a `connection:` nested group inside `Enables:`.
 ///
 /// Connection groups capture prose and optional formulation constraints that
 /// describe how one documented concept connects to another.
@@ -2371,7 +2376,7 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
             "extends?",
             "specifies?",
             "satisfies?",
-            "Provides?",
+            "Enables?",
             "Justified?",
             "Documented?",
             "Aliases?",
@@ -2416,9 +2421,9 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
             parse_required_clauses(section, "satisfies", tracker)
                 .map(|arguments| SatisfiesSection { arguments })
         }),
-        provides: sections.get("Provides").copied().and_then(|section| {
-            parse_required_groups(section, "Provides", tracker, parse_provides_item_group)
-                .map(|arguments| ProvidesSection { arguments })
+        enables: sections.get("Enables").copied().and_then(|section| {
+            parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
+                .map(|arguments| EnablesSection { arguments })
         }),
         justified: sections.get("Justified").copied().and_then(|section| {
             parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
@@ -2462,7 +2467,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             "using?",
             "when?",
             "expresses?",
-            "Provides?",
+            "Enables?",
             "Justified?",
             "Documented?",
             "Aliases?",
@@ -2499,9 +2504,9 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             parse_required_clause(section, "expresses", tracker)
                 .map(|argument| ExpressesSection { argument })
         }),
-        provides: sections.get("Provides").copied().and_then(|section| {
-            parse_required_groups(section, "Provides", tracker, parse_provides_item_group)
-                .map(|arguments| ProvidesSection { arguments })
+        enables: sections.get("Enables").copied().and_then(|section| {
+            parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
+                .map(|arguments| EnablesSection { arguments })
         }),
         justified: sections.get("Justified").copied().and_then(|section| {
             parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
@@ -2546,7 +2551,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             "when?",
             "extends?",
             "satisfies?",
-            "Provides?",
+            "Enables?",
             "Justified?",
             "Documented?",
             "Aliases?",
@@ -2592,9 +2597,9 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             parse_required_clauses(section, "satisfies", tracker)
                 .map(|arguments| SatisfiesSection { arguments })
         }),
-        provides: sections.get("Provides").copied().and_then(|section| {
-            parse_required_groups(section, "Provides", tracker, parse_provides_item_group)
-                .map(|arguments| ProvidesSection { arguments })
+        enables: sections.get("Enables").copied().and_then(|section| {
+            parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
+                .map(|arguments| EnablesSection { arguments })
         }),
         justified: sections.get("Justified").copied().and_then(|section| {
             parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
@@ -2642,7 +2647,7 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             "using?",
             "when?",
             "that",
-            "Provides?",
+            "Enables?",
             "Justified?",
             "Documented?",
             "Aliases?",
@@ -2673,9 +2678,9 @@ pub(in crate::frontend::structural::parser) fn parse_states(
         that: ThatSection {
             arguments: parse_required_clauses(section(&sections, "that")?, "that", tracker)?,
         },
-        provides: sections.get("Provides").copied().and_then(|section| {
-            parse_required_groups(section, "Provides", tracker, parse_provides_item_group)
-                .map(|arguments| ProvidesSection { arguments })
+        enables: sections.get("Enables").copied().and_then(|section| {
+            parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
+                .map(|arguments| EnablesSection { arguments })
         }),
         justified: sections.get("Justified").copied().and_then(|section| {
             parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
@@ -3122,7 +3127,7 @@ mod tests {
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, DescribesTarget, Document, DocumentedItem, IsOrViaItem,
-        JustifiedItem, MetadataItem, ProvidesItem, ResourceItem, SpecifyItem, TopLevelItem,
+        JustifiedItem, MetadataItem, EnablesItem, ResourceItem, SpecifyItem, TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -3260,9 +3265,9 @@ satisfies:
 . [logic.satisfies]
   not:
   . x = y
-Provides:
+Enables:
 . [symbol.plus]
-  symbol: plus(x_, y_) :=> x + y
+  capability: plus(x_, y_) :=> x + y
   written:
   . "+"
 Justified:
@@ -3288,7 +3293,7 @@ Metadata:
 
 [\structure.connection]
 Describes: T
-Provides:
+Enables:
 . [conn.plus]
   connection:
   . "addition"
@@ -3440,11 +3445,11 @@ that:
                 ));
                 assert!(matches!(
                     group
-                        .provides
+                        .enables
                         .as_ref()
-                        .expect("expected provides")
+                        .expect("expected enables")
                         .arguments[0],
-                    ProvidesItem::Symbol(_)
+                    EnablesItem::Capability(_)
                 ));
                 assert!(matches!(
                     group
@@ -3483,11 +3488,11 @@ that:
             TopLevelItem::Describes(group) => {
                 assert!(matches!(
                     group
-                        .provides
+                        .enables
                         .as_ref()
-                        .expect("expected provides")
+                        .expect("expected enables")
                         .arguments[0],
-                    ProvidesItem::Connection(_)
+                    EnablesItem::Connection(_)
                 ));
                 assert!(matches!(
                     group
@@ -3636,8 +3641,8 @@ that:
             r#"
 [\set]
 Describes: X
-Provides:
-. symbol: x_ "in" X :-> \\abstract
+Enables:
+. capability: x_ "in" X :-> \\abstract
 Documented:
 . called: "set"
 "#,
@@ -3649,11 +3654,11 @@ Documented:
 
         assert!(matches!(
             group
-                .provides
+                .enables
                 .as_ref()
-                .expect("expected provides")
+                .expect("expected enables")
                 .arguments[0],
-            ProvidesItem::Symbol(_)
+            EnablesItem::Capability(_)
         ));
     }
 
@@ -4090,9 +4095,9 @@ using:
 . x is \type{A}
 when:
 . x = x
-Provides:
+Enables:
 . [symbol]
-  symbol: f(x_) :=> x
+  capability: f(x_) :=> x
 Aliases:
 . [alias]
   alias: f(x_) :=> x

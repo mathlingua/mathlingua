@@ -16,9 +16,9 @@ satisfies:
 . [logic.satisfies]
   not:
   . x = y
-Provides:
-. [symbol.plus]
-  symbol: plus(x_, y_) :=> x + y
+Enables:
+. [capability.plus]
+  capability: plus(x_, y_) :=> x + y
   written:
   . "+"
 Justified:
@@ -44,7 +44,7 @@ Metadata:
 
 [\structure.connection]
 Describes: T
-Provides:
+Enables:
 . [conn.plus]
   connection:
   . "addition"

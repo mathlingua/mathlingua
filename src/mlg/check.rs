@@ -1179,8 +1179,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -1236,8 +1236,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
     . written: "\operatorname{set}"
@@ -1298,8 +1298,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -1483,8 +1483,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -1811,8 +1811,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ + y_ :=> x_ \.set.+./ y_
+    Enables:
+    . capability: x_ + y_ :=> x_ \.set.+./ y_
     Documented:
     . called: "set"
 
@@ -1858,12 +1858,12 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ - y_ :=> x_ \.set.minus./ y_
-    . symbol: x_ ** y_ :=> x_ \.set.minus./ y_
-    . symbol: x_ +_-* y_ :=> x_ \.set.minus./ y_
-    . symbol: x_ *_free y_ :=> x_ \.set.minus./ y_
-    . symbol: x_ |minus| y_ :=> x_ \.set.minus./ y_
+    Enables:
+    . capability: x_ - y_ :=> x_ \.set.minus./ y_
+    . capability: x_ ** y_ :=> x_ \.set.minus./ y_
+    . capability: x_ +_-* y_ :=> x_ \.set.minus./ y_
+    . capability: x_ *_free y_ :=> x_ \.set.minus./ y_
+    . capability: x_ |minus| y_ :=> x_ \.set.minus./ y_
     Documented:
     . called: "set"
 
@@ -1958,8 +1958,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ - y_ :=> x_ \.set.minus./ y_
+    Enables:
+    . capability: x_ - y_ :=> x_ \.set.minus./ y_
     Documented:
     . called: "set"
 
@@ -2016,10 +2016,10 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ != y_ :=> \not{x_ = y_}
-    . symbol: f(x_) :=> \foo{X, x_}
-    . symbol: a :=> \some.value{X}
+    Enables:
+    . capability: x_ != y_ :=> \not{x_ = y_}
+    . capability: f(x_) :=> \foo{X, x_}
+    . capability: a :=> \some.value{X}
     Documented:
     . called: "set"
 
@@ -2078,12 +2078,12 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
-    . symbol: x_ = y_ :=> x_ \.set.=./ y_
-    . symbol: x_ != y_ :=> \not{x_ = y_}
-    . symbol: x_ - y_ :=> x_ \.set.minus./ y_
+    . capability: x_ = y_ :=> x_ \.set.=./ y_
+    . capability: x_ != y_ :=> \not{x_ = y_}
+    . capability: x_ - y_ :=> x_ \.set.minus./ y_
     Documented:
     . called: "set"
 
@@ -2155,11 +2155,11 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
-    . symbol: x_ = y_ :=> x_ \.set.=./ y_
-    . symbol: x_ - y_ :=> x_ \.set.minus./ y_
+    . capability: x_ = y_ :=> x_ \.set.=./ y_
+    . capability: x_ - y_ :=> x_ \.set.minus./ y_
     Documented:
     . called: "set"
 
@@ -2338,8 +2338,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -2418,8 +2418,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -2524,8 +2524,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -2577,8 +2577,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -2636,8 +2636,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -2827,8 +2827,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -2902,8 +2902,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -2925,8 +2925,8 @@ mod tests {
     . * is \function:on{X}:to{X}
     . e "in" G
     extends: G is \set via X
-    Provides:
-    . symbol: x_ "in" G :-> x_ is \element.of:group{G}
+    Enables:
+    . capability: x_ "in" G :-> x_ is \element.of:group{G}
     Documented:
     . written: "\operatorname{group}"
 
@@ -2969,8 +2969,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -3015,8 +3015,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -3429,8 +3429,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X
-    Provides:
-    . symbol: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
@@ -3481,8 +3481,8 @@ mod tests {
 
     [\reals]
     Describes: R
-    Provides:
-    . symbol: x_ "in" R :-> x is \real
+    Enables:
+    . capability: x_ "in" R :-> x is \real
     Documented:
     . written: "\operatorname{reals}"
 
@@ -3530,8 +3530,8 @@ mod tests {
 
     [\set]
     Describes: X ::= {x__ : ...}
-    Provides:
-    . symbol: x_ "in" X :-> x_ member_of X
+    Enables:
+    . capability: x_ "in" X :-> x_ member_of X
     Documented:
     . written: "\operatorname{set}"
 
@@ -3591,8 +3591,8 @@ mod tests {
             &file,
             r#"[\set]
     Describes: X ::= {x__ : ...}
-    Provides:
-    . symbol: x_ "in" X :-> x_ member_of X
+    Enables:
+    . capability: x_ "in" X :-> x_ member_of X
     Documented:
     . written: "\operatorname{set}"
 
@@ -3634,8 +3634,8 @@ mod tests {
             &file,
             r#"[\group]
     Describes: G
-    Provides:
-    . symbol: x_ "in" G :-> \\abstract
+    Enables:
+    . capability: x_ "in" G :-> \\abstract
     Documented:
     . written: "\operatorname{group}"
 
@@ -3851,8 +3851,8 @@ mod tests {
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
-    Provides:
-    . symbol: x_ "in" G :-> x_ is \element.of:group{G}
+    Enables:
+    . capability: x_ "in" G :-> x_ is \element.of:group{G}
     Documented:
     . written: "\operatorname{group}"
 
@@ -3954,8 +3954,8 @@ mod tests {
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
-    Provides:
-    . symbol: x_ "in" G :-> x_ is \element.of:group{G}
+    Enables:
+    . capability: x_ "in" G :-> x_ is \element.of:group{G}
     Documented:
     . written: "\operatorname{group}"
 
@@ -4013,8 +4013,8 @@ mod tests {
     . * is \function:on{X}:to{X}
     . e "in" G
     extends: G is \set
-    Provides:
-    . symbol: x_ "in" G :-> x_ is \element.of:group{G}
+    Enables:
+    . capability: x_ "in" G :-> x_ is \element.of:group{G}
     Documented:
     . written: "\operatorname{group}"
 

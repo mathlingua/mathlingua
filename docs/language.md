@@ -50,7 +50,7 @@ group kind.
 Section labels are case-sensitive and order-sensitive. Optional sections may be
 omitted, but if present they must appear in the order defined for that group.
 For example, `using:` must come before `when:`, and `Documented:` must come
-after `Provides:` and `Justified:` in definition groups.
+after `Enables:` and `Justified:` in definition groups.
 
 Lines whose trimmed text starts with `--` are comments. At the top level, blank
 lines and comments are skipped before the next group; inside a group or section,
@@ -366,7 +366,7 @@ when:
 extends:
 specifies:
 satisfies:
-Provides:
+Enables:
 Justified:
 Documented:
 Aliases:
@@ -471,9 +471,9 @@ Quantifier declarations are local to the clause group that introduces them.
 
 ## Support Sections
 
-`Provides:` accepts:
+`Enables:` accepts:
 
-- `symbol:` groups, which usually define aliases or specification operators
+- `capability:` groups, which usually define aliases or specification operators
 - `connection:` groups, which contain prose fields such as `to:`, `means:`,
   `signifies:`, `viewable:`, and `through:`
 
@@ -516,13 +516,13 @@ reference walker does not validate command references inside that expression.
 Spec-operator aliases use `:->`.
 
 ```text
-symbol: x_ "in" R :-> x is \real
-symbol: x_ "in" X :-> \\abstract
+capability: x_ "in" R :-> x is \real
+capability: x_ "in" X :-> \\abstract
 ```
 
-When a described command provides a spec-operator alias, the type checker can
+When a described command enables a spec-operator alias, the type checker can
 reduce matching spec facts. If the context knows `R is \reals` and `r "in" R`,
-the alias above lets the checker prove `r is \real`.
+the alias above lets the checker establish `r is \real`.
 
 The target of a spec-operator alias may also be a built-in keyword written with
 two leading backslashes, such as `\\abstract`. Spec-operator aliases are
@@ -703,32 +703,32 @@ written as `_`. If the checker knows `f is \function:on{A}:to{B}` and
 
 ## Specification Operators
 
-Provided spec operators connect notation such as membership to type facts or
-other spec facts.
+Enabled specification capabilities connect notation such as membership to type
+facts or other spec facts.
 
 ```text
 [\reals]
 Describes: R
-Provides:
-. symbol: x_ "in" R :-> x is \real
+Enables:
+. capability: x_ "in" R :-> x is \real
 Documented:
 . called: "reals"
 ```
 
 If the context contains `R is \reals` and `r "in" R`, the checker can reduce the
-spec fact through the provided symbol and prove `r is \real`.
+spec fact through the enabled capability and establish `r is \real`.
 
 The alias target must satisfy the requirements of any command type it uses in
-the provider's context. For example, if `\element.of:group{G}` requires
-`G is \set`, then a provider on `\group` may alias membership to
+the enabling context. For example, if `\element.of:group{G}` requires
+`G is \set`, then an enabled capability on `\group` may alias membership to
 `\element.of:group{G}` only when `G is \set` is available, commonly through an
 `extends: G is \set` subtype declaration on `\group`.
 
-Direct spec requirements are also supported once the target type provides the
-operator. If `\group` provides `x_ "in" G` and a command requires `x "in" G`,
+Direct spec requirements are also supported once the target type enables the
+operator. If `\group` enables `x_ "in" G` and a command requires `x "in" G`,
 then an exact matching spec fact in the context satisfies that requirement even
 without reducing it to a type fact. A raw fact such as `x "in" G` is invalid
-when the checker knows `G` has a type that does not provide `"in"`.
+when the checker knows `G` has a type that does not enable `"in"`.
 
 ## Rendering Metadata
 

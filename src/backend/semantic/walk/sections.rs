@@ -43,15 +43,15 @@ impl ClauseSection for SatisfiesSection {
     }
 }
 
-pub(in crate::backend::semantic) fn walk_optional_provides(
-    section: &Option<ProvidesSection>,
+pub(in crate::backend::semantic) fn walk_optional_enables(
+    section: &Option<EnablesSection>,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
     if let Some(section) = section {
         for item in &section.arguments {
             match item {
-                ProvidesItem::Symbol(group) => walk_alias_kind(&group.symbol.argument, visit),
-                ProvidesItem::Connection(group) => {
+                EnablesItem::Capability(group) => walk_alias_kind(&group.capability.argument, visit),
+                EnablesItem::Connection(group) => {
                     if let Some(using) = &group.using {
                         for statement in &using.arguments {
                             walk_declaration_statement(statement, visit);

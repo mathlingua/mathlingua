@@ -414,6 +414,13 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            validate_when_section(
+                &group.when,
+                &describes_when_parameters(&group.heading, &group.describes.argument),
+                path,
+                locator,
+                event_log,
+            );
             assume_optional_clauses(
                 &group.when,
                 &mut context,
@@ -476,6 +483,13 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            validate_when_section(
+                &group.when,
+                &header_when_parameters(&group.heading),
+                path,
+                locator,
+                event_log,
+            );
             assume_optional_clauses(
                 &group.when,
                 &mut context,
@@ -516,6 +530,13 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            validate_when_section(
+                &group.when,
+                &header_when_parameters(&group.heading),
+                path,
+                locator,
+                event_log,
+            );
             assume_optional_clauses(
                 &group.when,
                 &mut context,
@@ -554,6 +575,13 @@ fn validate_top_level_item_types(
                 path,
                 locator,
                 registry,
+                event_log,
+            );
+            validate_when_section(
+                &group.when,
+                &header_when_parameters(&group.heading),
+                path,
+                locator,
                 event_log,
             );
             assume_optional_clauses(
@@ -1044,6 +1072,182 @@ fn assume_optional_clauses<T>(
             assume_clause(clause, context, path, locator, registry, event_log);
         }
     }
+}
+
+fn validate_when_section<T>(
+    section: &Option<T>,
+    parameters: &WhenParameters,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) where
+    T: ClauseSection,
+{
+    let mut covered_parameters = HashSet::new();
+    if let Some(section) = section {
+        for clause in section.clauses() {
+            validate_when_clause(
+                clause,
+                parameters,
+                &mut covered_parameters,
+                path,
+                locator,
+                event_log,
+            );
+        }
+    }
+
+    let mut missing_parameters = parameters
+        .required
+        .iter()
+        .filter(|parameter| !covered_parameters.contains(*parameter))
+        .cloned()
+        .collect::<Vec<_>>();
+    missing_parameters.sort();
+    for parameter in missing_parameters {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&parameter),
+            format!("Missing `when:` requirement for parameter `{parameter}`"),
+        );
+    }
+}
+
+fn validate_when_clause(
+    clause: &Clause,
+    parameters: &WhenParameters,
+    covered_parameters: &mut HashSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    match clause {
+        Clause::Declaration(statement) => validate_when_declaration(
+            statement,
+            parameters,
+            covered_parameters,
+            path,
+            locator,
+            event_log,
+        ),
+        Clause::Expression(expression) => validate_when_expression(
+            expression,
+            parameters,
+            covered_parameters,
+            path,
+            locator,
+            event_log,
+        ),
+        _ => emit_invalid_when_clause_error(path, locator, event_log),
+    }
+}
+
+fn validate_when_declaration(
+    statement: &DeclarationStatement,
+    parameters: &WhenParameters,
+    covered_parameters: &mut HashSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    if statement.expansion.is_some() || statement.definition.is_some() {
+        emit_invalid_when_clause_error(path, locator, event_log);
+        return;
+    }
+
+    match &statement.relation {
+        Some(DeclarationRelation::Is(_))
+        | Some(DeclarationRelation::Spec { .. })
+        | Some(DeclarationRelation::InfixSpec { .. }) => {
+            for subject in declaration_subject_keys(statement) {
+                validate_when_subject(
+                    &subject,
+                    parameters,
+                    covered_parameters,
+                    path,
+                    locator,
+                    event_log,
+                );
+            }
+        }
+        None => emit_invalid_when_clause_error(path, locator, event_log),
+    }
+}
+
+fn validate_when_expression(
+    expression: &Expression,
+    parameters: &WhenParameters,
+    covered_parameters: &mut HashSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    match &expression.kind {
+        ExpressionKind::IsType { subject, .. } => validate_when_subject(
+            &key_for_expression(subject),
+            parameters,
+            covered_parameters,
+            path,
+            locator,
+            event_log,
+        ),
+        ExpressionKind::SpecStatement(statement) => validate_when_subject(
+            &key_for_expression(&statement.subject),
+            parameters,
+            covered_parameters,
+            path,
+            locator,
+            event_log,
+        ),
+        ExpressionKind::InfixSpecStatement { left, spec, .. } if !spec.predicate => {
+            validate_when_subject(
+                &key_for_expression(left),
+                parameters,
+                covered_parameters,
+                path,
+                locator,
+                event_log,
+            );
+        }
+        _ => emit_invalid_when_clause_error(path, locator, event_log),
+    }
+}
+
+fn validate_when_subject(
+    subject: &str,
+    parameters: &WhenParameters,
+    covered_parameters: &mut HashSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    if parameters.allowed.contains(subject) {
+        covered_parameters.insert(subject.to_string());
+        return;
+    }
+
+    emit_error(
+        event_log,
+        path,
+        locator.locate_symbol(subject),
+        format!(
+            "`when:` requirement for `{subject}` is not allowed because `{subject}` is not a parameter of this definition"
+        ),
+    );
+}
+
+fn emit_invalid_when_clause_error(
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    emit_error(
+        event_log,
+        path,
+        locator.locate_symbol("when"),
+        "`when:` clauses only support `<subject> is <type>` or `<subject> \"op\" <target>` requirements",
+    );
 }
 
 fn check_optional_clauses<T>(
@@ -6438,6 +6642,182 @@ fn function_type_spec_as_fact(spec: &FunctionTypeSpec) -> Option<FunctionTypeFac
             operator: operator.clone(),
             target: target.clone(),
         }),
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+struct WhenParameters {
+    required: HashSet<String>,
+    allowed: HashSet<String>,
+}
+
+impl WhenParameters {
+    fn require(&mut self, parameter: String) {
+        self.allowed.insert(parameter.clone());
+        self.required.insert(parameter);
+    }
+
+    fn allow(&mut self, parameter: String) {
+        self.allowed.insert(parameter);
+    }
+
+    fn require_all(&mut self, parameters: HashSet<String>) {
+        for parameter in parameters {
+            self.require(parameter);
+        }
+    }
+
+    fn remove_required(&mut self, parameter: &str) {
+        self.required.remove(parameter);
+    }
+}
+
+fn header_when_parameters(header: &CommandHeader) -> WhenParameters {
+    let mut parameters = WhenParameters::default();
+    collect_header_form_parameters(header, &mut parameters);
+    parameters
+}
+
+fn collect_header_form_parameters(header: &CommandHeader, parameters: &mut WhenParameters) {
+    match header {
+        CommandHeader::Command(command) => {
+            collect_curly_heading_parameters(&command.head_args, parameters);
+            collect_tail_parameters(&command.tail, parameters);
+        }
+        CommandHeader::Infix(command) => {
+            require_optional_form_when_parameter(command.left.as_ref(), parameters);
+            collect_curly_heading_parameters(&command.head_args, parameters);
+            collect_tail_parameters(&command.tail, parameters);
+            require_optional_form_when_parameter(command.right.as_ref(), parameters);
+        }
+        CommandHeader::InfixSpec(spec) => {
+            require_form_when_parameter(&spec.left, parameters);
+            collect_curly_heading_parameters(&spec.head_args, parameters);
+            collect_tail_parameters(&spec.tail, parameters);
+            require_form_when_parameter(&spec.right, parameters);
+        }
+        CommandHeader::Refined(command) => {
+            for part in &command.parts {
+                collect_tail_parameters(&part.tail, parameters);
+            }
+            collect_curly_heading_parameters(&command.head_args, parameters);
+            collect_tail_parameters(&command.tail, parameters);
+        }
+    }
+}
+
+fn collect_curly_heading_parameters(groups: &[CurlyHeadingArgs], parameters: &mut WhenParameters) {
+    for form in groups.iter().flat_map(|group| group.forms.iter()) {
+        require_form_when_parameter(form, parameters);
+    }
+}
+
+fn collect_tail_parameters(parts: &[CommandHeaderTailPart], parameters: &mut WhenParameters) {
+    for form in parts
+        .iter()
+        .flat_map(|part| part.args.iter().map(move |group| (part.optional, group)))
+        .flat_map(|(optional, group)| group.forms.iter().map(move |form| (optional, form)))
+    {
+        let (optional, form) = form;
+        if optional {
+            allow_form_when_parameter(form, parameters);
+        } else {
+            require_form_when_parameter(form, parameters);
+        }
+    }
+}
+
+fn require_optional_form_when_parameter(
+    form: Option<&FormOrDeclaration>,
+    parameters: &mut WhenParameters,
+) {
+    if let Some(form) = form {
+        require_form_when_parameter(form, parameters);
+    }
+}
+
+fn require_form_when_parameter(form: &FormOrDeclaration, parameters: &mut WhenParameters) {
+    for parameter in form_when_parameter_names(form) {
+        parameters.require(parameter);
+    }
+}
+
+fn allow_form_when_parameter(form: &FormOrDeclaration, parameters: &mut WhenParameters) {
+    for parameter in form_when_parameter_names(form) {
+        parameters.allow(parameter);
+    }
+}
+
+fn form_when_parameter_names(form: &FormOrDeclaration) -> HashSet<String> {
+    let mut parameters = HashSet::new();
+    if let Some(name) = primary_form_name(form) {
+        parameters.insert(name);
+    }
+    if let FormOrDeclarationKind::TupleDeclaration { form, .. } = &form.kind {
+        collect_tuple_form_when_parameters(form, &mut parameters);
+    }
+    parameters
+}
+
+fn describes_when_parameters(header: &CommandHeader, target: &DescribesTarget) -> WhenParameters {
+    let mut parameters = header_when_parameters(header);
+    if let Some(subject) = describes_target_primary_subject(target) {
+        parameters.remove_required(&subject);
+    }
+    collect_describes_target_when_parameters(target, &mut parameters);
+    parameters
+}
+
+fn describes_target_primary_subject(target: &DescribesTarget) -> Option<String> {
+    match target {
+        DescribesTarget::Form(form) => {
+            primary_form_name(form).or_else(|| Some(key_for_form_or_declaration(form)))
+        }
+        DescribesTarget::Declaration(statement) => Some(primary_subject_key(&statement.subject)),
+    }
+}
+
+fn collect_describes_target_when_parameters(
+    target: &DescribesTarget,
+    parameters: &mut WhenParameters,
+) {
+    match target {
+        DescribesTarget::Form(form) => collect_describes_form_when_parameters(form, parameters),
+        DescribesTarget::Declaration(_) => {}
+    }
+}
+
+fn collect_describes_form_when_parameters(
+    form: &FormOrDeclaration,
+    parameters: &mut WhenParameters,
+) {
+    if let FormOrDeclarationKind::TupleDeclaration { form, .. } = &form.kind {
+        parameters.require_all(tuple_form_when_parameter_names(form));
+    }
+}
+
+fn tuple_form_when_parameter_names(form: &TupleForm) -> HashSet<String> {
+    let mut parameters = HashSet::new();
+    collect_tuple_form_when_parameters(form, &mut parameters);
+    parameters
+}
+
+fn collect_tuple_form_when_parameters(form: &TupleForm, parameters: &mut HashSet<String>) {
+    for element in &form.elements {
+        match element {
+            TupleFormElement::Form(form) => {
+                if let FormOrDeclarationKind::TupleDeclaration { name: None, form } = &form.kind {
+                    collect_tuple_form_when_parameters(form, parameters);
+                } else if let Some(name) = primary_form_name(form) {
+                    parameters.insert(name);
+                } else {
+                    parameters.insert(key_for_form_or_declaration(form));
+                }
+            }
+            TupleFormElement::Operator(operator) => {
+                parameters.insert(operator.text.clone());
+            }
+        }
     }
 }
 

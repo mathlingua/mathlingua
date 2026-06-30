@@ -1013,6 +1013,7 @@ mod tests {
             &file,
             r#"[\function:on{A}:to{B}]
     Defines: A ::= B "defines" B
+    when: A, B is \\unknown
     Documented:
     . [docs.called]
       written:
@@ -1036,7 +1037,7 @@ mod tests {
         assert!(has_user_error_at(
             &event_log,
             &file.canonicalize().unwrap(),
-            10,
+            11,
             7,
             "Undefined command signature `\\function`"
         ));
@@ -1096,6 +1097,7 @@ mod tests {
 
     [\foo{A, B}(x)]
     Defines: A "defines" B
+    when: A, B is \thing
     Documented:
     . [docs.called]
       written:
@@ -1138,6 +1140,7 @@ mod tests {
 
     [\some.function{A}(x, y)]
     Defines: A "defines" B
+    when: A is \thing
     Documented:
     . [docs.called]
       written:
@@ -1189,12 +1192,14 @@ mod tests {
 
     [\(bounded)::function:on{A}:to{B}]
     Refines: f(x__)
+    when: A, B is \set
     Documented:
     . adjective: "bounded"
     . written: "\operatorname{bounded}"
 
     [\(continuous)::function:on{A}:to{B}]
     Refines: f(x__)
+    when: A, B is \set
     Documented:
     . adjective: "continuous"
     . written: "\operatorname{continuous}"
@@ -1407,17 +1412,10 @@ mod tests {
     Documented:
     . adjective: "bijective"
 
-    [\uses.injective{f}]
-    States:
-    when: f is? \(injective)::bounded.function
-    that: f = f
-    Documented:
-    . written: "\operatorname{usesInjective}"
-
     Theorem:
     given: f is \bounded.function
     where: f is? \(bijective)::bounded.function
-    then: \uses.injective{f}
+    then: f is? \(injective)::bounded.function
     "#,
         )
         .unwrap();
@@ -1468,6 +1466,143 @@ mod tests {
             &[PathBuf::from("optional-expression-tail.mlg")],
             &mut event_log,
         );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_counts_comma_separated_refines_when_requirements() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("refined-comma-when.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Provides:
+    . symbol: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__)
+    when: A, B is \set
+    Documented:
+    . called: "function"
+
+    [\(injective)::function:?on{A}:?to{B}]
+    Refines: f(x__)
+    when: A, B is \set
+    satisfies:
+    . forAll: x1, x2 "in" A
+      then:
+      . if: f(x1) = f(x2)
+        then: x1 = x2
+    Documented:
+    . adjective: "injective"
+    Id: "8ae265b6-2112-4576-9976-6ba3beb95829"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("refined-comma-when.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_counts_comma_separated_states_when_requirements() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("states-comma-when.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[P \.and./ Q]
+    States:
+    when: P, Q is \\statement
+    that:
+    . allOf:
+      . P
+      . Q
+    Documented:
+    . written: "P? \text{ and } Q?"
+    Id: "da152255-eeb1-498e-9ef4-f0ee017406d2"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("states-comma-when.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_counts_comma_separated_when_requirements_in_collections() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path();
+        let content = root.join("content");
+        fs::create_dir(&content).unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
+        write_mlg_fixture(
+            &content.join("logic.mlg"),
+            r#"Title: "Logical Background"
+    Id: "66a3817c-cca1-4afd-9e0c-f842963cc5e1"
+
+    Text: "
+    Second-order logic will serve as the logical foundation for
+    the mathematics in this work.
+    "
+    Id: "b213d859-14fe-4612-8c8f-a6e38cc23c0e"
+
+    [P \.and./ Q]
+    States:
+    when: P, Q is \\statement
+    that:
+    . allOf:
+      . P
+      . Q
+    Documented:
+    . written: "P? \text{ and } Q?"
+    Id: "da152255-eeb1-498e-9ef4-f0ee017406d2"
+
+    [P \.or./ Q]
+    States:
+    when: P, Q is \\statement
+    that:
+    . anyOf:
+      . P
+      . Q
+    Documented:
+    . written: "P? \text{ or } Q?"
+    Id: "93149456-ff84-40af-8c41-b06906405ffa"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(root, &[], &mut event_log);
 
         assert_eq!(result.files_checked, 1);
         assert_eq!(
@@ -1890,16 +2025,21 @@ mod tests {
 
     [\not{P}]
     Defines: Q is \\statement
+    when: P is \\expression
     Documented:
     . written: "\neg P?"
 
     [\foo{X, x}]
     Defines: Y is \\expression
+    when:
+    . X is \set
+    . x is \\expression
     Documented:
     . written: "\operatorname{foo}(X?, x?)"
 
     [\some.value{X}]
     Defines: Y is \\expression
+    when: X is \set
     Documented:
     . written: "\operatorname{someValue}(X?)"
 
@@ -1966,6 +2106,7 @@ mod tests {
 
     [\not{P}]
     Defines: Q is \\statement
+    when: P is \\expression
     Documented:
     . written: "\neg P?"
 
@@ -2284,7 +2425,7 @@ mod tests {
 
     [A \:subset:/ B]
     Describes: A
-    when: B is \set
+    when: A, B is \set
     extends: A is \set
     satisfies:
     . forAll: a "in" A
@@ -2300,7 +2441,7 @@ mod tests {
     . written: "\operatorname{needsSet}"
 
     Theorem:
-    given: B is \set
+    given: A, B is \set
     where:
     . A \:subset:/ B
     then:
@@ -2343,7 +2484,7 @@ mod tests {
 
     [A \:subset:/ B]
     Describes: A
-    when: B is \set
+    when: A, B is \set
     Documented:
     . written: "A? \subseteq B?"
 
@@ -2391,7 +2532,7 @@ mod tests {
     [A \:subset:?within{U}:/ B]
     Describes: A
     when:
-    . U is \set
+    . A, B, U is \set
     . B \:subset:/ U
     extends: A is \set
     satisfies:
@@ -2403,7 +2544,7 @@ mod tests {
 
     Theorem:
     given:
-    . U is \set
+    . A, B, U is \set
     . B \:subset:/ U
     where:
     . A \:subset:within{U}:/ B
@@ -2444,7 +2585,7 @@ mod tests {
     [A \:subset:?within{U}:/ B]
     Describes: A
     when:
-    . U is \set
+    . A, B, U is \set
     . B \:subset:/ U
     extends: A is \set
     satisfies:
@@ -2462,6 +2603,7 @@ mod tests {
     [A \.set.intersect:?within{U}./ B]
     Defines: C \:subset:/ U
     when:
+    . A, B, U is \set
     . A \:subset:/ U
     . B \:subset:/ U
     expresses: C := {c_ : c_ "in" U | (.c "in"? A.) \.and./ (.c "in"? B.)}
@@ -2501,7 +2643,7 @@ mod tests {
 
     [A \:subset:/ B]
     Describes: A
-    when: B is \set
+    when: A, B is \set
     extends: A is \set
     Documented:
     . written: "A? \subseteq B?"
@@ -2770,13 +2912,18 @@ mod tests {
     when:
     . G is \group
     . X is \set
+    . * is \function:on{X}:to{X}
+    . e "in" G
     extends: x "in" X
     Documented:
     . written: "x? \in G?"
 
     [\group]
     Describes: G ::= (X, *, e)
-    when: X is \set
+    when:
+    . X is \set
+    . * is \function:on{X}:to{X}
+    . e "in" G
     extends: G is \set via X
     Provides:
     . symbol: x_ "in" G :-> x_ is \element.of:group{G}
@@ -3158,19 +3305,26 @@ mod tests {
 
         write_mlg_fixture(
             &file,
-            r#"[\foo:?baz{A}:?bar{B}]
+            r#"[\thing]
+    Describes: value
+    Documented:
+    . written: "\operatorname{thing}"
+
+    [\foo:?baz{A}:?bar{B}]
     Defines: A ::= B "defines" B
+    when: A, B is \thing
     Documented:
     . [docs.called]
       written:
       . "\operatorname{foo}"
 
     Theorem:
+    given: a, b is \thing
     then:
     . \foo
-    . \foo:baz{1}
-    . \foo:bar{2}
-    . \foo:baz{1}:bar{2}
+    . \foo:baz{a}
+    . \foo:bar{b}
+    . \foo:baz{a}:bar{b}
     "#,
         )
         .unwrap();
@@ -3498,6 +3652,7 @@ mod tests {
 
     [\function:?on{A}:?to{B}]
     Describes: f(x__)
+    when: A, B is \set
     Documented:
     . written: "\operatorname{function}"
 
@@ -3532,6 +3687,113 @@ mod tests {
     }
 
     #[test]
+    fn check_validates_definition_when_sections_against_parameters() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("definition-when-parameters.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\group]
+    Describes: G ::= (X, *, e)
+    when:
+    . X is \set
+    . Y is \set
+    . e := X
+    Documented:
+    . written: "\operatorname{group}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("definition-when-parameters.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let messages = user_events(&event_log)
+            .iter()
+            .filter_map(|event| event.as_message().map(|message| message.message.clone()))
+            .collect::<Vec<_>>();
+        assert!(
+            messages.iter().any(|message| message.contains(
+                "`when:` requirement for `Y` is not allowed because `Y` is not a parameter"
+            )),
+            "{messages:#?}"
+        );
+        assert!(
+            messages
+                .iter()
+                .any(|message| message.contains("Missing `when:` requirement for parameter `*`")),
+            "{messages:#?}"
+        );
+        assert!(
+            messages
+                .iter()
+                .any(|message| message.contains("Missing `when:` requirement for parameter `e`")),
+            "{messages:#?}"
+        );
+        assert!(
+            messages.iter().any(|message| message.contains(
+                "`when:` clauses only support `<subject> is <type>` or `<subject> \"op\" <target>` requirements"
+            )),
+            "{messages:#?}"
+        );
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_does_not_require_described_subjects_or_optional_tail_parameters_in_when() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("optional-when-parameters.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \:subset:?within{U}:/ B]
+    Describes: A
+    when:
+    . U is \set
+    . B is \set
+    extends: A is \set
+    Documented:
+    . written: "A? \subset B?"
+
+    [A \.combine:?using{U}./ B]
+    Defines: C is \set
+    when: A, B is \set
+    Documented:
+    . written: "A? \star B?"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("optional-when-parameters.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_uses_nominal_typing_for_describes_type_requirements() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("nominal-describes-type.mlg");
@@ -3545,6 +3807,7 @@ mod tests {
 
     [\function:?on{A}:?to{B}]
     Describes: f(x__)
+    when: A, B is \set
     Documented:
     . written: "\operatorname{function}"
 
@@ -3647,6 +3910,7 @@ mod tests {
 
     [\function:?on{A}:?to{B}]
     Describes: f(x__)
+    when: A, B is \set
     Documented:
     . written: "\operatorname{function}"
 
@@ -3704,6 +3968,7 @@ mod tests {
 
     [\function:?on{A}:?to{B}]
     Describes: f(x__)
+    when: A, B is \set
     Documented:
     . written: "\operatorname{function}"
 

@@ -2,6 +2,7 @@ use super::*;
 
 pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
     validate_top_level_item_ids(files, event_log);
+    validate_top_level_writing_count(files, event_log);
 
     let mut registry = SignatureRegistry::default();
     for file in files {
@@ -72,6 +73,38 @@ fn is_uuid(value: &str) -> bool {
             .iter()
             .enumerate()
             .all(|(index, byte)| matches!(index, 8 | 13 | 18 | 23) || byte.is_ascii_hexdigit())
+}
+
+fn validate_top_level_writing_count(files: &[ParsedSourceFile], event_log: &mut EventLog) {
+    let mut first: Option<(PathBuf, usize)> = None;
+
+    for file in files {
+        for (index, item) in file.document.items.iter().enumerate() {
+            if !matches!(item, TopLevelItem::Writing(_)) {
+                continue;
+            }
+
+            let row = file
+                .item_ids
+                .get(index)
+                .map(|id| id.group_row)
+                .unwrap_or_default();
+            if let Some((first_path, first_row)) = &first {
+                event_log.user_error_at_file_row(
+                    Some(ORIGIN),
+                    file.path.clone(),
+                    row,
+                    format!(
+                        "Only one top-level `Writing:` item is allowed per collection; first used at {}:{}",
+                        first_path.display(),
+                        first_row + 1
+                    ),
+                );
+            } else {
+                first = Some((file.path.clone(), row));
+            }
+        }
+    }
 }
 
 pub(super) fn collect_document_definitions(
@@ -227,6 +260,57 @@ pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>>
             documented: group.documented.as_ref(),
         }),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parsed_file(path: &str, source: &str) -> ParsedSourceFile {
+        let mut event_log = EventLog::new();
+        let document = parse_document(source, &mut event_log);
+        assert!(!event_log.has_errors(), "{:#?}", event_log.events());
+
+        ParsedSourceFile {
+            path: PathBuf::from(path),
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        }
+    }
+
+    #[test]
+    fn reports_more_than_one_top_level_writing_group() {
+        let files = vec![
+            parsed_file(
+                "a.mlg",
+                r#"Writing:
+. alpha :~> \alpha
+Id: "11111111-1111-4111-8111-111111111111"
+"#,
+            ),
+            parsed_file(
+                "b.mlg",
+                r#"Writing:
+. beta :~> \beta
+Id: "22222222-2222-4222-8222-222222222222"
+"#,
+            ),
+        ];
+
+        let mut event_log = EventLog::new();
+        check_documents(&files, &mut event_log);
+
+        assert!(
+            event_log
+                .events()
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| message
+                    .message
+                    .contains("Only one top-level `Writing:` item")))
+        );
     }
 }
 

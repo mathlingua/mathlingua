@@ -4,6 +4,8 @@ use super::*;
 pub(in crate::backend::view) struct RenderRegistry {
     /// Map from canonical command signature to the rendering data for that command.
     pub(super) commands: HashMap<String, CommandRender>,
+    /// Collection-wide aliases for rendering plain names as LaTeX fragments.
+    pub(super) writing: HashMap<String, String>,
     /// Whether resolved command renderings should carry clickable reference keys.
     pub(super) link_references: bool,
 }
@@ -39,6 +41,12 @@ pub(in crate::backend::view) fn build_render_registry(
 
     for file in files {
         for item in &file.document.items {
+            collect_writing_aliases(item, &mut registry);
+        }
+    }
+
+    for file in files {
+        for item in &file.document.items {
             for entry in render_entries(item) {
                 registry.commands.insert(entry.signature, entry.render);
             }
@@ -46,6 +54,18 @@ pub(in crate::backend::view) fn build_render_registry(
     }
 
     registry
+}
+
+fn collect_writing_aliases(item: &TopLevelItem, registry: &mut RenderRegistry) {
+    let TopLevelItem::Writing(group) = item else {
+        return;
+    };
+
+    for alias in &group.writing.arguments {
+        if let FormOrDeclarationKind::Name(name) = &alias.form.kind {
+            registry.writing.insert(name.clone(), alias.body.clone());
+        }
+    }
 }
 
 pub(in crate::backend::view) fn build_linked_render_registry(
@@ -138,7 +158,7 @@ pub(in crate::backend::view) fn render_group_heading_latex(
         return Some(latex);
     }
 
-    let substitutions = command_header_substitutions(&header);
+    let substitutions = command_header_substitutions(&header, registry);
 
     Some(render.render_called(&substitutions))
 }
@@ -152,12 +172,13 @@ pub(super) fn render_refines_group_heading_latex(
     let CommandHeader::Refined(refined_header) = header else {
         return None;
     };
-    let refinement_latex = refinement_render.render_called(&command_header_substitutions(header));
+    let refinement_latex =
+        refinement_render.render_called(&command_header_substitutions(header, registry));
     let base_signature = refined_command_header_base_signature(refined_header);
     let target_render = registry.commands.get(&base_signature)?;
     let target_latex = command_reference_latex(
         &base_signature,
-        target_render.render_called(&command_header_substitutions(header)),
+        target_render.render_called(&command_header_substitutions(header, registry)),
         registry,
     );
 
@@ -185,7 +206,7 @@ pub(super) fn render_parsed_formulation_latex(
 
     parse_form_or_declaration(text)
         .ok()
-        .map(|form| render_form_or_declaration(&form))
+        .map(|form| render_form_or_declaration(&form, registry))
 }
 
 pub(super) struct RenderEntry {

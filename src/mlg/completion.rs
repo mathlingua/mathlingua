@@ -38,113 +38,262 @@ struct GroupSpec {
 // (Kept inline in each spec for clarity rather than concatenated at runtime.)
 
 const GROUPS: &[GroupSpec] = &[
-    GroupSpec { head: "Title", sections: &[("Title", true), ("Id", false)] },
-    GroupSpec { head: "SectionTitle", sections: &[("SectionTitle", true), ("Id", false)] },
-    GroupSpec { head: "SubsectionTitle", sections: &[("SubsectionTitle", true), ("Id", false)] },
-    GroupSpec { head: "Text", sections: &[("Text", true), ("Id", false)] },
+    GroupSpec {
+        head: "Title",
+        sections: &[("Title", true), ("Id", false)],
+    },
+    GroupSpec {
+        head: "SectionTitle",
+        sections: &[("SectionTitle", true), ("Id", false)],
+    },
+    GroupSpec {
+        head: "SubsectionTitle",
+        sections: &[("SubsectionTitle", true), ("Id", false)],
+    },
+    GroupSpec {
+        head: "Text",
+        sections: &[("Text", true), ("Id", false)],
+    },
+    GroupSpec {
+        head: "Writing",
+        sections: &[("Writing", true), ("Id", false)],
+    },
     GroupSpec {
         head: "Describes",
         sections: &[
-            ("Describes", true), ("using", false), ("when", false), ("extends", false),
-            ("specifies", false), ("satisfies", false), ("Requires", false), ("Enables", false),
-            ("Justified", false), ("Documented", false), ("Aliases", false), ("References", false),
-            ("Metadata", false), ("Id", false),
+            ("Describes", true),
+            ("using", false),
+            ("when", false),
+            ("extends", false),
+            ("specifies", false),
+            ("satisfies", false),
+            ("Requires", false),
+            ("Enables", false),
+            ("Justified", false),
+            ("Documented", false),
+            ("Aliases", false),
+            ("References", false),
+            ("Metadata", false),
+            ("Id", false),
         ],
     },
     GroupSpec {
         head: "Defines",
         sections: &[
-            ("Defines", true), ("using", false), ("when", false), ("expresses", false),
-            ("Requires", false), ("Enables", false), ("Justified", false), ("Documented", false),
-            ("Aliases", false), ("References", false), ("Metadata", false), ("Id", false),
+            ("Defines", true),
+            ("using", false),
+            ("when", false),
+            ("expresses", false),
+            ("Requires", false),
+            ("Enables", false),
+            ("Justified", false),
+            ("Documented", false),
+            ("Aliases", false),
+            ("References", false),
+            ("Metadata", false),
+            ("Id", false),
         ],
     },
     GroupSpec {
         head: "Refines",
         sections: &[
-            ("Refines", true), ("using", false), ("when", false), ("extends", false),
-            ("satisfies", false), ("Requires", false), ("Enables", false), ("Justified", false),
-            ("Documented", false), ("Aliases", false), ("References", false), ("Metadata", false),
+            ("Refines", true),
+            ("using", false),
+            ("when", false),
+            ("extends", false),
+            ("satisfies", false),
+            ("Requires", false),
+            ("Enables", false),
+            ("Justified", false),
+            ("Documented", false),
+            ("Aliases", false),
+            ("References", false),
+            ("Metadata", false),
             ("Id", false),
         ],
     },
     GroupSpec {
         head: "States",
         sections: &[
-            ("States", true), ("using", false), ("when", false), ("that", true),
-            ("Requires", false), ("Enables", false), ("Justified", false), ("Documented", false),
-            ("Aliases", false), ("References", false), ("Metadata", false), ("Id", false),
+            ("States", true),
+            ("using", false),
+            ("when", false),
+            ("that", true),
+            ("Requires", false),
+            ("Enables", false),
+            ("Justified", false),
+            ("Documented", false),
+            ("Aliases", false),
+            ("References", false),
+            ("Metadata", false),
+            ("Id", false),
         ],
     },
-    GroupSpec { head: "Axiom", sections: THEOREM_LIKE_AXIOM },
-    GroupSpec { head: "Theorem", sections: THEOREM_LIKE_THEOREM },
-    GroupSpec { head: "Lemma", sections: THEOREM_LIKE_LEMMA },
-    GroupSpec { head: "Conjecture", sections: THEOREM_LIKE_CONJECTURE },
+    GroupSpec {
+        head: "Axiom",
+        sections: THEOREM_LIKE_AXIOM,
+    },
+    GroupSpec {
+        head: "Theorem",
+        sections: THEOREM_LIKE_THEOREM,
+    },
+    GroupSpec {
+        head: "Lemma",
+        sections: THEOREM_LIKE_LEMMA,
+    },
+    GroupSpec {
+        head: "Conjecture",
+        sections: THEOREM_LIKE_CONJECTURE,
+    },
     GroupSpec {
         head: "Corollary",
         sections: &[
-            ("Corollary", true), ("of", true), ("given", false), ("where", false),
-            ("then", true), ("iff", false), ("Justified", false), ("Documented", false),
-            ("Aliases", false), ("References", false), ("Metadata", false), ("Id", false),
+            ("Corollary", true),
+            ("of", true),
+            ("given", false),
+            ("where", false),
+            ("then", true),
+            ("iff", false),
+            ("Justified", false),
+            ("Documented", false),
+            ("Aliases", false),
+            ("References", false),
+            ("Metadata", false),
+            ("Id", false),
         ],
     },
     GroupSpec {
         head: "Disambiguates",
         sections: &[
-            ("Disambiguates", true), ("when", false), ("to", false), ("else", false),
-            ("Justified", false), ("Documented", false), ("Aliases", false), ("References", false),
-            ("Metadata", false), ("Id", false),
+            ("Disambiguates", true),
+            ("when", false),
+            ("to", false),
+            ("else", false),
+            ("Justified", false),
+            ("Documented", false),
+            ("Aliases", false),
+            ("References", false),
+            ("Metadata", false),
+            ("Id", false),
         ],
     },
     GroupSpec {
         head: "Person",
-        sections: &[("Person", true), ("name", true), ("biography", true), ("Id", false)],
+        sections: &[
+            ("Person", true),
+            ("name", true),
+            ("biography", true),
+            ("Id", false),
+        ],
     },
-    GroupSpec { head: "Resource", sections: &[("Resource", true), ("Id", false)] },
-    GroupSpec { head: "Specify", sections: &[("Specify", true), ("Id", false)] },
+    GroupSpec {
+        head: "Resource",
+        sections: &[("Resource", true), ("Id", false)],
+    },
+    GroupSpec {
+        head: "Specify",
+        sections: &[("Specify", true), ("Id", false)],
+    },
 ];
 
 // `Axiom`/`Theorem`/`Lemma`/`Conjecture` share one shape (see
 // `parse_argument_theorem_like`) differing only in the head label.
 const THEOREM_LIKE_AXIOM: &[Section] = &[
-    ("Axiom", true), ("given", false), ("where", false), ("then", true), ("iff", false),
-    ("Justified", false), ("Documented", false), ("Aliases", false), ("References", false),
-    ("Metadata", false), ("Id", false),
+    ("Axiom", true),
+    ("given", false),
+    ("where", false),
+    ("then", true),
+    ("iff", false),
+    ("Justified", false),
+    ("Documented", false),
+    ("Aliases", false),
+    ("References", false),
+    ("Metadata", false),
+    ("Id", false),
 ];
 const THEOREM_LIKE_THEOREM: &[Section] = &[
-    ("Theorem", true), ("given", false), ("where", false), ("then", true), ("iff", false),
-    ("Justified", false), ("Documented", false), ("Aliases", false), ("References", false),
-    ("Metadata", false), ("Id", false),
+    ("Theorem", true),
+    ("given", false),
+    ("where", false),
+    ("then", true),
+    ("iff", false),
+    ("Justified", false),
+    ("Documented", false),
+    ("Aliases", false),
+    ("References", false),
+    ("Metadata", false),
+    ("Id", false),
 ];
 const THEOREM_LIKE_LEMMA: &[Section] = &[
-    ("Lemma", true), ("given", false), ("where", false), ("then", true), ("iff", false),
-    ("Justified", false), ("Documented", false), ("Aliases", false), ("References", false),
-    ("Metadata", false), ("Id", false),
+    ("Lemma", true),
+    ("given", false),
+    ("where", false),
+    ("then", true),
+    ("iff", false),
+    ("Justified", false),
+    ("Documented", false),
+    ("Aliases", false),
+    ("References", false),
+    ("Metadata", false),
+    ("Id", false),
 ];
 const THEOREM_LIKE_CONJECTURE: &[Section] = &[
-    ("Conjecture", true), ("given", false), ("where", false), ("then", true), ("iff", false),
-    ("Justified", false), ("Documented", false), ("Aliases", false), ("References", false),
-    ("Metadata", false), ("Id", false),
+    ("Conjecture", true),
+    ("given", false),
+    ("where", false),
+    ("then", true),
+    ("iff", false),
+    ("Justified", false),
+    ("Documented", false),
+    ("Aliases", false),
+    ("References", false),
+    ("Metadata", false),
+    ("Id", false),
 ];
 
 /// Clause groups that may start inside a clause-valued section (`when:`,
 /// `then:`, `satisfies:`, ...). Mirrors the clause dispatcher in the parser.
 const CLAUSE_STARTERS: &[&str] = &[
-    "not", "allOf", "anyOf", "oneOf", "exists", "existsUnique", "forAll", "if", "iff", "piecewise",
+    "not",
+    "allOf",
+    "anyOf",
+    "oneOf",
+    "exists",
+    "existsUnique",
+    "forAll",
+    "if",
+    "iff",
+    "piecewise",
     "given",
 ];
 
 /// Sections whose bullets contain clauses, so a bullet there can start a clause
 /// group.
 const CLAUSE_SECTIONS: &[&str] = &[
-    "when", "then", "where", "iff", "satisfies", "suchThat", "that", "means", "expresses",
+    "when",
+    "then",
+    "where",
+    "iff",
+    "satisfies",
+    "suchThat",
+    "that",
+    "means",
+    "expresses",
 ];
 
 /// For sections whose bullets contain typed item groups, the group labels that
 /// can start there. Mirrors the per-section item dispatchers in the parser.
 fn item_starters(section: &str) -> Option<&'static [&'static str]> {
     Some(match section {
-        "Documented" => &["written", "called", "adjective", "writing", "overview", "related", "discoverer"],
+        "Documented" => &[
+            "written",
+            "called",
+            "adjective",
+            "writing",
+            "overview",
+            "related",
+            "discoverer",
+        ],
         "Enables" => &["capability", "from", "viewable", "connection"],
         "Requires" => &["capability", "definition"],
         "Justified" => &["label", "by"],
@@ -162,24 +311,63 @@ fn item_starters(section: &str) -> Option<&'static [&'static str]> {
 const NESTED_GROUPS: &[(&str, &[Section])] = &[
     // clause groups
     ("exists", &[("exists", true), ("suchThat", false)]),
-    ("existsUnique", &[("existsUnique", true), ("suchThat", false)]),
-    ("forAll", &[("forAll", true), ("where", false), ("then", true)]),
+    (
+        "existsUnique",
+        &[("existsUnique", true), ("suchThat", false)],
+    ),
+    (
+        "forAll",
+        &[("forAll", true), ("where", false), ("then", true)],
+    ),
     ("if", &[("if", true), ("then", true)]),
     ("iff", &[("iff", true), ("then", true)]),
-    ("piecewise", &[("piecewise", true), ("if", true), ("then", true), ("else", false)]),
-    ("given", &[("given", true), ("where", false), ("then", true)]),
+    (
+        "piecewise",
+        &[
+            ("piecewise", true),
+            ("if", true),
+            ("then", true),
+            ("else", false),
+        ],
+    ),
+    (
+        "given",
+        &[("given", true), ("where", false), ("then", true)],
+    ),
     // item groups
     ("alias", &[("alias", true), ("written", false)]),
     ("capability", &[("capability", true), ("written", false)]),
-    ("from", &[("from", true), ("capability", false), ("as", false), ("written", false)]),
-    ("viewable", &[("viewable", true), ("as", true), ("states", false)]),
-    ("connection", &[
-        ("connection", true), ("to", true), ("using", false), ("means", true),
-        ("signifies", false), ("viewable", false), ("through", false),
-    ]),
+    (
+        "from",
+        &[
+            ("from", true),
+            ("capability", false),
+            ("as", false),
+            ("written", false),
+        ],
+    ),
+    (
+        "viewable",
+        &[("viewable", true), ("as", true), ("states", false)],
+    ),
+    (
+        "connection",
+        &[
+            ("connection", true),
+            ("to", true),
+            ("using", false),
+            ("means", true),
+            ("signifies", false),
+            ("viewable", false),
+            ("through", false),
+        ],
+    ),
     ("called", &[("called", true), ("written", false)]),
     ("writing", &[("writing", true), ("as", true)]),
-    ("label", &[("label", true), ("by", false), ("comment", false)]),
+    (
+        "label",
+        &[("label", true), ("by", false), ("comment", false)],
+    ),
     ("by", &[("by", true), ("comment", false)]),
     ("zero", &[("zero", true), ("is", true)]),
 ];
@@ -193,7 +381,10 @@ fn sections_for(head: &str) -> Option<&'static [Section]> {
     if let Some(g) = group_spec(head) {
         return Some(g.sections);
     }
-    NESTED_GROUPS.iter().find(|(h, _)| *h == head).map(|(_, s)| *s)
+    NESTED_GROUPS
+        .iter()
+        .find(|(h, _)| *h == head)
+        .map(|(_, s)| *s)
 }
 
 /// All top-level group head labels (used when starting a fresh item).
@@ -326,7 +517,10 @@ fn section_completions(lines: &[&str], line: usize, before: &str) -> Vec<Complet
     let indent = indent_of(before);
     let prefix = before.trim_start();
     // Only a bare indent or a partial section name is a section context.
-    if !prefix.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+    if !prefix
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_')
+    {
         return Vec::new();
     }
 

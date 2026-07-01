@@ -4,10 +4,10 @@ pub(super) fn render_declaration_statement(
     statement: &DeclarationStatement,
     registry: &RenderRegistry,
 ) -> String {
-    let mut rendered = render_is_subject(&statement.subject);
+    let mut rendered = render_is_subject(&statement.subject, registry);
     if let Some(expansion) = &statement.expansion {
         rendered.push_str(" ::= ");
-        rendered.push_str(&render_is_subject(expansion));
+        rendered.push_str(&render_is_subject(expansion, registry));
     }
     if let Some(definition) = &statement.definition {
         rendered.push_str(" := ");
@@ -26,9 +26,9 @@ pub(super) fn render_is_via_statement(
 ) -> String {
     format!(
         "{} \\textrm{{ is }} {} \\textrm{{ via }} {}",
-        render_is_subject(&statement.is_statement.subject),
+        render_is_subject(&statement.is_statement.subject, registry),
         render_type_expression(&statement.is_statement.ty, registry),
-        render_form_or_declaration(&statement.via)
+        render_form_or_declaration(&statement.via, registry)
     )
 }
 
@@ -57,13 +57,13 @@ fn render_declaration_relation(
     }
 }
 
-pub(super) fn render_is_subject(subject: &IsSubject) -> String {
+pub(super) fn render_is_subject(subject: &IsSubject, registry: &RenderRegistry) -> String {
     match &subject.kind {
         IsSubjectKind::Forms(forms) => forms
             .iter()
             .map(|form| match form {
-                IsSubjectForm::Form(form) => render_form_or_declaration(form),
-                IsSubjectForm::PlaceholderForm(form) => render_placeholder_form(form),
+                IsSubjectForm::Form(form) => render_form_or_declaration(form, registry),
+                IsSubjectForm::PlaceholderForm(form) => render_placeholder_form(form, registry),
             })
             .collect::<Vec<_>>()
             .join(", "),
@@ -71,26 +71,27 @@ pub(super) fn render_is_subject(subject: &IsSubject) -> String {
     }
 }
 
-pub(super) fn render_form_or_declaration(form: &FormOrDeclaration) -> String {
+pub(super) fn render_form_or_declaration(
+    form: &FormOrDeclaration,
+    registry: &RenderRegistry,
+) -> String {
     match &form.kind {
-        FormOrDeclarationKind::Name(name) => escape_math_identifier(name),
+        FormOrDeclarationKind::Name(name) => escape_math_identifier(name, registry),
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
             let name = name.as_ref().unwrap_or(&form.name);
-            let args = form
-                .magnetic_placeholder
-                .iter()
-                .map(|placeholder| render_form_placeholder_name(&placeholder.name))
-                .chain(
-                    form.placeholders
-                        .iter()
-                        .map(|placeholder| render_form_placeholder_name(&placeholder.name)),
-                )
-                .collect::<Vec<_>>()
-                .join(", ");
+            let args =
+                form.magnetic_placeholder
+                    .iter()
+                    .map(|placeholder| render_form_placeholder_name(&placeholder.name, registry))
+                    .chain(form.placeholders.iter().map(|placeholder| {
+                        render_form_placeholder_name(&placeholder.name, registry)
+                    }))
+                    .collect::<Vec<_>>()
+                    .join(", ");
             if args.is_empty() {
-                escape_math_identifier(name)
+                escape_math_identifier(name, registry)
             } else {
-                format!("{}({})", escape_math_identifier(name), args)
+                format!("{}({})", escape_math_identifier(name, registry), args)
             }
         }
         FormOrDeclarationKind::TupleDeclaration { name, form } => {
@@ -98,7 +99,7 @@ pub(super) fn render_form_or_declaration(form: &FormOrDeclaration) -> String {
                 .elements
                 .iter()
                 .map(|element| match element {
-                    TupleFormElement::Form(form) => render_form_or_declaration(form),
+                    TupleFormElement::Form(form) => render_form_or_declaration(form, registry),
                     TupleFormElement::Operator(operator) => render_operator_text(&operator.text),
                 })
                 .collect::<Vec<_>>()
@@ -106,20 +107,20 @@ pub(super) fn render_form_or_declaration(form: &FormOrDeclaration) -> String {
             match name {
                 Some(name) => format!(
                     "{} ::= \\left({rendered}\\right)",
-                    escape_math_identifier(name)
+                    escape_math_identifier(name, registry)
                 ),
                 None => format!("\\left({rendered}\\right)"),
             }
         }
         FormOrDeclarationKind::SetDeclaration { name, form } => {
-            let placeholder = render_placeholder_form(&form.placeholder_form);
+            let placeholder = render_placeholder_form(&form.placeholder_form, registry);
             let rendered = if form.has_condition_placeholder {
                 format!("\\left\\{{{} \\: : \\: \\ldots\\right\\}}", placeholder)
             } else {
                 format!("\\left\\{{{}\\right\\}}", placeholder)
             };
             match name {
-                Some(name) => format!("{} ::= {rendered}", escape_math_identifier(name)),
+                Some(name) => format!("{} ::= {rendered}", escape_math_identifier(name, registry)),
                 None => rendered,
             }
         }
@@ -129,9 +130,9 @@ pub(super) fn render_form_or_declaration(form: &FormOrDeclaration) -> String {
             right,
         } => format!(
             "{} {} {}",
-            render_form_placeholder_name(&left.name),
+            render_form_placeholder_name(&left.name, registry),
             render_operator_text(&operator.text),
-            render_form_placeholder_name(&right.name)
+            render_form_placeholder_name(&right.name, registry)
         ),
         FormOrDeclarationKind::PrefixOperator {
             operator,
@@ -139,14 +140,14 @@ pub(super) fn render_form_or_declaration(form: &FormOrDeclaration) -> String {
         } => format!(
             "{}{}",
             render_operator_text(&operator.text),
-            render_form_placeholder_name(&placeholder.name)
+            render_form_placeholder_name(&placeholder.name, registry)
         ),
         FormOrDeclarationKind::PostfixOperator {
             placeholder,
             operator,
         } => format!(
             "{}{}",
-            render_form_placeholder_name(&placeholder.name),
+            render_form_placeholder_name(&placeholder.name, registry),
             render_operator_text(&operator.text)
         ),
     }
@@ -233,7 +234,7 @@ fn render_function_type_spec(spec: &FunctionTypeSpec, registry: &RenderRegistry)
         FunctionTypeSpecKind::Spec { operator, target } => format!(
             "\\_ {} {}",
             render_quoted_operator(operator),
-            escape_math_identifier(target)
+            escape_math_identifier(target, registry)
         ),
     }
 }

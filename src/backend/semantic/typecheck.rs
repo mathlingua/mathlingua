@@ -844,6 +844,7 @@ fn validate_top_level_item_types(
         | TopLevelItem::SectionTitle(_)
         | TopLevelItem::SubsectionTitle(_)
         | TopLevelItem::Text(_)
+        | TopLevelItem::Writing(_)
         | TopLevelItem::Person(_)
         | TopLevelItem::Resource(_) => {}
     }

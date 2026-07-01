@@ -2242,6 +2242,7 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
             parse_subsection_title(group, tracker).map(TopLevelItem::SubsectionTitle)
         }
         "Text" => parse_text_group(group, tracker).map(TopLevelItem::Text),
+        "Writing" => parse_top_level_writing(group, tracker).map(TopLevelItem::Writing),
         "Disambiguates" => parse_disambiguates(group, tracker).map(TopLevelItem::Disambiguates),
         "Describes" => parse_describes(group, tracker).map(TopLevelItem::Describes),
         "Defines" => parse_defines(group, tracker).map(TopLevelItem::Defines),
@@ -2351,6 +2352,40 @@ pub(in crate::frontend::structural::parser) fn parse_text_group(
         text: TextSection {
             argument: parse_required_open_text(section(&sections, "Text")?, "Text", tracker)?,
         },
+    })
+}
+
+/// Parses a collection-wide `Writing:` group.
+///
+/// These aliases are intentionally narrower than documented `writing:` groups:
+/// each entry must map one plain name to the LaTeX used to render that name.
+pub(in crate::frontend::structural::parser) fn parse_top_level_writing(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<TopLevelWritingGroup> {
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections("Writing", &group.sections, tracker, &["Writing", "Id?"])?;
+    let writing_section = section(&sections, "Writing")?;
+    let arguments =
+        parse_required_formulations(writing_section, "Writing", tracker, parse_writing_alias)?;
+
+    let mut all_names = true;
+    for alias in &arguments {
+        if !matches!(alias.form.kind, FormOrDeclarationKind::Name(_)) {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                writing_section.metadata.row,
+                "Writing aliases must use a name on the left of `:~>`",
+            );
+            all_names = false;
+        }
+    }
+    if !all_names {
+        return None;
+    }
+
+    Some(TopLevelWritingGroup {
+        writing: TopLevelWritingSection { arguments },
     })
 }
 
@@ -4597,6 +4632,44 @@ with another paragraph."
             }
             other => panic!("expected text group, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn parses_top_level_writing_groups() {
+        let document = parse_ok(
+            r#"
+Writing:
+. alpha :~> \alpha
+. beta :~> \beta
+"#,
+        );
+
+        let TopLevelItem::Writing(group) = &document.items[0] else {
+            panic!("expected writing group, got {:?}", document.items[0]);
+        };
+        assert_eq!(group.writing.arguments.len(), 2);
+        assert_eq!(group.writing.arguments[0].body, r#"\alpha"#);
+        assert!(matches!(
+            group.writing.arguments[0].form.kind,
+            FormOrDeclarationKind::Name(ref name) if name == "alpha"
+        ));
+    }
+
+    #[test]
+    fn rejects_top_level_writing_aliases_with_non_name_lhs() {
+        let (document, messages) = parse_with_diagnostics(
+            r#"
+Writing:
+. f(x_) :~> x
+"#,
+        );
+
+        assert!(document.items.is_empty());
+        assert!(messages.iter().any(|event| {
+            event
+                .as_message()
+                .is_some_and(|message| message.message.contains("Writing aliases must use a name"))
+        }));
     }
 
     // ===============================[ theorems ]=====================================

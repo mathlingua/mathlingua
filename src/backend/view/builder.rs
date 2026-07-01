@@ -75,6 +75,7 @@ fn build_file_view(
         items: groups
             .into_iter()
             .zip(group_sources)
+            .filter(|(group, _)| first_group_label(group) != Some("Writing"))
             .map(|(group, source)| group_view(group, source, registry))
             .collect(),
     })
@@ -128,6 +129,10 @@ fn source_for_groups(source: &str, groups: &[ProtoGroup]) -> Vec<String> {
 fn is_trailing_source_gap(line: &str) -> bool {
     let trimmed = line.trim_start();
     trimmed.is_empty() || trimmed.starts_with("--")
+}
+
+fn first_group_label(group: &ProtoGroup) -> Option<&str> {
+    group.sections.first().map(|section| section.label.as_str())
 }
 
 fn group_view(group: ProtoGroup, source: String, registry: &RenderRegistry) -> GroupView {
@@ -207,10 +212,7 @@ fn render_section_inline_latex(
         .or_else(|| render_formulation_latex(text, registry))
 }
 
-fn render_documented_template_argument(
-    kind: DocumentedRenderKind,
-    text: &str,
-) -> Option<String> {
+fn render_documented_template_argument(kind: DocumentedRenderKind, text: &str) -> Option<String> {
     let template = strip_quoted_text(text)?;
     let label = match kind {
         DocumentedRenderKind::Called => "called",

@@ -412,6 +412,33 @@ fn renders_trailing_digits_in_names_as_subscripts() {
 }
 
 #[test]
+fn renders_names_with_collection_writing_aliases() {
+    let registry = registry_for(
+        r#"Writing:
+. alpha :~> \alpha
+. beta :~> \beta
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex("alpha", &registry),
+        Some(r#"\alpha"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("alpha_1", &registry),
+        Some(r#"\alpha_1"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("alpha_beta", &registry),
+        Some(r#"\alpha_{\beta}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("alpha123 + beta2", &registry),
+        Some(r#"\alpha_{123} + \beta_2"#.to_string())
+    );
+}
+
+#[test]
 fn renders_tuple_declarations_with_operator_symbols() {
     let registry = registry_for("");
 

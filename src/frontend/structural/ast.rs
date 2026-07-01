@@ -272,6 +272,7 @@ argument_section!(TitleSection, OpenText);
 argument_section!(SectionTitleSection, OpenText);
 argument_section!(SubsectionTitleSection, OpenText);
 argument_section!(TextSection, OpenText);
+arguments_section!(TopLevelWritingSection, WritingAlias);
 
 // ===============================[ items ]=====================================
 
@@ -287,6 +288,7 @@ pub enum TopLevelItem {
     SectionTitle(SectionTitleGroup),
     SubsectionTitle(SubsectionTitleGroup),
     Text(TextGroup),
+    Writing(TopLevelWritingGroup),
     Disambiguates(DisambiguatesGroup),
     Describes(DescribesGroup),
     Defines(DefinesGroup),
@@ -427,6 +429,11 @@ pub struct SubsectionTitleGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TextGroup {
     pub text: TextSection,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TopLevelWritingGroup {
+    pub writing: TopLevelWritingSection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

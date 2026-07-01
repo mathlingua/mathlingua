@@ -30,13 +30,13 @@ pub(super) fn render_quoted_operator(operator: &str) -> String {
     format!("\\{}", escape_latex_command_name(operator))
 }
 
-pub(super) fn render_subset_call(call: &SubsetCall) -> String {
+pub(super) fn render_subset_call(call: &SubsetCall, registry: &RenderRegistry) -> String {
     match call {
         SubsetCall::One { target, first, .. } => {
             format!(
                 "{}[{}]",
-                escape_math_identifier(target),
-                escape_math_identifier(first)
+                escape_math_identifier(target, registry),
+                escape_math_identifier(first, registry)
             )
         }
         SubsetCall::Two {
@@ -46,9 +46,9 @@ pub(super) fn render_subset_call(call: &SubsetCall) -> String {
             ..
         } => format!(
             "{}[{}, {}]",
-            escape_math_identifier(target),
-            escape_math_identifier(first),
-            escape_math_identifier(second)
+            escape_math_identifier(target, registry),
+            escape_math_identifier(first, registry),
+            escape_math_identifier(second, registry)
         ),
         SubsetCall::Nested {
             target,
@@ -57,17 +57,17 @@ pub(super) fn render_subset_call(call: &SubsetCall) -> String {
             ..
         } => format!(
             "{}[{}[{}]]",
-            escape_math_identifier(target),
-            escape_math_identifier(outer),
-            escape_math_identifier(inner_target)
+            escape_math_identifier(target, registry),
+            escape_math_identifier(outer, registry),
+            escape_math_identifier(inner_target, registry)
         ),
     }
 }
 
-pub(super) fn render_placeholder_form(form: &PlaceholderForm) -> String {
+pub(super) fn render_placeholder_form(form: &PlaceholderForm, registry: &RenderRegistry) -> String {
     match &form.kind {
         PlaceholderFormKind::Placeholder(placeholder) => {
-            render_form_placeholder_name(&placeholder.name)
+            render_form_placeholder_name(&placeholder.name, registry)
         }
         PlaceholderFormKind::Function {
             placeholder,
@@ -75,22 +75,22 @@ pub(super) fn render_placeholder_form(form: &PlaceholderForm) -> String {
         } => {
             let arguments = arguments
                 .iter()
-                .map(|argument| render_form_placeholder_name(&argument.name))
+                .map(|argument| render_form_placeholder_name(&argument.name, registry))
                 .collect::<Vec<_>>()
                 .join(", ");
             format!(
                 "{}({arguments})",
-                render_form_placeholder_name(&placeholder.name)
+                render_form_placeholder_name(&placeholder.name, registry)
             )
         }
     }
 }
 
-pub(super) fn render_form_placeholder_name(name: &str) -> String {
+pub(super) fn render_form_placeholder_name(name: &str, registry: &RenderRegistry) -> String {
     let trimmed = name.trim_end_matches('_');
     if trimmed.is_empty() {
-        escape_math_identifier(name)
+        escape_math_identifier(name, registry)
     } else {
-        escape_math_identifier(trimmed)
+        escape_math_identifier(trimmed, registry)
     }
 }

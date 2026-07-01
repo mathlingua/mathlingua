@@ -230,12 +230,15 @@ pub(super) fn command_substitutions_for_names(
     names.iter().cloned().zip(values).collect()
 }
 
-pub(super) fn command_header_substitutions(header: &CommandHeader) -> HashMap<String, String> {
+pub(super) fn command_header_substitutions(
+    header: &CommandHeader,
+    registry: &RenderRegistry,
+) -> HashMap<String, String> {
     let mut substitutions = HashMap::new();
 
     for form in command_header_forms(header) {
         if let Some(name) = primary_form_name(form) {
-            substitutions.insert(name, render_form_or_declaration(form));
+            substitutions.insert(name, render_form_or_declaration(form, registry));
         }
     }
 

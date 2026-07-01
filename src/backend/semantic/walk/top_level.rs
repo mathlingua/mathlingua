@@ -128,6 +128,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
         | TopLevelItem::SectionTitle(_)
         | TopLevelItem::SubsectionTitle(_)
         | TopLevelItem::Text(_)
+        | TopLevelItem::Writing(_)
         | TopLevelItem::Person(_)
         | TopLevelItem::Resource(_) => {}
     }

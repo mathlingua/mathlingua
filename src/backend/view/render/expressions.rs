@@ -2,14 +2,14 @@ use super::*;
 
 pub(super) fn render_expression(expression: &Expression, registry: &RenderRegistry) -> String {
     match &expression.kind {
-        ExpressionKind::Name(name) => escape_math_identifier(name),
+        ExpressionKind::Name(name) => escape_math_identifier(name, registry),
         ExpressionKind::FunctionCall { name, arguments } => {
             let args = arguments
                 .iter()
                 .map(|argument| render_expression(argument, registry))
                 .collect::<Vec<_>>()
                 .join(", ");
-            format!("{}({})", escape_math_identifier(name), args)
+            format!("{}({})", escape_math_identifier(name, registry), args)
         }
         ExpressionKind::FunctionNamedCall { name, elements } => {
             let args = elements
@@ -17,7 +17,7 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 .map(|element| render_expression(&element.expression, registry))
                 .collect::<Vec<_>>()
                 .join(", ");
-            format!("{}({})", escape_math_identifier(name), args)
+            format!("{}({})", escape_math_identifier(name, registry), args)
         }
         ExpressionKind::MemberCall {
             owner,
@@ -32,14 +32,14 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             format!(
                 "{}.{}({})",
                 render_expression(owner, registry),
-                escape_math_identifier(name),
+                escape_math_identifier(name, registry),
                 args
             )
         }
         ExpressionKind::MemberAccess { owner, name } => format!(
             "{}.{}",
             render_expression(owner, registry),
-            escape_math_identifier(name)
+            escape_math_identifier(name, registry)
         ),
         ExpressionKind::Tuple(elements) => {
             let values = elements
@@ -69,7 +69,7 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             }
         }
         ExpressionKind::Labeled { expression, .. } => render_expression(expression, registry),
-        ExpressionKind::SubsetCall(call) => render_subset_call(call),
+        ExpressionKind::SubsetCall(call) => render_subset_call(call, registry),
         ExpressionKind::Command(command) => render_command_expression(command, registry),
         ExpressionKind::InfixCommand {
             left,
@@ -178,7 +178,7 @@ pub(super) fn render_infix_spec_like(spec: &InfixSpec, registry: &RenderRegistry
 }
 
 pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegistry) -> String {
-    let target = render_set_target(&set.target);
+    let target = render_set_target(&set.target, registry);
     let spec = set
         .specs
         .iter()
@@ -195,30 +195,30 @@ pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegist
     }
 }
 
-pub(super) fn render_set_target(target: &SetTarget) -> String {
+pub(super) fn render_set_target(target: &SetTarget, registry: &RenderRegistry) -> String {
     match &target.kind {
-        SetTargetKind::Name(name) => escape_math_identifier(name),
-        SetTargetKind::PlaceholderForm(form) => render_placeholder_form(form),
+        SetTargetKind::Name(name) => escape_math_identifier(name, registry),
+        SetTargetKind::PlaceholderForm(form) => render_placeholder_form(form, registry),
         SetTargetKind::Alias { name, target } => {
             format!(
                 "{} := {}",
-                escape_math_identifier(name),
-                render_set_target(target)
+                escape_math_identifier(name, registry),
+                render_set_target(target, registry)
             )
         }
         SetTargetKind::Function { name, arguments } => {
             let arguments = arguments
                 .iter()
-                .map(render_set_target)
+                .map(|target| render_set_target(target, registry))
                 .collect::<Vec<_>>()
                 .join(", ");
-            format!("{}({arguments})", escape_math_identifier(name))
+            format!("{}({arguments})", escape_math_identifier(name, registry))
         }
         SetTargetKind::Tuple(elements) => {
             let elements = elements
                 .iter()
                 .map(|element| match element {
-                    SetTargetElement::Target(target) => render_set_target(target),
+                    SetTargetElement::Target(target) => render_set_target(target, registry),
                     SetTargetElement::Operator(operator) => render_operator_text(&operator.text),
                 })
                 .collect::<Vec<_>>()
@@ -236,7 +236,7 @@ pub(super) fn render_spec_statement(
         "{} {} {}",
         render_expression(&statement.subject, registry),
         render_quoted_operator(&statement.operator),
-        escape_math_identifier(&statement.name)
+        escape_math_identifier(&statement.name, registry)
     )
 }
 

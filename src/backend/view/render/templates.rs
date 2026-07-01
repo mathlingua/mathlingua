@@ -278,11 +278,12 @@ pub(super) fn render_written_display_template(template: &str) -> String {
 }
 
 fn render_template_placeholder_name(name: &str) -> String {
+    let registry = RenderRegistry::default();
     let trimmed = name.trim_end_matches('_');
     if trimmed.is_empty() {
-        escape_math_identifier(name)
+        escape_math_identifier(name, &registry)
     } else {
-        escape_math_identifier(trimmed)
+        escape_math_identifier(trimmed, &registry)
     }
 }
 

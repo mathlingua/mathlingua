@@ -22,7 +22,7 @@ pub(super) use registry::build_render_registry;
 use registry::*;
 pub(super) use registry::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
-    render_formulation_latex, render_group_heading_latex,
+    render_documented_text_latex, render_formulation_latex, render_group_heading_latex,
 };
 use signatures::*;
 use statements::*;

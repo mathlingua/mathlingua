@@ -81,6 +81,8 @@ export type ArgumentView =
       kind: "text";
       /** Text content after source quoting has been removed. */
       text: string;
+      /** Backend-rendered LaTeX for documented called/written text. */
+      latex: string | null;
     }
   | {
       /** Nested group arguments recursively contain rendered sections. */

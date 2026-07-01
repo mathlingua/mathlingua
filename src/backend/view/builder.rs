@@ -3,7 +3,7 @@ use super::model::{
 };
 use super::render::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
-    render_formulation_latex, render_group_heading_latex,
+    render_documented_text_latex, render_formulation_latex, render_group_heading_latex,
 };
 use crate::events::{Audience, Event, EventLog, Level};
 use crate::frontend::{
@@ -168,7 +168,8 @@ fn section_view(section: ProtoSection, registry: &RenderRegistry) -> SectionView
     let inline_latex = section
         .inline_argument
         .as_deref()
-        .and_then(|text| render_formulation_latex(text, registry));
+        .and_then(|text| render_section_inline_latex(&section.label, text, registry));
+    let render_kind = documented_render_kind(&section.label);
 
     SectionView {
         label: section.label,
@@ -177,9 +178,46 @@ fn section_view(section: ProtoSection, registry: &RenderRegistry) -> SectionView
         arguments: section
             .arguments
             .into_iter()
-            .map(|argument| argument_view(argument, registry))
+            .map(|argument| argument_view(argument, registry, render_kind))
             .collect(),
     }
+}
+
+#[derive(Clone, Copy)]
+enum DocumentedRenderKind {
+    Called,
+    Written,
+}
+
+fn documented_render_kind(label: &str) -> Option<DocumentedRenderKind> {
+    match label {
+        "called" => Some(DocumentedRenderKind::Called),
+        "written" => Some(DocumentedRenderKind::Written),
+        _ => None,
+    }
+}
+
+fn render_section_inline_latex(
+    label: &str,
+    text: &str,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    documented_render_kind(label)
+        .and_then(|kind| render_documented_template_argument(kind, text))
+        .or_else(|| render_formulation_latex(text, registry))
+}
+
+fn render_documented_template_argument(
+    kind: DocumentedRenderKind,
+    text: &str,
+) -> Option<String> {
+    let template = strip_quoted_text(text)?;
+    let label = match kind {
+        DocumentedRenderKind::Called => "called",
+        DocumentedRenderKind::Written => "written",
+    };
+
+    render_documented_text_latex(label, &template)
 }
 
 fn page_view(kind: &str, sections: &[ProtoSection]) -> Option<PageView> {
@@ -218,15 +256,24 @@ fn strip_quoted_text(input: &str) -> Option<String> {
     Some(input[1..input.len() - 1].to_string())
 }
 
-fn argument_view(argument: ProtoArgument, registry: &RenderRegistry) -> ArgumentView {
+fn argument_view(
+    argument: ProtoArgument,
+    registry: &RenderRegistry,
+    documented_render_kind: Option<DocumentedRenderKind>,
+) -> ArgumentView {
     match argument {
         ProtoArgument::Formulation(formulation) => ArgumentView::Formulation {
             latex: render_formulation_latex(&formulation.text, registry),
             text: formulation.text,
         },
-        ProtoArgument::Text(text) => ArgumentView::Text {
-            text: strip_quoted_text(&text.text).unwrap_or(text.text),
-        },
+        ProtoArgument::Text(text) => {
+            let latex = documented_render_kind
+                .and_then(|kind| render_documented_template_argument(kind, &text.text));
+            ArgumentView::Text {
+                text: strip_quoted_text(&text.text).unwrap_or(text.text),
+                latex,
+            }
+        }
         ProtoArgument::Group(group) => ArgumentView::Group {
             heading: group.heading,
             sections: group
@@ -243,6 +290,7 @@ fn argument_view(argument: ProtoArgument, registry: &RenderRegistry) -> Argument
 #[cfg(test)]
 mod tests {
     use super::build_collection_view;
+    use crate::backend::view::ArgumentView;
     use crate::events::EventLog;
     use crate::frontend::{
         ParsedSourceFile, SourceFileViewMetadata, parse_document, top_level_item_ids,
@@ -285,6 +333,53 @@ mod tests {
             view.files[0].items[0].heading_latex,
             Some(r"\textrm{set}".to_string())
         );
+        assert!(!event_log.has_errors());
+    }
+
+    #[test]
+    fn renders_documented_called_and_written_text_in_view_details() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("sets.mlg");
+        let source = r#"[\membership]
+Describes: X
+Documented:
+. called: "membership of $x_?$ in $X?$"
+. written: "x_? \in X?"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+            .expect("expected view");
+        let documented = view.files[0].items[0]
+            .sections
+            .iter()
+            .find(|section| section.label == "Documented")
+            .expect("expected documented section");
+        let ArgumentView::Group { sections, .. } = &documented.arguments[0] else {
+            panic!("expected called group");
+        };
+        assert_eq!(
+            sections[0].inline_latex,
+            Some(r#"\textrm{membership of }x\textrm{ in }X"#.to_string())
+        );
+        let ArgumentView::Group { sections, .. } = &documented.arguments[1] else {
+            panic!("expected written group");
+        };
+        assert_eq!(sections[0].inline_latex, Some(r#"x \in X"#.to_string()));
         assert!(!event_log.has_errors());
     }
 

@@ -55,6 +55,7 @@ pub enum ArgumentView {
     },
     Text {
         text: String,
+        latex: Option<String>,
     },
     Group {
         heading: Option<String>,

@@ -1,4 +1,7 @@
-use super::{build_render_registry, render_formulation_latex, render_group_heading_latex};
+use super::{
+    build_render_registry, render_documented_text_latex, render_formulation_latex,
+    render_group_heading_latex,
+};
 use crate::events::EventLog;
 use crate::frontend::{
     ParsedSourceFile, SourceFileViewMetadata, parse_document, top_level_item_ids,
@@ -33,6 +36,18 @@ Documented:
     assert_eq!(
         render_formulation_latex(r#"\empty.set"#, &registry),
         Some(r#"\emptyset"#.to_string())
+    );
+}
+
+#[test]
+fn renders_documented_text_for_view_details() {
+    assert_eq!(
+        render_documented_text_latex("called", r#"membership of $x_?$ in $X?$"#),
+        Some(r#"\textrm{membership of }x\textrm{ in }X"#.to_string())
+    );
+    assert_eq!(
+        render_documented_text_latex("written", r#"x_? \in X?"#),
+        Some(r#"x \in X"#.to_string())
     );
 }
 

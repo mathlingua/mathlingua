@@ -80,6 +80,17 @@ pub(in crate::backend::view) fn render_formulation_latex(
         .or_else(|| render_simple_set_spec_latex(text, registry))
 }
 
+pub(in crate::backend::view) fn render_documented_text_latex(
+    label: &str,
+    text: &str,
+) -> Option<String> {
+    match label {
+        "called" => Some(render_called_display_template(text)),
+        "written" => Some(render_written_display_template(text)),
+        _ => None,
+    }
+}
+
 pub(super) fn command_reference_latex(
     signature: &str,
     latex: String,

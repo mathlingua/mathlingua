@@ -46,7 +46,18 @@ export function ArgumentList({
             )
           ) : null}
           {argument.kind === "text" ? (
-            <p className={styles.textLine}>{argument.text}</p>
+            argument.latex ? (
+              <span
+                className={`${styles.textLine} ${styles.formulationLineLatex}`}
+              >
+                <LatexRenderer
+                  latex={argument.latex}
+                  onReferenceClick={onReferenceClick}
+                />
+              </span>
+            ) : (
+              <p className={styles.textLine}>{argument.text}</p>
+            )
           ) : null}
           {argument.kind === "group" ? (
             <div className={styles.nestedGroup}>

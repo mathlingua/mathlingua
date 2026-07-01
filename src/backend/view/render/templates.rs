@@ -40,6 +40,43 @@ pub(super) fn render_called_template(
     result
 }
 
+pub(super) fn render_called_display_template(template: &str) -> String {
+    let chars = template.chars().collect::<Vec<_>>();
+    let mut result = String::new();
+    let mut segment = String::new();
+    let mut in_math = false;
+    let mut index = 0;
+
+    while index < chars.len() {
+        if chars[index] == '$' {
+            flush_called_display_segment(&mut result, &mut segment, in_math);
+            in_math = !in_math;
+            index += 1;
+            continue;
+        }
+
+        if let Some(conditional) = parse_template_conditional(&chars, index) {
+            flush_called_display_segment(&mut result, &mut segment, in_math);
+            if let Some(branch) = selected_conditional_branch(&conditional, &HashMap::new()) {
+                if in_math {
+                    result.push_str(&render_written_display_template(branch));
+                } else {
+                    result.push_str(&render_called_display_template(branch));
+                }
+            }
+            index = conditional.end;
+            continue;
+        }
+
+        segment.push(chars[index]);
+        index += 1;
+    }
+
+    flush_called_display_segment(&mut result, &mut segment, in_math);
+
+    result
+}
+
 pub(super) fn join_called_latex_parts(parts: Vec<String>) -> String {
     parts
         .into_iter()
@@ -62,6 +99,19 @@ fn flush_called_segment(
         result.push_str(&substitute_math_template(segment, substitutions));
     } else {
         result.push_str(&substitute_called_text_segment(segment, substitutions));
+    }
+    segment.clear();
+}
+
+fn flush_called_display_segment(result: &mut String, segment: &mut String, in_math: bool) {
+    if segment.is_empty() {
+        return;
+    }
+
+    if in_math {
+        result.push_str(&render_written_display_template(segment));
+    } else {
+        result.push_str(&substitute_called_display_text_segment(segment));
     }
     segment.clear();
 }
@@ -91,6 +141,38 @@ fn substitute_called_text_segment(
                     continue;
                 }
                 text.push_str(&name);
+                index += 1;
+                continue;
+            }
+            text.extend(chars[start..index].iter());
+        } else {
+            text.push(chars[index]);
+            index += 1;
+        }
+    }
+
+    flush_called_text(&mut result, &mut text);
+
+    result
+}
+
+fn substitute_called_display_text_segment(segment: &str) -> String {
+    let mut result = String::new();
+    let mut text = String::new();
+    let chars = segment.chars().collect::<Vec<_>>();
+    let mut index = 0;
+
+    while index < chars.len() {
+        if is_placeholder_start(chars[index]) {
+            let start = index;
+            index += 1;
+            while index < chars.len() && is_placeholder_continue(chars[index]) {
+                index += 1;
+            }
+            if index < chars.len() && chars[index] == '?' {
+                let name = chars[start..index].iter().collect::<String>();
+                flush_called_text(&mut result, &mut text);
+                result.push_str(&render_template_placeholder_name(&name));
                 index += 1;
                 continue;
             }
@@ -157,6 +239,51 @@ pub(super) fn substitute_math_template(
     }
 
     result
+}
+
+pub(super) fn render_written_display_template(template: &str) -> String {
+    let mut result = String::new();
+    let chars = template.chars().collect::<Vec<_>>();
+    let mut index = 0;
+
+    while index < chars.len() {
+        if let Some(conditional) = parse_template_conditional(&chars, index) {
+            if let Some(branch) = selected_conditional_branch(&conditional, &HashMap::new()) {
+                result.push_str(&render_written_display_template(branch));
+            }
+            index = conditional.end;
+            continue;
+        }
+
+        if is_placeholder_start(chars[index]) {
+            let start = index;
+            index += 1;
+            while index < chars.len() && is_placeholder_continue(chars[index]) {
+                index += 1;
+            }
+            if index < chars.len() && chars[index] == '?' {
+                let name = chars[start..index].iter().collect::<String>();
+                result.push_str(&render_template_placeholder_name(&name));
+                index += 1;
+                continue;
+            }
+            result.extend(chars[start..index].iter());
+        } else {
+            result.push(chars[index]);
+            index += 1;
+        }
+    }
+
+    result
+}
+
+fn render_template_placeholder_name(name: &str) -> String {
+    let trimmed = name.trim_end_matches('_');
+    if trimmed.is_empty() {
+        escape_math_identifier(name)
+    } else {
+        escape_math_identifier(trimmed)
+    }
 }
 
 #[derive(Clone, Debug)]

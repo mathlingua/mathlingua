@@ -53,6 +53,15 @@ pub(in crate::backend::semantic) fn walk_optional_enables(
                 EnablesItem::Capability(group) => {
                     walk_alias_kind(&group.capability.argument, visit)
                 }
+                EnablesItem::FromCapability(group) => {
+                    walk_declaration_statement(&group.from.argument, visit);
+                    walk_alias_kind(&group.capability.argument, visit);
+                }
+                EnablesItem::FromAs(group) => {
+                    walk_declaration_statement(&group.from.argument, visit);
+                    walk_expression(&group.as_.argument.left, visit);
+                    walk_expression(&group.as_.argument.right, visit);
+                }
                 EnablesItem::Connection(group) => {
                     if let Some(using) = &group.using {
                         for statement in &using.arguments {

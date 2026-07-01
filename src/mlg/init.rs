@@ -84,7 +84,10 @@ mod tests {
     use crate::events::{Event, EventLog};
     use std::fs;
     use std::path::{Path, PathBuf};
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    static TEST_DIR_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
     #[test]
     fn init_creates_missing_config_and_content_directory() {
@@ -155,17 +158,24 @@ mod tests {
 
     impl TestDir {
         fn new() -> Self {
-            let unique = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_nanos();
-            let path = std::env::temp_dir().join(format!(
-                "mlg-init-test-{}-{}",
-                std::process::id(),
-                unique
-            ));
-            fs::create_dir(&path).unwrap();
-            Self { path }
+            loop {
+                let unique = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos();
+                let sequence = TEST_DIR_COUNTER.fetch_add(1, Ordering::Relaxed);
+                let path = std::env::temp_dir().join(format!(
+                    "mlg-init-test-{}-{}-{}",
+                    std::process::id(),
+                    unique,
+                    sequence
+                ));
+                match fs::create_dir(&path) {
+                    Ok(()) => return Self { path },
+                    Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+                    Err(error) => panic!("failed to create test directory {path:?}: {error}"),
+                }
+            }
         }
 
         fn path(&self) -> &Path {

@@ -202,6 +202,7 @@ Examples:
 
 - a top-level group whose first section is `Describes:` is parsed as `DescribesGroup`
 - a nested group inside `Enables:` whose first section is `capability:` is parsed as `CapabilityGroup`
+- a nested group inside `Enables:` whose first section is `from:` is parsed as a cast-backed enables group
 - a clause group whose first section is `if:` is parsed as `IfGroup`
 
 The heading is then validated according to that group kind.
@@ -321,7 +322,11 @@ Used inside `Enables:`.
 | First section label | AST node | Heading | Ordered sections |
 | --- | --- | --- | --- |
 | `capability` | `CapabilityGroup` | label? | `capability: AliasKind`, `written?: WrittenText+` |
+| `from` | `FromCapabilityGroup` | label? | `from: DeclarationStatement`, `capability: AliasKind`, `written?: WrittenText+` |
+| `from` | `FromAsGroup` | label? | `from: DeclarationStatement`, `as: ExpressionBinding` |
 | `connection` | `ConnectionGroup` | label? | `connection: OpenText*`, `to: OpenText*`, `using?: DeclarationStatement+`, `means: OpenText*`, `signifies?: OpenText*`, `viewable?: OpenText*`, `through?: OpenText*` |
+
+`from:` groups must contain exactly one of `capability:` or `as:`.
 
 ### Documented items
 
@@ -538,6 +543,8 @@ RequiresItemUnion ::=
 ```union
 EnablesItemUnion ::=
     | CapabilityGroup
+    | FromCapabilityGroup
+    | FromAsGroup
     | ConnectionGroup
 ```
 
@@ -828,6 +835,19 @@ written?: <WrittenText>+
 ```group
 [LabelHeader]?
 definition: <DefinitionRequirement>
+```
+
+```group
+[LabelHeader]?
+from: <DeclarationStatement>
+capability: <AliasKindUnion>
+written?: <WrittenText>+
+```
+
+```group
+[LabelHeader]?
+from: <DeclarationStatement>
+as: <ExpressionBinding>
 ```
 
 ```group

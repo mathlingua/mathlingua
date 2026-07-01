@@ -98,6 +98,8 @@ pub(super) enum FunctionTypeFactSpec {
 #[derive(Clone, Debug)]
 pub(super) struct SpecOperatorRule {
     pub(super) owner_signature: String,
+    pub(super) source_subject: Option<String>,
+    pub(super) source_requires_literal: bool,
     pub(super) placeholder: String,
     pub(super) operator: String,
     pub(super) target: String,
@@ -108,9 +110,19 @@ pub(super) struct SpecOperatorRule {
 pub(super) struct ProvidedSymbolRule {
     pub(super) owner_signature: String,
     pub(super) owner_subject: String,
+    pub(super) source_subject: Option<String>,
     pub(super) key: DisambiguationKey,
     pub(super) parameters: Vec<String>,
     pub(super) target: Expression,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct CastAsRule {
+    pub(super) owner_signature: String,
+    pub(super) owner_subject: String,
+    pub(super) source_subject: String,
+    pub(super) left: Expression,
+    pub(super) right: Expression,
 }
 
 #[derive(Clone, Debug)]
@@ -199,5 +211,6 @@ pub(super) struct SignatureRegistry {
     pub(super) refinement_extension_rules: Vec<RefinementExtensionRule>,
     pub(super) disambiguations: Vec<DisambiguationRule>,
     pub(super) provided_symbols: Vec<ProvidedSymbolRule>,
+    pub(super) cast_as_rules: Vec<CastAsRule>,
     pub(super) collection_type_signatures: Vec<String>,
 }

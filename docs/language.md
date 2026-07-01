@@ -485,6 +485,10 @@ Quantifier declarations are local to the clause group that introduces them.
 
 - `capability:` groups, which define additional notation made available by the
   construct
+- `from:` plus `capability:`, which defines notation made available by a cast
+  source
+- `from:` plus `as:`, which defines how facts from a cast source are viewed as
+  facts about the described form
 - `connection:` groups, which contain prose fields such as `to:`, `means:`,
   `signifies:`, `viewable:`, and `through:`
 
@@ -746,10 +750,54 @@ the owning context. For example, if `\element.of:group{G}` requires
 `extends: G is \set` subtype declaration on `\group`.
 
 Direct spec requirements are also supported once the target type requires or
-enables the operator. If `\group` has `x_ "in" G` as a capability and a command requires `x "in" G`,
-then an exact matching spec fact in the context satisfies that requirement even
-without reducing it to a type fact. A raw fact such as `x "in" G` is invalid
-when the checker knows `G` has a type that does not enable `"in"`.
+enables the operator. If `\group` has `x_ "in" G` as a capability and a command
+requires `x "in" G`, then an exact matching spec fact in the context satisfies
+that requirement even without reducing it to a type fact. A raw fact such as
+`x "in" G` is invalid when the checker knows `G` has a type that does not enable
+`"in"`.
+
+### Cast-Backed Capabilities
+
+`Enables:` may use a `from:` group to describe capabilities supplied by a cast
+literal rather than by the opaque type itself.
+
+```text
+[\set]
+Describes: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Enables:
+. from: Y ::= {y__ : ...}
+  capability: x_ "in" X :-> x_ member_of Y
+Documented:
+. called: "set"
+```
+
+If a value is introduced as `A := \set@{x_ : x_ is \real}`, the checker records
+the literal for `A`. When it later reduces `a "in" A`, the `from:` capability
+substitutes the source subject `Y` with `A`, producing `a member_of A`. The
+existing `member_of` reducer then reads the cast literal and can establish
+`a is \real`.
+
+An ordinary non-`from:` capability on an opaque target does not read a cast
+literal through `member_of`. For example, `Describes: X` with
+`capability: x_ "in" X :-> x_ member_of X` does not make `\set@{...}` expose
+the literal's element facts. Use a structural target such as
+`Describes: X ::= {x__ : ...}` or an explicit `from:` capability for that.
+
+A `from:` group may also use `as:` with an expression binding, for example:
+
+```text
+Enables:
+. from: P ::= {(p_, q_) : ...}
+  as: f(p_) := q_
+```
+
+This records and validates the cast view from the source structure to the
+described form. If `F := \function@{(p_, q_) : q_ is \set}`, the binding lets
+the checker use facts about `q_` from the source literal as facts about
+`F(p_)`; for example it can establish `F(a) is \set` when the source literal
+supports that substitution.
 
 ## Rendering Metadata
 

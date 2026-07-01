@@ -4,9 +4,10 @@ use crate::events::EventLog;
 use crate::frontend::formulation::ast::{ExpressionKind, FormOrDeclaration, FormOrDeclarationKind};
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
-    parse_expression, parse_expression_alias, parse_form_or_declaration, parse_is_via_statement,
-    parse_label_header, parse_ordinary_declaration_statement, parse_refined_declaration_statement,
-    parse_resource_header, parse_spec_operator_alias, parse_writing_alias,
+    parse_expression, parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
+    parse_is_via_statement, parse_label_header, parse_ordinary_declaration_statement,
+    parse_refined_declaration_statement, parse_resource_header, parse_spec_operator_alias,
+    parse_writing_alias,
 };
 use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{
@@ -1133,6 +1134,7 @@ pub(super) fn parse_enables_item_group(
         "capability" => parse_capability(group, tracker)
             .map(Box::new)
             .map(EnablesItem::Capability),
+        "from" => parse_from_group(group, tracker),
         "connection" => parse_connection(group, tracker).map(EnablesItem::Connection),
         other => {
             tracker.user_error_at_row(
@@ -1470,6 +1472,88 @@ fn parse_definition_requirement(
         ));
     };
     Ok(DefinitionRequirement { command, ty })
+}
+
+/// Parses a cast-backed `from:` nested group inside `Enables:`.
+pub(in crate::frontend::structural::parser) fn parse_from_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<EnablesItem> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections(
+        "from",
+        &group.sections,
+        tracker,
+        &["from", "capability?", "as?", "written?"],
+    )?;
+    let from = FromSection {
+        argument: parse_required_formulation(
+            section(&sections, "from")?,
+            "from",
+            tracker,
+            parse_ordinary_declaration_statement,
+        )?,
+    };
+    let capability = sections.get("capability").copied();
+    let as_ = sections.get("as").copied();
+
+    match (capability, as_) {
+        (Some(capability), None) => {
+            Some(EnablesItem::FromCapability(Box::new(FromCapabilityGroup {
+                heading,
+                from,
+                capability: CapabilitySection {
+                    argument: parse_required_formulation(
+                        capability,
+                        "capability",
+                        tracker,
+                        parse_alias_kind,
+                    )?,
+                },
+                written: sections.get("written").copied().and_then(|section| {
+                    parse_required_written_texts(section, tracker)
+                        .map(|arguments| WrittenSection { arguments })
+                }),
+            })))
+        }
+        (None, Some(as_)) => {
+            if sections.contains_key("written") {
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    group.metadata.row,
+                    "`from:` groups with `as:` do not accept `written:`",
+                );
+            }
+            Some(EnablesItem::FromAs(Box::new(FromAsGroup {
+                heading,
+                from,
+                as_: CastAsSection {
+                    argument: parse_required_formulation(
+                        as_,
+                        "as",
+                        tracker,
+                        parse_expression_binding,
+                    )?,
+                },
+            })))
+        }
+        (Some(_), Some(_)) => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                "`from:` groups must contain either `capability:` or `as:`, not both",
+            );
+            None
+        }
+        (None, None) => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                "`from:` groups require either `capability:` or `as:`",
+            );
+            None
+        }
+    }
 }
 
 /// Parses a `connection:` nested group inside `Enables:`.
@@ -3755,6 +3839,33 @@ Documented:
             group.enables.as_ref().expect("expected enables").arguments[0],
             EnablesItem::Capability(_)
         ));
+    }
+
+    #[test]
+    fn parses_from_capability_and_from_as_enables_items() {
+        let document = parse_ok(
+            r#"
+[\set]
+Describes: X
+Enables:
+. from: Y ::= {y__ : ...}
+  capability: x_ "in" X :-> x_ member_of Y
+. from: P ::= {(p_, q_) : ...}
+  as: f(p_) := q_
+Documented:
+. called: "set"
+"#,
+        );
+
+        let TopLevelItem::Describes(group) = &document.items[0] else {
+            panic!("expected describes group");
+        };
+        let enables = group.enables.as_ref().expect("expected enables");
+        assert!(matches!(
+            enables.arguments[0],
+            EnablesItem::FromCapability(_)
+        ));
+        assert!(matches!(enables.arguments[1], EnablesItem::FromAs(_)));
     }
 
     // ===============================[ diagnostics ]=====================================

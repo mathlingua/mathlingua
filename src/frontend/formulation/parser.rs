@@ -1243,7 +1243,22 @@ pub fn parse_declaration_statement(
     let (body, relation) = parse_declaration_relation(input, allow_refined_type)?;
     let (subject_text, expansion_text, definition) = parse_declaration_body(body)?;
     let subject = parse_is_subject(subject_text)?;
-    let expansion = expansion_text.map(parse_is_subject).transpose()?;
+    let (expansion, definition) = match expansion_text {
+        Some(expansion_text) => match parse_is_subject(expansion_text) {
+            Ok(expansion) => (Some(expansion), definition),
+            Err(error) if definition.is_none() => match parse_expression(expansion_text) {
+                Ok(
+                    expression @ Expression {
+                        kind: ExpressionKind::Set(_),
+                        ..
+                    },
+                ) => (None, Some(expression)),
+                _ => return Err(error),
+            },
+            Err(error) => return Err(error),
+        },
+        None => (None, definition),
+    };
 
     validate_declaration_expansion(&subject, expansion.as_ref())?;
 

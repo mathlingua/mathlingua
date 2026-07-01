@@ -687,6 +687,15 @@ ExpressionSpec: ast::SpecStatement = {
 };
 
 SetExpression: ast::Expression = {
+    <l:@L> "{" <target:SetTarget> ":" "..." "}" <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Set(ast::SetExpression {
+            span: Span::new(l, r),
+            target,
+            specs: Vec::new(),
+            predicate: None,
+        }),
+    ),
     <l:@L> "{" <target:SetTarget> ":" <specs:ExpressionList> <predicate:("|" <SpecOrPredicateExpression>)?> "}" <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::Set(ast::SetExpression {

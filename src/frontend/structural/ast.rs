@@ -1,7 +1,7 @@
 use crate::frontend::formulation::ast::{
     AuthorHeader, CommandExpression, CommandHeader, DeclarationStatement, Expression,
-    ExpressionAlias, FormOrDeclaration, IsViaStatement, LabelHeader, ResourceHeader,
-    SpecOperatorAlias, TypeExpression, WritingAlias,
+    ExpressionAlias, ExpressionBinding, FormOrDeclaration, IsViaStatement, LabelHeader,
+    ResourceHeader, SpecOperatorAlias, TypeExpression, WritingAlias,
 };
 
 // ===============================[ repeated ]=====================================
@@ -208,6 +208,8 @@ argument_section!(AliasSection, AliasKind);
 arguments_section!(WrittenSection, WrittenText);
 argument_section!(CapabilitySection, AliasKind);
 argument_section!(DefinitionSection, DefinitionRequirement);
+argument_section!(FromSection, DeclarationStatement);
+argument_section!(CastAsSection, ExpressionBinding);
 zero_or_more_arguments_section!(ConnectionSection, OpenText);
 zero_or_more_arguments_section!(ToSection, OpenText);
 zero_or_more_arguments_section!(MeansSection, OpenText);
@@ -346,6 +348,8 @@ pub enum RequiresItem {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum EnablesItem {
     Capability(Box<CapabilityGroup>),
+    FromCapability(Box<FromCapabilityGroup>),
+    FromAs(Box<FromAsGroup>),
     Connection(ConnectionGroup),
 }
 
@@ -691,6 +695,21 @@ pub struct DefinitionRequirement {
 pub struct DefinitionGroup {
     pub heading: Option<LabelHeader>,
     pub definition: DefinitionSection,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FromCapabilityGroup {
+    pub heading: Option<LabelHeader>,
+    pub from: FromSection,
+    pub capability: CapabilitySection,
+    pub written: Option<WrittenSection>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FromAsGroup {
+    pub heading: Option<LabelHeader>,
+    pub from: FromSection,
+    pub as_: CastAsSection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

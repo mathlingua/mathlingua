@@ -14,6 +14,7 @@ pub(super) fn collect_definition_type_metadata(
     collect_refinement_extension_rules(item, &info, registry);
     collect_spec_operator_rules(item, &info, registry);
     collect_provided_symbol_rules(item, &info, registry);
+    collect_cast_as_rules(item, &info, registry);
     collect_collection_type_signature(item, &info, registry);
     registry
         .type_infos
@@ -43,12 +44,26 @@ fn collect_collection_type_signature(
 }
 
 fn describes_target_is_collection(target: &DescribesTarget) -> bool {
-    matches!(
-        target,
+    match target {
         DescribesTarget::Form(FormOrDeclaration {
             kind: FormOrDeclarationKind::SetDeclaration { .. },
             ..
+        }) => true,
+        DescribesTarget::Declaration(statement) => declaration_has_collection_literal(statement),
+        _ => false,
+    }
+}
+
+fn declaration_has_collection_literal(statement: &DeclarationStatement) -> bool {
+    matches!(
+        &statement.definition,
+        Some(Expression {
+            kind: ExpressionKind::Set(_),
+            ..
         })
+    ) || matches!(
+        &statement.relation,
+        Some(DeclarationRelation::Is(TypeExpression::Coercion { .. }))
     )
 }
 
@@ -231,13 +246,31 @@ fn collect_spec_operator_rules(
     };
 
     for capability in capability_aliases(item) {
-        let AliasKind::SpecOperator(alias) = capability else {
+        let AliasKind::SpecOperator(alias) = capability.alias else {
             continue;
         };
-        if let Some(rule) = spec_operator_rule_from_alias(alias, info) {
+        let mut source_subject = capability.source_subject;
+        let mut source_requires_literal = capability.source_requires_literal;
+        if source_subject.is_none()
+            && item_describes_collection(item)
+            && let Some(described) = &info.described
+        {
+            source_subject = Some(described.clone());
+            source_requires_literal = false;
+        }
+        if let Some(rule) =
+            spec_operator_rule_from_alias(alias, info, source_subject, source_requires_literal)
+        {
             registry.spec_rules.push(rule);
         }
     }
+}
+
+fn item_describes_collection(item: &TopLevelItem) -> bool {
+    matches!(
+        item,
+        TopLevelItem::Describes(group) if describes_target_is_collection(&group.describes.argument)
+    )
 }
 
 fn collect_provided_symbol_rules(
@@ -250,7 +283,7 @@ fn collect_provided_symbol_rules(
     };
 
     for capability in capability_aliases(item) {
-        let AliasKind::Expression(alias) = capability else {
+        let AliasKind::Expression(alias) = capability.alias else {
             continue;
         };
         let Some((key, parameters)) = provided_symbol_key_and_parameters(&alias.lhs) else {
@@ -259,9 +292,36 @@ fn collect_provided_symbol_rules(
         registry.provided_symbols.push(ProvidedSymbolRule {
             owner_signature: info.signature.clone(),
             owner_subject: described.clone(),
+            source_subject: capability.source_subject,
             key,
             parameters,
             target: alias.expression.clone(),
+        });
+    }
+}
+
+fn collect_cast_as_rules(
+    item: &TopLevelItem,
+    info: &DefinitionTypeInfo,
+    registry: &mut SignatureRegistry,
+) {
+    let Some(described) = info.described.as_ref() else {
+        return;
+    };
+    let Some(enables) = enables_section(item) else {
+        return;
+    };
+
+    for item in &enables.arguments {
+        let EnablesItem::FromAs(group) = item else {
+            continue;
+        };
+        registry.cast_as_rules.push(CastAsRule {
+            owner_signature: info.signature.clone(),
+            owner_subject: described.clone(),
+            source_subject: primary_subject_key(&group.from.argument.subject),
+            left: group.as_.argument.left.clone(),
+            right: group.as_.argument.right.clone(),
         });
     }
 }
@@ -363,17 +423,37 @@ fn requires_section(item: &TopLevelItem) -> Option<&RequiresSection> {
     }
 }
 
-fn capability_aliases(item: &TopLevelItem) -> Vec<&AliasKind> {
+struct CapabilityAliasRef<'a> {
+    alias: &'a AliasKind,
+    source_subject: Option<String>,
+    source_requires_literal: bool,
+}
+
+fn capability_aliases(item: &TopLevelItem) -> Vec<CapabilityAliasRef<'_>> {
     let mut result = Vec::new();
     if let Some(requires) = requires_section(item) {
         result.extend(requires.arguments.iter().filter_map(|item| match item {
-            RequiresItem::Capability(group) => Some(&group.capability.argument),
+            RequiresItem::Capability(group) => Some(CapabilityAliasRef {
+                alias: &group.capability.argument,
+                source_subject: None,
+                source_requires_literal: false,
+            }),
             RequiresItem::Definition(_) => None,
         }));
     }
     if let Some(enables) = enables_section(item) {
         result.extend(enables.arguments.iter().filter_map(|item| match item {
-            EnablesItem::Capability(group) => Some(&group.capability.argument),
+            EnablesItem::Capability(group) => Some(CapabilityAliasRef {
+                alias: &group.capability.argument,
+                source_subject: None,
+                source_requires_literal: false,
+            }),
+            EnablesItem::FromCapability(group) => Some(CapabilityAliasRef {
+                alias: &group.capability.argument,
+                source_subject: Some(primary_subject_key(&group.from.argument.subject)),
+                source_requires_literal: true,
+            }),
+            EnablesItem::FromAs(_) => None,
             EnablesItem::Connection(_) => None,
         }));
     }
@@ -383,10 +463,14 @@ fn capability_aliases(item: &TopLevelItem) -> Vec<&AliasKind> {
 fn spec_operator_rule_from_alias(
     alias: &SpecOperatorAlias,
     info: &DefinitionTypeInfo,
+    source_subject: Option<String>,
+    source_requires_literal: bool,
 ) -> Option<SpecOperatorRule> {
     let placeholder = placeholder_pattern_name(&alias.placeholder_spec.placeholder_form)?;
     Some(SpecOperatorRule {
         owner_signature: info.signature.clone(),
+        source_subject,
+        source_requires_literal,
         placeholder,
         operator: alias.placeholder_spec.operator.clone(),
         target: alias.placeholder_spec.name.clone(),
@@ -2623,6 +2707,7 @@ fn find_provided_symbol_rule<'a>(
     registry: &'a SignatureRegistry,
 ) -> Option<&'a ProvidedSymbolRule> {
     registry.provided_symbols.iter().find(|rule| {
+        let owner_actual = provided_symbol_owner_actual(kind, actuals);
         disambiguation_keys_match(key, &rule.key)
             && rule.parameters.len() == actuals.len()
             && provided_symbol_owner_matches(
@@ -2632,6 +2717,7 @@ fn find_provided_symbol_rule<'a>(
                 context,
                 registry,
             )
+            && provided_symbol_source_matches(rule, owner_actual.as_deref(), context)
     })
 }
 
@@ -2646,7 +2732,17 @@ fn find_member_provided_symbol_rule<'a>(
         disambiguation_keys_match(key, &rule.key)
             && rule.parameters.len() == actuals.len()
             && has_type_signature(owner_actual, &rule.owner_signature, context, registry)
+            && provided_symbol_source_matches(rule, Some(owner_actual), context)
     })
+}
+
+fn provided_symbol_source_matches(
+    rule: &ProvidedSymbolRule,
+    owner_actual: Option<&str>,
+    context: &TypeContext,
+) -> bool {
+    rule.source_subject.is_none()
+        || owner_actual.is_some_and(|actual| context.collection_literal(actual).is_some())
 }
 
 fn provided_symbol_owner_matches(
@@ -2693,6 +2789,10 @@ fn check_provided_symbol_target(
             rule.owner_subject.clone(),
             context.normalize_key(owner_actual),
         );
+        if let Some(source_subject) = &rule.source_subject {
+            child.declare_name(source_subject.clone());
+            child.add_substitution(source_subject.clone(), context.normalize_key(owner_actual));
+        }
     }
     check_expression(&rule.target, &child, path, locator, registry, event_log);
 }
@@ -3034,6 +3134,10 @@ fn effective_key_for_provided_symbol_target(
             rule.owner_subject.clone(),
             context.normalize_key(owner_actual),
         );
+        if let Some(source_subject) = &rule.source_subject {
+            child.declare_name(source_subject.clone());
+            child.add_substitution(source_subject.clone(), context.normalize_key(owner_actual));
+        }
     }
 
     effective_key_for_expression_inner(&rule.target, &child, registry, resolving)
@@ -3882,19 +3986,100 @@ fn validate_optional_enables(
     };
 
     for item in &enables.arguments {
-        let EnablesItem::Capability(group) = item else {
-            continue;
-        };
-        validate_capability_alias(
-            &group.capability.argument,
-            context,
-            owner_shapes,
-            owner_subject,
-            path,
-            locator,
-            registry,
-            event_log,
-        );
+        match item {
+            EnablesItem::Capability(group) => validate_capability_alias(
+                &group.capability.argument,
+                context,
+                owner_shapes,
+                owner_subject,
+                path,
+                locator,
+                registry,
+                event_log,
+            ),
+            EnablesItem::FromCapability(group) => {
+                let child = context_with_from_declaration(
+                    &group.from.argument,
+                    context,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+                validate_capability_alias(
+                    &group.capability.argument,
+                    &child,
+                    owner_shapes,
+                    owner_subject,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+            }
+            EnablesItem::FromAs(group) => {
+                let child = context_with_from_declaration(
+                    &group.from.argument,
+                    context,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+                check_expression(
+                    &group.as_.argument.left,
+                    &child,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+                check_expression(
+                    &group.as_.argument.right,
+                    &child,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+            }
+            EnablesItem::Connection(_) => {}
+        }
+    }
+}
+
+fn context_with_from_declaration(
+    statement: &DeclarationStatement,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) -> TypeContext {
+    let mut child = context.clone();
+    declare_declaration_statement_subjects(statement, &mut child);
+    complete_introduced_declaration_statement(
+        statement, &mut child, path, locator, registry, event_log,
+    );
+    declare_declaration_collection_literal_target(statement, &mut child);
+    child
+}
+
+fn declare_declaration_collection_literal_target(
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+) {
+    if let Some(Expression {
+        kind: ExpressionKind::Set(set),
+        ..
+    }) = &statement.definition
+    {
+        declare_set_target(&set.target, context);
+    }
+    if let Some(DeclarationRelation::Is(TypeExpression::Coercion { literal, .. })) =
+        &statement.relation
+    {
+        declare_set_target(&literal.target, context);
     }
 }
 
@@ -4683,6 +4868,10 @@ fn fact_implies(
         return true;
     }
 
+    if cast_as_fact_implies_required(&fact, required, context, registry, seen) {
+        return true;
+    }
+
     for extended in reduce_extension_fact(&fact, context, registry) {
         if fact_implies(&extended, required, context, registry, seen) {
             return true;
@@ -4705,6 +4894,145 @@ fn fact_implies(
     }
 
     false
+}
+
+fn cast_as_fact_implies_required(
+    fact: &TypeFact,
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> bool {
+    let TypeFact::Is {
+        subject, signature, ..
+    } = fact
+    else {
+        return false;
+    };
+    let subject = context.normalize_key(subject);
+    let Some(literal) = context.collection_literal(&subject) else {
+        return false;
+    };
+
+    for rule in registry
+        .cast_as_rules
+        .iter()
+        .filter(|rule| rule.owner_signature == *signature)
+    {
+        let mut substitutions = HashMap::from([
+            (rule.owner_subject.clone(), subject.clone()),
+            (rule.source_subject.clone(), subject.clone()),
+        ]);
+        let required_subject = context.normalize_key(fact_subject(required));
+        if !bind_cast_expression_to_key(&rule.left, &required_subject, &mut substitutions, context)
+        {
+            continue;
+        }
+        if !bind_cast_expression_to_key(&rule.right, &required_subject, &mut substitutions, context)
+        {
+            continue;
+        }
+
+        for fact in facts_from_collection_literal_cast(literal, &substitutions, context) {
+            if fact_implies(&fact, required, context, registry, seen) {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+fn bind_cast_expression_to_key(
+    pattern: &Expression,
+    actual: &str,
+    substitutions: &mut HashMap<String, String>,
+    context: &TypeContext,
+) -> bool {
+    match &pattern.kind {
+        ExpressionKind::Name(name) => bind_cast_name_to_key(name, actual, substitutions, context),
+        ExpressionKind::FunctionCall { name, arguments } => {
+            let Some((actual_name, actual_arguments)) = function_call_parts_from_key(actual) else {
+                return false;
+            };
+            let pattern_name = context.normalize_key(&substitute_key(name, substitutions));
+            if context.normalize_key(&actual_name) != pattern_name {
+                return false;
+            }
+            if arguments.len() != actual_arguments.len() {
+                return false;
+            }
+            arguments
+                .iter()
+                .zip(actual_arguments)
+                .all(|(argument, actual)| {
+                    bind_cast_expression_to_key(argument, &actual, substitutions, context)
+                })
+        }
+        ExpressionKind::Tuple(elements) => {
+            let Some(actual_arguments) = tuple_arguments_from_key(actual) else {
+                return false;
+            };
+            if elements.len() != actual_arguments.len() {
+                return false;
+            }
+            elements
+                .iter()
+                .zip(actual_arguments)
+                .all(|(element, actual)| {
+                    let TupleExpressionElement::Expression(expression) = element else {
+                        return false;
+                    };
+                    bind_cast_expression_to_key(expression, &actual, substitutions, context)
+                })
+        }
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            bind_cast_expression_to_key(expression, actual, substitutions, context)
+        }
+        _ => {
+            context.normalize_key(&substitute_key(&key_for_expression(pattern), substitutions))
+                == context.normalize_key(actual)
+        }
+    }
+}
+
+fn bind_cast_name_to_key(
+    name: &str,
+    actual: &str,
+    substitutions: &mut HashMap<String, String>,
+    context: &TypeContext,
+) -> bool {
+    if let Some(bound) = substitutions.get(name) {
+        return context.normalize_key(bound) == context.normalize_key(actual);
+    }
+
+    substitutions.insert(name.to_owned(), actual.to_owned());
+    true
+}
+
+fn tuple_arguments_from_key(key: &str) -> Option<Vec<String>> {
+    let key = key.trim();
+    let inner = key.strip_prefix('(')?.strip_suffix(')')?;
+    Some(split_key_arg_list(inner))
+}
+
+fn facts_from_collection_literal_cast(
+    literal: &SetExpression,
+    substitutions: &HashMap<String, String>,
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    let mut child = context.clone();
+    declare_set_target(&literal.target, &mut child);
+
+    let mut result = Vec::new();
+    for spec in &literal.specs {
+        let Some(fact) = fact_from_expression_in_context(spec, &child) else {
+            continue;
+        };
+        child.add_fact(fact.clone());
+        result.push(child.normalize_fact(&substitute_fact(&fact, substitutions)));
+    }
+    result
 }
 
 fn reduce_extension_fact(
@@ -4979,10 +5307,17 @@ fn reduce_spec_fact(
             continue;
         }
 
-        let substitutions = HashMap::from([
+        if rule.source_requires_literal && context.collection_literal(target).is_none() {
+            continue;
+        }
+
+        let mut substitutions = HashMap::from([
             (rule.placeholder.clone(), subject.clone()),
             (rule.target.clone(), target.clone()),
         ]);
+        if let Some(source_subject) = &rule.source_subject {
+            substitutions.insert(source_subject.clone(), target.clone());
+        }
 
         match &rule.target_alias {
             SpecOperatorAliasTarget::Builtin(_) => {}
@@ -4997,6 +5332,9 @@ fn reduce_spec_fact(
                 }
             }
             SpecOperatorAliasTarget::MemberOf(target_alias) => {
+                if rule.source_subject.is_none() {
+                    continue;
+                }
                 if let Some(next) = fact_from_expression(target_alias) {
                     let next = substitute_fact(&next, &substitutions);
                     let next = context.normalize_fact(&next);

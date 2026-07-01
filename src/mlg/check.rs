@@ -3697,6 +3697,217 @@ mod tests {
     }
 
     #[test]
+    fn check_reduces_cast_membership_through_from_capability() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("cast-membership.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Enables:
+    . from: Y ::= {y__ : ...}
+      capability: x_ "in" X :-> x_ member_of Y
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\needs.set{x}]
+    Describes: y
+    when: x is \set
+    Documented:
+    . written: "\operatorname{needsSet}(x?)"
+
+    Theorem:
+    given: X := \set@{x_ : x_ is \set}
+    then:
+    . forAll: x "in" X
+      then:
+      . x is? \set
+      . \needs.set{x}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("cast-membership.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reduces_cast_function_outputs_through_from_as() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("cast-function-output.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function]
+    Describes: f(x__) ::= y_
+    specifies:
+    . x__ is \\expression
+    . y_ is \\unknown
+    Enables:
+    . from: P ::= {(p_, q_) : ...}
+      as: f(p_) := q_
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\needs.set{x}]
+    Describes: y
+    when: x is \set
+    Documented:
+    . written: "\operatorname{needsSet}(x?)"
+
+    Theorem:
+    given:
+    . F := \function@{(p_, q_) : p_ is \\expression, q_ is \set}
+    . a is \\expression
+    then: \needs.set{F(a)}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("cast-function-output.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_does_not_reduce_opaque_member_of_through_cast_literal() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("opaque-member-of-cast.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> x_ member_of X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \.set.minus./ B]
+    Defines: C is \set
+    when: A, B is \set
+    Documented:
+    . written: "A? \setminus B?"
+
+    Theorem:
+    given: X := \set@{x_ : x_ is \set}
+    then:
+    . forAll: x, y "in" X
+      then: x \.set.minus./ y is? \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("opaque-member-of-cast.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let events = user_events(&event_log);
+        assert!(events.iter().any(|event| {
+            matches!(event, Event::Message(message) if
+                message.message == "Could not establish requirement `x is \\set` for command `\\.set.minus./`"
+            )
+        }));
+        assert!(events.iter().any(|event| {
+            matches!(event, Event::Message(message) if
+                message.message == "Could not establish requirement `y is \\set` for command `\\.set.minus./`"
+            )
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_from_capability_does_not_hide_command_requirement_mismatch() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("from-capability-mismatch.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\function]
+    Describes: f
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Enables:
+    . capability: x_ - y_ :=> x_ \.set.minus./ y_
+    . from: Y ::= {y_ : ...}
+      capability: x_ "in" X :-> x_ is \function
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \.set.minus./ B]
+    Defines: C is \set
+    when: A, B is \set
+    Documented:
+    . written: "A? \setminus B?"
+
+    Theorem:
+    given: X := \set@{x_ : x_ is \set}
+    then:
+    . forAll: x, y "in" X
+      then: x \.set.minus./ y is? \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("from-capability-mismatch.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let events = user_events(&event_log);
+        assert!(events.iter().any(|event| {
+            matches!(event, Event::Message(message) if
+                message.message == "Could not establish requirement `x is \\set` for command `\\.set.minus./`"
+            )
+        }));
+        assert!(events.iter().any(|event| {
+            matches!(event, Event::Message(message) if
+                message.message == "Could not establish requirement `y is \\set` for command `\\.set.minus./`"
+            )
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
     fn check_treats_membership_in_unstructured_collection_as_unknown() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("collection-membership-unknown.mlg");

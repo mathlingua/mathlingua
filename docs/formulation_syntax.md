@@ -330,13 +330,15 @@ Operators may appear as tuple elements, for example `(+, x)`.
 #### Set expressions
 
 ```text
-SetExpression ::= "{" PlaceholderForm ":" Expression ("|" Expression)? "}"
+SetExpression ::= "{" SetTarget ":" "..." "}"
+                | "{" SetTarget ":" Expression ("," Expression)* ("|" Expression)? "}"
 ```
 
 Examples:
 
 - `{x_ : x_ is \real}`
 - `{x_ : x_ is \real | x_ = y}`
+- `{(p_, q_) : ...}`
 
 #### Subset expressions
 
@@ -907,7 +909,8 @@ FunctionNamedExpressionElementLhs ::= Name | SubsetNameCall
 
 TupleExpression ::= "(" TupleExpressionElement "," TupleExpressionElement ("," TupleExpressionElement)* ")"
 
-SetExpression ::= "{" PlaceholderForm ":" Expression ("|" Expression)? "}"
+SetExpression ::= "{" SetTarget ":" "..." "}"
+                | "{" SetTarget ":" Expression ("," Expression)* ("|" Expression)? "}"
 
 SubsetExpression ::= SubsetNameCall
 ```

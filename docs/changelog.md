@@ -361,6 +361,20 @@ Types can now separate definitional requirements from additional capabilities.
   requested `is <spec>` fact.
 - A `Requires.definition:` item fails if the referenced command is undefined,
   is not a `Defines:` entry, or does not establish the requested fact.
+- `Enables:` accepts cast-backed `from:` groups.
+- A `from:` group must contain exactly one of `capability:` or `as:`.
+- `from: ... capability:` capabilities are used only when the actual target has
+  a recorded cast or set literal.
+- When reducing a `from: ... capability:` rule, the source subject from the
+  `from:` declaration is substituted with the actual target value.
+- Ordinary non-`from:` capabilities on opaque targets no longer read cast
+  literals through `member_of`; literal-backed membership requires a structural
+  target or an explicit `from:` capability.
+- `from: ... as:` records and validates an expression binding that describes
+  how to view the cast source as the described form.
+- A `from: ... as:` binding can reduce facts about a casted function call by
+  matching the binding's left side against the call and substituting the right
+  side into facts from the cast literal.
 
 ### Capability Rules
 
@@ -387,6 +401,10 @@ Function and value capabilities:
 - A bare capability such as `a :=> \some.value{X}` is used as `X.a`.
 - All capabilities have access to the subject of the item being
   described.
+
+Set expression literals now also accept the unconstrained ellipsis form, such as
+`{(p_, q_) : ...}`. This is useful in `from:` declarations that describe the
+shape of an accepted cast source without adding element constraints.
 
 ### Built-In `\\type`
 

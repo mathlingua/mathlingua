@@ -1,0 +1,54 @@
+/* Lightweight styling for raw MathLingua snippets when LaTeX is unavailable. */
+
+.inline {
+  white-space: pre-wrap;
+}
+
+.placeholder {
+  font-family: KaTeX_Math, "Cambria Math", var(--font-body);
+  font-style: italic;
+}
+
+.quotedOperator,
+.keyword {
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1em;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.memberOf {
+  font-family: KaTeX_Math, "Cambria Math", var(--font-body);
+  font-style: italic;
+}
+
+.arrow,
+.operator {
+  color: var(--ink);
+  font-family: KaTeX_Main, "Cambria Math", var(--font-body);
+}
+
+.arrow {
+  padding: 0 0.08em;
+  font-weight: 400;
+}
+
+.arrowColon {
+  margin-right: -0.08em;
+}
+
+.arrowGlyph {
+  display: inline-block;
+}
+
+.operator {
+  padding: 0 0.04em;
+}
+
+.command {
+  color: var(--muted-strong);
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  line-height: 1.35;
+}

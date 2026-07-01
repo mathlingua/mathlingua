@@ -5,6 +5,7 @@ import { ArgumentList } from "./argument-list";
 import type { GroupView, SectionView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
 import { MathLinguaSource } from "./mathlingua-source";
+import { MathLinguaInline } from "./mathlingua-inline";
 import styles from "./group-card.module.css";
 import sectionStyles from "./section-content.module.css";
 
@@ -120,9 +121,10 @@ export function GroupCard({
                         />
                       </span>
                     ) : (
-                      <code className={sectionStyles.inlineArgument}>
-                        {section.inline_argument}
-                      </code>
+                      <MathLinguaInline
+                        className={sectionStyles.inlineArgument}
+                        text={section.inline_argument}
+                      />
                     )
                   ) : null}
                 </div>
@@ -238,6 +240,7 @@ function CardIcon() {
 function isSupportSection(section: SectionView): boolean {
   return (
     section.label === "Documented" ||
+    section.label === "Enables" ||
     section.label === "Provides" ||
     section.label === "Id"
   );

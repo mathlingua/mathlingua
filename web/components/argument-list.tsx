@@ -1,5 +1,6 @@
 import { ArgumentView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
+import { MathLinguaInline } from "./mathlingua-inline";
 import styles from "./argument-list.module.css";
 import sectionStyles from "./section-content.module.css";
 
@@ -38,7 +39,10 @@ export function ArgumentList({
                 />
               </span>
             ) : (
-              <code className={styles.formulationLine}>{argument.text}</code>
+              <MathLinguaInline
+                className={styles.formulationLine}
+                text={argument.text}
+              />
             )
           ) : null}
           {argument.kind === "text" ? (
@@ -69,9 +73,10 @@ export function ArgumentList({
                           />
                         </span>
                       ) : (
-                        <code className={sectionStyles.inlineArgument}>
-                          {section.inline_argument}
-                        </code>
+                        <MathLinguaInline
+                          className={sectionStyles.inlineArgument}
+                          text={section.inline_argument}
+                        />
                       )
                     ) : null}
                   </div>

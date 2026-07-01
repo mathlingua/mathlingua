@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::frontend::formulation::parse_writing_alias;
 use crate::frontend::*;
 
 mod commands;
@@ -23,6 +24,7 @@ use registry::*;
 pub(super) use registry::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
     render_documented_text_latex, render_formulation_latex, render_group_heading_latex,
+    render_writing_alias_latex,
 };
 use signatures::*;
 use statements::*;

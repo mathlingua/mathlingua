@@ -4,6 +4,7 @@ use super::model::{
 use super::render::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
     render_documented_text_latex, render_formulation_latex, render_group_heading_latex,
+    render_writing_alias_latex,
 };
 use crate::events::{Audience, Event, EventLog, Level};
 use crate::frontend::{
@@ -75,7 +76,6 @@ fn build_file_view(
         items: groups
             .into_iter()
             .zip(group_sources)
-            .filter(|(group, _)| first_group_label(group) != Some("Writing"))
             .map(|(group, source)| group_view(group, source, registry))
             .collect(),
     })
@@ -131,10 +131,6 @@ fn is_trailing_source_gap(line: &str) -> bool {
     trimmed.is_empty() || trimmed.starts_with("--")
 }
 
-fn first_group_label(group: &ProtoGroup) -> Option<&str> {
-    group.sections.first().map(|section| section.label.as_str())
-}
-
 fn group_view(group: ProtoGroup, source: String, registry: &RenderRegistry) -> GroupView {
     let id = top_level_group_id(&group).unwrap_or_default();
     let kind = group
@@ -170,20 +166,21 @@ fn group_view(group: ProtoGroup, source: String, registry: &RenderRegistry) -> G
 }
 
 fn section_view(section: ProtoSection, registry: &RenderRegistry) -> SectionView {
+    let label = section.label;
     let inline_latex = section
         .inline_argument
         .as_deref()
-        .and_then(|text| render_section_inline_latex(&section.label, text, registry));
-    let render_kind = documented_render_kind(&section.label);
+        .and_then(|text| render_section_inline_latex(&label, text, registry));
+    let render_kind = documented_render_kind(&label);
 
     SectionView {
-        label: section.label,
+        label: label.clone(),
         inline_argument: section.inline_argument,
         inline_latex,
         arguments: section
             .arguments
             .into_iter()
-            .map(|argument| argument_view(argument, registry, render_kind))
+            .map(|argument| argument_view(argument, registry, &label, render_kind))
             .collect(),
     }
 }
@@ -261,11 +258,12 @@ fn strip_quoted_text(input: &str) -> Option<String> {
 fn argument_view(
     argument: ProtoArgument,
     registry: &RenderRegistry,
+    section_label: &str,
     documented_render_kind: Option<DocumentedRenderKind>,
 ) -> ArgumentView {
     match argument {
         ProtoArgument::Formulation(formulation) => ArgumentView::Formulation {
-            latex: render_formulation_latex(&formulation.text, registry),
+            latex: render_argument_formulation_latex(section_label, &formulation.text, registry),
             text: formulation.text,
         },
         ProtoArgument::Text(text) => {
@@ -284,6 +282,18 @@ fn argument_view(
                 .map(|section| section_view(section, registry))
                 .collect(),
         },
+    }
+}
+
+fn render_argument_formulation_latex(
+    section_label: &str,
+    text: &str,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    if section_label == "Writing" {
+        render_writing_alias_latex(text, registry)
+    } else {
+        render_formulation_latex(text, registry)
     }
 }
 
@@ -489,6 +499,55 @@ Second paragraph with $x \in X$."
                 .map(|page| page.text.as_str()),
             Some("First paragraph\n\nSecond paragraph with $x \\in X$.")
         );
+    }
+
+    #[test]
+    fn renders_writing_groups_as_latex_mapping_items() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("writing.mlg");
+        let source = r#"Writing:
+. alpha :~> \alpha
+. Gamma :~> \Gamma
+Id: "11111111-1111-4111-8111-111111111111"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+            .expect("expected view");
+
+        assert!(!event_log.has_errors());
+        assert_eq!(view.files[0].items.len(), 1);
+        assert_eq!(view.files[0].items[0].kind, "Writing");
+        let writing = &view.files[0].items[0].sections[0];
+        assert_eq!(writing.label, "Writing");
+        match &writing.arguments[0] {
+            ArgumentView::Formulation { latex, .. } => assert_eq!(
+                latex.as_deref(),
+                Some(r#"\textrm{alpha} \mathrel{:\!\rightsquigarrow} \alpha"#)
+            ),
+            other => panic!("expected formulation argument, got {other:?}"),
+        }
+        match &writing.arguments[1] {
+            ArgumentView::Formulation { latex, .. } => assert_eq!(
+                latex.as_deref(),
+                Some(r#"\textrm{Gamma} \mathrel{:\!\rightsquigarrow} \Gamma"#)
+            ),
+            other => panic!("expected formulation argument, got {other:?}"),
+        }
     }
 
     struct TestDir {

@@ -100,6 +100,22 @@ pub(in crate::backend::view) fn render_formulation_latex(
         .or_else(|| render_simple_set_spec_latex(text, registry))
 }
 
+pub(in crate::backend::view) fn render_writing_alias_latex(
+    text: &str,
+    _registry: &RenderRegistry,
+) -> Option<String> {
+    let alias = parse_writing_alias(text).ok()?;
+    let FormOrDeclarationKind::Name(name) = alias.form.kind else {
+        return None;
+    };
+
+    Some(format!(
+        "\\textrm{{{}}} \\mathrel{{:\\!\\rightsquigarrow}} {}",
+        escape_latex_text(&name),
+        alias.body
+    ))
+}
+
 pub(in crate::backend::view) fn render_documented_text_latex(
     label: &str,
     text: &str,

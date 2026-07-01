@@ -1,12 +1,16 @@
 use crate::mlg::check::{CheckDiagnostic, check, check_diagnostics_report};
-use lsp_server::{Connection, Message, Notification};
+use crate::mlg::completion::complete;
+use lsp_server::{Connection, Message, Notification, Response};
 use lsp_types::{
+    CompletionItem, CompletionItemKind, CompletionOptions, CompletionParams, CompletionResponse,
     Diagnostic, DiagnosticSeverity, InitializeParams, Position, PublishDiagnosticsParams, Range,
     SaveOptions, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
     TextDocumentSyncOptions, TextDocumentSyncSaveOptions, Url,
     notification::{
-        DidOpenTextDocument, DidSaveTextDocument, Notification as _, PublishDiagnostics,
+        DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument,
+        Notification as _, PublishDiagnostics,
     },
+    request::{Completion, Request as _},
 };
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -23,13 +27,16 @@ pub fn lsp() -> LspResult {
         text_document_sync: Some(TextDocumentSyncCapability::Options(
             TextDocumentSyncOptions {
                 open_close: Some(true),
-                change: Some(TextDocumentSyncKind::NONE),
+                // Full sync so the server always has the current buffer text for
+                // completion (diagnostics still only refresh on open/save).
+                change: Some(TextDocumentSyncKind::FULL),
                 save: Some(TextDocumentSyncSaveOptions::SaveOptions(SaveOptions {
                     include_text: Some(false),
                 })),
                 ..Default::default()
             },
         )),
+        completion_provider: Some(CompletionOptions::default()),
         ..Default::default()
     })
     .expect("server capabilities serialize");
@@ -51,6 +58,10 @@ pub fn lsp() -> LspResult {
                 if connection.handle_shutdown(&req).unwrap_or(false) {
                     break;
                 }
+                if req.method == Completion::METHOD {
+                    let response = state.handle_completion(req.id.clone(), &req.params);
+                    let _ = connection.sender.send(Message::Response(response));
+                }
             }
             Message::Notification(note) => state.handle_notification(&connection, note),
             Message::Response(_) => {}
@@ -64,6 +75,8 @@ pub fn lsp() -> LspResult {
 struct ServerState {
     workspace_root: Option<PathBuf>,
     last_diagnostic_files: HashSet<Url>,
+    /// Current text of open documents, keyed by URI. Used for completion.
+    documents: HashMap<Url, String>,
 }
 
 impl ServerState {
@@ -71,23 +84,51 @@ impl ServerState {
         Self {
             workspace_root,
             last_diagnostic_files: HashSet::new(),
+            documents: HashMap::new(),
         }
     }
 
     fn handle_notification(&mut self, connection: &Connection, note: Notification) {
+        // Keep the in-memory document text current for completion.
+        match note.method.as_str() {
+            DidOpenTextDocument::METHOD => {
+                if let (Some(uri), Some(text)) = (
+                    note_uri(&note.params),
+                    note.params
+                        .get("textDocument")
+                        .and_then(|td| td.get("text"))
+                        .and_then(|t| t.as_str()),
+                ) {
+                    self.documents.insert(uri, text.to_string());
+                }
+            }
+            DidChangeTextDocument::METHOD => {
+                // Full sync: the last content change carries the whole document.
+                if let (Some(uri), Some(text)) = (
+                    note_uri(&note.params),
+                    note.params
+                        .get("contentChanges")
+                        .and_then(|c| c.as_array())
+                        .and_then(|c| c.last())
+                        .and_then(|c| c.get("text"))
+                        .and_then(|t| t.as_str()),
+                ) {
+                    self.documents.insert(uri, text.to_string());
+                }
+                return; // diagnostics refresh on save, not on every edit
+            }
+            DidCloseTextDocument::METHOD => {
+                if let Some(uri) = note_uri(&note.params) {
+                    self.documents.remove(&uri);
+                }
+                return;
+            }
+            _ => {}
+        }
+
+        // Diagnostics refresh happens on open and save.
         let uri = match note.method.as_str() {
-            DidOpenTextDocument::METHOD => note
-                .params
-                .get("textDocument")
-                .and_then(|td| td.get("uri"))
-                .and_then(|u| u.as_str())
-                .and_then(|s| Url::parse(s).ok()),
-            DidSaveTextDocument::METHOD => note
-                .params
-                .get("textDocument")
-                .and_then(|td| td.get("uri"))
-                .and_then(|u| u.as_str())
-                .and_then(|s| Url::parse(s).ok()),
+            DidOpenTextDocument::METHOD | DidSaveTextDocument::METHOD => note_uri(&note.params),
             _ => return,
         };
 
@@ -98,6 +139,35 @@ impl ServerState {
 
         let root = project_root_for(&file_path, self.workspace_root.as_deref());
         self.refresh_diagnostics(connection, &root);
+    }
+
+    fn handle_completion(&self, id: lsp_server::RequestId, params: &Value) -> Response {
+        let items = self.completion_items(params).unwrap_or_default();
+        let result = serde_json::to_value(CompletionResponse::Array(items))
+            .unwrap_or(Value::Null);
+        Response {
+            id,
+            result: Some(result),
+            error: None,
+        }
+    }
+
+    fn completion_items(&self, params: &Value) -> Option<Vec<CompletionItem>> {
+        let params: CompletionParams = serde_json::from_value(params.clone()).ok()?;
+        let uri = params.text_document_position.text_document.uri;
+        let position = params.text_document_position.position;
+        let text = self.documents.get(&uri)?;
+        let items = complete(text, position.line as usize, position.character as usize)
+            .into_iter()
+            .map(|c| CompletionItem {
+                label: c.label,
+                kind: Some(CompletionItemKind::KEYWORD),
+                detail: Some(c.detail),
+                insert_text: Some(c.insert),
+                ..Default::default()
+            })
+            .collect();
+        Some(items)
     }
 
     fn refresh_diagnostics(&mut self, connection: &Connection, root: &Path) {
@@ -124,6 +194,15 @@ impl ServerState {
         }
         self.last_diagnostic_files = new_files;
     }
+}
+
+/// Extract the `textDocument.uri` from a notification's params.
+fn note_uri(params: &Value) -> Option<Url> {
+    params
+        .get("textDocument")
+        .and_then(|td| td.get("uri"))
+        .and_then(|u| u.as_str())
+        .and_then(|s| Url::parse(s).ok())
 }
 
 fn publish(connection: &Connection, uri: Url, diagnostics: Vec<Diagnostic>) {

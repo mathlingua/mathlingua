@@ -7,6 +7,7 @@ pub use view::{ViewResult, view};
 pub use whte_rbt_obj::{WhteRbtObjResult, whte_rbt_obj};
 
 mod check;
+mod completion;
 mod debug;
 mod init;
 mod lsp;

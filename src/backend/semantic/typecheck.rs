@@ -1,5 +1,5 @@
 use super::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 pub(super) fn collect_definition_type_metadata(
     item: &TopLevelItem,
@@ -551,13 +551,8 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
-            validate_when_section(
-                &group.when,
-                &describes_when_parameters(&group.heading, &group.describes.argument),
-                path,
-                locator,
-                event_log,
-            );
+            let when_parameters = describes_when_parameters_from_usage(group);
+            validate_when_section(&group.when, &when_parameters, path, locator, event_log);
             assume_optional_clauses(
                 &group.when,
                 &mut context,
@@ -589,6 +584,7 @@ fn validate_top_level_item_types(
                     event_log,
                 );
             }
+            validate_describes_target_symbol_specifications(group, path, locator, event_log);
             validate_optional_requires(
                 &group.requires,
                 &context,
@@ -653,6 +649,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            validate_defines_target_symbol_specifications(group, path, locator, event_log);
             validate_optional_requires(
                 &group.requires,
                 &context,
@@ -714,6 +711,7 @@ fn validate_top_level_item_types(
             if group.extends.is_some() {
                 check_refines_extends(group, &context, path, locator, registry, event_log);
             }
+            validate_refines_target_symbol_specifications(group, path, locator, event_log);
             validate_optional_requires(
                 &group.requires,
                 &context,
@@ -1288,6 +1286,791 @@ fn validate_when_section<T>(
             locator.locate_symbol(&parameter),
             format!("Missing `when:` requirement for parameter `{parameter}`"),
         );
+    }
+}
+
+fn describes_when_parameters_from_usage(group: &DescribesGroup) -> WhenParameters {
+    let mut parameters = header_when_parameters(&group.heading);
+    for name in describes_used_names(group) {
+        if parameters.allowed.contains(&name) {
+            parameters.require(name);
+        }
+    }
+    parameters
+}
+
+fn describes_used_names(group: &DescribesGroup) -> BTreeSet<String> {
+    let mut names = BTreeSet::new();
+    if let Some(extends) = &group.extends {
+        collect_is_or_via_names(&extends.argument, &mut names);
+    }
+    if let Some(specifies) = &group.specifies {
+        for item in &specifies.arguments {
+            collect_is_or_via_names(item, &mut names);
+        }
+    }
+    if let Some(satisfies) = &group.satisfies {
+        for clause in &satisfies.arguments {
+            collect_clause_names(clause, &mut names);
+        }
+    }
+    names
+}
+
+fn validate_describes_target_symbol_specifications(
+    group: &DescribesGroup,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let mut covered = BTreeSet::new();
+    covered.insert(described_target_subject_key(&group.describes.argument));
+    collect_using_covered_symbols(&group.using, &mut covered);
+    collect_valid_when_covered_symbols(
+        &group.when,
+        &header_when_parameters(&group.heading),
+        &mut covered,
+    );
+    collect_specifies_covered_symbols(&group.specifies, &mut covered);
+    collect_extends_covered_symbols(&group.extends, &mut covered);
+    let symbols = describes_target_symbols(&group.describes.argument);
+    validate_target_symbol_specifications(&symbols, &covered, path, locator, event_log);
+}
+
+fn validate_defines_target_symbol_specifications(
+    group: &DefinesGroup,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let mut covered = BTreeSet::new();
+    collect_using_covered_symbols(&group.using, &mut covered);
+    collect_valid_when_covered_symbols(
+        &group.when,
+        &header_when_parameters(&group.heading),
+        &mut covered,
+    );
+    collect_declaration_statement_covered_symbols(&group.defines.argument, &mut covered);
+    validate_declaration_target_symbol_specifications(
+        &group.defines.argument,
+        &covered,
+        path,
+        locator,
+        event_log,
+    );
+}
+
+fn validate_refines_target_symbol_specifications(
+    group: &RefinesGroup,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let mut covered = BTreeSet::new();
+    covered.insert(primary_subject_key(&group.refines.argument.subject));
+    collect_using_covered_symbols(&group.using, &mut covered);
+    collect_valid_when_covered_symbols(
+        &group.when,
+        &header_when_parameters(&group.heading),
+        &mut covered,
+    );
+    if let Some(extends) = &group.extends {
+        collect_declaration_statement_covered_symbols(&extends.argument, &mut covered);
+    }
+    validate_declaration_target_symbol_specifications(
+        &group.refines.argument,
+        &covered,
+        path,
+        locator,
+        event_log,
+    );
+}
+
+fn validate_declaration_target_symbol_specifications(
+    statement: &DeclarationStatement,
+    covered: &BTreeSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let symbols = declaration_target_symbols(statement);
+    validate_target_symbol_specifications(&symbols, covered, path, locator, event_log);
+}
+
+fn validate_target_symbol_specifications(
+    symbols: &BTreeSet<String>,
+    covered: &BTreeSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    for symbol in symbols {
+        if covered.contains(symbol) {
+            continue;
+        }
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(symbol),
+            format!(
+                "Missing specification for target symbol `{symbol}`; specify it directly or through `extends:`"
+            ),
+        );
+    }
+}
+
+fn collect_using_covered_symbols(using: &Option<UsingSection>, covered: &mut BTreeSet<String>) {
+    if let Some(using) = using {
+        for statement in &using.arguments {
+            collect_declaration_statement_covered_symbols(statement, covered);
+        }
+    }
+}
+
+fn collect_specifies_covered_symbols(
+    specifies: &Option<DescribesSpecifiesSection>,
+    covered: &mut BTreeSet<String>,
+) {
+    if let Some(specifies) = specifies {
+        for item in &specifies.arguments {
+            collect_is_or_via_covered_symbols(item, covered);
+        }
+    }
+}
+
+fn collect_extends_covered_symbols(
+    extends: &Option<ExtendsSection>,
+    covered: &mut BTreeSet<String>,
+) {
+    if let Some(extends) = extends {
+        collect_is_or_via_covered_symbols(&extends.argument, covered);
+    }
+}
+
+fn collect_valid_when_covered_symbols<T>(
+    section: &Option<T>,
+    parameters: &WhenParameters,
+    covered: &mut BTreeSet<String>,
+) where
+    T: ClauseSection,
+{
+    if let Some(section) = section {
+        for clause in section.clauses() {
+            collect_valid_when_clause_covered_symbols(clause, parameters, covered);
+        }
+    }
+}
+
+fn collect_valid_when_clause_covered_symbols(
+    clause: &Clause,
+    parameters: &WhenParameters,
+    covered: &mut BTreeSet<String>,
+) {
+    match clause {
+        Clause::Declaration(statement)
+            if statement.expansion.is_none() && statement.definition.is_none() =>
+        {
+            match &statement.relation {
+                Some(DeclarationRelation::Is(_))
+                | Some(DeclarationRelation::Spec { .. })
+                | Some(DeclarationRelation::InfixSpec { .. }) => {
+                    for subject in declaration_subject_keys(statement) {
+                        if parameters.allowed.contains(&subject) {
+                            covered.insert(subject);
+                        }
+                    }
+                }
+                None => {}
+            }
+        }
+        Clause::Expression(expression) => {
+            for subject in when_expression_subjects(expression) {
+                if parameters.allowed.contains(&subject) {
+                    covered.insert(subject);
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+fn when_expression_subjects(expression: &Expression) -> Vec<String> {
+    match &expression.kind {
+        ExpressionKind::IsType { subject, .. } => vec![key_for_expression(subject)],
+        ExpressionKind::SpecStatement(statement) => {
+            vec![key_for_expression(&statement.subject)]
+        }
+        ExpressionKind::InfixSpecStatement { left, spec, .. } if !spec.predicate => {
+            vec![key_for_expression(left)]
+        }
+        _ => Vec::new(),
+    }
+}
+
+fn collect_is_or_via_covered_symbols(item: &IsOrViaItem, covered: &mut BTreeSet<String>) {
+    match item {
+        IsOrViaItem::IsVia(statement) => {
+            collect_is_subject_covered_symbols(&statement.is_statement.subject, covered);
+            collect_form_or_declaration_target_symbols(&statement.via, covered);
+        }
+        IsOrViaItem::Declaration(statement) => {
+            collect_declaration_statement_covered_symbols(statement, covered);
+        }
+    }
+}
+
+fn collect_declaration_statement_covered_symbols(
+    statement: &DeclarationStatement,
+    covered: &mut BTreeSet<String>,
+) {
+    if statement.relation.is_none() {
+        return;
+    }
+    collect_is_subject_covered_symbols(&statement.subject, covered);
+}
+
+fn collect_is_subject_covered_symbols(subject: &IsSubject, covered: &mut BTreeSet<String>) {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) => {
+            for form in forms {
+                if let IsSubjectForm::Form(form) = form {
+                    collect_form_or_declaration_target_symbols(form, covered);
+                }
+            }
+        }
+        IsSubjectKind::Operator(operator) => {
+            covered.insert(operator.text.clone());
+        }
+    }
+}
+
+fn declaration_target_symbols(statement: &DeclarationStatement) -> BTreeSet<String> {
+    let mut symbols = BTreeSet::new();
+    collect_is_subject_target_symbols(&statement.subject, &mut symbols);
+    if let Some(expansion) = &statement.expansion {
+        collect_is_subject_target_symbols(expansion, &mut symbols);
+    }
+    symbols
+}
+
+fn describes_target_symbols(target: &DescribesTarget) -> BTreeSet<String> {
+    let mut symbols = BTreeSet::new();
+    match target {
+        DescribesTarget::Form(form) => {
+            collect_form_or_declaration_target_symbols(form, &mut symbols);
+        }
+        DescribesTarget::Declaration(statement) => {
+            symbols.extend(declaration_target_symbols(statement));
+        }
+    }
+    symbols
+}
+
+fn collect_is_subject_target_symbols(subject: &IsSubject, symbols: &mut BTreeSet<String>) {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) => {
+            for form in forms {
+                if let IsSubjectForm::Form(form) = form {
+                    collect_form_or_declaration_target_symbols(form, symbols);
+                }
+            }
+        }
+        IsSubjectKind::Operator(operator) => {
+            symbols.insert(operator.text.clone());
+        }
+    }
+}
+
+fn collect_form_or_declaration_target_symbols(
+    form: &FormOrDeclaration,
+    symbols: &mut BTreeSet<String>,
+) {
+    match &form.kind {
+        FormOrDeclarationKind::Name(name) => {
+            symbols.insert(name.clone());
+        }
+        FormOrDeclarationKind::FunctionDeclaration { name, form } => {
+            symbols.insert(name.as_ref().unwrap_or(&form.name).clone());
+        }
+        FormOrDeclarationKind::TupleDeclaration { name, form } => {
+            if let Some(name) = name {
+                symbols.insert(name.clone());
+            }
+            for element in &form.elements {
+                match element {
+                    TupleFormElement::Form(form) => {
+                        collect_form_or_declaration_target_symbols(form, symbols);
+                    }
+                    TupleFormElement::Operator(operator) => {
+                        symbols.insert(operator.text.clone());
+                    }
+                }
+            }
+        }
+        FormOrDeclarationKind::SetDeclaration { name, .. } => {
+            if let Some(name) = name {
+                symbols.insert(name.clone());
+            }
+        }
+        FormOrDeclarationKind::InfixOperator { operator, .. }
+        | FormOrDeclarationKind::PrefixOperator { operator, .. }
+        | FormOrDeclarationKind::PostfixOperator { operator, .. } => {
+            symbols.insert(operator.text.clone());
+        }
+    }
+}
+
+fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
+    match clause {
+        Clause::Not(group) => collect_clause_names(&group.not.argument, names),
+        Clause::AllOf(group) => {
+            for clause in &group.all_of.arguments {
+                collect_clause_names(clause, names);
+            }
+        }
+        Clause::AnyOf(group) => {
+            for clause in &group.any_of.arguments {
+                collect_clause_names(clause, names);
+            }
+        }
+        Clause::OneOf(group) => {
+            for clause in &group.one_of.arguments {
+                collect_clause_names(clause, names);
+            }
+        }
+        Clause::Exists(group) => {
+            collect_binding_or_spec_names(&group.exists.argument, names);
+            if let Some(such_that) = &group.such_that {
+                for clause in &such_that.arguments {
+                    collect_clause_names(clause, names);
+                }
+            }
+        }
+        Clause::ExistsUnique(group) => {
+            collect_binding_or_spec_names(&group.exists_unique.argument, names);
+            if let Some(such_that) = &group.such_that {
+                for clause in &such_that.arguments {
+                    collect_clause_names(clause, names);
+                }
+            }
+        }
+        Clause::ForAll(group) => {
+            collect_binding_or_spec_names(&group.for_all.argument, names);
+            if let Some(where_) = &group.where_ {
+                for clause in &where_.arguments {
+                    collect_clause_names(clause, names);
+                }
+            }
+            for clause in &group.then.arguments {
+                collect_clause_names(clause, names);
+            }
+        }
+        Clause::If(group) => {
+            for clause in &group.if_.arguments {
+                collect_clause_names(clause, names);
+            }
+            for clause in &group.then.arguments {
+                collect_clause_names(clause, names);
+            }
+        }
+        Clause::Iff(group) => {
+            for clause in &group.iff.arguments {
+                collect_clause_names(clause, names);
+            }
+            for clause in &group.then.arguments {
+                collect_clause_names(clause, names);
+            }
+        }
+        Clause::Piecewise(group) => {
+            for clause in &group.if_.arguments {
+                collect_clause_names(clause, names);
+            }
+            for clause in &group.then.arguments {
+                collect_clause_names(clause, names);
+            }
+            if let Some(else_) = &group.else_ {
+                for clause in &else_.arguments {
+                    collect_clause_names(clause, names);
+                }
+            }
+        }
+        Clause::Given(group) => {
+            collect_declaration_statement_names(&group.given.argument, names);
+            if let Some(where_) = &group.where_ {
+                for clause in &where_.arguments {
+                    collect_clause_names(clause, names);
+                }
+            }
+            for clause in &group.then.arguments {
+                collect_clause_names(clause, names);
+            }
+        }
+        Clause::Declaration(statement) => collect_declaration_statement_names(statement, names),
+        Clause::Expression(expression) => collect_expression_names(expression, names),
+    }
+}
+
+fn collect_binding_or_spec_names(item: &BindingOrSpec, names: &mut BTreeSet<String>) {
+    match item {
+        BindingOrSpec::Declaration(statement) => {
+            collect_declaration_statement_names(statement, names)
+        }
+    }
+}
+
+fn collect_is_or_via_names(item: &IsOrViaItem, names: &mut BTreeSet<String>) {
+    match item {
+        IsOrViaItem::IsVia(statement) => {
+            collect_is_subject_names(&statement.is_statement.subject, names);
+            collect_type_expression_names(&statement.is_statement.ty, names);
+            collect_form_or_declaration_names(&statement.via, names);
+        }
+        IsOrViaItem::Declaration(statement) => {
+            collect_declaration_statement_names(statement, names)
+        }
+    }
+}
+
+fn collect_declaration_statement_names(
+    statement: &DeclarationStatement,
+    names: &mut BTreeSet<String>,
+) {
+    collect_is_subject_names(&statement.subject, names);
+    if let Some(expansion) = &statement.expansion {
+        collect_is_subject_names(expansion, names);
+    }
+    if let Some(definition) = &statement.definition {
+        collect_expression_names(definition, names);
+    }
+    match &statement.relation {
+        Some(DeclarationRelation::Is(ty)) => collect_type_expression_names(ty, names),
+        Some(DeclarationRelation::Spec { target, .. }) => {
+            collect_expression_names(target, names);
+        }
+        Some(DeclarationRelation::InfixSpec { spec, target }) => {
+            collect_infix_spec_names(spec, names);
+            collect_expression_names(target, names);
+        }
+        None => {}
+    }
+}
+
+fn collect_is_subject_names(subject: &IsSubject, names: &mut BTreeSet<String>) {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) => {
+            for form in forms {
+                match form {
+                    IsSubjectForm::Form(form) => collect_form_or_declaration_names(form, names),
+                    IsSubjectForm::PlaceholderForm(form) => {
+                        collect_placeholder_form_names(form, names)
+                    }
+                }
+            }
+        }
+        IsSubjectKind::Operator(operator) => {
+            names.insert(operator.text.clone());
+        }
+    }
+}
+
+fn collect_form_or_declaration_names(form: &FormOrDeclaration, names: &mut BTreeSet<String>) {
+    match &form.kind {
+        FormOrDeclarationKind::Name(name) => {
+            names.insert(name.clone());
+        }
+        FormOrDeclarationKind::FunctionDeclaration { name, form } => {
+            names.insert(name.as_ref().unwrap_or(&form.name).clone());
+            if let Some(placeholder) = &form.magnetic_placeholder {
+                names.insert(placeholder.name.clone());
+            }
+            for placeholder in &form.placeholders {
+                names.insert(placeholder.name.clone());
+            }
+        }
+        FormOrDeclarationKind::TupleDeclaration { name, form } => {
+            if let Some(name) = name {
+                names.insert(name.clone());
+            }
+            for element in &form.elements {
+                match element {
+                    TupleFormElement::Form(form) => collect_form_or_declaration_names(form, names),
+                    TupleFormElement::Operator(operator) => {
+                        names.insert(operator.text.clone());
+                    }
+                }
+            }
+        }
+        FormOrDeclarationKind::SetDeclaration { name, form } => {
+            if let Some(name) = name {
+                names.insert(name.clone());
+            }
+            collect_placeholder_form_names(&form.placeholder_form, names);
+        }
+        FormOrDeclarationKind::InfixOperator {
+            left,
+            operator,
+            right,
+        } => {
+            names.insert(left.name.clone());
+            names.insert(operator.text.clone());
+            names.insert(right.name.clone());
+        }
+        FormOrDeclarationKind::PrefixOperator {
+            operator,
+            placeholder,
+        } => {
+            names.insert(operator.text.clone());
+            names.insert(placeholder.name.clone());
+        }
+        FormOrDeclarationKind::PostfixOperator {
+            placeholder,
+            operator,
+        } => {
+            names.insert(placeholder.name.clone());
+            names.insert(operator.text.clone());
+        }
+    }
+}
+
+fn collect_placeholder_form_names(form: &PlaceholderForm, names: &mut BTreeSet<String>) {
+    match &form.kind {
+        PlaceholderFormKind::Placeholder(placeholder) => {
+            names.insert(placeholder.name.clone());
+        }
+        PlaceholderFormKind::Function {
+            placeholder,
+            arguments,
+        } => {
+            names.insert(placeholder.name.clone());
+            for argument in arguments {
+                names.insert(argument.name.clone());
+            }
+        }
+    }
+}
+
+fn collect_expression_names(expression: &Expression, names: &mut BTreeSet<String>) {
+    match &expression.kind {
+        ExpressionKind::Name(name) => {
+            names.insert(name.clone());
+        }
+        ExpressionKind::FunctionCall { name, arguments } => {
+            names.insert(name.clone());
+            for argument in arguments {
+                collect_expression_names(argument, names);
+            }
+        }
+        ExpressionKind::FunctionNamedCall { name, elements } => {
+            names.insert(name.clone());
+            for element in elements {
+                match &element.lhs {
+                    FunctionNamedExpressionElementLhs::Name(name) => {
+                        names.insert(name.clone());
+                    }
+                    FunctionNamedExpressionElementLhs::SubsetCall(subset) => {
+                        collect_subset_call_names(subset, names);
+                    }
+                }
+                collect_expression_names(&element.expression, names);
+            }
+        }
+        ExpressionKind::MemberCall {
+            owner,
+            name,
+            arguments,
+        } => {
+            collect_expression_names(owner, names);
+            names.insert(name.clone());
+            for argument in arguments {
+                collect_expression_names(argument, names);
+            }
+        }
+        ExpressionKind::MemberAccess { owner, name } => {
+            collect_expression_names(owner, names);
+            names.insert(name.clone());
+        }
+        ExpressionKind::Tuple(elements) => {
+            for element in elements {
+                if let TupleExpressionElement::Expression(expression) = element {
+                    collect_expression_names(expression, names);
+                }
+            }
+        }
+        ExpressionKind::Set(set) => collect_set_expression_names(set, names),
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            collect_expression_names(expression, names);
+        }
+        ExpressionKind::SubsetCall(subset) => collect_subset_call_names(subset, names),
+        ExpressionKind::Command(command) => collect_command_expression_names(command, names),
+        ExpressionKind::InfixCommand {
+            left,
+            command,
+            right,
+        } => {
+            collect_expression_names(left, names);
+            collect_infix_command_names(command, names);
+            collect_expression_names(right, names);
+        }
+        ExpressionKind::InfixSpecStatement { left, spec, right } => {
+            collect_expression_names(left, names);
+            collect_infix_spec_names(spec, names);
+            collect_expression_names(right, names);
+        }
+        ExpressionKind::Prefix { expression, .. } | ExpressionKind::Postfix { expression, .. } => {
+            collect_expression_names(expression, names);
+        }
+        ExpressionKind::Binary { left, right, .. } => {
+            collect_expression_names(left, names);
+            collect_expression_names(right, names);
+        }
+        ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
+            collect_expression_names(&statement.subject, names);
+            names.insert(statement.name.clone());
+        }
+        ExpressionKind::IsPredicate { subject, command }
+        | ExpressionKind::IsNotPredicate { subject, command } => {
+            collect_expression_names(subject, names);
+            collect_command_expression_names(command, names);
+        }
+        ExpressionKind::IsBuiltinPredicate { subject, ty }
+        | ExpressionKind::IsNotBuiltinPredicate { subject, ty }
+        | ExpressionKind::IsType { subject, ty } => {
+            collect_expression_names(subject, names);
+            collect_type_expression_names(ty, names);
+        }
+        ExpressionKind::IsRefinedPredicate { subject, command }
+        | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
+            collect_expression_names(subject, names);
+            collect_refined_command_expression_names(command, names);
+        }
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => {
+            collect_expression_names(subject, names);
+            collect_expression_names(collection, names);
+        }
+    }
+}
+
+fn collect_type_expression_names(ty: &TypeExpression, names: &mut BTreeSet<String>) {
+    match ty {
+        TypeExpression::Builtin { .. } => {}
+        TypeExpression::Command(command) => collect_command_expression_names(command, names),
+        TypeExpression::RefinedCommand(command) => {
+            collect_refined_command_expression_names(command, names);
+        }
+        TypeExpression::Function(function_type) => {
+            for spec in function_type
+                .inputs
+                .iter()
+                .chain(std::iter::once(&function_type.output))
+            {
+                names.insert(spec.subject.clone());
+                match &spec.kind {
+                    FunctionTypeSpecKind::Is(ty) => collect_type_expression_names(ty, names),
+                    FunctionTypeSpecKind::Spec { target, .. } => {
+                        names.insert(target.clone());
+                    }
+                }
+            }
+        }
+        TypeExpression::Coercion { ty, literal, .. } => {
+            collect_type_expression_names(ty, names);
+            collect_set_expression_names(literal, names);
+        }
+    }
+}
+
+fn collect_set_expression_names(set: &SetExpression, names: &mut BTreeSet<String>) {
+    collect_set_target_names(&set.target, names);
+    for spec in &set.specs {
+        collect_expression_names(spec, names);
+    }
+    if let Some(predicate) = &set.predicate {
+        collect_expression_names(predicate, names);
+    }
+}
+
+fn collect_set_target_names(target: &SetTarget, names: &mut BTreeSet<String>) {
+    match &target.kind {
+        SetTargetKind::Name(name) => {
+            names.insert(name.clone());
+        }
+        SetTargetKind::PlaceholderForm(form) => collect_placeholder_form_names(form, names),
+        SetTargetKind::Alias { name, target } => {
+            names.insert(name.clone());
+            collect_set_target_names(target, names);
+        }
+        SetTargetKind::Function { name, arguments } => {
+            names.insert(name.clone());
+            for argument in arguments {
+                collect_set_target_names(argument, names);
+            }
+        }
+        SetTargetKind::Tuple(elements) => {
+            for element in elements {
+                if let SetTargetElement::Target(target) = element {
+                    collect_set_target_names(target, names);
+                }
+            }
+        }
+    }
+}
+
+fn collect_command_expression_names(command: &CommandExpression, names: &mut BTreeSet<String>) {
+    for expression in command_expression_arguments(command) {
+        collect_expression_names(expression, names);
+    }
+}
+
+fn collect_infix_command_names(command: &InfixCommand, names: &mut BTreeSet<String>) {
+    for expression in infix_command_arguments(command) {
+        collect_expression_names(expression, names);
+    }
+}
+
+fn collect_infix_spec_names(spec: &InfixSpec, names: &mut BTreeSet<String>) {
+    for expression in infix_spec_arguments(spec) {
+        collect_expression_names(expression, names);
+    }
+}
+
+fn collect_refined_command_expression_names(
+    command: &RefinedCommandExpression,
+    names: &mut BTreeSet<String>,
+) {
+    for expression in refined_command_expression_arguments(command) {
+        collect_expression_names(expression, names);
+    }
+}
+
+fn collect_subset_call_names(subset: &SubsetCall, names: &mut BTreeSet<String>) {
+    match subset {
+        SubsetCall::One { target, first, .. } => {
+            names.insert(target.clone());
+            names.insert(first.clone());
+        }
+        SubsetCall::Two {
+            target,
+            first,
+            second,
+            ..
+        } => {
+            names.insert(target.clone());
+            names.insert(first.clone());
+            names.insert(second.clone());
+        }
+        SubsetCall::Nested {
+            target,
+            outer,
+            inner_target,
+            ..
+        } => {
+            names.insert(target.clone());
+            names.insert(outer.clone());
+            names.insert(inner_target.clone());
+        }
     }
 }
 
@@ -3768,19 +4551,19 @@ fn expression_tail_part_is_active(part: &CommandExpressionTailPart, context: &Ty
 
 fn expression_names_are_defined(expression: &Expression, context: &TypeContext) -> bool {
     let mut names = Vec::new();
-    collect_expression_names(expression, &mut names);
+    collect_defined_expression_names(expression, &mut names);
     names
         .iter()
         .all(|name| is_literal_name(name) || context.has_name(name))
 }
 
-fn collect_expression_names(expression: &Expression, names: &mut Vec<String>) {
+fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<String>) {
     match &expression.kind {
         ExpressionKind::Name(name) => names.push(name.clone()),
         ExpressionKind::FunctionCall { name, arguments } => {
             names.push(name.clone());
             for argument in arguments {
-                collect_expression_names(argument, names);
+                collect_defined_expression_names(argument, names);
             }
         }
         ExpressionKind::FunctionNamedCall { name, elements } => {
@@ -3789,45 +4572,49 @@ fn collect_expression_names(expression: &Expression, names: &mut Vec<String>) {
                 match &element.lhs {
                     FunctionNamedExpressionElementLhs::Name(name) => names.push(name.clone()),
                     FunctionNamedExpressionElementLhs::SubsetCall(subset) => {
-                        collect_subset_call_names(subset, names);
+                        collect_defined_subset_call_names(subset, names);
                     }
                 }
-                collect_expression_names(&element.expression, names);
+                collect_defined_expression_names(&element.expression, names);
             }
         }
         ExpressionKind::MemberCall {
             owner, arguments, ..
         } => {
-            collect_expression_names(owner, names);
+            collect_defined_expression_names(owner, names);
             for argument in arguments {
-                collect_expression_names(argument, names);
+                collect_defined_expression_names(argument, names);
             }
         }
-        ExpressionKind::MemberAccess { owner, .. } => collect_expression_names(owner, names),
+        ExpressionKind::MemberAccess { owner, .. } => {
+            collect_defined_expression_names(owner, names)
+        }
         ExpressionKind::Tuple(elements) => {
             for element in elements {
                 if let TupleExpressionElement::Expression(expression) = element {
-                    collect_expression_names(expression, names);
+                    collect_defined_expression_names(expression, names);
                 }
             }
         }
         ExpressionKind::Set(set) => {
-            collect_set_target_names(&set.target, names);
+            collect_defined_set_target_names(&set.target, names);
             for spec in &set.specs {
-                collect_expression_names(spec, names);
+                collect_defined_expression_names(spec, names);
             }
             if let Some(predicate) = &set.predicate {
-                collect_expression_names(predicate, names);
+                collect_defined_expression_names(predicate, names);
             }
         }
         ExpressionKind::Grouped { expression, .. }
         | ExpressionKind::Labeled { expression, .. }
         | ExpressionKind::Prefix { expression, .. }
-        | ExpressionKind::Postfix { expression, .. } => collect_expression_names(expression, names),
-        ExpressionKind::SubsetCall(subset) => collect_subset_call_names(subset, names),
+        | ExpressionKind::Postfix { expression, .. } => {
+            collect_defined_expression_names(expression, names)
+        }
+        ExpressionKind::SubsetCall(subset) => collect_defined_subset_call_names(subset, names),
         ExpressionKind::Command(command) => {
             for expression in command_expression_arguments(command) {
-                collect_expression_names(expression, names);
+                collect_defined_expression_names(expression, names);
             }
         }
         ExpressionKind::InfixCommand {
@@ -3835,71 +4622,71 @@ fn collect_expression_names(expression: &Expression, names: &mut Vec<String>) {
             command,
             right,
         } => {
-            collect_expression_names(left, names);
+            collect_defined_expression_names(left, names);
             for expression in infix_command_arguments(command) {
-                collect_expression_names(expression, names);
+                collect_defined_expression_names(expression, names);
             }
-            collect_expression_names(right, names);
+            collect_defined_expression_names(right, names);
         }
         ExpressionKind::InfixSpecStatement { left, spec, right } => {
-            collect_expression_names(left, names);
+            collect_defined_expression_names(left, names);
             for expression in infix_spec_arguments(spec) {
-                collect_expression_names(expression, names);
+                collect_defined_expression_names(expression, names);
             }
-            collect_expression_names(right, names);
+            collect_defined_expression_names(right, names);
         }
         ExpressionKind::Binary { left, right, .. } => {
-            collect_expression_names(left, names);
-            collect_expression_names(right, names);
+            collect_defined_expression_names(left, names);
+            collect_defined_expression_names(right, names);
         }
         ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
-            collect_expression_names(&statement.subject, names);
+            collect_defined_expression_names(&statement.subject, names);
             names.push(statement.name.clone());
         }
         ExpressionKind::MemberOf {
             subject,
             collection,
         } => {
-            collect_expression_names(subject, names);
-            collect_expression_names(collection, names);
+            collect_defined_expression_names(subject, names);
+            collect_defined_expression_names(collection, names);
         }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
-            collect_expression_names(subject, names);
+            collect_defined_expression_names(subject, names);
             for expression in command_expression_arguments(command) {
-                collect_expression_names(expression, names);
+                collect_defined_expression_names(expression, names);
             }
         }
         ExpressionKind::IsBuiltinPredicate { subject, ty }
         | ExpressionKind::IsNotBuiltinPredicate { subject, ty } => {
-            collect_expression_names(subject, names);
-            collect_type_expression_names(ty, names);
+            collect_defined_expression_names(subject, names);
+            collect_defined_type_expression_names(ty, names);
         }
         ExpressionKind::IsRefinedPredicate { subject, command }
         | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
-            collect_expression_names(subject, names);
+            collect_defined_expression_names(subject, names);
             for expression in refined_command_expression_arguments(command) {
-                collect_expression_names(expression, names);
+                collect_defined_expression_names(expression, names);
             }
         }
         ExpressionKind::IsType { subject, ty } => {
-            collect_expression_names(subject, names);
-            collect_type_expression_names(ty, names);
+            collect_defined_expression_names(subject, names);
+            collect_defined_type_expression_names(ty, names);
         }
     }
 }
 
-fn collect_type_expression_names(ty: &TypeExpression, names: &mut Vec<String>) {
+fn collect_defined_type_expression_names(ty: &TypeExpression, names: &mut Vec<String>) {
     match ty {
         TypeExpression::Builtin { .. } => {}
         TypeExpression::Command(command) => {
             for expression in command_expression_arguments(command) {
-                collect_expression_names(expression, names);
+                collect_defined_expression_names(expression, names);
             }
         }
         TypeExpression::RefinedCommand(command) => {
             for expression in refined_command_expression_arguments(command) {
-                collect_expression_names(expression, names);
+                collect_defined_expression_names(expression, names);
             }
         }
         TypeExpression::Function(function_type) => {
@@ -3908,36 +4695,36 @@ fn collect_type_expression_names(ty: &TypeExpression, names: &mut Vec<String>) {
                 .iter()
                 .chain(std::iter::once(&function_type.output))
             {
-                collect_function_type_spec_names(spec, names);
+                collect_defined_function_type_spec_names(spec, names);
             }
         }
         TypeExpression::Coercion { ty, literal, .. } => {
-            collect_type_expression_names(ty, names);
-            collect_set_target_names(&literal.target, names);
+            collect_defined_type_expression_names(ty, names);
+            collect_defined_set_target_names(&literal.target, names);
             for spec in &literal.specs {
-                collect_expression_names(spec, names);
+                collect_defined_expression_names(spec, names);
             }
             if let Some(predicate) = &literal.predicate {
-                collect_expression_names(predicate, names);
+                collect_defined_expression_names(predicate, names);
             }
         }
     }
 }
 
-fn collect_function_type_spec_names(spec: &FunctionTypeSpec, names: &mut Vec<String>) {
+fn collect_defined_function_type_spec_names(spec: &FunctionTypeSpec, names: &mut Vec<String>) {
     match &spec.kind {
-        FunctionTypeSpecKind::Is(ty) => collect_type_expression_names(ty, names),
+        FunctionTypeSpecKind::Is(ty) => collect_defined_type_expression_names(ty, names),
         FunctionTypeSpecKind::Spec { target, .. } => names.push(target.clone()),
     }
 }
 
-fn collect_set_target_names(target: &SetTarget, names: &mut Vec<String>) {
+fn collect_defined_set_target_names(target: &SetTarget, names: &mut Vec<String>) {
     match &target.kind {
         SetTargetKind::Name(name) => names.push(name.clone()),
-        SetTargetKind::PlaceholderForm(form) => collect_placeholder_form_names(form, names),
+        SetTargetKind::PlaceholderForm(form) => collect_defined_placeholder_form_names(form, names),
         SetTargetKind::Alias { name, target } => {
             names.push(name.clone());
-            collect_set_target_names(target, names);
+            collect_defined_set_target_names(target, names);
         }
         SetTargetKind::Function {
             name: function_name,
@@ -3945,20 +4732,20 @@ fn collect_set_target_names(target: &SetTarget, names: &mut Vec<String>) {
         } => {
             names.push(function_name.clone());
             for argument in arguments {
-                collect_set_target_names(argument, names);
+                collect_defined_set_target_names(argument, names);
             }
         }
         SetTargetKind::Tuple(elements) => {
             for element in elements {
                 if let SetTargetElement::Target(target) = element {
-                    collect_set_target_names(target, names);
+                    collect_defined_set_target_names(target, names);
                 }
             }
         }
     }
 }
 
-fn collect_placeholder_form_names(form: &PlaceholderForm, names: &mut Vec<String>) {
+fn collect_defined_placeholder_form_names(form: &PlaceholderForm, names: &mut Vec<String>) {
     match &form.kind {
         PlaceholderFormKind::Placeholder(placeholder) => names.push(placeholder.name.clone()),
         PlaceholderFormKind::Function {
@@ -3971,7 +4758,7 @@ fn collect_placeholder_form_names(form: &PlaceholderForm, names: &mut Vec<String
     }
 }
 
-fn collect_subset_call_names(subset: &SubsetCall, names: &mut Vec<String>) {
+fn collect_defined_subset_call_names(subset: &SubsetCall, names: &mut Vec<String>) {
     match subset {
         SubsetCall::One { target, first, .. } => {
             names.push(target.clone());
@@ -7520,16 +8307,6 @@ impl WhenParameters {
     fn allow(&mut self, parameter: String) {
         self.allowed.insert(parameter);
     }
-
-    fn require_all(&mut self, parameters: HashSet<String>) {
-        for parameter in parameters {
-            self.require(parameter);
-        }
-    }
-
-    fn remove_required(&mut self, parameter: &str) {
-        self.required.remove(parameter);
-    }
 }
 
 fn header_when_parameters(header: &CommandHeader) -> WhenParameters {
@@ -7616,49 +8393,6 @@ fn form_when_parameter_names(form: &FormOrDeclaration) -> HashSet<String> {
     if let FormOrDeclarationKind::TupleDeclaration { form, .. } = &form.kind {
         collect_tuple_form_when_parameters(form, &mut parameters);
     }
-    parameters
-}
-
-fn describes_when_parameters(header: &CommandHeader, target: &DescribesTarget) -> WhenParameters {
-    let mut parameters = header_when_parameters(header);
-    if let Some(subject) = describes_target_primary_subject(target) {
-        parameters.remove_required(&subject);
-    }
-    collect_describes_target_when_parameters(target, &mut parameters);
-    parameters
-}
-
-fn describes_target_primary_subject(target: &DescribesTarget) -> Option<String> {
-    match target {
-        DescribesTarget::Form(form) => {
-            primary_form_name(form).or_else(|| Some(key_for_form_or_declaration(form)))
-        }
-        DescribesTarget::Declaration(statement) => Some(primary_subject_key(&statement.subject)),
-    }
-}
-
-fn collect_describes_target_when_parameters(
-    target: &DescribesTarget,
-    parameters: &mut WhenParameters,
-) {
-    match target {
-        DescribesTarget::Form(form) => collect_describes_form_when_parameters(form, parameters),
-        DescribesTarget::Declaration(_) => {}
-    }
-}
-
-fn collect_describes_form_when_parameters(
-    form: &FormOrDeclaration,
-    parameters: &mut WhenParameters,
-) {
-    if let FormOrDeclarationKind::TupleDeclaration { form, .. } = &form.kind {
-        parameters.require_all(tuple_form_when_parameter_names(form));
-    }
-}
-
-fn tuple_form_when_parameter_names(form: &TupleForm) -> HashSet<String> {
-    let mut parameters = HashSet::new();
-    collect_tuple_form_when_parameters(form, &mut parameters);
     parameters
 }
 

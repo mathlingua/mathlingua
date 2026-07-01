@@ -231,16 +231,20 @@ Set builder definitions allow general element forms before the colon.
 ### `when:` Requirements
 
 Definition-like entries validate `when:` against the parameters introduced by
-their headers and targets.
+their headers.
 
 Rules:
 
 - Required non-optional header parameters must have a corresponding `when:`
   requirement.
-- Optional tail parameters are allowed in `when:` but are not required.
-- The primary subject of a `Describes:` entry is not required in `when:`.
-- Structure parameters introduced by a target such as `G ::= (X, *, e)` are
-  required in `when:`.
+- Optional tail parameters are allowed in `when:` but are not required unless a
+  `Describes:` entry references them in semantic constraints such as
+  `specifies:`, `extends:`, or `satisfies:`.
+- Target symbols introduced by a declaration target such as `G ::= (X, *, e)`
+  are not `when:` parameters unless they also occur in the command header.
+- Target symbols introduced by `Describes:`, `Defines:`, and `Refines:` targets
+  must have specifications directly, such as through `specifies:`, `using:`, or
+  an `is` relation, or transitively through `extends: ... via ...`.
 - `A, B is \set` counts as both `A is \set` and `B is \set`.
 - `P, Q is \\statement` counts as both `P is \\statement` and
   `Q is \\statement`.

@@ -628,10 +628,14 @@ Declaration forms introduce their nested names. In:
 [\group]
 Describes: G ::= (X, *, e)
 extends: G is \set via X
+specifies:
+. X is \set
+. * is \function:on{X}:to{X}
+. e "in" G
 ```
 
-the `Describes:` form introduces `G`, `X`, and `e`, so `via X` is a recognized
-symbol.
+the `Describes:` form introduces `G`, `X`, and `e`. The structural symbols are
+specified outside of `when:`, and `via X` is a recognized structural view.
 
 ## Type Facts and Requirements
 
@@ -690,6 +694,10 @@ definitions.
 [\group]
 Describes: G ::= (X, *, e)
 extends: G is \set via X
+specifies:
+. X is \set
+. * is \function:on{X}:to{X}
+. e "in" G
 Documented:
 . called: "group"
 ```

@@ -1374,6 +1374,61 @@ mod tests {
     }
 
     #[test]
+    fn check_requires_used_optional_describes_parameters_in_when() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir
+            .path()
+            .join("used-optional-describes-parameter.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__) ::= y_
+    when: A is \set
+    specifies:
+    . x__ "in" A
+    . y_ "in" B
+    satisfies:
+    . forAll: x "in" A
+      then:
+      . existsUnique: y "in" B
+        suchThat: f(x) = y
+    Documented:
+    . called: "function on $A?$ to $B?$"
+    . written: "f? \: : \: A? \rightarrow B?"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("used-optional-describes-parameter.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let messages = user_events(&event_log)
+            .iter()
+            .filter_map(|event| event.as_message().map(|message| message.message.clone()))
+            .collect::<Vec<_>>();
+        assert!(
+            messages
+                .iter()
+                .any(|message| message.contains("Missing `when:` requirement for parameter `B`")),
+            "{messages:#?}"
+        );
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
     fn check_applies_refines_extends_to_dynamic_refined_base() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("dynamic-refined-base.mlg");
@@ -3034,11 +3089,11 @@ mod tests {
 
     [\group]
     Describes: G ::= (X, *, e)
-    when:
+    extends: G is \set via X
+    specifies:
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
-    extends: G is \set via X
     Enables:
     . capability: x_ "in" G :-> x_ is \element.of:group{G}
     Documented:
@@ -4241,7 +4296,7 @@ mod tests {
 
     [\group]
     Describes: G ::= (X, *, e)
-    when:
+    specifies:
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
@@ -4307,6 +4362,12 @@ mod tests {
             .collect::<Vec<_>>();
         assert!(
             messages.iter().any(|message| message.contains(
+                "`when:` requirement for `X` is not allowed because `X` is not a parameter"
+            )),
+            "{messages:#?}"
+        );
+        assert!(
+            messages.iter().any(|message| message.contains(
                 "`when:` requirement for `Y` is not allowed because `Y` is not a parameter"
             )),
             "{messages:#?}"
@@ -4314,13 +4375,19 @@ mod tests {
         assert!(
             messages
                 .iter()
-                .any(|message| message.contains("Missing `when:` requirement for parameter `*`")),
+                .any(|message| message.contains("Missing specification for target symbol `X`")),
             "{messages:#?}"
         );
         assert!(
             messages
                 .iter()
-                .any(|message| message.contains("Missing `when:` requirement for parameter `e`")),
+                .any(|message| message.contains("Missing specification for target symbol `*`")),
+            "{messages:#?}"
+        );
+        assert!(
+            messages
+                .iter()
+                .any(|message| message.contains("Missing specification for target symbol `e`")),
             "{messages:#?}"
         );
         assert!(
@@ -4329,6 +4396,80 @@ mod tests {
             )),
             "{messages:#?}"
         );
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_rejects_describes_when_for_non_header_target_symbols() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("describes-target-when-symbols.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function:on{A}:to{B}]
+    Describes: f(x__)
+    when: A, B is \set
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\element.of:group{G}]
+    Describes: x
+    when: G is \group
+    Documented:
+    . written: "x? \in G?"
+
+    [\group]
+    Describes: G ::= (X, *, e)
+    when:
+    . X is \set
+    . * is \function:on{X}:to{X}
+    . e "in" G
+    extends: G is \set via X
+    Enables:
+    . capability: x_ "in" G :-> x_ is \element.of:group{G}
+    Documented:
+    . written: "\operatorname{group}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("describes-target-when-symbols.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let messages = user_events(&event_log)
+            .iter()
+            .filter_map(|event| event.as_message().map(|message| message.message.clone()))
+            .collect::<Vec<_>>();
+        for subject in ["X", "*", "e"] {
+            assert!(
+                messages.iter().any(|message| message.contains(&format!(
+                    "`when:` requirement for `{subject}` is not allowed because `{subject}` is not a parameter"
+                ))),
+                "{messages:#?}"
+            );
+        }
+        for subject in ["*", "e"] {
+            assert!(
+                messages.iter().any(|message| {
+                    message.contains(&format!(
+                        "Missing specification for target symbol `{subject}`"
+                    ))
+                }),
+                "{messages:#?}"
+            );
+        }
         assert!(event_log.has_errors());
     }
 
@@ -4347,6 +4488,7 @@ mod tests {
     [A \:subset:?within{U}:/ B]
     Describes: A
     when:
+    . A is \set
     . U is \set
     . B is \set
     extends: A is \set
@@ -4396,7 +4538,7 @@ mod tests {
 
     [\group]
     Describes: G ::= (X, *, e)
-    when:
+    specifies:
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
@@ -4499,7 +4641,7 @@ mod tests {
 
     [\group]
     Describes: G ::= (X, *, e)
-    when:
+    specifies:
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
@@ -4557,11 +4699,11 @@ mod tests {
 
     [\group]
     Describes: G ::= (X, *, e)
-    when:
+    extends: G is \set
+    specifies:
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
-    extends: G is \set
     Enables:
     . capability: x_ "in" G :-> x_ is \element.of:group{G}
     Documented:

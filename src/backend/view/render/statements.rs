@@ -20,6 +20,18 @@ pub(super) fn render_declaration_statement(
     rendered
 }
 
+pub(super) fn render_is_via_statement(
+    statement: &IsViaStatement,
+    registry: &RenderRegistry,
+) -> String {
+    format!(
+        "{} \\textrm{{ is }} {} \\textrm{{ via }} {}",
+        render_is_subject(&statement.is_statement.subject),
+        render_type_expression(&statement.is_statement.ty, registry),
+        render_form_or_declaration(&statement.via)
+    )
+}
+
 fn render_declaration_relation(
     relation: &DeclarationRelation,
     registry: &RenderRegistry,

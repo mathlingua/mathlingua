@@ -164,6 +164,10 @@ pub(super) fn render_parsed_formulation_latex(
         return Some(render_expression(&expression, registry));
     }
 
+    if let Ok(statement) = parse_is_via_statement(text) {
+        return Some(render_is_via_statement(&statement, registry));
+    }
+
     if let Ok(statement) = parse_refined_declaration_statement(text) {
         return Some(render_declaration_statement(&statement, registry));
     }

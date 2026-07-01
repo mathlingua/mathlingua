@@ -11,7 +11,7 @@ pub use structural::ast::*;
 pub use structural::parse_document;
 
 pub(crate) use formulation::{
-    parse_command_header, parse_expression, parse_form_or_declaration,
+    parse_command_header, parse_expression, parse_form_or_declaration, parse_is_via_statement,
     parse_refined_declaration_statement,
 };
 pub(crate) use proto::Parser as ProtoParser;

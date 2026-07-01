@@ -108,6 +108,26 @@ Documented:
 }
 
 #[test]
+fn renders_is_via_statements_from_called_templates() {
+    let registry = registry_for(
+        r#"[\set]
+Describes: X
+Documented:
+. called: "set"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"G is \set via X"#, &registry),
+        Some(r#"G \textrm{ is } \textrm{set} \textrm{ via } X"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"G is \set via (X, Y)"#, &registry),
+        Some(r#"G \textrm{ is } \textrm{set} \textrm{ via } \left(X, Y\right)"#.to_string())
+    );
+}
+
+#[test]
 fn renders_builtin_type_expressions_as_plain_text() {
     let registry = registry_for("");
 

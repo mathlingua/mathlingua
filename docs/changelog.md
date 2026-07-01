@@ -375,6 +375,12 @@ Types can now separate definitional requirements from additional capabilities.
 - A `from: ... as:` binding can reduce facts about a casted function call by
   matching the binding's left side against the call and substituting the right
   side into facts from the cast literal.
+- `Enables:` accepts `viewable:` groups with required `as:` declarations and
+  optional `states:` clauses.
+- The `:= ...` construction in a `viewable:` `as:` declaration is optional.
+- Viewable casts may satisfy requirements after a command or operator has
+  already resolved.
+- Viewable casts are not used to resolve operators or capabilities.
 
 ### Capability Rules
 

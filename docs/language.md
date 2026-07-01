@@ -489,6 +489,8 @@ Quantifier declarations are local to the clause group that introduces them.
   source
 - `from:` plus `as:`, which defines how facts from a cast source are viewed as
   facts about the described form
+- `viewable:` groups, which declare that the described type can be viewed as
+  another type when satisfying already-resolved command requirements
 - `connection:` groups, which contain prose fields such as `to:`, `means:`,
   `signifies:`, `viewable:`, and `through:`
 
@@ -798,6 +800,32 @@ described form. If `F := \function@{(p_, q_) : q_ is \set}`, the binding lets
 the checker use facts about `q_` from the source literal as facts about
 `F(p_)`; for example it can establish `F(a) is \set` when the source literal
 supports that substitution.
+
+### Viewable Casts
+
+`Enables:` may contain `viewable:` groups:
+
+```text
+[\integer]
+Describes: n
+Enables:
+. viewable:
+  as: r := \as.rational{n} is \rational
+  states: n \.embedded.to./ r
+```
+
+The `as:` declaration states the target type using `is`. The `:= ...`
+construction is optional; without it, the cast is accepted but the converted
+value is opaque.
+The optional `states:` clause records a statement relating the original value
+and the viewed value.
+
+Viewable casts are used when checking whether an already-resolved command's
+arguments satisfy its requirements. For example, if `\integer` is viewable as
+`\rational`, then a command requiring `x is \rational` may accept an integer
+argument. Viewable casts are not used for operator resolution: `+` on integers
+will not resolve to `+` on rationals merely because integers are viewable as
+rationals.
 
 ## Rendering Metadata
 

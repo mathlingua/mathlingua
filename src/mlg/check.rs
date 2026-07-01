@@ -3797,6 +3797,230 @@ mod tests {
     }
 
     #[test]
+    fn check_uses_viewable_casts_for_resolved_command_requirements() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("viewable-cast-requirements.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\rational]
+    Describes: r
+    Documented:
+    . written: "\operatorname{rational}"
+
+    [\integer]
+    Describes: n
+    Enables:
+    . viewable:
+      as: r is \rational
+      states: n \.embedded.to./ r
+    Documented:
+    . written: "\operatorname{integer}"
+
+    [A \.embedded.to./ B]
+    States:
+    when:
+    . A is \integer
+    . B is \rational
+    that: A is? \integer
+    Documented:
+    . written: "A? \hookrightarrow B?"
+
+    [A \.rational.+./ B]
+    Defines: C is \rational
+    when: A, B is \rational
+    Documented:
+    . written: "A? + B?"
+
+    [\needs.rational{x}]
+    Describes: y
+    when: x is \rational
+    Documented:
+    . written: "\operatorname{needsRational}(x?)"
+
+    Theorem:
+    given: n is \integer
+    then: \needs.rational{n}
+
+    Theorem:
+    given: n, m is \integer
+    then: n \.rational.+./ m is? \rational
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("viewable-cast-requirements.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_does_not_use_viewable_casts_for_operator_resolution() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir
+            .path()
+            .join("viewable-does-not-resolve-operators.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\rational]
+    Describes: r
+    Enables:
+    . capability: x_ + y_ :=> x_ \.rational.+./ y_
+    Documented:
+    . written: "\operatorname{rational}"
+
+    [\integer]
+    Describes: n
+    Enables:
+    . viewable:
+      as: r is \rational
+    Documented:
+    . written: "\operatorname{integer}"
+
+    [A \.rational.+./ B]
+    Defines: C is \rational
+    when: A, B is \rational
+    Documented:
+    . written: "A? + B?"
+
+    Theorem:
+    given: n, m is \integer
+    then: n + m is? \rational
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("viewable-does-not-resolve-operators.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let events = user_events(&event_log);
+        assert!(events.iter().any(|event| {
+            matches!(event, Event::Message(message) if
+                message.message.contains("Could not resolve operator `+`")
+            )
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_reports_viewable_as_without_is_target() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("viewable-as-requires-is.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\rational]
+    Describes: r
+    Documented:
+    . written: "\operatorname{rational}"
+
+    [\integer]
+    Describes: n
+    Enables:
+    . viewable:
+      as: r "like" \rational
+    Documented:
+    . written: "\operatorname{integer}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("viewable-as-requires-is.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let events = user_events(&event_log);
+        assert!(events.iter().any(|event| {
+            matches!(event, Event::Message(message) if
+                message
+                    .message
+                    .contains("`viewable:` `as:` must specify the target type using `is`")
+            )
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_does_not_use_viewable_casts_for_disambiguates_branches() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir
+            .path()
+            .join("viewable-does-not-match-disambiguates.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\rational]
+    Describes: r
+    Documented:
+    . written: "\operatorname{rational}"
+
+    [\integer]
+    Describes: n
+    Enables:
+    . viewable:
+      as: r is \rational
+    Documented:
+    . written: "\operatorname{integer}"
+
+    [A \.rational.+./ B]
+    Defines: C is \rational
+    when: A, B is \rational
+    Documented:
+    . written: "A? + B?"
+
+    [x_ + y_]
+    Disambiguates:
+    when: x_, y_ is \rational
+    to: x_ \.rational.+./ y_
+    Documented:
+    . written: "x_? + y_?"
+
+    Theorem:
+    given: n, m is \integer
+    then: n + m is? \rational
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("viewable-does-not-match-disambiguates.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let events = user_events(&event_log);
+        assert!(events.iter().any(|event| {
+            matches!(event, Event::Message(message) if
+                message
+                    .message
+                    .contains("Could not disambiguate operator `+`")
+            )
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
     fn check_does_not_reduce_opaque_member_of_through_cast_literal() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("opaque-member-of-cast.mlg");

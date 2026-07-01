@@ -210,6 +210,8 @@ argument_section!(CapabilitySection, AliasKind);
 argument_section!(DefinitionSection, DefinitionRequirement);
 argument_section!(FromSection, DeclarationStatement);
 argument_section!(CastAsSection, ExpressionBinding);
+argument_section!(ViewableAsSection, DeclarationStatement);
+argument_section!(ViewableStatesSection, Clause);
 zero_or_more_arguments_section!(ConnectionSection, OpenText);
 zero_or_more_arguments_section!(ToSection, OpenText);
 zero_or_more_arguments_section!(MeansSection, OpenText);
@@ -350,6 +352,7 @@ pub enum EnablesItem {
     Capability(Box<CapabilityGroup>),
     FromCapability(Box<FromCapabilityGroup>),
     FromAs(Box<FromAsGroup>),
+    Viewable(Box<ViewableGroup>),
     Connection(ConnectionGroup),
 }
 
@@ -710,6 +713,13 @@ pub struct FromAsGroup {
     pub heading: Option<LabelHeader>,
     pub from: FromSection,
     pub as_: CastAsSection,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ViewableGroup {
+    pub heading: Option<LabelHeader>,
+    pub as_: ViewableAsSection,
+    pub states: Option<ViewableStatesSection>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

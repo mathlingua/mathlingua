@@ -324,6 +324,7 @@ Used inside `Enables:`.
 | `capability` | `CapabilityGroup` | label? | `capability: AliasKind`, `written?: WrittenText+` |
 | `from` | `FromCapabilityGroup` | label? | `from: DeclarationStatement`, `capability: AliasKind`, `written?: WrittenText+` |
 | `from` | `FromAsGroup` | label? | `from: DeclarationStatement`, `as: ExpressionBinding` |
+| `viewable` | `ViewableGroup` | label? | `viewable: OpenText*`, `as: DeclarationStatement`, `states?: Clause` |
 | `connection` | `ConnectionGroup` | label? | `connection: OpenText*`, `to: OpenText*`, `using?: DeclarationStatement+`, `means: OpenText*`, `signifies?: OpenText*`, `viewable?: OpenText*`, `through?: OpenText*` |
 
 `from:` groups must contain exactly one of `capability:` or `as:`.
@@ -545,6 +546,7 @@ EnablesItemUnion ::=
     | CapabilityGroup
     | FromCapabilityGroup
     | FromAsGroup
+    | ViewableGroup
     | ConnectionGroup
 ```
 
@@ -848,6 +850,13 @@ written?: <WrittenText>+
 [LabelHeader]?
 from: <DeclarationStatement>
 as: <ExpressionBinding>
+```
+
+```group
+[LabelHeader]?
+viewable: <OpenText>*
+as: <DeclarationStatement>
+states?: <Clause>
 ```
 
 ```group

@@ -15,6 +15,7 @@ pub(super) fn collect_definition_type_metadata(
     collect_spec_operator_rules(item, &info, registry);
     collect_provided_symbol_rules(item, &info, registry);
     collect_cast_as_rules(item, &info, registry);
+    collect_viewable_rules(item, &info, registry);
     collect_collection_type_signature(item, &info, registry);
     registry
         .type_infos
@@ -326,6 +327,39 @@ fn collect_cast_as_rules(
     }
 }
 
+fn collect_viewable_rules(
+    item: &TopLevelItem,
+    info: &DefinitionTypeInfo,
+    registry: &mut SignatureRegistry,
+) {
+    let Some(source_subject) = info.described.as_ref() else {
+        return;
+    };
+    let Some(enables) = enables_section(item) else {
+        return;
+    };
+
+    for item in &enables.arguments {
+        let EnablesItem::Viewable(group) = item else {
+            continue;
+        };
+        let Some(target @ TypeFact::Is { .. }) =
+            facts_from_declaration_statement(&group.as_.argument)
+                .into_iter()
+                .next()
+        else {
+            continue;
+        };
+        registry.viewable_rules.push(ViewableRule {
+            source_signature: info.signature.clone(),
+            source_subject: source_subject.clone(),
+            parameters: info.parameters.clone(),
+            target_subject: fact_subject(&target).to_owned(),
+            target,
+        });
+    }
+}
+
 fn collect_type_extension_rules(
     item: &TopLevelItem,
     info: &DefinitionTypeInfo,
@@ -453,7 +487,7 @@ fn capability_aliases(item: &TopLevelItem) -> Vec<CapabilityAliasRef<'_>> {
                 source_subject: Some(primary_subject_key(&group.from.argument.subject)),
                 source_requires_literal: true,
             }),
-            EnablesItem::FromAs(_) => None,
+            EnablesItem::FromAs(_) | EnablesItem::Viewable(_) => None,
             EnablesItem::Connection(_) => None,
         }));
     }
@@ -3301,7 +3335,7 @@ fn disambiguation_branch_matches(
 
     branch.requirements.iter().all(|requirement| {
         let instantiated = substitute_fact(requirement, &substitutions);
-        prove_fact(&instantiated, &requirement_context, registry)
+        prove_fact_without_viewable(&instantiated, &requirement_context, registry)
     })
 }
 
@@ -3496,7 +3530,14 @@ fn check_function_call_result_fact(
             found_matching_arity = true;
         }
         let mut seen = HashSet::new();
-        if function_type_implies_required(function_type, &required, context, registry, &mut seen) {
+        if function_type_implies_required(
+            function_type,
+            &required,
+            context,
+            registry,
+            &mut seen,
+            true,
+        ) {
             return;
         }
     }
@@ -4043,8 +4084,63 @@ fn validate_optional_enables(
                     event_log,
                 );
             }
+            EnablesItem::Viewable(group) => {
+                validate_viewable_group(
+                    group,
+                    context,
+                    owner_shapes,
+                    owner_subject,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+            }
             EnablesItem::Connection(_) => {}
         }
+    }
+}
+
+fn validate_viewable_group(
+    group: &ViewableGroup,
+    context: &TypeContext,
+    owner_shapes: &[HeaderShape],
+    owner_subject: &str,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let mut child = context.clone();
+    for owner_shape in owner_shapes {
+        child.add_fact(TypeFact::Is {
+            subject: owner_subject.to_owned(),
+            ty: owner_shape.type_key.clone(),
+            signature: owner_shape.shape.signature.clone(),
+        });
+    }
+    declare_declaration_statement_subjects(&group.as_.argument, &mut child);
+    complete_introduced_declaration_statement(
+        &group.as_.argument,
+        &mut child,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
+    if !matches!(
+        group.as_.argument.relation,
+        Some(DeclarationRelation::Is(_))
+    ) {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&primary_subject_key(&group.as_.argument.subject)),
+            "`viewable:` `as:` must specify the target type using `is`",
+        );
+    }
+    if let Some(states) = &group.states {
+        check_clause(&states.argument, &child, path, locator, registry, event_log);
     }
 }
 
@@ -4531,6 +4627,23 @@ fn function_type_spec_mentions_name(spec: &FunctionTypeFactSpec, name: &str) -> 
 }
 
 fn prove_fact(required: &TypeFact, context: &TypeContext, registry: &SignatureRegistry) -> bool {
+    prove_fact_with_options(required, context, registry, true)
+}
+
+fn prove_fact_without_viewable(
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> bool {
+    prove_fact_with_options(required, context, registry, false)
+}
+
+fn prove_fact_with_options(
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    allow_viewable: bool,
+) -> bool {
     let required = context.normalize_fact(required);
     if builtin_fact_holds(&required, registry) {
         return true;
@@ -4546,15 +4659,30 @@ fn prove_fact(required: &TypeFact, context: &TypeContext, registry: &SignatureRe
     let mut seen = HashSet::new();
     if defined_output_facts_for_key(fact_subject(&required), context, registry)
         .iter()
-        .any(|fact| fact_implies(fact, &required, context, registry, &mut seen))
+        .any(|fact| {
+            fact_implies_with_options(
+                fact,
+                &required,
+                context,
+                registry,
+                &mut seen,
+                allow_viewable,
+            )
+        })
     {
         return true;
     }
 
-    context
-        .facts
-        .iter()
-        .any(|fact| fact_implies(fact, &required, context, registry, &mut seen))
+    context.facts.iter().any(|fact| {
+        fact_implies_with_options(
+            fact,
+            &required,
+            context,
+            registry,
+            &mut seen,
+            allow_viewable,
+        )
+    })
 }
 
 fn builtin_fact_holds(required: &TypeFact, registry: &SignatureRegistry) -> bool {
@@ -4856,6 +4984,17 @@ fn fact_implies(
     registry: &SignatureRegistry,
     seen: &mut HashSet<TypeFact>,
 ) -> bool {
+    fact_implies_with_options(fact, required, context, registry, seen, true)
+}
+
+fn fact_implies_with_options(
+    fact: &TypeFact,
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+    allow_viewable: bool,
+) -> bool {
     let fact = context.normalize_fact(fact);
     if &fact == required {
         return true;
@@ -4864,22 +5003,26 @@ fn fact_implies(
         return false;
     }
 
-    if function_type_implies_required(&fact, required, context, registry, seen) {
+    if function_type_implies_required(&fact, required, context, registry, seen, allow_viewable) {
         return true;
     }
 
-    if cast_as_fact_implies_required(&fact, required, context, registry, seen) {
+    if cast_as_fact_implies_required(&fact, required, context, registry, seen, allow_viewable) {
+        return true;
+    }
+
+    if allow_viewable && viewable_fact_implies_required(&fact, required, context, registry, seen) {
         return true;
     }
 
     for extended in reduce_extension_fact(&fact, context, registry) {
-        if fact_implies(&extended, required, context, registry, seen) {
+        if fact_implies_with_options(&extended, required, context, registry, seen, allow_viewable) {
             return true;
         }
     }
 
-    for reduced in reduce_refined_fact(&fact, context, registry) {
-        if fact_implies(&reduced, required, context, registry, seen) {
+    for reduced in reduce_refined_fact_with_options(&fact, context, registry, allow_viewable) {
+        if fact_implies_with_options(&reduced, required, context, registry, seen, allow_viewable) {
             return true;
         }
     }
@@ -4887,7 +5030,14 @@ fn fact_implies(
     if matches!(fact, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
         let mut spec_seen = HashSet::new();
         for reduced in reduce_spec_or_member_fact(&fact, context, registry, &mut spec_seen) {
-            if fact_implies(&reduced, required, context, registry, seen) {
+            if fact_implies_with_options(
+                &reduced,
+                required,
+                context,
+                registry,
+                seen,
+                allow_viewable,
+            ) {
                 return true;
             }
         }
@@ -4896,12 +5046,49 @@ fn fact_implies(
     false
 }
 
+fn viewable_fact_implies_required(
+    fact: &TypeFact,
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> bool {
+    let fact = context.normalize_fact(fact);
+    let TypeFact::Is {
+        subject,
+        ty,
+        signature,
+    } = &fact
+    else {
+        return false;
+    };
+    let actuals = actuals_for_type_key(signature, ty).unwrap_or_default();
+
+    registry
+        .viewable_rules
+        .iter()
+        .filter(|rule| rule.source_signature == *signature)
+        .any(|rule| {
+            let mut substitutions = rule
+                .parameters
+                .iter()
+                .zip(&actuals)
+                .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
+                .collect::<HashMap<_, _>>();
+            substitutions.insert(rule.source_subject.clone(), subject.clone());
+            substitutions.insert(rule.target_subject.clone(), subject.clone());
+            let viewed = context.normalize_fact(&substitute_fact(&rule.target, &substitutions));
+            fact_implies(&viewed, required, context, registry, seen)
+        })
+}
+
 fn cast_as_fact_implies_required(
     fact: &TypeFact,
     required: &TypeFact,
     context: &TypeContext,
     registry: &SignatureRegistry,
     seen: &mut HashSet<TypeFact>,
+    allow_viewable: bool,
 ) -> bool {
     let TypeFact::Is {
         subject, signature, ..
@@ -4934,7 +5121,7 @@ fn cast_as_fact_implies_required(
         }
 
         for fact in facts_from_collection_literal_cast(literal, &substitutions, context) {
-            if fact_implies(&fact, required, context, registry, seen) {
+            if fact_implies_with_options(&fact, required, context, registry, seen, allow_viewable) {
                 return true;
             }
         }
@@ -5086,6 +5273,15 @@ fn reduce_refined_fact(
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> Vec<TypeFact> {
+    reduce_refined_fact_with_options(fact, context, registry, true)
+}
+
+fn reduce_refined_fact_with_options(
+    fact: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    allow_viewable: bool,
+) -> Vec<TypeFact> {
     let fact = context.normalize_fact(fact);
     let TypeFact::RefinedIs {
         subject,
@@ -5119,6 +5315,7 @@ fn reduce_refined_fact(
         base_signature,
         context,
         registry,
+        allow_viewable,
     ));
     result
 }
@@ -5169,6 +5366,7 @@ fn reduce_refinement_extension_fact(
     base_signature: &str,
     context: &TypeContext,
     registry: &SignatureRegistry,
+    allow_viewable: bool,
 ) -> Vec<TypeFact> {
     let actuals = actuals_for_refined_type_key(signature, ty).unwrap_or_default();
     registry
@@ -5182,6 +5380,7 @@ fn reduce_refinement_extension_fact(
                 rule,
                 context,
                 registry,
+                allow_viewable,
             )
         })
         .map(|rule| {
@@ -5210,6 +5409,7 @@ fn refinement_extension_rule_matches(
     rule: &RefinementExtensionRule,
     context: &TypeContext,
     registry: &SignatureRegistry,
+    allow_viewable: bool,
 ) -> bool {
     if rule.subtype_signature == signature {
         return true;
@@ -5244,7 +5444,14 @@ fn refinement_extension_rule_matches(
         signature: rule_base_signature,
     };
     let mut seen = HashSet::new();
-    fact_implies(&base_fact, &required, context, registry, &mut seen)
+    fact_implies_with_options(
+        &base_fact,
+        &required,
+        context,
+        registry,
+        &mut seen,
+        allow_viewable,
+    )
 }
 
 fn refinement_extension_target_fact(
@@ -5747,6 +5954,7 @@ fn function_type_implies_required(
     context: &TypeContext,
     registry: &SignatureRegistry,
     seen: &mut HashSet<TypeFact>,
+    allow_viewable: bool,
 ) -> bool {
     let TypeFact::FunctionType {
         subject,
@@ -5773,14 +5981,21 @@ fn function_type_implies_required(
 
     for (input, argument) in inputs.iter().zip(argument_subjects) {
         let required_input = instantiate_function_type_spec(input, &argument);
-        if !prove_fact(&required_input, context, registry) {
+        if !prove_fact_with_options(&required_input, context, registry, allow_viewable) {
             return false;
         }
     }
 
     let output_subject = fact_subject(required);
     let output_fact = instantiate_function_type_spec(output, output_subject);
-    fact_implies(&output_fact, required, context, registry, seen)
+    fact_implies_with_options(
+        &output_fact,
+        required,
+        context,
+        registry,
+        seen,
+        allow_viewable,
+    )
 }
 
 fn function_call_parts_from_fact(fact: &TypeFact) -> Option<(String, Vec<String>)> {

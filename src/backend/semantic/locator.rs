@@ -8,6 +8,8 @@ pub(super) struct SourcePosition {
 
 pub(super) struct SourceLocator<'a> {
     source: &'a str,
+    item_cursor: usize,
+    item_start: usize,
     heading_cursor: usize,
     reference_cursor: usize,
     symbol_cursor: usize,
@@ -17,9 +19,27 @@ impl<'a> SourceLocator<'a> {
     pub(super) fn new(source: &'a str) -> Self {
         Self {
             source,
+            item_cursor: 0,
+            item_start: 0,
             heading_cursor: 0,
             reference_cursor: 0,
             symbol_cursor: 0,
+        }
+    }
+
+    pub(super) fn anchor_item_heading(&mut self, shape: &SignatureShape) {
+        if let Some(offset) = find_signature_occurrence(
+            self.source,
+            shape,
+            self.item_cursor,
+            OccurrenceKind::Heading,
+        )
+        .or_else(|| find_signature_occurrence(self.source, shape, 0, OccurrenceKind::Heading))
+        {
+            self.item_cursor = offset.saturating_add(1);
+            self.item_start = offset.saturating_add(1);
+            self.reference_cursor = offset.saturating_add(1);
+            self.symbol_cursor = offset.saturating_add(1);
         }
     }
 
@@ -42,6 +62,14 @@ impl<'a> SourceLocator<'a> {
             self.reference_cursor,
             OccurrenceKind::Reference,
         )
+        .or_else(|| {
+            find_signature_occurrence(
+                self.source,
+                shape,
+                self.item_start,
+                OccurrenceKind::Reference,
+            )
+        })
         .or_else(|| find_signature_occurrence(self.source, shape, 0, OccurrenceKind::Reference))?;
         self.reference_cursor = offset.saturating_add(1);
         Some(position_at_offset(self.source, offset))
@@ -49,6 +77,7 @@ impl<'a> SourceLocator<'a> {
 
     pub(super) fn locate_symbol(&mut self, name: &str) -> Option<SourcePosition> {
         let offset = find_symbol_occurrence(self.source, name, self.symbol_cursor)
+            .or_else(|| find_symbol_occurrence(self.source, name, self.item_start))
             .or_else(|| find_symbol_occurrence(self.source, name, 0))?;
         self.symbol_cursor = offset.saturating_add(name.len());
         Some(position_at_offset(self.source, offset))

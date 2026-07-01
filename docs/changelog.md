@@ -254,6 +254,21 @@ Rules:
 - Assignments, definitions, and arbitrary expressions are not valid `when:`
   clauses.
 
+### Symbol Scoping
+
+The checker reports any ordinary symbol use that has not been introduced.
+
+- Binding and assumption sections such as `given:`, `exists:`, `existsUnique:`,
+  and `forAll:` introduce their declared subjects.
+- Declaration definitions make declaration-side symbols available to the right
+  hand side, so `f(x_) := x_` is valid.
+- Declaration relations are checked too, so `Defines: f(x_) := x_ is
+  \function:on{A}:to{B}` requires `B` to have been introduced.
+- Membership assumptions bind the member side, but the collection side must
+  already be declared.
+- Explicit optional command tail arguments are checked for undeclared symbols
+  even when the tail is inactive for requirement matching.
+
 ### Existential Clauses
 
 Existential clause groups support optional predicates.

@@ -177,7 +177,7 @@ fn definition_type_info(
 
 fn type_info_from_parts(
     header_shape: &HeaderShape,
-    _heading: &CommandHeader,
+    heading: &CommandHeader,
     using: Option<&UsingSection>,
     when: Option<&WhenSection>,
     defines: Option<&DeclarationStatement>,
@@ -185,6 +185,7 @@ fn type_info_from_parts(
     describes_specifies: Option<&DescribesSpecifiesSection>,
 ) -> DefinitionTypeInfo {
     let mut context = TypeContext::default();
+    declare_header_symbols(heading, &mut context);
 
     if let Some(using) = using {
         for statement in &using.arguments {
@@ -519,6 +520,8 @@ fn validate_top_level_item_types(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    anchor_top_level_item(item, locator);
+
     match item {
         TopLevelItem::Disambiguates(group) => {
             validate_disambiguates(group, path, locator, registry, event_log);
@@ -843,6 +846,25 @@ fn validate_top_level_item_types(
         | TopLevelItem::Text(_)
         | TopLevelItem::Person(_)
         | TopLevelItem::Resource(_) => {}
+    }
+}
+
+fn anchor_top_level_item(item: &TopLevelItem, locator: &mut SourceLocator<'_>) {
+    let heading = match item {
+        TopLevelItem::Describes(group) => Some(&group.heading),
+        TopLevelItem::Defines(group) => Some(&group.heading),
+        TopLevelItem::Refines(group) => Some(&group.heading),
+        TopLevelItem::States(group) => Some(&group.heading),
+        TopLevelItem::Axiom(group) => group.heading.as_ref(),
+        TopLevelItem::Theorem(group) => group.heading.as_ref(),
+        TopLevelItem::Corollary(group) => group.heading.as_ref(),
+        TopLevelItem::Lemma(group) => group.heading.as_ref(),
+        TopLevelItem::Conjecture(group) => group.heading.as_ref(),
+        _ => None,
+    };
+
+    if let Some(heading) = heading {
+        locator.anchor_item_heading(&shape_for_header(heading));
     }
 }
 
@@ -2512,6 +2534,9 @@ fn complete_introduced_declaration_statement(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    if let Some(relation) = &statement.relation {
+        check_declaration_relation(relation, context, path, locator, registry, event_log);
+    }
     if let Some(definition) = &statement.definition {
         check_expression(definition, context, path, locator, registry, event_log);
     }
@@ -2581,6 +2606,7 @@ fn check_declaration_relation(
             check_expression(target, context, path, locator, registry, event_log);
         }
         DeclarationRelation::InfixSpec { spec, target } => {
+            check_inactive_expression_tail(&spec.tail, context, path, locator, registry, event_log);
             let active_spec = active_infix_spec(spec, context);
             for expression in infix_spec_arguments(&active_spec) {
                 check_expression(expression, context, path, locator, registry, event_log);
@@ -2881,6 +2907,7 @@ fn check_expression(
         }
         ExpressionKind::InfixSpecStatement { left, spec, right } => {
             check_expression(left, context, path, locator, registry, event_log);
+            check_inactive_expression_tail(&spec.tail, context, path, locator, registry, event_log);
             let active_spec = active_infix_spec(spec, context);
             for expression in infix_spec_arguments(&active_spec) {
                 check_expression(expression, context, path, locator, registry, event_log);
@@ -4346,6 +4373,7 @@ fn check_command_expression(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    check_inactive_expression_tail(&command.tail, context, path, locator, registry, event_log);
     let active_command = active_command_expression(command, context);
     let shape = shape_for_command_expression(&active_command);
     let position = locator.locate_reference(&shape);
@@ -4372,6 +4400,7 @@ fn check_command_type_expression(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    check_inactive_expression_tail(&command.tail, context, path, locator, registry, event_log);
     let active_command = active_command_expression(command, context);
     let shape = shape_for_command_expression(&active_command);
     let position = locator.locate_reference(&shape);
@@ -4414,6 +4443,7 @@ fn check_infix_command(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    check_inactive_expression_tail(&command.tail, context, path, locator, registry, event_log);
     let active_command = active_infix_command(command, context);
     let shape = shape_for_infix_command(&active_command);
     let position = locator.locate_reference(&shape);
@@ -4444,6 +4474,9 @@ fn check_refined_command_type_expression(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    check_inactive_refined_command_expression_arguments(
+        command, context, path, locator, registry, event_log,
+    );
     let active_command = active_refined_command_expression(command, context);
     let shape = shape_for_refined_command_expression(&active_command);
     let position = locator.locate_reference(&shape);
@@ -4473,6 +4506,9 @@ fn check_refined_command_expression(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    check_inactive_refined_command_expression_arguments(
+        command, context, path, locator, registry, event_log,
+    );
     let active_command = active_refined_command_expression(command, context);
     let shape = shape_for_refined_command_expression(&active_command);
     let position = locator.locate_reference(&shape);
@@ -4528,6 +4564,38 @@ fn active_refined_command_expression(
         })
         .collect();
     active
+}
+
+fn check_inactive_refined_command_expression_arguments(
+    command: &RefinedCommandExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    for part in &command.parts {
+        check_inactive_expression_tail(&part.tail, context, path, locator, registry, event_log);
+    }
+    check_inactive_expression_tail(&command.tail, context, path, locator, registry, event_log);
+}
+
+fn check_inactive_expression_tail(
+    tail: &[CommandExpressionTailPart],
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    for part in tail
+        .iter()
+        .filter(|part| part.optional && !expression_tail_part_is_active(part, context))
+    {
+        for expression in part.args.iter().flat_map(|args| args.expressions.iter()) {
+            check_expression(expression, context, path, locator, registry, event_log);
+        }
+    }
 }
 
 fn active_expression_tail(
@@ -5048,6 +5116,14 @@ fn validate_definition_requirement(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    check_inactive_expression_tail(
+        &requirement.command.tail,
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
     let active_command = active_command_expression(&requirement.command, context);
     let shape = shape_for_command_expression(&active_command);
     let position = locator.locate_reference(&shape);
@@ -7253,10 +7329,11 @@ fn assume_fact_expression(
             collection,
         } => {
             declare_names_from_expression(subject, context);
-            declare_names_from_expression(collection, context);
+            check_expression(collection, context, path, locator, registry, event_log);
             register_expression_collection_literal(collection, context);
         }
         ExpressionKind::InfixSpecStatement { left, spec, right } if !spec.predicate => {
+            check_inactive_expression_tail(&spec.tail, context, path, locator, registry, event_log);
             let active_spec = active_infix_spec(spec, context);
             for expression in infix_spec_arguments(&active_spec) {
                 check_expression(expression, context, path, locator, registry, event_log);

@@ -1139,7 +1139,7 @@ mod tests {
     . written: "\operatorname{thing}"
 
     [\some.function{A}(x, y)]
-    Defines: A "defines" B
+    Defines: A is \thing
     when: A is \thing
     Documented:
     . [docs.called]
@@ -1604,7 +1604,7 @@ mod tests {
     }
 
     #[test]
-    fn check_omits_optional_expression_tails_when_arguments_are_not_defined() {
+    fn check_reports_undeclared_optional_expression_tail_arguments() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("optional-expression-tail.mlg");
 
@@ -1637,10 +1637,12 @@ mod tests {
         );
 
         assert_eq!(result.files_checked, 1);
-        assert_eq!(
-            user_events(&event_log),
-            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
-        );
+        assert!(user_events(&event_log).iter().any(|event| {
+            event
+                .as_message()
+                .is_some_and(|message| message.message == "Unrecognized symbol `A`")
+        }));
+        assert!(event_log.has_errors());
     }
 
     #[test]
@@ -3426,6 +3428,204 @@ mod tests {
     }
 
     #[test]
+    fn check_rejects_unintroduced_defines_relation_symbols() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("defines-relation-scope.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function:on{A}:to{B}]
+    Describes: f(x__) ::= y_
+    when: A, B is \set
+    specifies:
+    . x__ is \\expression
+    . y_ is \\unknown
+    Documented:
+    . written: "f? \: : \: A? \rightarrow B?"
+
+    [\identify.function:on{A}]
+    Defines: f(x__) := x__ is \function:on{A}:to{B}
+    when: A is \set
+    Documented:
+    . called: "identity function on $A?$"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("defines-relation-scope.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event
+                .as_message()
+                .is_some_and(|message| message.message == "Unrecognized symbol `B`")
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_reports_unintroduced_later_relation_symbols_on_later_entry() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("relation-location-scope.mlg");
+        let source = r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__) ::= y_
+    when: A, B is \set
+    specifies:
+    . x__ is \\expression
+    . y_ is \\unknown
+    Documented:
+    . written: "f? \: : \: A? \rightarrow B?"
+
+    [f \.function.compose./ g]
+    Defines: h(x__) := f(g(x__)) is \function:on{A}:to{C}
+    using: A, B, C is \set
+    when:
+    . g is \function:on{A}:to{B}
+    . f is \function:on{B}:to{C}
+    Documented:
+    . written: "f? \circ g?"
+
+    [\identify.function:on{A}]
+    Defines: f(x__) := x__ is \function:on{A}:to{B}
+    when: A is \set
+    Documented:
+    . called: "identity function on $A?$"
+    "#;
+
+        write_mlg_fixture(&file, source).unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("relation-location-scope.mlg")],
+            &mut event_log,
+        );
+
+        let compose_row = source
+            .lines()
+            .position(|line| line.contains("Defines: h(x__)"))
+            .expect("expected composition row");
+        let expected =
+            "Could not establish requirement `B is \\set` for command `\\function:on:to`";
+        let canonical_file = file.canonicalize().unwrap();
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message == expected
+                    && message.location.as_ref().is_some_and(|location| {
+                        matches!(
+                            location,
+                            crate::events::EventLocation::File {
+                                path,
+                                span: Some(span)
+                            } if path == &canonical_file
+                                && span.start.row.is_some_and(|row| row > compose_row)
+                        )
+                    })
+            })
+        }));
+        assert!(!user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message == expected
+                    && message.location.as_ref().is_some_and(|location| {
+                        matches!(
+                            location,
+                            crate::events::EventLocation::File {
+                                path,
+                                span: Some(span)
+                            } if path == &canonical_file && span.start.row == Some(compose_row)
+                        )
+                    })
+            })
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_allows_declaration_lhs_symbols_in_definition_rhs() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("definition-rhs-placeholders.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: x
+    Documented:
+    . written: "\operatorname{real}"
+
+    Theorem:
+    given: f(x_) := x_
+    then: f(x_) = f(x_)
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("definition-rhs-placeholders.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_unintroduced_member_of_collection_in_assumptions() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("member-of-scope.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    Theorem:
+    where: x member_of X
+    then: x = x
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("member-of-scope.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event
+                .as_message()
+                .is_some_and(|message| message.message == "Unrecognized symbol `X`")
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
     fn check_uses_quantifier_bindings_when_matching_types() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("exists-binding.mlg");
@@ -4878,7 +5078,7 @@ mod tests {
         write_mlg_fixture(
             &file,
             r#"[\written.only]
-    Defines: A "defines" B
+    Defines: A is \\unknown
     Documented:
     . [docs.written]
       written:

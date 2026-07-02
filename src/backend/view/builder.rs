@@ -440,6 +440,65 @@ Documented:
     }
 
     #[test]
+    fn renders_headings_for_states_and_theorem_like_cards() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("logic.mlg");
+        let source = r#"[A \.and./ B]
+States:
+that:
+. allOf:
+  . A
+  . B
+Documented:
+. written: "A? \text{ and } B?"
+
+
+[\axiom.of.choice]
+Axiom:
+then: X = X
+Documented:
+. called: "axiom of choice"
+
+
+[\axiom.of.unordered.pair]
+Axiom:
+then: X = X
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+            .expect("expected view");
+
+        assert!(!event_log.has_errors());
+        assert_eq!(
+            view.files[0].items[0].heading_latex,
+            Some(r#"A \text{ and } B"#.to_string())
+        );
+        assert_eq!(
+            view.files[0].items[1].heading_latex,
+            Some(r#"\textrm{axiom of choice}"#.to_string())
+        );
+        assert_eq!(
+            view.files[0].items[2].heading_latex,
+            Some(r#"\textrm{Axiom of Unordered Pair}"#.to_string())
+        );
+    }
+
+    #[test]
     fn builds_page_items_for_outline_and_text_groups() {
         let temp_dir = TestDir::new();
         let root = temp_dir.path().join("repo");

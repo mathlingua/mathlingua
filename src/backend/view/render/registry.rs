@@ -160,7 +160,7 @@ pub(in crate::backend::view) fn render_group_heading_latex(
     primary_inline_argument: Option<&str>,
     registry: &RenderRegistry,
 ) -> Option<String> {
-    if !matches!(kind, "Defines" | "Describes" | "Refines") {
+    if !supports_resolved_group_heading(kind) {
         return None;
     }
 
@@ -177,6 +177,21 @@ pub(in crate::backend::view) fn render_group_heading_latex(
     let substitutions = command_header_substitutions(&header, registry);
 
     Some(render.render_called(&substitutions))
+}
+
+fn supports_resolved_group_heading(kind: &str) -> bool {
+    matches!(
+        kind,
+        "Defines"
+            | "Describes"
+            | "Refines"
+            | "States"
+            | "Axiom"
+            | "Theorem"
+            | "Corollary"
+            | "Lemma"
+            | "Conjecture"
+    )
 }
 
 pub(super) fn render_refines_group_heading_latex(

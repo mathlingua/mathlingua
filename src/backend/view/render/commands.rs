@@ -108,16 +108,44 @@ pub(super) struct CalledTemplate {
     pub(super) latex: String,
 }
 
-pub(super) fn command_called_template(
+#[derive(Clone, Debug)]
+pub(super) struct TypeTemplate {
+    pub(super) latex: String,
+    pub(super) includes_subject: bool,
+}
+
+pub(super) fn command_type_template(
     command: &CommandExpression,
+    subject_latex: Option<String>,
     registry: &RenderRegistry,
-) -> Option<CalledTemplate> {
+) -> Option<TypeTemplate> {
     let signature = command_expression_signature(command);
     let render = registry.commands.get(&signature)?;
-    let substitutions = command_substitutions(command, render, None, registry);
-    Some(CalledTemplate {
-        latex: command_reference_latex(&signature, render.render_called(&substitutions), registry),
+    let substitutions = command_substitutions(command, render, subject_latex.clone(), registry);
+    let written_includes_subject = render
+        .written
+        .as_ref()
+        .is_some_and(|written| written_contains_subject_placeholder(written, render));
+    let use_written = render
+        .written
+        .as_ref()
+        .filter(|_| subject_latex.is_some() || !written_includes_subject);
+    let latex = match use_written {
+        Some(written) => substitute_math_template(written, &substitutions),
+        None => render.render_called(&substitutions),
+    };
+
+    Some(TypeTemplate {
+        latex: command_reference_latex(&signature, latex, registry),
+        includes_subject: subject_latex.is_some() && written_includes_subject,
     })
+}
+
+fn written_contains_subject_placeholder(written: &str, render: &CommandRender) -> bool {
+    render
+        .subject_variable
+        .as_ref()
+        .is_some_and(|name| template_contains_placeholder(written, name))
 }
 
 pub(super) fn refined_command_called_template(

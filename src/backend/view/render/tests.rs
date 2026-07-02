@@ -4,7 +4,7 @@ use super::{
 };
 use crate::events::EventLog;
 use crate::frontend::{
-    ParsedSourceFile, SourceFileViewMetadata, parse_document, top_level_item_ids,
+    parse_document, top_level_item_ids, ParsedSourceFile, SourceFileViewMetadata,
 };
 use std::path::PathBuf;
 
@@ -64,7 +64,7 @@ Documented:
 
     assert_eq!(
         render_formulation_latex(r#"g is \function:on{X}:to{Y}"#, &registry),
-        Some(r#"g \textrm{ is } \textrm{function on }X\textrm{ to }Y"#.to_string())
+        Some(r#"g : X \rightarrow Y"#.to_string())
     );
 }
 
@@ -118,7 +118,7 @@ Documented:
 
     assert_eq!(
         render_formulation_latex(r#"A, B is \set"#, &registry),
-        Some(r#"A, B \textrm{ is } \textrm{set}"#.to_string())
+        Some(r#"A, B \textrm{ is } \operatorname{Set}"#.to_string())
     );
 }
 
@@ -211,7 +211,7 @@ Documented:
 
     assert_eq!(
         render_formulation_latex(r#"G is \field:over{X}"#, &registry),
-        Some(r#"G \textrm{ is } \textrm{field over }X"#.to_string())
+        Some(r#"G \textrm{ is } \mathsf{Field}_{X}"#.to_string())
     );
 }
 
@@ -241,7 +241,7 @@ Documented:
 
     assert_eq!(
         render_formulation_latex(r#"g is \function:on{X}:to{Y}"#, &registry),
-        Some(r#"g \textrm{ is } \textrm{function on }X\textrm{ to }Y"#.to_string())
+        Some(r#"g \: : \: X \rightarrow Y"#.to_string())
     );
     assert_eq!(
         render_formulation_latex(
@@ -273,7 +273,7 @@ Documented:
 
     assert_eq!(
         render_formulation_latex(r#"f is \function"#, &registry),
-        Some(r#"f \textrm{ is } \textrm{function on }A\textrm{ to }B"#.to_string())
+        Some(r#"f \: : \: A \rightarrow B"#.to_string())
     );
     assert_eq!(
         render_formulation_latex(r#"f is? \(injective)::function"#, &registry),
@@ -339,7 +339,7 @@ Documented:
     );
     assert_eq!(
         render_formulation_latex(r#"X is \set"#, &registry),
-        Some(r#"X \textrm{ is } \textrm{set}"#.to_string())
+        Some(r#"X \textrm{ is } \operatorname{Set}"#.to_string())
     );
 }
 
@@ -584,11 +584,11 @@ Documented:
     );
     assert_eq!(
         render_formulation_latex(r#"A is \ambient"#, &registry),
-        Some(r#"A \textrm{ is } \textrm{ambient}\textrm{ without ambient}"#.to_string())
+        Some(r#"A \textrm{ is } \operatorname{Ambient}"#.to_string())
     );
     assert_eq!(
         render_formulation_latex(r#"A is \ambient:within{Z}"#, &registry),
-        Some(r#"A \textrm{ is } \textrm{ambient}\textrm{ within }Z"#.to_string())
+        Some(r#"A \textrm{ is } \operatorname{Ambient}_{Z}"#.to_string())
     );
 }
 

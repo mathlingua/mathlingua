@@ -24,12 +24,26 @@ pub(super) fn render_is_via_statement(
     statement: &IsViaStatement,
     registry: &RenderRegistry,
 ) -> String {
-    format!(
-        "{} \\textrm{{ is }} {} \\textrm{{ via }} {}",
-        render_is_subject(&statement.is_statement.subject, registry),
-        render_type_expression(&statement.is_statement.ty, registry),
-        render_form_or_declaration(&statement.via, registry)
-    )
+    let subject = render_is_subject(&statement.is_statement.subject, registry);
+    let ty = render_type_expression_with_subject(
+        &statement.is_statement.ty,
+        Some(subject.clone()),
+        registry,
+    );
+    if ty.includes_subject {
+        format!(
+            "{} \\textrm{{ via }} {}",
+            ty.latex,
+            render_form_or_declaration(&statement.via, registry)
+        )
+    } else {
+        format!(
+            "{} \\textrm{{ is }} {} \\textrm{{ via }} {}",
+            subject,
+            ty.latex,
+            render_form_or_declaration(&statement.via, registry)
+        )
+    }
 }
 
 fn render_declaration_relation(
@@ -187,12 +201,17 @@ pub(super) fn render_is_command_with_subject_latex(
 
     let substitutions =
         command_substitutions(command, render, Some(subject_latex.clone()), registry);
+    let ty = command_type_template(command, Some(subject_latex.clone()), registry).unwrap_or_else(
+        || TypeTemplate {
+            latex: render.render_called(&substitutions),
+            includes_subject: false,
+        },
+    );
+    if ty.includes_subject {
+        return ty.latex;
+    }
 
-    format!(
-        "{} \\textrm{{ is }} {}",
-        subject_latex,
-        command_reference_latex(&signature, render.render_called(&substitutions), registry)
-    )
+    format!("{} \\textrm{{ is }} {}", subject_latex, ty.latex)
 }
 
 pub(super) fn render_is_refined_command_with_subject_latex(
@@ -226,10 +245,7 @@ pub(super) fn render_function_type(
 fn render_function_type_spec(spec: &FunctionTypeSpec, registry: &RenderRegistry) -> String {
     match &spec.kind {
         FunctionTypeSpecKind::Is(ty) => {
-            format!(
-                "\\_ \\textrm{{ is }} {}",
-                render_type_expression(ty, registry)
-            )
+            render_is_type_with_subject("\\_".to_string(), ty, registry)
         }
         FunctionTypeSpecKind::Spec { operator, target } => format!(
             "\\_ {} {}",
@@ -239,19 +255,67 @@ fn render_function_type_spec(spec: &FunctionTypeSpec, registry: &RenderRegistry)
     }
 }
 
+#[derive(Clone, Debug)]
+struct RenderedTypeExpression {
+    latex: String,
+    includes_subject: bool,
+}
+
 pub(super) fn render_type_expression(ty: &TypeExpression, registry: &RenderRegistry) -> String {
+    render_type_expression_with_subject(ty, None, registry).latex
+}
+
+fn render_is_type_with_subject(
+    subject_latex: String,
+    ty: &TypeExpression,
+    registry: &RenderRegistry,
+) -> String {
+    let rendered = render_type_expression_with_subject(ty, Some(subject_latex.clone()), registry);
+    if rendered.includes_subject {
+        rendered.latex
+    } else {
+        format!("{} \\textrm{{ is }} {}", subject_latex, rendered.latex)
+    }
+}
+
+fn render_type_expression_with_subject(
+    ty: &TypeExpression,
+    subject_latex: Option<String>,
+    registry: &RenderRegistry,
+) -> RenderedTypeExpression {
     match ty {
-        TypeExpression::Builtin { chain, .. } => render_builtin_type_chain(chain),
-        TypeExpression::Command(command) => command_called_template(command, registry)
-            .map(|called| called.latex)
-            .unwrap_or_else(|| render_command_expression(command, registry)),
-        TypeExpression::RefinedCommand(command) => render_refined_command_called(command, registry),
-        TypeExpression::Function(function_type) => render_function_type(function_type, registry),
-        TypeExpression::Coercion { ty, literal, .. } => format!(
-            "{}@{}",
-            render_type_expression(ty, registry),
-            render_set_expression(literal, registry)
-        ),
+        TypeExpression::Builtin { chain, .. } => RenderedTypeExpression {
+            latex: render_builtin_type_chain(chain),
+            includes_subject: false,
+        },
+        TypeExpression::Command(command) => command_type_template(command, subject_latex, registry)
+            .map(|ty| RenderedTypeExpression {
+                latex: ty.latex,
+                includes_subject: ty.includes_subject,
+            })
+            .unwrap_or_else(|| RenderedTypeExpression {
+                latex: render_command_expression(command, registry),
+                includes_subject: false,
+            }),
+        TypeExpression::RefinedCommand(command) => RenderedTypeExpression {
+            latex: render_refined_command_called(command, registry),
+            includes_subject: false,
+        },
+        TypeExpression::Function(function_type) => RenderedTypeExpression {
+            latex: render_function_type(function_type, registry),
+            includes_subject: false,
+        },
+        TypeExpression::Coercion { ty, literal, .. } => {
+            let rendered = render_type_expression_with_subject(ty, subject_latex, registry);
+            RenderedTypeExpression {
+                latex: format!(
+                    "{}@{}",
+                    rendered.latex,
+                    render_set_expression(literal, registry)
+                ),
+                includes_subject: rendered.includes_subject,
+            }
+        }
     }
 }
 

@@ -24,38 +24,38 @@
 }
 
 .comment {
-  color: #8b8795;
+  color: var(--syntax-comment);
   font-style: italic;
 }
 
 .command {
-  color: #315eb9;
+  color: var(--syntax-command);
 }
 
 .keyword {
-  color: #87602d;
+  color: var(--syntax-keyword);
   font-weight: 600;
 }
 
 .label {
-  color: #7b3f91;
+  color: var(--syntax-label);
   font-weight: 650;
 }
 
 .operator {
-  color: #b03d54;
+  color: var(--syntax-operator);
 }
 
 .placeholder {
-  color: #0d7169;
+  color: var(--syntax-placeholder);
 }
 
 .punctuation {
-  color: #6f6d78;
+  color: var(--syntax-punctuation);
 }
 
 .string {
-  color: #6f641b;
+  color: var(--syntax-string);
 }
 
 @media (max-width: 520px) {

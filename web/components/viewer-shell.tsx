@@ -4,6 +4,13 @@ import { useEffect, useState } from "react";
 import { FileList } from "./file-list";
 import type { OutlineState } from "./outline-state";
 import { ViewerChrome } from "./viewer-chrome";
+import {
+  DEFAULT_VIEWER_THEME,
+  VIEWER_THEME_STORAGE_KEY,
+  applyViewerTheme,
+  isViewerTheme,
+  type ViewerTheme,
+} from "./viewer-theme";
 import styles from "./viewer-shell.module.css";
 import { DirectoryView, FileView } from "../lib/types";
 import {
@@ -46,6 +53,20 @@ export function ViewerShell({
   const [selectedFileIndex, setSelectedFileIndex] = useState(
     initialSelection.fileIndex,
   );
+  const [theme, setTheme] = useState<ViewerTheme>(DEFAULT_VIEWER_THEME);
+
+  useEffect(() => {
+    const documentTheme = document.documentElement.dataset.theme;
+    const storedTheme = readStoredTheme();
+    const initialTheme = isViewerTheme(documentTheme)
+      ? documentTheme
+      : isViewerTheme(storedTheme)
+        ? storedTheme
+        : DEFAULT_VIEWER_THEME;
+
+    setTheme(initialTheme);
+    applyViewerTheme(initialTheme);
+  }, []);
 
   useEffect(() => {
     const syncSelectedFileFromPath = () => {
@@ -96,11 +117,19 @@ export function ViewerShell({
     });
   };
 
+  const handleThemeChange = (nextTheme: ViewerTheme) => {
+    setTheme(nextTheme);
+    applyViewerTheme(nextTheme);
+    writeStoredTheme(nextTheme);
+  };
+
   return (
     <>
       <ViewerChrome
         onToggleOutline={handleToggleOutline}
+        onThemeChange={handleThemeChange}
         outlineState={outlineState}
+        theme={theme}
       />
       <main className={styles.pageShell}>
         <FileList
@@ -116,6 +145,20 @@ export function ViewerShell({
       </main>
     </>
   );
+}
+
+function readStoredTheme(): string | null {
+  try {
+    return window.localStorage.getItem(VIEWER_THEME_STORAGE_KEY);
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeStoredTheme(theme: ViewerTheme) {
+  try {
+    window.localStorage.setItem(VIEWER_THEME_STORAGE_KEY, theme);
+  } catch (_) {}
 }
 
 /** Route-derived viewer selection state. */

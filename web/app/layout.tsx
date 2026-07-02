@@ -8,6 +8,19 @@ export const metadata: Metadata = {
   description: "Rendered Mathlingua collection viewer",
 };
 
+const THEME_BOOTSTRAP_SCRIPT = `
+(() => {
+  try {
+    const theme = window.localStorage.getItem("mlg-view-theme");
+    if (!/^(classic|mono|sepia|dark)$/.test(theme ?? "")) {
+      return;
+    }
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme === "dark" ? "dark" : "light";
+  } catch (_) {}
+})();
+`;
+
 /** Root document shell shared by all viewer routes. */
 export default function RootLayout({
   children,
@@ -16,7 +29,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+      </head>
       <body>{children}</body>
     </html>
   );

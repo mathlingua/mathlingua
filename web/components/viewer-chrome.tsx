@@ -1,18 +1,25 @@
 import type { OutlineState } from "./outline-state";
+import { VIEWER_THEMES, type ViewerTheme } from "./viewer-theme";
 import styles from "./viewer-chrome.module.css";
 
 /** Props for the sticky viewer toolbar. */
 interface ViewerChromeProps {
   /** Toggles the outline panel visibility. */
   onToggleOutline: () => void;
+  /** Changes the active viewer theme. */
+  onThemeChange: (theme: ViewerTheme) => void;
   /** Current outline visibility mode. */
   outlineState: OutlineState;
+  /** Current visual theme. */
+  theme: ViewerTheme;
 }
 
 /** Renders the top toolbar for the collection viewer. */
 export function ViewerChrome({
   onToggleOutline,
+  onThemeChange,
   outlineState,
+  theme,
 }: ViewerChromeProps) {
   const expanded =
     outlineState === "auto" ? undefined : outlineState === "open";
@@ -42,6 +49,23 @@ export function ViewerChrome({
         </svg>
       </button>
       <div className={styles.spacer} />
+      <div aria-label="Theme" className={styles.themeSwitcher} role="group">
+        {VIEWER_THEMES.map((item) => (
+          <button
+            aria-pressed={theme === item.id}
+            className={
+              theme === item.id
+                ? `${styles.themeButton} ${styles.themeButtonActive}`
+                : styles.themeButton
+            }
+            key={item.id}
+            onClick={() => onThemeChange(item.id)}
+            type="button"
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
     </header>
   );
 }

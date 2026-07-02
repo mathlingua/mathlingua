@@ -223,6 +223,7 @@ arguments_section!(AdjectiveSection, AdjectiveText);
 argument_section!(WritingSection, WritingAlias);
 arguments_section!(AsSection, WritingText);
 argument_section!(OverviewSection, OpenText);
+argument_section!(DescriptionSection, OpenText);
 arguments_section!(RelatedSection, OpenText);
 zero_or_more_arguments_section!(DiscovererSection, OpenText);
 zero_or_more_arguments_section!(LabelSection, OpenText);
@@ -365,6 +366,7 @@ pub enum DocumentedItem {
     Adjective(AdjectiveGroup),
     Writing(WritingGroup),
     Overview(OverviewGroup),
+    Description(DescriptionGroup),
     Related(RelatedGroup),
     Discoverer(DiscovererGroup),
 }
@@ -771,6 +773,12 @@ pub struct WritingGroup {
 pub struct OverviewGroup {
     pub heading: Option<LabelHeader>,
     pub overview: OverviewSection,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DescriptionGroup {
+    pub heading: Option<LabelHeader>,
+    pub description: DescriptionSection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

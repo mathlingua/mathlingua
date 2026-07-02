@@ -291,6 +291,7 @@ fn item_starters(section: &str) -> Option<&'static [&'static str]> {
             "adjective",
             "writing",
             "overview",
+            "description",
             "related",
             "discoverer",
         ],

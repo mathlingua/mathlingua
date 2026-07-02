@@ -3,17 +3,17 @@ use std::collections::{HashMap, VecDeque};
 use crate::events::EventLog;
 use crate::frontend::formulation::ast::{ExpressionKind, FormOrDeclaration, FormOrDeclarationKind};
 use crate::frontend::formulation::{
-    ParseError as FormulationParseError, parse_author_header, parse_command_header,
-    parse_expression, parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
-    parse_is_via_statement, parse_label_header, parse_ordinary_declaration_statement,
-    parse_refined_declaration_statement, parse_resource_header, parse_spec_operator_alias,
-    parse_writing_alias,
+    parse_author_header, parse_command_header, parse_expression, parse_expression_alias,
+    parse_expression_binding, parse_form_or_declaration, parse_is_via_statement,
+    parse_label_header, parse_ordinary_declaration_statement, parse_refined_declaration_statement,
+    parse_resource_header, parse_spec_operator_alias, parse_writing_alias,
+    ParseError as FormulationParseError,
 };
-use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{
     Argument as ProtoArgument, Formulation as ProtoFormulation, Group as ProtoGroup,
     Section as ProtoSection, TextLiteral as ProtoText,
 };
+use crate::frontend::proto::Parser as ProtoParser;
 
 use super::ast::*;
 
@@ -1163,6 +1163,7 @@ pub(super) fn parse_documented_item_group(
         "called" => parse_called(group, tracker).map(DocumentedItem::Called),
         "writing" => parse_writing(group, tracker).map(DocumentedItem::Writing),
         "overview" => parse_overview(group, tracker).map(DocumentedItem::Overview),
+        "description" => parse_description(group, tracker).map(DocumentedItem::Description),
         "related" => parse_related(group, tracker).map(DocumentedItem::Related),
         "discoverer" => parse_discoverer(group, tracker).map(DocumentedItem::Discoverer),
         other => {
@@ -1197,6 +1198,7 @@ pub(super) fn parse_refines_documented_item_group(
         }
         "writing" => parse_writing(group, tracker).map(DocumentedItem::Writing),
         "overview" => parse_overview(group, tracker).map(DocumentedItem::Overview),
+        "description" => parse_description(group, tracker).map(DocumentedItem::Description),
         "related" => parse_related(group, tracker).map(DocumentedItem::Related),
         "discoverer" => parse_discoverer(group, tracker).map(DocumentedItem::Discoverer),
         other => {
@@ -1767,6 +1769,25 @@ pub(in crate::frontend::structural::parser) fn parse_overview(
             argument: parse_required_open_text(
                 section(&sections, "overview")?,
                 "overview",
+                tracker,
+            )?,
+        },
+    })
+}
+
+/// Parses a `description:` documentation group.
+pub(in crate::frontend::structural::parser) fn parse_description(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<DescriptionGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("description", &group.sections, tracker, &["description"])?;
+    Some(DescriptionGroup {
+        heading,
+        description: DescriptionSection {
+            argument: parse_required_open_text(
+                section(&sections, "description")?,
+                "description",
                 tracker,
             )?,
         },
@@ -3616,6 +3637,12 @@ Documented:
 . [docs.overview]
   overview: "Binary operation on X"
 
+[\structure.description]
+Describes: P
+Documented:
+. [docs.description]
+  description: "Longer prose for readers"
+
 [\structure.related]
 Describes: R
 Documented:
@@ -3683,7 +3710,7 @@ that:
 "#,
         );
 
-        assert_eq!(document.items.len(), 10);
+        assert_eq!(document.items.len(), 11);
 
         match &document.items[0] {
             TopLevelItem::Describes(group) => {
@@ -3833,7 +3860,7 @@ that:
                         .as_ref()
                         .expect("expected documented")
                         .arguments[0],
-                    DocumentedItem::Related(_)
+                    DocumentedItem::Description(_)
                 ));
             }
             other => panic!("expected describes group, got {other:?}"),
@@ -3847,13 +3874,27 @@ that:
                         .as_ref()
                         .expect("expected documented")
                         .arguments[0],
-                    DocumentedItem::Discoverer(_)
+                    DocumentedItem::Related(_)
                 ));
             }
             other => panic!("expected describes group, got {other:?}"),
         }
 
         match &document.items[6] {
+            TopLevelItem::Describes(group) => {
+                assert!(matches!(
+                    group
+                        .documented
+                        .as_ref()
+                        .expect("expected documented")
+                        .arguments[0],
+                    DocumentedItem::Discoverer(_)
+                ));
+            }
+            other => panic!("expected describes group, got {other:?}"),
+        }
+
+        match &document.items[7] {
             TopLevelItem::Defines(group) => {
                 assert!(matches!(
                     group
@@ -3867,7 +3908,7 @@ that:
             other => panic!("expected defines group, got {other:?}"),
         }
 
-        match &document.items[7] {
+        match &document.items[8] {
             TopLevelItem::Refines(group) => {
                 assert!(group.refines.argument.relation.is_none());
                 assert!(group.extends.is_some());
@@ -3887,7 +3928,7 @@ that:
             other => panic!("expected refines group, got {other:?}"),
         }
 
-        match &document.items[8] {
+        match &document.items[9] {
             TopLevelItem::States(group) => {
                 assert_eq!(group.states.arguments.len(), 2);
                 assert_eq!(group.states.arguments[0].0, "Closure law");
@@ -3897,7 +3938,7 @@ that:
             other => panic!("expected states group, got {other:?}"),
         }
 
-        match &document.items[9] {
+        match &document.items[10] {
             TopLevelItem::States(group) => {
                 assert!(matches!(group.that.arguments[0], Clause::Expression(_)));
             }
@@ -3979,13 +4020,11 @@ SectionTitle: "Recovered"
         assert_eq!(document.items.len(), 1);
         assert!(matches!(document.items[0], TopLevelItem::SectionTitle(_)));
         assert_eq!(diagnostics.len(), 1);
-        assert!(
-            diagnostics[0]
-                .as_message()
-                .expect("expected message event")
-                .message
-                .contains("Expected `that` but found `References`")
-        );
+        assert!(diagnostics[0]
+            .as_message()
+            .expect("expected message event")
+            .message
+            .contains("Expected `that` but found `References`"));
     }
 
     #[test]

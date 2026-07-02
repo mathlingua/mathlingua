@@ -2,14 +2,14 @@ use super::model::{
     ArgumentView, CollectionView, DirectoryView, FileView, GroupView, PageView, SectionView,
 };
 use super::render::{
-    RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
+    build_linked_render_registry, definition_reference_keys_for_heading,
     render_documented_text_latex, render_formulation_latex, render_group_heading_latex,
-    render_writing_alias_latex,
+    render_writing_alias_latex, RenderRegistry,
 };
 use crate::events::{Audience, Event, EventLog, Level};
 use crate::frontend::{
-    ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection, SourceFileViewMetadata,
-    top_level_group_id,
+    top_level_group_id, ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection,
+    SourceFileViewMetadata,
 };
 use std::path::{Path, PathBuf};
 
@@ -76,7 +76,7 @@ fn build_file_view(
         items: groups
             .into_iter()
             .zip(group_sources)
-            .map(|(group, source)| group_view(group, source, registry))
+            .flat_map(|(group, source)| group_views(group, source, registry))
             .collect(),
     })
 }
@@ -131,8 +131,45 @@ fn is_trailing_source_gap(line: &str) -> bool {
     trimmed.is_empty() || trimmed.starts_with("--")
 }
 
-fn group_view(group: ProtoGroup, source: String, registry: &RenderRegistry) -> GroupView {
+fn group_views(group: ProtoGroup, source: String, registry: &RenderRegistry) -> Vec<GroupView> {
     let id = top_level_group_id(&group).unwrap_or_default();
+    let description = documented_description_text(&group);
+    let card = group_view(group, source, registry, id.clone());
+
+    match description {
+        Some(description) if !description.trim().is_empty() => {
+            vec![description_page_group(&id, description), card]
+        }
+        _ => vec![card],
+    }
+}
+
+fn description_page_group(source_id: &str, text: String) -> GroupView {
+    GroupView {
+        id: if source_id.is_empty() {
+            "description".to_string()
+        } else {
+            format!("{source_id}-description")
+        },
+        kind: "Text".to_string(),
+        definition_keys: Vec::new(),
+        heading: None,
+        heading_latex: None,
+        page: Some(PageView {
+            kind: "Text".to_string(),
+            text,
+        }),
+        source: String::new(),
+        sections: Vec::new(),
+    }
+}
+
+fn group_view(
+    group: ProtoGroup,
+    source: String,
+    registry: &RenderRegistry,
+    id: String,
+) -> GroupView {
     let kind = group
         .sections
         .first()
@@ -160,13 +197,32 @@ fn group_view(group: ProtoGroup, source: String, registry: &RenderRegistry) -> G
         sections: group
             .sections
             .into_iter()
-            .map(|section| section_view(section, registry))
+            .map(|section| section_view(section, registry, SectionContext::Default))
             .collect(),
     }
 }
 
-fn section_view(section: ProtoSection, registry: &RenderRegistry) -> SectionView {
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SectionContext {
+    Default,
+    Documented,
+}
+
+fn section_view(
+    section: ProtoSection,
+    registry: &RenderRegistry,
+    context: SectionContext,
+) -> SectionView {
     let label = section.label;
+    if context == SectionContext::Documented && label == "description" {
+        return SectionView {
+            label,
+            inline_argument: Some("see above".to_string()),
+            inline_latex: Some(r#"\langle\textrm{see above}\rangle"#.to_string()),
+            arguments: Vec::new(),
+        };
+    }
+
     let inline_latex = section
         .inline_argument
         .as_deref()
@@ -232,6 +288,30 @@ fn page_view(kind: &str, sections: &[ProtoSection]) -> Option<PageView> {
     })
 }
 
+fn documented_description_text(group: &ProtoGroup) -> Option<String> {
+    let descriptions = group
+        .sections
+        .iter()
+        .find(|section| section.label == "Documented")?
+        .arguments
+        .iter()
+        .filter_map(|argument| match argument {
+            ProtoArgument::Group(group) => group.sections.first(),
+            _ => None,
+        })
+        .filter(|section| section.label == "description")
+        .filter_map(section_text)
+        .map(|text| unindent_description_text(&text))
+        .filter(|text| !text.trim().is_empty())
+        .collect::<Vec<_>>();
+
+    if descriptions.is_empty() {
+        None
+    } else {
+        Some(descriptions.join("\n\n"))
+    }
+}
+
 fn section_text(section: &ProtoSection) -> Option<String> {
     if let Some(text) = section.inline_argument.as_deref() {
         return strip_quoted_text(text);
@@ -244,6 +324,62 @@ fn section_text(section: &ProtoSection) -> Option<String> {
             ProtoArgument::Text(text) => strip_quoted_text(&text.text),
             _ => None,
         })
+}
+
+fn unindent_description_text(input: &str) -> String {
+    let mut lines = input
+        .replace("\r\n", "\n")
+        .replace('\r', "\n")
+        .split('\n')
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+
+    while lines.first().is_some_and(|line| line.trim().is_empty()) {
+        lines.remove(0);
+    }
+    while lines.last().is_some_and(|line| line.trim().is_empty()) {
+        lines.pop();
+    }
+
+    let skip_unindented_first_line =
+        lines.len() > 1 && lines.first().is_some_and(|line| leading_indent(line) == 0);
+    let common_indent = lines
+        .iter()
+        .enumerate()
+        .filter(|(index, line)| {
+            !line.trim().is_empty() && !(skip_unindented_first_line && *index == 0)
+        })
+        .map(|(_, line)| leading_indent(line))
+        .min()
+        .unwrap_or(0);
+
+    lines
+        .into_iter()
+        .map(|line| strip_leading_indent(&line, common_indent).to_string())
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn leading_indent(line: &str) -> usize {
+    line.chars()
+        .take_while(|character| matches!(character, ' ' | '\t'))
+        .count()
+}
+
+fn strip_leading_indent(line: &str, count: usize) -> &str {
+    if count == 0 {
+        return line;
+    }
+
+    let mut stripped = 0;
+    for (index, character) in line.char_indices() {
+        if stripped == count || !matches!(character, ' ' | '\t') {
+            return &line[index..];
+        }
+        stripped += 1;
+    }
+
+    ""
 }
 
 fn strip_quoted_text(input: &str) -> Option<String> {
@@ -279,7 +415,14 @@ fn argument_view(
             sections: group
                 .sections
                 .into_iter()
-                .map(|section| section_view(section, registry))
+                .map(|section| {
+                    let context = if section_label == "Documented" {
+                        SectionContext::Documented
+                    } else {
+                        SectionContext::Default
+                    };
+                    section_view(section, registry, context)
+                })
                 .collect(),
         },
     }
@@ -305,7 +448,7 @@ mod tests {
     use crate::backend::view::ArgumentView;
     use crate::events::EventLog;
     use crate::frontend::{
-        ParsedSourceFile, SourceFileViewMetadata, parse_document, top_level_item_ids,
+        parse_document, top_level_item_ids, ParsedSourceFile, SourceFileViewMetadata,
     };
     use std::fs;
     use std::path::{Path, PathBuf};
@@ -324,6 +467,7 @@ mod tests {
 
         let mut parse_log = EventLog::new();
         let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
         let parsed_file = ParsedSourceFile {
             path: file,
             source: source.to_string(),
@@ -366,6 +510,7 @@ Documented:
 
         let mut parse_log = EventLog::new();
         let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
         let parsed_file = ParsedSourceFile {
             path: file,
             source: source.to_string(),
@@ -392,6 +537,74 @@ Documented:
             panic!("expected written group");
         };
         assert_eq!(sections[0].inline_latex, Some(r#"x \in X"#.to_string()));
+        assert!(!event_log.has_errors());
+    }
+
+    #[test]
+    fn renders_documented_description_as_dedented_prose_before_card() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("sets.mlg");
+        let source = r#"[\set]
+Describes: X
+Documented:
+. called: "set"
+. description: "Some text
+                          Some indented text
+                          \[
+                              \some.math
+                          \]
+                          "
+Id: "11111111-1111-4111-8111-111111111111"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+            .expect("expected view");
+
+        assert_eq!(view.files[0].items.len(), 2);
+        assert_eq!(
+            view.files[0].items[0].id,
+            "11111111-1111-4111-8111-111111111111-description"
+        );
+        assert_eq!(view.files[0].items[0].kind, "Text");
+        assert_eq!(
+            view.files[0].items[0]
+                .page
+                .as_ref()
+                .map(|page| page.text.as_str()),
+            Some("Some text\nSome indented text\n\\[\n    \\some.math\n\\]")
+        );
+
+        let documented = view.files[0].items[1]
+            .sections
+            .iter()
+            .find(|section| section.label == "Documented")
+            .expect("expected documented section");
+        let ArgumentView::Group { sections, .. } = &documented.arguments[1] else {
+            panic!("expected description group");
+        };
+        assert_eq!(sections[0].label, "description");
+        assert_eq!(sections[0].inline_argument.as_deref(), Some("see above"));
+        assert_eq!(
+            sections[0].inline_latex.as_deref(),
+            Some(r#"\langle\textrm{see above}\rangle"#)
+        );
+        assert!(sections[0].arguments.is_empty());
         assert!(!event_log.has_errors());
     }
 

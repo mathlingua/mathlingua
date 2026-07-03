@@ -667,6 +667,12 @@ holds for command references whose top-level entry is a `Describes:` item.
 Thus `\set is? \\type` succeeds when `\set` is described, while
 `\sqrt is? \\type` fails when `\sqrt` is a `Defines:` item.
 
+The built-in type `\\opaque` is satisfied by any declared value. It is useful
+when a definition only needs an argument to exist but should not learn anything
+about that argument. A fact such as `A is \\opaque` does not imply `A is \set`,
+does not enable set capabilities, and does not otherwise contribute concrete
+type information.
+
 Facts can be introduced by `given:`, `where:`, `when:`, `using:`, assumed clause
 groups, and expression facts such as `x is \set` or `x "in" X`.
 

@@ -160,6 +160,8 @@ Builtin kinds render as plain text.
 - `\\statement` renders as `statement`.
 - `\\expression` renders as `expression`.
 - `\\specification` renders as `specification`.
+- `\\opaque` is satisfied by any value but does not establish any more specific
+  type information.
 - The renderer no longer treats these as a newline plus italic text.
 
 ### Refined Command Syntax
@@ -214,7 +216,7 @@ Collection targets:
 - If `A is \set@{x_ : x_ is \real}` and `x "in" A`, the checker can establish
   `x is \real`.
 - If `A is \set` without a collection literal, membership establishes
-  `x is \\unknown`.
+  `x is \\opaque`.
 
 ### Set Builder Definitions
 

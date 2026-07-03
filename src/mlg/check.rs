@@ -1013,7 +1013,7 @@ mod tests {
             &file,
             r#"[\function:on{A}:to{B}]
     Defines: A ::= B "defines" B
-    when: A, B is \\unknown
+    when: A, B is \\opaque
     Documented:
     . [docs.called]
       written:
@@ -1507,7 +1507,7 @@ mod tests {
     Theorem:
     given:
     . X is \set
-    . x is \\unknown
+    . x is \\opaque
     then: x "in" X
     "#,
         )
@@ -3444,7 +3444,7 @@ mod tests {
     when: A, B is \set
     specifies:
     . x__ is \\expression
-    . y_ is \\unknown
+    . y_ is \\opaque
     Documented:
     . written: "f? \: : \: A? \rightarrow B?"
 
@@ -3487,7 +3487,7 @@ mod tests {
     when: A, B is \set
     specifies:
     . x__ is \\expression
-    . y_ is \\unknown
+    . y_ is \\opaque
     Documented:
     . written: "f? \: : \: A? \rightarrow B?"
 
@@ -4015,7 +4015,7 @@ mod tests {
     Describes: f(x__) ::= y_
     specifies:
     . x__ is \\expression
-    . y_ is \\unknown
+    . y_ is \\opaque
     Enables:
     . from: P ::= {(p_, q_) : ...}
       as: f(p_) := q_
@@ -4387,9 +4387,9 @@ mod tests {
     }
 
     #[test]
-    fn check_treats_membership_in_unstructured_collection_as_unknown() {
+    fn check_treats_membership_in_unstructured_collection_as_opaque() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("collection-membership-unknown.mlg");
+        let file = temp_dir.path().join("collection-membership-opaque.mlg");
 
         write_mlg_fixture(
             &file,
@@ -4400,17 +4400,17 @@ mod tests {
     Documented:
     . written: "\operatorname{set}"
 
-    [\needs.unknown{x}]
+    [\needs.opaque{x}]
     Describes: y
-    when: x is \\unknown
+    when: x is \\opaque
     Documented:
-    . written: "\operatorname{needsUnknown}(x?)"
+    . written: "\operatorname{needsOpaque}(x?)"
 
     Theorem:
     given:
     . A is \set
     . x "in" A
-    then: \needs.unknown{x}
+    then: \needs.opaque{x}
     "#,
         )
         .unwrap();
@@ -4418,7 +4418,7 @@ mod tests {
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("collection-membership-unknown.mlg")],
+            &[PathBuf::from("collection-membership-opaque.mlg")],
             &mut event_log,
         );
 
@@ -4427,6 +4427,87 @@ mod tests {
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
+    }
+
+    #[test]
+    fn check_opaque_requirements_accept_any_declared_value() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("opaque-requirement.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\accepts.opaque{X}]
+    Describes: Y
+    when: X is \\opaque
+    Documented:
+    . written: "\operatorname{acceptsOpaque}(X?)"
+
+    Theorem:
+    given: A is \set
+    then: \accepts.opaque{A}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("opaque-requirement.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_opaque_facts_do_not_establish_concrete_types() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("opaque-does-not-establish-set.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\requires.set{X}]
+    Describes: Y
+    when: X is \set
+    Documented:
+    . written: "\operatorname{requiresSet}(X?)"
+
+    Theorem:
+    given: A is \\opaque
+    then: \requires.set{A}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("opaque-does-not-establish-set.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message
+                    == "Could not establish requirement `A is \\set` for command `\\requires.set`"
+            })
+        }));
+        assert!(event_log.has_errors());
     }
 
     #[test]
@@ -5078,7 +5159,7 @@ mod tests {
         write_mlg_fixture(
             &file,
             r#"[\written.only]
-    Defines: A is \\unknown
+    Defines: A is \\opaque
     Documented:
     . [docs.written]
       written:

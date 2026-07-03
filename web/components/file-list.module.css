@@ -147,6 +147,7 @@
   justify-items: center;
   gap: 1.15rem;
   width: 100%;
+  min-width: 0;
 }
 
 .pageItem {
@@ -270,6 +271,7 @@
   justify-items: center;
   gap: 1.25rem;
   width: min(100%, 47rem);
+  min-width: 0;
   padding: 2.35rem clamp(1rem, 4vw, 2.6rem) 2rem;
   border: 1px solid var(--line);
   border-radius: 0.8rem;
@@ -318,6 +320,7 @@
 
 .definitionTrailItem {
   width: min(100%, 31rem);
+  min-width: 0;
 }
 
 .emptyState {

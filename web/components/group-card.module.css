@@ -2,6 +2,7 @@
 
 .card {
   width: min(100%, 31rem);
+  min-width: 0;
   margin: 0 auto;
   perspective: 1400px;
   scroll-margin-top: 7.5rem;
@@ -9,6 +10,8 @@
 
 .cardStage {
   position: relative;
+  width: 100%;
+  min-width: 0;
   transform-style: preserve-3d;
   transition: transform 220ms ease;
 }
@@ -19,7 +22,9 @@
 
 .cardFace {
   position: relative;
+  box-sizing: border-box;
   width: 100%;
+  min-width: 0;
   padding: 1.35rem 1.6rem 1.45rem;
   border: 1px solid var(--line);
   border-radius: 0.75rem;

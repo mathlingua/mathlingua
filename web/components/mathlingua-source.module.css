@@ -1,6 +1,10 @@
 /* Lightweight MathLingua source highlighting for card backs. */
 
 .source {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   max-height: min(34rem, 68vh);
   margin: 0;
   overflow: auto;

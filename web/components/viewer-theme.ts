@@ -4,6 +4,7 @@ export const VIEWER_THEMES = [
   { id: "classic", label: "Classic" },
   { id: "mono", label: "Mono" },
   { id: "sepia", label: "Sepia" },
+  { id: "retro", label: "Retro" },
   { id: "dark", label: "Dark" },
 ] as const;
 

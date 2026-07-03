@@ -2596,7 +2596,7 @@ mod tests {
 
     [A \:subset:/ B]
     Describes: A
-    when: A, B is \set
+    when: B is \set
     extends: A is \set
     satisfies:
     . forAll: a "in" A

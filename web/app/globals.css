@@ -98,6 +98,35 @@ html[data-theme="sepia"] {
   --syntax-string: #7b652b;
 }
 
+html[data-theme="retro"] {
+  color-scheme: light;
+  --page-bg: #dce9b0;
+  --surface: #edf5c8;
+  --surface-alt: #d4e4a4;
+  --ink: #17351f;
+  --muted: #5f7145;
+  --muted-strong: #3c5a31;
+  --line: #b7ca80;
+  --line-strong: #9eb464;
+  --accent: #2d5d32;
+  --accent-soft: #cadd91;
+  --shadow: 0 12px 30px rgba(35, 67, 35, 0.13);
+  --chrome-bg: rgba(237, 245, 200, 0.94);
+  --definition-bg: linear-gradient(180deg, #e2edb8 0%, #edf5c8 100%);
+  --definition-shadow:
+    inset 0 1px 3px rgba(35, 67, 35, 0.14),
+    inset 0 -1px 0 rgba(248, 255, 220, 0.7), 0 18px 36px rgba(35, 67, 35, 0.07);
+  --control-shadow: 0 1px 4px rgba(35, 67, 35, 0.12);
+  --syntax-comment: #6a794c;
+  --syntax-command: #244e2b;
+  --syntax-keyword: #526a2a;
+  --syntax-label: #315f35;
+  --syntax-operator: #476b28;
+  --syntax-placeholder: #1d654f;
+  --syntax-punctuation: #65754f;
+  --syntax-string: #405f25;
+}
+
 html[data-theme="dark"] {
   color-scheme: dark;
   --page-bg: #111116;

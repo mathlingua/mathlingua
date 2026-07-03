@@ -1314,12 +1314,35 @@ fn validate_when_section<T>(
 
 fn describes_when_parameters_from_usage(group: &DescribesGroup) -> WhenParameters {
     let mut parameters = header_when_parameters(&group.heading);
+    let described_spec_infix_subject =
+        described_spec_infix_subject(&group.heading, &group.describes.argument);
+    if let Some(subject) = &described_spec_infix_subject {
+        parameters.required.remove(subject);
+    }
     for name in describes_used_names(group) {
+        if described_spec_infix_subject.as_ref() == Some(&name) {
+            continue;
+        }
         if parameters.allowed.contains(&name) {
             parameters.require(name);
         }
     }
     parameters
+}
+
+fn described_spec_infix_subject(
+    heading: &CommandHeader,
+    described: &DescribesTarget,
+) -> Option<String> {
+    let CommandHeader::InfixSpec(header) = heading else {
+        return None;
+    };
+    let subject = key_for_form_or_declaration(&header.left);
+    if subject == described_target_subject_key(described) {
+        Some(subject)
+    } else {
+        None
+    }
 }
 
 fn describes_used_names(group: &DescribesGroup) -> BTreeSet<String> {

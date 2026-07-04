@@ -3418,7 +3418,9 @@ fn check_provided_binary_operator(
     let key = DisambiguationKey::BinaryOperator(symbol.clone());
     let actuals = vec![key_for_expression(left), key_for_expression(right)];
     let Some(rule) = find_provided_symbol_rule(&key, kind, &actuals, context, registry) else {
-        if context.defer_unresolved_provided_symbols {
+        if context.defer_unresolved_provided_symbols
+            || binary_operator_uses_provided_by_default(operator)
+        {
             return false;
         }
 
@@ -4029,6 +4031,7 @@ fn provided_binary_operator_kind(
     kind: NamedOperatorKind,
 ) -> Option<NamedOperatorKind> {
     match (symbol, kind) {
+        ("=", NamedOperatorKind::Plain) => Some(NamedOperatorKind::BothColon),
         ("!=", NamedOperatorKind::Plain) => Some(NamedOperatorKind::BothColon),
         (_, NamedOperatorKind::Plain) => None,
         (_, kind) => Some(kind),
@@ -4037,7 +4040,7 @@ fn provided_binary_operator_kind(
 
 fn binary_operator_uses_provided_by_default(operator: &BinaryOperator) -> bool {
     let (symbol, kind) = binary_operator_symbol_and_kind(operator);
-    symbol == "!=" && kind == NamedOperatorKind::Plain
+    matches!(symbol.as_str(), "=" | "!=") && kind == NamedOperatorKind::Plain
 }
 
 fn resolution_kind_label(kind: NamedOperatorKind) -> &'static str {
@@ -5602,6 +5605,8 @@ fn key_is_type(key: &str, registry: &SignatureRegistry) -> bool {
 fn key_is_statement(key: &str, registry: &SignatureRegistry) -> bool {
     key_contains_top_level(key, " is? ")
         || key_contains_top_level(key, " is_not? ")
+        || key_contains_top_level(key, " = ")
+        || key_contains_top_level(key, " != ")
         || key_contains_top_level_quoted_spec(key, true)
         || key_contains_top_level_infix_spec(key, true)
         || key_is_states_command_reference(key, registry)

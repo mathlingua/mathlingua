@@ -2371,6 +2371,114 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_plain_equality_and_inequality_without_type_capabilities() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("unresolved-equality.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\number]
+    Describes: n
+    Documented:
+    . called: "number"
+
+    [\needs.statement{P}]
+    Describes: x
+    when: P is \\statement
+    Documented:
+    . written: "\operatorname{needsStatement}(P?)"
+
+    Theorem:
+    given:
+    . A is \set
+    . n is \number
+    then:
+    . A = n
+    . A != n
+    . \needs.statement{A = n}
+    . \needs.statement{A != n}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("unresolved-equality.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_uses_type_defined_plain_equality_and_inequality_when_available() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("defined-equality.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ = y_ :=> x_ \.set.=./ y_
+    . capability: x_ != y_ :=> \not{x_ = y_}
+    Documented:
+    . called: "set"
+
+    [A \.set.=./ B]
+    States:
+    when: A, B is \set
+    that: A = A
+    Documented:
+    . written: "A? = B?"
+
+    [\not{P}]
+    States:
+    when: P is \\statement
+    that: P
+    Documented:
+    . written: "\neg P?"
+
+    [\needs.statement{P}]
+    Describes: x
+    when: P is \\statement
+    Documented:
+    . written: "\operatorname{needsStatement}(P?)"
+
+    Theorem:
+    given: A, B is \set
+    then:
+    . \needs.statement{A = B}
+    . \needs.statement{A != B}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("defined-equality.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_formats_binary_operator_requirement_errors_readably() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("readable-binary-requirement.mlg");

@@ -362,6 +362,11 @@ Plain operators such as `x - y` use scope and disambiguation.
 - A `Disambiguates:` entry may contain only an `else:` branch.
 - If no definition or applicable disambiguation is found, the operator is an
   error.
+- Plain `=` and `!=` are exceptions: they may be written for any operand types
+  without a definition. If the common operand type enables `=` or `!=`, that
+  capability is still used.
+- Fallback `=` and `!=` expressions are treated as statements, so they can be
+  passed to commands that require `\\statement`.
 
 ### `Requires:` And `Enables:`
 

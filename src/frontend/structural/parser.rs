@@ -304,11 +304,11 @@ fn parse_describes_target(input: &str) -> Result<DescribesTarget, FormulationPar
     parse_ordinary_declaration_statement(input).map(DescribesTarget::Declaration)
 }
 
-/// Parses a quantifier binding or ordinary specification.
+/// Parses a quantifier binding or ordinary/refined specification.
 pub(in crate::frontend::structural::parser) fn parse_binding_or_spec(
     input: &str,
 ) -> Result<BindingOrSpec, FormulationParseError> {
-    parse_ordinary_declaration_statement(input).map(BindingOrSpec::Declaration)
+    parse_refined_declaration_statement(input).map(BindingOrSpec::Declaration)
 }
 
 /// Parses a required command heading from a proto group.
@@ -4534,6 +4534,26 @@ that:
                 }
             }
             other => panic!("expected states item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_refined_bindings_in_quantifier_clause_groups() {
+        let text = r#"
+Axiom: "Axiom of Infinity"
+then:
+. exists: A is \(inductive)::set
+"#;
+
+        let mut tracker = EventLog::new();
+        let document = parse_document(text, &mut tracker);
+
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
+        match &document.items[0] {
+            TopLevelItem::Axiom(group) => {
+                assert!(matches!(group.then.arguments[0], Clause::Exists(_)));
+            }
+            other => panic!("expected axiom item, got {other:?}"),
         }
     }
 

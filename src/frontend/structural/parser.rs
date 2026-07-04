@@ -3,17 +3,17 @@ use std::collections::{HashMap, VecDeque};
 use crate::events::EventLog;
 use crate::frontend::formulation::ast::{ExpressionKind, FormOrDeclaration, FormOrDeclarationKind};
 use crate::frontend::formulation::{
-    parse_author_header, parse_command_header, parse_expression, parse_expression_alias,
-    parse_expression_binding, parse_form_or_declaration, parse_is_via_statement,
-    parse_label_header, parse_ordinary_declaration_statement, parse_refined_declaration_statement,
-    parse_resource_header, parse_spec_operator_alias, parse_writing_alias,
-    ParseError as FormulationParseError,
+    ParseError as FormulationParseError, parse_author_header, parse_command_header,
+    parse_expression, parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
+    parse_is_via_statement, parse_label_header, parse_ordinary_declaration_statement,
+    parse_refined_declaration_statement, parse_resource_header, parse_spec_operator_alias,
+    parse_writing_alias,
 };
+use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{
     Argument as ProtoArgument, Formulation as ProtoFormulation, Group as ProtoGroup,
     Section as ProtoSection, TextLiteral as ProtoText,
 };
-use crate::frontend::proto::Parser as ProtoParser;
 
 use super::ast::*;
 
@@ -3301,8 +3301,8 @@ pub(in crate::frontend::structural::parser) fn parse_corollary(
 
 /// Parses a `Person:` metadata group.
 ///
-/// Person groups require an author-style heading and carry required `name:` and
-/// `biography:` sections, with optional prose on the leading `Person:` section.
+/// Person groups require an author-style heading and carry required name text on
+/// the leading `Person:` section plus a required `biography:` section.
 pub(in crate::frontend::structural::parser) fn parse_person(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -3312,16 +3312,13 @@ pub(in crate::frontend::structural::parser) fn parse_person(
         "Person",
         &group.sections,
         tracker,
-        &["Person", "name", "biography", "Id?"],
+        &["Person", "biography", "Id?"],
     )?;
 
     Some(PersonGroup {
         heading,
         person: PersonSection {
-            arguments: parse_optional_open_texts(sections.get("Person").copied(), tracker),
-        },
-        name: NameSection {
-            arguments: parse_required_open_texts(section(&sections, "name")?, "name", tracker)?,
+            arguments: parse_required_open_texts(section(&sections, "Person")?, "Person", tracker)?,
         },
         biography: BiographySection {
             argument: parse_required_open_text(
@@ -4020,11 +4017,13 @@ SectionTitle: "Recovered"
         assert_eq!(document.items.len(), 1);
         assert!(matches!(document.items[0], TopLevelItem::SectionTitle(_)));
         assert_eq!(diagnostics.len(), 1);
-        assert!(diagnostics[0]
-            .as_message()
-            .expect("expected message event")
-            .message
-            .contains("Expected `that` but found `References`"));
+        assert!(
+            diagnostics[0]
+                .as_message()
+                .expect("expected message event")
+                .message
+                .contains("Expected `that` but found `References`")
+        );
     }
 
     #[test]
@@ -4107,8 +4106,6 @@ SectionTitle: "Recovered"
             r#"
 [@euclid]
 Person:
-. "Ancient mathematician"
-name:
 . "Euclid"
 . "Euclides"
 biography: "Greek mathematician"
@@ -4224,8 +4221,7 @@ Specify:
 
         match &document.items[0] {
             TopLevelItem::Person(group) => {
-                assert_eq!(group.person.arguments.len(), 1);
-                assert_eq!(group.name.arguments.len(), 2);
+                assert_eq!(group.person.arguments.len(), 2);
                 assert_eq!(group.biography.argument.0, "Greek mathematician");
             }
             other => panic!("expected person group, got {other:?}"),
@@ -4451,9 +4447,7 @@ that:
   . x = x
 
 [@euclid]
-Person:
-name:
-. "Euclid"
+Person: "Euclid"
 biography: "Greek mathematician"
 
 [$elements]

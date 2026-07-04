@@ -277,7 +277,7 @@ An empty document is supported by the current implementation because `Document.i
 | `Corollary` | `CorollaryGroup` | command? | `Corollary: OpenText*`, `of: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Lemma` | `LemmaGroup` | command? | `Lemma: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Conjecture` | `ConjectureGroup` | command? | `Conjecture: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Person` | `PersonGroup` | author | `Person: OpenText*`, `name: OpenText+`, `biography: OpenText` |
+| `Person` | `PersonGroup` | author | `Person: OpenText+`, `biography: OpenText` |
 | `Resource` | `ResourceGroup` | resource | `Resource: ResourceItem+` |
 | `Specify` | `SpecifyGroup` | none | `Specify: SpecifyItem+` |
 
@@ -806,8 +806,7 @@ Metadata?: <MetadataItemUnion>+
 
 ```group
 [AuthorHeader]
-Person: <OpenText>*
-name: <OpenText>+
+Person: <OpenText>+
 biography: <OpenText>
 ```
 

@@ -238,8 +238,7 @@ zero_or_more_arguments_section!(IsSection, OpenText);
 zero_or_more_arguments_section!(NegativeSection, OpenText);
 zero_or_more_arguments_section!(ZeroSection, OpenText);
 zero_or_more_arguments_section!(DecimalSection, OpenText);
-zero_or_more_arguments_section!(PersonSection, OpenText);
-arguments_section!(NameSection, OpenText);
+arguments_section!(PersonSection, OpenText);
 argument_section!(BiographySection, OpenText);
 arguments_section!(ResourceSection, ResourceItem);
 argument_section!(ResourceTitleSection, OpenText);
@@ -868,7 +867,6 @@ pub struct NegativeDecimalGroup {
 pub struct PersonGroup {
     pub heading: AuthorHeader,
     pub person: PersonSection,
-    pub name: NameSection,
     pub biography: BiographySection,
 }
 

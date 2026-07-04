@@ -2239,6 +2239,67 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_callable_owner_capability_functions() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("callable-owner-capability.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+      written: "x_? \in X?"
+    Documented:
+    . called: "set"
+
+    [\relation:from{A}:to{B}]
+    Describes: R
+    when: A, B is \set
+    Requires:
+    . capability: z_ "in" R :-> \\abstract
+      written: "z_? \in R?"
+    Enables:
+    . capability: R(a_, b_) :-> (a_, b_) "in" R
+      written: "a_? \: R \: b_?"
+    Documented:
+    . called: "relation from $A?$ to $B?$"
+    . written: "R? \subseteq A? \times B?"
+
+    [\needs.specification{P}]
+    Describes: x
+    when: P is \\specification
+    Documented:
+    . written: "\operatorname{needsSpecification}(P?)"
+
+    Theorem:
+    given:
+    . A, B is \set
+    . R is \relation:from{A}:to{B}
+    . a "in" A
+    . b "in" B
+    then:
+    . R(a, b)
+    . \needs.specification{R(a, b)}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("callable-owner-capability.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_provided_operator_when_operand_is_defined_command_result() {
         let temp_dir = TestDir::new();
         let file = temp_dir

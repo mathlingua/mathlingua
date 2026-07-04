@@ -4,7 +4,7 @@ use super::{
 };
 use crate::events::EventLog;
 use crate::frontend::{
-    parse_document, top_level_item_ids, ParsedSourceFile, SourceFileViewMetadata,
+    ParsedSourceFile, SourceFileViewMetadata, parse_document, top_level_item_ids,
 };
 use std::path::PathBuf;
 
@@ -36,6 +36,27 @@ Documented:
     assert_eq!(
         render_formulation_latex(r#"\empty.set"#, &registry),
         Some(r#"\emptyset"#.to_string())
+    );
+}
+
+#[test]
+fn renders_callable_owner_capabilities_from_written_templates() {
+    let registry = registry_for(
+        r#"[\relation:from{A}:to{B}]
+Describes: R
+when: A, B is \set
+Enables:
+. capability: R(a_, b_) :-> (a_, b_) "in" R
+  written: "a_? \: R \: b_?"
+Documented:
+. called: "relation from $A?$ to $B?$"
+. written: "R? \subseteq A? \times B?"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"R(a, b)"#, &registry),
+        Some(r#"a \: R \: b"#.to_string())
     );
 }
 

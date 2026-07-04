@@ -2799,9 +2799,13 @@ fn check_expression(
                 check_expression(argument, context, path, locator, registry, event_log);
             }
             if function_types.is_empty() {
-                check_disambiguated_function_call(
+                if !check_provided_callable_owner_function(
                     name, arguments, context, path, locator, registry, event_log,
-                );
+                ) {
+                    check_disambiguated_function_call(
+                        name, arguments, context, path, locator, registry, event_log,
+                    );
+                }
             } else {
                 check_function_call_inputs(
                     name, arguments, context, path, locator, registry, event_log,
@@ -3551,6 +3555,39 @@ fn check_provided_member(
     );
 }
 
+fn check_provided_callable_owner_function(
+    name: &str,
+    arguments: &[Expression],
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) -> bool {
+    let actuals = arguments.iter().map(key_for_expression).collect::<Vec<_>>();
+    let Some(rule) = find_callable_owner_provided_symbol_rule(
+        name,
+        arguments.len(),
+        &actuals,
+        context,
+        registry,
+    ) else {
+        return false;
+    };
+
+    check_provided_symbol_target(
+        rule,
+        &actuals,
+        Some(name),
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
+    true
+}
+
 fn provided_symbol_owner_actual(kind: NamedOperatorKind, actuals: &[String]) -> Option<String> {
     match kind {
         NamedOperatorKind::Plain => None,
@@ -3591,6 +3628,24 @@ fn find_member_provided_symbol_rule<'a>(
     registry.provided_symbols.iter().find(|rule| {
         disambiguation_keys_match(key, &rule.key)
             && rule.parameters.len() == actuals.len()
+            && has_type_signature(owner_actual, &rule.owner_signature, context, registry)
+            && provided_symbol_source_matches(rule, Some(owner_actual), context)
+    })
+}
+
+fn find_callable_owner_provided_symbol_rule<'a>(
+    owner_actual: &str,
+    arity: usize,
+    actuals: &[String],
+    context: &TypeContext,
+    registry: &'a SignatureRegistry,
+) -> Option<&'a ProvidedSymbolRule> {
+    registry.provided_symbols.iter().find(|rule| {
+        matches!(
+            &rule.key,
+            DisambiguationKey::Function { name, arity: key_arity }
+                if name == &rule.owner_subject && *key_arity == arity
+        ) && rule.parameters.len() == actuals.len()
             && has_type_signature(owner_actual, &rule.owner_signature, context, registry)
             && provided_symbol_source_matches(rule, Some(owner_actual), context)
     })
@@ -3748,6 +3803,18 @@ fn effective_key_for_function_call(
         arity: arguments.len(),
     };
     let actuals = effective_keys_for_expressions(arguments, context, registry, resolving);
+    if let Some(rule) =
+        find_callable_owner_provided_symbol_rule(name, arguments.len(), &actuals, context, registry)
+    {
+        return Some(effective_key_for_provided_symbol_target(
+            rule,
+            &actuals,
+            Some(name),
+            context,
+            registry,
+            resolving,
+        ));
+    }
     effective_key_for_disambiguated_target(&key, &actuals, context, registry, resolving)
 }
 
@@ -5117,6 +5184,7 @@ fn validate_capability_alias(
             alias,
             context,
             owner_shapes,
+            owner_subject,
             path,
             locator,
             registry,
@@ -5249,6 +5317,7 @@ fn validate_provided_expression_alias(
     alias: &ExpressionAlias,
     context: &TypeContext,
     owner_shapes: &[HeaderShape],
+    owner_subject: &str,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     registry: &SignatureRegistry,
@@ -5256,7 +5325,12 @@ fn validate_provided_expression_alias(
 ) {
     let mut child = context.clone();
     declare_expression_alias_lhs(&alias.lhs, &mut child);
-    assume_provided_expression_alias_lhs_owner_types(&alias.lhs, owner_shapes, &mut child);
+    assume_provided_expression_alias_lhs_owner_types(
+        &alias.lhs,
+        owner_shapes,
+        owner_subject,
+        &mut child,
+    );
     check_expression(
         &alias.expression,
         &child,
@@ -5286,6 +5360,7 @@ fn declare_expression_alias_lhs(lhs: &ExpressionAliasLhs, context: &mut TypeCont
 fn assume_provided_expression_alias_lhs_owner_types(
     lhs: &ExpressionAliasLhs,
     owner_shapes: &[HeaderShape],
+    owner_subject: &str,
     context: &mut TypeContext,
 ) {
     let ExpressionAliasLhs::Form(form) = lhs else {
@@ -5300,8 +5375,13 @@ fn assume_provided_expression_alias_lhs_owner_types(
         | FormOrDeclarationKind::PostfixOperator { placeholder, .. } => {
             assume_owner_type(&placeholder.name, owner_shapes, context);
         }
+        FormOrDeclarationKind::FunctionDeclaration { name, form } => {
+            let function_name = name.as_ref().unwrap_or(&form.name);
+            if context.normalize_key(function_name) == context.normalize_key(owner_subject) {
+                assume_owner_type(function_name, owner_shapes, context);
+            }
+        }
         FormOrDeclarationKind::Name(_)
-        | FormOrDeclarationKind::FunctionDeclaration { .. }
         | FormOrDeclarationKind::TupleDeclaration { .. }
         | FormOrDeclarationKind::SetDeclaration { .. } => {}
     }

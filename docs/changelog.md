@@ -434,6 +434,14 @@ Function and value capabilities:
 - A function capability such as `f(x_) :=> \foo{X, x_}` is used as `X.f(a)`.
 - Arguments of such function capabilities do not receive an implicit type.
 - A bare capability such as `a :=> \some.value{X}` is used as `X.a`.
+- A callable-owner capability may use the described subject as the function
+  name, for example `R(a_, b_) :-> (a_, b_) "in" R`.
+- If `R is \relation:from{A}:to{B}`, then `R(a, b)` resolves through that
+  capability, reducing to the capability target with `R`, `a_`, and `b_`
+  substituted.
+- A callable-owner capability's `written:` text is used by `mlg view` to render
+  matching calls, for example `written: "a_? \: R \: b_?"` renders `R(a, b)` as
+  `a \: R \: b`.
 - All capabilities have access to the subject of the item being
   described.
 

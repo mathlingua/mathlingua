@@ -2069,15 +2069,20 @@ pub fn parse_writing_alias(input: &str) -> Result<WritingAlias, ParseError> {
 
 /// Parses an expression alias of the form `<lhs> :=> <expression>`.
 ///
+/// Form-based expression aliases may also use `:->` when the target expression
+/// is statement-like, such as `R(a_, b_) :-> (a_, b_) "in" R`.
+///
 /// The left-hand side may be a form declaration, ordinary command header, or
 /// infix command header.  Refined command headers are rejected here because
 /// aliases define base expression syntax rather than refinement composition.
 pub fn parse_expression_alias(input: &str) -> Result<ExpressionAlias, ParseError> {
     let input = input.trim();
-    let index = find_top_level_substring(input, ":=>")
+    let (index, arrow_len) = find_top_level_substring(input, ":=>")
+        .map(|index| (index, 3))
+        .or_else(|| find_top_level_substring(input, ":->").map(|index| (index, 3)))
         .ok_or_else(|| ParseError::custom("expected top-level `:=>`"))?;
     let lhs_text = input[..index].trim();
-    let expression = parse_expression(input[index + 3..].trim())?;
+    let expression = parse_expression(input[index + arrow_len..].trim())?;
 
     let lhs = if find_top_level_substring(lhs_text, "\\.").is_some() {
         let header = parse_infix_command_header(lhs_text)?;
@@ -3727,6 +3732,18 @@ mod tests {
         assert!(matches!(
             infix_alias.lhs,
             ExpressionAliasLhs::InfixCommand(_)
+        ));
+    }
+
+    #[test]
+    fn parses_thin_arrow_expression_aliases_for_callable_owner_forms() {
+        let alias = parse_expression_alias(r#"R(a_, b_) :-> (a_, b_) "in" R"#)
+            .expect("expected callable owner alias");
+
+        assert!(matches!(alias.lhs, ExpressionAliasLhs::Form(_)));
+        assert!(matches!(
+            alias.expression.kind,
+            ExpressionKind::SpecStatement(_) | ExpressionKind::InfixSpecStatement { .. }
         ));
     }
 

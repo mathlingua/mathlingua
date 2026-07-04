@@ -4,6 +4,9 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
     match &expression.kind {
         ExpressionKind::Name(name) => escape_math_identifier(name, registry),
         ExpressionKind::FunctionCall { name, arguments } => {
+            if let Some(rendered) = render_provided_function_call(name, arguments, registry) {
+                return rendered;
+            }
             let args = arguments
                 .iter()
                 .map(|argument| render_expression(argument, registry))
@@ -171,6 +174,29 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             ),
         },
     }
+}
+
+fn render_provided_function_call(
+    name: &str,
+    arguments: &[Expression],
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let render = registry.provided_calls.iter().find(|render| {
+        render.function_name == name && render.parameters.len() == arguments.len()
+    })?;
+    let mut substitutions = HashMap::new();
+    substitutions.insert(
+        render.owner_subject.clone(),
+        escape_math_identifier(name, registry),
+    );
+    for (parameter, argument) in render.parameters.iter().zip(arguments) {
+        let rendered_argument = render_expression(argument, registry);
+        substitutions.insert(parameter.clone(), rendered_argument.clone());
+        if !parameter.ends_with('_') {
+            substitutions.insert(format!("{parameter}_"), rendered_argument);
+        }
+    }
+    Some(substitute_math_template(&render.written, &substitutions))
 }
 
 pub(super) fn render_infix_spec_like(spec: &InfixSpec, registry: &RenderRegistry) -> String {

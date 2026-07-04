@@ -4,6 +4,9 @@ use super::*;
 pub(in crate::backend::view) struct RenderRegistry {
     /// Map from canonical command signature to the rendering data for that command.
     pub(super) commands: HashMap<String, CommandRender>,
+    /// Render templates for capabilities where the described item is callable,
+    /// such as `R(a_, b_) :-> ...` with `written: "a_? \: R \: b_?"`.
+    pub(super) provided_calls: Vec<ProvidedCallRender>,
     /// Collection-wide aliases for rendering plain names as LaTeX fragments.
     pub(super) writing: HashMap<String, String>,
     /// Whether resolved command renderings should carry clickable reference keys.
@@ -17,6 +20,14 @@ pub(super) struct CommandRender {
     pub(super) called: String,
     pub(super) called_source: CalledRenderSource,
     pub(super) written: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct ProvidedCallRender {
+    pub(super) owner_subject: String,
+    pub(super) function_name: String,
+    pub(super) parameters: Vec<String>,
+    pub(super) written: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -50,6 +61,7 @@ pub(in crate::backend::view) fn build_render_registry(
             for entry in render_entries(item) {
                 registry.commands.insert(entry.signature, entry.render);
             }
+            collect_provided_call_render_rules(item, &mut registry);
         }
     }
 
@@ -286,6 +298,143 @@ pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
         }
         _ => Vec::new(),
     }
+}
+
+fn collect_provided_call_render_rules(item: &TopLevelItem, registry: &mut RenderRegistry) {
+    let Some(owner_subject) = top_level_item_subject(item) else {
+        return;
+    };
+
+    match item {
+        TopLevelItem::Describes(group) => {
+            if let Some(requires) = &group.requires {
+                collect_requires_provided_call_render_rules(requires, &owner_subject, registry);
+            }
+            if let Some(enables) = &group.enables {
+                collect_enables_provided_call_render_rules(enables, &owner_subject, registry);
+            }
+        }
+        TopLevelItem::Defines(group) => {
+            if let Some(requires) = &group.requires {
+                collect_requires_provided_call_render_rules(requires, &owner_subject, registry);
+            }
+            if let Some(enables) = &group.enables {
+                collect_enables_provided_call_render_rules(enables, &owner_subject, registry);
+            }
+        }
+        TopLevelItem::Refines(group) => {
+            if let Some(requires) = &group.requires {
+                collect_requires_provided_call_render_rules(requires, &owner_subject, registry);
+            }
+            if let Some(enables) = &group.enables {
+                collect_enables_provided_call_render_rules(enables, &owner_subject, registry);
+            }
+        }
+        TopLevelItem::States(group) => {
+            if let Some(requires) = &group.requires {
+                collect_requires_provided_call_render_rules(requires, &owner_subject, registry);
+            }
+            if let Some(enables) = &group.enables {
+                collect_enables_provided_call_render_rules(enables, &owner_subject, registry);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn top_level_item_subject(item: &TopLevelItem) -> Option<String> {
+    match item {
+        TopLevelItem::Describes(group) => primary_describes_target_name(&group.describes.argument),
+        TopLevelItem::Defines(group) => primary_declaration_statement_name(&group.defines.argument),
+        TopLevelItem::Refines(group) => primary_declaration_statement_name(&group.refines.argument),
+        _ => None,
+    }
+}
+
+fn collect_requires_provided_call_render_rules(
+    requires: &RequiresSection,
+    owner_subject: &str,
+    registry: &mut RenderRegistry,
+) {
+    for item in &requires.arguments {
+        let RequiresItem::Capability(group) = item else {
+            continue;
+        };
+        collect_capability_provided_call_render_rule(
+            &group.capability.argument,
+            group.written.as_ref(),
+            owner_subject,
+            registry,
+        );
+    }
+}
+
+fn collect_enables_provided_call_render_rules(
+    enables: &EnablesSection,
+    owner_subject: &str,
+    registry: &mut RenderRegistry,
+) {
+    for item in &enables.arguments {
+        match item {
+            EnablesItem::Capability(group) => collect_capability_provided_call_render_rule(
+                &group.capability.argument,
+                group.written.as_ref(),
+                owner_subject,
+                registry,
+            ),
+            EnablesItem::FromCapability(group) => collect_capability_provided_call_render_rule(
+                &group.capability.argument,
+                group.written.as_ref(),
+                owner_subject,
+                registry,
+            ),
+            EnablesItem::FromAs(_) | EnablesItem::Viewable(_) | EnablesItem::Connection(_) => {}
+        }
+    }
+}
+
+fn collect_capability_provided_call_render_rule(
+    alias: &AliasKind,
+    written: Option<&WrittenSection>,
+    owner_subject: &str,
+    registry: &mut RenderRegistry,
+) {
+    let Some(written) = written else {
+        return;
+    };
+    let AliasKind::Expression(alias) = alias else {
+        return;
+    };
+    let ExpressionAliasLhs::Form(FormOrDeclaration {
+        kind: FormOrDeclarationKind::FunctionDeclaration { name, form },
+        ..
+    }) = &alias.lhs
+    else {
+        return;
+    };
+    let function_name = name.as_ref().unwrap_or(&form.name);
+    if function_name != owner_subject {
+        return;
+    }
+
+    registry.provided_calls.push(ProvidedCallRender {
+        owner_subject: owner_subject.to_owned(),
+        function_name: function_name.clone(),
+        parameters: function_form_render_parameters(form),
+        written: join_written_text(written),
+    });
+}
+
+fn function_form_render_parameters(form: &FunctionForm) -> Vec<String> {
+    form.magnetic_placeholder
+        .iter()
+        .map(|placeholder| placeholder.name.clone())
+        .chain(
+            form.placeholders
+                .iter()
+                .map(|placeholder| placeholder.name.clone()),
+        )
+        .collect()
 }
 
 fn primary_describes_target_name(target: &DescribesTarget) -> Option<String> {

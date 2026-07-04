@@ -1685,7 +1685,9 @@ fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
             }
         }
         Clause::Exists(group) => {
-            collect_binding_or_spec_names(&group.exists.argument, names);
+            for item in &group.exists.arguments {
+                collect_binding_or_spec_names(item, names);
+            }
             if let Some(such_that) = &group.such_that {
                 for clause in &such_that.arguments {
                     collect_clause_names(clause, names);
@@ -1693,7 +1695,9 @@ fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
             }
         }
         Clause::ExistsUnique(group) => {
-            collect_binding_or_spec_names(&group.exists_unique.argument, names);
+            for item in &group.exists_unique.arguments {
+                collect_binding_or_spec_names(item, names);
+            }
             if let Some(such_that) = &group.such_that {
                 for clause in &such_that.arguments {
                     collect_clause_names(clause, names);
@@ -1701,7 +1705,9 @@ fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
             }
         }
         Clause::ForAll(group) => {
-            collect_binding_or_spec_names(&group.for_all.argument, names);
+            for item in &group.for_all.arguments {
+                collect_binding_or_spec_names(item, names);
+            }
             if let Some(where_) = &group.where_ {
                 for clause in &where_.arguments {
                     collect_clause_names(clause, names);
@@ -1741,7 +1747,9 @@ fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
             }
         }
         Clause::Given(group) => {
-            collect_declaration_statement_names(&group.given.argument, names);
+            for statement in &group.given.arguments {
+                collect_declaration_statement_names(statement, names);
+            }
             if let Some(where_) = &group.where_ {
                 for clause in &where_.arguments {
                     collect_clause_names(clause, names);
@@ -2339,14 +2347,9 @@ fn check_clause(
         }
         Clause::Exists(group) => {
             let mut child = context.clone();
-            assume_binding_or_spec(
-                &group.exists.argument,
-                &mut child,
-                path,
-                locator,
-                registry,
-                event_log,
-            );
+            for item in &group.exists.arguments {
+                assume_binding_or_spec(item, &mut child, path, locator, registry, event_log);
+            }
             if let Some(section) = &group.such_that {
                 for clause in &section.arguments {
                     assume_clause(clause, &mut child, path, locator, registry, event_log);
@@ -2355,14 +2358,9 @@ fn check_clause(
         }
         Clause::ExistsUnique(group) => {
             let mut child = context.clone();
-            assume_binding_or_spec(
-                &group.exists_unique.argument,
-                &mut child,
-                path,
-                locator,
-                registry,
-                event_log,
-            );
+            for item in &group.exists_unique.arguments {
+                assume_binding_or_spec(item, &mut child, path, locator, registry, event_log);
+            }
             if let Some(section) = &group.such_that {
                 for clause in &section.arguments {
                     assume_clause(clause, &mut child, path, locator, registry, event_log);
@@ -2371,14 +2369,9 @@ fn check_clause(
         }
         Clause::ForAll(group) => {
             let mut child = context.clone();
-            assume_binding_or_spec(
-                &group.for_all.argument,
-                &mut child,
-                path,
-                locator,
-                registry,
-                event_log,
-            );
+            for item in &group.for_all.arguments {
+                assume_binding_or_spec(item, &mut child, path, locator, registry, event_log);
+            }
             if let Some(where_) = &group.where_ {
                 for clause in &where_.arguments {
                     assume_clause(clause, &mut child, path, locator, registry, event_log);
@@ -2422,14 +2415,11 @@ fn check_clause(
         }
         Clause::Given(group) => {
             let mut child = context.clone();
-            assume_declaration_statement(
-                &group.given.argument,
-                &mut child,
-                path,
-                locator,
-                registry,
-                event_log,
-            );
+            for statement in &group.given.arguments {
+                assume_declaration_statement(
+                    statement, &mut child, path, locator, registry, event_log,
+                );
+            }
             if let Some(where_) = &group.where_ {
                 for clause in &where_.arguments {
                     assume_clause(clause, &mut child, path, locator, registry, event_log);

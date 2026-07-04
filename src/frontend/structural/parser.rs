@@ -921,7 +921,7 @@ pub(super) fn parse_exists_clause(
     Some(ExistsGroup {
         heading,
         exists: ExistsSection {
-            argument: parse_required_formulation(
+            arguments: parse_required_formulations(
                 section(&sections, "exists")?,
                 "exists",
                 tracker,
@@ -953,7 +953,7 @@ pub(super) fn parse_exists_unique_clause(
     Some(ExistsUniqueGroup {
         heading,
         exists_unique: ExistsUniqueSection {
-            argument: parse_required_formulation(
+            arguments: parse_required_formulations(
                 section(&sections, "existsUnique")?,
                 "existsUnique",
                 tracker,
@@ -982,7 +982,7 @@ pub(super) fn parse_for_all_clause(
     Some(ForAllGroup {
         heading,
         for_all: ForAllSection {
-            argument: parse_required_formulation(
+            arguments: parse_required_formulations(
                 section(&sections, "forAll")?,
                 "forAll",
                 tracker,
@@ -1077,7 +1077,7 @@ pub(super) fn parse_given_clause(group: &ProtoGroup, tracker: &mut EventLog) -> 
     Some(GivenGroup {
         heading,
         given: GivenClauseSection {
-            argument: parse_required_formulation(
+            arguments: parse_required_formulations(
                 section(&sections, "given")?,
                 "given",
                 tracker,
@@ -4531,6 +4531,63 @@ that:
                 match &states.that.arguments[1] {
                     Clause::ExistsUnique(group) => assert!(group.such_that.is_none()),
                     other => panic!("expected existsUnique clause, got {other:?}"),
+                }
+            }
+            other => panic!("expected states item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_quantifier_clause_groups_with_multiple_bindings() {
+        let text = r#"
+[\property]
+States:
+that:
+. exists:
+  . a "in" A
+  . b "in" B
+  suchThat:
+  . a = b
+. existsUnique:
+  . x is \type{A}
+  . y is \type{B}
+  suchThat:
+  . x = y
+. forAll:
+  . m is \type{A}
+  . n is \type{B}
+  then:
+  . m = n
+. given:
+  . p is \type{A}
+  . q is \type{B}
+  then:
+  . p = q
+"#;
+
+        let mut tracker = EventLog::new();
+        let document = parse_document(text, &mut tracker);
+
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
+        match &document.items[0] {
+            TopLevelItem::States(states) => {
+                match &states.that.arguments[0] {
+                    Clause::Exists(group) => assert_eq!(group.exists.arguments.len(), 2),
+                    other => panic!("expected exists clause, got {other:?}"),
+                }
+                match &states.that.arguments[1] {
+                    Clause::ExistsUnique(group) => {
+                        assert_eq!(group.exists_unique.arguments.len(), 2)
+                    }
+                    other => panic!("expected existsUnique clause, got {other:?}"),
+                }
+                match &states.that.arguments[2] {
+                    Clause::ForAll(group) => assert_eq!(group.for_all.arguments.len(), 2),
+                    other => panic!("expected forAll clause, got {other:?}"),
+                }
+                match &states.that.arguments[3] {
+                    Clause::Given(group) => assert_eq!(group.given.arguments.len(), 2),
+                    other => panic!("expected given clause, got {other:?}"),
                 }
             }
             other => panic!("expected states item, got {other:?}"),

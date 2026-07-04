@@ -1,27 +1,62 @@
 //! Autocomplete support for the Mathlingua language server.
 //!
-//! Two cursor contexts are handled:
+//! Three cursor contexts are handled:
 //!
 //!   * **After / within a top-level group** (e.g. on a blank line under
 //!     `Defines:`): suggest the next valid section(s) for that group, in order.
 //!   * **On a `. ` argument bullet**: suggest the groups that can start there
 //!     (clause groups like `forAll:` / `exists:`, or the item groups valid for
 //!     the enclosing section such as `written:` under `Documented:`).
+//!   * **While typing a `\`-command** (e.g. `\f`): suggest the command
+//!     signatures declared by top-level `[...]` headings, inserted as snippets
+//!     whose placeholders are the parameter names (`\function:on{A}:to{B}`).
 //!
 //! The section orders below mirror the `identify_sections(...)` calls in
 //! [`crate::frontend::structural::parser`], which are the language's source of
 //! truth for section names, order and optionality. If a group's sections change
 //! there, update the corresponding entry here.
 
+use std::collections::HashSet;
+
+/// What a candidate inserts, so the server can pick the matching LSP
+/// completion-item kind.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CandidateKind {
+    /// A group / section header (e.g. `when:`).
+    Section,
+    /// A `\`-command signature (e.g. `\function:on{A}:to{B}`).
+    Command,
+}
+
 /// A single completion suggestion.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompletionCandidate {
-    /// The section / group name without its trailing colon (e.g. `when`).
+    /// The section / group name without its trailing colon (e.g. `when`), or
+    /// the full command signature for command candidates.
     pub label: String,
-    /// The text to insert at the cursor (e.g. `when:`).
+    /// The text to insert. For command candidates this is LSP snippet syntax
+    /// (see [`CompletionCandidate::snippet`]).
     pub insert: String,
     /// Human-readable context shown next to the label.
     pub detail: String,
+    /// Whether `insert` uses LSP snippet syntax (tab stops / placeholders).
+    pub snippet: bool,
+    /// Number of characters immediately before the cursor that the insertion
+    /// should replace. `0` inserts at the cursor with no replacement.
+    pub replace_chars: usize,
+    /// The kind of candidate, used to choose the LSP completion-item kind.
+    pub kind: CandidateKind,
+}
+
+/// A command signature harvested from a top-level `[...]` heading, e.g.
+/// `\function:on{A}:to{B}`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Signature {
+    /// The signature text exactly as written between the brackets.
+    pub text: String,
+    /// The group label on the line below the heading (`Describes`, `Defines`,
+    /// ...), shown as completion detail.
+    pub kind: Option<String>,
 }
 
 /// One section within a group: its name and whether it is required.
@@ -392,7 +427,12 @@ fn top_level_heads() -> impl Iterator<Item = &'static str> {
 /// Compute completions for `text` at the zero-based `line` / `character`
 /// (character counted in Unicode scalar values, which matches LSP offsets for
 /// the ASCII section syntax handled here).
-pub fn complete(text: &str, line: usize, character: usize) -> Vec<CompletionCandidate> {
+pub fn complete_with_signatures(
+    text: &str,
+    line: usize,
+    character: usize,
+    signatures: &[Signature],
+) -> Vec<CompletionCandidate> {
     let lines: Vec<&str> = text.split('\n').collect();
     if line >= lines.len() {
         return Vec::new();
@@ -400,10 +440,171 @@ pub fn complete(text: &str, line: usize, character: usize) -> Vec<CompletionCand
     let cur = lines[line];
     let before: String = cur.chars().take(character).collect();
 
+    if let Some(items) = command_completions(&before, signatures) {
+        return items;
+    }
     if is_bullet_prefix(&before) {
         return bullet_completions(&lines, line, &before);
     }
     section_completions(&lines, line, &before)
+}
+
+/// Harvest the command signatures declared by top-level `[...]` headings in
+/// `text`. A heading is a line whose trimmed form starts with `[` and ends with
+/// `]`; only those whose body starts with `\` (command signatures) are kept.
+pub fn collect_signatures(text: &str) -> Vec<Signature> {
+    let lines: Vec<&str> = text.split('\n').collect();
+    let mut signatures = Vec::new();
+    for (index, line) in lines.iter().enumerate() {
+        let trimmed = line.trim();
+        if trimmed.len() < 2 || !trimmed.starts_with('[') || !trimmed.ends_with(']') {
+            continue;
+        }
+        let inner = trimmed[1..trimmed.len() - 1].trim();
+        if !inner.starts_with('\\') {
+            continue;
+        }
+        signatures.push(Signature {
+            text: inner.to_string(),
+            kind: heading_kind(&lines, index),
+        });
+    }
+    signatures
+}
+
+/// The group label following a heading — the section name on the next line
+/// (e.g. `Describes` for `Describes: R`), or `None` if it is blank/absent.
+fn heading_kind(lines: &[&str], heading: usize) -> Option<String> {
+    let next = lines.get(heading + 1)?;
+    if next.trim().is_empty() {
+        return None;
+    }
+    section_header(next).map(|(_, label)| label.to_string())
+}
+
+/// If the text just before the cursor is a `\`-command being typed, return the
+/// matching command completions; `None` when the cursor is not in a command
+/// context (so section / bullet completion can take over).
+fn command_completions(before: &str, signatures: &[Signature]) -> Option<Vec<CompletionCandidate>> {
+    let typed = command_prefix(before)?;
+    let replace_chars = typed.chars().count();
+
+    let mut seen = HashSet::new();
+    let mut candidates = Vec::new();
+    for signature in signatures {
+        if !signature.text.starts_with(typed) || !seen.insert(signature.text.as_str()) {
+            continue;
+        }
+        candidates.push(CompletionCandidate {
+            label: signature.text.clone(),
+            insert: signature_to_snippet(&signature.text),
+            detail: signature
+                .kind
+                .clone()
+                .unwrap_or_else(|| "command".to_string()),
+            snippet: true,
+            replace_chars,
+            kind: CandidateKind::Command,
+        });
+    }
+    Some(candidates)
+}
+
+/// The `\`-command fragment ending at the cursor, including the leading `\`, or
+/// `None` if the run of characters before the cursor is not a command being
+/// typed (no `\`, or interrupted by whitespace / an argument delimiter).
+fn command_prefix(before: &str) -> Option<&str> {
+    for (index, ch) in before.char_indices().rev() {
+        if ch == '\\' {
+            return Some(&before[index..]);
+        }
+        if !is_command_char(ch) {
+            return None;
+        }
+    }
+    None
+}
+
+/// Characters that may appear in a command signature after the leading `\`:
+/// name parts, `:` separators, `.` chains, `?` optional markers, and the
+/// parentheses of a refined prefix such as `\(injective)::...`.
+fn is_command_char(ch: char) -> bool {
+    ch.is_ascii_alphanumeric() || matches!(ch, ':' | '.' | '_' | '?' | '(' | ')')
+}
+
+/// Turn a signature into an LSP snippet: each top-level `{...}` / `(...)`
+/// argument group's contents become a numbered placeholder, so
+/// `\function:on{A}:to{B}` yields `\function:on{${1:A}}:to{${2:B}}`.
+fn signature_to_snippet(signature: &str) -> String {
+    let mut out = String::new();
+    let mut placeholder = 1u32;
+    let mut chars = signature.char_indices().peekable();
+    while let Some((index, ch)) = chars.next() {
+        let close = match ch {
+            '{' => Some('}'),
+            '(' => Some(')'),
+            _ => None,
+        };
+        if let (Some(close_ch), Some(end)) = (close, matching_delim(signature, index)) {
+            let interior = &signature[index + ch.len_utf8()..end];
+            out.push(ch);
+            if interior.is_empty() {
+                out.push_str(&format!("${{{placeholder}}}"));
+            } else {
+                out.push_str(&format!("${{{placeholder}:{}}}", escape_snippet(interior)));
+            }
+            out.push(close_ch);
+            placeholder += 1;
+            while chars.peek().is_some_and(|(next, _)| *next <= end) {
+                chars.next();
+            }
+            continue;
+        }
+        push_snippet_literal(&mut out, ch);
+    }
+    out
+}
+
+/// Byte index of the delimiter matching the `{`/`(` at byte index `open`,
+/// accounting for nesting of the same delimiter; `None` if unbalanced.
+fn matching_delim(text: &str, open: usize) -> Option<usize> {
+    let bytes = text.as_bytes();
+    let opener = bytes[open];
+    let closer = match opener {
+        b'{' => b'}',
+        b'(' => b')',
+        _ => return None,
+    };
+    let mut depth = 0usize;
+    for (index, &byte) in bytes.iter().enumerate().skip(open) {
+        if byte == opener {
+            depth += 1;
+        } else if byte == closer {
+            depth -= 1;
+            if depth == 0 {
+                return Some(index);
+            }
+        }
+    }
+    None
+}
+
+/// Append `ch` to a snippet as a literal, escaping the snippet metacharacters
+/// `\`, `$` and `}` so they are not interpreted as tab stops / terminators.
+fn push_snippet_literal(out: &mut String, ch: char) {
+    if matches!(ch, '\\' | '$' | '}') {
+        out.push('\\');
+    }
+    out.push(ch);
+}
+
+/// Escape the snippet metacharacters in placeholder text.
+fn escape_snippet(text: &str) -> String {
+    let mut out = String::new();
+    for ch in text.chars() {
+        push_snippet_literal(&mut out, ch);
+    }
+    out
 }
 
 /// True when everything before the cursor is (indented) `.` optionally
@@ -460,6 +661,9 @@ fn candidate(label: &str, detail: String) -> CompletionCandidate {
         label: label.to_string(),
         insert: format!("{label}:"),
         detail,
+        snippet: false,
+        replace_chars: 0,
+        kind: CandidateKind::Section,
     }
 }
 
@@ -660,6 +864,12 @@ fn gather_nested<'a>(
 mod tests {
     use super::*;
 
+    /// Convenience wrapper that sources command signatures from `text` itself,
+    /// as the single-document case does.
+    fn complete(text: &str, line: usize, character: usize) -> Vec<CompletionCandidate> {
+        complete_with_signatures(text, line, character, &collect_signatures(text))
+    }
+
     fn labels(cands: &[CompletionCandidate]) -> Vec<String> {
         cands.iter().map(|c| c.label.clone()).collect()
     }
@@ -794,5 +1004,75 @@ mod tests {
         let text = "Def";
         let got = labels(&complete(text, 0, 3));
         assert_eq!(got, vec!["Defines".to_string()]);
+    }
+
+    #[test]
+    fn command_completion_offers_signature_with_placeholders() {
+        // A heading declares `\function:on{A}:to{B}`; typing `\f` offers it as a
+        // snippet whose placeholders are the parameter names A and B.
+        let text = "[\\function:on{A}:to{B}]\nDescribes: f\n\n\\f";
+        let got = complete(text, 3, 2);
+        assert_eq!(got.len(), 1);
+        let candidate = &got[0];
+        assert_eq!(candidate.label, "\\function:on{A}:to{B}");
+        // The leading `\` is escaped to `\\` for the snippet engine; `{A}`/`{B}`
+        // become numbered placeholders.
+        assert_eq!(candidate.insert, "\\\\function:on{${1:A}}:to{${2:B}}");
+        assert!(candidate.snippet);
+        assert_eq!(candidate.replace_chars, 2);
+        assert_eq!(candidate.kind, CandidateKind::Command);
+        assert_eq!(candidate.detail, "Describes");
+    }
+
+    #[test]
+    fn command_completion_prefix_filters() {
+        let text = "[\\relation:on{X}]\nDescribes: R\n\
+                    [\\function:on{A}:to{B}]\nDescribes: f\n\n\\rel";
+        let got = labels(&complete(text, 5, 4));
+        assert_eq!(got, vec!["\\relation:on{X}".to_string()]);
+    }
+
+    #[test]
+    fn command_completion_backslash_offers_all() {
+        let text = "[\\domain{R}]\nDefines: D\n[\\range{R}]\nDefines: N\n\n\\";
+        let mut got = labels(&complete(text, 5, 1));
+        got.sort();
+        assert_eq!(
+            got,
+            vec!["\\domain{R}".to_string(), "\\range{R}".to_string()]
+        );
+    }
+
+    #[test]
+    fn command_completion_dedupes_repeated_signatures() {
+        let text = "[\\set]\nDescribes: X\n[\\set]\nStates:\n\n\\se";
+        assert_eq!(complete(text, 5, 3).len(), 1);
+    }
+
+    #[test]
+    fn command_context_yields_no_section_completions() {
+        // In a `\`-context with no matching signature nothing is offered, rather
+        // than falling through to section suggestions.
+        let text = "Defines: f\n\\zz";
+        assert!(complete(text, 1, 3).is_empty());
+    }
+
+    #[test]
+    fn signature_snippet_conversion() {
+        assert_eq!(signature_to_snippet("\\domain{R}"), "\\\\domain{${1:R}}");
+        assert_eq!(signature_to_snippet("\\emptyset"), "\\\\emptyset");
+        assert_eq!(
+            signature_to_snippet("\\restriction:of{f}:to{C}"),
+            "\\\\restriction:of{${1:f}}:to{${2:C}}"
+        );
+    }
+
+    #[test]
+    fn collect_signatures_reads_headings() {
+        let text = "[\\domain{R}]\nDefines: D is \\set\n\nText: hi";
+        let signatures = collect_signatures(text);
+        assert_eq!(signatures.len(), 1);
+        assert_eq!(signatures[0].text, "\\domain{R}");
+        assert_eq!(signatures[0].kind.as_deref(), Some("Defines"));
     }
 }

@@ -3776,6 +3776,62 @@ mod tests {
     }
 
     #[test]
+    fn check_uses_all_quantifier_bindings_in_clause_group_blocks() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("multi-quantifier-bindings.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+      written: "x_? \in X?"
+    Documented:
+    . called: "set"
+
+    Theorem:
+    given: A, B is \set
+    then:
+    . exists:
+      . a "in" A
+      . b "in" B
+      suchThat:
+      . a = b
+    . existsUnique:
+      . c "in" A
+      . d "in" B
+      suchThat:
+      . c != d
+    . forAll:
+      . e "in" A
+      . f "in" B
+      then:
+      . e = f
+    . given:
+      . g "in" A
+      . h "in" B
+      then:
+      . g != h
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("multi-quantifier-bindings.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_exists_without_such_that_sections() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("exists-without-such-that.mlg");

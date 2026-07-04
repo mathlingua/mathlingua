@@ -22,7 +22,9 @@ pub(in crate::backend::semantic) fn walk_clause(
             }
         }
         Clause::Exists(group) => {
-            walk_binding_or_spec(&group.exists.argument, visit);
+            for item in &group.exists.arguments {
+                walk_binding_or_spec(item, visit);
+            }
             if let Some(section) = &group.such_that {
                 for clause in &section.arguments {
                     walk_clause(clause, visit);
@@ -30,7 +32,9 @@ pub(in crate::backend::semantic) fn walk_clause(
             }
         }
         Clause::ExistsUnique(group) => {
-            walk_binding_or_spec(&group.exists_unique.argument, visit);
+            for item in &group.exists_unique.arguments {
+                walk_binding_or_spec(item, visit);
+            }
             if let Some(section) = &group.such_that {
                 for clause in &section.arguments {
                     walk_clause(clause, visit);
@@ -38,7 +42,9 @@ pub(in crate::backend::semantic) fn walk_clause(
             }
         }
         Clause::ForAll(group) => {
-            walk_binding_or_spec(&group.for_all.argument, visit);
+            for item in &group.for_all.arguments {
+                walk_binding_or_spec(item, visit);
+            }
             if let Some(section) = &group.where_ {
                 for clause in &section.arguments {
                     walk_clause(clause, visit);
@@ -78,7 +84,9 @@ pub(in crate::backend::semantic) fn walk_clause(
             }
         }
         Clause::Given(group) => {
-            walk_declaration_statement(&group.given.argument, visit);
+            for statement in &group.given.arguments {
+                walk_declaration_statement(statement, visit);
+            }
             if let Some(section) = &group.where_ {
                 for clause in &section.arguments {
                     walk_clause(clause, visit);

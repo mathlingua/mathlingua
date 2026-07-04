@@ -262,6 +262,9 @@ The checker reports any ordinary symbol use that has not been introduced.
 
 - Binding and assumption sections such as `given:`, `exists:`, `existsUnique:`,
   and `forAll:` introduce their declared subjects.
+- Clause-group `given:`, `exists:`, `existsUnique:`, and `forAll:` sections may
+  contain multiple block arguments; each argument is introduced in order before
+  the guard, predicate, or body is checked.
 - Declaration definitions make declaration-side symbols available to the right
   hand side, so `f(x_) := x_` is valid.
 - Declaration relations are checked too, so `Defines: f(x_) := x_ is

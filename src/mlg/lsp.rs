@@ -1,11 +1,14 @@
 use crate::mlg::check::{CheckDiagnostic, check, check_diagnostics_report};
-use crate::mlg::completion::complete;
+use crate::mlg::completion::{
+    CandidateKind, CompletionCandidate, Signature, collect_signatures, complete_with_signatures,
+};
 use lsp_server::{Connection, Message, Notification, Response};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionOptions, CompletionParams, CompletionResponse,
-    Diagnostic, DiagnosticSeverity, InitializeParams, Position, PublishDiagnosticsParams, Range,
-    SaveOptions, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
-    TextDocumentSyncOptions, TextDocumentSyncSaveOptions, Url,
+    CompletionTextEdit, Diagnostic, DiagnosticSeverity, InitializeParams, InsertTextFormat,
+    Position, PublishDiagnosticsParams, Range, SaveOptions, ServerCapabilities,
+    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
+    TextDocumentSyncSaveOptions, TextEdit, Url,
     notification::{
         DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument,
         Notification as _, PublishDiagnostics,
@@ -36,7 +39,11 @@ pub fn lsp() -> LspResult {
                 ..Default::default()
             },
         )),
-        completion_provider: Some(CompletionOptions::default()),
+        completion_provider: Some(CompletionOptions {
+            // Pop up command completions as soon as a `\` is typed.
+            trigger_characters: Some(vec!["\\".to_string()]),
+            ..Default::default()
+        }),
         ..Default::default()
     })
     .expect("server capabilities serialize");
@@ -50,7 +57,8 @@ pub fn lsp() -> LspResult {
     };
 
     let workspace_root = initial_workspace_root(&init_params);
-    let mut state = ServerState::new(workspace_root);
+    let snippets = snippet_support(&init_params);
+    let mut state = ServerState::new(workspace_root, snippets);
 
     for msg in &connection.receiver {
         match msg {
@@ -77,14 +85,18 @@ struct ServerState {
     last_diagnostic_files: HashSet<Url>,
     /// Current text of open documents, keyed by URI. Used for completion.
     documents: HashMap<Url, String>,
+    /// Whether the client can render completion snippets (tab stops); when it
+    /// cannot, command completions fall back to inserting the plain signature.
+    snippets: bool,
 }
 
 impl ServerState {
-    fn new(workspace_root: Option<PathBuf>) -> Self {
+    fn new(workspace_root: Option<PathBuf>, snippets: bool) -> Self {
         Self {
             workspace_root,
             last_diagnostic_files: HashSet::new(),
             documents: HashMap::new(),
+            snippets,
         }
     }
 
@@ -157,17 +169,33 @@ impl ServerState {
         let uri = params.text_document_position.text_document.uri;
         let position = params.text_document_position.position;
         let text = self.documents.get(&uri)?;
-        let items = complete(text, position.line as usize, position.character as usize)
-            .into_iter()
-            .map(|c| CompletionItem {
-                label: c.label,
-                kind: Some(CompletionItemKind::KEYWORD),
-                detail: Some(c.detail),
-                insert_text: Some(c.insert),
-                ..Default::default()
-            })
-            .collect();
+        let signatures = self.all_signatures();
+        let snippets = self.snippets;
+        let items = complete_with_signatures(
+            text,
+            position.line as usize,
+            position.character as usize,
+            &signatures,
+        )
+        .into_iter()
+        .map(|candidate| completion_item(candidate, position, snippets))
+        .collect();
         Some(items)
+    }
+
+    /// Command signatures from every open document, deduplicated by text, so a
+    /// command declared in one file can be completed while editing another.
+    fn all_signatures(&self) -> Vec<Signature> {
+        let mut seen = HashSet::new();
+        let mut signatures = Vec::new();
+        for text in self.documents.values() {
+            for signature in collect_signatures(text) {
+                if seen.insert(signature.text.clone()) {
+                    signatures.push(signature);
+                }
+            }
+        }
+        signatures
     }
 
     fn refresh_diagnostics(&mut self, connection: &Connection, root: &Path) {
@@ -234,6 +262,67 @@ fn initial_workspace_root(init_params: &Value) -> Option<PathBuf> {
         }
     }
     None
+}
+
+/// Build an LSP completion item from a candidate. Command candidates carry
+/// snippet placeholders and replace the typed `\`-prefix via an explicit edit;
+/// section candidates insert at the cursor as before. When the client lacks
+/// snippet support, the plain signature (the label) is inserted instead.
+fn completion_item(
+    candidate: CompletionCandidate,
+    position: Position,
+    snippets: bool,
+) -> CompletionItem {
+    let kind = match candidate.kind {
+        CandidateKind::Section => CompletionItemKind::KEYWORD,
+        CandidateKind::Command => CompletionItemKind::FUNCTION,
+    };
+    let use_snippet = candidate.snippet && snippets;
+    let new_text = if candidate.snippet && !snippets {
+        candidate.label.clone()
+    } else {
+        candidate.insert
+    };
+
+    let mut item = CompletionItem {
+        kind: Some(kind),
+        detail: Some(candidate.detail),
+        filter_text: Some(candidate.label.clone()),
+        insert_text_format: use_snippet.then_some(InsertTextFormat::SNIPPET),
+        label: candidate.label,
+        ..Default::default()
+    };
+
+    if candidate.replace_chars > 0 {
+        let start = Position::new(
+            position.line,
+            position
+                .character
+                .saturating_sub(candidate.replace_chars as u32),
+        );
+        item.text_edit = Some(CompletionTextEdit::Edit(TextEdit {
+            range: Range { start, end: position },
+            new_text,
+        }));
+    } else {
+        item.insert_text = Some(new_text);
+    }
+
+    item
+}
+
+/// Whether the client advertised support for completion snippets.
+fn snippet_support(init_params: &Value) -> bool {
+    let Ok(parsed) = serde_json::from_value::<InitializeParams>(init_params.clone()) else {
+        return false;
+    };
+    parsed
+        .capabilities
+        .text_document
+        .and_then(|text_document| text_document.completion)
+        .and_then(|completion| completion.completion_item)
+        .and_then(|item| item.snippet_support)
+        .unwrap_or(false)
 }
 
 fn project_root_for(file: &Path, workspace_root: Option<&Path>) -> PathBuf {

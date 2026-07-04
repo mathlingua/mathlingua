@@ -14,11 +14,11 @@ then:
   then:
   . y = y
 iff:
-. [logic.iff]
+. [logic.have]
+  have:
+  . y = y
   iff:
   . x = x
-  then:
-  . y = y
 Justified:
 . [axiom.justified]
   by:

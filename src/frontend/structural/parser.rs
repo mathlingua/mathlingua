@@ -1014,17 +1014,17 @@ pub(super) fn parse_if_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Opt
     })
 }
 
-/// Parses an `iff:` clause group.
-pub(super) fn parse_iff_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IffGroup> {
+/// Parses a `have:` clause group with an `iff:` condition.
+pub(super) fn parse_have_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IffGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections("iff", &group.sections, tracker, &["iff", "then"])?;
+    let sections = identify_sections("have", &group.sections, tracker, &["have", "iff"])?;
     Some(IffGroup {
         heading,
         iff: IffSection {
             arguments: parse_required_clauses(section(&sections, "iff")?, "iff", tracker)?,
         },
         then: ThenSection {
-            arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
+            arguments: parse_required_clauses(section(&sections, "have")?, "have", tracker)?,
         },
     })
 }
@@ -1331,7 +1331,7 @@ pub(super) fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> 
         "existsUnique" => parse_exists_unique_clause(group, tracker).map(Clause::ExistsUnique),
         "forAll" => parse_for_all_clause(group, tracker).map(Clause::ForAll),
         "if" => parse_if_clause(group, tracker).map(Clause::If),
-        "iff" => parse_iff_clause(group, tracker).map(Clause::Iff),
+        "have" => parse_have_clause(group, tracker).map(Clause::Iff),
         "piecewise" => parse_piecewise_clause(group, tracker).map(Clause::Piecewise),
         "given" => parse_given_clause(group, tracker).map(Clause::Given),
         other => {
@@ -4733,11 +4733,11 @@ then:
   then:
   . y = y
 iff:
-. [logic.iff]
+. [logic.have]
+  have:
+  . y = y
   iff:
   . x = x
-  then:
-  . y = y
 Justified:
 . [axiom.justified]
   by:
@@ -4850,5 +4850,25 @@ then:
             }
             other => panic!("expected conjecture group, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn rejects_legacy_iff_then_clause_groups() {
+        let (_document, messages) = parse_with_diagnostics(
+            r#"
+Theorem:
+then:
+. iff:
+  . x = x
+  then:
+  . y = y
+"#,
+        );
+
+        assert!(messages.iter().any(|event| {
+            event
+                .as_message()
+                .is_some_and(|message| message.message.contains("Unexpected clause group `iff`"))
+        }));
     }
 }

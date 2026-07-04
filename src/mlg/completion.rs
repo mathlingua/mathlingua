@@ -262,7 +262,7 @@ const CLAUSE_STARTERS: &[&str] = &[
     "existsUnique",
     "forAll",
     "if",
-    "iff",
+    "have",
     "piecewise",
     "given",
 ];
@@ -273,6 +273,7 @@ const CLAUSE_SECTIONS: &[&str] = &[
     "when",
     "then",
     "where",
+    "have",
     "iff",
     "satisfies",
     "suchThat",
@@ -321,7 +322,7 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
         &[("forAll", true), ("where", false), ("then", true)],
     ),
     ("if", &[("if", true), ("then", true)]),
-    ("iff", &[("iff", true), ("then", true)]),
+    ("have", &[("have", true), ("iff", true)]),
     (
         "piecewise",
         &[
@@ -619,7 +620,7 @@ fn gather_nested<'a>(
         }
         if ind == indent {
             if is_bullet(l) {
-                break; // sibling bullet: we're at the argument-list level
+                continue; // content inside the current nested section
             }
             if let Some((_, label)) = section_header(l) {
                 present_above.push(label);
@@ -648,7 +649,7 @@ fn gather_nested<'a>(
         }
         if ind == indent {
             if is_bullet(l) {
-                break;
+                continue;
             }
             if let Some((_, label)) = section_header(l) {
                 present_all.push(label);
@@ -705,6 +706,8 @@ mod tests {
         assert!(got.contains(&"forAll".to_string()));
         assert!(got.contains(&"exists".to_string()));
         assert!(got.contains(&"if".to_string()));
+        assert!(got.contains(&"have".to_string()));
+        assert!(!got.contains(&"iff".to_string()));
     }
 
     #[test]
@@ -748,6 +751,13 @@ mod tests {
         let text = "Theorem:\nthen:\n. forAll: x\n  where: y\n  ";
         let got = labels(&complete(text, 4, 2));
         assert_eq!(got, vec!["then".to_string()]);
+    }
+
+    #[test]
+    fn next_section_inside_have_clause() {
+        let text = "Theorem:\nthen:\n. have:\n  . x = x\n  ";
+        let got = labels(&complete(text, 4, 2));
+        assert_eq!(got, vec!["iff".to_string()]);
     }
 
     #[test]

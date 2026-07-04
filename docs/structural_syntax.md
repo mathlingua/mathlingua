@@ -419,7 +419,7 @@ If a clause section contains:
 | `existsUnique` | `ExistsUniqueGroup` | label? | `existsUnique: BindingOrSpec`, `suchThat?: Clause+` |
 | `forAll` | `ForAllGroup` | label? | `forAll: BindingOrSpec`, `where?: Clause+`, `then: Clause+` |
 | `if` | `IfGroup` | label? | `if: Clause+`, `then: Clause+` |
-| `iff` | `IffGroup` | label? | `iff: Clause+`, `then: Clause+` |
+| `have` | `IffGroup` | label? | `have: Clause+`, `iff: Clause+` |
 | `piecewise` | `PiecewiseGroup` | label? | `piecewise: OpenText*`, `if: Clause+`, `then: Clause+`, `else?: Clause+` |
 | `given` | `GivenGroup` | label? | `given: RefinedDeclarationStatement`, `where?: Clause+`, `then: Clause+` |
 
@@ -1068,8 +1068,8 @@ then: <ClauseUnion>+
 
 ```group
 [LabelHeader]?
+have: <ClauseUnion>+
 iff: <ClauseUnion>+
-then: <ClauseUnion>+
 ```
 
 ```group

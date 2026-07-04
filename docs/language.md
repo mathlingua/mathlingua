@@ -452,7 +452,7 @@ expressions.
 | `existsUnique` | same as `exists`, with unique-existence intent |
 | `forAll` | creates a child context, assumes `where:`, checks `then:` |
 | `if` | assumes `if:`, checks `then:` |
-| `iff` | assumes `iff:`, checks `then:` |
+| `have` | assumes `iff:`, checks `have:` |
 | `piecewise` | assumes `if:`, checks `then:`; `else:` is checked in the outer context |
 | `given` | assumes one refined-capable given statement, then checks `then:` |
 

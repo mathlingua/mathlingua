@@ -514,7 +514,7 @@ the construct supports.
 `References:` contains resource headers such as `$book.chapter`.
 
 `Person` groups use author headings such as `[@ada.lovelace]` and require
-name text on `Person:` plus `biography:`. `Resource` groups use resource headings such as
+name text on `Person:` with optional `biography:`. `Resource` groups use resource headings such as
 `[$principia]` and contain resource item groups like `title:`, `author:`,
 `url:`, and `year:`.
 

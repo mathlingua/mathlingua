@@ -214,7 +214,7 @@ const GROUPS: &[GroupSpec] = &[
     },
     GroupSpec {
         head: "Person",
-        sections: &[("Person", true), ("biography", true), ("Id", false)],
+        sections: &[("Person", true), ("biography", false), ("Id", false)],
     },
     GroupSpec {
         head: "Resource",

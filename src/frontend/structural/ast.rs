@@ -867,7 +867,7 @@ pub struct NegativeDecimalGroup {
 pub struct PersonGroup {
     pub heading: AuthorHeader,
     pub person: PersonSection,
-    pub biography: BiographySection,
+    pub biography: Option<BiographySection>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

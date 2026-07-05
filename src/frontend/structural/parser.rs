@@ -3302,7 +3302,7 @@ pub(in crate::frontend::structural::parser) fn parse_corollary(
 /// Parses a `Person:` metadata group.
 ///
 /// Person groups require an author-style heading and carry required name text on
-/// the leading `Person:` section plus a required `biography:` section.
+/// the leading `Person:` section plus an optional `biography:` section.
 pub(in crate::frontend::structural::parser) fn parse_person(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -3312,7 +3312,7 @@ pub(in crate::frontend::structural::parser) fn parse_person(
         "Person",
         &group.sections,
         tracker,
-        &["Person", "biography", "Id?"],
+        &["Person", "biography?", "Id?"],
     )?;
 
     Some(PersonGroup {
@@ -3320,13 +3320,10 @@ pub(in crate::frontend::structural::parser) fn parse_person(
         person: PersonSection {
             arguments: parse_required_open_texts(section(&sections, "Person")?, "Person", tracker)?,
         },
-        biography: BiographySection {
-            argument: parse_required_open_text(
-                section(&sections, "biography")?,
-                "biography",
-                tracker,
-            )?,
-        },
+        biography: sections.get("biography").copied().and_then(|section| {
+            parse_required_open_text(section, "biography", tracker)
+                .map(|argument| BiographySection { argument })
+        }),
     })
 }
 
@@ -4222,7 +4219,13 @@ Specify:
         match &document.items[0] {
             TopLevelItem::Person(group) => {
                 assert_eq!(group.person.arguments.len(), 2);
-                assert_eq!(group.biography.argument.0, "Greek mathematician");
+                assert_eq!(
+                    group
+                        .biography
+                        .as_ref()
+                        .map(|section| section.argument.0.as_str()),
+                    Some("Greek mathematician")
+                );
             }
             other => panic!("expected person group, got {other:?}"),
         }
@@ -4464,6 +4467,24 @@ Resource:
         assert!(matches!(document.items[1], TopLevelItem::States(_)));
         assert!(matches!(document.items[2], TopLevelItem::Person(_)));
         assert!(matches!(document.items[3], TopLevelItem::Resource(_)));
+    }
+
+    #[test]
+    fn parses_person_group_without_biography() {
+        let document = parse_ok(
+            r#"
+[@ada.lovelace]
+Person: "Ada Lovelace"
+"#,
+        );
+
+        match &document.items[0] {
+            TopLevelItem::Person(group) => {
+                assert_eq!(group.person.arguments[0].0, "Ada Lovelace");
+                assert!(group.biography.is_none());
+            }
+            other => panic!("expected person group, got {other:?}"),
+        }
     }
 
     #[test]

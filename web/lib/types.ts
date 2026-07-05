@@ -38,6 +38,8 @@ export type GroupView = {
   heading: string | null;
   /** Backend-rendered LaTeX title for the group card, if available. */
   heading_latex: string | null;
+  /** Optional prose rendered directly in the card body. */
+  body_text: string | null;
   /** Direct page content for document headings/prose instead of card content. */
   page: PageView | null;
   /** Original MathLingua source for this top-level group. */

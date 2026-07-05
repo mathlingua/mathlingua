@@ -2,14 +2,14 @@ use super::model::{
     ArgumentView, CollectionView, DirectoryView, FileView, GroupView, PageView, SectionView,
 };
 use super::render::{
-    build_linked_render_registry, definition_reference_keys_for_heading,
+    RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
     render_documented_text_latex, render_formulation_latex, render_group_heading_latex,
-    render_writing_alias_latex, RenderRegistry,
+    render_writing_alias_latex,
 };
 use crate::events::{Audience, Event, EventLog, Level};
 use crate::frontend::{
-    top_level_group_id, ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection,
-    SourceFileViewMetadata,
+    ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection, SourceFileViewMetadata,
+    top_level_group_id,
 };
 use std::path::{Path, PathBuf};
 
@@ -155,6 +155,7 @@ fn description_page_group(source_id: &str, text: String) -> GroupView {
         definition_keys: Vec::new(),
         heading: None,
         heading_latex: None,
+        body_text: None,
         page: Some(PageView {
             kind: "Text".to_string(),
             text,
@@ -180,15 +181,20 @@ fn group_view(
         .first()
         .and_then(|section| section.inline_argument.as_deref());
     let page = page_view(&kind, &group.sections);
-
-    GroupView {
-        id,
-        heading_latex: render_group_heading_latex(
+    let heading_latex = person_heading_latex(&kind, &group.sections).or_else(|| {
+        render_group_heading_latex(
             &kind,
             group.heading.as_deref(),
             primary_inline_argument,
             registry,
-        ),
+        )
+    });
+    let body_text = person_body_text(&kind, &group.sections);
+
+    GroupView {
+        id,
+        heading_latex,
+        body_text,
         definition_keys: definition_reference_keys_for_heading(group.heading.as_deref()),
         kind,
         heading: group.heading,
@@ -200,6 +206,28 @@ fn group_view(
             .map(|section| section_view(section, registry, SectionContext::Default))
             .collect(),
     }
+}
+
+fn person_heading_latex(kind: &str, sections: &[ProtoSection]) -> Option<String> {
+    if kind != "Person" {
+        return None;
+    }
+
+    let name = first_section_text(sections.iter().find(|section| section.label == "Person")?)?;
+    render_documented_text_latex("called", &name)
+}
+
+fn person_body_text(kind: &str, sections: &[ProtoSection]) -> Option<String> {
+    if kind != "Person" {
+        return None;
+    }
+
+    sections
+        .iter()
+        .find(|section| section.label == "biography")
+        .and_then(section_text)
+        .map(|text| unindent_description_text(&text))
+        .filter(|text| !text.trim().is_empty())
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -313,6 +341,10 @@ fn documented_description_text(group: &ProtoGroup) -> Option<String> {
 }
 
 fn section_text(section: &ProtoSection) -> Option<String> {
+    first_section_text(section)
+}
+
+fn first_section_text(section: &ProtoSection) -> Option<String> {
     if let Some(text) = section.inline_argument.as_deref() {
         return strip_quoted_text(text);
     }
@@ -448,7 +480,7 @@ mod tests {
     use crate::backend::view::ArgumentView;
     use crate::events::EventLog;
     use crate::frontend::{
-        parse_document, top_level_item_ids, ParsedSourceFile, SourceFileViewMetadata,
+        ParsedSourceFile, SourceFileViewMetadata, parse_document, top_level_item_ids,
     };
     use std::fs;
     use std::path::{Path, PathBuf};
@@ -605,6 +637,50 @@ Id: "11111111-1111-4111-8111-111111111111"
             Some(r#"\langle\textrm{see above}\rangle"#)
         );
         assert!(sections[0].arguments.is_empty());
+        assert!(!event_log.has_errors());
+    }
+
+    #[test]
+    fn renders_person_name_as_title_and_biography_as_card_text() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("people.mlg");
+        let source = r#"[@ada.lovelace]
+Person: "Ada Lovelace"
+biography: "Known for notes on the Analytical Engine.
+
+Worked with $Babbage$."
+Id: "11111111-1111-4111-8111-111111111111"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+            .expect("expected view");
+        let person = &view.files[0].items[0];
+
+        assert_eq!(person.kind, "Person");
+        assert_eq!(
+            person.heading_latex.as_deref(),
+            Some(r#"\textrm{Ada Lovelace}"#)
+        );
+        assert_eq!(
+            person.body_text.as_deref(),
+            Some("Known for notes on the Analytical Engine.\n\nWorked with $Babbage$.")
+        );
         assert!(!event_log.has_errors());
     }
 

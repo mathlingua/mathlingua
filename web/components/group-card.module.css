@@ -72,6 +72,11 @@
   font-size: 1.08rem;
 }
 
+.bodyText {
+  margin-top: 0.75rem;
+  padding-right: 2.35rem;
+}
+
 .sectionStack {
   display: grid;
   gap: 0.18rem;
@@ -183,6 +188,7 @@
   }
 
   .header,
+  .bodyText,
   .sectionStack {
     padding-right: 2rem;
   }

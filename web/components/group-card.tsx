@@ -6,6 +6,7 @@ import type { GroupView, SectionView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
 import { MathLinguaSource } from "./mathlingua-source";
 import { MathLinguaInline } from "./mathlingua-inline";
+import { MarkdownText } from "./markdown-text";
 import styles from "./group-card.module.css";
 import sectionStyles from "./section-content.module.css";
 
@@ -38,7 +39,11 @@ export function GroupCard({
     ? capitalizeLeadingRenderedLatexWord(group.heading_latex)
     : null;
   const hasHeading = headingLatex !== null;
-  const hasSupportSections = group.sections.some(isSupportSection);
+  const bodyText = group.body_text?.trim() ? group.body_text : null;
+  const hasSupportSections = group.sections.some(
+    (section) =>
+      isSupportSection(section) && !isCardBodySection(group.kind, section),
+  );
   const frontFaceClass = `${styles.cardFace} ${styles.cardFront}${
     onClose ? ` ${styles.cardFaceClosable}` : ""
   }${showSource ? ` ${styles.cardFaceInactive}` : ""}`;
@@ -46,8 +51,14 @@ export function GroupCard({
     onClose ? ` ${styles.cardFaceClosable}` : ""
   }${showSource ? "" : ` ${styles.cardFaceInactive}`}`;
   const visibleSections = showSupportSections
-    ? group.sections
-    : group.sections.filter((section) => !isSupportSection(section));
+    ? group.sections.filter(
+        (section) => !isCardBodySection(group.kind, section),
+      )
+    : group.sections.filter(
+        (section) =>
+          !isSupportSection(section) && !isCardBodySection(group.kind, section),
+      );
+  const hasVisibleSections = visibleSections.length > 0;
 
   return (
     <section className={styles.card} id={anchorId}>
@@ -94,49 +105,56 @@ export function GroupCard({
               </h3>
             </header>
           ) : null}
-          <div
-            className={
-              hasHeading
-                ? styles.sectionStack
-                : `${styles.sectionStack} ${styles.sectionStackFlush}`
-            }
-          >
-            {visibleSections.map((section, index) => (
-              <section
-                className={styles.sectionBlock}
-                key={`${section.label}-${index}`}
-              >
-                <div className={sectionStyles.sectionLabelRow}>
-                  <span className={sectionStyles.sectionLabel}>
-                    {section.label}
-                  </span>
-                  {section.inline_argument ? (
-                    section.inline_latex ? (
-                      <span
-                        className={`${sectionStyles.inlineArgument} ${sectionStyles.inlineArgumentLatex}`}
-                      >
-                        <LatexRenderer
-                          latex={section.inline_latex}
-                          onReferenceClick={onReferenceClick}
+          {bodyText ? (
+            <div className={styles.bodyText}>
+              <MarkdownText text={bodyText} />
+            </div>
+          ) : null}
+          {hasVisibleSections ? (
+            <div
+              className={
+                hasHeading || bodyText
+                  ? styles.sectionStack
+                  : `${styles.sectionStack} ${styles.sectionStackFlush}`
+              }
+            >
+              {visibleSections.map((section, index) => (
+                <section
+                  className={styles.sectionBlock}
+                  key={`${section.label}-${index}`}
+                >
+                  <div className={sectionStyles.sectionLabelRow}>
+                    <span className={sectionStyles.sectionLabel}>
+                      {section.label}
+                    </span>
+                    {section.inline_argument ? (
+                      section.inline_latex ? (
+                        <span
+                          className={`${sectionStyles.inlineArgument} ${sectionStyles.inlineArgumentLatex}`}
+                        >
+                          <LatexRenderer
+                            latex={section.inline_latex}
+                            onReferenceClick={onReferenceClick}
+                          />
+                        </span>
+                      ) : (
+                        <MathLinguaInline
+                          className={sectionStyles.inlineArgument}
+                          text={section.inline_argument}
                         />
-                      </span>
-                    ) : (
-                      <MathLinguaInline
-                        className={sectionStyles.inlineArgument}
-                        text={section.inline_argument}
-                      />
-                    )
+                      )
+                    ) : null}
+                  </div>
+                  {section.arguments.length > 0 ? (
+                    <ArgumentList
+                      arguments={section.arguments}
+                      onReferenceClick={onReferenceClick}
+                    />
                   ) : null}
-                </div>
-                {section.arguments.length > 0 ? (
-                  <ArgumentList
-                    arguments={section.arguments}
-                    onReferenceClick={onReferenceClick}
-                  />
-                ) : null}
-              </section>
-            ))}
-          </div>
+                </section>
+              ))}
+            </div>
+          ) : null}
           {hasSupportSections ? (
             <button
               aria-expanded={showSupportSections}
@@ -243,6 +261,14 @@ function isSupportSection(section: SectionView): boolean {
     section.label === "Enables" ||
     section.label === "Provides" ||
     section.label === "Id"
+  );
+}
+
+/** Sections rendered as first-class card title/body content. */
+function isCardBodySection(groupKind: string, section: SectionView): boolean {
+  return (
+    groupKind === "Person" &&
+    (section.label === "Person" || section.label === "biography")
   );
 }
 

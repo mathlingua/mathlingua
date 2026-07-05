@@ -546,6 +546,7 @@ mod tests {
                     definition_keys: vec![],
                     heading: None,
                     heading_latex: None,
+                    body_text: None,
                     page: Some(PageView {
                         kind: "Title".to_string(),
                         text: "Example".to_string(),

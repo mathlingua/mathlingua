@@ -74,6 +74,9 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
         ExpressionKind::Labeled { expression, .. } => render_expression(expression, registry),
         ExpressionKind::SubsetCall(call) => render_subset_call(call, registry),
         ExpressionKind::Command(command) => render_command_expression(command, registry),
+        ExpressionKind::BuiltinCommand(command) => {
+            render_builtin_command_expression(command, registry)
+        }
         ExpressionKind::InfixCommand {
             left,
             command,
@@ -173,6 +176,143 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 render_set_expression(literal, registry)
             ),
         },
+    }
+}
+
+fn render_builtin_command_expression(
+    command: &BuiltinCommandExpression,
+    registry: &RenderRegistry,
+) -> String {
+    let head = render_builtin_arguments(&command.head_args, registry);
+    let tail = |name: &str| {
+        command
+            .tail
+            .iter()
+            .filter(|tail| format_chain(&tail.chain) == name)
+            .flat_map(|tail| render_builtin_arguments(&tail.args, registry))
+            .collect::<Vec<_>>()
+    };
+
+    match format_chain(&command.chain).as_str() {
+        "not" => format!(
+            "\\neg {}",
+            head.first()
+                .cloned()
+                .unwrap_or_else(|| "\\cdots".to_owned())
+        ),
+        "and" | "allOf" => head.join(" \\textrm{ and } "),
+        "or" | "anyOf" => head.join(" \\textrm{ or } "),
+        "oneOf" => format!("\\textrm{{one of }} {}", head.join(", ")),
+        "exists" => render_builtin_quantifier("\\exists", &head, &tail("suchThat")),
+        "existsUnique" => render_builtin_quantifier("\\exists!", &head, &tail("suchThat")),
+        "forAll" | "forall" => {
+            let where_ = tail("where");
+            let then = tail("then");
+            let mut rendered = render_builtin_quantifier("\\forall", &head, &where_);
+            if !then.is_empty() {
+                rendered.push_str(" \\textrm{ then } ");
+                rendered.push_str(&then.join(" \\textrm{ and } "));
+            }
+            rendered
+        }
+        "if" => {
+            let then = tail("then");
+            let mut rendered = format!("\\textrm{{if }} {}", head.join(" \\textrm{ and } "));
+            if !then.is_empty() {
+                rendered.push_str(" \\textrm{ then } ");
+                rendered.push_str(&then.join(" \\textrm{ and } "));
+            }
+            rendered
+        }
+        "have" => {
+            let iff = tail("iff");
+            format!(
+                "{} \\Longleftrightarrow {}",
+                head.join(" \\textrm{ and } "),
+                iff.join(" \\textrm{ and } ")
+            )
+        }
+        "given" => {
+            let where_ = tail("where");
+            let then = tail("then");
+            let mut rendered = format!("\\textrm{{given }} {}", head.join("; "));
+            if !where_.is_empty() {
+                rendered.push_str(" \\textrm{ where } ");
+                rendered.push_str(&where_.join(" \\textrm{ and } "));
+            }
+            if !then.is_empty() {
+                rendered.push_str(" \\textrm{ then } ");
+                rendered.push_str(&then.join(" \\textrm{ and } "));
+            }
+            rendered
+        }
+        "piecewise" => {
+            let if_ = tail("if");
+            let then = tail("then");
+            let else_ = tail("else");
+            let mut rendered = head.join(" \\textrm{ and } ");
+            if !if_.is_empty() {
+                if !rendered.is_empty() {
+                    rendered.push(' ');
+                }
+                rendered.push_str("\\textrm{if } ");
+                rendered.push_str(&if_.join(" \\textrm{ and } "));
+            }
+            if !then.is_empty() {
+                rendered.push_str(" \\textrm{ then } ");
+                rendered.push_str(&then.join(" \\textrm{ and } "));
+            }
+            if !else_.is_empty() {
+                rendered.push_str(" \\textrm{ else } ");
+                rendered.push_str(&else_.join(" \\textrm{ and } "));
+            }
+            rendered
+        }
+        other => format!(
+            "\\operatorname{{{}}}\\left({}\\right)",
+            escape_latex_math(other),
+            head.join("; ")
+        ),
+    }
+}
+
+fn render_builtin_quantifier(symbol: &str, head: &[String], such_that: &[String]) -> String {
+    let mut rendered = format!("{symbol} {}", head.join("; "));
+    if !such_that.is_empty() {
+        rendered.push_str(" \\textrm{ such that } ");
+        rendered.push_str(&such_that.join(" \\textrm{ and } "));
+    }
+    rendered
+}
+
+fn render_builtin_arguments(
+    groups: &[BuiltinCommandArgs],
+    registry: &RenderRegistry,
+) -> Vec<String> {
+    groups
+        .iter()
+        .flat_map(|group| group.arguments.iter())
+        .map(|argument| render_builtin_argument(argument, registry))
+        .collect()
+}
+
+fn render_builtin_argument(argument: &BuiltinCommandArgument, registry: &RenderRegistry) -> String {
+    match argument {
+        BuiltinCommandArgument::Text(argument) => {
+            if let Ok(statement) =
+                crate::frontend::formulation::parse_refined_declaration_statement(argument)
+            {
+                return render_declaration_statement(&statement, registry);
+            }
+            if let Ok(expression) = crate::frontend::formulation::parse_expression(argument) {
+                return render_expression(&expression, registry);
+            }
+            format!("\\textrm{{{}}}", escape_latex_text(argument.trim()))
+        }
+        BuiltinCommandArgument::Declaration(statement) => {
+            render_declaration_statement(statement, registry)
+        }
+        BuiltinCommandArgument::Expression(expression) => render_expression(expression, registry),
     }
 }
 

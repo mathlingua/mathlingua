@@ -1956,6 +1956,7 @@ fn collect_expression_names(expression: &Expression, names: &mut BTreeSet<String
         }
         ExpressionKind::SubsetCall(subset) => collect_subset_call_names(subset, names),
         ExpressionKind::Command(command) => collect_command_expression_names(command, names),
+        ExpressionKind::BuiltinCommand(_) => {}
         ExpressionKind::InfixCommand {
             left,
             command,
@@ -2301,6 +2302,12 @@ fn assume_clause(
                 context.add_fact(fact);
             }
         }
+        Clause::Expression(Expression {
+            kind: ExpressionKind::BuiltinCommand(command),
+            ..
+        }) => {
+            assume_builtin_command_expression(command, context, path, locator, registry, event_log);
+        }
         Clause::AllOf(group) => {
             for clause in &group.all_of.arguments {
                 assume_clause(clause, context, path, locator, registry, event_log);
@@ -2436,6 +2443,492 @@ fn check_clause(
             check_expression(expression, context, path, locator, registry, event_log)
         }
     }
+}
+
+fn check_builtin_command_expression(
+    command: &BuiltinCommandExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match format_chain(&command.chain).as_str() {
+        "not" => {
+            let clauses = parse_builtin_clause_arguments(
+                command,
+                &builtin_head_arguments(command),
+                path,
+                locator,
+                event_log,
+            );
+            if clauses.len() != 1 {
+                emit_builtin_command_error(
+                    command,
+                    path,
+                    locator,
+                    event_log,
+                    "`\\\\not{...}` expects exactly one clause argument",
+                );
+            }
+            for clause in &clauses {
+                check_clause(clause, context, path, locator, registry, event_log);
+            }
+            check_builtin_tail_names(command, &[], path, locator, event_log);
+        }
+        "and" | "allOf" | "or" | "anyOf" | "oneOf" => {
+            check_builtin_clause_list(
+                command,
+                &builtin_head_arguments(command),
+                context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            check_builtin_tail_names(command, &[], path, locator, event_log);
+        }
+        "exists" | "existsUnique" => {
+            let mut child = context.clone();
+            assume_builtin_binding_arguments(
+                command,
+                &builtin_head_arguments(command),
+                &mut child,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            for clause in &parse_builtin_clause_arguments(
+                command,
+                &builtin_tail_arguments(command, "suchThat"),
+                path,
+                locator,
+                event_log,
+            ) {
+                assume_clause(clause, &mut child, path, locator, registry, event_log);
+            }
+            check_builtin_tail_names(command, &["suchThat"], path, locator, event_log);
+        }
+        "forAll" | "forall" => {
+            let mut child = context.clone();
+            assume_builtin_binding_arguments(
+                command,
+                &builtin_head_arguments(command),
+                &mut child,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            for clause in &parse_builtin_clause_arguments(
+                command,
+                &builtin_tail_arguments(command, "where"),
+                path,
+                locator,
+                event_log,
+            ) {
+                assume_clause(clause, &mut child, path, locator, registry, event_log);
+            }
+            let then_clauses = parse_builtin_clause_arguments(
+                command,
+                &builtin_tail_arguments(command, "then"),
+                path,
+                locator,
+                event_log,
+            );
+            if then_clauses.is_empty() {
+                emit_builtin_command_error(
+                    command,
+                    path,
+                    locator,
+                    event_log,
+                    "`\\\\forAll{...}` requires a `:then{...}` tail",
+                );
+            }
+            for clause in &then_clauses {
+                check_clause(clause, &child, path, locator, registry, event_log);
+            }
+            check_builtin_tail_names(command, &["where", "then"], path, locator, event_log);
+        }
+        "if" => {
+            let mut child = context.clone();
+            for clause in &parse_builtin_clause_arguments(
+                command,
+                &builtin_head_arguments(command),
+                path,
+                locator,
+                event_log,
+            ) {
+                assume_clause(clause, &mut child, path, locator, registry, event_log);
+            }
+            let then_clauses = parse_builtin_clause_arguments(
+                command,
+                &builtin_tail_arguments(command, "then"),
+                path,
+                locator,
+                event_log,
+            );
+            for clause in &then_clauses {
+                check_clause(clause, &child, path, locator, registry, event_log);
+            }
+            check_builtin_tail_names(command, &["then"], path, locator, event_log);
+        }
+        "have" => {
+            let mut child = context.clone();
+            for clause in &parse_builtin_clause_arguments(
+                command,
+                &builtin_tail_arguments(command, "iff"),
+                path,
+                locator,
+                event_log,
+            ) {
+                assume_clause(clause, &mut child, path, locator, registry, event_log);
+            }
+            let have_clauses = parse_builtin_clause_arguments(
+                command,
+                &builtin_head_arguments(command),
+                path,
+                locator,
+                event_log,
+            );
+            if builtin_tail_arguments(command, "iff").is_empty() {
+                emit_builtin_command_error(
+                    command,
+                    path,
+                    locator,
+                    event_log,
+                    "`\\\\have{...}` requires an `:iff{...}` tail",
+                );
+            }
+            for clause in &have_clauses {
+                check_clause(clause, &child, path, locator, registry, event_log);
+            }
+            check_builtin_tail_names(command, &["iff"], path, locator, event_log);
+        }
+        "given" => {
+            let mut child = context.clone();
+            assume_builtin_binding_arguments(
+                command,
+                &builtin_head_arguments(command),
+                &mut child,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            for clause in &parse_builtin_clause_arguments(
+                command,
+                &builtin_tail_arguments(command, "where"),
+                path,
+                locator,
+                event_log,
+            ) {
+                assume_clause(clause, &mut child, path, locator, registry, event_log);
+            }
+            let then_clauses = parse_builtin_clause_arguments(
+                command,
+                &builtin_tail_arguments(command, "then"),
+                path,
+                locator,
+                event_log,
+            );
+            if then_clauses.is_empty() {
+                emit_builtin_command_error(
+                    command,
+                    path,
+                    locator,
+                    event_log,
+                    "`\\\\given{...}` requires a `:then{...}` tail",
+                );
+            }
+            for clause in &then_clauses {
+                check_clause(clause, &child, path, locator, registry, event_log);
+            }
+            check_builtin_tail_names(command, &["where", "then"], path, locator, event_log);
+        }
+        "piecewise" => {
+            let mut child = context.clone();
+            for clause in &parse_builtin_clause_arguments(
+                command,
+                &builtin_tail_arguments(command, "if"),
+                path,
+                locator,
+                event_log,
+            ) {
+                assume_clause(clause, &mut child, path, locator, registry, event_log);
+            }
+            let then_clauses = parse_builtin_clause_arguments(
+                command,
+                &builtin_tail_arguments(command, "then"),
+                path,
+                locator,
+                event_log,
+            );
+            if then_clauses.is_empty() {
+                emit_builtin_command_error(
+                    command,
+                    path,
+                    locator,
+                    event_log,
+                    "`\\\\piecewise{...}` requires a `:then{...}` tail",
+                );
+            }
+            for clause in &then_clauses {
+                check_clause(clause, &child, path, locator, registry, event_log);
+            }
+            for clause in &parse_builtin_clause_arguments(
+                command,
+                &builtin_tail_arguments(command, "else"),
+                path,
+                locator,
+                event_log,
+            ) {
+                check_clause(clause, context, path, locator, registry, event_log);
+            }
+            check_builtin_tail_names(command, &["if", "then", "else"], path, locator, event_log);
+        }
+        other => emit_builtin_command_error(
+            command,
+            path,
+            locator,
+            event_log,
+            format!("Unknown builtin clause command `\\\\{other}`"),
+        ),
+    }
+}
+
+fn assume_builtin_command_expression(
+    command: &BuiltinCommandExpression,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match format_chain(&command.chain).as_str() {
+        "and" | "allOf" => {
+            for clause in &parse_builtin_clause_arguments(
+                command,
+                &builtin_head_arguments(command),
+                path,
+                locator,
+                event_log,
+            ) {
+                assume_clause(clause, context, path, locator, registry, event_log);
+            }
+            check_builtin_tail_names(command, &[], path, locator, event_log);
+        }
+        _ => check_builtin_command_expression(command, context, path, locator, registry, event_log),
+    }
+}
+
+fn check_builtin_clause_list(
+    command: &BuiltinCommandExpression,
+    arguments: &[&BuiltinCommandArgument],
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let clauses = parse_builtin_clause_arguments(command, arguments, path, locator, event_log);
+    if clauses.is_empty() {
+        emit_builtin_command_error(
+            command,
+            path,
+            locator,
+            event_log,
+            format!(
+                "`\\\\{}{}` expects at least one clause argument",
+                format_chain(&command.chain),
+                "{...}"
+            ),
+        );
+    }
+    for clause in &clauses {
+        check_clause(clause, context, path, locator, registry, event_log);
+    }
+}
+
+fn assume_builtin_binding_arguments(
+    command: &BuiltinCommandExpression,
+    arguments: &[&BuiltinCommandArgument],
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    if arguments.is_empty() {
+        emit_builtin_command_error(
+            command,
+            path,
+            locator,
+            event_log,
+            format!(
+                "`\\\\{}{}` expects at least one binding argument",
+                format_chain(&command.chain),
+                "{...}"
+            ),
+        );
+    }
+    for argument in arguments {
+        assume_builtin_binding_argument(
+            command, argument, context, path, locator, registry, event_log,
+        );
+    }
+}
+
+fn assume_builtin_binding_argument(
+    command: &BuiltinCommandExpression,
+    argument: &BuiltinCommandArgument,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match argument {
+        BuiltinCommandArgument::Text(argument) => {
+            match crate::frontend::formulation::parse_refined_declaration_statement(argument) {
+                Ok(statement) => {
+                    assume_declaration_statement(
+                        &statement, context, path, locator, registry, event_log,
+                    );
+                }
+                Err(declaration_error) => {
+                    match crate::frontend::formulation::parse_expression(argument) {
+                        Ok(expression) => {
+                            assume_fact_expression(
+                                &expression,
+                                context,
+                                path,
+                                locator,
+                                registry,
+                                event_log,
+                            );
+                        }
+                        Err(expression_error) => emit_builtin_command_error(
+                            command,
+                            path,
+                            locator,
+                            event_log,
+                            format!(
+                                "Invalid builtin binding `{argument}`: {declaration_error}; {expression_error}"
+                            ),
+                        ),
+                    }
+                }
+            }
+        }
+        BuiltinCommandArgument::Declaration(statement) => {
+            assume_declaration_statement(statement, context, path, locator, registry, event_log);
+        }
+        BuiltinCommandArgument::Expression(expression) => {
+            assume_fact_expression(expression, context, path, locator, registry, event_log);
+        }
+    }
+}
+
+fn parse_builtin_clause_arguments(
+    command: &BuiltinCommandExpression,
+    arguments: &[&BuiltinCommandArgument],
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) -> Vec<Clause> {
+    arguments
+        .iter()
+        .filter_map(|argument| match argument {
+            BuiltinCommandArgument::Text(argument) => {
+                if let Ok(statement) =
+                    crate::frontend::formulation::parse_ordinary_declaration_statement(argument)
+                {
+                    return Some(Clause::Declaration(statement));
+                }
+
+                match crate::frontend::formulation::parse_expression(argument) {
+                    Ok(expression) => Some(Clause::Expression(expression)),
+                    Err(error) => {
+                        emit_builtin_command_error(
+                            command,
+                            path,
+                            locator,
+                            event_log,
+                            format!("Invalid builtin clause argument `{argument}`: {error}"),
+                        );
+                        None
+                    }
+                }
+            }
+            BuiltinCommandArgument::Declaration(statement) => {
+                Some(Clause::Declaration(statement.clone()))
+            }
+            BuiltinCommandArgument::Expression(expression) => {
+                Some(Clause::Expression(expression.clone()))
+            }
+        })
+        .collect()
+}
+
+fn builtin_head_arguments(command: &BuiltinCommandExpression) -> Vec<&BuiltinCommandArgument> {
+    builtin_args_arguments(&command.head_args)
+}
+
+fn builtin_tail_arguments<'a>(
+    command: &'a BuiltinCommandExpression,
+    name: &str,
+) -> Vec<&'a BuiltinCommandArgument> {
+    command
+        .tail
+        .iter()
+        .filter(|tail| format_chain(&tail.chain) == name)
+        .flat_map(|tail| builtin_args_arguments(&tail.args))
+        .collect()
+}
+
+fn builtin_args_arguments(args: &[BuiltinCommandArgs]) -> Vec<&BuiltinCommandArgument> {
+    args.iter().flat_map(|args| args.arguments.iter()).collect()
+}
+
+fn check_builtin_tail_names(
+    command: &BuiltinCommandExpression,
+    allowed: &[&str],
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    for tail in &command.tail {
+        let name = format_chain(&tail.chain);
+        if !allowed.iter().any(|allowed| allowed == &name) {
+            emit_builtin_command_error(
+                command,
+                path,
+                locator,
+                event_log,
+                format!(
+                    "Unexpected tail `:{name}` for builtin command `\\\\{}`",
+                    format_chain(&command.chain)
+                ),
+            );
+        }
+    }
+}
+
+fn emit_builtin_command_error(
+    command: &BuiltinCommandExpression,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+    message: impl Into<String>,
+) {
+    emit_error(
+        event_log,
+        path,
+        locator.locate_symbol(&format_chain(&command.chain)),
+        message,
+    );
 }
 
 fn assume_binding_or_spec(
@@ -2907,6 +3400,9 @@ fn check_expression(
             for expression in command_expression_arguments(&active_command) {
                 check_expression(expression, context, path, locator, registry, event_log);
             }
+        }
+        ExpressionKind::BuiltinCommand(command) => {
+            check_builtin_command_expression(command, context, path, locator, registry, event_log);
         }
         ExpressionKind::InfixCommand {
             left,
@@ -4769,6 +5265,7 @@ fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<Str
                 collect_defined_expression_names(expression, names);
             }
         }
+        ExpressionKind::BuiltinCommand(_) => {}
         ExpressionKind::InfixCommand {
             left,
             command,
@@ -5673,13 +6170,40 @@ fn key_is_type(key: &str, registry: &SignatureRegistry) -> bool {
 }
 
 fn key_is_statement(key: &str, registry: &SignatureRegistry) -> bool {
-    key_contains_top_level(key, " is? ")
+    key_is_builtin_clause_command(key)
+        || key_contains_top_level(key, " is? ")
         || key_contains_top_level(key, " is_not? ")
         || key_contains_top_level(key, " = ")
         || key_contains_top_level(key, " != ")
         || key_contains_top_level_quoted_spec(key, true)
         || key_contains_top_level_infix_spec(key, true)
         || key_is_states_command_reference(key, registry)
+}
+
+fn key_is_builtin_clause_command(key: &str) -> bool {
+    [
+        "\\\\not",
+        "\\\\and",
+        "\\\\allOf",
+        "\\\\or",
+        "\\\\anyOf",
+        "\\\\oneOf",
+        "\\\\exists",
+        "\\\\existsUnique",
+        "\\\\forAll",
+        "\\\\forall",
+        "\\\\if",
+        "\\\\have",
+        "\\\\given",
+        "\\\\piecewise",
+    ]
+    .iter()
+    .any(|prefix| {
+        key == *prefix
+            || key
+                .strip_prefix(prefix)
+                .is_some_and(|rest| rest.starts_with('{') || rest.starts_with(':'))
+    })
 }
 
 fn key_is_specification(key: &str) -> bool {
@@ -7614,6 +8138,7 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
                 declare_names_from_expression(expression, context);
             }
         }
+        ExpressionKind::BuiltinCommand(_) => {}
         ExpressionKind::InfixCommand {
             left,
             command,
@@ -8764,6 +9289,7 @@ fn key_for_expression(expression: &Expression) -> String {
         ExpressionKind::Labeled { expression, .. } => key_for_expression(expression),
         ExpressionKind::SubsetCall(subset) => format!("{subset:?}"),
         ExpressionKind::Command(command) => key_for_command_expression(command),
+        ExpressionKind::BuiltinCommand(command) => key_for_builtin_command_expression(command),
         ExpressionKind::InfixCommand {
             left,
             command,
@@ -9182,6 +9708,17 @@ fn key_for_command_expression(command: &CommandExpression) -> String {
     key
 }
 
+fn key_for_builtin_command_expression(command: &BuiltinCommandExpression) -> String {
+    let mut key = format!("\\\\{}", format_chain(&command.chain));
+    append_builtin_args(&mut key, &command.head_args);
+    for tail in &command.tail {
+        key.push(':');
+        key.push_str(&format_chain(&tail.chain));
+        append_builtin_args(&mut key, &tail.args);
+    }
+    key
+}
+
 fn key_for_refined_command_expression(command: &RefinedCommandExpression) -> String {
     let mut key = "\\".to_string();
     if let Some(prefix) = &command.prefix_chain {
@@ -9352,6 +9889,61 @@ fn append_expression_args(key: &mut String, groups: &[CurlyExpressionArgs]) {
         );
         key.push('}');
     }
+}
+
+fn append_builtin_args(key: &mut String, groups: &[BuiltinCommandArgs]) {
+    for args in groups {
+        key.push('{');
+        key.push_str(
+            &args
+                .arguments
+                .iter()
+                .map(key_for_builtin_command_argument)
+                .collect::<Vec<_>>()
+                .join(";"),
+        );
+        key.push('}');
+    }
+}
+
+fn key_for_builtin_command_argument(argument: &BuiltinCommandArgument) -> String {
+    match argument {
+        BuiltinCommandArgument::Text(text) => text.clone(),
+        BuiltinCommandArgument::Expression(expression) => key_for_expression(expression),
+        BuiltinCommandArgument::Declaration(statement) => key_for_declaration_statement(statement),
+    }
+}
+
+fn key_for_declaration_statement(statement: &DeclarationStatement) -> String {
+    let mut key = declaration_subject_keys(statement).join(", ");
+    if let Some(expansion) = &statement.expansion {
+        key.push_str(" ::= ");
+        key.push_str(&primary_subject_key(expansion));
+    }
+    if let Some(definition) = &statement.definition {
+        key.push_str(" := ");
+        key.push_str(&key_for_expression(definition));
+    }
+    if let Some(relation) = &statement.relation {
+        match relation {
+            DeclarationRelation::Is(ty) => {
+                key.push_str(" is ");
+                key.push_str(
+                    &key_for_type_expression(ty)
+                        .map(|(key, _)| key)
+                        .unwrap_or_else(|| key_for_non_command_type_expression(ty)),
+                );
+            }
+            DeclarationRelation::Spec { operator, target } => {
+                key.push_str(&format!(" \"{operator}\" {}", key_for_expression(target)));
+            }
+            DeclarationRelation::InfixSpec { spec, target } => {
+                key.push_str(&key_for_infix_spec(spec));
+                key.push_str(&key_for_expression(target));
+            }
+        }
+    }
+    key
 }
 
 fn command_expression_arguments(command: &CommandExpression) -> Vec<&Expression> {

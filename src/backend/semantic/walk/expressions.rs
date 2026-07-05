@@ -50,6 +50,7 @@ pub(in crate::backend::semantic) fn walk_expression(
             visit(&shape);
             walk_command_expression_arguments(command, visit);
         }
+        ExpressionKind::BuiltinCommand(_) => {}
         ExpressionKind::InfixCommand {
             left,
             command,

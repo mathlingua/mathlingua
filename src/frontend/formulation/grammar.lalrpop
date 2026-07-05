@@ -65,6 +65,7 @@ extern {
         "[" => Token::LBracket,
         "]" => Token::RBracket,
         "," => Token::Comma,
+        ";" => Token::Semicolon,
         ":?" => Token::OptionalColon,
         ":" => Token::Colon,
         "." => Token::Dot,
@@ -640,6 +641,60 @@ CommandExpression: ast::CommandExpression = {
     },
 };
 
+BuiltinCommandArgument: ast::BuiltinCommandArgument = {
+    <expression:SpecOrPredicateExpression> => ast::BuiltinCommandArgument::Expression(expression),
+};
+
+BuiltinCommandArgumentList: Vec<ast::BuiltinCommandArgument> = {
+    <argument:BuiltinCommandArgument> => vec![argument],
+    <mut arguments:BuiltinCommandArgumentList> ";" <argument:BuiltinCommandArgument> => {
+        arguments.push(argument);
+        arguments
+    },
+};
+
+BuiltinCommandArgs: ast::BuiltinCommandArgs = {
+    <l:@L> "{" <arguments:BuiltinCommandArgumentList> "}" <r:@R> => ast::BuiltinCommandArgs {
+        span: Span::new(l, r),
+        arguments,
+    },
+};
+
+BuiltinCommandArgsOpt: Vec<ast::BuiltinCommandArgs> = {
+    => Vec::new(),
+    <args:BuiltinCommandArgs> => vec![args],
+};
+
+BuiltinCommandExpressionTailPart: ast::BuiltinCommandTailPart = {
+    <l:@L> ":" <chain:Chain> <args:BuiltinCommandArgs> <r:@R> => ast::BuiltinCommandTailPart {
+        span: Span::new(l, r),
+        chain,
+        args: vec![args],
+    },
+};
+
+BuiltinCommandExpressionTailList: Vec<ast::BuiltinCommandTailPart> = {
+    <part:BuiltinCommandExpressionTailPart> => vec![part],
+    <mut parts:BuiltinCommandExpressionTailList> <part:BuiltinCommandExpressionTailPart> => {
+        parts.push(part);
+        parts
+    },
+};
+
+BuiltinCommandExpressionTailOpt: Vec<ast::BuiltinCommandTailPart> = {
+    => Vec::new(),
+    <parts:BuiltinCommandExpressionTailList> => parts,
+};
+
+BuiltinCommandExpression: ast::BuiltinCommandExpression = {
+    <l:@L> "\\" "\\" <chain:Chain> <head_args:BuiltinCommandArgsOpt> <tail:BuiltinCommandExpressionTailOpt> <r:@R> => ast::BuiltinCommandExpression {
+        span: Span::new(l, r),
+        chain,
+        head_args,
+        tail,
+    },
+};
+
 BuiltinTypeExpression: ast::TypeExpression = {
     <l:@L> "\\" "\\" <chain:Chain> <r:@R> => ast::TypeExpression::Builtin {
         span: Span::new(l, r),
@@ -753,6 +808,10 @@ PrimaryExpression: ast::Expression = {
     <l:@L> <command:CommandExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::Command(command),
+    ),
+    <l:@L> <command:BuiltinCommandExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::BuiltinCommand(command),
     ),
     <l:@L> <name:Name> <r:@R> => ast::Expression::new(Span::new(l, r), ExpressionKind::Name(name)),
 };

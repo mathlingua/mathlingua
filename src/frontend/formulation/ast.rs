@@ -110,6 +110,34 @@ pub struct CommandExpression {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BuiltinCommandArgs {
+    pub span: Span,
+    pub arguments: Vec<BuiltinCommandArgument>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum BuiltinCommandArgument {
+    Text(String),
+    Declaration(DeclarationStatement),
+    Expression(Expression),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BuiltinCommandTailPart {
+    pub span: Span,
+    pub chain: Chain,
+    pub args: Vec<BuiltinCommandArgs>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BuiltinCommandExpression {
+    pub span: Span,
+    pub chain: Chain,
+    pub head_args: Vec<BuiltinCommandArgs>,
+    pub tail: Vec<BuiltinCommandTailPart>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InfixCommand {
     pub span: Span,
     pub chain: Chain,
@@ -309,6 +337,7 @@ pub enum ExpressionKind {
     },
     SubsetCall(SubsetCall),
     Command(CommandExpression),
+    BuiltinCommand(BuiltinCommandExpression),
     InfixCommand {
         left: Box<Expression>,
         command: InfixCommand,

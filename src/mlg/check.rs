@@ -1830,6 +1830,81 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_builtin_clause_commands_with_scoped_arguments() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path();
+        let content = root.join("content");
+        fs::create_dir(&content).unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
+        write_mlg_fixture(
+            &content.join("builtin-clauses.mlg"),
+            r#"[\real]
+    Describes: x
+    Documented:
+    . called: "real"
+    Id: "f1a2b3c4-1111-4a22-8333-111111111111"
+
+    [\natural]
+    Describes: n
+    Documented:
+    . called: "natural"
+    Id: "f1a2b3c4-2222-4a22-8333-222222222222"
+
+    Theorem:
+    given: x is \real
+    then:
+    . \\and{x = x; \\forAll{y is \real}:then{\\exists{a, b is \real; n is \natural}:suchThat{x = y}}}
+    Id: "f1a2b3c4-3333-4a22-8333-333333333333"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(root, &[], &mut event_log);
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_accepts_builtin_clause_commands_inside_set_predicates() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path();
+        let content = root.join("content");
+        fs::create_dir(&content).unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
+        write_mlg_fixture(
+            &content.join("builtin-set-predicate.mlg"),
+            r#"[\set]
+    Describes: S
+    Documented:
+    . called: "set"
+    Id: "f1a2b3c4-4444-4a22-8333-444444444444"
+
+    [\foo]
+    Defines: X := {x_ : x_ is \set | \\forall{y is \set}:then{y is? \set}} is \set
+    Documented:
+    . called: "foo"
+    . written: "X?"
+    Id: "b165f407-283d-4d1b-815f-9200da352065"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(root, &[], &mut event_log);
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_reports_invalid_refined_headings_and_refines_targets() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("invalid-refines.mlg");

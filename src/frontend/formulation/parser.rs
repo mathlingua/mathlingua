@@ -4,17 +4,18 @@ use std::fmt;
 use lalrpop_util::ParseError as LalrpopParseError;
 
 use super::ast::{
-    AuthorHeader, Chain, ChainPart, CommandExpressionTailPart, CommandHeader, CommandHeaderNode,
-    CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs, DeclarationRelation,
-    DeclarationStatement, Expression, ExpressionAlias, ExpressionAliasLhs, ExpressionBinding,
-    ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionType, FunctionTypeSpec,
-    FunctionTypeSpecKind, InfixCommandHeader, InfixSpec, InfixSpecHeader, IsOrRefinedStatementSpec,
-    IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind, IsViaStatement, LabelHeader,
-    Operator, ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm,
-    PlaceholderFormKind, PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
-    RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, SetExpression, Span,
-    SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement,
-    TypeExpression, WritingAlias,
+    AuthorHeader, BuiltinCommandArgs, BuiltinCommandArgument, BuiltinCommandExpression,
+    BuiltinCommandTailPart, Chain, ChainPart, CommandExpressionTailPart, CommandHeader,
+    CommandHeaderNode, CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs,
+    DeclarationRelation, DeclarationStatement, Expression, ExpressionAlias, ExpressionAliasLhs,
+    ExpressionBinding, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionType,
+    FunctionTypeSpec, FunctionTypeSpecKind, InfixCommandHeader, InfixSpec, InfixSpecHeader,
+    IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind,
+    IsViaStatement, LabelHeader, Operator, ParenExpressionArgs, ParenHeadingArgs, Placeholder,
+    PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement, RefinedCommandExpression,
+    RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader,
+    SetExpression, Span, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind,
+    SubjectSpecStatement, TypeExpression, WritingAlias,
 };
 use super::grammar;
 use super::lexer::Lexer;
@@ -191,6 +192,7 @@ fn token_literal(token: &Token) -> &'static str {
         Token::LBracket => "[",
         Token::RBracket => "]",
         Token::Comma => ",",
+        Token::Semicolon => ";",
         Token::OptionalColon => ":?",
         Token::Colon => ":",
         Token::Dot => ".",
@@ -1162,6 +1164,98 @@ pub(super) fn parse_command_expression_tail(
     Ok((parts, input))
 }
 
+/// Parses consecutive `{...}` argument groups for a builtin command.
+///
+/// Builtin clauses use semicolon-separated arguments because each argument may
+/// itself contain comma-separated declaration syntax, such as
+/// `x, y is \real; n is \natural`.
+fn parse_builtin_command_args(
+    mut input: &str,
+) -> Result<(Vec<BuiltinCommandArgs>, &str), ParseError> {
+    let mut args = Vec::new();
+    while input.trim_start().starts_with('{') {
+        input = input.trim_start();
+        let (inside, rest) = consume_balanced_prefix(input, '{', '}')?;
+        let arguments = split_top_level(inside, ';')?
+            .into_iter()
+            .map(|argument| BuiltinCommandArgument::Text(argument.to_owned()))
+            .collect::<Vec<_>>();
+        args.push(BuiltinCommandArgs {
+            span: span_all(&input[..input.len() - rest.len()]),
+            arguments,
+        });
+        input = rest;
+    }
+
+    Ok((args, input))
+}
+
+/// Parses colon-prefixed tail parts for builtin command expressions.
+fn parse_builtin_command_tail(
+    mut input: &str,
+) -> Result<(Vec<BuiltinCommandTailPart>, &str), ParseError> {
+    let mut parts = Vec::new();
+    loop {
+        input = input.trim_start();
+        if !input.starts_with(':') || input.starts_with("::") {
+            break;
+        }
+
+        if input.starts_with(":?") {
+            return Err(ParseError::custom(
+                "builtin command tail parts do not support optional `:?` syntax",
+            ));
+        }
+
+        let tail_body = &input[1..];
+        let (chain_text, rest) = split_prefix_by_delimiters(tail_body, &['{']);
+        let chain = parse_chain(chain_text)?;
+        let (args, remaining) = parse_builtin_command_args(rest)?;
+        if args.is_empty() {
+            return Err(ParseError::custom(
+                "builtin command tail parts require at least one `{...}` argument list",
+            ));
+        }
+
+        parts.push(BuiltinCommandTailPart {
+            span: span_all(&input[..input.len() - remaining.len()]),
+            chain,
+            args,
+        });
+        input = remaining;
+    }
+
+    Ok((parts, input))
+}
+
+fn parse_builtin_command_expression(input: &str) -> Option<Result<Expression, ParseError>> {
+    let input = input.trim();
+    let body = input.strip_prefix("\\\\")?;
+
+    Some((|| {
+        let (chain_text, rest) = split_prefix_by_delimiters(body, &['{', ':']);
+        let chain = parse_chain(chain_text)?;
+        let (head_args, rest) = parse_builtin_command_args(rest)?;
+        let (tail, rest) = parse_builtin_command_tail(rest)?;
+        if !rest.trim().is_empty() {
+            return Err(ParseError::custom(format!(
+                "unexpected trailing text `{}` in builtin command",
+                rest.trim()
+            )));
+        }
+
+        Ok(Expression::new(
+            span_all(input),
+            ExpressionKind::BuiltinCommand(BuiltinCommandExpression {
+                span: span_all(input),
+                chain,
+                head_args,
+                tail,
+            }),
+        ))
+    })())
+}
+
 // ===============================[ statements ]=====================================
 
 /// Parses a subject/type `is` statement.
@@ -1889,6 +1983,9 @@ pub(super) fn parse_name_token(input: &str) -> Result<String, ParseError> {
 /// specification statement.
 pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     let input = input.trim();
+    if let Some(expression) = parse_builtin_command_expression(input) {
+        return expression;
+    }
     if let Some(expression) = parse_refined_predicate_expression(input) {
         return expression;
     }
@@ -2246,12 +2343,12 @@ mod tests {
         parse_resource_header, parse_spec_operator_alias, parse_writing_alias,
     };
     use crate::frontend::formulation::ast::{
-        BinaryOperator, ChainPart, CommandHeader, CommandHeaderNode, DeclarationRelation,
-        Expression, ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
-        FunctionNamedExpressionElementLhs, FunctionTypeSpecKind, IsOrRefinedStatementSpec,
-        IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind, PlaceholderFormKind,
-        RefinedTail, SetTargetElement, SetTargetKind, SpecOperatorAliasTarget, SpecSubjectKind,
-        SubsetCall, TypeExpression,
+        BinaryOperator, BuiltinCommandArgument, ChainPart, CommandHeader, CommandHeaderNode,
+        DeclarationRelation, Expression, ExpressionAliasLhs, ExpressionKind, FormOrDeclaration,
+        FormOrDeclarationKind, FunctionNamedExpressionElementLhs, FunctionTypeSpecKind,
+        IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind,
+        PlaceholderFormKind, RefinedTail, SetTargetElement, SetTargetKind, SpecOperatorAliasTarget,
+        SpecSubjectKind, SubsetCall, TypeExpression,
     };
 
     // ===============================[ support ]=====================================
@@ -2782,6 +2879,35 @@ mod tests {
     }
 
     #[test]
+    fn parses_builtin_clause_commands_inside_set_predicates() {
+        let expression =
+            parse_expression(r#"{x_ : x_ is \set | \\forall{y is \set}:then{y is? \set}}"#)
+                .expect("expected set expression with builtin predicate");
+
+        match expression.kind {
+            ExpressionKind::Set(set) => match set.predicate.as_deref() {
+                Some(Expression {
+                    kind: ExpressionKind::BuiltinCommand(command),
+                    ..
+                }) => {
+                    assert!(matches!(
+                        command.chain.parts[0],
+                        ChainPart::Name(ref name) if name == "forall"
+                    ));
+                    assert_eq!(command.head_args.len(), 1);
+                    assert_eq!(command.tail.len(), 1);
+                    assert!(matches!(
+                        command.tail[0].chain.parts[0],
+                        ChainPart::Name(ref name) if name == "then"
+                    ));
+                }
+                other => panic!("expected builtin predicate, got {other:?}"),
+            },
+            other => panic!("expected set expression, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn parses_collection_form_declarations_and_member_of_expressions() {
         let form = parse_form_or_declaration("X ::= {x__ : ...}")
             .expect("expected collection form declaration");
@@ -2981,6 +3107,64 @@ mod tests {
                 assert_eq!(command.paren_args.len(), 2);
             }
             other => panic!("expected command expression, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_builtin_command_expressions_with_semicolon_arguments() {
+        let expression =
+            parse_expression(r#"\\and{x = a; x = b}"#).expect("expected builtin command");
+
+        match expression.kind {
+            ExpressionKind::BuiltinCommand(command) => {
+                assert!(matches!(
+                    command.chain.parts[0],
+                    ChainPart::Name(ref name) if name == "and"
+                ));
+                assert_eq!(command.head_args.len(), 1);
+                assert_eq!(
+                    command.head_args[0].arguments,
+                    vec![
+                        BuiltinCommandArgument::Text("x = a".to_owned()),
+                        BuiltinCommandArgument::Text("x = b".to_owned())
+                    ]
+                );
+                assert!(command.tail.is_empty());
+            }
+            other => panic!("expected builtin command expression, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_builtin_quantifiers_without_splitting_commas_inside_arguments() {
+        let expression =
+            parse_expression(r#"\\exists{x, y is \real; n is \natural}:suchThat{x * n > y}"#)
+                .expect("expected builtin exists command");
+
+        match expression.kind {
+            ExpressionKind::BuiltinCommand(command) => {
+                assert!(matches!(
+                    command.chain.parts[0],
+                    ChainPart::Name(ref name) if name == "exists"
+                ));
+                assert_eq!(
+                    command.head_args[0].arguments,
+                    vec![
+                        BuiltinCommandArgument::Text(r#"x, y is \real"#.to_owned()),
+                        BuiltinCommandArgument::Text(r#"n is \natural"#.to_owned())
+                    ]
+                );
+                assert_eq!(command.tail.len(), 1);
+                assert!(matches!(
+                    command.tail[0].chain.parts[0],
+                    ChainPart::Name(ref name) if name == "suchThat"
+                ));
+                assert_eq!(
+                    command.tail[0].args[0].arguments,
+                    vec![BuiltinCommandArgument::Text("x * n > y".to_owned())]
+                );
+            }
+            other => panic!("expected builtin command expression, got {other:?}"),
         }
     }
 

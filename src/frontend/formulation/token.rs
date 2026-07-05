@@ -180,6 +180,8 @@ pub enum Token {
     RBracket,
     #[token(",")]
     Comma,
+    #[token(";")]
+    Semicolon,
     #[token(":?")]
     OptionalColon,
     #[token(":")]

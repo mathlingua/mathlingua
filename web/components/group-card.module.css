@@ -72,9 +72,86 @@
   font-size: 1.08rem;
 }
 
+.resourceHeading {
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+}
+
+.resourceTitleLink {
+  color: inherit;
+  text-decoration-color: var(--line-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+.resourceTitleLink:hover {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}
+
 .bodyText {
   margin-top: 0.75rem;
   padding-right: 2.35rem;
+}
+
+.resourceBody {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+  padding-right: 2.35rem;
+}
+
+.resourceMeta {
+  display: grid;
+  gap: 0.38rem;
+  margin: 0;
+}
+
+.resourceMetaRow {
+  display: grid;
+  grid-template-columns: minmax(4.8rem, max-content) minmax(0, 1fr);
+  gap: 0.8rem;
+  align-items: baseline;
+}
+
+.resourceMetaLabel {
+  color: var(--muted-strong);
+  font-family: var(--font-ui);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.resourceMetaValue {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.45rem;
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
+.resourceMetaItem:not(:last-child)::after {
+  content: ",";
+}
+
+.resourceDataLink {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  text-decoration-color: var(--line-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+.resourceDataLink:hover {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}
+
+.resourceDescription {
+  padding-top: 0.1rem;
 }
 
 .sectionStack {
@@ -189,12 +266,18 @@
 
   .header,
   .bodyText,
+  .resourceBody,
   .sectionStack {
     padding-right: 2rem;
   }
 
   .heading {
     font-size: 0.9rem;
+  }
+
+  .resourceMetaRow {
+    grid-template-columns: 1fr;
+    gap: 0.05rem;
   }
 }
 

@@ -6,7 +6,7 @@ import type { GroupView, SectionView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
 import { MathLinguaSource } from "./mathlingua-source";
 import { MathLinguaInline } from "./mathlingua-inline";
-import { MarkdownText } from "./markdown-text";
+import { MarkdownInline, MarkdownText } from "./markdown-text";
 import styles from "./group-card.module.css";
 import sectionStyles from "./section-content.module.css";
 
@@ -38,12 +38,14 @@ export function GroupCard({
   const headingLatex = group.heading_latex
     ? capitalizeLeadingRenderedLatexWord(group.heading_latex)
     : null;
-  const hasHeading = headingLatex !== null;
+  const resourceCard = buildResourceCard(group);
+  const hasHeading = resourceCard !== null || headingLatex !== null;
   const bodyText = group.body_text?.trim() ? group.body_text : null;
-  const hasSupportSections = group.sections.some(
-    (section) =>
-      isSupportSection(section) && !isCardBodySection(group.kind, section),
-  );
+  const hasSupportSections =
+    group.sections.some(
+      (section) =>
+        isSupportSection(section) && !isCardBodySection(group.kind, section),
+    ) || resourceCardHasHiddenFields(resourceCard);
   const frontFaceClass = `${styles.cardFace} ${styles.cardFront}${
     onClose ? ` ${styles.cardFaceClosable}` : ""
   }${showSource ? ` ${styles.cardFaceInactive}` : ""}`;
@@ -95,13 +97,32 @@ export function GroupCard({
           {hasHeading ? (
             <header className={styles.header}>
               <h3
-                className={`${styles.heading} ${styles.headingLatex}`}
-                title={headingTooltip}
+                className={
+                  resourceCard
+                    ? `${styles.heading} ${styles.resourceHeading}`
+                    : `${styles.heading} ${styles.headingLatex}`
+                }
+                title={resourceCard?.href ?? headingTooltip}
               >
-                <LatexRenderer
-                  latex={headingLatex}
-                  onReferenceClick={onReferenceClick}
-                />
+                {resourceCard ? (
+                  resourceCard.href ? (
+                    <a
+                      className={styles.resourceTitleLink}
+                      href={resourceCard.href}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      <MarkdownInline text={resourceCard.title} />
+                    </a>
+                  ) : (
+                    <MarkdownInline text={resourceCard.title} />
+                  )
+                ) : headingLatex ? (
+                  <LatexRenderer
+                    latex={headingLatex}
+                    onReferenceClick={onReferenceClick}
+                  />
+                ) : null}
               </h3>
             </header>
           ) : null}
@@ -110,10 +131,16 @@ export function GroupCard({
               <MarkdownText text={bodyText} />
             </div>
           ) : null}
+          {resourceCard ? (
+            <ResourceCardDetails
+              card={resourceCard}
+              showHiddenFields={showSupportSections}
+            />
+          ) : null}
           {hasVisibleSections ? (
             <div
               className={
-                hasHeading || bodyText
+                hasHeading || bodyText || resourceCard
                   ? styles.sectionStack
                   : `${styles.sectionStack} ${styles.sectionStackFlush}`
               }
@@ -267,9 +294,247 @@ function isSupportSection(section: SectionView): boolean {
 /** Sections rendered as first-class card title/body content. */
 function isCardBodySection(groupKind: string, section: SectionView): boolean {
   return (
-    groupKind === "Person" &&
-    (section.label === "Person" || section.label === "biography")
+    (groupKind === "Person" &&
+      (section.label === "Person" || section.label === "biography")) ||
+    (groupKind === "Resource" && section.label === "Resource")
   );
+}
+
+interface ResourceCardData {
+  title: string;
+  href: string | null;
+  fields: ResourceField[];
+}
+
+interface ResourceField {
+  label: string;
+  values: string[];
+  kind: "inline" | "link" | "description";
+  hidden: boolean;
+}
+
+function ResourceCardDetails({
+  card,
+  showHiddenFields,
+}: {
+  card: ResourceCardData;
+  showHiddenFields: boolean;
+}) {
+  const descriptionFields = card.fields.filter(
+    (field) => field.kind === "description",
+  );
+  const metadataFields = card.fields.filter(
+    (field) =>
+      field.kind !== "description" && (!field.hidden || showHiddenFields),
+  );
+
+  if (descriptionFields.length === 0 && metadataFields.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className={styles.resourceBody}>
+      {metadataFields.length > 0 ? (
+        <dl className={styles.resourceMeta}>
+          {metadataFields.map((field) => (
+            <div className={styles.resourceMetaRow} key={field.label}>
+              <dt className={styles.resourceMetaLabel}>{field.label}</dt>
+              <dd className={styles.resourceMetaValue}>
+                {field.values.map((value, index) => (
+                  <span className={styles.resourceMetaItem} key={index}>
+                    {field.kind === "link" && isSafeResourceHref(value) ? (
+                      <a
+                        className={styles.resourceDataLink}
+                        href={value}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        {value}
+                      </a>
+                    ) : (
+                      <MarkdownInline text={value} />
+                    )}
+                  </span>
+                ))}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {descriptionFields.map((field) => (
+        <div className={styles.resourceDescription} key={field.label}>
+          {field.values.map((value, index) => (
+            <MarkdownText key={index} text={value} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function buildResourceCard(group: GroupView): ResourceCardData | null {
+  if (group.kind !== "Resource") {
+    return null;
+  }
+
+  const resourceSection = group.sections.find(
+    (section) => section.label === "Resource",
+  );
+
+  if (!resourceSection) {
+    return null;
+  }
+
+  const rawFields = new Map<string, string[]>();
+
+  for (const argument of resourceSection.arguments) {
+    if (argument.kind !== "group") {
+      continue;
+    }
+
+    for (const section of argument.sections) {
+      const values = sectionTextValues(section);
+
+      if (values.length === 0) {
+        continue;
+      }
+
+      rawFields.set(section.label, [
+        ...(rawFields.get(section.label) ?? []),
+        ...values,
+      ]);
+    }
+  }
+
+  const title =
+    rawFields.get("title")?.[0] ??
+    readableResourceHeading(group.heading) ??
+    "Resource";
+  const href = rawFields.get("url")?.find(isSafeResourceHref) ?? null;
+  const fields: ResourceField[] = [];
+
+  for (const label of RESOURCE_FIELD_ORDER) {
+    if (label === "title") {
+      continue;
+    }
+
+    const values = rawFields.get(label);
+
+    if (!values || values.length === 0) {
+      continue;
+    }
+
+    fields.push({
+      hidden: label === "url",
+      label: resourceFieldLabel(label),
+      values,
+      kind:
+        label === "description"
+          ? "description"
+          : label === "url" || label === "homepage"
+            ? "link"
+            : "inline",
+    });
+  }
+
+  for (const [label, values] of rawFields) {
+    if (label === "title" || RESOURCE_FIELD_ORDER.includes(label)) {
+      continue;
+    }
+
+    fields.push({
+      hidden: false,
+      label: resourceFieldLabel(label),
+      values,
+      kind: "inline",
+    });
+  }
+
+  return { fields, href, title };
+}
+
+function resourceCardHasHiddenFields(card: ResourceCardData | null): boolean {
+  return card?.fields.some((field) => field.hidden) ?? false;
+}
+
+const RESOURCE_FIELD_ORDER = [
+  "title",
+  "author",
+  "editor",
+  "type",
+  "journal",
+  "publisher",
+  "institution",
+  "edition",
+  "volume",
+  "month",
+  "year",
+  "offset",
+  "url",
+  "homepage",
+  "description",
+];
+
+function sectionTextValues(section: SectionView): string[] {
+  const values: string[] = [];
+
+  if (section.inline_argument) {
+    values.push(stripQuotedText(section.inline_argument));
+  }
+
+  for (const argument of section.arguments) {
+    if (argument.kind === "text" || argument.kind === "formulation") {
+      values.push(argument.text);
+    }
+  }
+
+  return values.map((value) => value.trim()).filter(Boolean);
+}
+
+function stripQuotedText(text: string): string {
+  const trimmed = text.trim();
+
+  if (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) {
+    return trimmed.slice(1, -1);
+  }
+
+  return trimmed;
+}
+
+function readableResourceHeading(heading: string | null): string | null {
+  if (!heading?.startsWith("$")) {
+    return null;
+  }
+
+  const words = heading
+    .slice(1)
+    .split(".")
+    .filter(Boolean)
+    .map((word) => word.replace(/_/g, " "));
+
+  if (words.length === 0) {
+    return null;
+  }
+
+  return words.map(capitalizeWord).join(" ");
+}
+
+function capitalizeWord(word: string): string {
+  return word.replace(/[A-Za-z]/, (letter) => letter.toUpperCase());
+}
+
+function resourceFieldLabel(label: string): string {
+  if (label === "url") {
+    return "URL";
+  }
+
+  return label
+    .replace(/_/g, " ")
+    .replace(/[A-Za-z]/, (letter) => letter.toUpperCase());
+}
+
+function isSafeResourceHref(href: string): boolean {
+  return /^https?:\/\//i.test(href);
 }
 
 /**

@@ -3376,6 +3376,39 @@ mod tests {
     }
 
     #[test]
+    fn parses_infix_commands_with_lower_precedence_than_equality() {
+        let expression = parse_expression(r#"x = a \.or./ x = b"#).expect("expected infix command");
+
+        match expression.kind {
+            ExpressionKind::InfixCommand {
+                left,
+                command,
+                right,
+            } => {
+                assert!(matches!(
+                    command.chain.parts.first(),
+                    Some(ChainPart::Name(name)) if name == "or"
+                ));
+                assert!(matches!(
+                    left.kind,
+                    ExpressionKind::Binary {
+                        operator: BinaryOperator::Equality(_),
+                        ..
+                    }
+                ));
+                assert!(matches!(
+                    right.kind,
+                    ExpressionKind::Binary {
+                        operator: BinaryOperator::Equality(_),
+                        ..
+                    }
+                ));
+            }
+            other => panic!("expected infix command expression, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn parses_labeled_grouped_expressions() {
         let expression =
             parse_expression("(x + 1)[:some.label:]").expect("expected labeled expression");

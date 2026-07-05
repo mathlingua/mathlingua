@@ -1,4 +1,4 @@
-use crate::frontend::formulation::ast::{self, BinaryOperator, ExpressionKind, FormOrDeclarationKind, HighPrecedenceInfix, NamedOperatorKind, PlaceholderFormKind, SetTargetElement, SetTargetKind, Span, TupleExpressionElement, TupleFormElement, UnaryOperator};
+use crate::frontend::formulation::ast::{self, BinaryOperator, ExpressionKind, FormOrDeclarationKind, NamedOperatorKind, PlaceholderFormKind, SetTargetElement, SetTargetKind, Span, TupleExpressionElement, TupleFormElement, UnaryOperator};
 use crate::frontend::formulation::token::{LexicalError, Token};
 
 grammar;
@@ -448,9 +448,8 @@ PowerOperator: BinaryOperator = {
     <l:@L> ":^:" <r:@R> => BinaryOperator::Power(ast::Operator::with_kind(Span::new(l, r), "^", NamedOperatorKind::BothColon)),
 };
 
-HighPrecedenceInfixOperator: HighPrecedenceInfix = {
-    <operator:NamedOperatorToken> => HighPrecedenceInfix::Binary(BinaryOperator::Named(operator)),
-    <command:InfixCommand> => HighPrecedenceInfix::Command(command),
+HighPrecedenceInfixOperator: BinaryOperator = {
+    <operator:NamedOperatorToken> => BinaryOperator::Named(operator),
 };
 
 ExpressionList: Vec<ast::Expression> = {
@@ -782,27 +781,14 @@ PostfixExpression: ast::Expression = {
 
 HighPrecedenceExpression: ast::Expression = {
     <first:UnaryExpression> => first,
-    <left:HighPrecedenceExpression> <operator:HighPrecedenceInfixOperator> <right:UnaryExpression> => {
-        let span = Span::new(left.span.start, right.span.end);
-        match operator {
-            HighPrecedenceInfix::Binary(operator) => ast::Expression::new(
-                span,
-                ExpressionKind::Binary {
-                    left: Box::new(left),
-                    operator,
-                    right: Box::new(right),
-                },
-            ),
-            HighPrecedenceInfix::Command(command) => ast::Expression::new(
-                span,
-                ExpressionKind::InfixCommand {
-                    left: Box::new(left),
-                    command,
-                    right: Box::new(right),
-                },
-            ),
-        }
-    },
+    <left:HighPrecedenceExpression> <operator:HighPrecedenceInfixOperator> <right:UnaryExpression> => ast::Expression::new(
+        Span::new(left.span.start, right.span.end),
+        ExpressionKind::Binary {
+            left: Box::new(left),
+            operator,
+            right: Box::new(right),
+        },
+    ),
 };
 
 PowerExpression: ast::Expression = {
@@ -854,8 +840,8 @@ EqualityExpression: ast::Expression = {
 };
 
 SpecOrPredicateExpression: ast::Expression = {
-    <expression:EqualityExpression> => expression,
-    <l:@L> <left:EqualityExpression> <spec:InfixSpec> <right:EqualityExpression> <r:@R> => ast::Expression::new(
+    <expression:InfixCommandExpression> => expression,
+    <l:@L> <left:InfixCommandExpression> <spec:InfixSpec> <right:InfixCommandExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::InfixSpecStatement {
             left: Box::new(left),
@@ -863,7 +849,7 @@ SpecOrPredicateExpression: ast::Expression = {
             right: Box::new(right),
         },
     ),
-    <l:@L> <subject:EqualityExpression> <operator:QuotedName> <name:Name> <r:@R> => ast::Expression::new(
+    <l:@L> <subject:InfixCommandExpression> <operator:QuotedName> <name:Name> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::SpecStatement(ast::SpecStatement {
             span: Span::new(l, r),
@@ -872,7 +858,7 @@ SpecOrPredicateExpression: ast::Expression = {
             name,
         }),
     ),
-    <l:@L> <subject:EqualityExpression> <operator:QuotedName> "?" <name:Name> <r:@R> => ast::Expression::new(
+    <l:@L> <subject:InfixCommandExpression> <operator:QuotedName> "?" <name:Name> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::SpecPredicate(ast::SpecStatement {
             span: Span::new(l, r),
@@ -881,46 +867,58 @@ SpecOrPredicateExpression: ast::Expression = {
             name,
         }),
     ),
-    <l:@L> <subject:EqualityExpression> "is?" <ty:BuiltinTypeExpression> <r:@R> => ast::Expression::new(
+    <l:@L> <subject:InfixCommandExpression> "is?" <ty:BuiltinTypeExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::IsBuiltinPredicate {
             subject: Box::new(subject),
             ty,
         },
     ),
-    <l:@L> <subject:EqualityExpression> "is_not?" <ty:BuiltinTypeExpression> <r:@R> => ast::Expression::new(
+    <l:@L> <subject:InfixCommandExpression> "is_not?" <ty:BuiltinTypeExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::IsNotBuiltinPredicate {
             subject: Box::new(subject),
             ty,
         },
     ),
-    <l:@L> <subject:EqualityExpression> "is?" <command:CommandExpression> <r:@R> => ast::Expression::new(
+    <l:@L> <subject:InfixCommandExpression> "is?" <command:CommandExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::IsPredicate {
             subject: Box::new(subject),
             command,
         },
     ),
-    <l:@L> <subject:EqualityExpression> "is_not?" <command:CommandExpression> <r:@R> => ast::Expression::new(
+    <l:@L> <subject:InfixCommandExpression> "is_not?" <command:CommandExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::IsNotPredicate {
             subject: Box::new(subject),
             command,
         },
     ),
-    <l:@L> <subject:EqualityExpression> "is" <ty:PredicateTypeExpression> <r:@R> => ast::Expression::new(
+    <l:@L> <subject:InfixCommandExpression> "is" <ty:PredicateTypeExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::IsType {
             subject: Box::new(subject),
             ty,
         },
     ),
-    <l:@L> <subject:EqualityExpression> "member_of" <collection:EqualityExpression> <r:@R> => ast::Expression::new(
+    <l:@L> <subject:InfixCommandExpression> "member_of" <collection:InfixCommandExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::MemberOf {
             subject: Box::new(subject),
             collection: Box::new(collection),
+        },
+    ),
+};
+
+InfixCommandExpression: ast::Expression = {
+    <expression:EqualityExpression> => expression,
+    <left:InfixCommandExpression> <command:InfixCommand> <right:EqualityExpression> => ast::Expression::new(
+        Span::new(left.span.start, right.span.end),
+        ExpressionKind::InfixCommand {
+            left: Box::new(left),
+            command,
+            right: Box::new(right),
         },
     ),
 };

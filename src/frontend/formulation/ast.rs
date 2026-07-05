@@ -623,12 +623,6 @@ pub enum BinaryOperator {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum HighPrecedenceInfix {
-    Binary(BinaryOperator),
-    Command(InfixCommand),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NamedOperator {
     pub span: Span,
     pub name: String,

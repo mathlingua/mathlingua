@@ -1783,6 +1783,53 @@ mod tests {
     }
 
     #[test]
+    fn check_treats_equality_as_tighter_than_infix_commands() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path();
+        let content = root.join("content");
+        fs::create_dir(&content).unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
+        write_mlg_fixture(
+            &content.join("operations.mlg"),
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+    Id: "059126b9-dc83-41a2-aa1c-84f8e942f8d6"
+
+    [P \.or./ Q]
+    States:
+    when: P, Q is \\statement
+    that:
+    . anyOf:
+      . P
+      . Q
+    Documented:
+    . written: "P? \text{ or } Q?"
+    Id: "93149456-ff84-40af-8c41-b06906405ffa"
+
+    [\pair:of{a}:and{b}]
+    Defines: P := {x_ : x_ is \set | x = a \.or./ x = b} is \set
+    when: a, b is \set
+    Documented:
+    . called: "pair of $a?$ and $b?$"
+    . written: "\{a?, b?\}"
+    Id: "10faf153-d005-4feb-b620-c31589aefea1"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(root, &[], &mut event_log);
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_reports_invalid_refined_headings_and_refines_targets() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("invalid-refines.mlg");

@@ -10,7 +10,7 @@
 }
 
 .rendererInteractive :global([data-mlg-ref]) {
-  border-radius: 0.22rem;
+  border-radius: var(--radius-inline-ref);
   cursor: pointer;
   transition:
     background-color 120ms ease,

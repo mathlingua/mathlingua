@@ -2,8 +2,8 @@ use super::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) struct SourcePosition {
-    row: usize,
-    column: usize,
+    pub(super) row: usize,
+    pub(super) column: usize,
 }
 
 pub(super) struct SourceLocator<'a> {
@@ -122,84 +122,78 @@ pub(super) fn is_heading_line(source: &str, offset: usize) -> bool {
 }
 
 pub(super) fn matches_signature_at(source: &str, offset: usize, signature: &str) -> bool {
+    signature_match_end(source, offset, signature).is_some()
+}
+
+/// Like [`matches_signature_at`], but on a match returns the byte offset in
+/// `source` just past the matched command occurrence, including any argument
+/// groups (`{...}` / `(...)`) that were skipped over. Go-to-definition uses
+/// this to test whether a cursor falls within a command occurrence.
+pub(super) fn signature_match_end(source: &str, offset: usize, signature: &str) -> Option<usize> {
     if signature.starts_with("\\:") {
-        return matches_infix_spec_signature_at(source, offset, signature);
+        return infix_spec_match_end(source, offset, signature);
     }
 
     if signature.starts_with("\\.") || signature.contains("::") {
-        return source
-            .get(offset..)
-            .is_some_and(|tail| tail.starts_with(signature));
+        let tail = source.get(offset..)?;
+        return tail
+            .starts_with(signature)
+            .then(|| offset + signature.len());
     }
 
     let parts: Vec<&str> = signature.split(':').collect();
-    let Some(first) = parts.first() else {
-        return false;
-    };
-    let Some(mut remaining) = source.get(offset..) else {
-        return false;
-    };
+    let first = parts.first()?;
+    let mut remaining = source.get(offset..)?;
     if !remaining.starts_with(first) {
-        return false;
+        return None;
     }
     remaining = &remaining[first.len()..];
     remaining = skip_argument_groups(remaining);
 
     for part in parts.iter().skip(1) {
-        let Some(after_colon) = remaining.strip_prefix(':') else {
-            return false;
-        };
+        let after_colon = remaining.strip_prefix(':')?;
         let after_marker = after_colon.strip_prefix('?').unwrap_or(after_colon);
         if !after_marker.starts_with(part) {
-            return false;
+            return None;
         }
         remaining = &after_marker[part.len()..];
         remaining = skip_argument_groups(remaining);
     }
 
-    !remaining
+    let boundary_ok = !remaining
         .chars()
         .next()
-        .is_some_and(|ch| ch == ':' || ch == '.' || ch == '_' || ch.is_ascii_alphanumeric())
+        .is_some_and(|ch| ch == ':' || ch == '.' || ch == '_' || ch.is_ascii_alphanumeric());
+    boundary_ok.then(|| source.len() - remaining.len())
 }
 
-fn matches_infix_spec_signature_at(source: &str, offset: usize, signature: &str) -> bool {
-    let Some(body) = signature
+fn infix_spec_match_end(source: &str, offset: usize, signature: &str) -> Option<usize> {
+    let body = signature
         .strip_prefix("\\:")
-        .and_then(|text| text.strip_suffix(":/"))
-    else {
-        return false;
-    };
+        .and_then(|text| text.strip_suffix(":/"))?;
     let parts: Vec<&str> = body.split(':').collect();
-    let Some(first) = parts.first() else {
-        return false;
-    };
-    let Some(mut remaining) = source.get(offset..) else {
-        return false;
-    };
-    let Some(after_start) = remaining.strip_prefix("\\:") else {
-        return false;
-    };
-    remaining = after_start;
+    let first = parts.first()?;
+    let mut remaining = source.get(offset..)?.strip_prefix("\\:")?;
     if !remaining.starts_with(first) {
-        return false;
+        return None;
     }
     remaining = &remaining[first.len()..];
     remaining = skip_argument_groups(remaining);
 
     for part in parts.iter().skip(1) {
-        let Some(after_colon) = remaining.strip_prefix(':') else {
-            return false;
-        };
+        let after_colon = remaining.strip_prefix(':')?;
         let after_marker = after_colon.strip_prefix('?').unwrap_or(after_colon);
         if !after_marker.starts_with(part) {
-            return false;
+            return None;
         }
         remaining = &after_marker[part.len()..];
         remaining = skip_argument_groups(remaining);
     }
 
-    remaining.starts_with(":/") || remaining.starts_with("?:/")
+    let rest = remaining
+        .strip_prefix(":/")
+        .or_else(|| remaining.strip_prefix("?:/"))?;
+    Some(source.len() - rest.len())
 }
 
 pub(super) fn find_symbol_occurrence(source: &str, name: &str, start: usize) -> Option<usize> {

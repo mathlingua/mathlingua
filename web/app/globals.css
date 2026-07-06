@@ -38,6 +38,15 @@
   --syntax-placeholder: #0d7169;
   --syntax-punctuation: #6f6d78;
   --syntax-string: #6f641b;
+  --radius-card: 0.75rem;
+  --radius-control: 999px;
+  --radius-popover: 0.55rem;
+  --radius-option: 0.4rem;
+  --radius-nav: 8px;
+  --radius-definition: 0.8rem;
+  --radius-code: 0.24rem;
+  --radius-code-block: 0.45rem;
+  --radius-inline-ref: 0.22rem;
 }
 
 html[data-theme="mono"] {
@@ -96,6 +105,42 @@ html[data-theme="sepia"] {
   --syntax-placeholder: #657042;
   --syntax-punctuation: #8a7761;
   --syntax-string: #7b652b;
+}
+
+html[data-theme="flat-gray"] {
+  color-scheme: light;
+  --page-bg: #eeeeee;
+  --surface: #f8f8f8;
+  --surface-alt: #e7e7e7;
+  --ink: #202020;
+  --muted: #767676;
+  --muted-strong: #4f4f4f;
+  --line: #cfcfcf;
+  --line-strong: #b7b7b7;
+  --accent: #245eaa;
+  --accent-soft: #e2e9f3;
+  --shadow: none;
+  --chrome-bg: rgba(242, 242, 242, 0.98);
+  --definition-bg: #f2f2f2;
+  --definition-shadow: none;
+  --control-shadow: none;
+  --syntax-comment: #777777;
+  --syntax-command: #245eaa;
+  --syntax-keyword: #6c5b26;
+  --syntax-label: #2f5d8f;
+  --syntax-operator: #6a4e22;
+  --syntax-placeholder: #2b6f66;
+  --syntax-punctuation: #666666;
+  --syntax-string: #615b2a;
+  --radius-card: 0;
+  --radius-control: 0;
+  --radius-popover: 0;
+  --radius-option: 0;
+  --radius-nav: 0;
+  --radius-definition: 0;
+  --radius-code: 0;
+  --radius-code-block: 0;
+  --radius-inline-ref: 0;
 }
 
 html[data-theme="retro"] {

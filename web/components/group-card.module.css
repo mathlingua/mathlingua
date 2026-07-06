@@ -27,7 +27,7 @@
   min-width: 0;
   padding: 1.35rem 1.6rem 1.45rem;
   border: 1px solid var(--line);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-card);
   background: var(--surface);
   backface-visibility: hidden;
   box-shadow: var(--shadow);
@@ -179,7 +179,7 @@
   height: 1.85rem;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--muted);
   cursor: pointer;
@@ -225,7 +225,7 @@
   margin: 0.55rem auto -0.55rem;
   padding: 0;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--muted);
   cursor: pointer;

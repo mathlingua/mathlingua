@@ -7,6 +7,7 @@ use crate::frontend::*;
 const ORIGIN: &str = "semantic_check";
 
 mod check;
+mod definition;
 mod locator;
 mod shapes;
 mod typecheck;
@@ -15,6 +16,7 @@ mod validation;
 mod walk;
 
 pub use check::check_documents;
+pub use definition::{DefinitionSite, find_definition};
 
 use locator::*;
 use shapes::*;

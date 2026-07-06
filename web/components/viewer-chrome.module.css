@@ -22,7 +22,7 @@
   width: 24px;
   height: 24px;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
@@ -57,7 +57,7 @@
   height: 2rem;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--muted-strong);
   cursor: pointer;
@@ -85,7 +85,7 @@
   min-width: 9rem;
   padding: 0.35rem;
   border: 1px solid var(--line);
-  border-radius: 0.55rem;
+  border-radius: var(--radius-popover);
   background: var(--surface);
   box-shadow: var(--shadow);
 }
@@ -99,7 +99,7 @@
   min-height: 2rem;
   padding: 0.42rem 0.5rem;
   border: none;
-  border-radius: 0.4rem;
+  border-radius: var(--radius-option);
   background: transparent;
   color: var(--ink);
   cursor: pointer;

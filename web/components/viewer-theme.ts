@@ -3,6 +3,7 @@ export const VIEWER_THEME_STORAGE_KEY = "mlg-view-theme";
 export const VIEWER_THEMES = [
   { id: "classic", label: "Classic" },
   { id: "mono", label: "Mono" },
+  { id: "flat-gray", label: "Flat Gray" },
   { id: "sepia", label: "Sepia" },
   { id: "retro", label: "Retro" },
   { id: "dark", label: "Dark" },

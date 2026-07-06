@@ -5,15 +5,15 @@ use crate::mlg::completion::{
 use lsp_server::{Connection, Message, Notification, Response};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionOptions, CompletionParams, CompletionResponse,
-    CompletionTextEdit, Diagnostic, DiagnosticSeverity, InitializeParams, InsertTextFormat,
-    Position, PublishDiagnosticsParams, Range, SaveOptions, ServerCapabilities,
-    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
-    TextDocumentSyncSaveOptions, TextEdit, Url,
+    CompletionTextEdit, Diagnostic, DiagnosticSeverity, GotoDefinitionParams,
+    GotoDefinitionResponse, InitializeParams, InsertTextFormat, Location, OneOf, Position,
+    PublishDiagnosticsParams, Range, SaveOptions, ServerCapabilities, TextDocumentSyncCapability,
+    TextDocumentSyncKind, TextDocumentSyncOptions, TextDocumentSyncSaveOptions, TextEdit, Url,
     notification::{
         DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument,
         Notification as _, PublishDiagnostics,
     },
-    request::{Completion, Request as _},
+    request::{Completion, GotoDefinition, Request as _},
 };
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -44,6 +44,8 @@ pub fn lsp() -> LspResult {
             trigger_characters: Some(vec!["\\".to_string()]),
             ..Default::default()
         }),
+        // Jump from a `\`-command usage to the top-level item that defines it.
+        definition_provider: Some(OneOf::Left(true)),
         ..Default::default()
     })
     .expect("server capabilities serialize");
@@ -68,6 +70,9 @@ pub fn lsp() -> LspResult {
                 }
                 if req.method == Completion::METHOD {
                     let response = state.handle_completion(req.id.clone(), &req.params);
+                    let _ = connection.sender.send(Message::Response(response));
+                } else if req.method == GotoDefinition::METHOD {
+                    let response = state.handle_definition(req.id.clone(), &req.params);
                     let _ = connection.sender.send(Message::Response(response));
                 }
             }
@@ -183,6 +188,47 @@ impl ServerState {
         Some(items)
     }
 
+    fn handle_definition(&self, id: lsp_server::RequestId, params: &Value) -> Response {
+        let result = self
+            .definition_location(params)
+            .map(|location| {
+                serde_json::to_value(GotoDefinitionResponse::Scalar(location))
+                    .unwrap_or(Value::Null)
+            })
+            .unwrap_or(Value::Null);
+        Response {
+            id,
+            result: Some(result),
+            error: None,
+        }
+    }
+
+    /// Resolve the `\`-command under the cursor to the top-level item that
+    /// defines it, searching the whole collection. The current buffer supplies
+    /// both the cursor's byte offset and the target file's text, so navigation
+    /// reflects unsaved edits.
+    fn definition_location(&self, params: &Value) -> Option<Location> {
+        let params: GotoDefinitionParams = serde_json::from_value(params.clone()).ok()?;
+        let uri = params.text_document_position_params.text_document.uri;
+        let position = params.text_document_position_params.position;
+        let text = self.documents.get(&uri)?;
+        let file_path = uri.to_file_path().ok()?;
+        let root = project_root_for(&file_path, self.workspace_root.as_deref());
+        let offset = byte_offset_at(text, position.line, position.character)?;
+
+        let site = crate::backend::definition::resolve_definition(&root, &file_path, text, offset)?;
+
+        let target_uri = Url::from_file_path(&site.path).ok()?;
+        let target = Position::new(site.row as u32, site.column as u32);
+        Some(Location {
+            uri: target_uri,
+            range: Range {
+                start: target,
+                end: target,
+            },
+        })
+    }
+
     /// Command signatures from every open document, deduplicated by text, so a
     /// command declared in one file can be completed while editing another.
     fn all_signatures(&self) -> Vec<Signature> {
@@ -244,6 +290,25 @@ fn publish(connection: &Connection, uri: Url, diagnostics: Vec<Diagnostic>) {
         params: serde_json::to_value(params).unwrap_or(Value::Null),
     };
     let _ = connection.sender.send(Message::Notification(note));
+}
+
+/// Byte offset within `text` of the character at zero-based `line` /
+/// `character` (character counted in Unicode scalar values, matching the
+/// completion path). A position past a line's end clamps to the line's end; an
+/// out-of-range line yields `None`.
+fn byte_offset_at(text: &str, line: u32, character: u32) -> Option<usize> {
+    let mut offset = 0usize;
+    let mut lines = text.split('\n');
+    for _ in 0..line {
+        offset += lines.next()?.len() + 1; // + the '\n' that `split` consumed
+    }
+    let current = lines.next()?;
+    let column = current
+        .char_indices()
+        .nth(character as usize)
+        .map(|(byte, _)| byte)
+        .unwrap_or(current.len());
+    Some(offset + column)
 }
 
 fn initial_workspace_root(init_params: &Value) -> Option<PathBuf> {

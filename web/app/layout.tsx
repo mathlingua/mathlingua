@@ -12,7 +12,7 @@ const THEME_BOOTSTRAP_SCRIPT = `
 (() => {
   try {
     const theme = window.localStorage.getItem("mlg-view-theme");
-    if (!/^(classic|mono|sepia|retro|dark)$/.test(theme ?? "")) {
+    if (!/^(classic|mono|flat-gray|sepia|retro|dark)$/.test(theme ?? "")) {
       return;
     }
     document.documentElement.dataset.theme = theme;

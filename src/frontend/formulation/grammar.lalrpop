@@ -756,7 +756,7 @@ SetExpression: ast::Expression = {
             span: Span::new(l, r),
             target,
             specs,
-            predicate: predicate.map(Box::new),
+            predicate: predicate.map(|expression| ast::SetPredicate::Expression(Box::new(expression))),
         }),
     ),
 };

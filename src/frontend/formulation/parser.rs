@@ -14,8 +14,9 @@ use super::ast::{
     IsViaStatement, LabelHeader, Operator, ParenExpressionArgs, ParenHeadingArgs, Placeholder,
     PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement, RefinedCommandExpression,
     RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader,
-    SetExpression, Span, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind,
-    SubjectSpecStatement, TypeExpression, WritingAlias,
+    SetExpression, SetPredicate, SetTarget, SetTargetElement, SetTargetKind, Span,
+    SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement,
+    TypeExpression, WritingAlias,
 };
 use super::grammar;
 use super::lexer::Lexer;
@@ -1983,6 +1984,11 @@ pub(super) fn parse_name_token(input: &str) -> Result<String, ParseError> {
 /// specification statement.
 pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     let input = input.trim();
+    if input.starts_with('{') {
+        if let Ok(expression) = parse_set_expression(input) {
+            return Ok(expression);
+        }
+    }
     if let Some(expression) = parse_builtin_command_expression(input) {
         return expression;
     }
@@ -1993,6 +1999,206 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     grammar::InputExpressionParser::new()
         .parse(Lexer::new(input))
         .map_err(ParseError::from)
+}
+
+fn parse_set_expression(input: &str) -> Result<Expression, ParseError> {
+    let input = input.trim();
+    let (inside, rest) = consume_balanced_prefix(input, '{', '}')?;
+    if !rest.trim().is_empty() {
+        return Err(ParseError::custom(
+            "unexpected trailing text after set expression",
+        ));
+    }
+
+    let colon_index = find_set_comprehension_colon(inside)
+        .ok_or_else(|| ParseError::custom("expected `:` in set expression"))?;
+    let target = parse_set_target_text(&inside[..colon_index])?;
+    let body = inside[colon_index + 1..].trim();
+    if body == "..." {
+        return Ok(Expression::new(
+            span_all(input),
+            ExpressionKind::Set(SetExpression {
+                span: span_all(input),
+                target,
+                specs: Vec::new(),
+                predicate: None,
+            }),
+        ));
+    }
+
+    let (specs_text, predicate_text) = split_set_predicate(body);
+    let specs = split_set_specs(specs_text)?
+        .into_iter()
+        .map(parse_expression)
+        .collect::<Result<Vec<_>, _>>()?;
+    if specs.is_empty() {
+        return Err(ParseError::custom(
+            "expected at least one set specification",
+        ));
+    }
+    let predicate = predicate_text.map(parse_set_predicate_text).transpose()?;
+
+    Ok(Expression::new(
+        span_all(input),
+        ExpressionKind::Set(SetExpression {
+            span: span_all(input),
+            target,
+            specs,
+            predicate,
+        }),
+    ))
+}
+
+fn find_set_comprehension_colon(input: &str) -> Option<usize> {
+    let mut state = ScanState::default();
+    for (index, ch) in input.char_indices() {
+        if state.is_top_level() && ch == ':' {
+            let rest = &input[index..];
+            let previous = input[..index].chars().next_back();
+            if !rest.starts_with("::=")
+                && !rest.starts_with(":=")
+                && !rest.starts_with(":?")
+                && !rest.starts_with(":=>")
+                && !rest.starts_with(":->")
+                && !rest.starts_with(":~>")
+                && previous != Some(':')
+            {
+                return Some(index);
+            }
+        }
+        state.advance(ch);
+    }
+    None
+}
+
+fn split_set_predicate(input: &str) -> (&str, Option<&str>) {
+    match find_first_top_level_char(input, '|') {
+        Some(index) => (&input[..index], Some(input[index + 1..].trim())),
+        None => (input, None),
+    }
+}
+
+fn split_set_specs(input: &str) -> Result<Vec<&str>, ParseError> {
+    let mut parts = Vec::new();
+    let mut start = 0;
+    let mut state = ScanState::default();
+
+    for (index, ch) in input.char_indices() {
+        if state.is_top_level() && matches!(ch, ',' | ';') {
+            let part = input[start..index].trim();
+            if part.is_empty() {
+                return Err(ParseError::custom("empty item in set specification list"));
+            }
+            parts.push(part);
+            start = index + ch.len_utf8();
+        }
+        state.advance(ch);
+    }
+
+    let tail = input[start..].trim();
+    if !tail.is_empty() {
+        parts.push(tail);
+    }
+
+    Ok(parts)
+}
+
+fn parse_set_predicate_text(input: &str) -> Result<SetPredicate, ParseError> {
+    let input = input.trim();
+    if let Some(index) = find_top_level_definition(input) {
+        let target = parse_set_target_text(&input[..index])?;
+        let value = parse_expression(&input[index + 2..])?;
+        return Ok(SetPredicate::Definition {
+            span: span_all(input),
+            target,
+            value: Box::new(value),
+        });
+    }
+
+    parse_expression(input).map(|expression| SetPredicate::Expression(Box::new(expression)))
+}
+
+fn parse_set_target_text(input: &str) -> Result<SetTarget, ParseError> {
+    let input = input.trim();
+    if let Some(index) = find_top_level_introduce(input) {
+        let name = parse_set_target_binding_name(&input[..index])?;
+        let target = parse_set_target_text(&input[index + 3..])?;
+        return Ok(SetTarget::new(
+            span_all(input),
+            SetTargetKind::Introduction {
+                name,
+                target: Box::new(target),
+            },
+        ));
+    }
+    if let Some(index) = find_top_level_definition(input) {
+        let name = parse_set_target_binding_name(&input[..index])?;
+        let target = parse_set_target_text(&input[index + 2..])?;
+        return Ok(SetTarget::new(
+            span_all(input),
+            SetTargetKind::Alias {
+                name,
+                target: Box::new(target),
+            },
+        ));
+    }
+    if input.starts_with('(') {
+        let (inside, rest) = consume_balanced_prefix(input, '(', ')')?;
+        if rest.trim().is_empty() && find_first_top_level_char(inside, ',').is_some() {
+            let elements = split_top_level(inside, ',')?
+                .into_iter()
+                .map(|element| {
+                    if is_operator_text(element) {
+                        Ok(SetTargetElement::Operator(Operator::new(
+                            span_all(element),
+                            element,
+                        )))
+                    } else {
+                        parse_set_target_text(element).map(SetTargetElement::Target)
+                    }
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            return Ok(SetTarget::new(
+                span_all(input),
+                SetTargetKind::Tuple(elements),
+            ));
+        }
+    }
+    if let Ok(form) = parse_placeholder_form(input) {
+        return Ok(SetTarget::new(
+            span_all(input),
+            SetTargetKind::PlaceholderForm(form),
+        ));
+    }
+    if let Some(open_index) = find_first_top_level_char(input, '(') {
+        let (inside, rest) = consume_balanced_prefix(&input[open_index..], '(', ')')?;
+        if rest.trim().is_empty() {
+            let name = parse_name_token(&input[..open_index])?;
+            let arguments = split_top_level(inside, ',')?
+                .into_iter()
+                .map(parse_set_target_text)
+                .collect::<Result<Vec<_>, _>>()?;
+            return Ok(SetTarget::new(
+                span_all(input),
+                SetTargetKind::Function { name, arguments },
+            ));
+        }
+    }
+    let name = parse_name_token(input)?;
+    Ok(SetTarget::new(span_all(input), SetTargetKind::Name(name)))
+}
+
+fn parse_set_target_binding_name(input: &str) -> Result<String, ParseError> {
+    let input = input.trim();
+    if let Ok(placeholder) = parse_placeholder(input) {
+        return Ok(placeholder.name);
+    }
+    if let Some(name) = input.strip_suffix("__") {
+        if is_name_text(name) {
+            return Ok(name.to_owned());
+        }
+    }
+    parse_name_token(input)
 }
 
 fn parse_refined_predicate_expression(input: &str) -> Option<Result<Expression, ParseError>> {
@@ -2347,8 +2553,8 @@ mod tests {
         DeclarationRelation, Expression, ExpressionAliasLhs, ExpressionKind, FormOrDeclaration,
         FormOrDeclarationKind, FunctionNamedExpressionElementLhs, FunctionTypeSpecKind,
         IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind,
-        PlaceholderFormKind, RefinedTail, SetTargetElement, SetTargetKind, SpecOperatorAliasTarget,
-        SpecSubjectKind, SubsetCall, TypeExpression,
+        PlaceholderFormKind, RefinedTail, SetPredicate, SetTargetElement, SetTargetKind,
+        SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression,
     };
 
     // ===============================[ support ]=====================================
@@ -2845,11 +3051,9 @@ mod tests {
                     other => panic!("expected placeholder function target, got {other:?}"),
                 }
                 assert!(matches!(
-                    set.predicate.as_deref(),
-                    Some(Expression {
-                        kind: ExpressionKind::IsType { .. },
-                        ..
-                    })
+                    set.predicate,
+                    Some(SetPredicate::Expression(expression))
+                        if matches!(expression.kind, ExpressionKind::IsType { .. })
                 ));
             }
             other => panic!("expected set expression, got {other:?}"),
@@ -2879,28 +3083,81 @@ mod tests {
     }
 
     #[test]
+    fn parses_set_expressions_with_introduced_targets_and_definition_predicates() {
+        let expression = parse_expression(
+            r#"{z_ ::= (a_, b_) : a_ "in" A; b_ "in" B | z_ := \ordered.pair:of{a_}:and{b_}}"#,
+        )
+        .expect("expected set expression");
+
+        match expression.kind {
+            ExpressionKind::Set(set) => {
+                assert_eq!(set.specs.len(), 2);
+                match set.target.kind {
+                    SetTargetKind::Introduction { name, target } => {
+                        assert_eq!(name, "z");
+                        match target.kind {
+                            SetTargetKind::Tuple(elements) => {
+                                assert_eq!(elements.len(), 2);
+                                for element in elements {
+                                    assert!(matches!(element, SetTargetElement::Target(_)));
+                                }
+                            }
+                            other => panic!("expected introduced tuple target, got {other:?}"),
+                        }
+                    }
+                    other => panic!("expected introduced set target, got {other:?}"),
+                }
+                match set.predicate {
+                    Some(SetPredicate::Definition { target, value, .. }) => {
+                        match target.kind {
+                            SetTargetKind::PlaceholderForm(form) => match form.kind {
+                                PlaceholderFormKind::Placeholder(placeholder) => {
+                                    assert_eq!(placeholder.name, "z");
+                                }
+                                other => panic!("expected placeholder target, got {other:?}"),
+                            },
+                            other => panic!("expected placeholder target, got {other:?}"),
+                        }
+                        assert!(matches!(value.kind, ExpressionKind::Command(_)));
+                    }
+                    other => panic!("expected definition predicate, got {other:?}"),
+                }
+            }
+            other => panic!("expected set expression, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn rejects_set_definition_specs_before_predicate_branch() {
+        parse_expression(
+            r#"{z_ ::= (a_, b_) : a_ "in" A; b_ "in" B; z_ := \ordered.pair:of{a_}:and{b_}}"#,
+        )
+        .expect_err("expected definition spec before predicate branch to be rejected");
+    }
+
+    #[test]
     fn parses_builtin_clause_commands_inside_set_predicates() {
         let expression =
             parse_expression(r#"{x_ : x_ is \set | \\forall{y is \set}:then{y is? \set}}"#)
                 .expect("expected set expression with builtin predicate");
 
         match expression.kind {
-            ExpressionKind::Set(set) => match set.predicate.as_deref() {
-                Some(Expression {
-                    kind: ExpressionKind::BuiltinCommand(command),
-                    ..
-                }) => {
-                    assert!(matches!(
-                        command.chain.parts[0],
-                        ChainPart::Name(ref name) if name == "forall"
-                    ));
-                    assert_eq!(command.head_args.len(), 1);
-                    assert_eq!(command.tail.len(), 1);
-                    assert!(matches!(
-                        command.tail[0].chain.parts[0],
-                        ChainPart::Name(ref name) if name == "then"
-                    ));
-                }
+            ExpressionKind::Set(set) => match set.predicate {
+                Some(SetPredicate::Expression(expression)) => match expression.kind {
+                    ExpressionKind::BuiltinCommand(command) => {
+                        assert!(matches!(
+                            command.chain.parts[0],
+                            ChainPart::Name(ref name) if name == "forall"
+                        ));
+                        assert_eq!(command.head_args.len(), 1);
+                        assert_eq!(command.tail.len(), 1);
+                        assert!(matches!(
+                            command.tail[0].chain.parts[0],
+                            ChainPart::Name(ref name) if name == "then"
+                        ));
+                    }
+                    other => panic!("expected builtin predicate expression, got {other:?}"),
+                },
                 other => panic!("expected builtin predicate, got {other:?}"),
             },
             other => panic!("expected set expression, got {other:?}"),

@@ -408,7 +408,17 @@ pub struct SetExpression {
     pub span: Span,
     pub target: SetTarget,
     pub specs: Vec<Expression>,
-    pub predicate: Option<Box<Expression>>,
+    pub predicate: Option<SetPredicate>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SetPredicate {
+    Expression(Box<Expression>),
+    Definition {
+        span: Span,
+        target: SetTarget,
+        value: Box<Expression>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -428,6 +438,10 @@ pub enum SetTargetKind {
     Name(String),
     PlaceholderForm(PlaceholderForm),
     Alias {
+        name: String,
+        target: Box<SetTarget>,
+    },
+    Introduction {
         name: String,
         target: Box<SetTarget>,
     },

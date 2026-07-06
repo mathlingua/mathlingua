@@ -2043,7 +2043,17 @@ fn collect_set_expression_names(set: &SetExpression, names: &mut BTreeSet<String
         collect_expression_names(spec, names);
     }
     if let Some(predicate) = &set.predicate {
-        collect_expression_names(predicate, names);
+        collect_set_predicate_names(predicate, names);
+    }
+}
+
+fn collect_set_predicate_names(predicate: &SetPredicate, names: &mut BTreeSet<String>) {
+    match predicate {
+        SetPredicate::Expression(expression) => collect_expression_names(expression, names),
+        SetPredicate::Definition { target, value, .. } => {
+            collect_set_target_names(target, names);
+            collect_expression_names(value, names);
+        }
     }
 }
 
@@ -2053,7 +2063,7 @@ fn collect_set_target_names(target: &SetTarget, names: &mut BTreeSet<String>) {
             names.insert(name.clone());
         }
         SetTargetKind::PlaceholderForm(form) => collect_placeholder_form_names(form, names),
-        SetTargetKind::Alias { name, target } => {
+        SetTargetKind::Alias { name, target } | SetTargetKind::Introduction { name, target } => {
             names.insert(name.clone());
             collect_set_target_names(target, names);
         }
@@ -3361,7 +3371,7 @@ fn check_expression(
                 }
             }
             if let Some(predicate) = &set.predicate {
-                check_expression(predicate, &child, path, locator, registry, event_log);
+                check_set_predicate(predicate, &mut child, path, locator, registry, event_log);
             }
         }
         ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
@@ -3604,7 +3614,27 @@ fn check_set_literal(
         }
     }
     if let Some(predicate) = &set.predicate {
-        check_expression(predicate, &child, path, locator, registry, event_log);
+        check_set_predicate(predicate, &mut child, path, locator, registry, event_log);
+    }
+}
+
+fn check_set_predicate(
+    predicate: &SetPredicate,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match predicate {
+        SetPredicate::Expression(expression) => {
+            check_expression(expression, context, path, locator, registry, event_log);
+        }
+        SetPredicate::Definition { target, value, .. } => {
+            declare_set_target(target, context);
+            check_expression(value, context, path, locator, registry, event_log);
+            context.add_substitution(key_for_set_target(target), key_for_expression(value));
+        }
     }
 }
 
@@ -5250,7 +5280,7 @@ fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<Str
                 collect_defined_expression_names(spec, names);
             }
             if let Some(predicate) = &set.predicate {
-                collect_defined_expression_names(predicate, names);
+                collect_defined_set_predicate_names(predicate, names);
             }
         }
         ExpressionKind::Grouped { expression, .. }
@@ -5354,7 +5384,7 @@ fn collect_defined_type_expression_names(ty: &TypeExpression, names: &mut Vec<St
                 collect_defined_expression_names(spec, names);
             }
             if let Some(predicate) = &literal.predicate {
-                collect_defined_expression_names(predicate, names);
+                collect_defined_set_predicate_names(predicate, names);
             }
         }
     }
@@ -5371,7 +5401,7 @@ fn collect_defined_set_target_names(target: &SetTarget, names: &mut Vec<String>)
     match &target.kind {
         SetTargetKind::Name(name) => names.push(name.clone()),
         SetTargetKind::PlaceholderForm(form) => collect_defined_placeholder_form_names(form, names),
-        SetTargetKind::Alias { name, target } => {
+        SetTargetKind::Alias { name, target } | SetTargetKind::Introduction { name, target } => {
             names.push(name.clone());
             collect_defined_set_target_names(target, names);
         }
@@ -5390,6 +5420,16 @@ fn collect_defined_set_target_names(target: &SetTarget, names: &mut Vec<String>)
                     collect_defined_set_target_names(target, names);
                 }
             }
+        }
+    }
+}
+
+fn collect_defined_set_predicate_names(predicate: &SetPredicate, names: &mut Vec<String>) {
+    match predicate {
+        SetPredicate::Expression(expression) => collect_defined_expression_names(expression, names),
+        SetPredicate::Definition { target, value, .. } => {
+            collect_defined_set_target_names(target, names);
+            collect_defined_expression_names(value, names);
         }
     }
 }
@@ -7120,7 +7160,9 @@ fn collection_literal_member_pattern(target: &SetTarget) -> Option<String> {
     match &target.kind {
         SetTargetKind::Name(name) => Some(name.clone()),
         SetTargetKind::PlaceholderForm(form) => Some(key_for_placeholder_form(form)),
-        SetTargetKind::Alias { name, .. } => Some(name.clone()),
+        SetTargetKind::Alias { name, .. } | SetTargetKind::Introduction { name, .. } => {
+            Some(name.clone())
+        }
         SetTargetKind::Function { .. } | SetTargetKind::Tuple(_) => {
             Some(key_for_set_target(target))
         }
@@ -8055,7 +8097,7 @@ fn declare_set_target(target: &SetTarget, context: &mut TypeContext) {
     match &target.kind {
         SetTargetKind::Name(name) => context.declare_name(name.clone()),
         SetTargetKind::PlaceholderForm(form) => declare_placeholder_form(form, context),
-        SetTargetKind::Alias { name, target } => {
+        SetTargetKind::Alias { name, target } | SetTargetKind::Introduction { name, target } => {
             context.declare_name(name.clone());
             declare_set_target(target, context);
         }
@@ -8122,7 +8164,7 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
                 declare_names_from_expression(spec, context);
             }
             if let Some(predicate) = &set.predicate {
-                declare_names_from_expression(predicate, context);
+                declare_names_from_set_predicate(predicate, context);
             }
         }
         ExpressionKind::Grouped { expression, .. }
@@ -8237,8 +8279,18 @@ fn declare_names_from_type_expression(ty: &TypeExpression, context: &mut TypeCon
                 declare_names_from_expression(spec, context);
             }
             if let Some(predicate) = &literal.predicate {
-                declare_names_from_expression(predicate, context);
+                declare_names_from_set_predicate(predicate, context);
             }
+        }
+    }
+}
+
+fn declare_names_from_set_predicate(predicate: &SetPredicate, context: &mut TypeContext) {
+    match predicate {
+        SetPredicate::Expression(expression) => declare_names_from_expression(expression, context),
+        SetPredicate::Definition { target, value, .. } => {
+            declare_set_target(target, context);
+            declare_names_from_expression(value, context);
         }
     }
 }
@@ -9645,6 +9697,9 @@ fn key_for_set_target(target: &SetTarget) -> String {
         SetTargetKind::Alias { name, target } => {
             format!("{name}:={}", key_for_set_target(target))
         }
+        SetTargetKind::Introduction { name, target } => {
+            format!("{name}::={}", key_for_set_target(target))
+        }
         SetTargetKind::Function { name, arguments } => format!(
             "{}({})",
             name,
@@ -9680,9 +9735,22 @@ fn key_for_set_expression(set: &SetExpression) -> String {
     );
     if let Some(predicate) = &set.predicate {
         key.push('|');
-        key.push_str(&key_for_expression(predicate));
+        key.push_str(&key_for_set_predicate(predicate));
     }
     key
+}
+
+fn key_for_set_predicate(predicate: &SetPredicate) -> String {
+    match predicate {
+        SetPredicate::Expression(expression) => key_for_expression(expression),
+        SetPredicate::Definition { target, value, .. } => {
+            format!(
+                "{}:={}",
+                key_for_set_target(target),
+                key_for_expression(value)
+            )
+        }
+    }
 }
 
 fn key_for_command_expression(command: &CommandExpression) -> String {

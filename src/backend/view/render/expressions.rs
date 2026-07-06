@@ -355,7 +355,7 @@ pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegist
     match &set.predicate {
         Some(predicate) => format!(
             "\\left\\{{ {target} \\: : \\: {spec} \\: | \\: {} \\right\\}}",
-            render_expression(predicate, registry)
+            render_set_predicate(predicate, registry)
         ),
         None => format!("\\left\\{{ {target} \\: : \\: {spec} \\right\\}}"),
     }
@@ -368,6 +368,13 @@ pub(super) fn render_set_target(target: &SetTarget, registry: &RenderRegistry) -
         SetTargetKind::Alias { name, target } => {
             format!(
                 "{} := {}",
+                escape_math_identifier(name, registry),
+                render_set_target(target, registry)
+            )
+        }
+        SetTargetKind::Introduction { name, target } => {
+            format!(
+                "{} ::= {}",
                 escape_math_identifier(name, registry),
                 render_set_target(target, registry)
             )
@@ -391,6 +398,17 @@ pub(super) fn render_set_target(target: &SetTarget, registry: &RenderRegistry) -
                 .join(", ");
             format!("\\left({elements}\\right)")
         }
+    }
+}
+
+fn render_set_predicate(predicate: &SetPredicate, registry: &RenderRegistry) -> String {
+    match predicate {
+        SetPredicate::Expression(expression) => render_expression(expression, registry),
+        SetPredicate::Definition { target, value, .. } => format!(
+            "{} := {}",
+            render_set_target(target, registry),
+            render_expression(value, registry)
+        ),
     }
 }
 

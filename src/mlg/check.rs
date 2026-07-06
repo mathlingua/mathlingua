@@ -2830,6 +2830,56 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_introduced_set_builder_targets_and_definition_predicates() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("cartesian-set-builder.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+      written: "x_? \in X?"
+    Documented:
+    . called: "set"
+    Id: "059126b9-dc83-41a2-aa1c-84f8e942f8d6"
+
+    [\ordered.pair:of{a}:and{b}]
+    Defines: P is \set
+    when: a, b is \\opaque
+    Documented:
+    . called: "ordered pair of $a?$ and $b?$"
+    . written: "(a?, b?)"
+    Id: "10faf153-d005-4feb-b620-c31589aefea1"
+
+    [\cartesian.product:of{A}:and{B}]
+    Defines: P is \set
+    when: A, B is \set
+    expresses: P := {z_ ::= (a_, b_) : a_ "in" A; b_ "in" B | z_ := \ordered.pair:of{a_}:and{b_}}
+    Documented:
+    . called: "cartesian product of $A?$ and $B?$"
+    . written: "A? \times B?"
+    Id: "64578792-cf4f-4497-9c79-3fc0189a08e4"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("cartesian-set-builder.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_reports_command_when_requirement_type_mismatches() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("type-mismatch.mlg");

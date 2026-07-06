@@ -5594,4 +5594,59 @@ mod tests {
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
     }
+
+    #[test]
+    fn check_accepts_command_using_context_suffix() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("using-context.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Describes: X
+Documented:
+. called: "set"
+Id: "0d50b7b0-30b6-4bb1-9fa9-6ac3fcb435f0"
+
+[\ordered.pair]
+Describes: p
+using: A, B is \set
+Documented:
+. called: "ordered pair"
+Id: "c48e8057-c05f-458d-b7ad-09df94d4e9a4"
+
+[\ordered.pair:of{A}:and{B}]
+Defines: p is \ordered.pair#using{A := A; B := B}
+when: A, B is \set
+Documented:
+. called: "ordered pair of $A?$ and $B?$"
+Id: "9890d56c-448e-41d1-99cb-9dfbd33f1643"
+
+[\uses.given.context]
+Theorem:
+given: A is \set
+then: A is? \set
+Id: "0b75f789-b51c-4741-bdcf-9d1ea2a39ced"
+
+Theorem:
+given: X is \set
+then: \uses.given.context#given{A := X}
+Id: "c812728f-5e16-4774-a62d-00c911127a75"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("using-context.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
 }

@@ -107,6 +107,32 @@ pub struct CommandExpression {
     pub head_args: Vec<CurlyExpressionArgs>,
     pub tail: Vec<CommandExpressionTailPart>,
     pub paren_args: Vec<ParenExpressionArgs>,
+    pub context: Option<CommandContext>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CommandContext {
+    pub span: Span,
+    pub kind: CommandContextKind,
+    pub arguments: Vec<CommandContextArgument>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CommandContextKind {
+    Using,
+    Given,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum CommandContextArgument {
+    Assignment {
+        span: Span,
+        name: String,
+        value: Expression,
+    },
+    Declaration(DeclarationStatement),
+    Expression(Expression),
+    Text(String),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

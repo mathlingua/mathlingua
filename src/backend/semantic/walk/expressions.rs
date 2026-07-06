@@ -163,6 +163,22 @@ pub(in crate::backend::semantic) fn walk_command_expression_arguments(
             walk_expression(expression, visit);
         }
     }
+    if let Some(context) = &command.context {
+        for argument in &context.arguments {
+            match argument {
+                CommandContextArgument::Assignment { value, .. } => {
+                    walk_expression(value, visit);
+                }
+                CommandContextArgument::Declaration(statement) => {
+                    walk_declaration_statement(statement, visit);
+                }
+                CommandContextArgument::Expression(expression) => {
+                    walk_expression(expression, visit);
+                }
+                CommandContextArgument::Text(_) => {}
+            }
+        }
+    }
 }
 
 pub(in crate::backend::semantic) fn walk_infix_command_arguments(

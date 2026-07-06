@@ -638,6 +638,7 @@ CommandExpression: ast::CommandExpression = {
         head_args,
         tail,
         paren_args,
+        context: None,
     },
 };
 

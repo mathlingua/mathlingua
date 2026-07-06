@@ -124,6 +124,7 @@ fn definition_type_info(
             header_shape,
             &group.heading,
             group.using.as_ref(),
+            None,
             group.when.as_ref(),
             None,
             Some(&group.describes.argument),
@@ -133,6 +134,7 @@ fn definition_type_info(
             header_shape,
             &group.heading,
             group.using.as_ref(),
+            None,
             group.when.as_ref(),
             Some(&group.defines.argument),
             None,
@@ -142,6 +144,7 @@ fn definition_type_info(
             header_shape,
             &group.heading,
             group.using.as_ref(),
+            None,
             group.when.as_ref(),
             None,
             None,
@@ -151,25 +154,71 @@ fn definition_type_info(
             header_shape,
             &group.heading,
             group.using.as_ref(),
+            None,
             group.when.as_ref(),
             None,
             None,
             None,
         )),
         TopLevelItem::Axiom(group) => group.heading.as_ref().map(|heading| {
-            type_info_from_parts(header_shape, heading, None, None, None, None, None)
+            type_info_from_parts(
+                header_shape,
+                heading,
+                None,
+                group.given.as_ref(),
+                None,
+                None,
+                None,
+                None,
+            )
         }),
         TopLevelItem::Theorem(group) => group.heading.as_ref().map(|heading| {
-            type_info_from_parts(header_shape, heading, None, None, None, None, None)
+            type_info_from_parts(
+                header_shape,
+                heading,
+                None,
+                group.given.as_ref(),
+                None,
+                None,
+                None,
+                None,
+            )
         }),
         TopLevelItem::Corollary(group) => group.heading.as_ref().map(|heading| {
-            type_info_from_parts(header_shape, heading, None, None, None, None, None)
+            type_info_from_parts(
+                header_shape,
+                heading,
+                None,
+                group.given.as_ref(),
+                None,
+                None,
+                None,
+                None,
+            )
         }),
         TopLevelItem::Lemma(group) => group.heading.as_ref().map(|heading| {
-            type_info_from_parts(header_shape, heading, None, None, None, None, None)
+            type_info_from_parts(
+                header_shape,
+                heading,
+                None,
+                group.given.as_ref(),
+                None,
+                None,
+                None,
+                None,
+            )
         }),
         TopLevelItem::Conjecture(group) => group.heading.as_ref().map(|heading| {
-            type_info_from_parts(header_shape, heading, None, None, None, None, None)
+            type_info_from_parts(
+                header_shape,
+                heading,
+                None,
+                group.given.as_ref(),
+                None,
+                None,
+                None,
+                None,
+            )
         }),
         _ => None,
     }
@@ -179,6 +228,7 @@ fn type_info_from_parts(
     header_shape: &HeaderShape,
     heading: &CommandHeader,
     using: Option<&UsingSection>,
+    given: Option<&GivenSection>,
     when: Option<&WhenSection>,
     defines: Option<&DeclarationStatement>,
     described: Option<&DescribesTarget>,
@@ -186,6 +236,8 @@ fn type_info_from_parts(
 ) -> DefinitionTypeInfo {
     let mut context = TypeContext::default();
     declare_header_symbols(heading, &mut context);
+    let using_parameters = collect_using_parameter_names(using);
+    let given_parameters = collect_given_parameter_names(given);
 
     if let Some(using) = using {
         for statement in &using.arguments {
@@ -195,6 +247,21 @@ fn type_info_from_parts(
             }
             for fact in facts_from_declaration_statement_in_context(statement, &context) {
                 context.add_fact(fact);
+            }
+        }
+    }
+
+    if let Some(given) = given {
+        for statement in &given.arguments {
+            declare_is_subject(&statement.subject, &mut context);
+            if let Some(expansion) = &statement.expansion {
+                declare_is_subject(expansion, &mut context);
+            }
+            for fact in facts_from_declaration_statement_in_context(statement, &context) {
+                context.add_fact(fact);
+            }
+            if let Some((left, right)) = declaration_substitution(statement) {
+                context.add_substitution(left, right);
             }
         }
     }
@@ -231,11 +298,33 @@ fn type_info_from_parts(
         signature: header_shape.shape.signature.clone(),
         parameters: header_shape.parameters.clone(),
         hidden_parameters: header_shape.hidden_parameters.clone(),
+        using_parameters,
+        given_parameters,
         requirements,
         outputs,
         substitutions: context.substitutions,
         described: described.map(described_target_subject_key),
     }
+}
+
+fn collect_using_parameter_names(using: Option<&UsingSection>) -> Vec<String> {
+    using
+        .map(|using| collect_declaration_parameter_names(&using.arguments))
+        .unwrap_or_default()
+}
+
+fn collect_given_parameter_names(given: Option<&GivenSection>) -> Vec<String> {
+    given
+        .map(|given| collect_declaration_parameter_names(&given.arguments))
+        .unwrap_or_default()
+}
+
+fn collect_declaration_parameter_names(statements: &[DeclarationStatement]) -> Vec<String> {
+    let mut names = BTreeSet::new();
+    for statement in statements {
+        collect_declaration_statement_covered_symbols(statement, &mut names);
+    }
+    names.into_iter().collect()
 }
 
 fn collect_spec_operator_rules(
@@ -2087,6 +2176,22 @@ fn collect_command_expression_names(command: &CommandExpression, names: &mut BTr
     for expression in command_expression_arguments(command) {
         collect_expression_names(expression, names);
     }
+    if let Some(context) = &command.context {
+        for argument in &context.arguments {
+            match argument {
+                CommandContextArgument::Assignment { value, .. } => {
+                    collect_expression_names(value, names);
+                }
+                CommandContextArgument::Declaration(statement) => {
+                    collect_declaration_statement_names(statement, names);
+                }
+                CommandContextArgument::Expression(expression) => {
+                    collect_expression_names(expression, names);
+                }
+                CommandContextArgument::Text(_) => {}
+            }
+        }
+    }
 }
 
 fn collect_infix_command_names(command: &InfixCommand, names: &mut BTreeSet<String>) {
@@ -3224,7 +3329,7 @@ fn check_spec_fact_supported(
             actuals.extend(args.iter().cloned());
             actuals.push(target.clone());
             check_command_requirements(
-                signature, &actuals, context, path, position, registry, event_log,
+                signature, &actuals, None, context, path, position, registry, event_log,
             );
         }
         _ => {}
@@ -4985,6 +5090,14 @@ fn check_command_expression(
 ) {
     check_inactive_expression_tail(&command.tail, context, path, locator, registry, event_log);
     let active_command = active_command_expression(command, context);
+    check_command_context_arguments(
+        active_command.context.as_ref(),
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
     let shape = shape_for_command_expression(&active_command);
     let position = locator.locate_reference(&shape);
     let actuals = command_expression_arguments(&active_command)
@@ -4994,6 +5107,7 @@ fn check_command_expression(
     check_command_requirements(
         &shape.signature,
         &actuals,
+        active_command.context.as_ref(),
         context,
         path,
         position,
@@ -5012,18 +5126,29 @@ fn check_command_type_expression(
 ) {
     check_inactive_expression_tail(&command.tail, context, path, locator, registry, event_log);
     let active_command = active_command_expression(command, context);
+    check_command_context_arguments(
+        active_command.context.as_ref(),
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
     let shape = shape_for_command_expression(&active_command);
     let position = locator.locate_reference(&shape);
     let actuals = command_expression_arguments(&active_command)
         .into_iter()
         .map(|expression| effective_key_for_expression(expression, context, registry))
         .collect::<Vec<_>>();
-    if command_type_is_nominal_without_arguments(&shape.signature, &actuals, registry) {
+    if active_command.context.is_none()
+        && command_type_is_nominal_without_arguments(&shape.signature, &actuals, registry)
+    {
         return;
     }
     check_command_requirements(
         &shape.signature,
         &actuals,
+        active_command.context.as_ref(),
         context,
         path,
         position,
@@ -5068,6 +5193,7 @@ fn check_infix_command(
     check_command_requirements(
         &shape.signature,
         &actuals,
+        None,
         context,
         path,
         position,
@@ -5100,6 +5226,7 @@ fn check_refined_command_type_expression(
     check_command_requirements(
         &shape.signature,
         &actuals,
+        None,
         context,
         path,
         position,
@@ -5129,6 +5256,7 @@ fn check_refined_command_expression(
     check_command_requirements(
         &shape.signature,
         &actuals,
+        None,
         context,
         path,
         position,
@@ -5759,6 +5887,7 @@ fn validate_definition_requirement(
     check_command_requirements(
         &shape.signature,
         &actuals,
+        active_command.context.as_ref(),
         context,
         path,
         position,
@@ -6014,6 +6143,7 @@ fn check_type_expression_requirements(
 fn check_command_requirements(
     signature: &str,
     actuals: &[String],
+    command_context: Option<&CommandContext>,
     context: &TypeContext,
     path: &Path,
     position: Option<SourcePosition>,
@@ -6024,7 +6154,7 @@ fn check_command_requirements(
         return;
     };
 
-    let substitutions = info
+    let mut substitutions = info
         .parameters
         .iter()
         .zip(actuals)
@@ -6032,6 +6162,17 @@ fn check_command_requirements(
         .collect::<HashMap<_, _>>();
 
     let mut requirement_context = context.clone();
+    apply_command_context_bindings(
+        command_context,
+        info,
+        context,
+        &mut requirement_context,
+        &mut substitutions,
+        registry,
+        path,
+        position,
+        event_log,
+    );
     for (left, right) in &info.substitutions {
         if info
             .hidden_parameters
@@ -6066,6 +6207,212 @@ fn check_command_requirements(
                 ),
             );
         }
+    }
+}
+
+fn check_command_context_arguments(
+    command_context: Option<&CommandContext>,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let Some(command_context) = command_context else {
+        return;
+    };
+
+    let mut local_context = context.clone();
+    for argument in &command_context.arguments {
+        match argument {
+            CommandContextArgument::Assignment { value, .. } => {
+                check_expression(value, &local_context, path, locator, registry, event_log);
+            }
+            CommandContextArgument::Declaration(statement) => {
+                assume_declaration_statement(
+                    statement,
+                    &mut local_context,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+            }
+            CommandContextArgument::Expression(expression) => {
+                check_expression(expression, &local_context, path, locator, registry, event_log);
+            }
+            CommandContextArgument::Text(_) => {}
+        }
+    }
+}
+
+fn apply_command_context_bindings(
+    command_context: Option<&CommandContext>,
+    info: &DefinitionTypeInfo,
+    context: &TypeContext,
+    requirement_context: &mut TypeContext,
+    substitutions: &mut HashMap<String, String>,
+    registry: &SignatureRegistry,
+    path: &Path,
+    position: Option<SourcePosition>,
+    event_log: &mut EventLog,
+) {
+    let Some(command_context) = command_context else {
+        return;
+    };
+
+    let parameters = command_context_parameters(command_context.kind, info);
+    if parameters.is_empty() {
+        emit_error(
+            event_log,
+            path,
+            position,
+            format!(
+                "Command `{}` does not accept `{}`",
+                info.signature,
+                command_context_label(command_context.kind)
+            ),
+        );
+    }
+
+    for argument in &command_context.arguments {
+        match argument {
+            CommandContextArgument::Assignment { name, value, .. } => {
+                if !parameters.iter().any(|parameter| parameter == name) {
+                    emit_error(
+                        event_log,
+                        path,
+                        position,
+                        format!(
+                            "Unknown `{}` parameter `{name}` for command `{}`",
+                            command_context_label(command_context.kind),
+                            info.signature
+                        ),
+                    );
+                    continue;
+                }
+                substitutions.insert(
+                    name.clone(),
+                    requirement_context.normalize_key(&effective_key_for_expression(
+                        value,
+                        requirement_context,
+                        registry,
+                    )),
+                );
+            }
+            CommandContextArgument::Declaration(statement) => {
+                apply_command_context_declaration(
+                    statement,
+                    command_context.kind,
+                    &parameters,
+                    context,
+                    requirement_context,
+                    substitutions,
+                    path,
+                    position,
+                    event_log,
+                    info,
+                );
+            }
+            CommandContextArgument::Expression(expression) => {
+                if parameters.len() == 1 {
+                    substitutions.insert(
+                        parameters[0].clone(),
+                        requirement_context.normalize_key(&effective_key_for_expression(
+                            expression,
+                            requirement_context,
+                            registry,
+                        )),
+                    );
+                }
+                if let Some(fact) =
+                    fact_from_expression_in_context(expression, requirement_context)
+                {
+                    let normalized = requirement_context.normalize_fact(&fact);
+                    requirement_context.add_fact(normalized);
+                }
+            }
+            CommandContextArgument::Text(_) => {}
+        }
+    }
+
+    for parameter in parameters {
+        if !substitutions.contains_key(parameter) {
+            emit_error(
+                event_log,
+                path,
+                position,
+                format!(
+                    "Missing `{}` value for parameter `{parameter}` on command `{}`",
+                    command_context_label(command_context.kind),
+                    info.signature
+                ),
+            );
+        }
+    }
+}
+
+fn apply_command_context_declaration(
+    statement: &DeclarationStatement,
+    kind: CommandContextKind,
+    parameters: &[String],
+    context: &TypeContext,
+    requirement_context: &mut TypeContext,
+    substitutions: &mut HashMap<String, String>,
+    path: &Path,
+    position: Option<SourcePosition>,
+    event_log: &mut EventLog,
+    info: &DefinitionTypeInfo,
+) {
+    declare_is_subject(&statement.subject, requirement_context);
+    if let Some(expansion) = &statement.expansion {
+        declare_is_subject(expansion, requirement_context);
+    }
+    if let Some((left, right)) = declaration_substitution(statement) {
+        requirement_context.add_substitution(left, right);
+    }
+    for fact in facts_from_declaration_statement_in_context(statement, requirement_context) {
+        let normalized = requirement_context.normalize_fact(&fact);
+        requirement_context.add_fact(normalized);
+    }
+
+    if parameters.len() != 1 {
+        return;
+    }
+    let subjects = declaration_subject_keys(statement);
+    let Some(subject) = subjects.first() else {
+        return;
+    };
+    if subjects.len() > 1 {
+        emit_error(
+            event_log,
+            path,
+            position,
+            format!(
+                "Shorthand `{}` for command `{}` must identify exactly one value",
+                command_context_label(kind),
+                info.signature
+            ),
+        );
+        return;
+    }
+    substitutions.insert(parameters[0].clone(), context.normalize_key(subject));
+}
+
+fn command_context_parameters<'a>(
+    kind: CommandContextKind,
+    info: &'a DefinitionTypeInfo,
+) -> &'a [String] {
+    match kind {
+        CommandContextKind::Using => &info.using_parameters,
+        CommandContextKind::Given => &info.given_parameters,
+    }
+}
+
+fn command_context_label(kind: CommandContextKind) -> &'static str {
+    match kind {
+        CommandContextKind::Using => "#using",
+        CommandContextKind::Given => "#given",
     }
 }
 
@@ -6409,6 +6756,7 @@ fn signature_has_kind(signature: &str, kind: DefinitionKind, registry: &Signatur
 }
 
 fn command_signature_from_key(key: &str) -> Option<String> {
+    let key = strip_command_context_key_suffix(key);
     if !key.starts_with('\\') || key.starts_with("\\.") || key.starts_with("\\:") {
         return None;
     }
@@ -6432,6 +6780,31 @@ fn command_signature_from_key(key: &str) -> Option<String> {
     }
 
     Some(signature)
+}
+
+fn strip_command_context_key_suffix(key: &str) -> &str {
+    let using_index = find_top_level_key_substring(key, "#using");
+    let given_index = find_top_level_key_substring(key, "#given");
+    match (using_index, given_index) {
+        (Some(left), Some(right)) => &key[..left.min(right)],
+        (Some(index), None) | (None, Some(index)) => &key[..index],
+        (None, None) => key,
+    }
+}
+
+fn find_top_level_key_substring(key: &str, needle: &str) -> Option<usize> {
+    let mut search_start = 0;
+    while search_start < key.len() {
+        let Some(relative_start) = key[search_start..].find(needle) else {
+            return None;
+        };
+        let start = search_start + relative_start;
+        if key_is_top_level_at(key, start) {
+            return Some(start);
+        }
+        search_start = start + needle.len();
+    }
+    None
 }
 
 fn infix_command_signatures_from_key(key: &str) -> Vec<String> {
@@ -9773,7 +10146,37 @@ fn key_for_command_expression(command: &CommandExpression) -> String {
         );
         key.push(')');
     }
+    if let Some(context) = &command.context {
+        key.push_str(&key_for_command_context(context));
+    }
     key
+}
+
+fn key_for_command_context(context: &CommandContext) -> String {
+    let label = match context.kind {
+        CommandContextKind::Using => "#using",
+        CommandContextKind::Given => "#given",
+    };
+    format!(
+        "{label}{{{}}}",
+        context
+            .arguments
+            .iter()
+            .map(key_for_command_context_argument)
+            .collect::<Vec<_>>()
+            .join(";")
+    )
+}
+
+fn key_for_command_context_argument(argument: &CommandContextArgument) -> String {
+    match argument {
+        CommandContextArgument::Assignment { name, value, .. } => {
+            format!("{name}:={}", key_for_expression(value))
+        }
+        CommandContextArgument::Declaration(statement) => key_for_declaration_statement(statement),
+        CommandContextArgument::Expression(expression) => key_for_expression(expression),
+        CommandContextArgument::Text(text) => text.clone(),
+    }
 }
 
 fn key_for_builtin_command_expression(command: &BuiltinCommandExpression) -> String {
@@ -10096,6 +10499,7 @@ fn actuals_for_type_key(signature: &str, ty: &str) -> Option<Vec<String>> {
     if signature.starts_with("\\.") || signature.contains("::") {
         return None;
     }
+    let ty = strip_command_context_key_suffix(ty);
 
     let parts = signature.split(':').collect::<Vec<_>>();
     let first = parts.first()?;

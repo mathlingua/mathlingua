@@ -222,6 +222,14 @@ pub(super) fn command_substitutions(
         substitutions.insert(name.clone(), value);
     }
 
+    if let Some(context) = &command.context {
+        for argument in &context.arguments {
+            if let CommandContextArgument::Assignment { name, value, .. } = argument {
+                substitutions.insert(name.clone(), render_expression(value, registry));
+            }
+        }
+    }
+
     substitutions
 }
 

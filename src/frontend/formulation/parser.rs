@@ -5,7 +5,8 @@ use lalrpop_util::ParseError as LalrpopParseError;
 
 use super::ast::{
     AuthorHeader, BuiltinCommandArgs, BuiltinCommandArgument, BuiltinCommandExpression,
-    BuiltinCommandTailPart, Chain, ChainPart, CommandExpressionTailPart, CommandHeader,
+    BuiltinCommandTailPart, Chain, ChainPart, CommandContext, CommandContextArgument,
+    CommandContextKind, CommandExpression, CommandExpressionTailPart, CommandHeader,
     CommandHeaderNode, CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs,
     DeclarationRelation, DeclarationStatement, Expression, ExpressionAlias, ExpressionAliasLhs,
     ExpressionBinding, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionType,
@@ -944,6 +945,116 @@ pub(super) fn parse_refined_command_expression(
         tail,
         paren_args,
     })
+}
+
+fn parse_suffixed_command_expression(input: &str) -> Option<Result<Expression, ParseError>> {
+    let input = input.trim();
+    if !input.starts_with('\\')
+        || input.starts_with("\\\\")
+        || input.starts_with("\\.")
+        || input.starts_with("\\:")
+        || contains_top_level(input, "::")
+    {
+        return None;
+    }
+
+    if find_top_level_substring(input, "#using").is_none()
+        && find_top_level_substring(input, "#given").is_none()
+    {
+        return None;
+    }
+
+    Some(
+        parse_simple_command_expression_with_context(input)
+            .map(|command| Expression::new(span_all(input), ExpressionKind::Command(command))),
+    )
+}
+
+fn parse_simple_command_expression_with_context(
+    input: &str,
+) -> Result<CommandExpression, ParseError> {
+    let input = input.trim();
+    let mut rest = input
+        .strip_prefix('\\')
+        .ok_or_else(|| ParseError::custom("command expressions must start with `\\`"))?;
+    let (chain_text, remaining) = split_prefix_by_delimiters(rest, &['{', '(', ':', '#']);
+    let chain = parse_chain(chain_text)?;
+    rest = remaining;
+    let (head_args, remaining) = parse_curly_expression_args(rest)?;
+    rest = remaining;
+    let (tail, remaining) = parse_command_expression_tail(rest)?;
+    rest = remaining;
+    let (paren_args, remaining) = parse_paren_expression_args(rest)?;
+    rest = remaining;
+    let (context, remaining) = parse_command_context_suffix(rest)?;
+    if !remaining.trim().is_empty() {
+        return Err(ParseError::custom(format!(
+            "unexpected trailing text `{}` in command expression",
+            remaining.trim()
+        )));
+    }
+
+    Ok(CommandExpression {
+        span: span_all(input),
+        chain,
+        head_args,
+        tail,
+        paren_args,
+        context,
+    })
+}
+
+fn parse_command_context_suffix(
+    input: &str,
+) -> Result<(Option<CommandContext>, &str), ParseError> {
+    let input = input.trim_start();
+    let (kind, rest) = if let Some(rest) = input.strip_prefix("#using") {
+        (CommandContextKind::Using, rest)
+    } else if let Some(rest) = input.strip_prefix("#given") {
+        (CommandContextKind::Given, rest)
+    } else {
+        return Ok((None, input));
+    };
+
+    let rest = rest.trim_start();
+    let (inside, remaining) = consume_balanced_prefix(rest, '{', '}')?;
+    let arguments = split_top_level(inside, ';')?
+        .into_iter()
+        .filter(|argument| !argument.trim().is_empty())
+        .map(parse_command_context_argument)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok((
+        Some(CommandContext {
+            span: span_all(&input[..input.len() - remaining.len()]),
+            kind,
+            arguments,
+        }),
+        remaining,
+    ))
+}
+
+fn parse_command_context_argument(input: &str) -> Result<CommandContextArgument, ParseError> {
+    let input = input.trim();
+    if let Some(index) = find_top_level_definition(input) {
+        let name = parse_name_token(&input[..index])?;
+        let value = parse_expression(&input[index + 2..])?;
+        return Ok(CommandContextArgument::Assignment {
+            span: span_all(input),
+            name,
+            value,
+        });
+    }
+
+    if let Ok(statement) = parse_ordinary_declaration_statement(input) {
+        return Ok(CommandContextArgument::Declaration(statement));
+    }
+
+    if let Ok(expression) = parse_expression(input) {
+        return Ok(CommandContextArgument::Expression(expression));
+    }
+
+    Ok(CommandContextArgument::Text(input.to_owned()))
 }
 
 /// Parses one part inside a refined command expression part list.
@@ -1995,6 +2106,9 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     if let Some(expression) = parse_refined_predicate_expression(input) {
         return expression;
     }
+    if let Some(expression) = parse_suffixed_command_expression(input) {
+        return expression;
+    }
 
     grammar::InputExpressionParser::new()
         .parse(Lexer::new(input))
@@ -2549,12 +2663,13 @@ mod tests {
         parse_resource_header, parse_spec_operator_alias, parse_writing_alias,
     };
     use crate::frontend::formulation::ast::{
-        BinaryOperator, BuiltinCommandArgument, ChainPart, CommandHeader, CommandHeaderNode,
-        DeclarationRelation, Expression, ExpressionAliasLhs, ExpressionKind, FormOrDeclaration,
-        FormOrDeclarationKind, FunctionNamedExpressionElementLhs, FunctionTypeSpecKind,
-        IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind,
-        PlaceholderFormKind, RefinedTail, SetPredicate, SetTargetElement, SetTargetKind,
-        SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression,
+        BinaryOperator, BuiltinCommandArgument, ChainPart, CommandContextArgument,
+        CommandContextKind, CommandHeader, CommandHeaderNode, DeclarationRelation, Expression,
+        ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
+        FunctionNamedExpressionElementLhs, FunctionTypeSpecKind, IsOrRefinedStatementSpec,
+        IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind, PlaceholderFormKind,
+        RefinedTail, SetPredicate, SetTargetElement, SetTargetKind, SpecOperatorAliasTarget,
+        SpecSubjectKind, SubsetCall, TypeExpression,
     };
 
     // ===============================[ support ]=====================================
@@ -4372,5 +4487,38 @@ mod tests {
                 .to_string()
                 .contains("optional command tail parts are only valid")
         );
+    }
+
+    #[test]
+    fn parses_command_using_context_assignments() {
+        let expression = parse_expression(r#"\ordered.pair#using{A := X; B := Y}"#).unwrap();
+        let ExpressionKind::Command(command) = expression.kind else {
+            panic!("expected command expression");
+        };
+        let context = command.context.expect("expected #using context");
+
+        assert_eq!(context.kind, CommandContextKind::Using);
+        assert_eq!(context.arguments.len(), 2);
+        assert!(matches!(
+            &context.arguments[0],
+            CommandContextArgument::Assignment { name, .. } if name == "A"
+        ));
+        assert!(matches!(
+            &context.arguments[1],
+            CommandContextArgument::Assignment { name, .. } if name == "B"
+        ));
+    }
+
+    #[test]
+    fn parses_command_given_context_with_semicolon_arguments() {
+        let expression =
+            parse_expression(r#"\some.theorem#given{x, y is? \set; n is \natural}"#).unwrap();
+        let ExpressionKind::Command(command) = expression.kind else {
+            panic!("expected command expression");
+        };
+        let context = command.context.expect("expected #given context");
+
+        assert_eq!(context.kind, CommandContextKind::Given);
+        assert_eq!(context.arguments.len(), 2);
     }
 }

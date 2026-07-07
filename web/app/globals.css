@@ -25,6 +25,7 @@
   --accent-soft: #eef3ff;
   --shadow: 0 12px 30px rgba(28, 26, 42, 0.08);
   --chrome-bg: rgba(255, 255, 255, 0.96);
+  --card-bg: var(--surface);
   --definition-bg: linear-gradient(180deg, #fbfbfa 0%, #ffffff 100%);
   --definition-shadow:
     inset 0 1px 3px rgba(28, 26, 42, 0.09),
@@ -137,6 +138,7 @@ html[data-theme="flat-gray"] {
   --accent-soft: #e2e9f3;
   --shadow: none;
   --chrome-bg: rgba(242, 242, 242, 0.98);
+  --card-bg: #ffffff;
   --definition-bg: #f2f2f2;
   --definition-shadow: none;
   --control-shadow: none;

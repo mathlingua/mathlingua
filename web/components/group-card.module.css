@@ -28,7 +28,7 @@
   padding: 1.35rem 1.6rem 1.45rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
-  background: var(--surface);
+  background: var(--card-bg);
   backface-visibility: hidden;
   box-shadow: var(--shadow);
 }

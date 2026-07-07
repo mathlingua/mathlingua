@@ -93,3 +93,75 @@ fn is_mlg(path: &Path) -> bool {
         .and_then(|value| value.to_str())
         .is_some_and(|extension| extension.eq_ignore_ascii_case("mlg"))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
+
+    struct TempProject {
+        root: PathBuf,
+    }
+
+    impl TempProject {
+        fn new() -> Self {
+            let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
+            let root = std::env::temp_dir().join(format!(
+                "mlg-definition-test-{}-{id}",
+                std::process::id()
+            ));
+            fs::create_dir_all(root.join("content")).unwrap();
+            fs::write(root.join("mlg.json"), "{}\n").unwrap();
+            Self { root }
+        }
+
+        fn write(&self, name: &str, contents: &str) -> PathBuf {
+            let path = self.root.join("content").join(name);
+            fs::write(&path, contents).unwrap();
+            path
+        }
+    }
+
+    impl Drop for TempProject {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    #[test]
+    fn resolves_across_files_on_disk() {
+        let project = TempProject::new();
+        project.write(
+            "axioms.mlg",
+            "[\\set]\nDescribes: S\nId: \"11111111-1111-4111-8111-111111111111\"\n",
+        );
+        let usage = "Theorem:\nthen: x is \\set\nId: \"22222222-2222-4222-8222-222222222222\"\n";
+        let usage_path = project.write("thm.mlg", usage);
+
+        let offset = usage.find("\\set").unwrap() + 2;
+        let site = resolve_definition(&project.root, &usage_path, usage, offset)
+            .expect("resolves across files on disk");
+
+        assert_eq!(site.path.file_name().unwrap(), "axioms.mlg");
+        assert_eq!(site.row, 0);
+        assert_eq!(site.column, 1);
+    }
+
+    #[test]
+    fn uses_buffer_text_for_the_target_over_disk() {
+        // The definition exists only in the unsaved buffer, not on disk.
+        let project = TempProject::new();
+        let path = project.write("a.mlg", "Text: \"placeholder\"\nId: \"x\"\n");
+        let buffer =
+            "[\\gadget]\nDescribes: g\nId: \"a\"\n\nTheorem:\nthen: \\gadget\nId: \"b\"\n";
+
+        let offset = buffer.rfind("\\gadget").unwrap() + 3;
+        let site = resolve_definition(&project.root, &path, buffer, offset)
+            .expect("resolves against the in-memory buffer");
+
+        assert_eq!(site.path.file_name().unwrap(), "a.mlg");
+        assert_eq!(site.row, 0);
+    }
+}

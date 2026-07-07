@@ -134,7 +134,11 @@ pub(super) fn signature_match_end(source: &str, offset: usize, signature: &str) 
         return infix_spec_match_end(source, offset, signature);
     }
 
-    if signature.starts_with("\\.") || signature.contains("::") {
+    if signature.contains("::") {
+        return refined_match_end(source, offset, signature);
+    }
+
+    if signature.starts_with("\\.") {
         let tail = source.get(offset..)?;
         return tail
             .starts_with(signature)
@@ -194,6 +198,40 @@ fn infix_spec_match_end(source: &str, offset: usize, signature: &str) -> Option<
         .strip_prefix(":/")
         .or_else(|| remaining.strip_prefix("?:/"))?;
     Some(source.len() - rest.len())
+}
+
+/// Match a refined-command signature — one containing `::`, such as
+/// `\injective::function:from:to` — at `offset`. The written form wraps the
+/// refinement adjective in parentheses that the canonical signature omits
+/// (`\(injective)::function:from{A}:to{B}`), so each segment name may be
+/// parenthesized in the source and may be followed by argument groups to skip.
+fn refined_match_end(source: &str, offset: usize, signature: &str) -> Option<usize> {
+    let mut remaining = source.get(offset..)?.strip_prefix('\\')?;
+    let parts: Vec<&str> = signature.strip_prefix('\\')?.split(':').collect();
+
+    for (index, part) in parts.iter().enumerate() {
+        if index > 0 {
+            let after_colon = remaining.strip_prefix(':')?;
+            remaining = after_colon.strip_prefix('?').unwrap_or(after_colon);
+        }
+        // A segment name (the adjective) may be parenthesized in the source
+        // where the canonical signature is bare.
+        let wrapped = remaining.starts_with('(');
+        if wrapped {
+            remaining = &remaining[1..];
+        }
+        remaining = remaining.strip_prefix(part)?;
+        if wrapped {
+            remaining = remaining.strip_prefix(')')?;
+        }
+        remaining = skip_argument_groups(remaining);
+    }
+
+    let boundary_ok = !remaining
+        .chars()
+        .next()
+        .is_some_and(|ch| ch == ':' || ch == '.' || ch == '_' || ch.is_ascii_alphanumeric());
+    boundary_ok.then(|| source.len() - remaining.len())
 }
 
 pub(super) fn find_symbol_occurrence(source: &str, name: &str, start: usize) -> Option<usize> {

@@ -122,7 +122,7 @@ mod tests {
 
     #[test]
     fn resolves_across_files() {
-        let axioms = "[\\set]\nStates:\nthat: \"x\"\nId: \"11111111-1111-4111-8111-111111111111\"\n";
+        let axioms = "[\\set]\nDescribes: S\nId: \"11111111-1111-4111-8111-111111111111\"\n";
         let usage = "Theorem:\nthen: x is \\set\nId: \"22222222-2222-4222-8222-222222222222\"\n";
         let files = vec![parsed("axioms.mlg", axioms), parsed("thm.mlg", usage)];
         let cursor = offset_of(usage, "\\set", 2);
@@ -133,10 +133,11 @@ mod tests {
 
     #[test]
     fn returns_none_off_a_command() {
-        let source = "[\\set]\nStates:\nthat: \"x\"\nId: \"x\"\n";
+        let source = "[\\set]\nDescribes: S\nId: \"x\"\n";
         let files = vec![parsed("a.mlg", source)];
-        // cursor on the `States` keyword, not a command
-        let cursor = offset_of(source, "States", 2);
+        // cursor on the `Describes` keyword, not a command, even though `\set`
+        // is a known signature
+        let cursor = offset_of(source, "Describes", 2);
         assert_eq!(find_definition(&files, source, cursor), None);
     }
 
@@ -152,13 +153,35 @@ mod tests {
     fn resolves_innermost_nested_command() {
         // `\set` appears inside the argument of `\domain{...}`; clicking on the
         // inner `\set` resolves to `\set`, not the enclosing `\domain`.
-        let source = "[\\set]\nStates:\nthat: \"x\"\nId: \"a\"\n\n\
+        let source = "[\\set]\nDescribes: S\nId: \"a\"\n\n\
                       [\\domain{R}]\nDefines: D\nId: \"b\"\n\n\
                       Theorem:\nthen: \\domain{\\set}\nId: \"c\"\n";
         let files = vec![parsed("a.mlg", source)];
         let inner = offset_of(source, "\\domain{\\set}", 8) + 2; // onto the inner `\set`
         let site = find_definition(&files, source, inner).expect("resolves inner");
-        // `\set` heading is the first heading (row 0); `\domain` is at row 5.
+        // The `\set` heading is the first heading (row 0); `\domain` is lower.
+        assert_eq!(site.row, 0);
+    }
+
+    #[test]
+    fn resolves_refined_command() {
+        let def = "[\\(inductive)::set]\nRefines: A\nId: \"a\"\n";
+        let usage = "Theorem:\nthen: A is \\(inductive)::set\nId: \"b\"\n";
+        let files = vec![parsed("def.mlg", def), parsed("thm.mlg", usage)];
+        let cursor = offset_of(usage, "\\(inductive)::set", 14); // on the `set` tail
+        let site = find_definition(&files, usage, cursor).expect("resolves refined");
+        assert_eq!(site.path, PathBuf::from("def.mlg"));
+        assert_eq!(site.row, 0);
+    }
+
+    #[test]
+    fn resolves_infix_spec_command() {
+        let def = "[m \\:less.than:/ n]\nDescribes: R\nId: \"a\"\n";
+        let usage = "Theorem:\nthen: a \\:less.than:/ b\nId: \"b\"\n";
+        let files = vec![parsed("def.mlg", def), parsed("thm.mlg", usage)];
+        let cursor = offset_of(usage, "\\:less.than", 3); // inside the operator
+        let site = find_definition(&files, usage, cursor).expect("resolves infix spec");
+        assert_eq!(site.path, PathBuf::from("def.mlg"));
         assert_eq!(site.row, 0);
     }
 }

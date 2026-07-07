@@ -47,6 +47,14 @@
   --radius-code: 0.24rem;
   --radius-code-block: 0.45rem;
   --radius-inline-ref: 0.22rem;
+  --heading-color: var(--accent);
+  --heading-weight: 500;
+  --section-heading-color: var(--accent);
+  --section-heading-weight: 400;
+  --card-heading-color: var(--ink);
+  --card-heading-weight: 500;
+  --prose-heading-color: var(--ink);
+  --prose-heading-weight: 500;
 }
 
 html[data-theme="mono"] {
@@ -76,6 +84,14 @@ html[data-theme="mono"] {
   --syntax-placeholder: #4a4a4a;
   --syntax-punctuation: #747474;
   --syntax-string: #555555;
+  --heading-color: #000000;
+  --heading-weight: 700;
+  --section-heading-color: #000000;
+  --section-heading-weight: 700;
+  --card-heading-color: #000000;
+  --card-heading-weight: 700;
+  --prose-heading-color: #000000;
+  --prose-heading-weight: 700;
 }
 
 html[data-theme="sepia"] {

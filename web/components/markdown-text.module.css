@@ -31,9 +31,9 @@
 .markdown h5,
 .markdown h6 {
   margin: 1.45rem 0 0.45rem;
-  color: var(--ink);
+  color: var(--prose-heading-color);
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: var(--prose-heading-weight);
   line-height: 1.16;
 }
 

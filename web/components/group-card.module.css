@@ -60,10 +60,10 @@
 
 .heading {
   margin: 0;
-  color: var(--ink);
+  color: var(--card-heading-color);
   font-family: var(--font-mono);
   font-size: 0.98rem;
-  font-weight: 500;
+  font-weight: var(--card-heading-weight);
   line-height: 1.2;
 }
 

@@ -161,9 +161,9 @@
 .pageItem h3,
 .pageItem h4 {
   margin: 0;
-  color: var(--accent);
+  color: var(--heading-color);
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: var(--heading-weight);
   letter-spacing: 0;
 }
 

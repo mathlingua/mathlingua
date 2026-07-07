@@ -8,8 +8,9 @@
 }
 
 .sectionLabel {
-  color: var(--accent);
+  color: var(--section-heading-color);
   font-size: 1.05rem;
+  font-weight: var(--section-heading-weight);
 }
 
 .sectionLabel::after {

@@ -108,10 +108,8 @@ mod tests {
     impl TempProject {
         fn new() -> Self {
             let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
-            let root = std::env::temp_dir().join(format!(
-                "mlg-definition-test-{}-{id}",
-                std::process::id()
-            ));
+            let root = std::env::temp_dir()
+                .join(format!("mlg-definition-test-{}-{id}", std::process::id()));
             fs::create_dir_all(root.join("content")).unwrap();
             fs::write(root.join("mlg.json"), "{}\n").unwrap();
             Self { root }
@@ -154,8 +152,7 @@ mod tests {
         // The definition exists only in the unsaved buffer, not on disk.
         let project = TempProject::new();
         let path = project.write("a.mlg", "Text: \"placeholder\"\nId: \"x\"\n");
-        let buffer =
-            "[\\gadget]\nDescribes: g\nId: \"a\"\n\nTheorem:\nthen: \\gadget\nId: \"b\"\n";
+        let buffer = "[\\gadget]\nDescribes: g\nId: \"a\"\n\nTheorem:\nthen: \\gadget\nId: \"b\"\n";
 
         let offset = buffer.rfind("\\gadget").unwrap() + 3;
         let site = resolve_definition(&project.root, &path, buffer, offset)

@@ -1004,9 +1004,7 @@ fn parse_simple_command_expression_with_context(
     })
 }
 
-fn parse_command_context_suffix(
-    input: &str,
-) -> Result<(Option<CommandContext>, &str), ParseError> {
+fn parse_command_context_suffix(input: &str) -> Result<(Option<CommandContext>, &str), ParseError> {
     let input = input.trim_start();
     let (kind, rest) = if let Some(rest) = input.strip_prefix("#using") {
         (CommandContextKind::Using, rest)

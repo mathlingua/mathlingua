@@ -40,6 +40,40 @@ Documented:
 }
 
 #[test]
+fn renders_command_context_assignments_as_visible_given_values() {
+    let registry = registry_for(
+        r#"[\axiom.of.extension]
+Axiom:
+then: P
+Documented:
+. called: "axiom of extension"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"\axiom.of.extension#given{A := X; B := Y}"#, &registry),
+        Some(r#"\textrm{axiom of extension} \textrm{ given } X; Y"#.to_string())
+    );
+}
+
+#[test]
+fn renders_command_context_assignments_as_visible_using_values() {
+    let registry = registry_for(
+        r#"[\ordered.pair]
+Describes: p
+using: A, B is \set
+Documented:
+. called: "ordered pair"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"\ordered.pair#using{A := X; B := Y}"#, &registry),
+        Some(r#"\textrm{ordered pair} \textrm{ using } X; Y"#.to_string())
+    );
+}
+
+#[test]
 fn renders_callable_owner_capabilities_from_written_templates() {
     let registry = registry_for(
         r#"[\relation:from{A}:to{B}]

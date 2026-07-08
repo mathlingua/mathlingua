@@ -160,8 +160,7 @@ impl ServerState {
 
     fn handle_completion(&self, id: lsp_server::RequestId, params: &Value) -> Response {
         let items = self.completion_items(params).unwrap_or_default();
-        let result = serde_json::to_value(CompletionResponse::Array(items))
-            .unwrap_or(Value::Null);
+        let result = serde_json::to_value(CompletionResponse::Array(items)).unwrap_or(Value::Null);
         Response {
             id,
             result: Some(result),
@@ -366,7 +365,10 @@ fn completion_item(
                 .saturating_sub(candidate.replace_chars as u32),
         );
         item.text_edit = Some(CompletionTextEdit::Edit(TextEdit {
-            range: Range { start, end: position },
+            range: Range {
+                start,
+                end: position,
+            },
             new_text,
         }));
     } else {

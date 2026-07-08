@@ -45,7 +45,11 @@ pub fn find_definition(
 /// extent `[start, end)` contains the cursor. Ties prefer the start closest to
 /// the cursor (the innermost command, when one is nested inside another's
 /// argument), then the longer — more specific — signature.
-fn signature_at_offset(source: &str, offset: usize, registry: &SignatureRegistry) -> Option<String> {
+fn signature_at_offset(
+    source: &str,
+    offset: usize,
+    registry: &SignatureRegistry,
+) -> Option<String> {
     let mut best: Option<(usize, &str)> = None;
     for (start, _) in source.match_indices('\\') {
         if start > offset {

@@ -6239,7 +6239,14 @@ fn check_command_context_arguments(
                 );
             }
             CommandContextArgument::Expression(expression) => {
-                check_expression(expression, &local_context, path, locator, registry, event_log);
+                check_expression(
+                    expression,
+                    &local_context,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
             }
             CommandContextArgument::Text(_) => {}
         }
@@ -6325,8 +6332,7 @@ fn apply_command_context_bindings(
                         )),
                     );
                 }
-                if let Some(fact) =
-                    fact_from_expression_in_context(expression, requirement_context)
+                if let Some(fact) = fact_from_expression_in_context(expression, requirement_context)
                 {
                     let normalized = requirement_context.normalize_fact(&fact);
                     requirement_context.add_fact(normalized);

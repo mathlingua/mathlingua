@@ -6,7 +6,11 @@ pub(super) fn render_command_expression(
 ) -> String {
     let signature = command_expression_signature(command);
     let Some(render) = registry.commands.get(&signature) else {
-        return render_command_like(&command.chain, registry);
+        return append_command_context_suffix(
+            render_command_like(&command.chain, registry),
+            command.context.as_ref(),
+            registry,
+        );
     };
     let substitutions = command_substitutions(command, render, None, registry);
 
@@ -15,7 +19,11 @@ pub(super) fn render_command_expression(
         None => render.render_called(&substitutions),
     };
 
-    command_reference_latex(&signature, latex, registry)
+    append_command_context_suffix(
+        command_reference_latex(&signature, latex, registry),
+        command.context.as_ref(),
+        registry,
+    )
 }
 
 pub(super) fn render_predicate_command_expression(
@@ -24,7 +32,11 @@ pub(super) fn render_predicate_command_expression(
 ) -> String {
     let signature = command_expression_signature(command);
     let Some(render) = registry.commands.get(&signature) else {
-        return render_command_like(&command.chain, registry);
+        return append_command_context_suffix(
+            render_command_like(&command.chain, registry),
+            command.context.as_ref(),
+            registry,
+        );
     };
     let substitutions = command_substitutions(command, render, None, registry);
 
@@ -34,15 +46,23 @@ pub(super) fn render_predicate_command_expression(
             .as_ref()
             .is_some_and(|name| template_contains_placeholder(written, name));
         if !includes_subject {
-            return command_reference_latex(
-                &signature,
-                substitute_math_template(written, &substitutions),
+            return append_command_context_suffix(
+                command_reference_latex(
+                    &signature,
+                    substitute_math_template(written, &substitutions),
+                    registry,
+                ),
+                command.context.as_ref(),
                 registry,
             );
         }
     }
 
-    command_reference_latex(&signature, render.render_called(&substitutions), registry)
+    append_command_context_suffix(
+        command_reference_latex(&signature, render.render_called(&substitutions), registry),
+        command.context.as_ref(),
+        registry,
+    )
 }
 
 pub(super) fn render_infix_command_expression(
@@ -136,7 +156,11 @@ pub(super) fn command_type_template(
     };
 
     Some(TypeTemplate {
-        latex: command_reference_latex(&signature, latex, registry),
+        latex: append_command_context_suffix(
+            command_reference_latex(&signature, latex, registry),
+            command.context.as_ref(),
+            registry,
+        ),
         includes_subject: subject_latex.is_some() && written_includes_subject,
     })
 }
@@ -231,6 +255,50 @@ pub(super) fn command_substitutions(
     }
 
     substitutions
+}
+
+fn append_command_context_suffix(
+    latex: String,
+    context: Option<&CommandContext>,
+    registry: &RenderRegistry,
+) -> String {
+    let Some(context) = context else {
+        return latex;
+    };
+
+    let arguments = context
+        .arguments
+        .iter()
+        .map(|argument| render_command_context_argument(argument, registry))
+        .filter(|argument| !argument.is_empty())
+        .collect::<Vec<_>>();
+
+    if arguments.is_empty() {
+        return latex;
+    }
+
+    let label = match context.kind {
+        CommandContextKind::Using => "using",
+        CommandContextKind::Given => "given",
+    };
+
+    format!("{latex} \\textrm{{ {label} }} {}", arguments.join("; "))
+}
+
+fn render_command_context_argument(
+    argument: &CommandContextArgument,
+    registry: &RenderRegistry,
+) -> String {
+    match argument {
+        CommandContextArgument::Assignment { value, .. } => render_expression(value, registry),
+        CommandContextArgument::Declaration(statement) => {
+            render_declaration_statement(statement, registry)
+        }
+        CommandContextArgument::Expression(expression) => render_expression(expression, registry),
+        CommandContextArgument::Text(text) => {
+            format!("\\textrm{{{}}}", escape_latex_text(text.trim()))
+        }
+    }
 }
 
 pub(super) fn infix_command_substitutions(

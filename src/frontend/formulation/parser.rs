@@ -10,14 +10,14 @@ use super::ast::{
     CommandHeaderNode, CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs,
     DeclarationRelation, DeclarationStatement, Expression, ExpressionAlias, ExpressionAliasLhs,
     ExpressionBinding, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionType,
-    FunctionTypeSpec, FunctionTypeSpecKind, InfixCommandHeader, InfixSpec, InfixSpecHeader,
-    IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind,
-    IsViaStatement, LabelHeader, Operator, ParenExpressionArgs, ParenHeadingArgs, Placeholder,
-    PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement, RefinedCommandExpression,
-    RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader,
-    SetExpression, SetPredicate, SetTarget, SetTargetElement, SetTargetKind, Span,
-    SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement,
-    TypeExpression, WritingAlias,
+    FunctionTypeSpec, FunctionTypeSpecKind, HardCastStatement, InfixCommandHeader, InfixSpec,
+    InfixSpecHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm,
+    IsSubjectKind, IsViaStatement, LabelHeader, Operator, ParenExpressionArgs, ParenHeadingArgs,
+    Placeholder, PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement,
+    RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart,
+    RefinedTail, ResourceHeader, SetExpression, SetPredicate, SetTarget, SetTargetElement,
+    SetTargetKind, Span, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind,
+    SubjectSpecStatement, TypeExpression, WritingAlias,
 };
 use super::grammar;
 use super::lexer::Lexer;
@@ -1489,6 +1489,45 @@ pub fn parse_refined_declaration_statement(
     parse_declaration_statement(input, true)
 }
 
+/// Parses an `is!` hard-cast assumption.
+///
+/// Hard casts are deliberately not part of ordinary declaration parsing. They
+/// are only exposed to structural sections that explicitly allow assumptions of
+/// the form `x is! T` or `x := value is! T`.
+pub fn parse_hard_cast_statement(input: &str) -> Result<HardCastStatement, ParseError> {
+    let input = input.trim();
+    let index = find_top_level_substring(input, " is! ")
+        .ok_or_else(|| ParseError::custom("expected top-level ` is! `"))?;
+    let subject_text = input[..index].trim();
+    let ty_text = input[index + 5..].trim();
+    if subject_text.is_empty() || ty_text.is_empty() {
+        return Err(ParseError::custom(
+            "`is!` requires a subject before it and a type after it",
+        ));
+    }
+
+    let (subject_text, definition) =
+        if let Some(definition_index) = find_top_level_definition(subject_text) {
+            let left = subject_text[..definition_index].trim();
+            let right = subject_text[definition_index + 2..].trim();
+            if left.is_empty() || right.is_empty() {
+                return Err(ParseError::custom(
+                    "`:=` in an `is!` assumption requires text on both sides",
+                ));
+            }
+            (left, Some(parse_expression(right)?))
+        } else {
+            (subject_text, None)
+        };
+
+    Ok(HardCastStatement {
+        span: span_all(input),
+        subject: parse_is_subject(subject_text)?,
+        definition,
+        ty: parse_type_expression(ty_text, true)?,
+    })
+}
+
 fn parse_declaration_relation(
     input: &str,
     allow_refined_type: bool,
@@ -2656,9 +2695,10 @@ mod tests {
 
     use super::{
         parse_author_header, parse_command_header, parse_expression, parse_expression_alias,
-        parse_form_or_declaration, parse_is_or_refined_statement_spec, parse_is_or_spec,
-        parse_is_via_statement, parse_label_header, parse_ordinary_declaration_statement,
-        parse_resource_header, parse_spec_operator_alias, parse_writing_alias,
+        parse_form_or_declaration, parse_hard_cast_statement, parse_is_or_refined_statement_spec,
+        parse_is_or_spec, parse_is_via_statement, parse_label_header,
+        parse_ordinary_declaration_statement, parse_resource_header, parse_spec_operator_alias,
+        parse_writing_alias,
     };
     use crate::frontend::formulation::ast::{
         BinaryOperator, BuiltinCommandArgument, ChainPart, CommandContextArgument,
@@ -4128,6 +4168,22 @@ mod tests {
             composition.relation,
             Some(DeclarationRelation::Is(TypeExpression::Command(_)))
         ));
+    }
+
+    #[test]
+    fn parses_hard_cast_assumptions() {
+        let statement =
+            parse_hard_cast_statement(r#"a0 := a is! \set"#).expect("expected hard-cast statement");
+
+        assert!(statement.definition.is_some());
+        assert!(matches!(statement.ty, TypeExpression::Command(_)));
+        assert!(matches!(
+            statement.subject.kind,
+            IsSubjectKind::Forms(ref forms) if forms.len() == 1
+        ));
+
+        parse_ordinary_declaration_statement(r#"a0 := a is! \set"#)
+            .expect_err("ordinary declarations should not accept hard casts");
     }
 
     #[test]

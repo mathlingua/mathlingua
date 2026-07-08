@@ -75,7 +75,70 @@ pub(in crate::backend::semantic) fn walk_optional_enables(
                         }
                     }
                 }
+                EnablesItem::Generalization(group) => {
+                    walk_relationship_command(&group.of.argument, visit);
+                    for statement in &group.assuming.arguments {
+                        walk_hard_cast_statement(statement, visit);
+                    }
+                    walk_optional_where_section(&group.where_, visit);
+                }
+                EnablesItem::Abstraction(group) => {
+                    walk_relationship_command(&group.of.argument, visit);
+                    for statement in &group.assuming.arguments {
+                        walk_hard_cast_statement(statement, visit);
+                    }
+                    walk_optional_where_section(&group.where_, visit);
+                }
+                EnablesItem::Instance(group) => {
+                    walk_relationship_declaration(&group.of.argument, visit);
+                    for clause in &group.when.arguments {
+                        walk_clause(clause, visit);
+                    }
+                    walk_optional_where_section(&group.where_, visit);
+                    if let Some(means) = &group.means {
+                        walk_clause(&means.argument, visit);
+                    }
+                }
+                EnablesItem::View(group) => {
+                    walk_relationship_declaration(&group.as_.argument, visit);
+                    for clause in &group.when.arguments {
+                        walk_clause(clause, visit);
+                    }
+                    walk_optional_where_section(&group.where_, visit);
+                    if let Some(means) = &group.means {
+                        walk_clause(&means.argument, visit);
+                    }
+                }
             }
+        }
+    }
+}
+
+fn walk_relationship_command(command: &CommandExpression, visit: &mut impl FnMut(&SignatureShape)) {
+    let shape = shape_for_command_expression(command);
+    visit(&shape);
+    walk_command_expression_arguments(command, visit);
+}
+
+fn walk_relationship_declaration(
+    declaration: &RelationshipDeclaration,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
+    match declaration {
+        RelationshipDeclaration::Command(command) => walk_relationship_command(command, visit),
+        RelationshipDeclaration::Declaration(statement) => {
+            walk_declaration_statement(statement, visit)
+        }
+    }
+}
+
+fn walk_optional_where_section(
+    section: &Option<WhereSection>,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
+    if let Some(section) = section {
+        for clause in &section.arguments {
+            walk_clause(clause, visit);
         }
     }
 }

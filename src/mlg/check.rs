@@ -5649,4 +5649,61 @@ Id: "c812728f-5e16-4774-a62d-00c911127a75"
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
     }
+
+    #[test]
+    fn check_accepts_relationship_enables_with_hard_cast_assumptions() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("relationships.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Describes: X
+Documented:
+. called: "set"
+Id: "0d50b7b0-30b6-4bb1-9fa9-6ac3fcb435f0"
+
+[\pair]
+Describes: P
+Documented:
+. called: "pair"
+Id: "7e446cf6-995e-45aa-9b05-e07bf4be82e1"
+
+[\set.theoretic.pair:of{a}:and{b}]
+Defines: P is \set
+when: a, b is \set
+Documented:
+. called: "set-theoretic pair of $a?$ and $b?$"
+Id: "9f79d83e-8423-4343-b547-e391b3305994"
+
+[\pair:on{a}:and{b}]
+Defines: P is \pair
+when: a, b is \set
+Enables:
+. abstraction:
+  of: \set.theoretic.pair:of{a0}:and{b0}
+  assuming:
+  . a0 := a is! \set
+  . b0 := b is! \set
+  by: "\some.theorem"
+Documented:
+. written: "(a?, b?)"
+Id: "a95d2ea7-d1fd-41a5-b55c-b6c18c0d05b7"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("relationships.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
 }

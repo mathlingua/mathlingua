@@ -1,13 +1,15 @@
 use std::collections::{HashMap, VecDeque};
 
 use crate::events::EventLog;
-use crate::frontend::formulation::ast::{ExpressionKind, FormOrDeclaration, FormOrDeclarationKind};
+use crate::frontend::formulation::ast::{
+    CommandExpression, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
+};
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
     parse_expression, parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
-    parse_is_via_statement, parse_label_header, parse_ordinary_declaration_statement,
-    parse_refined_declaration_statement, parse_resource_header, parse_spec_operator_alias,
-    parse_writing_alias,
+    parse_hard_cast_statement, parse_is_via_statement, parse_label_header,
+    parse_ordinary_declaration_statement, parse_refined_declaration_statement,
+    parse_resource_header, parse_spec_operator_alias, parse_writing_alias,
 };
 use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{
@@ -1139,6 +1141,18 @@ pub(super) fn parse_enables_item_group(
             .map(Box::new)
             .map(EnablesItem::Viewable),
         "connection" => parse_connection(group, tracker).map(EnablesItem::Connection),
+        "generalization" => parse_generalization_group(group, tracker)
+            .map(Box::new)
+            .map(EnablesItem::Generalization),
+        "abstraction" => parse_abstraction_group(group, tracker)
+            .map(Box::new)
+            .map(EnablesItem::Abstraction),
+        "instance" => parse_instance_group(group, tracker)
+            .map(Box::new)
+            .map(EnablesItem::Instance),
+        "view" => parse_view_group(group, tracker)
+            .map(Box::new)
+            .map(EnablesItem::View),
         other => {
             tracker.user_error_at_row(
                 Some(ORIGIN),
@@ -1607,6 +1621,202 @@ fn parse_viewable_states(
     }
     Some(ViewableStatesSection {
         argument: clauses.into_iter().next().expect("len checked"),
+    })
+}
+
+/// Parses a `generalization:` nested group inside `Enables:`.
+pub(in crate::frontend::structural::parser) fn parse_generalization_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<GeneralizationGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections(
+        "generalization",
+        &group.sections,
+        tracker,
+        &["generalization", "of", "assuming", "where?", "by?"],
+    )?;
+
+    Some(GeneralizationGroup {
+        heading,
+        generalization: GeneralizationSection {
+            arguments: parse_optional_open_texts(sections.get("generalization").copied(), tracker),
+        },
+        of: RelationshipCommandOfSection {
+            argument: parse_required_formulation(
+                section(&sections, "of")?,
+                "of",
+                tracker,
+                parse_relationship_command,
+            )?,
+        },
+        assuming: AssumingSection {
+            arguments: parse_required_formulations(
+                section(&sections, "assuming")?,
+                "assuming",
+                tracker,
+                parse_hard_cast_statement,
+            )?,
+        },
+        where_: sections.get("where").copied().and_then(|section| {
+            parse_required_clauses(section, "where", tracker)
+                .map(|arguments| WhereSection { arguments })
+        }),
+        by: parse_optional_by_relationship_section(&sections, tracker),
+    })
+}
+
+/// Parses an `abstraction:` nested group inside `Enables:`.
+pub(in crate::frontend::structural::parser) fn parse_abstraction_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<AbstractionGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections(
+        "abstraction",
+        &group.sections,
+        tracker,
+        &["abstraction", "of", "assuming", "where?", "by?"],
+    )?;
+
+    Some(AbstractionGroup {
+        heading,
+        abstraction: AbstractionSection {
+            arguments: parse_optional_open_texts(sections.get("abstraction").copied(), tracker),
+        },
+        of: RelationshipCommandOfSection {
+            argument: parse_required_formulation(
+                section(&sections, "of")?,
+                "of",
+                tracker,
+                parse_relationship_command,
+            )?,
+        },
+        assuming: AssumingSection {
+            arguments: parse_required_formulations(
+                section(&sections, "assuming")?,
+                "assuming",
+                tracker,
+                parse_hard_cast_statement,
+            )?,
+        },
+        where_: sections.get("where").copied().and_then(|section| {
+            parse_required_clauses(section, "where", tracker)
+                .map(|arguments| WhereSection { arguments })
+        }),
+        by: parse_optional_by_relationship_section(&sections, tracker),
+    })
+}
+
+/// Parses an `instance:` nested group inside `Enables:`.
+pub(in crate::frontend::structural::parser) fn parse_instance_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<InstanceGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections(
+        "instance",
+        &group.sections,
+        tracker,
+        &["instance", "of", "when", "where?", "means?", "by?"],
+    )?;
+
+    Some(InstanceGroup {
+        heading,
+        instance: InstanceSection {
+            arguments: parse_optional_open_texts(sections.get("instance").copied(), tracker),
+        },
+        of: RelationshipDeclarationOfSection {
+            argument: parse_required_formulation(
+                section(&sections, "of")?,
+                "of",
+                tracker,
+                parse_relationship_declaration,
+            )?,
+        },
+        when: WhenSection {
+            arguments: parse_required_clauses(section(&sections, "when")?, "when", tracker)?,
+        },
+        where_: sections.get("where").copied().and_then(|section| {
+            parse_required_clauses(section, "where", tracker)
+                .map(|arguments| WhereSection { arguments })
+        }),
+        means: sections.get("means").copied().and_then(|section| {
+            parse_required_clause(section, "means", tracker)
+                .map(|argument| RelationshipMeansSection { argument })
+        }),
+        by: parse_optional_by_relationship_section(&sections, tracker),
+    })
+}
+
+/// Parses a `view:` nested group inside `Enables:`.
+pub(in crate::frontend::structural::parser) fn parse_view_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<ViewGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections(
+        "view",
+        &group.sections,
+        tracker,
+        &["view", "as", "when", "where?", "means?", "by?"],
+    )?;
+
+    Some(ViewGroup {
+        heading,
+        view: ViewSection {
+            arguments: parse_optional_open_texts(sections.get("view").copied(), tracker),
+        },
+        as_: RelationshipAsSection {
+            argument: parse_required_formulation(
+                section(&sections, "as")?,
+                "as",
+                tracker,
+                parse_relationship_declaration,
+            )?,
+        },
+        when: WhenSection {
+            arguments: parse_required_clauses(section(&sections, "when")?, "when", tracker)?,
+        },
+        where_: sections.get("where").copied().and_then(|section| {
+            parse_required_clauses(section, "where", tracker)
+                .map(|arguments| WhereSection { arguments })
+        }),
+        means: sections.get("means").copied().and_then(|section| {
+            parse_required_clause(section, "means", tracker)
+                .map(|argument| RelationshipMeansSection { argument })
+        }),
+        by: parse_optional_by_relationship_section(&sections, tracker),
+    })
+}
+
+fn parse_relationship_command(input: &str) -> Result<CommandExpression, FormulationParseError> {
+    let expression = parse_expression(input)?;
+    match expression.kind {
+        ExpressionKind::Command(command) => Ok(command),
+        _ => Err(FormulationParseError::Custom(
+            "expected command expression".to_owned(),
+        )),
+    }
+}
+
+fn parse_relationship_declaration(
+    input: &str,
+) -> Result<RelationshipDeclaration, FormulationParseError> {
+    if let Ok(command) = parse_relationship_command(input) {
+        return Ok(RelationshipDeclaration::Command(command));
+    }
+    parse_ordinary_declaration_statement(input).map(RelationshipDeclaration::Declaration)
+}
+
+fn parse_optional_by_relationship_section(
+    sections: &HashMap<String, &ProtoSection>,
+    tracker: &mut EventLog,
+) -> Option<BySection> {
+    sections.get("by").copied().and_then(|section| {
+        parse_required_open_texts(section, "by", tracker).map(|arguments| BySection {
+            arguments: arguments.into(),
+        })
     })
 }
 
@@ -3393,8 +3603,8 @@ mod tests {
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, DescribesTarget, Document, DocumentedItem, EnablesItem,
-        IsOrViaItem, JustifiedItem, MetadataItem, RequiresItem, ResourceItem, SpecifyItem,
-        TopLevelItem,
+        IsOrViaItem, JustifiedItem, MetadataItem, RelationshipDeclaration, RequiresItem,
+        ResourceItem, SpecifyItem, TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -3992,6 +4202,76 @@ Documented:
         ));
         assert!(matches!(enables.arguments[1], EnablesItem::FromAs(_)));
         assert!(matches!(enables.arguments[2], EnablesItem::Viewable(_)));
+    }
+
+    #[test]
+    fn parses_relationship_enables_items() {
+        let document = parse_ok(
+            r#"
+[\pair]
+Defines: P is \pair
+Enables:
+. generalization:
+  of: \set.theoretic.pair:of{a0}:and{b0}
+  assuming:
+  . a0 := a is! \set
+  . b0 := b is! \set
+. abstraction:
+  of: \point{P}
+  assuming:
+  . p0 := P is! \point
+. instance:
+  of: x is \group
+  when:
+  . x is \set
+  means: x is \group
+. view:
+  as: y ::= z is \set
+  when:
+  . y is \set
+  where:
+  . y is \set
+  means: y is \set
+  by: "\some.theorem"
+Documented:
+. written: "P?"
+"#,
+        );
+
+        let TopLevelItem::Defines(group) = &document.items[0] else {
+            panic!("expected defines group");
+        };
+        let enables = group.enables.as_ref().expect("expected enables");
+        assert!(matches!(
+            enables.arguments[0],
+            EnablesItem::Generalization(_)
+        ));
+        assert!(matches!(enables.arguments[1], EnablesItem::Abstraction(_)));
+        assert!(matches!(enables.arguments[2], EnablesItem::Instance(_)));
+        assert!(matches!(enables.arguments[3], EnablesItem::View(_)));
+
+        let EnablesItem::Generalization(generalization) = &enables.arguments[0] else {
+            panic!("expected generalization");
+        };
+        assert_eq!(generalization.assuming.arguments.len(), 2);
+
+        let EnablesItem::Instance(instance) = &enables.arguments[2] else {
+            panic!("expected instance");
+        };
+        assert!(matches!(
+            instance.of.argument,
+            RelationshipDeclaration::Declaration(_)
+        ));
+
+        let EnablesItem::View(view) = &enables.arguments[3] else {
+            panic!("expected view");
+        };
+        assert!(matches!(
+            view.as_.argument,
+            RelationshipDeclaration::Declaration(_)
+        ));
+        assert!(view.by.is_some());
+        assert!(view.means.is_some());
     }
 
     // ===============================[ diagnostics ]=====================================

@@ -783,6 +783,14 @@ pub struct DeclarationStatement {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HardCastStatement {
+    pub span: Span,
+    pub subject: IsSubject,
+    pub definition: Option<Expression>,
+    pub ty: TypeExpression,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DeclarationRelation {
     Is(TypeExpression),
     Spec {

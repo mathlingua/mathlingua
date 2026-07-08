@@ -388,7 +388,13 @@ fn collect_enables_provided_call_render_rules(
                 owner_subject,
                 registry,
             ),
-            EnablesItem::FromAs(_) | EnablesItem::Viewable(_) | EnablesItem::Connection(_) => {}
+            EnablesItem::FromAs(_)
+            | EnablesItem::Viewable(_)
+            | EnablesItem::Connection(_)
+            | EnablesItem::Generalization(_)
+            | EnablesItem::Abstraction(_)
+            | EnablesItem::Instance(_)
+            | EnablesItem::View(_) => {}
         }
     }
 }

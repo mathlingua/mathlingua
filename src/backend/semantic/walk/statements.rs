@@ -45,6 +45,17 @@ pub(in crate::backend::semantic) fn walk_is_statement(
     walk_type_expression(&statement.ty, visit);
 }
 
+pub(in crate::backend::semantic) fn walk_hard_cast_statement(
+    statement: &HardCastStatement,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
+    walk_is_subject(&statement.subject, visit);
+    if let Some(definition) = &statement.definition {
+        walk_expression(definition, visit);
+    }
+    walk_type_expression(&statement.ty, visit);
+}
+
 pub(in crate::backend::semantic) fn walk_is_subject(
     subject: &IsSubject,
     visit: &mut impl FnMut(&SignatureShape),

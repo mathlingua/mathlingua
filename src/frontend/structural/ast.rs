@@ -1,7 +1,7 @@
 use crate::frontend::formulation::ast::{
     AuthorHeader, CommandExpression, CommandHeader, DeclarationStatement, Expression,
-    ExpressionAlias, ExpressionBinding, FormOrDeclaration, IsViaStatement, LabelHeader,
-    ResourceHeader, SpecOperatorAlias, TypeExpression, WritingAlias,
+    ExpressionAlias, ExpressionBinding, FormOrDeclaration, HardCastStatement, IsViaStatement,
+    LabelHeader, ResourceHeader, SpecOperatorAlias, TypeExpression, WritingAlias,
 };
 
 // ===============================[ repeated ]=====================================
@@ -212,6 +212,15 @@ argument_section!(FromSection, DeclarationStatement);
 argument_section!(CastAsSection, ExpressionBinding);
 argument_section!(ViewableAsSection, DeclarationStatement);
 argument_section!(ViewableStatesSection, Clause);
+zero_or_more_arguments_section!(GeneralizationSection, OpenText);
+zero_or_more_arguments_section!(AbstractionSection, OpenText);
+zero_or_more_arguments_section!(InstanceSection, OpenText);
+zero_or_more_arguments_section!(ViewSection, OpenText);
+argument_section!(RelationshipCommandOfSection, CommandExpression);
+argument_section!(RelationshipDeclarationOfSection, RelationshipDeclaration);
+argument_section!(RelationshipAsSection, RelationshipDeclaration);
+arguments_section!(AssumingSection, HardCastStatement);
+argument_section!(RelationshipMeansSection, Clause);
 zero_or_more_arguments_section!(ConnectionSection, OpenText);
 zero_or_more_arguments_section!(ToSection, OpenText);
 zero_or_more_arguments_section!(MeansSection, OpenText);
@@ -356,6 +365,10 @@ pub enum EnablesItem {
     FromAs(Box<FromAsGroup>),
     Viewable(Box<ViewableGroup>),
     Connection(ConnectionGroup),
+    Generalization(Box<GeneralizationGroup>),
+    Abstraction(Box<AbstractionGroup>),
+    Instance(Box<InstanceGroup>),
+    View(Box<ViewGroup>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -728,6 +741,54 @@ pub struct ViewableGroup {
     pub heading: Option<LabelHeader>,
     pub as_: ViewableAsSection,
     pub states: Option<ViewableStatesSection>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RelationshipDeclaration {
+    Command(CommandExpression),
+    Declaration(DeclarationStatement),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GeneralizationGroup {
+    pub heading: Option<LabelHeader>,
+    pub generalization: GeneralizationSection,
+    pub of: RelationshipCommandOfSection,
+    pub assuming: AssumingSection,
+    pub where_: Option<WhereSection>,
+    pub by: Option<BySection>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AbstractionGroup {
+    pub heading: Option<LabelHeader>,
+    pub abstraction: AbstractionSection,
+    pub of: RelationshipCommandOfSection,
+    pub assuming: AssumingSection,
+    pub where_: Option<WhereSection>,
+    pub by: Option<BySection>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InstanceGroup {
+    pub heading: Option<LabelHeader>,
+    pub instance: InstanceSection,
+    pub of: RelationshipDeclarationOfSection,
+    pub when: WhenSection,
+    pub where_: Option<WhereSection>,
+    pub means: Option<RelationshipMeansSection>,
+    pub by: Option<BySection>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ViewGroup {
+    pub heading: Option<LabelHeader>,
+    pub view: ViewSection,
+    pub as_: RelationshipAsSection,
+    pub when: WhenSection,
+    pub where_: Option<WhereSection>,
+    pub means: Option<RelationshipMeansSection>,
+    pub by: Option<BySection>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -189,7 +189,7 @@ arguments_section!(AliasesSection, AliasItem);
 arguments_section!(ReferencesSection, ResourceHeader);
 arguments_section!(MetadataSection, MetadataItem);
 argument_section!(DefinesSection, DeclarationStatement);
-argument_section!(ExpressesSection, Clause);
+arguments_section!(ExpressesSection, Clause);
 argument_section!(RefinesSection, DeclarationStatement);
 argument_section!(RefinesExtendsSection, DeclarationStatement);
 zero_or_more_arguments_section!(StatesSection, OpenText);

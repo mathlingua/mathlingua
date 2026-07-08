@@ -2917,8 +2917,8 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
                 .map(|arguments| WhenSection { arguments })
         }),
         expresses: sections.get("expresses").copied().and_then(|section| {
-            parse_required_clause(section, "expresses", tracker)
-                .map(|argument| ExpressesSection { argument })
+            parse_required_clauses(section, "expresses", tracker)
+                .map(|arguments| ExpressesSection { arguments })
         }),
         requires: sections.get("Requires").copied().and_then(|section| {
             parse_required_groups(section, "Requires", tracker, parse_requires_item_group)
@@ -4053,7 +4053,7 @@ that:
                         .expresses
                         .as_ref()
                         .expect("expected expresses")
-                        .argument,
+                        .arguments[0],
                     Clause::Piecewise(_)
                 ));
             }

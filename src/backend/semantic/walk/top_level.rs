@@ -39,7 +39,9 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
             if let Some(section) = &group.expresses {
-                walk_clause(&section.argument, visit);
+                for clause in &section.arguments {
+                    walk_clause(clause, visit);
+                }
             }
             walk_optional_requires(&group.requires, visit);
             walk_optional_enables(&group.enables, visit);

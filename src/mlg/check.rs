@@ -5708,4 +5708,97 @@ Id: "a95d2ea7-d1fd-41a5-b55c-b6c18c0d05b7"
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
     }
+
+    #[test]
+    fn check_accepts_defines_expansion_symbols_bound_by_definitions() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("defines-bindings.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Describes: X
+Documented:
+. called: "set"
+Id: "b977c5dd-d79e-426c-8cc8-b028a716c47a"
+
+[\foo:of{a}:and{b}]
+Defines: Z ::= (x, y) := (a, b) is \set
+when: a, b is \set
+Documented:
+. called: "foo"
+Id: "5800ef12-bed3-427b-985f-ae871a6080ff"
+
+[\foo2:of{a}:and{b}]
+Defines: Z ::= (x, y) is \set
+when: a, b is \set
+expresses:
+. x := a
+. y := b
+Documented:
+. called: "foo2"
+Id: "5800ef12-bed3-427b-985f-ae871a6080f1"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("defines-bindings.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_duplicate_defines_expansion_symbol_bindings() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("defines-duplicate-bindings.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Describes: X
+Documented:
+. called: "set"
+Id: "b977c5dd-d79e-426c-8cc8-b028a716c47a"
+
+[\foo:of{a}:and{b}]
+Defines: Z ::= (x, y) is \set
+when: a, b is \set
+expresses:
+. x := a
+. x := b
+. y := b
+Documented:
+. called: "foo"
+Id: "5800ef12-bed3-427b-985f-ae871a6080ff"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("defines-duplicate-bindings.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let events = user_events(&event_log);
+        assert!(events.iter().any(|event| {
+            matches!(event, Event::Message(message) if
+                message
+                    .message
+                    .contains("Duplicate definition for target symbol `x`")
+            )
+        }));
+        assert!(event_log.has_errors());
+    }
 }

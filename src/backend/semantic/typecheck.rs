@@ -787,14 +787,9 @@ fn validate_top_level_item_types(
                 event_log,
             );
             if let Some(expresses) = &group.expresses {
-                check_clause(
-                    &expresses.argument,
-                    &context,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
+                for clause in &expresses.arguments {
+                    check_clause(clause, &context, path, locator, registry, event_log);
+                }
             }
         }
         TopLevelItem::Refines(group) => {
@@ -1513,6 +1508,7 @@ fn validate_defines_target_symbol_specifications(
     event_log: &mut EventLog,
 ) {
     let mut covered = BTreeSet::new();
+    let mut assigned = HashSet::new();
     collect_using_covered_symbols(&group.using, &mut covered);
     collect_valid_when_covered_symbols(
         &group.when,
@@ -1520,13 +1516,24 @@ fn validate_defines_target_symbol_specifications(
         &mut covered,
     );
     collect_declaration_statement_covered_symbols(&group.defines.argument, &mut covered);
-    validate_declaration_target_symbol_specifications(
+    collect_direct_defines_bindings(
         &group.defines.argument,
-        &covered,
+        &mut covered,
+        &mut assigned,
         path,
         locator,
         event_log,
     );
+    collect_expresses_bindings(
+        &group.expresses,
+        &mut covered,
+        &mut assigned,
+        path,
+        locator,
+        event_log,
+    );
+    let symbols = declaration_target_symbols(&group.defines.argument);
+    validate_defines_target_symbol_bindings(&symbols, &covered, path, locator, event_log);
 }
 
 fn validate_refines_target_symbol_specifications(
@@ -1585,6 +1592,126 @@ fn validate_target_symbol_specifications(
                 "Missing specification for target symbol `{symbol}`; specify it directly or through `extends:`"
             ),
         );
+    }
+}
+
+fn validate_defines_target_symbol_bindings(
+    symbols: &BTreeSet<String>,
+    covered: &BTreeSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    for symbol in symbols {
+        if covered.contains(symbol) {
+            continue;
+        }
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(symbol),
+            format!(
+                "Missing definition for target symbol `{symbol}`; assign it with `:=` in `Defines:` or top-level `expresses:`"
+            ),
+        );
+    }
+}
+
+fn collect_direct_defines_bindings(
+    statement: &DeclarationStatement,
+    covered: &mut BTreeSet<String>,
+    assigned: &mut HashSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    for symbol in direct_definition_binding_symbols(statement) {
+        record_defines_binding(&symbol, covered, assigned, path, locator, event_log);
+    }
+}
+
+fn collect_expresses_bindings(
+    expresses: &Option<ExpressesSection>,
+    covered: &mut BTreeSet<String>,
+    assigned: &mut HashSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let Some(expresses) = expresses else {
+        return;
+    };
+    for clause in &expresses.arguments {
+        let Clause::Declaration(statement) = clause else {
+            continue;
+        };
+        if statement.definition.is_none()
+            || statement.expansion.is_some()
+            || statement.relation.is_some()
+        {
+            continue;
+        }
+        for symbol in declaration_subject_keys(statement) {
+            record_defines_binding(&symbol, covered, assigned, path, locator, event_log);
+        }
+    }
+}
+
+fn record_defines_binding(
+    symbol: &str,
+    covered: &mut BTreeSet<String>,
+    assigned: &mut HashSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    covered.insert(symbol.to_owned());
+    if assigned.insert(symbol.to_owned()) {
+        return;
+    }
+    emit_error(
+        event_log,
+        path,
+        locator.locate_symbol(symbol),
+        format!(
+            "Duplicate definition for target symbol `{symbol}`; a symbol can have at most one `:=` in a `Defines:` item"
+        ),
+    );
+}
+
+fn direct_definition_binding_symbols(statement: &DeclarationStatement) -> Vec<String> {
+    let (Some(expansion), Some(definition)) = (&statement.expansion, &statement.definition) else {
+        return Vec::new();
+    };
+    let symbols = is_subject_binding_symbols(expansion);
+    if symbols.is_empty() {
+        return Vec::new();
+    }
+    if symbols.len() == 1 || expression_binding_value_count(definition) == symbols.len() {
+        symbols
+    } else {
+        Vec::new()
+    }
+}
+
+fn is_subject_binding_symbols(subject: &IsSubject) -> Vec<String> {
+    let mut symbols = BTreeSet::new();
+    collect_is_subject_target_symbols(subject, &mut symbols);
+    symbols.into_iter().collect()
+}
+
+fn expression_binding_value_count(expression: &Expression) -> usize {
+    match &expression.kind {
+        ExpressionKind::Tuple(elements) => elements
+            .iter()
+            .map(|element| match element {
+                TupleExpressionElement::Expression(expression) => {
+                    expression_binding_value_count(expression)
+                }
+                TupleExpressionElement::Operator(_) => 1,
+            })
+            .sum(),
+        _ => 1,
     }
 }
 

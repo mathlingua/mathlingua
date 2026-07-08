@@ -430,13 +430,11 @@ fn collect_viewable_rules(
     };
 
     for item in &enables.arguments {
-        let EnablesItem::Viewable(group) = item else {
+        let EnablesItem::View(group) = item else {
             continue;
         };
-        let Some(target @ TypeFact::Is { .. }) =
-            facts_from_declaration_statement(&group.as_.argument)
-                .into_iter()
-                .next()
+        let Some((target_subject, target @ TypeFact::Is { .. })) =
+            view_target_from_relationship_declaration(&group.as_.argument, source_subject)
         else {
             continue;
         };
@@ -444,9 +442,41 @@ fn collect_viewable_rules(
             source_signature: info.signature.clone(),
             source_subject: source_subject.clone(),
             parameters: info.parameters.clone(),
-            target_subject: fact_subject(&target).to_owned(),
+            target_subject,
             target,
         });
+    }
+}
+
+fn view_target_from_relationship_declaration(
+    declaration: &RelationshipDeclaration,
+    source_subject: &str,
+) -> Option<(String, TypeFact)> {
+    match declaration {
+        RelationshipDeclaration::Command(command) => {
+            let ty = TypeExpression::Command(command.clone());
+            let (ty, signature) = key_for_type_expression(&ty)?;
+            let subject = source_subject.to_owned();
+            Some((
+                subject.clone(),
+                TypeFact::Is {
+                    subject,
+                    ty,
+                    signature,
+                },
+            ))
+        }
+        RelationshipDeclaration::Declaration(statement) => {
+            facts_from_declaration_statement(statement)
+                .into_iter()
+                .find_map(|fact| {
+                    if matches!(fact, TypeFact::Is { .. }) {
+                        Some((fact_subject(&fact).to_owned(), fact))
+                    } else {
+                        None
+                    }
+                })
+        }
     }
 }
 
@@ -578,7 +608,6 @@ fn capability_aliases(item: &TopLevelItem) -> Vec<CapabilityAliasRef<'_>> {
                 source_requires_literal: true,
             }),
             EnablesItem::FromAs(_)
-            | EnablesItem::Viewable(_)
             | EnablesItem::Connection(_)
             | EnablesItem::Generalization(_)
             | EnablesItem::Abstraction(_)
@@ -5693,18 +5722,6 @@ fn validate_optional_enables(
                     event_log,
                 );
             }
-            EnablesItem::Viewable(group) => {
-                validate_viewable_group(
-                    group,
-                    context,
-                    owner_shapes,
-                    owner_subject,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
-            }
             EnablesItem::Connection(_) => {}
             EnablesItem::Generalization(group) => {
                 let mut child = context.clone();
@@ -5813,51 +5830,9 @@ fn validate_optional_enables(
                 if let Some(means) = &group.means {
                     check_clause(&means.argument, &child, path, locator, registry, event_log);
                 }
+                validate_view_group_target(group, path, locator, event_log);
             }
         }
-    }
-}
-
-fn validate_viewable_group(
-    group: &ViewableGroup,
-    context: &TypeContext,
-    owner_shapes: &[HeaderShape],
-    owner_subject: &str,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    let mut child = context.clone();
-    for owner_shape in owner_shapes {
-        child.add_fact(TypeFact::Is {
-            subject: owner_subject.to_owned(),
-            ty: owner_shape.type_key.clone(),
-            signature: owner_shape.shape.signature.clone(),
-        });
-    }
-    declare_declaration_statement_subjects(&group.as_.argument, &mut child);
-    complete_introduced_declaration_statement(
-        &group.as_.argument,
-        &mut child,
-        path,
-        locator,
-        registry,
-        event_log,
-    );
-    if !matches!(
-        group.as_.argument.relation,
-        Some(DeclarationRelation::Is(_))
-    ) {
-        emit_error(
-            event_log,
-            path,
-            locator.locate_symbol(&primary_subject_key(&group.as_.argument.subject)),
-            "`viewable:` `as:` must specify the target type using `is`",
-        );
-    }
-    if let Some(states) = &group.states {
-        check_clause(&states.argument, &child, path, locator, registry, event_log);
     }
 }
 
@@ -5895,6 +5870,26 @@ fn validate_relationship_declaration(
             );
         }
     }
+}
+
+fn validate_view_group_target(
+    group: &ViewGroup,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let RelationshipDeclaration::Declaration(statement) = &group.as_.argument else {
+        return;
+    };
+    if matches!(statement.relation, Some(DeclarationRelation::Is(_))) {
+        return;
+    }
+    emit_error(
+        event_log,
+        path,
+        locator.locate_symbol(&primary_subject_key(&statement.subject)),
+        "`view:` `as:` must specify the target type using `is` or a command type",
+    );
 }
 
 fn validate_hard_cast_statement(

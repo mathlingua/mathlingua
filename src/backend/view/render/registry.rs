@@ -389,7 +389,6 @@ fn collect_enables_provided_call_render_rules(
                 registry,
             ),
             EnablesItem::FromAs(_)
-            | EnablesItem::Viewable(_)
             | EnablesItem::Connection(_)
             | EnablesItem::Generalization(_)
             | EnablesItem::Abstraction(_)

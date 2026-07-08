@@ -4449,9 +4449,9 @@ mod tests {
     }
 
     #[test]
-    fn check_uses_viewable_casts_for_resolved_command_requirements() {
+    fn check_uses_view_casts_for_resolved_command_requirements() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("viewable-cast-requirements.mlg");
+        let file = temp_dir.path().join("view-cast-requirements.mlg");
 
         write_mlg_fixture(
             &file,
@@ -4463,9 +4463,10 @@ mod tests {
     [\integer]
     Describes: n
     Enables:
-    . viewable:
+    . view:
       as: r is \rational
-      states: n \.embedded.to./ r
+      when: n is \integer
+      means: n \.embedded.to./ r
     Documented:
     . written: "\operatorname{integer}"
 
@@ -4504,7 +4505,7 @@ mod tests {
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("viewable-cast-requirements.mlg")],
+            &[PathBuf::from("view-cast-requirements.mlg")],
             &mut event_log,
         );
 
@@ -4516,11 +4517,9 @@ mod tests {
     }
 
     #[test]
-    fn check_does_not_use_viewable_casts_for_operator_resolution() {
+    fn check_does_not_use_view_casts_for_operator_resolution() {
         let temp_dir = TestDir::new();
-        let file = temp_dir
-            .path()
-            .join("viewable-does-not-resolve-operators.mlg");
+        let file = temp_dir.path().join("view-does-not-resolve-operators.mlg");
 
         write_mlg_fixture(
             &file,
@@ -4534,8 +4533,9 @@ mod tests {
     [\integer]
     Describes: n
     Enables:
-    . viewable:
+    . view:
       as: r is \rational
+      when: n is \integer
     Documented:
     . written: "\operatorname{integer}"
 
@@ -4555,7 +4555,7 @@ mod tests {
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("viewable-does-not-resolve-operators.mlg")],
+            &[PathBuf::from("view-does-not-resolve-operators.mlg")],
             &mut event_log,
         );
 
@@ -4570,9 +4570,9 @@ mod tests {
     }
 
     #[test]
-    fn check_reports_viewable_as_without_is_target() {
+    fn check_reports_view_as_without_is_target() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("viewable-as-requires-is.mlg");
+        let file = temp_dir.path().join("view-as-requires-is.mlg");
 
         write_mlg_fixture(
             &file,
@@ -4584,8 +4584,9 @@ mod tests {
     [\integer]
     Describes: n
     Enables:
-    . viewable:
+    . view:
       as: r "like" \rational
+      when: n is \integer
     Documented:
     . written: "\operatorname{integer}"
     "#,
@@ -4595,7 +4596,7 @@ mod tests {
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("viewable-as-requires-is.mlg")],
+            &[PathBuf::from("view-as-requires-is.mlg")],
             &mut event_log,
         );
 
@@ -4605,18 +4606,18 @@ mod tests {
             matches!(event, Event::Message(message) if
                 message
                     .message
-                    .contains("`viewable:` `as:` must specify the target type using `is`")
+                    .contains("`view:` `as:` must specify the target type using `is`")
             )
         }));
         assert!(event_log.has_errors());
     }
 
     #[test]
-    fn check_does_not_use_viewable_casts_for_disambiguates_branches() {
+    fn check_does_not_use_view_casts_for_disambiguates_branches() {
         let temp_dir = TestDir::new();
         let file = temp_dir
             .path()
-            .join("viewable-does-not-match-disambiguates.mlg");
+            .join("view-does-not-match-disambiguates.mlg");
 
         write_mlg_fixture(
             &file,
@@ -4628,8 +4629,9 @@ mod tests {
     [\integer]
     Describes: n
     Enables:
-    . viewable:
+    . view:
       as: r is \rational
+      when: n is \integer
     Documented:
     . written: "\operatorname{integer}"
 
@@ -4656,7 +4658,7 @@ mod tests {
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("viewable-does-not-match-disambiguates.mlg")],
+            &[PathBuf::from("view-does-not-match-disambiguates.mlg")],
             &mut event_log,
         );
 

@@ -62,12 +62,6 @@ pub(in crate::backend::semantic) fn walk_optional_enables(
                     walk_expression(&group.as_.argument.left, visit);
                     walk_expression(&group.as_.argument.right, visit);
                 }
-                EnablesItem::Viewable(group) => {
-                    walk_declaration_statement(&group.as_.argument, visit);
-                    if let Some(states) = &group.states {
-                        walk_clause(&states.argument, visit);
-                    }
-                }
                 EnablesItem::Connection(group) => {
                     if let Some(using) = &group.using {
                         for statement in &using.arguments {

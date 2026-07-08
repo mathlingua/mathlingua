@@ -1137,9 +1137,6 @@ pub(super) fn parse_enables_item_group(
             .map(Box::new)
             .map(EnablesItem::Capability),
         "from" => parse_from_group(group, tracker),
-        "viewable" => parse_viewable_group(group, tracker)
-            .map(Box::new)
-            .map(EnablesItem::Viewable),
         "connection" => parse_connection(group, tracker).map(EnablesItem::Connection),
         "generalization" => parse_generalization_group(group, tracker)
             .map(Box::new)
@@ -1573,55 +1570,6 @@ pub(in crate::frontend::structural::parser) fn parse_from_group(
             None
         }
     }
-}
-
-/// Parses a `viewable:` nested group inside `Enables:`.
-pub(in crate::frontend::structural::parser) fn parse_viewable_group(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<ViewableGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections(
-        "viewable",
-        &group.sections,
-        tracker,
-        &["viewable", "as", "states?"],
-    )?;
-    let states = sections
-        .get("states")
-        .copied()
-        .and_then(|section| parse_viewable_states(section, tracker));
-
-    Some(ViewableGroup {
-        heading,
-        as_: ViewableAsSection {
-            argument: parse_required_formulation(
-                section(&sections, "as")?,
-                "as",
-                tracker,
-                parse_ordinary_declaration_statement,
-            )?,
-        },
-        states,
-    })
-}
-
-fn parse_viewable_states(
-    section: &ProtoSection,
-    tracker: &mut EventLog,
-) -> Option<ViewableStatesSection> {
-    let clauses = parse_required_clauses(section, "states", tracker)?;
-    if clauses.len() != 1 {
-        tracker.user_error_at_row(
-            Some(ORIGIN),
-            section.metadata.row,
-            "`states:` in a `viewable:` group must contain exactly one statement",
-        );
-        return None;
-    }
-    Some(ViewableStatesSection {
-        argument: clauses.into_iter().next().expect("len checked"),
-    })
 }
 
 /// Parses a `generalization:` nested group inside `Enables:`.
@@ -4174,7 +4122,7 @@ Documented:
     }
 
     #[test]
-    fn parses_from_capability_and_from_as_enables_items() {
+    fn parses_from_capability_from_as_and_view_enables_items() {
         let document = parse_ok(
             r#"
 [\set]
@@ -4184,9 +4132,10 @@ Enables:
   capability: x_ "in" X :-> x_ member_of Y
 . from: P ::= {(p_, q_) : ...}
   as: f(p_) := q_
-. viewable:
+. view:
   as: r := \as.rational{X} is \rational
-  states: X \.embedded.to./ r
+  when: X is \set
+  means: X \.embedded.to./ r
 Documented:
 . called: "set"
 "#,
@@ -4201,7 +4150,7 @@ Documented:
             EnablesItem::FromCapability(_)
         ));
         assert!(matches!(enables.arguments[1], EnablesItem::FromAs(_)));
-        assert!(matches!(enables.arguments[2], EnablesItem::Viewable(_)));
+        assert!(matches!(enables.arguments[2], EnablesItem::View(_)));
     }
 
     #[test]
@@ -4272,6 +4221,27 @@ Documented:
         ));
         assert!(view.by.is_some());
         assert!(view.means.is_some());
+    }
+
+    #[test]
+    fn rejects_legacy_viewable_enables_group() {
+        let (_document, diagnostics) = parse_with_diagnostics(
+            r#"
+[\integer]
+Describes: n
+Enables:
+. viewable:
+  as: r is \rational
+Documented:
+. written: "\operatorname{integer}"
+"#,
+        );
+
+        assert!(diagnostics.iter().any(|event| {
+            matches!(event, Event::Message(message) if
+                message.message.contains("Unexpected enables group `viewable`")
+            )
+        }));
     }
 
     // ===============================[ diagnostics ]=====================================

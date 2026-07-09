@@ -8,6 +8,42 @@ export type CollectionView = {
   files: FileView[];
 };
 
+/** Lightweight manifest loaded first by a static export. */
+export type CollectionManifest = {
+  /** Export data schema version. */
+  schemaVersion: number;
+  /** Human-readable collection title. */
+  title: string;
+  /** Renderable directories, already ordered by the backend. */
+  directories: DirectoryView[];
+  /** Lightweight file entries, already ordered by the backend. */
+  files: FileManifest[];
+  /** Definition reference key to top-level item id. */
+  definitions: Record<string, string>;
+  /** Top-level item id to JSON path under the static data root. */
+  items: Record<string, string>;
+};
+
+/** Lightweight manifest entry for one source page. */
+export type FileManifest = {
+  /** File path relative to the collection root when possible. */
+  path: string;
+  /** Optional display title supplied by a directory toc file. */
+  title: string | null;
+  /** JSON path under the static data root for the page payload. */
+  dataPath: string;
+};
+
+/** Static page payload containing ordered item ids for one source file. */
+export type PageData = {
+  /** File path relative to the collection root when possible. */
+  path: string;
+  /** Optional display title supplied by a directory toc file. */
+  title: string | null;
+  /** Ordered top-level item ids for the page. */
+  itemIds: string[];
+};
+
 /** Serialized view model for one MathLingua source directory. */
 export type DirectoryView = {
   /** Directory path relative to the collection root when possible. */

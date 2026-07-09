@@ -18,3 +18,8 @@ export async function loadCollectionView(): Promise<CollectionView> {
   const json = await fs.readFile(dataPath, "utf8");
   return JSON.parse(json) as CollectionView;
 }
+
+/** Returns true when Next is building the static export viewer. */
+export function isStaticExportBuild(): boolean {
+  return process.env.MLG_STATIC_EXPORT === "1";
+}

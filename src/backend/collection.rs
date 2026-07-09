@@ -198,8 +198,22 @@ fn resolve_collection_source_files(
     origin: &str,
 ) -> SourceFileDiscovery {
     let mut discovery = SourceFileDiscovery::default();
-    collect_source_files(root.to_path_buf(), &mut discovery, event_log, origin);
+    collect_source_files(
+        collection_source_root(root),
+        &mut discovery,
+        event_log,
+        origin,
+    );
     discovery
+}
+
+fn collection_source_root(root: &Path) -> PathBuf {
+    let content_dir = root.join(CONTENT_DIR);
+    if content_dir.is_dir() {
+        content_dir
+    } else {
+        root.to_path_buf()
+    }
 }
 
 fn ensure_source_file_ids(files: &[PathBuf], event_log: &mut EventLog, origin: &str) {
@@ -897,6 +911,37 @@ mod tests {
 
         assert!(user_events(&event_log).is_empty());
         assert_eq!(collection.source_files().len(), 3);
+    }
+
+    #[test]
+    fn source_collection_load_prefers_content_directory_when_present() {
+        let temp_dir = TestDir::new();
+        let content = temp_dir.path().join("content");
+        let generated = temp_dir.path().join("dist");
+
+        fs::create_dir_all(&content).unwrap();
+        fs::create_dir_all(&generated).unwrap();
+        fs::write(temp_dir.path().join("mlg.json"), default_config_contents()).unwrap();
+        fs::write(temp_dir.path().join("root_file.mlg"), "Title: \"Root\"\n").unwrap();
+        fs::write(
+            generated.join("generated_file.mlg"),
+            "Title: \"Generated\"\n",
+        )
+        .unwrap();
+        fs::write(content.join("source_file.mlg"), "Title: \"Source\"\n").unwrap();
+
+        let mut event_log = EventLog::new();
+        let collection =
+            SourceCollection::load(temp_dir.path(), &mut event_log, "source_collection");
+
+        assert!(user_events(&event_log).is_empty());
+        assert_eq!(collection.source_files().len(), 1);
+        assert!(
+            collection
+                .source_files()
+                .first()
+                .is_some_and(|path| path.ends_with("content/source_file.mlg"))
+        );
     }
 
     #[test]

@@ -89,6 +89,7 @@ pub enum Command {
     Check(CheckArgs),
     #[command(hide = true)]
     Debug,
+    Export(ExportArgs),
     Init,
     Lsp,
     Version,
@@ -110,6 +111,21 @@ pub struct CheckArgs {
 }
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
+pub struct ExportArgs {
+    #[arg(long, short = 'o', value_name = "DIR", default_value = "dist")]
+    pub output: PathBuf,
+
+    #[arg(long, value_name = "PATH")]
+    pub base_path: Option<String>,
+
+    #[arg(long, value_name = "DOMAIN")]
+    pub cname: Option<String>,
+
+    #[arg(long, default_value_t = false)]
+    pub force: bool,
+}
+
+#[derive(Clone, Debug, Args, PartialEq, Eq)]
 pub struct ViewArgs {
     #[arg(long, default_value_t = 3000)]
     pub port: u16,
@@ -119,7 +135,7 @@ pub struct ViewArgs {
 
 #[cfg(test)]
 mod tests {
-    use super::{CheckArgs, Cli, CliEventAudience, CliEventLevel, Command, ViewArgs};
+    use super::{CheckArgs, Cli, CliEventAudience, CliEventLevel, Command, ExportArgs, ViewArgs};
     use clap::{CommandFactory, Parser};
     use std::path::PathBuf;
 
@@ -176,6 +192,46 @@ mod tests {
         let cli = Cli::parse_from(["mlg", "debug"]);
 
         assert!(matches!(cli.command, Command::Debug));
+    }
+
+    #[test]
+    fn parses_export_defaults() {
+        let cli = Cli::parse_from(["mlg", "export"]);
+
+        assert!(matches!(
+            cli.command,
+            Command::Export(ExportArgs { output, base_path: None, cname: None, force: false }) if output == PathBuf::from("dist")
+        ));
+    }
+
+    #[test]
+    fn parses_export_output_and_force() {
+        let cli = Cli::parse_from(["mlg", "export", "--output", "site", "--force"]);
+
+        assert!(matches!(
+            cli.command,
+            Command::Export(ExportArgs { output, base_path: None, cname: None, force: true }) if output == PathBuf::from("site")
+        ));
+    }
+
+    #[test]
+    fn parses_export_github_pages_options() {
+        let cli = Cli::parse_from([
+            "mlg",
+            "export",
+            "--base-path",
+            "/mathlore",
+            "--cname",
+            "math.example.org",
+        ]);
+
+        assert!(matches!(
+            cli.command,
+            Command::Export(ExportArgs { output, base_path: Some(base_path), cname: Some(cname), force: false })
+                if output == PathBuf::from("dist")
+                    && base_path == "/mathlore"
+                    && cname == "math.example.org"
+        ));
     }
 
     #[test]

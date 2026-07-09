@@ -1,7 +1,5 @@
 import ViewerPage from "../viewer-page";
-
-/** Ensures every deep viewer route reads the current CLI-generated payload. */
-export const dynamic = "force-dynamic";
+import { staticExportRouteParams } from "../../lib/static-export-build";
 
 interface PathViewerPageProps {
   /** Catch-all route params supplied by Next.js. */
@@ -9,6 +7,11 @@ interface PathViewerPageProps {
     /** URL path segments after the root route. */
     path?: string[];
   }>;
+}
+
+/** Enumerates static deep-link pages for `mlg export`. */
+export async function generateStaticParams() {
+  return staticExportRouteParams();
 }
 
 /** Catch-all viewer route for file and directory paths. */

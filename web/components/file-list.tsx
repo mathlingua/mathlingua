@@ -22,12 +22,22 @@ const NARROW_OUTLINE_MEDIA_QUERY = "(max-width: 860px)";
 interface FileListProps {
   /** Directory currently shown by the outline browser. */
   currentDirectory: string;
+  /** Static export definition key to item id map. */
+  definitionItemIds?: Record<string, string>;
   /** Renderable directories in the collection. */
   directories: DirectoryView[];
   /** Renderable files in the collection. */
   files: FileView[];
+  /** True while the selected static-export page payload is being loaded. */
+  isSelectedFileLoading?: boolean;
+  /** Static-export page load error for the selected file, if one occurred. */
+  loadError?: string;
+  /** Definition cards loaded lazily by reference key. */
+  loadedDefinitions?: Record<string, GroupView>;
   /** Called when the outline drawer should be closed. */
   onCloseOutline: () => void;
+  /** Called when a reference key should be loaded lazily. */
+  onLoadDefinition?: (referenceKey: string) => void;
   /** Called when the user drills into or backs out of an outline directory. */
   onNavigateDirectory: (directory: string) => void;
   /** Called when the user selects a file from the outline. */
@@ -41,9 +51,14 @@ interface FileListProps {
 /** Renders the collection outline beside the selected file's group cards. */
 export function FileList({
   currentDirectory,
+  definitionItemIds,
   directories,
   files,
+  isSelectedFileLoading = false,
+  loadError,
+  loadedDefinitions,
   onCloseOutline,
+  onLoadDefinition,
   onNavigateDirectory,
   onSelectFile,
   outlineState,
@@ -90,9 +105,15 @@ export function FileList({
   };
 
   const handleReferenceClick = (rootAnchorId: string, referenceKey: string) => {
-    if (!definitionIndex.has(referenceKey)) {
+    if (
+      !definitionIndex.has(referenceKey) &&
+      !loadedDefinitions?.[referenceKey] &&
+      !definitionItemIds?.[referenceKey]
+    ) {
       return;
     }
+
+    onLoadDefinition?.(referenceKey);
 
     setDefinitionTrails((current) => {
       const existingTrail = current[rootAnchorId] ?? [];
@@ -207,6 +228,8 @@ export function FileList({
           key={selectedFile.path}
         >
           <div className={styles.groupStream}>
+            {loadError ? <PageLoadError message={loadError} /> : null}
+            {isSelectedFileLoading ? <PageLoadingState /> : null}
             {selectedFile.items.map((item, itemIndex) => {
               const fallbackKey = `${activeFileIndex}-${itemIndex}`;
               const anchorId = makeGroupAnchor(item, fallbackKey);
@@ -245,10 +268,16 @@ export function FileList({
                         <DefinitionTrailCloseIcon />
                       </button>
                       {trail.map((referenceKey, trailIndex) => {
-                        const definition = definitionIndex.get(referenceKey);
+                        const definition =
+                          definitionIndex.get(referenceKey)?.group ??
+                          loadedDefinitions?.[referenceKey];
 
                         if (!definition) {
-                          return null;
+                          return (
+                            <LoadingDefinition
+                              key={`${referenceKey}-${trailIndex}`}
+                            />
+                          );
                         }
 
                         return (
@@ -258,10 +287,10 @@ export function FileList({
                           >
                             <GroupCard
                               anchorId={`${makeGroupAnchor(
-                                definition.group,
+                                definition,
                                 `${anchorId}-definition-${trailIndex}`,
                               )}-definition-${trailIndex}`}
-                              group={definition.group}
+                              group={definition}
                               onClose={() =>
                                 handleCloseDefinition(anchorId, trailIndex)
                               }
@@ -298,6 +327,30 @@ export function FileList({
           ) : null}
         </article>
       </section>
+    </div>
+  );
+}
+
+function PageLoadingState() {
+  return (
+    <div className={styles.loadingState} role="status">
+      Loading page...
+    </div>
+  );
+}
+
+function PageLoadError({ message }: { message: string }) {
+  return (
+    <div className={styles.loadError} role="alert">
+      Could not load page data: {message}
+    </div>
+  );
+}
+
+function LoadingDefinition() {
+  return (
+    <div className={styles.loadingDefinition} role="status">
+      Loading definition...
     </div>
   );
 }

@@ -1,5 +1,6 @@
 pub use check::{CheckResult, check, check_diagnostics_report, check_diagnostics_schema};
 pub use debug::{DebugResult, debug};
+pub use export::{ExportResult, export};
 pub use init::{InitResult, init};
 pub use lsp::{LspResult, lsp};
 pub use version::{VersionResult, version};
@@ -9,6 +10,7 @@ pub use whte_rbt_obj::{WhteRbtObjResult, whte_rbt_obj};
 mod check;
 mod completion;
 mod debug;
+mod export;
 mod init;
 mod lsp;
 mod util;

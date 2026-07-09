@@ -323,6 +323,29 @@
   min-width: 0;
 }
 
+.loadingState,
+.loadingDefinition,
+.loadError {
+  width: min(100%, 47rem);
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.loadingState {
+  padding: 2rem 0;
+}
+
+.loadError {
+  padding: 2rem 0;
+}
+
+.loadingDefinition {
+  width: min(100%, 31rem);
+  padding: 1.2rem 0;
+}
+
 .emptyState {
   max-width: 42rem;
   margin: 5rem auto;

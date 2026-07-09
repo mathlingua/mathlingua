@@ -9,7 +9,7 @@ use super::render::{
 use crate::events::{Audience, Event, EventLog, Level};
 use crate::frontend::{
     ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection, SourceFileViewMetadata,
-    top_level_group_id,
+    top_level_group_id, unescape_quoted_text,
 };
 use std::path::{Path, PathBuf};
 
@@ -420,7 +420,7 @@ fn strip_quoted_text(input: &str) -> Option<String> {
         return None;
     }
 
-    Some(input[1..input.len() - 1].to_string())
+    Some(unescape_quoted_text(&input[1..input.len() - 1]))
 }
 
 fn argument_view(

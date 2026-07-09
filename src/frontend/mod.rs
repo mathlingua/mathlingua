@@ -122,5 +122,30 @@ fn section_quoted_text(section: &ProtoSection) -> Option<String> {
 fn strip_quoted_text(input: &str) -> Option<String> {
     let input = input.trim();
     let inner = input.strip_prefix('"')?.strip_suffix('"')?;
-    Some(inner.to_owned())
+    Some(unescape_quoted_text(inner))
+}
+
+pub(crate) fn unescape_quoted_text(input: &str) -> String {
+    let mut result = String::with_capacity(input.len());
+    let mut chars = input.chars().peekable();
+
+    while let Some(character) = chars.next() {
+        if character == '\\' {
+            match chars.peek().copied() {
+                Some('"') => {
+                    result.push('"');
+                    let _ = chars.next();
+                }
+                Some('\\') => {
+                    result.push('\\');
+                    let _ = chars.next();
+                }
+                _ => result.push(character),
+            }
+        } else {
+            result.push(character);
+        }
+    }
+
+    result
 }

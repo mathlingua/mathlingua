@@ -392,11 +392,25 @@ fn starts_multiline_text(text: &str) -> bool {
 }
 
 fn is_complete_quoted_text(text: &str) -> bool {
-    text.len() >= 2 && text.starts_with('"') && text.ends_with('"')
+    text.len() >= 2 && text.starts_with('"') && closes_quoted_text(text)
 }
 
 fn closes_quoted_text(text: &str) -> bool {
-    text.ends_with('"')
+    let text = text.trim_end();
+    text.ends_with('"') && !trailing_quote_is_escaped(text)
+}
+
+fn trailing_quote_is_escaped(text: &str) -> bool {
+    let mut backslash_count = 0;
+
+    for character in text[..text.len() - 1].chars().rev() {
+        if character != '\\' {
+            break;
+        }
+        backslash_count += 1;
+    }
+
+    backslash_count % 2 == 1
 }
 
 /// Detects legacy single-quoted formulation text.
@@ -655,6 +669,35 @@ when:
             &groups[1].sections[0].arguments[0],
             Argument::Text(item) if item.text == "\"Claim\nstill claim\n\""
         ));
+    }
+
+    #[test]
+    fn keeps_escaped_quotes_inside_multiline_text_literals() {
+        let input = r#"Text: "Here is sample source:
+```mlg
+[\function:on{A}:to{B}]
+Describes: f(x__) ::= y_
+Documented:
+. called: \"function\"
+Id: \"123\"
+```
+"
+Id: "11111111-1111-4111-8111-111111111111"
+"#;
+
+        let (groups, diagnostics) = parse_input(input);
+
+        assert!(diagnostics.is_empty());
+        assert_eq!(groups.len(), 1);
+        assert_eq!(groups[0].sections.len(), 2);
+        assert_eq!(groups[0].sections[0].label, "Text");
+        assert_eq!(groups[0].sections[1].label, "Id");
+        assert!(
+            groups[0].sections[0]
+                .inline_argument
+                .as_deref()
+                .is_some_and(|text| text.contains(r#"Id: \"123\""#))
+        );
     }
 
     #[test]

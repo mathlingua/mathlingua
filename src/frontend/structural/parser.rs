@@ -827,13 +827,12 @@ pub(in crate::frontend::structural::parser) fn one_or_more<T>(
 
 /// Strips one layer of double quotes from text.
 ///
-/// Escapes are not interpreted at this layer; the current structural syntax
-/// treats quoted text as the raw inner substring between the first and last
-/// quote.
+/// Only quote and backslash escapes are interpreted here, so prose can contain
+/// escaped string delimiters without changing LaTeX commands such as `\alpha`.
 pub(in crate::frontend::structural::parser) fn strip_quoted_text(input: &str) -> Option<String> {
     let input = input.trim();
     let inner = input.strip_prefix('"')?.strip_suffix('"')?;
-    Some(inner.to_owned())
+    Some(crate::frontend::unescape_quoted_text(inner))
 }
 
 // ===============================[ clauses ]=====================================
@@ -4898,6 +4897,20 @@ Writing:
             group.writing.arguments[0].form.kind,
             FormOrDeclarationKind::Name(ref name) if name == "alpha"
         ));
+    }
+
+    #[test]
+    fn unescapes_quotes_in_top_level_text() {
+        let document = parse_ok(
+            r#"
+Text: "A \"quoted\" word and \alpha."
+"#,
+        );
+
+        let TopLevelItem::Text(group) = &document.items[0] else {
+            panic!("expected text group, got {:?}", document.items[0]);
+        };
+        assert_eq!(group.text.argument.0, r#"A "quoted" word and \alpha."#);
     }
 
     #[test]

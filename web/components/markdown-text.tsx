@@ -2,6 +2,7 @@
 
 import katex from "katex";
 import type { ReactNode } from "react";
+import { MathLinguaSource } from "./mathlingua-source";
 import styles from "./markdown-text.module.css";
 
 /** Props for rendering Markdown prose with inline and display LaTeX. */
@@ -43,6 +44,7 @@ type MarkdownBlock =
   | {
       kind: "code";
       text: string;
+      language: string | null;
     }
   | {
       kind: "math";
@@ -72,6 +74,13 @@ function MarkdownBlock({ block }: { block: MarkdownBlock }) {
         </ol>
       );
     case "code":
+      if (block.language === "mlg" || block.language === "mathlingua") {
+        return (
+          <div className={styles.markdownMlgCode}>
+            <MathLinguaSource source={block.text} />
+          </div>
+        );
+      }
       return (
         <pre>
           <code>{block.text}</code>
@@ -136,8 +145,10 @@ function parseBlocks(text: string): MarkdownBlock[] {
       continue;
     }
 
-    if (trimmed.startsWith("```")) {
+    const codeFence = /^```([A-Za-z0-9_-]+)?\s*$/.exec(trimmed);
+    if (codeFence) {
       const codeLines: string[] = [];
+      const language = codeFence[1]?.toLowerCase() ?? null;
       index += 1;
       while (index < lines.length && !lines[index].trim().startsWith("```")) {
         codeLines.push(lines[index]);
@@ -146,7 +157,7 @@ function parseBlocks(text: string): MarkdownBlock[] {
       if (index < lines.length) {
         index += 1;
       }
-      blocks.push({ kind: "code", text: codeLines.join("\n") });
+      blocks.push({ kind: "code", text: codeLines.join("\n"), language });
       continue;
     }
 

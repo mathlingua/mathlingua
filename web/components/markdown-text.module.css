@@ -8,6 +8,7 @@
 .markdown ul,
 .markdown ol,
 .markdown pre,
+.markdownMlgCode,
 .markdownBlockMath {
   margin: 0;
 }
@@ -20,7 +21,9 @@
 .markdownBlockMath + p,
 .markdown p + .markdownBlockMath,
 .markdown pre + p,
-.markdown p + pre {
+.markdown p + pre,
+.markdownMlgCode + p,
+.markdown p + .markdownMlgCode {
   margin-top: 1rem;
 }
 
@@ -81,6 +84,38 @@
   background: transparent;
   font-size: 0.9rem;
   line-height: 1.5;
+}
+
+.markdownMlgCode {
+  box-sizing: border-box;
+  width: min(100%, 31rem);
+  max-width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+  overflow-x: auto;
+  padding: 0.72rem 0.82rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-code-block);
+  background: var(--card-bg);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.markdownMlgCode pre {
+  max-height: min(36rem, 70vh);
+  padding: 0;
+  background: transparent;
+}
+
+.markdownMlgCode pre code {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+@media (max-width: 520px) {
+  .markdownMlgCode {
+    font-size: 0.72rem;
+  }
 }
 
 .markdown a {

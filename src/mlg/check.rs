@@ -675,6 +675,44 @@ mod tests {
     }
 
     #[test]
+    fn check_ignores_mathlingua_examples_inside_text_code_fences() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("intro.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"
+            Text: "
+            Example:
+
+            ```mlg
+            [\function:on{A}:to{B}]
+            Describes: f(x__) ::= y_
+            Documented:
+            . called: \"function\"
+            Id: \"123\"
+            ```
+            "
+            Id: "fce2c58a-edeb-4af2-b2a3-c1f67b8d31d0"
+            "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("intro.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_with_empty_content_directory_succeeds() {
         let temp_dir = TestDir::new();
         let root = temp_dir.path().join("repo");

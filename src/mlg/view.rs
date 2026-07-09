@@ -17,6 +17,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const NEXTJS_ORIGIN: &str = "nextjs";
 const ORIGIN: &str = "mlg_view";
+const VIEW_BIND_HOST: &str = "0.0.0.0";
 static NEXT_VIEW_SESSION_DIR_ID: AtomicUsize = AtomicUsize::new(0);
 
 pub struct ViewResult {
@@ -153,7 +154,7 @@ fn run_next_server(
         .arg("dev")
         .arg("--")
         .arg("--hostname")
-        .arg("127.0.0.1")
+        .arg(VIEW_BIND_HOST)
         .arg("--port")
         .arg(port.to_string())
         .current_dir(web_app_directory())
@@ -523,8 +524,8 @@ struct ChildOutcome {
 #[cfg(test)]
 mod tests {
     use super::{
-        ViewDataRefresh, create_view_session_dir, rebuild_collection_view_data, web_app_directory,
-        write_collection_view_data,
+        VIEW_BIND_HOST, ViewDataRefresh, create_view_session_dir, rebuild_collection_view_data,
+        web_app_directory, write_collection_view_data,
     };
     use crate::backend::view::{CollectionView, FileView, GroupView, PageView, SectionView};
     use serde_json::Value;
@@ -574,6 +575,11 @@ mod tests {
     #[test]
     fn points_to_the_embedded_web_app_directory() {
         assert!(web_app_directory().join("package.json").is_file());
+    }
+
+    #[test]
+    fn viewer_binds_to_all_network_interfaces() {
+        assert_eq!(VIEW_BIND_HOST, "0.0.0.0");
     }
 
     #[test]

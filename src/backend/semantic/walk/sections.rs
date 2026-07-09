@@ -69,36 +69,13 @@ pub(in crate::backend::semantic) fn walk_optional_enables(
                         }
                     }
                 }
-                EnablesItem::Generalization(group) => {
-                    walk_relationship_command(&group.of.argument, visit);
-                    for statement in &group.assuming.arguments {
-                        walk_hard_cast_statement(statement, visit);
+                EnablesItem::Relation(group) => {
+                    walk_relationship_declaration(&group.to.argument, visit);
+                    if let Some(when) = &group.when {
+                        for item in &when.arguments {
+                            walk_relation_when_item(item, visit);
+                        }
                     }
-                    walk_optional_where_section(&group.where_, visit);
-                }
-                EnablesItem::Abstraction(group) => {
-                    walk_relationship_command(&group.of.argument, visit);
-                    for statement in &group.assuming.arguments {
-                        walk_hard_cast_statement(statement, visit);
-                    }
-                    walk_optional_where_section(&group.where_, visit);
-                }
-                EnablesItem::Instance(group) => {
-                    walk_relationship_declaration(&group.of.argument, visit);
-                    for clause in &group.when.arguments {
-                        walk_clause(clause, visit);
-                    }
-                    walk_optional_where_section(&group.where_, visit);
-                    if let Some(means) = &group.means {
-                        walk_clause(&means.argument, visit);
-                    }
-                }
-                EnablesItem::View(group) => {
-                    walk_relationship_declaration(&group.as_.argument, visit);
-                    for clause in &group.when.arguments {
-                        walk_clause(clause, visit);
-                    }
-                    walk_optional_where_section(&group.where_, visit);
                     if let Some(means) = &group.means {
                         walk_clause(&means.argument, visit);
                     }
@@ -126,14 +103,10 @@ fn walk_relationship_declaration(
     }
 }
 
-fn walk_optional_where_section(
-    section: &Option<WhereSection>,
-    visit: &mut impl FnMut(&SignatureShape),
-) {
-    if let Some(section) = section {
-        for clause in &section.arguments {
-            walk_clause(clause, visit);
-        }
+fn walk_relation_when_item(item: &RelationWhenItem, visit: &mut impl FnMut(&SignatureShape)) {
+    match item {
+        RelationWhenItem::Declaration(statement) => walk_declaration_statement(statement, visit),
+        RelationWhenItem::HardCast(statement) => walk_hard_cast_statement(statement, visit),
     }
 }
 

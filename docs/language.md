@@ -489,8 +489,8 @@ Quantifier declarations are local to the clause group that introduces them.
   source
 - `from:` plus `as:`, which defines how facts from a cast source are viewed as
   facts about the described form
-- `view:` groups, which declare that the described type can be viewed as
-  another type when satisfying already-resolved command requirements
+- `relation:` groups, which record relationships to another declaration and
+  may opt into type-system cast behavior with `as: \\view` or `as: \\abstraction`
 - `connection:` groups, which contain prose fields such as `to:`, `means:`,
   `signifies:`, `viewable:`, and `through:`
 
@@ -821,35 +821,47 @@ Expressions may use `value as \type` and `value as! \type`.
 
 `value as \type` succeeds when the value already has that type, has a parent
 type that extends to it, or the value's type (or a parent type) has an
-`Enables:` relationship of the form `view: as: ... is \type`.
+`Enables:` relationship of the form `relation: to: ... is \type` with
+`as: \\view`.
 
 `value as! \type` performs the same checks and additionally allows
-`abstraction: of: \type` relationships. Use `as!` when the expression is being
-viewed at a lower abstraction level.
+`relation:` groups marked with `as: \\abstraction`. Use `as!` when the
+expression is being viewed at a lower abstraction level.
 
-`Enables:` may contain `view:` groups:
+`Enables:` may contain `relation:` groups:
 
 ```text
 [\integer]
 Describes: n
 Enables:
-. view:
-  as: r := \as.rational{n} is \rational
+. relation:
+  to: r := \as.rational{n} is \rational
+  when: n is \integer
   means: n \.embedded.to./ r
+  as: \\view
 ```
 
-The `as:` declaration states the target type using `is`. The `:= ...`
+The `to:` declaration states the target type using `is`. The `:= ...`
 construction is optional; without it, the cast is accepted but the converted
-value is opaque.
+value is opaque. The optional `when:` section can contain ordinary declarations
+and hard-cast declarations such as `a0 := a is! \set`.
 The optional `means:` clause records a statement relating the original value
 and the viewed value.
 
-View relationships are used when checking whether an already-resolved command's
-arguments satisfy its requirements. For example, if `\integer` has a
-`view: as:` relationship to `\rational`, then a command requiring
-`x is \rational` may accept an integer argument. View relationships are not used
-for operator resolution: `+` on integers will not resolve to `+` on rationals
-merely because integers can be viewed as rationals.
+Relations marked `\\view` are used when checking whether an already-resolved
+command's arguments satisfy its requirements. For example, if `\integer` has a
+relation to `\rational` marked `\\view`, then a command requiring
+`x is \rational` may accept an integer argument. These relationships are not
+used for operator resolution: `+` on integers will not resolve to `+` on
+rationals merely because integers can be viewed as rationals.
+
+Relations marked `\\abstraction` are used only by `as!` casts. They describe a
+lower-level representation that an object may be pushed down to, such as a
+natural number being treated as an underlying set.
+
+Unmarked `relation:` groups are still valid. They record user-defined
+relationships for readers and for future semantic extensions without affecting
+casts.
 
 ## Rendering Metadata
 

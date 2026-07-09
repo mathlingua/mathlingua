@@ -21,26 +21,44 @@ pub fn resolve_definition(
     target_source: &str,
     offset: usize,
 ) -> Option<DefinitionSite> {
+    let (files, _) = load_collection_files(root, target, target_source);
+    find_definition(&files, target_source, offset)
+}
+
+/// Parse every `.mlg` file in the collection rooted at (or above) `root` into
+/// an in-memory document, using `target_source` for `target` so that unsaved
+/// edits are reflected. Returns the parsed files and the index of `target`
+/// within them.
+///
+/// Reading is read-only: unlike a full `check`, nothing is written back to
+/// disk. Other files are read from disk; the target uses `target_source`. The
+/// target may be outside `root` (or a not-yet-saved buffer), in which case it is
+/// appended so its own headings remain searchable.
+pub(crate) fn load_collection_files(
+    root: &Path,
+    target: &Path,
+    target_source: &str,
+) -> (Vec<ParsedSourceFile>, usize) {
     let root = find_collection_root(root).unwrap_or_else(|| root.to_path_buf());
     let target_key = canonical(target);
 
     let mut files = Vec::new();
-    let mut included_target = false;
+    let mut target_index = None;
     for path in mlg_files(&root) {
         if canonical(&path) == target_key {
+            target_index = Some(files.len());
             files.push(parse_in_memory(&path, target_source));
-            included_target = true;
         } else if let Ok(source) = fs::read_to_string(&path) {
             files.push(parse_in_memory(&path, &source));
         }
     }
-    // The target may be outside `root` (or a not-yet-saved buffer); make sure
-    // its own headings are still searchable.
-    if !included_target {
-        files.push(parse_in_memory(target, target_source));
-    }
 
-    find_definition(&files, target_source, offset)
+    let target_index = target_index.unwrap_or_else(|| {
+        files.push(parse_in_memory(target, target_source));
+        files.len() - 1
+    });
+
+    (files, target_index)
 }
 
 fn parse_in_memory(path: &Path, source: &str) -> ParsedSourceFile {

@@ -324,10 +324,12 @@ Used inside `Enables:`.
 | `capability` | `CapabilityGroup` | label? | `capability: AliasKind`, `written?: WrittenText+` |
 | `from` | `FromCapabilityGroup` | label? | `from: DeclarationStatement`, `capability: AliasKind`, `written?: WrittenText+` |
 | `from` | `FromAsGroup` | label? | `from: DeclarationStatement`, `as: ExpressionBinding` |
-| `view` | `ViewGroup` | label? | `view: OpenText*`, `as: RelationshipDeclaration`, `when: Spec+`, `where?: Clause+`, `means?: Clause`, `by?: OpenText+` |
+| `relation` | `RelationGroup` | label? | `relation: OpenText*`, `to: RelationshipDeclaration`, `when?: RelationWhenItem+`, `means?: Clause`, `as?: RelationKind+`, `by?: OpenText+` |
 | `connection` | `ConnectionGroup` | label? | `connection: OpenText*`, `to: OpenText*`, `using?: DeclarationStatement+`, `means: OpenText*`, `signifies?: OpenText*`, `viewable?: OpenText*`, `through?: OpenText*` |
 
 `from:` groups must contain exactly one of `capability:` or `as:`.
+`RelationWhenItem` is either a declaration statement or a hard-cast statement.
+`RelationKind` is one of `\\view` or `\\abstraction`.
 
 ### Documented items
 
@@ -853,11 +855,11 @@ as: <ExpressionBinding>
 
 ```group
 [LabelHeader]?
-view: <OpenText>*
-as: <RelationshipDeclaration>
-when: <Spec>+
-where?: <Clause>+
+relation: <OpenText>*
+to: <RelationshipDeclaration>
+when?: <RelationWhenItem>+
 means?: <Clause>
+as?: <RelationKind>+
 by?: <OpenText>+
 ```
 

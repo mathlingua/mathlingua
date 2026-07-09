@@ -1,9 +1,7 @@
 use std::collections::{HashMap, VecDeque};
 
 use crate::events::EventLog;
-use crate::frontend::formulation::ast::{
-    CommandExpression, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
-};
+use crate::frontend::formulation::ast::{ExpressionKind, FormOrDeclaration, FormOrDeclarationKind};
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
     parse_expression, parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
@@ -1137,19 +1135,10 @@ pub(super) fn parse_enables_item_group(
             .map(Box::new)
             .map(EnablesItem::Capability),
         "from" => parse_from_group(group, tracker),
+        "relation" => parse_relation_group(group, tracker)
+            .map(Box::new)
+            .map(EnablesItem::Relation),
         "connection" => parse_connection(group, tracker).map(EnablesItem::Connection),
-        "generalization" => parse_generalization_group(group, tracker)
-            .map(Box::new)
-            .map(EnablesItem::Generalization),
-        "abstraction" => parse_abstraction_group(group, tracker)
-            .map(Box::new)
-            .map(EnablesItem::Abstraction),
-        "instance" => parse_instance_group(group, tracker)
-            .map(Box::new)
-            .map(EnablesItem::Instance),
-        "view" => parse_view_group(group, tracker)
-            .map(Box::new)
-            .map(EnablesItem::View),
         other => {
             tracker.user_error_at_row(
                 Some(ORIGIN),
@@ -1572,178 +1561,61 @@ pub(in crate::frontend::structural::parser) fn parse_from_group(
     }
 }
 
-/// Parses a `generalization:` nested group inside `Enables:`.
-pub(in crate::frontend::structural::parser) fn parse_generalization_group(
+/// Parses a `relation:` nested group inside `Enables:`.
+pub(in crate::frontend::structural::parser) fn parse_relation_group(
     group: &ProtoGroup,
     tracker: &mut EventLog,
-) -> Option<GeneralizationGroup> {
+) -> Option<RelationGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
-        "generalization",
+        "relation",
         &group.sections,
         tracker,
-        &["generalization", "of", "assuming", "where?", "by?"],
+        &["relation", "to", "when?", "means?", "as?", "by?"],
     )?;
 
-    Some(GeneralizationGroup {
+    Some(RelationGroup {
         heading,
-        generalization: GeneralizationSection {
-            arguments: parse_optional_open_texts(sections.get("generalization").copied(), tracker),
+        relation: RelationSection {
+            arguments: parse_optional_open_texts(sections.get("relation").copied(), tracker),
         },
-        of: RelationshipCommandOfSection {
+        to: RelationToSection {
             argument: parse_required_formulation(
-                section(&sections, "of")?,
-                "of",
-                tracker,
-                parse_relationship_command,
-            )?,
-        },
-        assuming: AssumingSection {
-            arguments: parse_required_formulations(
-                section(&sections, "assuming")?,
-                "assuming",
-                tracker,
-                parse_hard_cast_statement,
-            )?,
-        },
-        where_: sections.get("where").copied().and_then(|section| {
-            parse_required_clauses(section, "where", tracker)
-                .map(|arguments| WhereSection { arguments })
-        }),
-        by: parse_optional_by_relationship_section(&sections, tracker),
-    })
-}
-
-/// Parses an `abstraction:` nested group inside `Enables:`.
-pub(in crate::frontend::structural::parser) fn parse_abstraction_group(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<AbstractionGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections(
-        "abstraction",
-        &group.sections,
-        tracker,
-        &["abstraction", "of", "assuming", "where?", "by?"],
-    )?;
-
-    Some(AbstractionGroup {
-        heading,
-        abstraction: AbstractionSection {
-            arguments: parse_optional_open_texts(sections.get("abstraction").copied(), tracker),
-        },
-        of: RelationshipCommandOfSection {
-            argument: parse_required_formulation(
-                section(&sections, "of")?,
-                "of",
-                tracker,
-                parse_relationship_command,
-            )?,
-        },
-        assuming: AssumingSection {
-            arguments: parse_required_formulations(
-                section(&sections, "assuming")?,
-                "assuming",
-                tracker,
-                parse_hard_cast_statement,
-            )?,
-        },
-        where_: sections.get("where").copied().and_then(|section| {
-            parse_required_clauses(section, "where", tracker)
-                .map(|arguments| WhereSection { arguments })
-        }),
-        by: parse_optional_by_relationship_section(&sections, tracker),
-    })
-}
-
-/// Parses an `instance:` nested group inside `Enables:`.
-pub(in crate::frontend::structural::parser) fn parse_instance_group(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<InstanceGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections(
-        "instance",
-        &group.sections,
-        tracker,
-        &["instance", "of", "when", "where?", "means?", "by?"],
-    )?;
-
-    Some(InstanceGroup {
-        heading,
-        instance: InstanceSection {
-            arguments: parse_optional_open_texts(sections.get("instance").copied(), tracker),
-        },
-        of: RelationshipDeclarationOfSection {
-            argument: parse_required_formulation(
-                section(&sections, "of")?,
-                "of",
+                section(&sections, "to")?,
+                "to",
                 tracker,
                 parse_relationship_declaration,
             )?,
         },
-        when: WhenSection {
-            arguments: parse_required_clauses(section(&sections, "when")?, "when", tracker)?,
-        },
-        where_: sections.get("where").copied().and_then(|section| {
-            parse_required_clauses(section, "where", tracker)
-                .map(|arguments| WhereSection { arguments })
+        when: sections.get("when").copied().and_then(|section| {
+            parse_required_formulations(section, "when", tracker, parse_relation_when_item)
+                .map(|arguments| RelationWhenSection { arguments })
         }),
         means: sections.get("means").copied().and_then(|section| {
             parse_required_clause(section, "means", tracker)
                 .map(|argument| RelationshipMeansSection { argument })
         }),
-        by: parse_optional_by_relationship_section(&sections, tracker),
-    })
-}
-
-/// Parses a `view:` nested group inside `Enables:`.
-pub(in crate::frontend::structural::parser) fn parse_view_group(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<ViewGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections(
-        "view",
-        &group.sections,
-        tracker,
-        &["view", "as", "when", "where?", "means?", "by?"],
-    )?;
-
-    Some(ViewGroup {
-        heading,
-        view: ViewSection {
-            arguments: parse_optional_open_texts(sections.get("view").copied(), tracker),
-        },
-        as_: RelationshipAsSection {
-            argument: parse_required_formulation(
-                section(&sections, "as")?,
-                "as",
-                tracker,
-                parse_relationship_declaration,
-            )?,
-        },
-        when: WhenSection {
-            arguments: parse_required_clauses(section(&sections, "when")?, "when", tracker)?,
-        },
-        where_: sections.get("where").copied().and_then(|section| {
-            parse_required_clauses(section, "where", tracker)
-                .map(|arguments| WhereSection { arguments })
-        }),
-        means: sections.get("means").copied().and_then(|section| {
-            parse_required_clause(section, "means", tracker)
-                .map(|argument| RelationshipMeansSection { argument })
+        as_: sections.get("as").copied().and_then(|section| {
+            parse_required_formulations(section, "as", tracker, parse_relation_kind)
+                .map(|arguments| RelationAsSection { arguments })
         }),
         by: parse_optional_by_relationship_section(&sections, tracker),
     })
 }
 
-fn parse_relationship_command(input: &str) -> Result<CommandExpression, FormulationParseError> {
-    let expression = parse_expression(input)?;
-    match expression.kind {
-        ExpressionKind::Command(command) => Ok(command),
+fn parse_relation_when_item(input: &str) -> Result<RelationWhenItem, FormulationParseError> {
+    if let Ok(statement) = parse_hard_cast_statement(input) {
+        return Ok(RelationWhenItem::HardCast(statement));
+    }
+    parse_ordinary_declaration_statement(input).map(RelationWhenItem::Declaration)
+}
+
+fn parse_relation_kind(input: &str) -> Result<RelationKind, FormulationParseError> {
+    match input.trim() {
+        r#"\\view"# => Ok(RelationKind::View),
+        r#"\\abstraction"# => Ok(RelationKind::Abstraction),
         _ => Err(FormulationParseError::Custom(
-            "expected command expression".to_owned(),
+            "`as:` entries must be `\\\\view` or `\\\\abstraction`".to_owned(),
         )),
     }
 }
@@ -1751,8 +1623,10 @@ fn parse_relationship_command(input: &str) -> Result<CommandExpression, Formulat
 fn parse_relationship_declaration(
     input: &str,
 ) -> Result<RelationshipDeclaration, FormulationParseError> {
-    if let Ok(command) = parse_relationship_command(input) {
-        return Ok(RelationshipDeclaration::Command(command));
+    if let Ok(expression) = parse_expression(input) {
+        if let ExpressionKind::Command(command) = expression.kind {
+            return Ok(RelationshipDeclaration::Command(command));
+        }
     }
     parse_ordinary_declaration_statement(input).map(RelationshipDeclaration::Declaration)
 }
@@ -3551,8 +3425,8 @@ mod tests {
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, DescribesTarget, Document, DocumentedItem, EnablesItem,
-        IsOrViaItem, JustifiedItem, MetadataItem, RelationshipDeclaration, RequiresItem,
-        ResourceItem, SpecifyItem, TopLevelItem,
+        IsOrViaItem, JustifiedItem, MetadataItem, RelationKind, RelationshipDeclaration,
+        RequiresItem, ResourceItem, SpecifyItem, TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -4132,10 +4006,12 @@ Enables:
   capability: x_ "in" X :-> x_ member_of Y
 . from: P ::= {(p_, q_) : ...}
   as: f(p_) := q_
-. view:
-  as: r := \as.rational{X} is \rational
+. relation:
+  to: r := \as.rational{X} is \rational
   when: X is \set
   means: X \.embedded.to./ r
+  as:
+  . \\view
 Documented:
 . called: "set"
 "#,
@@ -4150,7 +4026,7 @@ Documented:
             EnablesItem::FromCapability(_)
         ));
         assert!(matches!(enables.arguments[1], EnablesItem::FromAs(_)));
-        assert!(matches!(enables.arguments[2], EnablesItem::View(_)));
+        assert!(matches!(enables.arguments[2], EnablesItem::Relation(_)));
     }
 
     #[test]
@@ -4160,28 +4036,21 @@ Documented:
 [\pair]
 Defines: P is \pair
 Enables:
-. generalization:
-  of: \set.theoretic.pair:of{a0}:and{b0}
-  assuming:
+. relation:
+  to: x := \pair:of{a0}:and{b0}
+  when:
   . a0 := a is! \set
-  . b0 := b is! \set
-. abstraction:
-  of: \point{P}
-  assuming:
-  . p0 := P is! \point
-. instance:
-  of: x is \group
+  . b0 := b is \foo
+  means: x \:isomorphic.to?:/ p
+  as:
+  . \\view
+  . \\abstraction
+  by: "\some.theorem"
+. relation:
+  to: x is \group
   when:
   . x is \set
   means: x is \group
-. view:
-  as: y ::= z is \set
-  when:
-  . y is \set
-  where:
-  . y is \set
-  means: y is \set
-  by: "\some.theorem"
 Documented:
 . written: "P?"
 "#,
@@ -4191,36 +4060,31 @@ Documented:
             panic!("expected defines group");
         };
         let enables = group.enables.as_ref().expect("expected enables");
-        assert!(matches!(
-            enables.arguments[0],
-            EnablesItem::Generalization(_)
-        ));
-        assert!(matches!(enables.arguments[1], EnablesItem::Abstraction(_)));
-        assert!(matches!(enables.arguments[2], EnablesItem::Instance(_)));
-        assert!(matches!(enables.arguments[3], EnablesItem::View(_)));
+        assert!(matches!(enables.arguments[0], EnablesItem::Relation(_)));
+        assert!(matches!(enables.arguments[1], EnablesItem::Relation(_)));
 
-        let EnablesItem::Generalization(generalization) = &enables.arguments[0] else {
-            panic!("expected generalization");
+        let EnablesItem::Relation(relation) = &enables.arguments[0] else {
+            panic!("expected relation");
         };
-        assert_eq!(generalization.assuming.arguments.len(), 2);
-
-        let EnablesItem::Instance(instance) = &enables.arguments[2] else {
-            panic!("expected instance");
-        };
+        assert_eq!(
+            relation
+                .when
+                .as_ref()
+                .expect("expected when")
+                .arguments
+                .len(),
+            2
+        );
         assert!(matches!(
-            instance.of.argument,
+            relation.to.argument,
             RelationshipDeclaration::Declaration(_)
         ));
-
-        let EnablesItem::View(view) = &enables.arguments[3] else {
-            panic!("expected view");
-        };
-        assert!(matches!(
-            view.as_.argument,
-            RelationshipDeclaration::Declaration(_)
-        ));
-        assert!(view.by.is_some());
-        assert!(view.means.is_some());
+        let as_ = relation.as_.as_ref().expect("expected as markers");
+        assert_eq!(as_.arguments.len(), 2);
+        assert!(as_.arguments.contains(&RelationKind::View));
+        assert!(as_.arguments.contains(&RelationKind::Abstraction));
+        assert!(relation.by.is_some());
+        assert!(relation.means.is_some());
     }
 
     #[test]

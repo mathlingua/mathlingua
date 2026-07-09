@@ -210,14 +210,10 @@ argument_section!(CapabilitySection, AliasKind);
 argument_section!(DefinitionSection, DefinitionRequirement);
 argument_section!(FromSection, DeclarationStatement);
 argument_section!(CastAsSection, ExpressionBinding);
-zero_or_more_arguments_section!(GeneralizationSection, OpenText);
-zero_or_more_arguments_section!(AbstractionSection, OpenText);
-zero_or_more_arguments_section!(InstanceSection, OpenText);
-zero_or_more_arguments_section!(ViewSection, OpenText);
-argument_section!(RelationshipCommandOfSection, CommandExpression);
-argument_section!(RelationshipDeclarationOfSection, RelationshipDeclaration);
-argument_section!(RelationshipAsSection, RelationshipDeclaration);
-arguments_section!(AssumingSection, HardCastStatement);
+zero_or_more_arguments_section!(RelationSection, OpenText);
+argument_section!(RelationToSection, RelationshipDeclaration);
+arguments_section!(RelationWhenSection, RelationWhenItem);
+arguments_section!(RelationAsSection, RelationKind);
 argument_section!(RelationshipMeansSection, Clause);
 zero_or_more_arguments_section!(ConnectionSection, OpenText);
 zero_or_more_arguments_section!(ToSection, OpenText);
@@ -361,11 +357,8 @@ pub enum EnablesItem {
     Capability(Box<CapabilityGroup>),
     FromCapability(Box<FromCapabilityGroup>),
     FromAs(Box<FromAsGroup>),
+    Relation(Box<RelationGroup>),
     Connection(ConnectionGroup),
-    Generalization(Box<GeneralizationGroup>),
-    Abstraction(Box<AbstractionGroup>),
-    Instance(Box<InstanceGroup>),
-    View(Box<ViewGroup>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -740,44 +733,25 @@ pub enum RelationshipDeclaration {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GeneralizationGroup {
-    pub heading: Option<LabelHeader>,
-    pub generalization: GeneralizationSection,
-    pub of: RelationshipCommandOfSection,
-    pub assuming: AssumingSection,
-    pub where_: Option<WhereSection>,
-    pub by: Option<BySection>,
+pub enum RelationWhenItem {
+    Declaration(DeclarationStatement),
+    HardCast(HardCastStatement),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RelationKind {
+    View,
+    Abstraction,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AbstractionGroup {
+pub struct RelationGroup {
     pub heading: Option<LabelHeader>,
-    pub abstraction: AbstractionSection,
-    pub of: RelationshipCommandOfSection,
-    pub assuming: AssumingSection,
-    pub where_: Option<WhereSection>,
-    pub by: Option<BySection>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct InstanceGroup {
-    pub heading: Option<LabelHeader>,
-    pub instance: InstanceSection,
-    pub of: RelationshipDeclarationOfSection,
-    pub when: WhenSection,
-    pub where_: Option<WhereSection>,
+    pub relation: RelationSection,
+    pub to: RelationToSection,
+    pub when: Option<RelationWhenSection>,
     pub means: Option<RelationshipMeansSection>,
-    pub by: Option<BySection>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ViewGroup {
-    pub heading: Option<LabelHeader>,
-    pub view: ViewSection,
-    pub as_: RelationshipAsSection,
-    pub when: WhenSection,
-    pub where_: Option<WhereSection>,
-    pub means: Option<RelationshipMeansSection>,
+    pub as_: Option<RelationAsSection>,
     pub by: Option<BySection>,
 }
 

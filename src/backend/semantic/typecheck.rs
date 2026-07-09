@@ -432,11 +432,14 @@ fn collect_viewable_rules(
     };
 
     for item in &enables.arguments {
-        let EnablesItem::View(group) = item else {
+        let EnablesItem::Relation(group) = item else {
+            continue;
+        };
+        if !relation_group_has_kind(group, RelationKind::View) {
             continue;
         };
         let Some((target_subject, target @ TypeFact::Is { .. })) =
-            view_target_from_relationship_declaration(&group.as_.argument, source_subject)
+            view_target_from_relationship_declaration(&group.to.argument, source_subject)
         else {
             continue;
         };
@@ -463,24 +466,31 @@ fn collect_abstraction_rules(
     };
 
     for item in &enables.arguments {
-        let EnablesItem::Abstraction(group) = item else {
+        let EnablesItem::Relation(group) = item else {
             continue;
         };
-        let ty = TypeExpression::Command(group.of.argument.clone());
-        let Some((target_ty, target_signature)) = key_for_type_expression(&ty) else {
+        if !relation_group_has_kind(group, RelationKind::Abstraction) {
+            continue;
+        };
+        let Some((_, target @ TypeFact::Is { .. })) =
+            view_target_from_relationship_declaration(&group.to.argument, source_subject)
+        else {
             continue;
         };
         registry.abstraction_rules.push(AbstractionRule {
             source_signature: info.signature.clone(),
             source_subject: source_subject.clone(),
             parameters: info.parameters.clone(),
-            target: TypeFact::Is {
-                subject: source_subject.clone(),
-                ty: target_ty,
-                signature: target_signature,
-            },
+            target,
         });
     }
+}
+
+fn relation_group_has_kind(group: &RelationGroup, kind: RelationKind) -> bool {
+    group
+        .as_
+        .as_ref()
+        .is_some_and(|section| section.arguments.iter().any(|argument| *argument == kind))
 }
 
 fn view_target_from_relationship_declaration(
@@ -642,12 +652,7 @@ fn capability_aliases(item: &TopLevelItem) -> Vec<CapabilityAliasRef<'_>> {
                 source_subject: Some(primary_subject_key(&group.from.argument.subject)),
                 source_requires_literal: true,
             }),
-            EnablesItem::FromAs(_)
-            | EnablesItem::Connection(_)
-            | EnablesItem::Generalization(_)
-            | EnablesItem::Abstraction(_)
-            | EnablesItem::Instance(_)
-            | EnablesItem::View(_) => None,
+            EnablesItem::FromAs(_) | EnablesItem::Relation(_) | EnablesItem::Connection(_) => None,
         }));
     }
     result
@@ -6249,132 +6254,29 @@ fn validate_optional_enables(
                     event_log,
                 );
             }
+            EnablesItem::Relation(group) => {
+                let mut child = context.clone();
+                if let Some(when) = &group.when {
+                    for item in &when.arguments {
+                        assume_relation_when_item(
+                            item, &mut child, path, locator, registry, event_log,
+                        );
+                    }
+                }
+                validate_relationship_declaration(
+                    &group.to.argument,
+                    &mut child,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+                if let Some(means) = &group.means {
+                    check_clause(&means.argument, &child, path, locator, registry, event_log);
+                }
+            }
             EnablesItem::Connection(_) => {}
-            EnablesItem::Generalization(group) => {
-                let mut child = context.clone();
-                for statement in &group.assuming.arguments {
-                    validate_hard_cast_statement(
-                        statement, &mut child, path, locator, registry, event_log,
-                    );
-                }
-                validate_relationship_command(
-                    &group.of.argument,
-                    &mut child,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
-                validate_optional_relationship_where(
-                    &group.where_,
-                    &child,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
-            }
-            EnablesItem::Abstraction(group) => {
-                let mut child = context.clone();
-                for statement in &group.assuming.arguments {
-                    validate_hard_cast_statement(
-                        statement, &mut child, path, locator, registry, event_log,
-                    );
-                }
-                validate_relationship_command(
-                    &group.of.argument,
-                    &mut child,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
-                validate_optional_relationship_where(
-                    &group.where_,
-                    &child,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
-            }
-            EnablesItem::Instance(group) => {
-                let mut child = context.clone();
-                validate_relationship_declaration(
-                    &group.of.argument,
-                    &mut child,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
-                assume_relationship_clauses(
-                    &group.when.arguments,
-                    &mut child,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
-                validate_optional_relationship_where(
-                    &group.where_,
-                    &child,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
-                if let Some(means) = &group.means {
-                    check_clause(&means.argument, &child, path, locator, registry, event_log);
-                }
-            }
-            EnablesItem::View(group) => {
-                let mut child = context.clone();
-                validate_relationship_declaration(
-                    &group.as_.argument,
-                    &mut child,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
-                assume_relationship_clauses(
-                    &group.when.arguments,
-                    &mut child,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
-                validate_optional_relationship_where(
-                    &group.where_,
-                    &child,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
-                if let Some(means) = &group.means {
-                    check_clause(&means.argument, &child, path, locator, registry, event_log);
-                }
-                validate_view_group_target(group, path, locator, event_log);
-            }
         }
-    }
-}
-
-fn validate_relationship_command(
-    command: &CommandExpression,
-    context: &mut TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    check_command_expression(command, context, path, locator, registry, event_log);
-    let active_command = active_command_expression(command, context);
-    for expression in command_expression_arguments(&active_command) {
-        check_expression(expression, context, path, locator, registry, event_log);
     }
 }
 
@@ -6388,7 +6290,11 @@ fn validate_relationship_declaration(
 ) {
     match declaration {
         RelationshipDeclaration::Command(command) => {
-            validate_relationship_command(command, context, path, locator, registry, event_log);
+            check_command_expression(command, context, path, locator, registry, event_log);
+            let active_command = active_command_expression(command, context);
+            for expression in command_expression_arguments(&active_command) {
+                check_expression(expression, context, path, locator, registry, event_log);
+            }
         }
         RelationshipDeclaration::Declaration(statement) => {
             declare_declaration_statement_subjects(statement, context);
@@ -6399,24 +6305,22 @@ fn validate_relationship_declaration(
     }
 }
 
-fn validate_view_group_target(
-    group: &ViewGroup,
+fn assume_relation_when_item(
+    item: &RelationWhenItem,
+    context: &mut TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    let RelationshipDeclaration::Declaration(statement) = &group.as_.argument else {
-        return;
-    };
-    if matches!(statement.relation, Some(DeclarationRelation::Is(_))) {
-        return;
+    match item {
+        RelationWhenItem::Declaration(statement) => {
+            assume_declaration_statement(statement, context, path, locator, registry, event_log);
+        }
+        RelationWhenItem::HardCast(statement) => {
+            validate_hard_cast_statement(statement, context, path, locator, registry, event_log);
+        }
     }
-    emit_error(
-        event_log,
-        path,
-        locator.locate_symbol(&primary_subject_key(&statement.subject)),
-        "`view:` `as:` must specify the target type using `is` or a command type",
-    );
 }
 
 fn validate_hard_cast_statement(
@@ -6443,34 +6347,6 @@ fn validate_hard_cast_statement(
     };
     for fact in facts_from_is_statement(&is_statement) {
         context.add_fact(fact);
-    }
-}
-
-fn assume_relationship_clauses(
-    clauses: &[Clause],
-    context: &mut TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    for clause in clauses {
-        assume_clause(clause, context, path, locator, registry, event_log);
-    }
-}
-
-fn validate_optional_relationship_where(
-    section: &Option<WhereSection>,
-    context: &TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    if let Some(section) = section {
-        for clause in &section.arguments {
-            check_clause(clause, context, path, locator, registry, event_log);
-        }
     }
 }
 

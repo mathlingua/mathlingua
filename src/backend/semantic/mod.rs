@@ -9,6 +9,7 @@ const ORIGIN: &str = "semantic_check";
 mod check;
 mod definition;
 mod locator;
+mod rename;
 mod shapes;
 mod typecheck;
 mod types;
@@ -17,6 +18,9 @@ mod walk;
 
 pub use check::check_documents;
 pub use definition::{DefinitionSite, find_definition};
+pub use rename::{
+    RenameEditPlan, RenameError, RenamePreparation, RenameSpan, plan_rename, prepare_rename,
+};
 
 use locator::*;
 use shapes::*;

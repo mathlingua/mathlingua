@@ -4463,10 +4463,11 @@ mod tests {
     [\integer]
     Describes: n
     Enables:
-    . view:
-      as: r is \rational
+    . relation:
+      to: r is \rational
       when: n is \integer
       means: n \.embedded.to./ r
+      as: \\view
     Documented:
     . written: "\operatorname{integer}"
 
@@ -4531,9 +4532,10 @@ mod tests {
     [\integer]
     Describes: n
     Enables:
-    . view:
-      as: r is \rational
+    . relation:
+      to: r is \rational
       when: n is \integer
+      as: \\view
     Documented:
     . written: "\operatorname{integer}"
 
@@ -4581,10 +4583,9 @@ mod tests {
     [\natural]
     Describes: n
     Enables:
-    . abstraction:
-      of: \set
-      assuming:
-      . n0 := n is! \set
+    . relation:
+      to: n is \set
+      as: \\abstraction
     Documented:
     . written: "\operatorname{natural}"
 
@@ -4632,10 +4633,9 @@ mod tests {
     [\natural]
     Describes: n
     Enables:
-    . abstraction:
-      of: \set
-      assuming:
-      . n0 := n is! \set
+    . relation:
+      to: n is \set
+      as: \\abstraction
     Documented:
     . written: "\operatorname{natural}"
 
@@ -4686,9 +4686,10 @@ mod tests {
     [\integer]
     Describes: n
     Enables:
-    . view:
-      as: r is \rational
+    . relation:
+      to: r is \rational
       when: n is \integer
+      as: \\view
     Documented:
     . written: "\operatorname{integer}"
 
@@ -4723,9 +4724,9 @@ mod tests {
     }
 
     #[test]
-    fn check_reports_view_as_without_is_target() {
+    fn check_reports_relation_as_with_unknown_marker() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("view-as-requires-is.mlg");
+        let file = temp_dir.path().join("relation-as-marker.mlg");
 
         write_mlg_fixture(
             &file,
@@ -4737,9 +4738,10 @@ mod tests {
     [\integer]
     Describes: n
     Enables:
-    . view:
-      as: r "like" \rational
+    . relation:
+      to: r is \rational
       when: n is \integer
+      as: \\something.else
     Documented:
     . written: "\operatorname{integer}"
     "#,
@@ -4749,7 +4751,7 @@ mod tests {
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("view-as-requires-is.mlg")],
+            &[PathBuf::from("relation-as-marker.mlg")],
             &mut event_log,
         );
 
@@ -4759,7 +4761,7 @@ mod tests {
             matches!(event, Event::Message(message) if
                 message
                     .message
-                    .contains("`view:` `as:` must specify the target type using `is`")
+                    .contains("`as:` entries must be `\\\\view` or `\\\\abstraction`")
             )
         }));
         assert!(event_log.has_errors());
@@ -4782,9 +4784,10 @@ mod tests {
     [\integer]
     Describes: n
     Enables:
-    . view:
-      as: r is \rational
+    . relation:
+      to: r is \rational
       when: n is \integer
+      as: \\view
     Documented:
     . written: "\operatorname{integer}"
 
@@ -5835,11 +5838,12 @@ Id: "9f79d83e-8423-4343-b547-e391b3305994"
 Defines: P is \pair
 when: a, b is \set
 Enables:
-. abstraction:
-  of: \set.theoretic.pair:of{a0}:and{b0}
-  assuming:
+. relation:
+  to: \set.theoretic.pair:of{a0}:and{b0}
+  when:
   . a0 := a is! \set
   . b0 := b is! \set
+  as: \\abstraction
   by: "\some.theorem"
 Documented:
 . written: "(a?, b?)"

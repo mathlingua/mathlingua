@@ -1,19 +1,22 @@
+use crate::backend::rename::{RenameEdit, RenameError, RenamePreparation, RenameSpan};
 use crate::mlg::check::{CheckDiagnostic, check, check_diagnostics_report};
 use crate::mlg::completion::{
     CandidateKind, CompletionCandidate, Signature, collect_signatures, complete_with_signatures,
 };
-use lsp_server::{Connection, Message, Notification, Response};
+use lsp_server::{Connection, ErrorCode, Message, Notification, Response};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionOptions, CompletionParams, CompletionResponse,
     CompletionTextEdit, Diagnostic, DiagnosticSeverity, GotoDefinitionParams,
     GotoDefinitionResponse, InitializeParams, InsertTextFormat, Location, OneOf, Position,
-    PublishDiagnosticsParams, Range, SaveOptions, ServerCapabilities, TextDocumentSyncCapability,
+    PrepareRenameResponse, PublishDiagnosticsParams, Range, RenameOptions, RenameParams,
+    SaveOptions, ServerCapabilities, TextDocumentPositionParams, TextDocumentSyncCapability,
     TextDocumentSyncKind, TextDocumentSyncOptions, TextDocumentSyncSaveOptions, TextEdit, Url,
+    WorkDoneProgressOptions, WorkspaceEdit,
     notification::{
         DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument,
         Notification as _, PublishDiagnostics,
     },
-    request::{Completion, GotoDefinition, Request as _},
+    request::{Completion, GotoDefinition, PrepareRenameRequest, Rename, Request as _},
 };
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -46,6 +49,13 @@ pub fn lsp() -> LspResult {
         }),
         // Jump from a `\`-command usage to the top-level item that defines it.
         definition_provider: Some(OneOf::Left(true)),
+        // Rename a top-level item's command heading and every use of it. The
+        // prepare step restricts renames to heading signatures and seeds the
+        // edit box with the current signature.
+        rename_provider: Some(OneOf::Right(RenameOptions {
+            prepare_provider: Some(true),
+            work_done_progress_options: WorkDoneProgressOptions::default(),
+        })),
         ..Default::default()
     })
     .expect("server capabilities serialize");
@@ -73,6 +83,12 @@ pub fn lsp() -> LspResult {
                     let _ = connection.sender.send(Message::Response(response));
                 } else if req.method == GotoDefinition::METHOD {
                     let response = state.handle_definition(req.id.clone(), &req.params);
+                    let _ = connection.sender.send(Message::Response(response));
+                } else if req.method == PrepareRenameRequest::METHOD {
+                    let response = state.handle_prepare_rename(req.id.clone(), &req.params);
+                    let _ = connection.sender.send(Message::Response(response));
+                } else if req.method == Rename::METHOD {
+                    let response = state.handle_rename(req.id.clone(), &req.params);
                     let _ = connection.sender.send(Message::Response(response));
                 }
             }
@@ -228,6 +244,72 @@ impl ServerState {
         })
     }
 
+    fn handle_prepare_rename(&self, id: lsp_server::RequestId, params: &Value) -> Response {
+        let result = self
+            .rename_preparation(params)
+            .map(|prep| {
+                serde_json::to_value(PrepareRenameResponse::RangeWithPlaceholder {
+                    range: span_to_range(&prep.span),
+                    placeholder: prep.placeholder,
+                })
+                .unwrap_or(Value::Null)
+            })
+            .unwrap_or(Value::Null);
+        Response {
+            id,
+            result: Some(result),
+            error: None,
+        }
+    }
+
+    /// The signature span the cursor rests on, if it is on a top-level item's
+    /// command heading; `None` (reported as `null`) means "cannot rename here".
+    fn rename_preparation(&self, params: &Value) -> Option<RenamePreparation> {
+        let params: TextDocumentPositionParams = serde_json::from_value(params.clone()).ok()?;
+        let uri = params.text_document.uri;
+        let position = params.position;
+        let text = self.documents.get(&uri)?;
+        let file_path = uri.to_file_path().ok()?;
+        let root = project_root_for(&file_path, self.workspace_root.as_deref());
+        let offset = byte_offset_at(text, position.line, position.character)?;
+        crate::backend::rename::prepare_rename(&root, &file_path, text, offset)
+    }
+
+    fn handle_rename(&self, id: lsp_server::RequestId, params: &Value) -> Response {
+        match self.rename_workspace_edit(params) {
+            Ok(edit) => Response {
+                id,
+                result: Some(serde_json::to_value(edit).unwrap_or(Value::Null)),
+                error: None,
+            },
+            // A rejected rename must come back as an error so the editor shows
+            // the reason instead of silently applying nothing.
+            Err(message) => Response::new_err(id, ErrorCode::InvalidParams as i32, message),
+        }
+    }
+
+    fn rename_workspace_edit(&self, params: &Value) -> Result<WorkspaceEdit, String> {
+        let params: RenameParams =
+            serde_json::from_value(params.clone()).map_err(|error| error.to_string())?;
+        let uri = params.text_document_position.text_document.uri;
+        let position = params.text_document_position.position;
+        let new_name = params.new_name;
+        let text = self.documents.get(&uri).ok_or("The document is not open")?;
+        let file_path = uri
+            .to_file_path()
+            .map_err(|_| "The document has no file path".to_string())?;
+        let root = project_root_for(&file_path, self.workspace_root.as_deref());
+        let offset = byte_offset_at(text, position.line, position.character)
+            .ok_or("The cursor is out of range")?;
+
+        let edits = crate::backend::rename::resolve_rename(
+            &root, &file_path, text, offset, &new_name,
+        )
+        .map_err(rename_error_message)?;
+
+        Ok(workspace_edit_from_edits(edits))
+    }
+
     /// Command signatures from every open document, deduplicated by text, so a
     /// command declared in one file can be completed while editing another.
     fn all_signatures(&self) -> Vec<Signature> {
@@ -289,6 +371,44 @@ fn publish(connection: &Connection, uri: Url, diagnostics: Vec<Diagnostic>) {
         params: serde_json::to_value(params).unwrap_or(Value::Null),
     };
     let _ = connection.sender.send(Message::Notification(note));
+}
+
+fn span_to_range(span: &RenameSpan) -> Range {
+    Range {
+        start: Position::new(span.start_row as u32, span.start_column as u32),
+        end: Position::new(span.end_row as u32, span.end_column as u32),
+    }
+}
+
+/// Group per-file rename edits into a single workspace edit. Files that cannot
+/// be expressed as a `file://` URL are dropped.
+fn workspace_edit_from_edits(edits: Vec<RenameEdit>) -> WorkspaceEdit {
+    let mut changes: HashMap<Url, Vec<TextEdit>> = HashMap::new();
+    for edit in edits {
+        let Ok(uri) = Url::from_file_path(&edit.path) else {
+            continue;
+        };
+        changes.entry(uri).or_default().push(TextEdit {
+            range: span_to_range(&edit.span),
+            new_text: edit.new_text,
+        });
+    }
+    WorkspaceEdit {
+        changes: Some(changes),
+        document_changes: None,
+        change_annotations: None,
+    }
+}
+
+fn rename_error_message(error: RenameError) -> String {
+    match error {
+        RenameError::NotOnHeading => {
+            "Place the cursor on a top-level item's command heading to rename it".to_string()
+        }
+        RenameError::Unsupported(message)
+        | RenameError::InvalidNewName(message)
+        | RenameError::ParametersChanged(message) => message,
+    }
 }
 
 /// Byte offset within `text` of the character at zero-based `line` /

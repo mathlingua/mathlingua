@@ -212,6 +212,12 @@ pub(super) struct DefinitionItem<'a> {
     documented: Option<&'a DocumentedSection>,
 }
 
+impl<'a> DefinitionItem<'a> {
+    pub(super) fn heading(&self) -> &'a CommandHeader {
+        self.heading
+    }
+}
+
 pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>> {
     match item {
         TopLevelItem::Describes(group) => Some(DefinitionItem {

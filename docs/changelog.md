@@ -404,9 +404,13 @@ Types can now separate definitional requirements from additional capabilities.
 - A `from: ... as:` binding can reduce facts about a casted function call by
   matching the binding's left side against the call and substituting the right
   side into facts from the cast literal.
-- `Enables:` accepts `view:` groups with required `as:` declarations and
-  optional `means:` clauses.
-- The `:= ...` construction in a `view:` `as:` declaration is optional.
+- `Enables:` accepts `relation:` groups with required `to:` declarations and
+  optional `when:`, `means:`, `as:`, and `by:` sections.
+- The `:= ...` construction in a `relation:` `to:` declaration is optional.
+- `relation:` entries marked with `as: \\view` provide ordinary cast
+  relationships.
+- `relation:` entries marked with `as: \\abstraction` provide hard-cast
+  abstraction relationships for `as!`.
 - View relationships may satisfy requirements after a command or operator has
   already resolved.
 - View relationships are not used to resolve operators or capabilities.

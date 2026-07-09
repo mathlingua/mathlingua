@@ -127,7 +127,14 @@
 }
 
 .documentStream {
+  min-width: 0;
   padding: 3.1rem 0 5rem;
+  overflow-x: clip;
+}
+
+.fileSection {
+  width: 100%;
+  min-width: 0;
 }
 
 .fileSection + .fileSection {
@@ -138,6 +145,8 @@
   display: grid;
   gap: 3rem;
   justify-items: center;
+  width: 100%;
+  min-width: 0;
   max-width: 74rem;
   margin: 0 auto;
 }
@@ -151,7 +160,9 @@
 }
 
 .pageItem {
+  box-sizing: border-box;
   width: min(100%, 47rem);
+  min-width: 0;
   margin: 0 auto;
   scroll-margin-top: 7.5rem;
 }
@@ -270,6 +281,7 @@
   display: grid;
   justify-items: center;
   gap: 1.25rem;
+  box-sizing: border-box;
   width: min(100%, 47rem);
   min-width: 0;
   padding: 2.35rem clamp(1rem, 4vw, 2.6rem) 2rem;

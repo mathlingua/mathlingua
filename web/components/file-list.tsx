@@ -118,8 +118,8 @@ export function FileList({
     setDefinitionTrails((current) => {
       const existingTrail = current[rootAnchorId] ?? [];
       const nextTrail = [
-        referenceKey,
         ...existingTrail.filter((key) => key !== referenceKey),
+        referenceKey,
       ];
 
       return {

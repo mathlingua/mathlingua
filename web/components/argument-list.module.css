@@ -34,6 +34,8 @@
 }
 
 .formulationLine {
+  min-width: 0;
+  max-width: 100%;
   padding: 0;
   border: none;
   background: none;
@@ -45,10 +47,14 @@
 }
 
 .formulationLineLatex {
+  overflow-x: auto;
+  overflow-y: hidden;
   font-family: var(--font-body);
 }
 
 .textLine {
+  min-width: 0;
+  max-width: 100%;
   margin: 0;
   color: var(--ink);
   font-size: 1rem;
@@ -56,6 +62,7 @@
 }
 
 .nestedGroup {
+  min-width: 0;
   padding-left: 0;
   border-left: none;
 }
@@ -68,5 +75,6 @@
 }
 
 .nestedSection {
+  min-width: 0;
   padding-top: 0;
 }

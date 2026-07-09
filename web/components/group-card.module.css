@@ -1,7 +1,9 @@
 /* Card-level styling for one rendered top-level MathLingua group. */
 
 .card {
+  box-sizing: border-box;
   width: min(100%, 31rem);
+  max-width: 100%;
   min-width: 0;
   margin: 0 auto;
   perspective: 1400px;
@@ -11,6 +13,7 @@
 .cardStage {
   position: relative;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   transform-style: preserve-3d;
   transition: transform 220ms ease;
@@ -24,6 +27,7 @@
   position: relative;
   box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   padding: 1.35rem 1.6rem 1.45rem;
   border: 1px solid var(--line);
@@ -31,6 +35,7 @@
   background: var(--card-bg);
   backface-visibility: hidden;
   box-shadow: var(--shadow);
+  overflow-wrap: anywhere;
 }
 
 .cardFaceClosable {
@@ -53,6 +58,7 @@
 
 .header {
   display: block;
+  min-width: 0;
   padding-right: 2.35rem;
   padding-bottom: 0.55rem;
   border-bottom: 1px solid var(--line);
@@ -90,6 +96,7 @@
 }
 
 .bodyText {
+  min-width: 0;
   margin-top: 0.75rem;
   padding-right: 2.35rem;
 }
@@ -97,6 +104,7 @@
 .resourceBody {
   display: grid;
   gap: 0.85rem;
+  min-width: 0;
   margin-top: 0.75rem;
   padding-right: 2.35rem;
 }
@@ -157,6 +165,7 @@
 .sectionStack {
   display: grid;
   gap: 0.18rem;
+  min-width: 0;
   margin-top: 0.6rem;
   padding-right: 2.35rem;
 }
@@ -166,6 +175,7 @@
 }
 
 .sectionBlock {
+  min-width: 0;
   padding-top: 0;
 }
 

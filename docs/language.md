@@ -489,7 +489,7 @@ Quantifier declarations are local to the clause group that introduces them.
   source
 - `from:` plus `as:`, which defines how facts from a cast source are viewed as
   facts about the described form
-- `viewable:` groups, which declare that the described type can be viewed as
+- `view:` groups, which declare that the described type can be viewed as
   another type when satisfying already-resolved command requirements
 - `connection:` groups, which contain prose fields such as `to:`, `means:`,
   `signifies:`, `viewable:`, and `through:`
@@ -789,16 +789,16 @@ Documented:
 . called: "set"
 ```
 
-If a value is introduced as `A := \set@{x_ : x_ is \real}`, the checker records
-the literal for `A`. When it later reduces `a "in" A`, the `from:` capability
-substitutes the source subject `Y` with `A`, producing `a member_of A`. The
-existing `member_of` reducer then reads the cast literal and can establish
-`a is \real`.
+If a value is introduced as `A := {x_ : x_ is \real} as \set`, the checker
+records the literal for `A`. When it later reduces `a "in" A`, the `from:`
+capability substitutes the source subject `Y` with `A`, producing
+`a member_of A`. The existing `member_of` reducer then reads the cast literal
+and can establish `a is \real`.
 
 An ordinary non-`from:` capability on an opaque target does not read a cast
 literal through `member_of`. For example, `Describes: X` with
-`capability: x_ "in" X :-> x_ member_of X` does not make `\set@{...}` expose
-the literal's element facts. Use a structural target such as
+`capability: x_ "in" X :-> x_ member_of X` does not make
+`{...} as \set` expose the literal's element facts. Use a structural target such as
 `Describes: X ::= {x__ : ...}` or an explicit `from:` capability for that.
 
 A `from:` group may also use `as:` with an expression binding, for example:
@@ -810,36 +810,46 @@ Enables:
 ```
 
 This records and validates the cast view from the source structure to the
-described form. If `F := \function@{(p_, q_) : q_ is \set}`, the binding lets
-the checker use facts about `q_` from the source literal as facts about
+described form. If `F := {(p_, q_) : q_ is \set} as \function`, the binding
+lets the checker use facts about `q_` from the source literal as facts about
 `F(p_)`; for example it can establish `F(a) is \set` when the source literal
 supports that substitution.
 
-### Viewable Casts
+### Cast Expressions
 
-`Enables:` may contain `viewable:` groups:
+Expressions may use `value as \type` and `value as! \type`.
+
+`value as \type` succeeds when the value already has that type, has a parent
+type that extends to it, or the value's type (or a parent type) has an
+`Enables:` relationship of the form `view: as: ... is \type`.
+
+`value as! \type` performs the same checks and additionally allows
+`abstraction: of: \type` relationships. Use `as!` when the expression is being
+viewed at a lower abstraction level.
+
+`Enables:` may contain `view:` groups:
 
 ```text
 [\integer]
 Describes: n
 Enables:
-. viewable:
+. view:
   as: r := \as.rational{n} is \rational
-  states: n \.embedded.to./ r
+  means: n \.embedded.to./ r
 ```
 
 The `as:` declaration states the target type using `is`. The `:= ...`
 construction is optional; without it, the cast is accepted but the converted
 value is opaque.
-The optional `states:` clause records a statement relating the original value
+The optional `means:` clause records a statement relating the original value
 and the viewed value.
 
-Viewable casts are used when checking whether an already-resolved command's
-arguments satisfy its requirements. For example, if `\integer` is viewable as
-`\rational`, then a command requiring `x is \rational` may accept an integer
-argument. Viewable casts are not used for operator resolution: `+` on integers
-will not resolve to `+` on rationals merely because integers are viewable as
-rationals.
+View relationships are used when checking whether an already-resolved command's
+arguments satisfy its requirements. For example, if `\integer` has a
+`view: as:` relationship to `\rational`, then a command requiring
+`x is \rational` may accept an integer argument. View relationships are not used
+for operator resolution: `+` on integers will not resolve to `+` on rationals
+merely because integers can be viewed as rationals.
 
 ## Rendering Metadata
 

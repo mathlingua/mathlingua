@@ -16,6 +16,7 @@ pub(super) fn collect_definition_type_metadata(
     collect_provided_symbol_rules(item, &info, registry);
     collect_cast_as_rules(item, &info, registry);
     collect_viewable_rules(item, &info, registry);
+    collect_abstraction_rules(item, &info, registry);
     collect_collection_type_signature(item, &info, registry);
     registry
         .type_infos
@@ -62,10 +63,11 @@ fn declaration_has_collection_literal(statement: &DeclarationStatement) -> bool 
             kind: ExpressionKind::Set(_),
             ..
         })
-    ) || matches!(
-        &statement.relation,
-        Some(DeclarationRelation::Is(TypeExpression::Coercion { .. }))
-    )
+    ) || statement
+        .definition
+        .as_ref()
+        .and_then(cast_expression_set_literal)
+        .is_some()
 }
 
 pub(super) fn disambiguation_rule_from_item(item: &TopLevelItem) -> Option<DisambiguationRule> {
@@ -444,6 +446,39 @@ fn collect_viewable_rules(
             parameters: info.parameters.clone(),
             target_subject,
             target,
+        });
+    }
+}
+
+fn collect_abstraction_rules(
+    item: &TopLevelItem,
+    info: &DefinitionTypeInfo,
+    registry: &mut SignatureRegistry,
+) {
+    let Some(source_subject) = info.described.as_ref() else {
+        return;
+    };
+    let Some(enables) = enables_section(item) else {
+        return;
+    };
+
+    for item in &enables.arguments {
+        let EnablesItem::Abstraction(group) = item else {
+            continue;
+        };
+        let ty = TypeExpression::Command(group.of.argument.clone());
+        let Some((target_ty, target_signature)) = key_for_type_expression(&ty) else {
+            continue;
+        };
+        registry.abstraction_rules.push(AbstractionRule {
+            source_signature: info.signature.clone(),
+            source_subject: source_subject.clone(),
+            parameters: info.parameters.clone(),
+            target: TypeFact::Is {
+                subject: source_subject.clone(),
+                ty: target_ty,
+                signature: target_signature,
+            },
         });
     }
 }
@@ -2243,6 +2278,10 @@ fn collect_expression_names(expression: &Expression, names: &mut BTreeSet<String
             collect_expression_names(subject, names);
             collect_type_expression_names(ty, names);
         }
+        ExpressionKind::Cast { expression, ty, .. } => {
+            collect_expression_names(expression, names);
+            collect_type_expression_names(ty, names);
+        }
         ExpressionKind::IsRefinedPredicate { subject, command }
         | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
             collect_expression_names(subject, names);
@@ -2279,10 +2318,6 @@ fn collect_type_expression_names(ty: &TypeExpression, names: &mut BTreeSet<Strin
                     }
                 }
             }
-        }
-        TypeExpression::Coercion { ty, literal, .. } => {
-            collect_type_expression_names(ty, names);
-            collect_set_expression_names(literal, names);
         }
     }
 }
@@ -3345,9 +3380,10 @@ fn register_declaration_collection_literal(
             context.add_collection_literal(subject, set.clone());
         }
     }
-
-    if let Some(DeclarationRelation::Is(TypeExpression::Coercion { literal, .. })) =
-        &statement.relation
+    if let Some(literal) = statement
+        .definition
+        .as_ref()
+        .and_then(cast_expression_set_literal)
     {
         for subject in declaration_subject_keys(statement) {
             context.add_collection_literal(subject, literal.clone());
@@ -3355,22 +3391,28 @@ fn register_declaration_collection_literal(
     }
 }
 
-fn register_coerced_collection_literal(
-    subject: &Expression,
-    ty: &TypeExpression,
-    context: &mut TypeContext,
-) {
-    let TypeExpression::Coercion { literal, .. } = ty else {
-        return;
-    };
-    context.add_collection_literal(key_for_expression(subject), literal.clone());
+fn register_expression_collection_literal(expression: &Expression, context: &mut TypeContext) {
+    match &expression.kind {
+        ExpressionKind::Set(set) => {
+            context.add_collection_literal(key_for_expression(expression), set.clone());
+        }
+        ExpressionKind::Cast { expression, .. } => {
+            if let ExpressionKind::Set(set) = &expression.kind {
+                context.add_collection_literal(key_for_expression(expression), set.clone());
+            }
+        }
+        _ => {}
+    }
 }
 
-fn register_expression_collection_literal(expression: &Expression, context: &mut TypeContext) {
-    let ExpressionKind::Set(set) = &expression.kind else {
-        return;
+fn cast_expression_set_literal(expression: &Expression) -> Option<&SetExpression> {
+    let ExpressionKind::Cast { expression, .. } = &expression.kind else {
+        return None;
     };
-    context.add_collection_literal(key_for_expression(expression), set.clone());
+    match &expression.kind {
+        ExpressionKind::Set(set) => Some(set),
+        _ => None,
+    }
 }
 
 fn check_declaration_relation(
@@ -3818,6 +3860,308 @@ fn check_expression(
             check_type_expression(ty, context, path, locator, registry, event_log);
             check_function_call_result(subject, ty, context, path, locator, registry, event_log);
         }
+        ExpressionKind::Cast {
+            expression,
+            ty,
+            hard,
+        } => {
+            check_expression(expression, context, path, locator, registry, event_log);
+            check_type_expression(ty, context, path, locator, registry, event_log);
+            check_cast_expression(
+                expression, ty, *hard, context, path, locator, registry, event_log,
+            );
+        }
+    }
+}
+
+fn check_cast_expression(
+    expression: &Expression,
+    ty: &TypeExpression,
+    hard: bool,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    if matches!(expression.kind, ExpressionKind::Set(_)) {
+        return;
+    }
+    let Some(required) = fact_from_type_assertion_in_context(expression, ty, context) else {
+        return;
+    };
+    let succeeds = if hard {
+        prove_fact_allowing_abstraction(&required, context, registry)
+    } else {
+        prove_fact(&required, context, registry)
+    };
+    if succeeds {
+        return;
+    }
+
+    emit_error(
+        event_log,
+        path,
+        cast_expression_position(expression, context, locator),
+        format!(
+            "Could not establish cast `{}`",
+            format_cast_expression(expression, ty, hard)
+        ),
+    );
+}
+
+fn context_with_cast_expression_facts<'a>(
+    expressions: impl IntoIterator<Item = &'a Expression>,
+    context: &TypeContext,
+) -> TypeContext {
+    let mut child = context.clone();
+    for expression in expressions {
+        add_cast_expression_facts(expression, &mut child);
+    }
+    child
+}
+
+fn add_cast_expression_facts(expression: &Expression, context: &mut TypeContext) {
+    match &expression.kind {
+        ExpressionKind::Name(_) | ExpressionKind::SubsetCall(_) => {}
+        ExpressionKind::FunctionCall { arguments, .. } => {
+            for argument in arguments {
+                add_cast_expression_facts(argument, context);
+            }
+        }
+        ExpressionKind::FunctionNamedCall { elements, .. } => {
+            for element in elements {
+                add_cast_expression_facts(&element.expression, context);
+            }
+        }
+        ExpressionKind::MemberCall {
+            owner, arguments, ..
+        } => {
+            add_cast_expression_facts(owner, context);
+            for argument in arguments {
+                add_cast_expression_facts(argument, context);
+            }
+        }
+        ExpressionKind::MemberAccess { owner, .. } => add_cast_expression_facts(owner, context),
+        ExpressionKind::Tuple(elements) => {
+            for element in elements {
+                if let TupleExpressionElement::Expression(expression) = element {
+                    add_cast_expression_facts(expression, context);
+                }
+            }
+        }
+        ExpressionKind::Set(set) => {
+            for spec in &set.specs {
+                add_cast_expression_facts(spec, context);
+            }
+            if let Some(predicate) = &set.predicate {
+                add_cast_set_predicate_facts(predicate, context);
+            }
+        }
+        ExpressionKind::Grouped { expression, .. }
+        | ExpressionKind::Labeled { expression, .. }
+        | ExpressionKind::Prefix { expression, .. }
+        | ExpressionKind::Postfix { expression, .. } => {
+            add_cast_expression_facts(expression, context)
+        }
+        ExpressionKind::Command(command) => {
+            add_command_context_cast_facts(command.context.as_ref(), context);
+            for expression in command_expression_arguments(command) {
+                add_cast_expression_facts(expression, context);
+            }
+        }
+        ExpressionKind::BuiltinCommand(command) => add_builtin_command_cast_facts(command, context),
+        ExpressionKind::InfixCommand {
+            left,
+            command,
+            right,
+        } => {
+            add_cast_expression_facts(left, context);
+            for expression in infix_command_arguments(command) {
+                add_cast_expression_facts(expression, context);
+            }
+            add_cast_expression_facts(right, context);
+        }
+        ExpressionKind::InfixSpecStatement { left, spec, right } => {
+            add_cast_expression_facts(left, context);
+            for expression in infix_spec_arguments(spec) {
+                add_cast_expression_facts(expression, context);
+            }
+            add_cast_expression_facts(right, context);
+        }
+        ExpressionKind::Binary { left, right, .. } => {
+            add_cast_expression_facts(left, context);
+            add_cast_expression_facts(right, context);
+        }
+        ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
+            add_cast_expression_facts(&statement.subject, context);
+        }
+        ExpressionKind::IsPredicate { subject, command }
+        | ExpressionKind::IsNotPredicate { subject, command } => {
+            add_cast_expression_facts(subject, context);
+            add_command_context_cast_facts(command.context.as_ref(), context);
+            for expression in command_expression_arguments(command) {
+                add_cast_expression_facts(expression, context);
+            }
+        }
+        ExpressionKind::IsBuiltinPredicate { subject, ty }
+        | ExpressionKind::IsNotBuiltinPredicate { subject, ty }
+        | ExpressionKind::IsType { subject, ty } => {
+            add_cast_expression_facts(subject, context);
+            add_cast_type_expression_facts(ty, context);
+        }
+        ExpressionKind::IsRefinedPredicate { subject, command }
+        | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
+            add_cast_expression_facts(subject, context);
+            for expression in refined_command_expression_arguments(command) {
+                add_cast_expression_facts(expression, context);
+            }
+        }
+        ExpressionKind::Cast { expression, ty, .. } => {
+            add_cast_expression_facts(expression, context);
+            add_cast_type_expression_facts(ty, context);
+            register_expression_collection_literal(expression, context);
+            if let Some(fact) = fact_from_type_assertion_in_context(expression, ty, context) {
+                let normalized = context.normalize_fact(&fact);
+                context.add_fact(normalized);
+            }
+        }
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => {
+            add_cast_expression_facts(subject, context);
+            add_cast_expression_facts(collection, context);
+        }
+    }
+}
+
+fn add_cast_set_predicate_facts(predicate: &SetPredicate, context: &mut TypeContext) {
+    match predicate {
+        SetPredicate::Expression(expression) => add_cast_expression_facts(expression, context),
+        SetPredicate::Definition { value, .. } => add_cast_expression_facts(value, context),
+    }
+}
+
+fn add_cast_type_expression_facts(ty: &TypeExpression, context: &mut TypeContext) {
+    match ty {
+        TypeExpression::Builtin { .. } => {}
+        TypeExpression::Command(command) => {
+            add_command_context_cast_facts(command.context.as_ref(), context);
+            for expression in command_expression_arguments(command) {
+                add_cast_expression_facts(expression, context);
+            }
+        }
+        TypeExpression::RefinedCommand(command) => {
+            for expression in refined_command_expression_arguments(command) {
+                add_cast_expression_facts(expression, context);
+            }
+        }
+        TypeExpression::Function(function_type) => {
+            for spec in function_type
+                .inputs
+                .iter()
+                .chain(std::iter::once(&function_type.output))
+            {
+                add_cast_function_type_spec_facts(spec, context);
+            }
+        }
+    }
+}
+
+fn add_cast_function_type_spec_facts(spec: &FunctionTypeSpec, context: &mut TypeContext) {
+    if let FunctionTypeSpecKind::Is(ty) = &spec.kind {
+        add_cast_type_expression_facts(ty, context);
+    }
+}
+
+fn add_builtin_command_cast_facts(command: &BuiltinCommandExpression, context: &mut TypeContext) {
+    for argument in builtin_head_arguments(command) {
+        add_builtin_command_argument_cast_facts(argument, context);
+    }
+    for tail in &command.tail {
+        for argument in builtin_args_arguments(&tail.args) {
+            add_builtin_command_argument_cast_facts(argument, context);
+        }
+    }
+}
+
+fn add_builtin_command_argument_cast_facts(
+    argument: &BuiltinCommandArgument,
+    context: &mut TypeContext,
+) {
+    match argument {
+        BuiltinCommandArgument::Text(_) => {}
+        BuiltinCommandArgument::Declaration(statement) => {
+            add_declaration_statement_cast_facts(statement, context);
+        }
+        BuiltinCommandArgument::Expression(expression) => {
+            add_cast_expression_facts(expression, context)
+        }
+    }
+}
+
+fn add_command_context_cast_facts(
+    command_context: Option<&CommandContext>,
+    context: &mut TypeContext,
+) {
+    let Some(command_context) = command_context else {
+        return;
+    };
+    for argument in &command_context.arguments {
+        match argument {
+            CommandContextArgument::Assignment { value, .. }
+            | CommandContextArgument::Expression(value) => {
+                add_cast_expression_facts(value, context);
+            }
+            CommandContextArgument::Declaration(statement) => {
+                add_declaration_statement_cast_facts(statement, context);
+            }
+            CommandContextArgument::Text(_) => {}
+        }
+    }
+}
+
+fn add_declaration_statement_cast_facts(
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+) {
+    if let Some(definition) = &statement.definition {
+        add_cast_expression_facts(definition, context);
+    }
+    if let Some(relation) = &statement.relation {
+        add_declaration_relation_cast_facts(relation, context);
+    }
+}
+
+fn add_declaration_relation_cast_facts(relation: &DeclarationRelation, context: &mut TypeContext) {
+    match relation {
+        DeclarationRelation::Is(ty) => add_cast_type_expression_facts(ty, context),
+        DeclarationRelation::Spec { target, .. } => add_cast_expression_facts(target, context),
+        DeclarationRelation::InfixSpec { spec, target } => {
+            for expression in infix_spec_arguments(spec) {
+                add_cast_expression_facts(expression, context);
+            }
+            add_cast_expression_facts(target, context);
+        }
+    }
+}
+
+fn cast_expression_position(
+    expression: &Expression,
+    context: &TypeContext,
+    locator: &mut SourceLocator<'_>,
+) -> Option<SourcePosition> {
+    match &expression.kind {
+        ExpressionKind::Name(name) => locator.locate_symbol(name),
+        ExpressionKind::Command(command) => {
+            let active_command = active_command_expression(command, context);
+            locator.locate_reference(&shape_for_command_expression(&active_command))
+        }
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            cast_expression_position(expression, context, locator)
+        }
+        _ => None,
     }
 }
 
@@ -3856,31 +4200,6 @@ fn check_type_expression(
                 check_function_type_spec(spec, context, path, locator, registry, event_log);
             }
         }
-        TypeExpression::Coercion { ty, literal, .. } => {
-            check_type_expression(ty, context, path, locator, registry, event_log);
-            check_set_literal(literal, context, path, locator, registry, event_log);
-        }
-    }
-}
-
-fn check_set_literal(
-    set: &SetExpression,
-    context: &TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    let mut child = context.clone();
-    declare_set_target(&set.target, &mut child);
-    for spec in &set.specs {
-        assume_fact_expression(spec, &mut child, path, locator, registry, event_log);
-        if let Some(fact) = fact_from_expression_in_context(spec, &child) {
-            child.add_fact(fact);
-        }
-    }
-    if let Some(predicate) = &set.predicate {
-        check_set_predicate(predicate, &mut child, path, locator, registry, event_log);
     }
 }
 
@@ -3991,7 +4310,8 @@ fn check_function_call_inputs(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    let function_types = function_type_facts_for_subject(name, context, registry);
+    let requirement_context = context_with_cast_expression_facts(arguments.iter(), context);
+    let function_types = function_type_facts_for_subject(name, &requirement_context, registry);
     let mut matched_arity = false;
     for function_type in function_types {
         let TypeFact::FunctionType {
@@ -4007,7 +4327,7 @@ fn check_function_call_inputs(
             inputs.len(),
             variadic_tuple_input,
             arguments,
-            context,
+            &requirement_context,
             registry,
         );
         let Some(argument_subjects) = argument_subjects else {
@@ -4017,7 +4337,7 @@ fn check_function_call_inputs(
 
         for (input, argument_subject) in inputs.iter().zip(argument_subjects) {
             let required = instantiate_function_type_spec(input, &argument_subject);
-            if !prove_fact(&required, context, registry) {
+            if !prove_fact(&required, &requirement_context, registry) {
                 emit_error(
                     event_log,
                     path,
@@ -4076,9 +4396,10 @@ fn check_disambiguated_function_call(
     {
         return;
     }
+    let requirement_context = context_with_cast_expression_facts(arguments.iter(), context);
     let actuals = arguments
         .iter()
-        .map(|argument| effective_key_for_expression(argument, context, registry))
+        .map(|argument| effective_key_for_expression(argument, &requirement_context, registry))
         .collect::<Vec<_>>();
     let position = locator.locate_symbol(name);
     check_disambiguated_expression(
@@ -4086,7 +4407,7 @@ fn check_disambiguated_function_call(
         &actuals,
         &format!("function `{name}`"),
         position,
-        context,
+        &requirement_context,
         path,
         locator,
         registry,
@@ -4124,13 +4445,24 @@ fn check_disambiguated_binary(
         );
         return;
     }
-    let actuals = vec![
-        effective_key_for_expression(left, context, registry),
-        effective_key_for_expression(right, context, registry),
-    ];
+    let argument_expressions = [left, right];
+    let requirement_context =
+        context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let actuals = argument_expressions
+        .iter()
+        .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
+        .collect::<Vec<_>>();
     let position = locator.locate_symbol(&symbol);
     check_disambiguated_expression(
-        &key, &actuals, &label, position, context, path, locator, registry, event_log,
+        &key,
+        &actuals,
+        &label,
+        position,
+        &requirement_context,
+        path,
+        locator,
+        registry,
+        event_log,
     );
 }
 
@@ -4151,10 +4483,24 @@ fn check_disambiguated_prefix(
     {
         return;
     }
-    let actuals = vec![effective_key_for_expression(expression, context, registry)];
+    let requirement_context =
+        context_with_cast_expression_facts(std::iter::once(expression), context);
+    let actuals = vec![effective_key_for_expression(
+        expression,
+        &requirement_context,
+        registry,
+    )];
     let position = locator.locate_symbol(&symbol);
     check_disambiguated_expression(
-        &key, &actuals, &label, position, context, path, locator, registry, event_log,
+        &key,
+        &actuals,
+        &label,
+        position,
+        &requirement_context,
+        path,
+        locator,
+        registry,
+        event_log,
     );
 }
 
@@ -4171,14 +4517,20 @@ fn check_disambiguated_postfix(
     if !has_disambiguation_for_key(&key, registry) {
         return;
     }
-    let actuals = vec![effective_key_for_expression(expression, context, registry)];
+    let requirement_context =
+        context_with_cast_expression_facts(std::iter::once(expression), context);
+    let actuals = vec![effective_key_for_expression(
+        expression,
+        &requirement_context,
+        registry,
+    )];
     let position = locator.locate_symbol(&operator.text);
     check_disambiguated_expression(
         &key,
         &actuals,
         &format!("operator `|{}`", operator.text),
         position,
-        context,
+        &requirement_context,
         path,
         locator,
         registry,
@@ -4202,8 +4554,16 @@ fn check_provided_binary_operator(
     };
 
     let key = DisambiguationKey::BinaryOperator(symbol.clone());
-    let actuals = vec![key_for_expression(left), key_for_expression(right)];
-    let Some(rule) = find_provided_symbol_rule(&key, kind, &actuals, context, registry) else {
+    let argument_expressions = [left, right];
+    let requirement_context =
+        context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let actuals = argument_expressions
+        .iter()
+        .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
+        .collect::<Vec<_>>();
+    let Some(rule) =
+        find_provided_symbol_rule(&key, kind, &actuals, &requirement_context, registry)
+    else {
         if context.defer_unresolved_provided_symbols
             || binary_operator_uses_provided_by_default(operator)
         {
@@ -4227,7 +4587,7 @@ fn check_provided_binary_operator(
         rule,
         &actuals,
         owner_actual.as_deref(),
-        context,
+        &requirement_context,
         path,
         locator,
         registry,
@@ -4246,12 +4606,18 @@ fn check_provided_prefix_operator(
     event_log: &mut EventLog,
 ) {
     let (key, _, _) = disambiguation_key_for_prefix_operator(operator);
-    let actuals = vec![key_for_expression(expression)];
+    let requirement_context =
+        context_with_cast_expression_facts(std::iter::once(expression), context);
+    let actuals = vec![effective_key_for_expression(
+        expression,
+        &requirement_context,
+        registry,
+    )];
     let Some(rule) = find_provided_symbol_rule(
         &key,
         NamedOperatorKind::BothColon,
         &actuals,
-        context,
+        &requirement_context,
         registry,
     ) else {
         return;
@@ -4262,7 +4628,7 @@ fn check_provided_prefix_operator(
         rule,
         &actuals,
         owner_actual.as_deref(),
-        context,
+        &requirement_context,
         path,
         locator,
         registry,
@@ -4280,12 +4646,18 @@ fn check_provided_postfix_operator(
     event_log: &mut EventLog,
 ) {
     let key = DisambiguationKey::PostfixOperator(operator.text.clone());
-    let actuals = vec![key_for_expression(expression)];
+    let requirement_context =
+        context_with_cast_expression_facts(std::iter::once(expression), context);
+    let actuals = vec![effective_key_for_expression(
+        expression,
+        &requirement_context,
+        registry,
+    )];
     let Some(rule) = find_provided_symbol_rule(
         &key,
         NamedOperatorKind::BothColon,
         &actuals,
-        context,
+        &requirement_context,
         registry,
     ) else {
         return;
@@ -4296,7 +4668,7 @@ fn check_provided_postfix_operator(
         rule,
         &actuals,
         owner_actual.as_deref(),
-        context,
+        &requirement_context,
         path,
         locator,
         registry,
@@ -4318,11 +4690,23 @@ fn check_provided_member(
         name: name.to_owned(),
         arity: arguments.len(),
     };
-    let owner_actual = key_for_expression(owner);
-    let actuals = arguments.iter().map(key_for_expression).collect::<Vec<_>>();
-    let Some(rule) =
-        find_member_provided_symbol_rule(&key, &owner_actual, &actuals, context, registry)
-    else {
+    let mut argument_expressions = Vec::new();
+    argument_expressions.push(owner);
+    argument_expressions.extend(arguments.iter());
+    let requirement_context =
+        context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let owner_actual = effective_key_for_expression(owner, &requirement_context, registry);
+    let actuals = arguments
+        .iter()
+        .map(|argument| effective_key_for_expression(argument, &requirement_context, registry))
+        .collect::<Vec<_>>();
+    let Some(rule) = find_member_provided_symbol_rule(
+        &key,
+        &owner_actual,
+        &actuals,
+        &requirement_context,
+        registry,
+    ) else {
         emit_error(
             event_log,
             path,
@@ -4339,7 +4723,7 @@ fn check_provided_member(
         rule,
         &actuals,
         Some(&owner_actual),
-        context,
+        &requirement_context,
         path,
         locator,
         registry,
@@ -4356,12 +4740,16 @@ fn check_provided_callable_owner_function(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) -> bool {
-    let actuals = arguments.iter().map(key_for_expression).collect::<Vec<_>>();
+    let requirement_context = context_with_cast_expression_facts(arguments.iter(), context);
+    let actuals = arguments
+        .iter()
+        .map(|argument| effective_key_for_expression(argument, &requirement_context, registry))
+        .collect::<Vec<_>>();
     let Some(rule) = find_callable_owner_provided_symbol_rule(
         name,
         arguments.len(),
         &actuals,
-        context,
+        &requirement_context,
         registry,
     ) else {
         return false;
@@ -4371,7 +4759,7 @@ fn check_provided_callable_owner_function(
         rule,
         &actuals,
         Some(name),
-        context,
+        &requirement_context,
         path,
         locator,
         registry,
@@ -4561,6 +4949,9 @@ fn effective_key_for_expression_inner(
         } => {
             effective_key_for_binary_expression(left, operator, right, context, registry, resolving)
         }
+        ExpressionKind::Cast { expression, .. } => Some(effective_key_for_expression_inner(
+            expression, context, registry, resolving,
+        )),
         _ => None,
     }
     .unwrap_or_else(|| raw_key.clone());
@@ -5209,7 +5600,8 @@ fn check_function_call_result_fact(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    let function_types = function_type_facts_for_subject(name, context, registry);
+    let requirement_context = context_with_cast_expression_facts(std::iter::once(subject), context);
+    let function_types = function_type_facts_for_subject(name, &requirement_context, registry);
     let mut found_matching_arity = false;
     for function_type in &function_types {
         if function_type_matches_call_arity(function_type, function_call_arity(subject)) {
@@ -5219,7 +5611,7 @@ fn check_function_call_result_fact(
         if function_type_implies_required(
             function_type,
             &required,
-            context,
+            &requirement_context,
             registry,
             &mut seen,
             true,
@@ -5261,15 +5653,18 @@ fn check_command_expression(
     );
     let shape = shape_for_command_expression(&active_command);
     let position = locator.locate_reference(&shape);
-    let actuals = command_expression_arguments(&active_command)
-        .into_iter()
-        .map(|expression| effective_key_for_expression(expression, context, registry))
+    let argument_expressions = command_expression_arguments(&active_command);
+    let requirement_context =
+        context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let actuals = argument_expressions
+        .iter()
+        .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
         .collect::<Vec<_>>();
     check_command_requirements(
         &shape.signature,
         &actuals,
         active_command.context.as_ref(),
-        context,
+        &requirement_context,
         path,
         position,
         registry,
@@ -5297,9 +5692,12 @@ fn check_command_type_expression(
     );
     let shape = shape_for_command_expression(&active_command);
     let position = locator.locate_reference(&shape);
-    let actuals = command_expression_arguments(&active_command)
-        .into_iter()
-        .map(|expression| effective_key_for_expression(expression, context, registry))
+    let argument_expressions = command_expression_arguments(&active_command);
+    let requirement_context =
+        context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let actuals = argument_expressions
+        .iter()
+        .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
         .collect::<Vec<_>>();
     if active_command.context.is_none()
         && command_type_is_nominal_without_arguments(&shape.signature, &actuals, registry)
@@ -5310,7 +5708,7 @@ fn check_command_type_expression(
         &shape.signature,
         &actuals,
         active_command.context.as_ref(),
-        context,
+        &requirement_context,
         path,
         position,
         registry,
@@ -5343,19 +5741,21 @@ fn check_infix_command(
     let active_command = active_infix_command(command, context);
     let shape = shape_for_infix_command(&active_command);
     let position = locator.locate_reference(&shape);
-    let mut actuals = Vec::new();
-    actuals.push(effective_key_for_expression(left, context, registry));
-    actuals.extend(
-        infix_command_arguments(&active_command)
-            .into_iter()
-            .map(|expression| effective_key_for_expression(expression, context, registry)),
-    );
-    actuals.push(effective_key_for_expression(right, context, registry));
+    let mut argument_expressions = Vec::new();
+    argument_expressions.push(left);
+    argument_expressions.extend(infix_command_arguments(&active_command));
+    argument_expressions.push(right);
+    let requirement_context =
+        context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let actuals = argument_expressions
+        .iter()
+        .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
+        .collect::<Vec<_>>();
     check_command_requirements(
         &shape.signature,
         &actuals,
         None,
-        context,
+        &requirement_context,
         path,
         position,
         registry,
@@ -5377,9 +5777,12 @@ fn check_refined_command_type_expression(
     let active_command = active_refined_command_expression(command, context);
     let shape = shape_for_refined_command_expression(&active_command);
     let position = locator.locate_reference(&shape);
-    let actuals = refined_command_expression_arguments(&active_command)
-        .into_iter()
-        .map(|expression| effective_key_for_expression(expression, context, registry))
+    let argument_expressions = refined_command_expression_arguments(&active_command);
+    let requirement_context =
+        context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let actuals = argument_expressions
+        .iter()
+        .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
         .collect::<Vec<_>>();
     if command_type_is_nominal_without_arguments(&shape.signature, &actuals, registry) {
         return;
@@ -5388,7 +5791,7 @@ fn check_refined_command_type_expression(
         &shape.signature,
         &actuals,
         None,
-        context,
+        &requirement_context,
         path,
         position,
         registry,
@@ -5410,15 +5813,18 @@ fn check_refined_command_expression(
     let active_command = active_refined_command_expression(command, context);
     let shape = shape_for_refined_command_expression(&active_command);
     let position = locator.locate_reference(&shape);
-    let actuals = refined_command_expression_arguments(&active_command)
-        .into_iter()
-        .map(|expression| effective_key_for_expression(expression, context, registry))
+    let argument_expressions = refined_command_expression_arguments(&active_command);
+    let requirement_context =
+        context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let actuals = argument_expressions
+        .iter()
+        .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
         .collect::<Vec<_>>();
     check_command_requirements(
         &shape.signature,
         &actuals,
         None,
-        context,
+        &requirement_context,
         path,
         position,
         registry,
@@ -5641,6 +6047,10 @@ fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<Str
             collect_defined_expression_names(subject, names);
             collect_defined_type_expression_names(ty, names);
         }
+        ExpressionKind::Cast { expression, ty, .. } => {
+            collect_defined_expression_names(expression, names);
+            collect_defined_type_expression_names(ty, names);
+        }
     }
 }
 
@@ -5664,16 +6074,6 @@ fn collect_defined_type_expression_names(ty: &TypeExpression, names: &mut Vec<St
                 .chain(std::iter::once(&function_type.output))
             {
                 collect_defined_function_type_spec_names(spec, names);
-            }
-        }
-        TypeExpression::Coercion { ty, literal, .. } => {
-            collect_defined_type_expression_names(ty, names);
-            collect_defined_set_target_names(&literal.target, names);
-            for spec in &literal.specs {
-                collect_defined_expression_names(spec, names);
-            }
-            if let Some(predicate) = &literal.predicate {
-                collect_defined_set_predicate_names(predicate, names);
             }
         }
     }
@@ -6102,8 +6502,10 @@ fn declare_declaration_collection_literal_target(
     {
         declare_set_target(&set.target, context);
     }
-    if let Some(DeclarationRelation::Is(TypeExpression::Coercion { literal, .. })) =
-        &statement.relation
+    if let Some(literal) = statement
+        .definition
+        .as_ref()
+        .and_then(cast_expression_set_literal)
     {
         declare_set_target(&literal.target, context);
     }
@@ -6203,18 +6605,21 @@ fn validate_definition_requirement(
     let active_command = active_command_expression(&requirement.command, context);
     let shape = shape_for_command_expression(&active_command);
     let position = locator.locate_reference(&shape);
-    let actuals = command_expression_arguments(&active_command)
-        .into_iter()
+    let argument_expressions = command_expression_arguments(&active_command);
+    let requirement_context =
+        context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let actuals = argument_expressions
+        .iter()
         .map(|expression| {
             check_expression(expression, context, path, locator, registry, event_log);
-            effective_key_for_expression(expression, context, registry)
+            effective_key_for_expression(expression, &requirement_context, registry)
         })
         .collect::<Vec<_>>();
     check_command_requirements(
         &shape.signature,
         &actuals,
         active_command.context.as_ref(),
-        context,
+        &requirement_context,
         path,
         position,
         registry,
@@ -6459,10 +6864,6 @@ fn check_type_expression_requirements(
                 check_function_type_spec(spec, context, path, locator, registry, event_log);
             }
         }
-        TypeExpression::Coercion { ty, literal, .. } => {
-            check_type_expression_requirements(ty, context, path, locator, registry, event_log);
-            check_set_literal(literal, context, path, locator, registry, event_log);
-        }
     }
 }
 
@@ -6488,6 +6889,7 @@ fn check_command_requirements(
         .collect::<HashMap<_, _>>();
 
     let mut requirement_context = context.clone();
+    add_command_context_cast_facts(command_context, &mut requirement_context);
     apply_command_context_bindings(
         command_context,
         info,
@@ -6858,6 +7260,31 @@ fn prove_fact_with_options(
             &mut seen,
             allow_viewable,
         )
+    })
+}
+
+fn prove_fact_allowing_abstraction(
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> bool {
+    if prove_fact(required, context, registry) {
+        return true;
+    }
+
+    let required = context.normalize_fact(required);
+    let mut seen = HashSet::new();
+    if defined_output_facts_for_key(fact_subject(&required), context, registry)
+        .iter()
+        .any(|fact| {
+            fact_implies_allowing_abstraction(fact, &required, context, registry, &mut seen)
+        })
+    {
+        return true;
+    }
+
+    context.facts.iter().any(|fact| {
+        fact_implies_allowing_abstraction(fact, &required, context, registry, &mut seen)
     })
 }
 
@@ -7276,6 +7703,90 @@ fn fact_implies_with_options(
     }
 
     false
+}
+
+fn fact_implies_allowing_abstraction(
+    fact: &TypeFact,
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> bool {
+    let fact = context.normalize_fact(fact);
+    if fact_implies_with_options(
+        &fact,
+        required,
+        context,
+        registry,
+        &mut HashSet::new(),
+        true,
+    ) {
+        return true;
+    }
+    if !seen.insert(fact.clone()) {
+        return false;
+    }
+
+    if abstraction_fact_implies_required(&fact, required, context, registry, seen) {
+        return true;
+    }
+
+    for extended in reduce_extension_fact(&fact, context, registry) {
+        if fact_implies_allowing_abstraction(&extended, required, context, registry, seen) {
+            return true;
+        }
+    }
+
+    for reduced in reduce_refined_fact(&fact, context, registry) {
+        if fact_implies_allowing_abstraction(&reduced, required, context, registry, seen) {
+            return true;
+        }
+    }
+
+    if matches!(fact, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
+        let mut spec_seen = HashSet::new();
+        for reduced in reduce_spec_or_member_fact(&fact, context, registry, &mut spec_seen) {
+            if fact_implies_allowing_abstraction(&reduced, required, context, registry, seen) {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+fn abstraction_fact_implies_required(
+    fact: &TypeFact,
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> bool {
+    let TypeFact::Is {
+        subject,
+        ty,
+        signature,
+    } = fact
+    else {
+        return false;
+    };
+    let actuals = actuals_for_type_key(signature, ty).unwrap_or_default();
+
+    registry
+        .abstraction_rules
+        .iter()
+        .filter(|rule| rule.source_signature == *signature)
+        .any(|rule| {
+            let mut substitutions = rule
+                .parameters
+                .iter()
+                .zip(&actuals)
+                .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
+                .collect::<HashMap<_, _>>();
+            substitutions.insert(rule.source_subject.clone(), subject.clone());
+            let abstracted = context.normalize_fact(&substitute_fact(&rule.target, &substitutions));
+            fact_implies_with_options(&abstracted, required, context, registry, seen, true)
+        })
 }
 
 fn viewable_fact_implies_required(
@@ -8679,7 +9190,18 @@ fn assume_fact_expression(
         ExpressionKind::IsType { subject, ty } => {
             check_type_expression(ty, context, path, locator, registry, event_log);
             declare_names_from_expression(subject, context);
-            register_coerced_collection_literal(subject, ty, context);
+        }
+        ExpressionKind::Cast {
+            expression,
+            ty,
+            hard,
+        } => {
+            check_type_expression(ty, context, path, locator, registry, event_log);
+            declare_names_from_expression(expression, context);
+            register_expression_collection_literal(expression, context);
+            check_cast_expression(
+                expression, ty, *hard, context, path, locator, registry, event_log,
+            );
         }
         ExpressionKind::SpecStatement(statement) => {
             check_name(&statement.name, context, path, locator, event_log);
@@ -8950,6 +9472,10 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
             declare_names_from_expression(subject, context);
             declare_names_from_type_expression(ty, context);
         }
+        ExpressionKind::Cast { expression, ty, .. } => {
+            declare_names_from_expression(expression, context);
+            declare_names_from_type_expression(ty, context);
+        }
     }
 }
 
@@ -8975,16 +9501,6 @@ fn declare_names_from_type_expression(ty: &TypeExpression, context: &mut TypeCon
                 .chain(std::iter::once(&function_type.output))
             {
                 declare_names_from_function_type_spec(spec, context);
-            }
-        }
-        TypeExpression::Coercion { ty, literal, .. } => {
-            declare_names_from_type_expression(ty, context);
-            declare_set_target(&literal.target, context);
-            for spec in &literal.specs {
-                declare_names_from_expression(spec, context);
-            }
-            if let Some(predicate) = &literal.predicate {
-                declare_names_from_set_predicate(predicate, context);
             }
         }
     }
@@ -9325,7 +9841,7 @@ fn facts_from_is_or_spec(spec: &IsOrSpec) -> Vec<TypeFact> {
 
 fn facts_from_declaration_statement(statement: &DeclarationStatement) -> Vec<TypeFact> {
     let Some(relation) = &statement.relation else {
-        return Vec::new();
+        return facts_from_declaration_cast_definition(statement);
     };
 
     match relation {
@@ -9362,7 +9878,7 @@ fn facts_from_declaration_statement_in_context(
     context: &TypeContext,
 ) -> Vec<TypeFact> {
     let Some(relation) = &statement.relation else {
-        return Vec::new();
+        return facts_from_declaration_cast_definition_in_context(statement, context);
     };
 
     match relation {
@@ -9393,6 +9909,37 @@ fn facts_from_declaration_statement_in_context(
                 .collect()
         }
     }
+}
+
+fn facts_from_declaration_cast_definition(statement: &DeclarationStatement) -> Vec<TypeFact> {
+    let Some(Expression {
+        kind: ExpressionKind::Cast { ty, .. },
+        ..
+    }) = &statement.definition
+    else {
+        return Vec::new();
+    };
+    declaration_subject_keys(statement)
+        .into_iter()
+        .filter_map(|subject| fact_from_type_key_assertion_without_context(subject, ty))
+        .collect()
+}
+
+fn facts_from_declaration_cast_definition_in_context(
+    statement: &DeclarationStatement,
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    let Some(Expression {
+        kind: ExpressionKind::Cast { ty, .. },
+        ..
+    }) = &statement.definition
+    else {
+        return Vec::new();
+    };
+    declaration_subject_keys(statement)
+        .into_iter()
+        .filter_map(|subject| fact_from_type_key_assertion(subject, ty, context))
+        .collect()
 }
 
 fn facts_from_declaration_is(
@@ -9556,6 +10103,7 @@ fn fact_from_expression(expression: &Expression) -> Option<TypeFact> {
             key_for_expression(subject),
             command,
         )),
+        ExpressionKind::Cast { expression, ty, .. } => fact_from_type_assertion(expression, ty),
         _ => None,
     }
 }
@@ -9589,6 +10137,9 @@ fn fact_from_expression_in_context(
                 key_for_expression(subject),
                 &active_command,
             ))
+        }
+        ExpressionKind::Cast { expression, ty, .. } => {
+            fact_from_type_assertion_in_context(expression, ty, context)
         }
         _ => None,
     }
@@ -9684,6 +10235,33 @@ fn fact_from_type_assertion_in_context(
     let (ty, signature) = key_for_type_expression_in_context(ty, context)?;
     Some(TypeFact::Is {
         subject: key_for_expression(subject),
+        ty,
+        signature,
+    })
+}
+
+fn fact_from_type_key_assertion_without_context(
+    subject: String,
+    ty: &TypeExpression,
+) -> Option<TypeFact> {
+    if let TypeExpression::Function(function_type) = ty {
+        let inputs = function_type_inputs_as_facts(function_type)?;
+        let output = function_type_spec_as_fact(&function_type.output)?;
+        return Some(TypeFact::FunctionType {
+            subject,
+            inputs,
+            output,
+            variadic_tuple_input: false,
+        });
+    }
+
+    if let TypeExpression::RefinedCommand(command) = ty {
+        return Some(refined_fact_from_command(subject, command));
+    }
+
+    let (ty, signature) = key_for_type_expression(ty)?;
+    Some(TypeFact::Is {
+        subject,
         ty,
         signature,
     })
@@ -9957,7 +10535,6 @@ fn key_for_type_expression(ty: &TypeExpression) -> Option<(String, String)> {
             key_for_command_expression(command),
             shape_for_command_expression(command).signature,
         )),
-        TypeExpression::Coercion { ty, .. } => key_for_type_expression(ty),
         TypeExpression::RefinedCommand(_) | TypeExpression::Function(_) => None,
     }
 }
@@ -9978,7 +10555,6 @@ fn key_for_type_expression_in_context(
                 shape_for_command_expression(&active_command).signature,
             ))
         }
-        TypeExpression::Coercion { ty, .. } => key_for_type_expression_in_context(ty, context),
         TypeExpression::RefinedCommand(_) | TypeExpression::Function(_) => None,
     }
 }
@@ -10148,7 +10724,23 @@ fn key_for_expression(expression: &Expression) -> String {
                 .map(|(key, _)| key)
                 .unwrap_or_else(|| key_for_non_command_type_expression(ty))
         ),
+        ExpressionKind::Cast {
+            expression,
+            ty,
+            hard,
+        } => format_cast_expression(expression, ty, *hard),
     }
+}
+
+fn format_cast_expression(expression: &Expression, ty: &TypeExpression, hard: bool) -> String {
+    format!(
+        "{} {} {}",
+        key_for_expression(expression),
+        if hard { "as!" } else { "as" },
+        key_for_type_expression(ty)
+            .map(|(key, _)| key)
+            .unwrap_or_else(|| key_for_non_command_type_expression(ty))
+    )
 }
 
 fn key_for_unary_operator(operator: &UnaryOperator) -> String {
@@ -10208,13 +10800,6 @@ fn key_for_non_command_type_expression(ty: &TypeExpression) -> String {
                 },
             ),
         ),
-        TypeExpression::Coercion { ty, literal, .. } => {
-            format!(
-                "{}@{}",
-                key_for_non_command_type_expression(ty),
-                key_for_set_expression(literal)
-            )
-        }
     }
 }
 

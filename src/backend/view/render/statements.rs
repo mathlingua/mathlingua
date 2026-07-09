@@ -305,17 +305,6 @@ fn render_type_expression_with_subject(
             latex: render_function_type(function_type, registry),
             includes_subject: false,
         },
-        TypeExpression::Coercion { ty, literal, .. } => {
-            let rendered = render_type_expression_with_subject(ty, subject_latex, registry);
-            RenderedTypeExpression {
-                latex: format!(
-                    "{}@{}",
-                    rendered.latex,
-                    render_set_expression(literal, registry)
-                ),
-                includes_subject: rendered.includes_subject,
-            }
-        }
     }
 }
 

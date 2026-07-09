@@ -108,6 +108,10 @@ pub(in crate::backend::semantic) fn walk_expression(
             walk_expression(subject, visit);
             walk_type_expression(ty, visit);
         }
+        ExpressionKind::Cast { expression, ty, .. } => {
+            walk_expression(expression, visit);
+            walk_type_expression(ty, visit);
+        }
     }
 }
 

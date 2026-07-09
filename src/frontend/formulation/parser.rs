@@ -179,6 +179,8 @@ fn token_literal(token: &Token) -> &'static str {
         Token::IsPredicate => "is?",
         Token::Is => "is",
         Token::Via => "via",
+        Token::AsBang => "as!",
+        Token::As => "as",
         Token::MemberOf => "member_of",
         Token::CommandStart => "\\",
         Token::Plus => "+",
@@ -1559,18 +1561,6 @@ fn parse_declaration_relation(
         return Ok((&input[..index], Some(DeclarationRelation::Is(ty))));
     }
 
-    if let Some(index) = find_top_level_definition(input) {
-        let subject = input[..index].trim();
-        let definition_text = input[index + 2..].trim();
-        if !subject.is_empty()
-            && !definition_text.is_empty()
-            && let Ok(ty @ TypeExpression::Coercion { .. }) =
-                parse_type_expression(definition_text, allow_refined_type)
-        {
-            return Ok((subject, Some(DeclarationRelation::Is(ty))));
-        }
-    }
-
     if let Some((body, operator, name_text)) = split_subject_operator_name(input) {
         let target = parse_expression(name_text)?;
         return Ok((
@@ -1688,16 +1678,6 @@ pub(super) fn parse_type_expression(
     allow_refined: bool,
 ) -> Result<TypeExpression, ParseError> {
     let input = input.trim();
-    if let Some(index) = find_first_top_level_char(input, '@') {
-        let ty = parse_type_expression(input[..index].trim(), allow_refined)?;
-        let literal = parse_set_expression_literal(input[index + 1..].trim())?;
-        return Ok(TypeExpression::Coercion {
-            span: span_all(input),
-            ty: Box::new(ty),
-            literal,
-        });
-    }
-
     if input.starts_with("\\\\") {
         return parse_builtin_type_expression(input);
     }
@@ -1714,14 +1694,6 @@ pub(super) fn parse_type_expression(
     match expression.kind {
         ExpressionKind::Command(command) => Ok(TypeExpression::Command(command)),
         _ => Err(ParseError::custom("expected command expression for type")),
-    }
-}
-
-fn parse_set_expression_literal(input: &str) -> Result<SetExpression, ParseError> {
-    let expression = parse_expression(input)?;
-    match expression.kind {
-        ExpressionKind::Set(set) => Ok(set),
-        _ => Err(ParseError::custom("expected set literal after `@`")),
     }
 }
 
@@ -3349,6 +3321,39 @@ mod tests {
     }
 
     #[test]
+    fn parses_cast_expressions() {
+        let normal = parse_expression(r#"{x_ : x_ is \real} as \set"#)
+            .expect("expected ordinary cast expression");
+        let hard = parse_expression(r#"n as! \set"#).expect("expected hard cast expression");
+
+        match normal.kind {
+            ExpressionKind::Cast {
+                expression,
+                ty,
+                hard,
+            } => {
+                assert!(!hard);
+                assert!(matches!(expression.kind, ExpressionKind::Set(_)));
+                assert!(matches!(ty, TypeExpression::Command(_)));
+            }
+            other => panic!("expected cast expression, got {other:?}"),
+        }
+
+        match hard.kind {
+            ExpressionKind::Cast {
+                expression,
+                ty,
+                hard,
+            } => {
+                assert!(hard);
+                assert!(matches!(expression.kind, ExpressionKind::Name(ref name) if name == "n"));
+                assert!(matches!(ty, TypeExpression::Command(_)));
+            }
+            other => panic!("expected hard cast expression, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn parses_direct_subset_calls_and_named_function_calls() {
         let subset = parse_expression("Domain[element]").expect("expected subset expression");
         let named_call =
@@ -4143,22 +4148,19 @@ mod tests {
                 if matches!(target.kind, ExpressionKind::Command(_))
         ));
 
-        let coerced_collection =
-            parse_ordinary_declaration_statement(r#"A is \set@{x_ : x_ is \real}"#)
-                .expect("expected collection coercion declaration statement");
+        let cast_collection =
+            parse_ordinary_declaration_statement(r#"B := {x_ : x_ is \real} as \set"#)
+                .expect("expected defined collection cast declaration statement");
+        assert!(cast_collection.relation.is_none());
         assert!(matches!(
-            coerced_collection.relation,
-            Some(DeclarationRelation::Is(TypeExpression::Coercion { .. }))
+            cast_collection
+                .definition
+                .as_ref()
+                .map(|expression| &expression.kind),
+            Some(ExpressionKind::Cast { .. })
         ));
-
-        let defined_coerced_collection =
-            parse_ordinary_declaration_statement(r#"B := \set@{x_ : x_ is \real}"#)
-                .expect("expected defined collection coercion declaration statement");
-        assert!(defined_coerced_collection.definition.is_none());
-        assert!(matches!(
-            defined_coerced_collection.relation,
-            Some(DeclarationRelation::Is(TypeExpression::Coercion { .. }))
-        ));
+        parse_ordinary_declaration_statement(r#"A is \set@{x_ : x_ is \real}"#)
+            .expect_err("old command-at cast syntax should be rejected");
 
         let composition =
             parse_ordinary_declaration_statement(r#"h(x__) := f(g(x__)) is \function:on{A}:to{C}"#)

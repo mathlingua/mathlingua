@@ -137,6 +137,14 @@ pub(super) struct ViewableRule {
 }
 
 #[derive(Clone, Debug)]
+pub(super) struct AbstractionRule {
+    pub(super) source_signature: String,
+    pub(super) source_subject: String,
+    pub(super) parameters: Vec<String>,
+    pub(super) target: TypeFact,
+}
+
+#[derive(Clone, Debug)]
 pub(super) struct TypeExtensionRule {
     pub(super) subtype_signature: String,
     pub(super) subject: String,
@@ -224,5 +232,6 @@ pub(super) struct SignatureRegistry {
     pub(super) provided_symbols: Vec<ProvidedSymbolRule>,
     pub(super) cast_as_rules: Vec<CastAsRule>,
     pub(super) viewable_rules: Vec<ViewableRule>,
+    pub(super) abstraction_rules: Vec<AbstractionRule>,
     pub(super) collection_type_signatures: Vec<String>,
 }

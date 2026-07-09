@@ -169,13 +169,17 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 render_expression(subject, registry),
                 render_function_type(function_type, registry)
             ),
-            TypeExpression::Coercion { ty, literal, .. } => format!(
-                "{} \\textrm{{ is }} {}@{}",
-                render_expression(subject, registry),
-                render_type_expression(ty, registry),
-                render_set_expression(literal, registry)
-            ),
         },
+        ExpressionKind::Cast {
+            expression,
+            ty,
+            hard,
+        } => format!(
+            "{} \\textrm{{ {} }} {}",
+            render_expression(expression, registry),
+            if *hard { "as!" } else { "as" },
+            render_type_expression(ty, registry)
+        ),
     }
 }
 

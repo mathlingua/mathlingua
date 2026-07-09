@@ -4309,7 +4309,7 @@ mod tests {
 
     Theorem:
     given:
-    . A is \set@{x_ : x_ is \real}
+    . A := {x_ : x_ is \real} as \set
     . x "in" A
     then: \needs.real{x}
 
@@ -4321,12 +4321,12 @@ mod tests {
 
     Theorem:
     given:
-    . C := \set@{c_ : c_ is \real}
+    . C := {c_ : c_ is \real} as \set
     . z "in" C
     then: \needs.real{z}
 
     Theorem:
-    given: X := \set@{x_ : x_ is \set}
+    given: X := {x_ : x_ is \set} as \set
     then:
     . forAll: x "in" X
       then: x is \set
@@ -4372,7 +4372,7 @@ mod tests {
     . written: "\operatorname{needsSet}(x?)"
 
     Theorem:
-    given: X := \set@{x_ : x_ is \set}
+    given: X := {x_ : x_ is \set} as \set
     then:
     . forAll: x "in" X
       then:
@@ -4427,7 +4427,7 @@ mod tests {
 
     Theorem:
     given:
-    . F := \function@{(p_, q_) : p_ is \\expression, q_ is \set}
+    . F := {(p_, q_) : p_ is \\expression, q_ is \set} as \function
     . a is \\expression
     then: \needs.set{F(a)}
     "#,
@@ -4514,6 +4514,159 @@ mod tests {
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
+    }
+
+    #[test]
+    fn check_accepts_explicit_as_cast_for_view_requirements() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("explicit-view-cast.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\rational]
+    Describes: r
+    Documented:
+    . written: "\operatorname{rational}"
+
+    [\integer]
+    Describes: n
+    Enables:
+    . view:
+      as: r is \rational
+      when: n is \integer
+    Documented:
+    . written: "\operatorname{integer}"
+
+    [\needs.rational{x}]
+    Describes: y
+    when: x is \rational
+    Documented:
+    . written: "\operatorname{needsRational}(x?)"
+
+    Theorem:
+    given: n is \integer
+    then:
+    . \needs.rational{n as \rational}
+    . (n as \rational) is? \rational
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("explicit-view-cast.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_hard_cast_uses_abstraction_relationships() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("hard-cast-abstraction.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\natural]
+    Describes: n
+    Enables:
+    . abstraction:
+      of: \set
+      assuming:
+      . n0 := n is! \set
+    Documented:
+    . written: "\operatorname{natural}"
+
+    [\needs.set{x}]
+    Describes: y
+    when: x is \set
+    Documented:
+    . written: "\operatorname{needsSet}(x?)"
+
+    Theorem:
+    given: n is \natural
+    then:
+    . \needs.set{n as! \set}
+    . (n as! \set) is? \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("hard-cast-abstraction.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_plain_cast_does_not_use_abstraction_relationships() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("plain-cast-no-abstraction.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\natural]
+    Describes: n
+    Enables:
+    . abstraction:
+      of: \set
+      assuming:
+      . n0 := n is! \set
+    Documented:
+    . written: "\operatorname{natural}"
+
+    [\needs.set{x}]
+    Describes: y
+    when: x is \set
+    Documented:
+    . written: "\operatorname{needsSet}(x?)"
+
+    Theorem:
+    given: n is \natural
+    then: \needs.set{n as \set}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("plain-cast-no-abstraction.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let events = user_events(&event_log);
+        assert!(events.iter().any(|event| {
+            matches!(event, Event::Message(message) if
+                message.message.contains("Could not establish cast `n as \\set`")
+            )
+        }));
+        assert!(event_log.has_errors());
     }
 
     #[test]
@@ -4695,7 +4848,7 @@ mod tests {
     . written: "A? \setminus B?"
 
     Theorem:
-    given: X := \set@{x_ : x_ is \set}
+    given: X := {x_ : x_ is \set} as \set
     then:
     . forAll: x, y "in" X
       then: x \.set.minus./ y is? \set
@@ -4755,7 +4908,7 @@ mod tests {
     . written: "A? \setminus B?"
 
     Theorem:
-    given: X := \set@{x_ : x_ is \set}
+    given: X := {x_ : x_ is \set} as \set
     then:
     . forAll: x, y "in" X
       then: x \.set.minus./ y is? \set

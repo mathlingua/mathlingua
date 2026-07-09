@@ -182,18 +182,10 @@ pub struct InfixSpec {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypeExpression {
-    Builtin {
-        span: Span,
-        chain: Chain,
-    },
+    Builtin { span: Span, chain: Chain },
     Command(CommandExpression),
     RefinedCommand(RefinedCommandExpression),
     Function(FunctionType),
-    Coercion {
-        span: Span,
-        ty: Box<TypeExpression>,
-        literal: SetExpression,
-    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -416,6 +408,11 @@ pub enum ExpressionKind {
     IsType {
         subject: Box<Expression>,
         ty: TypeExpression,
+    },
+    Cast {
+        expression: Box<Expression>,
+        ty: TypeExpression,
+        hard: bool,
     },
     MemberOf {
         subject: Box<Expression>,

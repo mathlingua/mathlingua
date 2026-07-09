@@ -45,6 +45,8 @@ extern {
         "is_not?" => Token::IsNotPredicate,
         "is?" => Token::IsPredicate,
         "is" => Token::Is,
+        "as!" => Token::AsBang,
+        "as" => Token::As,
         "member_of" => Token::MemberOf,
         "quoted_name" => Token::QuotedName(<String>),
         "magnetic_placeholder" => Token::MagneticPlaceholder(<String>),
@@ -85,6 +87,11 @@ pub InputFormOrDeclaration: ast::FormOrDeclaration = {
 
 Name: String = {
     <name:"name"> => name,
+};
+
+ChainName: String = {
+    <name:Name> => name,
+    "as" => "as".to_owned(),
 };
 
 QuotedName: String = {
@@ -543,7 +550,7 @@ SubsetNameCall: ast::SubsetCall = {
 };
 
 ChainPart: ast::ChainPart = {
-    <name:Name> => ast::ChainPart::Name(name),
+    <name:ChainName> => ast::ChainPart::Name(name),
     "$" <name:Name> => ast::ChainPart::Alias(name),
     <operator:AnyOperator> => ast::ChainPart::Operator(operator.text),
 };
@@ -960,6 +967,22 @@ SpecOrPredicateExpression: ast::Expression = {
         ExpressionKind::IsType {
             subject: Box::new(subject),
             ty,
+        },
+    ),
+    <l:@L> <expression:InfixCommandExpression> "as" <ty:PredicateTypeExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Cast {
+            expression: Box::new(expression),
+            ty,
+            hard: false,
+        },
+    ),
+    <l:@L> <expression:InfixCommandExpression> "as!" <ty:PredicateTypeExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Cast {
+            expression: Box::new(expression),
+            ty,
+            hard: true,
         },
     ),
     <l:@L> <subject:InfixCommandExpression> "member_of" <collection:InfixCommandExpression> <r:@R> => ast::Expression::new(

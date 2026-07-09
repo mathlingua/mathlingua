@@ -210,11 +210,11 @@ Collection targets:
   value, where that value may itself have any expression shape.
 - `member_of` is a keyword used by enabled membership capabilities.
 - `x member_of X` is valid only when `X` is a collection literal or has a
-  collection literal attached by coercion.
-- `\set@{x_ : x_ is \real}` coerces a collection literal to the described type.
+  collection literal attached by an explicit cast.
+- `{x_ : x_ is \real} as \set` casts a collection literal to the described type.
 - `A := {x_ : x_ is \real | x_ > 2} is \set` binds the literal to `A` as a set.
-- If `A is \set@{x_ : x_ is \real}` and `x "in" A`, the checker can establish
-  `x is \real`.
+- If `A := {x_ : x_ is \real} as \set` and `x "in" A`, the checker can
+  establish `x is \real`.
 - If `A is \set` without a collection literal, membership establishes
   `x is \\opaque`.
 
@@ -304,7 +304,7 @@ The checker distinguishes values, definitions, and described types.
 
 - `X is \foo` is used when `\foo` is a `Describes:` entry.
 - `X := \foo` is used when `\foo` is a `Defines:` entry.
-- `X := \set@{...}` is valid where a definition-style binding is expected.
+- `X := {...} as \set` is valid where a definition-style binding is expected.
 - A `Defines:` entry may include an expression and result type, such as
   `Defines: C := A is \set`.
 
@@ -404,12 +404,12 @@ Types can now separate definitional requirements from additional capabilities.
 - A `from: ... as:` binding can reduce facts about a casted function call by
   matching the binding's left side against the call and substituting the right
   side into facts from the cast literal.
-- `Enables:` accepts `viewable:` groups with required `as:` declarations and
-  optional `states:` clauses.
-- The `:= ...` construction in a `viewable:` `as:` declaration is optional.
-- Viewable casts may satisfy requirements after a command or operator has
+- `Enables:` accepts `view:` groups with required `as:` declarations and
+  optional `means:` clauses.
+- The `:= ...` construction in a `view:` `as:` declaration is optional.
+- View relationships may satisfy requirements after a command or operator has
   already resolved.
-- Viewable casts are not used to resolve operators or capabilities.
+- View relationships are not used to resolve operators or capabilities.
 
 ### Capability Rules
 

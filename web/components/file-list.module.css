@@ -423,21 +423,36 @@
   }
 
   .pageTitle h1 {
-    font-size: 2.25rem;
+    font-size: 2.85rem;
+    line-height: 1.05;
   }
 
   .pageSectionTitle h2 {
-    font-size: 1.65rem;
+    font-size: 2rem;
+    line-height: 1.12;
   }
 
   .pageSubsectionTitle h3 {
-    font-size: 1.32rem;
+    font-size: 1.55rem;
+    line-height: 1.16;
   }
 }
 
 @media (max-width: 520px) {
   .outlineLink {
     font-size: 1.05rem;
+  }
+
+  .pageTitle h1 {
+    font-size: 2.45rem;
+  }
+
+  .pageSectionTitle h2 {
+    font-size: 1.78rem;
+  }
+
+  .pageSubsectionTitle h3 {
+    font-size: 1.42rem;
   }
 
   .pageNavigation {

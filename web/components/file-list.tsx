@@ -333,8 +333,22 @@ export function FileList({
 
 function PageLoadingState() {
   return (
-    <div className={styles.loadingState} role="status">
-      Loading page...
+    <div
+      aria-label="Loading page"
+      className={styles.pageSkeleton}
+      role="status"
+    >
+      <div aria-hidden="true" className={styles.skeletonTextBlock}>
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineLong}`} />
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
+      </div>
+      <div aria-hidden="true" className={styles.skeletonCard}>
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineTitle}`} />
+        <span className={styles.skeletonDivider} />
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineMedium}`} />
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineLong}`} />
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
+      </div>
     </div>
   );
 }
@@ -349,8 +363,18 @@ function PageLoadError({ message }: { message: string }) {
 
 function LoadingDefinition() {
   return (
-    <div className={styles.loadingDefinition} role="status">
-      Loading definition...
+    <div
+      aria-label="Loading definition"
+      className={styles.definitionSkeleton}
+      role="status"
+    >
+      <div aria-hidden="true" className={styles.skeletonCard}>
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineTitle}`} />
+        <span className={styles.skeletonDivider} />
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineMedium}`} />
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineLong}`} />
+        <span className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
+      </div>
     </div>
   );
 }

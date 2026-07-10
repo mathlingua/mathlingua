@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileList } from "./file-list";
 import type { OutlineState } from "./outline-state";
 import { ViewerChrome } from "./viewer-chrome";
@@ -82,6 +82,7 @@ export function ViewerShell({
   const [loadingDefinitionKeys, setLoadingDefinitionKeys] = useState<
     Record<string, boolean>
   >({});
+  const warmedFilePaths = useRef<Set<string>>(new Set());
   const directories = manifest?.directories ?? [];
   const fileEntries = manifest?.files ?? [];
   const files = useMemo(
@@ -104,6 +105,40 @@ export function ViewerShell({
     initialSelection.fileIndex,
   );
   const [theme, setTheme] = useState<ViewerTheme>(DEFAULT_VIEWER_THEME);
+
+  const loadFileIntoCache = useCallback(
+    (file: FileManifest, options: { recordError: boolean }) => {
+      if (!staticDataBasePath || !manifest) {
+        return;
+      }
+
+      setLoadingFilePaths((current) => ({ ...current, [file.path]: true }));
+
+      loadStaticFile(staticDataBasePath, manifest, file)
+        .then((loadedFile) => {
+          setLoadedFiles((current) => ({
+            ...current,
+            [loadedFile.path]: loadedFile,
+          }));
+        })
+        .catch((error) => {
+          console.error(`Failed to load MathLingua page ${file.path}`, error);
+          if (options.recordError) {
+            setFileLoadErrors((current) => ({
+              ...current,
+              [file.path]: readableErrorMessage(error),
+            }));
+          }
+        })
+        .finally(() => {
+          setLoadingFilePaths((current) => ({
+            ...current,
+            [file.path]: false,
+          }));
+        });
+    },
+    [staticDataBasePath, manifest],
+  );
 
   useEffect(() => {
     if (!staticDataBasePath || manifest) {
@@ -143,28 +178,7 @@ export function ViewerShell({
       return;
     }
 
-    setLoadingFilePaths((current) => ({ ...current, [file.path]: true }));
-
-    loadStaticFile(staticDataBasePath, manifest, file)
-      .then((loadedFile) => {
-        setLoadedFiles((current) => ({
-          ...current,
-          [loadedFile.path]: loadedFile,
-        }));
-      })
-      .catch((error) => {
-        console.error(`Failed to load MathLingua page ${file.path}`, error);
-        setFileLoadErrors((current) => ({
-          ...current,
-          [file.path]: readableErrorMessage(error),
-        }));
-      })
-      .finally(() => {
-        setLoadingFilePaths((current) => ({
-          ...current,
-          [file.path]: false,
-        }));
-      });
+    loadFileIntoCache(file, { recordError: true });
   }, [
     staticDataBasePath,
     manifest,
@@ -172,6 +186,43 @@ export function ViewerShell({
     loadedFiles,
     loadingFilePaths,
     fileLoadErrors,
+    loadFileIntoCache,
+  ]);
+
+  useEffect(() => {
+    if (!staticDataBasePath || !manifest) {
+      return;
+    }
+
+    const currentFile = manifest.files[selectedFileIndex];
+    if (
+      currentFile &&
+      !loadedFiles[currentFile.path] &&
+      !fileLoadErrors[currentFile.path]
+    ) {
+      return;
+    }
+
+    const nextFile = manifest.files[selectedFileIndex + 1];
+    if (
+      !nextFile ||
+      loadedFiles[nextFile.path] ||
+      loadingFilePaths[nextFile.path] ||
+      warmedFilePaths.current.has(nextFile.path)
+    ) {
+      return;
+    }
+
+    warmedFilePaths.current.add(nextFile.path);
+    loadFileIntoCache(nextFile, { recordError: false });
+  }, [
+    staticDataBasePath,
+    manifest,
+    selectedFileIndex,
+    loadedFiles,
+    loadingFilePaths,
+    fileLoadErrors,
+    loadFileIntoCache,
   ]);
 
   useEffect(() => {

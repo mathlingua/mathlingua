@@ -130,6 +130,14 @@ pub struct ExportArgs {
 pub struct ReleaseArgs {
     #[arg(long, value_name = "TEXT")]
     pub summary: String,
+
+    /// Show what the release would record without writing any files.
+    #[arg(long, default_value_t = false)]
+    pub dry_run: bool,
+
+    /// Also show a diff of each item whose contents changed.
+    #[arg(long, default_value_t = false)]
+    pub diff: bool,
 }
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
@@ -294,7 +302,22 @@ mod tests {
 
         assert!(matches!(
             cli.command,
-            Command::Release(ReleaseArgs { summary }) if summary == "first cut"
+            Command::Release(ReleaseArgs { summary, dry_run: false, diff: false })
+                if summary == "first cut"
+        ));
+    }
+
+    #[test]
+    fn parses_release_dry_run_and_diff_flags() {
+        let cli = Cli::parse_from(["mlg", "release", "--summary", "x", "--dry-run", "--diff"]);
+
+        assert!(matches!(
+            cli.command,
+            Command::Release(ReleaseArgs {
+                dry_run: true,
+                diff: true,
+                ..
+            })
         ));
     }
 

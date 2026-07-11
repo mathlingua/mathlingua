@@ -44,7 +44,14 @@ fn main() {
         Command::Init => init(&cwd, Some(console_listener(filter, &cwd))).successful,
         Command::Lsp => lsp().successful,
         Command::Release(args) => {
-            release(&cwd, &args.summary, Some(console_listener(filter, &cwd))).successful
+            release(
+                &cwd,
+                &args.summary,
+                args.dry_run,
+                args.diff,
+                Some(console_listener(filter, &cwd)),
+            )
+            .successful
         }
         Command::Version => version(Some(console_listener(filter, &cwd))).successful,
         Command::View(args) => {

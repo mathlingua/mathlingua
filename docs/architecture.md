@@ -135,7 +135,7 @@ The implemented top-level commands are:
 - `mlg export [-o DIR] [--base-path PATH] [--cname DOMAIN] [--force]`
 - `mlg init`
 - `mlg lsp`
-- `mlg release --summary TEXT`
+- `mlg release --summary TEXT [--dry-run] [--diff]`
 - `mlg version`
 - `mlg view [--port PORT]`
 

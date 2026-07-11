@@ -189,6 +189,33 @@ fn item_preview(group: &ProtoGroup) -> Option<String> {
     Some(unescape_quoted_text(inner))
 }
 
+/// The source slice of the top-level item whose `Id:` value is `id` within
+/// `source`, using the same slicing as [`build_release_items`]. Returns `None`
+/// when no top-level item in `source` has that id (for example a since-added
+/// item that did not exist in an earlier revision). Used to recover an item's
+/// previous contents for `mlg release --diff`.
+pub(crate) fn item_source_by_id(source: &str, id: &str) -> Option<String> {
+    let mut proto_log = EventLog::new();
+    let groups = ProtoParser::new(source, &mut proto_log).parse();
+    let lines = source.split('\n').collect::<Vec<_>>();
+    let line_count = lines.len();
+
+    for (index, group) in groups.iter().enumerate() {
+        if top_level_group_id(group).as_deref() != Some(id) {
+            continue;
+        }
+        let start_row = group.metadata.row.min(line_count);
+        let end_row = groups
+            .get(index + 1)
+            .map(|next| next.metadata.row)
+            .unwrap_or(line_count)
+            .min(line_count);
+        return Some(slice_item_source(&lines, start_row, end_row));
+    }
+
+    None
+}
+
 fn line_start_offsets(source: &str) -> Vec<usize> {
     let mut starts = vec![0usize];
     for (index, byte) in source.bytes().enumerate() {
@@ -290,6 +317,21 @@ mod tests {
 
         let subset = item(&items, B);
         assert_eq!(subset.header.as_deref(), Some("A \\:subset:/ B"));
+    }
+
+    #[test]
+    fn item_source_by_id_extracts_the_matching_item_slice() {
+        let source = format!(
+            "[\\b]\nDescribes: B\nDocumented:\n. called: \"b\"\nId: \"{B}\"\n\n\n\
+             [\\a]\nDescribes: A\nDocumented:\n. called: \"a\"\nId: \"{A}\"\n"
+        );
+        let expected = format!("[\\a]\nDescribes: A\nDocumented:\n. called: \"a\"\nId: \"{A}\"");
+
+        assert_eq!(
+            item_source_by_id(&source, A).as_deref(),
+            Some(expected.as_str())
+        );
+        assert_eq!(item_source_by_id(&source, "no-such-id"), None);
     }
 
     #[test]

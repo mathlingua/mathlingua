@@ -1,6 +1,6 @@
 use crate::backend::collection::{SourceCollection, find_collection_root};
 use crate::backend::config::CONFIG_FILE;
-use crate::backend::release::{ReleaseItem, build_release_items};
+use crate::backend::release::{ReleaseItem, build_release_items, item_source_by_id};
 use crate::events::{EventLog, EventLogListener};
 use crate::mlg::util::no_errors_since;
 use serde::de::DeserializeOwned;
@@ -41,6 +41,8 @@ struct ItemEntry {
 pub fn release(
     cwd: &Path,
     summary: &str,
+    dry_run: bool,
+    diff: bool,
     listener: Option<Box<dyn EventLogListener>>,
 ) -> ReleaseResult {
     let mut event_log = EventLog::new();
@@ -49,7 +51,7 @@ pub fn release(
     }
 
     let starting_event_count = event_log.events().len();
-    let io_ok = release_in(cwd, summary, &mut event_log).is_ok();
+    let io_ok = release_in(cwd, summary, dry_run, diff, &mut event_log).is_ok();
     let successful = io_ok && no_errors_since(&event_log, starting_event_count);
 
     ReleaseResult {
@@ -58,7 +60,13 @@ pub fn release(
     }
 }
 
-fn release_in(cwd: &Path, summary: &str, event_log: &mut EventLog) -> io::Result<()> {
+fn release_in(
+    cwd: &Path,
+    summary: &str,
+    dry_run: bool,
+    diff: bool,
+    event_log: &mut EventLog,
+) -> io::Result<()> {
     let start = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
     let Some(root) = find_collection_root(&start) else {
         event_log.user_error(
@@ -99,6 +107,9 @@ fn release_in(cwd: &Path, summary: &str, event_log: &mut EventLog) -> io::Result
     let collection_path = metadata_dir.join(COLLECTION_FILE);
 
     let mut collection_entries = read_json_array::<CollectionEntry>(&collection_path, event_log)?;
+    let previous_release_sha = collection_entries
+        .last()
+        .map(|entry| entry.version_control_sha256.clone());
     let existing_item_entries = items
         .iter()
         .map(|item| {
@@ -120,7 +131,7 @@ fn release_in(cwd: &Path, summary: &str, event_log: &mut EventLog) -> io::Result
         .collect::<Vec<_>>();
     let update = compute_update_closure(&items, &changed);
 
-    // 7. Write the new metadata, then bump mlg.json last.
+    // 7. Write the new metadata (unless this is a dry run), then bump mlg.json.
     let mut updated = Vec::new();
     for (index, item) in items.iter().enumerate() {
         if !update[index] {
@@ -131,35 +142,166 @@ fn release_in(cwd: &Path, summary: &str, event_log: &mut EventLog) -> io::Result
             .map(|entry| entry.version)
             .max();
         let new_version = previous_version.unwrap_or(0) + 1;
-        let mut entries = existing_item_entries[index].clone();
-        entries.push(ItemEntry {
-            version: new_version,
-            sha256: shas[index].clone(),
-            repo_version: new_repo_version,
-        });
-        write_json(&items_dir.join(item_file_name(&item.id)), &entries)?;
+        if !dry_run {
+            let mut entries = existing_item_entries[index].clone();
+            entries.push(ItemEntry {
+                version: new_version,
+                sha256: shas[index].clone(),
+                repo_version: new_repo_version,
+            });
+            write_json(&items_dir.join(item_file_name(&item.id)), &entries)?;
+        }
         updated.push(UpdatedItem {
             kind: item.kind.clone(),
             label: item_display_label(item),
             previous_version,
             new_version,
+            content_changed: changed[index],
         });
     }
 
-    collection_entries.push(CollectionEntry {
-        version: new_repo_version,
-        version_control_sha256: head_sha.clone(),
-        summary: summary.to_string(),
-    });
-    write_json(&collection_path, &collection_entries)?;
-    write_repo_version(&config_path, config_value, new_repo_version)?;
+    if !dry_run {
+        collection_entries.push(CollectionEntry {
+            version: new_repo_version,
+            version_control_sha256: head_sha.clone(),
+            summary: summary.to_string(),
+        });
+        write_json(&collection_path, &collection_entries)?;
+        write_repo_version(&config_path, config_value, new_repo_version)?;
+    }
 
-    event_log.user_log(
-        Some(ORIGIN),
-        format_release_report(new_repo_version, &head_sha, summary, &updated, items.len()),
+    // 8. Report what happened (or would happen), optionally with per-item diffs.
+    let mut report = format_release_report(
+        new_repo_version,
+        &head_sha,
+        summary,
+        &updated,
+        items.len(),
+        dry_run,
     );
+    if diff {
+        let item_diffs =
+            compute_item_diffs(&root, previous_release_sha.as_deref(), &items, &changed);
+        report.push_str("\n\n");
+        report.push_str(&format_diff_section(&item_diffs));
+    }
+    event_log.user_log(Some(ORIGIN), report);
 
     Ok(())
+}
+
+/// A per-item diff for `mlg release --diff`: the line-level changes from an
+/// item's previous released contents to its current contents. Each item's source
+/// slice already begins with its heading and ends with its `Id:`, so the diff is
+/// self-identifying and needs no separate label.
+type ItemDiff = Vec<(char, String)>;
+
+/// Build a diff for every item whose contents changed this release, comparing
+/// its current source against its source at the previous release's commit, in
+/// collection order.
+fn compute_item_diffs(
+    root: &Path,
+    previous_release_sha: Option<&str>,
+    items: &[ReleaseItem],
+    changed: &[bool],
+) -> Vec<ItemDiff> {
+    let mut old_files: HashMap<&Path, Option<String>> = HashMap::new();
+    let mut diffs = Vec::new();
+
+    for (index, item) in items.iter().enumerate() {
+        if !changed[index] {
+            continue;
+        }
+        let old_file = old_files
+            .entry(item.path.as_path())
+            .or_insert_with(|| show_file_at_commit(root, previous_release_sha, &item.path));
+        let old_source = old_file
+            .as_deref()
+            .and_then(|contents| item_source_by_id(contents, &item.id));
+
+        diffs.push(diff_lines(
+            old_source.as_deref().unwrap_or(""),
+            &item.source,
+        ));
+    }
+
+    diffs
+}
+
+/// The full contents of `path` as of commit `sha`, via `git show`, or `None`
+/// when there is no previous release or the file did not exist then.
+fn show_file_at_commit(root: &Path, sha: Option<&str>, path: &Path) -> Option<String> {
+    let sha = sha?;
+    let relative = path.strip_prefix(root).ok()?;
+    let spec = format!("{sha}:{}", relative.to_string_lossy().replace('\\', "/"));
+    let output = git_output(root, &["show", &spec]).ok()?;
+    output
+        .status
+        .success()
+        .then(|| String::from_utf8_lossy(&output.stdout).into_owned())
+}
+
+/// A line-level diff of `old` against `new` as `(marker, line)` pairs, where the
+/// marker is `' '` (unchanged), `'-'` (removed), or `'+'` (added). Items are
+/// small, so the whole item is shown rather than collapsed hunks.
+fn diff_lines(old: &str, new: &str) -> Vec<(char, String)> {
+    let old_lines = old.lines().collect::<Vec<_>>();
+    let new_lines = new.lines().collect::<Vec<_>>();
+    let (rows, cols) = (old_lines.len(), new_lines.len());
+
+    // Longest-common-subsequence lengths, filled from the bottom-right.
+    let mut lcs = vec![vec![0usize; cols + 1]; rows + 1];
+    for row in (0..rows).rev() {
+        for col in (0..cols).rev() {
+            lcs[row][col] = if old_lines[row] == new_lines[col] {
+                lcs[row + 1][col + 1] + 1
+            } else {
+                lcs[row + 1][col].max(lcs[row][col + 1])
+            };
+        }
+    }
+
+    let mut result = Vec::new();
+    let (mut row, mut col) = (0, 0);
+    while row < rows && col < cols {
+        if old_lines[row] == new_lines[col] {
+            result.push((' ', old_lines[row].to_string()));
+            row += 1;
+            col += 1;
+        } else if lcs[row + 1][col] >= lcs[row][col + 1] {
+            result.push(('-', old_lines[row].to_string()));
+            row += 1;
+        } else {
+            result.push(('+', new_lines[col].to_string()));
+            col += 1;
+        }
+    }
+    for line in &old_lines[row..] {
+        result.push(('-', (*line).to_string()));
+    }
+    for line in &new_lines[col..] {
+        result.push(('+', (*line).to_string()));
+    }
+    result
+}
+
+/// Render the optional diff section shown under the release summary as a
+/// unified diff: one block per changed item (blank-line separated), each line
+/// prefixed with `' '`, `'-'`, or `'+'`. A wholly new item shows every line as
+/// added.
+fn format_diff_section(diffs: &[ItemDiff]) -> String {
+    if diffs.is_empty() {
+        return "Diffs\n\n  (no item contents changed)".to_string();
+    }
+
+    let mut section = String::from("Diffs");
+    for diff in diffs {
+        section.push('\n'); // blank line before each item's diff block
+        for (marker, content) in diff {
+            section.push_str(&format!("\n{marker} {content}"));
+        }
+    }
+    section
 }
 
 /// One updated item, as shown in the release report.
@@ -168,6 +310,9 @@ struct UpdatedItem {
     label: String,
     previous_version: Option<u64>,
     new_version: u64,
+    /// `true` when the item's own contents changed; `false` when it is only
+    /// re-versioned because a definition that uses it changed (propagation).
+    content_changed: bool,
 }
 
 /// Page-content kinds whose body text is previewed instead of a bracket heading.
@@ -238,6 +383,16 @@ fn version_transition(item: &UpdatedItem) -> String {
     }
 }
 
+/// The `previous → new` version cell, e.g. `v1 → v2` or `new → v1`, right-aligned
+/// on its left edge so cells share a width.
+fn version_cell(item: &UpdatedItem, from_width: usize) -> String {
+    format!(
+        "{:>from_width$} \u{2192} v{}",
+        version_transition(item),
+        item.new_version,
+    )
+}
+
 fn item_noun(count: usize) -> &'static str {
     if count == 1 { "item" } else { "items" }
 }
@@ -249,22 +404,40 @@ fn format_release_report(
     summary: &str,
     updated: &[UpdatedItem],
     total_items: usize,
+    dry_run: bool,
 ) -> String {
-    let mut report = format!("Released repo version {new_version}\n");
+    let mut report = if dry_run {
+        format!("Would release repo version {new_version}  (dry run \u{2014} no files written)\n")
+    } else {
+        format!("Released repo version {new_version}\n")
+    };
     report.push_str(&format!("Commit   {sha}\n"));
+
+    // Split the update set into content changes and transitive (propagation)
+    // bumps. The tags are only worth showing when both kinds are present.
+    let changed_count = updated.iter().filter(|item| item.content_changed).count();
+    let propagated_count = updated.len() - changed_count;
+    let show_tags = changed_count > 0 && propagated_count > 0;
+
     report.push_str(&format!(
-        "Updated  {} of {total_items} {}\n",
+        "Updated  {} of {total_items} {}",
         updated.len(),
         item_noun(total_items),
     ));
+    if show_tags {
+        report.push_str(&format!(
+            " ({changed_count} changed, {propagated_count} propagated)"
+        ));
+    }
+    report.push('\n');
     report.push_str(&format!("Summary  {summary}"));
 
     if updated.is_empty() {
         return report;
     }
 
-    // Align the version column across the whole report so every transition lines
-    // up, regardless of which kind group an item is in.
+    // Align the label and version columns across the whole report so every
+    // transition (and any trailing tag) lines up, regardless of kind group.
     let label_width = updated
         .iter()
         .map(|item| item.label.chars().count())
@@ -273,6 +446,11 @@ fn format_release_report(
     let from_width = updated
         .iter()
         .map(|item| version_transition(item).chars().count())
+        .max()
+        .unwrap_or(0);
+    let cell_width = updated
+        .iter()
+        .map(|item| version_cell(item, from_width).chars().count())
         .max()
         .unwrap_or(0);
 
@@ -291,12 +469,23 @@ fn format_release_report(
     for kind in kinds {
         report.push_str(&format!("\n\n{kind}"));
         for item in &by_kind[kind] {
-            report.push_str(&format!(
-                "\n  {label:<label_width$}   {from:>from_width$} \u{2192} v{to}",
-                label = item.label,
-                from = version_transition(item),
-                to = item.new_version,
-            ));
+            let cell = version_cell(item, from_width);
+            if show_tags {
+                let tag = if item.content_changed {
+                    "changed"
+                } else {
+                    "propagated"
+                };
+                report.push_str(&format!(
+                    "\n  {label:<label_width$}   {cell:<cell_width$}   {tag}",
+                    label = item.label,
+                ));
+            } else {
+                report.push_str(&format!(
+                    "\n  {label:<label_width$}   {cell}",
+                    label = item.label
+                ));
+            }
         }
     }
 
@@ -671,22 +860,25 @@ mod tests {
                 label: "\u{201c}Intro\u{201d}".to_string(),
                 previous_version: Some(1),
                 new_version: 2,
+                content_changed: true,
             },
             UpdatedItem {
                 kind: "Describes".to_string(),
                 label: "[\\set]".to_string(),
                 previous_version: None,
                 new_version: 1,
+                content_changed: true,
             },
             UpdatedItem {
                 kind: "Axiom".to_string(),
                 label: "[\\axiom.of.extension]".to_string(),
                 previous_version: Some(2),
                 new_version: 3,
+                content_changed: false,
             },
         ];
 
-        let report = format_release_report(4, "abcdef0", "release notes", &updated, 10);
+        let report = format_release_report(4, "abcdef0", "release notes", &updated, 10, false);
 
         assert!(report.starts_with("Released repo version 4\n"));
         assert!(
@@ -694,7 +886,8 @@ mod tests {
             "the previous version is not shown"
         );
         assert!(report.contains("Commit   abcdef0\n"));
-        assert!(report.contains("Updated  3 of 10 items\n"));
+        // Two contents changed, one is a propagation bump.
+        assert!(report.contains("Updated  3 of 10 items (2 changed, 1 propagated)\n"));
         assert!(report.contains("Summary  release notes"));
         // `Updated` is listed before `Summary`.
         assert!(report.find("Updated  ").unwrap() < report.find("Summary  ").unwrap());
@@ -719,20 +912,97 @@ mod tests {
             })
             .collect::<std::collections::BTreeSet<_>>();
         assert_eq!(arrow_columns.len(), 1, "{report}");
+        // Content changes are tagged `changed`; propagation bumps `propagated`.
+        let set_line = report
+            .lines()
+            .find(|line| line.contains("[\\set]"))
+            .unwrap();
+        assert!(set_line.ends_with("changed"), "{set_line}");
+        let axiom_line = report
+            .lines()
+            .find(|line| line.contains("[\\axiom.of.extension]"))
+            .unwrap();
+        assert!(axiom_line.ends_with("propagated"), "{axiom_line}");
+    }
+
+    #[test]
+    fn report_omits_tags_when_nothing_was_propagated() {
+        // Every update is a real content change (e.g. a first release), so there
+        // is no changed-vs-propagated distinction to draw.
+        let updated = vec![
+            UpdatedItem {
+                kind: "Describes".to_string(),
+                label: "[\\set]".to_string(),
+                previous_version: None,
+                new_version: 1,
+                content_changed: true,
+            },
+            UpdatedItem {
+                kind: "Axiom".to_string(),
+                label: "[\\ax]".to_string(),
+                previous_version: None,
+                new_version: 1,
+                content_changed: true,
+            },
+        ];
+
+        let report = format_release_report(1, "sha", "s", &updated, 2, false);
+
+        assert!(report.contains("Updated  2 of 2 items\n"), "{report}");
+        assert!(!report.contains("propagated"), "{report}");
+        assert!(!report.contains("changed"), "{report}");
     }
 
     #[test]
     fn report_with_no_updates_omits_the_item_list() {
-        let report = format_release_report(2, "abc123", "empty", &[], 5);
+        let report = format_release_report(2, "abc123", "empty", &[], 5, false);
         assert!(report.contains("Updated  0 of 5 items"));
         assert!(!report.contains('\u{2192}'));
     }
 
     #[test]
     fn report_uses_the_singular_noun_for_a_single_total_item() {
-        let report = format_release_report(1, "sha", "note", &[], 1);
+        let report = format_release_report(1, "sha", "note", &[], 1, false);
         assert!(report.contains("Updated  0 of 1 item\n"), "{report}");
         assert!(!report.contains("item(s)"));
+    }
+
+    #[test]
+    fn dry_run_report_uses_the_would_release_title() {
+        let report = format_release_report(3, "sha", "note", &[], 5, true);
+        assert!(
+            report.starts_with("Would release repo version 3"),
+            "{report}"
+        );
+        assert!(report.contains("dry run"), "{report}");
+    }
+
+    #[test]
+    fn diff_lines_marks_added_removed_and_unchanged_lines() {
+        let lines = diff_lines("a\nb\nc\n", "a\nB\nc\n");
+        assert_eq!(
+            lines,
+            vec![
+                (' ', "a".to_string()),
+                ('-', "b".to_string()),
+                ('+', "B".to_string()),
+                (' ', "c".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn diff_section_shows_new_items_as_fully_added() {
+        let diffs = vec![diff_lines("", "[\\set]\nDescribes: X")];
+        let section = format_diff_section(&diffs);
+        assert!(section.starts_with("Diffs"));
+        assert!(section.contains("\n+ [\\set]"), "{section}");
+        assert!(section.contains("\n+ Describes: X"), "{section}");
+    }
+
+    #[test]
+    fn diff_section_reports_when_nothing_changed() {
+        assert!(format_diff_section(&[]).contains("(no item contents changed)"));
     }
 
     const A_ID: &str = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -757,7 +1027,7 @@ mod tests {
         init_git_collection(root, &defs_source("a"));
 
         // First release: every item is new, so both get version 1 / repo_version 1.
-        let first = release(root, "first cut", None);
+        let first = release(root, "first cut", false, false, None);
         assert!(first.successful, "{:#?}", first.event_log.events());
 
         let collection = read_entries::<CollectionEntry>(&root.join("metadata/collection.json"));
@@ -783,7 +1053,7 @@ mod tests {
 
         // Second release: A changed, and A (a definition) uses \b, so B is
         // re-versioned by propagation even though its content did not change.
-        let second = release(root, "second cut", None);
+        let second = release(root, "second cut", false, false, None);
         assert!(second.successful, "{:#?}", second.event_log.events());
 
         let a_second = read_entries::<ItemEntry>(&item_json(root, A_ID));
@@ -795,6 +1065,79 @@ mod tests {
         assert_ne!(a_second[0].sha256, a_second[1].sha256, "A changed");
         assert_eq!(b_second[0].sha256, b_second[1].sha256, "B only propagated");
         assert!(read_config_version(root).contains("\"2\""));
+    }
+
+    #[test]
+    fn dry_run_reports_without_writing_anything() {
+        if !git_available() {
+            return;
+        }
+        let dir = TempDir::new();
+        let root = dir.path();
+        init_git_collection(root, &defs_source("a"));
+
+        let result = release(root, "preview", true, false, None);
+        assert!(result.successful, "{:#?}", result.event_log.events());
+
+        // A dry run writes nothing: no metadata directory, version left at 0.
+        assert!(
+            !root.join("metadata").exists(),
+            "dry run must not write metadata"
+        );
+        assert!(
+            read_config_version(root).contains("\"0\""),
+            "dry run must not bump the version"
+        );
+
+        let report = report_text(&result);
+        assert!(report.contains("Would release repo version 1"), "{report}");
+        assert!(report.contains("dry run"), "{report}");
+    }
+
+    #[test]
+    fn diff_flag_shows_changed_item_contents() {
+        if !git_available() {
+            return;
+        }
+        let dir = TempDir::new();
+        let root = dir.path();
+        init_git_collection(root, &defs_source("a"));
+
+        // A real first release gives us a previous release commit to diff against.
+        assert!(release(root, "first", false, false, None).successful);
+        commit_all(root, "release 1");
+        fs::write(root.join("content/defs.mlg"), defs_source("a changed")).unwrap();
+        commit_all(root, "edit A");
+
+        // Dry run with --diff previews the change to A without writing.
+        let result = release(root, "preview", true, true, None);
+        assert!(result.successful, "{:#?}", result.event_log.events());
+
+        let a = read_entries::<ItemEntry>(&item_json(root, A_ID));
+        assert_eq!(a.len(), 1, "dry run must not append an entry");
+
+        let report = report_text(&result);
+        // A changed; B is only re-versioned by propagation.
+        assert!(report.contains("(1 changed, 1 propagated)"), "{report}");
+        assert!(report.contains("Diffs"), "{report}");
+        // Only A's contents changed; the diff shows the old and new `called` lines.
+        assert!(report.contains("- . called: \"a\""), "{report}");
+        assert!(report.contains("+ . called: \"a changed\""), "{report}");
+    }
+
+    fn report_text(result: &ReleaseResult) -> String {
+        result
+            .event_log
+            .events()
+            .iter()
+            .filter_map(|event| event.as_message())
+            .filter(|message| {
+                message.audience == crate::events::Audience::User
+                    && message.level == crate::events::Level::Log
+            })
+            .map(|message| message.message.clone())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     fn init_git_collection(root: &Path, defs: &str) {

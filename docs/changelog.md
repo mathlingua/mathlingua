@@ -608,6 +608,22 @@ of the collection into a `metadata/` directory next to `content/`.
   and the version column is aligned across the whole report. Items with a bracket
   heading are shown by that heading, page content (`Title:`/`Text:` and the like)
   by a truncated preview of its text, and anything else by its id.
+- When a release both changes some items and propagates version bumps to others,
+  each item is tagged `changed` (its own contents changed) or `propagated` (it was
+  re-versioned only because a definition that uses it changed), and the `Updated`
+  line shows the breakdown, e.g. `4 of 127 items (1 changed, 3 propagated)`. The
+  tags are omitted when there is nothing to distinguish (for example a first
+  release, where every item is a content change).
+- `--dry-run` computes and prints exactly what the release would record but writes
+  nothing: no metadata files and no `mlg.json` version bump. It still requires a
+  clean Git repository and a passing `mlg check`, so the preview matches what a
+  real release would do.
+- `--diff` additionally prints a line-level diff of each item whose contents
+  changed since the previous release, comparing the item against its source at the
+  previous release's commit. Items updated only by propagation (unchanged content)
+  appear in the summary but are omitted from the diffs. The flag works with or
+  without `--dry-run`, so the intended flow is `mlg release --dry-run --diff` to
+  review, then `mlg release` to record.
 
 ### `mlg debug`
 

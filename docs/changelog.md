@@ -575,6 +575,34 @@ directory, `--force` replaces a nonempty output directory, `--base-path`
 supports subpath hosting, and `--cname` writes a GitHub Pages `CNAME` file. The
 export also writes `.nojekyll` and route data required by the static viewer.
 
+### `mlg release`
+
+`mlg release --summary "<text>"` records an immutable, content-addressed snapshot
+of the collection into a `metadata/` directory next to `content/`.
+
+- `--summary` is required and describes the release.
+- The command aborts unless the collection is inside a Git repository with no
+  uncommitted, unstaged, or untracked changes, and `mlg check` reports no errors.
+- The new repo version is the integer `version` in `mlg.json` plus one, written
+  back to `mlg.json` (other fields are preserved).
+- `metadata/collection.json` is an append-only list; each release appends
+  `{version, version_control_sha256, summary}`, where `version_control_sha256` is
+  the current `HEAD` commit.
+- `metadata/items/<id>.json` is an append-only version history per top-level item,
+  each entry `{version, sha256, repo_version}` where `sha256` is the SHA-256 of
+  the item's source and `version` is a per-item counter.
+- An item gains a new entry when its content hash differs from its latest recorded
+  entry.
+- When a definition (`Defines:`, `Describes:`, `States:`, `Refines:`,
+  `Disambiguates:`) is (re)versioned, every definition it uses is re-versioned as
+  well, transitively across the dependency graph.
+- The dependency graph is computed as a DAG before anything is written, so a
+  definition reached by several changed items is updated once per release, not
+  once per use. Items reached only by propagation record their current (unchanged)
+  hash under a new version number.
+- Non-definition items (page content, people, resources, theorem-like items) are
+  versioned on their own content but do not propagate to anything.
+
 ### `mlg debug`
 
 A hidden `mlg debug` command was added for parser exploration.

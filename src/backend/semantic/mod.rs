@@ -13,6 +13,7 @@ mod rename;
 mod shapes;
 mod typecheck;
 mod types;
+mod uses;
 mod validation;
 mod walk;
 
@@ -21,6 +22,7 @@ pub use definition::{DefinitionSite, find_definition};
 pub use rename::{
     RenameEditPlan, RenameError, RenamePreparation, RenameSpan, plan_rename, prepare_rename,
 };
+pub(crate) use uses::{collect_definition_locations, command_occurrences};
 
 use locator::*;
 use shapes::*;

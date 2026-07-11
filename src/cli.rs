@@ -92,6 +92,7 @@ pub enum Command {
     Export(ExportArgs),
     Init,
     Lsp,
+    Release(ReleaseArgs),
     Version,
     View(ViewArgs),
     #[command(name = "whte_rbt.obj", hide = true)]
@@ -126,6 +127,12 @@ pub struct ExportArgs {
 }
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
+pub struct ReleaseArgs {
+    #[arg(long, value_name = "TEXT")]
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Args, PartialEq, Eq)]
 pub struct ViewArgs {
     #[arg(long, default_value_t = 3000)]
     pub port: u16,
@@ -135,7 +142,9 @@ pub struct ViewArgs {
 
 #[cfg(test)]
 mod tests {
-    use super::{CheckArgs, Cli, CliEventAudience, CliEventLevel, Command, ExportArgs, ViewArgs};
+    use super::{
+        CheckArgs, Cli, CliEventAudience, CliEventLevel, Command, ExportArgs, ReleaseArgs, ViewArgs,
+    };
     use clap::{CommandFactory, Parser};
     use std::path::PathBuf;
 
@@ -277,6 +286,23 @@ mod tests {
             vec![CliEventLevel::Warning, CliEventLevel::Error]
         );
         assert!(cli.event_markers);
+    }
+
+    #[test]
+    fn parses_release_with_a_summary() {
+        let cli = Cli::parse_from(["mlg", "release", "--summary", "first cut"]);
+
+        assert!(matches!(
+            cli.command,
+            Command::Release(ReleaseArgs { summary }) if summary == "first cut"
+        ));
+    }
+
+    #[test]
+    fn release_requires_a_summary() {
+        let result = Cli::try_parse_from(["mlg", "release"]);
+
+        assert!(result.is_err(), "release should require --summary");
     }
 
     #[test]

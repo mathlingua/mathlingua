@@ -118,7 +118,8 @@ Responsibilities:
 - `src/backend/` contains collection loading, semantic checking, and viewer
   model generation.
 - `src/mlg/` contains command orchestration for `check`, `export`, `init`,
-  `lsp`, `version`, and `view`, plus completion and command-specific utilities.
+  `lsp`, `release`, `version`, and `view`, plus completion and command-specific
+  utilities.
 
 ## Command Layer
 
@@ -134,6 +135,7 @@ The implemented top-level commands are:
 - `mlg export [-o DIR] [--base-path PATH] [--cname DOMAIN] [--force]`
 - `mlg init`
 - `mlg lsp`
+- `mlg release --summary TEXT`
 - `mlg version`
 - `mlg view [--port PORT]`
 
@@ -325,6 +327,7 @@ viewer model generation.
 src/backend/
 ├── collection.rs
 ├── config.rs
+├── release.rs
 ├── semantic/
 │   ├── mod.rs
 │   └── ...
@@ -340,6 +343,14 @@ generation pass.
 
 `config.rs` owns `mlg.json` constants, default contents, and validation used by
 collection loading and initialization.
+
+`release.rs` builds the release dependency graph consumed by `mlg release`. For
+each top-level item it records the item id, kind, exact source slice, and the ids
+of the definitions that item uses. Item identity, kind, and source slicing reuse
+the proto parser (the same layer the view uses); command-use resolution reuses the
+semantic signature registry through `semantic::collect_definition_locations` and
+`semantic::command_occurrences`, so a "use" edge is resolved exactly as
+go-to-definition resolves a command occurrence.
 
 ### Semantic Checker
 
@@ -503,6 +514,41 @@ The viewer command treats parser and semantic errors as blocking, because the
 rendered output would otherwise be misleading.
 
 The temporary view data directory is removed after the Next.js process exits.
+
+## Release Command Data Flow
+
+`mlg release` is implemented by `src/mlg/release.rs`.
+
+```text
+main.rs
+  -> Cli::parse
+  -> mlg::release
+  -> find collection root (mlg.json)
+  -> require a clean Git work tree and capture HEAD sha
+  -> SourceCollection::load + run_check_passes  (must be error-free)
+  -> backend::release::build_release_items
+      -> proto parser for item id/kind/source
+      -> semantic command-use resolution for dependency edges
+  -> read existing metadata/ (collection.json, items/<id>.json)
+  -> compute the update set as a transitive closure over `uses` edges
+  -> write metadata/, then bump mlg.json version
+```
+
+The command snapshots the current committed state of the collection into a
+`metadata/` directory next to `content/`:
+
+- `metadata/collection.json` is an append-only list of releases, each recording
+  the new repo `version`, the `version_control_sha256` of the commit the release
+  corresponds to, and the `--summary` text.
+- `metadata/items/<id>.json` is an append-only version history for each top-level
+  item, keyed by the SHA-256 of the item's source.
+
+An item is (re)versioned when its content hash changed since its last recorded
+entry. In addition, when a *definition* (`Defines`, `Describes`, `States`,
+`Refines`, `Disambiguates`) is (re)versioned, every definition it uses is
+re-versioned transitively, deduplicated so each item gains at most one new entry
+per release. The whole update set is computed in memory before anything is
+written, and `mlg.json` is bumped last.
 
 ## Parser Generation
 

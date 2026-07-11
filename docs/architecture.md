@@ -23,7 +23,9 @@ At a high level, the system does four jobs:
 1. Parse `.mlg` files into typed Rust ASTs.
 2. Check parsed files for semantic, reference, symbol, and requirement errors.
 3. Render parsed collections into a JSON view model.
-4. Serve that view model in a local web UI.
+4. Serve that view model in a local web UI or export it as a static site.
+5. Provide editor diagnostics, context-aware completion, definition lookup, and
+   rename over LSP.
 
 The main runtime paths are:
 
@@ -47,6 +49,14 @@ mlg view
       -> proto parser for display layout
   -> temporary collection.json
   -> Next.js viewer
+
+mlg export
+  -> the same collection checks and view-model generation as `mlg view`
+  -> static Next.js build and route data
+
+mlg lsp
+  -> collection diagnostics and context-aware completion
+  -> command definition lookup and workspace rename
 ```
 
 The Rust code owns parsing, validation, semantic checking, and rendering
@@ -62,7 +72,6 @@ depending on Rust AST internals.
 ├── docs/
 ├── goldens/
 ├── src/
-├── testbed/
 └── web/
 ```
 
@@ -75,7 +84,6 @@ Important roots:
 - `goldens/` contains expected parser outputs used by parser tests.
 - `src/` contains the Rust CLI, parsers, semantic checker, renderer, and event
   system.
-- `testbed/` is a small example MathLingua collection.
 - `web/` contains the embedded Next.js viewer launched by `mlg view`.
 
 Generated/build artifacts such as `target/`, `web/.next/`, and
@@ -91,8 +99,6 @@ src/
 ├── main.rs
 ├── lib.rs
 ├── cli.rs
-├── constants.rs
-├── environment.rs
 ├── events/
 ├── frontend/
 ├── backend/
@@ -107,14 +113,12 @@ Responsibilities:
 - `src/lib.rs` exposes command helpers and internal modules for tests and
   embedding.
 - `src/cli.rs` defines the `clap` command-line interface.
-- `src/environment.rs` contains process environment helpers.
-- `src/constants.rs` defines shared constants such as collection filenames.
 - `src/events/` is the shared diagnostic and logging system.
 - `src/frontend/` contains lexing and parsing.
 - `src/backend/` contains collection loading, semantic checking, and viewer
   model generation.
-- `src/mlg/` contains command orchestration for `check`, `init`, `version`, and
-  `view`.
+- `src/mlg/` contains command orchestration for `check`, `export`, `init`,
+  `lsp`, `version`, and `view`, plus completion and command-specific utilities.
 
 ## Command Layer
 
@@ -127,9 +131,16 @@ The command layer is split between:
 The implemented top-level commands are:
 
 - `mlg check [PATH...]`
+- `mlg export [-o DIR] [--base-path PATH] [--cname DOMAIN] [--force]`
 - `mlg init`
+- `mlg lsp`
 - `mlg version`
 - `mlg view [--port PORT]`
+
+The CLI also has global diagnostic filtering flags: `--event-audience`
+(`--event-scope` is an alias), `--event-level`, and `--event-markers`.
+`mlg check` supports machine-readable `--json` diagnostics and
+`--diagnostic-schema` output.
 
 `src/mlg/mod.rs` re-exports the command entrypoints used by `src/main.rs` and
 `src/lib.rs`.
@@ -255,9 +266,8 @@ Main files:
 - `lexer.rs` wraps the Logos token stream for LALRPOP.
 - `grammar.lalrpop` defines the generated expression/form parser.
 - `parser.rs` re-exports hand-written parser entrypoints and helpers.
-- `parser/entrypoints.rs` contains public parser functions.
-- `parser/commands.rs`, `parser/statements.rs`, `parser/lists.rs`, and
-  `parser/scan.rs` implement scanner-based helper parsers.
+- `parser.rs` contains the public formulation parser functions and
+  scanner-based helpers.
 - `ast.rs` and `ast/` define formulation AST nodes.
 - `span.rs` stores byte spans for parsed formulation nodes.
 
@@ -515,7 +525,7 @@ before compiling the crate.
 
 Only part of the formulation language lives in the LALRPOP grammar. Command
 headers, refined commands, aliases, and statement helper forms are implemented
-by hand-written parsers in `src/frontend/formulation/parser/`.
+by the hand-written functions in `src/frontend/formulation/parser.rs`.
 
 ## Testing Layout
 
@@ -523,11 +533,9 @@ Tests live close to the code they exercise.
 
 Examples:
 
-- `src/frontend/formulation/parser/tests.rs` and nested parser tests cover
-  formulation parser behavior.
-- `src/frontend/structural/parser/tests.rs` and nested tests cover structural
-  parsing.
-- `src/mlg/check/tests/` covers command-level checking behavior.
+- tests in `src/frontend/formulation/parser.rs` cover formulation parsing.
+- tests in `src/frontend/structural/parser.rs` cover structural parsing.
+- tests in `src/mlg/check.rs` cover command-level checking behavior.
 - `src/backend/view/render/tests.rs` covers rendering behavior.
 - `src/backend/semantic/` behavior is covered through semantic and command
   tests.
@@ -538,9 +546,6 @@ Golden parser outputs are stored in:
 goldens/formulation/
 goldens/structural/
 ```
-
-The `testbed/` directory contains a small collection useful for manual command
-testing and viewer smoke checks.
 
 ## Design Boundaries
 

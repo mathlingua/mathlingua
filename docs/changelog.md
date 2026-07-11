@@ -7,6 +7,12 @@ the feature is valid.
 
 ## Structural Language
 
+### Markdown MathLingua Fences
+
+`Text:` Markdown may contain fenced blocks tagged `mlg`. These blocks render as
+MathLingua source using the same source presentation used by cards; other fenced
+code blocks retain ordinary Markdown code rendering.
+
 ### Page Content Blocks
 
 Top-level page content blocks are supported and render directly on the page
@@ -229,6 +235,14 @@ Set builder definitions allow general element forms before the colon.
   `Defines: C := {(a_, b_) : ...} is \set`.
 
 ## Semantic Checks
+
+### Editor Language Server
+
+`mlg lsp` communicates over standard input/output and provides collection
+diagnostics on open and save; context-aware completion for group heads, section
+items, and commands; jump to definition for command uses; and workspace rename
+for top-level command signatures and their uses. Command completion is triggered
+after `\\` and uses snippets when the client supports them.
 
 ### `when:` Requirements
 
@@ -465,6 +479,15 @@ The checker supports the built-in type predicate `\\type`.
 
 ## Rendering And View
 
+### Viewer Serving And Navigation
+
+- The development viewer listens on `0.0.0.0` while reporting a localhost URL.
+- Route links are warmed in the background so page navigation starts loading
+  before selection.
+- Loading routes display skeleton content.
+- Directory display names use the directory name rather than an internal page
+  title, while `toc` display overrides continue to take precedence.
+
 ### Math Rendering
 
 Rendering behavior was tightened in several places.
@@ -544,6 +567,14 @@ The viewer has responsive navigation behavior.
 
 ## CLI
 
+### `mlg export`
+
+`mlg export` checks and renders the current collection, then builds a static
+copy of the viewer. Output defaults to `dist`; `-o/--output` selects another
+directory, `--force` replaces a nonempty output directory, `--base-path`
+supports subpath hosting, and `--cname` writes a GitHub Pages `CNAME` file. The
+export also writes `.nojekyll` and route data required by the static viewer.
+
 ### `mlg debug`
 
 A hidden `mlg debug` command was added for parser exploration.
@@ -582,22 +613,3 @@ Error messages were made more user-facing.
 - Line and column information is reported where the checker can locate the
   relevant source span.
 - Parser errors surfaced through `mlg debug` are formatted for readability.
-
-## Testbed Content
-
-The testbed content was expanded to exercise the implemented behavior.
-
-- Existing set content was updated with real `Title:`, `SectionTitle:`,
-  `SubsectionTitle:`, and `Text:` blocks.
-- The set page now includes starter definitions such as singleton and unordered
-  pair examples.
-- New starter pages were added for natural numbers, integers, rationals, reals,
-  algebra, and analysis.
-- The number-system pages include simple carrier sets, element types, initial
-  constructors, and a small tower of extensions:
-  `natural number -> integer -> rational -> real`.
-- Algebra includes starter structures such as semigroup, monoid, ring, and
-  field.
-- Analysis includes starter entries for real sequences, convergent sequences,
-  limits, and continuous functions.
-- The testbed `toc` was updated to include the new pages in a stable order.

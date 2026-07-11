@@ -7,8 +7,8 @@ import type { OutlineState } from "./outline-state";
 import styles from "./file-list.module.css";
 import {
   buildFileBrowserEntries,
+  formatDirectoryLabel,
   formatFileLabel,
-  formatPathSegment,
   makeFileAnchor,
   makeGroupAnchor,
   parentDirectory,
@@ -178,7 +178,7 @@ export function FileList({
             type="button"
           >
             <span aria-hidden="true" className={styles.outlineBackChevron} />
-            {formatPathSegment(currentDirectory.split("/").at(-1) ?? "")}
+            {formatDirectoryLabel(directories, currentDirectory)}
           </button>
         ) : null}
         <nav>

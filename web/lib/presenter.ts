@@ -59,14 +59,7 @@ export function buildFileBrowserEntries(
   directory: string,
 ): FileBrowserEntry[] {
   const normalizedDirectory = normalizeDirectory(directory);
-  const directoryLabels = new Map(
-    directories.map((entry) => {
-      const path = contentRelativePath(entry.path);
-      const segment = path.split("/").filter(Boolean).at(-1) ?? path;
-
-      return [path, entry.title ?? formatPathSegment(segment)] as const;
-    }),
-  );
+  const directoryLabels = directoryLabelMap(directories);
   const directoryEntries = new Map<string, FileBrowserEntry>();
   const entries: FileBrowserEntry[] = [];
 
@@ -110,6 +103,22 @@ export function buildFileBrowserEntries(
   });
 
   return entries;
+}
+
+/** Returns the toc-aware display label for a source directory path. */
+export function formatDirectoryLabel(
+  directories: DirectoryView[],
+  directory: string,
+): string {
+  const normalizedDirectory = normalizeDirectory(directory);
+  const segment =
+    normalizedDirectory.split("/").filter(Boolean).at(-1) ??
+    normalizedDirectory;
+
+  return (
+    directoryLabelMap(directories).get(normalizedDirectory) ??
+    formatPathSegment(segment)
+  );
 }
 
 /** Returns the parent directory path for outline back-navigation. */
@@ -211,6 +220,17 @@ function contentRelativePath(path: string): string {
   return normalized.startsWith("content/")
     ? normalized.slice("content/".length)
     : normalized;
+}
+
+function directoryLabelMap(directories: DirectoryView[]): Map<string, string> {
+  return new Map(
+    directories.map((entry) => {
+      const path = contentRelativePath(entry.path);
+      const segment = path.split("/").filter(Boolean).at(-1) ?? path;
+
+      return [path, entry.title ?? formatPathSegment(segment)] as const;
+    }),
+  );
 }
 
 /** Percent-encodes each route segment without encoding path separators. */

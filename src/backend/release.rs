@@ -1,6 +1,9 @@
 use crate::backend::semantic::{collect_definition_locations, command_occurrences};
 use crate::events::EventLog;
-use crate::frontend::{ParsedSourceFile, ProtoParser, top_level_group_id};
+use crate::frontend::{
+    ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, top_level_group_id,
+    unescape_quoted_text,
+};
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 
@@ -19,6 +22,13 @@ pub(crate) struct ReleaseItem {
     pub(crate) path: PathBuf,
     /// The item's group kind (its first section label, e.g. `Describes`).
     pub(crate) kind: String,
+    /// The bracketed heading of the item without its `[` `]`, when it has one
+    /// (e.g. `\set` or `A \:subset:/ B`). `None` for page content and other
+    /// heading-less items.
+    pub(crate) header: Option<String>,
+    /// The quoted text of the item's first section, when it has one (e.g. a
+    /// `Title:` or `Text:` body). Used to preview page content.
+    pub(crate) preview: Option<String>,
     /// The exact source slice of the item, used for content hashing. Matches the
     /// slice `mlg view`/`mlg export` present as the item's source.
     pub(crate) source: String,
@@ -32,6 +42,8 @@ struct RawItem {
     id: Option<String>,
     path: PathBuf,
     kind: String,
+    header: Option<String>,
+    preview: Option<String>,
     source: String,
     start_byte: usize,
     end_byte: usize,
@@ -105,6 +117,8 @@ pub(crate) fn build_release_items(files: &[ParsedSourceFile]) -> Vec<ReleaseItem
                 path: item.path,
                 is_definition: DEFINITION_KINDS.contains(&item.kind.as_str()),
                 kind: item.kind,
+                header: item.header,
+                preview: item.preview,
                 source: item.source,
                 uses: uses.into_iter().collect(),
             })
@@ -136,6 +150,8 @@ fn append_file_items(file: &ParsedSourceFile, raw_items: &mut Vec<RawItem>) {
             id: top_level_group_id(group),
             path: file.path.clone(),
             kind,
+            header: item_header(group),
+            preview: item_preview(group),
             source: slice_item_source(&lines, start_row, end_row),
             start_byte: byte_offset_of_row(&line_starts, start_row, file.source.len()),
             end_byte: byte_offset_of_row(&line_starts, end_row, file.source.len()),
@@ -143,6 +159,34 @@ fn append_file_items(file: &ParsedSourceFile, raw_items: &mut Vec<RawItem>) {
             end_row,
         });
     }
+}
+
+/// The item's bracketed heading text without the surrounding `[` `]`, if any.
+fn item_header(group: &ProtoGroup) -> Option<String> {
+    group
+        .heading
+        .as_deref()
+        .map(str::trim)
+        .filter(|heading| !heading.is_empty())
+        .map(str::to_string)
+}
+
+/// The unescaped quoted text of the item's first section, if it has one. This is
+/// the page text of a `Title:`/`SectionTitle:`/`SubsectionTitle:`/`Text:` item.
+fn item_preview(group: &ProtoGroup) -> Option<String> {
+    let section = group.sections.first()?;
+    let raw = section.inline_argument.as_deref().or_else(|| {
+        section
+            .arguments
+            .iter()
+            .find_map(|argument| match argument {
+                ProtoArgument::Text(text) => Some(text.text.as_str()),
+                _ => None,
+            })
+    })?;
+    let trimmed = raw.trim();
+    let inner = trimmed.strip_prefix('"')?.strip_suffix('"')?;
+    Some(unescape_quoted_text(inner))
 }
 
 fn line_start_offsets(source: &str) -> Vec<usize> {
@@ -216,6 +260,7 @@ mod tests {
         let describes = item(&items, A);
         assert_eq!(describes.kind, "Describes");
         assert!(describes.is_definition);
+        assert_eq!(describes.header.as_deref(), Some("\\set"));
         assert_eq!(
             describes.source,
             format!("[\\set]\nDescribes: A\nDocumented:\n. called: \"set\"\nId: \"{A}\"")
@@ -223,7 +268,28 @@ mod tests {
 
         let theorem = item(&items, B);
         assert_eq!(theorem.kind, "Theorem");
+        assert!(
+            theorem.header.is_none(),
+            "the theorem has no bracket heading"
+        );
         assert!(!theorem.is_definition, "theorems do not propagate");
+    }
+
+    #[test]
+    fn captures_bracket_headers_and_page_previews() {
+        let source = format!(
+            "Title: \"Intro to Sets\"\nId: \"{A}\"\n\n\n\
+             [A \\:subset:/ B]\nDescribes: A\nDocumented:\n. called: \"subset\"\nId: \"{B}\"\n"
+        );
+        let items = build_release_items(&[parsed("a.mlg", &source)]);
+
+        let title = item(&items, A);
+        assert_eq!(title.kind, "Title");
+        assert!(title.header.is_none());
+        assert_eq!(title.preview.as_deref(), Some("Intro to Sets"));
+
+        let subset = item(&items, B);
+        assert_eq!(subset.header.as_deref(), Some("A \\:subset:/ B"));
     }
 
     #[test]

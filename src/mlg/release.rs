@@ -121,20 +121,29 @@ fn release_in(cwd: &Path, summary: &str, event_log: &mut EventLog) -> io::Result
     let update = compute_update_closure(&items, &changed);
 
     // 7. Write the new metadata, then bump mlg.json last.
-    let mut updated_count = 0;
+    let mut updated = Vec::new();
     for (index, item) in items.iter().enumerate() {
         if !update[index] {
             continue;
         }
+        let previous_version = existing_item_entries[index]
+            .iter()
+            .map(|entry| entry.version)
+            .max();
+        let new_version = previous_version.unwrap_or(0) + 1;
         let mut entries = existing_item_entries[index].clone();
-        let next_version = entries.iter().map(|entry| entry.version).max().unwrap_or(0) + 1;
         entries.push(ItemEntry {
-            version: next_version,
+            version: new_version,
             sha256: shas[index].clone(),
             repo_version: new_repo_version,
         });
         write_json(&items_dir.join(item_file_name(&item.id)), &entries)?;
-        updated_count += 1;
+        updated.push(UpdatedItem {
+            kind: item.kind.clone(),
+            label: item_display_label(item),
+            previous_version,
+            new_version,
+        });
     }
 
     collection_entries.push(CollectionEntry {
@@ -147,18 +156,151 @@ fn release_in(cwd: &Path, summary: &str, event_log: &mut EventLog) -> io::Result
 
     event_log.user_log(
         Some(ORIGIN),
-        format!("Released repo version {new_repo_version} at commit {head_sha}"),
-    );
-    event_log.user_log(
-        Some(ORIGIN),
-        format!(
-            "Recorded {updated_count} of {} item(s) in {}/",
-            items.len(),
-            METADATA_DIR
-        ),
+        format_release_report(new_repo_version, &head_sha, summary, &updated, items.len()),
     );
 
     Ok(())
+}
+
+/// One updated item, as shown in the release report.
+struct UpdatedItem {
+    kind: String,
+    label: String,
+    previous_version: Option<u64>,
+    new_version: u64,
+}
+
+/// Page-content kinds whose body text is previewed instead of a bracket heading.
+const PAGE_KINDS: [&str; 4] = ["Title", "SectionTitle", "SubsectionTitle", "Text"];
+
+/// The order top-level kinds are grouped in the release report. Kinds not listed
+/// here sort after these, alphabetically.
+const KIND_ORDER: [&str; 17] = [
+    "Defines",
+    "Describes",
+    "States",
+    "Refines",
+    "Disambiguates",
+    "Axiom",
+    "Conjecture",
+    "Theorem",
+    "Corollary",
+    "Lemma",
+    "Title",
+    "SectionTitle",
+    "SubsectionTitle",
+    "Text",
+    "Person",
+    "Resource",
+    "Specify",
+];
+
+const PREVIEW_MAX: usize = 50;
+
+/// How an item is labelled in the report: its bracket heading if it has one, a
+/// truncated preview of its text for page content, else its id.
+fn item_display_label(item: &ReleaseItem) -> String {
+    if let Some(header) = item.header.as_deref() {
+        return format!("[{header}]");
+    }
+    if PAGE_KINDS.contains(&item.kind.as_str()) {
+        if let Some(preview) = item.preview.as_deref() {
+            let preview = truncate_preview(preview, PREVIEW_MAX);
+            if !preview.is_empty() {
+                return format!("\u{201c}{preview}\u{201d}");
+            }
+        }
+    }
+    item.id.clone()
+}
+
+fn truncate_preview(text: &str, max: usize) -> String {
+    let collapsed = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    if collapsed.chars().count() <= max {
+        collapsed
+    } else {
+        let head = collapsed.chars().take(max).collect::<String>();
+        format!("{}\u{2026}", head.trim_end())
+    }
+}
+
+fn kind_rank(kind: &str) -> usize {
+    KIND_ORDER
+        .iter()
+        .position(|known| *known == kind)
+        .unwrap_or(KIND_ORDER.len())
+}
+
+fn version_transition(item: &UpdatedItem) -> String {
+    match item.previous_version {
+        Some(version) => format!("v{version}"),
+        None => "new".to_string(),
+    }
+}
+
+fn item_noun(count: usize) -> &'static str {
+    if count == 1 { "item" } else { "items" }
+}
+
+/// Render the clean, grouped release summary printed to the user.
+fn format_release_report(
+    new_version: u64,
+    sha: &str,
+    summary: &str,
+    updated: &[UpdatedItem],
+    total_items: usize,
+) -> String {
+    let mut report = format!("Released repo version {new_version}\n");
+    report.push_str(&format!("Commit   {sha}\n"));
+    report.push_str(&format!(
+        "Updated  {} of {total_items} {}\n",
+        updated.len(),
+        item_noun(total_items),
+    ));
+    report.push_str(&format!("Summary  {summary}"));
+
+    if updated.is_empty() {
+        return report;
+    }
+
+    // Align the version column across the whole report so every transition lines
+    // up, regardless of which kind group an item is in.
+    let label_width = updated
+        .iter()
+        .map(|item| item.label.chars().count())
+        .max()
+        .unwrap_or(0);
+    let from_width = updated
+        .iter()
+        .map(|item| version_transition(item).chars().count())
+        .max()
+        .unwrap_or(0);
+
+    // Group by kind, ordering the groups by `KIND_ORDER` then name while keeping
+    // each item in its original collection order within the group.
+    let mut kinds: Vec<&str> = Vec::new();
+    let mut by_kind: HashMap<&str, Vec<&UpdatedItem>> = HashMap::new();
+    for item in updated {
+        if !by_kind.contains_key(item.kind.as_str()) {
+            kinds.push(item.kind.as_str());
+        }
+        by_kind.entry(item.kind.as_str()).or_default().push(item);
+    }
+    kinds.sort_by(|left, right| kind_rank(left).cmp(&kind_rank(right)).then(left.cmp(right)));
+
+    for kind in kinds {
+        report.push_str(&format!("\n\n{kind}"));
+        for item in &by_kind[kind] {
+            report.push_str(&format!(
+                "\n  {label:<label_width$}   {from:>from_width$} \u{2192} v{to}",
+                label = item.label,
+                from = version_transition(item),
+                to = item.new_version,
+            ));
+        }
+    }
+
+    report
 }
 
 /// The transitive set of items to (re)version this release: every changed item,
@@ -382,9 +524,24 @@ mod tests {
                 "Theorem"
             }
             .to_string(),
+            header: None,
+            preview: None,
             source: String::new(),
             is_definition,
             uses: uses.iter().map(|value| value.to_string()).collect(),
+        }
+    }
+
+    fn labelled(kind: &str, header: Option<&str>, preview: Option<&str>) -> ReleaseItem {
+        ReleaseItem {
+            id: "1de3c455-b09b-4d80-8b44-7dd223da2083".to_string(),
+            path: PathBuf::from("content/x.mlg"),
+            kind: kind.to_string(),
+            header: header.map(str::to_string),
+            preview: preview.map(str::to_string),
+            source: String::new(),
+            is_definition: false,
+            uses: Vec::new(),
         }
     }
 
@@ -480,6 +637,102 @@ mod tests {
         let update = compute_update_closure(&items, &changed);
 
         assert!(updated_ids(&items, &update).is_empty());
+    }
+
+    #[test]
+    fn label_prefers_header_then_preview_then_id() {
+        assert_eq!(
+            item_display_label(&labelled("Describes", Some("\\set"), None)),
+            "[\\set]"
+        );
+        assert_eq!(
+            item_display_label(&labelled("Title", None, Some("Hello World"))),
+            "\u{201c}Hello World\u{201d}"
+        );
+        // A non-page kind (or a page kind with no text) falls back to the id.
+        let fallback = labelled("Theorem", None, None);
+        assert_eq!(item_display_label(&fallback), fallback.id);
+    }
+
+    #[test]
+    fn truncate_preview_collapses_whitespace_and_adds_ellipsis() {
+        assert_eq!(truncate_preview("  a\n\n  b   c ", 50), "a b c");
+        let long = "word ".repeat(40);
+        let truncated = truncate_preview(&long, 10);
+        assert!(truncated.ends_with('\u{2026}'));
+        assert!(truncated.chars().count() <= 11);
+    }
+
+    #[test]
+    fn report_groups_by_kind_in_order_with_version_transitions() {
+        let updated = vec![
+            UpdatedItem {
+                kind: "Text".to_string(),
+                label: "\u{201c}Intro\u{201d}".to_string(),
+                previous_version: Some(1),
+                new_version: 2,
+            },
+            UpdatedItem {
+                kind: "Describes".to_string(),
+                label: "[\\set]".to_string(),
+                previous_version: None,
+                new_version: 1,
+            },
+            UpdatedItem {
+                kind: "Axiom".to_string(),
+                label: "[\\axiom.of.extension]".to_string(),
+                previous_version: Some(2),
+                new_version: 3,
+            },
+        ];
+
+        let report = format_release_report(4, "abcdef0", "release notes", &updated, 10);
+
+        assert!(report.starts_with("Released repo version 4\n"));
+        assert!(
+            !report.contains("(was"),
+            "the previous version is not shown"
+        );
+        assert!(report.contains("Commit   abcdef0\n"));
+        assert!(report.contains("Updated  3 of 10 items\n"));
+        assert!(report.contains("Summary  release notes"));
+        // `Updated` is listed before `Summary`.
+        assert!(report.find("Updated  ").unwrap() < report.find("Summary  ").unwrap());
+        // Groups appear in KIND_ORDER: Describes, then Axiom, then Text. Each
+        // kind heading sits at column 0 (preceded by a blank line).
+        let describes = report.find("\n\nDescribes\n").unwrap();
+        let axiom = report.find("\n\nAxiom\n").unwrap();
+        let text = report.find("\n\nText\n").unwrap();
+        assert!(describes < axiom && axiom < text, "{report}");
+        assert!(report.contains("new \u{2192} v1"));
+        assert!(report.contains("v1 \u{2192} v2"));
+        assert!(report.contains("v2 \u{2192} v3"));
+        // The version column is aligned globally: every " → v" sits at the same
+        // character column, across all groups (measured in chars, not bytes,
+        // since labels contain multibyte characters).
+        let arrow_columns = report
+            .lines()
+            .filter(|line| line.contains(" \u{2192} v"))
+            .map(|line| {
+                let byte = line.find(" \u{2192} v").unwrap();
+                line[..byte].chars().count()
+            })
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(arrow_columns.len(), 1, "{report}");
+    }
+
+    #[test]
+    fn report_with_no_updates_omits_the_item_list() {
+        let report = format_release_report(2, "abc123", "empty", &[], 5);
+        assert!(report.contains("Updated  0 of 5 items"));
+        assert!(!report.contains('\u{2192}'));
+    }
+
+    #[test]
+    fn report_uses_the_singular_noun_for_a_single_total_item() {
+        let report = format_release_report(1, "sha", "note", &[], 1);
+        assert!(report.contains("Updated  0 of 1 item\n"), "{report}");
+        assert!(!report.contains("item(s)"));
     }
 
     const A_ID: &str = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";

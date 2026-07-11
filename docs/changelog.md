@@ -602,6 +602,12 @@ of the collection into a `metadata/` directory next to `content/`.
   hash under a new version number.
 - Non-definition items (page content, people, resources, theorem-like items) are
   versioned on their own content but do not propagate to anything.
+- On success it prints the new repo version, the commit sha, a count of updated
+  items, the summary, and the updated items grouped by top-level kind. Each item
+  is shown with its `previous → new` version (or `new → v1` for a first release),
+  and the version column is aligned across the whole report. Items with a bracket
+  heading are shown by that heading, page content (`Title:`/`Text:` and the like)
+  by a truncated preview of its text, and anything else by its id.
 
 ### `mlg debug`
 

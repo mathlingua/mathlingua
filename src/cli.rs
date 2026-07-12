@@ -92,6 +92,7 @@ pub enum Command {
     Debug,
     Export(ExportArgs),
     Init,
+    #[command(hide = true)]
     Lsp,
     Release(ReleaseArgs),
     Version,

@@ -224,6 +224,23 @@ const GROUPS: &[GroupSpec] = &[
         head: "Specify",
         sections: &[("Specify", true), ("Id", false)],
     },
+    GroupSpec {
+        head: "Relation",
+        sections: &[
+            ("Relation", true),
+            ("using", false),
+            ("between", true),
+            ("and", true),
+            ("when", false),
+            ("means", false),
+            ("Justified", false),
+            ("Documented", false),
+            ("Aliases", false),
+            ("References", false),
+            ("Metadata", false),
+            ("Id", false),
+        ],
+    },
 ];
 
 // `Axiom`/`Theorem`/`Lemma`/`Conjecture` share one shape (see

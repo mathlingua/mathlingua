@@ -1043,6 +1043,70 @@ mod tests {
     }
 
     #[test]
+    fn check_accepts_relation_item_with_declared_subjects() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("relation.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"Relation:
+between: a is \\expression
+and: b is \\expression
+when:
+. a = b
+means: a = b
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("relation.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_undeclared_symbol_in_relation_means() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("relation-scope.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"Relation:
+between: a is \\expression
+and: b is \\expression
+means: c = c
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("relation-scope.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            user_events(&event_log).iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("Unrecognized symbol")
+                    && message.message.contains('c'))),
+            "expected an unrecognized-symbol error for `c`: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
     fn check_reports_references_to_undefined_command_signatures() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("undefined.mlg");

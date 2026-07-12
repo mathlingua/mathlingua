@@ -210,11 +210,15 @@ argument_section!(CapabilitySection, AliasKind);
 argument_section!(DefinitionSection, DefinitionRequirement);
 argument_section!(FromSection, DeclarationStatement);
 argument_section!(CastAsSection, ExpressionBinding);
-zero_or_more_arguments_section!(RelationSection, OpenText);
+zero_or_more_arguments_section!(EnablesRelationSection, OpenText);
 argument_section!(RelationToSection, RelationshipDeclaration);
 arguments_section!(RelationWhenSection, RelationWhenItem);
 arguments_section!(RelationAsSection, RelationKind);
 argument_section!(RelationshipMeansSection, Clause);
+// Top-level `Relation:` item sections (distinct from the `Enables: relation:` group above).
+zero_or_more_arguments_section!(RelationSection, OpenText);
+argument_section!(RelationBetweenSection, DeclarationStatement);
+argument_section!(RelationAndSection, DeclarationStatement);
 zero_or_more_arguments_section!(ConnectionSection, OpenText);
 zero_or_more_arguments_section!(ToSection, OpenText);
 zero_or_more_arguments_section!(MeansSection, OpenText);
@@ -305,6 +309,7 @@ pub enum TopLevelItem {
     Person(PersonGroup),
     Resource(ResourceGroup),
     Specify(SpecifyGroup),
+    Relation(RelationGroup),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -357,7 +362,7 @@ pub enum EnablesItem {
     Capability(Box<CapabilityGroup>),
     FromCapability(Box<FromCapabilityGroup>),
     FromAs(Box<FromAsGroup>),
-    Relation(Box<RelationGroup>),
+    Relation(Box<EnablesRelationGroup>),
     Connection(ConnectionGroup),
 }
 
@@ -604,6 +609,25 @@ pub struct ConjectureGroup {
     pub metadata: Option<MetadataSection>,
 }
 
+/// A top-level `Relation:` item, which states a bidirectional relationship
+/// between the two concepts declared in `between:` and `and:`. Unlike the
+/// directional `Enables: relation:` group ([`EnablesRelationGroup`]), it is a
+/// heading-less, standalone item and does not register a cast/view rule.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RelationGroup {
+    pub relation: RelationSection,
+    pub using: Option<UsingSection>,
+    pub between: RelationBetweenSection,
+    pub and_: RelationAndSection,
+    pub when: Option<WhenSection>,
+    pub means: Option<RelationshipMeansSection>,
+    pub justified: Option<JustifiedSection>,
+    pub documented: Option<DocumentedSection>,
+    pub aliases: Option<AliasesSection>,
+    pub references: Option<ReferencesSection>,
+    pub metadata: Option<MetadataSection>,
+}
+
 // ===============================[ clause groups ]=====================================
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -745,9 +769,9 @@ pub enum RelationKind {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RelationGroup {
+pub struct EnablesRelationGroup {
     pub heading: Option<LabelHeader>,
-    pub relation: RelationSection,
+    pub relation: EnablesRelationSection,
     pub to: RelationToSection,
     pub when: Option<RelationWhenSection>,
     pub means: Option<RelationshipMeansSection>,

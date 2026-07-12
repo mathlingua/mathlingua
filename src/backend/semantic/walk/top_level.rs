@@ -126,6 +126,16 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
                 walk_specify_item(item, visit);
             }
         }
+        TopLevelItem::Relation(group) => {
+            walk_optional_is_or_specs(&group.using, visit);
+            walk_declaration_statement(&group.between.argument, visit);
+            walk_declaration_statement(&group.and_.argument, visit);
+            walk_optional_clauses(&group.when, visit);
+            if let Some(means) = &group.means {
+                walk_clause(&means.argument, visit);
+            }
+            walk_optional_aliases(&group.aliases, visit);
+        }
         TopLevelItem::Title(_)
         | TopLevelItem::SectionTitle(_)
         | TopLevelItem::SubsectionTitle(_)

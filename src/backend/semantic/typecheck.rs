@@ -486,7 +486,7 @@ fn collect_abstraction_rules(
     }
 }
 
-fn relation_group_has_kind(group: &RelationGroup, kind: RelationKind) -> bool {
+fn relation_group_has_kind(group: &EnablesRelationGroup, kind: RelationKind) -> bool {
     group
         .as_
         .as_ref()
@@ -997,6 +997,55 @@ fn validate_top_level_item_types(
             registry,
             event_log,
         ),
+        TopLevelItem::Relation(group) => {
+            // Assume the `using:` declarations and the two related declarations
+            // (introducing their subjects and facts) and the `when:` specs, then
+            // check the `means:` statement against that scope. Like a theorem, the
+            // statement is checked for valid symbols/references, not proven.
+            let mut context = TypeContext::default();
+            assume_optional_using(
+                &group.using,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            assume_declaration_statement(
+                &group.between.argument,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            assume_declaration_statement(
+                &group.and_.argument,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            assume_optional_clauses(
+                &group.when,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            if let Some(means) = &group.means {
+                check_clause(
+                    &means.argument,
+                    &context,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+            }
+        }
         TopLevelItem::Specify(_)
         | TopLevelItem::Title(_)
         | TopLevelItem::SectionTitle(_)

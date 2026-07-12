@@ -1,0 +1,16 @@
+Relation:
+between: a is \real
+and: b is \real
+means: a = b
+
+Relation:
+. "equivalence of rationals and reals"
+using:
+. n is \integer
+between: r is \rational
+and: s is \real
+when:
+. r = s
+means: r = s
+Documented:
+. description: "r and s name the same value."

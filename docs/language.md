@@ -338,6 +338,7 @@ These groups may appear at the top level of a document.
 | `Person` | author | person metadata |
 | `Resource` | resource | bibliography or web metadata |
 | `Specify` | none | numeric-domain specification metadata |
+| `Relation` | none | bidirectional relationship between two concepts (`between:`/`and:`) |
 
 Groups with command headings introduce command signatures: `Describes`,
 `Defines`, `Refines`, `States`, and theorem-like groups that have an optional

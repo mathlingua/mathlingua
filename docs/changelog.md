@@ -7,6 +7,35 @@ the feature is valid.
 
 ## Structural Language
 
+### Top-Level `Relation:` Item
+
+A new top-level item states a bidirectional relationship between two concepts.
+
+```
+Relation:
+using?: <declaration>+
+between: <declaration>
+and: <declaration>
+when?: <spec>+
+means?: <statement>
+Justified?: ...  Documented?: ...  Aliases?: ...  References?: ...  Metadata?: ...  Id?: ...
+```
+
+- `between:` and `and:` each declare one of the two related concepts (a
+  declaration such as `a is \real`); `using?:` brings auxiliary declarations into
+  scope (as on `Describes:`/`States:`); `when?:` gives spec preconditions and
+  `means?:` a single statement of what the relationship means.
+- It is heading-less (no `[...]`) and takes the same trailing sections as the
+  theorem-like items. `mlg check` auto-inserts an `Id:` as for any top-level item.
+- Whereas the directional `relation:` group inside `Enables:` relates the
+  described concept *to* another (and with `as: \\view`/`\\abstraction` registers
+  a cast rule the type checker uses), the top-level `Relation:` is standalone and
+  bidirectional — e.g. for stating that two concepts are equivalent.
+- It is checked like a theorem: the `between:`/`and:` declarations introduce their
+  subjects, and the `when:` specs and `means:` statement are validated for
+  declared symbols and valid command references — the relationship is stated, not
+  proven, and it registers no type facts.
+
 ### Markdown MathLingua Fences
 
 `Text:` Markdown may contain fenced blocks tagged `mlg`. These blocks render as

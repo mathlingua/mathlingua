@@ -1134,7 +1134,7 @@ pub(super) fn parse_enables_item_group(
             .map(Box::new)
             .map(EnablesItem::Capability),
         "from" => parse_from_group(group, tracker),
-        "relation" => parse_relation_group(group, tracker)
+        "relation" => parse_enables_relation_group(group, tracker)
             .map(Box::new)
             .map(EnablesItem::Relation),
         "connection" => parse_connection(group, tracker).map(EnablesItem::Connection),
@@ -1561,10 +1561,10 @@ pub(in crate::frontend::structural::parser) fn parse_from_group(
 }
 
 /// Parses a `relation:` nested group inside `Enables:`.
-pub(in crate::frontend::structural::parser) fn parse_relation_group(
+pub(in crate::frontend::structural::parser) fn parse_enables_relation_group(
     group: &ProtoGroup,
     tracker: &mut EventLog,
-) -> Option<RelationGroup> {
+) -> Option<EnablesRelationGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
         "relation",
@@ -1573,9 +1573,9 @@ pub(in crate::frontend::structural::parser) fn parse_relation_group(
         &["relation", "to", "when?", "means?", "as?", "by?"],
     )?;
 
-    Some(RelationGroup {
+    Some(EnablesRelationGroup {
         heading,
-        relation: RelationSection {
+        relation: EnablesRelationSection {
             arguments: parse_optional_open_texts(sections.get("relation").copied(), tracker),
         },
         to: RelationToSection {
@@ -2308,6 +2308,7 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
         "Person" => parse_person(group, tracker).map(TopLevelItem::Person),
         "Resource" => parse_resource(group, tracker).map(TopLevelItem::Resource),
         "Specify" => parse_specify(group, tracker).map(TopLevelItem::Specify),
+        "Relation" => parse_relation(group, tracker).map(TopLevelItem::Relation),
         other => {
             tracker.user_error_at_row(
                 Some(ORIGIN),
@@ -2984,6 +2985,98 @@ pub(in crate::frontend::structural::parser) fn parse_states(
         enables: sections.get("Enables").copied().and_then(|section| {
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
                 .map(|arguments| EnablesSection { arguments })
+        }),
+        justified: sections.get("Justified").copied().and_then(|section| {
+            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
+                .map(|arguments| JustifiedSection { arguments })
+        }),
+        documented: sections.get("Documented").copied().and_then(|section| {
+            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
+                .map(|arguments| DocumentedSection { arguments })
+        }),
+        aliases: sections.get("Aliases").copied().and_then(|section| {
+            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
+                .map(|arguments| AliasesSection { arguments })
+        }),
+        references: sections.get("References").copied().and_then(|section| {
+            parse_required_formulations(section, "References", tracker, parse_resource_header)
+                .map(|arguments| ReferencesSection { arguments })
+        }),
+        metadata: sections.get("Metadata").copied().and_then(|section| {
+            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
+                .map(|arguments| MetadataSection { arguments })
+        }),
+    })
+}
+
+// ===============================[ relation ]=====================================
+
+/// Parses a top-level `Relation:` item.
+///
+/// A `Relation:` states a bidirectional relationship between the two concepts
+/// declared in the required `between:` and `and:` sections. It takes no command
+/// heading and — unlike the `Enables: relation:` group — registers no cast rule.
+pub(in crate::frontend::structural::parser) fn parse_relation(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<RelationGroup> {
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections(
+        "Relation",
+        &group.sections,
+        tracker,
+        &[
+            "Relation",
+            "using?",
+            "between",
+            "and",
+            "when?",
+            "means?",
+            "Justified?",
+            "Documented?",
+            "Aliases?",
+            "References?",
+            "Metadata?",
+            "Id?",
+        ],
+    )?;
+
+    Some(RelationGroup {
+        relation: RelationSection {
+            arguments: parse_optional_open_texts(sections.get("Relation").copied(), tracker),
+        },
+        using: sections.get("using").copied().and_then(|section| {
+            parse_required_formulations(
+                section,
+                "using",
+                tracker,
+                parse_ordinary_declaration_statement,
+            )
+            .map(|arguments| UsingSection { arguments })
+        }),
+        between: RelationBetweenSection {
+            argument: parse_required_formulation(
+                section(&sections, "between")?,
+                "between",
+                tracker,
+                parse_refined_declaration_statement,
+            )?,
+        },
+        and_: RelationAndSection {
+            argument: parse_required_formulation(
+                section(&sections, "and")?,
+                "and",
+                tracker,
+                parse_refined_declaration_statement,
+            )?,
+        },
+        when: sections.get("when").copied().and_then(|section| {
+            parse_required_clauses(section, "when", tracker)
+                .map(|arguments| WhenSection { arguments })
+        }),
+        means: sections.get("means").copied().and_then(|section| {
+            parse_required_clause(section, "means", tracker)
+                .map(|argument| RelationshipMeansSection { argument })
         }),
         justified: sections.get("Justified").copied().and_then(|section| {
             parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
@@ -4137,6 +4230,52 @@ SectionTitle: "Recovered"
     }
 
     #[test]
+    fn parses_relation_item_with_using_between_and_when_means() {
+        let document = parse_ok(
+            r#"
+Relation:
+using:
+. n is \integer
+between: a is \real
+and: b is \real
+when:
+. a = b
+means: a = b
+Documented:
+. description: "a and b name the same value."
+"#,
+        );
+
+        match &document.items[0] {
+            TopLevelItem::Relation(group) => {
+                assert!(group.using.is_some());
+                assert!(group.when.is_some());
+                assert!(group.means.is_some());
+                assert!(group.documented.is_some());
+            }
+            other => panic!("expected Relation item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn relation_requires_between_and_and_sections() {
+        let (_, diagnostics) = parse_with_diagnostics(
+            r#"
+Relation:
+between: a is \real
+means: a = a
+"#,
+        );
+
+        assert!(
+            diagnostics.iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("and"))),
+            "expected a diagnostic about the missing `and:` section: {diagnostics:#?}"
+        );
+    }
+
+    #[test]
     fn parses_structural_golden_directory() {
         let directory = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/goldens/structural"));
         let files = read_test_files(directory, "text");
@@ -4150,6 +4289,7 @@ SectionTitle: "Recovered"
             "outline.text".to_owned(),
             "persons.text".to_owned(),
             "refines.text".to_owned(),
+            "relations.text".to_owned(),
             "resources.text".to_owned(),
             "specify.text".to_owned(),
             "states.text".to_owned(),

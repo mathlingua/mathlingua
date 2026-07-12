@@ -280,6 +280,7 @@ An empty document is supported by the current implementation because `Document.i
 | `Person` | `PersonGroup` | author | `Person: OpenText+`, `biography?: OpenText` |
 | `Resource` | `ResourceGroup` | resource | `Resource: ResourceItem+` |
 | `Specify` | `SpecifyGroup` | none | `Specify: SpecifyItem+` |
+| `Relation` | `RelationGroup` | none | `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RefinedDeclarationStatement`, `and: RefinedDeclarationStatement`, `when?: Clause+`, `means?: Clause`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 
 Notes:
 
@@ -820,6 +821,30 @@ Resource: <ResourceItemUnion>+
 ```group
 Specify: <SpecifyItemUnion>+
 ```
+
+```group
+Relation: <OpenText>*
+using?: <DeclarationStatement>+
+between: <RefinedDeclarationStatement>
+and: <RefinedDeclarationStatement>
+when?: <Clause>+
+means?: <Clause>
+Justified?: <JustifiedItemUnion>+
+Documented?: <DocumentedItemUnion>+
+Aliases?: <AliasItemUnion>+
+References?: <ResourceHeader>+
+Metadata?: <MetadataItemUnion>+
+Id?: <OpenText>
+```
+
+A top-level `Relation:` states a bidirectional relationship between the two
+concepts declared in `between:` and `and:` (for example that they are
+equivalent). Contrast the directional `relation:` group nested inside `Enables:`
+([`EnablesRelationGroup`], which relates the described concept *to* another and,
+with `as: \\view`/`\\abstraction`, registers a cast rule): the top-level item is
+heading-less, standalone, and registers no cast — it is checked like a theorem
+(its `when:` specs and `means:` statement are validated for declared symbols and
+valid command references, not proven).
 
 ### Nested item groups
 

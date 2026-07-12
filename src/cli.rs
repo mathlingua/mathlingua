@@ -87,6 +87,7 @@ impl From<CliEventLevel> for Level {
 #[derive(Clone, Debug, Subcommand)]
 pub enum Command {
     Check(CheckArgs),
+    Clean,
     #[command(hide = true)]
     Debug,
     Export(ExportArgs),
@@ -113,9 +114,6 @@ pub struct CheckArgs {
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
 pub struct ExportArgs {
-    #[arg(long, short = 'o', value_name = "DIR", default_value = "dist")]
-    pub output: PathBuf,
-
     #[arg(long, value_name = "PATH")]
     pub base_path: Option<String>,
 
@@ -217,17 +215,25 @@ mod tests {
 
         assert!(matches!(
             cli.command,
-            Command::Export(ExportArgs { output, base_path: None, cname: None, force: false }) if output == PathBuf::from("dist")
+            Command::Export(ExportArgs {
+                base_path: None,
+                cname: None,
+                force: false
+            })
         ));
     }
 
     #[test]
-    fn parses_export_output_and_force() {
-        let cli = Cli::parse_from(["mlg", "export", "--output", "site", "--force"]);
+    fn parses_export_force() {
+        let cli = Cli::parse_from(["mlg", "export", "--force"]);
 
         assert!(matches!(
             cli.command,
-            Command::Export(ExportArgs { output, base_path: None, cname: None, force: true }) if output == PathBuf::from("site")
+            Command::Export(ExportArgs {
+                base_path: None,
+                cname: None,
+                force: true
+            })
         ));
     }
 
@@ -244,11 +250,16 @@ mod tests {
 
         assert!(matches!(
             cli.command,
-            Command::Export(ExportArgs { output, base_path: Some(base_path), cname: Some(cname), force: false })
-                if output == PathBuf::from("dist")
-                    && base_path == "/mathlore"
-                    && cname == "math.example.org"
+            Command::Export(ExportArgs { base_path: Some(base_path), cname: Some(cname), force: false })
+                if base_path == "/mathlore" && cname == "math.example.org"
         ));
+    }
+
+    #[test]
+    fn parses_clean_command() {
+        let cli = Cli::parse_from(["mlg", "clean"]);
+
+        assert!(matches!(cli.command, Command::Clean));
     }
 
     #[test]

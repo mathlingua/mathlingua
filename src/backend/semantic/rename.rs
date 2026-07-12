@@ -96,8 +96,8 @@ pub fn plan_rename(
 
     let mut sink = EventLog::new();
     let new_document = parse_document(&new_source, &mut sink);
-    let new_heading = heading_starting_at(&new_document, &new_source, heading_start)
-        .ok_or_else(|| {
+    let new_heading =
+        heading_starting_at(&new_document, &new_source, heading_start).ok_or_else(|| {
             RenameError::InvalidNewName("The new name is not a valid command heading".to_string())
         })?;
     if !matches!(new_heading, CommandHeader::Command(_)) {
@@ -180,7 +180,10 @@ fn collect_edits(files: &[ParsedSourceFile], mapping: &[(String, String)]) -> Ve
 
 /// The command heading of the top-level item whose heading signature covers
 /// `offset`, along with the `[start, end)` byte range of that signature.
-fn locate_heading(target: &ParsedSourceFile, offset: usize) -> Option<(&CommandHeader, usize, usize)> {
+fn locate_heading(
+    target: &ParsedSourceFile,
+    offset: usize,
+) -> Option<(&CommandHeader, usize, usize)> {
     let source = &target.source;
     for item in &target.document.items {
         let Some(definition) = definition_item(item) else {
@@ -397,10 +400,24 @@ mod tests {
         let cursor = offset_of(def, "\\set", 2);
         let edits = plan_rename(&files, &def_file, cursor, "\\collection").expect("plan");
 
-        let def_edits: Vec<_> = edits.iter().filter(|e| e.path == def_file.path).cloned().collect();
-        let usage_edits: Vec<_> = edits.iter().filter(|e| e.path == usage_file.path).cloned().collect();
-        assert_eq!(apply(def, &def_edits), "[\\collection]\nDescribes: S\nId: \"a\"\n");
-        assert_eq!(apply(usage, &usage_edits), "Theorem:\nthen: x is \\collection\nId: \"b\"\n");
+        let def_edits: Vec<_> = edits
+            .iter()
+            .filter(|e| e.path == def_file.path)
+            .cloned()
+            .collect();
+        let usage_edits: Vec<_> = edits
+            .iter()
+            .filter(|e| e.path == usage_file.path)
+            .cloned()
+            .collect();
+        assert_eq!(
+            apply(def, &def_edits),
+            "[\\collection]\nDescribes: S\nId: \"a\"\n"
+        );
+        assert_eq!(
+            apply(usage, &usage_edits),
+            "Theorem:\nthen: x is \\collection\nId: \"b\"\n"
+        );
     }
 
     #[test]

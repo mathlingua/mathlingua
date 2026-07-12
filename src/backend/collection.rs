@@ -13,6 +13,7 @@ use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
 pub(crate) const CONTENT_DIR: &str = "content";
+pub(crate) const DOCS_DIR: &str = "docs";
 
 pub(crate) struct SourceCollection {
     root: PathBuf,

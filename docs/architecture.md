@@ -117,9 +117,9 @@ Responsibilities:
 - `src/frontend/` contains lexing and parsing.
 - `src/backend/` contains collection loading, semantic checking, and viewer
   model generation.
-- `src/mlg/` contains command orchestration for `check`, `export`, `init`,
-  `lsp`, `release`, `version`, and `view`, plus completion and command-specific
-  utilities.
+- `src/mlg/` contains command orchestration for `check`, `clean`, `export`,
+  `init`, `lsp`, `release`, `version`, and `view`, plus completion and
+  command-specific utilities.
 
 ## Command Layer
 
@@ -132,7 +132,8 @@ The command layer is split between:
 The implemented top-level commands are:
 
 - `mlg check [PATH...]`
-- `mlg export [-o DIR] [--base-path PATH] [--cname DOMAIN] [--force]`
+- `mlg clean`
+- `mlg export [--base-path PATH] [--cname DOMAIN] [--force]`
 - `mlg init`
 - `mlg lsp`
 - `mlg release --summary TEXT [--dry-run] [--diff]`
@@ -549,6 +550,13 @@ entry. In addition, when a *definition* (`Defines`, `Describes`, `States`,
 re-versioned transitively, deduplicated so each item gains at most one new entry
 per release. The whole update set is computed in memory before anything is
 written, and `mlg.json` is bumped last.
+
+A real (non-dry-run) release finishes by regenerating the published site: the CLI
+(`src/main.rs`) runs `mlg clean` then `mlg export`, replacing `docs/` so it
+matches the release just recorded. This orchestration lives at the binary level
+because it composes whole commands (each with its own console listener) and drives
+the `npm` build in `mlg export`; the `release` library entry point itself only
+writes the release metadata.
 
 ## Parser Generation
 

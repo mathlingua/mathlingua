@@ -302,10 +302,9 @@ impl ServerState {
         let offset = byte_offset_at(text, position.line, position.character)
             .ok_or("The cursor is out of range")?;
 
-        let edits = crate::backend::rename::resolve_rename(
-            &root, &file_path, text, offset, &new_name,
-        )
-        .map_err(rename_error_message)?;
+        let edits =
+            crate::backend::rename::resolve_rename(&root, &file_path, text, offset, &new_name)
+                .map_err(rename_error_message)?;
 
         Ok(workspace_edit_from_edits(edits))
     }

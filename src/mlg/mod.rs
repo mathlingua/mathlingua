@@ -1,4 +1,5 @@
 pub use check::{CheckResult, check, check_diagnostics_report, check_diagnostics_schema};
+pub use clean::{CleanResult, clean};
 pub use debug::{DebugResult, debug};
 pub use export::{ExportResult, export};
 pub use init::{InitResult, init};
@@ -9,6 +10,7 @@ pub use view::{ViewResult, view};
 pub use whte_rbt_obj::{WhteRbtObjResult, whte_rbt_obj};
 
 mod check;
+mod clean;
 mod completion;
 mod debug;
 mod export;

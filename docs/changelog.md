@@ -570,10 +570,18 @@ The viewer has responsive navigation behavior.
 ### `mlg export`
 
 `mlg export` checks and renders the current collection, then builds a static
-copy of the viewer. Output defaults to `dist`; `-o/--output` selects another
-directory, `--force` replaces a nonempty output directory, `--base-path`
-supports subpath hosting, and `--cname` writes a GitHub Pages `CNAME` file. The
-export also writes `.nojekyll` and route data required by the static viewer.
+copy of the viewer. The output location is fixed: the site is always written to
+`docs/` at the collection root (a sibling of `content/` and `metadata/`, the
+conventional GitHub Pages source folder), so there is no `--output` option.
+`--force` replaces a nonempty `docs/`, `--base-path` supports subpath hosting,
+and `--cname` writes a GitHub Pages `CNAME` file. The export also writes
+`.nojekyll` and route data required by the static viewer.
+
+### `mlg clean`
+
+`mlg clean` removes the generated `docs/` directory from the collection (the
+inverse of `mlg export`). It must be run inside a Mathlingua collection (a
+directory tree containing `mlg.json`) and is a no-op when `docs/` is absent.
 
 ### `mlg release`
 
@@ -624,6 +632,11 @@ of the collection into a `metadata/` directory next to `content/`.
   appear in the summary but are omitted from the diffs. The flag works with or
   without `--dry-run`, so the intended flow is `mlg release --dry-run --diff` to
   review, then `mlg release` to record.
+- A real (non-dry-run) release then regenerates the published site: it removes
+  `docs/` and runs `mlg export`, so `docs/` reflects the version just recorded.
+  The regenerated `docs/` (along with the new `metadata/` and the `mlg.json`
+  version bump) is left uncommitted for the author to commit. A dry run does not
+  touch `docs/`.
 
 ### `mlg debug`
 

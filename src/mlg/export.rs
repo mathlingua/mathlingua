@@ -1,4 +1,4 @@
-use crate::backend::collection::SourceCollection;
+use crate::backend::collection::{DOCS_DIR, SourceCollection};
 use crate::backend::view::{CollectionView, DirectoryView, GroupView};
 use crate::events::{EventLog, EventLogListener};
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since};
@@ -23,7 +23,6 @@ pub struct ExportResult {
 
 pub fn export(
     cwd: &Path,
-    output: &Path,
     base_path: Option<&str>,
     cname: Option<&str>,
     force: bool,
@@ -35,7 +34,7 @@ pub fn export(
     }
 
     let starting_event_count = event_log.events().len();
-    let io_ok = export_in(cwd, output, base_path, cname, force, &mut event_log).is_ok();
+    let io_ok = export_in(cwd, base_path, cname, force, &mut event_log).is_ok();
     let successful = io_ok && no_errors_since(&event_log, starting_event_count);
 
     ExportResult {
@@ -46,7 +45,6 @@ pub fn export(
 
 pub(super) fn export_in(
     cwd: &Path,
-    output: &Path,
     base_path: Option<&str>,
     cname: Option<&str>,
     force: bool,
@@ -61,6 +59,9 @@ pub(super) fn export_in(
     };
     let starting_event_count = event_log.events().len();
     let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
+    // The static site always builds into `<collection root>/docs`, a sibling of
+    // `content/` and `metadata/` (the conventional GitHub Pages source folder).
+    let output = collection.root().join(DOCS_DIR);
     if collection.source_files().is_empty() {
         event_log.user_error(Some(ORIGIN), "No Mathlingua files were found to export");
         return Err(io::Error::other("No Mathlingua files were found to export"));
@@ -96,7 +97,7 @@ pub(super) fn export_in(
         ));
     };
 
-    prepare_output_directory(output, force, event_log)?;
+    prepare_output_directory(&output, force, event_log)?;
 
     let temp_dir = create_export_session_dir()?;
     let data_dir = temp_dir.join(DATA_DIR);
@@ -104,9 +105,9 @@ pub(super) fn export_in(
 
     ensure_web_dependencies(event_log)?;
     build_static_web_app(&data_dir, &export_options, event_log)?;
-    copy_static_web_app(output)?;
+    copy_static_web_app(&output)?;
     copy_dir_contents(&data_dir, &output.join(DATA_DIR))?;
-    write_github_pages_files(output, &export_options)?;
+    write_github_pages_files(&output, &export_options)?;
 
     let _ = fs::remove_dir_all(&temp_dir);
     event_log.user_log(

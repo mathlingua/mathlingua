@@ -18,6 +18,7 @@ pub(super) fn collect_definition_type_metadata(
     collect_viewable_rules(item, &info, registry);
     collect_abstraction_rules(item, &info, registry);
     collect_collection_type_signature(item, &info, registry);
+    collect_equivalence_class(item, header_shape, registry);
     registry.definition_summaries.insert(
         header_shape.shape.signature.clone(),
         DefinitionSummary {
@@ -27,6 +28,63 @@ pub(super) fn collect_definition_type_metadata(
     registry
         .type_infos
         .insert(header_shape.shape.signature.clone(), info);
+}
+
+/// Record the equivalence class declared by a top-level `Equivalent:` item: the
+/// class-naming header plus each `to:` member, each paired with the header
+/// parameters its arguments use. `to:` members whose arguments are not all bare
+/// names are skipped here (they are reported by `validate_equivalent_item`).
+fn collect_equivalence_class(
+    item: &TopLevelItem,
+    header_shape: &HeaderShape,
+    registry: &mut SignatureRegistry,
+) {
+    let TopLevelItem::Equivalent(group) = item else {
+        return;
+    };
+    // A multi-shape header collects the class once, under its primary shape.
+    if registry
+        .equivalence_classes
+        .iter()
+        .any(|class| class.member(&header_shape.shape.signature).is_some())
+    {
+        return;
+    }
+
+    let mut members = vec![EquivalenceMember {
+        signature: header_shape.shape.signature.clone(),
+        params: header_shape.parameters.clone(),
+    }];
+    for expression in &group.to.arguments {
+        let ExpressionKind::Command(command) = &expression.kind else {
+            continue;
+        };
+        let Some(params) = command_bare_name_arguments(command) else {
+            continue;
+        };
+        members.push(EquivalenceMember {
+            signature: shape_for_command_expression(command).signature,
+            params,
+        });
+    }
+
+    if members.len() >= 2 {
+        registry
+            .equivalence_classes
+            .push(EquivalenceClass { members });
+    }
+}
+
+/// The bare `Name` arguments of a command, in order, or `None` if any argument is
+/// not a bare name.
+fn command_bare_name_arguments(command: &CommandExpression) -> Option<Vec<String>> {
+    command_argument_expressions(command)
+        .into_iter()
+        .map(|argument| match &argument.kind {
+            ExpressionKind::Name(name) => Some(name.clone()),
+            _ => None,
+        })
+        .collect()
 }
 
 /// The form of the object `item` declares (rule 2 of `Equivalent:`).
@@ -8063,6 +8121,10 @@ fn fact_implies_with_options(
         return true;
     }
 
+    if equivalence_fact_implies_required(&fact, required, context, registry) {
+        return true;
+    }
+
     for extended in reduce_extension_fact(&fact, context, registry) {
         if fact_implies_with_options(&extended, required, context, registry, seen, allow_viewable) {
             return true;
@@ -8212,6 +8274,73 @@ fn viewable_fact_implies_required(
             let viewed = context.normalize_fact(&substitute_fact(&rule.target, &substitutions));
             fact_implies(&viewed, required, context, registry, seen)
         })
+}
+
+/// A value known to be one member of an equivalence class satisfies a requirement
+/// that it be any other member of the same class, as long as the target member's
+/// header parameters are all pinned — to matching actuals — by the known member.
+/// This is the interchangeability declared by a top-level `Equivalent:` item.
+fn equivalence_fact_implies_required(
+    fact: &TypeFact,
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> bool {
+    if registry.equivalence_classes.is_empty() {
+        return false;
+    }
+    // Both facts must speak about the same value.
+    if context.normalize_key(fact_subject(fact)) != context.normalize_key(fact_subject(required)) {
+        return false;
+    }
+    let Some((from_signature, from_actuals)) = command_fact_signature_and_actuals(fact) else {
+        return false;
+    };
+    let Some((to_signature, to_actuals)) = command_fact_signature_and_actuals(required) else {
+        return false;
+    };
+    if from_signature == to_signature {
+        return false; // identical commands are settled by the direct equality check
+    }
+
+    registry.equivalence_classes.iter().any(|class| {
+        let (Some(from), Some(to)) = (class.member(&from_signature), class.member(&to_signature))
+        else {
+            return false;
+        };
+        if from.params.len() != from_actuals.len() || to.params.len() != to_actuals.len() {
+            return false;
+        }
+        // Bind each header parameter to the actual the known member supplies, then
+        // require the target member's actuals to agree under that binding. A target
+        // parameter the known member does not mention leaves the target actual
+        // unpinned, so the reduction is (soundly) not available.
+        let bindings: HashMap<&str, String> = from
+            .params
+            .iter()
+            .map(String::as_str)
+            .zip(
+                from_actuals
+                    .iter()
+                    .map(|actual| context.normalize_key(actual)),
+            )
+            .collect();
+        to.params.iter().zip(&to_actuals).all(|(param, actual)| {
+            bindings
+                .get(param.as_str())
+                .is_some_and(|bound| *bound == context.normalize_key(actual))
+        })
+    })
+}
+
+/// Whether two distinct command signatures are members of a common equivalence
+/// class (declared by some top-level `Equivalent:` item).
+fn signatures_are_equivalent(left: &str, right: &str, registry: &SignatureRegistry) -> bool {
+    left != right
+        && registry
+            .equivalence_classes
+            .iter()
+            .any(|class| class.member(left).is_some() && class.member(right).is_some())
 }
 
 fn cast_as_fact_implies_required(
@@ -8961,6 +9090,21 @@ fn fact_has_type_signature(
             ..
         } if fact_subject == subject && fact_signature == signature
     ) {
+        return true;
+    }
+
+    // A value known to be one member of an equivalence class has the type
+    // signature of every other member of the class (they are interchangeable, and
+    // provide the same capabilities per the `Equivalent:` validation). This lets a
+    // provided symbol or spec operator resolve through the class.
+    if let TypeFact::Is {
+        subject: fact_subject,
+        signature: fact_signature,
+        ..
+    } = &fact
+        && fact_subject == subject
+        && signatures_are_equivalent(fact_signature, signature, registry)
+    {
         return true;
     }
 

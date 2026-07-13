@@ -1425,6 +1425,243 @@ then:
     }
 
     #[test]
+    fn check_accepts_requirement_satisfied_through_equivalence() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("equivalence-use.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\aaa{a}]
+Describes: S
+when: a is \\expression
+Documented:
+. called: "aaa"
+
+[\bbb{a}]
+Describes: T
+when: a is \\expression
+Documented:
+. called: "bbb"
+
+[\eq{a}]
+Equivalent:
+when:
+. a is \\expression
+to:
+. \aaa{a}
+. \bbb{a}
+
+[\uses{p}{a}]
+Describes: W
+when:
+. a is \\expression
+. p is \aaa{a}
+Documented:
+. called: "uses"
+
+Theorem:
+given:
+. z is \\expression
+. y is \bbb{z}
+then:
+. \uses{y}{z} = \uses{y}{z}
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("equivalence-use.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            !event_log.has_errors(),
+            "expected `y is \\bbb{{z}}` to satisfy the required `y is \\aaa{{z}}` via \
+             equivalence: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_rejects_equivalence_with_mismatched_actual() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("equivalence-mismatch.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\aaa{a}]
+Describes: S
+when: a is \\expression
+Documented:
+. called: "aaa"
+
+[\bbb{a}]
+Describes: T
+when: a is \\expression
+Documented:
+. called: "bbb"
+
+[\eq{a}]
+Equivalent:
+when:
+. a is \\expression
+to:
+. \aaa{a}
+. \bbb{a}
+
+[\uses{p}{a}]
+Describes: W
+when:
+. a is \\expression
+. p is \aaa{a}
+Documented:
+. called: "uses"
+
+Theorem:
+given:
+. z is \\expression
+. w is \\expression
+. y is \bbb{w}
+then:
+. \uses{y}{z} = \uses{y}{z}
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("equivalence-mismatch.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| message
+                    .message
+                    .contains("Could not establish requirement")
+                    && message.message.contains("\\aaa"))),
+            "expected `y is \\bbb{{w}}` NOT to satisfy the required `y is \\aaa{{z}}` \
+             (mismatched actual): {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_resolves_class_capability_on_equivalent_header_typed_value() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("equivalence-capability.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\setA]
+Describes: X
+Enables:
+. capability: x_ "belongsA" X :-> \\abstract
+Documented:
+. called: "setA"
+
+[\setB]
+Describes: Y
+Enables:
+. capability: x_ "belongsA" Y :-> \\abstract
+Documented:
+. called: "setB"
+
+[\eqset]
+Equivalent:
+to:
+. \setA
+. \setB
+
+Theorem:
+given:
+. p is \\expression
+. A is \eqset
+then:
+. p "belongsA" A
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("equivalence-capability.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            !event_log.has_errors(),
+            "expected the class capability to resolve on an `\\eqset`-typed value: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_does_not_resolve_class_capability_on_unrelated_value() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("equivalence-capability-neg.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\setA]
+Describes: X
+Enables:
+. capability: x_ "belongsA" X :-> \\abstract
+Documented:
+. called: "setA"
+
+[\setB]
+Describes: Y
+Enables:
+. capability: x_ "belongsA" Y :-> \\abstract
+Documented:
+. called: "setB"
+
+[\eqset]
+Equivalent:
+to:
+. \setA
+. \setB
+
+[\other]
+Describes: Z
+Documented:
+. called: "other"
+
+Theorem:
+given:
+. p is \\expression
+. C is \other
+then:
+. p "belongsA" C
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("equivalence-capability-neg.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log).iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("\"belongsA\""))),
+            "expected `\\other` NOT to resolve the class capability `belongsA`: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
     fn check_reports_references_to_undefined_command_signatures() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("undefined.mlg");

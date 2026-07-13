@@ -57,15 +57,19 @@ Justified?: ...  Documented?: ...  References?: ...  Id?: ...
   `mlg check` auto-inserts an `Id:`.
 - Each `to:` command must use the header parameters directly, as bare names — no
   compound expressions, nested commands, or `using:` symbols.
-- Local validation (Phase 1): every `to:` member must be defined and be one of
+- Local validation: every `to:` member must be defined and be one of
   `Describes`/`Defines`/`States`/`Refines`, and all members must be the same
   kind; they must share the same target shape and — by kind — the same `is` type
   (`Defines`), `extends:` target (`Describes`), or base type (`Refines`); they
   must provide the same capabilities (by name and arity); and the item's own
   `when:` must guarantee each member's requirements.
-- Not yet done (deferred): making the members mutually substitutable to the type
-  checker, and resolving symbols/capabilities on an `\foo`-typed value through
-  the first `to:` member.
+- Interchangeability: the members are mutually substitutable to the type checker.
+  A value known to be one member (or the class-naming header) satisfies a
+  requirement that it be any other member, provided the target member's header
+  parameters are all pinned — to matching actuals — by the known member (so a
+  member instantiated at *different* actuals is correctly not accepted). A
+  capability or spec operator the class provides also resolves on a value typed
+  as any member or the header, since every member provides the same capabilities.
 
 ### `equivalently:` Clause
 

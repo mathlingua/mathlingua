@@ -217,6 +217,32 @@ pub(super) struct DefinitionSummary {
     pub(super) target_shape: TargetShape,
 }
 
+/// One command in an equivalence class declared by a top-level `Equivalent:`
+/// item (a `to:` member, or the class-naming header itself).
+#[derive(Clone, Debug)]
+pub(super) struct EquivalenceMember {
+    pub(super) signature: String,
+    /// The header parameter names this member's arguments correspond to, in the
+    /// order the member lists them.
+    pub(super) params: Vec<String>,
+}
+
+/// A set of mutually interchangeable commands declared by one `Equivalent:` item.
+/// Membership is by command signature; a value known to be one member is treated
+/// as every other member instantiated at the same header parameters.
+#[derive(Clone, Debug)]
+pub(super) struct EquivalenceClass {
+    pub(super) members: Vec<EquivalenceMember>,
+}
+
+impl EquivalenceClass {
+    pub(super) fn member(&self, signature: &str) -> Option<&EquivalenceMember> {
+        self.members
+            .iter()
+            .find(|member| member.signature == signature)
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DefinitionKind {
     Describes,
@@ -252,6 +278,7 @@ impl DefinitionKind {
 pub(super) struct SignatureRegistry {
     pub(super) definitions: HashMap<String, DefinitionEntry>,
     pub(super) definition_summaries: HashMap<String, DefinitionSummary>,
+    pub(super) equivalence_classes: Vec<EquivalenceClass>,
     pub(super) type_infos: HashMap<String, DefinitionTypeInfo>,
     pub(super) spec_rules: Vec<SpecOperatorRule>,
     pub(super) extension_rules: Vec<TypeExtensionRule>,

@@ -882,9 +882,11 @@ signature and is validated locally:
 - the members must provide the same set of capabilities (by name and arity); and
 - this item's own `when:` must guarantee each member's requirements.
 
-Making the members mutually substitutable to the type checker is deferred; Phase
-1 performs the validation above but does not yet treat one member as usable
-wherever another is required.
+The members are then mutually substitutable to the type checker: a value known to
+be one member (or the class-naming header) satisfies a requirement that it be any
+other member, as long as the target member's header parameters are all pinned to
+matching actuals by the known member. A capability or spec operator the class
+provides likewise resolves on a value typed as any member or the header.
 
 ### Nested item groups
 

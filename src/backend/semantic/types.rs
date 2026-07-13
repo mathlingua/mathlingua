@@ -192,6 +192,31 @@ pub(super) struct DisambiguationBranch {
     pub(super) to: Expression,
 }
 
+/// The form of the object a definition declares, compared across the members of
+/// a top-level `Equivalent:` item (its "target shape" — rule 2). Two members can
+/// be interchangeable only if they declare the same shape of object.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) enum TargetShape {
+    Name,
+    Function(usize),
+    Tuple(usize),
+    Set,
+    Operator,
+    Statement,
+    /// A subject whose shape is not one of the comparable cases above (e.g. a
+    /// multi-subject declaration). Two `Other`s compare equal, so exotic subjects
+    /// are treated leniently rather than reported as a spurious mismatch.
+    Other,
+}
+
+/// Precomputed facts about a definition that are needed to validate a top-level
+/// `Equivalent:` item but are not otherwise recoverable from the registry by
+/// signature alone. Built in pass 1 (which has the defining item's AST).
+#[derive(Clone, Debug)]
+pub(super) struct DefinitionSummary {
+    pub(super) target_shape: TargetShape,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DefinitionKind {
     Describes,
@@ -203,6 +228,7 @@ pub(super) enum DefinitionKind {
     Corollary,
     Lemma,
     Conjecture,
+    Equivalent,
 }
 
 impl DefinitionKind {
@@ -217,6 +243,7 @@ impl DefinitionKind {
             Self::Corollary => "Corollary",
             Self::Lemma => "Lemma",
             Self::Conjecture => "Conjecture",
+            Self::Equivalent => "Equivalent",
         }
     }
 }
@@ -224,6 +251,7 @@ impl DefinitionKind {
 #[derive(Default)]
 pub(super) struct SignatureRegistry {
     pub(super) definitions: HashMap<String, DefinitionEntry>,
+    pub(super) definition_summaries: HashMap<String, DefinitionSummary>,
     pub(super) type_infos: HashMap<String, DefinitionTypeInfo>,
     pub(super) spec_rules: Vec<SpecOperatorRule>,
     pub(super) extension_rules: Vec<TypeExtensionRule>,

@@ -203,6 +203,7 @@ fn supports_resolved_group_heading(kind: &str) -> bool {
             | "Corollary"
             | "Lemma"
             | "Conjecture"
+            | "Equivalent"
     )
 }
 
@@ -296,6 +297,11 @@ pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
         TopLevelItem::Conjecture(group) => {
             render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
         }
+        TopLevelItem::Equivalent(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
+            None,
+            group.documented.as_ref(),
+        ),
         _ => Vec::new(),
     }
 }

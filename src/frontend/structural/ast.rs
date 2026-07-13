@@ -194,6 +194,8 @@ argument_section!(RefinesSection, DeclarationStatement);
 argument_section!(RefinesExtendsSection, DeclarationStatement);
 zero_or_more_arguments_section!(StatesSection, OpenText);
 arguments_section!(ThatSection, Clause);
+zero_or_more_arguments_section!(EquivalentSection, OpenText);
+arguments_section!(EquivalentToSection, Expression);
 zero_or_more_arguments_section!(AxiomSection, OpenText);
 zero_or_more_arguments_section!(TheoremSection, OpenText);
 zero_or_more_arguments_section!(CorollarySection, OpenText);
@@ -265,6 +267,7 @@ argument_section!(ResourceYearSection, OpenText);
 argument_section!(ResourceDescriptionSection, OpenText);
 argument_section!(NotSection, Box<Clause>);
 arguments_section!(AllOfSection, Clause);
+arguments_section!(EquivalentlySection, Clause);
 arguments_section!(AnyOfSection, Clause);
 arguments_section!(OneOfSection, Clause);
 arguments_section!(ExistsSection, BindingOrSpec);
@@ -310,6 +313,7 @@ pub enum TopLevelItem {
     Resource(ResourceGroup),
     Specify(SpecifyGroup),
     Relation(RelationGroup),
+    Equivalent(EquivalentGroup),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -323,6 +327,7 @@ pub enum Clause {
     ForAll(ForAllGroup),
     If(IfGroup),
     Iff(IffGroup),
+    Equivalently(EquivalentlyGroup),
     Piecewise(PiecewiseGroup),
     Given(GivenGroup),
     Declaration(DeclarationStatement),
@@ -533,6 +538,22 @@ pub struct StatesGroup {
     pub metadata: Option<MetadataSection>,
 }
 
+/// A top-level `Equivalent:` item. Its `[...]` command heading names an
+/// equivalence class; each `to:` command (which must use the header parameters
+/// exactly) is asserted to be interchangeable with the others. Unlike the
+/// definition-like groups it has no `Enables:`/`Requires:`/`Aliases:`/`Metadata:`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EquivalentGroup {
+    pub heading: CommandHeader,
+    pub equivalent: EquivalentSection,
+    pub using: Option<UsingSection>,
+    pub when: Option<WhenSection>,
+    pub to: EquivalentToSection,
+    pub justified: Option<JustifiedSection>,
+    pub documented: Option<DocumentedSection>,
+    pub references: Option<ReferencesSection>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AxiomGroup {
     pub heading: Option<CommandHeader>,
@@ -640,6 +661,15 @@ pub struct NotGroup {
 pub struct AllOfGroup {
     pub heading: Option<LabelHeader>,
     pub all_of: AllOfSection,
+}
+
+/// An `equivalently:` clause — sugar for a chain of `iff`s asserting that all of
+/// its sub-clauses are equivalent. Purely a checking convenience; each sub-clause
+/// is validated like an `allOf:` entry.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EquivalentlyGroup {
+    pub heading: Option<LabelHeader>,
+    pub equivalently: EquivalentlySection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

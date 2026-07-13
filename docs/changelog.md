@@ -36,6 +36,44 @@ Justified?: ...  Documented?: ...  Aliases?: ...  References?: ...  Metadata?: .
   declared symbols and valid command references — the relationship is stated, not
   proven, and it registers no type facts.
 
+### Top-Level `Equivalent:` Item
+
+A new top-level item declares that several commands are interchangeable under a
+shared name.
+
+```
+[\foo:of{A}:with{B}]
+Equivalent:
+using?: <declaration>+
+when?: <spec>+
+to:
+. \foo2{A, B}
+. \foo3:with{B}:and{A}
+Justified?: ...  Documented?: ...  References?: ...  Id?: ...
+```
+
+- The `[...]` heading names the equivalence class and registers a command
+  signature (referenceable and duplicate-checked, like `Describes:`/`States:`).
+  `mlg check` auto-inserts an `Id:`.
+- Each `to:` command must use the header parameters directly, as bare names — no
+  compound expressions, nested commands, or `using:` symbols.
+- Local validation (Phase 1): every `to:` member must be defined and be one of
+  `Describes`/`Defines`/`States`/`Refines`, and all members must be the same
+  kind; they must share the same target shape and — by kind — the same `is` type
+  (`Defines`), `extends:` target (`Describes`), or base type (`Refines`); they
+  must provide the same capabilities (by name and arity); and the item's own
+  `when:` must guarantee each member's requirements.
+- Not yet done (deferred): making the members mutually substitutable to the type
+  checker, and resolving symbols/capabilities on an `\foo`-typed value through
+  the first `to:` member.
+
+### `equivalently:` Clause
+
+A new clause `equivalently: <clause>+` asserts that its sub-clauses are all
+mutually equivalent (sugar for a chain of `iff`s). It is checked like `allOf:`
+(each sub-clause is validated in turn) and carries no additional type meaning. It
+is not valid inside a `when:` section.
+
 ### Markdown MathLingua Fences
 
 `Text:` Markdown may contain fenced blocks tagged `mlg`. These blocks render as

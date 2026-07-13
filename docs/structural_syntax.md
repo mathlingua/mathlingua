@@ -281,6 +281,7 @@ An empty document is supported by the current implementation because `Document.i
 | `Resource` | `ResourceGroup` | resource | `Resource: ResourceItem+` |
 | `Specify` | `SpecifyGroup` | none | `Specify: SpecifyItem+` |
 | `Relation` | `RelationGroup` | none | `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RefinedDeclarationStatement`, `and: RefinedDeclarationStatement`, `when?: Clause+`, `means?: Clause`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Equivalent` | `EquivalentGroup` | command | `Equivalent: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `References?: ResourceHeader+` |
 
 Notes:
 
@@ -425,6 +426,11 @@ If a clause section contains:
 | `have` | `IffGroup` | label? | `have: Clause+`, `iff: Clause+` |
 | `piecewise` | `PiecewiseGroup` | label? | `piecewise: OpenText*`, `if: Clause+`, `then: Clause+`, `else?: Clause+` |
 | `given` | `GivenGroup` | label? | `given: RefinedDeclarationStatement`, `where?: Clause+`, `then: Clause+` |
+| `equivalently` | `EquivalentlyGroup` | label? | `equivalently: Clause+` |
+
+`equivalently:` asserts that its sub-clauses are all mutually equivalent (sugar
+for a chain of `iff`s); it is checked like `allOf:` and carries no additional
+type meaning.
 
 ## Heading Kinds
 
@@ -438,6 +444,7 @@ Required on:
 - `Defines`
 - `Refines`
 - `States`
+- `Equivalent`
 
 Optional on:
 
@@ -616,6 +623,7 @@ ClauseUnion ::=
     | IffGroup
     | PiecewiseGroup
     | GivenGroup
+    | EquivalentlyGroup
     | DeclarationStatement
     | Expression
 ```
@@ -637,6 +645,8 @@ TopLevelItemUnion ::=
     | PersonGroup
     | ResourceGroup
     | SpecifyGroup
+    | RelationGroup
+    | EquivalentGroup
 ```
 
 ```union
@@ -845,6 +855,36 @@ with `as: \\view`/`\\abstraction`, registers a cast rule): the top-level item is
 heading-less, standalone, and registers no cast — it is checked like a theorem
 (its `when:` specs and `means:` statement are validated for declared symbols and
 valid command references, not proven).
+
+```group
+[CommandHeader]
+Equivalent: <OpenText>*
+using?: <DeclarationStatement>+
+when?: <Clause>+
+to: <Expression>+
+Justified?: <JustifiedItemUnion>+
+Documented?: <DocumentedItemUnion>+
+References?: <ResourceHeader>+
+Id?: <OpenText>
+```
+
+A top-level `Equivalent:` declares that the `\command`s listed under `to:` are
+interchangeable under the shared name given by its `[...]` heading. Each `to:`
+command must use the header parameters directly, as bare names (no compound
+expressions, no `using:` symbols). The item registers its heading as a command
+signature and is validated locally:
+
+- every `to:` member must be defined and be a `Describes`, `Defines`, `States`,
+  or `Refines` — and all members must be the same one of those kinds;
+- the members must declare the same target shape, and (by kind) the same `is`
+  type (`Defines`), the same `extends:` target (`Describes`), or the same base
+  type (`Refines`);
+- the members must provide the same set of capabilities (by name and arity); and
+- this item's own `when:` must guarantee each member's requirements.
+
+Making the members mutually substitutable to the type checker is deferred; Phase
+1 performs the validation above but does not yet treat one member as usable
+wherever another is required.
 
 ### Nested item groups
 

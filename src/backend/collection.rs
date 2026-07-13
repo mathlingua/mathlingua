@@ -337,6 +337,7 @@ fn is_top_level_item_label(label: &str) -> bool {
             | "Resource"
             | "Specify"
             | "Relation"
+            | "Equivalent"
     )
 }
 

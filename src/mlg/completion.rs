@@ -241,6 +241,19 @@ const GROUPS: &[GroupSpec] = &[
             ("Id", false),
         ],
     },
+    GroupSpec {
+        head: "Equivalent",
+        sections: &[
+            ("Equivalent", true),
+            ("using", false),
+            ("when", false),
+            ("to", true),
+            ("Justified", false),
+            ("Documented", false),
+            ("References", false),
+            ("Id", false),
+        ],
+    },
 ];
 
 // `Axiom`/`Theorem`/`Lemma`/`Conjecture` share one shape (see
@@ -310,6 +323,7 @@ const CLAUSE_STARTERS: &[&str] = &[
     "forAll",
     "if",
     "have",
+    "equivalently",
     "piecewise",
     "given",
 ];

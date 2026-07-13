@@ -871,6 +871,24 @@ pub(super) fn parse_all_of_clause(
     })
 }
 
+pub(super) fn parse_equivalently_clause(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<EquivalentlyGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("equivalently", &group.sections, tracker, &["equivalently"])?;
+    Some(EquivalentlyGroup {
+        heading,
+        equivalently: EquivalentlySection {
+            arguments: parse_required_clauses(
+                section(&sections, "equivalently")?,
+                "equivalently",
+                tracker,
+            )?,
+        },
+    })
+}
+
 /// Parses an `anyOf:` clause group.
 pub(super) fn parse_any_of_clause(
     group: &ProtoGroup,
@@ -1333,6 +1351,7 @@ pub(super) fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> 
         "have" => parse_have_clause(group, tracker).map(Clause::Iff),
         "piecewise" => parse_piecewise_clause(group, tracker).map(Clause::Piecewise),
         "given" => parse_given_clause(group, tracker).map(Clause::Given),
+        "equivalently" => parse_equivalently_clause(group, tracker).map(Clause::Equivalently),
         other => {
             tracker.user_error_at_row(
                 Some(ORIGIN),
@@ -2309,6 +2328,7 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
         "Resource" => parse_resource(group, tracker).map(TopLevelItem::Resource),
         "Specify" => parse_specify(group, tracker).map(TopLevelItem::Specify),
         "Relation" => parse_relation(group, tracker).map(TopLevelItem::Relation),
+        "Equivalent" => parse_equivalent(group, tracker).map(TopLevelItem::Equivalent),
         other => {
             tracker.user_error_at_row(
                 Some(ORIGIN),
@@ -3005,6 +3025,75 @@ pub(in crate::frontend::structural::parser) fn parse_states(
         metadata: sections.get("Metadata").copied().and_then(|section| {
             parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
                 .map(|arguments| MetadataSection { arguments })
+        }),
+    })
+}
+
+// ===============================[ equivalent ]=====================================
+
+/// Parses a top-level `Equivalent:` item.
+///
+/// The required `[...]` command heading names the equivalence class, and the
+/// required `to:` section lists one or more `\command` expressions asserted to be
+/// interchangeable. It has no `Enables:`/`Requires:`/`Aliases:`/`Metadata:`.
+pub(in crate::frontend::structural::parser) fn parse_equivalent(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<EquivalentGroup> {
+    let heading = parse_required_command_heading(group, tracker)?;
+    let sections = identify_sections(
+        "Equivalent",
+        &group.sections,
+        tracker,
+        &[
+            "Equivalent",
+            "using?",
+            "when?",
+            "to",
+            "Justified?",
+            "Documented?",
+            "References?",
+            "Id?",
+        ],
+    )?;
+
+    Some(EquivalentGroup {
+        heading,
+        equivalent: EquivalentSection {
+            arguments: parse_optional_open_texts(sections.get("Equivalent").copied(), tracker),
+        },
+        using: sections.get("using").copied().and_then(|section| {
+            parse_required_formulations(
+                section,
+                "using",
+                tracker,
+                parse_ordinary_declaration_statement,
+            )
+            .map(|arguments| UsingSection { arguments })
+        }),
+        when: sections.get("when").copied().and_then(|section| {
+            parse_required_clauses(section, "when", tracker)
+                .map(|arguments| WhenSection { arguments })
+        }),
+        to: EquivalentToSection {
+            arguments: parse_required_formulations(
+                section(&sections, "to")?,
+                "to",
+                tracker,
+                parse_expression,
+            )?,
+        },
+        justified: sections.get("Justified").copied().and_then(|section| {
+            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
+                .map(|arguments| JustifiedSection { arguments })
+        }),
+        documented: sections.get("Documented").copied().and_then(|section| {
+            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
+                .map(|arguments| DocumentedSection { arguments })
+        }),
+        references: sections.get("References").copied().and_then(|section| {
+            parse_required_formulations(section, "References", tracker, parse_resource_header)
+                .map(|arguments| ReferencesSection { arguments })
         }),
     })
 }
@@ -4276,6 +4365,102 @@ means: a = a
     }
 
     #[test]
+    fn parses_equivalent_item_with_using_when_to() {
+        let document = parse_ok(
+            r#"
+[\foo:of{a}:with{b}]
+Equivalent:
+using:
+. n is \integer
+when:
+. a is \real
+. b is \real
+to:
+. \bar{a, b}
+. \baz:with{b}:and{a}
+References:
+. $book.foo
+Id: "11111111-1111-4111-8111-111111111111"
+"#,
+        );
+
+        match &document.items[0] {
+            TopLevelItem::Equivalent(group) => {
+                assert!(group.using.is_some());
+                assert!(group.when.is_some());
+                assert_eq!(group.to.arguments.len(), 2);
+                assert!(group.references.is_some());
+            }
+            other => panic!("expected Equivalent item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_equivalent_item_with_head_text() {
+        let document = parse_ok(
+            r#"
+[\eq{a, b}]
+Equivalent:
+. "a and b are interchangeable"
+to:
+. \bar{a, b}
+. \baz{a, b}
+"#,
+        );
+
+        match &document.items[0] {
+            TopLevelItem::Equivalent(group) => {
+                assert_eq!(group.equivalent.arguments.len(), 1);
+                assert_eq!(group.to.arguments.len(), 2);
+                assert!(group.using.is_none());
+            }
+            other => panic!("expected Equivalent item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn equivalent_requires_a_to_section() {
+        let (_, diagnostics) = parse_with_diagnostics(
+            r#"
+[\foo{a}]
+Equivalent:
+when:
+. a is \real
+"#,
+        );
+
+        assert!(
+            diagnostics.iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("to"))),
+            "expected a diagnostic about the missing `to:` section: {diagnostics:#?}"
+        );
+    }
+
+    #[test]
+    fn parses_equivalently_clause_inside_theorem() {
+        let document = parse_ok(
+            r#"
+Theorem:
+then:
+. equivalently:
+  . a = b
+  . b = a
+"#,
+        );
+
+        let TopLevelItem::Theorem(theorem) = &document.items[0] else {
+            panic!("expected Theorem item, got {:?}", document.items[0]);
+        };
+        match &theorem.then.arguments[0] {
+            Clause::Equivalently(group) => {
+                assert_eq!(group.equivalently.arguments.len(), 2);
+            }
+            other => panic!("expected an equivalently clause, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn parses_structural_golden_directory() {
         let directory = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/goldens/structural"));
         let files = read_test_files(directory, "text");
@@ -4285,6 +4470,7 @@ means: a = a
             "corollaries.text".to_owned(),
             "defines.text".to_owned(),
             "describes.text".to_owned(),
+            "equivalent.text".to_owned(),
             "lemmas.text".to_owned(),
             "outline.text".to_owned(),
             "persons.text".to_owned(),

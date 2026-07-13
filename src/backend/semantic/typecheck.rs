@@ -18,9 +18,59 @@ pub(super) fn collect_definition_type_metadata(
     collect_viewable_rules(item, &info, registry);
     collect_abstraction_rules(item, &info, registry);
     collect_collection_type_signature(item, &info, registry);
+    registry.definition_summaries.insert(
+        header_shape.shape.signature.clone(),
+        DefinitionSummary {
+            target_shape: target_shape_of_item(item),
+        },
+    );
     registry
         .type_infos
         .insert(header_shape.shape.signature.clone(), info);
+}
+
+/// The form of the object `item` declares (rule 2 of `Equivalent:`).
+fn target_shape_of_item(item: &TopLevelItem) -> TargetShape {
+    match item {
+        TopLevelItem::Describes(group) => describes_target_shape(&group.describes.argument),
+        TopLevelItem::Defines(group) => is_subject_shape(&group.defines.argument.subject),
+        TopLevelItem::Refines(group) => is_subject_shape(&group.refines.argument.subject),
+        TopLevelItem::States(_) => TargetShape::Statement,
+        _ => TargetShape::Other,
+    }
+}
+
+fn describes_target_shape(target: &DescribesTarget) -> TargetShape {
+    match target {
+        DescribesTarget::Form(form) => form_shape(form),
+        DescribesTarget::Declaration(statement) => is_subject_shape(&statement.subject),
+    }
+}
+
+fn is_subject_shape(subject: &IsSubject) -> TargetShape {
+    match &subject.kind {
+        IsSubjectKind::Operator(_) => TargetShape::Operator,
+        IsSubjectKind::Forms(forms) => match forms.as_slice() {
+            [IsSubjectForm::Form(form)] => form_shape(form),
+            _ => TargetShape::Other,
+        },
+    }
+}
+
+fn form_shape(form: &FormOrDeclaration) -> TargetShape {
+    match &form.kind {
+        FormOrDeclarationKind::Name(_) => TargetShape::Name,
+        FormOrDeclarationKind::FunctionDeclaration { form, .. } => {
+            TargetShape::Function(form.placeholders.len())
+        }
+        FormOrDeclarationKind::TupleDeclaration { form, .. } => {
+            TargetShape::Tuple(form.elements.len())
+        }
+        FormOrDeclarationKind::SetDeclaration { .. } => TargetShape::Set,
+        FormOrDeclarationKind::InfixOperator { .. }
+        | FormOrDeclarationKind::PrefixOperator { .. }
+        | FormOrDeclarationKind::PostfixOperator { .. } => TargetShape::Operator,
+    }
 }
 
 fn collect_collection_type_signature(
@@ -222,6 +272,16 @@ fn definition_type_info(
                 None,
             )
         }),
+        TopLevelItem::Equivalent(group) => Some(type_info_from_parts(
+            header_shape,
+            &group.heading,
+            group.using.as_ref(),
+            None,
+            group.when.as_ref(),
+            None,
+            None,
+            None,
+        )),
         _ => None,
     }
 }
@@ -676,6 +736,386 @@ fn spec_operator_rule_from_alias(
     })
 }
 
+/// The definition kinds a top-level `Equivalent:` may group.
+const EQUIVALENT_MEMBER_KINDS: [DefinitionKind; 4] = [
+    DefinitionKind::Describes,
+    DefinitionKind::Defines,
+    DefinitionKind::States,
+    DefinitionKind::Refines,
+];
+
+/// One `to:` command of an `Equivalent:` item, as needed for validation.
+struct EquivalentMember<'a> {
+    signature: String,
+    /// The header parameters used as arguments, in order — `Some` only when every
+    /// argument was a bare header parameter (so a `when:` check is meaningful).
+    actuals: Option<Vec<String>>,
+    command_context: Option<&'a CommandContext>,
+}
+
+/// Every argument expression across a command's head, tail, and paren argument
+/// groups, in order.
+fn command_argument_expressions(command: &CommandExpression) -> Vec<&Expression> {
+    let mut arguments = Vec::new();
+    for group in &command.head_args {
+        arguments.extend(&group.expressions);
+    }
+    for part in &command.tail {
+        for group in &part.args {
+            arguments.extend(&group.expressions);
+        }
+    }
+    for group in &command.paren_args {
+        arguments.extend(&group.expressions);
+    }
+    arguments
+}
+
+/// Validate a top-level `Equivalent:` item.
+///
+/// Phase 1: local validation only — parameter-exactness of the `to:` commands,
+/// that they agree in kind/shape/target/capabilities, and that this item's
+/// `when:` is compatible with each member's requirements. It does NOT yet make
+/// the members interchangeable to the type checker (that is Phase 2).
+fn validate_equivalent_item(
+    group: &EquivalentGroup,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let position = locator.locate_heading(&shape_for_header(&group.heading));
+
+    // The header parameters; `to:` commands may use only these, directly.
+    let header_parameters: HashSet<String> = shapes_for_header(&group.heading)
+        .into_iter()
+        .flat_map(|shape| shape.parameters)
+        .collect();
+
+    // Establish the `using:`/`when:` scope (this also validates their references).
+    let mut context = TypeContext::default();
+    declare_header_symbols(&group.heading, &mut context);
+    assume_optional_using(
+        &group.using,
+        &mut context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
+    assume_optional_clauses(
+        &group.when,
+        &mut context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
+
+    // Collect the members, validating command-ness and parameter-exactness.
+    let mut members: Vec<EquivalentMember> = Vec::new();
+    for expression in &group.to.arguments {
+        let ExpressionKind::Command(command) = &expression.kind else {
+            emit_error(event_log, path, position, "`to:` entries must be commands");
+            continue;
+        };
+        let mut actuals = Some(Vec::new());
+        for argument in command_argument_expressions(command) {
+            match &argument.kind {
+                ExpressionKind::Name(name) if header_parameters.contains(name) => {
+                    if let Some(list) = actuals.as_mut() {
+                        list.push(name.clone());
+                    }
+                }
+                ExpressionKind::Name(name) => {
+                    actuals = None;
+                    emit_error(
+                        event_log,
+                        path,
+                        position,
+                        format!(
+                            "`to:` command uses `{name}`, which is not a parameter of the `Equivalent:` header"
+                        ),
+                    );
+                }
+                _ => {
+                    actuals = None;
+                    emit_error(
+                        event_log,
+                        path,
+                        position,
+                        "`to:` command arguments must be header parameters used directly, not expressions",
+                    );
+                }
+            }
+        }
+        members.push(EquivalentMember {
+            signature: shape_for_command_expression(command).signature,
+            actuals,
+            command_context: command.context.as_ref(),
+        });
+    }
+
+    // Rule 1: every member is defined, is one of the supported kinds, and they all
+    // share the same kind.
+    let mut member_kind: Option<DefinitionKind> = None;
+    for member in &members {
+        let signature = &member.signature;
+        let Some(kind) = registry.definitions.get(signature).map(|entry| entry.kind) else {
+            continue; // undefined command — already reported by reference validation
+        };
+        if !EQUIVALENT_MEMBER_KINDS.contains(&kind) {
+            emit_error(
+                event_log,
+                path,
+                position,
+                format!(
+                    "`Equivalent:` `to:` items must be Describes/Defines/States/Refines, but `{signature}` is a {}",
+                    kind.label()
+                ),
+            );
+            continue;
+        }
+        match member_kind {
+            None => member_kind = Some(kind),
+            Some(first) if first == kind => {}
+            Some(first) => emit_error(
+                event_log,
+                path,
+                position,
+                format!(
+                    "`Equivalent:` mixes a {} (`{signature}`) with a {}; all `to:` items must be the same kind",
+                    kind.label(),
+                    first.label()
+                ),
+            ),
+        }
+    }
+
+    validate_equivalent_member_agreement(
+        &members,
+        member_kind,
+        position,
+        path,
+        registry,
+        event_log,
+    );
+    validate_equivalent_when_compatibility(&members, &context, position, path, registry, event_log);
+}
+
+/// Rules 2–6: the `to:` members must agree in target shape and — depending on
+/// their shared kind — in the type they define (`is`, Defines), the type they
+/// extend (`extends:`, Describes), the base they refine (Refines), plus their
+/// provided-capability set.
+fn validate_equivalent_member_agreement(
+    members: &[EquivalentMember],
+    member_kind: Option<DefinitionKind>,
+    position: Option<SourcePosition>,
+    path: &Path,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let Some(kind) = member_kind else {
+        return; // no defined members, or a kind conflict was already reported
+    };
+
+    // Compare only the members actually defined with the shared kind; undefined
+    // members and kind conflicts were already reported.
+    let defined: Vec<&str> = members
+        .iter()
+        .filter(|member| {
+            registry
+                .definitions
+                .get(member.signature.as_str())
+                .map(|entry| entry.kind)
+                == Some(kind)
+        })
+        .map(|member| member.signature.as_str())
+        .collect();
+    if defined.len() < 2 {
+        return;
+    }
+
+    // Rule 2: same target shape.
+    require_uniform_members(
+        &defined,
+        position,
+        path,
+        event_log,
+        |signature| {
+            registry
+                .definition_summaries
+                .get(signature)
+                .map(|summary| summary.target_shape.clone())
+                .unwrap_or(TargetShape::Other)
+        },
+        "declare targets of different shapes",
+    );
+
+    // Rules 3–5: members must share their core type identity. Which registry facts
+    // express that identity, and the wording of a divergence, depend on the kind.
+    let identity_divergence = match kind {
+        DefinitionKind::Defines => Some("define values of different types"),
+        DefinitionKind::Describes => Some("extend different types"),
+        DefinitionKind::Refines => Some("refine different base types"),
+        _ => None,
+    };
+    if let Some(divergence) = identity_divergence {
+        require_uniform_members(
+            &defined,
+            position,
+            path,
+            event_log,
+            |signature| member_type_identity(signature, kind, registry),
+            divergence,
+        );
+    }
+
+    // Rule 6: members must provide the same set of capabilities (existence only).
+    require_uniform_members(
+        &defined,
+        position,
+        path,
+        event_log,
+        |signature| member_capability_keys(signature, registry),
+        "provide different capabilities",
+    );
+}
+
+/// Emit one error (naming the two diverging members) if `key_of` is not constant
+/// across `members`.
+fn require_uniform_members<K: PartialEq>(
+    members: &[&str],
+    position: Option<SourcePosition>,
+    path: &Path,
+    event_log: &mut EventLog,
+    key_of: impl Fn(&str) -> K,
+    divergence: &str,
+) {
+    let Some((first, rest)) = members.split_first() else {
+        return;
+    };
+    let first_key = key_of(first);
+    for member in rest {
+        if key_of(member) != first_key {
+            emit_error(
+                event_log,
+                path,
+                position,
+                format!("`Equivalent:` `to:` items `{first}` and `{member}` {divergence}"),
+            );
+            return;
+        }
+    }
+}
+
+/// The set of type signatures that fix a member's core identity for rules 3–5:
+/// the `is` type of a Defines, the `extends:` target of a Describes, or the base
+/// type of a Refines. Uses only global type signatures (never definition-local
+/// symbol names), so structurally identical types compare equal.
+fn member_type_identity(
+    signature: &str,
+    kind: DefinitionKind,
+    registry: &SignatureRegistry,
+) -> BTreeSet<String> {
+    match kind {
+        DefinitionKind::Defines => registry
+            .type_infos
+            .get(signature)
+            .map(|info| {
+                info.outputs
+                    .iter()
+                    .filter_map(type_fact_type_signature)
+                    .collect()
+            })
+            .unwrap_or_default(),
+        DefinitionKind::Describes => registry
+            .extension_rules
+            .iter()
+            .filter(|rule| rule.subtype_signature == signature)
+            .filter_map(|rule| type_fact_type_signature(&rule.target))
+            .collect(),
+        DefinitionKind::Refines => registry
+            .refinement_extension_rules
+            .iter()
+            .filter(|rule| rule.subtype_signature == signature)
+            .map(|rule| match &rule.target {
+                RefinementExtensionTarget::Fact(fact) => {
+                    type_fact_type_signature(fact).unwrap_or_else(|| "\\\\other".to_string())
+                }
+                RefinementExtensionTarget::DynamicRefinedIs { .. } => "\\\\dynamic".to_string(),
+            })
+            .collect(),
+        _ => BTreeSet::new(),
+    }
+}
+
+/// The global type signature a fact asserts its subject to be, or `None` for
+/// facts that don't pin the subject to a named type.
+fn type_fact_type_signature(fact: &TypeFact) -> Option<String> {
+    match fact {
+        TypeFact::Is { signature, .. } => Some(signature.clone()),
+        TypeFact::RefinedIs { base_signature, .. } => Some(base_signature.clone()),
+        _ => None,
+    }
+}
+
+/// The set of capabilities a member provides (rule 6): named symbols keyed by
+/// name and arity, and spec operators. Only existence is compared, per the spec.
+fn member_capability_keys(signature: &str, registry: &SignatureRegistry) -> BTreeSet<String> {
+    let mut keys = BTreeSet::new();
+    for rule in &registry.provided_symbols {
+        if rule.owner_signature == signature {
+            keys.insert(format!("symbol {}", disambiguation_key_label(&rule.key)));
+        }
+    }
+    for rule in &registry.spec_rules {
+        if rule.owner_signature == signature {
+            keys.insert(format!("operator {}", rule.operator));
+        }
+    }
+    keys
+}
+
+fn disambiguation_key_label(key: &DisambiguationKey) -> String {
+    match key {
+        DisambiguationKey::BinaryOperator(operator) => format!("binop {operator}"),
+        DisambiguationKey::PrefixOperator(operator) => format!("prefix {operator}"),
+        DisambiguationKey::PostfixOperator(operator) => format!("postfix {operator}"),
+        DisambiguationKey::Function { name, arity } => format!("fn {name}/{arity}"),
+    }
+}
+
+/// The `Equivalent:`'s own `when:`/`using:` scope (captured in `context`) must
+/// guarantee each member command's requirements — otherwise a member could not be
+/// formed under the conditions the equivalence claims to hold. Reuses the standard
+/// call-site requirement check, treating each `to:` command as a call within the
+/// `Equivalent:`'s scope.
+fn validate_equivalent_when_compatibility(
+    members: &[EquivalentMember],
+    context: &TypeContext,
+    position: Option<SourcePosition>,
+    path: &Path,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    for member in members {
+        let Some(actuals) = &member.actuals else {
+            continue; // parameter-exactness already failed; a requirement check is moot
+        };
+        check_command_requirements(
+            &member.signature,
+            actuals,
+            member.command_context,
+            context,
+            path,
+            position,
+            registry,
+            event_log,
+        );
+    }
+}
+
 fn validate_top_level_item_types(
     item: &TopLevelItem,
     path: &Path,
@@ -997,6 +1437,9 @@ fn validate_top_level_item_types(
             registry,
             event_log,
         ),
+        TopLevelItem::Equivalent(group) => {
+            validate_equivalent_item(group, path, locator, registry, event_log);
+        }
         TopLevelItem::Relation(group) => {
             // Assume the `using:` declarations and the two related declarations
             // (introducing their subjects and facts) and the `when:` specs, then
@@ -1068,6 +1511,7 @@ fn anchor_top_level_item(item: &TopLevelItem, locator: &mut SourceLocator<'_>) {
         TopLevelItem::Corollary(group) => group.heading.as_ref(),
         TopLevelItem::Lemma(group) => group.heading.as_ref(),
         TopLevelItem::Conjecture(group) => group.heading.as_ref(),
+        TopLevelItem::Equivalent(group) => Some(&group.heading),
         _ => None,
     };
 
@@ -2013,6 +2457,11 @@ fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
                 collect_clause_names(clause, names);
             }
         }
+        Clause::Equivalently(group) => {
+            for clause in &group.equivalently.arguments {
+                collect_clause_names(clause, names);
+            }
+        }
         Clause::AnyOf(group) => {
             for clause in &group.any_of.arguments {
                 collect_clause_names(clause, names);
@@ -2678,6 +3127,11 @@ fn assume_clause(
                 assume_clause(clause, context, path, locator, registry, event_log);
             }
         }
+        Clause::Equivalently(group) => {
+            for clause in &group.equivalently.arguments {
+                assume_clause(clause, context, path, locator, registry, event_log);
+            }
+        }
         _ => {
             check_clause(clause, context, path, locator, registry, event_log);
             collect_clause_assumptions(clause, context);
@@ -2704,6 +3158,11 @@ fn check_clause(
         ),
         Clause::AllOf(group) => {
             for clause in &group.all_of.arguments {
+                check_clause(clause, context, path, locator, registry, event_log);
+            }
+        }
+        Clause::Equivalently(group) => {
+            for clause in &group.equivalently.arguments {
                 check_clause(clause, context, path, locator, registry, event_log);
             }
         }
@@ -3332,6 +3791,11 @@ fn collect_clause_assumptions(clause: &Clause, context: &mut TypeContext) {
         }
         Clause::AllOf(group) => {
             for clause in &group.all_of.arguments {
+                collect_clause_assumptions(clause, context);
+            }
+        }
+        Clause::Equivalently(group) => {
+            for clause in &group.equivalently.arguments {
                 collect_clause_assumptions(clause, context);
             }
         }

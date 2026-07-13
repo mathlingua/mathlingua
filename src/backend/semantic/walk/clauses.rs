@@ -11,6 +11,11 @@ pub(in crate::backend::semantic) fn walk_clause(
                 walk_clause(clause, visit);
             }
         }
+        Clause::Equivalently(group) => {
+            for clause in &group.equivalently.arguments {
+                walk_clause(clause, visit);
+            }
+        }
         Clause::AnyOf(group) => {
             for clause in &group.any_of.arguments {
                 walk_clause(clause, visit);

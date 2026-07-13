@@ -136,6 +136,13 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             }
             walk_optional_aliases(&group.aliases, visit);
         }
+        TopLevelItem::Equivalent(group) => {
+            walk_optional_is_or_specs(&group.using, visit);
+            walk_optional_clauses(&group.when, visit);
+            for expression in &group.to.arguments {
+                walk_expression(expression, visit);
+            }
+        }
         TopLevelItem::Title(_)
         | TopLevelItem::SectionTitle(_)
         | TopLevelItem::SubsectionTitle(_)

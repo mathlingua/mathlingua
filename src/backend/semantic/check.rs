@@ -265,6 +265,11 @@ pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>>
             heading,
             documented: group.documented.as_ref(),
         }),
+        TopLevelItem::Equivalent(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Equivalent,
+            heading: &group.heading,
+            documented: group.documented.as_ref(),
+        }),
         _ => None,
     }
 }

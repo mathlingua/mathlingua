@@ -339,11 +339,12 @@ These groups may appear at the top level of a document.
 | `Resource` | resource | bibliography or web metadata |
 | `Specify` | none | numeric-domain specification metadata |
 | `Relation` | none | bidirectional relationship between two concepts (`between:`/`and:`) |
+| `Equivalent` | command | interchangeable commands under a shared name (`to:`) |
 
 Groups with command headings introduce command signatures: `Describes`,
-`Defines`, `Refines`, `States`, and theorem-like groups that have an optional
-heading. Duplicate signatures are rejected across all of these definition
-kinds.
+`Defines`, `Refines`, `States`, `Equivalent`, and theorem-like groups that have
+an optional heading. Duplicate signatures are rejected across all of these
+definition kinds.
 
 `Describes`, `Defines`, and `Refines` must include a `called:` item somewhere in
 their `Documented:` section. `States` and theorem-like groups may have

@@ -1107,6 +1107,324 @@ means: c = c
     }
 
     #[test]
+    fn check_accepts_equivalent_over_matching_describes() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("equivalent.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\aaa{a}]
+Describes: S
+when: a is \\expression
+Documented:
+. called: "aaa"
+
+[\bbb{a}]
+Describes: T
+when: a is \\expression
+Documented:
+. called: "bbb"
+
+[\eq{a}]
+Equivalent:
+when:
+. a is \\expression
+to:
+. \aaa{a}
+. \bbb{a}
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("equivalent.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            !event_log.has_errors(),
+            "expected a clean check: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_reports_equivalent_mixed_member_kinds() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("equivalent-mixed.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\aaa{a}]
+Describes: S
+when: a is \\expression
+Documented:
+. called: "aaa"
+
+[\bbb{a}]
+Defines: b is \\expression
+when: a is \\expression
+Documented:
+. called: "bbb"
+
+[\eq{a}]
+Equivalent:
+when:
+. a is \\expression
+to:
+. \aaa{a}
+. \bbb{a}
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("equivalent-mixed.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log).iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("must be the same kind"))),
+            "expected a mixed-kind error: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_reports_equivalent_target_shape_mismatch() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("equivalent-shape.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\aaa{a}]
+Describes: S
+when: a is \\expression
+Documented:
+. called: "aaa"
+
+[\bbb{a}]
+Describes: f(x__)
+when: a is \\expression
+Documented:
+. called: "bbb"
+
+[\eq{a}]
+Equivalent:
+when:
+. a is \\expression
+to:
+. \aaa{a}
+. \bbb{a}
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("equivalent-shape.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log).iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("different shapes"))),
+            "expected a target-shape mismatch error: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_reports_equivalent_defines_type_mismatch() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("equivalent-deftype.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\aaa{a}]
+Defines: b is \\expression
+when: a is \\expression
+Documented:
+. called: "aaa"
+
+[\bbb{a}]
+Defines: c is \\statement
+when: a is \\expression
+Documented:
+. called: "bbb"
+
+[\eq{a}]
+Equivalent:
+when:
+. a is \\expression
+to:
+. \aaa{a}
+. \bbb{a}
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("equivalent-deftype.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| message
+                    .message
+                    .contains("define values of different types"))),
+            "expected a Defines type-identity error: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_reports_equivalent_when_incompatible_with_member() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("equivalent-when.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\aaa{a}]
+Describes: S
+when: a is \\statement
+Documented:
+. called: "aaa"
+
+[\bbb{a}]
+Describes: T
+when: a is \\statement
+Documented:
+. called: "bbb"
+
+[\eq{a}]
+Equivalent:
+when:
+. a is \\expression
+to:
+. \aaa{a}
+. \bbb{a}
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("equivalent-when.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| message
+                    .message
+                    .contains("Could not establish requirement")
+                    && message.message.contains("\\aaa"))),
+            "expected an unsatisfied-requirement error for a member: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_reports_equivalent_to_command_using_non_parameter() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("equivalent-param.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\aaa{a}]
+Describes: S
+when: a is \\expression
+Documented:
+. called: "aaa"
+
+[\bbb{a}]
+Describes: T
+when: a is \\expression
+Documented:
+. called: "bbb"
+
+[\eq{a}]
+Equivalent:
+when:
+. a is \\expression
+to:
+. \aaa{a}
+. \bbb{z}
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("equivalent-param.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| message
+                    .message
+                    .contains("is not a parameter of the `Equivalent:` header"))),
+            "expected a parameter-exactness error: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_reports_undefined_reference_in_equivalently_clause() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("equivalently-clause.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"Theorem:
+given: x is \\expression
+then:
+. equivalently:
+  . x is \nonexistent
+  . x = x
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("equivalently-clause.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| message
+                    .message
+                    .contains("Undefined command signature")
+                    && message.message.contains("\\nonexistent"))),
+            "expected an undefined-command error inside the equivalently clause: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
     fn check_reports_references_to_undefined_command_signatures() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("undefined.mlg");

@@ -11,7 +11,14 @@ use std::path::{Path, PathBuf};
 /// *definitions*. A change to one of these re-versions the definitions it uses;
 /// other kinds (page content, people, resources, and theorem-like items) are
 /// versioned on their own content but never propagate.
-const DEFINITION_KINDS: [&str; 5] = ["Defines", "Describes", "States", "Refines", "Disambiguates"];
+const DEFINITION_KINDS: [&str; 6] = [
+    "Defines",
+    "Describes",
+    "States",
+    "Refines",
+    "Disambiguates",
+    "Equivalent",
+];
 
 /// A single top-level item as seen by `mlg release`.
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -4,7 +4,7 @@ use super::model::{
 use super::render::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
     render_documented_text_latex, render_formulation_latex, render_group_heading_latex,
-    render_writing_alias_latex,
+    render_writing_alias_latex, resolve_topic_heading_latex,
 };
 use crate::events::{Audience, Event, EventLog, Level};
 use crate::frontend::{
@@ -181,14 +181,16 @@ fn group_view(
         .first()
         .and_then(|section| section.inline_argument.as_deref());
     let page = page_view(&kind, &group.sections);
-    let heading_latex = person_heading_latex(&kind, &group.sections).or_else(|| {
-        render_group_heading_latex(
-            &kind,
-            group.heading.as_deref(),
-            primary_inline_argument,
-            registry,
-        )
-    });
+    let heading_latex = person_heading_latex(&kind, &group.sections)
+        .or_else(|| topic_heading_latex(&kind, group.heading.as_deref(), registry))
+        .or_else(|| {
+            render_group_heading_latex(
+                &kind,
+                group.heading.as_deref(),
+                primary_inline_argument,
+                registry,
+            )
+        });
     let body_text = person_body_text(&kind, &group.sections);
 
     GroupView {
@@ -215,6 +217,21 @@ fn person_heading_latex(kind: &str, sections: &[ProtoSection]) -> Option<String>
 
     let name = first_section_text(sections.iter().find(|section| section.label == "Person")?)?;
     render_documented_text_latex("called", &name)
+}
+
+/// Renders a top-level `Topic:` heading as its human title: the explicit
+/// `Documented:called:` override when present, otherwise the title-cased `#some.name`
+/// heading (so `#real.analysis` renders as "Real Analysis").
+fn topic_heading_latex(
+    kind: &str,
+    heading: Option<&str>,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    if kind != "Topic" {
+        return None;
+    }
+
+    resolve_topic_heading_latex(heading, registry)
 }
 
 fn person_body_text(kind: &str, sections: &[ProtoSection]) -> Option<String> {
@@ -681,6 +698,58 @@ Id: "11111111-1111-4111-8111-111111111111"
             person.body_text.as_deref(),
             Some("Known for notes on the Analytical Engine.\n\nWorked with $Babbage$.")
         );
+        assert!(!event_log.has_errors());
+    }
+
+    #[test]
+    fn renders_topic_heading_from_dotted_path_and_called_override() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("topics.mlg");
+        let source = r#"[#complex.analysis]
+Topic: "Analysis over the complex numbers."
+Id: "11111111-1111-4111-8111-111111111111"
+
+[#real.analysis]
+Topic: "Analysis over the real numbers."
+Documented:
+. called: "Real Variable Theory"
+Id: "22222222-2222-4222-8222-222222222222"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+            .expect("expected view");
+
+        // Without a `Documented:called:`, the dotted heading is title-cased.
+        let title_cased = &view.files[0].items[0];
+        assert_eq!(title_cased.kind, "Topic");
+        assert_eq!(
+            title_cased.heading_latex.as_deref(),
+            Some(r#"\textrm{Complex Analysis}"#)
+        );
+
+        // With a `Documented:called:`, that text overrides the title.
+        let with_called = &view.files[0].items[1];
+        assert_eq!(
+            with_called.heading_latex.as_deref(),
+            Some(r#"\textrm{Real Variable Theory}"#)
+        );
+
         assert!(!event_log.has_errors());
     }
 

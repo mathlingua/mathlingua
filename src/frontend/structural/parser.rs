@@ -7,7 +7,7 @@ use crate::frontend::formulation::{
     parse_expression, parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
     parse_hard_cast_statement, parse_is_via_statement, parse_label_header,
     parse_ordinary_declaration_statement, parse_refined_declaration_statement,
-    parse_resource_header, parse_spec_operator_alias, parse_writing_alias,
+    parse_resource_header, parse_spec_operator_alias, parse_topic_header, parse_writing_alias,
 };
 use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{
@@ -426,6 +426,32 @@ pub(in crate::frontend::structural::parser) fn parse_required_resource_heading(
                 Some(ORIGIN),
                 group.metadata.row,
                 format!("Invalid resource heading: {error}"),
+            );
+            None
+        }
+    }
+}
+
+/// Parses a required topic heading from a `Topic:` group.
+///
+/// Topic headings are `#`-sigil dotted paths (for example `#real.analysis`) that
+/// name a documentation topic and, absent a `Documented:called:`, render as a
+/// human title.
+pub(in crate::frontend::structural::parser) fn parse_required_topic_heading(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<crate::frontend::formulation::ast::TopicHeader> {
+    let Some(heading) = group.heading.as_deref() else {
+        tracker.user_error_at_row(Some(ORIGIN), group.metadata.row, "Expected topic heading");
+        return None;
+    };
+    match parse_topic_header(heading) {
+        Ok(heading) => Some(heading),
+        Err(error) => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                format!("Invalid topic heading: {error}"),
             );
             None
         }
@@ -2329,6 +2355,7 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
         "Specify" => parse_specify(group, tracker).map(TopLevelItem::Specify),
         "Relation" => parse_relation(group, tracker).map(TopLevelItem::Relation),
         "Equivalent" => parse_equivalent(group, tracker).map(TopLevelItem::Equivalent),
+        "Topic" => parse_topic(group, tracker).map(TopLevelItem::Topic),
         other => {
             tracker.user_error_at_row(
                 Some(ORIGIN),
@@ -3148,7 +3175,7 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
                 section(&sections, "between")?,
                 "between",
                 tracker,
-                parse_refined_declaration_statement,
+                parse_relation_subject,
             )?,
         },
         and_: RelationAndSection {
@@ -3156,7 +3183,7 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
                 section(&sections, "and")?,
                 "and",
                 tracker,
-                parse_refined_declaration_statement,
+                parse_relation_subject,
             )?,
         },
         when: sections.get("when").copied().and_then(|section| {
@@ -3188,6 +3215,80 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
                 .map(|arguments| MetadataSection { arguments })
         }),
     })
+}
+
+/// Parses one side of a `Relation:` (`between:`/`and:`).
+///
+/// A leading `#` marks a documentation topic reference; anything else is parsed as
+/// an ordinary refined declaration such as `a is \real`.
+fn parse_relation_subject(input: &str) -> Result<RelationSubject, FormulationParseError> {
+    if input.trim_start().starts_with('#') {
+        parse_topic_header(input).map(RelationSubject::Topic)
+    } else {
+        parse_refined_declaration_statement(input).map(RelationSubject::Declaration)
+    }
+}
+
+// ===============================[ topic ]=====================================
+
+/// Parses a top-level `Topic:` item.
+///
+/// A `Topic:` names a documentation topic via a required `#`-sigil heading. The
+/// optional `within:` names a parent topic (making this a sub-topic) and the
+/// optional `Documented:` accepts only `called:`, which overrides how the topic
+/// title is rendered.
+pub(in crate::frontend::structural::parser) fn parse_topic(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<TopicGroup> {
+    let heading = parse_required_topic_heading(group, tracker)?;
+    let sections = identify_sections(
+        "Topic",
+        &group.sections,
+        tracker,
+        &["Topic", "within?", "Documented?", "Id?"],
+    )?;
+
+    Some(TopicGroup {
+        heading,
+        topic: TopicSection {
+            arguments: parse_optional_open_texts(sections.get("Topic").copied(), tracker),
+        },
+        within: sections.get("within").copied().and_then(|section| {
+            parse_required_formulation(section, "within", tracker, parse_topic_header)
+                .map(|argument| TopicWithinSection { argument })
+        }),
+        documented: sections.get("Documented").copied().and_then(|section| {
+            parse_required_groups(
+                section,
+                "Documented",
+                tracker,
+                parse_topic_documented_item_group,
+            )
+            .map(|arguments| DocumentedSection { arguments })
+        }),
+    })
+}
+
+/// Dispatches nested `Documented:` groups for `Topic:` entries.
+///
+/// A topic's documentation only controls how its title renders, so `called:` is
+/// the sole accepted field.
+pub(super) fn parse_topic_documented_item_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<DocumentedItem> {
+    match first_section_label(group)? {
+        "called" => parse_called(group, tracker).map(DocumentedItem::Called),
+        other => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                format!("`Topic` documentation only accepts `called:`, not `{other}:`"),
+            );
+            None
+        }
+    }
 }
 
 // ===============================[ theorems ]=====================================
@@ -3606,8 +3707,8 @@ mod tests {
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, DescribesTarget, Document, DocumentedItem, EnablesItem,
-        IsOrViaItem, JustifiedItem, MetadataItem, RelationKind, RelationshipDeclaration,
-        RequiresItem, ResourceItem, SpecifyItem, TopLevelItem,
+        IsOrViaItem, JustifiedItem, MetadataItem, RelationKind, RelationSubject,
+        RelationshipDeclaration, RequiresItem, ResourceItem, SpecifyItem, TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -4365,6 +4466,92 @@ means: a = a
     }
 
     #[test]
+    fn parses_topic_item_with_within_and_documented_called() {
+        let document = parse_ok(
+            r#"
+[#real.analysis]
+Topic: "Analysis over the real numbers."
+within: #analysis
+Documented:
+. called: "Real Analysis"
+"#,
+        );
+
+        match &document.items[0] {
+            TopLevelItem::Topic(group) => {
+                assert_eq!(group.heading.parts.len(), 2);
+                assert_eq!(group.heading.parts[0], "real");
+                assert_eq!(group.heading.parts[1], "analysis");
+                assert_eq!(group.topic.arguments.len(), 1);
+                let within = group.within.as_ref().expect("expected a within section");
+                assert_eq!(within.argument.parts, ["analysis"]);
+                assert!(group.documented.is_some());
+            }
+            other => panic!("expected Topic item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn topic_requires_a_heading() {
+        let (_, diagnostics) = parse_with_diagnostics(
+            r#"
+Topic: "A topic with no heading."
+"#,
+        );
+
+        assert!(
+            diagnostics.iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("topic heading"))),
+            "expected a diagnostic about the missing topic heading: {diagnostics:#?}"
+        );
+    }
+
+    #[test]
+    fn topic_documented_rejects_fields_other_than_called() {
+        let (_, diagnostics) = parse_with_diagnostics(
+            r#"
+[#real.analysis]
+Topic: "Analysis over the real numbers."
+Documented:
+. description: "Not allowed here."
+"#,
+        );
+
+        assert!(
+            diagnostics.iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("only accepts `called:`"))),
+            "expected a diagnostic rejecting non-`called:` topic documentation: {diagnostics:#?}"
+        );
+    }
+
+    #[test]
+    fn parses_relation_between_two_topics() {
+        let document = parse_ok(
+            r#"
+Relation:
+between: #real.analysis
+and: #complex.analysis
+"#,
+        );
+
+        match &document.items[0] {
+            TopLevelItem::Relation(group) => {
+                match &group.between.argument {
+                    RelationSubject::Topic(header) => assert_eq!(header.parts[0], "real"),
+                    other => panic!("expected a topic subject, got {other:?}"),
+                }
+                match &group.and_.argument {
+                    RelationSubject::Topic(header) => assert_eq!(header.parts[0], "complex"),
+                    other => panic!("expected a topic subject, got {other:?}"),
+                }
+            }
+            other => panic!("expected Relation item, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn parses_equivalent_item_with_using_when_to() {
         let document = parse_ok(
             r#"
@@ -4480,6 +4667,7 @@ then:
             "specify.text".to_owned(),
             "states.text".to_owned(),
             "theorems.text".to_owned(),
+            "topics.text".to_owned(),
         ]);
 
         assert!(!files.is_empty(), "expected structural golden files");

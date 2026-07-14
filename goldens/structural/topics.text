@@ -1,0 +1,21 @@
+[#analysis]
+Topic: "The study of limits, continuity, and convergence."
+
+[#real.analysis]
+Topic: "Analysis over the real numbers."
+within: #analysis
+Documented:
+. called: "Real Analysis"
+
+[#complex.analysis]
+Topic: "Analysis over the complex numbers."
+within: #analysis
+
+Relation:
+between: #real.analysis
+and: #complex.analysis
+
+Relation:
+between: a is \real
+and: #real.analysis
+means: a = a

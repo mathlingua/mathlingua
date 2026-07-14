@@ -254,6 +254,15 @@ const GROUPS: &[GroupSpec] = &[
             ("Id", false),
         ],
     },
+    GroupSpec {
+        head: "Topic",
+        sections: &[
+            ("Topic", true),
+            ("within", false),
+            ("Documented", false),
+            ("Id", false),
+        ],
+    },
 ];
 
 // `Axiom`/`Theorem`/`Lemma`/`Conjecture` share one shape (see

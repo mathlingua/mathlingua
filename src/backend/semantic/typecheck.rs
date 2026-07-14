@@ -1512,7 +1512,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
-            assume_declaration_statement(
+            assume_relation_subject(
                 &group.between.argument,
                 &mut context,
                 path,
@@ -1520,7 +1520,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
-            assume_declaration_statement(
+            assume_relation_subject(
                 &group.and_.argument,
                 &mut context,
                 path,
@@ -1554,7 +1554,10 @@ fn validate_top_level_item_types(
         | TopLevelItem::Text(_)
         | TopLevelItem::Writing(_)
         | TopLevelItem::Person(_)
-        | TopLevelItem::Resource(_) => {}
+        | TopLevelItem::Resource(_)
+        // A `Topic:` only names a documentation topic (heading, prose, optional
+        // parent, optional rendering override); there is nothing to type-check.
+        | TopLevelItem::Topic(_) => {}
     }
 }
 
@@ -3880,6 +3883,23 @@ fn check_declaration_statement(
         check_declaration_relation(relation, context, path, locator, registry, event_log);
     }
     check_declaration_spec_facts_supported(statement, context, path, locator, registry, event_log);
+}
+
+/// Assumes one side of a `Relation:` (`between:`/`and:`).
+///
+/// A declared subject introduces its symbol and facts into scope; a `#topic`
+/// reference names an external documentation topic and introduces nothing.
+fn assume_relation_subject(
+    subject: &RelationSubject,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    if let RelationSubject::Declaration(statement) = subject {
+        assume_declaration_statement(statement, context, path, locator, registry, event_log);
+    }
 }
 
 fn assume_declaration_statement(

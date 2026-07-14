@@ -17,7 +17,7 @@ use super::ast::{
     RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart,
     RefinedTail, ResourceHeader, SetExpression, SetPredicate, SetTarget, SetTargetElement,
     SetTargetKind, Span, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind,
-    SubjectSpecStatement, TypeExpression, WritingAlias,
+    SubjectSpecStatement, TopicHeader, TypeExpression, WritingAlias,
 };
 use super::grammar;
 use super::lexer::Lexer;
@@ -2657,6 +2657,23 @@ pub fn parse_resource_header(input: &str) -> Result<ResourceHeader, ParseError> 
     })
 }
 
+/// Parses a topic heading beginning with `#`.
+///
+/// Topic headings share dotted-path validation with labels but use a `#` sigil so
+/// that `[#real.analysis]` names a documentation topic. The returned header stores
+/// the dotted name path without the sigil, matching the author/resource headers.
+pub fn parse_topic_header(input: &str) -> Result<TopicHeader, ParseError> {
+    let input = input.trim();
+    let rest = input
+        .strip_prefix('#')
+        .ok_or_else(|| ParseError::custom("topic headers must start with `#`"))?;
+    let parts = parse_dotted_parts(rest)?;
+    Ok(TopicHeader {
+        span: span_all(input),
+        parts,
+    })
+}
+
 // ===============================[ tests ]=====================================
 
 #[cfg(test)]
@@ -2670,7 +2687,7 @@ mod tests {
         parse_form_or_declaration, parse_hard_cast_statement, parse_is_or_refined_statement_spec,
         parse_is_or_spec, parse_is_via_statement, parse_label_header,
         parse_ordinary_declaration_statement, parse_resource_header, parse_spec_operator_alias,
-        parse_writing_alias,
+        parse_topic_header, parse_writing_alias,
     };
     use crate::frontend::formulation::ast::{
         BinaryOperator, BuiltinCommandArgument, ChainPart, CommandContextArgument,
@@ -2796,6 +2813,12 @@ mod tests {
             .map_err(|error| error.to_string())
     }
 
+    pub(super) fn parse_topic_header_entry(input: &str) -> Result<(), String> {
+        parse_topic_header(input)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
     pub(super) fn formulation_golden_parsers() -> GoldenParsers {
         BTreeMap::from([
             (
@@ -2815,6 +2838,7 @@ mod tests {
             ("label_header.txt", parse_label_header_entry),
             ("resource_header.txt", parse_resource_header_entry),
             ("spec_operator_alias.txt", parse_spec_operator_alias_entry),
+            ("topic_header.txt", parse_topic_header_entry),
             ("writing_alias.txt", parse_writing_alias_entry),
         ])
     }
@@ -3918,6 +3942,11 @@ mod tests {
     #[test]
     fn formulation_golden_spec_operator_alias() {
         run_formulation_golden("spec_operator_alias.txt");
+    }
+
+    #[test]
+    fn formulation_golden_topic_header() {
+        run_formulation_golden("topic_header.txt");
     }
 
     #[test]

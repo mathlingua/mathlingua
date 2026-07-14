@@ -9,6 +9,10 @@ pub(in crate::backend::view) struct RenderRegistry {
     pub(super) provided_calls: Vec<ProvidedCallRender>,
     /// Collection-wide aliases for rendering plain names as LaTeX fragments.
     pub(super) writing: HashMap<String, String>,
+    /// Explicit `Documented:called:` rendering overrides for top-level `Topic:`
+    /// items, keyed by the raw `#some.name` heading string. Topics without an
+    /// override are title-cased from their heading at render time.
+    pub(super) topic_titles: HashMap<String, String>,
     /// Whether resolved command renderings should carry clickable reference keys.
     pub(super) link_references: bool,
 }
@@ -62,10 +66,62 @@ pub(in crate::backend::view) fn build_render_registry(
                 registry.commands.insert(entry.signature, entry.render);
             }
             collect_provided_call_render_rules(item, &mut registry);
+            collect_topic_title(item, &mut registry);
         }
     }
 
     registry
+}
+
+/// Records the explicit `Documented:called:` rendering override for a `Topic:`
+/// item, keyed by its `#some.name` heading. Topics without a `called:` are
+/// title-cased at render time, so only overrides are stored here.
+fn collect_topic_title(item: &TopLevelItem, registry: &mut RenderRegistry) {
+    let TopLevelItem::Topic(group) = item else {
+        return;
+    };
+    if let Some(called) = topic_explicit_called_text(group) {
+        registry
+            .topic_titles
+            .insert(topic_heading_key(&group.heading.parts), called);
+    }
+}
+
+/// Extracts the raw `called:` text from a topic's `Documented:` section, if any.
+fn topic_explicit_called_text(group: &TopicGroup) -> Option<String> {
+    group
+        .documented
+        .as_ref()?
+        .arguments
+        .iter()
+        .find_map(|item| match item {
+            DocumentedItem::Called(called) => Some(join_called_text(&called.called)),
+            _ => None,
+        })
+}
+
+/// The registry key for a topic heading: the sigil plus the dotted path, matching
+/// the raw bracket-inner string the view builder sees (for example `#real.analysis`).
+fn topic_heading_key(parts: &[String]) -> String {
+    format!("#{}", parts.join("."))
+}
+
+/// Resolves the rendered title for a top-level `Topic:` heading string.
+///
+/// Uses the topic's explicit `Documented:called:` override when present, otherwise
+/// title-cases the dotted heading path (so `#real.analysis` renders as "Real
+/// Analysis").
+pub(in crate::backend::view) fn resolve_topic_heading_latex(
+    heading: Option<&str>,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let header = parse_topic_header(heading?).ok()?;
+    let text = registry
+        .topic_titles
+        .get(&topic_heading_key(&header.parts))
+        .cloned()
+        .unwrap_or_else(|| title_case_label(&header.parts.join(".")));
+    render_documented_text_latex("called", &text)
 }
 
 fn collect_writing_aliases(item: &TopLevelItem, registry: &mut RenderRegistry) {

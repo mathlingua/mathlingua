@@ -280,8 +280,9 @@ An empty document is supported by the current implementation because `Document.i
 | `Person` | `PersonGroup` | author | `Person: OpenText+`, `biography?: OpenText` |
 | `Resource` | `ResourceGroup` | resource | `Resource: ResourceItem+` |
 | `Specify` | `SpecifyGroup` | none | `Specify: SpecifyItem+` |
-| `Relation` | `RelationGroup` | none | `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RefinedDeclarationStatement`, `and: RefinedDeclarationStatement`, `when?: Clause+`, `means?: Clause`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Relation` | `RelationGroup` | none | `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RelationSubject`, `and: RelationSubject`, `when?: Clause+`, `means?: Clause`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Equivalent` | `EquivalentGroup` | command | `Equivalent: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `References?: ResourceHeader+` |
+| `Topic` | `TopicGroup` | topic | `Topic: OpenText*`, `within?: TopicHeader`, `Documented?: CalledDocumentedItem+` |
 
 Notes:
 
@@ -647,6 +648,7 @@ TopLevelItemUnion ::=
     | SpecifyGroup
     | RelationGroup
     | EquivalentGroup
+    | TopicGroup
 ```
 
 ```union
@@ -835,8 +837,8 @@ Specify: <SpecifyItemUnion>+
 ```group
 Relation: <OpenText>*
 using?: <DeclarationStatement>+
-between: <RefinedDeclarationStatement>
-and: <RefinedDeclarationStatement>
+between: <RelationSubject>
+and: <RelationSubject>
 when?: <Clause>+
 means?: <Clause>
 Justified?: <JustifiedItemUnion>+
@@ -848,13 +850,15 @@ Id?: <OpenText>
 ```
 
 A top-level `Relation:` states a bidirectional relationship between the two
-concepts declared in `between:` and `and:` (for example that they are
-equivalent). Contrast the directional `relation:` group nested inside `Enables:`
-([`EnablesRelationGroup`], which relates the described concept *to* another and,
-with `as: \\view`/`\\abstraction`, registers a cast rule): the top-level item is
-heading-less, standalone, and registers no cast — it is checked like a theorem
-(its `when:` specs and `means:` statement are validated for declared symbols and
-valid command references, not proven).
+subjects named in `between:` and `and:` (for example that they are equivalent).
+Each `RelationSubject` is either a declaration (such as `a is \real`) or a
+`#topic` reference, in any combination, so a `Relation:` may relate two concepts,
+two topics, or a concept and a topic. Contrast the directional `relation:` group
+nested inside `Enables:` ([`EnablesRelationGroup`], which relates the described
+concept *to* another and, with `as: \\view`/`\\abstraction`, registers a cast
+rule): the top-level item is heading-less, standalone, and registers no cast — it
+is checked like a theorem (its `when:` specs and `means:` statement are validated
+for declared symbols and valid command references, not proven).
 
 ```group
 [CommandHeader]
@@ -887,6 +891,24 @@ be one member (or the class-naming header) satisfies a requirement that it be an
 other member, as long as the target member's header parameters are all pinned to
 matching actuals by the known member. A capability or spec operator the class
 provides likewise resolves on a value typed as any member or the header.
+
+```group
+[TopicHeader]
+Topic: <OpenText>*
+within?: <TopicHeader>
+Documented?: <CalledDocumentedItem>+
+Id?: <OpenText>
+```
+
+A top-level `Topic:` names a documentation topic. Its required heading is a
+`TopicHeader` — a `#` sigil followed by a dotted name path (for example
+`[#real.analysis]`) — which renders as a human title by title-casing the path
+("Real Analysis") unless the `Documented:called:` text overrides it. `Topic:`
+carries optional descriptive prose and `within?:` names a parent topic (as a
+`#...` reference) to make this a sub-topic. `Documented?:` accepts only `called:`
+(a `CalledDocumentedItem`); other documentation fields are rejected. The item is
+stated, not checked: topic and `within:` references need not resolve to a defined
+topic, and it registers no command signatures or type facts.
 
 ### Nested item groups
 

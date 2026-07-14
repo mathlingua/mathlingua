@@ -1,7 +1,7 @@
 use crate::frontend::formulation::ast::{
     AuthorHeader, CommandExpression, CommandHeader, DeclarationStatement, Expression,
     ExpressionAlias, ExpressionBinding, FormOrDeclaration, HardCastStatement, IsViaStatement,
-    LabelHeader, ResourceHeader, SpecOperatorAlias, TypeExpression, WritingAlias,
+    LabelHeader, ResourceHeader, SpecOperatorAlias, TopicHeader, TypeExpression, WritingAlias,
 };
 
 // ===============================[ repeated ]=====================================
@@ -175,6 +175,16 @@ pub enum DescribesTarget {
     Declaration(DeclarationStatement),
 }
 
+/// One side of a top-level `Relation:` (`between:`/`and:`). A relationship may
+/// hold between two declared concepts, between two documentation topics, or a
+/// mix of the two, so each side is either an ordinary declaration or a `#topic`
+/// reference.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RelationSubject {
+    Declaration(DeclarationStatement),
+    Topic(TopicHeader),
+}
+
 argument_section!(DescribesSection, DescribesTarget);
 arguments_section!(UsingSection, DeclarationStatement);
 arguments_section!(WhenSection, Clause);
@@ -219,8 +229,11 @@ arguments_section!(RelationAsSection, RelationKind);
 argument_section!(RelationshipMeansSection, Clause);
 // Top-level `Relation:` item sections (distinct from the `Enables: relation:` group above).
 zero_or_more_arguments_section!(RelationSection, OpenText);
-argument_section!(RelationBetweenSection, DeclarationStatement);
-argument_section!(RelationAndSection, DeclarationStatement);
+argument_section!(RelationBetweenSection, RelationSubject);
+argument_section!(RelationAndSection, RelationSubject);
+// Top-level `Topic:` item sections.
+zero_or_more_arguments_section!(TopicSection, OpenText);
+argument_section!(TopicWithinSection, TopicHeader);
 zero_or_more_arguments_section!(ConnectionSection, OpenText);
 zero_or_more_arguments_section!(ToSection, OpenText);
 zero_or_more_arguments_section!(MeansSection, OpenText);
@@ -314,6 +327,7 @@ pub enum TopLevelItem {
     Specify(SpecifyGroup),
     Relation(RelationGroup),
     Equivalent(EquivalentGroup),
+    Topic(TopicGroup),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -647,6 +661,19 @@ pub struct RelationGroup {
     pub aliases: Option<AliasesSection>,
     pub references: Option<ReferencesSection>,
     pub metadata: Option<MetadataSection>,
+}
+
+/// A top-level `Topic:` item, which names a documentation topic. Its `[#some.name]`
+/// heading is a dotted, `#`-sigil path that renders as a human title (for example
+/// `#real.analysis` renders as "Real Analysis") unless `Documented:called:` gives an
+/// explicit rendering. The optional `within:` names a parent topic, making this a
+/// sub-topic. It is stated, not proven, and registers no type facts.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TopicGroup {
+    pub heading: TopicHeader,
+    pub topic: TopicSection,
+    pub within: Option<TopicWithinSection>,
+    pub documented: Option<DocumentedSection>,
 }
 
 // ===============================[ clause groups ]=====================================

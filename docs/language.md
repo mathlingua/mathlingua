@@ -338,8 +338,9 @@ These groups may appear at the top level of a document.
 | `Person` | author | person metadata |
 | `Resource` | resource | bibliography or web metadata |
 | `Specify` | none | numeric-domain specification metadata |
-| `Relation` | none | bidirectional relationship between two concepts (`between:`/`and:`) |
+| `Relation` | none | bidirectional relationship between two concepts or topics (`between:`/`and:`) |
 | `Equivalent` | command | interchangeable commands under a shared name (`to:`) |
+| `Topic` | topic | names a documentation topic (`#some.name`), optionally a sub-topic (`within:`) |
 
 Groups with command headings introduce command signatures: `Describes`,
 `Defines`, `Refines`, `States`, `Equivalent`, and theorem-like groups that have

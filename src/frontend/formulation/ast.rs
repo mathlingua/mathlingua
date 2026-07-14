@@ -65,6 +65,12 @@ pub struct ResourceHeader {
     pub parts: Vec<String>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TopicHeader {
+    pub span: Span,
+    pub parts: Vec<String>,
+}
+
 // ===============================[ command expressions ]=====================================
 
 #[derive(Clone, Debug, PartialEq, Eq)]

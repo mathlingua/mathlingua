@@ -7,6 +7,33 @@ the feature is valid.
 
 ## Structural Language
 
+### Top-Level `Topic:` Item
+
+A new top-level item names a documentation topic and organizes topics into a
+hierarchy.
+
+```
+[#some.name]
+Topic: <text>*
+within?: #<parent.topic>
+Documented?: called: <text>
+Id?: <text>
+```
+
+- The heading `[#some.name]` uses a `#` sigil followed by any number of dotted
+  names (like a label or command path, but for topics). It renders as a human
+  title by title-casing the dotted path — `#real.analysis` renders as "Real
+  Analysis" — unless `Documented:called:` supplies an explicit rendering.
+- `Topic:` carries optional descriptive prose; `within?:` names a parent topic
+  (making this a sub-topic) as a `#...` reference.
+- `Documented?:` is restricted to a single `called:` field, which only controls
+  how the topic title renders; other documentation fields are rejected.
+- It is stated, not checked: topic and `within:` references are not required to
+  resolve to a defined topic, and the item registers no command signatures or
+  type facts. `mlg check` auto-inserts an `Id:` as for any top-level item.
+- A top-level `Relation:` may relate two topics (see below), letting a document
+  record relationships between topics as well as between concepts.
+
 ### Top-Level `Relation:` Item
 
 A new top-level item states a bidirectional relationship between two concepts.
@@ -21,10 +48,11 @@ means?: <statement>
 Justified?: ...  Documented?: ...  Aliases?: ...  References?: ...  Metadata?: ...  Id?: ...
 ```
 
-- `between:` and `and:` each declare one of the two related concepts (a
-  declaration such as `a is \real`); `using?:` brings auxiliary declarations into
-  scope (as on `Describes:`/`States:`); `when?:` gives spec preconditions and
-  `means?:` a single statement of what the relationship means.
+- `between:` and `and:` each name one side of the relationship: either a
+  declaration (such as `a is \real`) or a `#topic` reference, in any combination;
+  `using?:` brings auxiliary declarations into scope (as on `Describes:`/`States:`);
+  `when?:` gives spec preconditions and `means?:` a single statement of what the
+  relationship means.
 - It is heading-less (no `[...]`) and takes the same trailing sections as the
   theorem-like items. `mlg check` auto-inserts an `Id:` as for any top-level item.
 - Whereas the directional `relation:` group inside `Enables:` relates the

@@ -1107,6 +1107,73 @@ means: c = c
     }
 
     #[test]
+    fn check_accepts_topic_with_within_and_documented() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("topics.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[#analysis]
+Topic: "The study of limits, continuity, and convergence."
+
+[#real.analysis]
+Topic: "Analysis over the real numbers."
+within: #analysis
+Documented:
+. called: "Real Analysis"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("topics.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_accepts_relation_between_topics() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("topic-relation.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[#real.analysis]
+Topic: "Analysis over the real numbers."
+
+[#complex.analysis]
+Topic: "Analysis over the complex numbers."
+
+Relation:
+between: #real.analysis
+and: #complex.analysis
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("topic-relation.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_equivalent_over_matching_describes() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("equivalent.mlg");

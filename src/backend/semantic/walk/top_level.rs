@@ -128,8 +128,8 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
         }
         TopLevelItem::Relation(group) => {
             walk_optional_is_or_specs(&group.using, visit);
-            walk_declaration_statement(&group.between.argument, visit);
-            walk_declaration_statement(&group.and_.argument, visit);
+            walk_relation_subject(&group.between.argument, visit);
+            walk_relation_subject(&group.and_.argument, visit);
             walk_optional_clauses(&group.when, visit);
             if let Some(means) = &group.means {
                 walk_clause(&means.argument, visit);
@@ -149,7 +149,17 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
         | TopLevelItem::Text(_)
         | TopLevelItem::Writing(_)
         | TopLevelItem::Person(_)
-        | TopLevelItem::Resource(_) => {}
+        | TopLevelItem::Resource(_)
+        | TopLevelItem::Topic(_) => {}
+    }
+}
+
+/// Walks one side of a `Relation:`. Only a declared subject introduces symbols; a
+/// `#topic` reference names an external documentation topic and contributes none.
+fn walk_relation_subject(subject: &RelationSubject, visit: &mut impl FnMut(&SignatureShape)) {
+    match subject {
+        RelationSubject::Declaration(statement) => walk_declaration_statement(statement, visit),
+        RelationSubject::Topic(_) => {}
     }
 }
 

@@ -280,7 +280,7 @@ An empty document is supported by the current implementation because `Document.i
 | `Person` | `PersonGroup` | author | `Person: OpenText+`, `biography?: OpenText` |
 | `Resource` | `ResourceGroup` | resource | `Resource: ResourceItem+` |
 | `Specify` | `SpecifyGroup` | none | `Specify: SpecifyItem+` |
-| `Relation` | `RelationGroup` | none | `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RelationSubject`, `and: RelationSubject`, `when?: Clause+`, `means?: Clause`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Relation` | `RelationGroup` | none | `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RelationSubject`, `and: RelationSubject`, `when?: Clause+`, `means?: RelationMeans`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Equivalent` | `EquivalentGroup` | command | `Equivalent: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `References?: ResourceHeader+` |
 | `Topic` | `TopicGroup` | topic | `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Documented?: CalledDocumentedItem+` |
 
@@ -840,7 +840,7 @@ using?: <DeclarationStatement>+
 between: <RelationSubject>
 and: <RelationSubject>
 when?: <Clause>+
-means?: <Clause>
+means?: <RelationMeans>
 Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
 Aliases?: <AliasItemUnion>+
@@ -851,14 +851,18 @@ Id?: <OpenText>
 
 A top-level `Relation:` states a bidirectional relationship between the two
 subjects named in `between:` and `and:` (for example that they are equivalent).
-Each `RelationSubject` is either a declaration (such as `a is \real`) or a
-`#topic` reference, in any combination, so a `Relation:` may relate two concepts,
-two topics, or a concept and a topic. Contrast the directional `relation:` group
+Each `RelationSubject` is either an unquoted declaration (such as `a is \real`)
+for a concept, or a quoted-text reference — a `"#topic"` or a `"\signature"` (a
+`\command` with its arguments removed, like `\function:on:to`) — so a `Relation:`
+may relate concepts, topics, and definitions in any combination. Its `RelationMeans`
+is likewise either an unquoted clause (a statement of what the relationship means)
+or a quoted-text prose description. Contrast the directional `relation:` group
 nested inside `Enables:` ([`EnablesRelationGroup`], which relates the described
 concept *to* another and, with `as: \\view`/`\\abstraction`, registers a cast
 rule): the top-level item is heading-less, standalone, and registers no cast — it
-is checked like a theorem (its `when:` specs and `means:` statement are validated
-for declared symbols and valid command references, not proven).
+is checked like a theorem (any declaration subjects and a statement `means:` are
+validated for declared symbols and valid command references; quoted-text
+references and a prose `means:` are recorded, not proven).
 
 ```group
 [CommandHeader]

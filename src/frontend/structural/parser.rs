@@ -3171,28 +3171,22 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             .map(|arguments| UsingSection { arguments })
         }),
         between: RelationBetweenSection {
-            argument: parse_required_formulation(
+            argument: parse_required_relation_subject(
                 section(&sections, "between")?,
                 "between",
                 tracker,
-                parse_relation_subject,
             )?,
         },
         and_: RelationAndSection {
-            argument: parse_required_formulation(
-                section(&sections, "and")?,
-                "and",
-                tracker,
-                parse_relation_subject,
-            )?,
+            argument: parse_required_relation_subject(section(&sections, "and")?, "and", tracker)?,
         },
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
         means: sections.get("means").copied().and_then(|section| {
-            parse_required_clause(section, "means", tracker)
-                .map(|argument| RelationshipMeansSection { argument })
+            parse_required_relation_means(section, tracker)
+                .map(|argument| RelationMeansSection { argument })
         }),
         justified: sections.get("Justified").copied().and_then(|section| {
             parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
@@ -3217,15 +3211,52 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
     })
 }
 
+/// Reports whether a section's single argument is quoted text.
+///
+/// Both top-level `Relation:` subjects and its `means:` accept either quoted text
+/// (a `"#topic"`/`"\signature"` reference, or a prose description) or an unquoted
+/// formulation; this routes the section to the matching parser. The inline
+/// argument carries its quotes verbatim, so quoting is detected with
+/// [`strip_quoted_text`].
+fn section_is_quoted_text(section: &ProtoSection) -> bool {
+    match section_entries(section).first() {
+        Some(SectionEntry::Text { .. }) => true,
+        Some(SectionEntry::Inline { text, .. }) => strip_quoted_text(text).is_some(),
+        _ => false,
+    }
+}
+
 /// Parses one side of a `Relation:` (`between:`/`and:`).
 ///
-/// A leading `#` marks a documentation topic reference; anything else is parsed as
-/// an ordinary refined declaration such as `a is \real`.
-fn parse_relation_subject(input: &str) -> Result<RelationSubject, FormulationParseError> {
-    if input.trim_start().starts_with('#') {
-        parse_topic_header(input).map(RelationSubject::Topic)
+/// A quoted `"#topic"` or `"\signature"` is a reference (to a topic or a
+/// definition); anything unquoted is parsed as an ordinary refined declaration
+/// such as `a is \real`.
+fn parse_required_relation_subject(
+    section: &ProtoSection,
+    label: &str,
+    tracker: &mut EventLog,
+) -> Option<RelationSubject> {
+    if section_is_quoted_text(section) {
+        parse_required_open_text(section, label, tracker).map(RelationSubject::Reference)
     } else {
-        parse_refined_declaration_statement(input).map(RelationSubject::Declaration)
+        parse_required_formulation(section, label, tracker, parse_refined_declaration_statement)
+            .map(|declaration| RelationSubject::Declaration(Box::new(declaration)))
+    }
+}
+
+/// Parses the `means:` of a `Relation:`.
+///
+/// A quoted string is a prose description; anything unquoted is parsed as a
+/// logical clause (a statement of what the relationship means).
+fn parse_required_relation_means(
+    section: &ProtoSection,
+    tracker: &mut EventLog,
+) -> Option<RelationMeans> {
+    if section_is_quoted_text(section) {
+        parse_required_open_text(section, "means", tracker).map(RelationMeans::Text)
+    } else {
+        parse_required_clause(section, "means", tracker)
+            .map(|clause| RelationMeans::Statement(Box::new(clause)))
     }
 }
 
@@ -3733,7 +3764,7 @@ mod tests {
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, DescribesTarget, Document, DocumentedItem, EnablesItem,
-        IsOrViaItem, JustifiedItem, MetadataItem, RelationKind, RelationSubject,
+        IsOrViaItem, JustifiedItem, MetadataItem, RelationKind, RelationMeans, RelationSubject,
         RelationshipDeclaration, RequiresItem, ResourceItem, SpecifyItem, TopLevelItem,
     };
 
@@ -4586,25 +4617,58 @@ Documented:
     }
 
     #[test]
-    fn parses_relation_between_two_topics() {
+    fn parses_relation_between_quoted_topic_and_signature_with_text_means() {
         let document = parse_ok(
-            r#"
+            r##"
 Relation:
-between: #real.analysis
-and: #complex.analysis
-"#,
+between: "#real.analysis"
+and: "\sin"
+means: "The sine function is studied within real analysis."
+"##,
         );
 
         match &document.items[0] {
             TopLevelItem::Relation(group) => {
                 match &group.between.argument {
-                    RelationSubject::Topic(header) => assert_eq!(header.parts[0], "real"),
-                    other => panic!("expected a topic subject, got {other:?}"),
+                    RelationSubject::Reference(text) => assert_eq!(text.0, "#real.analysis"),
+                    other => panic!("expected a reference subject, got {other:?}"),
                 }
                 match &group.and_.argument {
-                    RelationSubject::Topic(header) => assert_eq!(header.parts[0], "complex"),
-                    other => panic!("expected a topic subject, got {other:?}"),
+                    RelationSubject::Reference(text) => assert_eq!(text.0, r"\sin"),
+                    other => panic!("expected a reference subject, got {other:?}"),
                 }
+                match &group.means.as_ref().expect("means").argument {
+                    RelationMeans::Text(text) => {
+                        assert_eq!(text.0, "The sine function is studied within real analysis.")
+                    }
+                    other => panic!("expected a text means, got {other:?}"),
+                }
+            }
+            other => panic!("expected Relation item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_relation_between_declaration_with_statement_means() {
+        let document = parse_ok(
+            r#"
+Relation:
+between: a is \real
+and: b is \real
+means: a = b
+"#,
+        );
+
+        match &document.items[0] {
+            TopLevelItem::Relation(group) => {
+                assert!(matches!(
+                    &group.between.argument,
+                    RelationSubject::Declaration(_)
+                ));
+                assert!(matches!(
+                    &group.means.as_ref().expect("means").argument,
+                    RelationMeans::Statement(_)
+                ));
             }
             other => panic!("expected Relation item, got {other:?}"),
         }

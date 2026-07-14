@@ -1536,15 +1536,11 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
-            if let Some(means) = &group.means {
-                check_clause(
-                    &means.argument,
-                    &context,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
+            // Only a statement `means:` is checked; a prose `Text` description is not.
+            if let Some(RelationMeans::Statement(clause)) =
+                group.means.as_ref().map(|means| &means.argument)
+            {
+                check_clause(clause, &context, path, locator, registry, event_log);
             }
         }
         TopLevelItem::Specify(_)

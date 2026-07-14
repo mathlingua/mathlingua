@@ -131,8 +131,10 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_relation_subject(&group.between.argument, visit);
             walk_relation_subject(&group.and_.argument, visit);
             walk_optional_clauses(&group.when, visit);
-            if let Some(means) = &group.means {
-                walk_clause(&means.argument, visit);
+            if let Some(RelationMeans::Statement(clause)) =
+                group.means.as_ref().map(|m| &m.argument)
+            {
+                walk_clause(clause, visit);
             }
             walk_optional_aliases(&group.aliases, visit);
         }
@@ -155,11 +157,12 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
 }
 
 /// Walks one side of a `Relation:`. Only a declared subject introduces symbols; a
-/// `#topic` reference names an external documentation topic and contributes none.
+/// quoted reference (a topic or a definition signature) names an external target
+/// and contributes none.
 fn walk_relation_subject(subject: &RelationSubject, visit: &mut impl FnMut(&SignatureShape)) {
     match subject {
         RelationSubject::Declaration(statement) => walk_declaration_statement(statement, visit),
-        RelationSubject::Topic(_) => {}
+        RelationSubject::Reference(_) => {}
     }
 }
 

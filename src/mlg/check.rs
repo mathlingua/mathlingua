@@ -1149,16 +1149,17 @@ Documented:
 
         write_mlg_fixture(
             &file,
-            r#"[#real.analysis]
+            r##"[#real.analysis]
 Topic: "Analysis over the real numbers."
 
 [#complex.analysis]
 Topic: "Analysis over the complex numbers."
 
 Relation:
-between: #real.analysis
-and: #complex.analysis
-"#,
+between: "#real.analysis"
+and: "#complex.analysis"
+means: "Complex analysis extends real analysis."
+"##,
         )
         .unwrap();
 
@@ -1166,6 +1167,38 @@ and: #complex.analysis
         let result = check_in(
             temp_dir.path(),
             &[PathBuf::from("topic-relation.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_accepts_relation_between_quoted_signatures_with_text_means() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("signature-relation.mlg");
+
+        // Quoted `"\..."` subjects are references, not usages, so `\sin`/`\cos`
+        // need not be defined; a prose `means:` is recorded, not checked, so its
+        // `c` is not reported as an undeclared symbol.
+        write_mlg_fixture(
+            &file,
+            r##"Relation:
+between: "\sin"
+and: "\cos"
+means: "c makes them cofunctions."
+"##,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("signature-relation.mlg")],
             &mut event_log,
         );
 

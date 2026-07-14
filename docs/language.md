@@ -338,7 +338,7 @@ These groups may appear at the top level of a document.
 | `Person` | author | person metadata |
 | `Resource` | resource | bibliography or web metadata |
 | `Specify` | none | numeric-domain specification metadata |
-| `Relation` | none | bidirectional relationship between two concepts or topics (`between:`/`and:`) |
+| `Relation` | none | bidirectional relationship between two concepts, topics, or definitions (`between:`/`and:`, with quoted `"#topic"`/`"\signature"` references) |
 | `Equivalent` | command | interchangeable commands under a shared name (`to:`) |
 | `Topic` | topic | names a documentation topic (`#some.name`); optional `within:` parent and `Related:` links (quoted `"#topic"`/`"\signature"` references) |
 

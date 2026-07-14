@@ -18,10 +18,16 @@ Topic: "Analysis over the complex numbers."
 within: "#analysis"
 
 Relation:
-between: #real.analysis
-and: #complex.analysis
+between: "#real.analysis"
+and: "#complex.analysis"
+means: "Complex analysis extends real analysis."
 
 Relation:
 between: a is \real
-and: #real.analysis
-means: a = a
+and: b is \real
+means: a = b
+
+Relation:
+between: "\sin"
+and: "\cos"
+means: "Cofunctions of one another."

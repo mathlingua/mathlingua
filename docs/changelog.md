@@ -43,38 +43,46 @@ Id?: <text>
 - It is stated, not checked: topic and signature references are recorded but not
   required to resolve, and the item registers no command signatures or type facts.
   `mlg check` auto-inserts an `Id:` as for any top-level item.
-- A top-level `Relation:` may relate two topics (see below), letting a document
-  record relationships between topics as well as between concepts.
+- A top-level `Relation:` may relate two topics or definitions (see below),
+  letting a document record relationships between topics and definitions as well
+  as between concepts.
 
 ### Top-Level `Relation:` Item
 
-A new top-level item states a bidirectional relationship between two concepts.
+A new top-level item states a bidirectional relationship between two concepts,
+topics, or definitions.
 
 ```
 Relation:
 using?: <declaration>+
-between: <declaration>
-and: <declaration>
+between: <declaration | "#topic" | "\signature">
+and: <declaration | "#topic" | "\signature">
 when?: <spec>+
-means?: <statement>
+means?: <statement | text>
 Justified?: ...  Documented?: ...  Aliases?: ...  References?: ...  Metadata?: ...  Id?: ...
 ```
 
-- `between:` and `and:` each name one side of the relationship: either a
-  declaration (such as `a is \real`) or a `#topic` reference, in any combination;
-  `using?:` brings auxiliary declarations into scope (as on `Describes:`/`States:`);
-  `when?:` gives spec preconditions and `means?:` a single statement of what the
-  relationship means.
+- `between:` and `and:` each name one side of the relationship: an unquoted
+  declaration (such as `a is \real`) for a concept, or a **quoted-text reference**
+  for a topic (`"#real.analysis"`) or a definition **signature** (`"\sin"`, or
+  `"\function:on:to"` for `\function:on{A}:to{B}`), in any combination. Quoting a
+  reference keeps a `\signature` distinct from a usage, matching `Topic:`'s
+  `within:`/`to:` convention.
+- `means?:` is either an unquoted **statement** (a clause) of what the
+  relationship means, or a **quoted-text** prose description of it.
+- `using?:` brings auxiliary declarations into scope (as on `Describes:`/`States:`)
+  and `when?:` gives spec preconditions.
 - It is heading-less (no `[...]`) and takes the same trailing sections as the
   theorem-like items. `mlg check` auto-inserts an `Id:` as for any top-level item.
 - Whereas the directional `relation:` group inside `Enables:` relates the
   described concept *to* another (and with `as: \\view`/`\\abstraction` registers
   a cast rule the type checker uses), the top-level `Relation:` is standalone and
   bidirectional — e.g. for stating that two concepts are equivalent.
-- It is checked like a theorem: the `between:`/`and:` declarations introduce their
-  subjects, and the `when:` specs and `means:` statement are validated for
-  declared symbols and valid command references — the relationship is stated, not
-  proven, and it registers no type facts.
+- It is checked like a theorem: any `between:`/`and:` *declarations* introduce
+  their subjects and a *statement* `means:` is validated for declared symbols and
+  valid command references. Quoted-text references and a prose `means:` are
+  recorded, not checked — the relationship is stated, not proven, and it registers
+  no type facts.
 
 ### Top-Level `Equivalent:` Item
 

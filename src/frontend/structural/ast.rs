@@ -176,13 +176,23 @@ pub enum DescribesTarget {
 }
 
 /// One side of a top-level `Relation:` (`between:`/`and:`). A relationship may
-/// hold between two declared concepts, between two documentation topics, or a
-/// mix of the two, so each side is either an ordinary declaration or a `#topic`
-/// reference.
+/// hold between declared concepts, documentation topics, or definitions, in any
+/// combination, so each side is either an ordinary declaration (`a is \real`) or a
+/// quoted-text `Reference` — a `"#topic"` or a `"\signature"` (see [`TopicRelatedItem`]
+/// for the signature convention). Quoting keeps a `\signature` reference distinct
+/// from a usage.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RelationSubject {
-    Declaration(DeclarationStatement),
-    Topic(TopicHeader),
+    Declaration(Box<DeclarationStatement>),
+    Reference(OpenText),
+}
+
+/// The `means:` of a top-level `Relation:`. It is either a logical `Statement`
+/// (a clause) or a quoted-text prose `Text` description of the relationship.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RelationMeans {
+    Statement(Box<Clause>),
+    Text(OpenText),
 }
 
 argument_section!(DescribesSection, DescribesTarget);
@@ -231,6 +241,7 @@ argument_section!(RelationshipMeansSection, Clause);
 zero_or_more_arguments_section!(RelationSection, OpenText);
 argument_section!(RelationBetweenSection, RelationSubject);
 argument_section!(RelationAndSection, RelationSubject);
+argument_section!(RelationMeansSection, RelationMeans);
 // Top-level `Topic:` item sections. References (`within:`/`to:`) are quoted text
 // so a `#topic` or a bare `\signature` reads as a reference, never a usage.
 // (`TopicRelated*` is distinct from the `related:` documentation item below.)
@@ -660,7 +671,7 @@ pub struct RelationGroup {
     pub between: RelationBetweenSection,
     pub and_: RelationAndSection,
     pub when: Option<WhenSection>,
-    pub means: Option<RelationshipMeansSection>,
+    pub means: Option<RelationMeansSection>,
     pub justified: Option<JustifiedSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,

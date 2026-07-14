@@ -27,6 +27,20 @@
   margin-top: 1rem;
 }
 
+/* Keep MathLingua code blocks from butting up against an adjacent block —
+   most importantly against each other, since consecutive fences are common. */
+.markdownMlgCode + .markdownMlgCode,
+.markdownMlgCode + ul,
+.markdownMlgCode + ol,
+.markdownMlgCode + pre,
+.markdownMlgCode + .markdownBlockMath,
+.markdown ul + .markdownMlgCode,
+.markdown ol + .markdownMlgCode,
+.markdown pre + .markdownMlgCode,
+.markdownBlockMath + .markdownMlgCode {
+  margin-top: 1rem;
+}
+
 .markdown h1,
 .markdown h2,
 .markdown h3,

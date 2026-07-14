@@ -74,7 +74,11 @@ function MarkdownBlock({ block }: { block: MarkdownBlock }) {
         </ol>
       );
     case "code":
-      if (block.language === "mlg" || block.language === "mathlingua") {
+      if (isMathLinguaLanguage(block.language)) {
+        // `mlg` and `mlg-fragment` are both syntax-highlighted as MathLingua.
+        // `mlg` blocks are whole items (and are syntax-checked by `mlg check`);
+        // `mlg-fragment` blocks may be any structural, formulation, or header
+        // snippet and are never checked.
         return (
           <div className={styles.markdownMlgCode}>
             <MathLinguaSource source={block.text} />
@@ -384,6 +388,14 @@ function findNext(text: string, token: string, start: number): number {
   }
 
   return -1;
+}
+
+function isMathLinguaLanguage(language: string | null): boolean {
+  return (
+    language === "mlg" ||
+    language === "mlg-fragment" ||
+    language === "mathlingua"
+  );
 }
 
 function normalizeNewlines(text: string): string {

@@ -175,6 +175,17 @@ mod tests {
     }
 
     #[test]
+    fn ignores_mlg_fragment_fences() {
+        // `mlg-fragment` blocks are highlighted but never checked — even a bare
+        // formulation (not a valid standalone item) must not be reported.
+        let source = "Text: \"Example:\n```mlg-fragment\nf(x) := y\n```\n\"\n";
+        assert!(
+            fence_error_messages(source).is_empty(),
+            "mlg-fragment fences must not be syntax-checked"
+        );
+    }
+
+    #[test]
     fn dedents_indented_fences() {
         // A fence indented four spaces still parses once dedented.
         let source = "    Text: \"\n    ```mlg\n    [\\real]\n    Describes: X\n    ```\n    \"\n";

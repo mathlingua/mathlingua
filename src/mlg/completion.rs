@@ -259,6 +259,7 @@ const GROUPS: &[GroupSpec] = &[
         sections: &[
             ("Topic", true),
             ("within", false),
+            ("Related", false),
             ("Documented", false),
             ("Id", false),
         ],

@@ -15,7 +15,10 @@ hierarchy.
 ```
 [#some.name]
 Topic: <text>*
-within?: #<parent.topic>
+within?: "#<parent.topic>"
+Related?:
+. to: "<#topic | \signature>"+
+  means: <text>
 Documented?: called: <text>
 Id?: <text>
 ```
@@ -25,12 +28,21 @@ Id?: <text>
   title by title-casing the dotted path — `#real.analysis` renders as "Real
   Analysis" — unless `Documented:called:` supplies an explicit rendering.
 - `Topic:` carries optional descriptive prose; `within?:` names a parent topic
-  (making this a sub-topic) as a `#...` reference.
+  (making this a sub-topic).
+- `Related?:` lists relationships to other topics or definitions. Each entry's
+  `to:` points at one or more targets and `means:` explains the relationship.
+- **References are quoted text.** `within:` and each `to:` target are written in
+  double quotes so a reference is never confused with a usage: `to: "#topic"` is a
+  topic reference and `to: "\sin"` is the `\sin` *definition* (a **signature** — a
+  `\command` with its arguments removed, so `\function:on{A}:to{B}` is written
+  `\function:on:to`). A signature names the `Describes`/`Defines`/`Refines`/`States`/
+  theorem-like item itself, not a use of it. `called:` (already quoted) rounds out
+  the four quoted-text fields (`within:`, `to:`, `means:`, `called:`).
 - `Documented?:` is restricted to a single `called:` field, which only controls
   how the topic title renders; other documentation fields are rejected.
-- It is stated, not checked: topic and `within:` references are not required to
-  resolve to a defined topic, and the item registers no command signatures or
-  type facts. `mlg check` auto-inserts an `Id:` as for any top-level item.
+- It is stated, not checked: topic and signature references are recorded but not
+  required to resolve, and the item registers no command signatures or type facts.
+  `mlg check` auto-inserts an `Id:` as for any top-level item.
 - A top-level `Relation:` may relate two topics (see below), letting a document
   record relationships between topics as well as between concepts.
 

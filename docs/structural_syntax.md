@@ -282,7 +282,7 @@ An empty document is supported by the current implementation because `Document.i
 | `Specify` | `SpecifyGroup` | none | `Specify: SpecifyItem+` |
 | `Relation` | `RelationGroup` | none | `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RelationSubject`, `and: RelationSubject`, `when?: Clause+`, `means?: Clause`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Equivalent` | `EquivalentGroup` | command | `Equivalent: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `References?: ResourceHeader+` |
-| `Topic` | `TopicGroup` | topic | `Topic: OpenText*`, `within?: TopicHeader`, `Documented?: CalledDocumentedItem+` |
+| `Topic` | `TopicGroup` | topic | `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Documented?: CalledDocumentedItem+` |
 
 Notes:
 
@@ -895,20 +895,37 @@ provides likewise resolves on a value typed as any member or the header.
 ```group
 [TopicHeader]
 Topic: <OpenText>*
-within?: <TopicHeader>
+within?: <OpenText>
+Related?: <TopicRelatedItem>+
 Documented?: <CalledDocumentedItem>+
 Id?: <OpenText>
+```
+
+```group
+to: <OpenText>+
+means: <OpenText>
 ```
 
 A top-level `Topic:` names a documentation topic. Its required heading is a
 `TopicHeader` — a `#` sigil followed by a dotted name path (for example
 `[#real.analysis]`) — which renders as a human title by title-casing the path
 ("Real Analysis") unless the `Documented:called:` text overrides it. `Topic:`
-carries optional descriptive prose and `within?:` names a parent topic (as a
-`#...` reference) to make this a sub-topic. `Documented?:` accepts only `called:`
-(a `CalledDocumentedItem`); other documentation fields are rejected. The item is
-stated, not checked: topic and `within:` references need not resolve to a defined
-topic, and it registers no command signatures or type facts.
+carries optional descriptive prose and `within?:` names a parent topic to make
+this a sub-topic. `Related?:` records how the topic relates to others: each
+`TopicRelatedItem` pairs one or more `to:` targets with a `means:` description.
+
+References (`within:` and each `to:`) are **quoted text** so a reference is never
+mistaken for a usage. A `"#topic"` value is a topic reference; a `"\signature"`
+value is a **signature** — a `\command` with its arguments removed, e.g.
+`\function:on{A}:to{B}` written as `\function:on:to` — that names a
+`Describes`/`Defines`/`Refines`/`States`/theorem-like definition itself, not a use
+of it. With `called:` (already quoted), the four quoted-text fields are `within:`,
+`to:`, `means:`, and `called:`.
+
+`Documented?:` accepts only `called:` (a `CalledDocumentedItem`); other
+documentation fields are rejected. The item is stated, not checked: topic and
+signature references need not resolve, and it registers no command signatures or
+type facts.
 
 ### Nested item groups
 

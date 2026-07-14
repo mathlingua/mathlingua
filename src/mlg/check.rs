@@ -1107,21 +1107,24 @@ means: c = c
     }
 
     #[test]
-    fn check_accepts_topic_with_within_and_documented() {
+    fn check_accepts_topic_with_within_related_and_documented() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("topics.mlg");
 
         write_mlg_fixture(
             &file,
-            r#"[#analysis]
+            r##"[#analysis]
 Topic: "The study of limits, continuity, and convergence."
 
 [#real.analysis]
 Topic: "Analysis over the real numbers."
-within: #analysis
+within: "#analysis"
+Related:
+. to: "#complex.analysis"
+  means: "Closely connected subjects."
 Documented:
 . called: "Real Analysis"
-"#,
+"##,
         )
         .unwrap();
 

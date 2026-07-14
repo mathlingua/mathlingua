@@ -3234,9 +3234,10 @@ fn parse_relation_subject(input: &str) -> Result<RelationSubject, FormulationPar
 /// Parses a top-level `Topic:` item.
 ///
 /// A `Topic:` names a documentation topic via a required `#`-sigil heading. The
-/// optional `within:` names a parent topic (making this a sub-topic) and the
-/// optional `Documented:` accepts only `called:`, which overrides how the topic
-/// title is rendered.
+/// optional `within:` names a parent topic (making this a sub-topic) as a quoted
+/// `"#..."` reference; the optional `Related:` records relationships to other
+/// topics or definitions; and the optional `Documented:` accepts only `called:`,
+/// which overrides how the topic title is rendered.
 pub(in crate::frontend::structural::parser) fn parse_topic(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -3246,7 +3247,7 @@ pub(in crate::frontend::structural::parser) fn parse_topic(
         "Topic",
         &group.sections,
         tracker,
-        &["Topic", "within?", "Documented?", "Id?"],
+        &["Topic", "within?", "Related?", "Documented?", "Id?"],
     )?;
 
     Some(TopicGroup {
@@ -3255,8 +3256,12 @@ pub(in crate::frontend::structural::parser) fn parse_topic(
             arguments: parse_optional_open_texts(sections.get("Topic").copied(), tracker),
         },
         within: sections.get("within").copied().and_then(|section| {
-            parse_required_formulation(section, "within", tracker, parse_topic_header)
+            parse_required_open_text(section, "within", tracker)
                 .map(|argument| TopicWithinSection { argument })
+        }),
+        related: sections.get("Related").copied().and_then(|section| {
+            parse_required_groups(section, "Related", tracker, parse_related_item_group)
+                .map(|arguments| TopicRelatedSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(
@@ -3267,6 +3272,27 @@ pub(in crate::frontend::structural::parser) fn parse_topic(
             )
             .map(|arguments| DocumentedSection { arguments })
         }),
+    })
+}
+
+/// Parses one entry of a `Topic:`'s `Related:` section.
+///
+/// Each entry lists one or more `to:` references (quoted `"#topic"` or
+/// `"\signature"` strings) and a required `means:` description. References are
+/// quoted text so a bare `\signature` reads as a reference to a definition rather
+/// than a usage; they are recorded, not resolved.
+pub(super) fn parse_related_item_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<TopicRelatedItem> {
+    let sections = identify_sections("related", &group.sections, tracker, &["to", "means"])?;
+    Some(TopicRelatedItem {
+        to: TopicRelatedToSection {
+            arguments: parse_required_open_texts(section(&sections, "to")?, "to", tracker)?,
+        },
+        means: TopicRelatedMeansSection {
+            argument: parse_required_open_text(section(&sections, "means")?, "means", tracker)?,
+        },
     })
 }
 
@@ -4466,15 +4492,21 @@ means: a = a
     }
 
     #[test]
-    fn parses_topic_item_with_within_and_documented_called() {
+    fn parses_topic_item_with_within_related_and_documented_called() {
         let document = parse_ok(
-            r#"
+            r##"
 [#real.analysis]
 Topic: "Analysis over the real numbers."
-within: #analysis
+within: "#analysis"
+Related:
+. to: "#complex.analysis"
+  . "\sin"
+  means: "Closely connected subjects."
+. to: "\function:on:to"
+  means: "Functions studied here."
 Documented:
 . called: "Real Analysis"
-"#,
+"##,
         );
 
         match &document.items[0] {
@@ -4484,11 +4516,38 @@ Documented:
                 assert_eq!(group.heading.parts[1], "analysis");
                 assert_eq!(group.topic.arguments.len(), 1);
                 let within = group.within.as_ref().expect("expected a within section");
-                assert_eq!(within.argument.parts, ["analysis"]);
+                assert_eq!(within.argument.0, "#analysis");
+                let related = group.related.as_ref().expect("expected a Related section");
+                assert_eq!(related.arguments.len(), 2);
+                let first = &related.arguments[0];
+                assert_eq!(first.to.arguments.len(), 2);
+                assert_eq!(first.to.arguments[0].0, "#complex.analysis");
+                assert_eq!(first.to.arguments[1].0, r"\sin");
+                assert_eq!(first.means.argument.0, "Closely connected subjects.");
+                assert_eq!(related.arguments[1].to.arguments[0].0, r"\function:on:to");
                 assert!(group.documented.is_some());
             }
             other => panic!("expected Topic item, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn topic_related_item_requires_means() {
+        let (_, diagnostics) = parse_with_diagnostics(
+            r##"
+[#real.analysis]
+Topic: "Analysis over the real numbers."
+Related:
+. to: "#complex.analysis"
+"##,
+        );
+
+        assert!(
+            diagnostics.iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("means"))),
+            "expected a diagnostic about the missing `means:` section: {diagnostics:#?}"
+        );
     }
 
     #[test]

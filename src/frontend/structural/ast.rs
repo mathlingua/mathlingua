@@ -231,9 +231,14 @@ argument_section!(RelationshipMeansSection, Clause);
 zero_or_more_arguments_section!(RelationSection, OpenText);
 argument_section!(RelationBetweenSection, RelationSubject);
 argument_section!(RelationAndSection, RelationSubject);
-// Top-level `Topic:` item sections.
+// Top-level `Topic:` item sections. References (`within:`/`to:`) are quoted text
+// so a `#topic` or a bare `\signature` reads as a reference, never a usage.
+// (`TopicRelated*` is distinct from the `related:` documentation item below.)
 zero_or_more_arguments_section!(TopicSection, OpenText);
-argument_section!(TopicWithinSection, TopicHeader);
+argument_section!(TopicWithinSection, OpenText);
+arguments_section!(TopicRelatedToSection, OpenText);
+argument_section!(TopicRelatedMeansSection, OpenText);
+arguments_section!(TopicRelatedSection, TopicRelatedItem);
 zero_or_more_arguments_section!(ConnectionSection, OpenText);
 zero_or_more_arguments_section!(ToSection, OpenText);
 zero_or_more_arguments_section!(MeansSection, OpenText);
@@ -666,14 +671,27 @@ pub struct RelationGroup {
 /// A top-level `Topic:` item, which names a documentation topic. Its `[#some.name]`
 /// heading is a dotted, `#`-sigil path that renders as a human title (for example
 /// `#real.analysis` renders as "Real Analysis") unless `Documented:called:` gives an
-/// explicit rendering. The optional `within:` names a parent topic, making this a
-/// sub-topic. It is stated, not proven, and registers no type facts.
+/// explicit rendering. The optional `within:` names a parent topic (making this a
+/// sub-topic) as a quoted `"#..."` reference, and the optional `Related:` records
+/// how this topic relates to other topics or definitions. It is stated, not proven,
+/// and registers no type facts.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TopicGroup {
     pub heading: TopicHeader,
     pub topic: TopicSection,
     pub within: Option<TopicWithinSection>,
+    pub related: Option<TopicRelatedSection>,
     pub documented: Option<DocumentedSection>,
+}
+
+/// One entry of a `Topic:`'s `Related:` section. Each entry points at one or more
+/// other topics or definitions via `to:` — quoted `"#topic"` references or
+/// `"\signature"` references (a `\command` with its arguments removed, such as
+/// `\function:on:to`) — and explains the relationship in `means:`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TopicRelatedItem {
+    pub to: TopicRelatedToSection,
+    pub means: TopicRelatedMeansSection,
 }
 
 // ===============================[ clause groups ]=====================================

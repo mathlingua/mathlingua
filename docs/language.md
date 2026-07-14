@@ -340,7 +340,7 @@ These groups may appear at the top level of a document.
 | `Specify` | none | numeric-domain specification metadata |
 | `Relation` | none | bidirectional relationship between two concepts or topics (`between:`/`and:`) |
 | `Equivalent` | command | interchangeable commands under a shared name (`to:`) |
-| `Topic` | topic | names a documentation topic (`#some.name`), optionally a sub-topic (`within:`) |
+| `Topic` | topic | names a documentation topic (`#some.name`); optional `within:` parent and `Related:` links (quoted `"#topic"`/`"\signature"` references) |
 
 Groups with command headings introduce command signatures: `Describes`,
 `Defines`, `Refines`, `States`, `Equivalent`, and theorem-like groups that have

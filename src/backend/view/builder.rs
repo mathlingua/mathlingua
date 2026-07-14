@@ -501,7 +501,12 @@ mod tests {
     };
     use std::fs;
     use std::path::{Path, PathBuf};
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    // Distinguishes concurrently-created test directories whose nanosecond
+    // timestamps could otherwise collide under parallel test execution.
+    static NEXT_TEST_DIR_ID: AtomicUsize = AtomicUsize::new(0);
 
     #[test]
     fn builds_a_collection_view_from_valid_files() {
@@ -977,10 +982,12 @@ Id: "11111111-1111-4111-8111-111111111111"
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_nanos();
+            let id = NEXT_TEST_DIR_ID.fetch_add(1, Ordering::Relaxed);
             let path = std::env::temp_dir().join(format!(
-                "mlg-view-builder-test-{}-{}",
+                "mlg-view-builder-test-{}-{}-{}",
                 std::process::id(),
-                unique
+                unique,
+                id
             ));
             fs::create_dir(&path).unwrap();
             Self { path }

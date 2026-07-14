@@ -128,9 +128,17 @@ is not valid inside a `when:` section.
 
 ### Markdown MathLingua Fences
 
-`Text:` Markdown may contain fenced blocks tagged `mlg`. These blocks render as
-MathLingua source using the same source presentation used by cards; other fenced
-code blocks retain ordinary Markdown code rendering.
+Any quoted text value (`Text:` Markdown, `description:`, `means:` prose, and so
+on) may contain fenced blocks tagged `mlg`. These blocks render as MathLingua
+source using the same source presentation used by cards; other fenced code blocks
+retain ordinary Markdown code rendering.
+
+`mlg check` validates the **syntax** of each `mlg` fence: the fenced code is
+structurally parsed (after undoing the enclosing text's `\"` escaping and the
+fence's Markdown indentation), and any parse errors are reported against the
+containing file at the fenced line. Only syntax is checked — the fenced code is
+never type-checked, so an example may freely reference commands, topics, or
+symbols that are not defined in the collection.
 
 ### Page Content Blocks
 

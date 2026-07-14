@@ -675,10 +675,12 @@ mod tests {
     }
 
     #[test]
-    fn check_ignores_mathlingua_examples_inside_text_code_fences() {
+    fn check_accepts_valid_mathlingua_syntax_in_text_code_fences() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("intro.mlg");
 
+        // The fenced example is syntactically valid, so it passes even though its
+        // `\function:on:to` is defined nowhere — fences are syntax-checked only.
         write_mlg_fixture(
             &file,
             r#"
@@ -709,6 +711,44 @@ mod tests {
         assert_eq!(
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_syntax_error_in_text_code_fence() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("intro.mlg");
+
+        // `Bogus:` is not a recognized top-level item, so the fenced code fails to
+        // parse and its syntax error is surfaced by `mlg check`.
+        write_mlg_fixture(
+            &file,
+            r#"Text: "
+Example:
+
+```mlg
+Bogus: \"not a real item\"
+```
+"
+Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("intro.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            user_events(&event_log).iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("mlg` code block"))),
+            "expected a fenced-code syntax error: {:#?}",
+            user_events(&event_log)
         );
     }
 

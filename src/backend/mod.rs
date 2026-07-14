@@ -4,4 +4,5 @@ pub mod definition;
 pub(crate) mod release;
 pub mod rename;
 pub mod semantic;
+pub(crate) mod text_fence;
 pub mod view;

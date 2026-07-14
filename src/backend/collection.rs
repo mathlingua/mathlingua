@@ -101,6 +101,7 @@ impl SourceCollection {
 
     pub(crate) fn run_check_passes(&mut self, event_log: &mut EventLog, origin: &str) {
         self.parse_structural(event_log, origin);
+        self.check_text_fences(event_log, origin);
         self.check_semantics(event_log);
     }
 
@@ -169,6 +170,17 @@ impl SourceCollection {
                     .unwrap_or_default();
                 self.parsed_files.push(parsed_file);
             }
+        }
+    }
+
+    fn check_text_fences(&self, event_log: &mut EventLog, origin: &str) {
+        for file in &self.parsed_files {
+            crate::backend::text_fence::check_text_fence_syntax(
+                &file.path,
+                &file.source,
+                event_log,
+                origin,
+            );
         }
     }
 

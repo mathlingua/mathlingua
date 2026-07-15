@@ -327,12 +327,11 @@ Used inside `Enables:`.
 | `capability` | `CapabilityGroup` | label? | `capability: AliasKind`, `written?: WrittenText+` |
 | `from` | `FromCapabilityGroup` | label? | `from: DeclarationStatement`, `capability: AliasKind`, `written?: WrittenText+` |
 | `from` | `FromAsGroup` | label? | `from: DeclarationStatement`, `as: ExpressionBinding` |
-| `relation` | `RelationGroup` | label? | `relation: OpenText*`, `to: RelationshipDeclaration`, `when?: RelationWhenItem+`, `means?: Clause`, `as?: RelationKind+`, `by?: OpenText+` |
-| `connection` | `ConnectionGroup` | label? | `connection: OpenText*`, `to: OpenText*`, `using?: DeclarationStatement+`, `means: OpenText*`, `signifies?: OpenText*`, `viewable?: OpenText*`, `through?: OpenText*` |
+| `relation` | `RelationGroup` | label? | `relation: OpenText*`, `to: RelationshipDeclaration`, `when?: RelationWhenItem+`, `means?: Clause`, `represents?: RelationKind+`, `by?: OpenText+` |
 
 `from:` groups must contain exactly one of `capability:` or `as:`.
 `RelationWhenItem` is either a declaration statement or a hard-cast statement.
-`RelationKind` is one of `\\viewable_as` or `\\encoded_by`.
+`RelationKind` is one of `\\coercion` or `\\encoding`.
 
 ### Documented items
 
@@ -557,8 +556,7 @@ EnablesItemUnion ::=
     | CapabilityGroup
     | FromCapabilityGroup
     | FromAsGroup
-    | ViewableGroup
-    | ConnectionGroup
+    | RelationGroup
 ```
 
 ```union
@@ -862,8 +860,8 @@ may relate concepts, topics, and definitions in any combination. Its `RelationMe
 is likewise either an unquoted clause (a statement of what the relationship means)
 or a quoted-text prose description. Contrast the directional `relation:` group
 nested inside `Enables:` ([`EnablesRelationGroup`], which relates the described
-concept *to* another and, with `as: \\viewable_as`/`\\encoded_by`, registers a cast
-rule): the top-level item is heading-less, standalone, and registers no cast — it
+concept *to* another and, with `represents: \\coercion`/`\\encoding`, registers a
+cast rule): the top-level item is heading-less, standalone, and registers no cast — it
 is checked like a theorem (any declaration subjects and a statement `means:` are
 validated for declared symbols and valid command references; quoted-text
 references and a prose `means:` are recorded, not proven).
@@ -973,19 +971,8 @@ relation: <OpenText>*
 to: <RelationshipDeclaration>
 when?: <RelationWhenItem>+
 means?: <Clause>
-as?: <RelationKind>+
+represents?: <RelationKind>+
 by?: <OpenText>+
-```
-
-```group
-[LabelHeader]?
-connection: <OpenText>*
-to: <OpenText>*
-using?: <DeclarationStatement>+
-means: <OpenText>*
-signifies?: <OpenText>*
-viewable?: <OpenText>*
-through?: <OpenText>*
 ```
 
 ```group

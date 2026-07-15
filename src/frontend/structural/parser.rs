@@ -1168,7 +1168,7 @@ pub(super) fn parse_requires_item_group(
     }
 }
 
-/// Dispatches nested `Enables:` groups to capability or connection parsers.
+/// Dispatches nested `Enables:` groups to capability, from, or relation parsers.
 pub(super) fn parse_enables_item_group(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1181,7 +1181,6 @@ pub(super) fn parse_enables_item_group(
         "relation" => parse_enables_relation_group(group, tracker)
             .map(Box::new)
             .map(EnablesItem::Relation),
-        "connection" => parse_connection(group, tracker).map(EnablesItem::Connection),
         other => {
             tracker.user_error_at_row(
                 Some(ORIGIN),
@@ -1615,7 +1614,7 @@ pub(in crate::frontend::structural::parser) fn parse_enables_relation_group(
         "relation",
         &group.sections,
         tracker,
-        &["relation", "to", "when?", "means?", "as?", "by?"],
+        &["relation", "to", "when?", "means?", "represents?", "by?"],
     )?;
 
     Some(EnablesRelationGroup {
@@ -1639,9 +1638,9 @@ pub(in crate::frontend::structural::parser) fn parse_enables_relation_group(
             parse_required_clause(section, "means", tracker)
                 .map(|argument| RelationshipMeansSection { argument })
         }),
-        as_: sections.get("as").copied().and_then(|section| {
-            parse_required_formulations(section, "as", tracker, parse_relation_kind)
-                .map(|arguments| RelationAsSection { arguments })
+        represents: sections.get("represents").copied().and_then(|section| {
+            parse_required_formulations(section, "represents", tracker, parse_relation_kind)
+                .map(|arguments| RelationRepresentsSection { arguments })
         }),
         by: parse_optional_by_relationship_section(&sections, tracker),
     })
@@ -1656,10 +1655,10 @@ fn parse_relation_when_item(input: &str) -> Result<RelationWhenItem, Formulation
 
 fn parse_relation_kind(input: &str) -> Result<RelationKind, FormulationParseError> {
     match input.trim() {
-        r#"\\viewable_as"# => Ok(RelationKind::ViewableAs),
-        r#"\\encoded_by"# => Ok(RelationKind::EncodedBy),
+        r#"\\coercion"# => Ok(RelationKind::Coercion),
+        r#"\\encoding"# => Ok(RelationKind::Encoding),
         _ => Err(FormulationParseError::Custom(
-            "`as:` entries must be `\\\\viewable_as` or `\\\\encoded_by`".to_owned(),
+            "`represents:` entries must be `\\\\coercion` or `\\\\encoding`".to_owned(),
         )),
     }
 }
@@ -1683,71 +1682,6 @@ fn parse_optional_by_relationship_section(
         parse_required_open_texts(section, "by", tracker).map(|arguments| BySection {
             arguments: arguments.into(),
         })
-    })
-}
-
-/// Parses a `connection:` nested group inside `Enables:`.
-///
-/// Connection groups capture prose and optional formulation constraints that
-/// describe how one documented concept connects to another.
-pub(in crate::frontend::structural::parser) fn parse_connection(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<ConnectionGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections(
-        "connection",
-        &group.sections,
-        tracker,
-        &[
-            "connection",
-            "to",
-            "using?",
-            "means",
-            "signifies?",
-            "viewable?",
-            "through?",
-        ],
-    )?;
-
-    Some(ConnectionGroup {
-        heading,
-        connection: ConnectionSection {
-            arguments: parse_optional_open_texts(sections.get("connection").copied(), tracker),
-        },
-        to: ToSection {
-            arguments: parse_optional_open_texts(sections.get("to").copied(), tracker),
-        },
-        using: sections.get("using").copied().and_then(|section| {
-            parse_required_formulations(
-                section,
-                "using",
-                tracker,
-                parse_ordinary_declaration_statement,
-            )
-            .map(|arguments| UsingSection { arguments })
-        }),
-        means: MeansSection {
-            arguments: parse_optional_open_texts(sections.get("means").copied(), tracker),
-        },
-        signifies: sections
-            .get("signifies")
-            .copied()
-            .map(|section| SignifiesSection {
-                arguments: parse_optional_open_texts(Some(section), tracker),
-            }),
-        viewable: sections
-            .get("viewable")
-            .copied()
-            .map(|section| ViewableSection {
-                arguments: parse_optional_open_texts(Some(section), tracker),
-            }),
-        through: sections
-            .get("through")
-            .copied()
-            .map(|section| ThroughSection {
-                arguments: parse_optional_open_texts(Some(section), tracker),
-            }),
     })
 }
 
@@ -3973,20 +3907,9 @@ Metadata:
 Describes: T
 Enables:
 . [conn.plus]
-  connection:
-  . "addition"
-  to:
-  . "binary operation"
-  using:
-  . X is \set
-  means:
-  . "adds elements"
-  signifies:
-  . "closure"
-  viewable:
-  . "as a table"
-  through:
-  . "worked examples"
+  relation:
+  to: y := \foo{X} is \bar
+  represents: \\coercion
 Justified:
 . [proof.by]
   by:
@@ -4168,7 +4091,7 @@ that:
             TopLevelItem::Describes(group) => {
                 assert!(matches!(
                     group.enables.as_ref().expect("expected enables").arguments[0],
-                    EnablesItem::Connection(_)
+                    EnablesItem::Relation(_)
                 ));
                 assert!(matches!(
                     group
@@ -4349,7 +4272,7 @@ Documented:
     }
 
     #[test]
-    fn parses_from_capability_from_as_and_view_enables_items() {
+    fn parses_from_capability_from_as_and_relation_enables_items() {
         let document = parse_ok(
             r#"
 [\set]
@@ -4363,8 +4286,8 @@ Enables:
   to: r := \as.rational{X} is \rational
   when: X is \set
   means: X \.embedded.to./ r
-  as:
-  . \\viewable_as
+  represents:
+  . \\coercion
 Documented:
 . called: "set"
 "#,
@@ -4395,9 +4318,9 @@ Enables:
   . a0 := a is! \set
   . b0 := b is \foo
   means: x \:isomorphic.to?:/ p
-  as:
-  . \\viewable_as
-  . \\encoded_by
+  represents:
+  . \\coercion
+  . \\encoding
   by: "\some.theorem"
 . relation:
   to: x is \group
@@ -4432,10 +4355,13 @@ Documented:
             relation.to.argument,
             RelationshipDeclaration::Declaration(_)
         ));
-        let as_ = relation.as_.as_ref().expect("expected as markers");
-        assert_eq!(as_.arguments.len(), 2);
-        assert!(as_.arguments.contains(&RelationKind::ViewableAs));
-        assert!(as_.arguments.contains(&RelationKind::EncodedBy));
+        let represents = relation
+            .represents
+            .as_ref()
+            .expect("expected represents markers");
+        assert_eq!(represents.arguments.len(), 2);
+        assert!(represents.arguments.contains(&RelationKind::Coercion));
+        assert!(represents.arguments.contains(&RelationKind::Encoding));
         assert!(relation.by.is_some());
         assert!(relation.means.is_some());
     }
@@ -4457,6 +4383,28 @@ Documented:
         assert!(diagnostics.iter().any(|event| {
             matches!(event, Event::Message(message) if
                 message.message.contains("Unexpected enables group `viewable`")
+            )
+        }));
+    }
+
+    #[test]
+    fn rejects_legacy_connection_enables_group() {
+        let (_document, diagnostics) = parse_with_diagnostics(
+            r#"
+[\integer]
+Describes: n
+Enables:
+. connection:
+  to: s := \as.set{n} is \set
+  represents: \\encoding
+Documented:
+. written: "\operatorname{integer}"
+"#,
+        );
+
+        assert!(diagnostics.iter().any(|event| {
+            matches!(event, Event::Message(message) if
+                message.message.contains("Unexpected enables group `connection`")
             )
         }));
     }

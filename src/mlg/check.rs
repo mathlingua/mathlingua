@@ -5267,7 +5267,7 @@ then:
       to: r is \rational
       when: n is \integer
       means: n \.embedded.to./ r
-      as: \\viewable_as
+      represents: \\coercion
     Documented:
     . written: "\operatorname{integer}"
 
@@ -5335,7 +5335,7 @@ then:
     . relation:
       to: r is \rational
       when: n is \integer
-      as: \\viewable_as
+      represents: \\coercion
     Documented:
     . written: "\operatorname{integer}"
 
@@ -5385,7 +5385,7 @@ then:
     Enables:
     . relation:
       to: n is \set
-      as: \\encoded_by
+      represents: \\encoding
     Documented:
     . written: "\operatorname{natural}"
 
@@ -5435,7 +5435,7 @@ then:
     Enables:
     . relation:
       to: n is \set
-      as: \\encoded_by
+      represents: \\encoding
     Documented:
     . written: "\operatorname{natural}"
 
@@ -5489,7 +5489,7 @@ then:
     . relation:
       to: r is \rational
       when: n is \integer
-      as: \\viewable_as
+      represents: \\coercion
     Documented:
     . written: "\operatorname{integer}"
 
@@ -5524,9 +5524,9 @@ then:
     }
 
     #[test]
-    fn check_reports_relation_as_with_unknown_marker() {
+    fn check_reports_relation_represents_with_unknown_marker() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("relation-as-marker.mlg");
+        let file = temp_dir.path().join("relation-represents-marker.mlg");
 
         write_mlg_fixture(
             &file,
@@ -5541,7 +5541,7 @@ then:
     . relation:
       to: r is \rational
       when: n is \integer
-      as: \\something.else
+      represents: \\something.else
     Documented:
     . written: "\operatorname{integer}"
     "#,
@@ -5551,7 +5551,7 @@ then:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("relation-as-marker.mlg")],
+            &[PathBuf::from("relation-represents-marker.mlg")],
             &mut event_log,
         );
 
@@ -5561,7 +5561,7 @@ then:
             matches!(event, Event::Message(message) if
                 message
                     .message
-                    .contains("`as:` entries must be `\\\\viewable_as` or `\\\\encoded_by`")
+                    .contains("`represents:` entries must be `\\\\coercion` or `\\\\encoding`")
             )
         }));
         assert!(event_log.has_errors());
@@ -5587,7 +5587,7 @@ then:
     . relation:
       to: r is \rational
       when: n is \integer
-      as: \\viewable_as
+      represents: \\coercion
     Documented:
     . written: "\operatorname{integer}"
 
@@ -6643,7 +6643,7 @@ Enables:
   when:
   . a0 := a is! \set
   . b0 := b is! \set
-  as: \\encoded_by
+  represents: \\encoding
   by: "\some.theorem"
 Documented:
 . written: "(a?, b?)"

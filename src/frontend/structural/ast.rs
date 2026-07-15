@@ -232,7 +232,7 @@ argument_section!(CastAsSection, ExpressionBinding);
 zero_or_more_arguments_section!(EnablesRelationSection, OpenText);
 argument_section!(RelationToSection, RelationshipDeclaration);
 arguments_section!(RelationWhenSection, RelationWhenItem);
-arguments_section!(RelationAsSection, RelationKind);
+arguments_section!(RelationRepresentsSection, RelationKind);
 argument_section!(RelationshipMeansSection, Clause);
 // Top-level `Relation:` item sections (distinct from the `Enables: relation:` group above).
 zero_or_more_arguments_section!(RelationSection, OpenText);
@@ -247,12 +247,6 @@ argument_section!(TopicWithinSection, OpenText);
 arguments_section!(TopicRelatedToSection, OpenText);
 argument_section!(TopicRelatedMeansSection, OpenText);
 arguments_section!(TopicRelatedSection, TopicRelatedItem);
-zero_or_more_arguments_section!(ConnectionSection, OpenText);
-zero_or_more_arguments_section!(ToSection, OpenText);
-zero_or_more_arguments_section!(MeansSection, OpenText);
-zero_or_more_arguments_section!(SignifiesSection, OpenText);
-zero_or_more_arguments_section!(ViewableSection, OpenText);
-zero_or_more_arguments_section!(ThroughSection, OpenText);
 arguments_section!(CalledSection, CalledText);
 arguments_section!(AdjectiveSection, AdjectiveText);
 argument_section!(WritingSection, WritingAlias);
@@ -395,7 +389,6 @@ pub enum EnablesItem {
     FromCapability(Box<FromCapabilityGroup>),
     FromAs(Box<FromAsGroup>),
     Relation(Box<EnablesRelationGroup>),
-    Connection(ConnectionGroup),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -841,12 +834,14 @@ pub enum RelationWhenItem {
 }
 
 /// The kind of type-system cast a nested `Enables: relation:` registers via its
-/// `as:` field: `\\viewable_as` (a view cast) or `\\encoded_by` (an encoding cast,
-/// used only by `as!`). The variants mirror those surface keywords.
+/// `represents:` field: `\\coercion` (a value of the described type may be used
+/// wherever the related type is expected, and `as` casts to it) or `\\encoding`
+/// (an abstraction boundary — no automatic coercion; only an explicit `as!` cast
+/// drops through the encoding). The variants mirror those surface keywords.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RelationKind {
-    ViewableAs,
-    EncodedBy,
+    Coercion,
+    Encoding,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -856,20 +851,8 @@ pub struct EnablesRelationGroup {
     pub to: RelationToSection,
     pub when: Option<RelationWhenSection>,
     pub means: Option<RelationshipMeansSection>,
-    pub as_: Option<RelationAsSection>,
+    pub represents: Option<RelationRepresentsSection>,
     pub by: Option<BySection>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ConnectionGroup {
-    pub heading: Option<LabelHeader>,
-    pub connection: ConnectionSection,
-    pub to: ToSection,
-    pub using: Option<UsingSection>,
-    pub means: MeansSection,
-    pub signifies: Option<SignifiesSection>,
-    pub viewable: Option<ViewableSection>,
-    pub through: Option<ThroughSection>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

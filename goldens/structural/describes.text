@@ -46,20 +46,9 @@ Metadata:
 Describes: T
 Enables:
 . [conn.plus]
-  connection:
-  . "addition"
-  to:
-  . "binary operation"
-  using:
-  . X is \set
-  means:
-  . "adds elements"
-  signifies:
-  . "closure"
-  viewable:
-  . "as a table"
-  through:
-  . "worked examples"
+  relation:
+  to: y := \foo{X} is \bar
+  represents: \\coercion
 Justified:
 . [proof.by]
   by:

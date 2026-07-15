@@ -497,9 +497,8 @@ Quantifier declarations are local to the clause group that introduces them.
 - `from:` plus `as:`, which defines how facts from a cast source are viewed as
   facts about the described form
 - `relation:` groups, which record relationships to another declaration and
-  may opt into type-system cast behavior with `as: \\viewable_as` or `as: \\encoded_by`
-- `connection:` groups, which contain prose fields such as `to:`, `means:`,
-  `signifies:`, `viewable:`, and `through:`
+  may opt into type-system cast behavior with `represents: \\coercion` or
+  `represents: \\encoding`
 
 For type checking, capabilities from `Requires:` and `Enables:` are combined.
 The separate sections are for communication: `Requires:` describes what the
@@ -829,10 +828,10 @@ Expressions may use `value as \type` and `value as! \type`.
 `value as \type` succeeds when the value already has that type, has a parent
 type that extends to it, or the value's type (or a parent type) has an
 `Enables:` relationship of the form `relation: to: ... is \type` with
-`as: \\viewable_as`.
+`represents: \\coercion`.
 
 `value as! \type` performs the same checks and additionally allows
-`relation:` groups marked with `as: \\encoded_by`. Use `as!` when the
+`relation:` groups marked with `represents: \\encoding`. Use `as!` when the
 expression is being viewed at a lower abstraction level.
 
 `Enables:` may contain `relation:` groups:
@@ -845,7 +844,7 @@ Enables:
   to: r := \as.rational{n} is \rational
   when: n is \integer
   means: n \.embedded.to./ r
-  as: \\viewable_as
+  represents: \\coercion
 ```
 
 The `to:` declaration states the target type using `is`. The `:= ...`
@@ -855,14 +854,14 @@ and hard-cast declarations such as `a0 := a is! \set`.
 The optional `means:` clause records a statement relating the original value
 and the viewed value.
 
-Relations marked `\\viewable_as` are used when checking whether an already-resolved
+Relations marked `\\coercion` are used when checking whether an already-resolved
 command's arguments satisfy its requirements. For example, if `\integer` has a
-relation to `\rational` marked `\\viewable_as`, then a command requiring
+relation to `\rational` marked `\\coercion`, then a command requiring
 `x is \rational` may accept an integer argument. These relationships are not
 used for operator resolution: `+` on integers will not resolve to `+` on
 rationals merely because integers can be viewed as rationals.
 
-Relations marked `\\encoded_by` are used only by `as!` casts. They describe a
+Relations marked `\\encoding` are used only by `as!` casts. They describe a
 lower-level representation that an object may be pushed down to, such as a
 natural number being treated as an underlying set.
 

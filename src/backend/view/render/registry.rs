@@ -450,7 +450,7 @@ fn collect_enables_provided_call_render_rules(
                 owner_subject,
                 registry,
             ),
-            EnablesItem::FromAs(_) | EnablesItem::Relation(_) | EnablesItem::Connection(_) => {}
+            EnablesItem::FromAs(_) | EnablesItem::Relation(_) => {}
         }
     }
 }

@@ -7,6 +7,33 @@ the feature is valid.
 
 ## Structural Language
 
+### `Enables:` `relation:` uses `represents:`; `connection:` removed
+
+The directional `relation:` group nested inside `Enables:` — which relates the
+described concept *to* another and registers a cast rule for the type checker —
+had its cast section renamed and its keywords changed:
+
+- The section `as?:` is renamed to `represents?:`.
+- The keyword `\\viewable_as` is renamed to `\\coercion` and `\\encoded_by` to
+  `\\encoding`. Any other value is an error pointing at the two allowed keywords.
+
+The semantics are unchanged by the rename:
+
+- `represents: \\coercion` records that a value of the described type **may be used
+  where the related type is expected** — an ordinary cast. If `\integer` has a
+  `relation:` `to:` `\rational` marked `\\coercion`, then `x is \integer` lets you
+  write `x as \rational`, and a `\baz{a}` requiring `a is \rational` accepts a
+  `\integer` argument (the integer coerces to a rational).
+- `represents: \\encoding` records an **abstraction boundary**: the described type
+  does *not* coerce to the related type, and an ordinary `as` cast will not cross
+  it. Only the hard cast `x as! \bar` follows an encoding. This expresses e.g. that
+  an `\integer` is *encoded as* a `\set` without an integer *being* a set: `x as
+  \set` will not work, but `x as! \set` will.
+
+The separate `connection:` group under `Enables:` is **removed**. It is superseded
+by the `relation:` `to:` group, which covers the same directional relationships and
+additionally drives cast checking.
+
 ### Theorem-Like Result Names Move to `Documented:` `called:`
 
 The head sections of the theorem-like items — `Axiom:`, `Theorem:`, `Corollary:`,
@@ -91,9 +118,9 @@ Justified?: ...  Documented?: ...  Aliases?: ...  References?: ...  Metadata?: .
 - It is heading-less (no `[...]`) and takes the same trailing sections as the
   theorem-like items. `mlg check` auto-inserts an `Id:` as for any top-level item.
 - Whereas the directional `relation:` group inside `Enables:` relates the
-  described concept *to* another (and with `as: \\viewable_as`/`\\encoded_by` registers
-  a cast rule the type checker uses), the top-level `Relation:` is standalone and
-  bidirectional — e.g. for stating that two concepts are equivalent.
+  described concept *to* another (and with `represents: \\coercion`/`\\encoding`
+  registers a cast rule the type checker uses), the top-level `Relation:` is
+  standalone and bidirectional — e.g. for stating that two concepts are equivalent.
 - It is checked like a theorem: any `between:`/`and:` *declarations* introduce
   their subjects and a *statement* `means:` is validated for declared symbols and
   valid command references. Quoted-text references and a prose `means:` are
@@ -567,11 +594,11 @@ Types can now separate definitional requirements from additional capabilities.
   matching the binding's left side against the call and substituting the right
   side into facts from the cast literal.
 - `Enables:` accepts `relation:` groups with required `to:` declarations and
-  optional `when:`, `means:`, `as:`, and `by:` sections.
+  optional `when:`, `means:`, `represents:`, and `by:` sections.
 - The `:= ...` construction in a `relation:` `to:` declaration is optional.
-- `relation:` entries marked with `as: \\viewable_as` provide ordinary cast
+- `relation:` entries marked with `represents: \\coercion` provide ordinary cast
   relationships.
-- `relation:` entries marked with `as: \\encoded_by` provide hard-cast
+- `relation:` entries marked with `represents: \\encoding` provide hard-cast
   abstraction relationships for `as!`.
 - View relationships may satisfy requirements after a command or operator has
   already resolved.

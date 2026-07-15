@@ -553,7 +553,7 @@ fn collect_viewable_rules(
         let EnablesItem::Relation(group) = item else {
             continue;
         };
-        if !relation_group_has_kind(group, RelationKind::ViewableAs) {
+        if !relation_group_has_kind(group, RelationKind::Coercion) {
             continue;
         };
         let Some((target_subject, target @ TypeFact::Is { .. })) =
@@ -587,7 +587,7 @@ fn collect_abstraction_rules(
         let EnablesItem::Relation(group) = item else {
             continue;
         };
-        if !relation_group_has_kind(group, RelationKind::EncodedBy) {
+        if !relation_group_has_kind(group, RelationKind::Encoding) {
             continue;
         };
         let Some((_, target @ TypeFact::Is { .. })) =
@@ -606,7 +606,7 @@ fn collect_abstraction_rules(
 
 fn relation_group_has_kind(group: &EnablesRelationGroup, kind: RelationKind) -> bool {
     group
-        .as_
+        .represents
         .as_ref()
         .is_some_and(|section| section.arguments.iter().any(|argument| *argument == kind))
 }
@@ -770,7 +770,7 @@ fn capability_aliases(item: &TopLevelItem) -> Vec<CapabilityAliasRef<'_>> {
                 source_subject: Some(primary_subject_key(&group.from.argument.subject)),
                 source_requires_literal: true,
             }),
-            EnablesItem::FromAs(_) | EnablesItem::Relation(_) | EnablesItem::Connection(_) => None,
+            EnablesItem::FromAs(_) | EnablesItem::Relation(_) => None,
         }));
     }
     result
@@ -6862,7 +6862,6 @@ fn validate_optional_enables(
                     check_clause(&means.argument, &child, path, locator, registry, event_log);
                 }
             }
-            EnablesItem::Connection(_) => {}
         }
     }
 }

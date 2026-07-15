@@ -9,8 +9,9 @@ then:
 
 [\lemma]
 Lemma:
-. "A helper fact"
 given:
 . X is \set
 then:
 . x = x
+Documented:
+. called: "A helper fact"

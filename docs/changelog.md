@@ -7,6 +7,22 @@ the feature is valid.
 
 ## Structural Language
 
+### Theorem-Like Result Names Move to `Documented:` `called:`
+
+The head sections of the theorem-like items — `Axiom:`, `Theorem:`, `Corollary:`,
+`Lemma:`, and `Conjecture:` — no longer take an argument. Previously they accepted
+an optional quoted name of the result; a name given there is now an error that
+points at `Documented:` `called:`.
+
+- A result's name is instead written in `Documented:` `called:`, exactly as
+  definition items name themselves, so naming is uniform across the language.
+- The name renders as the card's **title**. A command-headed theorem-like resolves
+  its title through the command-signature registry (as before); a **heading-less**
+  theorem-like now takes its title from `Documented:` `called:` too — previously a
+  heading-less item's name did not render as a title.
+- `Corollary:` still takes its `of:` section (what it follows from); only its head
+  name moved.
+
 ### Top-Level `Topic:` Item
 
 A new top-level item names a documentation topic and organizes topics into a

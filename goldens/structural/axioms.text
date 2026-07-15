@@ -1,6 +1,5 @@
 [\axiom]
 Axiom:
-. "Every element equals itself"
 given:
 . X is \set
 where:
@@ -25,6 +24,7 @@ Justified:
   . "Definition"
   comment: "classical"
 Documented:
+. called: "Every element equals itself"
 . [axiom.written]
   written:
   . "axiom"

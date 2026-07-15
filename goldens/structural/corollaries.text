@@ -1,6 +1,5 @@
 [\corollary]
 Corollary:
-. "Immediate consequence"
 of:
 . "Previous theorem"
 then:
@@ -8,3 +7,5 @@ then:
   oneOf:
   . x = x
   . y = y
+Documented:
+. called: "Immediate consequence"

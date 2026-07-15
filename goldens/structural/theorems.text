@@ -7,8 +7,9 @@ then:
 
 [\theorem]
 Theorem:
-. "Binary operation preserves equality"
 given:
 . X is \set
 then:
 . x = x
+Documented:
+. called: "Binary operation preserves equality"

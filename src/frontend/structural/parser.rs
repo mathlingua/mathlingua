@@ -3360,7 +3360,6 @@ pub(in crate::frontend::structural::parser) fn parse_axiom(
     parse_argument_theorem_like(group, tracker, "Axiom").map(
         |(
             heading,
-            text,
             given,
             where_,
             then,
@@ -3373,7 +3372,6 @@ pub(in crate::frontend::structural::parser) fn parse_axiom(
         )| {
             AxiomGroup {
                 heading,
-                axiom: AxiomSection { arguments: text },
                 given,
                 where_,
                 then,
@@ -3396,7 +3394,6 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
     parse_argument_theorem_like(group, tracker, "Theorem").map(
         |(
             heading,
-            text,
             given,
             where_,
             then,
@@ -3409,7 +3406,6 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
         )| {
             TheoremGroup {
                 heading,
-                theorem: TheoremSection { arguments: text },
                 given,
                 where_,
                 then,
@@ -3432,7 +3428,6 @@ pub(in crate::frontend::structural::parser) fn parse_lemma(
     parse_argument_theorem_like(group, tracker, "Lemma").map(
         |(
             heading,
-            text,
             given,
             where_,
             then,
@@ -3445,7 +3440,6 @@ pub(in crate::frontend::structural::parser) fn parse_lemma(
         )| {
             LemmaGroup {
                 heading,
-                lemma: LemmaSection { arguments: text },
                 given,
                 where_,
                 then,
@@ -3468,7 +3462,6 @@ pub(in crate::frontend::structural::parser) fn parse_conjecture(
     parse_argument_theorem_like(group, tracker, "Conjecture").map(
         |(
             heading,
-            text,
             given,
             where_,
             then,
@@ -3481,7 +3474,6 @@ pub(in crate::frontend::structural::parser) fn parse_conjecture(
         )| {
             ConjectureGroup {
                 heading,
-                conjecture: ConjectureSection { arguments: text },
                 given,
                 where_,
                 then,
@@ -3494,6 +3486,31 @@ pub(in crate::frontend::structural::parser) fn parse_conjecture(
             }
         },
     )
+}
+
+/// Rejects a name/argument on a theorem-like head section.
+///
+/// `Axiom:`/`Theorem:`/`Lemma:`/`Conjecture:`/`Corollary:` no longer accept a name;
+/// a result's name belongs in `Documented:` `called:`, matching the definition items.
+fn ensure_no_named_result_arg(section: Option<&ProtoSection>, name: &str, tracker: &mut EventLog) {
+    let Some(section) = section else {
+        return;
+    };
+    if let Some(entry) = section_entries(section).first() {
+        let row = match entry {
+            SectionEntry::Inline { row, .. }
+            | SectionEntry::Formulation { row, .. }
+            | SectionEntry::Text { row, .. }
+            | SectionEntry::Group { row, .. } => *row,
+        };
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            row,
+            format!(
+                "`{name}:` does not take a name; put the result's name in `Documented:` `called:`"
+            ),
+        );
+    }
 }
 
 #[allow(clippy::type_complexity)]
@@ -3510,7 +3527,6 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
     name: &str,
 ) -> Option<(
     Option<crate::frontend::formulation::ast::CommandHeader>,
-    ZeroOrMore<OpenText>,
     Option<GivenSection>,
     Option<WhereSection>,
     ThenSection,
@@ -3541,10 +3557,10 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
             "Id?",
         ],
     )?;
+    ensure_no_named_result_arg(sections.get(section_name).copied(), name, tracker);
 
     Some((
         heading,
-        parse_optional_open_texts(sections.get(section_name).copied(), tracker),
         sections.get("given").copied().and_then(|section| {
             parse_required_formulations(
                 section,
@@ -3616,12 +3632,10 @@ pub(in crate::frontend::structural::parser) fn parse_corollary(
             "Id?",
         ],
     )?;
+    ensure_no_named_result_arg(sections.get("Corollary").copied(), "Corollary", tracker);
 
     Some(CorollaryGroup {
         heading,
-        corollary: CorollarySection {
-            arguments: parse_optional_open_texts(sections.get("Corollary").copied(), tracker),
-        },
         of: OfSection {
             arguments: parse_optional_open_texts(sections.get("of").copied(), tracker),
         },
@@ -5311,7 +5325,7 @@ that:
     #[test]
     fn parses_refined_bindings_in_quantifier_clause_groups() {
         let text = r#"
-Axiom: "Axiom of Infinity"
+Axiom:
 then:
 . exists: A is \(inductive)::set
 "#;
@@ -5326,6 +5340,33 @@ then:
             }
             other => panic!("expected axiom item, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn theorem_like_head_rejects_a_name() {
+        for head in ["Axiom", "Theorem", "Lemma", "Conjecture"] {
+            let (_, diagnostics) =
+                parse_with_diagnostics(&format!("{head}: \"Some Result\"\nthen: x = x\n"));
+            assert!(
+                diagnostics
+                    .iter()
+                    .any(|event| event.as_message().is_some_and(|message| {
+                        message.message.contains("does not take a name")
+                            && message.message.contains(head)
+                    })),
+                "expected `{head}:` to reject a name: {diagnostics:#?}"
+            );
+        }
+
+        let (_, diagnostics) =
+            parse_with_diagnostics("Corollary: \"Some Result\"\nof: \"A theorem\"\nthen: x = x\n");
+        assert!(
+            diagnostics.iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("does not take a name")
+                    && message.message.contains("Corollary"))),
+            "expected `Corollary:` to reject a name: {diagnostics:#?}"
+        );
     }
 
     #[test]
@@ -5575,7 +5616,6 @@ Writing:
             r#"
 [\axiom]
 Axiom:
-. "Every element equals itself"
 given:
 . X is \set
 where:
@@ -5620,7 +5660,6 @@ then:
 
 [\corollary]
 Corollary:
-. "Immediate consequence"
 of:
 . "Previous theorem"
 then:
@@ -5640,7 +5679,6 @@ then:
 
 [\conjecture]
 Conjecture:
-. "Open question"
 then:
 . [logic.exists]
   exists: x is \element
@@ -5654,7 +5692,6 @@ then:
         match &document.items[0] {
             TopLevelItem::Axiom(group) => {
                 assert!(group.heading.is_some());
-                assert_eq!(group.axiom.arguments.len(), 1);
                 assert!(group.given.is_some());
                 assert!(matches!(
                     group.where_.as_ref().expect("expected where").arguments[0],

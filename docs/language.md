@@ -422,6 +422,10 @@ that:
 shape. `then:` is required. `given:`, `where:`, `iff:`, and support sections are
 optional. `Corollary` also requires an `of:` section.
 
+The head section (`Axiom:`/`Theorem:`/etc.) takes no argument. A result's name is
+given in `Documented:` `called:`, exactly as for the definition items, and renders
+as the card's title (whether or not the item has a command heading).
+
 ```text
 Theorem:
 given:

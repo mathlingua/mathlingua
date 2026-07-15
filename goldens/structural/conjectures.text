@@ -1,8 +1,9 @@
 [\conjecture]
 Conjecture:
-. "Open question"
 then:
 . [logic.exists]
   exists: x is \element
   suchThat:
   . x = x
+Documented:
+. called: "Open question"

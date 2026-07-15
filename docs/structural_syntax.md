@@ -272,11 +272,11 @@ An empty document is supported by the current implementation because `Document.i
 | `Defines` | `DefinesGroup` | command | `Defines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Refines` | `RefinesGroup` | command | `Refines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: DeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `States` | `StatesGroup` | command | `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Axiom` | `AxiomGroup` | command? | `Axiom: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Theorem` | `TheoremGroup` | command? | `Theorem: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Corollary` | `CorollaryGroup` | command? | `Corollary: OpenText*`, `of: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Lemma` | `LemmaGroup` | command? | `Lemma: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Conjecture` | `ConjectureGroup` | command? | `Conjecture: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Axiom` | `AxiomGroup` | command? | `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Theorem` | `TheoremGroup` | command? | `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Corollary` | `CorollaryGroup` | command? | `Corollary:`, `of: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Lemma` | `LemmaGroup` | command? | `Lemma:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Conjecture` | `ConjectureGroup` | command? | `Conjecture:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Person` | `PersonGroup` | author | `Person: OpenText+`, `biography?: OpenText` |
 | `Resource` | `ResourceGroup` | resource | `Resource: ResourceItem+` |
 | `Specify` | `SpecifyGroup` | none | `Specify: SpecifyItem+` |
@@ -750,7 +750,7 @@ Metadata?: <MetadataItemUnion>+
 
 ```group
 [CommandHeader]?
-Axiom: <OpenText>*
+Axiom:
 given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
@@ -764,7 +764,7 @@ Metadata?: <MetadataItemUnion>+
 
 ```group
 [CommandHeader]?
-Theorem: <OpenText>*
+Theorem:
 given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
@@ -778,7 +778,7 @@ Metadata?: <MetadataItemUnion>+
 
 ```group
 [CommandHeader]?
-Corollary: <OpenText>*
+Corollary:
 of: <OpenText>*
 given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
@@ -793,7 +793,7 @@ Metadata?: <MetadataItemUnion>+
 
 ```group
 [CommandHeader]?
-Lemma: <OpenText>*
+Lemma:
 given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
@@ -807,7 +807,7 @@ Metadata?: <MetadataItemUnion>+
 
 ```group
 [CommandHeader]?
-Conjecture: <OpenText>*
+Conjecture:
 given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
@@ -818,6 +818,10 @@ Aliases?: <AliasItemUnion>+
 References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
 ```
+
+The theorem-like head sections (`Axiom:`/`Theorem:`/`Corollary:`/`Lemma:`/`Conjecture:`)
+take no argument. A result's name is given in `Documented:` `called:`, exactly as
+for the definition items, and renders as the card's title.
 
 ```group
 [AuthorHeader]

@@ -216,12 +216,9 @@ zero_or_more_arguments_section!(StatesSection, OpenText);
 arguments_section!(ThatSection, Clause);
 zero_or_more_arguments_section!(EquivalentSection, OpenText);
 arguments_section!(EquivalentToSection, Expression);
-zero_or_more_arguments_section!(AxiomSection, OpenText);
-zero_or_more_arguments_section!(TheoremSection, OpenText);
-zero_or_more_arguments_section!(CorollarySection, OpenText);
+// The `Axiom:`/`Theorem:`/`Corollary:`/`Lemma:`/`Conjecture:` head sections take
+// no argument; a result's name lives in `Documented:` `called:` (as for definitions).
 zero_or_more_arguments_section!(OfSection, OpenText);
-zero_or_more_arguments_section!(LemmaSection, OpenText);
-zero_or_more_arguments_section!(ConjectureSection, OpenText);
 arguments_section!(GivenSection, DeclarationStatement);
 arguments_section!(WhereSection, Clause);
 arguments_section!(ThenSection, Clause);
@@ -587,7 +584,6 @@ pub struct EquivalentGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AxiomGroup {
     pub heading: Option<CommandHeader>,
-    pub axiom: AxiomSection,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
     pub then: ThenSection,
@@ -602,7 +598,6 @@ pub struct AxiomGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TheoremGroup {
     pub heading: Option<CommandHeader>,
-    pub theorem: TheoremSection,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
     pub then: ThenSection,
@@ -617,7 +612,6 @@ pub struct TheoremGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CorollaryGroup {
     pub heading: Option<CommandHeader>,
-    pub corollary: CorollarySection,
     pub of: OfSection,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
@@ -633,7 +627,6 @@ pub struct CorollaryGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LemmaGroup {
     pub heading: Option<CommandHeader>,
-    pub lemma: LemmaSection,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
     pub then: ThenSection,
@@ -648,7 +641,6 @@ pub struct LemmaGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConjectureGroup {
     pub heading: Option<CommandHeader>,
-    pub conjecture: ConjectureSection,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
     pub then: ThenSection,

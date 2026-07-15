@@ -190,7 +190,8 @@ fn group_view(
                 primary_inline_argument,
                 registry,
             )
-        });
+        })
+        .or_else(|| theorem_like_heading_latex(&kind, group.heading.as_deref(), &group.sections));
     let body_text = person_body_text(&kind, &group.sections);
 
     GroupView {
@@ -217,6 +218,41 @@ fn person_heading_latex(kind: &str, sections: &[ProtoSection]) -> Option<String>
 
     let name = first_section_text(sections.iter().find(|section| section.label == "Person")?)?;
     render_documented_text_latex("called", &name)
+}
+
+/// Renders a heading-less theorem-like card's title from its `Documented:` `called:`.
+///
+/// Command-headed theorem-like items resolve their title through the command-signature
+/// registry (like definitions); a heading-less `Axiom:`/`Theorem:`/`Corollary:`/`Lemma:`/
+/// `Conjecture:` instead takes its name from `Documented:` `called:`.
+fn theorem_like_heading_latex(
+    kind: &str,
+    heading: Option<&str>,
+    sections: &[ProtoSection],
+) -> Option<String> {
+    const THEOREM_LIKE: [&str; 5] = ["Axiom", "Theorem", "Corollary", "Lemma", "Conjecture"];
+    if !THEOREM_LIKE.contains(&kind) || heading.is_some() {
+        return None;
+    }
+
+    render_documented_text_latex("called", &documented_called_text(sections)?)
+}
+
+/// Extracts the `Documented:` `called:` text from a group's proto sections.
+fn documented_called_text(sections: &[ProtoSection]) -> Option<String> {
+    let documented = sections
+        .iter()
+        .find(|section| section.label == "Documented")?;
+    documented.arguments.iter().find_map(|argument| {
+        let ProtoArgument::Group(group) = argument else {
+            return None;
+        };
+        let called = group
+            .sections
+            .iter()
+            .find(|section| section.label == "called")?;
+        first_section_text(called)
+    })
 }
 
 /// Renders a top-level `Topic:` heading as its human title: the explicit
@@ -859,6 +895,51 @@ then: X = X
             view.files[0].items[2].heading_latex,
             Some(r#"\textrm{Axiom of Unordered Pair}"#.to_string())
         );
+    }
+
+    #[test]
+    fn renders_heading_less_theorem_like_called_as_title() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("thm.mlg");
+        let source = r#"Theorem:
+given: a is \\expression
+then: a = a
+Documented:
+. called: "Commutativity"
+Id: "11111111-1111-4111-8111-111111111111"
+
+
+Theorem:
+then: X = X
+Id: "22222222-2222-4222-8222-222222222222"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+            .expect("expected view");
+
+        // A heading-less theorem-like takes its title from Documented:called:.
+        assert_eq!(
+            view.files[0].items[0].heading_latex,
+            Some(r#"\textrm{Commutativity}"#.to_string())
+        );
+        // With no called:, a heading-less theorem-like has no title.
+        assert_eq!(view.files[0].items[1].heading_latex, None);
     }
 
     #[test]

@@ -75,7 +75,7 @@ Justified?: ...  Documented?: ...  Aliases?: ...  References?: ...  Metadata?: .
 - It is heading-less (no `[...]`) and takes the same trailing sections as the
   theorem-like items. `mlg check` auto-inserts an `Id:` as for any top-level item.
 - Whereas the directional `relation:` group inside `Enables:` relates the
-  described concept *to* another (and with `as: \\view`/`\\abstraction` registers
+  described concept *to* another (and with `as: \\viewable_as`/`\\encoded_by` registers
   a cast rule the type checker uses), the top-level `Relation:` is standalone and
   bidirectional — e.g. for stating that two concepts are equivalent.
 - It is checked like a theorem: any `between:`/`and:` *declarations* introduce
@@ -553,9 +553,9 @@ Types can now separate definitional requirements from additional capabilities.
 - `Enables:` accepts `relation:` groups with required `to:` declarations and
   optional `when:`, `means:`, `as:`, and `by:` sections.
 - The `:= ...` construction in a `relation:` `to:` declaration is optional.
-- `relation:` entries marked with `as: \\view` provide ordinary cast
+- `relation:` entries marked with `as: \\viewable_as` provide ordinary cast
   relationships.
-- `relation:` entries marked with `as: \\abstraction` provide hard-cast
+- `relation:` entries marked with `as: \\encoded_by` provide hard-cast
   abstraction relationships for `as!`.
 - View relationships may satisfy requirements after a command or operator has
   already resolved.

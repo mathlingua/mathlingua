@@ -332,7 +332,7 @@ Used inside `Enables:`.
 
 `from:` groups must contain exactly one of `capability:` or `as:`.
 `RelationWhenItem` is either a declaration statement or a hard-cast statement.
-`RelationKind` is one of `\\view` or `\\abstraction`.
+`RelationKind` is one of `\\viewable_as` or `\\encoded_by`.
 
 ### Documented items
 
@@ -858,7 +858,7 @@ may relate concepts, topics, and definitions in any combination. Its `RelationMe
 is likewise either an unquoted clause (a statement of what the relationship means)
 or a quoted-text prose description. Contrast the directional `relation:` group
 nested inside `Enables:` ([`EnablesRelationGroup`], which relates the described
-concept *to* another and, with `as: \\view`/`\\abstraction`, registers a cast
+concept *to* another and, with `as: \\viewable_as`/`\\encoded_by`, registers a cast
 rule): the top-level item is heading-less, standalone, and registers no cast — it
 is checked like a theorem (any declaration subjects and a statement `means:` are
 validated for declared symbols and valid command references; quoted-text

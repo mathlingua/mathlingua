@@ -553,7 +553,7 @@ fn collect_viewable_rules(
         let EnablesItem::Relation(group) = item else {
             continue;
         };
-        if !relation_group_has_kind(group, RelationKind::View) {
+        if !relation_group_has_kind(group, RelationKind::ViewableAs) {
             continue;
         };
         let Some((target_subject, target @ TypeFact::Is { .. })) =
@@ -587,7 +587,7 @@ fn collect_abstraction_rules(
         let EnablesItem::Relation(group) = item else {
             continue;
         };
-        if !relation_group_has_kind(group, RelationKind::Abstraction) {
+        if !relation_group_has_kind(group, RelationKind::EncodedBy) {
             continue;
         };
         let Some((_, target @ TypeFact::Is { .. })) =

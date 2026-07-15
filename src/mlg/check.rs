@@ -5267,7 +5267,7 @@ then:
       to: r is \rational
       when: n is \integer
       means: n \.embedded.to./ r
-      as: \\view
+      as: \\viewable_as
     Documented:
     . written: "\operatorname{integer}"
 
@@ -5335,7 +5335,7 @@ then:
     . relation:
       to: r is \rational
       when: n is \integer
-      as: \\view
+      as: \\viewable_as
     Documented:
     . written: "\operatorname{integer}"
 
@@ -5385,7 +5385,7 @@ then:
     Enables:
     . relation:
       to: n is \set
-      as: \\abstraction
+      as: \\encoded_by
     Documented:
     . written: "\operatorname{natural}"
 
@@ -5435,7 +5435,7 @@ then:
     Enables:
     . relation:
       to: n is \set
-      as: \\abstraction
+      as: \\encoded_by
     Documented:
     . written: "\operatorname{natural}"
 
@@ -5489,7 +5489,7 @@ then:
     . relation:
       to: r is \rational
       when: n is \integer
-      as: \\view
+      as: \\viewable_as
     Documented:
     . written: "\operatorname{integer}"
 
@@ -5561,7 +5561,7 @@ then:
             matches!(event, Event::Message(message) if
                 message
                     .message
-                    .contains("`as:` entries must be `\\\\view` or `\\\\abstraction`")
+                    .contains("`as:` entries must be `\\\\viewable_as` or `\\\\encoded_by`")
             )
         }));
         assert!(event_log.has_errors());
@@ -5587,7 +5587,7 @@ then:
     . relation:
       to: r is \rational
       when: n is \integer
-      as: \\view
+      as: \\viewable_as
     Documented:
     . written: "\operatorname{integer}"
 
@@ -6643,7 +6643,7 @@ Enables:
   when:
   . a0 := a is! \set
   . b0 := b is! \set
-  as: \\abstraction
+  as: \\encoded_by
   by: "\some.theorem"
 Documented:
 . written: "(a?, b?)"

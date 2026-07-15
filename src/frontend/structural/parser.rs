@@ -1656,10 +1656,10 @@ fn parse_relation_when_item(input: &str) -> Result<RelationWhenItem, Formulation
 
 fn parse_relation_kind(input: &str) -> Result<RelationKind, FormulationParseError> {
     match input.trim() {
-        r#"\\view"# => Ok(RelationKind::View),
-        r#"\\abstraction"# => Ok(RelationKind::Abstraction),
+        r#"\\viewable_as"# => Ok(RelationKind::ViewableAs),
+        r#"\\encoded_by"# => Ok(RelationKind::EncodedBy),
         _ => Err(FormulationParseError::Custom(
-            "`as:` entries must be `\\\\view` or `\\\\abstraction`".to_owned(),
+            "`as:` entries must be `\\\\viewable_as` or `\\\\encoded_by`".to_owned(),
         )),
     }
 }
@@ -4350,7 +4350,7 @@ Enables:
   when: X is \set
   means: X \.embedded.to./ r
   as:
-  . \\view
+  . \\viewable_as
 Documented:
 . called: "set"
 "#,
@@ -4382,8 +4382,8 @@ Enables:
   . b0 := b is \foo
   means: x \:isomorphic.to?:/ p
   as:
-  . \\view
-  . \\abstraction
+  . \\viewable_as
+  . \\encoded_by
   by: "\some.theorem"
 . relation:
   to: x is \group
@@ -4420,8 +4420,8 @@ Documented:
         ));
         let as_ = relation.as_.as_ref().expect("expected as markers");
         assert_eq!(as_.arguments.len(), 2);
-        assert!(as_.arguments.contains(&RelationKind::View));
-        assert!(as_.arguments.contains(&RelationKind::Abstraction));
+        assert!(as_.arguments.contains(&RelationKind::ViewableAs));
+        assert!(as_.arguments.contains(&RelationKind::EncodedBy));
         assert!(relation.by.is_some());
         assert!(relation.means.is_some());
     }

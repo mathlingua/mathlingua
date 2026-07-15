@@ -848,10 +848,13 @@ pub enum RelationWhenItem {
     HardCast(HardCastStatement),
 }
 
+/// The kind of type-system cast a nested `Enables: relation:` registers via its
+/// `as:` field: `\\viewable_as` (a view cast) or `\\encoded_by` (an encoding cast,
+/// used only by `as!`). The variants mirror those surface keywords.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RelationKind {
-    View,
-    Abstraction,
+    ViewableAs,
+    EncodedBy,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

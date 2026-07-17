@@ -2282,8 +2282,6 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
         "Axiom" => parse_axiom(group, tracker).map(TopLevelItem::Axiom),
         "Theorem" => parse_theorem(group, tracker).map(TopLevelItem::Theorem),
         "Corollary" => parse_corollary(group, tracker).map(TopLevelItem::Corollary),
-        "Lemma" => parse_lemma(group, tracker).map(TopLevelItem::Lemma),
-        "Conjecture" => parse_conjecture(group, tracker).map(TopLevelItem::Conjecture),
         "Person" => parse_person(group, tracker).map(TopLevelItem::Person),
         "Resource" => parse_resource(group, tracker).map(TopLevelItem::Resource),
         "Specify" => parse_specify(group, tracker).map(TopLevelItem::Specify),
@@ -3354,77 +3352,9 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
     )
 }
 
-/// Parses a `Lemma:` group using the shared theorem-like parser.
-pub(in crate::frontend::structural::parser) fn parse_lemma(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<LemmaGroup> {
-    parse_argument_theorem_like(group, tracker, "Lemma").map(
-        |(
-            heading,
-            given,
-            where_,
-            then,
-            iff,
-            justified,
-            documented,
-            aliases,
-            references,
-            metadata,
-        )| {
-            LemmaGroup {
-                heading,
-                given,
-                where_,
-                then,
-                iff,
-                justified,
-                documented,
-                aliases,
-                references,
-                metadata,
-            }
-        },
-    )
-}
-
-/// Parses a `Conjecture:` group using the shared theorem-like parser.
-pub(in crate::frontend::structural::parser) fn parse_conjecture(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<ConjectureGroup> {
-    parse_argument_theorem_like(group, tracker, "Conjecture").map(
-        |(
-            heading,
-            given,
-            where_,
-            then,
-            iff,
-            justified,
-            documented,
-            aliases,
-            references,
-            metadata,
-        )| {
-            ConjectureGroup {
-                heading,
-                given,
-                where_,
-                then,
-                iff,
-                justified,
-                documented,
-                aliases,
-                references,
-                metadata,
-            }
-        },
-    )
-}
-
 /// Rejects a name/argument on a theorem-like head section.
 ///
-/// `Axiom:`/`Theorem:`/`Lemma:`/`Conjecture:`/`Corollary:` no longer accept a name;
+/// `Axiom:`/`Theorem:`/`Corollary:` no longer accept a name;
 /// a result's name belongs in `Documented:` `called:`, matching the definition items.
 fn ensure_no_named_result_arg(section: Option<&ProtoSection>, name: &str, tracker: &mut EventLog) {
     let Some(section) = section else {
@@ -4738,12 +4668,10 @@ then:
         let files = read_test_files(directory, "text");
         let expected_names = BTreeSet::from([
             "axioms.text".to_owned(),
-            "conjectures.text".to_owned(),
             "corollaries.text".to_owned(),
             "defines.text".to_owned(),
             "describes.text".to_owned(),
             "equivalent.text".to_owned(),
-            "lemmas.text".to_owned(),
             "outline.text".to_owned(),
             "persons.text".to_owned(),
             "refines.text".to_owned(),
@@ -5292,7 +5220,7 @@ then:
 
     #[test]
     fn theorem_like_head_rejects_a_name() {
-        for head in ["Axiom", "Theorem", "Lemma", "Conjecture"] {
+        for head in ["Axiom", "Theorem"] {
             let (_, diagnostics) =
                 parse_with_diagnostics(&format!("{head}: \"Some Result\"\nthen: x = x\n"));
             assert!(
@@ -5615,27 +5543,10 @@ then:
   oneOf:
   . x = x
   . y = y
-
-Lemma:
-then:
-. [logic.forall]
-  forAll: x is \element
-  where:
-  . x = x
-  then:
-  . x = x
-
-[\conjecture]
-Conjecture:
-then:
-. [logic.exists]
-  exists: x is \element
-  suchThat:
-  . x = x
 "#,
         );
 
-        assert_eq!(document.items.len(), 5);
+        assert_eq!(document.items.len(), 3);
 
         match &document.items[0] {
             TopLevelItem::Axiom(group) => {
@@ -5674,22 +5585,6 @@ then:
                 assert!(matches!(group.then.arguments[0], Clause::OneOf(_)));
             }
             other => panic!("expected corollary group, got {other:?}"),
-        }
-
-        match &document.items[3] {
-            TopLevelItem::Lemma(group) => {
-                assert!(group.heading.is_none());
-                assert!(matches!(group.then.arguments[0], Clause::ForAll(_)));
-            }
-            other => panic!("expected lemma group, got {other:?}"),
-        }
-
-        match &document.items[4] {
-            TopLevelItem::Conjecture(group) => {
-                assert!(group.heading.is_some());
-                assert!(matches!(group.then.arguments[0], Clause::Exists(_)));
-            }
-            other => panic!("expected conjecture group, got {other:?}"),
         }
     }
 

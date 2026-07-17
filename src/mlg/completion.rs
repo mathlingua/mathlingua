@@ -173,14 +173,6 @@ const GROUPS: &[GroupSpec] = &[
         sections: THEOREM_LIKE_THEOREM,
     },
     GroupSpec {
-        head: "Lemma",
-        sections: THEOREM_LIKE_LEMMA,
-    },
-    GroupSpec {
-        head: "Conjecture",
-        sections: THEOREM_LIKE_CONJECTURE,
-    },
-    GroupSpec {
         head: "Corollary",
         sections: &[
             ("Corollary", true),
@@ -266,7 +258,7 @@ const GROUPS: &[GroupSpec] = &[
     },
 ];
 
-// `Axiom`/`Theorem`/`Lemma`/`Conjecture` share one shape (see
+// `Axiom`/`Theorem` share one shape (see
 // `parse_argument_theorem_like`) differing only in the head label.
 const THEOREM_LIKE_AXIOM: &[Section] = &[
     ("Axiom", true),
@@ -294,33 +286,6 @@ const THEOREM_LIKE_THEOREM: &[Section] = &[
     ("Metadata", false),
     ("Id", false),
 ];
-const THEOREM_LIKE_LEMMA: &[Section] = &[
-    ("Lemma", true),
-    ("given", false),
-    ("where", false),
-    ("then", true),
-    ("iff", false),
-    ("Justified", false),
-    ("Documented", false),
-    ("Aliases", false),
-    ("References", false),
-    ("Metadata", false),
-    ("Id", false),
-];
-const THEOREM_LIKE_CONJECTURE: &[Section] = &[
-    ("Conjecture", true),
-    ("given", false),
-    ("where", false),
-    ("then", true),
-    ("iff", false),
-    ("Justified", false),
-    ("Documented", false),
-    ("Aliases", false),
-    ("References", false),
-    ("Metadata", false),
-    ("Id", false),
-];
-
 /// Clause groups that may start inside a clause-valued section (`when:`,
 /// `then:`, `satisfies:`, ...). Mirrors the clause dispatcher in the parser.
 const CLAUSE_STARTERS: &[&str] = &[

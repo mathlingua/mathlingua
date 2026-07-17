@@ -252,8 +252,6 @@ pub(super) enum DefinitionKind {
     Axiom,
     Theorem,
     Corollary,
-    Lemma,
-    Conjecture,
     Equivalent,
 }
 
@@ -267,8 +265,6 @@ impl DefinitionKind {
             Self::Axiom => "Axiom",
             Self::Theorem => "Theorem",
             Self::Corollary => "Corollary",
-            Self::Lemma => "Lemma",
-            Self::Conjecture => "Conjecture",
             Self::Equivalent => "Equivalent",
         }
     }

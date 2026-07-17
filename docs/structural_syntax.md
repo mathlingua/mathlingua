@@ -275,8 +275,6 @@ An empty document is supported by the current implementation because `Document.i
 | `Axiom` | `AxiomGroup` | command? | `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Theorem` | `TheoremGroup` | command? | `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Corollary` | `CorollaryGroup` | command? | `Corollary:`, `of: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Lemma` | `LemmaGroup` | command? | `Lemma:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Conjecture` | `ConjectureGroup` | command? | `Conjecture:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Person` | `PersonGroup` | author | `Person: OpenText+`, `biography?: OpenText` |
 | `Resource` | `ResourceGroup` | resource | `Resource: ResourceItem+` |
 | `Specify` | `SpecifyGroup` | none | `Specify: SpecifyItem+` |
@@ -451,8 +449,6 @@ Optional on:
 - `Axiom`
 - `Theorem`
 - `Corollary`
-- `Lemma`
-- `Conjecture`
 
 These headings must parse with `parse_command_header`.
 
@@ -639,8 +635,6 @@ TopLevelItemUnion ::=
     | AxiomGroup
     | TheoremGroup
     | CorollaryGroup
-    | LemmaGroup
-    | ConjectureGroup
     | PersonGroup
     | ResourceGroup
     | SpecifyGroup
@@ -789,35 +783,7 @@ References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
 ```
 
-```group
-[CommandHeader]?
-Lemma:
-given?: <RefinedDeclarationStatement>+
-where?: <ClauseUnion>+
-then: <ClauseUnion>+
-iff?: <ClauseUnion>+
-Justified?: <JustifiedItemUnion>+
-Documented?: <DocumentedItemUnion>+
-Aliases?: <AliasItemUnion>+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
-```
-
-```group
-[CommandHeader]?
-Conjecture:
-given?: <RefinedDeclarationStatement>+
-where?: <ClauseUnion>+
-then: <ClauseUnion>+
-iff?: <ClauseUnion>+
-Justified?: <JustifiedItemUnion>+
-Documented?: <DocumentedItemUnion>+
-Aliases?: <AliasItemUnion>+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
-```
-
-The theorem-like head sections (`Axiom:`/`Theorem:`/`Corollary:`/`Lemma:`/`Conjecture:`)
+The theorem-like head sections (`Axiom:`/`Theorem:`/`Corollary:`)
 take no argument. A result's name is given in `Documented:` `called:`, exactly as
 for the definition items, and renders as the card's title.
 

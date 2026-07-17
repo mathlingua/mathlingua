@@ -7,6 +7,18 @@ the feature is valid.
 
 ## Structural Language
 
+### `Lemma:` and `Conjecture:` Items Removed
+
+The top-level `Lemma:` and `Conjecture:` items are **removed**. Each had exactly the
+same `given:` / `where:` / `then:` / `iff:` shape as `Theorem:` and differed only in
+its label, so both are redundant — a `Theorem:` states the same result, and a
+`related:` documentation link records how one result relates to another.
+
+- Migrate a former `Lemma:` or `Conjecture:` by changing its head to `Theorem:`;
+  every other section (including the name in `Documented:` `called:`) is unchanged.
+- `Lemma:` and `Conjecture:` are no longer accepted top-level group heads and now
+  produce an "Unexpected top-level group" error.
+
 ### `Enables:` `relation:` uses `represents:`; `connection:` removed
 
 The directional `relation:` group nested inside `Enables:` — which relates the
@@ -36,8 +48,8 @@ additionally drives cast checking.
 
 ### Theorem-Like Result Names Move to `Documented:` `called:`
 
-The head sections of the theorem-like items — `Axiom:`, `Theorem:`, `Corollary:`,
-`Lemma:`, and `Conjecture:` — no longer take an argument. Previously they accepted
+The head sections of the theorem-like items — `Axiom:`, `Theorem:`, and
+`Corollary:` — no longer take an argument. Previously they accepted
 an optional quoted name of the result; a name given there is now an error that
 points at `Documented:` `called:`.
 

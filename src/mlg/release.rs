@@ -320,17 +320,15 @@ const PAGE_KINDS: [&str; 4] = ["Title", "SectionTitle", "SubsectionTitle", "Text
 
 /// The order top-level kinds are grouped in the release report. Kinds not listed
 /// here sort after these, alphabetically.
-const KIND_ORDER: [&str; 20] = [
+const KIND_ORDER: [&str; 18] = [
     "Defines",
     "Describes",
     "States",
     "Refines",
     "Disambiguates",
     "Axiom",
-    "Conjecture",
     "Theorem",
     "Corollary",
-    "Lemma",
     "Relation",
     "Equivalent",
     "Topic",

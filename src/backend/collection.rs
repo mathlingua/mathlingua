@@ -343,8 +343,6 @@ fn is_top_level_item_label(label: &str) -> bool {
             | "Axiom"
             | "Theorem"
             | "Corollary"
-            | "Lemma"
-            | "Conjecture"
             | "Person"
             | "Resource"
             | "Specify"

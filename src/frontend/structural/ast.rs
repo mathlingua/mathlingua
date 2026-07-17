@@ -216,7 +216,7 @@ zero_or_more_arguments_section!(StatesSection, OpenText);
 arguments_section!(ThatSection, Clause);
 zero_or_more_arguments_section!(EquivalentSection, OpenText);
 arguments_section!(EquivalentToSection, Expression);
-// The `Axiom:`/`Theorem:`/`Corollary:`/`Lemma:`/`Conjecture:` head sections take
+// The `Axiom:`/`Theorem:`/`Corollary:` head sections take
 // no argument; a result's name lives in `Documented:` `called:` (as for definitions).
 zero_or_more_arguments_section!(OfSection, OpenText);
 arguments_section!(GivenSection, DeclarationStatement);
@@ -327,8 +327,6 @@ pub enum TopLevelItem {
     Axiom(AxiomGroup),
     Theorem(TheoremGroup),
     Corollary(CorollaryGroup),
-    Lemma(LemmaGroup),
-    Conjecture(ConjectureGroup),
     Person(PersonGroup),
     Resource(ResourceGroup),
     Specify(SpecifyGroup),
@@ -606,34 +604,6 @@ pub struct TheoremGroup {
 pub struct CorollaryGroup {
     pub heading: Option<CommandHeader>,
     pub of: OfSection,
-    pub given: Option<GivenSection>,
-    pub where_: Option<WhereSection>,
-    pub then: ThenSection,
-    pub iff: Option<IffSection>,
-    pub justified: Option<JustifiedSection>,
-    pub documented: Option<DocumentedSection>,
-    pub aliases: Option<AliasesSection>,
-    pub references: Option<ReferencesSection>,
-    pub metadata: Option<MetadataSection>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct LemmaGroup {
-    pub heading: Option<CommandHeader>,
-    pub given: Option<GivenSection>,
-    pub where_: Option<WhereSection>,
-    pub then: ThenSection,
-    pub iff: Option<IffSection>,
-    pub justified: Option<JustifiedSection>,
-    pub documented: Option<DocumentedSection>,
-    pub aliases: Option<AliasesSection>,
-    pub references: Option<ReferencesSection>,
-    pub metadata: Option<MetadataSection>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ConjectureGroup {
-    pub heading: Option<CommandHeader>,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
     pub then: ThenSection,

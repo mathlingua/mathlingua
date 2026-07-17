@@ -257,8 +257,6 @@ fn supports_resolved_group_heading(kind: &str) -> bool {
             | "Axiom"
             | "Theorem"
             | "Corollary"
-            | "Lemma"
-            | "Conjecture"
             | "Equivalent"
     )
 }
@@ -345,12 +343,6 @@ pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
             render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
         }
         TopLevelItem::Corollary(group) => {
-            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
-        }
-        TopLevelItem::Lemma(group) => {
-            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
-        }
-        TopLevelItem::Conjecture(group) => {
             render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
         }
         TopLevelItem::Equivalent(group) => render_entries_from_parts(

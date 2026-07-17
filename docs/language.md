@@ -333,8 +333,6 @@ These groups may appear at the top level of a document.
 | `Axiom` | optional command | theorem-like assertion |
 | `Theorem` | optional command | theorem-like assertion |
 | `Corollary` | optional command | theorem-like assertion with `of:` text |
-| `Lemma` | optional command | theorem-like assertion |
-| `Conjecture` | optional command | theorem-like assertion |
 | `Person` | author | person metadata |
 | `Resource` | resource | bibliography or web metadata |
 | `Specify` | none | numeric-domain specification metadata |
@@ -418,7 +416,7 @@ that:
 
 ## Theorem-Like Groups
 
-`Axiom`, `Theorem`, `Corollary`, `Lemma`, and `Conjecture` share the same proof
+`Axiom`, `Theorem`, and `Corollary` share the same proof
 shape. `then:` is required. `given:`, `where:`, `iff:`, and support sections are
 optional. `Corollary` also requires an `of:` section.
 

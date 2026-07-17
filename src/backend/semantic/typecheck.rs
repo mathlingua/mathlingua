@@ -306,30 +306,6 @@ fn definition_type_info(
                 None,
             )
         }),
-        TopLevelItem::Lemma(group) => group.heading.as_ref().map(|heading| {
-            type_info_from_parts(
-                header_shape,
-                heading,
-                None,
-                group.given.as_ref(),
-                None,
-                None,
-                None,
-                None,
-            )
-        }),
-        TopLevelItem::Conjecture(group) => group.heading.as_ref().map(|heading| {
-            type_info_from_parts(
-                header_shape,
-                heading,
-                None,
-                group.given.as_ref(),
-                None,
-                None,
-                None,
-                None,
-            )
-        }),
         TopLevelItem::Equivalent(group) => Some(type_info_from_parts(
             header_shape,
             &group.heading,
@@ -1469,32 +1445,6 @@ fn validate_top_level_item_types(
             registry,
             event_log,
         ),
-        TopLevelItem::Lemma(group) => validate_theorem_like(
-            TheoremLikeSections::new(
-                group.heading.as_ref(),
-                group.given.as_ref(),
-                group.where_.as_ref(),
-                &group.then,
-                group.iff.as_ref(),
-            ),
-            path,
-            locator,
-            registry,
-            event_log,
-        ),
-        TopLevelItem::Conjecture(group) => validate_theorem_like(
-            TheoremLikeSections::new(
-                group.heading.as_ref(),
-                group.given.as_ref(),
-                group.where_.as_ref(),
-                &group.then,
-                group.iff.as_ref(),
-            ),
-            path,
-            locator,
-            registry,
-            event_log,
-        ),
         TopLevelItem::Equivalent(group) => {
             validate_equivalent_item(group, path, locator, registry, event_log);
         }
@@ -1566,8 +1516,6 @@ fn anchor_top_level_item(item: &TopLevelItem, locator: &mut SourceLocator<'_>) {
         TopLevelItem::Axiom(group) => group.heading.as_ref(),
         TopLevelItem::Theorem(group) => group.heading.as_ref(),
         TopLevelItem::Corollary(group) => group.heading.as_ref(),
-        TopLevelItem::Lemma(group) => group.heading.as_ref(),
-        TopLevelItem::Conjecture(group) => group.heading.as_ref(),
         TopLevelItem::Equivalent(group) => Some(&group.heading),
         _ => None,
     };

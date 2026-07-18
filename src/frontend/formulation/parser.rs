@@ -20,7 +20,7 @@ use super::ast::{
     SubjectSpecStatement, TopicHeader, TypeExpression, WritingAlias,
 };
 use super::grammar;
-use super::lexer::Lexer;
+use super::lexer::{Lexer, Spanned};
 use super::token::{LexicalError, Token};
 
 /// Concrete parse error type returned by the generated LALRPOP grammar.
@@ -1205,14 +1205,28 @@ pub(super) fn parse_curly_expression_args(
     while input.trim_start().starts_with('{') {
         input = input.trim_start();
         let (inside, rest) = consume_balanced_prefix(input, '{', '}')?;
+        let group = &input[..input.len() - rest.len()];
+        // Collection-literal sugar: `\foo{x_ : ...}` == `\foo{{x_ : ...}}`.
+        let expressions = match parse_collection_literal_argument(group, inside) {
+            Some(set) => vec![set],
+            None => parse_expression_list(inside)?,
+        };
         args.push(CurlyExpressionArgs {
-            span: span_all(&input[..input.len() - rest.len()]),
-            expressions: parse_expression_list(inside)?,
+            span: span_all(group),
+            expressions,
         });
         input = rest;
     }
 
     Ok((args, input))
+}
+
+/// If a `{...}` command-argument group (`group` includes the braces, `inside`
+/// does not) is a brace-less collection literal, parses it as a single set
+/// expression. Returns `None` when the content is not a set-builder.
+fn parse_collection_literal_argument(group: &str, inside: &str) -> Option<Expression> {
+    find_set_comprehension_colon(inside)?;
+    parse_set_expression(group).ok()
 }
 
 /// Parses consecutive `(...)` argument groups in a command expression.
@@ -2120,9 +2134,119 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
         return expression;
     }
 
-    grammar::InputExpressionParser::new()
-        .parse(Lexer::new(input))
-        .map_err(ParseError::from)
+    parse_input_expression(input).map_err(ParseError::from)
+}
+
+/// Parses an expression through the generated grammar, first desugaring the
+/// collection-literal argument shorthand at the token level.
+fn parse_input_expression(input: &str) -> Result<Expression, LalrpopError> {
+    grammar::InputExpressionParser::new().parse(desugar_collection_literal_args(input))
+}
+
+/// Desugars `\foo{x_ : ...}` into `\foo{{x_ : ...}}` at the token level.
+///
+/// A `{` that opens a command-argument group (its previous token ends a command
+/// chain or a preceding argument group — a `Name` or `}`) and whose content is a
+/// brace-less collection literal (first token starts a set target, and the group
+/// contains a top-level `:`) is wrapped with a synthetic inner brace pair, so the
+/// grammar sees the explicit `{{...}}` form. Everything else — standalone sets,
+/// `A = {x_ : ...}`, ordinary `{a, b}` argument lists, already-braced
+/// `\foo{{...}}` — is left untouched. Synthetic braces reuse the real brace's
+/// offsets, keeping spans valid.
+fn desugar_collection_literal_args(input: &str) -> Vec<Spanned<Token, usize, LexicalError>> {
+    let raw: Vec<Spanned<Token, usize, LexicalError>> = Lexer::new(input).collect();
+    if raw.iter().any(Result::is_err) {
+        return raw;
+    }
+    let toks: Vec<(usize, Token, usize)> = raw
+        .iter()
+        .map(|item| item.as_ref().expect("checked all Ok above").clone())
+        .collect();
+    let count = toks.len();
+
+    // Match each `{` to its `}` (tracking only brace depth).
+    let mut match_of = vec![usize::MAX; count];
+    let mut open_stack = Vec::new();
+    for (index, (_, token, _)) in toks.iter().enumerate() {
+        match token {
+            Token::LBrace => open_stack.push(index),
+            Token::RBrace => {
+                if let Some(open) = open_stack.pop() {
+                    match_of[open] = index;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    let mut double_open = vec![false; count];
+    let mut double_close = vec![false; count];
+    for index in 0..count {
+        if !matches!(toks[index].1, Token::LBrace) {
+            continue;
+        }
+        // Command-argument opener?
+        if index == 0 || !ends_command_chain_or_group(&toks[index - 1].1) {
+            continue;
+        }
+        let close = match_of[index];
+        if close == usize::MAX || index + 1 >= close {
+            continue;
+        }
+        // Brace-less collection literal: target-starting, with a top-level `:`.
+        if !is_set_target_start(&toks[index + 1].1) {
+            continue;
+        }
+        if !group_has_top_level_colon(&toks, index + 1, close) {
+            continue;
+        }
+        double_open[index] = true;
+        double_close[close] = true;
+    }
+
+    if !double_open.iter().any(|&flag| flag) {
+        return raw;
+    }
+
+    let mut out = Vec::with_capacity(count + 4);
+    for (index, item) in raw.into_iter().enumerate() {
+        if double_open[index] || double_close[index] {
+            let (start, token, end) = item.expect("checked all Ok above");
+            out.push(Ok((start, token.clone(), end)));
+            out.push(Ok((start, token, end)));
+        } else {
+            out.push(item);
+        }
+    }
+    out
+}
+
+/// Whether a token can end a command chain or an argument group, i.e. can precede
+/// a command-argument `{`.
+fn ends_command_chain_or_group(token: &Token) -> bool {
+    matches!(token, Token::Name(_) | Token::RBrace)
+}
+
+/// Whether a token can begin a set-builder target.
+fn is_set_target_start(token: &Token) -> bool {
+    matches!(
+        token,
+        Token::Name(_) | Token::Placeholder(_) | Token::MagneticPlaceholder(_) | Token::LParen
+    )
+}
+
+/// Whether the tokens in `[start, end)` contain a `:` at bracket depth zero.
+fn group_has_top_level_colon(toks: &[(usize, Token, usize)], start: usize, end: usize) -> bool {
+    let mut depth = 0i32;
+    for (_, token, _) in &toks[start..end] {
+        match token {
+            Token::LBrace | Token::LParen | Token::LBracket => depth += 1,
+            Token::RBrace | Token::RParen | Token::RBracket => depth -= 1,
+            Token::Colon if depth == 0 => return true,
+            _ => {}
+        }
+    }
+    false
 }
 
 fn parse_set_expression(input: &str) -> Result<Expression, ParseError> {
@@ -2346,11 +2470,10 @@ fn parse_refined_predicate_expression_with_operator(
         return None;
     }
 
-    let subject =
-        match grammar::InputExpressionParser::new().parse(Lexer::new(input[..index].trim())) {
-            Ok(subject) => subject,
-            Err(error) => return Some(Err(ParseError::from(error))),
-        };
+    let subject = match parse_input_expression(input[..index].trim()) {
+        Ok(subject) => subject,
+        Err(error) => return Some(Err(ParseError::from(error))),
+    };
     let command = match parse_refined_command_expression(command_text) {
         Ok(command) => command,
         Err(error) => return Some(Err(error)),
@@ -3000,6 +3123,78 @@ mod tests {
             1,
             1,
         );
+    }
+
+    #[test]
+    fn parses_collection_literal_argument_sugar() {
+        // The sugar `\foo{x_ : ...}` parses identically to the explicit
+        // double-brace `\foo{{x_ : ...}}`.
+        let sugared = parse_expression(r#"\foo{x_ : x_ is \real | x > 0}"#)
+            .expect("expected sugared collection-literal argument");
+        let explicit = parse_expression(r#"\foo{{x_ : x_ is \real | x > 0}}"#)
+            .expect("expected explicit collection-literal argument");
+        let ExpressionKind::Command(sugared_cmd) = &sugared.kind else {
+            panic!("expected a command, got {:?}", sugared.kind);
+        };
+        assert_eq!(sugared_cmd.head_args.len(), 1);
+        assert_eq!(sugared_cmd.head_args[0].expressions.len(), 1);
+        assert!(
+            matches!(
+                sugared_cmd.head_args[0].expressions[0].kind,
+                ExpressionKind::Set(_)
+            ),
+            "expected a single Set argument, got {:?}",
+            sugared_cmd.head_args[0].expressions
+        );
+        // The explicit double-brace form also yields a single Set argument; the
+        // two differ only in byte spans (their sources differ by one `{`).
+        let ExpressionKind::Command(explicit_cmd) = &explicit.kind else {
+            panic!("expected a command, got {:?}", explicit.kind);
+        };
+        let ExpressionKind::Set(sugared_body) = &sugared_cmd.head_args[0].expressions[0].kind else {
+            panic!("expected a Set argument");
+        };
+        assert!(matches!(
+            explicit_cmd.head_args[0].expressions[0].kind,
+            ExpressionKind::Set(_)
+        ));
+        // The sugared set has the expected target, one spec, and a predicate.
+        assert!(matches!(
+            &sugared_body.target.kind,
+            SetTargetKind::PlaceholderForm(form)
+                if matches!(&form.kind, PlaceholderFormKind::Placeholder(p) if p.name == "x")
+        ));
+        assert_eq!(sugared_body.specs.len(), 1);
+        assert!(sugared_body.predicate.is_some());
+
+        // Nested: a sugared command as the collection of a membership.
+        let nested = parse_expression(r#"y "in" \set:where{x_ : x_ is \real}"#)
+            .expect("expected nested sugared command");
+        assert!(matches!(
+            nested.kind,
+            ExpressionKind::SpecStatementExpr { .. } | ExpressionKind::SpecStatement(_)
+        ));
+
+        // Tail arguments sugar too.
+        let tail = parse_expression(r#"\foo:bar{x_ : x_ is \real}"#).expect("expected tail sugar");
+        let ExpressionKind::Command(tail_cmd) = &tail.kind else {
+            panic!("expected a command, got {:?}", tail.kind);
+        };
+        assert!(matches!(
+            tail_cmd.tail[0].args[0].expressions[0].kind,
+            ExpressionKind::Set(_)
+        ));
+
+        // Untouched: standalone set, a plain argument list, and an explicit set arg.
+        assert!(matches!(
+            parse_expression(r#"{x_ : x_ is \real}"#).expect("set").kind,
+            ExpressionKind::Set(_)
+        ));
+        let plain = parse_expression(r#"\foo{a, b}"#).expect("plain args");
+        let ExpressionKind::Command(plain_cmd) = &plain.kind else {
+            panic!("expected a command");
+        };
+        assert_eq!(plain_cmd.head_args[0].expressions.len(), 2);
     }
 
     #[test]

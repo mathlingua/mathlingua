@@ -5411,6 +5411,50 @@ then:
     }
 
     #[test]
+    fn check_accepts_collection_literal_argument_sugar() {
+        // `\collect{x_ : ...}` (sugar) checks the same as the explicit
+        // double-brace `\collect{{x_ : ...}}`.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("collection-literal-sugar.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    [\collect{S}]
+    Describes: y
+    when: S is \\expression
+    Documented:
+    . written: "\operatorname{collect}(S?)"
+
+    Theorem:
+    given:
+    . a is \\opaque
+    then:
+    . a is? \collect{x_ : x_ is \real}
+    . a is? \collect{{x_ : x_ is \real}}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("collection-literal-sugar.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_applies_satisfies_of_concrete_spec_literal() {
         // In a local set literal, `x_ satisfies (? is \real)` reduces to
         // `x_ is \real`, so members are known to be reals.

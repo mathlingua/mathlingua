@@ -332,6 +332,11 @@ impl Expression {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ExpressionKind {
     Name(String),
+    /// An inferred parameter written `X?` at a command argument position. The
+    /// string is the bare name (no `?`). The first occurrence declares `X` into
+    /// scope with the type its argument position requires; later uses are plain
+    /// `Name`s.
+    InferredName(String),
     FunctionCall {
         name: String,
         arguments: Vec<Expression>,

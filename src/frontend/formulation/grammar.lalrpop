@@ -821,6 +821,7 @@ PrimaryExpression: ast::Expression = {
         Span::new(l, r),
         ExpressionKind::BuiltinCommand(command),
     ),
+    <l:@L> <name:Name> "?" <r:@R> => ast::Expression::new(Span::new(l, r), ExpressionKind::InferredName(name)),
     <l:@L> <name:Name> <r:@R> => ast::Expression::new(Span::new(l, r), ExpressionKind::Name(name)),
 };
 

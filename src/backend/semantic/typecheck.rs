@@ -2698,7 +2698,7 @@ fn collect_placeholder_form_names(form: &PlaceholderForm, names: &mut BTreeSet<S
 
 fn collect_expression_names(expression: &Expression, names: &mut BTreeSet<String>) {
     match &expression.kind {
-        ExpressionKind::Name(name) => {
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => {
             names.insert(name.clone());
         }
         ExpressionKind::FunctionCall { name, arguments } => {
@@ -3846,6 +3846,238 @@ fn assume_relation_subject(
     }
 }
 
+/// Introduces the inferred parameters (`X?`) that appear in a declaration
+/// statement into scope, taking each one's type from the command definition its
+/// argument position belongs to. Runs in the assume phase, before the relation is
+/// checked, so the injected facts satisfy the subsequent requirement check and are
+/// visible to every later use of the symbol.
+fn declare_inferred_parameters(
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    if let Some(relation) = &statement.relation {
+        match relation {
+            DeclarationRelation::Is(ty) => {
+                declare_inferred_parameters_in_type_expression(
+                    ty, context, path, locator, registry, event_log,
+                );
+            }
+            DeclarationRelation::Spec { target, .. } => {
+                declare_inferred_parameters_in_expression(
+                    target, context, path, locator, registry, event_log,
+                );
+            }
+            DeclarationRelation::InfixSpec { target, .. } => {
+                declare_inferred_parameters_in_expression(
+                    target, context, path, locator, registry, event_log,
+                );
+            }
+        }
+    }
+    if let Some(definition) = &statement.definition {
+        declare_inferred_parameters_in_expression(
+            definition, context, path, locator, registry, event_log,
+        );
+    }
+}
+
+fn declare_inferred_parameters_in_type_expression(
+    ty: &TypeExpression,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match ty {
+        TypeExpression::Command(command) => {
+            let active = active_command_expression(command, context);
+            let shape = shape_for_command_expression(&active);
+            let arguments = command_expression_arguments(&active);
+            inject_inferred_parameters(
+                &shape.signature,
+                &arguments,
+                context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            for argument in arguments {
+                declare_inferred_parameters_in_expression(
+                    argument, context, path, locator, registry, event_log,
+                );
+            }
+        }
+        TypeExpression::RefinedCommand(command) => {
+            let active = active_refined_command_expression(command, context);
+            let shape = shape_for_refined_command_expression(&active);
+            let arguments = refined_command_expression_arguments(&active);
+            inject_inferred_parameters(
+                &shape.signature,
+                &arguments,
+                context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            for argument in arguments {
+                declare_inferred_parameters_in_expression(
+                    argument, context, path, locator, registry, event_log,
+                );
+            }
+        }
+        TypeExpression::Builtin { .. } | TypeExpression::Function(_) => {}
+    }
+}
+
+/// Recursively finds command expressions carrying inferred parameters inside a
+/// general expression (a `Spec:`/`InfixSpec:` target or a definition body).
+fn declare_inferred_parameters_in_expression(
+    expression: &Expression,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match &expression.kind {
+        ExpressionKind::Command(command) => {
+            let active = active_command_expression(command, context);
+            let shape = shape_for_command_expression(&active);
+            let arguments = command_expression_arguments(&active);
+            inject_inferred_parameters(
+                &shape.signature,
+                &arguments,
+                context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            for argument in arguments {
+                declare_inferred_parameters_in_expression(
+                    argument, context, path, locator, registry, event_log,
+                );
+            }
+        }
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            declare_inferred_parameters_in_expression(
+                expression, context, path, locator, registry, event_log,
+            );
+        }
+        ExpressionKind::Cast { expression, ty, .. } => {
+            declare_inferred_parameters_in_expression(
+                expression, context, path, locator, registry, event_log,
+            );
+            declare_inferred_parameters_in_type_expression(
+                ty, context, path, locator, registry, event_log,
+            );
+        }
+        ExpressionKind::IsType { subject, ty } => {
+            declare_inferred_parameters_in_expression(
+                subject, context, path, locator, registry, event_log,
+            );
+            declare_inferred_parameters_in_type_expression(
+                ty, context, path, locator, registry, event_log,
+            );
+        }
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => {
+            declare_inferred_parameters_in_expression(
+                subject, context, path, locator, registry, event_log,
+            );
+            declare_inferred_parameters_in_expression(
+                collection, context, path, locator, registry, event_log,
+            );
+        }
+        _ => {}
+    }
+}
+
+/// Given a command's resolved `signature` and its ordered argument expressions,
+/// declares every argument written as an inferred parameter (`X?`) and injects
+/// the definition requirement(s) that type it. Argument i corresponds to
+/// `info.parameters[i]` (the same positional correspondence the requirement check
+/// relies on).
+fn inject_inferred_parameters(
+    signature: &str,
+    arguments: &[&Expression],
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    if !arguments
+        .iter()
+        .any(|argument| matches!(argument.kind, ExpressionKind::InferredName(_)))
+    {
+        return;
+    }
+    let Some(info) = registry.type_infos.get(signature) else {
+        return;
+    };
+
+    let actuals = arguments
+        .iter()
+        .map(|argument| effective_key_for_expression(argument, context, registry))
+        .collect::<Vec<_>>();
+    let substitutions = info
+        .parameters
+        .iter()
+        .zip(&actuals)
+        .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
+        .collect::<HashMap<_, _>>();
+
+    // Declare each inferred name first, so a requirement on one inferred parameter
+    // that references another resolves once all are in scope.
+    let mut introduced_parameters = Vec::new();
+    for (index, argument) in arguments.iter().enumerate() {
+        let ExpressionKind::InferredName(name) = &argument.kind else {
+            continue;
+        };
+        let Some(parameter) = info.parameters.get(index) else {
+            continue;
+        };
+        if context.has_name(name) {
+            emit_error(
+                event_log,
+                path,
+                locator.locate_symbol(name),
+                format!("Inferred parameter `{name}` is already introduced"),
+            );
+            continue;
+        }
+        context.declare_name(name.clone());
+        introduced_parameters.push(parameter.clone());
+    }
+
+    // Inject the requirement(s) that type each introduced inferred parameter.
+    for requirement in &info.requirements {
+        if info
+            .hidden_parameters
+            .iter()
+            .any(|name| fact_mentions_name(requirement, name))
+        {
+            continue;
+        }
+        if introduced_parameters
+            .iter()
+            .any(|parameter| parameter == fact_subject(requirement))
+        {
+            context.add_fact(substitute_fact(requirement, &substitutions));
+        }
+    }
+}
+
 fn assume_declaration_statement(
     statement: &DeclarationStatement,
     context: &mut TypeContext,
@@ -3854,6 +4086,7 @@ fn assume_declaration_statement(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    declare_inferred_parameters(statement, context, path, locator, registry, event_log);
     declare_is_subject(&statement.subject, context);
     if let Some(expansion) = &statement.expansion {
         declare_is_subject(expansion, context);
@@ -3892,6 +4125,7 @@ fn complete_introduced_declaration_statement(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    declare_inferred_parameters(statement, context, path, locator, registry, event_log);
     if let Some(relation) = &statement.relation {
         check_declaration_relation(relation, context, path, locator, registry, event_log);
     }
@@ -4136,7 +4370,12 @@ fn check_expression(
     event_log: &mut EventLog,
 ) {
     match &expression.kind {
-        ExpressionKind::Name(name) => {
+        // An inferred parameter is declared into scope by the assume phase
+        // (`declare_inferred_parameters`); by the time the check pass revisits it,
+        // the name is in scope, so it is checked exactly like a plain `Name`. In a
+        // genuinely check-only position it is not in scope and surfaces the usual
+        // "Unrecognized symbol" error.
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => {
             check_name(name, context, path, locator, event_log);
         }
         ExpressionKind::FunctionCall { name, arguments } => {
@@ -4463,7 +4702,9 @@ fn context_with_cast_expression_facts<'a>(
 
 fn add_cast_expression_facts(expression: &Expression, context: &mut TypeContext) {
     match &expression.kind {
-        ExpressionKind::Name(_) | ExpressionKind::SubsetCall(_) => {}
+        ExpressionKind::Name(_)
+        | ExpressionKind::InferredName(_)
+        | ExpressionKind::SubsetCall(_) => {}
         ExpressionKind::FunctionCall { arguments, .. } => {
             for argument in arguments {
                 add_cast_expression_facts(argument, context);
@@ -6472,7 +6713,7 @@ fn expression_names_are_defined(expression: &Expression, context: &TypeContext) 
 
 fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<String>) {
     match &expression.kind {
-        ExpressionKind::Name(name) => names.push(name.clone()),
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => names.push(name.clone()),
         ExpressionKind::FunctionCall { name, arguments } => {
             names.push(name.clone());
             for argument in arguments {
@@ -9842,7 +10083,9 @@ fn declare_set_target(target: &SetTarget, context: &mut TypeContext) {
 
 fn declare_names_from_expression(expression: &Expression, context: &mut TypeContext) {
     match &expression.kind {
-        ExpressionKind::Name(name) => context.declare_name(name.clone()),
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => {
+            context.declare_name(name.clone())
+        }
         ExpressionKind::FunctionCall { name, arguments } => {
             context.declare_name(name.clone());
             for argument in arguments {
@@ -11057,7 +11300,7 @@ fn key_for_type_expression_in_context(
 
 fn key_for_expression(expression: &Expression) -> String {
     match &expression.kind {
-        ExpressionKind::Name(name) => name.clone(),
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => name.clone(),
         ExpressionKind::FunctionCall { name, arguments } => {
             format!(
                 "{}({})",

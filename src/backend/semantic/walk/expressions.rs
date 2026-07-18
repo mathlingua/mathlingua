@@ -6,6 +6,7 @@ pub(in crate::backend::semantic) fn walk_expression(
 ) {
     match &expression.kind {
         ExpressionKind::Name(_) => {}
+        ExpressionKind::InferredName(_) => {}
         ExpressionKind::FunctionCall { arguments, .. } => {
             for argument in arguments {
                 walk_expression(argument, visit);

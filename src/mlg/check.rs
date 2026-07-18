@@ -2028,6 +2028,162 @@ then:
     }
 
     #[test]
+    fn check_accepts_inferred_parameters() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("inferred-parameters.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function:on{A}:to{B}]
+    Describes: f(x__)
+    when: A, B is \set
+    Documented:
+    . written: "A? \to B?"
+
+    Theorem:
+    given:
+    . f is \function:on{A?}:to{B?}
+    . x "in" A
+    then:
+    . x "in" A
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("inferred-parameters.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_inferred_parameter_type_misuse() {
+        // `A?` locks `A`'s type to `\set` (the type its `\function` argument
+        // position requires). Using `A` where a `\group` is required must then be
+        // rejected by requirement checking.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("inferred-misuse.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\group]
+    Describes: X
+    Documented:
+    . written: "\operatorname{group}"
+
+    [\function:on{A}:to{B}]
+    Describes: f(x__)
+    when: A, B is \set
+    Documented:
+    . written: "A? \to B?"
+
+    [\needs.group{G}]
+    Describes: x
+    when: G is \group
+    Documented:
+    . written: "\operatorname{needsGroup}"
+
+    Theorem:
+    given:
+    . f is \function:on{A?}:to{B?}
+    then:
+    . \needs.group{A}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("inferred-misuse.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            user_events(&event_log).iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message
+                        == "Could not establish requirement `A is \\group` for command `\\needs.group`"
+                })
+            }),
+            "expected a requirement mismatch because `A` is a `\\set`, not a `\\group`, got {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_reports_reintroduced_inferred_parameter() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("inferred-reintroduced.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function:on{A}:to{B}]
+    Describes: f(x__)
+    when: A, B is \set
+    Documented:
+    . written: "A? \to B?"
+
+    Theorem:
+    given:
+    . A is \set
+    . f is \function:on{A?}:to{B?}
+    then:
+    . A is \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("inferred-reintroduced.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            user_events(&event_log).iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message == "Inferred parameter `A` is already introduced"
+                })
+            }),
+            "expected a re-introduction error, got {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
     fn check_accepts_refines_adjectives_and_optional_expression_tails() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("refined-adjective.mlg");

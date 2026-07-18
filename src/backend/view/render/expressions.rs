@@ -3,6 +3,8 @@ use super::*;
 pub(super) fn render_expression(expression: &Expression, registry: &RenderRegistry) -> String {
     match &expression.kind {
         ExpressionKind::Name(name) => escape_math_identifier(name, registry),
+        // The `?` on an inferred parameter is authoring-only; render the bare name.
+        ExpressionKind::InferredName(name) => escape_math_identifier(name, registry),
         ExpressionKind::FunctionCall { name, arguments } => {
             if let Some(rendered) = render_provided_function_call(name, arguments, registry) {
                 return rendered;

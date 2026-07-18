@@ -3002,6 +3002,43 @@ mod tests {
     }
 
     #[test]
+    fn parses_inferred_parameters_in_command_arguments() {
+        let command = parse_expression(r#"\function:on{A?}:to{B?}"#)
+            .expect("expected command expression with inferred parameters");
+        let ExpressionKind::Command(command) = command.kind else {
+            panic!("expected a command expression, got {:?}", command.kind);
+        };
+        assert_eq!(command.tail.len(), 2);
+        assert!(
+            matches!(
+                command.tail[0].args[0].expressions.as_slice(),
+                [Expression { kind: ExpressionKind::InferredName(name), .. }] if name == "A"
+            ),
+            "expected `on{{A?}}` to parse as InferredName(\"A\"), got {:?}",
+            command.tail[0].args[0].expressions
+        );
+        assert!(
+            matches!(
+                command.tail[1].args[0].expressions.as_slice(),
+                [Expression { kind: ExpressionKind::InferredName(name), .. }] if name == "B"
+            ),
+            "expected `to{{B?}}` to parse as InferredName(\"B\"), got {:?}",
+            command.tail[1].args[0].expressions
+        );
+
+        // Without the `?`, the same argument is an ordinary name reference.
+        let plain = parse_expression(r#"\function:on{A}:to{B}"#)
+            .expect("expected command expression with plain arguments");
+        let ExpressionKind::Command(plain) = plain.kind else {
+            panic!("expected a command expression, got {:?}", plain.kind);
+        };
+        assert!(matches!(
+            plain.tail[0].args[0].expressions.as_slice(),
+            [Expression { kind: ExpressionKind::Name(name), .. }] if name == "A"
+        ));
+    }
+
+    #[test]
     fn parses_refined_command_headers() {
         let header =
             parse_command_header(r#"\(f)::[[g]]"#).expect("expected refined command header");

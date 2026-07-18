@@ -305,6 +305,10 @@ fn render_type_expression_with_subject(
             latex: render_function_type(function_type, registry),
             includes_subject: false,
         },
+        TypeExpression::Parameter { name, .. } => RenderedTypeExpression {
+            latex: escape_math_identifier(name, registry),
+            includes_subject: false,
+        },
     }
 }
 

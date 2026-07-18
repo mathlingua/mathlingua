@@ -285,4 +285,8 @@ pub(super) struct SignatureRegistry {
     pub(super) viewable_rules: Vec<ViewableRule>,
     pub(super) abstraction_rules: Vec<AbstractionRule>,
     pub(super) collection_type_signatures: Vec<String>,
+    /// Maps a set-defining command signature (a `Defines` whose `:=` value is a
+    /// set literal) to that set-builder body, so membership in a use of the
+    /// command can be reduced to the body's element condition.
+    pub(super) collection_bodies: HashMap<String, SetExpression>,
 }

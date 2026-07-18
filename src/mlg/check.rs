@@ -5305,6 +5305,278 @@ then:
     }
 
     #[test]
+    fn check_reduces_spec_literal_set_membership_to_element_type() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("spec-literal-membership.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    [\set]
+    Describes: X ::= {x__ : ...}
+    Enables:
+    . capability: x_ "in" X :-> x_ member_of X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\needs.real{x}]
+    Describes: y
+    when: x is \real
+    Documented:
+    . written: "\operatorname{needsReal}(x?)"
+
+    [\set:where{spec}]
+    Defines: X := {x_ : x_ satisfies spec} is \set
+    when: spec is \\specification
+    Documented:
+    . written: "\operatorname{setWhere}(spec?)"
+
+    Theorem:
+    given:
+    . y "in" \set:where{? is \real}
+    then: \needs.real{y}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("spec-literal-membership.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reduces_type_parameter_set_membership_to_element_type() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("type-parameter-membership.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    [\set]
+    Describes: X ::= {x__ : ...}
+    Enables:
+    . capability: x_ "in" X :-> x_ member_of X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\needs.real{x}]
+    Describes: y
+    when: x is \real
+    Documented:
+    . written: "\operatorname{needsReal}(x?)"
+
+    [\set:of{T}]
+    Defines: X := {x_ : x_ is T} is \set
+    when: T is \\type
+    Documented:
+    . written: "\operatorname{setOf}(T?)"
+
+    Theorem:
+    given:
+    . z "in" \set:of{\real}
+    then: \needs.real{z}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("type-parameter-membership.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_applies_satisfies_of_concrete_spec_literal() {
+        // In a local set literal, `x_ satisfies (? is \real)` reduces to
+        // `x_ is \real`, so members are known to be reals.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("satisfies-literal.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    [\set]
+    Describes: X ::= {x__ : ...}
+    Enables:
+    . capability: x_ "in" X :-> x_ member_of X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\needs.real{x}]
+    Describes: y
+    when: x is \real
+    Documented:
+    . written: "\operatorname{needsReal}(x?)"
+
+    Theorem:
+    given:
+    . A := {x_ : x_ satisfies (? is \real)} as \set
+    . y "in" A
+    then: \needs.real{y}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("satisfies-literal.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_wrong_element_type_from_spec_literal_set() {
+        // `y "in" \set:where{? is \real}` establishes `y is \real`, so requiring
+        // `y is \set` must fail — the reduction must not over-derive.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("spec-literal-negative.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    [\set]
+    Describes: X ::= {x__ : ...}
+    Enables:
+    . capability: x_ "in" X :-> x_ member_of X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\needs.set{x}]
+    Describes: y
+    when: x is \set
+    Documented:
+    . written: "\operatorname{needsSet}(x?)"
+
+    [\set:where{spec}]
+    Defines: X := {x_ : x_ satisfies spec} is \set
+    when: spec is \\specification
+    Documented:
+    . written: "\operatorname{setWhere}(spec?)"
+
+    Theorem:
+    given:
+    . y "in" \set:where{? is \real}
+    then: \needs.set{y}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("spec-literal-negative.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            user_events(&event_log).iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message
+                        == "Could not establish requirement `y is \\set` for command `\\needs.set`"
+                })
+            }),
+            "expected a requirement mismatch: `y` is a `\\real`, not a `\\set`, got {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_rejects_type_target_for_spec_operator_literal() {
+        // `? "in" \real` uses a `Describes:` type as a spec-operator target; only
+        // values (`Defines:`) are allowed there.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("spec-literal-bad-target.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    [\set]
+    Describes: X ::= {x__ : ...}
+    Enables:
+    . capability: x_ "in" X :-> x_ member_of X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\set:where{spec}]
+    Defines: X := {x_ : x_ satisfies spec} is \set
+    when: spec is \\specification
+    Documented:
+    . written: "\operatorname{setWhere}(spec?)"
+
+    Theorem:
+    given:
+    . y "in" \set:where{? "in" \real}
+    then: y is \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("spec-literal-bad-target.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            user_events(&event_log).iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message
+                        == "the target of a spec operator must be a value, not the type `\\real`"
+                })
+            }),
+            "expected a spec-operator-target rejection, got {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
     fn check_reduces_cast_membership_through_from_capability() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("cast-membership.mlg");

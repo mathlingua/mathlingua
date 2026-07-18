@@ -18,6 +18,7 @@ pub(super) fn collect_definition_type_metadata(
     collect_viewable_rules(item, &info, registry);
     collect_abstraction_rules(item, &info, registry);
     collect_collection_type_signature(item, &info, registry);
+    collect_collection_body(item, header_shape, registry);
     collect_equivalence_class(item, header_shape, registry);
     registry.definition_summaries.insert(
         header_shape.shape.signature.clone(),
@@ -28,6 +29,30 @@ pub(super) fn collect_definition_type_metadata(
     registry
         .type_infos
         .insert(header_shape.shape.signature.clone(), info);
+}
+
+/// Records a set-defining command's body (`Defines: X := {x_ : ...} is \set`) so
+/// membership in a use of the command can reduce to the body's element condition.
+fn collect_collection_body(
+    item: &TopLevelItem,
+    header_shape: &HeaderShape,
+    registry: &mut SignatureRegistry,
+) {
+    let TopLevelItem::Defines(group) = item else {
+        return;
+    };
+    let Some(definition) = &group.defines.argument.definition else {
+        return;
+    };
+    let body = match &definition.kind {
+        ExpressionKind::Set(set) => Some(set),
+        _ => cast_expression_set_literal(definition),
+    };
+    if let Some(body) = body {
+        registry
+            .collection_bodies
+            .insert(header_shape.shape.signature.clone(), body.clone());
+    }
 }
 
 /// Record the equivalence class declared by a top-level `Equivalent:` item: the
@@ -2802,12 +2827,29 @@ fn collect_expression_names(expression: &Expression, names: &mut BTreeSet<String
             collect_expression_names(subject, names);
             collect_expression_names(collection, names);
         }
+        ExpressionKind::SpecStatementExpr {
+            subject, target, ..
+        } => {
+            collect_expression_names(subject, names);
+            collect_expression_names(target, names);
+        }
+        ExpressionKind::SpecLiteral(literal) => match &literal.form {
+            SpecLiteralForm::Is(ty) => collect_type_expression_names(ty, names),
+            SpecLiteralForm::Spec { target, .. } => collect_expression_names(target, names),
+        },
+        ExpressionKind::Satisfies { subject, spec } => {
+            collect_expression_names(subject, names);
+            collect_expression_names(spec, names);
+        }
     }
 }
 
 fn collect_type_expression_names(ty: &TypeExpression, names: &mut BTreeSet<String>) {
     match ty {
         TypeExpression::Builtin { .. } => {}
+        TypeExpression::Parameter { name, .. } => {
+            names.insert(name.clone());
+        }
         TypeExpression::Command(command) => collect_command_expression_names(command, names),
         TypeExpression::RefinedCommand(command) => {
             collect_refined_command_expression_names(command, names);
@@ -3932,7 +3974,9 @@ fn declare_inferred_parameters_in_type_expression(
                 );
             }
         }
-        TypeExpression::Builtin { .. } | TypeExpression::Function(_) => {}
+        TypeExpression::Builtin { .. }
+        | TypeExpression::Function(_)
+        | TypeExpression::Parameter { .. } => {}
     }
 }
 
@@ -4361,6 +4405,72 @@ fn check_is_statement(
     check_type_expression(&statement.ty, context, path, locator, registry, event_log);
 }
 
+/// Checks a spec literal (`? is \real`, `? "in" \reals`). A spec literal is a
+/// value of type `\\specification`; the only extra rule is that a `"op"` target
+/// which is a command must name a value (`Defines:`), not a type (`Describes:`).
+fn check_spec_literal(
+    literal: &SpecLiteral,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match &literal.form {
+        SpecLiteralForm::Is(ty) => {
+            check_type_expression(ty, context, path, locator, registry, event_log);
+        }
+        SpecLiteralForm::Spec { target, .. } => {
+            check_expression(target, context, path, locator, registry, event_log);
+            if let ExpressionKind::Command(_) = &target.kind {
+                let target_key = context.normalize_key(&key_for_expression(target));
+                if let Some(signature) = command_signature_from_key(&target_key) {
+                    if signature_has_kind(&signature, DefinitionKind::Describes, registry) {
+                        emit_error(
+                            event_log,
+                            path,
+                            locator.locate_symbol(&signature),
+                            format!(
+                                "the target of a spec operator must be a value, not the type `{signature}`"
+                            ),
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Checks `x satisfies spec`: the right-hand side must be provably a
+/// `\\specification` (a concrete spec literal, or a variable known to be one).
+fn check_satisfies(
+    subject: &Expression,
+    spec: &Expression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    check_expression(subject, context, path, locator, registry, event_log);
+    check_expression(spec, context, path, locator, registry, event_log);
+
+    let spec_key = context.normalize_key(&key_for_expression(spec));
+    let required = TypeFact::Is {
+        subject: spec_key,
+        ty: BUILTIN_SPECIFICATION_SIGNATURE.to_owned(),
+        signature: BUILTIN_SPECIFICATION_SIGNATURE.to_owned(),
+    };
+    if !prove_fact(&required, context, registry) {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol("satisfies"),
+            "`satisfies` requires a specification on the right-hand side".to_owned(),
+        );
+    }
+}
+
 fn check_expression(
     expression: &Expression,
     context: &TypeContext,
@@ -4599,6 +4709,30 @@ fn check_expression(
                 event_log,
             );
         }
+        ExpressionKind::SpecStatementExpr {
+            subject,
+            operator,
+            target,
+        } => {
+            check_expression(subject, context, path, locator, registry, event_log);
+            check_expression(target, context, path, locator, registry, event_log);
+            if let Some(fact) = fact_from_expression(expression) {
+                check_spec_fact_supported(
+                    &fact,
+                    context,
+                    path,
+                    locator.locate_symbol(operator),
+                    registry,
+                    event_log,
+                );
+            }
+        }
+        ExpressionKind::SpecLiteral(literal) => {
+            check_spec_literal(literal, context, path, locator, registry, event_log);
+        }
+        ExpressionKind::Satisfies { subject, spec } => {
+            check_satisfies(subject, spec, context, path, locator, registry, event_log);
+        }
         ExpressionKind::MemberOf {
             subject,
             collection,
@@ -4777,6 +4911,20 @@ fn add_cast_expression_facts(expression: &Expression, context: &mut TypeContext)
         ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
             add_cast_expression_facts(&statement.subject, context);
         }
+        ExpressionKind::SpecStatementExpr {
+            subject, target, ..
+        } => {
+            add_cast_expression_facts(subject, context);
+            add_cast_expression_facts(target, context);
+        }
+        ExpressionKind::SpecLiteral(literal) => match &literal.form {
+            SpecLiteralForm::Is(ty) => add_cast_type_expression_facts(ty, context),
+            SpecLiteralForm::Spec { target, .. } => add_cast_expression_facts(target, context),
+        },
+        ExpressionKind::Satisfies { subject, spec } => {
+            add_cast_expression_facts(subject, context);
+            add_cast_expression_facts(spec, context);
+        }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
             add_cast_expression_facts(subject, context);
@@ -4826,7 +4974,7 @@ fn add_cast_set_predicate_facts(predicate: &SetPredicate, context: &mut TypeCont
 
 fn add_cast_type_expression_facts(ty: &TypeExpression, context: &mut TypeContext) {
     match ty {
-        TypeExpression::Builtin { .. } => {}
+        TypeExpression::Builtin { .. } | TypeExpression::Parameter { .. } => {}
         TypeExpression::Command(command) => {
             add_command_context_cast_facts(command.context.as_ref(), context);
             for expression in command_expression_arguments(command) {
@@ -4956,6 +5104,24 @@ fn check_type_expression(
 ) {
     match ty {
         TypeExpression::Builtin { .. } => {}
+        // A bare name used as a type (`x is T`) is only valid when `T` is a known
+        // type — i.e. a `T is \\type` fact is provable (e.g. a `when: T is \\type`
+        // type parameter). Everything else (`\real`) parses as a Command.
+        TypeExpression::Parameter { name, .. } => {
+            let fact = TypeFact::Is {
+                subject: name.clone(),
+                ty: BUILTIN_TYPE_SIGNATURE.to_owned(),
+                signature: BUILTIN_TYPE_SIGNATURE.to_owned(),
+            };
+            if !prove_fact(&fact, context, registry) {
+                emit_error(
+                    event_log,
+                    path,
+                    locator.locate_symbol(name),
+                    format!("`{name}` is not a known type"),
+                );
+            }
+        }
         TypeExpression::Command(command) => {
             check_command_type_expression(command, context, path, locator, registry, event_log);
             let active_command = active_command_expression(command, context);
@@ -6798,6 +6964,22 @@ fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<Str
             collect_defined_expression_names(&statement.subject, names);
             names.push(statement.name.clone());
         }
+        ExpressionKind::SpecStatementExpr {
+            subject, target, ..
+        } => {
+            collect_defined_expression_names(subject, names);
+            collect_defined_expression_names(target, names);
+        }
+        ExpressionKind::SpecLiteral(literal) => match &literal.form {
+            SpecLiteralForm::Is(ty) => collect_defined_type_expression_names(ty, names),
+            SpecLiteralForm::Spec { target, .. } => {
+                collect_defined_expression_names(target, names)
+            }
+        },
+        ExpressionKind::Satisfies { subject, spec } => {
+            collect_defined_expression_names(subject, names);
+            collect_defined_expression_names(spec, names);
+        }
         ExpressionKind::MemberOf {
             subject,
             collection,
@@ -6838,6 +7020,7 @@ fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<Str
 fn collect_defined_type_expression_names(ty: &TypeExpression, names: &mut Vec<String>) {
     match ty {
         TypeExpression::Builtin { .. } => {}
+        TypeExpression::Parameter { name, .. } => names.push(name.clone()),
         TypeExpression::Command(command) => {
             for expression in command_expression_arguments(command) {
                 collect_defined_expression_names(expression, names);
@@ -7491,7 +7674,7 @@ fn check_type_expression_requirements(
     event_log: &mut EventLog,
 ) {
     match ty {
-        TypeExpression::Builtin { .. } => {}
+        TypeExpression::Builtin { .. } | TypeExpression::Parameter { .. } => {}
         TypeExpression::Command(command) => {
             check_command_expression(command, context, path, locator, registry, event_log);
             let active_command = active_command_expression(command, context);
@@ -9061,11 +9244,47 @@ fn reduce_member_of_fact(
         }
     }
 
+    // Membership in a use of a set-defining command (`y "in" \set:where{? is \real}`,
+    // `y "in" \set:of{\real}`): instantiate the stored body with the call's actual
+    // arguments and derive the member's element facts. Gated on a registered body,
+    // so abstract set variables and body-less collection types stay opaque below.
+    let body_facts = facts_from_collection_body_membership(subject, collection, context, registry);
+    if !body_facts.is_empty() {
+        return body_facts;
+    }
+
     if collection_has_registered_collection_type(collection, context, registry) {
         return vec![opaque_type_fact(subject)];
     }
 
     Vec::new()
+}
+
+fn facts_from_collection_body_membership(
+    subject: &str,
+    collection: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let Some((signature, actuals)) = command_signature_and_actuals_from_key(collection) else {
+        return Vec::new();
+    };
+    let Some(body) = registry.collection_bodies.get(&signature) else {
+        return Vec::new();
+    };
+    let Some(info) = registry.type_infos.get(&signature) else {
+        return Vec::new();
+    };
+
+    let mut substitutions = HashMap::new();
+    for (parameter, actual) in info.parameters.iter().zip(&actuals) {
+        if let Ok(expression) = crate::frontend::formulation::parse_expression(actual) {
+            substitutions.insert(parameter.clone(), expression);
+        }
+    }
+
+    let instantiated = substitute_set_expression(body, &substitutions);
+    facts_from_collection_literal_membership(subject, &instantiated, context)
 }
 
 fn facts_from_collection_literal_membership(
@@ -10179,6 +10398,20 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
             declare_names_from_expression(&statement.subject, context);
             context.declare_name(statement.name.clone());
         }
+        ExpressionKind::SpecStatementExpr {
+            subject, target, ..
+        } => {
+            declare_names_from_expression(subject, context);
+            declare_names_from_expression(target, context);
+        }
+        ExpressionKind::SpecLiteral(literal) => match &literal.form {
+            SpecLiteralForm::Is(ty) => declare_names_from_type_expression(ty, context),
+            SpecLiteralForm::Spec { target, .. } => declare_names_from_expression(target, context),
+        },
+        ExpressionKind::Satisfies { subject, spec } => {
+            declare_names_from_expression(subject, context);
+            declare_names_from_expression(spec, context);
+        }
         ExpressionKind::MemberOf {
             subject,
             collection,
@@ -10220,7 +10453,7 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
 
 fn declare_names_from_type_expression(ty: &TypeExpression, context: &mut TypeContext) {
     match ty {
-        TypeExpression::Builtin { .. } => {}
+        TypeExpression::Builtin { .. } | TypeExpression::Parameter { .. } => {}
         TypeExpression::Command(command) => {
             let active_command = active_command_expression(command, context);
             for expression in command_expression_arguments(&active_command) {
@@ -10288,6 +10521,263 @@ fn declare_subset_call_names(subset: &SubsetCall, context: &mut TypeContext) {
             context.declare_name(outer.clone());
             context.declare_name(inner_target.clone());
         }
+    }
+}
+
+/// Rewrites an expression, replacing each `Name`/`InferredName` leaf (and each
+/// bare-name type `TypeExpression::Parameter`) whose name is a key of
+/// `substitutions` with the mapped expression. Used to instantiate a command's
+/// set-definition body with its actual arguments at a membership use site.
+fn substitute_expression(
+    expression: &Expression,
+    substitutions: &HashMap<String, Expression>,
+) -> Expression {
+    let sub = |expr: &Expression| substitute_expression(expr, substitutions);
+    let boxed = |expr: &Expression| Box::new(substitute_expression(expr, substitutions));
+    let kind = match &expression.kind {
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => {
+            if let Some(replacement) = substitutions.get(name) {
+                return replacement.clone();
+            }
+            expression.kind.clone()
+        }
+        ExpressionKind::FunctionCall { name, arguments } => match substitutions.get(name) {
+            // A replaced callee only makes sense if it is itself a name.
+            Some(Expression {
+                kind: ExpressionKind::Name(new_name),
+                ..
+            }) => ExpressionKind::FunctionCall {
+                name: new_name.clone(),
+                arguments: arguments.iter().map(sub).collect(),
+            },
+            _ => ExpressionKind::FunctionCall {
+                name: name.clone(),
+                arguments: arguments.iter().map(sub).collect(),
+            },
+        },
+        ExpressionKind::MemberCall {
+            owner,
+            name,
+            arguments,
+        } => ExpressionKind::MemberCall {
+            owner: boxed(owner),
+            name: name.clone(),
+            arguments: arguments.iter().map(sub).collect(),
+        },
+        ExpressionKind::MemberAccess { owner, name } => ExpressionKind::MemberAccess {
+            owner: boxed(owner),
+            name: name.clone(),
+        },
+        ExpressionKind::Tuple(elements) => ExpressionKind::Tuple(
+            elements
+                .iter()
+                .map(|element| match element {
+                    TupleExpressionElement::Expression(expr) => {
+                        TupleExpressionElement::Expression(sub(expr))
+                    }
+                    other => other.clone(),
+                })
+                .collect(),
+        ),
+        ExpressionKind::Set(set) => ExpressionKind::Set(substitute_set_expression(set, substitutions)),
+        ExpressionKind::Grouped {
+            expression,
+            dot_delimited,
+        } => ExpressionKind::Grouped {
+            expression: boxed(expression),
+            dot_delimited: *dot_delimited,
+        },
+        ExpressionKind::Labeled { expression, label } => ExpressionKind::Labeled {
+            expression: boxed(expression),
+            label: label.clone(),
+        },
+        ExpressionKind::Command(command) => {
+            ExpressionKind::Command(substitute_command_expression(command, substitutions))
+        }
+        ExpressionKind::InfixCommand {
+            left,
+            command,
+            right,
+        } => ExpressionKind::InfixCommand {
+            left: boxed(left),
+            command: command.clone(),
+            right: boxed(right),
+        },
+        ExpressionKind::Prefix {
+            operator,
+            expression,
+        } => ExpressionKind::Prefix {
+            operator: operator.clone(),
+            expression: boxed(expression),
+        },
+        ExpressionKind::Postfix {
+            expression,
+            operator,
+        } => ExpressionKind::Postfix {
+            expression: boxed(expression),
+            operator: operator.clone(),
+        },
+        ExpressionKind::Binary {
+            left,
+            operator,
+            right,
+        } => ExpressionKind::Binary {
+            left: boxed(left),
+            operator: operator.clone(),
+            right: boxed(right),
+        },
+        ExpressionKind::SpecStatement(statement) => ExpressionKind::SpecStatement(SpecStatement {
+            span: statement.span,
+            subject: boxed(&statement.subject),
+            operator: statement.operator.clone(),
+            name: statement.name.clone(),
+        }),
+        ExpressionKind::SpecStatementExpr {
+            subject,
+            operator,
+            target,
+        } => ExpressionKind::SpecStatementExpr {
+            subject: boxed(subject),
+            operator: operator.clone(),
+            target: boxed(target),
+        },
+        ExpressionKind::SpecLiteral(literal) => ExpressionKind::SpecLiteral(SpecLiteral {
+            span: literal.span,
+            form: match &literal.form {
+                SpecLiteralForm::Is(ty) => {
+                    SpecLiteralForm::Is(substitute_type_expression(ty, substitutions))
+                }
+                SpecLiteralForm::Spec { operator, target } => SpecLiteralForm::Spec {
+                    operator: operator.clone(),
+                    target: boxed(target),
+                },
+            },
+        }),
+        ExpressionKind::Satisfies { subject, spec } => ExpressionKind::Satisfies {
+            subject: boxed(subject),
+            spec: boxed(spec),
+        },
+        ExpressionKind::IsType { subject, ty } => ExpressionKind::IsType {
+            subject: boxed(subject),
+            ty: substitute_type_expression(ty, substitutions),
+        },
+        ExpressionKind::IsBuiltinPredicate { subject, ty } => ExpressionKind::IsBuiltinPredicate {
+            subject: boxed(subject),
+            ty: substitute_type_expression(ty, substitutions),
+        },
+        ExpressionKind::IsNotBuiltinPredicate { subject, ty } => {
+            ExpressionKind::IsNotBuiltinPredicate {
+                subject: boxed(subject),
+                ty: substitute_type_expression(ty, substitutions),
+            }
+        }
+        ExpressionKind::Cast {
+            expression,
+            ty,
+            hard,
+        } => ExpressionKind::Cast {
+            expression: boxed(expression),
+            ty: substitute_type_expression(ty, substitutions),
+            hard: *hard,
+        },
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => ExpressionKind::MemberOf {
+            subject: boxed(subject),
+            collection: boxed(collection),
+        },
+        // Predicate/command-heavy and leaf nodes not expected to carry substitutable
+        // parameters inside a set-definition body are left unchanged.
+        other => other.clone(),
+    };
+    Expression::new(expression.span, kind)
+}
+
+fn substitute_set_expression(
+    set: &SetExpression,
+    substitutions: &HashMap<String, Expression>,
+) -> SetExpression {
+    SetExpression {
+        span: set.span,
+        target: set.target.clone(),
+        specs: set
+            .specs
+            .iter()
+            .map(|spec| substitute_expression(spec, substitutions))
+            .collect(),
+        predicate: set.predicate.as_ref().map(|predicate| match predicate {
+            SetPredicate::Expression(expr) => {
+                SetPredicate::Expression(Box::new(substitute_expression(expr, substitutions)))
+            }
+            other => other.clone(),
+        }),
+    }
+}
+
+fn substitute_command_expression(
+    command: &CommandExpression,
+    substitutions: &HashMap<String, Expression>,
+) -> CommandExpression {
+    let mut result = command.clone();
+    for group in &mut result.head_args {
+        for expr in &mut group.expressions {
+            *expr = substitute_expression(expr, substitutions);
+        }
+    }
+    for part in &mut result.tail {
+        for group in &mut part.args {
+            for expr in &mut group.expressions {
+                *expr = substitute_expression(expr, substitutions);
+            }
+        }
+    }
+    for group in &mut result.paren_args {
+        for expr in &mut group.expressions {
+            *expr = substitute_expression(expr, substitutions);
+        }
+    }
+    result
+}
+
+/// Substitutes into a type position. A bare-name type `Parameter(T)` whose name is
+/// mapped is replaced by the actual argument reinterpreted as a type (a command
+/// like `\real` becomes `TypeExpression::Command`).
+fn substitute_type_expression(
+    ty: &TypeExpression,
+    substitutions: &HashMap<String, Expression>,
+) -> TypeExpression {
+    match ty {
+        TypeExpression::Parameter { span, name } => match substitutions.get(name) {
+            Some(replacement) => expression_as_type_expression(replacement)
+                .unwrap_or_else(|| TypeExpression::Parameter {
+                    span: *span,
+                    name: name.clone(),
+                }),
+            None => ty.clone(),
+        },
+        TypeExpression::Command(command) => {
+            TypeExpression::Command(substitute_command_expression(command, substitutions))
+        }
+        other => other.clone(),
+    }
+}
+
+/// Reinterprets an expression used as a type (e.g. the `\real` argument bound to a
+/// `\\type` parameter) as a `TypeExpression`.
+fn expression_as_type_expression(expression: &Expression) -> Option<TypeExpression> {
+    match &expression.kind {
+        ExpressionKind::Command(command) => Some(TypeExpression::Command(command.clone())),
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => {
+            Some(TypeExpression::Parameter {
+                span: expression.span,
+                name: name.clone(),
+            })
+        }
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            expression_as_type_expression(expression)
+        }
+        _ => None,
     }
 }
 
@@ -10828,6 +11318,16 @@ fn fact_from_expression(expression: &Expression) -> Option<TypeFact> {
             operator: statement.operator.clone(),
             target: statement.name.clone(),
         }),
+        ExpressionKind::SpecStatementExpr {
+            subject,
+            operator,
+            target,
+        } => Some(TypeFact::Spec {
+            subject: key_for_expression(subject),
+            operator: operator.clone(),
+            target: key_for_expression(target),
+        }),
+        ExpressionKind::Satisfies { subject, spec } => fact_from_satisfies(subject, spec),
         ExpressionKind::InfixSpecStatement { left, spec, right } if !spec.predicate => {
             fact_from_infix_spec_statement(left, spec, right)
         }
@@ -10847,6 +11347,47 @@ fn fact_from_expression(expression: &Expression) -> Option<TypeFact> {
     }
 }
 
+/// The specification a `satisfies` expression's right-hand side denotes, if it is
+/// a concrete spec literal, with its `?` placeholder replaced by `subject`.
+/// Returns `None` for an abstract spec (e.g. a `\\specification` parameter), which
+/// stays inert until instantiated.
+fn fact_from_satisfies(subject: &Expression, spec: &Expression) -> Option<TypeFact> {
+    let literal = spec_literal_of(spec)?;
+    let base = fact_from_spec_literal(literal)?;
+    let substitutions = HashMap::from([("?".to_owned(), key_for_expression(subject))]);
+    Some(substitute_fact(&base, &substitutions))
+}
+
+/// Peels `Grouped`/`Labeled` wrappers to find a spec literal.
+fn spec_literal_of(expression: &Expression) -> Option<&SpecLiteral> {
+    match &expression.kind {
+        ExpressionKind::SpecLiteral(literal) => Some(literal),
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            spec_literal_of(expression)
+        }
+        _ => None,
+    }
+}
+
+/// The fact a spec literal asserts about its `?` placeholder (subject key `"?"`).
+fn fact_from_spec_literal(literal: &SpecLiteral) -> Option<TypeFact> {
+    match &literal.form {
+        SpecLiteralForm::Is(ty) => {
+            let (ty_key, signature) = key_for_type_expression(ty)?;
+            Some(TypeFact::Is {
+                subject: "?".to_owned(),
+                ty: ty_key,
+                signature,
+            })
+        }
+        SpecLiteralForm::Spec { operator, target } => Some(TypeFact::Spec {
+            subject: "?".to_owned(),
+            operator: operator.clone(),
+            target: key_for_expression(target),
+        }),
+    }
+}
+
 fn fact_from_expression_in_context(
     expression: &Expression,
     context: &TypeContext,
@@ -10860,6 +11401,18 @@ fn fact_from_expression_in_context(
             operator: statement.operator.clone(),
             target: statement.name.clone(),
         }),
+        ExpressionKind::SpecStatementExpr {
+            subject,
+            operator,
+            target,
+        } => Some(TypeFact::Spec {
+            subject: context.normalize_key(&key_for_expression(subject)),
+            operator: operator.clone(),
+            target: context.normalize_key(&key_for_expression(target)),
+        }),
+        ExpressionKind::Satisfies { subject, spec } => {
+            fact_from_satisfies(subject, spec).map(|fact| context.normalize_fact(&fact))
+        }
         ExpressionKind::InfixSpecStatement { left, spec, right } if !spec.predicate => {
             fact_from_infix_spec_statement_in_context(left, spec, right, context)
         }
@@ -11274,6 +11827,7 @@ fn key_for_type_expression(ty: &TypeExpression) -> Option<(String, String)> {
             key_for_command_expression(command),
             shape_for_command_expression(command).signature,
         )),
+        TypeExpression::Parameter { name, .. } => Some((name.clone(), name.clone())),
         TypeExpression::RefinedCommand(_) | TypeExpression::Function(_) => None,
     }
 }
@@ -11294,6 +11848,7 @@ fn key_for_type_expression_in_context(
                 shape_for_command_expression(&active_command).signature,
             ))
         }
+        TypeExpression::Parameter { name, .. } => Some((name.clone(), name.clone())),
         TypeExpression::RefinedCommand(_) | TypeExpression::Function(_) => None,
     }
 }
@@ -11405,6 +11960,32 @@ fn key_for_expression(expression: &Expression) -> String {
             key_for_expression(&statement.subject),
             statement.operator,
             statement.name
+        ),
+        ExpressionKind::SpecStatementExpr {
+            subject,
+            operator,
+            target,
+        } => format!(
+            "{}\"{}\"{}",
+            key_for_expression(subject),
+            operator,
+            key_for_expression(target)
+        ),
+        ExpressionKind::SpecLiteral(literal) => match &literal.form {
+            SpecLiteralForm::Is(ty) => format!(
+                "? is {}",
+                key_for_type_expression(ty)
+                    .map(|(key, _)| key)
+                    .unwrap_or_else(|| key_for_non_command_type_expression(ty))
+            ),
+            SpecLiteralForm::Spec { operator, target } => {
+                format!("?\"{}\"{}", operator, key_for_expression(target))
+            }
+        },
+        ExpressionKind::Satisfies { subject, spec } => format!(
+            "{} satisfies {}",
+            key_for_expression(subject),
+            key_for_expression(spec)
         ),
         ExpressionKind::MemberOf {
             subject,
@@ -11523,6 +12104,7 @@ fn key_for_binary_operator_parts(symbol: &str, kind: NamedOperatorKind, named: b
 
 fn key_for_non_command_type_expression(ty: &TypeExpression) -> String {
     match ty {
+        TypeExpression::Parameter { name, .. } => name.clone(),
         TypeExpression::Builtin { chain, .. } => format!("\\\\{}", format_chain(chain)),
         TypeExpression::Command(command) => key_for_command_expression(command),
         TypeExpression::RefinedCommand(command) => key_for_refined_command_expression(command),

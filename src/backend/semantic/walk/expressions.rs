@@ -86,6 +86,20 @@ pub(in crate::backend::semantic) fn walk_expression(
         }
         ExpressionKind::SpecStatement(statement) => walk_expression(&statement.subject, visit),
         ExpressionKind::SpecPredicate(statement) => walk_expression(&statement.subject, visit),
+        ExpressionKind::SpecStatementExpr {
+            subject, target, ..
+        } => {
+            walk_expression(subject, visit);
+            walk_expression(target, visit);
+        }
+        ExpressionKind::SpecLiteral(literal) => match &literal.form {
+            SpecLiteralForm::Is(ty) => walk_type_expression(ty, visit),
+            SpecLiteralForm::Spec { target, .. } => walk_expression(target, visit),
+        },
+        ExpressionKind::Satisfies { subject, spec } => {
+            walk_expression(subject, visit);
+            walk_expression(spec, visit);
+        }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
             walk_expression(subject, visit);

@@ -118,6 +118,31 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
         ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
             render_spec_statement(statement, registry)
         }
+        ExpressionKind::SpecStatementExpr {
+            subject,
+            operator,
+            target,
+        } => format!(
+            "{} {} {}",
+            render_expression(subject, registry),
+            render_quoted_operator(operator),
+            render_expression(target, registry)
+        ),
+        ExpressionKind::SpecLiteral(literal) => match &literal.form {
+            SpecLiteralForm::Is(ty) => {
+                format!("? \\textrm{{ is }} {}", render_type_expression(ty, registry))
+            }
+            SpecLiteralForm::Spec { operator, target } => format!(
+                "? {} {}",
+                render_quoted_operator(operator),
+                render_expression(target, registry)
+            ),
+        },
+        ExpressionKind::Satisfies { subject, spec } => format!(
+            "{} \\textrm{{ satisfies }} {}",
+            render_expression(subject, registry),
+            render_expression(spec, registry)
+        ),
         ExpressionKind::MemberOf {
             subject,
             collection,
@@ -170,6 +195,11 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 "{} \\textrm{{ is }} {}",
                 render_expression(subject, registry),
                 render_function_type(function_type, registry)
+            ),
+            TypeExpression::Parameter { name, .. } => format!(
+                "{} \\textrm{{ is }} {}",
+                render_expression(subject, registry),
+                escape_math_identifier(name, registry)
             ),
         },
         ExpressionKind::Cast {

@@ -48,6 +48,7 @@ extern {
         "as!" => Token::AsBang,
         "as" => Token::As,
         "member_of" => Token::MemberOf,
+        "satisfies" => Token::Satisfies,
         "quoted_name" => Token::QuotedName(<String>),
         "magnetic_placeholder" => Token::MagneticPlaceholder(<String>),
         "placeholder" => Token::Placeholder(<String>),
@@ -713,6 +714,7 @@ BuiltinTypeExpression: ast::TypeExpression = {
 PredicateTypeExpression: ast::TypeExpression = {
     <command:CommandExpression> => ast::TypeExpression::Command(command),
     <builtin:BuiltinTypeExpression> => builtin,
+    <l:@L> <name:Name> <r:@R> => ast::TypeExpression::Parameter { span: Span::new(l, r), name },
 };
 
 InfixCommand: ast::InfixCommand = {
@@ -992,6 +994,48 @@ SpecOrPredicateExpression: ast::Expression = {
             subject: Box::new(subject),
             collection: Box::new(collection),
         },
+    ),
+    <l:@L> <subject:InfixCommandExpression> <operator:QuotedName> <target:CommandExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::SpecStatementExpr {
+            subject: Box::new(subject),
+            operator,
+            target: Box::new(ast::Expression::new(target.span, ExpressionKind::Command(target))),
+        },
+    ),
+    <l:@L> <subject:InfixCommandExpression> "satisfies" <spec:InfixCommandExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Satisfies {
+            subject: Box::new(subject),
+            spec: Box::new(spec),
+        },
+    ),
+    <l:@L> "?" "is" <ty:PredicateTypeExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::SpecLiteral(ast::SpecLiteral {
+            span: Span::new(l, r),
+            form: ast::SpecLiteralForm::Is(ty),
+        }),
+    ),
+    <l:@L> "?" <operator:QuotedName> <nl:@L> <name:Name> <nr:@R> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::SpecLiteral(ast::SpecLiteral {
+            span: Span::new(l, r),
+            form: ast::SpecLiteralForm::Spec {
+                operator,
+                target: Box::new(ast::Expression::new(Span::new(nl, nr), ExpressionKind::Name(name))),
+            },
+        }),
+    ),
+    <l:@L> "?" <operator:QuotedName> <target:CommandExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::SpecLiteral(ast::SpecLiteral {
+            span: Span::new(l, r),
+            form: ast::SpecLiteralForm::Spec {
+                operator,
+                target: Box::new(ast::Expression::new(target.span, ExpressionKind::Command(target))),
+            },
+        }),
     ),
 };
 

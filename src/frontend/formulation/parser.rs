@@ -182,6 +182,7 @@ fn token_literal(token: &Token) -> &'static str {
         Token::AsBang => "as!",
         Token::As => "as",
         Token::MemberOf => "member_of",
+        Token::Satisfies => "satisfies",
         Token::CommandStart => "\\",
         Token::Plus => "+",
         Token::Minus => "-",
@@ -2695,8 +2696,8 @@ mod tests {
         ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
         FunctionNamedExpressionElementLhs, FunctionTypeSpecKind, IsOrRefinedStatementSpec,
         IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind, PlaceholderFormKind,
-        RefinedTail, SetPredicate, SetTargetElement, SetTargetKind, SpecOperatorAliasTarget,
-        SpecSubjectKind, SubsetCall, TypeExpression,
+        RefinedTail, SetPredicate, SetTargetElement, SetTargetKind, SpecLiteral, SpecLiteralForm,
+        SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression,
     };
 
     // ===============================[ support ]=====================================
@@ -3035,6 +3036,70 @@ mod tests {
         assert!(matches!(
             plain.tail[0].args[0].expressions.as_slice(),
             [Expression { kind: ExpressionKind::Name(name), .. }] if name == "A"
+        ));
+    }
+
+    #[test]
+    fn parses_spec_literals_and_satisfies() {
+        // `? is <type>`
+        let is_literal = parse_expression(r#"? is \real"#).expect("expected spec literal");
+        assert!(matches!(
+            is_literal.kind,
+            ExpressionKind::SpecLiteral(SpecLiteral {
+                form: SpecLiteralForm::Is(_),
+                ..
+            })
+        ));
+
+        // `? "op" <name>`
+        let name_literal = parse_expression(r#"? "in" R"#).expect("expected spec literal");
+        assert!(matches!(
+            &name_literal.kind,
+            ExpressionKind::SpecLiteral(SpecLiteral {
+                form: SpecLiteralForm::Spec { operator, target },
+                ..
+            }) if operator == "in" && matches!(target.kind, ExpressionKind::Name(ref n) if n == "R")
+        ));
+
+        // `? "op" <command>` (command right-hand side)
+        let cmd_literal = parse_expression(r#"? "in" \reals"#).expect("expected spec literal");
+        assert!(matches!(
+            &cmd_literal.kind,
+            ExpressionKind::SpecLiteral(SpecLiteral {
+                form: SpecLiteralForm::Spec { operator, target },
+                ..
+            }) if operator == "in" && matches!(target.kind, ExpressionKind::Command(_))
+        ));
+
+        // `x satisfies (? is \real)`
+        let satisfies =
+            parse_expression(r#"x satisfies (? is \real)"#).expect("expected satisfies expression");
+        let ExpressionKind::Satisfies { subject, spec } = satisfies.kind else {
+            panic!("expected Satisfies, got {:?}", satisfies.kind);
+        };
+        assert!(matches!(subject.kind, ExpressionKind::Name(ref n) if n == "x"));
+        assert!(matches!(
+            spec.kind,
+            ExpressionKind::Grouped { .. }
+        ));
+
+        // `x "in" \reals` — command right-hand side of a spec statement
+        let member = parse_expression(r#"x "in" \reals"#).expect("expected spec statement");
+        assert!(matches!(
+            &member.kind,
+            ExpressionKind::SpecStatementExpr { operator, .. } if operator == "in"
+        ));
+
+        // Regression: the `?` inferred-parameter and spec-predicate forms still parse.
+        assert!(matches!(
+            parse_expression("A?").expect("expected inferred name").kind,
+            ExpressionKind::InferredName(ref n) if n == "A"
+        ));
+        assert!(matches!(
+            parse_expression(r#"x "op"? y"#)
+                .expect("expected spec predicate")
+                .kind,
+            ExpressionKind::SpecPredicate(_)
         ));
     }
 

@@ -192,6 +192,9 @@ pub enum TypeExpression {
     Command(CommandExpression),
     RefinedCommand(RefinedCommandExpression),
     Function(FunctionType),
+    /// A bare type-parameter name used as a type, e.g. `T` in `x is T` where a
+    /// `when: T is \\type` requirement declares `T` a type parameter.
+    Parameter { span: Span, name: String },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -392,6 +395,25 @@ pub enum ExpressionKind {
     },
     SpecStatement(SpecStatement),
     SpecPredicate(SpecStatement),
+    /// A `"op"` spec statement whose right-hand side is an expression (typically a
+    /// command such as `\reals`) rather than a bare `Name`. `SpecStatement` keeps
+    /// its `String` name; this is its command-capable sibling.
+    SpecStatementExpr {
+        subject: Box<Expression>,
+        operator: String,
+        target: Box<Expression>,
+    },
+    /// A spec literal: a `\\specification` value with an implicit `?` placeholder
+    /// subject, e.g. `? is \real` or `? "in" \reals`. Distinct from
+    /// `InferredName` (the `A?` inferred-parameter marker).
+    SpecLiteral(SpecLiteral),
+    /// Applies a specification to a subject: `x satisfies spec`. When `spec` is a
+    /// concrete spec literal, substituting its `?` with `x` yields the condition
+    /// (e.g. `x satisfies (? is \real)` means `x is \real`).
+    Satisfies {
+        subject: Box<Expression>,
+        spec: Box<Expression>,
+    },
     IsPredicate {
         subject: Box<Expression>,
         command: CommandExpression,
@@ -722,6 +744,23 @@ pub struct SpecStatement {
     pub subject: Box<Expression>,
     pub operator: String,
     pub name: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SpecLiteral {
+    pub span: Span,
+    pub form: SpecLiteralForm,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SpecLiteralForm {
+    /// `? is <type>`
+    Is(TypeExpression),
+    /// `? "op" <target>` where the target may be a name or a command.
+    Spec {
+        operator: String,
+        target: Box<Expression>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

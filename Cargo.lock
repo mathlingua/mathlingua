@@ -790,10 +790,13 @@ dependencies = [
  "logos",
  "lsp-server",
  "lsp-types",
+ "proc-macro2",
+ "quote",
  "ratatui",
  "serde",
  "serde_json",
  "sha2",
+ "syn",
  "uuid",
 ]
 

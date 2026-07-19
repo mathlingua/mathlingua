@@ -100,6 +100,10 @@ pub(in crate::backend::semantic) fn walk_expression(
             walk_expression(subject, visit);
             walk_expression(spec, visit);
         }
+        ExpressionKind::Mapping { lhs, rhs } => {
+            walk_expression(lhs, visit);
+            walk_expression(rhs, visit);
+        }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
             walk_expression(subject, visit);

@@ -183,6 +183,7 @@ fn token_literal(token: &Token) -> &'static str {
         Token::As => "as",
         Token::MemberOf => "member_of",
         Token::Satisfies => "satisfies",
+        Token::MapsTo => "|->",
         Token::CommandStart => "\\",
         Token::Plus => "+",
         Token::Minus => "-",
@@ -2138,22 +2139,36 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
 }
 
 /// Parses an expression through the generated grammar, first desugaring the
-/// collection-literal argument shorthand at the token level.
+/// collection-literal and mapping-literal argument shorthands at the token level.
 fn parse_input_expression(input: &str) -> Result<Expression, LalrpopError> {
-    grammar::InputExpressionParser::new().parse(desugar_collection_literal_args(input))
+    grammar::InputExpressionParser::new().parse(desugar_command_argument_sugar(input))
 }
 
-/// Desugars `\foo{x_ : ...}` into `\foo{{x_ : ...}}` at the token level.
+/// A per-token rewrite applied when desugaring argument shorthands.
+enum TokenEdit {
+    Keep,
+    /// Emit the token twice (used to inject a synthetic inner brace).
+    Double,
+    /// Replace the token with a fixed sequence (reusing its offsets).
+    Replace(Vec<Token>),
+    /// Drop the token.
+    Skip,
+}
+
+/// Desugars two command-argument shorthands at the token level, so the grammar
+/// sees the explicit forms (spans stay valid — synthetic tokens reuse real offsets):
 ///
-/// A `{` that opens a command-argument group (its previous token ends a command
-/// chain or a preceding argument group — a `Name` or `}`) and whose content is a
-/// brace-less collection literal (first token starts a set target, and the group
-/// contains a top-level `:`) is wrapped with a synthetic inner brace pair, so the
-/// grammar sees the explicit `{{...}}` form. Everything else — standalone sets,
-/// `A = {x_ : ...}`, ordinary `{a, b}` argument lists, already-braced
-/// `\foo{{...}}` — is left untouched. Synthetic braces reuse the real brace's
-/// offsets, keeping spans valid.
-fn desugar_collection_literal_args(input: &str) -> Vec<Spanned<Token, usize, LexicalError>> {
+/// - Collection literal: `\foo{x_ : ...}` → `\foo{{x_ : ...}}`. A `{` that opens a
+///   command-argument group (previous token is a `Name` or `}`) whose content is a
+///   brace-less set-builder (first token starts a target, contains a top-level `:`)
+///   gets a synthetic inner brace pair.
+/// - Mapping literal: `\foo[lhs]{rhs}` → `\foo{(lhs) |-> rhs}`. A `[` after a `Name`
+///   (a command chain) whose matching `]` is immediately followed by `{` is that
+///   sugar (no other construct has this shape).
+///
+/// Standalone sets, `A = {x_ : ...}`, ordinary `{a, b}` lists, already-explicit
+/// forms, and `X[i]` subset calls are all left untouched.
+fn desugar_command_argument_sugar(input: &str) -> Vec<Spanned<Token, usize, LexicalError>> {
     let raw: Vec<Spanned<Token, usize, LexicalError>> = Lexer::new(input).collect();
     if raw.iter().any(Result::is_err) {
         return raw;
@@ -2164,58 +2179,84 @@ fn desugar_collection_literal_args(input: &str) -> Vec<Spanned<Token, usize, Lex
         .collect();
     let count = toks.len();
 
-    // Match each `{` to its `}` (tracking only brace depth).
-    let mut match_of = vec![usize::MAX; count];
-    let mut open_stack = Vec::new();
+    // Match `{`↔`}` and `[`↔`]`.
+    let mut brace_match = vec![usize::MAX; count];
+    let mut bracket_match = vec![usize::MAX; count];
+    let mut brace_stack = Vec::new();
+    let mut bracket_stack = Vec::new();
     for (index, (_, token, _)) in toks.iter().enumerate() {
         match token {
-            Token::LBrace => open_stack.push(index),
+            Token::LBrace => brace_stack.push(index),
             Token::RBrace => {
-                if let Some(open) = open_stack.pop() {
-                    match_of[open] = index;
+                if let Some(open) = brace_stack.pop() {
+                    brace_match[open] = index;
+                }
+            }
+            Token::LBracket => bracket_stack.push(index),
+            Token::RBracket => {
+                if let Some(open) = bracket_stack.pop() {
+                    bracket_match[open] = index;
                 }
             }
             _ => {}
         }
     }
 
-    let mut double_open = vec![false; count];
-    let mut double_close = vec![false; count];
+    let mut edits: Vec<TokenEdit> = (0..count).map(|_| TokenEdit::Keep).collect();
+    let mut changed = false;
     for index in 0..count {
-        if !matches!(toks[index].1, Token::LBrace) {
-            continue;
+        match &toks[index].1 {
+            // Collection-literal sugar: `{x_ : ...}` command-argument group.
+            Token::LBrace
+                if index > 0
+                    && ends_command_chain_or_group(&toks[index - 1].1)
+                    && brace_match[index] != usize::MAX
+                    && index + 1 < brace_match[index]
+                    && is_set_target_start(&toks[index + 1].1)
+                    && group_has_top_level_colon(&toks, index + 1, brace_match[index]) =>
+            {
+                let close = brace_match[index];
+                edits[index] = TokenEdit::Double;
+                edits[close] = TokenEdit::Double;
+                changed = true;
+            }
+            // Mapping-literal sugar: `[lhs]{rhs}` after a command chain.
+            Token::LBracket
+                if index > 0
+                    && matches!(toks[index - 1].1, Token::Name(_))
+                    && bracket_match[index] != usize::MAX
+                    && bracket_match[index] + 1 < count
+                    && matches!(toks[bracket_match[index] + 1].1, Token::LBrace) =>
+            {
+                let close = bracket_match[index];
+                edits[index] = TokenEdit::Replace(vec![Token::LBrace, Token::LParen]);
+                edits[close] = TokenEdit::Replace(vec![Token::RParen, Token::MapsTo]);
+                edits[close + 1] = TokenEdit::Skip; // drop the `{` after `]`
+                changed = true;
+            }
+            _ => {}
         }
-        // Command-argument opener?
-        if index == 0 || !ends_command_chain_or_group(&toks[index - 1].1) {
-            continue;
-        }
-        let close = match_of[index];
-        if close == usize::MAX || index + 1 >= close {
-            continue;
-        }
-        // Brace-less collection literal: target-starting, with a top-level `:`.
-        if !is_set_target_start(&toks[index + 1].1) {
-            continue;
-        }
-        if !group_has_top_level_colon(&toks, index + 1, close) {
-            continue;
-        }
-        double_open[index] = true;
-        double_close[close] = true;
     }
 
-    if !double_open.iter().any(|&flag| flag) {
+    if !changed {
         return raw;
     }
 
     let mut out = Vec::with_capacity(count + 4);
     for (index, item) in raw.into_iter().enumerate() {
-        if double_open[index] || double_close[index] {
-            let (start, token, end) = item.expect("checked all Ok above");
-            out.push(Ok((start, token.clone(), end)));
-            out.push(Ok((start, token, end)));
-        } else {
-            out.push(item);
+        let (start, token, end) = item.expect("checked all Ok above");
+        match std::mem::replace(&mut edits[index], TokenEdit::Keep) {
+            TokenEdit::Keep => out.push(Ok((start, token, end))),
+            TokenEdit::Double => {
+                out.push(Ok((start, token.clone(), end)));
+                out.push(Ok((start, token, end)));
+            }
+            TokenEdit::Replace(tokens) => {
+                for token in tokens {
+                    out.push(Ok((start, token, end)));
+                }
+            }
+            TokenEdit::Skip => {}
         }
     }
     out
@@ -3123,6 +3164,63 @@ mod tests {
             1,
             1,
         );
+    }
+
+    #[test]
+    fn parses_mapping_literals_and_sugar() {
+        // Expression form with an `is` spec.
+        let is_map =
+            parse_expression(r#"(x_ is \real) |-> x_ + 1"#).expect("expected mapping literal");
+        let ExpressionKind::Mapping { lhs, rhs } = &is_map.kind else {
+            panic!("expected Mapping, got {:?}", is_map.kind);
+        };
+        // lhs is the grouped `(x_ is \real)`, rhs is `x_ + 1`.
+        assert!(matches!(
+            &lhs.kind,
+            ExpressionKind::Grouped { expression, .. }
+                if matches!(expression.kind, ExpressionKind::IsType { .. })
+        ));
+        assert!(matches!(rhs.kind, ExpressionKind::Binary { .. }));
+
+        // Expression form with an `"op"` spec.
+        let op_map =
+            parse_expression(r#"(x_ "in" A) |-> x_ + a"#).expect("expected mapping literal");
+        assert!(matches!(op_map.kind, ExpressionKind::Mapping { .. }));
+
+        // Bare parameter parses (spec inferred later by the checker).
+        let bare = parse_expression(r#"x_ |-> x_ + 1"#).expect("expected bare mapping");
+        let ExpressionKind::Mapping { lhs, .. } = &bare.kind else {
+            panic!("expected Mapping, got {:?}", bare.kind);
+        };
+        assert!(matches!(lhs.kind, ExpressionKind::Name(ref n) if n == "x"));
+
+        // Command sugar `\foo[lhs]{rhs}` == `\foo{(lhs) |-> rhs}`.
+        let sugar =
+            parse_expression(r#"\foo[x_ is \real]{x_ + 1}"#).expect("expected command sugar");
+        let explicit =
+            parse_expression(r#"\foo{(x_ is \real) |-> x_ + 1}"#).expect("expected explicit form");
+        let ExpressionKind::Command(sugar_cmd) = &sugar.kind else {
+            panic!("expected a command, got {:?}", sugar.kind);
+        };
+        let ExpressionKind::Command(explicit_cmd) = &explicit.kind else {
+            panic!("expected a command, got {:?}", explicit.kind);
+        };
+        assert_eq!(sugar_cmd.head_args.len(), 1);
+        assert_eq!(sugar_cmd.head_args[0].expressions.len(), 1);
+        assert!(matches!(
+            sugar_cmd.head_args[0].expressions[0].kind,
+            ExpressionKind::Mapping { .. }
+        ));
+        assert!(matches!(
+            explicit_cmd.head_args[0].expressions[0].kind,
+            ExpressionKind::Mapping { .. }
+        ));
+
+        // Untouched: a subset call `X[i]` (no `{` after `]`).
+        assert!(matches!(
+            parse_expression(r#"X[i]"#).expect("subset call").kind,
+            ExpressionKind::SubsetCall(_)
+        ));
     }
 
     #[test]

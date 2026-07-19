@@ -143,6 +143,11 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             render_expression(subject, registry),
             render_expression(spec, registry)
         ),
+        ExpressionKind::Mapping { lhs, rhs } => format!(
+            "{} \\mapsto {}",
+            render_expression(lhs, registry),
+            render_expression(rhs, registry)
+        ),
         ExpressionKind::MemberOf {
             subject,
             collection,

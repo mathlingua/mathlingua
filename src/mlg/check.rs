@@ -5411,6 +5411,160 @@ then:
     }
 
     #[test]
+    fn check_accepts_mapping_literal_with_spec() {
+        // The body is checked with the parameter bound to its spec's type.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("mapping-literal.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    Theorem:
+    given:
+    . a is \\opaque
+    . f := (x_ is \real) |-> x_
+    then: a is \\opaque
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("mapping-literal.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_undeclared_symbol_in_mapping_body() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("mapping-body-error.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    Theorem:
+    given:
+    . a is \\opaque
+    . f := (x_ is \real) |-> undeclared
+    then: a is \\opaque
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("mapping-body-error.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            user_events(&event_log).iter().any(|event| {
+                event
+                    .as_message()
+                    .is_some_and(|message| message.message == "Unrecognized symbol `undeclared`")
+            }),
+            "expected an unrecognized-symbol error in the mapping body, got {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_reports_bare_mapping_without_known_type() {
+        // A bare-parameter mapping outside an `is`-typed context has no spec to bind.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("mapping-bare.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    Theorem:
+    given:
+    . a is \\opaque
+    . f := x_ |-> x_
+    then: a is \\opaque
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("mapping-bare.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            user_events(&event_log).iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message.contains("needs a spec")
+                })
+            }),
+            "expected a 'needs a spec' error for the bare mapping, got {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_infers_bare_mapping_parameter_from_is_type() {
+        // `f := x_ |-> x_ is (_ is \real) => (_ is \real)` — the bare parameter's
+        // spec is inferred from the declared function type.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("mapping-inferred.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Describes: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    Theorem:
+    given:
+    . a is \\opaque
+    . f := x_ |-> x_ is (_ is \real) => (_ is \real)
+    then: a is \\opaque
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("mapping-inferred.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_collection_literal_argument_sugar() {
         // `\collect{x_ : ...}` (sugar) checks the same as the explicit
         // double-brace `\collect{{x_ : ...}}`.

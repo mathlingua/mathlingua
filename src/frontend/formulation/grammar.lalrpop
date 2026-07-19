@@ -49,6 +49,7 @@ extern {
         "as" => Token::As,
         "member_of" => Token::MemberOf,
         "satisfies" => Token::Satisfies,
+        "|->" => Token::MapsTo,
         "quoted_name" => Token::QuotedName(<String>),
         "magnetic_placeholder" => Token::MagneticPlaceholder(<String>),
         "placeholder" => Token::Placeholder(<String>),
@@ -79,7 +80,21 @@ extern {
 }
 
 pub InputExpression: ast::Expression = {
+    <expression:MappingExpression> => expression,
+};
+
+// A mapping literal `(lhs) |-> rhs` (right-associative), or any ordinary
+// expression. Sits above `SpecOrPredicateExpression` so mapping literals are
+// valid wherever a full expression is (top level, command args, tuple/set items).
+MappingExpression: ast::Expression = {
     <expression:SpecOrPredicateExpression> => expression,
+    <l:@L> <lhs:SpecOrPredicateExpression> "|->" <rhs:MappingExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Mapping {
+            lhs: Box::new(lhs),
+            rhs: Box::new(rhs),
+        },
+    ),
 };
 
 pub InputFormOrDeclaration: ast::FormOrDeclaration = {
@@ -462,8 +477,8 @@ HighPrecedenceInfixOperator: BinaryOperator = {
 };
 
 ExpressionList: Vec<ast::Expression> = {
-    <expression:SpecOrPredicateExpression> => vec![expression],
-    <mut expressions:ExpressionList> "," <expression:SpecOrPredicateExpression> => {
+    <expression:MappingExpression> => vec![expression],
+    <mut expressions:ExpressionList> "," <expression:MappingExpression> => {
         expressions.push(expression);
         expressions
     },

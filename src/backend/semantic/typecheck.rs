@@ -2841,6 +2841,10 @@ fn collect_expression_names(expression: &Expression, names: &mut BTreeSet<String
             collect_expression_names(subject, names);
             collect_expression_names(spec, names);
         }
+        ExpressionKind::Mapping { lhs, rhs } => {
+            collect_expression_names(lhs, names);
+            collect_expression_names(rhs, names);
+        }
     }
 }
 
@@ -3850,6 +3854,31 @@ fn collect_clause_assumptions(clause: &Clause, context: &mut TypeContext) {
     }
 }
 
+/// Checks a declaration's `:=` value. A mapping-literal value whose declaration
+/// has an `is <type>` relation is checked with that type available, so a bare
+/// parameter's spec can be inferred from it.
+fn check_declaration_definition(
+    statement: &DeclarationStatement,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let Some(definition) = &statement.definition else {
+        return;
+    };
+    if matches!(definition.kind, ExpressionKind::Mapping { .. }) {
+        let expected = match &statement.relation {
+            Some(DeclarationRelation::Is(ty)) => Some(ty),
+            _ => None,
+        };
+        check_mapping_expression(definition, expected, context, path, locator, registry, event_log);
+    } else {
+        check_expression(definition, context, path, locator, registry, event_log);
+    }
+}
+
 fn check_declaration_statement(
     statement: &DeclarationStatement,
     context: &TypeContext,
@@ -3862,9 +3891,7 @@ fn check_declaration_statement(
     if let Some(expansion) = &statement.expansion {
         check_is_subject(expansion, context, path, locator, event_log);
     }
-    if let Some(definition) = &statement.definition {
-        check_expression(definition, context, path, locator, registry, event_log);
-    }
+    check_declaration_definition(statement, context, path, locator, registry, event_log);
     if let Some(relation) = &statement.relation {
         check_declaration_relation(relation, context, path, locator, registry, event_log);
     }
@@ -4139,9 +4166,7 @@ fn assume_declaration_statement(
         check_declaration_relation(relation, context, path, locator, registry, event_log);
     }
     check_declaration_spec_facts_supported(statement, context, path, locator, registry, event_log);
-    if let Some(definition) = &statement.definition {
-        check_expression(definition, context, path, locator, registry, event_log);
-    }
+    check_declaration_definition(statement, context, path, locator, registry, event_log);
     register_declaration_collection_literal(statement, context);
     if let Some((left, right)) = declaration_substitution(statement) {
         context.add_substitution(left, right);
@@ -4173,9 +4198,7 @@ fn complete_introduced_declaration_statement(
     if let Some(relation) = &statement.relation {
         check_declaration_relation(relation, context, path, locator, registry, event_log);
     }
-    if let Some(definition) = &statement.definition {
-        check_expression(definition, context, path, locator, registry, event_log);
-    }
+    check_declaration_definition(statement, context, path, locator, registry, event_log);
     register_declaration_collection_literal(statement, context);
     if let Some((left, right)) = declaration_substitution(statement) {
         context.add_substitution(left, right);
@@ -4471,6 +4494,130 @@ fn check_satisfies(
     }
 }
 
+/// The bare parameter name of a mapping literal's left-hand side (placeholders are
+/// already stripped of their trailing `_` at lex time).
+fn mapping_parameter_name(subject: &Expression) -> Option<String> {
+    match &subject.kind {
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => Some(name.clone()),
+        _ => None,
+    }
+}
+
+/// The input specification of a function type, as the fact-spec used to type a
+/// mapping literal's parameter. Handles the structural `=>` type and a command
+/// type (e.g. `\real.function`) that defines a function.
+fn function_input_spec_from_type(
+    ty: &TypeExpression,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<FunctionTypeFactSpec> {
+    match ty {
+        TypeExpression::Function(function_type) => {
+            function_type_spec_as_fact(function_type.inputs.first()?)
+        }
+        TypeExpression::Command(command) => {
+            let active = active_command_expression(command, context);
+            let signature = shape_for_command_expression(&active).signature;
+            let info = registry.type_infos.get(&signature)?;
+            info.outputs.iter().find_map(|fact| match fact {
+                TypeFact::FunctionType { inputs, .. } => inputs.first().cloned(),
+                _ => None,
+            })
+        }
+        _ => None,
+    }
+}
+
+/// Checks a mapping literal `(x_ is \real) |-> x_ + 1`: the parameter is bound to
+/// its spec's type, then the body is checked in that extended scope. `expected` is
+/// the declared type (from an enclosing `is`) used to infer a bare parameter's
+/// spec; without it a bare parameter is an error.
+fn check_mapping_expression(
+    expression: &Expression,
+    expected: Option<&TypeExpression>,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let ExpressionKind::Mapping { lhs, rhs } = &expression.kind else {
+        return;
+    };
+
+    // Peel `(...)`/labels off the parameter binder.
+    let mut binder = lhs.as_ref();
+    while let ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } =
+        &binder.kind
+    {
+        binder = expression;
+    }
+
+    let (parameter, explicit_spec): (Option<String>, Option<FunctionTypeFactSpec>) = match &binder
+        .kind
+    {
+        ExpressionKind::IsType { subject, ty } => {
+            check_type_expression(ty, context, path, locator, registry, event_log);
+            let spec = key_for_type_expression(ty)
+                .map(|(ty_key, signature)| FunctionTypeFactSpec::Is { ty: ty_key, signature });
+            (mapping_parameter_name(subject), spec)
+        }
+        ExpressionKind::SpecStatement(statement) => (
+            mapping_parameter_name(&statement.subject),
+            Some(FunctionTypeFactSpec::Spec {
+                operator: statement.operator.clone(),
+                target: statement.name.clone(),
+            }),
+        ),
+        ExpressionKind::SpecStatementExpr {
+            subject,
+            operator,
+            target,
+        } => {
+            check_expression(target, context, path, locator, registry, event_log);
+            (
+                mapping_parameter_name(subject),
+                Some(FunctionTypeFactSpec::Spec {
+                    operator: operator.clone(),
+                    target: context.normalize_key(&key_for_expression(target)),
+                }),
+            )
+        }
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => (Some(name.clone()), None),
+        _ => (None, None),
+    };
+
+    let Some(parameter) = parameter else {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol("|->"),
+            "a mapping literal parameter must be a name with a spec, e.g. `(x_ is ...)`".to_owned(),
+        );
+        check_expression(rhs, context, path, locator, registry, event_log);
+        return;
+    };
+
+    // Resolve the parameter's spec: explicit, else inferred from the expected type.
+    let spec = explicit_spec
+        .or_else(|| expected.and_then(|ty| function_input_spec_from_type(ty, context, registry)));
+
+    let mut child = context.clone();
+    child.declare_name(parameter.clone());
+    match spec {
+        Some(spec) => child.add_fact(instantiate_function_type_spec(&spec, &parameter)),
+        None => emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&parameter),
+            format!(
+                "mapping literal parameter `{parameter}` needs a spec (e.g. `(x_ is ...)`) unless the type is known from an `is`"
+            ),
+        ),
+    }
+    check_expression(rhs, &child, path, locator, registry, event_log);
+}
+
 fn check_expression(
     expression: &Expression,
     context: &TypeContext,
@@ -4733,6 +4880,12 @@ fn check_expression(
         ExpressionKind::Satisfies { subject, spec } => {
             check_satisfies(subject, spec, context, path, locator, registry, event_log);
         }
+        ExpressionKind::Mapping { .. } => {
+            // No expected type here, so a bare-parameter mapping (no spec) is an error.
+            check_mapping_expression(
+                expression, None, context, path, locator, registry, event_log,
+            );
+        }
         ExpressionKind::MemberOf {
             subject,
             collection,
@@ -4924,6 +5077,10 @@ fn add_cast_expression_facts(expression: &Expression, context: &mut TypeContext)
         ExpressionKind::Satisfies { subject, spec } => {
             add_cast_expression_facts(subject, context);
             add_cast_expression_facts(spec, context);
+        }
+        ExpressionKind::Mapping { lhs, rhs } => {
+            add_cast_expression_facts(lhs, context);
+            add_cast_expression_facts(rhs, context);
         }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
@@ -6979,6 +7136,10 @@ fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<Str
         ExpressionKind::Satisfies { subject, spec } => {
             collect_defined_expression_names(subject, names);
             collect_defined_expression_names(spec, names);
+        }
+        ExpressionKind::Mapping { lhs, rhs } => {
+            collect_defined_expression_names(lhs, names);
+            collect_defined_expression_names(rhs, names);
         }
         ExpressionKind::MemberOf {
             subject,
@@ -10412,6 +10573,10 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
             declare_names_from_expression(subject, context);
             declare_names_from_expression(spec, context);
         }
+        ExpressionKind::Mapping { lhs, rhs } => {
+            declare_names_from_expression(lhs, context);
+            declare_names_from_expression(rhs, context);
+        }
         ExpressionKind::MemberOf {
             subject,
             collection,
@@ -10656,6 +10821,10 @@ fn substitute_expression(
         ExpressionKind::Satisfies { subject, spec } => ExpressionKind::Satisfies {
             subject: boxed(subject),
             spec: boxed(spec),
+        },
+        ExpressionKind::Mapping { lhs, rhs } => ExpressionKind::Mapping {
+            lhs: boxed(lhs),
+            rhs: boxed(rhs),
         },
         ExpressionKind::IsType { subject, ty } => ExpressionKind::IsType {
             subject: boxed(subject),
@@ -11987,6 +12156,9 @@ fn key_for_expression(expression: &Expression) -> String {
             key_for_expression(subject),
             key_for_expression(spec)
         ),
+        ExpressionKind::Mapping { lhs, rhs } => {
+            format!("{} |-> {}", key_for_expression(lhs), key_for_expression(rhs))
+        }
         ExpressionKind::MemberOf {
             subject,
             collection,

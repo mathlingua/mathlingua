@@ -6,7 +6,7 @@ use std::path::Path;
 pub const CONFIG_FILE: &str = "mlg.json";
 
 /// The default target width, in characters, for `mlg format`.
-pub const DEFAULT_PRINT_MARGIN: usize = 120;
+pub const DEFAULT_PRINT_MARGIN: usize = 100;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Config {

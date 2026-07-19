@@ -164,8 +164,9 @@ fn section_inline_text_edit(
     reflow_inline_text(section.metadata.row, lines, margin)
 }
 
-/// Builds the reflow edit for the inline text value that begins on `row`, or `None`
-/// if it is block-form (content starts on the next line) or malformed.
+/// Builds the reflow edit for the text value that begins on `row` (either inline —
+/// content on the `label: "` line — or block form, content on the following lines),
+/// reflowing both into the canonical inline form. `None` if malformed.
 fn reflow_inline_text(
     row: usize,
     lines: &[String],
@@ -175,11 +176,6 @@ fn reflow_inline_text(
     // The opening `"` is the first quote on the line (labels never contain quotes).
     let quote = open_line.find('"')?;
     let content_col = quote + 1;
-
-    // Block form: nothing but whitespace follows the opening `"` on this line.
-    if open_line[content_col..].trim().is_empty() {
-        return None;
-    }
 
     // Find the closing line (the first line from `row` that ends with an unescaped
     // `"`, considering the opening quote itself for a single-line value).
@@ -202,73 +198,173 @@ fn reflow_inline_text(
     }
 
     let first_prefix = &open_line[..content_col];
-    let replacement = reflow_text(&content_lines, first_prefix, content_col, margin);
+    let replacement = reflow_text(&content_lines, first_prefix, content_col, margin)?;
     Some((row, close_row, replacement))
 }
 
-/// Reflows text content into lines that fit within `margin`. The first line keeps
-/// the verbatim `first_prefix` (`…label: "`); every other line is indented to
-/// `content_col`. Blank lines separate paragraphs, each reflowed independently. The
+/// One unit of a text value for reflow: a whitespace-delimited word (with LaTeX
+/// blobs kept whole, so their internal spaces don't split it) or a paragraph break.
+enum Piece {
+    Word(String),
+    Paragraph,
+}
+
+/// Reflows text content into lines that fit within `margin`, treating LaTeX blobs
+/// (`$…$`, `$$…$$`, `\(…\)`, `\[…\]`) as atomic tokens that are never split or
+/// modified. The first line keeps the verbatim `first_prefix` (`…label: "`); every
+/// other line is indented to `content_col`; a blank line separates paragraphs; the
 /// closing `"` is appended to the final line.
+///
+/// Returns `None` (leave the value unchanged) when a LaTeX blob spans multiple
+/// lines or is too wide to fit on a line — the author has laid such content out by
+/// hand and it must not be reflowed.
 fn reflow_text(
     content_lines: &[&str],
     first_prefix: &str,
     content_col: usize,
     margin: usize,
-) -> Vec<String> {
-    let indent = " ".repeat(content_col);
-    let mut out: Vec<String> = Vec::new();
+) -> Option<Vec<String>> {
+    let content = content_lines.join("\n");
+    let pieces = tokenize_reflow_pieces(&content);
+    let available = margin.saturating_sub(content_col);
 
-    // Split into paragraphs on whitespace-only content lines.
-    let paragraphs: Vec<&[&str]> = content_lines
-        .split(|line| line.trim().is_empty())
-        .filter(|paragraph| paragraph.iter().any(|line| !line.trim().is_empty()))
-        .collect();
-
-    if paragraphs.is_empty() {
-        // An all-whitespace text value: keep a single empty-content line.
-        return vec![format!("{first_prefix}\"")];
+    for piece in &pieces {
+        if let Piece::Word(word) = piece {
+            let has_latex = word_contains_latex(word);
+            // A multi-line LaTeX blob, or a blob too wide to sit on a line, means the
+            // author has already laid this out — leave the whole value untouched.
+            if word.contains('\n') || (has_latex && word.chars().count() > available) {
+                return None;
+            }
+        }
     }
 
-    for (paragraph_index, paragraph) in paragraphs.iter().enumerate() {
-        if paragraph_index > 0 {
-            out.push(String::new());
-        }
+    let indent = " ".repeat(content_col);
+    let mut out: Vec<String> = Vec::new();
+    let mut current = first_prefix.to_string();
+    let mut has_word = false;
 
-        let words: Vec<&str> = paragraph
-            .iter()
-            .flat_map(|line| line.split_whitespace())
-            .collect();
-
-        let mut current = if paragraph_index == 0 {
-            first_prefix.to_string()
-        } else {
-            indent.clone()
-        };
-        let mut has_word = false;
-
-        for word in words {
-            if has_word && current.len() + 1 + word.len() > margin {
+    for piece in pieces {
+        match piece {
+            Piece::Paragraph => {
                 out.push(std::mem::take(&mut current));
+                out.push(String::new());
                 current = indent.clone();
-                current.push_str(word);
-                has_word = true;
-            } else {
-                if has_word {
-                    current.push(' ');
+                has_word = false;
+            }
+            Piece::Word(word) => {
+                let word_len = word.chars().count();
+                if has_word && current.chars().count() + 1 + word_len > margin {
+                    out.push(std::mem::take(&mut current));
+                    current = indent.clone();
+                    current.push_str(&word);
+                } else {
+                    if has_word {
+                        current.push(' ');
+                    }
+                    current.push_str(&word);
                 }
-                current.push_str(word);
                 has_word = true;
             }
         }
-
-        out.push(current);
     }
+    out.push(current);
 
     if let Some(last) = out.last_mut() {
         last.push('"');
     }
-    out
+    Some(out)
+}
+
+/// Splits text content into words and paragraph breaks, keeping each LaTeX blob
+/// whole (its internal whitespace and newlines are not word/paragraph separators).
+fn tokenize_reflow_pieces(content: &str) -> Vec<Piece> {
+    let chars: Vec<char> = content.chars().collect();
+    let count = chars.len();
+    let mut pieces = Vec::new();
+    let mut index = 0;
+
+    while index < count {
+        if chars[index].is_whitespace() {
+            let mut newlines = 0;
+            while index < count && chars[index].is_whitespace() {
+                if chars[index] == '\n' {
+                    newlines += 1;
+                }
+                index += 1;
+            }
+            if newlines >= 2 {
+                pieces.push(Piece::Paragraph);
+            }
+            continue;
+        }
+
+        let mut word = String::new();
+        while index < count {
+            if let Some(end) = latex_blob_end(&chars, index) {
+                word.extend(&chars[index..end]);
+                index = end;
+                continue;
+            }
+            if chars[index].is_whitespace() {
+                break;
+            }
+            word.push(chars[index]);
+            index += 1;
+        }
+        pieces.push(Piece::Word(word));
+    }
+
+    pieces
+}
+
+/// If a LaTeX blob opens at `start`, returns the char index just past its close
+/// (an unclosed blob runs to the end). Handles `$…$`, `$$…$$`, `\(…\)`, `\[…\]`.
+fn latex_blob_end(chars: &[char], start: usize) -> Option<usize> {
+    let count = chars.len();
+    if chars[start] == '$' {
+        if chars.get(start + 1) == Some(&'$') {
+            let mut index = start + 2;
+            while index + 1 < count {
+                if chars[index] == '$' && chars[index + 1] == '$' {
+                    return Some(index + 2);
+                }
+                index += 1;
+            }
+            return Some(count);
+        }
+        let mut index = start + 1;
+        while index < count {
+            if chars[index] == '$' {
+                return Some(index + 1);
+            }
+            index += 1;
+        }
+        return Some(count);
+    }
+
+    if chars[start] == '\\' {
+        let close = match chars.get(start + 1) {
+            Some('(') => ')',
+            Some('[') => ']',
+            _ => return None,
+        };
+        let mut index = start + 2;
+        while index + 1 < count {
+            if chars[index] == '\\' && chars[index + 1] == close {
+                return Some(index + 2);
+            }
+            index += 1;
+        }
+        return Some(count);
+    }
+
+    None
+}
+
+/// Whether a word contains any LaTeX delimiter.
+fn word_contains_latex(word: &str) -> bool {
+    word.contains('$') || word.contains("\\(") || word.contains("\\[")
 }
 
 /// Records edits that normalize the blank-line gap between consecutive top-level
@@ -415,10 +511,41 @@ mod tests {
     }
 
     #[test]
-    fn leaves_block_form_text_untouched() {
-        // Opening `"` at end of line, content on following lines → block form.
-        let source = "Text: \"\nBefore beginning with the axioms of set theory, it is worthwhile.\n\"\nId: \"x\"\n";
-        assert_eq!(format_source(source, 40), None);
+    fn reflows_block_form_text_into_inline_form() {
+        // Opening `"` at end of line, content on following lines (block form) is
+        // reflowed into the canonical inline form.
+        let source = "Text: \"\nBefore beginning with the axioms of Zermelo-Fraenkel set theory, it is\nworthwhile to engage with the reader's intuitive notion of a set and to justify\nthe axiomatic approach to set theory.\"\nId: \"x\"\n";
+        let formatted = format_stable(source, 80);
+        let lines: Vec<&str> = formatted.split('\n').collect();
+        assert!(
+            lines[0].starts_with("Text: \"Before beginning"),
+            "first line should be inline: {:?}",
+            lines[0]
+        );
+        // Continuation lines indented to the content column (7).
+        assert!(
+            lines[1].starts_with("       ") && !lines[1].trim().is_empty(),
+            "continuation should be indented to col 7: {:?}",
+            lines[1]
+        );
+        // Closing quote at the end, Id preserved.
+        assert!(formatted.contains("set theory.\""));
+        assert!(formatted.contains("Id: \"x\""));
+    }
+
+    /// Block form is reflowed to inline and repacked to the margin (fuller lines
+    /// than the author's original breaks), and is idempotent.
+    #[test]
+    fn reflows_block_form_example_repacked_to_margin() {
+        let source = "Text: \"\nBefore beginning with the axioms of Zermelo-Fraenkel set theory, it is\nworthwhile to engage with the reader's intuitive notion of a set and to justify\nthe axiomatic approach to set theory.\"\nId: \"8f66079c-6e4d-47d1-bb13-9798c5a9d36a\"\n";
+        let expected = "Text: \"Before beginning with the axioms of Zermelo-Fraenkel set theory, it is worthwhile to engage\n       with the reader's intuitive notion of a set and to justify the axiomatic approach to set\n       theory.\"\nId: \"8f66079c-6e4d-47d1-bb13-9798c5a9d36a\"\n";
+        assert_eq!(format_stable(source, 100), expected);
+        // Every content line stays within the margin.
+        for line in expected.split('\n') {
+            assert!(line.len() <= 100, "line exceeds margin: {line:?}");
+        }
+        // Idempotent.
+        assert_eq!(format_source(expected, 100), None);
     }
 
     #[test]
@@ -464,6 +591,49 @@ mod tests {
         assert!(formatted.contains("Id: \"x\""));
         // Idempotent.
         assert_eq!(format_source(&formatted, 15), None);
+    }
+
+    #[test]
+    fn leaves_text_with_multiline_latex_unchanged() {
+        // The exact example from the feature request: a description containing
+        // `$$…$$` and `\[…\]` display-math blocks must be left untouched.
+        let source = "[\\foo]\nDescribes: x\nDocumented:\n. called: \"family indexed by $I?$\"\n. written: \"\\{A?_i\\}_{i \\in I?}\"\n. description: \"A family of sets is a function $A$ with domain $I$. When $A$ is\n                a family over $I$ one writes $\\{A_i\\}_{i \\in I}$ and $A_i$ for\n                $A(i)$.\n                $$\n                  \\int f(x) \\: dx\n                $$\n                Some more text\n                \\[\n                  \\int f(x) \\: dx\n                \\]\"\nId: \"a2451abb-cfc3-4655-a641-ff6826592e7d\"\n";
+        assert_eq!(format_source(source, 100), None);
+    }
+
+    #[test]
+    fn keeps_inline_math_with_internal_spaces_whole() {
+        // `$\{A_i\}_{i \in I}$` has internal spaces but must never be split.
+        let source =
+            "Documented:\n. description: \"aaaa bbbb cccc dddd eeee ffff $\\{A_i\\}_{i \\in I}$ gggg hhhh\"\nId: \"x\"\n";
+        let formatted = format_source(source, 40).expect("expected wrapping at margin 40");
+        assert!(
+            formatted.contains("$\\{A_i\\}_{i \\in I}$"),
+            "inline math blob was split: {formatted}"
+        );
+        // The blob sits entirely on one line (no line contains only part of it).
+        for line in formatted.split('\n') {
+            let opens = line.matches('$').count();
+            assert!(opens % 2 == 0, "unbalanced `$` on a line: {line:?}");
+        }
+    }
+
+    #[test]
+    fn leaves_text_with_overwide_latex_blob_unchanged() {
+        // A single-line blob too wide to fit on a line → the author laid it out.
+        let source =
+            "Documented:\n. description: \"text $blobbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb$ more\"\nId: \"x\"\n";
+        assert_eq!(format_source(source, 30), None);
+    }
+
+    #[test]
+    fn still_reflows_descriptions_with_short_inline_math() {
+        // Short inline math does not block reflow.
+        let source = "Documented:\n. description: \"The value $x$ satisfies $x \\in A$ and also $x \\notin B$ under the stated hypotheses here.\"\nId: \"x\"\n";
+        let formatted = format_source(source, 60).expect("expected reflow");
+        assert!(formatted.split('\n').count() > 3, "expected wrapping");
+        assert!(formatted.contains("$x \\in A$"));
+        assert_eq!(format_source(&formatted, 60), None); // idempotent
     }
 
     #[test]

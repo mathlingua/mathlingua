@@ -5,12 +5,25 @@ use std::path::Path;
 
 pub const CONFIG_FILE: &str = "mlg.json";
 
+/// The default target width, in characters, for `mlg format`.
+pub const DEFAULT_PRINT_MARGIN: usize = 120;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
     pub name: String,
     #[serde(default = "default_version")]
     pub version: String,
+    /// Target line width for `mlg format`; `None` uses `DEFAULT_PRINT_MARGIN`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub print_margin: Option<usize>,
+}
+
+impl Config {
+    /// The configured print margin, or the default when unset.
+    pub fn print_margin(&self) -> usize {
+        self.print_margin.unwrap_or(DEFAULT_PRINT_MARGIN)
+    }
 }
 
 fn default_version() -> String {
@@ -22,6 +35,7 @@ impl Default for Config {
         Self {
             name: String::new(),
             version: default_version(),
+            print_margin: None,
         }
     }
 }
@@ -69,6 +83,18 @@ pub fn validate_config_file(path: &Path, event_log: &mut EventLog, origin: &str)
 
     validate_string_field(&object, "name", path, event_log, origin);
     validate_string_field(&object, "version", path, event_log, origin);
+
+    // `print_margin` is optional, but if present it must be a positive integer.
+    if let Some(value) = object.get("print_margin") {
+        let valid = value.as_u64().is_some_and(|margin| margin > 0);
+        if !valid {
+            event_log.user_error_at_path(
+                Some(origin),
+                path.to_path_buf(),
+                format!("{CONFIG_FILE} field \"print_margin\" must be a positive integer"),
+            );
+        }
+    }
 }
 
 fn validate_string_field(

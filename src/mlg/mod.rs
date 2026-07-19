@@ -2,6 +2,7 @@ pub use check::{CheckResult, check, check_diagnostics_report, check_diagnostics_
 pub use clean::{CleanResult, clean};
 pub use debug::{DebugResult, debug};
 pub use export::{ExportResult, export};
+pub use format::{FormatResult, format};
 pub use init::{InitResult, init};
 pub use lsp::{LspResult, lsp};
 pub use release::{ReleaseResult, release};
@@ -14,6 +15,7 @@ mod clean;
 mod completion;
 mod debug;
 mod export;
+mod format;
 mod init;
 mod lsp;
 mod release;

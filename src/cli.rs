@@ -91,6 +91,7 @@ pub enum Command {
     #[command(hide = true)]
     Debug,
     Export(ExportArgs),
+    Format,
     Init,
     #[command(hide = true)]
     Lsp,
@@ -187,6 +188,12 @@ mod tests {
             })
                 if paths == vec![PathBuf::from("content"), PathBuf::from("notes/example.mlg")]
         ));
+    }
+
+    #[test]
+    fn parses_format() {
+        let cli = Cli::parse_from(["mlg", "format"]);
+        assert!(matches!(cli.command, Command::Format));
     }
 
     #[test]

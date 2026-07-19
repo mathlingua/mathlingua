@@ -205,6 +205,15 @@ impl SourceCollection {
     }
 }
 
+/// The `.mlg` source files of the collection rooted at `root`, in discovery order.
+pub(crate) fn collection_source_files(
+    root: &Path,
+    event_log: &mut EventLog,
+    origin: &str,
+) -> Vec<PathBuf> {
+    resolve_collection_source_files(root, event_log, origin).source_files
+}
+
 fn resolve_collection_source_files(
     root: &Path,
     event_log: &mut EventLog,

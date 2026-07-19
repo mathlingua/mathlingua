@@ -2,8 +2,8 @@ use clap::Parser;
 use mlg::cli::{Cli, Command};
 use mlg::events::{ColorMode, EventConsoleWriter, EventFilter, EventLogListener};
 use mlg::{
-    check, check_diagnostics_report, check_diagnostics_schema, clean, debug, export, init, lsp,
-    release, version, view, whte_rbt_obj,
+    check, check_diagnostics_report, check_diagnostics_schema, clean, debug, export, format, init,
+    lsp, release, version, view, whte_rbt_obj,
 };
 use serde::Serialize;
 use std::io::{self, Write};
@@ -39,6 +39,7 @@ fn main() {
             )
             .successful
         }
+        Command::Format => format(&cwd, Some(console_listener(filter, &cwd))).successful,
         Command::Init => init(&cwd, Some(console_listener(filter, &cwd))).successful,
         Command::Lsp => lsp().successful,
         Command::Release(args) => {

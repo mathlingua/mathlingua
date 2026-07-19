@@ -1417,6 +1417,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            reject_specification_clauses(&group.that.arguments, path, locator, event_log);
             for clause in &group.that.arguments {
                 check_clause(clause, &context, path, locator, registry, event_log);
             }
@@ -1825,11 +1826,13 @@ fn validate_theorem_like(
         }
     }
 
+    reject_specification_clauses(&sections.then.arguments, path, locator, event_log);
     for clause in &sections.then.arguments {
         check_clause(clause, &context, path, locator, registry, event_log);
     }
 
     if let Some(iff) = sections.iff {
+        reject_specification_clauses(&iff.arguments, path, locator, event_log);
         for clause in &iff.arguments {
             check_clause(clause, &context, path, locator, registry, event_log);
         }
@@ -3147,6 +3150,85 @@ fn check_optional_clauses<T>(
     }
 }
 
+/// Statement-position clauses (`if:`, `then:`, `iff:`, `where:`, `such_that:`, and
+/// the logical combinators) may only contain statements, not specifications. A
+/// specification (`x is \real`, `A \:subset:/ B`) introduces symbols and is only
+/// valid in a binding position (`exists:`, `given:`, `forAll:`); here the predicate
+/// form (`is?`, `\:...?:/`) must be used instead. (Binding arguments never reach
+/// this path — they are checked directly, not as clauses.)
+fn reject_specification_clause(
+    clause: &Clause,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    const IS_MESSAGE: &str = "An `is` specification introduces a symbol and is only allowed in `exists:`, `given:`, or `forAll:`; use the statement form `is?` here";
+    const INFIX_MESSAGE: &str = "An infix specification (`\\:...:/`) introduces a symbol and is only allowed in `exists:`, `given:`, or `forAll:`; use the predicate form (`\\:...?:/`) here";
+
+    let (message, subject) = match clause {
+        // The logical combinators are position-transparent: their operands inherit
+        // the enclosing statement position, so recurse into them.
+        Clause::Not(group) => {
+            reject_specification_clause(&group.not.argument, path, locator, event_log);
+            return;
+        }
+        Clause::AllOf(group) => {
+            reject_specification_clauses(&group.all_of.arguments, path, locator, event_log);
+            return;
+        }
+        Clause::AnyOf(group) => {
+            reject_specification_clauses(&group.any_of.arguments, path, locator, event_log);
+            return;
+        }
+        Clause::OneOf(group) => {
+            reject_specification_clauses(&group.one_of.arguments, path, locator, event_log);
+            return;
+        }
+        Clause::Equivalently(group) => {
+            reject_specification_clauses(&group.equivalently.arguments, path, locator, event_log);
+            return;
+        }
+        Clause::Declaration(statement) => {
+            let message = match &statement.relation {
+                Some(DeclarationRelation::Is(_)) => IS_MESSAGE,
+                Some(DeclarationRelation::InfixSpec { spec, .. }) if !spec.predicate => INFIX_MESSAGE,
+                _ => return,
+            };
+            (message, primary_subject_key(&statement.subject))
+        }
+        Clause::Expression(expression) => match &expression.kind {
+            ExpressionKind::IsType { subject, .. } => (IS_MESSAGE, key_for_expression(subject)),
+            ExpressionKind::InfixSpecStatement { left, spec, .. } if !spec.predicate => {
+                (INFIX_MESSAGE, key_for_expression(left))
+            }
+            _ => return,
+        },
+        // Structured clauses (if/iff/forAll/exists/given/piecewise) carry their own
+        // binding and statement sub-sections, checked separately — stop here.
+        _ => return,
+    };
+
+    emit_error(
+        event_log,
+        path,
+        locator.locate_symbol(&subject),
+        message.to_owned(),
+    );
+}
+
+/// Applies [`reject_specification_clause`] to each clause in a statement-position
+/// clause list.
+fn reject_specification_clauses(
+    clauses: &[Clause],
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    for clause in clauses {
+        reject_specification_clause(clause, path, locator, event_log);
+    }
+}
+
 fn assume_clause(
     clause: &Clause,
     context: &mut TypeContext,
@@ -3259,37 +3341,45 @@ fn check_clause(
                     assume_clause(clause, &mut child, path, locator, registry, event_log);
                 }
             }
+            reject_specification_clauses(&group.then.arguments, path, locator, event_log);
             for clause in &group.then.arguments {
                 check_clause(clause, &child, path, locator, registry, event_log);
             }
         }
         Clause::If(group) => {
             let mut child = context.clone();
+            reject_specification_clauses(&group.if_.arguments, path, locator, event_log);
             for clause in &group.if_.arguments {
                 assume_clause(clause, &mut child, path, locator, registry, event_log);
             }
+            reject_specification_clauses(&group.then.arguments, path, locator, event_log);
             for clause in &group.then.arguments {
                 check_clause(clause, &child, path, locator, registry, event_log);
             }
         }
         Clause::Iff(group) => {
             let mut child = context.clone();
+            reject_specification_clauses(&group.iff.arguments, path, locator, event_log);
             for clause in &group.iff.arguments {
                 assume_clause(clause, &mut child, path, locator, registry, event_log);
             }
+            reject_specification_clauses(&group.then.arguments, path, locator, event_log);
             for clause in &group.then.arguments {
                 check_clause(clause, &child, path, locator, registry, event_log);
             }
         }
         Clause::Piecewise(group) => {
             let mut child = context.clone();
+            reject_specification_clauses(&group.if_.arguments, path, locator, event_log);
             for clause in &group.if_.arguments {
                 assume_clause(clause, &mut child, path, locator, registry, event_log);
             }
+            reject_specification_clauses(&group.then.arguments, path, locator, event_log);
             for clause in &group.then.arguments {
                 check_clause(clause, &child, path, locator, registry, event_log);
             }
             if let Some(else_) = &group.else_ {
+                reject_specification_clauses(&else_.arguments, path, locator, event_log);
                 for clause in &else_.arguments {
                     check_clause(clause, context, path, locator, registry, event_log);
                 }
@@ -3307,6 +3397,7 @@ fn check_clause(
                     assume_clause(clause, &mut child, path, locator, registry, event_log);
                 }
             }
+            reject_specification_clauses(&group.then.arguments, path, locator, event_log);
             for clause in &group.then.arguments {
                 check_clause(clause, &child, path, locator, registry, event_log);
             }

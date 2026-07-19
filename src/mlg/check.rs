@@ -1907,7 +1907,7 @@ then:
     given:
     . y, C, D, z is \thing
     then:
-    . y is \foo{C, D}(z)
+    . y is? \foo{C, D}(z)
     "#,
         )
         .unwrap();
@@ -1950,8 +1950,8 @@ then:
     given:
     . f, X, g, a, b is \thing
     then:
-    . f is \some.function{X}
-    . g is \some.function{X}(a, b)
+    . f is? \some.function{X}
+    . g is? \some.function{X}(a, b)
     "#,
         )
         .unwrap();
@@ -3079,7 +3079,7 @@ then:
 
     Theorem:
     given: A, B is \set
-    then: A + B is \set
+    then: A + B is? \set
     "#,
         )
         .unwrap();
@@ -3125,51 +3125,51 @@ then:
 
     Theorem:
     given: A, B is \set
-    then: A :- B is \set
+    then: A :- B is? \set
 
     Theorem:
     given: A, B is \set
-    then: A -: B is \set
+    then: A -: B is? \set
 
     Theorem:
     given: A, B is \set
-    then: A :-: B is \set
+    then: A :-: B is? \set
 
     Theorem:
     given: A, B is \set
-    then: A :** B is \set
+    then: A :** B is? \set
 
     Theorem:
     given: A, B is \set
-    then: A **: B is \set
+    then: A **: B is? \set
 
     Theorem:
     given: A, B is \set
-    then: A :**: B is \set
+    then: A :**: B is? \set
 
     Theorem:
     given: A, B is \set
-    then: A :*_free B is \set
+    then: A :*_free B is? \set
 
     Theorem:
     given: A, B is \set
-    then: A :+_-* B is \set
+    then: A :+_-* B is? \set
 
     Theorem:
     given: A, B is \set
-    then: A :|minus| B is \set
+    then: A :|minus| B is? \set
 
     Theorem:
     given: A, B is \set
-    then: A |minus|: B is \set
+    then: A |minus|: B is? \set
 
     Theorem:
     given: A, B is \set
-    then: A :|minus|: B is \set
+    then: A :|minus|: B is? \set
 
     Theorem:
     given: A, B is \set
-    then: A - B is \set
+    then: A - B is? \set
 
     [x_ - y_]
     Disambiguates:
@@ -3475,11 +3475,11 @@ then:
 
     Theorem:
     given: A, B is \set
-    then: A + B is \set
+    then: A + B is? \set
 
     Theorem:
     given: A, B is \set
-    then: A - B is \set
+    then: A - B is? \set
     "#,
         )
         .unwrap();
@@ -3930,6 +3930,73 @@ then:
         assert_eq!(
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_specifications_in_statement_clauses() {
+        // Specifications (`is`, non-predicate `\:...:/`) introduce symbols and are
+        // only allowed in binding positions (`exists:`/`given:`/`forAll:`). In a
+        // statement position (`if:`/`then:`/`iff:`/`that:`), the predicate forms
+        // (`is?`, `\:...?:/`) must be used instead.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("spec-in-statement.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \:subset:/ B]
+    Describes: A
+    when: B is \set
+    extends: A is \set
+    Documented:
+    . written: "A? \subseteq B?"
+
+    Theorem:
+    given: A, B is \set
+    then:
+    . A \:subset:/ B
+    . if:
+      . A is \set
+      then:
+      . A \:subset?:/ B
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("spec-in-statement.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        let messages = event_log
+            .events()
+            .iter()
+            .filter_map(Event::as_message)
+            .filter(|message| message.audience == Audience::User)
+            .map(|message| message.message.as_str())
+            .collect::<Vec<_>>();
+
+        assert!(
+            messages.contains(
+                &"An infix specification (`\\:...:/`) introduces a symbol and is only allowed in `exists:`, `given:`, or `forAll:`; use the predicate form (`\\:...?:/`) here"
+            ),
+            "expected the infix-specification rejection, got {messages:#?}"
+        );
+        assert!(
+            messages.contains(
+                &"An `is` specification introduces a symbol and is only allowed in `exists:`, `given:`, or `forAll:`; use the statement form `is?` here"
+            ),
+            "expected the `is`-specification rejection, got {messages:#?}"
         );
     }
 
@@ -4544,7 +4611,7 @@ then:
     . f is (_ is \real) => (_ is \integer)
     . y is \real
     then:
-    . f(y) is \integer
+    . f(y) is? \integer
     "#,
         )
         .unwrap();
@@ -5285,7 +5352,7 @@ then:
     given: X := {x_ : x_ is \set} as \set
     then:
     . forAll: x "in" X
-      then: x is \set
+      then: x is? \set
     "#,
         )
         .unwrap();
@@ -5427,7 +5494,7 @@ then:
     given:
     . a is \\opaque
     . f := (x_ is \real) |-> x_
-    then: a is \\opaque
+    then: a is? \\opaque
     "#,
         )
         .unwrap();
@@ -5462,7 +5529,7 @@ then:
     given:
     . a is \\opaque
     . f := (x_ is \real) |-> undeclared
-    then: a is \\opaque
+    then: a is? \\opaque
     "#,
         )
         .unwrap();
@@ -5503,7 +5570,7 @@ then:
     given:
     . a is \\opaque
     . f := x_ |-> x_
-    then: a is \\opaque
+    then: a is? \\opaque
     "#,
         )
         .unwrap();
@@ -5545,7 +5612,7 @@ then:
     given:
     . a is \\opaque
     . f := x_ |-> x_ is (_ is \real) => (_ is \real)
-    then: a is \\opaque
+    then: a is? \\opaque
     "#,
         )
         .unwrap();

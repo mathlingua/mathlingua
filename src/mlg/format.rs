@@ -1,5 +1,7 @@
 use crate::backend::collection::{collection_source_files, find_collection_root};
-use crate::backend::config::{CONFIG_FILE, Config, DEFAULT_PRINT_MARGIN};
+use crate::backend::config::{
+    CONFIG_FILE, Config, DEFAULT_MARGIN, legacy_margin_field_message, uses_legacy_margin_field,
+};
 use crate::events::{EventLog, EventLogListener};
 use crate::frontend::{ProtoArgument, ProtoGroup, ProtoParser, ProtoSection};
 use crate::mlg::util::no_errors_since;
@@ -43,7 +45,12 @@ fn format_in(cwd: &Path, event_log: &mut EventLog) -> io::Result<()> {
         return Err(io::Error::other("no collection root"));
     };
 
-    let margin = load_print_margin(&root);
+    // A stale `print_margin` aborts rather than falling back: formatting every
+    // file to the default width would rewrap exactly the files the author set a
+    // narrower margin for.
+    let Some(margin) = load_margin(&root, event_log) else {
+        return Err(io::Error::other("stale margin field"));
+    };
     let files = collection_source_files(&root, event_log, ORIGIN);
     let mut formatted = 0usize;
 
@@ -75,12 +82,23 @@ fn format_in(cwd: &Path, event_log: &mut EventLog) -> io::Result<()> {
     Ok(())
 }
 
-/// The `print_margin` from `mlg.json`, or the default when unset/unreadable.
-fn load_print_margin(root: &Path) -> usize {
-    fs::read_to_string(root.join(CONFIG_FILE))
-        .ok()
-        .and_then(|contents| serde_json::from_str::<Config>(&contents).ok())
-        .map_or(DEFAULT_PRINT_MARGIN, |config| config.print_margin())
+/// The `margin` from `mlg.json`, or the default when unset/unreadable.
+///
+/// `None` means the config still uses the pre-rename `print_margin` key, which
+/// is reported rather than ignored: silently formatting to the default width
+/// would rewrap every file the author had set a narrower margin for.
+fn load_margin(root: &Path, event_log: &mut EventLog) -> Option<usize> {
+    let path = root.join(CONFIG_FILE);
+    let Ok(contents) = fs::read_to_string(&path) else {
+        return Some(DEFAULT_MARGIN);
+    };
+
+    if uses_legacy_margin_field(&contents) {
+        event_log.user_error_at_path(Some(ORIGIN), path, legacy_margin_field_message());
+        return None;
+    }
+
+    Some(serde_json::from_str::<Config>(&contents).map_or(DEFAULT_MARGIN, |config| config.margin()))
 }
 
 /// Applies the formatting rules to a single file's source, returning the rewritten
@@ -470,7 +488,8 @@ fn trailing_quote_is_escaped(text: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::format_source;
+    use super::{CONFIG_FILE, DEFAULT_MARGIN, EventLog, format_source, load_margin};
+    use std::fs;
 
     /// Formats until a fixed point, asserting it is reached within a few passes.
     fn format_stable(source: &str, margin: usize) -> String {
@@ -501,8 +520,7 @@ mod tests {
 
     #[test]
     fn repacks_already_wrapped_inline_text_to_margin() {
-        let source =
-            "Text: \"Before beginning with the axioms,\n       it is worthwhile to engage the reader.\"\nId: \"x\"\n";
+        let source = "Text: \"Before beginning with the axioms,\n       it is worthwhile to engage the reader.\"\nId: \"x\"\n";
         // At a wide margin the two author lines repack onto one.
         let formatted = format_source(source, 120).expect("expected a change");
         assert!(formatted.contains(
@@ -550,8 +568,7 @@ mod tests {
 
     #[test]
     fn preserves_paragraph_breaks() {
-        let source =
-            "Text: \"First paragraph here.\n\nSecond paragraph here.\"\nId: \"x\"\n";
+        let source = "Text: \"First paragraph here.\n\nSecond paragraph here.\"\nId: \"x\"\n";
         let formatted = format_stable(source, 120);
         let lines: Vec<&str> = formatted.split('\n').collect();
         assert_eq!(lines[0], "Text: \"First paragraph here.");
@@ -563,14 +580,20 @@ mod tests {
     fn normalizes_blank_lines_between_top_level_items_to_two() {
         let source = "Title: \"A\"\nId: \"1\"\n\n\n\n\nTitle: \"B\"\nId: \"2\"\n";
         let formatted = format_source(source, 120).expect("expected a change");
-        assert_eq!(formatted, "Title: \"A\"\nId: \"1\"\n\n\nTitle: \"B\"\nId: \"2\"\n");
+        assert_eq!(
+            formatted,
+            "Title: \"A\"\nId: \"1\"\n\n\nTitle: \"B\"\nId: \"2\"\n"
+        );
     }
 
     #[test]
     fn inserts_missing_blank_lines_between_top_level_items() {
         let source = "Title: \"A\"\nId: \"1\"\nTitle: \"B\"\nId: \"2\"\n";
         let formatted = format_source(source, 120).expect("expected a change");
-        assert_eq!(formatted, "Title: \"A\"\nId: \"1\"\n\n\nTitle: \"B\"\nId: \"2\"\n");
+        assert_eq!(
+            formatted,
+            "Title: \"A\"\nId: \"1\"\n\n\nTitle: \"B\"\nId: \"2\"\n"
+        );
     }
 
     #[test]
@@ -594,6 +617,60 @@ mod tests {
     }
 
     #[test]
+    fn a_stale_print_margin_aborts_instead_of_reformatting() {
+        // Falling back to the default width here would rewrap exactly the files
+        // whose author had chosen a narrower margin, so formatting must not run.
+        let dir = std::env::temp_dir().join(format!(
+            "mlg-format-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&dir).unwrap();
+        fs::write(
+            dir.join(CONFIG_FILE),
+            r#"{"name": "a", "version": "1", "print_margin": 80}"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let margin = load_margin(&dir, &mut event_log);
+
+        assert_eq!(margin, None, "a stale key must not yield a usable margin");
+        assert!(
+            event_log
+                .events()
+                .iter()
+                .filter_map(crate::events::Event::as_message)
+                .any(|message| message.message.contains("was renamed to \"margin\"")),
+            "expected the rename to be reported"
+        );
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_missing_config_uses_the_default_margin() {
+        let dir = std::env::temp_dir().join(format!(
+            "mlg-format-test-missing-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&dir).unwrap();
+
+        let mut event_log = EventLog::new();
+
+        assert_eq!(load_margin(&dir, &mut event_log), Some(DEFAULT_MARGIN));
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn leaves_text_with_multiline_latex_unchanged() {
         // The exact example from the feature request: a description containing
         // `$$…$$` and `\[…\]` display-math blocks must be left untouched.
@@ -604,8 +681,7 @@ mod tests {
     #[test]
     fn keeps_inline_math_with_internal_spaces_whole() {
         // `$\{A_i\}_{i \in I}$` has internal spaces but must never be split.
-        let source =
-            "Documented:\n. description: \"aaaa bbbb cccc dddd eeee ffff $\\{A_i\\}_{i \\in I}$ gggg hhhh\"\nId: \"x\"\n";
+        let source = "Documented:\n. description: \"aaaa bbbb cccc dddd eeee ffff $\\{A_i\\}_{i \\in I}$ gggg hhhh\"\nId: \"x\"\n";
         let formatted = format_source(source, 40).expect("expected wrapping at margin 40");
         assert!(
             formatted.contains("$\\{A_i\\}_{i \\in I}$"),
@@ -621,8 +697,7 @@ mod tests {
     #[test]
     fn leaves_text_with_overwide_latex_blob_unchanged() {
         // A single-line blob too wide to fit on a line → the author laid it out.
-        let source =
-            "Documented:\n. description: \"text $blobbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb$ more\"\nId: \"x\"\n";
+        let source = "Documented:\n. description: \"text $blobbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb$ more\"\nId: \"x\"\n";
         assert_eq!(format_source(source, 30), None);
     }
 

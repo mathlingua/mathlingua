@@ -177,12 +177,19 @@ The current config file is `mlg.json`. The config model is intentionally small:
 ```json
 {
   "name": "",
-  "version": "0"
+  "version": "0",
+  "margin": 80
 }
 ```
 
-Validation requires `name` and `version` to exist and be strings. Extra fields
-are accepted for forward compatibility.
+Validation requires `name` and `version` to exist and be strings. `margin` is
+optional — it is the target line width for `mlg format`, defaulting to
+`DEFAULT_MARGIN` (80) when absent — and must be a positive integer when
+present. Extra fields are accepted for forward compatibility, with one
+exception: `margin` was formerly named `print_margin`, and because unknown
+fields are ignored, a config still carrying the old key would silently lose its
+configured width. That key is therefore rejected with a message naming the new
+one.
 
 `src/mlg/init.rs` creates missing `mlg.json` and `content/` entries, and leaves
 existing entries untouched.

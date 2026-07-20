@@ -754,6 +754,31 @@ The viewer has responsive navigation behavior.
 
 ## CLI
 
+### `mlg.json` `print_margin` Renamed To `margin`
+
+The optional `mlg.json` field controlling the target line width for `mlg format`
+is renamed from `print_margin` to `margin`.
+
+- `margin` remains optional and must be a positive integer when present; when
+  absent the default width of 80 is used.
+- `print_margin` is **no longer read**. Because unknown fields in `mlg.json` are
+  otherwise ignored for forward compatibility, a collection still carrying the
+  old key would silently fall back to the default width, so the old key is
+  rejected with an error naming the new one:
+  `mlg.json field "print_margin" was renamed to "margin"; rename it to keep the
+  configured width`.
+- Migrate by renaming the key; the value is unchanged.
+
+### Default Format Margin Changed From 100 To 80
+
+The default target line width for `mlg format` — used when `mlg.json` has no
+`margin` field — is changed from 100 to 80.
+
+- A collection that sets `margin` explicitly is unaffected.
+- A collection that relies on the default will have its inline `"..."` text
+  values reflowed to the narrower width the next time `mlg format` runs. Set
+  `"margin": 100` in `mlg.json` to keep the previous width.
+
 ### `mlg export`
 
 `mlg export` checks and renders the current collection, then builds a static

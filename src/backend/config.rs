@@ -6,7 +6,11 @@ use std::path::Path;
 pub const CONFIG_FILE: &str = "mlg.json";
 
 /// The default target width, in characters, for `mlg format`.
-pub const DEFAULT_PRINT_MARGIN: usize = 100;
+pub const DEFAULT_MARGIN: usize = 80;
+
+/// The former name of the `margin` field, still recognized so that a collection
+/// carrying it is told to rename rather than silently losing its setting.
+const LEGACY_MARGIN_FIELD: &str = "print_margin";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Config {
@@ -14,15 +18,15 @@ pub struct Config {
     pub name: String,
     #[serde(default = "default_version")]
     pub version: String,
-    /// Target line width for `mlg format`; `None` uses `DEFAULT_PRINT_MARGIN`.
+    /// Target line width for `mlg format`; `None` uses `DEFAULT_MARGIN`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub print_margin: Option<usize>,
+    pub margin: Option<usize>,
 }
 
 impl Config {
-    /// The configured print margin, or the default when unset.
-    pub fn print_margin(&self) -> usize {
-        self.print_margin.unwrap_or(DEFAULT_PRINT_MARGIN)
+    /// The configured margin, or the default when unset.
+    pub fn margin(&self) -> usize {
+        self.margin.unwrap_or(DEFAULT_MARGIN)
     }
 }
 
@@ -35,9 +39,29 @@ impl Default for Config {
         Self {
             name: String::new(),
             version: default_version(),
-            print_margin: None,
+            margin: None,
         }
     }
+}
+
+/// Whether `contents` still uses the pre-rename `print_margin` key.
+///
+/// `mlg format` reads the margin directly rather than going through
+/// [`validate_config_file`], so it uses this to report the stale key instead of
+/// silently formatting to the default width.
+pub fn uses_legacy_margin_field(contents: &str) -> bool {
+    serde_json::from_str::<serde_json::Value>(contents)
+        .ok()
+        .and_then(|value| value.as_object().cloned())
+        .is_some_and(|object| object.contains_key(LEGACY_MARGIN_FIELD))
+}
+
+/// The error reported when a config still carries the pre-rename key.
+pub fn legacy_margin_field_message() -> String {
+    format!(
+        "{CONFIG_FILE} field \"{LEGACY_MARGIN_FIELD}\" was renamed to \"margin\"; \
+         rename it to keep the configured width"
+    )
 }
 
 pub fn default_config_contents() -> String {
@@ -84,16 +108,27 @@ pub fn validate_config_file(path: &Path, event_log: &mut EventLog, origin: &str)
     validate_string_field(&object, "name", path, event_log, origin);
     validate_string_field(&object, "version", path, event_log, origin);
 
-    // `print_margin` is optional, but if present it must be a positive integer.
-    if let Some(value) = object.get("print_margin") {
+    // `margin` is optional, but if present it must be a positive integer.
+    if let Some(value) = object.get("margin") {
         let valid = value.as_u64().is_some_and(|margin| margin > 0);
         if !valid {
             event_log.user_error_at_path(
                 Some(origin),
                 path.to_path_buf(),
-                format!("{CONFIG_FILE} field \"print_margin\" must be a positive integer"),
+                format!("{CONFIG_FILE} field \"margin\" must be a positive integer"),
             );
         }
+    }
+
+    // Unknown fields are otherwise ignored, so a collection still carrying the
+    // old `print_margin` would silently fall back to the default width. Name it
+    // explicitly instead.
+    if object.contains_key(LEGACY_MARGIN_FIELD) {
+        event_log.user_error_at_path(
+            Some(origin),
+            path.to_path_buf(),
+            legacy_margin_field_message(),
+        );
     }
 }
 
@@ -123,7 +158,9 @@ fn validate_string_field(
 
 #[cfg(test)]
 mod tests {
-    use super::{Config, default_config_contents, default_version, validate_config_file};
+    use super::{
+        Config, DEFAULT_MARGIN, default_config_contents, default_version, validate_config_file,
+    };
     use crate::events::{Event, EventLog, Level};
     use std::fs;
     use std::path::{Path, PathBuf};
@@ -193,6 +230,74 @@ mod tests {
             vec![
                 "mlg.json is missing required field \"name\"".to_string(),
                 "mlg.json is missing required field \"version\"".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn margin_defaults_when_unset() {
+        let parsed: Config = serde_json::from_str(r#"{"name": "a", "version": "1"}"#).unwrap();
+
+        assert_eq!(parsed.margin, None);
+        assert_eq!(parsed.margin(), DEFAULT_MARGIN);
+    }
+
+    #[test]
+    fn margin_is_read_from_the_config() {
+        let parsed: Config =
+            serde_json::from_str(r#"{"name": "a", "version": "1", "margin": 80}"#).unwrap();
+
+        assert_eq!(parsed.margin(), 80);
+    }
+
+    #[test]
+    fn validate_accepts_a_positive_margin() {
+        let dir = TestDir::new();
+        let path = dir.path().join("mlg.json");
+        fs::write(&path, r#"{"name": "a", "version": "1", "margin": 80}"#).unwrap();
+
+        let mut event_log = EventLog::new();
+        validate_config_file(&path, &mut event_log, ORIGIN);
+
+        assert!(error_messages(&event_log).is_empty());
+    }
+
+    #[test]
+    fn validate_reports_a_non_positive_margin() {
+        let dir = TestDir::new();
+        let path = dir.path().join("mlg.json");
+        fs::write(&path, r#"{"name": "a", "version": "1", "margin": 0}"#).unwrap();
+
+        let mut event_log = EventLog::new();
+        validate_config_file(&path, &mut event_log, ORIGIN);
+
+        assert_eq!(
+            error_messages(&event_log),
+            vec!["mlg.json field \"margin\" must be a positive integer".to_string()]
+        );
+    }
+
+    #[test]
+    fn validate_reports_the_renamed_print_margin_field() {
+        // Unknown fields are ignored, so without this the old key would silently
+        // drop the configured width back to the default.
+        let dir = TestDir::new();
+        let path = dir.path().join("mlg.json");
+        fs::write(
+            &path,
+            r#"{"name": "a", "version": "1", "print_margin": 80}"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        validate_config_file(&path, &mut event_log, ORIGIN);
+
+        assert_eq!(
+            error_messages(&event_log),
+            vec![
+                "mlg.json field \"print_margin\" was renamed to \"margin\"; \
+                 rename it to keep the configured width"
+                    .to_string()
             ]
         );
     }

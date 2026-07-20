@@ -8,6 +8,11 @@ pub const CONFIG_FILE: &str = "mlg.json";
 /// The default target width, in characters, for `mlg format`.
 pub const DEFAULT_MARGIN: usize = 80;
 
+/// Whether `mlg check` formats the collection before checking it, absent a
+/// `format_on_check` setting. Formatting is normalization rather than a
+/// judgement call, so a collection is kept formatted unless it opts out.
+pub const DEFAULT_FORMAT_ON_CHECK: bool = true;
+
 /// The former name of the `margin` field, still recognized so that a collection
 /// carrying it is told to rename rather than silently losing its setting.
 const LEGACY_MARGIN_FIELD: &str = "print_margin";
@@ -21,6 +26,10 @@ pub struct Config {
     /// Target line width for `mlg format`; `None` uses `DEFAULT_MARGIN`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub margin: Option<usize>,
+    /// Whether `mlg check` formats the collection before checking it; `None`
+    /// uses `DEFAULT_FORMAT_ON_CHECK`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub format_on_check: Option<bool>,
 }
 
 impl Config {
@@ -28,6 +37,24 @@ impl Config {
     pub fn margin(&self) -> usize {
         self.margin.unwrap_or(DEFAULT_MARGIN)
     }
+
+    /// Whether `mlg check` should format first, or the default when unset.
+    pub fn format_on_check(&self) -> bool {
+        self.format_on_check.unwrap_or(DEFAULT_FORMAT_ON_CHECK)
+    }
+}
+
+/// The config for the collection rooted at `root`, or the defaults when it has
+/// no readable `mlg.json`.
+///
+/// Malformed contents fall back to the defaults rather than failing: the
+/// callers that need a config also run [`validate_config_file`], which is what
+/// reports the problem.
+pub fn load_config(root: &Path) -> Config {
+    fs::read_to_string(root.join(CONFIG_FILE))
+        .ok()
+        .and_then(|contents| serde_json::from_str::<Config>(&contents).ok())
+        .unwrap_or_default()
 }
 
 fn default_version() -> String {
@@ -40,6 +67,7 @@ impl Default for Config {
             name: String::new(),
             version: default_version(),
             margin: None,
+            format_on_check: None,
         }
     }
 }
@@ -120,6 +148,19 @@ pub fn validate_config_file(path: &Path, event_log: &mut EventLog, origin: &str)
         }
     }
 
+    // `format_on_check` is optional, but if present it must be a boolean —
+    // otherwise it silently falls back to the default and formats a collection
+    // that meant to opt out.
+    if let Some(value) = object.get("format_on_check")
+        && !value.is_boolean()
+    {
+        event_log.user_error_at_path(
+            Some(origin),
+            path.to_path_buf(),
+            format!("{CONFIG_FILE} field \"format_on_check\" must be a boolean"),
+        );
+    }
+
     // Unknown fields are otherwise ignored, so a collection still carrying the
     // old `print_margin` would silently fall back to the default width. Name it
     // explicitly instead.
@@ -159,7 +200,8 @@ fn validate_string_field(
 #[cfg(test)]
 mod tests {
     use super::{
-        Config, DEFAULT_MARGIN, default_config_contents, default_version, validate_config_file,
+        Config, DEFAULT_MARGIN, default_config_contents, default_version, load_config,
+        validate_config_file,
     };
     use crate::events::{Event, EventLog, Level};
     use std::fs;
@@ -300,6 +342,82 @@ mod tests {
                     .to_string()
             ]
         );
+    }
+
+    #[test]
+    fn format_on_check_defaults_to_true_when_unset() {
+        let parsed: Config = serde_json::from_str(r#"{"name": "a", "version": "1"}"#).unwrap();
+
+        assert_eq!(parsed.format_on_check, None);
+        assert!(parsed.format_on_check());
+    }
+
+    #[test]
+    fn format_on_check_can_be_turned_off() {
+        let parsed: Config =
+            serde_json::from_str(r#"{"name": "a", "version": "1", "format_on_check": false}"#)
+                .unwrap();
+
+        assert!(!parsed.format_on_check());
+    }
+
+    #[test]
+    fn validate_accepts_a_boolean_format_on_check() {
+        let dir = TestDir::new();
+        let path = dir.path().join("mlg.json");
+        fs::write(
+            &path,
+            r#"{"name": "a", "version": "1", "format_on_check": false}"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        validate_config_file(&path, &mut event_log, ORIGIN);
+
+        assert!(error_messages(&event_log).is_empty());
+    }
+
+    #[test]
+    fn validate_reports_a_non_boolean_format_on_check() {
+        // Without this the value is ignored and the collection is formatted
+        // anyway — the opposite of what writing the field asked for.
+        let dir = TestDir::new();
+        let path = dir.path().join("mlg.json");
+        fs::write(
+            &path,
+            r#"{"name": "a", "version": "1", "format_on_check": "no"}"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        validate_config_file(&path, &mut event_log, ORIGIN);
+
+        assert_eq!(
+            error_messages(&event_log),
+            vec!["mlg.json field \"format_on_check\" must be a boolean".to_string()]
+        );
+    }
+
+    #[test]
+    fn load_config_falls_back_to_defaults_without_a_config_file() {
+        let dir = TestDir::new();
+
+        assert_eq!(load_config(dir.path()), Config::default());
+    }
+
+    #[test]
+    fn load_config_reads_the_collections_settings() {
+        let dir = TestDir::new();
+        fs::write(
+            dir.path().join("mlg.json"),
+            r#"{"name": "a", "version": "1", "format_on_check": false, "margin": 100}"#,
+        )
+        .unwrap();
+
+        let config = load_config(dir.path());
+
+        assert!(!config.format_on_check());
+        assert_eq!(config.margin(), 100);
     }
 
     #[test]

@@ -754,6 +754,27 @@ The viewer has responsive navigation behavior.
 
 ## CLI
 
+### `mlg check` Formats The Collection First
+
+`mlg check` runs the same formatting pass as `mlg format` over the collection
+before checking it, so a checked collection is also a formatted one.
+
+- The new optional `mlg.json` field `format_on_check` controls this. It must be
+  a boolean when present and defaults to `true`, so a collection is formatted
+  unless it opts out with `"format_on_check": false`.
+- Formatting is whole-collection even when the check is narrowed to explicit
+  paths: a check of a few files already reads the whole collection to resolve
+  them, and formatting only the named files would leave the rest in whatever
+  state the last check happened to touch.
+- It runs *before* the source is parsed. Checking the pre-format source would
+  report line and column positions that no longer exist by the time the author
+  reads them.
+- Files that were rewritten are reported as `Formatted N files`, ahead of the
+  check summary. A run that changed nothing says nothing about formatting.
+- Outside a collection — no `mlg.json` in the current directory or any ancestor
+  — there is no root to format and no config to read, so `mlg check` on loose
+  files formats nothing.
+
 ### `mlg.json` `print_margin` Renamed To `margin`
 
 The optional `mlg.json` field controlling the target line width for `mlg format`

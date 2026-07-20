@@ -1,5 +1,7 @@
-use crate::backend::collection::SourceCollection;
+use crate::backend::collection::{SourceCollection, find_collection_root};
+use crate::backend::config::load_config;
 use crate::events::{Audience, EventLocation, EventLog, EventLogListener, Level, MarkerRange};
+use crate::mlg::format::format_collection;
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since, user_issue_count_since};
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -51,6 +53,8 @@ pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) 
         format!("Checking {} explicit path(s)", paths.len()),
     );
 
+    format_before_checking(cwd, event_log);
+
     let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
     let diagnostic_filter = collection.diagnostic_filter(cwd, paths, event_log, ORIGIN);
     let files_checked = diagnostic_filter.selected_file_count(&collection);
@@ -75,6 +79,38 @@ pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) 
     CheckSummary {
         files_checked,
         marker_range: MarkerRange::new(begin, end),
+    }
+}
+
+/// Run `mlg format` over the collection before checking it, unless the config
+/// turns that off with `"format_on_check": false`.
+///
+/// Formatting rewrites the very files about to be parsed, so it has to happen
+/// before the collection is loaded — a check of the pre-format source would
+/// report positions that no longer exist by the time the user looks at them.
+///
+/// Whole-collection, like `mlg format` itself: even a check narrowed to a few
+/// paths reads the whole collection to resolve them, and formatting only the
+/// named files would leave the collection in a half-formatted state that
+/// depends on which paths were last checked.
+///
+/// Outside a collection there is no config and no root to format, so this is a
+/// no-op — `mlg check` still works on loose files.
+fn format_before_checking(cwd: &Path, event_log: &mut EventLog) {
+    let start = cwd.canonicalize().unwrap_or_else(|_| cwd.to_path_buf());
+    let Some(root) = find_collection_root(&start) else {
+        return;
+    };
+    if !load_config(&root).format_on_check() {
+        return;
+    }
+
+    // Silent when nothing changed: the interesting news is the check result,
+    // and a "Nothing to format" on every run would bury it.
+    match format_collection(&root, event_log, ORIGIN) {
+        Some(0) | None => {}
+        Some(1) => event_log.user_log(Some(ORIGIN), "Formatted 1 file"),
+        Some(count) => event_log.user_log(Some(ORIGIN), format!("Formatted {count} files")),
     }
 }
 
@@ -398,6 +434,26 @@ mod tests {
                     .and_then(|message| (message.audience == Audience::User).then(|| event.clone()))
             })
             .collect()
+    }
+
+    /// Asserts a clean check whose summary reads `summary`.
+    ///
+    /// Unlike comparing the whole event list, this tolerates the `Formatted N
+    /// files` that `mlg check` reports when a fixture is not already in
+    /// canonical form — several fixtures separate their items by one blank line
+    /// where the formatter wants two, which has nothing to do with what those
+    /// tests are about.
+    pub(super) fn assert_checked_cleanly(event_log: &EventLog, summary: &str) {
+        let events = user_events(event_log);
+        assert!(
+            !event_log.has_errors(),
+            "expected a clean check: {events:#?}"
+        );
+        assert_eq!(
+            events.last(),
+            Some(&Event::user_log(summary).with_origin("mlg_check")),
+            "expected the check summary last: {events:#?}"
+        );
     }
 
     pub(super) fn has_user_error_at(
@@ -939,10 +995,113 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         let result = check_in(&root, &[PathBuf::from("selected.mlg")], &mut event_log);
 
         assert_eq!(result.files_checked, 1);
+        assert_checked_cleanly(&event_log, "Checked 1 file");
+    }
+
+    /// A file the formatter will rewrite: its two top-level items are separated
+    /// by one blank line where the canonical form wants two.
+    const UNFORMATTED_SOURCE: &str = "Title: \"A\"\nId: \"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\"\n\nTitle: \"B\"\nId: \"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb\"\n";
+
+    const FORMATTED_SOURCE: &str = "Title: \"A\"\nId: \"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa\"\n\n\nTitle: \"B\"\nId: \"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb\"\n";
+
+    /// A collection root holding `UNFORMATTED_SOURCE`, configured with `config`.
+    fn unformatted_collection(root: &Path, config: &str) -> PathBuf {
+        let file = root.join("unformatted.mlg");
+        fs::create_dir_all(root).unwrap();
+        fs::write(root.join("mlg.json"), config).unwrap();
+        fs::write(&file, UNFORMATTED_SOURCE).unwrap();
+        file
+    }
+
+    #[test]
+    fn check_formats_the_collection_by_default() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let file = unformatted_collection(&root, &default_config_contents());
+
+        let mut event_log = EventLog::new();
+        check_in(&root, &[], &mut event_log);
+
+        assert_eq!(fs::read_to_string(&file).unwrap(), FORMATTED_SOURCE);
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .filter_map(|event| event.as_message())
+                .any(|message| message.message == "Formatted 1 file"),
+            "the rewrite must be reported: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_leaves_the_collection_alone_when_format_on_check_is_false() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let file = unformatted_collection(
+            &root,
+            r#"{"name": "a", "version": "1", "format_on_check": false}"#,
+        );
+
+        let mut event_log = EventLog::new();
+        check_in(&root, &[], &mut event_log);
+
+        assert_eq!(fs::read_to_string(&file).unwrap(), UNFORMATTED_SOURCE);
+        assert_checked_cleanly(&event_log, "Checked 1 file");
+    }
+
+    #[test]
+    fn check_formats_the_whole_collection_even_when_given_one_path() {
+        // Formatting only the named file would leave the collection in a
+        // half-formatted state that depends on which paths were last checked.
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let unnamed = unformatted_collection(&root, &default_config_contents());
+        let named = root.join("named.mlg");
+        fs::write(
+            &named,
+            "Title: \"C\"\nId: \"cccccccc-cccc-4ccc-8ccc-cccccccccccc\"\n",
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(&root, &[PathBuf::from("named.mlg")], &mut event_log);
+
+        assert_eq!(fs::read_to_string(&unnamed).unwrap(), FORMATTED_SOURCE);
+    }
+
+    #[test]
+    fn check_says_nothing_about_formatting_when_nothing_changed() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
+        fs::write(root.join("formatted.mlg"), FORMATTED_SOURCE).unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(&root, &[], &mut event_log);
+
         assert_eq!(
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
+    }
+
+    #[test]
+    fn check_outside_a_collection_does_not_format() {
+        // There is no root to format and no config to consult, and `mlg check`
+        // still has to work on loose files.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("loose.mlg");
+        fs::write(&file, UNFORMATTED_SOURCE).unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("loose.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(fs::read_to_string(&file).unwrap(), UNFORMATTED_SOURCE);
     }
 
     #[test]
@@ -2732,10 +2891,7 @@ then:
         let result = check_in(root, &[], &mut event_log);
 
         assert_eq!(result.files_checked, 1);
-        assert_eq!(
-            user_events(&event_log),
-            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
-        );
+        assert_checked_cleanly(&event_log, "Checked 1 file");
     }
 
     #[test]
@@ -2779,10 +2935,7 @@ then:
         let result = check_in(root, &[], &mut event_log);
 
         assert_eq!(result.files_checked, 1);
-        assert_eq!(
-            user_events(&event_log),
-            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
-        );
+        assert_checked_cleanly(&event_log, "Checked 1 file");
     }
 
     #[test]
@@ -2819,10 +2972,7 @@ then:
         let result = check_in(root, &[], &mut event_log);
 
         assert_eq!(result.files_checked, 1);
-        assert_eq!(
-            user_events(&event_log),
-            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
-        );
+        assert_checked_cleanly(&event_log, "Checked 1 file");
     }
 
     #[test]
@@ -2854,10 +3004,7 @@ then:
         let result = check_in(root, &[], &mut event_log);
 
         assert_eq!(result.files_checked, 1);
-        assert_eq!(
-            user_events(&event_log),
-            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
-        );
+        assert_checked_cleanly(&event_log, "Checked 1 file");
     }
 
     #[test]
@@ -5585,9 +5732,9 @@ then:
         assert_eq!(result.files_checked, 1);
         assert!(
             user_events(&event_log).iter().any(|event| {
-                event.as_message().is_some_and(|message| {
-                    message.message.contains("needs a spec")
-                })
+                event
+                    .as_message()
+                    .is_some_and(|message| message.message.contains("needs a spec"))
             }),
             "expected a 'needs a spec' error for the bare mapping, got {:#?}",
             user_events(&event_log)

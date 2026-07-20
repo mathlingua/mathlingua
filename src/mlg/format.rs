@@ -45,31 +45,9 @@ fn format_in(cwd: &Path, event_log: &mut EventLog) -> io::Result<()> {
         return Err(io::Error::other("no collection root"));
     };
 
-    // A stale `print_margin` aborts rather than falling back: formatting every
-    // file to the default width would rewrap exactly the files the author set a
-    // narrower margin for.
-    let Some(margin) = load_margin(&root, event_log) else {
+    let Some(formatted) = format_collection(&root, event_log, ORIGIN) else {
         return Err(io::Error::other("stale margin field"));
     };
-    let files = collection_source_files(&root, event_log, ORIGIN);
-    let mut formatted = 0usize;
-
-    for file in files {
-        let Ok(source) = fs::read_to_string(&file) else {
-            continue;
-        };
-        if let Some(updated) = format_source(&source, margin) {
-            if let Err(error) = fs::write(&file, updated) {
-                event_log.user_error_at_path(
-                    Some(ORIGIN),
-                    file.clone(),
-                    format!("Failed to write formatted source: {error}"),
-                );
-                continue;
-            }
-            formatted += 1;
-        }
-    }
 
     event_log.user_log(
         Some(ORIGIN),
@@ -82,19 +60,58 @@ fn format_in(cwd: &Path, event_log: &mut EventLog) -> io::Result<()> {
     Ok(())
 }
 
+/// Format every source file of the collection rooted at `root`, returning how
+/// many files were rewritten. `None` means the config still uses the pre-rename
+/// `print_margin` key, so nothing was formatted.
+///
+/// The count is returned rather than logged so that each caller words its own
+/// summary — `mlg format` always reports, while `mlg check` stays quiet unless
+/// it actually changed something.
+pub(super) fn format_collection(
+    root: &Path,
+    event_log: &mut EventLog,
+    origin: &str,
+) -> Option<usize> {
+    // A stale `print_margin` aborts rather than falling back: formatting every
+    // file to the default width would rewrap exactly the files the author set a
+    // narrower margin for.
+    let margin = load_margin(root, event_log, origin)?;
+    let files = collection_source_files(root, event_log, origin);
+    let mut formatted = 0usize;
+
+    for file in files {
+        let Ok(source) = fs::read_to_string(&file) else {
+            continue;
+        };
+        if let Some(updated) = format_source(&source, margin) {
+            if let Err(error) = fs::write(&file, updated) {
+                event_log.user_error_at_path(
+                    Some(origin),
+                    file.clone(),
+                    format!("Failed to write formatted source: {error}"),
+                );
+                continue;
+            }
+            formatted += 1;
+        }
+    }
+
+    Some(formatted)
+}
+
 /// The `margin` from `mlg.json`, or the default when unset/unreadable.
 ///
 /// `None` means the config still uses the pre-rename `print_margin` key, which
 /// is reported rather than ignored: silently formatting to the default width
 /// would rewrap every file the author had set a narrower margin for.
-fn load_margin(root: &Path, event_log: &mut EventLog) -> Option<usize> {
+fn load_margin(root: &Path, event_log: &mut EventLog, origin: &str) -> Option<usize> {
     let path = root.join(CONFIG_FILE);
     let Ok(contents) = fs::read_to_string(&path) else {
         return Some(DEFAULT_MARGIN);
     };
 
     if uses_legacy_margin_field(&contents) {
-        event_log.user_error_at_path(Some(ORIGIN), path, legacy_margin_field_message());
+        event_log.user_error_at_path(Some(origin), path, legacy_margin_field_message());
         return None;
     }
 
@@ -488,7 +505,7 @@ fn trailing_quote_is_escaped(text: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{CONFIG_FILE, DEFAULT_MARGIN, EventLog, format_source, load_margin};
+    use super::{CONFIG_FILE, DEFAULT_MARGIN, EventLog, ORIGIN, format_source, load_margin};
     use std::fs;
 
     /// Formats until a fixed point, asserting it is reached within a few passes.
@@ -636,7 +653,7 @@ mod tests {
         .unwrap();
 
         let mut event_log = EventLog::new();
-        let margin = load_margin(&dir, &mut event_log);
+        let margin = load_margin(&dir, &mut event_log, ORIGIN);
 
         assert_eq!(margin, None, "a stale key must not yield a usable margin");
         assert!(
@@ -665,7 +682,10 @@ mod tests {
 
         let mut event_log = EventLog::new();
 
-        assert_eq!(load_margin(&dir, &mut event_log), Some(DEFAULT_MARGIN));
+        assert_eq!(
+            load_margin(&dir, &mut event_log, ORIGIN),
+            Some(DEFAULT_MARGIN)
+        );
 
         let _ = fs::remove_dir_all(&dir);
     }

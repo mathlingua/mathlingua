@@ -178,14 +178,18 @@ The current config file is `mlg.json`. The config model is intentionally small:
 {
   "name": "",
   "version": "0",
-  "margin": 80
+  "margin": 80,
+  "format_on_check": true
 }
 ```
 
 Validation requires `name` and `version` to exist and be strings. `margin` is
 optional — it is the target line width for `mlg format`, defaulting to
 `DEFAULT_MARGIN` (80) when absent — and must be a positive integer when
-present. Extra fields are accepted for forward compatibility, with one
+present. `format_on_check` is optional and must be a boolean when present; it
+controls whether `mlg check` formats the collection before checking it, and
+defaults to `DEFAULT_FORMAT_ON_CHECK` (`true`). Extra fields are accepted for
+forward compatibility, with one
 exception: `margin` was formerly named `print_margin`, and because unknown
 fields are ignored, a config still carrying the old key would silently lose its
 configured width. That key is therefore rejected with a message naming the new

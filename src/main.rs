@@ -2,8 +2,8 @@ use clap::Parser;
 use mlg::cli::{Cli, Command};
 use mlg::events::{ColorMode, EventConsoleWriter, EventFilter, EventLogListener};
 use mlg::{
-    check, check_diagnostics_report, check_diagnostics_schema, clean, debug, export, format, init,
-    lsp, release, version, view, whte_rbt_obj,
+    check, check_diagnostics_report, check_diagnostics_schema, clean, debug, export, extract,
+    format, init, lsp, release, report, version, view, whte_rbt_obj,
 };
 use serde::Serialize;
 use std::io::{self, Write};
@@ -39,6 +39,9 @@ fn main() {
             )
             .successful
         }
+        Command::Extract(args) => {
+            extract(&cwd, &[args.id], Some(console_listener(filter, &cwd))).successful
+        }
         Command::Format => format(&cwd, Some(console_listener(filter, &cwd))).successful,
         Command::Init => init(&cwd, Some(console_listener(filter, &cwd))).successful,
         Command::Lsp => lsp().successful,
@@ -54,6 +57,9 @@ fn main() {
             // A real release regenerates the site: remove `docs/` and re-export it
             // so the published docs reflect the release just recorded.
             released && (args.dry_run || regenerate_docs(&filter, &cwd))
+        }
+        Command::Report(args) => {
+            report(&cwd, &args.ids, Some(console_listener(filter, &cwd))).successful
         }
         Command::Version => version(Some(console_listener(filter, &cwd))).successful,
         Command::View(args) => {

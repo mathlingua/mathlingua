@@ -91,11 +91,15 @@ pub enum Command {
     #[command(hide = true)]
     Debug,
     Export(ExportArgs),
+    #[command(hide = true)]
+    Extract(ExtractArgs),
     Format,
     Init,
     #[command(hide = true)]
     Lsp,
     Release(ReleaseArgs),
+    #[command(hide = true)]
+    Report(ReportArgs),
     Version,
     View(ViewArgs),
     #[command(name = "whte_rbt.obj", hide = true)]
@@ -127,6 +131,20 @@ pub struct ExportArgs {
 }
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
+pub struct ExtractArgs {
+    /// The `Id:` of the top-level item to extract.
+    #[arg(value_name = "ID")]
+    pub id: String,
+}
+
+#[derive(Clone, Debug, Args, PartialEq, Eq)]
+pub struct ReportArgs {
+    /// The `Id:` of each top-level item to include in the report.
+    #[arg(value_name = "ID", required = true, num_args = 1..)]
+    pub ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Args, PartialEq, Eq)]
 pub struct ReleaseArgs {
     #[arg(long, value_name = "TEXT")]
     pub summary: String,
@@ -151,7 +169,8 @@ pub struct ViewArgs {
 #[cfg(test)]
 mod tests {
     use super::{
-        CheckArgs, Cli, CliEventAudience, CliEventLevel, Command, ExportArgs, ReleaseArgs, ViewArgs,
+        CheckArgs, Cli, CliEventAudience, CliEventLevel, Command, ExportArgs, ExtractArgs,
+        ReleaseArgs, ReportArgs, ViewArgs,
     };
     use clap::{CommandFactory, Parser};
     use std::path::PathBuf;
@@ -278,6 +297,42 @@ mod tests {
     }
 
     #[test]
+    fn parses_hidden_extract_command() {
+        let cli = Cli::parse_from(["mlg", "extract", "11111111-1111-4111-8111-111111111111"]);
+
+        assert!(matches!(
+            cli.command,
+            Command::Extract(ExtractArgs { id })
+                if id == "11111111-1111-4111-8111-111111111111"
+        ));
+    }
+
+    #[test]
+    fn extract_requires_an_id() {
+        let result = Cli::try_parse_from(["mlg", "extract"]);
+
+        assert!(result.is_err(), "extract should require an id");
+    }
+
+    #[test]
+    fn parses_hidden_report_command_with_several_ids() {
+        let cli = Cli::parse_from(["mlg", "report", "first-id", "second-id"]);
+
+        assert!(matches!(
+            cli.command,
+            Command::Report(ReportArgs { ids })
+                if ids == vec!["first-id".to_string(), "second-id".to_string()]
+        ));
+    }
+
+    #[test]
+    fn report_requires_at_least_one_id() {
+        let result = Cli::try_parse_from(["mlg", "report"]);
+
+        assert!(result.is_err(), "report should require an id");
+    }
+
+    #[test]
     fn help_does_not_show_hidden_commands() {
         let mut command = Cli::command();
         let mut help = Vec::new();
@@ -290,6 +345,16 @@ mod tests {
                 .any(|line| line.trim_start().starts_with("debug"))
         );
         assert!(!help.contains("whte_rbt.obj"));
+        assert!(
+            !help
+                .lines()
+                .any(|line| line.trim_start().starts_with("extract"))
+        );
+        assert!(
+            !help
+                .lines()
+                .any(|line| line.trim_start().starts_with("report"))
+        );
     }
 
     #[test]

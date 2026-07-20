@@ -838,6 +838,67 @@ A hidden `mlg debug` command was added for parser exploration.
 - The command is hidden from normal help output where supported by the CLI
   framework.
 
+### `mlg extract`
+
+A hidden `mlg extract <id>` command was added for building reproducible test
+cases out of a working collection.
+
+- It takes the `Id:` of one top-level item and prints that item together with
+  every definition it depends on, transitively.
+- Dependencies come from the same graph `mlg release` uses: a command occurrence
+  is resolved through the semantic signature registry, so the edges match what
+  go-to-definition sees.
+- Items are printed in dependencies-first order — each item appears after
+  everything it uses, with the requested item last — separated by two blank
+  lines, the same gap `mlg format` normalizes to, so the output is already in
+  canonical form. An item reachable by several paths is printed once.
+- The output is exactly the items' source slices, so pasting it into a fresh
+  collection reproduces the original behavior: it passes `mlg check` whenever
+  the collection it came from did.
+- An id that no top-level item carries is an error naming that id, and running
+  outside a collection is an error.
+- A collection that does *not* check cleanly is not a failure — reproducing a
+  case the checker mishandles is the point. The check pass still runs (it is
+  what resolves dependency edges and fills in missing `Id:` sections), but its
+  diagnostics are collected separately: only a count is reported, on stderr,
+  pointing at `mlg check` for detail. Extracted source therefore always leaves
+  stdout clean enough to redirect straight into a file.
+- The command is hidden from normal help output where supported by the CLI
+  framework.
+
+### `mlg report`
+
+A hidden `mlg report <id>...` command was added for filing parser issues against
+`mathlingua/mathlingua`.
+
+- It takes one or more `Id:` values and extracts them exactly as `mlg extract`
+  does, so a report always quotes the same self-contained collection.
+- It opens `$VISUAL` (else `$EDITOR`, else `vi` — `notepad` on Windows) on a
+  Markdown template: a title line, prompts for what happened and what was
+  expected, and the extracted MathLingua already fenced under `Reproduction`.
+  Either variable may carry arguments, as `EDITOR="code --wait"` does.
+- The fence around the extracted code is one backtick longer than the longest
+  backtick run inside it, so an item whose quoted text embeds its own ` ```mlg `
+  fence cannot close the block early.
+- On exit the finished issue is printed and the user chooses `[r]eport`,
+  `[e]dit`, or `[c]ancel`. Editing reopens the editor on the current text and
+  asks again. An unrecognized answer re-asks; a blank answer is not a choice, so
+  pressing Enter never posts. Cancelling reports nothing and is not a failure.
+- The issue title is the first non-empty line with any leading `#` stripped; the
+  body is everything after it. An issue with no title is an error and posts
+  nothing.
+- Reporting posts through `gh issue create --repo mathlingua/mathlingua` when
+  the `gh` CLI is available, which carries the whole body and needs no browser.
+  When `gh` is absent it falls back to opening a prefilled issue form in the
+  browser; a body too large to survive a URL is replaced with a pointer to
+  `mlg extract` rather than silently truncated. A `gh` that runs but refuses
+  (typically unauthenticated) is reported rather than falling back, so its
+  complaint is not discarded.
+- The command requires an interactive terminal and errors otherwise, directing
+  the user to `mlg extract` for the scriptable path.
+- The command is hidden from normal help output where supported by the CLI
+  framework.
+
 ### `mlg whte_rbt.obj`
 
 A hidden easter-egg command was added.

@@ -42,6 +42,17 @@ impl EventConsoleWriter {
         self
     }
 
+    /// The line `event` would be printed as, without choosing a stream for it.
+    /// `None` when the filter excludes it.
+    ///
+    /// This is for callers that route console-shaped diagnostics somewhere other
+    /// than the console — `mlg extract` prints them into its stdout payload — so
+    /// that the wording, paths, and line/column format stay identical to what
+    /// `mlg check` shows.
+    pub fn render_to_string(&self, event: &Event) -> Option<String> {
+        self.render(event).map(|rendered| rendered.text)
+    }
+
     fn render(&self, event: &Event) -> Option<RenderedEvent> {
         if !self.filter.matches(event) {
             return None;

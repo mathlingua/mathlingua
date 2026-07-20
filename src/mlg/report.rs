@@ -8,7 +8,7 @@
 //! otherwise opens a prefilled issue form in the browser.
 
 use crate::events::{EventLog, EventLogListener};
-use crate::mlg::extract::extracted_source;
+use crate::mlg::extract::{check_error_warning, extract_source};
 use crate::mlg::util::no_errors_since;
 use std::fs;
 use std::io::{self, IsTerminal, Write};
@@ -46,9 +46,20 @@ pub fn report(
 }
 
 fn report_in(cwd: &Path, ids: &[String], event_log: &mut EventLog) {
-    let Some(source) = extracted_source(cwd, ids, event_log) else {
+    let Some(extracted) = extract_source(cwd, ids, event_log) else {
         return;
     };
+    let source = extracted.source;
+
+    // The errors themselves are not quoted into the issue — the issue is about
+    // what the parser did, not about the collection's state — so only the count
+    // is surfaced, pointing at `mlg check` for the detail.
+    if !extracted.check_errors.is_empty() {
+        event_log.user_warning(
+            Some(ORIGIN),
+            check_error_warning(extracted.check_errors.len()),
+        );
+    }
 
     if !io::stdin().is_terminal() {
         event_log.user_error(

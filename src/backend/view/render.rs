@@ -23,8 +23,8 @@ pub(super) use registry::build_render_registry;
 use registry::*;
 pub(super) use registry::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
-    render_documented_text_latex, render_formulation_latex, render_group_heading_latex,
-    render_writing_alias_latex, resolve_topic_heading_latex,
+    join_title_parts, render_documented_text_latex, render_formulation_latex,
+    render_group_heading_latex, render_writing_alias_latex, resolve_topic_heading_latex,
 };
 use signatures::*;
 use statements::*;

@@ -21,9 +21,14 @@ pub(in crate::backend::view) struct RenderRegistry {
 pub(super) struct CommandRender {
     pub(super) subject_variable: Option<String>,
     pub(super) parameters: Vec<String>,
+    /// The form used wherever the item is named inline, such as `X is \foo`.
     pub(super) called: String,
     pub(super) called_source: CalledRenderSource,
     pub(super) written: Option<String>,
+    /// The `called:` template, kept apart from [`Self::called`] so that a card
+    /// title can show both forms even when the `written:` form is the one that
+    /// names the item inline.
+    pub(super) called_template: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -47,6 +52,30 @@ impl CommandRender {
             CalledRenderSource::Written => substitute_math_template(&self.called, substitutions),
         }
     }
+
+    /// The card title for this item.
+    ///
+    /// An item documented with both a `called:` and a `written:` form is titled
+    /// with both, as `<called>: <written>`. With only one of them the title is
+    /// just that form, exactly as it names the item inline.
+    pub(super) fn render_title(&self, substitutions: &HashMap<String, String>) -> String {
+        match (&self.called_template, &self.written) {
+            (Some(called), Some(written)) => join_title_parts(
+                &render_called_template(called, substitutions),
+                &substitute_math_template(written, substitutions),
+            ),
+            _ => self.render_called(substitutions),
+        }
+    }
+}
+
+/// Joins the two halves of a `<called>: <written>` title.
+///
+/// The separator is written as text rather than as a bare `:` so that it keeps
+/// the tight spacing of prose punctuation; a math-mode colon is a relation and
+/// would be set with a space on either side.
+pub(in crate::backend::view) fn join_title_parts(called: &str, written: &str) -> String {
+    format!("{called}\\textrm{{: }}{written}")
 }
 
 pub(in crate::backend::view) fn build_render_registry(
@@ -244,7 +273,7 @@ pub(in crate::backend::view) fn render_group_heading_latex(
 
     let substitutions = command_header_substitutions(&header, registry);
 
-    Some(render.render_called(&substitutions))
+    Some(render.render_title(&substitutions))
 }
 
 fn supports_resolved_group_heading(kind: &str) -> bool {
@@ -528,11 +557,14 @@ pub(super) fn render_refines_entries(
         return Vec::new();
     };
 
+    // `Refines:` is named by an `adjective:` rather than a `called:`, so there is
+    // no called form to pair with the written one and its title is unchanged.
     render_entries_from_signatures(
         signatures,
         subject_variable,
         Some((join_adjective_text(adjective), CalledRenderSource::Called)),
         written.map(join_written_text),
+        None,
     )
 }
 
@@ -565,6 +597,7 @@ fn render_entries_from_parts_with_fallback(
                     signatures,
                     subject_variable,
                     Some((called, CalledRenderSource::Called)),
+                    None,
                     None,
                 )
             })
@@ -610,9 +643,12 @@ fn render_entries_from_parts_with_fallback(
         .flatten()
         .map(|written| (join_written_text(written), CalledRenderSource::Written));
 
+    let called_template = called.map(|called| join_called_text(&called.called));
     let called_text = title_from_written
         .or_else(|| {
-            called.map(|called| (join_called_text(&called.called), CalledRenderSource::Called))
+            called_template
+                .clone()
+                .map(|called| (called, CalledRenderSource::Called))
         })
         .or_else(|| {
             written_text
@@ -620,7 +656,13 @@ fn render_entries_from_parts_with_fallback(
                 .map(|written| (written, CalledRenderSource::Written))
         })
         .or_else(|| fallback_called.map(|called| (called, CalledRenderSource::Called)));
-    render_entries_from_signatures(signatures, subject_variable, called_text, written_text)
+    render_entries_from_signatures(
+        signatures,
+        subject_variable,
+        called_text,
+        written_text,
+        called_template,
+    )
 }
 
 fn render_entries_from_signatures(
@@ -628,6 +670,7 @@ fn render_entries_from_signatures(
     subject_variable: Option<String>,
     called: Option<(String, CalledRenderSource)>,
     written: Option<String>,
+    called_template: Option<String>,
 ) -> Vec<RenderEntry> {
     signatures
         .into_iter()
@@ -645,6 +688,7 @@ fn render_entries_from_signatures(
                     called: called_text,
                     called_source,
                     written: written.clone(),
+                    called_template: called_template.clone(),
                 },
             }
         })

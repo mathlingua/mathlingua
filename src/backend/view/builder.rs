@@ -3,8 +3,8 @@ use super::model::{
 };
 use super::render::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
-    render_documented_text_latex, render_formulation_latex, render_group_heading_latex,
-    render_writing_alias_latex, resolve_topic_heading_latex,
+    join_title_parts, render_documented_text_latex, render_formulation_latex,
+    render_group_heading_latex, render_writing_alias_latex, resolve_topic_heading_latex,
 };
 use crate::backend::config::load_config;
 use crate::events::{Audience, Event, EventLog, Level};
@@ -233,11 +233,11 @@ fn person_heading_latex(kind: &str, sections: &[ProtoSection]) -> Option<String>
     render_documented_text_latex("called", &name)
 }
 
-/// Renders a heading-less theorem-like card's title from its `Documented:` `called:`.
+/// Renders a heading-less theorem-like card's title from its `Documented:` forms.
 ///
 /// Command-headed theorem-like items resolve their title through the command-signature
 /// registry (like definitions); a heading-less `Axiom:`/`Theorem:`/`Corollary:`
-/// instead takes its name from `Documented:` `called:`.
+/// instead takes its name from `Documented:`.
 fn theorem_like_heading_latex(
     kind: &str,
     heading: Option<&str>,
@@ -248,32 +248,65 @@ fn theorem_like_heading_latex(
         return None;
     }
 
-    let (label, text) = documented_title_text(sections)?;
-    render_documented_text_latex(label, &text)
+    let (called, written) = documented_title_forms(sections);
+    let called_latex = called
+        .as_deref()
+        .and_then(|text| render_documented_text_latex("called", text));
+    let written_latex = written
+        .as_deref()
+        .and_then(|text| render_documented_text_latex("written", text));
+
+    match (called_latex, written_latex) {
+        (Some(called), Some(written)) => Some(join_title_parts(&called, &written)),
+        (called, written) => called.or(written),
+    }
 }
 
-/// Extracts the naming text from a group's `Documented:` proto sections, along with
-/// the label (`called` or `written`) it came from.
+/// The `called:` and `written:` naming text from a group's `Documented:` sections.
 ///
-/// When a `Documented:` section supplies both a top-level `called:` and a top-level
-/// `written:`, whichever the author listed first names the card. A `written:` nested
-/// inside a `called:` group never competes for the title.
-fn documented_title_text(sections: &[ProtoSection]) -> Option<(&'static str, String)> {
-    let documented = sections
+/// A `written:` nested inside a `called:` group counts as the written form too, so
+/// that both spellings of "documented with both forms" title a card the same way.
+fn documented_title_forms(sections: &[ProtoSection]) -> (Option<String>, Option<String>) {
+    let Some(documented) = sections
         .iter()
-        .find(|section| section.label == "Documented")?;
-    documented.arguments.iter().find_map(|argument| {
+        .find(|section| section.label == "Documented")
+    else {
+        return (None, None);
+    };
+
+    let mut called = None;
+    let mut written = None;
+    let set_once = |slot: &mut Option<String>, section: &ProtoSection| {
+        if slot.is_none() {
+            *slot = first_section_text(section);
+        }
+    };
+
+    for argument in &documented.arguments {
         let ProtoArgument::Group(group) = argument else {
-            return None;
+            continue;
         };
-        let section = group.sections.first()?;
-        let label = match section.label.as_str() {
-            "called" => "called",
-            "written" => "written",
-            _ => return None,
+        let Some(first) = group.sections.first() else {
+            continue;
         };
-        Some((label, first_section_text(section)?))
-    })
+
+        match first.label.as_str() {
+            "called" => {
+                set_once(&mut called, first);
+                if let Some(nested) = group
+                    .sections
+                    .iter()
+                    .find(|section| section.label == "written")
+                {
+                    set_once(&mut written, nested);
+                }
+            }
+            "written" => set_once(&mut written, first),
+            _ => continue,
+        }
+    }
+
+    (called, written)
 }
 
 /// Renders a top-level `Topic:` heading as its human title: the explicit
@@ -1015,6 +1048,83 @@ Id: "22222222-2222-4222-8222-222222222222"
         );
         // With no called:, a heading-less theorem-like has no title.
         assert_eq!(view.files[0].items[1].heading_latex, None);
+    }
+
+    #[test]
+    fn titles_a_heading_less_theorem_like_with_both_documented_forms() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("thm.mlg");
+        let source = r#"Theorem:
+then: X = X
+Documented:
+. called: "Reflexivity"
+. written: "X = X"
+Id: "11111111-1111-4111-8111-111111111111"
+
+
+Theorem:
+then: Y = Y
+Documented:
+. written: "Y = Y"
+. called: "Reflexivity again"
+Id: "22222222-2222-4222-8222-222222222222"
+
+
+Theorem:
+then: Z = Z
+Documented:
+. written: "Z = Z"
+Id: "33333333-3333-4333-8333-333333333333"
+
+
+Theorem:
+then: W = W
+Documented:
+. called: "Nested"
+  written:
+  . "W = W"
+Id: "44444444-4444-4444-8444-444444444444"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+            .expect("expected view");
+
+        // Both forms present: the title shows `<called>: <written>`.
+        assert_eq!(
+            view.files[0].items[0].heading_latex,
+            Some(r#"\textrm{Reflexivity}\textrm{: }X = X"#.to_string())
+        );
+        // The same order holds when `written:` is listed first.
+        assert_eq!(
+            view.files[0].items[1].heading_latex,
+            Some(r#"\textrm{Reflexivity again}\textrm{: }Y = Y"#.to_string())
+        );
+        // Only a written form: the title is that form alone, with no separator.
+        assert_eq!(
+            view.files[0].items[2].heading_latex,
+            Some(r#"Z = Z"#.to_string())
+        );
+        // A `written:` nested inside `called:` pairs with it just the same.
+        assert_eq!(
+            view.files[0].items[3].heading_latex,
+            Some(r#"\textrm{Nested}\textrm{: }W = W"#.to_string())
+        );
     }
 
     #[test]

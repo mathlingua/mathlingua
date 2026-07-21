@@ -340,7 +340,7 @@ Documented:
 }
 
 #[test]
-fn renders_definition_group_headings_from_called_text() {
+fn renders_definition_group_headings_from_both_documented_forms() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
 Describes: f(x__)
@@ -357,12 +357,12 @@ Documented:
             None,
             &registry
         ),
-        Some(r#"\textrm{function on }A\textrm{ to }B"#.to_string())
+        Some(r#"\textrm{function on }A\textrm{ to }B\textrm{: }f \: : \: A \rightarrow B"#.to_string())
     );
 }
 
 #[test]
-fn renders_definition_group_headings_from_written_when_written_is_listed_first() {
+fn definition_group_heading_order_is_called_then_written_however_they_are_listed() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
 Describes: f(x__)
@@ -372,7 +372,8 @@ Documented:
 "#,
     );
 
-    // `written:` comes first, so it names the card instead of `called:`.
+    // `written:` is listed first, but a title that shows both forms always reads
+    // `<called>: <written>`, exactly as when `called:` is listed first.
     assert_eq!(
         render_group_heading_latex(
             "Describes",
@@ -380,10 +381,10 @@ Documented:
             None,
             &registry
         ),
-        Some(r#"f \: : \: A \rightarrow B"#.to_string())
+        Some(r#"\textrm{function on }A\textrm{ to }B\textrm{: }f \: : \: A \rightarrow B"#.to_string())
     );
 
-    // Expressions still render from `written:` regardless of the ordering.
+    // Listing `written:` first still decides which form names the item inline.
     assert_eq!(
         render_formulation_latex(r#"g is \function:on{X}:to{Y}"#, &registry),
         Some(r#"g \: : \: X \rightarrow Y"#.to_string())
@@ -407,7 +408,7 @@ Documented:
 }
 
 #[test]
-fn renders_definition_group_heading_called_text_without_capitalizing() {
+fn renders_definition_group_heading_forms_without_capitalizing() {
     let registry = registry_for(
         r#"[\set]
 Describes: X
@@ -419,7 +420,7 @@ Documented:
 
     assert_eq!(
         render_group_heading_latex("Describes", Some(r#"\set"#), None, &registry),
-        Some(r#"\textrm{set}"#.to_string())
+        Some(r#"\textrm{set}\textrm{: }\operatorname{Set}"#.to_string())
     );
     assert_eq!(
         render_formulation_latex(r#"X is \set"#, &registry),
@@ -801,3 +802,58 @@ Documented:
     );
 }
 
+
+#[test]
+fn a_composed_card_title_does_not_change_how_the_item_is_named_inline() {
+    let registry = registry_for(
+        r#"[\empty.set]
+Describes: X
+Documented:
+. called: "empty set"
+. written: "\emptyset"
+"#,
+    );
+
+    // The card title shows both forms.
+    assert_eq!(
+        render_group_heading_latex("Describes", Some(r#"\empty.set"#), None, &registry),
+        Some(r#"\textrm{empty set}\textrm{: }\emptyset"#.to_string())
+    );
+
+    // Inline uses of the item keep naming it with a single form, so a title that
+    // shows both must not leak into `is` statements, references, or expressions.
+    assert_eq!(
+        render_formulation_latex(r#"X is \empty.set"#, &registry),
+        Some(r#"X \textrm{ is } \emptyset"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"Y != \empty.set"#, &registry),
+        Some(r#"Y \ne \emptyset"#.to_string())
+    );
+}
+
+#[test]
+fn a_written_nested_inside_called_pairs_with_it_in_the_title() {
+    let registry = registry_for(
+        r#"[\function:on{A}:to{B}]
+Describes: f(x__)
+Documented:
+. called: "function on $A?$ to $B?$"
+  written:
+  . "f? \: : \: A? \rightarrow B?"
+"#,
+    );
+
+    assert_eq!(
+        render_group_heading_latex(
+            "Describes",
+            Some(r#"\function:on{A}:to{B}"#),
+            None,
+            &registry
+        ),
+        Some(
+            r#"\textrm{function on }A\textrm{ to }B\textrm{: }f \: : \: A \rightarrow B"#
+                .to_string()
+        )
+    );
+}

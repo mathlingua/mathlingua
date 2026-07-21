@@ -936,28 +936,32 @@ The renderer uses these entries to display commands, forms, and definitions.
 The semantic checker only enforces that `Describes`, `Defines`, and `Refines`
 include at least one `called:` item.
 
-When a `Documented:` section supplies both a top-level `called:` and a top-level
-`written:`, the one listed first is the title shown on the item's card. Listing
-`called:` first gives the card a plain-text name; listing `written:` first gives
-it the math-mode form.
+### Card titles
+
+When a `Documented:` section supplies both a `called:` and a `written:` form, the
+item's card is titled with both, as `<called>: <written>`.
 
 ```text
+[\empty.set]
+Describes: X
 Documented:
-. called: "function on $A?$ to $B?$"
-. written: "f? \: : \: A? \rightarrow B?"
+. called: "empty set"
+. written: "\emptyset"
 ```
 
-```text
-Documented:
-. written: "f? \: : \: A? \rightarrow B?"
-. called: "function on $A?$ to $B?$"
-```
+That card is titled "Empty set: $\emptyset$". An item documented with only one of
+the two forms is titled with that form alone, and no separator is added.
 
-The first card is titled "function on A to B"; the second is titled
-$f : A \rightarrow B$. The ordering affects only the card title — expressions
-elsewhere still render from `written:` when it is present. A `written:` nested
-inside a `called:` group is not a top-level item and never competes for the
-title.
+The title always reads `<called>: <written>`, whichever order the two are listed
+in. Listing order still decides which single form names the item *inline* —
+`called:` first makes `X is \empty.set` read "X is empty set", `written:` first
+makes it read "X is $\emptyset$" — but it does not reorder the card title.
+
+A `written:` nested inside a `called:` group documents that called form, so it
+pairs with it in the title just as a top-level `written:` would.
+
+`Refines:` items are named by an `adjective:` rather than a `called:`, so their
+titles are unaffected.
 
 ## Current Footguns
 

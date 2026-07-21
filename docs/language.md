@@ -900,6 +900,29 @@ The renderer uses these entries to display commands, forms, and definitions.
 The semantic checker only enforces that `Describes`, `Defines`, and `Refines`
 include at least one `called:` item.
 
+When a `Documented:` section supplies both a top-level `called:` and a top-level
+`written:`, the one listed first is the title shown on the item's card. Listing
+`called:` first gives the card a plain-text name; listing `written:` first gives
+it the math-mode form.
+
+```text
+Documented:
+. called: "function on $A?$ to $B?$"
+. written: "f? \: : \: A? \rightarrow B?"
+```
+
+```text
+Documented:
+. written: "f? \: : \: A? \rightarrow B?"
+. called: "function on $A?$ to $B?$"
+```
+
+The first card is titled "function on A to B"; the second is titled
+$f : A \rightarrow B$. The ordering affects only the card title — expressions
+elsewhere still render from `written:` when it is present. A `written:` nested
+inside a `called:` group is not a top-level item and never competes for the
+title.
+
 ## Current Footguns
 
 These behaviors are intentionally documented because authors will run into

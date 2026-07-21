@@ -235,11 +235,17 @@ fn theorem_like_heading_latex(
         return None;
     }
 
-    render_documented_text_latex("called", &documented_called_text(sections)?)
+    let (label, text) = documented_title_text(sections)?;
+    render_documented_text_latex(label, &text)
 }
 
-/// Extracts the `Documented:` `called:` text from a group's proto sections.
-fn documented_called_text(sections: &[ProtoSection]) -> Option<String> {
+/// Extracts the naming text from a group's `Documented:` proto sections, along with
+/// the label (`called` or `written`) it came from.
+///
+/// When a `Documented:` section supplies both a top-level `called:` and a top-level
+/// `written:`, whichever the author listed first names the card. A `written:` nested
+/// inside a `called:` group never competes for the title.
+fn documented_title_text(sections: &[ProtoSection]) -> Option<(&'static str, String)> {
     let documented = sections
         .iter()
         .find(|section| section.label == "Documented")?;
@@ -247,11 +253,13 @@ fn documented_called_text(sections: &[ProtoSection]) -> Option<String> {
         let ProtoArgument::Group(group) = argument else {
             return None;
         };
-        let called = group
-            .sections
-            .iter()
-            .find(|section| section.label == "called")?;
-        first_section_text(called)
+        let section = group.sections.first()?;
+        let label = match section.label.as_str() {
+            "called" => "called",
+            "written" => "written",
+            _ => return None,
+        };
+        Some((label, first_section_text(section)?))
     })
 }
 

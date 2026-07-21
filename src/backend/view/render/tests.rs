@@ -362,6 +362,35 @@ Documented:
 }
 
 #[test]
+fn renders_definition_group_headings_from_written_when_written_is_listed_first() {
+    let registry = registry_for(
+        r#"[\function:on{A}:to{B}]
+Describes: f(x__)
+Documented:
+. written: "f? \: : \: A? \rightarrow B?"
+. called: "function on $A?$ to $B?$"
+"#,
+    );
+
+    // `written:` comes first, so it names the card instead of `called:`.
+    assert_eq!(
+        render_group_heading_latex(
+            "Describes",
+            Some(r#"\function:on{A}:to{B}"#),
+            None,
+            &registry
+        ),
+        Some(r#"f \: : \: A \rightarrow B"#.to_string())
+    );
+
+    // Expressions still render from `written:` regardless of the ordering.
+    assert_eq!(
+        render_formulation_latex(r#"g is \function:on{X}:to{Y}"#, &registry),
+        Some(r#"g \: : \: X \rightarrow Y"#.to_string())
+    );
+}
+
+#[test]
 fn renders_plain_called_placeholders_in_group_headings() {
     let registry = registry_for(
         r#"[A \:subset:/ B]

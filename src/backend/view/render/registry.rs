@@ -570,6 +570,15 @@ fn render_entries_from_parts_with_fallback(
             })
             .unwrap_or_default();
     };
+    let called_index = documented
+        .arguments
+        .iter()
+        .position(|item| matches!(item, DocumentedItem::Called(_)));
+    let written_index = documented
+        .arguments
+        .iter()
+        .position(|item| matches!(item, DocumentedItem::Written(_)));
+
     let called = documented.arguments.iter().find_map(|item| match item {
         DocumentedItem::Called(group) => Some(group),
         _ => None,
@@ -586,9 +595,25 @@ fn render_entries_from_parts_with_fallback(
         return Vec::new();
     }
 
+    // When a `Documented:` section supplies both a top-level `called:` and a
+    // top-level `written:`, whichever the author listed first names the card.
+    // A `written:` nested inside `called:` never competes for the title.
+    let written_names_card = match (called_index, written_index) {
+        (Some(called_index), Some(written_index)) => written_index < called_index,
+        (None, Some(_)) => true,
+        _ => false,
+    };
+
     let written_text = written.map(join_written_text);
-    let called_text = called
-        .map(|called| (join_called_text(&called.called), CalledRenderSource::Called))
+    let title_from_written = written_names_card
+        .then_some(documented_written)
+        .flatten()
+        .map(|written| (join_written_text(written), CalledRenderSource::Written));
+
+    let called_text = title_from_written
+        .or_else(|| {
+            called.map(|called| (join_called_text(&called.called), CalledRenderSource::Called))
+        })
         .or_else(|| {
             written_text
                 .clone()

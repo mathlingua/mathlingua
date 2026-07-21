@@ -5,6 +5,7 @@ use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since};
 use serde_json::to_writer_pretty;
 use std::fs;
 use std::io::{self, BufRead, BufReader};
+use std::net::TcpListener;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, ExitStatus, Stdio};
 use std::sync::{
@@ -92,6 +93,8 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
     write_collection_view_data(&view_data_path, &collection_view)?;
     ensure_web_dependencies(event_log)?;
 
+    check_port_is_available(port, event_log)?;
+
     let url = format!("http://localhost:{port}/");
     event_log.user_log(Some(ORIGIN), format!("Starting viewer at {url}"));
 
@@ -108,6 +111,34 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
     join_view_data_refresher(refresh_thread, event_log);
     let _ = fs::remove_dir_all(&view_session_dir);
     result
+}
+
+/// Reports an unusable port before the web viewer is started.
+///
+/// Binding here is a pre-flight probe: the listener is dropped immediately and
+/// the real server binds the port a moment later. Something else can still take
+/// the port in that gap, so this is a way to give a clear message in the common
+/// case, not a guarantee — [`describe_child_startup_failure`] covers the rest.
+fn check_port_is_available(port: u16, event_log: &mut EventLog) -> io::Result<()> {
+    let error = match TcpListener::bind((VIEW_BIND_HOST, port)) {
+        Ok(_) => return Ok(()),
+        Err(error) => error,
+    };
+
+    let message = match error.kind() {
+        io::ErrorKind::AddrInUse => format!(
+            "Port {port} is already in use by another program. \
+             Stop that program, or start the viewer on a different port with `mlg view --port <PORT>`"
+        ),
+        io::ErrorKind::PermissionDenied => format!(
+            "Port {port} cannot be opened because this user is not permitted to use it. \
+             Ports below 1024 usually require elevated privileges, so try `mlg view --port <PORT>` with a port above 1024"
+        ),
+        _ => format!("Port {port} is not available for the viewer: {error}"),
+    };
+
+    event_log.user_error(Some(ORIGIN), message.clone());
+    Err(io::Error::new(error.kind(), message))
 }
 
 fn finish_view_setup_with_possible_errors(event_log: &mut EventLog) -> io::Result<()> {
@@ -134,6 +165,7 @@ fn ensure_web_dependencies(event_log: &mut EventLog) -> io::Result<()> {
         },
         NEXTJS_ORIGIN,
         event_log,
+        None,
         None,
         None,
     )?;
@@ -167,6 +199,7 @@ fn run_next_server(
         event_log,
         Some(url),
         Some(refresh_receiver),
+        Some(port),
     )
 }
 
@@ -176,6 +209,7 @@ fn run_child(
     event_log: &mut EventLog,
     ready_url: Option<&str>,
     refresh_receiver: Option<Receiver<Vec<Event>>>,
+    port: Option<u16>,
 ) -> io::Result<()> {
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
 
@@ -213,10 +247,9 @@ fn run_child(
     let outcome = outcome?;
 
     if !outcome.was_ready && ready_url.is_some() {
-        event_log.user_error(Some(ORIGIN), "The web viewer exited before it became ready");
-        return Err(io::Error::other(
-            "The web viewer exited before it became ready",
-        ));
+        let message = describe_child_startup_failure(&outcome, port);
+        event_log.user_error(Some(ORIGIN), message.clone());
+        return Err(io::Error::other(message));
     }
 
     if outcome.status.success() {
@@ -242,45 +275,55 @@ fn stream_child_output(
     ready_url: Option<&str>,
 ) -> io::Result<ChildOutcome> {
     let mut was_ready = false;
+    let mut recent_output: Vec<String> = Vec::new();
+
+    let handle_line = |line: OutputLine,
+                           was_ready: &mut bool,
+                           recent_output: &mut Vec<String>,
+                           event_log: &mut EventLog| {
+        let is_ready = is_ready_line(&line.text);
+        if is_ready
+            && !*was_ready
+            && let Some(url) = ready_url
+        {
+            event_log.user_log(Some(ORIGIN), format!("Viewer ready at {url}"));
+        }
+        *was_ready |= is_ready;
+
+        if recent_output.len() == RECENT_OUTPUT_LIMIT {
+            recent_output.remove(0);
+        }
+        recent_output.push(line.text.clone());
+
+        log_child_output(line, origin, event_log);
+    };
 
     loop {
         drain_refresh_events(refresh_receiver.as_ref(), event_log);
 
         match output_receiver.recv_timeout(Duration::from_millis(100)) {
-            Ok(line) => {
-                let is_ready = is_ready_line(&line.text);
-                if is_ready
-                    && !was_ready
-                    && let Some(url) = ready_url
-                {
-                    event_log.user_log(Some(ORIGIN), format!("Viewer ready at {url}"));
-                }
-                was_ready |= is_ready;
-                log_child_output(line, origin, event_log);
-            }
+            Ok(line) => handle_line(line, &mut was_ready, &mut recent_output, event_log),
             Err(RecvTimeoutError::Timeout) => {
                 drain_refresh_events(refresh_receiver.as_ref(), event_log);
                 if let Some(status) = child.try_wait()? {
                     while let Ok(line) = output_receiver.try_recv() {
-                        let is_ready = is_ready_line(&line.text);
-                        if is_ready
-                            && !was_ready
-                            && let Some(url) = ready_url
-                        {
-                            event_log.user_log(Some(ORIGIN), format!("Viewer ready at {url}"));
-                        }
-                        was_ready |= is_ready;
-                        log_child_output(line, origin, event_log);
+                        handle_line(line, &mut was_ready, &mut recent_output, event_log);
                     }
                     drain_refresh_events(refresh_receiver.as_ref(), event_log);
-                    return Ok(ChildOutcome { status, was_ready });
+                    return Ok(ChildOutcome {
+                        status,
+                        was_ready,
+                        recent_output,
+                    });
                 }
             }
             Err(RecvTimeoutError::Disconnected) => {
                 drain_refresh_events(refresh_receiver.as_ref(), event_log);
-                return child
-                    .wait()
-                    .map(|status| ChildOutcome { status, was_ready });
+                return child.wait().map(|status| ChildOutcome {
+                    status,
+                    was_ready,
+                    recent_output,
+                });
             }
         }
     }
@@ -517,6 +560,68 @@ struct OutputLine {
 struct ChildOutcome {
     status: ExitStatus,
     was_ready: bool,
+    /// The tail of the child's combined stdout/stderr, used to explain a startup
+    /// failure. Bounded so a chatty child cannot grow this without limit.
+    recent_output: Vec<String>,
+}
+
+/// How many trailing output lines are kept to diagnose a startup failure.
+const RECENT_OUTPUT_LIMIT: usize = 50;
+
+/// How many output lines are quoted back to the user for an unrecognized failure.
+const REPORTED_OUTPUT_LINES: usize = 5;
+
+/// Explains why the web viewer exited before it was ready, in the user's terms.
+///
+/// The child is a Next.js process, so the specifics arrive only as text on its
+/// output. Recognized causes get an actionable message; anything else falls back
+/// to quoting the child's own last words, which beats a bare "it exited".
+fn describe_child_startup_failure(outcome: &ChildOutcome, port: Option<u16>) -> String {
+    let output = outcome.recent_output.join("\n");
+
+    if output.contains("EADDRINUSE") || output.contains("address already in use") {
+        return match port {
+            Some(port) => format!(
+                "The viewer could not start because port {port} is already in use by another program. \
+                 Stop that program, or start the viewer on a different port with `mlg view --port <PORT>`"
+            ),
+            None => "The viewer could not start because its port is already in use by another program"
+                .to_string(),
+        };
+    }
+
+    if output.contains("EACCES") || output.contains("permission denied") {
+        return match port {
+            Some(port) => format!(
+                "The viewer could not start because it is not permitted to open port {port}. \
+                 Ports below 1024 usually require elevated privileges, so try `mlg view --port <PORT>` with a port above 1024"
+            ),
+            None => "The viewer could not start because it was denied permission".to_string(),
+        };
+    }
+
+    let details = outcome
+        .recent_output
+        .iter()
+        .map(|line| line.trim())
+        .filter(|line| !line.is_empty())
+        .rev()
+        .take(REPORTED_OUTPUT_LINES)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect::<Vec<_>>()
+        .join("\n  ");
+
+    if details.is_empty() {
+        return format!(
+            "The web viewer exited before it became ready, without reporting a reason \
+             (it exited with status {})",
+            outcome.status
+        );
+    }
+
+    format!("The web viewer exited before it became ready. It reported:\n  {details}")
 }
 
 // ===============================[ tests ]=====================================
@@ -524,12 +629,120 @@ struct ChildOutcome {
 #[cfg(test)]
 mod tests {
     use super::{
-        VIEW_BIND_HOST, ViewDataRefresh, create_view_session_dir, rebuild_collection_view_data,
+        ChildOutcome, VIEW_BIND_HOST, ViewDataRefresh, check_port_is_available,
+        create_view_session_dir, describe_child_startup_failure, rebuild_collection_view_data,
         web_app_directory, write_collection_view_data,
     };
     use crate::backend::view::{CollectionView, FileView, GroupView, PageView, SectionView};
+    use crate::events::EventLog;
     use serde_json::Value;
     use std::fs;
+    use std::net::TcpListener;
+
+    fn outcome_with_output(lines: &[&str]) -> ChildOutcome {
+        ChildOutcome {
+            status: std::process::Command::new("sh")
+                .arg("-c")
+                .arg("exit 1")
+                .status()
+                .expect("expected a child status"),
+            was_ready: false,
+            recent_output: lines.iter().map(|line| line.to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn reports_an_occupied_port_as_being_in_use() {
+        let listener = TcpListener::bind((VIEW_BIND_HOST, 0)).expect("expected a bound port");
+        let port = listener.local_addr().expect("expected an address").port();
+        let mut event_log = EventLog::new();
+
+        let error = check_port_is_available(port, &mut event_log)
+            .expect_err("expected the occupied port to be rejected");
+
+        assert!(error.to_string().contains(&format!("Port {port}")));
+        assert!(error.to_string().contains("already in use"));
+        assert!(error.to_string().contains("mlg view --port"));
+        assert!(
+            event_log
+                .events()
+                .iter()
+                .filter_map(|event| event.as_message())
+                .any(|message| message.message.contains("already in use"))
+        );
+    }
+
+    #[test]
+    fn accepts_a_free_port() {
+        // An ephemeral port can be claimed by a concurrently running test between
+        // being released here and being probed, so a few attempts are allowed
+        // before the check itself is blamed.
+        for attempt in 0..8 {
+            let port = {
+                let listener =
+                    TcpListener::bind((VIEW_BIND_HOST, 0)).expect("expected a bound port");
+                listener.local_addr().expect("expected an address").port()
+            };
+            let mut event_log = EventLog::new();
+
+            if check_port_is_available(port, &mut event_log).is_ok() {
+                assert!(event_log.events().is_empty());
+                return;
+            }
+
+            assert!(attempt < 7, "a freed port was never reported as available");
+        }
+    }
+
+    #[test]
+    fn explains_an_address_in_use_startup_failure() {
+        let outcome = outcome_with_output(&[
+            " ⨯ Failed to start server",
+            "Error: listen EADDRINUSE: address already in use 0.0.0.0:3999",
+        ]);
+
+        let message = describe_child_startup_failure(&outcome, Some(3999));
+
+        assert!(message.contains("port 3999 is already in use"));
+        assert!(message.contains("mlg view --port"));
+    }
+
+    #[test]
+    fn explains_a_permission_denied_startup_failure() {
+        let outcome =
+            outcome_with_output(&["Error: listen EACCES: permission denied 0.0.0.0:80"]);
+
+        let message = describe_child_startup_failure(&outcome, Some(80));
+
+        assert!(message.contains("not permitted to open port 80"));
+        assert!(message.contains("above 1024"));
+    }
+
+    #[test]
+    fn quotes_the_child_output_for_an_unrecognized_startup_failure() {
+        let outcome = outcome_with_output(&[
+            "",
+            "> dev",
+            "Error: Cannot find module 'next'",
+            "   at Module._resolveFilename",
+        ]);
+
+        let message = describe_child_startup_failure(&outcome, Some(3000));
+
+        assert!(message.contains("exited before it became ready"));
+        assert!(message.contains("Cannot find module 'next'"));
+        // Blank lines are dropped rather than padding the quoted output.
+        assert!(!message.contains("\n  \n"));
+    }
+
+    #[test]
+    fn reports_a_silent_startup_failure_without_quoting_empty_output() {
+        let outcome = outcome_with_output(&[]);
+
+        let message = describe_child_startup_failure(&outcome, Some(3000));
+
+        assert!(message.contains("without reporting a reason"));
+    }
 
     #[test]
     fn writes_collection_view_data_as_json() {

@@ -6,6 +6,7 @@ use super::render::{
     render_documented_text_latex, render_formulation_latex, render_group_heading_latex,
     render_writing_alias_latex, resolve_topic_heading_latex,
 };
+use crate::backend::config::load_config;
 use crate::events::{Audience, Event, EventLog, Level};
 use crate::frontend::{
     ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection, SourceFileViewMetadata,
@@ -87,7 +88,19 @@ fn has_blocking_user_issues(events: &[Event]) -> bool {
     })
 }
 
+/// The collection's display title: the `name` field from `mlg.json` when it is
+/// set, otherwise the collection directory's own name.
+///
+/// The config wins because it is what the author chose to call the collection;
+/// the directory name is only a stand-in for collections without a config (or
+/// with an empty `name`).
 fn collection_title(collection_root: &Path) -> String {
+    let configured_name = load_config(collection_root).name;
+    let configured_name = configured_name.trim();
+    if !configured_name.is_empty() {
+        return configured_name.to_string();
+    }
+
     collection_root
         .file_name()
         .and_then(|name| name.to_str())
@@ -551,6 +564,60 @@ mod tests {
     // Distinguishes concurrently-created test directories whose nanosecond
     // timestamps could otherwise collide under parallel test execution.
     static NEXT_TEST_DIR_ID: AtomicUsize = AtomicUsize::new(0);
+
+    /// Builds a one-file collection at `root` and returns its view title.
+    fn collection_view_title_at(root: &Path) -> String {
+        let content = root.join("content");
+        let file = content.join("sets.mlg");
+        let source = "[\\set]\nDescribes: S\nDocumented:\n. called: \"set\"\n";
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+
+        build_collection_view(root, &[parsed_file], &[], &mut event_log)
+            .expect("expected view")
+            .title
+    }
+
+    #[test]
+    fn collection_title_comes_from_the_config_name() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(
+            root.join("mlg.json"),
+            r#"{"name": "Real Analysis", "version": "1"}"#,
+        )
+        .unwrap();
+
+        assert_eq!(collection_view_title_at(&root), "Real Analysis");
+    }
+
+    #[test]
+    fn collection_title_falls_back_to_the_directory_name() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        fs::create_dir_all(&root).unwrap();
+
+        // No mlg.json at all.
+        assert_eq!(collection_view_title_at(&root), "repo");
+
+        // An mlg.json whose name is blank is treated the same as none.
+        fs::write(root.join("mlg.json"), r#"{"name": "   ", "version": "1"}"#).unwrap();
+        assert_eq!(collection_view_title_at(&root), "repo");
+    }
 
     #[test]
     fn builds_a_collection_view_from_valid_files() {

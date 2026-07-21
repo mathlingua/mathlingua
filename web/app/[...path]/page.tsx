@@ -1,5 +1,8 @@
-import ViewerPage from "../viewer-page";
+import ViewerPage, { viewerMetadata } from "../viewer-page";
 import { staticExportRouteParams } from "../../lib/static-export-build";
+
+/** Titles every deep-link route with the collection's own name. */
+export const generateMetadata = viewerMetadata;
 
 interface PathViewerPageProps {
   /** Catch-all route params supplied by Next.js. */

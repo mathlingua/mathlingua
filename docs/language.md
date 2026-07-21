@@ -884,6 +884,42 @@ Documented:
 . written: "f? \: : \: A? \rightarrow B?"
 ```
 
+### Placeholder parentheses
+
+A placeholder may carry a `+` or `-` before its `?` to control the parentheses
+around the value substituted into it. The modifier is not part of the name, so
+`A?`, `A+?`, and `A-?` all substitute the same value `A`.
+
+| Form  | Meaning                                                              |
+| ----- | -------------------------------------------------------------------- |
+| `A?`  | Substitutes the value exactly as rendered.                            |
+| `A+?` | Wraps the value in exactly one pair of parentheses, unless it is a single atom. |
+| `A-?` | Removes every pair of parentheses wrapping the value.                 |
+
+With `A` bound to each of the following, the three forms render as:
+
+| Value     | `A?`        | `A+?`     | `A-?`   |
+| --------- | ----------- | --------- | ------- |
+| `1+2`     | `1 + 2`     | `(1 + 2)` | `1 + 2` |
+| `(1+2)`   | `(1 + 2)`   | `(1 + 2)` | `1 + 2` |
+| `(((1+2)))` | `(((1 + 2)))` | `(1 + 2)` | `1 + 2` |
+| `a`       | `a`         | `a`       | `a`     |
+
+`A+?` never doubles parentheses: the value is first reduced to its bare form and
+then wrapped once. Only parentheses that enclose the *whole* value are removed, so
+`(1+2)+(3+4)` is left intact by `A-?` — its leading `(` closes before the end and
+therefore does not wrap the expression.
+
+A value counts as a single atom, and so is left unwrapped by `A+?`, when it
+contains no space or comma outside of a bracket. That covers names (`a`, `x_1`),
+single commands (`\emptyset`, `\mathsf{Field}_{V}`), and function calls (`f(x)`),
+but not compound expressions (`1 + 2`) or comma-separated tuples (`X, Y`).
+
+A modifier only applies when the `+` or `-` sits between the name and the `?`, so
+`A?-B?` is still a placeholder, a literal `-`, and another placeholder. Where a
+template is rendered without values — a card title, for instance — a modifier has
+nothing to act on and shows the same bare name that `A?` does.
+
 Both `called:` and `written:` templates support conditional fragments:
 
 ```text

@@ -689,3 +689,115 @@ fn renders_set_builder_specs() {
         Some(r#"\left\{ f(a, b) \: : \: x \in X \: | \: z \right\}"#.to_string())
     );
 }
+
+/// Renders `argument` through a `written:` template that is exactly the single
+/// placeholder `A?`, `A+?`, or `A-?`, so the result is the substituted value alone.
+fn rendered_with_modifier(modifier: &str, argument: &str) -> String {
+    let registry = registry_for(&format!(
+        "[\\f:of{{A}}]\nDescribes: X\nDocumented:\n. written: \"A{modifier}?\"\n"
+    ));
+
+    render_formulation_latex(&format!(r#"\f:of{{{argument}}}"#), &registry)
+        .expect("expected the formulation to render")
+}
+
+fn keep(argument: &str) -> String {
+    rendered_with_modifier("", argument)
+}
+
+fn ensure(argument: &str) -> String {
+    rendered_with_modifier("+", argument)
+}
+
+fn strip(argument: &str) -> String {
+    rendered_with_modifier("-", argument)
+}
+
+#[test]
+fn ensure_paren_modifier_wraps_compound_values_exactly_once() {
+    // A compound value gains one pair of parentheses.
+    assert_eq!(ensure("1+2"), r#"\left(1 + 2\right)"#);
+    // An already-parenthesized value keeps exactly one pair, never two.
+    assert_eq!(ensure("(1+2)"), r#"\left(1 + 2\right)"#);
+    // Redundant layers collapse to exactly one.
+    assert_eq!(ensure("(((1+2)))"), r#"\left(1 + 2\right)"#);
+}
+
+#[test]
+fn ensure_paren_modifier_leaves_single_names_unwrapped() {
+    assert_eq!(ensure("a"), "a");
+    // A parenthesized name is reduced to the bare name rather than re-wrapped.
+    assert_eq!(ensure("(a)"), "a");
+}
+
+#[test]
+fn strip_paren_modifier_removes_every_wrapping_layer() {
+    assert_eq!(strip("1+2"), "1 + 2");
+    assert_eq!(strip("(1+2)"), "1 + 2");
+    assert_eq!(strip("(((1+2)))"), "1 + 2");
+    assert_eq!(strip("a"), "a");
+    assert_eq!(strip("(a)"), "a");
+}
+
+#[test]
+fn keep_paren_modifier_substitutes_the_value_verbatim() {
+    assert_eq!(keep("1+2"), "1 + 2");
+    assert_eq!(keep("(1+2)"), r#"\left(1 + 2\right)"#);
+    assert_eq!(keep("a"), "a");
+    assert_eq!(
+        keep("(((1+2)))"),
+        r#"\left(\left(\left(1 + 2\right)\right)\right)"#
+    );
+}
+
+#[test]
+fn paren_modifiers_only_act_on_parentheses_that_wrap_the_whole_value() {
+    // The leading `(` of `(1+2)+(3+4)` closes before the end, so it does not wrap
+    // the expression: stripping must not turn this into `1 + 2\right) + \left(3 + 4`.
+    let both = r#"\left(1 + 2\right) + \left(3 + 4\right)"#;
+
+    assert_eq!(keep("(1+2)+(3+4)"), both);
+    assert_eq!(strip("(1+2)+(3+4)"), both);
+    assert_eq!(ensure("(1+2)+(3+4)"), format!(r#"\left({both}\right)"#));
+}
+
+#[test]
+fn ensure_paren_modifier_treats_a_function_call_as_a_single_atom() {
+    assert_eq!(ensure("f(x)"), "f(x)");
+    // A comma-separated tuple is compound, so it keeps its parentheses.
+    assert_eq!(ensure("(X, Y)"), r#"\left(X, Y\right)"#);
+    assert_eq!(strip("(X, Y)"), "X, Y");
+}
+
+#[test]
+fn paren_modifiers_render_as_bare_names_without_substitutions() {
+    // Card titles and other display renderings have no values to parenthesize, so
+    // a modifier shows the same name that `X?` does.
+    assert_eq!(
+        render_documented_text_latex("written", r#"P-? \iff Q+?"#),
+        Some(r#"P \iff Q"#.to_string())
+    );
+    assert_eq!(
+        render_documented_text_latex("called", r#"iff of $P-?$ and $Q+?$"#),
+        Some(r#"\textrm{iff of }P\textrm{ and }Q"#.to_string())
+    );
+}
+
+#[test]
+fn a_name_followed_by_plus_or_minus_is_still_ordinary_text() {
+    let registry = registry_for(
+        r#"[\g:of{A}:and{B}]
+Describes: X
+Documented:
+. written: "A?-B? \: A?+B?"
+"#,
+    );
+
+    // `A?-B?` is a placeholder, a literal `-`, and another placeholder: the
+    // modifier only applies when the `+`/`-` sits between the name and the `?`.
+    assert_eq!(
+        render_formulation_latex(r#"\g:of{1+2}:and{y}"#, &registry),
+        Some(r#"1 + 2-y \: 1 + 2+y"#.to_string())
+    );
+}
+

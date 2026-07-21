@@ -126,28 +126,24 @@ fn substitute_called_text_segment(
     let mut index = 0;
 
     while index < chars.len() {
-        if is_placeholder_start(chars[index]) {
-            let start = index;
-            index += 1;
-            while index < chars.len() && is_placeholder_continue(chars[index]) {
-                index += 1;
-            }
-            if index < chars.len() && chars[index] == '?' {
-                let name = chars[start..index].iter().collect::<String>();
-                if let Some(value) = substitutions.get(&name) {
+        match scan_placeholder(&chars, index) {
+            Some(PlaceholderScan::Placeholder(placeholder)) => {
+                if let Some(value) = substitutions.get(&placeholder.name) {
                     flush_called_text(&mut result, &mut text);
-                    result.push_str(value);
-                    index += 1;
-                    continue;
+                    result.push_str(&apply_paren_modifier(value, placeholder.modifier));
+                } else {
+                    text.push_str(&placeholder.name);
                 }
-                text.push_str(&name);
-                index += 1;
-                continue;
+                index = placeholder.end;
             }
-            text.extend(chars[start..index].iter());
-        } else {
-            text.push(chars[index]);
-            index += 1;
+            Some(PlaceholderScan::LiteralName { end }) => {
+                text.extend(chars[index..end].iter());
+                index = end;
+            }
+            None => {
+                text.push(chars[index]);
+                index += 1;
+            }
         }
     }
 
@@ -163,23 +159,22 @@ fn substitute_called_display_text_segment(segment: &str) -> String {
     let mut index = 0;
 
     while index < chars.len() {
-        if is_placeholder_start(chars[index]) {
-            let start = index;
-            index += 1;
-            while index < chars.len() && is_placeholder_continue(chars[index]) {
-                index += 1;
-            }
-            if index < chars.len() && chars[index] == '?' {
-                let name = chars[start..index].iter().collect::<String>();
+        match scan_placeholder(&chars, index) {
+            // With no value to substitute there is nothing to parenthesize, so a
+            // modifier shows the same bare name that `X?` does.
+            Some(PlaceholderScan::Placeholder(placeholder)) => {
                 flush_called_text(&mut result, &mut text);
-                result.push_str(&render_template_placeholder_name(&name));
-                index += 1;
-                continue;
+                result.push_str(&render_template_placeholder_name(&placeholder.name));
+                index = placeholder.end;
             }
-            text.extend(chars[start..index].iter());
-        } else {
-            text.push(chars[index]);
-            index += 1;
+            Some(PlaceholderScan::LiteralName { end }) => {
+                text.extend(chars[index..end].iter());
+                index = end;
+            }
+            None => {
+                text.push(chars[index]);
+                index += 1;
+            }
         }
     }
 
@@ -214,27 +209,24 @@ pub(super) fn substitute_math_template(
             continue;
         }
 
-        if is_placeholder_start(chars[index]) {
-            let start = index;
-            index += 1;
-            while index < chars.len() && is_placeholder_continue(chars[index]) {
-                index += 1;
-            }
-            if index < chars.len() && chars[index] == '?' {
-                let name = chars[start..index].iter().collect::<String>();
-                if let Some(value) = substitutions.get(&name) {
-                    result.push_str(value);
-                    index += 1;
-                    continue;
+        match scan_placeholder(&chars, index) {
+            Some(PlaceholderScan::Placeholder(placeholder)) => {
+                match substitutions.get(&placeholder.name) {
+                    Some(value) => {
+                        result.push_str(&apply_paren_modifier(value, placeholder.modifier))
+                    }
+                    None => result.push_str(&placeholder.name),
                 }
-                result.push_str(&name);
-                index += 1;
-                continue;
+                index = placeholder.end;
             }
-            result.extend(chars[start..index].iter());
-        } else {
-            result.push(chars[index]);
-            index += 1;
+            Some(PlaceholderScan::LiteralName { end }) => {
+                result.extend(chars[index..end].iter());
+                index = end;
+            }
+            None => {
+                result.push(chars[index]);
+                index += 1;
+            }
         }
     }
 
@@ -255,22 +247,21 @@ pub(super) fn render_written_display_template(template: &str) -> String {
             continue;
         }
 
-        if is_placeholder_start(chars[index]) {
-            let start = index;
-            index += 1;
-            while index < chars.len() && is_placeholder_continue(chars[index]) {
+        match scan_placeholder(&chars, index) {
+            // As in the called display template, a modifier has no value to act on
+            // here and so renders the same bare name that `X?` does.
+            Some(PlaceholderScan::Placeholder(placeholder)) => {
+                result.push_str(&render_template_placeholder_name(&placeholder.name));
+                index = placeholder.end;
+            }
+            Some(PlaceholderScan::LiteralName { end }) => {
+                result.extend(chars[index..end].iter());
+                index = end;
+            }
+            None => {
+                result.push(chars[index]);
                 index += 1;
             }
-            if index < chars.len() && chars[index] == '?' {
-                let name = chars[start..index].iter().collect::<String>();
-                result.push_str(&render_template_placeholder_name(&name));
-                index += 1;
-                continue;
-            }
-            result.extend(chars[start..index].iter());
-        } else {
-            result.push(chars[index]);
-            index += 1;
         }
     }
 
@@ -396,8 +387,219 @@ fn selected_conditional_branch<'a>(
 }
 
 pub(super) fn template_contains_placeholder(template: &str, name: &str) -> bool {
-    let needle = format!("{name}?");
-    template.contains(&needle)
+    [
+        format!("{name}?"),
+        format!("{name}+?"),
+        format!("{name}-?"),
+    ]
+    .iter()
+    .any(|needle| template.contains(needle.as_str()))
+}
+
+/// The parenthesis handling a placeholder asks for around its substituted value.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum ParenModifier {
+    /// `X?` — the value is substituted exactly as it was rendered.
+    Keep,
+    /// `X+?` — the value is wrapped in exactly one pair of parentheses, unless it
+    /// is a single atom that needs none.
+    Ensure,
+    /// `X-?` — every pair of parentheses wrapping the value is removed.
+    Strip,
+}
+
+/// A `NAME?`, `NAME+?`, or `NAME-?` placeholder found in a template.
+pub(super) struct TemplatePlaceholder {
+    /// The substitution key, which never includes the `+`/`-` modifier.
+    pub(super) name: String,
+    pub(super) modifier: ParenModifier,
+    /// Index just past the closing `?`.
+    pub(super) end: usize,
+}
+
+/// What a name-like run of characters starting at `start` turned out to be.
+pub(super) enum PlaceholderScan {
+    /// A complete placeholder.
+    Placeholder(TemplatePlaceholder),
+    /// A name not followed by `?`, so it is literal text ending at `end`.
+    ///
+    /// A `+` or `-` after the name is left for the caller to re-read as ordinary
+    /// text, so `A-B` and `A - B` keep rendering as they always have.
+    LiteralName { end: usize },
+}
+
+/// Reads the placeholder, if any, that starts at `start`.
+///
+/// Returns `None` when `start` does not begin a name, leaving the caller to treat
+/// the character as ordinary text.
+pub(super) fn scan_placeholder(chars: &[char], start: usize) -> Option<PlaceholderScan> {
+    if !is_placeholder_start(*chars.get(start)?) {
+        return None;
+    }
+
+    let mut index = start + 1;
+    while index < chars.len() && is_placeholder_continue(chars[index]) {
+        index += 1;
+    }
+    let name_end = index;
+
+    let modifier = match chars.get(index) {
+        Some('+') => ParenModifier::Ensure,
+        Some('-') => ParenModifier::Strip,
+        _ => ParenModifier::Keep,
+    };
+    if modifier != ParenModifier::Keep {
+        index += 1;
+    }
+
+    if chars.get(index) != Some(&'?') {
+        return Some(PlaceholderScan::LiteralName { end: name_end });
+    }
+
+    Some(PlaceholderScan::Placeholder(TemplatePlaceholder {
+        name: chars[start..name_end].iter().collect(),
+        modifier,
+        end: index + 1,
+    }))
+}
+
+/// The LaTeX parentheses this renderer emits and recognizes for grouping.
+const LEFT_PAREN: &str = "\\left(";
+const RIGHT_PAREN: &str = "\\right)";
+
+/// Applies a placeholder's parenthesis modifier to an already-rendered value.
+pub(super) fn apply_paren_modifier(value: &str, modifier: ParenModifier) -> String {
+    match modifier {
+        ParenModifier::Keep => value.to_string(),
+        ParenModifier::Strip => strip_wrapping_parens(value).to_string(),
+        ParenModifier::Ensure => {
+            // Stripping first is what keeps `(1 + 2)` from becoming `((1 + 2))`:
+            // the value is reduced to its bare form and then wrapped exactly once.
+            let stripped = strip_wrapping_parens(value);
+            if is_atomic_latex(stripped) {
+                stripped.to_string()
+            } else {
+                format!("{LEFT_PAREN}{stripped}{RIGHT_PAREN}")
+            }
+        }
+    }
+}
+
+/// Removes every pair of parentheses that wraps the whole of `text`.
+fn strip_wrapping_parens(text: &str) -> &str {
+    let mut current = text.trim();
+    while let Some(inner) = strip_one_wrapping_paren(current) {
+        current = inner;
+    }
+    current
+}
+
+/// Removes one pair of parentheses when a single pair encloses all of `text`.
+///
+/// Returns `None` when `text` does not open with a parenthesis, when the opening
+/// parenthesis closes before the end (as in `(a) + (b)`, where the leading `(` is
+/// not a wrapper around the whole expression), or when the pair is mismatched
+/// (`\left(` closed by a bare `)`), since removing half of a pair would produce
+/// broken LaTeX.
+fn strip_one_wrapping_paren(text: &str) -> Option<&str> {
+    let text = text.trim();
+    let (open_len, opened_with_left) = if text.starts_with(LEFT_PAREN) {
+        (LEFT_PAREN.len(), true)
+    } else if text.starts_with('(') {
+        (1, false)
+    } else {
+        return None;
+    };
+
+    let mut depth = 1usize;
+    let mut index = open_len;
+
+    while index < text.len() {
+        let rest = &text[index..];
+
+        if rest.starts_with(LEFT_PAREN) {
+            depth += 1;
+            index += LEFT_PAREN.len();
+            continue;
+        }
+        if let Some(after) = rest.strip_prefix(RIGHT_PAREN) {
+            depth -= 1;
+            if depth == 0 {
+                return (after.is_empty() && opened_with_left)
+                    .then(|| text[open_len..index].trim());
+            }
+            index += RIGHT_PAREN.len();
+            continue;
+        }
+        if rest.starts_with('(') {
+            depth += 1;
+            index += 1;
+            continue;
+        }
+        if let Some(after) = rest.strip_prefix(')') {
+            depth -= 1;
+            if depth == 0 {
+                return (after.is_empty() && !opened_with_left)
+                    .then(|| text[open_len..index].trim());
+            }
+            index += 1;
+            continue;
+        }
+
+        index += escaped_unit_len(rest);
+    }
+
+    None
+}
+
+/// Whether `text` reads as a single atom that needs no parentheses around it.
+///
+/// Rendered compound expressions always separate their operands with spaces
+/// (`1 + 2`) or commas (`X, Y`), so a value with neither outside of a bracket —
+/// `a`, `x_1`, `\emptyset`, `\mathsf{Field}_{V}`, `f(x)` — is treated as atomic.
+fn is_atomic_latex(text: &str) -> bool {
+    let mut depth = 0usize;
+    let mut index = 0usize;
+
+    while index < text.len() {
+        let rest = &text[index..];
+
+        if rest.starts_with(LEFT_PAREN) {
+            depth += 1;
+            index += LEFT_PAREN.len();
+            continue;
+        }
+        if rest.starts_with(RIGHT_PAREN) {
+            depth = depth.saturating_sub(1);
+            index += RIGHT_PAREN.len();
+            continue;
+        }
+
+        match rest.chars().next().expect("rest is not empty") {
+            '(' | '{' | '[' => depth += 1,
+            ')' | '}' | ']' => depth = depth.saturating_sub(1),
+            ch if depth == 0 && (ch == ',' || ch.is_whitespace()) => return false,
+            _ => {}
+        }
+
+        index += escaped_unit_len(rest);
+    }
+
+    true
+}
+
+/// The byte length of the next unit of LaTeX at the start of `rest`.
+///
+/// A backslash escape such as `\{` counts as a single unit so that its brace is
+/// not mistaken for a grouping delimiter.
+fn escaped_unit_len(rest: &str) -> usize {
+    let mut chars = rest.chars();
+    let first = chars.next().expect("rest is not empty");
+    if first != '\\' {
+        return first.len_utf8();
+    }
+
+    first.len_utf8() + chars.next().map_or(0, char::len_utf8)
 }
 
 pub(super) fn is_placeholder_start(ch: char) -> bool {

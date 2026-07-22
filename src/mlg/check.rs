@@ -849,6 +849,8 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
             vec![
                 "mlg.json field \"name\" must be a string",
                 "mlg.json is missing required field \"version\"",
+                "mlg.json is missing required field \"margin\"",
+                "mlg.json is missing required field \"format_on_check\"",
             ]
         );
         assert!(event_log.has_errors());
@@ -1039,7 +1041,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         let root = temp_dir.path().join("repo");
         let file = unformatted_collection(
             &root,
-            r#"{"name": "a", "version": "1", "format_on_check": false}"#,
+            r#"{"name": "a", "version": "1", "margin": 80, "format_on_check": false}"#,
         );
 
         let mut event_log = EventLog::new();

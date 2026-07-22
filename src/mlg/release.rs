@@ -1145,7 +1145,7 @@ mod tests {
         fs::create_dir_all(root.join("content")).unwrap();
         fs::write(
             root.join("mlg.json"),
-            "{\n  \"name\": \"t\",\n  \"version\": \"0\"\n}\n",
+            "{\n  \"name\": \"t\",\n  \"version\": \"0\",\n  \"margin\": 80,\n  \"format_on_check\": true\n}\n",
         )
         .unwrap();
         fs::write(root.join("content/defs.mlg"), defs).unwrap();

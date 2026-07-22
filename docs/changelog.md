@@ -754,14 +754,47 @@ The viewer has responsive navigation behavior.
 
 ## CLI
 
+### `mlg.json` Must Spell Out Every Field
+
+`mlg.json` no longer has implicit defaults: a valid config must contain every
+field, so the whole configuration is visible and editable in one place rather
+than split between the file and defaults applied behind the scenes.
+
+- The required fields are `name`, `version`, `margin`, and `format_on_check`.
+  `mlg check` reports each missing one as
+  `mlg.json is missing required field "<field>"`.
+- `mlg init` writes a fresh `mlg.json` with every field at its default, so the
+  author sees all of them:
+
+  ```json
+  {
+    "name": "",
+    "version": "0",
+    "margin": 80,
+    "format_on_check": true
+  }
+  ```
+
+- When `mlg init` finds an existing `mlg.json` that is missing fields, it asks
+  (on an interactive terminal) whether to fill them in with their defaults. It
+  preserves existing values and any extra fields, and appends the filled-in ones.
+  Without a terminal it reports the gaps and leaves the file unchanged.
+- The runtime accessors still fall back to the defaults for a partial config so
+  other commands keep working, but the collection will not pass `mlg check`
+  until the fields are present.
+- A config carrying the old `print_margin` key is treated as missing `margin`;
+  the existing rename error stands in for the missing-field error rather than
+  reporting both.
+
 ### `mlg check` Formats The Collection First
 
 `mlg check` runs the same formatting pass as `mlg format` over the collection
 before checking it, so a checked collection is also a formatted one.
 
-- The new optional `mlg.json` field `format_on_check` controls this. It must be
-  a boolean when present and defaults to `true`, so a collection is formatted
-  unless it opts out with `"format_on_check": false`.
+- The `mlg.json` field `format_on_check` controls this. It must be a boolean; a
+  collection is formatted unless it opts out with `"format_on_check": false`.
+  (It was originally optional and defaulting to `true`; it is now a required
+  field — see *`mlg.json` Must Spell Out Every Field* above.)
 - Formatting is whole-collection even when the check is narrowed to explicit
   paths: a check of a few files already reads the whole collection to resolve
   them, and formatting only the named files would leave the rest in whatever
@@ -780,8 +813,9 @@ before checking it, so a checked collection is also a formatted one.
 The optional `mlg.json` field controlling the target line width for `mlg format`
 is renamed from `print_margin` to `margin`.
 
-- `margin` remains optional and must be a positive integer when present; when
-  absent the default width of 80 is used.
+- `margin` must be a positive integer. (It was originally optional, defaulting
+  to a width of 80; it is now a required field — see *`mlg.json` Must Spell Out
+  Every Field* above.)
 - `print_margin` is **no longer read**. Because unknown fields in `mlg.json` are
   otherwise ignored for forward compatibility, a collection still carrying the
   old key would silently fall back to the default width, so the old key is

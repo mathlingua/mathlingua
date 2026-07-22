@@ -13,6 +13,14 @@ pub const DEFAULT_MARGIN: usize = 80;
 /// judgement call, so a collection is kept formatted unless it opts out.
 pub const DEFAULT_FORMAT_ON_CHECK: bool = true;
 
+/// Every field an `mlg.json` must carry, in the order `mlg init` writes them.
+///
+/// A collection must spell out every setting rather than lean on implicit
+/// defaults, so that the whole configuration is visible and editable in one
+/// place. `mlg check` reports any of these that is absent, and `mlg init` fills
+/// them in with their defaults.
+pub const CONFIG_FIELDS: [&str; 4] = ["name", "version", "margin", "format_on_check"];
+
 /// The former name of the `margin` field, still recognized so that a collection
 /// carrying it is told to rename rather than silently losing its setting.
 const LEGACY_MARGIN_FIELD: &str = "print_margin";
@@ -23,22 +31,29 @@ pub struct Config {
     pub name: String,
     #[serde(default = "default_version")]
     pub version: String,
-    /// Target line width for `mlg format`; `None` uses `DEFAULT_MARGIN`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Target line width for `mlg format`.
+    ///
+    /// A valid `mlg.json` always carries this, but parsing stays lenient — a
+    /// missing value reads as `None` so tools keep running while `mlg check`
+    /// reports the omission — and [`Self::margin`] falls back to `DEFAULT_MARGIN`.
+    #[serde(default)]
     pub margin: Option<usize>,
-    /// Whether `mlg check` formats the collection before checking it; `None`
-    /// uses `DEFAULT_FORMAT_ON_CHECK`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Whether `mlg check` formats the collection before checking it.
+    ///
+    /// Lenient in the same way as [`Self::margin`]: `None` when absent, with
+    /// [`Self::format_on_check`] falling back to `DEFAULT_FORMAT_ON_CHECK`.
+    #[serde(default)]
     pub format_on_check: Option<bool>,
 }
 
 impl Config {
-    /// The configured margin, or the default when unset.
+    /// The configured margin, or the default when a partial config omitted it.
     pub fn margin(&self) -> usize {
         self.margin.unwrap_or(DEFAULT_MARGIN)
     }
 
-    /// Whether `mlg check` should format first, or the default when unset.
+    /// Whether `mlg check` should format first, or the default when a partial
+    /// config omitted it.
     pub fn format_on_check(&self) -> bool {
         self.format_on_check.unwrap_or(DEFAULT_FORMAT_ON_CHECK)
     }
@@ -66,10 +81,61 @@ impl Default for Config {
         Self {
             name: String::new(),
             version: default_version(),
-            margin: None,
-            format_on_check: None,
+            margin: Some(DEFAULT_MARGIN),
+            format_on_check: Some(DEFAULT_FORMAT_ON_CHECK),
         }
     }
+}
+
+/// The default value of every config field, as a JSON object.
+///
+/// Derived from [`Config::default`] so the written defaults and the in-memory
+/// ones can never drift apart.
+fn default_field_values() -> serde_json::Map<String, serde_json::Value> {
+    match serde_json::to_value(Config::default()) {
+        Ok(serde_json::Value::Object(map)) => map,
+        _ => unreachable!("Config serializes to a JSON object"),
+    }
+}
+
+/// Parses `contents` as the JSON object an `mlg.json` should be, or `None` when
+/// it is not valid JSON or not an object.
+pub fn config_object(contents: &str) -> Option<serde_json::Map<String, serde_json::Value>> {
+    match serde_json::from_str(contents) {
+        Ok(serde_json::Value::Object(map)) => Some(map),
+        _ => None,
+    }
+}
+
+/// The required fields absent from `object`, in the canonical [`CONFIG_FIELDS`]
+/// order.
+pub fn missing_config_fields(object: &serde_json::Map<String, serde_json::Value>) -> Vec<String> {
+    CONFIG_FIELDS
+        .iter()
+        .filter(|field| !object.contains_key(**field))
+        .map(|field| (*field).to_string())
+        .collect()
+}
+
+/// `object` re-serialized with every missing required field added at its default.
+///
+/// Existing fields keep their values and their position; the defaults for any
+/// absent fields are appended. Unknown extra fields are preserved untouched.
+pub fn merge_default_fields(object: &serde_json::Map<String, serde_json::Value>) -> String {
+    let defaults = default_field_values();
+    let mut merged = object.clone();
+    for field in CONFIG_FIELDS {
+        if !merged.contains_key(field)
+            && let Some(value) = defaults.get(field)
+        {
+            merged.insert(field.to_string(), value.clone());
+        }
+    }
+
+    let mut contents = serde_json::to_string_pretty(&merged)
+        .expect("a config object always serializes to JSON");
+    contents.push('\n');
+    contents
 }
 
 /// Whether `contents` still uses the pre-rename `print_margin` key.
@@ -133,32 +199,35 @@ pub fn validate_config_file(path: &Path, event_log: &mut EventLog, origin: &str)
         return;
     };
 
+    // Every field is required: a config must state its whole configuration
+    // rather than lean on implicit defaults, so `mlg init` can show all of them.
     validate_string_field(&object, "name", path, event_log, origin);
     validate_string_field(&object, "version", path, event_log, origin);
 
-    // `margin` is optional, but if present it must be a positive integer.
-    if let Some(value) = object.get("margin") {
-        let valid = value.as_u64().is_some_and(|margin| margin > 0);
-        if !valid {
-            event_log.user_error_at_path(
-                Some(origin),
-                path.to_path_buf(),
-                format!("{CONFIG_FILE} field \"margin\" must be a positive integer"),
-            );
-        }
+    // `margin` must be present and a positive integer. When it is absent but the
+    // old `print_margin` is present, the rename message below already tells the
+    // author to add `margin`, so it is not also reported as missing here.
+    match object.get("margin") {
+        Some(value) if value.as_u64().is_some_and(|margin| margin > 0) => {}
+        Some(_) => event_log.user_error_at_path(
+            Some(origin),
+            path.to_path_buf(),
+            format!("{CONFIG_FILE} field \"margin\" must be a positive integer"),
+        ),
+        None if object.contains_key(LEGACY_MARGIN_FIELD) => {}
+        None => report_missing_field("margin", path, event_log, origin),
     }
 
-    // `format_on_check` is optional, but if present it must be a boolean —
-    // otherwise it silently falls back to the default and formats a collection
-    // that meant to opt out.
-    if let Some(value) = object.get("format_on_check")
-        && !value.is_boolean()
-    {
-        event_log.user_error_at_path(
+    // `format_on_check` must be present and a boolean — a non-boolean silently
+    // falls back to the default and formats a collection that meant to opt out.
+    match object.get("format_on_check") {
+        Some(value) if value.is_boolean() => {}
+        Some(_) => event_log.user_error_at_path(
             Some(origin),
             path.to_path_buf(),
             format!("{CONFIG_FILE} field \"format_on_check\" must be a boolean"),
-        );
+        ),
+        None => report_missing_field("format_on_check", path, event_log, origin),
     }
 
     // Unknown fields are otherwise ignored, so a collection still carrying the
@@ -173,6 +242,14 @@ pub fn validate_config_file(path: &Path, event_log: &mut EventLog, origin: &str)
     }
 }
 
+fn report_missing_field(field: &str, path: &Path, event_log: &mut EventLog, origin: &str) {
+    event_log.user_error_at_path(
+        Some(origin),
+        path.to_path_buf(),
+        format!("{CONFIG_FILE} is missing required field \"{field}\""),
+    );
+}
+
 fn validate_string_field(
     object: &serde_json::Map<String, serde_json::Value>,
     field: &str,
@@ -181,11 +258,7 @@ fn validate_string_field(
     origin: &str,
 ) {
     match object.get(field) {
-        None => event_log.user_error_at_path(
-            Some(origin),
-            path.to_path_buf(),
-            format!("{CONFIG_FILE} is missing required field \"{field}\""),
-        ),
+        None => report_missing_field(field, path, event_log, origin),
         Some(serde_json::Value::String(_)) => {}
         Some(_) => event_log.user_error_at_path(
             Some(origin),
@@ -200,8 +273,8 @@ fn validate_string_field(
 #[cfg(test)]
 mod tests {
     use super::{
-        Config, DEFAULT_MARGIN, default_config_contents, default_version, load_config,
-        validate_config_file,
+        Config, DEFAULT_MARGIN, config_object, default_config_contents, default_version,
+        load_config, merge_default_fields, missing_config_fields, validate_config_file,
     };
     use crate::events::{Event, EventLog, Level};
     use std::fs;
@@ -214,10 +287,24 @@ mod tests {
     static NEXT_TEST_DIR_ID: AtomicUsize = AtomicUsize::new(0);
 
     #[test]
-    fn default_has_empty_name_and_version_zero() {
+    fn default_fills_in_every_field() {
         let config = Config::default();
         assert_eq!(config.name, "");
         assert_eq!(config.version, "0");
+        assert_eq!(config.margin, Some(80));
+        assert_eq!(config.format_on_check, Some(true));
+    }
+
+    #[test]
+    fn default_contents_spell_out_every_field() {
+        // `mlg init` writes this, so the author sees every key and its default.
+        let contents = default_config_contents();
+        for field in ["name", "version", "margin", "format_on_check"] {
+            assert!(
+                contents.contains(&format!("\"{field}\"")),
+                "default config should contain {field}: {contents}"
+            );
+        }
     }
 
     #[test]
@@ -250,7 +337,11 @@ mod tests {
     fn validate_accepts_extra_fields() {
         let dir = TestDir::new();
         let path = dir.path().join("mlg.json");
-        fs::write(&path, r#"{"name": "thing", "version": "1", "extra": true}"#).unwrap();
+        fs::write(
+            &path,
+            r#"{"name": "thing", "version": "1", "margin": 80, "format_on_check": true, "extra": true}"#,
+        )
+        .unwrap();
 
         let mut event_log = EventLog::new();
         validate_config_file(&path, &mut event_log, ORIGIN);
@@ -259,7 +350,7 @@ mod tests {
     }
 
     #[test]
-    fn validate_reports_missing_fields() {
+    fn validate_reports_every_missing_field() {
         let dir = TestDir::new();
         let path = dir.path().join("mlg.json");
         fs::write(&path, "{}\n").unwrap();
@@ -272,6 +363,8 @@ mod tests {
             vec![
                 "mlg.json is missing required field \"name\"".to_string(),
                 "mlg.json is missing required field \"version\"".to_string(),
+                "mlg.json is missing required field \"margin\"".to_string(),
+                "mlg.json is missing required field \"format_on_check\"".to_string(),
             ]
         );
     }
@@ -296,7 +389,11 @@ mod tests {
     fn validate_accepts_a_positive_margin() {
         let dir = TestDir::new();
         let path = dir.path().join("mlg.json");
-        fs::write(&path, r#"{"name": "a", "version": "1", "margin": 80}"#).unwrap();
+        fs::write(
+            &path,
+            r#"{"name": "a", "version": "1", "margin": 80, "format_on_check": true}"#,
+        )
+        .unwrap();
 
         let mut event_log = EventLog::new();
         validate_config_file(&path, &mut event_log, ORIGIN);
@@ -308,7 +405,11 @@ mod tests {
     fn validate_reports_a_non_positive_margin() {
         let dir = TestDir::new();
         let path = dir.path().join("mlg.json");
-        fs::write(&path, r#"{"name": "a", "version": "1", "margin": 0}"#).unwrap();
+        fs::write(
+            &path,
+            r#"{"name": "a", "version": "1", "margin": 0, "format_on_check": true}"#,
+        )
+        .unwrap();
 
         let mut event_log = EventLog::new();
         validate_config_file(&path, &mut event_log, ORIGIN);
@@ -327,13 +428,15 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "print_margin": 80}"#,
+            r#"{"name": "a", "version": "1", "format_on_check": true, "print_margin": 80}"#,
         )
         .unwrap();
 
         let mut event_log = EventLog::new();
         validate_config_file(&path, &mut event_log, ORIGIN);
 
+        // The rename message stands in for "missing margin": it already tells the
+        // author to add the new key, so `margin` is not also flagged as missing.
         assert_eq!(
             error_messages(&event_log),
             vec![
@@ -367,7 +470,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "format_on_check": false}"#,
+            r#"{"name": "a", "version": "1", "margin": 80, "format_on_check": false}"#,
         )
         .unwrap();
 
@@ -385,7 +488,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "format_on_check": "no"}"#,
+            r#"{"name": "a", "version": "1", "margin": 80, "format_on_check": "no"}"#,
         )
         .unwrap();
 
@@ -424,7 +527,11 @@ mod tests {
     fn validate_reports_wrong_type_fields() {
         let dir = TestDir::new();
         let path = dir.path().join("mlg.json");
-        fs::write(&path, r#"{"name": 5, "version": true}"#).unwrap();
+        fs::write(
+            &path,
+            r#"{"name": 5, "version": true, "margin": 80, "format_on_check": true}"#,
+        )
+        .unwrap();
 
         let mut event_log = EventLog::new();
         validate_config_file(&path, &mut event_log, ORIGIN);
@@ -486,6 +593,63 @@ mod tests {
             "unexpected message: {}",
             messages[0]
         );
+    }
+
+    #[test]
+    fn missing_config_fields_lists_absent_fields_in_canonical_order() {
+        let object = config_object(r#"{"version": "1", "extra": true}"#).expect("object");
+
+        assert_eq!(
+            missing_config_fields(&object),
+            vec![
+                "name".to_string(),
+                "margin".to_string(),
+                "format_on_check".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn missing_config_fields_is_empty_for_a_complete_config() {
+        let object = config_object(&default_config_contents()).expect("object");
+
+        assert!(missing_config_fields(&object).is_empty());
+    }
+
+    #[test]
+    fn config_object_rejects_non_objects() {
+        assert!(config_object("[]").is_none());
+        assert!(config_object("not json").is_none());
+    }
+
+    #[test]
+    fn merge_default_fields_fills_gaps_and_keeps_existing_values() {
+        let object = config_object(r#"{"name": "mine", "extra": "kept"}"#).expect("object");
+
+        let merged = merge_default_fields(&object);
+        let reparsed = config_object(&merged).expect("merged object");
+
+        // Existing values (including unknown extras) are preserved.
+        assert_eq!(reparsed.get("name").and_then(|v| v.as_str()), Some("mine"));
+        assert_eq!(
+            reparsed.get("extra").and_then(|v| v.as_str()),
+            Some("kept")
+        );
+        // Every previously missing field is now present at its default.
+        assert!(missing_config_fields(&reparsed).is_empty());
+        assert_eq!(reparsed.get("version").and_then(|v| v.as_str()), Some("0"));
+        assert_eq!(reparsed.get("margin").and_then(|v| v.as_u64()), Some(80));
+        assert_eq!(
+            reparsed.get("format_on_check").and_then(|v| v.as_bool()),
+            Some(true)
+        );
+    }
+
+    #[test]
+    fn merge_default_fields_preserves_a_complete_config() {
+        let object = config_object(&default_config_contents()).expect("object");
+
+        assert_eq!(merge_default_fields(&object), default_config_contents());
     }
 
     fn error_messages(event_log: &EventLog) -> Vec<String> {

@@ -172,7 +172,8 @@ Rules:
 
 Collection config handling lives in `src/backend/config.rs`.
 
-The current config file is `mlg.json`. The config model is intentionally small:
+The current config file is `mlg.json`. The config model is intentionally small,
+and every field is required so the whole configuration is visible in one place:
 
 ```json
 {
@@ -183,20 +184,32 @@ The current config file is `mlg.json`. The config model is intentionally small:
 }
 ```
 
-Validation requires `name` and `version` to exist and be strings. `margin` is
-optional — it is the target line width for `mlg format`, defaulting to
-`DEFAULT_MARGIN` (80) when absent — and must be a positive integer when
-present. `format_on_check` is optional and must be a boolean when present; it
-controls whether `mlg check` formats the collection before checking it, and
-defaults to `DEFAULT_FORMAT_ON_CHECK` (`true`). Extra fields are accepted for
-forward compatibility, with one
-exception: `margin` was formerly named `print_margin`, and because unknown
-fields are ignored, a config still carrying the old key would silently lose its
-configured width. That key is therefore rejected with a message naming the new
-one.
+`CONFIG_FIELDS` lists these four fields in the order `mlg init` writes them.
+Validation requires every one to be present:
 
-`src/mlg/init.rs` creates missing `mlg.json` and `content/` entries, and leaves
-existing entries untouched.
+- `name` and `version` must be strings.
+- `margin` — the target line width for `mlg format` — must be a positive
+  integer.
+- `format_on_check` — whether `mlg check` formats the collection before checking
+  it — must be a boolean.
+
+There are no implicit defaults in a valid config: a missing field is a `mlg check`
+error rather than a silent fallback. The accessors `Config::margin` and
+`Config::format_on_check` still fall back to `DEFAULT_MARGIN` (80) and
+`DEFAULT_FORMAT_ON_CHECK` (`true`), but only so that other commands keep running
+on an already-flagged partial config; `mlg check` is what enforces presence.
+Extra fields are accepted for forward compatibility, with one exception:
+`margin` was formerly named `print_margin`, and a config still carrying the old
+key is rejected with a message naming the new one (which also stands in for the
+"missing `margin`" error, so the two are not both reported).
+
+`src/mlg/init.rs` creates a missing `mlg.json` with every field at its default,
+and creates a missing `content/`. When `mlg.json` already exists but omits some
+required fields, `mlg init` asks (on an interactive terminal) whether to fill
+them in with their defaults, preserving existing values and any extra fields;
+without a terminal it reports the gaps and leaves the file untouched. The
+`config_object`, `missing_config_fields`, and `merge_default_fields` helpers in
+`config.rs` back this, so init and validation agree on the field set.
 
 ## Event and Diagnostic Architecture
 

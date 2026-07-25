@@ -31,12 +31,17 @@
     inset 0 1px 3px rgba(28, 26, 42, 0.09),
     inset 0 -1px 0 rgba(255, 255, 255, 0.95), 0 18px 36px rgba(28, 26, 42, 0.04);
   --control-shadow: 0 1px 4px rgba(28, 26, 42, 0.08);
-  --syntax-comment: #8b8795;
-  --syntax-command: #315eb9;
+  /* Syntax highlighting mirrors the rendered view's palette (ink / accent /
+     muted): commands and labels take the accent blue the rendered view uses for
+     command names and section headings, comments and punctuation take the muted
+     grays, and the remaining tokens are low-saturation earthy tints so the code
+     view reads as the same colour world as the rendered card. */
+  --syntax-comment: #777684;
+  --syntax-command: #3a67c7;
   --syntax-keyword: #87602d;
-  --syntax-label: #7b3f91;
-  --syntax-operator: #b03d54;
-  --syntax-placeholder: #0d7169;
+  --syntax-label: #3f5f9c;
+  --syntax-operator: #96583a;
+  --syntax-placeholder: #23726a;
   --syntax-punctuation: #6f6d78;
   --syntax-string: #6f641b;
   --radius-card: 0.75rem;

@@ -22,13 +22,11 @@ import {
   PageData,
 } from "../lib/types";
 import {
-  directoryRoute,
-  directoryRoutePath,
-  fileDirectory,
-  fileRoute,
-  fileRoutePath,
-  firstFileIndexInDirectory,
-  routePathFromPathname,
+  buildReaderNodes,
+  nodeIndexForDirectory,
+  nodeIndexForFile,
+  readerNodeRoute,
+  resolveReaderNodeIndex,
 } from "../lib/presenter";
 
 const NARROW_OUTLINE_MEDIA_QUERY = "(max-width: 860px)";
@@ -92,19 +90,24 @@ export function ViewerShell({
       ),
     [fileEntries, loadedFiles],
   );
-  const initialSelection = resolveRouteSelection(
-    stripRouteBasePath(initialPathname, routeBasePath),
-    files,
-    directories,
+  const collectionTitle = manifest?.title ?? "";
+  const readerNodes = useMemo(
+    () => buildReaderNodes(fileEntries, directories, collectionTitle),
+    [fileEntries, directories, collectionTitle],
   );
   const [outlineState, setOutlineState] = useState<OutlineState>("auto");
-  const [currentDirectory, setCurrentDirectory] = useState(
-    initialSelection.directory,
-  );
-  const [selectedFileIndex, setSelectedFileIndex] = useState(
-    initialSelection.fileIndex,
+  const [selectedNodeIndex, setSelectedNodeIndex] = useState(() =>
+    resolveReaderNodeIndex(
+      stripRouteBasePath(initialPathname, routeBasePath),
+      readerNodes,
+    ),
   );
   const [theme, setTheme] = useState<ViewerTheme>(DEFAULT_VIEWER_THEME);
+
+  const selectedNode = readerNodes[selectedNodeIndex] ?? readerNodes[0];
+  const currentDirectory = selectedNode?.directory ?? "";
+  const selectedFileIndex =
+    selectedNode?.kind === "file" ? selectedNode.fileIndex : -1;
 
   const loadFileIntoCache = useCallback(
     (file: FileManifest, options: { recordError: boolean }) => {
@@ -239,65 +242,53 @@ export function ViewerShell({
   }, []);
 
   useEffect(() => {
-    const syncSelectedFileFromPath = () => {
-      const selection = resolveRouteSelection(
-        stripRouteBasePath(window.location.pathname, routeBasePath),
-        files,
-        directories,
+    const syncSelectedNodeFromPath = () => {
+      setSelectedNodeIndex(
+        resolveReaderNodeIndex(
+          stripRouteBasePath(window.location.pathname, routeBasePath),
+          readerNodes,
+        ),
       );
-      setSelectedFileIndex(selection.fileIndex);
-      setCurrentDirectory(selection.directory);
     };
 
-    syncSelectedFileFromPath();
-    window.addEventListener("popstate", syncSelectedFileFromPath);
+    syncSelectedNodeFromPath();
+    window.addEventListener("popstate", syncSelectedNodeFromPath);
 
     return () => {
-      window.removeEventListener("popstate", syncSelectedFileFromPath);
+      window.removeEventListener("popstate", syncSelectedNodeFromPath);
     };
-  }, [files, directories, routeBasePath]);
+  }, [readerNodes, routeBasePath]);
 
-  const handleSelectFile = (fileIndex: number) => {
-    setSelectedFileIndex(fileIndex);
-    setCurrentDirectory(fileDirectory(files[fileIndex]?.path ?? ""));
+  const handleSelectNode = (nodeIndex: number) => {
+    const node = readerNodes[nodeIndex];
+    if (!node) {
+      return;
+    }
+
+    setSelectedNodeIndex(nodeIndex);
     window.history.pushState(
       null,
       "",
       withRouteBasePath(
-        fileRoute(files[fileIndex]?.path ?? ""),
+        readerNodeRoute(node),
         routeBasePath,
         useTrailingSlashRoutes,
       ),
     );
   };
 
-  const handleNavigateDirectory = (directory: string) => {
-    setCurrentDirectory(directory);
-
-    const fileIndex = firstFileIndexInDirectory(files, directories, directory);
-    if (fileIndex === null) {
-      window.history.pushState(
-        null,
-        "",
-        withRouteBasePath(
-          directoryRoute(directory),
-          routeBasePath,
-          useTrailingSlashRoutes,
-        ),
-      );
-      return;
+  const handleSelectFile = (fileIndex: number) => {
+    const nodeIndex = nodeIndexForFile(readerNodes, fileIndex);
+    if (nodeIndex >= 0) {
+      handleSelectNode(nodeIndex);
     }
+  };
 
-    setSelectedFileIndex(fileIndex);
-    window.history.pushState(
-      null,
-      "",
-      withRouteBasePath(
-        fileRoute(files[fileIndex]?.path ?? ""),
-        routeBasePath,
-        useTrailingSlashRoutes,
-      ),
-    );
+  const handleNavigateDirectory = (directory: string) => {
+    const nodeIndex = nodeIndexForDirectory(readerNodes, directory);
+    if (nodeIndex >= 0) {
+      handleSelectNode(nodeIndex);
+    }
   };
 
   const handleToggleOutline = () => {
@@ -394,8 +385,11 @@ export function ViewerShell({
           onLoadDefinition={handleLoadDefinition}
           onNavigateDirectory={handleNavigateDirectory}
           onSelectFile={handleSelectFile}
+          onSelectNode={handleSelectNode}
           outlineState={outlineState}
+          readerNodes={readerNodes}
           selectedFileIndex={selectedFileIndex}
+          selectedNodeIndex={selectedNodeIndex}
         />
       </main>
     </>
@@ -565,68 +559,4 @@ function writeStoredTheme(theme: ViewerTheme) {
   try {
     window.localStorage.setItem(VIEWER_THEME_STORAGE_KEY, theme);
   } catch (_) {}
-}
-
-/** Route-derived viewer selection state. */
-interface RouteSelection {
-  /** Directory shown in the outline. */
-  directory: string;
-  /** File index shown in the document stream. */
-  fileIndex: number;
-}
-
-/** Resolves a browser pathname into the selected file and outline directory. */
-function resolveRouteSelection(
-  pathname: string,
-  files: FileView[],
-  directories: DirectoryView[],
-): RouteSelection {
-  const routePath = routePathFromPathname(pathname);
-  if (!routePath) {
-    return { directory: "", fileIndex: 0 };
-  }
-
-  const fileIndex = files.findIndex(
-    (file) => fileRoutePath(file.path) === routePath,
-  );
-  if (fileIndex >= 0) {
-    return {
-      directory: fileDirectory(files[fileIndex]?.path ?? ""),
-      fileIndex,
-    };
-  }
-
-  const directory = findDirectoryForRoutePath(routePath, files, directories);
-  const directoryFileIndex =
-    directory === null
-      ? null
-      : firstFileIndexInDirectory(files, directories, directory);
-  if (directoryFileIndex !== null) {
-    return {
-      directory: directory ?? "",
-      fileIndex: directoryFileIndex,
-    };
-  }
-
-  return { directory: "", fileIndex: 0 };
-}
-
-/** Finds the outline directory represented by a normalized route path. */
-function findDirectoryForRoutePath(
-  routePath: string,
-  files: FileView[],
-  directories: DirectoryView[],
-): string | null {
-  const directoryPaths = new Set([
-    ...files.map((file) => fileDirectory(file.path)),
-    ...directories.map((directory) => fileDirectory(`${directory.path}/_`)),
-  ]);
-
-  for (const directory of directoryPaths) {
-    if (directoryRoutePath(directory) === routePath) {
-      return directory;
-    }
-  }
-
-  return null;
 }

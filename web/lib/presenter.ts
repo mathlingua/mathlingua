@@ -129,24 +129,138 @@ export function parentDirectory(directory: string): string {
   return segments.join("/");
 }
 
-/** Returns the first selectable file inside a directory, if one exists. */
-export function firstFileIndexInDirectory(
-  files: { path: string; title?: string | null }[],
-  directories: DirectoryView[],
-  directory: string,
-): number | null {
-  const firstFile = buildFileBrowserEntries(files, directories, directory).find(
-    (entry) => entry.kind === "file",
-  );
-
-  return firstFile?.kind === "file" ? firstFile.fileIndex : null;
-}
-
 /** Returns the directory that contains a source file path. */
 export function fileDirectory(path: string): string {
   const segments = contentRelativePath(path).split("/").filter(Boolean);
   segments.pop();
   return segments.join("/");
+}
+
+/**
+ * One stop in the linear reading order. The collection root and every directory
+ * become a `divider` (a centered title page); each source file is a `file`. The
+ * sequence is a depth-first, toc-ordered walk, so Next/Prev read like a book.
+ */
+export type ReaderNode =
+  | {
+      kind: "divider";
+      /** Directory this divider announces; "" is the collection root. */
+      directory: string;
+      /** Centered title: the collection name, or the directory label. */
+      title: string;
+    }
+  | {
+      kind: "file";
+      /** Index of this file in the serialized collection view. */
+      fileIndex: number;
+      /** File path relative to the content root. */
+      path: string;
+      /** Directory that contains the file. */
+      directory: string;
+      /** File label shown in navigation. */
+      title: string;
+    };
+
+/**
+ * Builds the linear reading order: a root divider, then each file in toc order,
+ * emitting a divider the first time a directory is entered. Assumes `files` is
+ * in depth-first order (each directory's subtree contiguous), which the manifest
+ * guarantees.
+ */
+export function buildReaderNodes(
+  files: { path: string; title?: string | null }[],
+  directories: DirectoryView[],
+  collectionTitle: string,
+): ReaderNode[] {
+  const nodes: ReaderNode[] = [
+    { kind: "divider", directory: "", title: collectionTitle },
+  ];
+  const emitted = new Set<string>([""]);
+
+  files.forEach((file, fileIndex) => {
+    const directory = fileDirectory(file.path);
+
+    if (directory) {
+      let prefix = "";
+      for (const segment of directory.split("/").filter(Boolean)) {
+        prefix = prefix ? `${prefix}/${segment}` : segment;
+        if (!emitted.has(prefix)) {
+          emitted.add(prefix);
+          nodes.push({
+            kind: "divider",
+            directory: prefix,
+            title: formatDirectoryLabel(directories, prefix),
+          });
+        }
+      }
+    }
+
+    nodes.push({
+      kind: "file",
+      fileIndex,
+      path: file.path,
+      directory,
+      title: file.title ?? formatFileLabel(file.path),
+    });
+  });
+
+  return nodes;
+}
+
+/** Browser route for a reader node: a directory route for dividers, else a file route. */
+export function readerNodeRoute(node: ReaderNode): string {
+  return node.kind === "divider"
+    ? directoryRoute(node.directory)
+    : fileRoute(node.path);
+}
+
+/** Index of the divider node for a directory ("" is the root), or -1. */
+export function nodeIndexForDirectory(
+  nodes: ReaderNode[],
+  directory: string,
+): number {
+  return nodes.findIndex(
+    (node) => node.kind === "divider" && node.directory === directory,
+  );
+}
+
+/** Index of the file node with the given collection file index, or -1. */
+export function nodeIndexForFile(
+  nodes: ReaderNode[],
+  fileIndex: number,
+): number {
+  return nodes.findIndex(
+    (node) => node.kind === "file" && node.fileIndex === fileIndex,
+  );
+}
+
+/** Resolves a browser pathname to a reader-node index (root divider by default). */
+export function resolveReaderNodeIndex(
+  pathname: string,
+  nodes: ReaderNode[],
+): number {
+  const routePath = routePathFromPathname(pathname);
+  if (!routePath) {
+    return Math.max(nodeIndexForDirectory(nodes, ""), 0);
+  }
+
+  const fileNodeIndex = nodes.findIndex(
+    (node) => node.kind === "file" && fileRoutePath(node.path) === routePath,
+  );
+  if (fileNodeIndex >= 0) {
+    return fileNodeIndex;
+  }
+
+  const dividerNodeIndex = nodes.findIndex(
+    (node) =>
+      node.kind === "divider" &&
+      directoryRoutePath(node.directory) === routePath,
+  );
+  if (dividerNodeIndex >= 0) {
+    return dividerNodeIndex;
+  }
+
+  return Math.max(nodeIndexForDirectory(nodes, ""), 0);
 }
 
 /** One crumb in the content-page breadcrumb trail. */
@@ -158,31 +272,47 @@ export interface BreadcrumbCrumb {
 }
 
 /**
- * Builds the breadcrumb trail for a file: the collection root, each ancestor
- * directory, and the current page. Ancestor crumbs carry the directory to
- * navigate to; the final page crumb is inert (`directory: null`).
+ * Breadcrumb trail for a reader node. The root crumb (directory "") leads to the
+ * collection title page; ancestor directory crumbs lead to their divider pages;
+ * the final crumb is the current location and is inert.
  */
-export function buildBreadcrumbTrail(
+export function buildNodeBreadcrumb(
   directories: DirectoryView[],
-  filePath: string,
-  pageLabel: string,
+  node: ReaderNode,
   rootLabel: string,
 ): BreadcrumbCrumb[] {
-  const crumbs: BreadcrumbCrumb[] = [{ label: rootLabel, directory: "" }];
-  const directory = fileDirectory(filePath);
+  if (node.kind === "divider" && node.directory === "") {
+    return [{ label: rootLabel, directory: null }];
+  }
 
-  if (directory) {
+  const crumbs: BreadcrumbCrumb[] = [{ label: rootLabel, directory: "" }];
+  const prefixes: string[] = [];
+  if (node.directory) {
     let prefix = "";
-    for (const segment of directory.split("/").filter(Boolean)) {
+    for (const segment of node.directory.split("/").filter(Boolean)) {
       prefix = prefix ? `${prefix}/${segment}` : segment;
+      prefixes.push(prefix);
+    }
+  }
+
+  if (node.kind === "file") {
+    for (const prefix of prefixes) {
       crumbs.push({
         label: formatDirectoryLabel(directories, prefix),
         directory: prefix,
       });
     }
+    crumbs.push({ label: node.title, directory: null });
+  } else {
+    prefixes.forEach((prefix, index) => {
+      const isSelf = index === prefixes.length - 1;
+      crumbs.push({
+        label: formatDirectoryLabel(directories, prefix),
+        directory: isSelf ? null : prefix,
+      });
+    });
   }
 
-  crumbs.push({ label: pageLabel, directory: null });
   return crumbs;
 }
 

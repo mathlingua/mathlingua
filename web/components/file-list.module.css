@@ -40,6 +40,55 @@
   border-right-color: transparent;
 }
 
+/* -- Cover link: back to the collection's title page ------------------------ */
+
+.outlineCover {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: calc(100% + 0.9rem);
+  margin: 0 0 1.15rem -0.45rem;
+  padding: 0.4rem 0.5rem;
+  border: none;
+  border-radius: var(--radius-nav);
+  background: none;
+  color: var(--muted-strong);
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.outlineCover:hover {
+  background: var(--surface-alt);
+  color: var(--accent);
+}
+
+.outlineCover:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.outlineCoverActive {
+  color: var(--accent);
+}
+
+.outlineCoverMark {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+}
+
+.outlineCoverText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* -- Outline header: "up" control + current-section title ------------------ */
 
 .outlineHeader {
@@ -92,23 +141,38 @@
   white-space: nowrap;
 }
 
-.outlineEyebrow {
-  margin: 0 0 0.22rem;
-  color: var(--muted);
-  font-family: var(--font-ui);
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-}
-
 .outlineSectionTitle {
-  margin: 0;
+  display: block;
+  width: calc(100% + 0.9rem);
+  margin: 0 0 0 -0.45rem;
+  padding: 0.1rem 0.45rem;
+  border: none;
+  border-radius: var(--radius-nav);
+  background: none;
   color: var(--heading-color);
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: var(--heading-weight);
   line-height: 1.16;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.outlineSectionTitle:hover {
+  background: var(--surface-alt);
+  color: var(--accent);
+}
+
+.outlineSectionTitle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.outlineSectionTitleActive {
+  color: var(--accent);
 }
 
 /* -- Outline entries -------------------------------------------------------- */
@@ -197,17 +261,21 @@
 
 .outlineLinkDirectory {
   color: var(--ink);
-  font-weight: 500;
+  font-weight: 700;
 }
 
-.outlineFolderIcon {
+.outlineChapterMark {
   flex: 0 0 auto;
-  width: 1.05rem;
-  height: 1.05rem;
+  width: 0.95rem;
+  height: 0.95rem;
   color: var(--muted-strong);
 }
 
-.outlineLinkDirectory:hover .outlineFolderIcon {
+.outlineLinkDirectory:hover .outlineChapterMark {
+  color: var(--accent);
+}
+
+.outlineLinkActive.outlineLinkDirectory .outlineChapterMark {
   color: var(--accent);
 }
 
@@ -288,6 +356,54 @@
   border-width: 0 1.4px 1.4px 0;
   opacity: 0.75;
   transform: rotate(-45deg);
+}
+
+/* -- Divider page (collection root / section title page) -------------------- */
+
+.dividerPage {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 47rem);
+  min-height: calc(100vh - 64px - 15rem);
+  margin: 0 auto;
+}
+
+.dividerCenter {
+  display: grid;
+  flex: 1 1 auto;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+.dividerTitle {
+  margin: 0;
+  color: var(--heading-color);
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1.03;
+  letter-spacing: -0.01em;
+}
+
+.dividerRule {
+  width: 3rem;
+  height: 2px;
+  margin-top: 1.6rem;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+@media (max-width: 860px) {
+  .dividerTitle {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .dividerTitle {
+    font-size: 2.5rem;
+  }
 }
 
 .documentStream {
@@ -426,6 +542,18 @@
 .pageNavText {
   display: grid;
   min-width: 0;
+}
+
+.pageNavLabel {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.pageNavButtonNext .pageNavLabel {
+  text-align: right;
 }
 
 .pageNavTitle {

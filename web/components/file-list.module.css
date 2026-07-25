@@ -40,42 +40,78 @@
   border-right-color: transparent;
 }
 
-.outlineBack {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0 0 1.1rem;
-  padding: 0.25rem 0;
-  border: none;
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--font-body);
-  font-size: 1.28rem;
-  font-weight: 400;
-  cursor: pointer;
+/* -- Outline header: "up" control + current-section title ------------------ */
+
+.outlineHeader {
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.95rem;
+  border-bottom: 1px solid var(--line);
 }
 
-.outlineBack:hover {
+.outlineUp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.85rem -0.45rem;
+  padding: 0.24rem 0.5rem 0.24rem 0.4rem;
+  border: none;
+  border-radius: var(--radius-nav);
+  background: transparent;
+  color: var(--muted-strong);
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.outlineUp:hover {
+  background: var(--surface-alt);
   color: var(--accent);
 }
 
-.outlineBackChevron,
-.outlineLinkChevron {
-  width: 0.42rem;
-  height: 0.42rem;
+.outlineUp:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.outlineUpChevron {
+  width: 0.4rem;
+  height: 0.4rem;
   border-color: currentColor;
   border-style: solid;
   border-width: 0 1.5px 1.5px 0;
-}
-
-.outlineBackChevron {
   transform: rotate(135deg);
 }
 
-.outlineLinkChevron {
-  margin-left: 0.35rem;
-  transform: rotate(-45deg);
+.outlineUpText {
+  overflow: hidden;
+  max-width: 15rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+.outlineEyebrow {
+  margin: 0 0 0.22rem;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.outlineSectionTitle {
+  margin: 0;
+  color: var(--heading-color);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: var(--heading-weight);
+  line-height: 1.16;
+}
+
+/* -- Outline entries -------------------------------------------------------- */
 
 .outlineList {
   list-style: none;
@@ -84,46 +120,174 @@
 }
 
 .outlineList li + li {
-  margin-top: 0.85rem;
+  margin-top: 0.12rem;
 }
 
 .outlineLink {
+  position: relative;
   display: flex;
   align-items: center;
+  gap: 0.55rem;
   width: 100%;
-  min-height: 2rem;
-  padding: 0;
+  padding: 0.42rem 0.6rem;
   border: none;
+  border-radius: var(--radius-nav);
   background: none;
   color: var(--ink);
-  font-size: 1.28rem;
+  font-family: var(--font-body);
+  font-size: 1.02rem;
+  line-height: 1.28;
   text-align: left;
   cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
 }
 
 .outlineLink:hover {
+  background: var(--surface-alt);
   color: var(--accent);
+}
+
+.outlineLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.outlineLinkLabel {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .outlineLinkActive {
   color: var(--accent);
+  font-weight: 500;
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+}
+
+.outlineLinkActive::before {
+  content: "";
+  position: absolute;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  left: 0;
+  width: 2.5px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent);
+}
+
+.outlineLinkActive:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+/* Leaf-page marker: a small dot that aligns files with folder-icon rows. */
+.outlineFileDot {
+  flex: 0 0 auto;
+  width: 0.3rem;
+  height: 0.3rem;
+  margin: 0 0.35rem;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+.outlineLinkActive .outlineFileDot {
+  opacity: 0.85;
 }
 
 .outlineLinkDirectory {
-  justify-content: flex-start;
-  gap: 0;
-  padding: 0;
-  border: none;
-  background: transparent;
   color: var(--ink);
-  font-family: var(--font-body);
-  font-size: 1.28rem;
-  font-weight: 400;
+  font-weight: 500;
 }
 
-.outlineLinkDirectory:hover {
-  background: transparent;
+.outlineFolderIcon {
+  flex: 0 0 auto;
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--muted-strong);
+}
+
+.outlineLinkDirectory:hover .outlineFolderIcon {
   color: var(--accent);
+}
+
+.outlineLinkChevron {
+  flex: 0 0 auto;
+  width: 0.42rem;
+  height: 0.42rem;
+  margin-left: auto;
+  border-color: var(--muted);
+  border-style: solid;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(-45deg);
+}
+
+.outlineLinkDirectory:hover .outlineLinkChevron {
+  border-color: var(--accent);
+}
+
+/* -- Content breadcrumb ----------------------------------------------------- */
+
+.breadcrumb {
+  width: min(100%, 47rem);
+  margin: 0 auto -1.75rem;
+}
+
+.breadcrumbList {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.breadcrumbItem {
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumbLink {
+  padding: 0.12rem 0.34rem;
+  border: none;
+  border-radius: var(--radius-nav);
+  background: transparent;
+  color: var(--muted-strong);
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.breadcrumbLink:hover {
+  background: var(--surface-alt);
+  color: var(--accent);
+}
+
+.breadcrumbLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.breadcrumbCurrent {
+  padding: 0.12rem 0.34rem;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.breadcrumbSeparator {
+  width: 0.32rem;
+  height: 0.32rem;
+  margin: 0 0.12rem;
+  border-color: var(--muted);
+  border-style: solid;
+  border-width: 0 1.4px 1.4px 0;
+  opacity: 0.75;
+  transform: rotate(-45deg);
 }
 
 .documentStream {

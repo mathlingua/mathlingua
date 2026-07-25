@@ -149,6 +149,43 @@ export function fileDirectory(path: string): string {
   return segments.join("/");
 }
 
+/** One crumb in the content-page breadcrumb trail. */
+export interface BreadcrumbCrumb {
+  /** Display label for the crumb. */
+  label: string;
+  /** Directory to navigate to, or `null` for the current (non-clickable) page. */
+  directory: string | null;
+}
+
+/**
+ * Builds the breadcrumb trail for a file: the collection root, each ancestor
+ * directory, and the current page. Ancestor crumbs carry the directory to
+ * navigate to; the final page crumb is inert (`directory: null`).
+ */
+export function buildBreadcrumbTrail(
+  directories: DirectoryView[],
+  filePath: string,
+  pageLabel: string,
+  rootLabel: string,
+): BreadcrumbCrumb[] {
+  const crumbs: BreadcrumbCrumb[] = [{ label: rootLabel, directory: "" }];
+  const directory = fileDirectory(filePath);
+
+  if (directory) {
+    let prefix = "";
+    for (const segment of directory.split("/").filter(Boolean)) {
+      prefix = prefix ? `${prefix}/${segment}` : segment;
+      crumbs.push({
+        label: formatDirectoryLabel(directories, prefix),
+        directory: prefix,
+      });
+    }
+  }
+
+  crumbs.push({ label: pageLabel, directory: null });
+  return crumbs;
+}
+
 /** Builds the DOM anchor id for a rendered file. */
 export function makeFileAnchor(path: string): string {
   return encodeRoutePath(fileRoutePath(path));

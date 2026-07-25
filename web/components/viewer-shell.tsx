@@ -382,6 +382,7 @@ export function ViewerShell({
       />
       <main className={styles.pageShell}>
         <FileList
+          collectionTitle={manifest?.title}
           currentDirectory={currentDirectory}
           definitionItemIds={manifest?.definitions}
           directories={directories}

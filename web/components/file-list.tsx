@@ -5,7 +5,9 @@ import { GroupCard } from "./group-card";
 import { MarkdownInline, MarkdownText } from "./markdown-text";
 import type { OutlineState } from "./outline-state";
 import styles from "./file-list.module.css";
+import type { BreadcrumbCrumb } from "../lib/presenter";
 import {
+  buildBreadcrumbTrail,
   buildFileBrowserEntries,
   formatDirectoryLabel,
   formatFileLabel,
@@ -20,6 +22,8 @@ const NARROW_OUTLINE_MEDIA_QUERY = "(max-width: 860px)";
 
 /** Props for coordinating outline navigation and selected document state. */
 interface FileListProps {
+  /** Collection title, used as the breadcrumb root and top-level outline label. */
+  collectionTitle?: string;
   /** Directory currently shown by the outline browser. */
   currentDirectory: string;
   /** Static export definition key to item id map. */
@@ -50,6 +54,7 @@ interface FileListProps {
 
 /** Renders the collection outline beside the selected file's group cards. */
 export function FileList({
+  collectionTitle,
   currentDirectory,
   definitionItemIds,
   directories,
@@ -84,6 +89,27 @@ export function FileList({
   const previousFileIndex = activeFileIndex > 0 ? activeFileIndex - 1 : null;
   const nextFileIndex =
     activeFileIndex < files.length - 1 ? activeFileIndex + 1 : null;
+
+  const rootLabel = collectionTitle?.trim() || "Contents";
+  const parentPath = currentDirectory ? parentDirectory(currentDirectory) : "";
+  // Where the "up" control leads: the parent section, or the collection root.
+  const upLabel = currentDirectory
+    ? parentPath
+      ? formatDirectoryLabel(directories, parentPath)
+      : rootLabel
+    : "";
+  // "You are here": the current section, or the collection itself at the root.
+  const sectionLabel = currentDirectory
+    ? formatDirectoryLabel(directories, currentDirectory)
+    : rootLabel;
+  const selectedFileLabel =
+    selectedFile.title ?? formatFileLabel(selectedFile.path);
+  const breadcrumb = buildBreadcrumbTrail(
+    directories,
+    selectedFile.path,
+    selectedFileLabel,
+    rootLabel,
+  );
 
   const handleSelectPage = (fileIndex: number) => {
     onSelectFile(fileIndex);
@@ -169,18 +195,22 @@ export function FileList({
       }
     >
       <aside className={styles.outlinePanel}>
-        {currentDirectory ? (
-          <button
-            className={styles.outlineBack}
-            onClick={() =>
-              onNavigateDirectory(parentDirectory(currentDirectory))
-            }
-            type="button"
-          >
-            <span aria-hidden="true" className={styles.outlineBackChevron} />
-            {formatDirectoryLabel(directories, currentDirectory)}
-          </button>
-        ) : null}
+        <div className={styles.outlineHeader}>
+          {currentDirectory ? (
+            <button
+              className={styles.outlineUp}
+              onClick={() => onNavigateDirectory(parentPath)}
+              type="button"
+            >
+              <span aria-hidden="true" className={styles.outlineUpChevron} />
+              <span className={styles.outlineUpText}>{upLabel}</span>
+            </button>
+          ) : null}
+          <p className={styles.outlineEyebrow}>
+            {currentDirectory ? "Section" : "Collection"}
+          </p>
+          <h2 className={styles.outlineSectionTitle}>{sectionLabel}</h2>
+        </div>
         <nav>
           <ul className={styles.outlineList}>
             {entries.map((entry) => (
@@ -194,7 +224,10 @@ export function FileList({
                     }}
                     type="button"
                   >
-                    <span>{entry.label}</span>
+                    <FolderIcon />
+                    <span className={styles.outlineLinkLabel}>
+                      {entry.label}
+                    </span>
                     <span
                       aria-hidden="true"
                       className={styles.outlineLinkChevron}
@@ -204,8 +237,8 @@ export function FileList({
                   <button
                     className={
                       entry.fileIndex === activeFileIndex
-                        ? `${styles.outlineLink} ${styles.outlineLinkActive}`
-                        : styles.outlineLink
+                        ? `${styles.outlineLink} ${styles.outlineLinkFile} ${styles.outlineLinkActive}`
+                        : `${styles.outlineLink} ${styles.outlineLinkFile}`
                     }
                     onClick={() => {
                       onSelectFile(entry.fileIndex);
@@ -213,7 +246,13 @@ export function FileList({
                     }}
                     type="button"
                   >
-                    {entry.label}
+                    <span
+                      aria-hidden="true"
+                      className={styles.outlineFileDot}
+                    />
+                    <span className={styles.outlineLinkLabel}>
+                      {entry.label}
+                    </span>
                   </button>
                 )}
               </li>
@@ -228,6 +267,10 @@ export function FileList({
           key={selectedFile.path}
         >
           <div className={styles.groupStream}>
+            <Breadcrumb
+              crumbs={breadcrumb}
+              onNavigate={(directory) => onNavigateDirectory(directory)}
+            />
             {loadError ? <PageLoadError message={loadError} /> : null}
             {isSelectedFileLoading ? <PageLoadingState /> : null}
             {selectedFile.items.map((item, itemIndex) => {
@@ -331,6 +374,78 @@ export function FileList({
   );
 }
 
+/** Sleek breadcrumb trail shown above the content, marking the current location. */
+function Breadcrumb({
+  crumbs,
+  onNavigate,
+}: {
+  crumbs: BreadcrumbCrumb[];
+  onNavigate: (directory: string) => void;
+}) {
+  if (crumbs.length <= 1) {
+    return null;
+  }
+
+  return (
+    <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
+      <ol className={styles.breadcrumbList}>
+        {crumbs.map((crumb, index) => {
+          const isLast = index === crumbs.length - 1;
+
+          return (
+            <li
+              className={styles.breadcrumbItem}
+              key={`${crumb.label}-${index}`}
+            >
+              {crumb.directory !== null && !isLast ? (
+                <button
+                  className={styles.breadcrumbLink}
+                  onClick={() => onNavigate(crumb.directory as string)}
+                  type="button"
+                >
+                  {crumb.label}
+                </button>
+              ) : (
+                <span
+                  aria-current={isLast ? "page" : undefined}
+                  className={styles.breadcrumbCurrent}
+                >
+                  {crumb.label}
+                </span>
+              )}
+              {isLast ? null : (
+                <span
+                  aria-hidden="true"
+                  className={styles.breadcrumbSeparator}
+                />
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
+/** Small folder glyph marking a directory entry the reader can drill into. */
+function FolderIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.outlineFolderIcon}
+      fill="none"
+      viewBox="0 0 16 16"
+    >
+      <path
+        d="M1.75 4.25c0-.55.45-1 1-1h3.09c.32 0 .62.15.81.4l.7.95c.19.25.49.4.81.4h5.29c.55 0 1 .45 1 1v6.35c0 .55-.45 1-1 1H2.75c-.55 0-1-.45-1-1V4.25Z"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.2"
+      />
+    </svg>
+  );
+}
+
 function PageLoadingState() {
   return (
     <div
@@ -340,14 +455,22 @@ function PageLoadingState() {
     >
       <div aria-hidden="true" className={styles.skeletonTextBlock}>
         <span className={`${styles.skeletonLine} ${styles.skeletonLineLong}`} />
-        <span className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
+        <span
+          className={`${styles.skeletonLine} ${styles.skeletonLineShort}`}
+        />
       </div>
       <div aria-hidden="true" className={styles.skeletonCard}>
-        <span className={`${styles.skeletonLine} ${styles.skeletonLineTitle}`} />
+        <span
+          className={`${styles.skeletonLine} ${styles.skeletonLineTitle}`}
+        />
         <span className={styles.skeletonDivider} />
-        <span className={`${styles.skeletonLine} ${styles.skeletonLineMedium}`} />
+        <span
+          className={`${styles.skeletonLine} ${styles.skeletonLineMedium}`}
+        />
         <span className={`${styles.skeletonLine} ${styles.skeletonLineLong}`} />
-        <span className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
+        <span
+          className={`${styles.skeletonLine} ${styles.skeletonLineShort}`}
+        />
       </div>
     </div>
   );
@@ -369,11 +492,17 @@ function LoadingDefinition() {
       role="status"
     >
       <div aria-hidden="true" className={styles.skeletonCard}>
-        <span className={`${styles.skeletonLine} ${styles.skeletonLineTitle}`} />
+        <span
+          className={`${styles.skeletonLine} ${styles.skeletonLineTitle}`}
+        />
         <span className={styles.skeletonDivider} />
-        <span className={`${styles.skeletonLine} ${styles.skeletonLineMedium}`} />
+        <span
+          className={`${styles.skeletonLine} ${styles.skeletonLineMedium}`}
+        />
         <span className={`${styles.skeletonLine} ${styles.skeletonLineLong}`} />
-        <span className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
+        <span
+          className={`${styles.skeletonLine} ${styles.skeletonLineShort}`}
+        />
       </div>
     </div>
   );

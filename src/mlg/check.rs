@@ -83,7 +83,7 @@ pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) 
 }
 
 /// Run `mlg format` over the collection before checking it, unless the config
-/// turns that off with `"format_on_check": false`.
+/// turns that off with `"formatOnCheck": false`.
 ///
 /// Formatting rewrites the very files about to be parsed, so it has to happen
 /// before the collection is loaded — a check of the pre-format source would
@@ -850,7 +850,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
                 "mlg.json field \"name\" must be a string",
                 "mlg.json is missing required field \"version\"",
                 "mlg.json is missing required field \"margin\"",
-                "mlg.json is missing required field \"format_on_check\"",
+                "mlg.json is missing required field \"formatOnCheck\"",
             ]
         );
         assert!(event_log.has_errors());
@@ -1041,7 +1041,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         let root = temp_dir.path().join("repo");
         let file = unformatted_collection(
             &root,
-            r#"{"name": "a", "version": "1", "margin": 80, "format_on_check": false}"#,
+            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": false}"#,
         );
 
         let mut event_log = EventLog::new();

@@ -180,17 +180,17 @@ and every field is required so the whole configuration is visible in one place:
   "name": "",
   "version": "0",
   "margin": 80,
-  "format_on_check": true
+  "formatOnCheck": true
 }
 ```
 
-`CONFIG_FIELDS` lists these four fields in the order `mlg init` writes them.
-Validation requires every one to be present:
+Keys are camelCase. `CONFIG_FIELDS` lists these four fields in the order
+`mlg init` writes them. Validation requires every one to be present:
 
 - `name` and `version` must be strings.
 - `margin` — the target line width for `mlg format` — must be a positive
   integer.
-- `format_on_check` — whether `mlg check` formats the collection before checking
+- `formatOnCheck` — whether `mlg check` formats the collection before checking
   it — must be a boolean.
 
 There are no implicit defaults in a valid config: a missing field is a `mlg check`

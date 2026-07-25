@@ -9,7 +9,7 @@ pub const CONFIG_FILE: &str = "mlg.json";
 pub const DEFAULT_MARGIN: usize = 80;
 
 /// Whether `mlg check` formats the collection before checking it, absent a
-/// `format_on_check` setting. Formatting is normalization rather than a
+/// `formatOnCheck` setting. Formatting is normalization rather than a
 /// judgement call, so a collection is kept formatted unless it opts out.
 pub const DEFAULT_FORMAT_ON_CHECK: bool = true;
 
@@ -19,13 +19,14 @@ pub const DEFAULT_FORMAT_ON_CHECK: bool = true;
 /// defaults, so that the whole configuration is visible and editable in one
 /// place. `mlg check` reports any of these that is absent, and `mlg init` fills
 /// them in with their defaults.
-pub const CONFIG_FIELDS: [&str; 4] = ["name", "version", "margin", "format_on_check"];
+pub const CONFIG_FIELDS: [&str; 4] = ["name", "version", "margin", "formatOnCheck"];
 
 /// The former name of the `margin` field, still recognized so that a collection
 /// carrying it is told to rename rather than silently losing its setting.
 const LEGACY_MARGIN_FIELD: &str = "print_margin";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Config {
     #[serde(default)]
     pub name: String,
@@ -218,16 +219,16 @@ pub fn validate_config_file(path: &Path, event_log: &mut EventLog, origin: &str)
         None => report_missing_field("margin", path, event_log, origin),
     }
 
-    // `format_on_check` must be present and a boolean — a non-boolean silently
+    // `formatOnCheck` must be present and a boolean — a non-boolean silently
     // falls back to the default and formats a collection that meant to opt out.
-    match object.get("format_on_check") {
+    match object.get("formatOnCheck") {
         Some(value) if value.is_boolean() => {}
         Some(_) => event_log.user_error_at_path(
             Some(origin),
             path.to_path_buf(),
-            format!("{CONFIG_FILE} field \"format_on_check\" must be a boolean"),
+            format!("{CONFIG_FILE} field \"formatOnCheck\" must be a boolean"),
         ),
-        None => report_missing_field("format_on_check", path, event_log, origin),
+        None => report_missing_field("formatOnCheck", path, event_log, origin),
     }
 
     // Unknown fields are otherwise ignored, so a collection still carrying the
@@ -299,7 +300,7 @@ mod tests {
     fn default_contents_spell_out_every_field() {
         // `mlg init` writes this, so the author sees every key and its default.
         let contents = default_config_contents();
-        for field in ["name", "version", "margin", "format_on_check"] {
+        for field in ["name", "version", "margin", "formatOnCheck"] {
             assert!(
                 contents.contains(&format!("\"{field}\"")),
                 "default config should contain {field}: {contents}"
@@ -339,7 +340,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "thing", "version": "1", "margin": 80, "format_on_check": true, "extra": true}"#,
+            r#"{"name": "thing", "version": "1", "margin": 80, "formatOnCheck": true, "extra": true}"#,
         )
         .unwrap();
 
@@ -364,7 +365,7 @@ mod tests {
                 "mlg.json is missing required field \"name\"".to_string(),
                 "mlg.json is missing required field \"version\"".to_string(),
                 "mlg.json is missing required field \"margin\"".to_string(),
-                "mlg.json is missing required field \"format_on_check\"".to_string(),
+                "mlg.json is missing required field \"formatOnCheck\"".to_string(),
             ]
         );
     }
@@ -391,7 +392,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "margin": 80, "format_on_check": true}"#,
+            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": true}"#,
         )
         .unwrap();
 
@@ -407,7 +408,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "margin": 0, "format_on_check": true}"#,
+            r#"{"name": "a", "version": "1", "margin": 0, "formatOnCheck": true}"#,
         )
         .unwrap();
 
@@ -428,7 +429,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "format_on_check": true, "print_margin": 80}"#,
+            r#"{"name": "a", "version": "1", "formatOnCheck": true, "print_margin": 80}"#,
         )
         .unwrap();
 
@@ -458,7 +459,7 @@ mod tests {
     #[test]
     fn format_on_check_can_be_turned_off() {
         let parsed: Config =
-            serde_json::from_str(r#"{"name": "a", "version": "1", "format_on_check": false}"#)
+            serde_json::from_str(r#"{"name": "a", "version": "1", "formatOnCheck": false}"#)
                 .unwrap();
 
         assert!(!parsed.format_on_check());
@@ -470,7 +471,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "margin": 80, "format_on_check": false}"#,
+            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": false}"#,
         )
         .unwrap();
 
@@ -488,7 +489,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "margin": 80, "format_on_check": "no"}"#,
+            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": "no"}"#,
         )
         .unwrap();
 
@@ -497,7 +498,7 @@ mod tests {
 
         assert_eq!(
             error_messages(&event_log),
-            vec!["mlg.json field \"format_on_check\" must be a boolean".to_string()]
+            vec!["mlg.json field \"formatOnCheck\" must be a boolean".to_string()]
         );
     }
 
@@ -513,7 +514,7 @@ mod tests {
         let dir = TestDir::new();
         fs::write(
             dir.path().join("mlg.json"),
-            r#"{"name": "a", "version": "1", "format_on_check": false, "margin": 100}"#,
+            r#"{"name": "a", "version": "1", "formatOnCheck": false, "margin": 100}"#,
         )
         .unwrap();
 
@@ -529,7 +530,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": 5, "version": true, "margin": 80, "format_on_check": true}"#,
+            r#"{"name": 5, "version": true, "margin": 80, "formatOnCheck": true}"#,
         )
         .unwrap();
 
@@ -604,7 +605,7 @@ mod tests {
             vec![
                 "name".to_string(),
                 "margin".to_string(),
-                "format_on_check".to_string()
+                "formatOnCheck".to_string()
             ]
         );
     }
@@ -640,7 +641,7 @@ mod tests {
         assert_eq!(reparsed.get("version").and_then(|v| v.as_str()), Some("0"));
         assert_eq!(reparsed.get("margin").and_then(|v| v.as_u64()), Some(80));
         assert_eq!(
-            reparsed.get("format_on_check").and_then(|v| v.as_bool()),
+            reparsed.get("formatOnCheck").and_then(|v| v.as_bool()),
             Some(true)
         );
     }

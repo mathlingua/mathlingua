@@ -760,8 +760,8 @@ The viewer has responsive navigation behavior.
 field, so the whole configuration is visible and editable in one place rather
 than split between the file and defaults applied behind the scenes.
 
-- The required fields are `name`, `version`, `margin`, and `format_on_check`.
-  `mlg check` reports each missing one as
+- The required fields are `name`, `version`, `margin`, and `formatOnCheck`.
+  Keys are camelCase. `mlg check` reports each missing one as
   `mlg.json is missing required field "<field>"`.
 - `mlg init` writes a fresh `mlg.json` with every field at its default, so the
   author sees all of them:
@@ -771,7 +771,7 @@ than split between the file and defaults applied behind the scenes.
     "name": "",
     "version": "0",
     "margin": 80,
-    "format_on_check": true
+    "formatOnCheck": true
   }
   ```
 
@@ -791,8 +791,8 @@ than split between the file and defaults applied behind the scenes.
 `mlg check` runs the same formatting pass as `mlg format` over the collection
 before checking it, so a checked collection is also a formatted one.
 
-- The `mlg.json` field `format_on_check` controls this. It must be a boolean; a
-  collection is formatted unless it opts out with `"format_on_check": false`.
+- The `mlg.json` field `formatOnCheck` controls this. It must be a boolean; a
+  collection is formatted unless it opts out with `"formatOnCheck": false`.
   (It was originally optional and defaulting to `true`; it is now a required
   field — see *`mlg.json` Must Spell Out Every Field* above.)
 - Formatting is whole-collection even when the check is narrowed to explicit

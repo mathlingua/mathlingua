@@ -190,7 +190,7 @@ fn parse_yes_no(input: &str) -> Option<bool> {
 }
 
 /// A human-readable phrase for a set of config field names, such as
-/// `field "name"` or `fields "margin" and "format_on_check"`.
+/// `field "name"` or `fields "margin" and "formatOnCheck"`.
 fn describe_fields(fields: &[String]) -> String {
     let quoted: Vec<String> = fields.iter().map(|field| format!("\"{field}\"")).collect();
     let noun = if quoted.len() == 1 { "field" } else { "fields" };
@@ -305,7 +305,7 @@ mod tests {
                 .filter_map(Event::as_message)
                 .any(|message| message.message
                     == format!(
-                        "Left {CONFIG_FILE} unchanged; it is missing fields \"margin\" and \"format_on_check\""
+                        "Left {CONFIG_FILE} unchanged; it is missing fields \"margin\" and \"formatOnCheck\""
                     )),
             "the missing fields must be reported: {:#?}",
             event_log.events()
@@ -344,16 +344,16 @@ mod tests {
     fn describe_fields_reads_as_a_list() {
         assert_eq!(describe_fields(&["margin".to_string()]), "field \"margin\"");
         assert_eq!(
-            describe_fields(&["margin".to_string(), "format_on_check".to_string()]),
-            "fields \"margin\" and \"format_on_check\""
+            describe_fields(&["margin".to_string(), "formatOnCheck".to_string()]),
+            "fields \"margin\" and \"formatOnCheck\""
         );
         assert_eq!(
             describe_fields(&[
                 "name".to_string(),
                 "margin".to_string(),
-                "format_on_check".to_string()
+                "formatOnCheck".to_string()
             ]),
-            "fields \"name\", \"margin\" and \"format_on_check\""
+            "fields \"name\", \"margin\" and \"formatOnCheck\""
         );
     }
 
@@ -364,7 +364,7 @@ mod tests {
             crate::backend::config::config_object("{\"name\": \"a\", \"version\": \"1\"}").unwrap();
         assert_eq!(
             missing_config_fields(&object),
-            vec!["margin".to_string(), "format_on_check".to_string()]
+            vec!["margin".to_string(), "formatOnCheck".to_string()]
         );
     }
 

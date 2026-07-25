@@ -939,7 +939,9 @@ include at least one `called:` item.
 ### Card titles
 
 When a `Documented:` section supplies both a `called:` and a `written:` form, the
-item's card is titled with both, as `<called>: <written>`.
+item's card is titled with both: the human name, a wide space, then the written
+notation, which the viewer renders muted so it reads as "and here is its symbol"
+rather than as a second, competing title.
 
 ```text
 [\empty.set]
@@ -949,13 +951,14 @@ Documented:
 . written: "\emptyset"
 ```
 
-That card is titled "Empty set: $\emptyset$". An item documented with only one of
-the two forms is titled with that form alone, and no separator is added.
+That card is titled "Empty set  $\emptyset$" (with `$\emptyset$` muted). An item
+documented with only one of the two forms is titled with that form alone.
 
-The title always reads `<called>: <written>`, whichever order the two are listed
-in. Listing order still decides which single form names the item *inline* —
-`called:` first makes `X is \empty.set` read "X is empty set", `written:` first
-makes it read "X is $\emptyset$" — but it does not reorder the card title.
+The title always shows the name first and the notation second, whichever order
+the two are listed in. Listing order still decides which single form names the
+item *inline* — `called:` first makes `X is \empty.set` read "X is empty set",
+`written:` first makes it read "X is $\emptyset$" — but it does not reorder the
+card title.
 
 A `written:` nested inside a `called:` group documents that called form, so it
 pairs with it in the title just as a top-level `written:` would.

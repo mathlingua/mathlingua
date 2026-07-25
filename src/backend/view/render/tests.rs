@@ -357,7 +357,7 @@ Documented:
             None,
             &registry
         ),
-        Some(r#"\textrm{function on }A\textrm{ to }B\textrm{: }f \: : \: A \rightarrow B"#.to_string())
+        Some(r#"\textrm{function on }A\textrm{ to }B\quad\htmlClass{mlg-title-written}{f \: : \: A \rightarrow B}"#.to_string())
     );
 }
 
@@ -381,7 +381,7 @@ Documented:
             None,
             &registry
         ),
-        Some(r#"\textrm{function on }A\textrm{ to }B\textrm{: }f \: : \: A \rightarrow B"#.to_string())
+        Some(r#"\textrm{function on }A\textrm{ to }B\quad\htmlClass{mlg-title-written}{f \: : \: A \rightarrow B}"#.to_string())
     );
 
     // Listing `written:` first still decides which form names the item inline.
@@ -420,7 +420,7 @@ Documented:
 
     assert_eq!(
         render_group_heading_latex("Describes", Some(r#"\set"#), None, &registry),
-        Some(r#"\textrm{set}\textrm{: }\operatorname{Set}"#.to_string())
+        Some(r#"\textrm{set}\quad\htmlClass{mlg-title-written}{\operatorname{Set}}"#.to_string())
     );
     assert_eq!(
         render_formulation_latex(r#"X is \set"#, &registry),
@@ -817,7 +817,7 @@ Documented:
     // The card title shows both forms.
     assert_eq!(
         render_group_heading_latex("Describes", Some(r#"\empty.set"#), None, &registry),
-        Some(r#"\textrm{empty set}\textrm{: }\emptyset"#.to_string())
+        Some(r#"\textrm{empty set}\quad\htmlClass{mlg-title-written}{\emptyset}"#.to_string())
     );
 
     // Inline uses of the item keep naming it with a single form, so a title that
@@ -852,7 +852,7 @@ Documented:
             &registry
         ),
         Some(
-            r#"\textrm{function on }A\textrm{ to }B\textrm{: }f \: : \: A \rightarrow B"#
+            r#"\textrm{function on }A\textrm{ to }B\quad\htmlClass{mlg-title-written}{f \: : \: A \rightarrow B}"#
                 .to_string()
         )
     );

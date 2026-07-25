@@ -1108,12 +1108,12 @@ Id: "44444444-4444-4444-8444-444444444444"
         // Both forms present: the title shows `<called>: <written>`.
         assert_eq!(
             view.files[0].items[0].heading_latex,
-            Some(r#"\textrm{Reflexivity}\textrm{: }X = X"#.to_string())
+            Some(r#"\textrm{Reflexivity}\quad\htmlClass{mlg-title-written}{X = X}"#.to_string())
         );
         // The same order holds when `written:` is listed first.
         assert_eq!(
             view.files[0].items[1].heading_latex,
-            Some(r#"\textrm{Reflexivity again}\textrm{: }Y = Y"#.to_string())
+            Some(r#"\textrm{Reflexivity again}\quad\htmlClass{mlg-title-written}{Y = Y}"#.to_string())
         );
         // Only a written form: the title is that form alone, with no separator.
         assert_eq!(
@@ -1123,7 +1123,7 @@ Id: "44444444-4444-4444-8444-444444444444"
         // A `written:` nested inside `called:` pairs with it just the same.
         assert_eq!(
             view.files[0].items[3].heading_latex,
-            Some(r#"\textrm{Nested}\textrm{: }W = W"#.to_string())
+            Some(r#"\textrm{Nested}\quad\htmlClass{mlg-title-written}{W = W}"#.to_string())
         );
     }
 

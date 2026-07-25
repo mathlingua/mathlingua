@@ -18,7 +18,7 @@ export function LatexRenderer({ latex, onReferenceClick }: LatexRendererProps) {
     displayMode: false,
     strict: "ignore",
     throwOnError: false,
-    trust: allowMathLinguaReferenceData,
+    trust: allowMathLinguaCommands,
   });
 
   const handleClick = (event: MouseEvent<HTMLSpanElement>) => {
@@ -57,19 +57,32 @@ export function LatexRenderer({ latex, onReferenceClick }: LatexRendererProps) {
   );
 }
 
-function allowMathLinguaReferenceData(context: {
+/** The one `\htmlClass` the backend emits: the muted written form of a card title. */
+const TITLE_WRITTEN_CLASS = "mlg-title-written";
+
+/**
+ * Trusts only the specific HTML commands the backend renderer emits: a
+ * `data-mlg-ref` marker for a linked definition reference, and the single class
+ * that mutes the written half of a two-part card title. Everything else is
+ * rejected so arbitrary markup in a formulation cannot reach the page.
+ */
+function allowMathLinguaCommands(context: {
   command?: string;
   attributes?: Record<string, string>;
+  class?: string;
 }): boolean {
-  if (context.command !== "\\htmlData" || !context.attributes) {
-    return false;
+  if (context.command === "\\htmlClass") {
+    return context.class === TITLE_WRITTEN_CLASS;
   }
 
-  const attributes = Object.keys(context.attributes);
+  if (context.command === "\\htmlData" && context.attributes) {
+    const attributes = Object.keys(context.attributes);
+    return (
+      attributes.length === 1 &&
+      attributes[0] === "data-mlg-ref" &&
+      /^[0-9a-f]+$/.test(context.attributes["data-mlg-ref"] ?? "")
+    );
+  }
 
-  return (
-    attributes.length === 1 &&
-    attributes[0] === "data-mlg-ref" &&
-    /^[0-9a-f]+$/.test(context.attributes["data-mlg-ref"] ?? "")
-  );
+  return false;
 }

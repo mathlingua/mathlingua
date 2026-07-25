@@ -9,6 +9,12 @@
   font-size: 90%;
 }
 
+/* The written form in a two-part card title (`<called>  <written>`) recedes to a
+   secondary role — a wide space already separates it from the name. */
+.renderer :global(.mlg-title-written) {
+  color: var(--muted);
+}
+
 .rendererInteractive :global([data-mlg-ref]) {
   border-radius: var(--radius-inline-ref);
   cursor: pointer;

@@ -56,8 +56,9 @@ impl CommandRender {
     /// The card title for this item.
     ///
     /// An item documented with both a `called:` and a `written:` form is titled
-    /// with both, as `<called>: <written>`. With only one of them the title is
-    /// just that form, exactly as it names the item inline.
+    /// with both: the name, a wide space, then the muted notation (see
+    /// [`join_title_parts`]). With only one of them the title is just that form,
+    /// exactly as it names the item inline.
     pub(super) fn render_title(&self, substitutions: &HashMap<String, String>) -> String {
         match (&self.called_template, &self.written) {
             (Some(called), Some(written)) => join_title_parts(
@@ -69,13 +70,21 @@ impl CommandRender {
     }
 }
 
-/// Joins the two halves of a `<called>: <written>` title.
+/// The CSS class applied to the written form of a two-part card title.
 ///
-/// The separator is written as text rather than as a bare `:` so that it keeps
-/// the tight spacing of prose punctuation; a math-mode colon is a relation and
-/// would be set with a space on either side.
+/// Kept in sync with the web viewer: `latex-renderer.tsx` only trusts this exact
+/// class, and the title CSS in `latex-renderer.module.css` mutes it. Changing the
+/// name requires updating both.
+const TITLE_WRITTEN_CLASS: &str = "mlg-title-written";
+
+/// Joins the two halves of a two-part card title as `<called>  <written>`.
+///
+/// The human name and its notation are set apart by a wide space rather than a
+/// colon — a math-mode colon is a relation and reads as part of the formula — and
+/// the notation is wrapped in [`TITLE_WRITTEN_CLASS`] so the viewer renders it
+/// muted: a secondary "and here is its symbol", not a second competing title.
 pub(in crate::backend::view) fn join_title_parts(called: &str, written: &str) -> String {
-    format!("{called}\\textrm{{: }}{written}")
+    format!("{called}\\quad\\htmlClass{{{TITLE_WRITTEN_CLASS}}}{{{written}}}")
 }
 
 pub(in crate::backend::view) fn build_render_registry(

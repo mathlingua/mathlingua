@@ -12,6 +12,7 @@ use crate::frontend::{
     ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection, SourceFileViewMetadata,
     top_level_group_id, unescape_quoted_text,
 };
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 /// Builds the complete serialized view model for a MathLingua collection.
@@ -24,6 +25,7 @@ pub fn build_collection_view(
     collection_root: &Path,
     parsed_files: &[ParsedSourceFile],
     directory_metadata: &[(PathBuf, SourceFileViewMetadata)],
+    preface_files: &[(PathBuf, PathBuf)],
     event_log: &mut EventLog,
 ) -> Option<CollectionView> {
     let registry = build_linked_render_registry(parsed_files);
@@ -33,8 +35,19 @@ pub fn build_collection_view(
         .map(|file| build_file_view(collection_root, file, &registry, event_log))
         .collect::<Option<Vec<_>>>()?;
 
+    let mut prefaces =
+        build_directory_prefaces(collection_root, preface_files, &registry, event_log);
+
+    // The content root's own preface (`content/_preface_.mlg`) belongs to the
+    // collection cover, not to a listed directory.
+    let collection_preface = prefaces
+        .remove("content")
+        .or_else(|| prefaces.remove(""))
+        .unwrap_or_default();
+
     Some(CollectionView {
         title: collection_title(collection_root),
+        preface: collection_preface,
         directories: directory_metadata
             .iter()
             .filter(|(_, metadata)| !metadata.hidden)
@@ -44,14 +57,53 @@ pub fn build_collection_view(
                     return None;
                 }
 
+                let preface = prefaces.remove(&path).unwrap_or_default();
                 Some(DirectoryView {
                     path,
                     title: metadata.title.clone(),
+                    preface,
                 })
             })
             .collect(),
         files: rendered_files,
     })
+}
+
+/// Renders each directory's optional `_preface_.mlg` into view items, keyed by
+/// the directory's collection-relative path.
+fn build_directory_prefaces(
+    collection_root: &Path,
+    preface_files: &[(PathBuf, PathBuf)],
+    registry: &RenderRegistry,
+    event_log: &mut EventLog,
+) -> BTreeMap<String, Vec<GroupView>> {
+    let mut prefaces = BTreeMap::new();
+
+    for (directory, preface_path) in preface_files {
+        let Ok(source) = std::fs::read_to_string(preface_path) else {
+            continue;
+        };
+
+        let mut proto_log = EventLog::new();
+        let groups = ProtoParser::new(&source, &mut proto_log).parse();
+        for event in proto_log.events() {
+            event_log.push(event.clone().with_file_path(preface_path.clone()));
+        }
+        if has_blocking_user_issues(proto_log.events()) {
+            continue;
+        }
+
+        let group_sources = source_for_groups(&source, &groups);
+        let items = groups
+            .into_iter()
+            .zip(group_sources)
+            .flat_map(|(group, source)| group_views(group, source, registry))
+            .collect::<Vec<_>>();
+
+        prefaces.insert(relative_path(collection_root, directory), items);
+    }
+
+    prefaces
 }
 
 fn build_file_view(
@@ -619,7 +671,7 @@ mod tests {
         };
         let mut event_log = EventLog::new();
 
-        build_collection_view(root, &[parsed_file], &[], &mut event_log)
+        build_collection_view(root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view")
             .title
     }
@@ -674,7 +726,7 @@ mod tests {
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
 
         assert_eq!(view.title, "repo");
@@ -717,7 +769,7 @@ Documented:
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
         let documented = view.files[0].items[0]
             .sections
@@ -771,7 +823,7 @@ Id: "11111111-1111-4111-8111-111111111111"
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
 
         assert_eq!(view.files[0].items.len(), 2);
@@ -834,7 +886,7 @@ Id: "11111111-1111-4111-8111-111111111111"
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
         let person = &view.files[0].items[0];
 
@@ -881,7 +933,7 @@ Id: "22222222-2222-4222-8222-222222222222"
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
 
         // Without a `Documented:called:`, the dotted heading is title-cased.
@@ -934,7 +986,7 @@ Documented:
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
         let extends = &view.files[0].items[1].sections[1];
 
@@ -987,7 +1039,7 @@ then: X = X
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
 
         assert!(!event_log.has_errors());
@@ -1038,7 +1090,7 @@ Id: "22222222-2222-4222-8222-222222222222"
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
 
         // A heading-less theorem-like takes its title from Documented:called:.
@@ -1102,7 +1154,7 @@ Id: "44444444-4444-4444-8444-444444444444"
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
 
         // Both forms present: the title shows `<called>: <written>`.
@@ -1155,7 +1207,7 @@ Second paragraph with $x \in X$."
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
 
         assert!(!event_log.has_errors());
@@ -1214,7 +1266,7 @@ Id: "11111111-1111-4111-8111-111111111111"
             view_metadata: SourceFileViewMetadata::default(),
         };
         let mut event_log = EventLog::new();
-        let view = build_collection_view(&root, &[parsed_file], &[], &mut event_log)
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
 
         assert!(!event_log.has_errors());

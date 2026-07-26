@@ -373,6 +373,7 @@ export function ViewerShell({
       />
       <main className={styles.pageShell}>
         <FileList
+          collectionPreface={manifest?.preface}
           collectionTitle={manifest?.title}
           currentDirectory={currentDirectory}
           definitionItemIds={manifest?.definitions}
@@ -419,6 +420,7 @@ function manifestFromCollection(
   return {
     schemaVersion: 1,
     title: collection.title,
+    preface: collection.preface,
     directories: collection.directories,
     files: collection.files.map((file) => ({
       path: file.path,

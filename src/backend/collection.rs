@@ -15,12 +15,19 @@ use uuid::Uuid;
 pub(crate) const CONTENT_DIR: &str = "content";
 pub(crate) const DOCS_DIR: &str = "docs";
 
+/// Optional per-directory section introduction. When a directory contains this
+/// file it is not a navigable page (it is never listed in `toc`); instead its
+/// rendered contents are shown on that directory's section page, beneath the
+/// directory title.
+pub(crate) const PREFACE_FILE: &str = "_preface_.mlg";
+
 pub(crate) struct SourceCollection {
     root: PathBuf,
     source_files: Vec<PathBuf>,
     source_file_view_metadata: BTreeMap<PathBuf, SourceFileViewMetadata>,
     source_directory_view_metadata: Vec<(PathBuf, SourceFileViewMetadata)>,
     toc_files: Vec<PathBuf>,
+    preface_files: Vec<(PathBuf, PathBuf)>,
     parsed_files: Vec<ParsedSourceFile>,
 }
 
@@ -69,6 +76,12 @@ impl SourceCollection {
 
         let source_files = resolve_collection_source_files(&root, event_log, origin);
         ensure_source_file_ids(&source_files.source_files, event_log, origin);
+        let preface_paths = source_files
+            .preface_files
+            .iter()
+            .map(|(_, preface)| preface.clone())
+            .collect::<Vec<_>>();
+        ensure_source_file_ids(&preface_paths, event_log, origin);
         Self::new(root, source_files)
     }
 
@@ -79,6 +92,7 @@ impl SourceCollection {
             source_file_view_metadata: source_files.view_metadata,
             source_directory_view_metadata: source_files.directory_metadata,
             toc_files: source_files.toc_files,
+            preface_files: source_files.preface_files,
             parsed_files: Vec::new(),
         }
     }
@@ -193,6 +207,7 @@ impl SourceCollection {
             &self.root,
             &self.parsed_files,
             &self.source_directory_view_metadata,
+            &self.preface_files,
             event_log,
         )
     }
@@ -469,6 +484,9 @@ fn collect_directory_source_files(
     };
 
     let mut children = directory_children(entries);
+    if let Some(preface_path) = preface_file_path(&children) {
+        discovery.add_preface_file(directory.to_path_buf(), preface_path);
+    }
     if let Some(toc_path) = toc_file_path(&children) {
         discovery.add_toc_file(toc_path.clone());
         collect_directory_source_files_from_toc(
@@ -556,12 +574,18 @@ struct SourceFileDiscovery {
     view_metadata: BTreeMap<PathBuf, SourceFileViewMetadata>,
     directory_metadata: Vec<(PathBuf, SourceFileViewMetadata)>,
     toc_files: Vec<PathBuf>,
+    /// `(directory, preface file)` pairs for directories with a `_preface_.mlg`.
+    preface_files: Vec<(PathBuf, PathBuf)>,
     seen_source_files: BTreeSet<PathBuf>,
     seen_directories: BTreeSet<PathBuf>,
     seen_toc_files: BTreeSet<PathBuf>,
 }
 
 impl SourceFileDiscovery {
+    fn add_preface_file(&mut self, directory: PathBuf, preface: PathBuf) {
+        self.preface_files.push((directory, preface));
+    }
+
     fn add_source_file(&mut self, path: PathBuf, metadata: SourceFileViewMetadata) {
         let normalized = normalize_path(&path);
         if self.seen_source_files.insert(normalized.clone()) {
@@ -598,6 +622,7 @@ impl SourceFileDiscovery {
 enum DirectoryChild {
     Directory(PathBuf),
     SourceFile(PathBuf),
+    PrefaceFile(PathBuf),
     TocFile(PathBuf),
     Other,
 }
@@ -609,6 +634,8 @@ fn directory_children(entries: Vec<fs::DirEntry>) -> Vec<DirectoryChild> {
             let path = entry.path();
             if path.is_dir() {
                 DirectoryChild::Directory(path)
+            } else if path.is_file() && is_preface_file(&path) {
+                DirectoryChild::PrefaceFile(path)
             } else if path.is_file() && is_mathlingua_source_file(&path) {
                 DirectoryChild::SourceFile(path)
             } else if path.is_file() && path.file_name().is_some_and(|name| name == "toc") {
@@ -623,6 +650,13 @@ fn directory_children(entries: Vec<fs::DirEntry>) -> Vec<DirectoryChild> {
 fn toc_file_path(children: &[DirectoryChild]) -> Option<PathBuf> {
     children.iter().find_map(|child| match child {
         DirectoryChild::TocFile(path) => Some(path.clone()),
+        _ => None,
+    })
+}
+
+fn preface_file_path(children: &[DirectoryChild]) -> Option<PathBuf> {
+    children.iter().find_map(|child| match child {
+        DirectoryChild::PrefaceFile(path) => Some(path.clone()),
         _ => None,
     })
 }
@@ -645,7 +679,7 @@ fn collect_directory_child(
         DirectoryChild::SourceFile(path) => {
             discovery.add_source_file(path, metadata);
         }
-        DirectoryChild::TocFile(_) | DirectoryChild::Other => {}
+        DirectoryChild::PrefaceFile(_) | DirectoryChild::TocFile(_) | DirectoryChild::Other => {}
     }
 }
 
@@ -840,6 +874,7 @@ impl DirectoryChild {
                 .and_then(|name| name.to_str())
                 .unwrap_or("<unknown>")
                 .to_string(),
+            DirectoryChild::PrefaceFile(_) => PREFACE_FILE.to_string(),
             DirectoryChild::TocFile(_) => "toc".to_string(),
             DirectoryChild::Other => "<unknown>".to_string(),
         }
@@ -868,7 +903,9 @@ fn directory_child_sort_key(child: &DirectoryChild) -> (String, String) {
             ),
             path.display().to_string(),
         ),
-        DirectoryChild::TocFile(path) => ("".to_string(), path.display().to_string()),
+        DirectoryChild::PrefaceFile(path) | DirectoryChild::TocFile(path) => {
+            ("".to_string(), path.display().to_string())
+        }
         DirectoryChild::Other => ("".to_string(), String::new()),
     }
 }
@@ -889,6 +926,10 @@ fn is_mathlingua_source_file(path: &Path) -> bool {
         .is_some_and(|extension| extension.eq_ignore_ascii_case("mlg"))
 }
 
+fn is_preface_file(path: &Path) -> bool {
+    path.file_name().and_then(|name| name.to_str()) == Some(PREFACE_FILE)
+}
+
 fn normalize_path(path: &Path) -> PathBuf {
     path.canonicalize().unwrap_or_else(|_| path.to_path_buf())
 }
@@ -906,7 +947,7 @@ fn event_file_path(event: &Event) -> Option<&Path> {
 
 #[cfg(test)]
 mod tests {
-    use super::{SourceCollection, SourceFileFilter, find_collection_root};
+    use super::{PREFACE_FILE, SourceCollection, SourceFileFilter, find_collection_root};
     use crate::backend::config::default_config_contents;
     use crate::events::{Audience, Event, EventLog};
     use std::fs;
@@ -1068,6 +1109,55 @@ mod tests {
         );
         assert!(messages.iter().any(|message| message.contains("extra_dir")
             && message.contains("Directory toc is missing entry")));
+    }
+
+    #[test]
+    fn preface_file_is_not_a_page_and_renders_on_its_directory() {
+        let temp_dir = TestDir::new();
+        let content = temp_dir.path().join("content");
+        let section = content.join("set_theory");
+
+        fs::create_dir_all(&section).unwrap();
+        fs::write(temp_dir.path().join("mlg.json"), default_config_contents()).unwrap();
+        fs::write(content.join("toc"), "set_theory\n").unwrap();
+        fs::write(section.join("toc"), "axioms.mlg\n").unwrap();
+        fs::write(section.join("axioms.mlg"), "Title: \"Axioms\"\n").unwrap();
+        fs::write(
+            section.join(PREFACE_FILE),
+            "Text: \"Intro to set theory.\"\n",
+        )
+        .unwrap();
+        // A root preface belongs to the collection cover, not a listed directory.
+        fs::write(content.join(PREFACE_FILE), "Text: \"Collection intro.\"\n").unwrap();
+
+        let mut event_log = EventLog::new();
+        let mut collection =
+            SourceCollection::load(temp_dir.path(), &mut event_log, "source_collection");
+        let messages = user_events(&event_log)
+            .into_iter()
+            .filter_map(|event| event.as_message().map(|message| message.message.clone()))
+            .collect::<Vec<_>>();
+
+        // The preface is not a navigable page and needs no toc entry.
+        assert_eq!(collection.source_files().len(), 1);
+        assert!(!messages.iter().any(|message| {
+            message.contains(PREFACE_FILE) && message.contains("Directory toc is missing entry")
+        }));
+
+        // Its rendered contents are attached to its directory's view.
+        collection.run_check_passes(&mut event_log, "source_collection");
+        let view = collection
+            .build_view(&mut event_log)
+            .expect("view should build");
+        let directory = view
+            .directories
+            .iter()
+            .find(|directory| directory.path.ends_with("set_theory"))
+            .expect("set_theory directory should be present");
+        assert_eq!(directory.preface.len(), 1);
+
+        // The root preface is attached to the collection cover.
+        assert_eq!(view.preface.len(), 1);
     }
 
     #[test]

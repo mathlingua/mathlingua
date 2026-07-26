@@ -5,12 +5,20 @@ pub struct CollectionView {
     pub title: String,
     pub directories: Vec<DirectoryView>,
     pub files: Vec<FileView>,
+    /// Rendered items of the collection's optional root `content/_preface_.mlg`,
+    /// shown on the cover page beneath the collection title. Empty when absent.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub preface: Vec<GroupView>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct DirectoryView {
     pub path: String,
     pub title: Option<String>,
+    /// Rendered items of the directory's optional `_preface_.mlg`, shown on the
+    /// section page beneath the title. Empty when the directory has no preface.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub preface: Vec<GroupView>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]

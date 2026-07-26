@@ -394,6 +394,29 @@
   background: var(--accent);
 }
 
+/* Section title at the top of a divider page that has a preface. */
+.dividerHead {
+  display: grid;
+  justify-items: center;
+  width: min(100%, 47rem);
+  padding: 0.6rem 0 0.4rem;
+  text-align: center;
+}
+
+.dividerHeadTitle {
+  margin: 0;
+  color: var(--heading-color);
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.dividerHead .dividerRule {
+  margin-top: 1.1rem;
+}
+
 @media (max-width: 860px) {
   .dividerTitle {
     font-size: 3rem;

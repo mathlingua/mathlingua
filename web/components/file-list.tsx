@@ -21,6 +21,8 @@ const NARROW_OUTLINE_MEDIA_QUERY = "(max-width: 860px)";
 
 /** Props for coordinating outline navigation and selected document state. */
 interface FileListProps {
+  /** Rendered items of the collection's root `content/_preface_.mlg`, shown on the cover. */
+  collectionPreface?: GroupView[];
   /** Collection title, used as the breadcrumb root and top-level outline label. */
   collectionTitle?: string;
   /** Directory currently shown by the outline browser. */
@@ -59,6 +61,7 @@ interface FileListProps {
 
 /** Renders the collection outline beside the selected file's group cards. */
 export function FileList({
+  collectionPreface,
   collectionTitle,
   currentDirectory,
   definitionItemIds,
@@ -115,6 +118,17 @@ export function FileList({
     isDivider && selectedNode.directory === currentDirectory;
   // The cover link is active when the collection's own title page is showing.
   const isCoverActive = isDivider && selectedNode.directory === "";
+  // A section's optional _preface_.mlg, rendered beneath its title. The root
+  // divider (the cover) uses the collection-level preface; other dividers use
+  // their own directory's preface.
+  const currentPreface = !isDivider
+    ? []
+    : selectedNode.directory === ""
+      ? (collectionPreface ?? [])
+      : (directories.find(
+          (dir) =>
+            dir.path.replace(/^content\//, "") === selectedNode.directory,
+        )?.preface ?? []);
 
   const breadcrumb = selectedNode
     ? buildNodeBreadcrumb(directories, selectedNode, rootLabel)
@@ -316,6 +330,7 @@ export function FileList({
             <DividerPage
               breadcrumb={breadcrumb}
               onNavigate={(directory) => onNavigateDirectory(directory)}
+              preface={currentPreface}
               title={selectedNode?.title ?? rootLabel}
             />
           ) : (
@@ -543,18 +558,48 @@ function ChapterMark() {
  * announces the move into a new part of the collection, like a book divider.
  */
 /**
- * A divider page: the centered title of the collection root or a directory,
- * shown as its own stop in the reading order — like a book's part divider.
+ * A divider page: the collection root or a directory shown as its own stop in
+ * the reading order. Without a preface the title is centered (a book part
+ * divider); with a `_preface_.mlg` the title sits at the top and the preface
+ * content renders beneath it.
  */
 function DividerPage({
   breadcrumb,
   onNavigate,
+  preface,
   title,
 }: {
   breadcrumb: BreadcrumbCrumb[];
   onNavigate: (directory: string) => void;
+  preface: GroupView[];
   title: string;
 }) {
+  if (preface.length > 0) {
+    return (
+      <div className={styles.groupStream}>
+        <Breadcrumb crumbs={breadcrumb} onNavigate={onNavigate} />
+        <header className={styles.dividerHead}>
+          <h1 className={styles.dividerHeadTitle}>{title}</h1>
+          <span aria-hidden="true" className={styles.dividerRule} />
+        </header>
+        {preface.map((item, index) => {
+          const anchorId = makeGroupAnchor(item, `preface-${index}`);
+          const key = item.id || `preface-${index}`;
+          return item.page ? (
+            <PageItem anchorId={anchorId} key={key} page={item.page} />
+          ) : (
+            <GroupCard
+              anchorId={anchorId}
+              group={item}
+              key={key}
+              onReferenceClick={() => {}}
+            />
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className={styles.dividerPage}>
       <Breadcrumb crumbs={breadcrumb} onNavigate={onNavigate} />

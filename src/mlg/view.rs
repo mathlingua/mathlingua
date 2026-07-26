@@ -731,6 +731,7 @@ mod tests {
         let path = dir.join("collection.json");
         let collection = CollectionView {
             title: "demo".to_string(),
+            preface: vec![],
             directories: vec![],
             files: vec![FileView {
                 path: "content/example.mlg".to_string(),

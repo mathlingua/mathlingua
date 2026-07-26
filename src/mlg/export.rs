@@ -270,6 +270,7 @@ fn write_static_export_data(data_dir: &Path, collection: &CollectionView) -> io:
     let mut manifest = ExportManifest {
         schema_version: 1,
         title: collection.title.clone(),
+        preface: collection.preface.clone(),
         directories: collection.directories.clone(),
         files: Vec::new(),
         definitions: BTreeMap::new(),
@@ -457,6 +458,8 @@ fn normalize_cname(value: Option<&str>) -> Result<Option<String>, String> {
 struct ExportManifest {
     schema_version: u32,
     title: String,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    preface: Vec<GroupView>,
     directories: Vec<DirectoryView>,
     files: Vec<ExportFile>,
     definitions: BTreeMap<String, String>,
@@ -499,6 +502,7 @@ mod tests {
         let data_dir = temp_dir.path().join("data");
         let collection = CollectionView {
             title: "Demo".to_string(),
+            preface: Vec::new(),
             directories: Vec::new(),
             files: vec![FileView {
                 path: "content/sets/intro.mlg".to_string(),

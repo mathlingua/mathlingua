@@ -311,8 +311,10 @@ fn reflow_text(
     Some(out)
 }
 
-/// Splits text content into words and paragraph breaks, keeping each LaTeX blob
-/// whole (its internal whitespace and newlines are not word/paragraph separators).
+/// Splits text content into words and paragraph breaks, keeping each LaTeX blob and
+/// each Markdown code fence whole (their internal whitespace and newlines are not
+/// word/paragraph separators). A code fence therefore becomes a single word spanning
+/// newlines, which makes `reflow_text` leave the whole value unchanged.
 fn tokenize_reflow_pieces(content: &str) -> Vec<Piece> {
     let chars: Vec<char> = content.chars().collect();
     let count = chars.len();
@@ -336,6 +338,11 @@ fn tokenize_reflow_pieces(content: &str) -> Vec<Piece> {
 
         let mut word = String::new();
         while index < count {
+            if let Some(end) = code_fence_end(&chars, index) {
+                word.extend(&chars[index..end]);
+                index = end;
+                continue;
+            }
             if let Some(end) = latex_blob_end(&chars, index) {
                 word.extend(&chars[index..end]);
                 index = end;
@@ -395,6 +402,61 @@ fn latex_blob_end(chars: &[char], start: usize) -> Option<usize> {
     }
 
     None
+}
+
+/// If a Markdown code fence opens at `start` (a run of three or more backticks),
+/// returns the char index just past its closing fence line. An unclosed fence runs
+/// to the end of the content. The whole fence — its info string, exact spacing, and
+/// line breaks — is captured verbatim so the caller keeps it as one atomic token and
+/// never reflows or modifies its contents (the layout inside a fence is significant).
+fn code_fence_end(chars: &[char], start: usize) -> Option<usize> {
+    let count = chars.len();
+    let open_ticks = backtick_run(chars, start);
+    if open_ticks < 3 {
+        return None;
+    }
+
+    // Skip to the end of the opening line (past any info string, e.g. ```` ```mlg ````).
+    let mut index = start + open_ticks;
+    while index < count && chars[index] != '\n' {
+        index += 1;
+    }
+
+    // Scan following lines for the closing fence: a line whose only non-whitespace
+    // content is a run of at least `open_ticks` backticks.
+    while index < count {
+        index += 1; // step over the '\n' onto the next line
+        let mut cursor = index;
+        while cursor < count && chars[cursor] == ' ' {
+            cursor += 1;
+        }
+        let ticks = backtick_run(chars, cursor);
+        if ticks >= open_ticks {
+            let mut after = cursor + ticks;
+            while after < count && chars[after] != '\n' && chars[after].is_whitespace() {
+                after += 1;
+            }
+            if after >= count || chars[after] == '\n' {
+                return Some(after);
+            }
+        }
+        // Not a closing fence — advance to this line's end and keep scanning.
+        index = cursor;
+        while index < count && chars[index] != '\n' {
+            index += 1;
+        }
+    }
+
+    Some(count)
+}
+
+/// Counts the run of consecutive backtick characters beginning at `start`.
+fn backtick_run(chars: &[char], start: usize) -> usize {
+    let mut run = 0;
+    while start + run < chars.len() && chars[start + run] == '`' {
+        run += 1;
+    }
+    run
 }
 
 /// Whether a word contains any LaTeX delimiter.
@@ -696,6 +758,22 @@ mod tests {
         // `$$…$$` and `\[…\]` display-math blocks must be left untouched.
         let source = "[\\foo]\nDescribes: x\nDocumented:\n. called: \"family indexed by $I?$\"\n. written: \"\\{A?_i\\}_{i \\in I?}\"\n. description: \"A family of sets is a function $A$ with domain $I$. When $A$ is\n                a family over $I$ one writes $\\{A_i\\}_{i \\in I}$ and $A_i$ for\n                $A(i)$.\n                $$\n                  \\int f(x) \\: dx\n                $$\n                Some more text\n                \\[\n                  \\int f(x) \\: dx\n                \\]\"\nId: \"a2451abb-cfc3-4655-a641-ff6826592e7d\"\n";
         assert_eq!(format_source(source, 100), None);
+    }
+
+    #[test]
+    fn leaves_text_with_code_fence_unchanged() {
+        // The exact example from the bug report: a `Text:` value embedding an
+        // ```` ```mlg-fragment ```` code fence must be left untouched — its spacing
+        // and line breaks are significant and must never be collapsed or reflowed.
+        let source = "Text: \"We don't want to require a set to have a particular shape. We want it to\n       be abstract in that regard, but we want to allow write\n       ```mlg-fragment\n          X := {x__ : x_ is \\\\real} is \\\\set\n       ```\"\nId: \"8d820a04-5252-4ef2-9177-b1b328328197\"\n";
+        assert_eq!(format_source(source, 80), None);
+    }
+
+    #[test]
+    fn leaves_text_with_plain_code_fence_unchanged() {
+        // A fence with no language specifier is handled the same way.
+        let source = "Documented:\n. description: \"Consider the example below where spacing matters a great deal here:\n                ```\n                a    b\n                  c\n                ```\"\nId: \"x\"\n";
+        assert_eq!(format_source(source, 60), None);
     }
 
     #[test]

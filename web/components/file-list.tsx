@@ -236,7 +236,6 @@ export function FileList({
           }}
           type="button"
         >
-          <CoverMark />
           <span className={styles.outlineCoverText}>{rootLabel}</span>
         </button>
         {currentDirectory ? (
@@ -502,32 +501,6 @@ function Breadcrumb({
         })}
       </ol>
     </nav>
-  );
-}
-
-/** Small "cover" glyph (stacked pages) for the link back to the collection start. */
-function CoverMark() {
-  return (
-    <svg
-      aria-hidden="true"
-      className={styles.outlineCoverMark}
-      fill="none"
-      viewBox="0 0 16 16"
-    >
-      <path
-        d="M2.75 3.4h6.7c.83 0 1.5.67 1.5 1.5v7.7h-6.7c-.83 0-1.5-.67-1.5-1.5V3.4Z"
-        stroke="currentColor"
-        strokeLinejoin="round"
-        strokeWidth="1.2"
-      />
-      <path
-        d="M5.25 2.4h6.7c.83 0 1.5.67 1.5 1.5v7.7"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.2"
-      />
-    </svg>
   );
 }
 

@@ -52,9 +52,9 @@
   background: none;
   color: var(--heading-color);
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-weight: var(--heading-weight);
-  line-height: 1.2;
+  line-height: 1.16;
   text-align: left;
   cursor: pointer;
   transition:
@@ -94,7 +94,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin: 0 0 0.85rem -0.45rem;
+  margin: 0.4rem 0 0 -0.45rem;
   padding: 0.24rem 0.5rem 0.24rem 0.4rem;
   border: none;
   border-radius: var(--radius-nav);
@@ -144,9 +144,9 @@
   background: none;
   color: var(--heading-color);
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: var(--heading-weight);
-  line-height: 1.16;
+  line-height: 1.2;
   text-align: left;
   cursor: pointer;
   transition:

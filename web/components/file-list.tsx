@@ -240,16 +240,6 @@ export function FileList({
         </button>
         {currentDirectory ? (
           <div className={styles.outlineHeader}>
-            {parentPath ? (
-              <button
-                className={styles.outlineUp}
-                onClick={() => onNavigateDirectory(parentPath)}
-                type="button"
-              >
-                <span aria-hidden="true" className={styles.outlineUpChevron} />
-                <span className={styles.outlineUpText}>{upLabel}</span>
-              </button>
-            ) : null}
             <button
               className={
                 isSectionDividerActive
@@ -264,6 +254,16 @@ export function FileList({
             >
               {sectionLabel}
             </button>
+            {parentPath ? (
+              <button
+                className={styles.outlineUp}
+                onClick={() => onNavigateDirectory(parentPath)}
+                type="button"
+              >
+                <span aria-hidden="true" className={styles.outlineUpChevron} />
+                <span className={styles.outlineUpText}>{upLabel}</span>
+              </button>
+            ) : null}
           </div>
         ) : null}
         <nav>

@@ -86,22 +86,42 @@ impl From<CliEventLevel> for Level {
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum Command {
+    /// Check the collection for syntax and semantic errors
     Check(CheckArgs),
+
+    /// Delete the generated `docs/` directory (inverse of `export`)
     Clean,
+
     #[command(hide = true)]
     Debug,
+
+    /// Build a static documentation site into `docs/` (e.g. for GitHub Pages)
     Export(ExportArgs),
+
     #[command(hide = true)]
     Extract(ExtractArgs),
+
+    /// Reformat `.mlg` source files to the configured print margin
     Format,
+
+    /// Scaffold a new collection here (`mlg.json` and a `content/` directory)
     Init,
+
     #[command(hide = true)]
     Lsp,
+
+    /// Record a new release in the collection's metadata
     Release(ReleaseArgs),
+
     #[command(hide = true)]
     Report(ReportArgs),
+
+    /// Print the Mathlingua version
     Version,
+
+    /// Serve the collection in a local web viewer
     View(ViewArgs),
+
     #[command(name = "whte_rbt.obj", hide = true)]
     WhteRbtObj,
 }

@@ -13,7 +13,7 @@
   background: transparent;
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 1rem;
+  font-size: 0.9rem;
   line-height: 1.55;
   tab-size: 2;
   white-space: pre;

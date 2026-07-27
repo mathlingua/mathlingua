@@ -142,6 +142,21 @@ mod tests {
     }
 
     #[test]
+    fn unescapes_quotes_but_preserves_double_backslash_builtins_in_fences() {
+        // Inside a `Text:` value, operator quotes are escaped (`\"in\"`) and the
+        // builtin sigil keeps its two backslashes (`\\abstract`). The fence checker
+        // must unescape `\"` -> `"` while leaving `\\abstract` intact, so the
+        // capability parses as `x_ "in" X :-> \\abstract` rather than choking on a
+        // stray quote or a collapsed single-backslash target.
+        let source = "Text: \"intro\n       ```mlg\n       [\\set]\n       Describes: X\n       Requires:\n       . capability: x_ \\\"in\\\" X :-> \\\\abstract\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n\"\n";
+        assert!(
+            fence_error_messages(source).is_empty(),
+            "escaped-quote/builtin fence should check cleanly, got: {:?}",
+            fence_error_messages(source)
+        );
+    }
+
+    #[test]
     fn accepts_syntactically_valid_fenced_mathlingua() {
         // The example references `\function:on:to`, which is not defined anywhere;
         // that is a semantic concern and must not be reported here.

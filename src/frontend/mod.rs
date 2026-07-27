@@ -125,27 +125,53 @@ fn strip_quoted_text(input: &str) -> Option<String> {
     Some(unescape_quoted_text(inner))
 }
 
+/// Unescapes a quoted text value's contents.
+///
+/// The only escape in a quoted text value is `\"` for a literal double quote;
+/// backslashes are otherwise literal. This matters for embedded content that uses
+/// backslashes meaningfully — LaTeX (`$A \times B$`, the `\\` line break) and the
+/// MathLingua builtin sigil (`\\abstract`): a `\\` here must survive as `\\`, not
+/// collapse to `\`, or the code fence a `Text:` value carries would be corrupted.
 pub(crate) fn unescape_quoted_text(input: &str) -> String {
     let mut result = String::with_capacity(input.len());
     let mut chars = input.chars().peekable();
 
     while let Some(character) = chars.next() {
-        if character == '\\' {
-            match chars.peek().copied() {
-                Some('"') => {
-                    result.push('"');
-                    let _ = chars.next();
-                }
-                Some('\\') => {
-                    result.push('\\');
-                    let _ = chars.next();
-                }
-                _ => result.push(character),
-            }
+        if character == '\\' && chars.peek() == Some(&'"') {
+            result.push('"');
+            let _ = chars.next();
         } else {
             result.push(character);
         }
     }
 
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::unescape_quoted_text;
+
+    #[test]
+    fn unescapes_only_escaped_quotes() {
+        assert_eq!(unescape_quoted_text(r#"x_ \"in\" X"#), r#"x_ "in" X"#);
+        assert_eq!(unescape_quoted_text(r#"\"set\""#), r#""set""#);
+    }
+
+    #[test]
+    fn leaves_backslashes_literal() {
+        // Single-backslash LaTeX and the double-backslash builtin sigil both survive
+        // verbatim — only `\"` is an escape.
+        assert_eq!(unescape_quoted_text(r"$A \times B$"), r"$A \times B$");
+        assert_eq!(unescape_quoted_text(r"x_ \\abstract"), r"x_ \\abstract");
+        assert_eq!(unescape_quoted_text(r"a \\ b"), r"a \\ b");
+    }
+
+    #[test]
+    fn combines_escaped_quotes_with_literal_backslashes() {
+        assert_eq!(
+            unescape_quoted_text(r#". capability: x_ \"in\" X :-> \\abstract"#),
+            r#". capability: x_ "in" X :-> \\abstract"#
+        );
+    }
 }

@@ -1,3 +1,5 @@
 x_ "in" X :-> x is \type{A}
 
 x_ "in" X :-> + "on" Nat
+
+x_ "in" A :-> x_ "in" B

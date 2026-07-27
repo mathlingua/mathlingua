@@ -2189,6 +2189,46 @@ then:
     }
 
     #[test]
+    fn check_accepts_placeholder_spec_capability_target() {
+        // A capability may map a placeholder spec on the left of `:->` to a spec that
+        // reuses that placeholder on the right: `x_ "in" A :-> x_ "in" B` says that
+        // `x "in" A` implies `x "in" B`. This must parse and check cleanly.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("subset.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \:subset:/ B]
+    Describes: A
+    when: B is \set
+    extends: A is \set
+    Requires:
+    . capability: x_ "in" A :-> x_ "in" B
+    Documented:
+    . written: "A? \subseteq B?"
+    . called: "$A?$ is a subset of $B?$"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(temp_dir.path(), &[PathBuf::from("subset.mlg")], &mut event_log);
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_inferred_parameters() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("inferred-parameters.mlg");

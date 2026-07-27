@@ -2772,6 +2772,13 @@ fn parse_spec_operator_alias_target(input: &str) -> Result<SpecOperatorAliasTarg
         return Ok(SpecOperatorAliasTarget::MemberOf(Box::new(expression)));
     }
 
+    // A placeholder spec such as `x_ "in" B` reuses the placeholder bound on the left
+    // of `:->`. This only matches a placeholder subject (`x_`); a plain `<name> "op"
+    // Name` or `is` target still falls through to `parse_is_or_spec` below.
+    if let Ok(spec) = parse_placeholder_spec_statement(input) {
+        return Ok(SpecOperatorAliasTarget::PlaceholderSpec(spec));
+    }
+
     parse_is_or_spec(input)
         .map(Box::new)
         .map(SpecOperatorAliasTarget::IsOrSpec)
@@ -4860,6 +4867,23 @@ mod tests {
                 assert!(matches!(*target, IsOrSpec::Spec(_)));
             }
             other => panic!("expected spec alias target, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_spec_operator_aliases_with_placeholder_spec_targets() {
+        // The placeholder bound on the left of `:->` may be reused on the target,
+        // e.g. `x_ "in" A :-> x_ "in" B`.
+        let alias = parse_spec_operator_alias(r#"x_ "in" A :-> x_ "in" B"#)
+            .expect("expected spec operator alias");
+
+        assert_eq!(alias.placeholder_spec.operator, "in");
+        match alias.target {
+            SpecOperatorAliasTarget::PlaceholderSpec(spec) => {
+                assert_eq!(spec.operator, "in");
+                assert_eq!(spec.name, "B");
+            }
+            other => panic!("expected placeholder spec target, got {other:?}"),
         }
     }
 

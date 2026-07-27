@@ -37,6 +37,9 @@ pub struct ExpressionAlias {
 pub enum SpecOperatorAliasTarget {
     IsOrSpec(Box<IsOrSpec>),
     MemberOf(Box<Expression>),
+    /// A spec whose subject reuses the placeholder introduced on the left of `:->`,
+    /// for example `x_ "in" B` in `x_ "in" A :-> x_ "in" B`.
+    PlaceholderSpec(PlaceholderSpecStatement),
     Builtin(Chain),
 }
 

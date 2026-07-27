@@ -7792,6 +7792,12 @@ fn validate_spec_operator_alias(
         SpecOperatorAliasTarget::MemberOf(expression) => {
             check_expression(expression, &child, path, locator, registry, event_log);
         }
+        SpecOperatorAliasTarget::PlaceholderSpec(spec) => {
+            // The subject placeholder is bound on the left of `:->` (declared into
+            // `child` above); only the target name needs checking. The spec is the
+            // rule's conclusion, so it is not required to be independently supported.
+            check_name(&spec.name, &child, path, locator, event_log);
+        }
         SpecOperatorAliasTarget::Builtin(_) => {}
     }
 }
@@ -9449,6 +9455,26 @@ fn reduce_spec_fact(
                     if matches!(next, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
                         result.extend(reduce_spec_or_member_fact(&next, context, registry, seen));
                     }
+                }
+            }
+            SpecOperatorAliasTarget::PlaceholderSpec(target_alias) => {
+                // `x_ "in" A :-> x_ "in" B`: the conclusion is a spec on the bound
+                // placeholder. Substitution then rewrites the placeholder to the
+                // triggering fact's subject (and the left target to its target).
+                let Some(subject) = placeholder_pattern_name(&target_alias.placeholder_form)
+                else {
+                    continue;
+                };
+                let next = TypeFact::Spec {
+                    subject,
+                    operator: target_alias.operator.clone(),
+                    target: target_alias.name.clone(),
+                };
+                let next = substitute_fact(&next, &substitutions);
+                let next = context.normalize_fact(&next);
+                result.push(next.clone());
+                if matches!(next, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
+                    result.extend(reduce_spec_or_member_fact(&next, context, registry, seen));
                 }
             }
         }

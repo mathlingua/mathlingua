@@ -238,10 +238,14 @@ fn reflow_inline_text(
 }
 
 /// One unit of a text value for reflow: a whitespace-delimited word (with LaTeX
-/// blobs kept whole, so their internal spaces don't split it) or a paragraph break.
+/// blobs kept whole, so their internal spaces don't split it), a paragraph break,
+/// or a Markdown code fence. A `Fence` carries its lines dedented to the fence's own
+/// base indentation, so the reflow re-indents them to the value's content column
+/// while preserving the relative layout the author gave the fenced content.
 enum Piece {
     Word(String),
     Paragraph,
+    Fence(Vec<String>),
 }
 
 /// Reflows text content into lines that fit within `margin`, treating LaTeX blobs
@@ -249,6 +253,10 @@ enum Piece {
 /// modified. The first line keeps the verbatim `first_prefix` (`…label: "`); every
 /// other line is indented to `content_col`; a blank line separates paragraphs; the
 /// closing `"` is appended to the final line.
+///
+/// Markdown code fences (```` ``` ````, with or without an info string) are emitted
+/// verbatim on their own lines — their internal spacing and line breaks are never
+/// wrapped or altered — while the prose around them is still reflowed to `margin`.
 ///
 /// Returns `None` (leave the value unchanged) when a LaTeX blob spans multiple
 /// lines or is too wide to fit on a line — the author has laid such content out by
@@ -278,6 +286,9 @@ fn reflow_text(
     let mut out: Vec<String> = Vec::new();
     let mut current = first_prefix.to_string();
     let mut has_word = false;
+    // Whether `current` is a prose line still awaiting a flush. A fence closes the
+    // open prose line and emits its own lines, so nothing is left pending after it.
+    let mut open_line = true;
 
     for piece in pieces {
         match piece {
@@ -286,8 +297,15 @@ fn reflow_text(
                 out.push(String::new());
                 current = indent.clone();
                 has_word = false;
+                open_line = true;
             }
             Piece::Word(word) => {
+                // A word after a fence starts a fresh, indented prose line.
+                if !open_line {
+                    current = indent.clone();
+                    has_word = false;
+                    open_line = true;
+                }
                 let word_len = word.chars().count();
                 if has_word && current.chars().count() + 1 + word_len > margin {
                     out.push(std::mem::take(&mut current));
@@ -301,9 +319,28 @@ fn reflow_text(
                 }
                 has_word = true;
             }
+            Piece::Fence(fence_lines) => {
+                // Flush the open prose line, then emit the fence verbatim, indented to
+                // the content column (blank lines stay empty).
+                if open_line {
+                    out.push(std::mem::take(&mut current));
+                }
+                for line in fence_lines {
+                    if line.is_empty() {
+                        out.push(String::new());
+                    } else {
+                        out.push(format!("{indent}{line}"));
+                    }
+                }
+                current = String::new();
+                has_word = false;
+                open_line = false;
+            }
         }
     }
-    out.push(current);
+    if open_line {
+        out.push(current);
+    }
 
     if let Some(last) = out.last_mut() {
         last.push('"');
@@ -311,14 +348,52 @@ fn reflow_text(
     Some(out)
 }
 
-/// Splits text content into words and paragraph breaks, keeping each LaTeX blob and
-/// each Markdown code fence whole (their internal whitespace and newlines are not
-/// word/paragraph separators). A code fence therefore becomes a single word spanning
-/// newlines, which makes `reflow_text` leave the whole value unchanged.
+/// Splits text content into pieces. Markdown code fences are recognized at line
+/// granularity and emitted as verbatim `Fence` pieces (dedented to the fence's own
+/// indentation); the prose between fences is tokenized into `Word`/`Paragraph`
+/// pieces, keeping each LaTeX blob whole so its internal spaces don't split it.
 fn tokenize_reflow_pieces(content: &str) -> Vec<Piece> {
+    let lines: Vec<&str> = content.split('\n').collect();
+    let mut pieces = Vec::new();
+    let mut prose = String::new();
+    let mut row = 0;
+
+    while row < lines.len() {
+        let Some((base_indent, open_ticks)) = fence_open(lines[row]) else {
+            prose.push_str(lines[row]);
+            prose.push('\n');
+            row += 1;
+            continue;
+        };
+
+        // A fence begins — flush the prose gathered before it, then capture the fence
+        // (through its closing line, or to the end if it is never closed), dedenting
+        // each line by the fence's own indentation so its relative layout survives.
+        tokenize_prose(&prose, &mut pieces);
+        prose.clear();
+
+        let mut fence = vec![dedent(lines[row], base_indent)];
+        row += 1;
+        while row < lines.len() {
+            let line = lines[row];
+            fence.push(dedent(line, base_indent));
+            row += 1;
+            if is_closing_fence(line, open_ticks) {
+                break;
+            }
+        }
+        pieces.push(Piece::Fence(fence));
+    }
+
+    tokenize_prose(&prose, &mut pieces);
+    pieces
+}
+
+/// Tokenizes a run of prose into `Word`/`Paragraph` pieces, keeping each LaTeX blob
+/// whole (its internal whitespace and newlines are not word/paragraph separators).
+fn tokenize_prose(content: &str, pieces: &mut Vec<Piece>) {
     let chars: Vec<char> = content.chars().collect();
     let count = chars.len();
-    let mut pieces = Vec::new();
     let mut index = 0;
 
     while index < count {
@@ -338,11 +413,6 @@ fn tokenize_reflow_pieces(content: &str) -> Vec<Piece> {
 
         let mut word = String::new();
         while index < count {
-            if let Some(end) = code_fence_end(&chars, index) {
-                word.extend(&chars[index..end]);
-                index = end;
-                continue;
-            }
             if let Some(end) = latex_blob_end(&chars, index) {
                 word.extend(&chars[index..end]);
                 index = end;
@@ -356,8 +426,6 @@ fn tokenize_reflow_pieces(content: &str) -> Vec<Piece> {
         }
         pieces.push(Piece::Word(word));
     }
-
-    pieces
 }
 
 /// If a LaTeX blob opens at `start`, returns the char index just past its close
@@ -404,59 +472,30 @@ fn latex_blob_end(chars: &[char], start: usize) -> Option<usize> {
     None
 }
 
-/// If a Markdown code fence opens at `start` (a run of three or more backticks),
-/// returns the char index just past its closing fence line. An unclosed fence runs
-/// to the end of the content. The whole fence — its info string, exact spacing, and
-/// line breaks — is captured verbatim so the caller keeps it as one atomic token and
-/// never reflows or modifies its contents (the layout inside a fence is significant).
-fn code_fence_end(chars: &[char], start: usize) -> Option<usize> {
-    let count = chars.len();
-    let open_ticks = backtick_run(chars, start);
-    if open_ticks < 3 {
-        return None;
-    }
-
-    // Skip to the end of the opening line (past any info string, e.g. ```` ```mlg ````).
-    let mut index = start + open_ticks;
-    while index < count && chars[index] != '\n' {
-        index += 1;
-    }
-
-    // Scan following lines for the closing fence: a line whose only non-whitespace
-    // content is a run of at least `open_ticks` backticks.
-    while index < count {
-        index += 1; // step over the '\n' onto the next line
-        let mut cursor = index;
-        while cursor < count && chars[cursor] == ' ' {
-            cursor += 1;
-        }
-        let ticks = backtick_run(chars, cursor);
-        if ticks >= open_ticks {
-            let mut after = cursor + ticks;
-            while after < count && chars[after] != '\n' && chars[after].is_whitespace() {
-                after += 1;
-            }
-            if after >= count || chars[after] == '\n' {
-                return Some(after);
-            }
-        }
-        // Not a closing fence — advance to this line's end and keep scanning.
-        index = cursor;
-        while index < count && chars[index] != '\n' {
-            index += 1;
-        }
-    }
-
-    Some(count)
+/// If `line` opens a Markdown code fence — its first non-space content is a run of
+/// three or more backticks — returns `(leading-space indent, backtick count)`. An
+/// info string after the backticks (e.g. ```` ```mlg ````) is allowed on an opener.
+fn fence_open(line: &str) -> Option<(usize, usize)> {
+    let line = line.trim_end_matches('\r');
+    let body = line.trim_start_matches(' ');
+    let indent = line.len() - body.len();
+    let ticks = body.chars().take_while(|&ch| ch == '`').count();
+    (ticks >= 3).then_some((indent, ticks))
 }
 
-/// Counts the run of consecutive backtick characters beginning at `start`.
-fn backtick_run(chars: &[char], start: usize) -> usize {
-    let mut run = 0;
-    while start + run < chars.len() && chars[start + run] == '`' {
-        run += 1;
-    }
-    run
+/// Whether `line` closes a fence opened with `open_ticks` backticks: its only
+/// non-whitespace content is a run of at least `open_ticks` backticks.
+fn is_closing_fence(line: &str, open_ticks: usize) -> bool {
+    let trimmed = line.trim();
+    trimmed.len() >= open_ticks && trimmed.bytes().all(|byte| byte == b'`')
+}
+
+/// Removes up to `indent` leading spaces, mirroring how Markdown dedents fenced
+/// content by the fence's own indentation.
+fn dedent(line: &str, indent: usize) -> String {
+    let line = line.trim_end_matches('\r');
+    let leading = line.len() - line.trim_start_matches(' ').len();
+    line[leading.min(indent)..].to_string()
 }
 
 /// Whether a word contains any LaTeX delimiter.
@@ -761,19 +800,35 @@ mod tests {
     }
 
     #[test]
-    fn leaves_text_with_code_fence_unchanged() {
-        // The exact example from the bug report: a `Text:` value embedding an
-        // ```` ```mlg-fragment ```` code fence must be left untouched — its spacing
-        // and line breaks are significant and must never be collapsed or reflowed.
-        let source = "Text: \"We don't want to require a set to have a particular shape. We want it to\n       be abstract in that regard, but we want to allow write\n       ```mlg-fragment\n          X := {x__ : x_ is \\\\real} is \\\\set\n       ```\"\nId: \"8d820a04-5252-4ef2-9177-b1b328328197\"\n";
-        assert_eq!(format_source(source, 80), None);
+    fn reflows_prose_after_a_code_fence_and_attaches_the_closing_quote() {
+        // Prose following a fence starts a fresh indented line and reflows; a value
+        // that ends at the fence keeps the closing `"` on the closing fence line.
+        let source = "Text: \"```\nx = 1\n```\nthen some words after the fence here\"\nId: \"y\"\n";
+        let expected = "Text: \"\n       ```\n       x = 1\n       ```\n       then some words after the fence here\"\nId: \"y\"\n";
+        assert_eq!(format_source(source, 55).as_deref(), Some(expected));
+        assert_eq!(format_source(expected, 55), None);
     }
 
     #[test]
-    fn leaves_text_with_plain_code_fence_unchanged() {
-        // A fence with no language specifier is handled the same way.
+    fn reflows_prose_around_a_code_fence() {
+        // The example from the bug report: the surrounding prose is reflowed to the
+        // margin, but the embedded ```` ```mlg-fragment ```` fence is emitted verbatim
+        // — its spacing and line breaks are significant and must never be collapsed.
+        let source = "Text: \"We don't want to require a set to have a particular shape. We want it to\n       be abstract in that regard, but we want to allow write\n       ```mlg-fragment\n          X := {x__ : x_ is \\real} is \\set\n       ```\"\nId: \"8d820a04-5252-4ef2-9177-b1b328328197\"\n";
+        let expected = "Text: \"We don't want to require a set to have a\n       particular shape. We want it to be abstract in\n       that regard, but we want to allow write\n       ```mlg-fragment\n          X := {x__ : x_ is \\real} is \\set\n       ```\"\nId: \"8d820a04-5252-4ef2-9177-b1b328328197\"\n";
+        assert_eq!(format_source(source, 55).as_deref(), Some(expected));
+        // Idempotent: the reflowed form is a fixed point.
+        assert_eq!(format_source(expected, 55), None);
+    }
+
+    #[test]
+    fn preserves_interior_spacing_of_a_code_fence() {
+        // Significant interior whitespace (`a    b`) and relative indentation (`  c`)
+        // inside the fence survive verbatim while the prose before it is reflowed.
         let source = "Documented:\n. description: \"Consider the example below where spacing matters a great deal here:\n                ```\n                a    b\n                  c\n                ```\"\nId: \"x\"\n";
-        assert_eq!(format_source(source, 60), None);
+        let expected = "Documented:\n. description: \"Consider the example below where spacing\n                matters a great deal here:\n                ```\n                a    b\n                  c\n                ```\"\nId: \"x\"\n";
+        assert_eq!(format_source(source, 60).as_deref(), Some(expected));
+        assert_eq!(format_source(expected, 60), None);
     }
 
     #[test]

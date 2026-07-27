@@ -50,7 +50,7 @@ pub(super) fn export_in(
     force: bool,
     event_log: &mut EventLog,
 ) -> io::Result<()> {
-    let export_options = match ExportOptions::new(base_path, cname) {
+    let mut export_options = match ExportOptions::new(base_path, cname) {
         Ok(options) => options,
         Err(message) => {
             event_log.user_error(Some(ORIGIN), message.clone());
@@ -62,6 +62,25 @@ pub(super) fn export_in(
     // The static site always builds into `<collection root>/docs`, a sibling of
     // `content/` and `metadata/` (the conventional GitHub Pages source folder).
     let output = collection.root().join(DOCS_DIR);
+
+    // Unless the author pinned a base path (or is publishing to a custom domain),
+    // infer one from the GitHub remote. A project site served from
+    // `https://<user>.github.io/<repo>/` needs every `/_next` and `/data` URL under
+    // `/<repo>`; without this the browser requests them from the domain root and the
+    // scripts 404. `--base-path /` opts back into a domain-root deployment.
+    if base_path.is_none()
+        && export_options.cname.is_none()
+        && let Some(detected) = detect_github_pages_base_path(collection.root())
+    {
+        event_log.user_log(
+            Some(ORIGIN),
+            format!(
+                "Using base path `{detected}` inferred from the git remote (GitHub Pages \
+                 project site); pass `--base-path /` to deploy at a domain root instead"
+            ),
+        );
+        export_options.base_path = detected;
+    }
     if collection.source_files().is_empty() {
         event_log.user_error(Some(ORIGIN), "No Mathlingua files were found to export");
         return Err(io::Error::other("No Mathlingua files were found to export"));
@@ -414,6 +433,60 @@ impl ExportOptions {
     }
 }
 
+/// Infers the GitHub Pages base path for the collection rooted at `root`, or `None`
+/// when it cannot be determined (not a git repository, no `origin`, a non-GitHub
+/// remote, or a user/organization site served from the domain root).
+fn detect_github_pages_base_path(root: &Path) -> Option<String> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .args(["config", "--get", "remote.origin.url"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+
+    let url = String::from_utf8_lossy(&output.stdout);
+    github_pages_base_path(url.trim())
+}
+
+/// Maps a GitHub `origin` remote URL to the base path its GitHub Pages site is served
+/// from: `/<repo>` for a project site, or `None` for a `<owner>.github.io` user/org
+/// site (served from the domain root) and for any URL that is not a GitHub remote.
+///
+/// Recognizes the HTTPS (`https://github.com/owner/repo.git`), SCP-like
+/// (`git@github.com:owner/repo.git`), and `ssh://`/`git://` remote forms.
+fn github_pages_base_path(remote_url: &str) -> Option<String> {
+    let url = remote_url.trim();
+
+    // SCP-like syntax (`git@github.com:owner/repo`) has no `://` scheme.
+    let owner_repo = if let Some(rest) = url.strip_prefix("git@github.com:") {
+        rest
+    } else {
+        let without_scheme = url.split_once("://").map_or(url, |(_, rest)| rest);
+        let without_userinfo = without_scheme
+            .split_once('@')
+            .map_or(without_scheme, |(_, rest)| rest);
+        without_userinfo.strip_prefix("github.com/")?
+    };
+
+    let mut parts = owner_repo.trim_start_matches('/').splitn(3, '/');
+    let owner = parts.next()?.trim();
+    let repo = parts.next()?.trim().trim_end_matches(".git");
+    if owner.is_empty() || repo.is_empty() {
+        return None;
+    }
+
+    // A `<owner>.github.io` repository is the user/organization site, served from the
+    // domain root, so it needs no base path.
+    if repo.eq_ignore_ascii_case(&format!("{owner}.github.io")) {
+        return None;
+    }
+
+    Some(format!("/{repo}"))
+}
+
 fn normalize_base_path(value: Option<&str>) -> Result<String, String> {
     let Some(value) = value else {
         return Ok(String::new());
@@ -485,9 +558,10 @@ struct ExportPage {
 #[cfg(test)]
 mod tests {
     use super::{
-        ExportOptions, MANIFEST_FILE, normalize_base_path, normalize_cname,
-        write_github_pages_files, write_static_export_data,
+        ExportOptions, MANIFEST_FILE, detect_github_pages_base_path, github_pages_base_path,
+        normalize_base_path, normalize_cname, write_github_pages_files, write_static_export_data,
     };
+    use std::process::Command;
     use crate::backend::view::{CollectionView, FileView, GroupView, PageView};
     use serde::Deserialize;
     use serde::de::DeserializeOwned;
@@ -577,6 +651,94 @@ mod tests {
             "/mathlore"
         );
         assert!(normalize_base_path(Some("https://example.org/mathlore")).is_err());
+    }
+
+    #[test]
+    fn infers_project_site_base_path_from_github_remotes() {
+        // Every common remote form maps a project repo to `/<repo>`.
+        for url in [
+            "https://github.com/mathlingua/mathlingua-by-example.git",
+            "https://github.com/mathlingua/mathlingua-by-example",
+            "git@github.com:mathlingua/mathlingua-by-example.git",
+            "ssh://git@github.com/mathlingua/mathlingua-by-example.git",
+            "git://github.com/mathlingua/mathlingua-by-example.git",
+        ] {
+            assert_eq!(
+                github_pages_base_path(url).as_deref(),
+                Some("/mathlingua-by-example"),
+                "unexpected base path for {url}"
+            );
+        }
+    }
+
+    #[test]
+    fn infers_no_base_path_for_user_or_org_sites() {
+        // A `<owner>.github.io` repository is served from the domain root.
+        assert_eq!(
+            github_pages_base_path("https://github.com/mathlingua/mathlingua.github.io"),
+            None
+        );
+        assert_eq!(
+            github_pages_base_path("git@github.com:MathLingua/mathlingua.github.io.git"),
+            None
+        );
+    }
+
+    #[test]
+    fn infers_no_base_path_for_non_github_or_malformed_remotes() {
+        assert_eq!(
+            github_pages_base_path("https://gitlab.com/mathlingua/example.git"),
+            None
+        );
+        assert_eq!(github_pages_base_path("https://github.com/only-owner"), None);
+        assert_eq!(github_pages_base_path(""), None);
+    }
+
+    #[test]
+    fn detects_base_path_from_the_repository_git_remote() {
+        if !git_available() {
+            return;
+        }
+
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path();
+
+        // A repository with no `origin` cannot be resolved.
+        assert!(run_git(root, &["init", "-q"]));
+        assert_eq!(detect_github_pages_base_path(root), None);
+
+        // Once an `origin` points at a project repo, the base path is inferred.
+        assert!(run_git(
+            root,
+            &[
+                "remote",
+                "add",
+                "origin",
+                "https://github.com/mathlingua/example-book.git",
+            ],
+        ));
+        assert_eq!(
+            detect_github_pages_base_path(root).as_deref(),
+            Some("/example-book")
+        );
+    }
+
+    fn git_available() -> bool {
+        Command::new("git")
+            .arg("--version")
+            .output()
+            .map(|output| output.status.success())
+            .unwrap_or(false)
+    }
+
+    fn run_git(root: &Path, args: &[&str]) -> bool {
+        Command::new("git")
+            .arg("-C")
+            .arg(root)
+            .args(args)
+            .output()
+            .map(|output| output.status.success())
+            .unwrap_or(false)
     }
 
     #[test]

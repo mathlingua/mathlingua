@@ -120,12 +120,17 @@ pub struct CheckArgs {
 
 #[derive(Clone, Debug, Args, PartialEq, Eq)]
 pub struct ExportArgs {
+    /// Sub-path the site is served from, e.g. `/my-repo`. When omitted, it is
+    /// inferred from the git remote for GitHub Pages project sites; pass `/` to
+    /// deploy at a domain root.
     #[arg(long, value_name = "PATH")]
     pub base_path: Option<String>,
 
+    /// Custom domain to write to a `CNAME` file (also serves the site at the root).
     #[arg(long, value_name = "DOMAIN")]
     pub cname: Option<String>,
 
+    /// Replace the `docs/` output directory if it already exists and is not empty.
     #[arg(long, default_value_t = false)]
     pub force: bool,
 }

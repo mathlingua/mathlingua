@@ -239,13 +239,22 @@ fn reflow_inline_text(
 
 /// One unit of a text value for reflow: a whitespace-delimited word (with LaTeX
 /// blobs kept whole, so their internal spaces don't split it), a paragraph break,
-/// or a Markdown code fence. A `Fence` carries its lines dedented to the fence's own
-/// base indentation, so the reflow re-indents them to the value's content column
-/// while preserving the relative layout the author gave the fenced content.
+/// a Markdown code fence, or a Markdown list item. A `Fence` carries its lines
+/// dedented to the fence's own base indentation, so the reflow re-indents them to the
+/// value's content column while preserving the relative layout the author gave the
+/// fenced content. A `ListItem` carries its nesting (extra indent past the content
+/// column, so nested lists keep their level), its normalized marker (e.g. `* ` or
+/// `1. `), and its content words, so the reflow wraps the item to the margin with
+/// continuation lines hanging-indented past the marker.
 enum Piece {
     Word(String),
     Paragraph,
     Fence(Vec<String>),
+    ListItem {
+        nesting: usize,
+        marker: String,
+        words: Vec<String>,
+    },
 }
 
 /// Reflows text content into lines that fit within `margin`, treating LaTeX blobs
@@ -257,6 +266,8 @@ enum Piece {
 /// Markdown code fences (```` ``` ````, with or without an info string) are emitted
 /// verbatim on their own lines — their internal spacing and line breaks are never
 /// wrapped or altered — while the prose around them is still reflowed to `margin`.
+/// Markdown list items keep their own line and marker, wrapping under a hanging
+/// indent so their structure is preserved.
 ///
 /// Returns `None` (leave the value unchanged) when a LaTeX blob spans multiple
 /// lines or is too wide to fit on a line — the author has laid such content out by
@@ -268,11 +279,16 @@ fn reflow_text(
     margin: usize,
 ) -> Option<Vec<String>> {
     let content = content_lines.join("\n");
-    let pieces = tokenize_reflow_pieces(&content);
+    let pieces = tokenize_reflow_pieces(&content, content_col);
     let available = margin.saturating_sub(content_col);
 
     for piece in &pieces {
-        if let Piece::Word(word) = piece {
+        let words: &[String] = match piece {
+            Piece::Word(word) => std::slice::from_ref(word),
+            Piece::ListItem { words, .. } => words,
+            Piece::Paragraph | Piece::Fence(_) => continue,
+        };
+        for word in words {
             let has_latex = word_contains_latex(word);
             // A multi-line LaTeX blob, or a blob too wide to sit on a line, means the
             // author has already laid this out — leave the whole value untouched.
@@ -339,6 +355,44 @@ fn reflow_text(
                 has_word = false;
                 open_line = false;
             }
+            Piece::ListItem {
+                nesting,
+                marker,
+                words,
+            } => {
+                // Flush the open prose line (or opening prefix), then wrap the item:
+                // the first line carries the marker at the content column (plus any
+                // nesting); wrapped continuation lines hang-indent past the marker.
+                if open_line && (has_word || out.is_empty()) {
+                    out.push(std::mem::take(&mut current));
+                }
+                let item_indent = " ".repeat(content_col + nesting);
+                let hang = " ".repeat(content_col + nesting + marker.chars().count());
+                let mut line = format!("{item_indent}{marker}");
+                let mut item_has_word = false;
+                for word in words {
+                    let word_len = word.chars().count();
+                    if item_has_word && line.chars().count() + 1 + word_len > margin {
+                        out.push(std::mem::take(&mut line));
+                        line = hang.clone();
+                        line.push_str(&word);
+                    } else {
+                        if item_has_word {
+                            line.push(' ');
+                        }
+                        line.push_str(&word);
+                    }
+                    item_has_word = true;
+                }
+                // A bare marker (no content) must not leave trailing whitespace.
+                if !item_has_word {
+                    line = format!("{item_indent}{}", marker.trim_end());
+                }
+                out.push(line);
+                current = String::new();
+                has_word = false;
+                open_line = false;
+            }
         }
     }
     if open_line {
@@ -360,7 +414,7 @@ fn reflow_text(
 ///
 /// This mirrors the "split into chunks between fences, reflow each chunk" approach:
 /// prose reflows to the margin while the fenced blocks pass through untouched.
-fn tokenize_reflow_pieces(content: &str) -> Vec<Piece> {
+fn tokenize_reflow_pieces(content: &str, content_col: usize) -> Vec<Piece> {
     let lines: Vec<&str> = content.split('\n').collect();
     let mut pieces: Vec<Piece> = Vec::new();
     let mut row = 0;
@@ -396,34 +450,100 @@ fn tokenize_reflow_pieces(content: &str) -> Vec<Piece> {
             }
             pieces.push(Piece::Fence(fence));
         } else {
-            // A prose paragraph: consecutive non-blank, non-fence lines. Joined with
-            // `\n` (word separators) and tokenized into words, so it reflows freely.
-            let mut paragraph = String::new();
+            // A run of consecutive non-blank, non-fence lines. When it contains a
+            // Markdown list item its structure must survive (each item on its own
+            // line); otherwise it is one prose paragraph that reflows freely.
+            let start = row;
             while row < lines.len()
                 && !lines[row].trim().is_empty()
                 && fence_open(lines[row]).is_none()
             {
-                if !paragraph.is_empty() {
-                    paragraph.push('\n');
-                }
-                paragraph.push_str(lines[row]);
                 row += 1;
             }
-            tokenize_prose_words(&paragraph, &mut pieces);
+            let run = &lines[start..row];
+            if run.iter().any(|line| split_list_marker(line).is_some()) {
+                tokenize_list_run(run, content_col, &mut pieces);
+            } else {
+                tokenize_prose_words(&run.join("\n"), &mut pieces);
+            }
         }
     }
 
     pieces
 }
 
-/// Splits one prose paragraph (which contains no blank lines) into `Word` pieces,
-/// keeping each LaTeX blob whole so its internal whitespace and newlines do not split
-/// it — a multi-line blob thus yields a word containing `\n`, which the caller uses to
-/// detect hand-laid-out content and leave the whole value unchanged.
-fn tokenize_prose_words(content: &str, pieces: &mut Vec<Piece>) {
+/// Tokenizes a run of lines that contains at least one Markdown list item. Any prose
+/// before the first marker becomes `Word` pieces (a lead-in paragraph); then each
+/// marker line, together with the non-marker lines that continue it, becomes one
+/// `ListItem` piece whose words the reflow re-wraps under a hanging indent.
+fn tokenize_list_run(run: &[&str], content_col: usize, pieces: &mut Vec<Piece>) {
+    let first_marker = run
+        .iter()
+        .position(|line| split_list_marker(line).is_some())
+        .unwrap_or(run.len());
+    if first_marker > 0 {
+        tokenize_prose_words(&run[..first_marker].join("\n"), pieces);
+    }
+
+    let mut row = first_marker;
+    while row < run.len() {
+        let (marker, first) = split_list_marker(run[row]).expect("run[row] opens a list item");
+        // Indentation past the content column marks a nested item; preserve it so the
+        // list level survives. (A list item on the value's first line has no leading
+        // indent, so it clamps to the content column.)
+        let leading = run[row].len() - run[row].trim_start_matches(' ').len();
+        let nesting = leading.saturating_sub(content_col);
+        let mut content = first.to_string();
+        row += 1;
+        // Non-marker lines lazily continue the current item.
+        while row < run.len() && split_list_marker(run[row]).is_none() {
+            content.push('\n');
+            content.push_str(run[row]);
+            row += 1;
+        }
+        pieces.push(Piece::ListItem {
+            nesting,
+            marker,
+            words: tokenize_words(&content),
+        });
+    }
+}
+
+/// If `line` opens a Markdown list item, returns its normalized marker (the bullet or
+/// number followed by a single space, e.g. `* ` or `10. `) and the content after the
+/// marker. Recognizes unordered (`*`/`-`/`+`) and ordered (`N.`/`N)`) markers.
+fn split_list_marker(line: &str) -> Option<(String, &str)> {
+    let trimmed = line.trim_start();
+    let first = trimmed.chars().next()?;
+
+    if matches!(first, '*' | '-' | '+') {
+        let rest = &trimmed[first.len_utf8()..];
+        let content = rest.strip_prefix([' ', '\t'])?;
+        return Some((format!("{first} "), content));
+    }
+
+    if first.is_ascii_digit() {
+        let digits_len = trimmed.chars().take_while(char::is_ascii_digit).count();
+        let after = &trimmed[digits_len..];
+        let delim = after.chars().next()?;
+        if matches!(delim, '.' | ')') {
+            let content = after[delim.len_utf8()..].strip_prefix([' ', '\t'])?;
+            return Some((format!("{}{delim} ", &trimmed[..digits_len]), content));
+        }
+    }
+
+    None
+}
+
+/// Splits `content` into words, keeping each LaTeX blob whole so its internal
+/// whitespace and newlines do not split it — a multi-line blob thus yields a word
+/// containing `\n`, which the caller uses to detect hand-laid-out content and leave
+/// the whole value unchanged.
+fn tokenize_words(content: &str) -> Vec<String> {
     let chars: Vec<char> = content.chars().collect();
     let count = chars.len();
     let mut index = 0;
+    let mut words = Vec::new();
 
     while index < count {
         if chars[index].is_whitespace() {
@@ -444,8 +564,15 @@ fn tokenize_prose_words(content: &str, pieces: &mut Vec<Piece>) {
             word.push(chars[index]);
             index += 1;
         }
-        pieces.push(Piece::Word(word));
+        words.push(word);
     }
+
+    words
+}
+
+/// Tokenizes one prose paragraph (which contains no blank lines) into `Word` pieces.
+fn tokenize_prose_words(content: &str, pieces: &mut Vec<Piece>) {
+    pieces.extend(tokenize_words(content).into_iter().map(Piece::Word));
 }
 
 /// If a LaTeX blob opens at `start`, returns the char index just past its close
@@ -817,6 +944,41 @@ mod tests {
         // `$$…$$` and `\[…\]` display-math blocks must be left untouched.
         let source = "[\\foo]\nDescribes: x\nDocumented:\n. called: \"family indexed by $I?$\"\n. written: \"\\{A?_i\\}_{i \\in I?}\"\n. description: \"A family of sets is a function $A$ with domain $I$. When $A$ is\n                a family over $I$ one writes $\\{A_i\\}_{i \\in I}$ and $A_i$ for\n                $A(i)$.\n                $$\n                  \\int f(x) \\: dx\n                $$\n                Some more text\n                \\[\n                  \\int f(x) \\: dx\n                \\]\"\nId: \"a2451abb-cfc3-4655-a641-ff6826592e7d\"\n";
         assert_eq!(format_source(source, 100), None);
+    }
+
+    #[test]
+    fn reflows_markdown_list_items_with_a_hanging_indent() {
+        // Each `* ` item keeps its own line and marker; a long item wraps with its
+        // continuation lines hanging-indented to align past the marker. The lead-in
+        // sentence and the earlier paragraph still reflow as ordinary prose.
+        let source = "Text: \"So far, our definitions have used `Describes: X`. That is, our\n       definitions do not specify a shape the entity being defined could have.\n\n       Mathlingua supports the following structures:\n       * `f(x_)` for mappings, i.e. entities that map and input to an output\n       * `(x, f(x_), (a, b)) for tuples, i.e. entities that are a fixed named sequence of items\n       * `{x_ : ...}` for collections, i.e. entities that are a collection of items\"\nId: \"c4eaa2cf-c945-47b8-a7bd-4d88b7834ba8\"\n";
+        let expected = "Text: \"So far, our definitions have used `Describes: X`. That is, our\n       definitions do not specify a shape the entity being defined could have.\n\n       Mathlingua supports the following structures:\n       * `f(x_)` for mappings, i.e. entities that map and input to an output\n       * `(x, f(x_), (a, b)) for tuples, i.e. entities that are a fixed named\n         sequence of items\n       * `{x_ : ...}` for collections, i.e. entities that are a collection of\n         items\"\nId: \"c4eaa2cf-c945-47b8-a7bd-4d88b7834ba8\"\n";
+        assert_eq!(format_source(source, 80).as_deref(), Some(expected));
+        // Idempotent.
+        assert_eq!(format_source(expected, 80), None);
+    }
+
+    #[test]
+    fn preserves_nested_list_indentation_when_wrapping() {
+        // A nested item (indented past the content column) keeps its level, and each
+        // level wraps under its own hanging indent.
+        let source = "Documented:\n. description: \"Outline:\n                * outer item that is reasonably long so that it wraps across the margin here\n                  * inner nested item that is also long enough to wrap across the print margin\n                * second outer\"\nId: \"x\"\n";
+        let expected = "Documented:\n. description: \"Outline:\n                * outer item that is reasonably long so that it wraps\n                  across the margin here\n                  * inner nested item that is also long enough to wrap\n                    across the print margin\n                * second outer\"\nId: \"x\"\n";
+        assert_eq!(format_source(source, 70).as_deref(), Some(expected));
+        assert_eq!(format_source(expected, 70), None);
+    }
+
+    #[test]
+    fn reflows_ordered_list_items_and_preserves_the_marker() {
+        // Ordered markers (`1. `) survive and wrap with a hanging indent sized to the
+        // marker width.
+        let source = "Documented:\n. description: \"Steps:\n                1. do the first thing and then keep going until the line is quite long indeed\n                2. done\"\nId: \"x\"\n";
+        let formatted = format_source(source, 60).expect("expected reflow");
+        assert!(formatted.contains("                1. do the first thing and then keep going"));
+        // The wrapped continuation hangs under the marker (content column + `1. `).
+        assert!(formatted.contains("\n                   until"));
+        assert!(formatted.contains("                2. done"));
+        assert_eq!(format_source(&formatted, 60), None);
     }
 
     #[test]

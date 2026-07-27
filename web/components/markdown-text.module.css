@@ -107,7 +107,7 @@
   margin-right: auto;
   margin-left: auto;
   overflow-x: auto;
-  padding: 0.72rem 0.82rem;
+  padding: 1rem 1.2rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-code-block);
   background: var(--card-bg);

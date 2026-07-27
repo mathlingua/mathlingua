@@ -8,12 +8,12 @@
   max-height: min(34rem, 68vh);
   margin: 0;
   overflow: auto;
-  padding: 0.1rem 2.35rem 0.1rem 0;
+  padding: 0.2rem 2.35rem 0.2rem 0;
   border: none;
   background: transparent;
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 1rem;
   line-height: 1.55;
   tab-size: 2;
   white-space: pre;

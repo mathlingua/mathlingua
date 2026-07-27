@@ -111,8 +111,17 @@ fn mlg_fence_open(line: &str) -> Option<usize> {
 }
 
 /// Returns whether a line is a closing code fence (only backticks, at least three).
+///
+/// The enclosing quoted text may terminate on the same line as the closing fence —
+/// e.g. ` ```" ` — which is the canonical form `mlg format` produces. A single
+/// unescaped trailing `"` (the text value's terminator, never an escaped `\"`) is
+/// dropped before checking so that closing fence is still recognized.
 fn is_fence_close(line: &str) -> bool {
     let trimmed = line.trim();
+    let trimmed = match trimmed.strip_suffix('"') {
+        Some(rest) if !rest.ends_with('\\') => rest,
+        _ => trimmed,
+    };
     trimmed.len() >= 3 && trimmed.bytes().all(|byte| byte == b'`')
 }
 
@@ -152,6 +161,19 @@ mod tests {
         assert!(
             fence_error_messages(source).is_empty(),
             "escaped-quote/builtin fence should check cleanly, got: {:?}",
+            fence_error_messages(source)
+        );
+    }
+
+    #[test]
+    fn recognizes_a_closing_fence_glued_to_the_text_value_terminator() {
+        // The canonical `mlg format` output puts the text value's closing `"` on the
+        // same line as the closing fence (` ```" `). That line must still be seen as
+        // the fence close, not swallowed as fenced content.
+        let source = "Text: \"Some text\n       ```mlg\n       Theorem:\n       given: x is \\set\n       then: x is? \\set\n       ```\"\nId: \"c4eaa2cf-c945-47b8-a7bd-4d88b7834ba8\"\n";
+        assert!(
+            fence_error_messages(source).is_empty(),
+            "a fence closing on the same line as the text terminator should check cleanly, got: {:?}",
             fence_error_messages(source)
         );
     }

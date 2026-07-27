@@ -385,7 +385,7 @@ fn person_body_text(kind: &str, sections: &[ProtoSection]) -> Option<String> {
         .iter()
         .find(|section| section.label == "biography")
         .and_then(section_text)
-        .map(|text| unindent_description_text(&text))
+        .map(|text| unindent_text(&text))
         .filter(|text| !text.trim().is_empty())
 }
 
@@ -467,7 +467,15 @@ fn page_view(kind: &str, sections: &[ProtoSection]) -> Option<PageView> {
         return None;
     }
 
-    let text = sections.first().and_then(section_text).unwrap_or_default();
+    // Dedent by the common leading indent so a multi-line `Text:` value — whose
+    // continuation lines are aligned under the opening `Text: "` — renders without
+    // that alignment indent. This matters most for embedded code fences, where a
+    // stray indent would otherwise be rendered as part of the fenced code.
+    let text = sections
+        .first()
+        .and_then(section_text)
+        .map(|text| unindent_text(&text))
+        .unwrap_or_default();
 
     Some(PageView {
         kind: kind.to_string(),
@@ -488,7 +496,7 @@ fn documented_description_text(group: &ProtoGroup) -> Option<String> {
         })
         .filter(|section| section.label == "description")
         .filter_map(section_text)
-        .map(|text| unindent_description_text(&text))
+        .map(|text| unindent_text(&text))
         .filter(|text| !text.trim().is_empty())
         .collect::<Vec<_>>();
 
@@ -517,7 +525,7 @@ fn first_section_text(section: &ProtoSection) -> Option<String> {
         })
 }
 
-fn unindent_description_text(input: &str) -> String {
+fn unindent_text(input: &str) -> String {
     let mut lines = input
         .replace("\r\n", "\n")
         .replace('\r', "\n")
@@ -1239,6 +1247,54 @@ Second paragraph with $x \in X$."
                 .map(|page| page.text.as_str()),
             Some("First paragraph\n\nSecond paragraph with $x \\in X$.")
         );
+    }
+
+    #[test]
+    fn dedents_a_text_page_so_an_embedded_code_fence_has_no_alignment_indent() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("intro.mlg");
+        // The `Text:` value's continuation lines are aligned under the opening
+        // `Text: "` (seven-space indent). Rendering must dedent by that common
+        // amount so the embedded ```` ```mlg ```` fence is flush-left, not indented.
+        let source = "Text: \"The Describes: construct is used to specify an abstract concept, called a\n       type in other languages. To start, we specify that a set is an type.\n       We'll expand on it as we continue.\n\n       ```mlg\n       [\\set]\n       Describes: X\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n       \"\nId: \"e798d1a3-1029-44f3-8b92-d794cbb6596c\"\n";
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
+            .expect("expected view");
+
+        let expected = "The Describes: construct is used to specify an abstract concept, called a\n\
+                        type in other languages. To start, we specify that a set is an type.\n\
+                        We'll expand on it as we continue.\n\n\
+                        ```mlg\n\
+                        [\\set]\n\
+                        Describes: X\n\
+                        Documented:\n\
+                        . called: \"set\"\n\
+                        Id: \"a0759217-e1f6-412c-982a-0038cd17a3a1\"\n\
+                        ```";
+        assert_eq!(
+            view.files[0].items[0]
+                .page
+                .as_ref()
+                .map(|page| page.text.as_str()),
+            Some(expected)
+        );
+        assert!(!event_log.has_errors());
     }
 
     #[test]

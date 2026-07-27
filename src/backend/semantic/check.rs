@@ -324,7 +324,10 @@ pub(super) fn check_documented_rendering(
 ) {
     if !matches!(
         kind,
-        DefinitionKind::Describes | DefinitionKind::Defines | DefinitionKind::Refines
+        DefinitionKind::Describes
+            | DefinitionKind::Defines
+            | DefinitionKind::Refines
+            | DefinitionKind::States
     ) {
         return;
     }

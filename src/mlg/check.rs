@@ -4323,6 +4323,8 @@ then:
     States:
     when: P, Q is \\statement
     that: P
+    Documented:
+    . written: "P? \land Q?"
 
     [A \.set.intersect:?within{U}./ B]
     Defines: C \:subset:/ U
@@ -4377,6 +4379,8 @@ then:
     when: A, B is \set
     that:
     . A is? \set
+    Documented:
+    . written: "A? \equiv B?"
 
     [\needs.expression{x}]
     Describes: y
@@ -7386,6 +7390,90 @@ then:
             "Refines entries must include an `adjective:` item in `Documented:`"
         ));
         assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_requires_states_to_have_documented_called_or_written() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("states-rendering.mlg");
+
+        // A `States:` group, like `Describes:`/`Defines:`, must render via `called:`
+        // or `written:`. This one omits `Documented:` entirely, so it must error.
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [x \.not.in./ X]
+    States:
+    when: x, X is \set
+    that:
+    . not: x "in"? X
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("states-rendering.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            event_log.events().iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message
+                        == "States entries must include either a `called:` or `written:` item in `Documented:`"
+                })
+            }),
+            "expected a States called/written diagnostic, got: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_accepts_states_with_documented_written() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("states-valid.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [x \.not.in./ X]
+    States:
+    when: x, X is \set
+    that:
+    . not: x "in"? X
+    Documented:
+    . written: "x? \notin X?"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("states-valid.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
     }
 
     #[test]

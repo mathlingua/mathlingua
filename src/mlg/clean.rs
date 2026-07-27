@@ -1,4 +1,5 @@
-use crate::backend::collection::{DOCS_DIR, find_collection_root};
+use crate::backend::collection::find_collection_root;
+use crate::backend::config::load_config;
 use crate::events::{EventLog, EventLogListener};
 use crate::mlg::util::no_errors_since;
 use std::fs;
@@ -40,25 +41,28 @@ fn clean_in(cwd: &Path, event_log: &mut EventLog) -> io::Result<()> {
         return Err(io::Error::other("no collection root"));
     };
 
-    let docs_dir = root.join(DOCS_DIR);
-    if !docs_dir.exists() {
+    // `output_dir()` sanitizes the configured value, so it always stays within the
+    // collection root even if `mlg.json` was never checked.
+    let output_dir = load_config(&root).output_dir();
+    let output_path = root.join(&output_dir);
+    if !output_path.exists() {
         event_log.user_log(
             Some(ORIGIN),
-            format!("Nothing to remove; {DOCS_DIR}/ does not exist"),
+            format!("Nothing to remove; {output_dir}/ does not exist"),
         );
         return Ok(());
     }
 
-    if let Err(error) = fs::remove_dir_all(&docs_dir) {
+    if let Err(error) = fs::remove_dir_all(&output_path) {
         event_log.user_error_at_path(
             Some(ORIGIN),
-            docs_dir,
-            format!("Failed to remove {DOCS_DIR}/: {error}"),
+            output_path,
+            format!("Failed to remove {output_dir}/: {error}"),
         );
         return Err(error);
     }
 
-    event_log.user_log(Some(ORIGIN), format!("Removed {DOCS_DIR}/"));
+    event_log.user_log(Some(ORIGIN), format!("Removed {output_dir}/"));
     Ok(())
 }
 
@@ -66,11 +70,13 @@ fn clean_in(cwd: &Path, event_log: &mut EventLog) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{DOCS_DIR, clean};
+    use super::clean;
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    const DOCS_DIR: &str = "docs";
 
     #[test]
     fn removes_the_docs_directory() {
@@ -84,6 +90,46 @@ mod tests {
 
         assert!(result.successful, "{:#?}", result.event_log.events());
         assert!(!root.join(DOCS_DIR).exists());
+    }
+
+    #[test]
+    fn removes_a_custom_output_directory() {
+        let dir = TestDir::new();
+        let root = dir.path();
+        fs::write(
+            root.join("mlg.json"),
+            "{\n  \"version\": \"0\",\n  \"outputDir\": \"site\"\n}\n",
+        )
+        .unwrap();
+        fs::create_dir_all(root.join("site").join("nested")).unwrap();
+        // The default `docs/` is left untouched when a custom directory is configured.
+        fs::create_dir_all(root.join(DOCS_DIR)).unwrap();
+
+        let result = clean(root, None);
+
+        assert!(result.successful, "{:#?}", result.event_log.events());
+        assert!(!root.join("site").exists());
+        assert!(root.join(DOCS_DIR).exists(), "docs/ must be left alone");
+    }
+
+    #[test]
+    fn ignores_an_unsafe_output_directory() {
+        let dir = TestDir::new();
+        let root = dir.path();
+        // An escaping value must never be honored; clean falls back to `docs/`.
+        fs::write(
+            root.join("mlg.json"),
+            "{\n  \"version\": \"0\",\n  \"outputDir\": \"../escape\"\n}\n",
+        )
+        .unwrap();
+        let sibling = root.parent().unwrap().join("escape");
+        fs::create_dir_all(&sibling).unwrap();
+
+        let result = clean(root, None);
+
+        assert!(result.successful);
+        assert!(sibling.exists(), "must not delete outside the collection");
+        let _ = fs::remove_dir_all(&sibling);
     }
 
     #[test]

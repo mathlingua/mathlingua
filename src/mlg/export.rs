@@ -1,4 +1,5 @@
-use crate::backend::collection::{DOCS_DIR, SourceCollection};
+use crate::backend::collection::SourceCollection;
+use crate::backend::config::load_config;
 use crate::backend::view::{CollectionView, DirectoryView, GroupView};
 use crate::events::{EventLog, EventLogListener};
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since};
@@ -59,9 +60,12 @@ pub(super) fn export_in(
     };
     let starting_event_count = event_log.events().len();
     let mut collection = SourceCollection::load(cwd, event_log, ORIGIN);
-    // The static site always builds into `<collection root>/docs`, a sibling of
-    // `content/` and `metadata/` (the conventional GitHub Pages source folder).
-    let output = collection.root().join(DOCS_DIR);
+    // The static site builds into the configured output directory (`docs/` by
+    // default), a sibling of `content/` and `metadata/` — the conventional GitHub
+    // Pages source folder.
+    let output = collection
+        .root()
+        .join(load_config(collection.root()).output_dir());
 
     // Unless the author pinned a base path (or is publishing to a custom domain),
     // infer one from the GitHub remote. A project site served from

@@ -1,7 +1,7 @@
 use crate::events::EventLog;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::Path;
+use std::path::{Component, Path};
 
 pub const CONFIG_FILE: &str = "mlg.json";
 
@@ -13,13 +13,23 @@ pub const DEFAULT_MARGIN: usize = 80;
 /// judgement call, so a collection is kept formatted unless it opts out.
 pub const DEFAULT_FORMAT_ON_CHECK: bool = true;
 
+/// The directory, relative to the collection root, that `mlg export` builds into
+/// and `mlg clean` removes, absent an `outputDir` setting.
+pub const DEFAULT_OUTPUT_DIR: &str = "docs";
+
 /// Every field an `mlg.json` must carry, in the order `mlg init` writes them.
 ///
 /// A collection must spell out every setting rather than lean on implicit
 /// defaults, so that the whole configuration is visible and editable in one
 /// place. `mlg check` reports any of these that is absent, and `mlg init` fills
 /// them in with their defaults.
-pub const CONFIG_FIELDS: [&str; 4] = ["name", "version", "margin", "formatOnCheck"];
+pub const CONFIG_FIELDS: [&str; 5] = [
+    "name",
+    "version",
+    "margin",
+    "formatOnCheck",
+    "outputDir",
+];
 
 /// The former name of the `margin` field, still recognized so that a collection
 /// carrying it is told to rename rather than silently losing its setting.
@@ -45,6 +55,12 @@ pub struct Config {
     /// [`Self::format_on_check`] falling back to `DEFAULT_FORMAT_ON_CHECK`.
     #[serde(default)]
     pub format_on_check: Option<bool>,
+    /// The directory `mlg export` builds into and `mlg clean` removes.
+    ///
+    /// Lenient in the same way as [`Self::margin`]: `None` when absent, with
+    /// [`Self::output_dir`] falling back to `DEFAULT_OUTPUT_DIR`.
+    #[serde(default)]
+    pub output_dir: Option<String>,
 }
 
 impl Config {
@@ -58,6 +74,32 @@ impl Config {
     pub fn format_on_check(&self) -> bool {
         self.format_on_check.unwrap_or(DEFAULT_FORMAT_ON_CHECK)
     }
+
+    /// The configured output directory, or the default when a partial config
+    /// omitted it. An unsafe value (empty, absolute, or escaping the collection
+    /// root with `..`) also falls back to the default, so `mlg clean`/`mlg export`
+    /// can never be steered outside the collection even if `mlg check` was skipped.
+    pub fn output_dir(&self) -> String {
+        self.output_dir
+            .as_deref()
+            .map(str::trim)
+            .filter(|dir| is_safe_output_dir(dir))
+            .unwrap_or(DEFAULT_OUTPUT_DIR)
+            .to_string()
+    }
+}
+
+/// Whether `dir` is a safe output directory: a non-empty relative path that stays
+/// within the collection root (not absolute, no `..` components). This guards the
+/// destructive `mlg clean`/`mlg export` from an empty value (which would target the
+/// root itself) or a traversal outside the collection.
+pub(crate) fn is_safe_output_dir(dir: &str) -> bool {
+    let path = Path::new(dir);
+    !dir.is_empty()
+        && !path.is_absolute()
+        && !path
+            .components()
+            .any(|component| matches!(component, Component::ParentDir | Component::RootDir))
 }
 
 /// The config for the collection rooted at `root`, or the defaults when it has
@@ -84,6 +126,7 @@ impl Default for Config {
             version: default_version(),
             margin: Some(DEFAULT_MARGIN),
             format_on_check: Some(DEFAULT_FORMAT_ON_CHECK),
+            output_dir: Some(DEFAULT_OUTPUT_DIR.to_string()),
         }
     }
 }
@@ -231,6 +274,27 @@ pub fn validate_config_file(path: &Path, event_log: &mut EventLog, origin: &str)
         None => report_missing_field("formatOnCheck", path, event_log, origin),
     }
 
+    // `outputDir` must be present and a safe relative path — `mlg export` writes it
+    // and `mlg clean` deletes it, so an absolute path or one escaping the collection
+    // root is rejected rather than silently falling back to `docs/`.
+    match object.get("outputDir") {
+        Some(serde_json::Value::String(dir)) if is_safe_output_dir(dir.trim()) => {}
+        Some(serde_json::Value::String(_)) => event_log.user_error_at_path(
+            Some(origin),
+            path.to_path_buf(),
+            format!(
+                "{CONFIG_FILE} field \"outputDir\" must be a non-empty relative path \
+                 within the collection"
+            ),
+        ),
+        Some(_) => event_log.user_error_at_path(
+            Some(origin),
+            path.to_path_buf(),
+            format!("{CONFIG_FILE} field \"outputDir\" must be a string"),
+        ),
+        None => report_missing_field("outputDir", path, event_log, origin),
+    }
+
     // Unknown fields are otherwise ignored, so a collection still carrying the
     // old `print_margin` would silently fall back to the default width. Name it
     // explicitly instead.
@@ -294,13 +358,14 @@ mod tests {
         assert_eq!(config.version, "0");
         assert_eq!(config.margin, Some(80));
         assert_eq!(config.format_on_check, Some(true));
+        assert_eq!(config.output_dir, Some("docs".to_string()));
     }
 
     #[test]
     fn default_contents_spell_out_every_field() {
         // `mlg init` writes this, so the author sees every key and its default.
         let contents = default_config_contents();
-        for field in ["name", "version", "margin", "formatOnCheck"] {
+        for field in ["name", "version", "margin", "formatOnCheck", "outputDir"] {
             assert!(
                 contents.contains(&format!("\"{field}\"")),
                 "default config should contain {field}: {contents}"
@@ -340,7 +405,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "thing", "version": "1", "margin": 80, "formatOnCheck": true, "extra": true}"#,
+            r#"{"name": "thing", "version": "1", "margin": 80, "formatOnCheck": true, "outputDir": "docs", "extra": true}"#,
         )
         .unwrap();
 
@@ -366,6 +431,7 @@ mod tests {
                 "mlg.json is missing required field \"version\"".to_string(),
                 "mlg.json is missing required field \"margin\"".to_string(),
                 "mlg.json is missing required field \"formatOnCheck\"".to_string(),
+                "mlg.json is missing required field \"outputDir\"".to_string(),
             ]
         );
     }
@@ -392,7 +458,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": true}"#,
+            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": true, "outputDir": "docs"}"#,
         )
         .unwrap();
 
@@ -408,7 +474,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "margin": 0, "formatOnCheck": true}"#,
+            r#"{"name": "a", "version": "1", "margin": 0, "formatOnCheck": true, "outputDir": "docs"}"#,
         )
         .unwrap();
 
@@ -429,7 +495,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "formatOnCheck": true, "print_margin": 80}"#,
+            r#"{"name": "a", "version": "1", "formatOnCheck": true, "outputDir": "docs", "print_margin": 80}"#,
         )
         .unwrap();
 
@@ -471,7 +537,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": false}"#,
+            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": false, "outputDir": "docs"}"#,
         )
         .unwrap();
 
@@ -489,7 +555,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": "no"}"#,
+            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": "no", "outputDir": "docs"}"#,
         )
         .unwrap();
 
@@ -499,6 +565,61 @@ mod tests {
         assert_eq!(
             error_messages(&event_log),
             vec!["mlg.json field \"formatOnCheck\" must be a boolean".to_string()]
+        );
+    }
+
+    #[test]
+    fn output_dir_defaults_and_reads_from_the_config() {
+        let unset: Config = serde_json::from_str(r#"{"name": "a", "version": "1"}"#).unwrap();
+        assert_eq!(unset.output_dir, None);
+        assert_eq!(unset.output_dir(), "docs");
+
+        let set: Config =
+            serde_json::from_str(r#"{"name": "a", "version": "1", "outputDir": "site"}"#).unwrap();
+        assert_eq!(set.output_dir(), "site");
+    }
+
+    #[test]
+    fn output_dir_falls_back_when_the_configured_value_is_unsafe() {
+        // Empty, absolute, and escaping values must never be honored — they would
+        // steer the destructive `mlg clean` outside the collection.
+        for unsafe_dir in ["", "   ", "/etc", "../escape", "docs/../.."] {
+            let config = Config {
+                output_dir: Some(unsafe_dir.to_string()),
+                ..Config::default()
+            };
+            assert_eq!(config.output_dir(), "docs", "for {unsafe_dir:?}");
+        }
+    }
+
+    #[test]
+    fn output_dir_trims_and_accepts_nested_relative_paths() {
+        let config = Config {
+            output_dir: Some("  build/site  ".to_string()),
+            ..Config::default()
+        };
+        assert_eq!(config.output_dir(), "build/site");
+    }
+
+    #[test]
+    fn validate_reports_an_unsafe_output_dir() {
+        let dir = TestDir::new();
+        let path = dir.path().join("mlg.json");
+        fs::write(
+            &path,
+            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": true, "outputDir": "/etc"}"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        validate_config_file(&path, &mut event_log, ORIGIN);
+
+        assert_eq!(
+            error_messages(&event_log),
+            vec![
+                "mlg.json field \"outputDir\" must be a non-empty relative path within the collection"
+                    .to_string()
+            ]
         );
     }
 
@@ -530,7 +651,7 @@ mod tests {
         let path = dir.path().join("mlg.json");
         fs::write(
             &path,
-            r#"{"name": 5, "version": true, "margin": 80, "formatOnCheck": true}"#,
+            r#"{"name": 5, "version": true, "margin": 80, "formatOnCheck": true, "outputDir": "docs"}"#,
         )
         .unwrap();
 
@@ -605,7 +726,8 @@ mod tests {
             vec![
                 "name".to_string(),
                 "margin".to_string(),
-                "formatOnCheck".to_string()
+                "formatOnCheck".to_string(),
+                "outputDir".to_string(),
             ]
         );
     }

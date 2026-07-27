@@ -13,7 +13,6 @@ use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
 pub(crate) const CONTENT_DIR: &str = "content";
-pub(crate) const DOCS_DIR: &str = "docs";
 
 /// Optional per-directory section introduction. When a directory contains this
 /// file it is not a navigable page (it is never listed in `toc`); instead its

@@ -286,21 +286,22 @@ fn reflow_text(
     let mut out: Vec<String> = Vec::new();
     let mut current = first_prefix.to_string();
     let mut has_word = false;
-    // Whether `current` is a prose line still awaiting a flush. A fence closes the
-    // open prose line and emits its own lines, so nothing is left pending after it.
+    // Whether `current` holds a prose line not yet flushed into `out`. A `Paragraph`
+    // or `Fence` closes it; the next word opens a fresh, indented line.
     let mut open_line = true;
 
     for piece in pieces {
         match piece {
             Piece::Paragraph => {
-                out.push(std::mem::take(&mut current));
+                if open_line {
+                    out.push(std::mem::take(&mut current));
+                }
                 out.push(String::new());
-                current = indent.clone();
                 has_word = false;
-                open_line = true;
+                open_line = false;
             }
             Piece::Word(word) => {
-                // A word after a fence starts a fresh, indented prose line.
+                // The first word after a paragraph break or fence opens a fresh line.
                 if !open_line {
                     current = indent.clone();
                     has_word = false;
@@ -320,9 +321,11 @@ fn reflow_text(
                 has_word = true;
             }
             Piece::Fence(fence_lines) => {
-                // Flush the open prose line, then emit the fence verbatim, indented to
-                // the content column (blank lines stay empty).
-                if open_line {
+                // Flush the open prose line (the last wrapped line, or the opening
+                // prefix when the value starts with a fence). A fence right after a
+                // paragraph break must not emit a stray indent-only line, so an open
+                // line with no word is dropped unless it is the very first line.
+                if open_line && (has_word || out.is_empty()) {
                     out.push(std::mem::take(&mut current));
                 }
                 for line in fence_lines {
@@ -348,66 +351,83 @@ fn reflow_text(
     Some(out)
 }
 
-/// Splits text content into pieces. Markdown code fences are recognized at line
-/// granularity and emitted as verbatim `Fence` pieces (dedented to the fence's own
-/// indentation); the prose between fences is tokenized into `Word`/`Paragraph`
-/// pieces, keeping each LaTeX blob whole so its internal spaces don't split it.
+/// Splits text content into pieces, working one line at a time so a Markdown code
+/// fence can be lifted out as a verbatim block. The content is a sequence of blocks —
+/// prose paragraphs and code fences — separated by blank lines; each blank-line gap
+/// between two blocks becomes a `Paragraph` piece (leading and trailing gaps are
+/// dropped). A prose paragraph is tokenized into `Word` pieces (LaTeX blobs kept
+/// whole); a fence becomes a verbatim `Fence` piece dedented to its own indentation.
+///
+/// This mirrors the "split into chunks between fences, reflow each chunk" approach:
+/// prose reflows to the margin while the fenced blocks pass through untouched.
 fn tokenize_reflow_pieces(content: &str) -> Vec<Piece> {
     let lines: Vec<&str> = content.split('\n').collect();
-    let mut pieces = Vec::new();
-    let mut prose = String::new();
+    let mut pieces: Vec<Piece> = Vec::new();
     let mut row = 0;
+    // A blank-line gap has been seen; emit a `Paragraph` separator before the next
+    // block. Gaps before the first block and after the last one are simply ignored.
+    let mut pending_separator = false;
 
     while row < lines.len() {
-        let Some((base_indent, open_ticks)) = fence_open(lines[row]) else {
-            prose.push_str(lines[row]);
-            prose.push('\n');
+        if lines[row].trim().is_empty() {
+            pending_separator = !pieces.is_empty();
             row += 1;
             continue;
-        };
-
-        // A fence begins — flush the prose gathered before it, then capture the fence
-        // (through its closing line, or to the end if it is never closed), dedenting
-        // each line by the fence's own indentation so its relative layout survives.
-        tokenize_prose(&prose, &mut pieces);
-        prose.clear();
-
-        let mut fence = vec![dedent(lines[row], base_indent)];
-        row += 1;
-        while row < lines.len() {
-            let line = lines[row];
-            fence.push(dedent(line, base_indent));
-            row += 1;
-            if is_closing_fence(line, open_ticks) {
-                break;
-            }
         }
-        pieces.push(Piece::Fence(fence));
+
+        if pending_separator {
+            pieces.push(Piece::Paragraph);
+            pending_separator = false;
+        }
+
+        if let Some((base_indent, open_ticks)) = fence_open(lines[row]) {
+            // Capture the fence verbatim through its closing line (or to the end if it
+            // is never closed), dedented by its own indentation so its relative layout
+            // survives re-indentation to the content column.
+            let mut fence = vec![dedent(lines[row], base_indent)];
+            row += 1;
+            while row < lines.len() {
+                let line = lines[row];
+                fence.push(dedent(line, base_indent));
+                row += 1;
+                if is_closing_fence(line, open_ticks) {
+                    break;
+                }
+            }
+            pieces.push(Piece::Fence(fence));
+        } else {
+            // A prose paragraph: consecutive non-blank, non-fence lines. Joined with
+            // `\n` (word separators) and tokenized into words, so it reflows freely.
+            let mut paragraph = String::new();
+            while row < lines.len()
+                && !lines[row].trim().is_empty()
+                && fence_open(lines[row]).is_none()
+            {
+                if !paragraph.is_empty() {
+                    paragraph.push('\n');
+                }
+                paragraph.push_str(lines[row]);
+                row += 1;
+            }
+            tokenize_prose_words(&paragraph, &mut pieces);
+        }
     }
 
-    tokenize_prose(&prose, &mut pieces);
     pieces
 }
 
-/// Tokenizes a run of prose into `Word`/`Paragraph` pieces, keeping each LaTeX blob
-/// whole (its internal whitespace and newlines are not word/paragraph separators).
-fn tokenize_prose(content: &str, pieces: &mut Vec<Piece>) {
+/// Splits one prose paragraph (which contains no blank lines) into `Word` pieces,
+/// keeping each LaTeX blob whole so its internal whitespace and newlines do not split
+/// it — a multi-line blob thus yields a word containing `\n`, which the caller uses to
+/// detect hand-laid-out content and leave the whole value unchanged.
+fn tokenize_prose_words(content: &str, pieces: &mut Vec<Piece>) {
     let chars: Vec<char> = content.chars().collect();
     let count = chars.len();
     let mut index = 0;
 
     while index < count {
         if chars[index].is_whitespace() {
-            let mut newlines = 0;
-            while index < count && chars[index].is_whitespace() {
-                if chars[index] == '\n' {
-                    newlines += 1;
-                }
-                index += 1;
-            }
-            if newlines >= 2 {
-                pieces.push(Piece::Paragraph);
-            }
+            index += 1;
             continue;
         }
 
@@ -797,6 +817,19 @@ mod tests {
         // `$$…$$` and `\[…\]` display-math blocks must be left untouched.
         let source = "[\\foo]\nDescribes: x\nDocumented:\n. called: \"family indexed by $I?$\"\n. written: \"\\{A?_i\\}_{i \\in I?}\"\n. description: \"A family of sets is a function $A$ with domain $I$. When $A$ is\n                a family over $I$ one writes $\\{A_i\\}_{i \\in I}$ and $A_i$ for\n                $A(i)$.\n                $$\n                  \\int f(x) \\: dx\n                $$\n                Some more text\n                \\[\n                  \\int f(x) \\: dx\n                \\]\"\nId: \"a2451abb-cfc3-4655-a641-ff6826592e7d\"\n";
         assert_eq!(format_source(source, 100), None);
+    }
+
+    #[test]
+    fn reflows_prose_paragraphs_around_a_fence_keeping_one_blank_line_on_each_side() {
+        // A `Text:` value with prose paragraphs before and after a fence: every prose
+        // paragraph reflows to the margin, the fence passes through verbatim, and each
+        // blank-line separator collapses to exactly one blank line (no stray indent
+        // line before the fence, no lost blank line after it).
+        let source = "Text: \"The Describes: construct is used to specify an abstract concept, called a\n       type in other languages. To start, we specify that a set is an type.\n       We'll expand on it as we continue.\n\n       Here is the minimal content needed to define an abstract concept in Mathlingua.\n\n       ```mlg\n       [\\set]\n       Describes: X\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n\n       The `\\set` specifies the name used to identify this type.  The `Describes:`\n       construct is used to define abstract concepts, i.e. types.\"\nId: \"e798d1a3-1029-44f3-8b92-d794cbb6596c\"\n";
+        let expected = "Text: \"The Describes: construct is used to specify an abstract concept, called a\n       type in other languages. To start, we specify that a set is an type.\n       We'll expand on it as we continue.\n\n       Here is the minimal content needed to define an abstract concept in\n       Mathlingua.\n\n       ```mlg\n       [\\set]\n       Describes: X\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n\n       The `\\set` specifies the name used to identify this type. The\n       `Describes:` construct is used to define abstract concepts, i.e. types.\"\nId: \"e798d1a3-1029-44f3-8b92-d794cbb6596c\"\n";
+        assert_eq!(format_source(source, 80).as_deref(), Some(expected));
+        // Idempotent.
+        assert_eq!(format_source(expected, 80), None);
     }
 
     #[test]

@@ -180,11 +180,12 @@ and every field is required so the whole configuration is visible in one place:
   "name": "",
   "version": "0",
   "margin": 80,
-  "formatOnCheck": true
+  "formatOnCheck": true,
+  "outputDir": "docs"
 }
 ```
 
-Keys are camelCase. `CONFIG_FIELDS` lists these four fields in the order
+Keys are camelCase. `CONFIG_FIELDS` lists these five fields in the order
 `mlg init` writes them. Validation requires every one to be present:
 
 - `name` and `version` must be strings.
@@ -192,12 +193,17 @@ Keys are camelCase. `CONFIG_FIELDS` lists these four fields in the order
   integer.
 - `formatOnCheck` — whether `mlg check` formats the collection before checking
   it — must be a boolean.
+- `outputDir` — the directory `mlg export` builds into and `mlg clean` removes —
+  must be a non-empty relative path that stays within the collection root (not
+  absolute and no `..`), so those destructive commands cannot escape the
+  collection.
 
 There are no implicit defaults in a valid config: a missing field is a `mlg check`
-error rather than a silent fallback. The accessors `Config::margin` and
-`Config::format_on_check` still fall back to `DEFAULT_MARGIN` (80) and
-`DEFAULT_FORMAT_ON_CHECK` (`true`), but only so that other commands keep running
-on an already-flagged partial config; `mlg check` is what enforces presence.
+error rather than a silent fallback. The accessors `Config::margin`,
+`Config::format_on_check`, and `Config::output_dir` still fall back to
+`DEFAULT_MARGIN` (80), `DEFAULT_FORMAT_ON_CHECK` (`true`), and `DEFAULT_OUTPUT_DIR`
+(`docs`), but only so that other commands keep running on an already-flagged
+partial config; `mlg check` is what enforces presence.
 Extra fields are accepted for forward compatibility, with one exception:
 `margin` was formerly named `print_margin`, and a config still carrying the old
 key is rejected with a message naming the new one (which also stands in for the

@@ -23,13 +23,7 @@ pub const DEFAULT_OUTPUT_DIR: &str = "docs";
 /// defaults, so that the whole configuration is visible and editable in one
 /// place. `mlg check` reports any of these that is absent, and `mlg init` fills
 /// them in with their defaults.
-pub const CONFIG_FIELDS: [&str; 5] = [
-    "name",
-    "version",
-    "margin",
-    "formatOnCheck",
-    "outputDir",
-];
+pub const CONFIG_FIELDS: [&str; 5] = ["name", "version", "margin", "formatOnCheck", "outputDir"];
 
 /// The former name of the `margin` field, still recognized so that a collection
 /// carrying it is told to rename rather than silently losing its setting.

@@ -305,7 +305,7 @@ mod tests {
                 .filter_map(Event::as_message)
                 .any(|message| message.message
                     == format!(
-                        "Left {CONFIG_FILE} unchanged; it is missing fields \"margin\" and \"formatOnCheck\""
+                        "Left {CONFIG_FILE} unchanged; it is missing fields \"margin\", \"formatOnCheck\" and \"outputDir\""
                     )),
             "the missing fields must be reported: {:#?}",
             event_log.events()
@@ -364,7 +364,11 @@ mod tests {
             crate::backend::config::config_object("{\"name\": \"a\", \"version\": \"1\"}").unwrap();
         assert_eq!(
             missing_config_fields(&object),
-            vec!["margin".to_string(), "formatOnCheck".to_string()]
+            vec![
+                "margin".to_string(),
+                "formatOnCheck".to_string(),
+                "outputDir".to_string(),
+            ]
         );
     }
 

@@ -851,6 +851,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
                 "mlg.json is missing required field \"version\"",
                 "mlg.json is missing required field \"margin\"",
                 "mlg.json is missing required field \"formatOnCheck\"",
+                "mlg.json is missing required field \"outputDir\"",
             ]
         );
         assert!(event_log.has_errors());
@@ -1041,7 +1042,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         let root = temp_dir.path().join("repo");
         let file = unformatted_collection(
             &root,
-            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": false}"#,
+            r#"{"name": "a", "version": "1", "margin": 80, "formatOnCheck": false, "outputDir": "docs"}"#,
         );
 
         let mut event_log = EventLog::new();

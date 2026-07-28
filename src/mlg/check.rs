@@ -2234,6 +2234,69 @@ then:
     }
 
     #[test]
+    fn check_requires_defines_to_state_its_type() {
+        // A `Defines:` value must state the type it defines — either `... is <type>`
+        // or a top-level `\ty@value` build. A bare `X := {…}` is rejected even though
+        // the `member_of` capability would let the collection literal infer `\set`.
+        let set = "[\\set]\nDescribes: X\nRequires:\n. capability: x_ \"in\" X :-> \\\\abstract\nEnables:\n. from: Y ::= {y__ : ...}\n  capability: x_ \"in\" X :-> x_ member_of Y\nDocumented:\n. called: \"set\"\n\n";
+
+        let accepted = [
+            // Explicit `is`.
+            r#"X := {(a_, b_) : a_ "in" A; b_ "in" B} is \set"#,
+            // Top-level build (sugar for the `is`).
+            r#"X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}"#,
+        ];
+        for defines in accepted {
+            let temp_dir = TestDir::new();
+            let file = temp_dir.path().join("cross.mlg");
+            write_mlg_fixture(
+                &file,
+                &format!(
+                    "{set}[A \\.set.cross./ B]\nDefines: {defines}\nwhen: A, B is \\set\nDocumented:\n. called: \"cross\"\n"
+                ),
+            )
+            .unwrap();
+            let mut event_log = EventLog::new();
+            check_in(
+                temp_dir.path(),
+                &[PathBuf::from("cross.mlg")],
+                &mut event_log,
+            );
+            assert!(
+                !event_log.has_errors(),
+                "expected `{defines}` to check, got: {:#?}",
+                user_events(&event_log)
+            );
+        }
+
+        // A bare definition states no type and is rejected.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("cross.mlg");
+        write_mlg_fixture(
+            &file,
+            &format!(
+                "{set}[A \\.set.cross./ B]\nDefines: X := {{(a_, b_) : a_ \"in\" A; b_ \"in\" B}}\nwhen: A, B is \\set\nDocumented:\n. called: \"cross\"\n"
+            ),
+        )
+        .unwrap();
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("cross.mlg")],
+            &mut event_log,
+        );
+        assert!(
+            event_log.events().iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.level == Level::Error && message.message.contains("must state its type")
+                })
+            }),
+            "expected a bare `Defines:` to be rejected, got: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
     fn check_accepts_command_build_literals() {
         // `\cmd@<literal>` builds a value of the command's type inline. Here a set is
         // built from a collection literal and used where a `\set` is expected.

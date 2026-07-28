@@ -2098,6 +2098,28 @@ fn validate_defines_target_symbol_specifications(
         locator,
         event_log,
     );
+
+    // The `Defines:` value is assigned but states no type — a bare `X := {…}` with no
+    // `is` and no top-level `\ty@value` build. Report that precisely (and mark the
+    // targets covered so the generic "missing definition" message does not also fire).
+    if group.defines.argument.definition.is_some()
+        && !declaration_states_type(&group.defines.argument)
+    {
+        for symbol in declaration_target_symbols(&group.defines.argument) {
+            if covered.insert(symbol.clone()) {
+                emit_error(
+                    event_log,
+                    path,
+                    locator.locate_symbol(&symbol),
+                    format!(
+                        "`Defines:` target `{symbol}` must state its type: use `... is <type>` \
+                         or a top-level `\\...@...` build (e.g. `\\set@{{...}}`)"
+                    ),
+                );
+            }
+        }
+    }
+
     let symbols = declaration_target_symbols(&group.defines.argument);
     validate_defines_target_symbol_bindings(&symbols, &covered, path, locator, event_log);
 }
@@ -2385,10 +2407,29 @@ fn collect_declaration_statement_covered_symbols(
     statement: &DeclarationStatement,
     covered: &mut BTreeSet<String>,
 ) {
-    if statement.relation.is_none() {
+    // A definition covers (specifies the type of) its target subject only when it
+    // states that type explicitly: an `is`/`"op"` relation, or a top-level
+    // `\ty@value` build (whose type is `\ty`). A bare definition — `X := {…}` with no
+    // relation and no top-level build — states no type, so it leaves the subject
+    // uncovered even when a type could otherwise be inferred (e.g. a collection
+    // literal that is provably a set).
+    if !declaration_states_type(statement) {
         return;
     }
     collect_is_subject_covered_symbols(&statement.subject, covered);
+}
+
+/// Whether a definition explicitly states the type of its subject: via an `is`/spec
+/// relation, or a top-level `\ty@value` build.
+fn declaration_states_type(statement: &DeclarationStatement) -> bool {
+    statement.relation.is_some()
+        || matches!(
+            statement
+                .definition
+                .as_ref()
+                .map(|definition| &definition.kind),
+            Some(ExpressionKind::Build { .. })
+        )
 }
 
 fn collect_is_subject_covered_symbols(subject: &IsSubject, covered: &mut BTreeSet<String>) {
@@ -3191,7 +3232,9 @@ fn reject_specification_clause(
         Clause::Declaration(statement) => {
             let message = match &statement.relation {
                 Some(DeclarationRelation::Is(_)) => IS_MESSAGE,
-                Some(DeclarationRelation::InfixSpec { spec, .. }) if !spec.predicate => INFIX_MESSAGE,
+                Some(DeclarationRelation::InfixSpec { spec, .. }) if !spec.predicate => {
+                    INFIX_MESSAGE
+                }
                 _ => return,
             };
             (message, primary_subject_key(&statement.subject))
@@ -3964,7 +4007,9 @@ fn check_declaration_definition(
             Some(DeclarationRelation::Is(ty)) => Some(ty),
             _ => None,
         };
-        check_mapping_expression(definition, expected, context, path, locator, registry, event_log);
+        check_mapping_expression(
+            definition, expected, context, path, locator, registry, event_log,
+        );
     } else {
         check_expression(definition, context, path, locator, registry, event_log);
     }
@@ -4133,7 +4178,11 @@ fn declare_inferred_parameters_in_expression(
                 expression, context, path, locator, registry, event_log,
             );
         }
-        ExpressionKind::Build { value: expression, ty, .. } => {
+        ExpressionKind::Build {
+            value: expression,
+            ty,
+            ..
+        } => {
             declare_inferred_parameters_in_expression(
                 expression, context, path, locator, registry, event_log,
             );
@@ -4328,7 +4377,9 @@ fn register_expression_collection_literal(expression: &Expression, context: &mut
         ExpressionKind::Set(set) => {
             context.add_collection_literal(key_for_expression(expression), set.clone());
         }
-        ExpressionKind::Build { value: expression, .. } => {
+        ExpressionKind::Build {
+            value: expression, ..
+        } => {
             if let ExpressionKind::Set(set) = &expression.kind {
                 context.add_collection_literal(key_for_expression(expression), set.clone());
             }
@@ -4338,7 +4389,10 @@ fn register_expression_collection_literal(expression: &Expression, context: &mut
 }
 
 fn cast_expression_set_literal(expression: &Expression) -> Option<&SetExpression> {
-    let ExpressionKind::Build { value: expression, .. } = &expression.kind else {
+    let ExpressionKind::Build {
+        value: expression, ..
+    } = &expression.kind
+    else {
         return None;
     };
     match &expression.kind {
@@ -4638,8 +4692,8 @@ fn check_mapping_expression(
 
     // Peel `(...)`/labels off the parameter binder.
     let mut binder = lhs.as_ref();
-    while let ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } =
-        &binder.kind
+    while let ExpressionKind::Grouped { expression, .. }
+    | ExpressionKind::Labeled { expression, .. } = &binder.kind
     {
         binder = expression;
     }
@@ -4649,8 +4703,11 @@ fn check_mapping_expression(
     {
         ExpressionKind::IsType { subject, ty } => {
             check_type_expression(ty, context, path, locator, registry, event_log);
-            let spec = key_for_type_expression(ty)
-                .map(|(ty_key, signature)| FunctionTypeFactSpec::Is { ty: ty_key, signature });
+            let spec =
+                key_for_type_expression(ty).map(|(ty_key, signature)| FunctionTypeFactSpec::Is {
+                    ty: ty_key,
+                    signature,
+                });
             (mapping_parameter_name(subject), spec)
         }
         ExpressionKind::SpecStatement(statement) => (
@@ -4674,7 +4731,9 @@ fn check_mapping_expression(
                 }),
             )
         }
-        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => (Some(name.clone()), None),
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => {
+            (Some(name.clone()), None)
+        }
         _ => (None, None),
     };
 
@@ -5020,7 +5079,9 @@ fn check_expression(
         ExpressionKind::Build { ty, value, hard } => {
             check_expression(value, context, path, locator, registry, event_log);
             check_type_expression(ty, context, path, locator, registry, event_log);
-            check_build_expression(value, ty, *hard, context, path, locator, registry, event_log);
+            check_build_expression(
+                value, ty, *hard, context, path, locator, registry, event_log,
+            );
         }
     }
 }
@@ -5057,7 +5118,10 @@ fn check_build_expression(
         event_log,
         path,
         cast_expression_position(value, context, locator),
-        format!("Could not build `{}`", format_build_expression(ty, value, hard)),
+        format!(
+            "Could not build `{}`",
+            format_build_expression(ty, value, hard)
+        ),
     );
 }
 
@@ -6138,7 +6202,9 @@ fn effective_key_for_expression_inner(
         } => {
             effective_key_for_binary_expression(left, operator, right, context, registry, resolving)
         }
-        ExpressionKind::Build { value: expression, .. } => Some(effective_key_for_expression_inner(
+        ExpressionKind::Build {
+            value: expression, ..
+        } => Some(effective_key_for_expression_inner(
             expression, context, registry, resolving,
         )),
         _ => None,
@@ -7214,9 +7280,7 @@ fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<Str
         }
         ExpressionKind::SpecLiteral(literal) => match &literal.form {
             SpecLiteralForm::Is(ty) => collect_defined_type_expression_names(ty, names),
-            SpecLiteralForm::Spec { target, .. } => {
-                collect_defined_expression_names(target, names)
-            }
+            SpecLiteralForm::Spec { target, .. } => collect_defined_expression_names(target, names),
         },
         ExpressionKind::Satisfies { subject, spec } => {
             collect_defined_expression_names(subject, names);
@@ -9455,8 +9519,7 @@ fn reduce_spec_fact(
                 // `x_ "in" A :-> x_ "in" B`: the conclusion is a spec on the bound
                 // placeholder. Substitution then rewrites the placeholder to the
                 // triggering fact's subject (and the left target to its target).
-                let Some(subject) = placeholder_pattern_name(&target_alias.placeholder_form)
-                else {
+                let Some(subject) = placeholder_pattern_name(&target_alias.placeholder_form) else {
                     continue;
                 };
                 let next = TypeFact::Spec {
@@ -10423,7 +10486,9 @@ fn assume_fact_expression(
             check_type_expression(ty, context, path, locator, registry, event_log);
             declare_names_from_expression(value, context);
             register_expression_collection_literal(value, context);
-            check_build_expression(value, ty, *hard, context, path, locator, registry, event_log);
+            check_build_expression(
+                value, ty, *hard, context, path, locator, registry, event_log,
+            );
         }
         ExpressionKind::SpecStatement(statement) => {
             check_name(&statement.name, context, path, locator, event_log);
@@ -10849,7 +10914,9 @@ fn substitute_expression(
                 })
                 .collect(),
         ),
-        ExpressionKind::Set(set) => ExpressionKind::Set(substitute_set_expression(set, substitutions)),
+        ExpressionKind::Set(set) => {
+            ExpressionKind::Set(substitute_set_expression(set, substitutions))
+        }
         ExpressionKind::Grouped {
             expression,
             dot_delimited,
@@ -11019,11 +11086,12 @@ fn substitute_type_expression(
 ) -> TypeExpression {
     match ty {
         TypeExpression::Parameter { span, name } => match substitutions.get(name) {
-            Some(replacement) => expression_as_type_expression(replacement)
-                .unwrap_or_else(|| TypeExpression::Parameter {
+            Some(replacement) => expression_as_type_expression(replacement).unwrap_or_else(|| {
+                TypeExpression::Parameter {
                     span: *span,
                     name: name.clone(),
-                }),
+                }
+            }),
             None => ty.clone(),
         },
         TypeExpression::Command(command) => {
@@ -11612,7 +11680,11 @@ fn fact_from_expression(expression: &Expression) -> Option<TypeFact> {
             key_for_expression(subject),
             command,
         )),
-        ExpressionKind::Build { value: expression, ty, .. } => fact_from_type_assertion(expression, ty),
+        ExpressionKind::Build {
+            value: expression,
+            ty,
+            ..
+        } => fact_from_type_assertion(expression, ty),
         _ => None,
     }
 }
@@ -11700,9 +11772,11 @@ fn fact_from_expression_in_context(
                 &active_command,
             ))
         }
-        ExpressionKind::Build { value: expression, ty, .. } => {
-            fact_from_type_assertion_in_context(expression, ty, context)
-        }
+        ExpressionKind::Build {
+            value: expression,
+            ty,
+            ..
+        } => fact_from_type_assertion_in_context(expression, ty, context),
         _ => None,
     }
 }
@@ -12258,7 +12332,11 @@ fn key_for_expression(expression: &Expression) -> String {
             key_for_expression(spec)
         ),
         ExpressionKind::Mapping { lhs, rhs } => {
-            format!("{} |-> {}", key_for_expression(lhs), key_for_expression(rhs))
+            format!(
+                "{} |-> {}",
+                key_for_expression(lhs),
+                key_for_expression(rhs)
+            )
         }
         ExpressionKind::MemberOf {
             subject,

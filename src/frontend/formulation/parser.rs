@@ -3655,6 +3655,21 @@ mod tests {
     }
 
     #[test]
+    fn parses_build_with_semicolon_separated_set_specs() {
+        // A set builder reached through the grammar (here as a `\ty@…` build value)
+        // accepts `;` spec separators just like a standalone `{…}` set does.
+        let expression = parse_expression(r#"\set@{(a_, b_) : a_ "in" A; b_ "in" B}"#)
+            .expect("expected build with `;`-separated set specs");
+        match expression.kind {
+            ExpressionKind::Build { value, .. } => match value.kind {
+                ExpressionKind::Set(set) => assert_eq!(set.specs.len(), 2),
+                other => panic!("expected set value, got {other:?}"),
+            },
+            other => panic!("expected build expression, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn parses_set_expressions_with_introduced_targets_and_definition_predicates() {
         let expression = parse_expression(
             r#"{z_ ::= (a_, b_) : a_ "in" A; b_ "in" B | z_ := \ordered.pair:of{a_}:and{b_}}"#,

@@ -483,6 +483,22 @@ ExpressionList: Vec<ast::Expression> = {
     },
 };
 
+// Set-comprehension specifications, separated by `,` or `;` interchangeably (the
+// hand-written `split_set_specs` treats them the same). Kept apart from
+// `ExpressionList` so only set builders accept `;` as a separator.
+SetSpecSeparator: () = {
+    "," => (),
+    ";" => (),
+};
+
+SetSpecList: Vec<ast::Expression> = {
+    <expression:MappingExpression> => vec![expression],
+    <mut expressions:SetSpecList> SetSpecSeparator <expression:MappingExpression> => {
+        expressions.push(expression);
+        expressions
+    },
+};
+
 TupleExpressionElementList: Vec<TupleExpressionElement> = {
     <element:TupleExpressionElement> => vec![element],
     <mut elements:TupleExpressionElementList> "," <element:TupleExpressionElement> => {
@@ -774,7 +790,7 @@ SetExpression: ast::Expression = {
             predicate: None,
         }),
     ),
-    <l:@L> "{" <target:SetTarget> ":" <specs:ExpressionList> <predicate:("|" <SpecOrPredicateExpression>)?> "}" <r:@R> => ast::Expression::new(
+    <l:@L> "{" <target:SetTarget> ":" <specs:SetSpecList> <predicate:("|" <SpecOrPredicateExpression>)?> "}" <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::Set(ast::SetExpression {
             span: Span::new(l, r),

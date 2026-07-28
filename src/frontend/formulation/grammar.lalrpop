@@ -76,6 +76,7 @@ extern {
         "|" => Token::Pipe,
         "$" => Token::Dollar,
         "?" => Token::Question,
+        "@" => Token::At,
     }
 }
 
@@ -519,7 +520,7 @@ FunctionNamedExpressionElement: ast::FunctionNamedExpressionElement = {
 };
 
 GroupedExpression: ast::Expression = {
-    <l:@L> "(" <expression:SpecOrPredicateExpression> ")" <r:@R> => ast::Expression::new(
+    <l:@L> "(" <expression:MappingExpression> ")" <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::Grouped {
             expression: Box::new(expression),
@@ -829,6 +830,13 @@ PrimaryExpression: ast::Expression = {
     <l:@L> <subset:SubsetNameCall> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::SubsetCall(subset),
+    ),
+    <l:@L> <command:CommandExpression> "@" <value:PrimaryExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Build {
+            ty: ast::TypeExpression::Command(command),
+            value: Box::new(value),
+        },
     ),
     <l:@L> <command:CommandExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),

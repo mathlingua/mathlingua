@@ -458,6 +458,13 @@ pub enum ExpressionKind {
         ty: TypeExpression,
         hard: bool,
     },
+    /// `\cmd@<value>` — builds a value of type `\cmd` from a literal, consulting only
+    /// the command's `Describes:` / `Enables:from:` (never `\\coercion`). Distinct
+    /// from `Cast`, which follows coercion.
+    Build {
+        ty: TypeExpression,
+        value: Box<Expression>,
+    },
     MemberOf {
         subject: Box<Expression>,
         collection: Box<Expression>,

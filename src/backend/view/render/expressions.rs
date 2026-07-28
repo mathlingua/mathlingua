@@ -130,7 +130,10 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
         ),
         ExpressionKind::SpecLiteral(literal) => match &literal.form {
             SpecLiteralForm::Is(ty) => {
-                format!("? \\textrm{{ is }} {}", render_type_expression(ty, registry))
+                format!(
+                    "? \\textrm{{ is }} {}",
+                    render_type_expression(ty, registry)
+                )
             }
             SpecLiteralForm::Spec { operator, target } => format!(
                 "? {} {}",
@@ -216,6 +219,11 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             render_expression(expression, registry),
             if *hard { "as!" } else { "as" },
             render_type_expression(ty, registry)
+        ),
+        ExpressionKind::Build { ty, value } => format!(
+            "{}@{}",
+            render_type_expression(ty, registry),
+            render_expression(value, registry)
         ),
     }
 }

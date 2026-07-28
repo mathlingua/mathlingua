@@ -205,6 +205,7 @@ fn token_literal(token: &Token) -> &'static str {
         Token::Pipe => "|",
         Token::Dollar => "$",
         Token::Question => "?",
+        Token::At => "@",
         Token::Name(_)
         | Token::Placeholder(_)
         | Token::MagneticPlaceholder(_)
@@ -1482,6 +1483,20 @@ pub fn parse_declaration_statement(
         None => (None, definition),
     };
 
+    // `as`/`as!` cast an existing value; they must not sit at the top level of a
+    // declaration, which is where a symbol is introduced (use `is`/`is!` for the
+    // declared type, or let it be inferred). A cast nested inside the value
+    // expression — e.g. `X := (\pi as \real) + 1` — is fine, since it is no longer at
+    // the top level.
+    if let Some(definition) = &definition
+        && matches!(definition.kind, ExpressionKind::Cast { .. })
+    {
+        return Err(ParseError::custom(
+            "`as`/`as!` cannot be used where a symbol is introduced; use `is`/`is!` for the \
+             declared type (or omit it to infer), and keep any cast nested inside the expression",
+        ));
+    }
+
     validate_declaration_expansion(&subject, expansion.as_ref())?;
 
     Ok(DeclarationStatement {
@@ -2155,8 +2170,8 @@ enum TokenEdit {
     Skip,
 }
 
-/// Desugars two command-argument shorthands at the token level, so the grammar
-/// sees the explicit forms (spans stay valid — synthetic tokens reuse real offsets):
+/// Desugars three command shorthands at the token level, so the grammar sees the
+/// explicit forms (spans stay valid — synthetic tokens reuse real offsets):
 ///
 /// - Collection literal: `\foo{x_ : ...}` → `\foo{{x_ : ...}}`. A `{` that opens a
 ///   command-argument group (previous token is a `Name` or `}`) whose content is a
@@ -2165,6 +2180,9 @@ enum TokenEdit {
 /// - Mapping literal: `\foo[lhs]{rhs}` → `\foo{(lhs) |-> rhs}`. A `[` after a `Name`
 ///   (a command chain) whose matching `]` is immediately followed by `{` is that
 ///   sugar (no other construct has this shape).
+/// - Build function literal: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) |-> rhs)`. Same shape
+///   as the mapping literal but after the `@` build marker, so the literal is grouped
+///   in parens (a build argument) rather than braces (a command argument).
 ///
 /// Standalone sets, `A = {x_ : ...}`, ordinary `{a, b}` lists, already-explicit
 /// forms, and `X[i]` subset calls are all left untouched.
@@ -2232,6 +2250,26 @@ fn desugar_command_argument_sugar(input: &str) -> Vec<Spanned<Token, usize, Lexi
                 edits[index] = TokenEdit::Replace(vec![Token::LBrace, Token::LParen]);
                 edits[close] = TokenEdit::Replace(vec![Token::RParen, Token::MapsTo]);
                 edits[close + 1] = TokenEdit::Skip; // drop the `{` after `]`
+                changed = true;
+            }
+            // Build function-literal sugar: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) |-> rhs)`.
+            // The `[` follows the `@` build marker (rather than a command chain), and
+            // the whole literal is grouped in parens rather than braces.
+            Token::LBracket
+                if index > 0
+                    && matches!(toks[index - 1].1, Token::At)
+                    && bracket_match[index] != usize::MAX
+                    && bracket_match[index] + 1 < count
+                    && matches!(toks[bracket_match[index] + 1].1, Token::LBrace)
+                    && brace_match[bracket_match[index] + 1] != usize::MAX =>
+            {
+                let close = bracket_match[index]; // `]`
+                let brace_open = close + 1; // `{`
+                let brace_close = brace_match[brace_open]; // `}`
+                edits[index] = TokenEdit::Replace(vec![Token::LParen, Token::LParen]);
+                edits[close] = TokenEdit::Replace(vec![Token::RParen, Token::MapsTo]);
+                edits[brace_open] = TokenEdit::Skip; // drop the `{` after `]`
+                edits[brace_close] = TokenEdit::Replace(vec![Token::RParen]);
                 changed = true;
             }
             _ => {}
@@ -3256,7 +3294,8 @@ mod tests {
         let ExpressionKind::Command(explicit_cmd) = &explicit.kind else {
             panic!("expected a command, got {:?}", explicit.kind);
         };
-        let ExpressionKind::Set(sugared_body) = &sugared_cmd.head_args[0].expressions[0].kind else {
+        let ExpressionKind::Set(sugared_body) = &sugared_cmd.head_args[0].expressions[0].kind
+        else {
             panic!("expected a Set argument");
         };
         assert!(matches!(
@@ -3378,10 +3417,7 @@ mod tests {
             panic!("expected Satisfies, got {:?}", satisfies.kind);
         };
         assert!(matches!(subject.kind, ExpressionKind::Name(ref n) if n == "x"));
-        assert!(matches!(
-            spec.kind,
-            ExpressionKind::Grouped { .. }
-        ));
+        assert!(matches!(spec.kind, ExpressionKind::Grouped { .. }));
 
         // `x "in" \reals` — command right-hand side of a spec statement
         let member = parse_expression(r#"x "in" \reals"#).expect("expected spec statement");
@@ -3776,6 +3812,48 @@ mod tests {
                 assert!(matches!(ty, TypeExpression::Command(_)));
             }
             other => panic!("expected hard cast expression, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_command_build_expressions() {
+        // `\cmd@<literal>` builds a value of type `\cmd` from a literal.
+        let tuple = parse_expression(r#"\group@(a, b, c)"#).expect("expected build expression");
+        match tuple.kind {
+            ExpressionKind::Build { ty, value } => {
+                assert!(matches!(ty, TypeExpression::Command(_)));
+                assert!(matches!(value.kind, ExpressionKind::Tuple(_)));
+            }
+            other => panic!("expected build expression, got {other:?}"),
+        }
+
+        // A grouped mapping literal is a valid build argument.
+        let mapping = parse_expression(r#"\function@((x_ is \real) |-> x_^2 + 1)"#)
+            .expect("expected build-with-mapping expression");
+        match mapping.kind {
+            ExpressionKind::Build { value, .. } => {
+                assert!(matches!(value.kind, ExpressionKind::Grouped { .. }));
+            }
+            other => panic!("expected build expression, got {other:?}"),
+        }
+
+        // `@` binds tighter than `as` and `+`: a build is an atom.
+        let nested =
+            parse_expression(r#"\group@(a, b, c) as \monoid"#).expect("expected build then cast");
+        assert!(matches!(nested.kind, ExpressionKind::Cast { .. }));
+
+        // Function-literal sugar: `\cmd@[lhs]{rhs}` == `\cmd@((lhs) |-> rhs)`, i.e. a
+        // build whose value is a grouped mapping literal.
+        let sugar = parse_expression(r#"\function@[x_ is \real]{x_^2 + 1}"#)
+            .expect("expected sugared build expression");
+        match sugar.kind {
+            ExpressionKind::Build { value, .. } => match value.kind {
+                ExpressionKind::Grouped { expression, .. } => {
+                    assert!(matches!(expression.kind, ExpressionKind::Mapping { .. }));
+                }
+                other => panic!("expected grouped mapping value, got {other:?}"),
+            },
+            other => panic!("expected build expression, got {other:?}"),
         }
     }
 
@@ -4579,19 +4657,17 @@ mod tests {
                 if matches!(target.kind, ExpressionKind::Command(_))
         ));
 
-        let cast_collection =
-            parse_ordinary_declaration_statement(r#"B := {x_ : x_ is \real} as \set"#)
-                .expect("expected defined collection cast declaration statement");
-        assert!(cast_collection.relation.is_none());
+        // A top-level `as`/`as!` is rejected in a declaration (symbol-introducing
+        // position); the declared type is stated with `is` instead.
+        parse_ordinary_declaration_statement(r#"B := {x_ : x_ is \real} as \set"#)
+            .expect_err("top-level `as` is not allowed where a symbol is introduced");
+        let coerced_collection =
+            parse_ordinary_declaration_statement(r#"B := {x_ : x_ is \real} is \set"#)
+                .expect("expected `is`-typed collection declaration statement");
         assert!(matches!(
-            cast_collection
-                .definition
-                .as_ref()
-                .map(|expression| &expression.kind),
-            Some(ExpressionKind::Cast { .. })
+            coerced_collection.relation,
+            Some(DeclarationRelation::Is(_))
         ));
-        parse_ordinary_declaration_statement(r#"A is \set@{x_ : x_ is \real}"#)
-            .expect_err("old command-at cast syntax should be rejected");
 
         let composition =
             parse_ordinary_declaration_statement(r#"h(x__) := f(g(x__)) is \function:on{A}:to{C}"#)
@@ -4601,6 +4677,37 @@ mod tests {
             composition.relation,
             Some(DeclarationRelation::Is(TypeExpression::Command(_)))
         ));
+    }
+
+    #[test]
+    fn declarations_forbid_top_level_casts_but_allow_nested_ones() {
+        // `as`/`as!` may only appear in expressions, never at the top level of a
+        // symbol-introducing declaration.
+        parse_ordinary_declaration_statement(r#"X := \pi + 1 as \real"#)
+            .expect_err("top-level `as` must be rejected in a declaration");
+        parse_ordinary_declaration_statement(r#"X := \pi + 1 as! \real"#)
+            .expect_err("top-level `as!` must be rejected in a declaration");
+        // A bare cast with no `:=` is likewise not a declaration subject.
+        parse_ordinary_declaration_statement(r#"X as \foo"#)
+            .expect_err("a bare cast does not introduce a symbol");
+
+        // The declared type is stated with `is`, or inferred, or the cast is nested.
+        let with_is = parse_ordinary_declaration_statement(r#"X := \pi + 1 is \real"#)
+            .expect("`is` states the declared type");
+        assert!(matches!(with_is.relation, Some(DeclarationRelation::Is(_))));
+
+        let inferred = parse_ordinary_declaration_statement(r#"X := \pi + 1"#)
+            .expect("the type may be left to inference");
+        assert!(inferred.relation.is_none());
+        assert!(inferred.definition.is_some());
+
+        let nested = parse_ordinary_declaration_statement(r#"X := (\pi as \real) + 1"#)
+            .expect("a nested cast inside the value is allowed");
+        let nested_kind = nested
+            .definition
+            .as_ref()
+            .map(|expression| &expression.kind);
+        assert!(matches!(nested_kind, Some(ExpressionKind::Binary { .. })));
     }
 
     #[test]

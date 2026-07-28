@@ -202,6 +202,8 @@ pub enum Token {
     Dollar,
     #[token("?")]
     Question,
+    #[token("@")]
+    At,
 }
 
 fn plain_named_operator(lex: &mut logos::Lexer<'_, Token>) -> String {

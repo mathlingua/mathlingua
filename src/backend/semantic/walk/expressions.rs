@@ -131,6 +131,10 @@ pub(in crate::backend::semantic) fn walk_expression(
             walk_expression(expression, visit);
             walk_type_expression(ty, visit);
         }
+        ExpressionKind::Build { ty, value } => {
+            walk_type_expression(ty, visit);
+            walk_expression(value, visit);
+        }
     }
 }
 

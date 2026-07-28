@@ -2220,12 +2220,95 @@ then:
         .unwrap();
 
         let mut event_log = EventLog::new();
-        let result = check_in(temp_dir.path(), &[PathBuf::from("subset.mlg")], &mut event_log);
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("subset.mlg")],
+            &mut event_log,
+        );
 
         assert_eq!(result.files_checked, 1);
         assert_eq!(
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_accepts_command_build_literals() {
+        // `\cmd@<literal>` builds a value of the command's type inline. Here a set is
+        // built from a collection literal and used where a `\set` is expected.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("build.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    Theorem:
+    given: X := \set@{x_ : x_ is \set}
+    then: X is? \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("build.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_an_unbuildable_command_build_literal() {
+        // A build must be establishable by construction; here `n` is an expression, so
+        // `\set@n` cannot build a set and is reported.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("bad-build.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    Theorem:
+    given: n is \\expression
+    then: \set@n is? \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("bad-build.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            event_log.events().iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.level == Level::Error
+                        && message.message.contains("Could not build `\\set@n`")
+                })
+            }),
+            "expected an unbuildable-literal error, got: {:#?}",
+            user_events(&event_log)
         );
     }
 
@@ -5526,7 +5609,7 @@ then:
 
     Theorem:
     given:
-    . A := {x_ : x_ is \real} as \set
+    . A := {x_ : x_ is \real} is \set
     . x "in" A
     then: \needs.real{x}
 
@@ -5538,12 +5621,12 @@ then:
 
     Theorem:
     given:
-    . C := {c_ : c_ is \real} as \set
+    . C := {c_ : c_ is \real} is \set
     . z "in" C
     then: \needs.real{z}
 
     Theorem:
-    given: X := {x_ : x_ is \set} as \set
+    given: X := {x_ : x_ is \set} is \set
     then:
     . forAll: x "in" X
       then: x is? \set
@@ -5898,7 +5981,7 @@ then:
 
     Theorem:
     given:
-    . A := {x_ : x_ satisfies (? is \real)} as \set
+    . A := {x_ : x_ satisfies (? is \real)} is \set
     . y "in" A
     then: \needs.real{y}
     "#,
@@ -6059,7 +6142,7 @@ then:
     . written: "\operatorname{needsSet}(x?)"
 
     Theorem:
-    given: X := {x_ : x_ is \set} as \set
+    given: X := {x_ : x_ is \set} is \set
     then:
     . forAll: x "in" X
       then:
@@ -6114,7 +6197,7 @@ then:
 
     Theorem:
     given:
-    . F := {(p_, q_) : p_ is \\expression, q_ is \set} as \function
+    . F := {(p_, q_) : p_ is \\expression, q_ is \set} is \function
     . a is \\expression
     then: \needs.set{F(a)}
     "#,
@@ -6538,7 +6621,7 @@ then:
     . written: "A? \setminus B?"
 
     Theorem:
-    given: X := {x_ : x_ is \set} as \set
+    given: X := {x_ : x_ is \set} is \set
     then:
     . forAll: x, y "in" X
       then: x \.set.minus./ y is? \set
@@ -6598,7 +6681,7 @@ then:
     . written: "A? \setminus B?"
 
     Theorem:
-    given: X := {x_ : x_ is \set} as \set
+    given: X := {x_ : x_ is \set} is \set
     then:
     . forAll: x, y "in" X
       then: x \.set.minus./ y is? \set

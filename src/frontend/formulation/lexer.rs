@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn reports_invalid_tokens() {
-        let mut lexer = Lexer::new("@");
+        let mut lexer = Lexer::new("€");
 
         let token = lexer.next().expect("expected one token result");
 

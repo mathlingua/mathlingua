@@ -2818,6 +2818,10 @@ fn collect_expression_names(expression: &Expression, names: &mut BTreeSet<String
             collect_expression_names(expression, names);
             collect_type_expression_names(ty, names);
         }
+        ExpressionKind::Build { ty, value } => {
+            collect_type_expression_names(ty, names);
+            collect_expression_names(value, names);
+        }
         ExpressionKind::IsRefinedPredicate { subject, command }
         | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
             collect_expression_names(subject, names);
@@ -5028,6 +5032,11 @@ fn check_expression(
                 expression, ty, *hard, context, path, locator, registry, event_log,
             );
         }
+        ExpressionKind::Build { ty, value } => {
+            check_expression(value, context, path, locator, registry, event_log);
+            check_type_expression(ty, context, path, locator, registry, event_log);
+            check_build_expression(value, ty, context, path, locator, registry, event_log);
+        }
     }
 }
 
@@ -5064,6 +5073,36 @@ fn check_cast_expression(
             "Could not establish cast `{}`",
             format_cast_expression(expression, ty, hard)
         ),
+    );
+}
+
+/// Checks `\cmd@value` — a build. Unlike a cast, a build establishes its type only
+/// through construction (`Describes:` / `Enables:from:`), never `\\coercion`, so it
+/// proves the required fact with the viewable rules disabled.
+fn check_build_expression(
+    value: &Expression,
+    ty: &TypeExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    if matches!(value.kind, ExpressionKind::Set(_)) {
+        return;
+    }
+    let Some(required) = fact_from_type_assertion_in_context(value, ty, context) else {
+        return;
+    };
+    if prove_fact_without_viewable(&required, context, registry) {
+        return;
+    }
+
+    emit_error(
+        event_log,
+        path,
+        cast_expression_position(value, context, locator),
+        format!("Could not build `{}`", format_build_expression(ty, value)),
     );
 }
 
@@ -5199,6 +5238,15 @@ fn add_cast_expression_facts(expression: &Expression, context: &mut TypeContext)
             add_cast_type_expression_facts(ty, context);
             register_expression_collection_literal(expression, context);
             if let Some(fact) = fact_from_type_assertion_in_context(expression, ty, context) {
+                let normalized = context.normalize_fact(&fact);
+                context.add_fact(normalized);
+            }
+        }
+        ExpressionKind::Build { ty, value } => {
+            add_cast_expression_facts(value, context);
+            add_cast_type_expression_facts(ty, context);
+            register_expression_collection_literal(value, context);
+            if let Some(fact) = fact_from_type_assertion_in_context(value, ty, context) {
                 let normalized = context.normalize_fact(&fact);
                 context.add_fact(normalized);
             }
@@ -7265,6 +7313,10 @@ fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<Str
         ExpressionKind::Cast { expression, ty, .. } => {
             collect_defined_expression_names(expression, names);
             collect_defined_type_expression_names(ty, names);
+        }
+        ExpressionKind::Build { ty, value } => {
+            collect_defined_type_expression_names(ty, names);
+            collect_defined_expression_names(value, names);
         }
     }
 }
@@ -10730,6 +10782,10 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
             declare_names_from_expression(expression, context);
             declare_names_from_type_expression(ty, context);
         }
+        ExpressionKind::Build { ty, value } => {
+            declare_names_from_type_expression(ty, context);
+            declare_names_from_expression(value, context);
+        }
     }
 }
 
@@ -12338,6 +12394,7 @@ fn key_for_expression(expression: &Expression) -> String {
             ty,
             hard,
         } => format_cast_expression(expression, ty, *hard),
+        ExpressionKind::Build { ty, value } => format_build_expression(ty, value),
     }
 }
 
@@ -12349,6 +12406,16 @@ fn format_cast_expression(expression: &Expression, ty: &TypeExpression, hard: bo
         key_for_type_expression(ty)
             .map(|(key, _)| key)
             .unwrap_or_else(|| key_for_non_command_type_expression(ty))
+    )
+}
+
+fn format_build_expression(ty: &TypeExpression, value: &Expression) -> String {
+    format!(
+        "{}@{}",
+        key_for_type_expression(ty)
+            .map(|(key, _)| key)
+            .unwrap_or_else(|| key_for_non_command_type_expression(ty)),
+        key_for_expression(value)
     )
 }
 

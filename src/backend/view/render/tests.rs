@@ -678,6 +678,33 @@ Documented:
 }
 
 #[test]
+fn written_that_is_a_whole_unbound_conditional_falls_back_to_called() {
+    // The `written:` is a single top-level `@[A, B]{…}` with no fallback: with no
+    // `on`/`to` arguments its variables are unbound, so it is treated as missing and
+    // rendering falls back to `called:`. With the arguments bound it is used.
+    let registry = registry_for(
+        r#"[\function:?on{A}:?to{B}]
+Describes: f(x__)
+Documented:
+. called: "func@[A]{ on $A?$}@[B]{ to $B?$}"
+. written: "@[A, B]{f? : A? \rightarrow B?}"
+"#,
+    );
+
+    // No `A`/`B`: the whole `written:` is missing, so `called:` is used ("func").
+    assert_eq!(
+        render_formulation_latex(r#"\function"#, &registry),
+        Some(r#"\textrm{func}"#.to_string())
+    );
+
+    // With both bound the `written:` renders.
+    assert_eq!(
+        render_formulation_latex(r#"\function:on{X}:to{Y}"#, &registry),
+        Some(r#"f : X \rightarrow Y"#.to_string())
+    );
+}
+
+#[test]
 fn renders_set_builder_specs() {
     let registry = registry_for("");
 
@@ -801,7 +828,6 @@ Documented:
         Some(r#"1 + 2-y \: 1 + 2+y"#.to_string())
     );
 }
-
 
 #[test]
 fn a_composed_card_title_does_not_change_how_the_item_is_named_inline() {

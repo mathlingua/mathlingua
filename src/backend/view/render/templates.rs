@@ -386,14 +386,31 @@ fn selected_conditional_branch<'a>(
     }
 }
 
+/// Whether a `called:`/`written:` template still renders to content for the given
+/// substitutions.
+///
+/// A template that is, at the top level, a single `@[vars]{…}` conditional with no
+/// `:{…}` fallback is treated as **absent** when its variables are unbound — the
+/// block "does not exist", so rendering falls back (`written:` → `called:`). This
+/// only fires when the conditional spans the whole template: a template with any
+/// other content (a prefix, a fallback branch, a second block) always renders.
+pub(super) fn template_is_present(template: &str, substitutions: &HashMap<String, String>) -> bool {
+    let chars = template.trim().chars().collect::<Vec<_>>();
+    let Some(conditional) = parse_template_conditional(&chars, 0) else {
+        return true;
+    };
+    let spans_whole_template = conditional.end == chars.len();
+    let variables_unbound = !conditional
+        .variables
+        .iter()
+        .all(|variable| substitutions.contains_key(variable));
+    !(spans_whole_template && conditional.when_absent.is_none() && variables_unbound)
+}
+
 pub(super) fn template_contains_placeholder(template: &str, name: &str) -> bool {
-    [
-        format!("{name}?"),
-        format!("{name}+?"),
-        format!("{name}-?"),
-    ]
-    .iter()
-    .any(|needle| template.contains(needle.as_str()))
+    [format!("{name}?"), format!("{name}+?"), format!("{name}-?")]
+        .iter()
+        .any(|needle| template.contains(needle.as_str()))
 }
 
 /// The parenthesis handling a placeholder asks for around its substituted value.

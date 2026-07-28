@@ -14,7 +14,7 @@ pub(super) fn render_command_expression(
     };
     let substitutions = command_substitutions(command, render, None, registry);
 
-    let latex = match &render.written {
+    let latex = match render.effective_written(&substitutions) {
         Some(written) => substitute_math_template(written, &substitutions),
         None => render.render_called(&substitutions),
     };
@@ -40,7 +40,7 @@ pub(super) fn render_predicate_command_expression(
     };
     let substitutions = command_substitutions(command, render, None, registry);
 
-    if let Some(written) = &render.written {
+    if let Some(written) = render.effective_written(&substitutions) {
         let includes_subject = render
             .subject_variable
             .as_ref()
@@ -82,7 +82,7 @@ pub(super) fn render_infix_command_expression(
     };
     let substitutions = infix_command_substitutions(left, command, right, render, registry);
 
-    let latex = match &render.written {
+    let latex = match render.effective_written(&substitutions) {
         Some(written) => substitute_math_template(written, &substitutions),
         None => render.render_called(&substitutions),
     };
@@ -107,7 +107,7 @@ pub(super) fn render_infix_spec_expression(
     };
     let substitutions = infix_spec_substitutions(left, spec, right, render, registry);
 
-    let latex = match &render.written {
+    let latex = match render.effective_written(&substitutions) {
         Some(written) => substitute_math_template(written, &substitutions),
         None => render.render_called(&substitutions),
     };
@@ -143,12 +143,10 @@ pub(super) fn command_type_template(
     let render = registry.commands.get(&signature)?;
     let substitutions = command_substitutions(command, render, subject_latex.clone(), registry);
     let written_includes_subject = render
-        .written
-        .as_ref()
+        .effective_written(&substitutions)
         .is_some_and(|written| written_contains_subject_placeholder(written, render));
     let use_written = render
-        .written
-        .as_ref()
+        .effective_written(&substitutions)
         .filter(|_| subject_latex.is_some() || !written_includes_subject);
     let latex = match use_written {
         Some(written) => substitute_math_template(written, &substitutions),

@@ -53,6 +53,19 @@ impl CommandRender {
         }
     }
 
+    /// The `written:` template to use for these substitutions, or `None` when it is
+    /// absent — either not written at all, or effectively missing because it is a
+    /// top-level `@[vars]{…}` conditional with no fallback whose variables are unbound
+    /// (see [`template_is_present`]). Callers fall back to `called:` in that case.
+    pub(super) fn effective_written(
+        &self,
+        substitutions: &HashMap<String, String>,
+    ) -> Option<&str> {
+        self.written
+            .as_deref()
+            .filter(|written| template_is_present(written, substitutions))
+    }
+
     /// The card title for this item.
     ///
     /// An item documented with both a `called:` and a `written:` form is titled
@@ -60,7 +73,7 @@ impl CommandRender {
     /// [`join_title_parts`]). With only one of them the title is just that form,
     /// exactly as it names the item inline.
     pub(super) fn render_title(&self, substitutions: &HashMap<String, String>) -> String {
-        match (&self.called_template, &self.written) {
+        match (&self.called_template, self.effective_written(substitutions)) {
             (Some(called), Some(written)) => join_title_parts(
                 &render_called_template(called, substitutions),
                 &substitute_math_template(written, substitutions),

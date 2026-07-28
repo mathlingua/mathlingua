@@ -2814,11 +2814,7 @@ fn collect_expression_names(expression: &Expression, names: &mut BTreeSet<String
             collect_expression_names(subject, names);
             collect_type_expression_names(ty, names);
         }
-        ExpressionKind::Cast { expression, ty, .. } => {
-            collect_expression_names(expression, names);
-            collect_type_expression_names(ty, names);
-        }
-        ExpressionKind::Build { ty, value } => {
+        ExpressionKind::Build { ty, value, .. } => {
             collect_type_expression_names(ty, names);
             collect_expression_names(value, names);
         }
@@ -4137,7 +4133,7 @@ fn declare_inferred_parameters_in_expression(
                 expression, context, path, locator, registry, event_log,
             );
         }
-        ExpressionKind::Cast { expression, ty, .. } => {
+        ExpressionKind::Build { value: expression, ty, .. } => {
             declare_inferred_parameters_in_expression(
                 expression, context, path, locator, registry, event_log,
             );
@@ -4332,7 +4328,7 @@ fn register_expression_collection_literal(expression: &Expression, context: &mut
         ExpressionKind::Set(set) => {
             context.add_collection_literal(key_for_expression(expression), set.clone());
         }
-        ExpressionKind::Cast { expression, .. } => {
+        ExpressionKind::Build { value: expression, .. } => {
             if let ExpressionKind::Set(set) = &expression.kind {
                 context.add_collection_literal(key_for_expression(expression), set.clone());
             }
@@ -4342,7 +4338,7 @@ fn register_expression_collection_literal(expression: &Expression, context: &mut
 }
 
 fn cast_expression_set_literal(expression: &Expression) -> Option<&SetExpression> {
-    let ExpressionKind::Cast { expression, .. } = &expression.kind else {
+    let ExpressionKind::Build { value: expression, .. } = &expression.kind else {
         return None;
     };
     match &expression.kind {
@@ -5021,67 +5017,19 @@ fn check_expression(
             check_type_expression(ty, context, path, locator, registry, event_log);
             check_function_call_result(subject, ty, context, path, locator, registry, event_log);
         }
-        ExpressionKind::Cast {
-            expression,
-            ty,
-            hard,
-        } => {
-            check_expression(expression, context, path, locator, registry, event_log);
-            check_type_expression(ty, context, path, locator, registry, event_log);
-            check_cast_expression(
-                expression, ty, *hard, context, path, locator, registry, event_log,
-            );
-        }
-        ExpressionKind::Build { ty, value } => {
+        ExpressionKind::Build { ty, value, hard } => {
             check_expression(value, context, path, locator, registry, event_log);
             check_type_expression(ty, context, path, locator, registry, event_log);
-            check_build_expression(value, ty, context, path, locator, registry, event_log);
+            check_build_expression(value, ty, *hard, context, path, locator, registry, event_log);
         }
     }
 }
 
-fn check_cast_expression(
-    expression: &Expression,
-    ty: &TypeExpression,
-    hard: bool,
-    context: &TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    if matches!(expression.kind, ExpressionKind::Set(_)) {
-        return;
-    }
-    let Some(required) = fact_from_type_assertion_in_context(expression, ty, context) else {
-        return;
-    };
-    let succeeds = if hard {
-        prove_fact_allowing_abstraction(&required, context, registry)
-    } else {
-        prove_fact(&required, context, registry)
-    };
-    if succeeds {
-        return;
-    }
-
-    emit_error(
-        event_log,
-        path,
-        cast_expression_position(expression, context, locator),
-        format!(
-            "Could not establish cast `{}`",
-            format_cast_expression(expression, ty, hard)
-        ),
-    );
-}
-
-/// Checks `\cmd@value` — a build. Unlike a cast, a build establishes its type only
-/// through construction (`Describes:` / `Enables:from:`), never `\\coercion`, so it
-/// proves the required fact with the viewable rules disabled.
+/// Checks `\ty@value` / `\ty@!value` — the only cast form.
 fn check_build_expression(
     value: &Expression,
     ty: &TypeExpression,
+    hard: bool,
     context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
@@ -5094,7 +5042,14 @@ fn check_build_expression(
     let Some(required) = fact_from_type_assertion_in_context(value, ty, context) else {
         return;
     };
-    if prove_fact_without_viewable(&required, context, registry) {
+    // The soft build `\ty@value` follows subclassing and `\\coercion`; the hard build
+    // `\ty@!value` additionally follows `\\encoding`.
+    let succeeds = if hard {
+        prove_fact_allowing_abstraction(&required, context, registry)
+    } else {
+        prove_fact(&required, context, registry)
+    };
+    if succeeds {
         return;
     }
 
@@ -5102,7 +5057,7 @@ fn check_build_expression(
         event_log,
         path,
         cast_expression_position(value, context, locator),
-        format!("Could not build `{}`", format_build_expression(ty, value)),
+        format!("Could not build `{}`", format_build_expression(ty, value, hard)),
     );
 }
 
@@ -5233,16 +5188,7 @@ fn add_cast_expression_facts(expression: &Expression, context: &mut TypeContext)
                 add_cast_expression_facts(expression, context);
             }
         }
-        ExpressionKind::Cast { expression, ty, .. } => {
-            add_cast_expression_facts(expression, context);
-            add_cast_type_expression_facts(ty, context);
-            register_expression_collection_literal(expression, context);
-            if let Some(fact) = fact_from_type_assertion_in_context(expression, ty, context) {
-                let normalized = context.normalize_fact(&fact);
-                context.add_fact(normalized);
-            }
-        }
-        ExpressionKind::Build { ty, value } => {
+        ExpressionKind::Build { ty, value, .. } => {
             add_cast_expression_facts(value, context);
             add_cast_type_expression_facts(ty, context);
             register_expression_collection_literal(value, context);
@@ -6192,7 +6138,7 @@ fn effective_key_for_expression_inner(
         } => {
             effective_key_for_binary_expression(left, operator, right, context, registry, resolving)
         }
-        ExpressionKind::Cast { expression, .. } => Some(effective_key_for_expression_inner(
+        ExpressionKind::Build { value: expression, .. } => Some(effective_key_for_expression_inner(
             expression, context, registry, resolving,
         )),
         _ => None,
@@ -7310,11 +7256,7 @@ fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<Str
             collect_defined_expression_names(subject, names);
             collect_defined_type_expression_names(ty, names);
         }
-        ExpressionKind::Cast { expression, ty, .. } => {
-            collect_defined_expression_names(expression, names);
-            collect_defined_type_expression_names(ty, names);
-        }
-        ExpressionKind::Build { ty, value } => {
+        ExpressionKind::Build { ty, value, .. } => {
             collect_defined_type_expression_names(ty, names);
             collect_defined_expression_names(value, names);
         }
@@ -10477,17 +10419,11 @@ fn assume_fact_expression(
             check_type_expression(ty, context, path, locator, registry, event_log);
             declare_names_from_expression(subject, context);
         }
-        ExpressionKind::Cast {
-            expression,
-            ty,
-            hard,
-        } => {
+        ExpressionKind::Build { value, ty, hard } => {
             check_type_expression(ty, context, path, locator, registry, event_log);
-            declare_names_from_expression(expression, context);
-            register_expression_collection_literal(expression, context);
-            check_cast_expression(
-                expression, ty, *hard, context, path, locator, registry, event_log,
-            );
+            declare_names_from_expression(value, context);
+            register_expression_collection_literal(value, context);
+            check_build_expression(value, ty, *hard, context, path, locator, registry, event_log);
         }
         ExpressionKind::SpecStatement(statement) => {
             check_name(&statement.name, context, path, locator, event_log);
@@ -10778,11 +10714,7 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
             declare_names_from_expression(subject, context);
             declare_names_from_type_expression(ty, context);
         }
-        ExpressionKind::Cast { expression, ty, .. } => {
-            declare_names_from_expression(expression, context);
-            declare_names_from_type_expression(ty, context);
-        }
-        ExpressionKind::Build { ty, value } => {
+        ExpressionKind::Build { ty, value, .. } => {
             declare_names_from_type_expression(ty, context);
             declare_names_from_expression(value, context);
         }
@@ -11013,12 +10945,8 @@ fn substitute_expression(
                 ty: substitute_type_expression(ty, substitutions),
             }
         }
-        ExpressionKind::Cast {
-            expression,
-            ty,
-            hard,
-        } => ExpressionKind::Cast {
-            expression: boxed(expression),
+        ExpressionKind::Build { value, ty, hard } => ExpressionKind::Build {
+            value: boxed(value),
             ty: substitute_type_expression(ty, substitutions),
             hard: *hard,
         },
@@ -11484,7 +11412,7 @@ fn facts_from_declaration_statement_in_context(
 
 fn facts_from_declaration_cast_definition(statement: &DeclarationStatement) -> Vec<TypeFact> {
     let Some(Expression {
-        kind: ExpressionKind::Cast { ty, .. },
+        kind: ExpressionKind::Build { ty, .. },
         ..
     }) = &statement.definition
     else {
@@ -11501,7 +11429,7 @@ fn facts_from_declaration_cast_definition_in_context(
     context: &TypeContext,
 ) -> Vec<TypeFact> {
     let Some(Expression {
-        kind: ExpressionKind::Cast { ty, .. },
+        kind: ExpressionKind::Build { ty, .. },
         ..
     }) = &statement.definition
     else {
@@ -11684,7 +11612,7 @@ fn fact_from_expression(expression: &Expression) -> Option<TypeFact> {
             key_for_expression(subject),
             command,
         )),
-        ExpressionKind::Cast { expression, ty, .. } => fact_from_type_assertion(expression, ty),
+        ExpressionKind::Build { value: expression, ty, .. } => fact_from_type_assertion(expression, ty),
         _ => None,
     }
 }
@@ -11772,7 +11700,7 @@ fn fact_from_expression_in_context(
                 &active_command,
             ))
         }
-        ExpressionKind::Cast { expression, ty, .. } => {
+        ExpressionKind::Build { value: expression, ty, .. } => {
             fact_from_type_assertion_in_context(expression, ty, context)
         }
         _ => None,
@@ -12389,32 +12317,17 @@ fn key_for_expression(expression: &Expression) -> String {
                 .map(|(key, _)| key)
                 .unwrap_or_else(|| key_for_non_command_type_expression(ty))
         ),
-        ExpressionKind::Cast {
-            expression,
-            ty,
-            hard,
-        } => format_cast_expression(expression, ty, *hard),
-        ExpressionKind::Build { ty, value } => format_build_expression(ty, value),
+        ExpressionKind::Build { ty, value, hard } => format_build_expression(ty, value, *hard),
     }
 }
 
-fn format_cast_expression(expression: &Expression, ty: &TypeExpression, hard: bool) -> String {
+fn format_build_expression(ty: &TypeExpression, value: &Expression, hard: bool) -> String {
     format!(
-        "{} {} {}",
-        key_for_expression(expression),
-        if hard { "as!" } else { "as" },
-        key_for_type_expression(ty)
-            .map(|(key, _)| key)
-            .unwrap_or_else(|| key_for_non_command_type_expression(ty))
-    )
-}
-
-fn format_build_expression(ty: &TypeExpression, value: &Expression) -> String {
-    format!(
-        "{}@{}",
+        "{}{}{}",
         key_for_type_expression(ty)
             .map(|(key, _)| key)
             .unwrap_or_else(|| key_for_non_command_type_expression(ty)),
+        if hard { "@!" } else { "@" },
         key_for_expression(value)
     )
 }

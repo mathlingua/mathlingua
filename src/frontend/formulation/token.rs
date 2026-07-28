@@ -131,10 +131,6 @@ pub enum Token {
     Is,
     #[token("via")]
     Via,
-    #[token("as!")]
-    AsBang,
-    #[token("as")]
-    As,
     #[token("member_of")]
     MemberOf,
     #[token("satisfies")]
@@ -202,6 +198,8 @@ pub enum Token {
     Dollar,
     #[token("?")]
     Question,
+    #[token("@!")]
+    AtBang,
     #[token("@")]
     At,
 }

@@ -179,8 +179,6 @@ fn token_literal(token: &Token) -> &'static str {
         Token::IsPredicate => "is?",
         Token::Is => "is",
         Token::Via => "via",
-        Token::AsBang => "as!",
-        Token::As => "as",
         Token::MemberOf => "member_of",
         Token::Satisfies => "satisfies",
         Token::MapsTo => "|->",
@@ -206,6 +204,7 @@ fn token_literal(token: &Token) -> &'static str {
         Token::Dollar => "$",
         Token::Question => "?",
         Token::At => "@",
+        Token::AtBang => "@!",
         Token::Name(_)
         | Token::Placeholder(_)
         | Token::MagneticPlaceholder(_)
@@ -1483,20 +1482,6 @@ pub fn parse_declaration_statement(
         None => (None, definition),
     };
 
-    // `as`/`as!` cast an existing value; they must not sit at the top level of a
-    // declaration, which is where a symbol is introduced (use `is`/`is!` for the
-    // declared type, or let it be inferred). A cast nested inside the value
-    // expression — e.g. `X := (\pi as \real) + 1` — is fine, since it is no longer at
-    // the top level.
-    if let Some(definition) = &definition
-        && matches!(definition.kind, ExpressionKind::Cast { .. })
-    {
-        return Err(ParseError::custom(
-            "`as`/`as!` cannot be used where a symbol is introduced; use `is`/`is!` for the \
-             declared type (or omit it to infer), and keep any cast nested inside the expression",
-        ));
-    }
-
     validate_declaration_expansion(&subject, expansion.as_ref())?;
 
     Ok(DeclarationStatement {
@@ -2252,12 +2237,12 @@ fn desugar_command_argument_sugar(input: &str) -> Vec<Spanned<Token, usize, Lexi
                 edits[close + 1] = TokenEdit::Skip; // drop the `{` after `]`
                 changed = true;
             }
-            // Build function-literal sugar: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) |-> rhs)`.
-            // The `[` follows the `@` build marker (rather than a command chain), and
-            // the whole literal is grouped in parens rather than braces.
+            // Build function-literal sugar: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) |-> rhs)`
+            // (and likewise after the hard `@!`). The `[` follows the build marker
+            // (rather than a command chain), and the literal is grouped in parens.
             Token::LBracket
                 if index > 0
-                    && matches!(toks[index - 1].1, Token::At)
+                    && matches!(toks[index - 1].1, Token::At | Token::AtBang)
                     && bracket_match[index] != usize::MAX
                     && bracket_match[index] + 1 < count
                     && matches!(toks[bracket_match[index] + 1].1, Token::LBrace)
@@ -3783,35 +3768,26 @@ mod tests {
     }
 
     #[test]
-    fn parses_cast_expressions() {
-        let normal = parse_expression(r#"{x_ : x_ is \real} as \set"#)
-            .expect("expected ordinary cast expression");
-        let hard = parse_expression(r#"n as! \set"#).expect("expected hard cast expression");
-
-        match normal.kind {
-            ExpressionKind::Cast {
-                expression,
-                ty,
-                hard,
-            } => {
+    fn parses_soft_and_hard_build_casts() {
+        // `\ty@value` (soft) follows coercion; `\ty@!value` (hard) also follows encoding.
+        let soft = parse_expression(r#"\set@{x_ : x_ is \real}"#).expect("expected soft build");
+        match soft.kind {
+            ExpressionKind::Build { ty, value, hard } => {
                 assert!(!hard);
-                assert!(matches!(expression.kind, ExpressionKind::Set(_)));
+                assert!(matches!(value.kind, ExpressionKind::Set(_)));
                 assert!(matches!(ty, TypeExpression::Command(_)));
             }
-            other => panic!("expected cast expression, got {other:?}"),
+            other => panic!("expected soft build, got {other:?}"),
         }
 
+        let hard = parse_expression(r#"\set@!n"#).expect("expected hard build");
         match hard.kind {
-            ExpressionKind::Cast {
-                expression,
-                ty,
-                hard,
-            } => {
+            ExpressionKind::Build { ty, value, hard } => {
                 assert!(hard);
-                assert!(matches!(expression.kind, ExpressionKind::Name(ref name) if name == "n"));
+                assert!(matches!(value.kind, ExpressionKind::Name(ref name) if name == "n"));
                 assert!(matches!(ty, TypeExpression::Command(_)));
             }
-            other => panic!("expected hard cast expression, got {other:?}"),
+            other => panic!("expected hard build, got {other:?}"),
         }
     }
 
@@ -3820,12 +3796,24 @@ mod tests {
         // `\cmd@<literal>` builds a value of type `\cmd` from a literal.
         let tuple = parse_expression(r#"\group@(a, b, c)"#).expect("expected build expression");
         match tuple.kind {
-            ExpressionKind::Build { ty, value } => {
+            ExpressionKind::Build { ty, value, .. } => {
                 assert!(matches!(ty, TypeExpression::Command(_)));
                 assert!(matches!(value.kind, ExpressionKind::Tuple(_)));
             }
             other => panic!("expected build expression, got {other:?}"),
         }
+
+        // The value may be any (parenthesized) expression: `\real@2`, `\real@(...)`.
+        assert!(matches!(
+            parse_expression(r#"\real@2"#).expect("atom build").kind,
+            ExpressionKind::Build { .. }
+        ));
+        assert!(matches!(
+            parse_expression(r#"\real@(a^2 + 2 * \pi + \sin(2))"#)
+                .expect("expression build")
+                .kind,
+            ExpressionKind::Build { .. }
+        ));
 
         // A grouped mapping literal is a valid build argument.
         let mapping = parse_expression(r#"\function@((x_ is \real) |-> x_^2 + 1)"#)
@@ -3837,10 +3825,9 @@ mod tests {
             other => panic!("expected build expression, got {other:?}"),
         }
 
-        // `@` binds tighter than `as` and `+`: a build is an atom.
-        let nested =
-            parse_expression(r#"\group@(a, b, c) as \monoid"#).expect("expected build then cast");
-        assert!(matches!(nested.kind, ExpressionKind::Cast { .. }));
+        // `@` binds tighter than `+`: a build is an atom.
+        let nested = parse_expression(r#"\group@(a, b, c) + 1"#).expect("expected build then add");
+        assert!(matches!(nested.kind, ExpressionKind::Binary { .. }));
 
         // Function-literal sugar: `\cmd@[lhs]{rhs}` == `\cmd@((lhs) |-> rhs)`, i.e. a
         // build whose value is a grouped mapping literal.
@@ -4680,18 +4667,9 @@ mod tests {
     }
 
     #[test]
-    fn declarations_forbid_top_level_casts_but_allow_nested_ones() {
-        // `as`/`as!` may only appear in expressions, never at the top level of a
-        // symbol-introducing declaration.
-        parse_ordinary_declaration_statement(r#"X := \pi + 1 as \real"#)
-            .expect_err("top-level `as` must be rejected in a declaration");
-        parse_ordinary_declaration_statement(r#"X := \pi + 1 as! \real"#)
-            .expect_err("top-level `as!` must be rejected in a declaration");
-        // A bare cast with no `:=` is likewise not a declaration subject.
-        parse_ordinary_declaration_statement(r#"X as \foo"#)
-            .expect_err("a bare cast does not introduce a symbol");
-
-        // The declared type is stated with `is`, or inferred, or the cast is nested.
+    fn declarations_state_type_with_is_or_infer_it_or_build_a_value() {
+        // Symbols are introduced with `is` (there is no `as`); the declared type may
+        // be stated, left to inference, or the value may be an inline `@`-build.
         let with_is = parse_ordinary_declaration_statement(r#"X := \pi + 1 is \real"#)
             .expect("`is` states the declared type");
         assert!(matches!(with_is.relation, Some(DeclarationRelation::Is(_))));
@@ -4701,13 +4679,17 @@ mod tests {
         assert!(inferred.relation.is_none());
         assert!(inferred.definition.is_some());
 
-        let nested = parse_ordinary_declaration_statement(r#"X := (\pi as \real) + 1"#)
-            .expect("a nested cast inside the value is allowed");
-        let nested_kind = nested
-            .definition
-            .as_ref()
-            .map(|expression| &expression.kind);
-        assert!(matches!(nested_kind, Some(ExpressionKind::Binary { .. })));
+        // An `@`-build is a perfectly good declaration value (it introduces no symbol).
+        let build = parse_ordinary_declaration_statement(r#"X := \real@2"#)
+            .expect("a build value is allowed in a declaration");
+        assert!(matches!(
+            build.definition.as_ref().map(|expression| &expression.kind),
+            Some(ExpressionKind::Build { .. })
+        ));
+
+        // `as` no longer exists.
+        parse_ordinary_declaration_statement(r#"X := \pi + 1 as \real"#)
+            .expect_err("`as` is not a valid token");
     }
 
     #[test]

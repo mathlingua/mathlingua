@@ -191,13 +191,19 @@ pub struct InfixSpec {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypeExpression {
-    Builtin { span: Span, chain: Chain },
+    Builtin {
+        span: Span,
+        chain: Chain,
+    },
     Command(CommandExpression),
     RefinedCommand(RefinedCommandExpression),
     Function(FunctionType),
     /// A bare type-parameter name used as a type, e.g. `T` in `x is T` where a
     /// `when: T is \\type` requirement declares `T` a type parameter.
-    Parameter { span: Span, name: String },
+    Parameter {
+        span: Span,
+        name: String,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -453,17 +459,14 @@ pub enum ExpressionKind {
         subject: Box<Expression>,
         ty: TypeExpression,
     },
-    Cast {
-        expression: Box<Expression>,
-        ty: TypeExpression,
-        hard: bool,
-    },
-    /// `\cmd@<value>` — builds a value of type `\cmd` from a literal, consulting only
-    /// the command's `Describes:` / `Enables:from:` (never `\\coercion`). Distinct
-    /// from `Cast`, which follows coercion.
+    /// `\cmd@<value>` (soft) or `\cmd@!<value>` (hard) — casts/builds a value to type
+    /// `\cmd`. The soft form follows subclassing and `\\coercion`; the hard form
+    /// (`hard = true`) additionally follows `\\encoding`. This is the only cast form;
+    /// `is`/`is!` play the same role when introducing a named symbol.
     Build {
         ty: TypeExpression,
         value: Box<Expression>,
+        hard: bool,
     },
     MemberOf {
         subject: Box<Expression>,

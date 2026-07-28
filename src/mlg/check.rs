@@ -6288,7 +6288,7 @@ then:
     }
 
     #[test]
-    fn check_accepts_explicit_as_cast_for_view_requirements() {
+    fn check_accepts_soft_build_cast_for_view_requirements() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("explicit-view-cast.mlg");
 
@@ -6318,8 +6318,8 @@ then:
     Theorem:
     given: n is \integer
     then:
-    . \needs.rational{n as \rational}
-    . (n as \rational) is? \rational
+    . \needs.rational{\rational@n}
+    . (\rational@n) is? \rational
     "#,
         )
         .unwrap();
@@ -6339,7 +6339,7 @@ then:
     }
 
     #[test]
-    fn check_hard_cast_uses_abstraction_relationships() {
+    fn check_hard_build_cast_uses_abstraction_relationships() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("hard-cast-abstraction.mlg");
 
@@ -6368,8 +6368,8 @@ then:
     Theorem:
     given: n is \natural
     then:
-    . \needs.set{n as! \set}
-    . (n as! \set) is? \set
+    . \needs.set{\set@!n}
+    . (\set@!n) is? \set
     "#,
         )
         .unwrap();
@@ -6389,7 +6389,7 @@ then:
     }
 
     #[test]
-    fn check_plain_cast_does_not_use_abstraction_relationships() {
+    fn check_soft_build_cast_does_not_use_abstraction_relationships() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("plain-cast-no-abstraction.mlg");
 
@@ -6417,7 +6417,7 @@ then:
 
     Theorem:
     given: n is \natural
-    then: \needs.set{n as \set}
+    then: \needs.set{\set@n}
     "#,
         )
         .unwrap();
@@ -6433,7 +6433,7 @@ then:
         let events = user_events(&event_log);
         assert!(events.iter().any(|event| {
             matches!(event, Event::Message(message) if
-                message.message.contains("Could not establish cast `n as \\set`")
+                message.message.contains("Could not build `\\set@n`")
             )
         }));
         assert!(event_log.has_errors());

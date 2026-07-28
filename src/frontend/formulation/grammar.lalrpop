@@ -45,8 +45,6 @@ extern {
         "is_not?" => Token::IsNotPredicate,
         "is?" => Token::IsPredicate,
         "is" => Token::Is,
-        "as!" => Token::AsBang,
-        "as" => Token::As,
         "member_of" => Token::MemberOf,
         "satisfies" => Token::Satisfies,
         "|->" => Token::MapsTo,
@@ -77,6 +75,7 @@ extern {
         "$" => Token::Dollar,
         "?" => Token::Question,
         "@" => Token::At,
+        "@!" => Token::AtBang,
     }
 }
 
@@ -108,7 +107,6 @@ Name: String = {
 
 ChainName: String = {
     <name:Name> => name,
-    "as" => "as".to_owned(),
 };
 
 QuotedName: String = {
@@ -836,6 +834,15 @@ PrimaryExpression: ast::Expression = {
         ExpressionKind::Build {
             ty: ast::TypeExpression::Command(command),
             value: Box::new(value),
+            hard: false,
+        },
+    ),
+    <l:@L> <command:CommandExpression> "@!" <value:PrimaryExpression> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Build {
+            ty: ast::TypeExpression::Command(command),
+            value: Box::new(value),
+            hard: true,
         },
     ),
     <l:@L> <command:CommandExpression> <r:@R> => ast::Expression::new(
@@ -993,22 +1000,6 @@ SpecOrPredicateExpression: ast::Expression = {
         ExpressionKind::IsType {
             subject: Box::new(subject),
             ty,
-        },
-    ),
-    <l:@L> <expression:InfixCommandExpression> "as" <ty:PredicateTypeExpression> <r:@R> => ast::Expression::new(
-        Span::new(l, r),
-        ExpressionKind::Cast {
-            expression: Box::new(expression),
-            ty,
-            hard: false,
-        },
-    ),
-    <l:@L> <expression:InfixCommandExpression> "as!" <ty:PredicateTypeExpression> <r:@R> => ast::Expression::new(
-        Span::new(l, r),
-        ExpressionKind::Cast {
-            expression: Box::new(expression),
-            ty,
-            hard: true,
         },
     ),
     <l:@L> <subject:InfixCommandExpression> "member_of" <collection:InfixCommandExpression> <r:@R> => ast::Expression::new(

@@ -210,19 +210,10 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 escape_math_identifier(name, registry)
             ),
         },
-        ExpressionKind::Cast {
-            expression,
-            ty,
-            hard,
-        } => format!(
-            "{} \\textrm{{ {} }} {}",
-            render_expression(expression, registry),
-            if *hard { "as!" } else { "as" },
-            render_type_expression(ty, registry)
-        ),
-        ExpressionKind::Build { ty, value } => format!(
-            "{}@{}",
+        ExpressionKind::Build { ty, value, hard } => format!(
+            "{}{}{}",
             render_type_expression(ty, registry),
+            if *hard { "@!" } else { "@" },
             render_expression(value, registry)
         ),
     }

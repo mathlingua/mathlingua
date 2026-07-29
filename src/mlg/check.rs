@@ -3438,12 +3438,19 @@ then:
             extends: M is \set via X
             specifies:
             . * is \op:on{M}
-            . X is \set
             Enables:
             . capability: x_ "in" M :-> x_ is \elt:of{M}
               written: "x_? \in M?"
             Documented:
             . called: "structure"
+
+            [\pointed.structure]
+            Describes: S ::= (X, *, e)
+            extends: S is \structure via (X, *)
+            specifies:
+            . e "in" X
+            Documented:
+            . called: "pointed structure"
 
             Theorem:
             given:

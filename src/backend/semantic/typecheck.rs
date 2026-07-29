@@ -6,7 +6,7 @@ pub(super) fn collect_definition_type_metadata(
     header_shape: &HeaderShape,
     registry: &mut SignatureRegistry,
 ) {
-    let Some(info) = definition_type_info(item, header_shape) else {
+    let Some(info) = definition_type_info(item, header_shape, registry) else {
         return;
     };
 
@@ -253,6 +253,7 @@ pub(super) fn validate_document_types(
 fn definition_type_info(
     item: &TopLevelItem,
     header_shape: &HeaderShape,
+    registry: &SignatureRegistry,
 ) -> Option<DefinitionTypeInfo> {
     match item {
         TopLevelItem::Describes(group) => Some(type_info_from_parts(
@@ -265,6 +266,7 @@ fn definition_type_info(
             Some(&group.describes.argument),
             group.specifies.as_ref(),
             group.extends.as_ref(),
+            registry,
         )),
         TopLevelItem::Defines(group) => Some(type_info_from_parts(
             header_shape,
@@ -276,6 +278,7 @@ fn definition_type_info(
             None,
             None,
             None,
+            registry,
         )),
         TopLevelItem::Refines(group) => Some(type_info_from_parts(
             header_shape,
@@ -287,6 +290,7 @@ fn definition_type_info(
             None,
             None,
             None,
+            registry,
         )),
         TopLevelItem::States(group) => Some(type_info_from_parts(
             header_shape,
@@ -298,6 +302,7 @@ fn definition_type_info(
             None,
             None,
             None,
+            registry,
         )),
         TopLevelItem::Axiom(group) => group.heading.as_ref().map(|heading| {
             type_info_from_parts(
@@ -310,6 +315,7 @@ fn definition_type_info(
                 None,
                 None,
                 None,
+                registry,
             )
         }),
         TopLevelItem::Theorem(group) => group.heading.as_ref().map(|heading| {
@@ -323,6 +329,7 @@ fn definition_type_info(
                 None,
                 None,
                 None,
+                registry,
             )
         }),
         TopLevelItem::Corollary(group) => group.heading.as_ref().map(|heading| {
@@ -336,6 +343,7 @@ fn definition_type_info(
                 None,
                 None,
                 None,
+                registry,
             )
         }),
         TopLevelItem::Equivalent(group) => Some(type_info_from_parts(
@@ -348,6 +356,7 @@ fn definition_type_info(
             None,
             None,
             None,
+            registry,
         )),
         _ => None,
     }
@@ -363,6 +372,7 @@ fn type_info_from_parts(
     described: Option<&DescribesTarget>,
     describes_specifies: Option<&DescribesSpecifiesSection>,
     extends: Option<&ExtendsSection>,
+    registry: &SignatureRegistry,
 ) -> DefinitionTypeInfo {
     let mut context = TypeContext::default();
     declare_header_symbols(heading, &mut context);
@@ -425,7 +435,9 @@ fn type_info_from_parts(
     }
 
     let component_types = described
-        .map(|target| component_type_facts(target, extends, describes_specifies, &context))
+        .map(|target| {
+            component_type_facts(target, extends, describes_specifies, &context, registry)
+        })
         .unwrap_or_default();
 
     DefinitionTypeInfo {
@@ -452,6 +464,7 @@ fn component_type_facts(
     extends: Option<&ExtendsSection>,
     specifies: Option<&DescribesSpecifiesSection>,
     context: &TypeContext,
+    registry: &SignatureRegistry,
 ) -> Vec<TypeFact> {
     let component_names = describes_target_component_names(target);
     if component_names.is_empty() {
@@ -461,6 +474,9 @@ fn component_type_facts(
     let mut fact_context = context.clone();
     if let Some(extends) = extends {
         for fact in facts_from_is_or_via_item_in_context(&extends.argument, &fact_context) {
+            fact_context.add_fact(fact);
+        }
+        for fact in facts_from_extends_via(&extends.argument, &fact_context, registry) {
             fact_context.add_fact(fact);
         }
     }
@@ -482,6 +498,68 @@ fn component_type_facts(
                 .map(|fact| fact_context.normalize_fact(fact))
         })
         .collect()
+}
+
+/// The type facts an `extends: <subject> is <Type> via <via>` clause assigns to
+/// the `via` symbols. `via X` with a plain `\set` gives `X is \set`. `via (X, *)`
+/// onto a tuple type maps the extended type's components positionally, so
+/// `S is \magma via (X, *)` yields `X is \set` and `* is \binary.operation:on{S}`
+/// by following `\magma`'s own component types (with its subject replaced by `S`).
+fn facts_from_extends_via(
+    item: &IsOrViaItem,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let IsOrViaItem::IsVia(statement) = item else {
+        return Vec::new();
+    };
+    let ty = &statement.is_statement.ty;
+    let subject = primary_subject_key(&statement.is_statement.subject);
+    match &statement.via.kind {
+        FormOrDeclarationKind::Name(name) => {
+            fact_from_type_key_assertion(name.clone(), ty, context)
+                .into_iter()
+                .collect()
+        }
+        FormOrDeclarationKind::TupleDeclaration { form, .. } => {
+            let via_names = tuple_form_component_names(form);
+            let Some((_, signature)) = key_for_type_expression(ty) else {
+                return Vec::new();
+            };
+            let Some(info) = registry.type_infos.get(&signature) else {
+                return Vec::new();
+            };
+            let mut sub_context = context.clone();
+            if let Some(described) = &info.described {
+                sub_context.add_substitution(described.clone(), subject);
+            }
+            for (index, fact) in info.component_types.iter().enumerate() {
+                if let Some(local) = via_names.get(index) {
+                    sub_context.add_substitution(fact_subject(fact).to_owned(), local.clone());
+                }
+            }
+            info.component_types
+                .iter()
+                .map(|fact| sub_context.normalize_fact(fact))
+                .collect()
+        }
+        _ => Vec::new(),
+    }
+}
+
+/// Adds the component types an `extends: … via …` clause assigns (`X is \set`,
+/// etc.) to the checking context, so the definition's own body (e.g.
+/// `specifies: e "in" X`) can rely on them.
+fn assume_extends_via_facts(
+    extends: &Option<ExtendsSection>,
+    context: &mut TypeContext,
+    registry: &SignatureRegistry,
+) {
+    if let Some(extends) = extends {
+        for fact in facts_from_extends_via(&extends.argument, context, registry) {
+            context.add_fact(fact);
+        }
+    }
 }
 
 fn collect_using_parameter_names(using: Option<&UsingSection>) -> Vec<String> {
@@ -1283,6 +1361,7 @@ fn validate_top_level_item_types(
                 event_log,
             );
             assume_destructured_parameter_components(&group.heading, &mut context, registry);
+            assume_extends_via_facts(&group.extends, &mut context, registry);
             assume_optional_specifies(
                 &group.specifies,
                 &mut context,

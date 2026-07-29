@@ -3121,6 +3121,24 @@ mod tests {
     // ===============================[ tests ]=====================================
 
     #[test]
+    fn parses_member_path_named_operators() {
+        for (input, expected) in [
+            ("x |M.*| x", "M.*"),
+            ("x |x.y.z| x", "x.y.z"),
+            ("a |foo| b", "foo"),
+        ] {
+            let expr = parse_expression(input).expect("expected parse");
+            match expr.kind {
+                ExpressionKind::Binary {
+                    operator: BinaryOperator::Named(op),
+                    ..
+                } => assert_eq!(op.name, expected, "for input {input}"),
+                other => panic!("expected named binary for {input}, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
     fn parses_command_headers() {
         let header = parse_command_header(r#"\function:on{A}:to{B}(f(x_))"#)
             .expect("expected command header");

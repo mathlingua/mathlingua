@@ -39,23 +39,27 @@ pub enum Token {
     InfixSpecPredicateEnd,
     #[token(":/")]
     InfixSpecEnd,
+    // A named operator's content may be a dotted member path whose segments are
+    // names or operator-symbol runs (e.g. `M.*`, `x.y.z`), tracking down through
+    // a value's fields. The `|` character cannot appear in a segment since it is
+    // the delimiter.
     #[regex(
-        r":\|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\|:",
+        r":\|(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+)(?:\.(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+))*\|:",
         both_named_operator
     )]
     BothNamedOperator(String),
     #[regex(
-        r":\|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\|",
+        r":\|(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+)(?:\.(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+))*\|",
         left_named_operator
     )]
     LeftNamedOperator(String),
     #[regex(
-        r"\|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\|:",
+        r"\|(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+)(?:\.(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+))*\|:",
         right_named_operator
     )]
     RightNamedOperator(String),
     #[regex(
-        r"\|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\|",
+        r"\|(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+)(?:\.(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+))*\|",
         plain_named_operator
     )]
     NamedOperator(String),

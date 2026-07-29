@@ -3388,6 +3388,93 @@ then:
     }
 
     #[test]
+    fn check_accepts_destructuring_components_and_symbolic_operator_application() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("structure.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+            Describes: X
+            Enables:
+            . capability: x_ "in" X :-> \\abstract
+            Documented:
+            . called: "set"
+
+            [A \.cross./ B]
+            Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+            when: A, B is \set
+            Documented:
+            . written: "A? \times B?"
+
+            [\fn:on{A}:to{B}]
+            Describes: f(x__) ::= y_
+            when: A, B is \set
+            specifies:
+            . x__ "in" A
+            . y_ "in" B
+            Documented:
+            . called: "fn"
+
+            [\op:on{X}]
+            Describes: x_ * y_
+            when: X is \set
+            extends: * is \fn:on{X \.cross./ X}:to{X}
+            Documented:
+            . called: "op"
+
+            [\elt:of{M ::= (X, *)}]
+            Describes: x
+            when: M is \structure
+            extends: x "in" X
+            Enables:
+            . capability: x_ * y_ :=> x_ * y_
+              written: "x_? *? y_?"
+            Documented:
+            . called: "elt"
+
+            [\structure]
+            Describes: M ::= (X, *)
+            extends: M is \set via X
+            specifies:
+            . * is \op:on{M}
+            . X is \set
+            Enables:
+            . capability: x_ "in" M :-> x_ is \elt:of{M}
+              written: "x_? \in M?"
+            Documented:
+            . called: "structure"
+
+            Theorem:
+            given:
+            . M ::= (X, *) is \structure
+            . x "in" M
+            then: x * x "in" M
+
+            Theorem:
+            given:
+            . M ::= (X, *) is \structure
+            . x "in" M
+            then: x |M.*| x "in" M
+            "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("structure.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_disambiguates_with_else_only() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("disambiguates-else-only.mlg");

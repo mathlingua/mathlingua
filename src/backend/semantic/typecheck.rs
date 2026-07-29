@@ -264,6 +264,7 @@ fn definition_type_info(
             None,
             Some(&group.describes.argument),
             group.specifies.as_ref(),
+            group.extends.as_ref(),
         )),
         TopLevelItem::Defines(group) => Some(type_info_from_parts(
             header_shape,
@@ -274,6 +275,7 @@ fn definition_type_info(
             Some(&group.defines.argument),
             None,
             None,
+            None,
         )),
         TopLevelItem::Refines(group) => Some(type_info_from_parts(
             header_shape,
@@ -281,6 +283,7 @@ fn definition_type_info(
             group.using.as_ref(),
             None,
             group.when.as_ref(),
+            None,
             None,
             None,
             None,
@@ -294,6 +297,7 @@ fn definition_type_info(
             None,
             None,
             None,
+            None,
         )),
         TopLevelItem::Axiom(group) => group.heading.as_ref().map(|heading| {
             type_info_from_parts(
@@ -301,6 +305,7 @@ fn definition_type_info(
                 heading,
                 None,
                 group.given.as_ref(),
+                None,
                 None,
                 None,
                 None,
@@ -317,6 +322,7 @@ fn definition_type_info(
                 None,
                 None,
                 None,
+                None,
             )
         }),
         TopLevelItem::Corollary(group) => group.heading.as_ref().map(|heading| {
@@ -329,6 +335,7 @@ fn definition_type_info(
                 None,
                 None,
                 None,
+                None,
             )
         }),
         TopLevelItem::Equivalent(group) => Some(type_info_from_parts(
@@ -337,6 +344,7 @@ fn definition_type_info(
             group.using.as_ref(),
             None,
             group.when.as_ref(),
+            None,
             None,
             None,
             None,
@@ -354,6 +362,7 @@ fn type_info_from_parts(
     defines: Option<&DeclarationStatement>,
     described: Option<&DescribesTarget>,
     describes_specifies: Option<&DescribesSpecifiesSection>,
+    extends: Option<&ExtendsSection>,
 ) -> DefinitionTypeInfo {
     let mut context = TypeContext::default();
     declare_header_symbols(heading, &mut context);
@@ -415,6 +424,10 @@ fn type_info_from_parts(
         outputs.push(context.normalize_fact(&fact));
     }
 
+    let component_types = described
+        .map(|target| component_type_facts(target, extends, describes_specifies, &context))
+        .unwrap_or_default();
+
     DefinitionTypeInfo {
         signature: header_shape.shape.signature.clone(),
         parameters: header_shape.parameters.clone(),
@@ -425,7 +438,50 @@ fn type_info_from_parts(
         outputs,
         substitutions: context.substitutions,
         described: described.map(described_target_subject_key),
+        component_types,
     }
+}
+
+/// Type facts for the components of a destructuring describes target, in tuple
+/// order. Each component's type is drawn from `extends:` first (its components
+/// inherit the extended type's component types) and then `specifies:` for any
+/// component not covered by `extends:`. Facts are normalized so they can be
+/// re-substituted when another definition destructures a value of this type.
+fn component_type_facts(
+    target: &DescribesTarget,
+    extends: Option<&ExtendsSection>,
+    specifies: Option<&DescribesSpecifiesSection>,
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    let component_names = describes_target_component_names(target);
+    if component_names.is_empty() {
+        return Vec::new();
+    }
+
+    let mut fact_context = context.clone();
+    if let Some(extends) = extends {
+        for fact in facts_from_is_or_via_item_in_context(&extends.argument, &fact_context) {
+            fact_context.add_fact(fact);
+        }
+    }
+    if let Some(specifies) = specifies {
+        for item in &specifies.arguments {
+            for fact in facts_from_is_or_via_item_in_context(item, &fact_context) {
+                fact_context.add_fact(fact);
+            }
+        }
+    }
+
+    component_names
+        .iter()
+        .filter_map(|name| {
+            fact_context
+                .facts
+                .iter()
+                .find(|fact| fact_subject(fact) == name)
+                .map(|fact| fact_context.normalize_fact(fact))
+        })
+        .collect()
 }
 
 fn collect_using_parameter_names(using: Option<&UsingSection>) -> Vec<String> {
@@ -1226,6 +1282,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            assume_destructured_parameter_components(&group.heading, &mut context, registry);
             assume_optional_specifies(
                 &group.specifies,
                 &mut context,
@@ -2003,8 +2060,15 @@ fn describes_when_parameters_from_usage(group: &DescribesGroup) -> WhenParameter
     if let Some(subject) = &described_spec_infix_subject {
         parameters.required.remove(subject);
     }
+    // Components of a destructuring parameter are typed from the parameter's own
+    // type, so using them in the body must not turn them into `when:`-required
+    // parameters.
+    let destructured_components = header_destructured_component_names(&group.heading);
     for name in describes_used_names(group) {
         if described_spec_infix_subject.as_ref() == Some(&name) {
+            continue;
+        }
+        if destructured_components.contains(&name) {
             continue;
         }
         if parameters.allowed.contains(&name) {
@@ -2012,6 +2076,22 @@ fn describes_when_parameters_from_usage(group: &DescribesGroup) -> WhenParameter
         }
     }
     parameters
+}
+
+/// Names of every component of a named destructuring parameter `M ::= (X, *)` in
+/// the header, e.g. `{X, *}`.
+fn header_destructured_component_names(header: &CommandHeader) -> HashSet<String> {
+    let mut components = HashSet::new();
+    for form in header_parameter_forms(header) {
+        if let FormOrDeclarationKind::TupleDeclaration {
+            name: Some(_),
+            form: tuple,
+        } = &form.kind
+        {
+            collect_tuple_form_when_parameters(tuple, &mut components);
+        }
+    }
+    components
 }
 
 fn described_spec_infix_subject(
@@ -2454,6 +2534,50 @@ fn declaration_target_symbols(statement: &DeclarationStatement) -> BTreeSet<Stri
         collect_is_subject_target_symbols(expansion, &mut symbols);
     }
     symbols
+}
+
+/// Ordered component names of a tuple form, e.g. `(X, *)` -> `["X", "*"]`.
+fn tuple_form_component_names(form: &TupleForm) -> Vec<String> {
+    form.elements
+        .iter()
+        .map(|element| match element {
+            TupleFormElement::Form(form) => {
+                primary_form_name(form).unwrap_or_else(|| key_for_form_or_declaration(form))
+            }
+            TupleFormElement::Operator(operator) => operator.text.clone(),
+        })
+        .collect()
+}
+
+/// The tuple form of a destructuring form-or-declaration `Name ::= (c1, ..., cn)`.
+fn form_or_declaration_tuple_form(form: &FormOrDeclaration) -> Option<&TupleForm> {
+    match &form.kind {
+        FormOrDeclarationKind::TupleDeclaration { form, .. } => Some(form),
+        _ => None,
+    }
+}
+
+fn is_subject_first_form(subject: &IsSubject) -> Option<&FormOrDeclaration> {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) => forms.iter().find_map(|form| match form {
+            IsSubjectForm::Form(form) => Some(form),
+            IsSubjectForm::PlaceholderForm(_) => None,
+        }),
+        IsSubjectKind::Operator(_) => None,
+    }
+}
+
+/// Ordered component names of a describes target `Name ::= (c1, ..., cn)`, or an
+/// empty vector when the target does not destructure a tuple.
+fn describes_target_component_names(target: &DescribesTarget) -> Vec<String> {
+    let form = match target {
+        DescribesTarget::Form(form) => Some(form),
+        DescribesTarget::Declaration(statement) => is_subject_first_form(&statement.subject)
+            .or_else(|| statement.expansion.as_ref().and_then(is_subject_first_form)),
+    };
+    form.and_then(form_or_declaration_tuple_form)
+        .map(tuple_form_component_names)
+        .unwrap_or_default()
 }
 
 fn describes_target_symbols(target: &DescribesTarget) -> BTreeSet<String> {
@@ -4314,6 +4438,60 @@ fn assume_declaration_statement(
     for fact in facts_from_declaration_statement_in_context(statement, context) {
         context.add_fact(fact);
     }
+    assume_destructured_declaration_components(statement, context, registry);
+}
+
+/// Binds the components of a destructuring declaration `M ::= (X, *) is \T` (a
+/// `Defines:` target or a `given:`/`using:` binding): the component types come
+/// from `\T`'s stored component types, substituted onto the local names. This is
+/// what lets a theorem `given: M ::= (X, *) is \magma` use `X` and `*`. Only
+/// `::=` introduces symbols; `:=` requires its right-hand side to already be in
+/// scope, so it is deliberately not handled here.
+fn assume_destructured_declaration_components(
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+    registry: &SignatureRegistry,
+) {
+    let Some(DeclarationRelation::Is(ty)) = &statement.relation else {
+        return;
+    };
+    let component_names = statement
+        .expansion
+        .as_ref()
+        .and_then(is_subject_first_form)
+        .and_then(form_or_declaration_tuple_form)
+        .map(tuple_form_component_names)
+        .unwrap_or_default();
+    if component_names.is_empty() {
+        return;
+    }
+    let Some((_, signature)) = key_for_type_expression(ty) else {
+        return;
+    };
+    let Some(info) = registry.type_infos.get(&signature) else {
+        return;
+    };
+    if info.component_types.is_empty() {
+        return;
+    }
+
+    let subject = primary_subject_key(&statement.subject);
+    let mut sub_context = context.clone();
+    if let Some(described) = &info.described {
+        sub_context.add_substitution(described.clone(), subject.clone());
+    }
+    for (index, fact) in info.component_types.iter().enumerate() {
+        if let Some(local) = component_names.get(index) {
+            sub_context.add_substitution(fact_subject(fact).to_owned(), local.clone());
+        }
+    }
+    for local in &component_names {
+        context.declare_name(local.clone());
+    }
+    for fact in &info.component_types {
+        context.add_fact(sub_context.normalize_fact(fact));
+    }
+    context.add_destructured_components(subject, component_names);
 }
 
 fn declare_declaration_statement_subjects(
@@ -4875,25 +5053,24 @@ fn check_expression(
             operator,
             expression,
         } => {
-            check_expression(expression, context, path, locator, registry, event_log);
-            check_disambiguated_prefix(
-                operator, expression, context, path, locator, registry, event_log,
-            );
-            check_provided_prefix_operator(
-                operator, expression, context, path, locator, registry, event_log,
-            );
+            if let Some(call) = named_prefix_operator_desugaring(operator, expression) {
+                check_expression(&call, context, path, locator, registry, event_log);
+            } else {
+                check_expression(expression, context, path, locator, registry, event_log);
+                check_disambiguated_prefix(
+                    operator, expression, context, path, locator, registry, event_log,
+                );
+                check_provided_prefix_operator(
+                    operator, expression, context, path, locator, registry, event_log,
+                );
+            }
         }
         ExpressionKind::Postfix {
             expression,
             operator,
         } => {
-            check_expression(expression, context, path, locator, registry, event_log);
-            check_disambiguated_postfix(
-                expression, operator, context, path, locator, registry, event_log,
-            );
-            check_provided_postfix_operator(
-                expression, operator, context, path, locator, registry, event_log,
-            );
+            let call = postfix_operator_desugaring(expression, operator);
+            check_expression(&call, context, path, locator, registry, event_log);
         }
         ExpressionKind::SubsetCall(subset) => {
             check_subset_call(subset, context, path, locator, event_log);
@@ -4949,15 +5126,21 @@ fn check_expression(
             operator,
             right,
         } => {
-            check_expression(left, context, path, locator, registry, event_log);
-            check_expression(right, context, path, locator, registry, event_log);
-            let resolved_from_provided = check_provided_binary_operator(
-                left, operator, right, context, path, locator, registry, event_log,
-            );
-            if !resolved_from_provided && !binary_operator_uses_provided_by_default(operator) {
-                check_disambiguated_binary(
+            if let Some(call) =
+                binary_operator_application_desugaring(left, operator, right, context)
+            {
+                check_expression(&call, context, path, locator, registry, event_log);
+            } else {
+                check_expression(left, context, path, locator, registry, event_log);
+                check_expression(right, context, path, locator, registry, event_log);
+                let resolved_from_provided = check_provided_binary_operator(
                     left, operator, right, context, path, locator, registry, event_log,
                 );
+                if !resolved_from_provided && !binary_operator_uses_provided_by_default(operator) {
+                    check_disambiguated_binary(
+                        left, operator, right, context, path, locator, registry, event_log,
+                    );
+                }
             }
         }
         ExpressionKind::SpecStatement(statement) => {
@@ -5668,6 +5851,117 @@ fn check_disambiguated_function_call(
     );
 }
 
+/// A plain named operator is syntactic sugar for application: `x |op| y` means
+/// `op(x, y)` (and `f| x` / `x |f` mean `f(x)`). When the operator is a dotted
+/// member path such as `M.*` or `x.y.z`, the application tracks down through the
+/// value's fields as a member call on the value the path reaches; a bare name
+/// becomes a plain function call.
+fn desugar_named_operator_application(
+    name: &str,
+    span: Span,
+    arguments: Vec<Expression>,
+) -> Expression {
+    match name.rsplit_once('.') {
+        Some((owner_path, member)) => Expression::new(
+            span,
+            ExpressionKind::MemberCall {
+                owner: Box::new(member_path_owner_expression(owner_path, span)),
+                name: member.to_owned(),
+                arguments,
+            },
+        ),
+        None => Expression::new(
+            span,
+            ExpressionKind::FunctionCall {
+                name: name.to_owned(),
+                arguments,
+            },
+        ),
+    }
+}
+
+/// Builds the owner expression for a dotted member path: `M` becomes a name and
+/// `x.y` becomes `x` with `.y` accessed, so that the final segment can be called
+/// on it.
+fn member_path_owner_expression(path: &str, span: Span) -> Expression {
+    let mut segments = path.split('.');
+    let first = segments.next().unwrap_or_default();
+    let mut owner = Expression::new(span, ExpressionKind::Name(first.to_owned()));
+    for segment in segments {
+        owner = Expression::new(
+            span,
+            ExpressionKind::MemberAccess {
+                owner: Box::new(owner),
+                name: segment.to_owned(),
+            },
+        );
+    }
+    owner
+}
+
+/// If `operator` is a plain named operator, returns the application it desugars
+/// to (`x |op| y` == `op(x, y)`). Colon-qualified named operators and the
+/// built-in symbolic operators are left to their own resolution paths.
+fn binary_operator_application_desugaring(
+    left: &Expression,
+    operator: &BinaryOperator,
+    right: &Expression,
+    context: &TypeContext,
+) -> Option<Expression> {
+    let (symbol, kind, span, named) = match operator {
+        BinaryOperator::Named(operator) => {
+            (operator.name.clone(), operator.kind, operator.span, true)
+        }
+        BinaryOperator::Equality(operator)
+        | BinaryOperator::Special(operator)
+        | BinaryOperator::Add(operator)
+        | BinaryOperator::Subtract(operator)
+        | BinaryOperator::Multiply(operator)
+        | BinaryOperator::Divide(operator)
+        | BinaryOperator::Power(operator) => {
+            (operator.text.clone(), operator.kind, operator.span, false)
+        }
+    };
+    if kind != NamedOperatorKind::Plain {
+        return None;
+    }
+    // A `|op|` named operator is always application sugar. A symbolic operator
+    // (`*`, `+`, ...) is sugar for `symbol(x, y)` only when the symbol names a
+    // bound value in scope (e.g. a magma's operation `*`); otherwise it keeps
+    // its built-in arithmetic resolution.
+    if !named && !context.has_name(&symbol) {
+        return None;
+    }
+    Some(desugar_named_operator_application(
+        &symbol,
+        span,
+        vec![left.clone(), right.clone()],
+    ))
+}
+
+/// If `operator` is a named prefix operator, returns the application it desugars
+/// to (`f| x` == `f(x)`). Arithmetic prefix operators such as `-x` keep their own
+/// resolution path.
+fn named_prefix_operator_desugaring(
+    operator: &UnaryOperator,
+    expression: &Expression,
+) -> Option<Expression> {
+    let UnaryOperator::Named(operator) = operator else {
+        return None;
+    };
+    Some(desugar_named_operator_application(
+        &operator.text,
+        operator.span,
+        vec![expression.clone()],
+    ))
+}
+
+/// Every postfix expression operator is a named operator (`x |f`), so it is
+/// always application sugar for `f(x)`.
+fn postfix_operator_desugaring(expression: &Expression, operator: &Operator) -> Expression {
+    desugar_named_operator_application(&operator.text, operator.span, vec![expression.clone()])
+}
+
 fn check_disambiguated_binary(
     left: &Expression,
     operator: &BinaryOperator,
@@ -5748,40 +6042,6 @@ fn check_disambiguated_prefix(
         &key,
         &actuals,
         &label,
-        position,
-        &requirement_context,
-        path,
-        locator,
-        registry,
-        event_log,
-    );
-}
-
-fn check_disambiguated_postfix(
-    expression: &Expression,
-    operator: &Operator,
-    context: &TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    let key = DisambiguationKey::PostfixOperator(operator.text.clone());
-    if !has_disambiguation_for_key(&key, registry) {
-        return;
-    }
-    let requirement_context =
-        context_with_cast_expression_facts(std::iter::once(expression), context);
-    let actuals = vec![effective_key_for_expression(
-        expression,
-        &requirement_context,
-        registry,
-    )];
-    let position = locator.locate_symbol(&operator.text);
-    check_disambiguated_expression(
-        &key,
-        &actuals,
-        &format!("operator `|{}`", operator.text),
         position,
         &requirement_context,
         path,
@@ -5889,44 +6149,77 @@ fn check_provided_prefix_operator(
     );
 }
 
-fn check_provided_postfix_operator(
-    expression: &Expression,
-    operator: &Operator,
-    context: &TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    let key = DisambiguationKey::PostfixOperator(operator.text.clone());
-    let requirement_context =
-        context_with_cast_expression_facts(std::iter::once(expression), context);
-    let actuals = vec![effective_key_for_expression(
-        expression,
-        &requirement_context,
-        registry,
-    )];
-    let Some(rule) = find_provided_symbol_rule(
-        &key,
-        NamedOperatorKind::BothColon,
-        &actuals,
-        &requirement_context,
-        registry,
-    ) else {
-        return;
-    };
+/// Top-level component names of a tuple key like `(X,*)` -> `["X", "*"]`, or
+/// `None` when the key is not a parenthesized tuple.
+fn tuple_key_components(key: &str) -> Option<Vec<String>> {
+    let inner = key.strip_prefix('(')?.strip_suffix(')')?;
+    if inner.trim().is_empty() {
+        return Some(Vec::new());
+    }
+    let mut components = Vec::new();
+    let mut depth = 0usize;
+    let mut current = String::new();
+    for ch in inner.chars() {
+        match ch {
+            '(' | '[' | '{' => {
+                depth += 1;
+                current.push(ch);
+            }
+            ')' | ']' | '}' => {
+                depth = depth.saturating_sub(1);
+                current.push(ch);
+            }
+            ',' if depth == 0 => {
+                components.push(current.trim().to_owned());
+                current.clear();
+            }
+            other => current.push(other),
+        }
+    }
+    components.push(current.trim().to_owned());
+    Some(components)
+}
 
-    let owner_actual = provided_symbol_owner_actual(NamedOperatorKind::LeftColon, &actuals);
-    check_provided_symbol_target(
-        rule,
-        &actuals,
-        owner_actual.as_deref(),
-        &requirement_context,
-        path,
-        locator,
-        registry,
-        event_log,
-    );
+/// Resolves member access/call on a destructured tuple: when `owner` reduces to a
+/// tuple key `(..., name, ...)` and `name` is a bound symbol, `owner.name` is the
+/// component `name` itself and `owner.name(args)` is `name(args)`. This is what
+/// lets `M.*` (and `x |M.*| y` == `M.*(x, y)`) reach the `*` component of a
+/// destructured `M ::= (X, *)`.
+/// The bare name of an owner expression, when it is a plain name (`M`).
+fn owner_name_key(owner: &Expression) -> Option<String> {
+    match &owner.kind {
+        ExpressionKind::Name(name) => Some(name.clone()),
+        _ => None,
+    }
+}
+
+fn tuple_component_access_expression(
+    owner: &Expression,
+    name: &str,
+    arguments: &[Expression],
+    owner_actual: &str,
+    context: &TypeContext,
+) -> Option<Expression> {
+    // `name` must be a component of the owner: either the owner reduces to a
+    // tuple key `(..., name, ...)` (a tuple value), or the owner is a value
+    // destructured as `M ::= (..., name, ...)` (recorded component names).
+    let is_tuple_value_component = tuple_key_components(&context.normalize_key(owner_actual))
+        .is_some_and(|components| components.iter().any(|component| component == name));
+    let is_destructured_component = owner_name_key(owner)
+        .and_then(|subject| context.destructured_components_of(&subject).cloned())
+        .is_some_and(|components| components.iter().any(|component| component == name));
+    if (!is_tuple_value_component && !is_destructured_component) || !context.has_name(name) {
+        return None;
+    }
+    let kind = if arguments.is_empty() {
+        ExpressionKind::Name(name.to_owned())
+    } else {
+        ExpressionKind::FunctionCall {
+            name: name.to_owned(),
+            arguments: arguments.to_vec(),
+        }
+    };
+    Some(Expression::new(owner.span, kind))
 }
 
 fn check_provided_member(
@@ -5960,6 +6253,23 @@ fn check_provided_member(
         &requirement_context,
         registry,
     ) else {
+        if let Some(expression) = tuple_component_access_expression(
+            owner,
+            name,
+            arguments,
+            &owner_actual,
+            &requirement_context,
+        ) {
+            check_expression(
+                &expression,
+                &requirement_context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            return;
+        }
         emit_error(
             event_log,
             path,
@@ -6270,15 +6580,29 @@ fn effective_key_for_member_call(
     };
     let owner_actual = effective_key_for_expression_inner(owner, context, registry, resolving);
     let actuals = effective_keys_for_expressions(arguments, context, registry, resolving);
-    let rule = find_member_provided_symbol_rule(&key, &owner_actual, &actuals, context, registry)?;
-    Some(effective_key_for_provided_symbol_target(
-        rule,
-        &actuals,
-        Some(&owner_actual),
-        context,
-        registry,
-        resolving,
-    ))
+    if let Some(rule) =
+        find_member_provided_symbol_rule(&key, &owner_actual, &actuals, context, registry)
+    {
+        return Some(effective_key_for_provided_symbol_target(
+            rule,
+            &actuals,
+            Some(&owner_actual),
+            context,
+            registry,
+            resolving,
+        ));
+    }
+    if let Some(expression) =
+        tuple_component_access_expression(owner, name, arguments, &owner_actual, context)
+    {
+        return Some(effective_key_for_expression_inner(
+            &expression,
+            context,
+            registry,
+            resolving,
+        ));
+    }
+    None
 }
 
 fn effective_key_for_member_access(
@@ -6298,6 +6622,12 @@ fn effective_key_for_prefix_expression(
     registry: &SignatureRegistry,
     resolving: &mut HashSet<String>,
 ) -> Option<String> {
+    if let Some(call) = named_prefix_operator_desugaring(operator, expression) {
+        return Some(effective_key_for_expression_inner(
+            &call, context, registry, resolving,
+        ));
+    }
+
     let (key, _, _) = disambiguation_key_for_prefix_operator(operator);
     let actuals = vec![effective_key_for_expression_inner(
         expression, context, registry, resolving,
@@ -6333,31 +6663,9 @@ fn effective_key_for_postfix_expression(
     registry: &SignatureRegistry,
     resolving: &mut HashSet<String>,
 ) -> Option<String> {
-    let key = DisambiguationKey::PostfixOperator(operator.text.clone());
-    let actuals = vec![effective_key_for_expression_inner(
-        expression, context, registry, resolving,
-    )];
-    if let Some(key) =
-        effective_key_for_disambiguated_target(&key, &actuals, context, registry, resolving)
-    {
-        return Some(key);
-    }
-
-    let rule = find_provided_symbol_rule(
-        &key,
-        NamedOperatorKind::BothColon,
-        &actuals,
-        context,
-        registry,
-    )?;
-    let owner_actual = provided_symbol_owner_actual(NamedOperatorKind::LeftColon, &actuals);
-    Some(effective_key_for_provided_symbol_target(
-        rule,
-        &actuals,
-        owner_actual.as_deref(),
-        context,
-        registry,
-        resolving,
+    let call = postfix_operator_desugaring(expression, operator);
+    Some(effective_key_for_expression_inner(
+        &call, context, registry, resolving,
     ))
 }
 
@@ -6369,6 +6677,12 @@ fn effective_key_for_binary_expression(
     registry: &SignatureRegistry,
     resolving: &mut HashSet<String>,
 ) -> Option<String> {
+    if let Some(call) = binary_operator_application_desugaring(left, operator, right, context) {
+        return Some(effective_key_for_expression_inner(
+            &call, context, registry, resolving,
+        ));
+    }
+
     let (symbol, kind) = binary_operator_symbol_and_kind(operator);
     let actuals = vec![
         effective_key_for_expression_inner(left, context, registry, resolving),
@@ -10156,6 +10470,9 @@ struct TypeContext {
     symbols: HashSet<String>,
     active_disambiguations: Vec<DisambiguationKey>,
     defer_unresolved_provided_symbols: bool,
+    /// Maps a destructured value (`M` from `M ::= (X, *)`) to its component names
+    /// in tuple order, so member access `M.*` can resolve to the `*` component.
+    destructured_components: HashMap<String, Vec<String>>,
 }
 
 impl TypeContext {
@@ -10178,6 +10495,17 @@ impl TypeContext {
         self.collection_literals
             .get(subject)
             .or_else(|| self.collection_literals.get(&self.normalize_key(subject)))
+    }
+
+    fn add_destructured_components(&mut self, subject: String, components: Vec<String>) {
+        self.destructured_components.insert(subject, components);
+    }
+
+    fn destructured_components_of(&self, subject: &str) -> Option<&Vec<String>> {
+        self.destructured_components.get(subject).or_else(|| {
+            self.destructured_components
+                .get(&self.normalize_key(subject))
+        })
     }
 
     fn declare_name(&mut self, name: impl Into<String>) {
@@ -10568,8 +10896,13 @@ fn declare_form_or_declaration(form: &FormOrDeclaration, context: &mut TypeConte
                 context.declare_name(name.clone());
             }
             for element in &form.elements {
-                if let TupleFormElement::Form(form) = element {
-                    declare_form_or_declaration(form, context);
+                match element {
+                    TupleFormElement::Form(form) => declare_form_or_declaration(form, context),
+                    // An operator component (e.g. the `*` in `M ::= (X, *)`) is a
+                    // named symbol too, so that `x * y` can resolve as `*(x, y)`.
+                    TupleFormElement::Operator(operator) => {
+                        context.declare_name(operator.text.clone());
+                    }
                 }
             }
         }
@@ -12022,6 +12355,122 @@ fn collect_curly_heading_parameters(groups: &[CurlyHeadingArgs], parameters: &mu
     }
 }
 
+/// Every parameter form appearing in a command header (curly-brace groups, tail
+/// parts, and infix left/right operands).
+fn header_parameter_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
+    let mut forms = Vec::new();
+    match header {
+        CommandHeader::Command(command) => {
+            collect_curly_parameter_forms(&command.head_args, &mut forms);
+            collect_tail_parameter_forms(&command.tail, &mut forms);
+        }
+        CommandHeader::Infix(command) => {
+            if let Some(left) = command.left.as_ref() {
+                forms.push(left);
+            }
+            collect_curly_parameter_forms(&command.head_args, &mut forms);
+            collect_tail_parameter_forms(&command.tail, &mut forms);
+            if let Some(right) = command.right.as_ref() {
+                forms.push(right);
+            }
+        }
+        CommandHeader::InfixSpec(spec) => {
+            forms.push(&spec.left);
+            collect_curly_parameter_forms(&spec.head_args, &mut forms);
+            collect_tail_parameter_forms(&spec.tail, &mut forms);
+            forms.push(&spec.right);
+        }
+        CommandHeader::Refined(command) => {
+            for part in &command.parts {
+                collect_tail_parameter_forms(&part.tail, &mut forms);
+            }
+            collect_curly_parameter_forms(&command.head_args, &mut forms);
+            collect_tail_parameter_forms(&command.tail, &mut forms);
+        }
+    }
+    forms
+}
+
+fn collect_curly_parameter_forms<'a>(
+    groups: &'a [CurlyHeadingArgs],
+    out: &mut Vec<&'a FormOrDeclaration>,
+) {
+    for group in groups {
+        for form in &group.forms {
+            out.push(form);
+        }
+    }
+}
+
+fn collect_tail_parameter_forms<'a>(
+    parts: &'a [CommandHeaderTailPart],
+    out: &mut Vec<&'a FormOrDeclaration>,
+) {
+    for part in parts {
+        for group in &part.args {
+            for form in &group.forms {
+                out.push(form);
+            }
+        }
+    }
+}
+
+/// The type signature declared for `name` by an `is` fact currently in context,
+/// e.g. `\magma` for a parameter `M` with `M is \magma`.
+fn declared_type_signature(name: &str, context: &TypeContext) -> Option<String> {
+    context.facts.iter().find_map(|fact| match fact {
+        TypeFact::Is {
+            subject, signature, ..
+        } if subject == name => Some(signature.clone()),
+        _ => None,
+    })
+}
+
+/// Binds the components of a destructuring parameter `M ::= (X, *)` by copying
+/// the component type facts from `M`'s type (looked up in the registry) with the
+/// type's own subject and component names substituted by the local ones. This is
+/// what lets `\magma.element:of{M ::= (X, *)}` know `X is \set` and
+/// `* is \binary.operation:on{M}` without a separate `when:` entry.
+fn assume_destructured_parameter_components(
+    header: &CommandHeader,
+    context: &mut TypeContext,
+    registry: &SignatureRegistry,
+) {
+    for form in header_parameter_forms(header) {
+        let FormOrDeclarationKind::TupleDeclaration {
+            name: Some(name),
+            form: tuple,
+        } = &form.kind
+        else {
+            continue;
+        };
+        let Some(signature) = declared_type_signature(name, context) else {
+            continue;
+        };
+        let Some(info) = registry.type_infos.get(&signature) else {
+            continue;
+        };
+        if info.component_types.is_empty() {
+            continue;
+        }
+        let local_components = tuple_form_component_names(tuple);
+        let mut sub_context = context.clone();
+        if let Some(described) = &info.described {
+            sub_context.add_substitution(described.clone(), name.clone());
+        }
+        for (index, fact) in info.component_types.iter().enumerate() {
+            if let Some(local) = local_components.get(index) {
+                sub_context.add_substitution(fact_subject(fact).to_owned(), local.clone());
+            }
+        }
+        for fact in &info.component_types {
+            let localized = sub_context.normalize_fact(fact);
+            context.add_fact(localized);
+        }
+        context.add_destructured_components(name.clone(), local_components);
+    }
+}
+
 fn collect_tail_parameters(parts: &[CommandHeaderTailPart], parameters: &mut WhenParameters) {
     for form in parts
         .iter()
@@ -12047,6 +12496,22 @@ fn require_optional_form_when_parameter(
 }
 
 fn require_form_when_parameter(form: &FormOrDeclaration, parameters: &mut WhenParameters) {
+    // A named destructuring parameter `M ::= (X, *)` requires only `M`; its
+    // components are typed from `M`'s type, so they are allowed (a `when:` entry
+    // may still refine them) but not independently required.
+    if let FormOrDeclarationKind::TupleDeclaration {
+        name: Some(name),
+        form: tuple,
+    } = &form.kind
+    {
+        parameters.require(name.clone());
+        let mut components = HashSet::new();
+        collect_tuple_form_when_parameters(tuple, &mut components);
+        for component in components {
+            parameters.allow(component);
+        }
+        return;
+    }
     for parameter in form_when_parameter_names(form) {
         parameters.require(parameter);
     }
@@ -13370,5 +13835,99 @@ fn format_function_type_spec(spec: &FunctionTypeFactSpec) -> String {
     match spec {
         FunctionTypeFactSpec::Is { ty, .. } => format!("_ is {ty}"),
         FunctionTypeFactSpec::Spec { operator, target } => format!("_ \"{operator}\" {target}"),
+    }
+}
+
+#[cfg(test)]
+mod desugar_tests {
+    use super::*;
+    use crate::frontend::formulation::parser::parse_expression;
+
+    fn operand(name: &str) -> Expression {
+        Expression::new(Span::new(0, 0), ExpressionKind::Name(name.to_owned()))
+    }
+
+    #[test]
+    fn named_operator_desugars_to_application() {
+        // A bare name becomes a function call: `x |op| y` == `op(x, y)`.
+        let call = desugar_named_operator_application(
+            "op",
+            Span::new(0, 0),
+            vec![operand("x"), operand("y")],
+        );
+        match call.kind {
+            ExpressionKind::FunctionCall { name, arguments } => {
+                assert_eq!(name, "op");
+                assert_eq!(arguments.len(), 2);
+            }
+            other => panic!("expected function call, got {other:?}"),
+        }
+
+        // A dotted path becomes a member call that tracks down through the value's
+        // fields: `x |M.*| y` == `M.*(x, y)`.
+        let call = desugar_named_operator_application(
+            "M.*",
+            Span::new(0, 0),
+            vec![operand("x"), operand("y")],
+        );
+        match call.kind {
+            ExpressionKind::MemberCall {
+                owner,
+                name,
+                arguments,
+            } => {
+                assert!(matches!(owner.kind, ExpressionKind::Name(ref n) if n == "M"));
+                assert_eq!(name, "*");
+                assert_eq!(arguments.len(), 2);
+            }
+            other => panic!("expected member call, got {other:?}"),
+        }
+
+        // A longer path nests member accesses: `x |a.b.c| y` == `a.b.c(x, y)`.
+        let call = desugar_named_operator_application(
+            "a.b.c",
+            Span::new(0, 0),
+            vec![operand("x"), operand("y")],
+        );
+        match call.kind {
+            ExpressionKind::MemberCall { owner, name, .. } => {
+                assert_eq!(name, "c");
+                assert!(matches!(owner.kind, ExpressionKind::MemberAccess { .. }));
+            }
+            other => panic!("expected member call, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn named_prefix_and_postfix_desugar_to_calls() {
+        let expr = parse_expression("f| x").expect("prefix parses");
+        let ExpressionKind::Prefix {
+            operator,
+            expression,
+        } = &expr.kind
+        else {
+            panic!("expected prefix, got {:?}", expr.kind);
+        };
+        let call = named_prefix_operator_desugaring(operator, expression).expect("named prefix");
+        assert!(matches!(
+            call.kind,
+            ExpressionKind::FunctionCall { ref name, ref arguments }
+                if name == "f" && arguments.len() == 1
+        ));
+
+        let expr = parse_expression("x |f").expect("postfix parses");
+        let ExpressionKind::Postfix {
+            expression,
+            operator,
+        } = &expr.kind
+        else {
+            panic!("expected postfix, got {:?}", expr.kind);
+        };
+        let call = postfix_operator_desugaring(expression, operator);
+        assert!(matches!(
+            call.kind,
+            ExpressionKind::FunctionCall { ref name, ref arguments }
+                if name == "f" && arguments.len() == 1
+        ));
     }
 }

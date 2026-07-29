@@ -52,6 +52,12 @@ pub(super) struct DefinitionTypeInfo {
     pub(super) outputs: Vec<TypeFact>,
     pub(super) substitutions: Vec<(String, String)>,
     pub(super) described: Option<String>,
+    /// For a type described with a destructuring target `Name ::= (c1, ..., cn)`,
+    /// the type facts of the components in tuple order (each fact's subject is a
+    /// component name). Lets another definition that destructures a value of this
+    /// type (e.g. a parameter `{M ::= (X, *)}` with `M is \magma`) recover the
+    /// component types positionally. Empty when the target is not a tuple.
+    pub(super) component_types: Vec<TypeFact>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

@@ -2794,6 +2794,426 @@ then:
     }
 
     #[test]
+    fn check_accepts_implicitly_marker_restating_inherited_refinement() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("implicitly-marker.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function]
+    Describes: f(x__)
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\bounded.function]
+    Describes: f(x__)
+    extends: f is \function
+    Documented:
+    . written: "\operatorname{boundedFunction}"
+
+    [\(injective)::function]
+    Refines: f(x__)
+    Documented:
+    . adjective: "injective"
+
+    [\(injective)::bounded.function]
+    Refines: f(x__)
+    implicitly:
+    extends: f is \(injective)::function
+    Documented:
+    . adjective: "injective"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("implicitly-marker.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_implicitly_marker_not_naming_parent_refinement() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("implicitly-wrong-parent.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function]
+    Describes: f(x__)
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\bounded.function]
+    Describes: f(x__)
+    extends: f is \function
+    Documented:
+    . written: "\operatorname{boundedFunction}"
+
+    [\(injective)::function]
+    Refines: f(x__)
+    Documented:
+    . adjective: "injective"
+
+    [\(injective)::bounded.function]
+    Refines: f(x__)
+    implicitly:
+    extends: f is \(injective)::[[f]]
+    Documented:
+    . adjective: "injective"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("implicitly-wrong-parent.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| message
+                    .message
+                    .contains("name the parent type's refinement"))),
+            "expected a parent-refinement error: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_rejects_implicitly_marker_that_adds_properties() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("implicitly-extra.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function]
+    Describes: f(x__)
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\bounded.function]
+    Describes: f(x__)
+    extends: f is \function
+    Documented:
+    . written: "\operatorname{boundedFunction}"
+
+    [\(injective)::function]
+    Refines: f(x__)
+    Documented:
+    . adjective: "injective"
+
+    [\(injective)::bounded.function]
+    Refines: f(x__)
+    implicitly:
+    extends: f is \(injective)::[[f]]
+    satisfies:
+    . forAll: x__
+      then: f(x__) = f(x__)
+    Documented:
+    . adjective: "injective"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("implicitly-extra.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| message
+                    .message
+                    .contains("must contain only the inherited"))),
+            "expected an implicitly-marker error: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_accepts_explicitly_marker_that_adds_properties() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("explicitly-marker.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function]
+    Describes: f(x__)
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\bounded.function]
+    Describes: f(x__)
+    extends: f is \function
+    Documented:
+    . written: "\operatorname{boundedFunction}"
+
+    [\(injective)::function]
+    Refines: f(x__)
+    Documented:
+    . adjective: "injective"
+
+    [\(injective)::bounded.function]
+    Refines: f(x__)
+    explicitly:
+    extends: f is \(injective)::[[f]]
+    satisfies:
+    . forAll: x__
+      then: f(x__) = f(x__)
+    Documented:
+    . adjective: "injective"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("explicitly-marker.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_explicitly_marker_without_added_properties() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("explicitly-trivial.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function]
+    Describes: f(x__)
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\bounded.function]
+    Describes: f(x__)
+    extends: f is \function
+    Documented:
+    . written: "\operatorname{boundedFunction}"
+
+    [\(injective)::function]
+    Refines: f(x__)
+    Documented:
+    . adjective: "injective"
+
+    [\(injective)::bounded.function]
+    Refines: f(x__)
+    explicitly:
+    extends: f is \(injective)::[[f]]
+    Documented:
+    . adjective: "injective"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("explicitly-trivial.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log).iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("must add at least one property"))),
+            "expected an explicitly-marker error: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_rejects_refinement_marker_with_arguments() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("marker-with-args.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function]
+    Describes: f(x__)
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\bounded.function]
+    Describes: f(x__)
+    extends: f is \function
+    Documented:
+    . written: "\operatorname{boundedFunction}"
+
+    [\(injective)::bounded.function]
+    Refines: f(x__)
+    implicitly: f
+    extends: f is \(injective)::[[f]]
+    Documented:
+    . adjective: "injective"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("marker-with-args.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log).iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("takes no arguments"))),
+            "expected a marker-argument error: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_rejects_both_refinement_markers() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("marker-both.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function]
+    Describes: f(x__)
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\bounded.function]
+    Describes: f(x__)
+    extends: f is \function
+    Documented:
+    . written: "\operatorname{boundedFunction}"
+
+    [\(injective)::bounded.function]
+    Refines: f(x__)
+    implicitly:
+    explicitly:
+    extends: f is \(injective)::[[f]]
+    Documented:
+    . adjective: "injective"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("marker-both.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| message
+                    .message
+                    .contains("at most one of `implicitly:` or `explicitly:`"))),
+            "expected a mutual-exclusivity error: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_rejects_refinement_marker_on_non_subtype_base() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("marker-non-subtype.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function]
+    Describes: f(x__)
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\(injective)::function]
+    Refines: f(x__)
+    implicitly:
+    extends: f is \(injective)::[[f]]
+    Documented:
+    . adjective: "injective"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("marker-non-subtype.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log).iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("subtype of another type"))),
+            "expected a non-subtype marker error: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
     fn check_uses_requires_capabilities_for_type_provided_specs() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("requires-capability.mlg");

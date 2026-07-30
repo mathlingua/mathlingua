@@ -523,10 +523,24 @@ pub struct DefinesGroup {
     pub metadata: Option<MetadataSection>,
 }
 
+/// The optional `implicitly:`/`explicitly:` marker on a `Refines:` group.
+///
+/// These zero-argument sections signal to readers whether an explicitly written
+/// refinement of a subtype merely restates the definition inherited from the
+/// supertype's refinement (`Implicit`) or deliberately overrides it with extra
+/// properties (`Explicit`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RefinementKind {
+    Implicit,
+    Explicit,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RefinesGroup {
     pub heading: CommandHeader,
     pub refines: RefinesSection,
+    /// The optional `implicitly:`/`explicitly:` marker, if present.
+    pub refinement_kind: Option<RefinementKind>,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub extends: Option<RefinesExtendsSection>,

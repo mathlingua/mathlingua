@@ -88,6 +88,36 @@ A `:->` capability target may be a spec on the bound placeholder, e.g.
 
 ## Structural Language
 
+### `Refines:` Refinement Markers (`implicitly:`/`explicitly:`)
+
+A `Refines:` group may now carry an optional, zero-argument marker section —
+`implicitly:` or `explicitly:` — placed immediately after `Refines:`. The two are
+mutually exclusive and are stored as an `Option<RefinementKind>` on
+`RefinesGroup`. They document (and let the checker verify) whether an explicitly
+written refinement of a subtype merely restates the definition inherited from a
+supertype's refinement, or overrides it with extra properties.
+
+- A refinement of a base type is implied on that type's subtypes (a
+  `\(finite)::group` is available because `\group` extends `\magma` and
+  `\(finite)::magma` exists). The markers let authors write such a refinement out
+  and signal their intent to readers.
+- `implicitly:` — the body must contain **only** the inherited `extends:` clause
+  (plus scaffolding `using:`/`when:`). Adding `satisfies:`, `Requires:`,
+  `Enables:`, or `Justified:` is an error. The `extends:` clause must also
+  literally name the parent type's refinement — the same adjective(s) applied to
+  a direct supertype of the refined base type (`\(finite)::group` extends
+  `\(finite)::magma`, since `\group` extends `\magma`) — and naming anything else
+  is an error.
+- `explicitly:` — the body must add **at least one** property beyond the
+  inherited `extends:` clause; a body that is only the inherited `extends:` must
+  be marked `implicitly:` instead.
+- Either marker requires the refined base type to itself be a subtype of another
+  type (to have an `extends:` clause of its own); using a marker on a
+  non-subtype base is an error, and non-subtype refinements take no marker.
+- Both markers reject any arguments ("`implicitly:` is a marker section and takes
+  no arguments"), and specifying both reports "A `Refines:` may specify at most
+  one of `implicitly:` or `explicitly:`".
+
 ### `Lemma:` and `Conjecture:` Items Removed
 
 The top-level `Lemma:` and `Conjecture:` items are **removed**. Each had exactly the

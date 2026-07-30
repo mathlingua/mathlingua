@@ -1509,6 +1509,7 @@ fn validate_top_level_item_types(
             if group.extends.is_some() {
                 check_refines_extends(group, &context, path, locator, registry, event_log);
             }
+            check_refines_marker(group, path, locator, registry, event_log);
             validate_refines_target_symbol_specifications(group, path, locator, event_log);
             validate_optional_requires(
                 &group.requires,
@@ -1751,6 +1752,176 @@ fn check_refines_extends(
         registry,
         event_log,
     );
+}
+
+/// The base type signature (`\group`) of a refined command heading such as
+/// `[\(finite)::group]`.
+fn refined_command_header_base_signature(command: &RefinedCommandHeader) -> String {
+    format!("\\{}", format_refined_tail(&command.refined_tail))
+}
+
+/// The `::`-joined adjective chains of a refined command heading, e.g.
+/// `\(finite)::group` -> `finite`, `\(injective, surjective)::function` ->
+/// `injective::surjective`.
+fn refined_command_header_adjective_key(command: &RefinedCommandHeader) -> String {
+    command
+        .parts
+        .iter()
+        .map(|part| format_chain(&part.chain))
+        .collect::<Vec<_>>()
+        .join("::")
+}
+
+/// The `::`-joined adjective chains of a refined command expression (the form of
+/// a `Refines:` `extends:` target), rendered the same way as
+/// [`refined_command_header_adjective_key`] so the two can be compared.
+fn refined_command_expression_adjective_key(command: &RefinedCommandExpression) -> String {
+    command
+        .parts
+        .iter()
+        .map(|part| format_chain(&part.chain))
+        .collect::<Vec<_>>()
+        .join("::")
+}
+
+/// The type signature a subtype's `extends:` rule points at (the supertype), for
+/// the fact kinds an `extends:` clause can produce.
+fn extension_rule_supertype_signature(fact: &TypeFact) -> Option<String> {
+    match fact {
+        TypeFact::Is { signature, .. } => Some(signature.clone()),
+        TypeFact::RefinedIs { base_signature, .. } => Some(base_signature.clone()),
+        _ => None,
+    }
+}
+
+/// The direct supertypes (parents) of `base_signature`, taken from the type
+/// extension rules the registry collected for the base type's own `extends:`.
+fn direct_parent_signatures(base_signature: &str, registry: &SignatureRegistry) -> Vec<String> {
+    registry
+        .extension_rules
+        .iter()
+        .filter(|rule| rule.subtype_signature == base_signature)
+        .filter_map(|rule| extension_rule_supertype_signature(&rule.target))
+        .collect()
+}
+
+/// Whether an `implicitly:`-marked group's `extends:` clause literally names the
+/// parent type's refinement: the same adjective(s) applied to a direct supertype
+/// of the refined base type.
+fn implicit_extends_names_parent_refinement(
+    group: &RefinesGroup,
+    heading: &RefinedCommandHeader,
+    parents: &[String],
+) -> bool {
+    let Some(extends) = &group.extends else {
+        return false;
+    };
+    let Some(DeclarationRelation::Is(TypeExpression::RefinedCommand(target))) =
+        &extends.argument.relation
+    else {
+        return false;
+    };
+    if refined_command_header_adjective_key(heading)
+        != refined_command_expression_adjective_key(target)
+    {
+        return false;
+    }
+    let target_base = format!("\\{}", format_refined_tail(&target.refined_tail));
+    parents.contains(&target_base)
+}
+
+/// Validates the optional `implicitly:`/`explicitly:` marker on a `Refines:`
+/// group.
+///
+/// Both markers are only meaningful when the refined base type is a subtype of
+/// another type (so that a supertype refinement could be inherited).  Given that:
+///
+///   * `implicitly:` asserts the group merely restates the inherited definition,
+///     so its body must contain nothing beyond the inherited `extends:` clause
+///     (plus scaffolding `using:`/`when:`), and that `extends:` clause must
+///     literally name the parent type's refinement — the same adjective(s)
+///     applied to a direct supertype of the refined base type.
+///   * `explicitly:` asserts the group overrides the inherited definition, so it
+///     must add at least one property beyond the inherited `extends:` clause;
+///     otherwise it is the trivial case that should be marked `implicitly:`.
+fn check_refines_marker(
+    group: &RefinesGroup,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let Some(marker) = group.refinement_kind else {
+        return;
+    };
+    let CommandHeader::Refined(heading) = &group.heading else {
+        return;
+    };
+    let location = locator.locate_heading(&shape_for_header(&group.heading));
+
+    let base_signature = refined_command_header_base_signature(heading);
+    let parents = direct_parent_signatures(&base_signature, registry);
+
+    if parents.is_empty() {
+        emit_error(
+            event_log,
+            path,
+            location,
+            "`implicitly:` and `explicitly:` may only be used when the `Refines:` base type is a \
+             subtype of another type (has an `extends:` clause of its own); the base here is not",
+        );
+        return;
+    }
+
+    let has_extends = group.extends.is_some();
+    let adds_properties = group.satisfies.is_some()
+        || group.requires.is_some()
+        || group.enables.is_some()
+        || group.justified.is_some();
+
+    match marker {
+        RefinementKind::Implicit => {
+            if !has_extends {
+                emit_error(
+                    event_log,
+                    path,
+                    location,
+                    "A `Refines:` marked `implicitly:` must restate the inherited definition with an \
+                     `extends:` clause naming the supertype's refinement",
+                );
+            } else if adds_properties {
+                emit_error(
+                    event_log,
+                    path,
+                    location,
+                    "A `Refines:` marked `implicitly:` must contain only the inherited `extends:` \
+                     clause; it must not add `satisfies:`, `Requires:`, `Enables:`, or `Justified:`. \
+                     Mark it `explicitly:` if the definition is meant to differ",
+                );
+            } else if !implicit_extends_names_parent_refinement(group, heading, &parents) {
+                emit_error(
+                    event_log,
+                    path,
+                    location,
+                    "A `Refines:` marked `implicitly:` must name the parent type's refinement in its \
+                     `extends:` clause: the same adjective(s) applied to a supertype of the refined \
+                     base type",
+                );
+            }
+        }
+        RefinementKind::Explicit => {
+            if !adds_properties {
+                emit_error(
+                    event_log,
+                    path,
+                    location,
+                    "A `Refines:` marked `explicitly:` must add at least one property beyond the \
+                     inherited `extends:` clause (for example a `satisfies:` section); the trivial \
+                     case should be marked `implicitly:`",
+                );
+            }
+        }
+    }
 }
 
 fn validate_refines_form_only(

@@ -449,6 +449,44 @@ Documented:
 . called: "continuous"
 ```
 
+#### `Refines` Refinement Markers (`implicitly:`/`explicitly:`)
+
+A refinement of a base type is automatically available on that type's subtypes:
+if `\(finite)::magma` refines `\magma` and `\group` extends `\magma`, then
+`\(finite)::group` is already implied (a finite group is just a finite magma
+whose carrier is a group). Authors may still want to write the
+`\(finite)::group` refinement out explicitly — for documentation, or to give it
+extra properties. Two optional, mutually exclusive, zero-argument marker sections
+placed immediately after `Refines:` state the author's intent, and the checker
+verifies the body is consistent with the marker:
+
+```text
+[\(finite)::group]
+Refines: G(x__)
+implicitly:
+extends: G is \(finite)::magma
+Documented:
+. adjective: "finite"
+```
+
+- `implicitly:` — the group merely restates the inherited definition. The body
+  must contain **nothing beyond** the inherited `extends:` clause (the scaffolding
+  `using:`/`when:` sections are allowed). Adding `satisfies:`, `Requires:`,
+  `Enables:`, or `Justified:` is an error — mark it `explicitly:` instead.
+  Furthermore, the `extends:` clause must **literally name the parent type's
+  refinement**: the same adjective(s) applied to a supertype of the refined base
+  type (above, `\(finite)::magma`, because `\group` extends `\magma`). An
+  `extends:` clause that names anything else is an error.
+- `explicitly:` — the group overrides the inherited definition with stronger
+  meaning, so it must add **at least one** property beyond the inherited
+  `extends:` clause (for example a `satisfies:` section). If the body is only the
+  inherited `extends:`, that is the trivial case and must be marked `implicitly:`.
+
+Both markers are only meaningful when the refined base type is itself a subtype
+of another type (it has an `extends:` clause of its own). Using either marker on
+a base that is not a subtype of anything is an error. When the base is not a
+subtype, no marker is written at all.
+
 A `specifies:` section (only `Describes` has one) types the described form's
 parts — including the components of a destructuring target — and those facts are
 assumed when checking the definition body and stored so a value of the type
@@ -800,6 +838,15 @@ function ...`, `\`{name}\` is not a known type`).
 - **`Refines:` `extends:`** — the extends subject must match the `Refines:`
   subject, a `[[...]]` in it must name that subject, and a `Refines:` must have
   the form `Refines: <form>`.
+- **`Refines:` refinement markers** — the optional `implicitly:`/`explicitly:`
+  marker sections must take no arguments and are mutually exclusive. Either
+  marker requires the refined base type to be a subtype of another type;
+  `implicitly:` additionally requires the body to contain only the inherited
+  `extends:` clause (no `satisfies:`/`Requires:`/`Enables:`/`Justified:`) and
+  that clause to literally name the parent type's refinement (the same
+  adjective(s) applied to a direct supertype of the refined base type), while
+  `explicitly:` requires at least one such property beyond the inherited
+  `extends:` clause.
 - **Mapping literals** — a mapping-literal parameter must be a name with a spec
   (`(x_ is ...)`), or a bare name whose type is already known from an `is`;
   otherwise it is rejected.

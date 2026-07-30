@@ -2804,6 +2804,46 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
     })
 }
 
+/// Extracts the optional `implicitly:`/`explicitly:` marker from a `Refines:`
+/// group's sections.
+///
+/// Both are zero-argument marker sections and are mutually exclusive; violations
+/// are reported to `tracker` (and the first-declared marker is still returned so
+/// that later semantic checks can proceed).
+fn parse_refinement_kind(
+    sections: &HashMap<String, &ProtoSection>,
+    tracker: &mut EventLog,
+) -> Option<RefinementKind> {
+    let implicitly = section(sections, "implicitly");
+    let explicitly = section(sections, "explicitly");
+
+    for (label, marker) in [("implicitly", implicitly), ("explicitly", explicitly)] {
+        if let Some(marker) = marker
+            && (marker.inline_argument.is_some() || !marker.arguments.is_empty())
+        {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                marker.metadata.row,
+                format!("`{label}:` is a marker section and takes no arguments"),
+            );
+        }
+    }
+
+    match (implicitly, explicitly) {
+        (Some(_), Some(explicitly)) => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                explicitly.metadata.row,
+                "A `Refines:` may specify at most one of `implicitly:` or `explicitly:`".to_owned(),
+            );
+            Some(RefinementKind::Implicit)
+        }
+        (Some(_), None) => Some(RefinementKind::Implicit),
+        (None, Some(_)) => Some(RefinementKind::Explicit),
+        (None, None) => None,
+    }
+}
+
 /// Parses a command-backed `Refines:` group.
 ///
 /// Refines groups define a refined command signature and validate their
@@ -2820,6 +2860,8 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
         tracker,
         &[
             "Refines",
+            "implicitly?",
+            "explicitly?",
             "using?",
             "when?",
             "extends?",
@@ -2835,6 +2877,8 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
         ],
     )?;
 
+    let refinement_kind = parse_refinement_kind(&sections, tracker);
+
     Some(RefinesGroup {
         heading,
         refines: RefinesSection {
@@ -2845,6 +2889,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
                 parse_refined_declaration_statement,
             )?,
         },
+        refinement_kind,
         using: sections.get("using").copied().and_then(|section| {
             parse_required_formulations(
                 section,

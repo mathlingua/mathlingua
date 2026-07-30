@@ -3139,6 +3139,19 @@ mod tests {
     }
 
     #[test]
+    fn parses_bracketed_placeholder_operator_form() {
+        // `x_ [*] y_` is an infix-operator form whose operator is a bracketed
+        // placeholder; the brackets are retained in the operator text.
+        let form = parse_form_or_declaration("x_ [*] y_").expect("expected form");
+        match form.kind {
+            FormOrDeclarationKind::InfixOperator { operator, .. } => {
+                assert_eq!(operator.text, "[*]");
+            }
+            other => panic!("expected infix operator form, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn parses_command_headers() {
         let header = parse_command_header(r#"\function:on{A}:to{B}(f(x_))"#)
             .expect("expected command header");

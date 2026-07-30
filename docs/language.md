@@ -351,27 +351,40 @@ form or declaration.
 
 These groups may appear at the top level of a document.
 
-| Group | Heading | Required purpose |
-| --- | --- | --- |
-| `Title` | none | document title text |
-| `SectionTitle` | none | first-level prose heading |
-| `SubsectionTitle` | none | second-level prose heading |
-| `Text` | none | a prose block (Markdown with embedded LaTeX) |
-| `Writing` | none | collection-wide writing aliases (`:~>`); at most one per collection |
-| `Disambiguates` | operator/function form | global resolution of an ambiguous operator or function into typed branches |
-| `Describes` | command | introduces a command for a mathematical form |
-| `Defines` | command | defines a statement, specification, or type fact |
-| `Refines` | command | defines a refined command in terms of another command |
-| `States` | command | defines a named statement with a `that:` body |
-| `Axiom` | optional command | theorem-like assertion |
-| `Theorem` | optional command | theorem-like assertion |
-| `Corollary` | optional command | theorem-like assertion with `of:` text |
-| `Person` | author | person metadata |
-| `Resource` | resource | bibliography or web metadata |
-| `Specify` | none | numeric-domain specification metadata |
-| `Relation` | none | bidirectional relationship between two concepts, topics, or definitions (`between:`/`and:`, with quoted `"#topic"`/`"\signature"` references) |
-| `Equivalent` | command | interchangeable commands under a shared name (`to:`) |
-| `Topic` | topic | names a documentation topic (`#some.name`); optional `within:` parent and `Related:` links (quoted `"#topic"`/`"\signature"` references) |
+Each entry below gives the group, the kind of heading it takes (in
+parentheses), and its purpose.
+
+- **`Title`** (no heading) — document title text.
+- **`SectionTitle`** (no heading) — first-level prose heading.
+- **`SubsectionTitle`** (no heading) — second-level prose heading.
+- **`Text`** (no heading) — a prose block (Markdown with embedded LaTeX).
+- **`Writing`** (no heading) — collection-wide writing aliases (`:~>`); at most
+  one per collection.
+- **`Disambiguates`** (operator/function form heading) — global resolution of an
+  ambiguous operator or function into typed branches.
+- **`Describes`** (command heading) — introduces a command for a mathematical
+  form.
+- **`Defines`** (command heading) — defines a statement, specification, or type
+  fact.
+- **`Refines`** (command heading) — defines a refined command in terms of
+  another command.
+- **`States`** (command heading) — defines a named statement with a `that:`
+  body.
+- **`Axiom`** (optional command heading) — theorem-like assertion.
+- **`Theorem`** (optional command heading) — theorem-like assertion.
+- **`Corollary`** (optional command heading) — theorem-like assertion with
+  `of:` text.
+- **`Person`** (author heading) — person metadata.
+- **`Resource`** (resource heading) — bibliography or web metadata.
+- **`Specify`** (no heading) — numeric-domain specification metadata.
+- **`Relation`** (no heading) — bidirectional relationship between two concepts,
+  topics, or definitions (`between:`/`and:`, with quoted
+  `"#topic"`/`"\signature"` references).
+- **`Equivalent`** (command heading) — interchangeable commands under a shared
+  name (`to:`).
+- **`Topic`** (topic heading) — names a documentation topic (`#some.name`);
+  optional `within:` parent and `Related:` links (quoted
+  `"#topic"`/`"\signature"` references).
 
 Groups with command headings introduce command signatures: `Describes`,
 `Defines`, `Refines`, `States`, `Equivalent`, and theorem-like groups that have
@@ -486,20 +499,21 @@ Clause sections accept inline formulations or nested clause groups. Inline
 clause formulations are tried as declaration statements first, then ordinary
 expressions.
 
-| Clause | Meaning in the checker |
-| --- | --- |
-| `not` | checks the nested clause in the current context |
-| `allOf` | checks all children; when assumed, gathers facts from children |
-| `anyOf` | checks all children |
-| `oneOf` | checks all children |
-| `exists` | creates a child context from its declaration and assumes optional `suchThat:` clauses |
-| `existsUnique` | same as `exists`, with unique-existence intent |
-| `forAll` | creates a child context, assumes `where:`, checks `then:` |
-| `if` | assumes `if:`, checks `then:` |
-| `have` | assumes `iff:`, checks `have:` |
-| `equivalently` | a chain of biconditionals — sugar for pairwise `iff` |
-| `piecewise` | assumes `if:`, checks `then:`; the optional `else:` is checked in the outer context |
-| `given` | assumes one refined-capable given statement (optional `where:`), then checks `then:` |
+- **`not`** — checks the nested clause in the current context.
+- **`allOf`** — checks all children; when assumed, gathers facts from children.
+- **`anyOf`** — checks all children.
+- **`oneOf`** — checks all children.
+- **`exists`** — creates a child context from its declaration and assumes
+  optional `suchThat:` clauses.
+- **`existsUnique`** — same as `exists`, with unique-existence intent.
+- **`forAll`** — creates a child context, assumes `where:`, checks `then:`.
+- **`if`** — assumes `if:`, checks `then:`.
+- **`have`** — assumes `iff:`, checks `have:`.
+- **`equivalently`** — a chain of biconditionals — sugar for pairwise `iff`.
+- **`piecewise`** — assumes `if:`, checks `then:`; the optional `else:` is checked
+  in the outer context.
+- **`given`** — assumes one refined-capable given statement (optional `where:`),
+  then checks `then:`.
 
 Each of these clauses also has a builtin *command* form used inline in a
 statement position: `\\not{...}`, `\\allOf{...}`, `\\anyOf{...}`, `\\oneOf{...}`,
@@ -1182,20 +1196,18 @@ A placeholder may carry a `+` or `-` before its `?` to control the parentheses
 around the value substituted into it. The modifier is not part of the name, so
 `A?`, `A+?`, and `A-?` all substitute the same value `A`.
 
-| Form  | Meaning                                                              |
-| ----- | -------------------------------------------------------------------- |
-| `A?`  | Substitutes the value exactly as rendered.                            |
-| `A+?` | Wraps the value in exactly one pair of parentheses, unless it is a single atom. |
-| `A-?` | Removes every pair of parentheses wrapping the value.                 |
+- `A?` — substitutes the value exactly as rendered.
+- `A+?` — wraps the value in exactly one pair of parentheses, unless it is a
+  single atom.
+- `A-?` — removes every pair of parentheses wrapping the value.
 
-With `A` bound to each of the following, the three forms render as:
+With `A` bound to each of the following, the three forms render as (shown
+`A?` / `A+?` / `A-?`):
 
-| Value     | `A?`        | `A+?`     | `A-?`   |
-| --------- | ----------- | --------- | ------- |
-| `1+2`     | `1 + 2`     | `(1 + 2)` | `1 + 2` |
-| `(1+2)`   | `(1 + 2)`   | `(1 + 2)` | `1 + 2` |
-| `(((1+2)))` | `(((1 + 2)))` | `(1 + 2)` | `1 + 2` |
-| `a`       | `a`         | `a`       | `a`     |
+- `A = 1+2` → `1 + 2` / `(1 + 2)` / `1 + 2`
+- `A = (1+2)` → `(1 + 2)` / `(1 + 2)` / `1 + 2`
+- `A = (((1+2)))` → `(((1 + 2)))` / `(1 + 2)` / `1 + 2`
+- `A = a` → `a` / `a` / `a`
 
 `A+?` never doubles parentheses: the value is first reduced to its bare form and
 then wrapped once. Only parentheses that enclose the *whole* value are removed, so

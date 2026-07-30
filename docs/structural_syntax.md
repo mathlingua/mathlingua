@@ -263,27 +263,25 @@ An empty document is supported by the current implementation because `Document.i
 
 ### Top-level group inventory
 
-| First section label | AST node | Heading | Ordered sections |
-| --- | --- | --- | --- |
-| `Title` | `TitleGroup` | none | `Title: OpenText` |
-| `SectionTitle` | `SectionTitleGroup` | none | `SectionTitle: OpenText` |
-| `SubsectionTitle` | `SubsectionTitleGroup` | none | `SubsectionTitle: OpenText` |
-| `Text` | `TextGroup` | none | `Text: OpenText` |
-| `Writing` | `TopLevelWritingGroup` | none | `Writing: WritingAlias+` (each alias LHS must be a `Name`, used with `:~>`) |
-| `Disambiguates` | `DisambiguatesGroup` | operator/function form | `Disambiguates:`, zero or more ordered `when?: Clause+`/`to: Expression` branches, `else?: Expression`, `Justified?`, `Documented?`, `Aliases?`, `References?`, `Metadata?` |
-| `Describes` | `DescribesGroup` | command | `Describes: FormOrDeclaration`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: IsOrViaItem`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Defines` | `DefinesGroup` | command | `Defines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Refines` | `RefinesGroup` | command | `Refines: RefinedDeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `States` | `StatesGroup` | command | `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Axiom` | `AxiomGroup` | command? | `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Theorem` | `TheoremGroup` | command? | `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Corollary` | `CorollaryGroup` | command? | `Corollary:`, `of: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Person` | `PersonGroup` | author | `Person: OpenText+`, `biography?: OpenText` |
-| `Resource` | `ResourceGroup` | resource | `Resource: ResourceItem+` |
-| `Specify` | `SpecifyGroup` | none | `Specify: SpecifyItem+` |
-| `Relation` | `RelationGroup` | none | `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RelationSubject`, `and: RelationSubject`, `when?: Clause+`, `means?: RelationMeans`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Equivalent` | `EquivalentGroup` | command | `Equivalent: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `References?: ResourceHeader+` |
-| `Topic` | `TopicGroup` | topic | `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Documented?: CalledDocumentedItem+` |
+- **`Title`** — `TitleGroup`, heading: none. Sections: `Title: OpenText`
+- **`SectionTitle`** — `SectionTitleGroup`, heading: none. Sections: `SectionTitle: OpenText`
+- **`SubsectionTitle`** — `SubsectionTitleGroup`, heading: none. Sections: `SubsectionTitle: OpenText`
+- **`Text`** — `TextGroup`, heading: none. Sections: `Text: OpenText`
+- **`Writing`** — `TopLevelWritingGroup`, heading: none. Sections: `Writing: WritingAlias+` (each alias LHS must be a `Name`, used with `:~>`)
+- **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when?: Clause+`/`to: Expression` branches, `else?: Expression`, `Justified?`, `Documented?`, `Aliases?`, `References?`, `Metadata?`
+- **`Describes`** — `DescribesGroup`, heading: command. Sections: `Describes: FormOrDeclaration`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: IsOrViaItem`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Refines`** — `RefinesGroup`, heading: command. Sections: `Refines: RefinedDeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`States`** — `StatesGroup`, heading: command. Sections: `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Theorem`** — `TheoremGroup`, heading: command?. Sections: `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Corollary`** — `CorollaryGroup`, heading: command?. Sections: `Corollary:`, `of: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Person`** — `PersonGroup`, heading: author. Sections: `Person: OpenText+`, `biography?: OpenText`
+- **`Resource`** — `ResourceGroup`, heading: resource. Sections: `Resource: ResourceItem+`
+- **`Specify`** — `SpecifyGroup`, heading: none. Sections: `Specify: SpecifyItem+`
+- **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RelationSubject`, `and: RelationSubject`, `when?: Clause+`, `means?: RelationMeans`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Equivalent`** — `EquivalentGroup`, heading: command. Sections: `Equivalent: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `References?: ResourceHeader+`
+- **`Topic`** — `TopicGroup`, heading: topic. Sections: `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Documented?: CalledDocumentedItem+`
 
 Notes:
 
@@ -303,9 +301,7 @@ The following groups are used inside top-level sections.
 
 Used inside `Aliases:`.
 
-| First section label | AST node | Heading | Ordered sections |
-| --- | --- | --- | --- |
-| `alias` | `AliasGroup` | label? | `alias: AliasKind`, `written?: WrittenText+` |
+- **`alias`** — `AliasGroup`, heading: label?. Sections: `alias: AliasKind`, `written?: WrittenText+`
 
 `AliasKind` is one of:
 
@@ -316,10 +312,8 @@ Used inside `Aliases:`.
 
 Used inside `Requires:`.
 
-| First section label | AST node | Heading | Ordered sections |
-| --- | --- | --- | --- |
-| `capability` | `CapabilityGroup` | label? | `capability: AliasKind`, `written?: WrittenText+` |
-| `definition` | `DefinitionGroup` | label? | `definition: DefinitionRequirement` |
+- **`capability`** — `CapabilityGroup`, heading: label?. Sections: `capability: AliasKind`, `written?: WrittenText+`
+- **`definition`** — `DefinitionGroup`, heading: label?. Sections: `definition: DefinitionRequirement`
 
 `DefinitionRequirement` is parsed from the formulation shape
 `\command is <type-or-spec>`.
@@ -328,12 +322,10 @@ Used inside `Requires:`.
 
 Used inside `Enables:`.
 
-| First section label | AST node | Heading | Ordered sections |
-| --- | --- | --- | --- |
-| `capability` | `CapabilityGroup` | label? | `capability: AliasKind`, `written?: WrittenText+` |
-| `from` | `FromCapabilityGroup` | label? | `from: DeclarationStatement`, `capability: AliasKind`, `written?: WrittenText+` |
-| `from` | `FromAsGroup` | label? | `from: DeclarationStatement`, `as: ExpressionBinding` |
-| `relation` | `RelationGroup` | label? | `relation: OpenText*`, `to: RelationshipDeclaration`, `when?: RelationWhenItem+`, `means?: Clause`, `represents?: RelationKind+`, `by?: OpenText+` |
+- **`capability`** — `CapabilityGroup`, heading: label?. Sections: `capability: AliasKind`, `written?: WrittenText+`
+- **`from`** — `FromCapabilityGroup`, heading: label?. Sections: `from: DeclarationStatement`, `capability: AliasKind`, `written?: WrittenText+`
+- **`from`** — `FromAsGroup`, heading: label?. Sections: `from: DeclarationStatement`, `as: ExpressionBinding`
+- **`relation`** — `RelationGroup`, heading: label?. Sections: `relation: OpenText*`, `to: RelationshipDeclaration`, `when?: RelationWhenItem+`, `means?: Clause`, `represents?: RelationKind+`, `by?: OpenText+`
 
 `from:` groups must contain exactly one of `capability:` or `as:`.
 `RelationWhenItem` is either a declaration statement or a hard-cast statement.
@@ -343,46 +335,38 @@ Used inside `Enables:`.
 
 Used inside `Documented:`.
 
-| First section label | AST node | Heading | Ordered sections |
-| --- | --- | --- | --- |
-| `written` | `WrittenGroup` | label? | `written: WrittenText+` |
-| `called` | `CalledGroup` | label? | `called: CalledText+`, `written?: WrittenText+` |
-| `adjective` | `AdjectiveGroup` | label? | `adjective: AdjectiveText+` (required by `Refines:`; `Refines:` `Documented:` rejects `called:`) |
-| `description` | `DescriptionGroup` | label? | `description: OpenText` |
-| `writing` | `WritingGroup` | label? | `writing: WritingAlias`, `as: WritingText+` |
-| `overview` | `OverviewGroup` | label? | `overview: OpenText` |
-| `related` | `RelatedGroup` | label? | `related: OpenText+` |
-| `discoverer` | `DiscovererGroup` | label? | `discoverer: OpenText*` |
+- **`written`** — `WrittenGroup`, heading: label?. Sections: `written: WrittenText+`
+- **`called`** — `CalledGroup`, heading: label?. Sections: `called: CalledText+`, `written?: WrittenText+`
+- **`adjective`** — `AdjectiveGroup`, heading: label?. Sections: `adjective: AdjectiveText+` (required by `Refines:`; `Refines:` `Documented:` rejects `called:`)
+- **`description`** — `DescriptionGroup`, heading: label?. Sections: `description: OpenText`
+- **`writing`** — `WritingGroup`, heading: label?. Sections: `writing: WritingAlias`, `as: WritingText+`
+- **`overview`** — `OverviewGroup`, heading: label?. Sections: `overview: OpenText`
+- **`related`** — `RelatedGroup`, heading: label?. Sections: `related: OpenText+`
+- **`discoverer`** — `DiscovererGroup`, heading: label?. Sections: `discoverer: OpenText*`
 
 ### Justified items
 
 Used inside `Justified:`.
 
-| First section label | AST node | Heading | Ordered sections |
-| --- | --- | --- | --- |
-| `label` | `LabelGroup` | label? | `label: OpenText*`, `by: OpenText*`, `comment: OpenText` |
-| `by` | `ByGroup` | label? | `by: OpenText*`, `comment: OpenText` |
+- **`label`** — `LabelGroup`, heading: label?. Sections: `label: OpenText*`, `by: OpenText*`, `comment: OpenText`
+- **`by`** — `ByGroup`, heading: label?. Sections: `by: OpenText*`, `comment: OpenText`
 
 ### Metadata items
 
 Used inside `Metadata:`.
 
-| First section label | AST node | Heading | Ordered sections |
-| --- | --- | --- | --- |
-| `id` | `IdGroup` | none | `id: OpenText` |
-| `version` | `VersionGroup` | none | `version: OpenText` |
+- **`id`** — `IdGroup`, heading: none. Sections: `id: OpenText`
+- **`version`** — `VersionGroup`, heading: none. Sections: `version: OpenText`
 
 ### Specify items
 
 Used inside top-level `Specify:`.
 
-| First section label | AST node | Heading | Ordered sections |
-| --- | --- | --- | --- |
-| `positive` with an `int` section | `PositiveIntGroup` | label? | `positive: OpenText*`, `int: OpenText*`, `is: OpenText*` |
-| `negative` with an `int` section | `NegativeIntGroup` | label? | `negative: OpenText*`, `int: OpenText*`, `is: OpenText*` |
-| `zero` | `ZeroGroup` | label? | `zero: OpenText*`, `is: OpenText*` |
-| `positive` without an `int` section | `PositiveDecimalGroup` | label? | `positive: OpenText*`, `decimal: OpenText*`, `is: OpenText*` |
-| `negative` without an `int` section | `NegativeDecimalGroup` | label? | `negative: OpenText*`, `decimal: OpenText*`, `is: OpenText*` |
+- **`positive` with an `int` section** — `PositiveIntGroup`, heading: label?. Sections: `positive: OpenText*`, `int: OpenText*`, `is: OpenText*`
+- **`negative` with an `int` section** — `NegativeIntGroup`, heading: label?. Sections: `negative: OpenText*`, `int: OpenText*`, `is: OpenText*`
+- **`zero`** — `ZeroGroup`, heading: label?. Sections: `zero: OpenText*`, `is: OpenText*`
+- **`positive` without an `int` section** — `PositiveDecimalGroup`, heading: label?. Sections: `positive: OpenText*`, `decimal: OpenText*`, `is: OpenText*`
+- **`negative` without an `int` section** — `NegativeDecimalGroup`, heading: label?. Sections: `negative: OpenText*`, `decimal: OpenText*`, `is: OpenText*`
 
 Important implementation detail:
 
@@ -392,23 +376,21 @@ Important implementation detail:
 
 Used inside top-level `Resource:`.
 
-| First section label | AST node | Heading | Ordered sections |
-| --- | --- | --- | --- |
-| `title` | `ResourceTitleGroup` | none | `title: OpenText` |
-| `author` | `ResourceAuthorGroup` | none | `author: OpenText+` |
-| `offset` | `ResourceOffsetGroup` | none | `offset: OpenText` |
-| `url` | `ResourceUrlGroup` | none | `url: OpenText` |
-| `homepage` | `ResourceHomepageGroup` | none | `homepage: OpenText` |
-| `type` | `ResourceTypeGroup` | none | `type: OpenText` |
-| `edition` | `ResourceEditionGroup` | none | `edition: OpenText` |
-| `editor` | `ResourceEditorGroup` | none | `editor: OpenText` |
-| `institution` | `ResourceInstitutionGroup` | none | `institution: OpenText` |
-| `journal` | `ResourceJournalGroup` | none | `journal: OpenText` |
-| `publisher` | `ResourcePublisherGroup` | none | `publisher: OpenText` |
-| `volume` | `ResourceVolumeGroup` | none | `volume: OpenText` |
-| `month` | `ResourceMonthGroup` | none | `month: OpenText` |
-| `year` | `ResourceYearGroup` | none | `year: OpenText` |
-| `description` | `ResourceDescriptionGroup` | none | `description: OpenText` |
+- **`title`** — `ResourceTitleGroup`, heading: none. Sections: `title: OpenText`
+- **`author`** — `ResourceAuthorGroup`, heading: none. Sections: `author: OpenText+`
+- **`offset`** — `ResourceOffsetGroup`, heading: none. Sections: `offset: OpenText`
+- **`url`** — `ResourceUrlGroup`, heading: none. Sections: `url: OpenText`
+- **`homepage`** — `ResourceHomepageGroup`, heading: none. Sections: `homepage: OpenText`
+- **`type`** — `ResourceTypeGroup`, heading: none. Sections: `type: OpenText`
+- **`edition`** — `ResourceEditionGroup`, heading: none. Sections: `edition: OpenText`
+- **`editor`** — `ResourceEditorGroup`, heading: none. Sections: `editor: OpenText`
+- **`institution`** — `ResourceInstitutionGroup`, heading: none. Sections: `institution: OpenText`
+- **`journal`** — `ResourceJournalGroup`, heading: none. Sections: `journal: OpenText`
+- **`publisher`** — `ResourcePublisherGroup`, heading: none. Sections: `publisher: OpenText`
+- **`volume`** — `ResourceVolumeGroup`, heading: none. Sections: `volume: OpenText`
+- **`month`** — `ResourceMonthGroup`, heading: none. Sections: `month: OpenText`
+- **`year`** — `ResourceYearGroup`, heading: none. Sections: `year: OpenText`
+- **`description`** — `ResourceDescriptionGroup`, heading: none. Sections: `description: OpenText`
 
 ## Clause Groups
 
@@ -421,20 +403,18 @@ If a clause section contains:
 
 ### Clause inventory
 
-| First section label | AST node | Heading | Ordered sections |
-| --- | --- | --- | --- |
-| `not` | `NotGroup` | label? | `not: Clause` |
-| `allOf` | `AllOfGroup` | label? | `allOf: Clause+` |
-| `anyOf` | `AnyOfGroup` | label? | `anyOf: Clause+` |
-| `oneOf` | `OneOfGroup` | label? | `oneOf: Clause+` |
-| `exists` | `ExistsGroup` | label? | `exists: BindingOrSpec`, `suchThat?: Clause+` |
-| `existsUnique` | `ExistsUniqueGroup` | label? | `existsUnique: BindingOrSpec`, `suchThat?: Clause+` |
-| `forAll` | `ForAllGroup` | label? | `forAll: BindingOrSpec`, `where?: Clause+`, `then: Clause+` |
-| `if` | `IfGroup` | label? | `if: Clause+`, `then: Clause+` |
-| `have` | `IffGroup` | label? | `have: Clause+`, `iff: Clause+` |
-| `piecewise` | `PiecewiseGroup` | label? | `piecewise: OpenText*`, `if: Clause+`, `then: Clause+`, `else?: Clause+` |
-| `given` | `GivenGroup` | label? | `given: RefinedDeclarationStatement`, `where?: Clause+`, `then: Clause+` |
-| `equivalently` | `EquivalentlyGroup` | label? | `equivalently: Clause+` |
+- **`not`** — `NotGroup`, heading: label?. Sections: `not: Clause`
+- **`allOf`** — `AllOfGroup`, heading: label?. Sections: `allOf: Clause+`
+- **`anyOf`** — `AnyOfGroup`, heading: label?. Sections: `anyOf: Clause+`
+- **`oneOf`** — `OneOfGroup`, heading: label?. Sections: `oneOf: Clause+`
+- **`exists`** — `ExistsGroup`, heading: label?. Sections: `exists: BindingOrSpec`, `suchThat?: Clause+`
+- **`existsUnique`** — `ExistsUniqueGroup`, heading: label?. Sections: `existsUnique: BindingOrSpec`, `suchThat?: Clause+`
+- **`forAll`** — `ForAllGroup`, heading: label?. Sections: `forAll: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
+- **`if`** — `IfGroup`, heading: label?. Sections: `if: Clause+`, `then: Clause+`
+- **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`
+- **`piecewise`** — `PiecewiseGroup`, heading: label?. Sections: `piecewise: OpenText*`, `if: Clause+`, `then: Clause+`, `else?: Clause+`
+- **`given`** — `GivenGroup`, heading: label?. Sections: `given: RefinedDeclarationStatement`, `where?: Clause+`, `then: Clause+`
+- **`equivalently`** — `EquivalentlyGroup`, heading: label?. Sections: `equivalently: Clause+`
 
 `equivalently:` asserts that its sub-clauses are all mutually equivalent (sugar
 for a chain of `iff`s); it is checked like `allOf:` and carries no additional
@@ -495,19 +475,17 @@ These headings must parse with `parse_resource_header`.
 
 The structural parser delegates section content to formulation parsers as follows:
 
-| Structural content kind | Parser used |
-| --- | --- |
-| `FormOrDeclaration` | `parse_form_or_declaration` |
-| `DeclarationStatement` | `parse_ordinary_declaration_statement` |
-| `RefinedDeclarationStatement` | `parse_refined_declaration_statement` |
-| `IsOrViaItem` | try `parse_is_via_statement`, then `parse_ordinary_declaration_statement` |
-| `BindingOrSpec` | `parse_refined_declaration_statement` |
-| `AliasKind` | try `parse_expression_alias`, then `parse_spec_operator_alias` |
-| `WritingAlias` | `parse_writing_alias` |
-| `ResourceHeader` | `parse_resource_header` |
-| `CommandHeader` | `parse_command_header` |
-| `AuthorHeader` | `parse_author_header` |
-| `LabelHeader` | `parse_label_header` |
+- `FormOrDeclaration` — `parse_form_or_declaration`
+- `DeclarationStatement` — `parse_ordinary_declaration_statement`
+- `RefinedDeclarationStatement` — `parse_refined_declaration_statement`
+- `IsOrViaItem` — try `parse_is_via_statement`, then `parse_ordinary_declaration_statement`
+- `BindingOrSpec` — `parse_refined_declaration_statement`
+- `AliasKind` — try `parse_expression_alias`, then `parse_spec_operator_alias`
+- `WritingAlias` — `parse_writing_alias`
+- `ResourceHeader` — `parse_resource_header`
+- `CommandHeader` — `parse_command_header`
+- `AuthorHeader` — `parse_author_header`
+- `LabelHeader` — `parse_label_header`
 
 Clause formulation arguments are tried as `parse_ordinary_declaration_statement`, then `parse_expression`. This means helper-only forms such as comma-separated `is` subjects or quoted operators with spaces are represented as declaration statements, while expression-compatible facts can still be parsed as declaration statements when they appear in clause position.
 

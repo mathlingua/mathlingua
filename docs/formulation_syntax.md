@@ -23,25 +23,31 @@ The generated parser is built from `src/frontend/formulation/grammar.lalrpop` by
 
 The formulation subsystem does not have one single root grammar. It exposes several entry points:
 
-| Parser function | Accepted root syntax |
-| --- | --- |
-| `parse_expression` | general expressions |
-| `parse_ordinary_declaration_statement` | declarations/definitions using `::=`, `:=`, `is`, or a quoted spec operator (wraps `parse_declaration_statement(input, allow_refined_type = false)`) |
-| `parse_refined_declaration_statement` | same, but the `is` target may be a refined command expression (`allow_refined_type = true`) |
-| `parse_hard_cast_statement` | `<subject> is! <type>` (optionally `<subject> := <value> is! <type>`) |
-| `parse_expression_binding` | `<expression> := <expression>` |
-| `parse_form_or_declaration` | forms and declarations |
-| `parse_is_or_spec` | internal `<is-subject> is <command-type>` or `<subject> "op" Name` helper |
-| `parse_is_or_refined_statement_spec` | internal variant where `is` may target a refined command expression |
-| `parse_is_via_statement` | `<is-statement> via <form-or-declaration>` |
-| `parse_command_header` | simple, infix, infix-spec, or refined command headers |
-| `parse_writing_alias` | `<form-or-declaration> :~> <raw body>` |
-| `parse_expression_alias` | `<lhs> (:=> | :->) <expression>` |
-| `parse_spec_operator_alias` | `<placeholder-spec> :-> (<is-or-spec> \| `member_of` \| placeholder-spec \| builtin)` |
-| `parse_label_header` | dotted label header text |
-| `parse_author_header` | `@` followed by dotted parts |
-| `parse_resource_header` | `$` followed by dotted parts |
-| `parse_topic_header` | `#` followed by dotted parts |
+- **`parse_expression`** — general expressions.
+- **`parse_ordinary_declaration_statement`** — declarations/definitions using
+  `::=`, `:=`, `is`, or a quoted spec operator (wraps
+  `parse_declaration_statement(input, allow_refined_type = false)`).
+- **`parse_refined_declaration_statement`** — same, but the `is` target may be a
+  refined command expression (`allow_refined_type = true`).
+- **`parse_hard_cast_statement`** — `<subject> is! <type>` (optionally
+  `<subject> := <value> is! <type>`).
+- **`parse_expression_binding`** — `<expression> := <expression>`.
+- **`parse_form_or_declaration`** — forms and declarations.
+- **`parse_is_or_spec`** — internal `<is-subject> is <command-type>` or
+  `<subject> "op" Name` helper.
+- **`parse_is_or_refined_statement_spec`** — internal variant where `is` may
+  target a refined command expression.
+- **`parse_is_via_statement`** — `<is-statement> via <form-or-declaration>`.
+- **`parse_command_header`** — simple, infix, infix-spec, or refined command
+  headers.
+- **`parse_writing_alias`** — `<form-or-declaration> :~> <raw body>`.
+- **`parse_expression_alias`** — `<lhs> (:=> or :->) <expression>`.
+- **`parse_spec_operator_alias`** — `<placeholder-spec> :-> <target>`, where the
+  target is an is-or-spec, `member_of`, a placeholder-spec, or a builtin.
+- **`parse_label_header`** — dotted label header text.
+- **`parse_author_header`** — `@` followed by dotted parts.
+- **`parse_resource_header`** — `$` followed by dotted parts.
+- **`parse_topic_header`** — `#` followed by dotted parts.
 
 (The base `parse_declaration_statement(input, allow_refined_type)` takes a flag; the two `parse_*_declaration_statement` wrappers above are the public entry points.)
 

@@ -501,8 +501,49 @@ Set builder definitions allow general element forms before the colon.
 - For example, `{(a_, b_) : a_ "in" A, b_ "in" B}` is accepted.
 - This applies in declarations and definitions such as:
   `Defines: C := {(a_, b_) : ...} is \set`.
+- Specifications after the colon may be separated by `,` **or** `;`. The `;`
+  form is also accepted after a build (`\set@{(a_, b_) : a_ "in" A; b_ "in" B}`).
+
+### Mapping Literals
+
+An anonymous mapping is written with `|->`:
+
+- `(x_ is \real) |-> x_ + 1` maps an input to an output. A mapping-literal
+  parameter must be a name with a spec (`(x_ is ...)`), or a bare name when the
+  type is already known from an `is`. A bare parameter without a known type, or
+  an undeclared symbol in the body, is rejected.
+
+### Inferred Parameters
+
+A command argument written `X?` introduces `X` inline the first time it appears:
+
+- The first occurrence of `X?` at a command-argument position declares `X` into
+  scope with the type its argument position requires; later uses are the plain
+  name `X`. Reintroducing an already-introduced inferred parameter is an error.
+
+### Spec Literals And `is` Indirection
+
+- A `\\specification` value may be written with an implicit `?` subject, e.g.
+  `? is \x` or `? "in" X`, and instantiated by a `satisfies:` clause.
+- `is` accepts type indirection: a type parameter can stand for a type
+  (`x is T` where `T is \\type`), and `T is \\type` records that `T` is itself a
+  type.
+
+### Collection-Argument Sugar
+
+A command argument that is a bare collection literal is sugared, so
+`\foo{x_ : x_ is \real}` is treated as `\foo{{x_ : x_ is \real}}`.
 
 ## Semantic Checks
+
+### Specifications Are Not Allowed Where Statements Are Expected
+
+An `is` specification or infix specification introduces a symbol, so it is only
+valid in binding positions (`exists:`, `given:`, `forAll:`, `where:`, `when:`,
+`suchThat:`). In a statement position (`then:`, `iff:`, `that:`, `if:`, `not:`,
+`allOf:`, `anyOf:`, `oneOf:`, `equivalently:`) the predicate form must be used
+instead: `x is? \set` rather than `x is \set`, and `A \:subset?:/ B` rather than
+`A \:subset:/ B`.
 
 ### Editor Language Server
 
@@ -841,9 +882,12 @@ The viewer has responsive navigation behavior.
 field, so the whole configuration is visible and editable in one place rather
 than split between the file and defaults applied behind the scenes.
 
-- The required fields are `name`, `version`, `margin`, and `formatOnCheck`.
-  Keys are camelCase. `mlg check` reports each missing one as
-  `mlg.json is missing required field "<field>"`.
+- The required fields are `name`, `version`, `margin`, `formatOnCheck`, and
+  `outputDir`. Keys are camelCase. `mlg check` reports each missing one as
+  `mlg.json is missing required field "<field>"`. Each is typed: `name`/`version`
+  are strings, `margin` is a positive integer, `formatOnCheck` is a boolean, and
+  `outputDir` is a non-empty relative path inside the collection (a bad value
+  reports `... must be a non-empty relative path within the collection`).
 - `mlg init` writes a fresh `mlg.json` with every field at its default, so the
   author sees all of them:
 
@@ -852,7 +896,8 @@ than split between the file and defaults applied behind the scenes.
     "name": "",
     "version": "0",
     "margin": 80,
-    "formatOnCheck": true
+    "formatOnCheck": true,
+    "outputDir": "docs"
   }
   ```
 
@@ -889,6 +934,35 @@ before checking it, so a checked collection is also a formatted one.
   — there is no root to format and no config to read, so `mlg check` on loose
   files formats nothing.
 
+### `Text:` Blocks, Code Fences, And Escapes
+
+`Text:` and other quoted prose is Markdown with embedded LaTeX, and both the
+checker and the formatter treat it carefully:
+
+- A ```` ```mlg ```` fenced code block inside quoted prose is parsed as real
+  source and reports `Syntax error in \`mlg\` code block: ...` when it fails to
+  parse; ```` ```mlg-fragment ```` and non-`mlg` fences are skipped. A closing
+  ```` ``` ```` glued directly to the text terminator (```` ```" ````) is
+  handled correctly.
+- `mlg check` reads escaped quotes (`\"`) inside `Text:` values without
+  corrupting the surrounding text, and no longer over-collapses backslash
+  escapes (so embedded `\\command` builtins survive round-tripping).
+- `mlg format` reflows prose in `Text:` blocks to the configured margin but does
+  **not** reformat fenced code blocks or Markdown list items (`* `, numbered
+  lists), preserving their structure; text content is de-indented before
+  rendering.
+
+### `mlg view` Prefaces And Navigation
+
+A `_preface_.mlg` file in a directory is excluded from the page list and instead
+rendered as that directory's preface (its overview), and the left-panel
+collection navigation orders and titles entries from the directory `toc` files.
+
+### `mlg help` Descriptions
+
+`mlg help` and each subcommand's `--help` print concise descriptions of every
+command and its options.
+
 ### `mlg.json` `print_margin` Renamed To `margin`
 
 The optional `mlg.json` field controlling the target line width for `mlg format`
@@ -918,16 +992,21 @@ The default target line width for `mlg format` — used when `mlg.json` has no
 ### `mlg export`
 
 `mlg export` checks and renders the current collection, then builds a static
-copy of the viewer. The output location is fixed: the site is always written to
-`docs/` at the collection root (a sibling of `content/` and `metadata/`, the
-conventional GitHub Pages source folder), so there is no `--output` option.
-`--force` replaces a nonempty `docs/`, `--base-path` supports subpath hosting,
-and `--cname` writes a GitHub Pages `CNAME` file. The export also writes
-`.nojekyll` and route data required by the static viewer.
+copy of the viewer. The output directory is the `mlg.json` `outputDir` field
+(default `docs`), written at the collection root (the conventional GitHub Pages
+source folder), so there is no `--output` option. `--force` replaces a nonempty
+output directory, and `--cname` writes a GitHub Pages `CNAME` file. The export
+also writes `.nojekyll` and the route data required by the static viewer.
+
+The base path for subpath hosting is inferred automatically: for a GitHub
+Pages **project** site the base path is derived from the git remote (the
+repository name), so a project site is linked correctly without configuration;
+`--base-path` overrides the inferred value.
 
 ### `mlg clean`
 
-`mlg clean` removes the generated `docs/` directory from the collection (the
+`mlg clean` removes the generated output directory (`outputDir`, default `docs`)
+from the collection (the
 inverse of `mlg export`). It must be run inside a Mathlingua collection (a
 directory tree containing `mlg.json`) and is a no-op when `docs/` is absent.
 

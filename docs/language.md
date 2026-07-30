@@ -172,20 +172,31 @@ x is? \set
 \set is? \\type
 ```
 
+Builtin types and targets are written with two leading backslashes: `\\type`
+(the type of `Describes` types), `\\statement`, `\\expression`,
+`\\specification` (the types of statements, expressions, and specification
+literals), `\\opaque` (an unstructured value), and `\\abstract` (the abstract
+`:->` capability target).
+
 The expression precedence, from lowest to highest, is:
 
-1. spec and predicate forms
-2. equality and special binary operators
-3. addition and subtraction
-4. multiplication and division
-5. powers
-6. named operators and infix commands
-7. unary `+` and `-`
-8. atoms
+1. mapping `|->` (right-associative)
+2. spec and predicate forms (`is`, `is?`, quoted `"op"` specs, infix specs
+   `\:...:/`, `member_of`, `satisfies`, spec literals)
+3. infix commands `\.name./`
+4. equality (`=`, `!=`) and special binary operators
+5. addition and subtraction
+6. multiplication and division
+7. powers
+8. named operators (`|op|`, member-path `|M.*|`)
+9. unary prefix (`+`, `-`, prefix named operators)
+10. postfix named operators (`x |f`)
+11. atoms
 
-Powers associate to the right. The arithmetic binary levels associate to the
-left. Named-operator and infix-command expressions also associate to the left,
-so `a |f| b |g| c` is accepted as a left-associated chain.
+Note that infix commands (level 3) bind **looser** than arithmetic, while named
+operators (level 8) bind **tighter** — they are not the same level. Powers
+associate to the right; the arithmetic and named-operator levels associate to
+the left, so `a |f| b |g| c` is a left-associated chain.
 
 Subset expressions are intentionally narrow. The supported forms are:
 
@@ -317,6 +328,25 @@ X, Y is \set via (X, Y)
 The left side must be an `is` statement. The right side after `via` may be any
 form or declaration.
 
+### Other Statement And Expression Forms
+
+- **Infix specification commands** are written `<a> \:name:/ <b>` (with the
+  predicate form `\:name?:/`). They are the specification-level analogue of the
+  infix command `\.name./` and are declared by an infix-spec `Describes:` header
+  `[A \:subset:/ B]`.
+- **Mapping expressions** are anonymous functions written with `|->`:
+  `(x_ is \real) |-> x_ + 1`.
+- **Spec literals** are `\\specification` values written with an implicit `?`
+  subject — `? is \set`, `? "in" X` — and are instantiated by a `satisfies:`
+  clause.
+- **Inferred parameters** are command arguments written `X?`: the first
+  occurrence introduces `X` with the type its position requires; later uses are
+  the plain name.
+- **`member_of`** (`x member_of X`) is the builtin collection-membership form,
+  and **`satisfies`** applies a spec literal to a subject.
+- A command may carry a **context suffix** `#using{...}` or `#given{...}`
+  supplying that command's `using:`/`given:` values inline.
+
 ## Top-Level Groups
 
 These groups may appear at the top level of a document.
@@ -326,6 +356,9 @@ These groups may appear at the top level of a document.
 | `Title` | none | document title text |
 | `SectionTitle` | none | first-level prose heading |
 | `SubsectionTitle` | none | second-level prose heading |
+| `Text` | none | a prose block (Markdown with embedded LaTeX) |
+| `Writing` | none | collection-wide writing aliases (`:~>`); at most one per collection |
+| `Disambiguates` | operator/function form | global resolution of an ambiguous operator or function into typed branches |
 | `Describes` | command | introduces a command for a mathematical form |
 | `Defines` | command | defines a statement, specification, or type fact |
 | `Refines` | command | defines a refined command in terms of another command |
@@ -345,10 +378,11 @@ Groups with command headings introduce command signatures: `Describes`,
 an optional heading. Duplicate signatures are rejected across all of these
 definition kinds.
 
-`Describes`, `Defines`, and `Refines` must include a `called:` item somewhere in
-their `Documented:` section. `States` and theorem-like groups may have
-documentation, but the current semantic check does not require a `called:` item
-for them.
+`Describes`, `Defines`, and `States` must include a `called:` **or** `written:`
+item somewhere in their `Documented:` section. `Refines` must instead include an
+`adjective:` item (and its `Documented:` rejects `called:`). Theorem-like groups
+(`Axiom`, `Theorem`, `Corollary`) may have documentation but require no such
+item.
 
 ## Definition Groups
 
@@ -369,6 +403,7 @@ when:
 extends:
 specifies:
 satisfies:
+Requires:
 Enables:
 Justified:
 Documented:
@@ -376,6 +411,9 @@ Aliases:
 References:
 Metadata:
 ```
+
+(`Refines` uses `extends:`/`satisfies:` rather than `specifies:`; only
+`Describes` has a `specifies:` section.)
 
 `Defines` introduces a command by an `is` or spec statement.
 
@@ -398,9 +436,10 @@ Documented:
 . called: "continuous"
 ```
 
-`specifies:` sections on `Describes` and `Refines` are parsed and command
-references inside them are validated, but the current type checker does not use
-them as assumptions, requirements, or proof facts.
+A `specifies:` section (only `Describes` has one) types the described form's
+parts — including the components of a destructuring target — and those facts are
+assumed when checking the definition body and stored so a value of the type
+carries them (see [Subtyping With `extends:`](#subtyping-with-extends)).
 
 `States` defines a command-backed statement body:
 
@@ -458,8 +497,16 @@ expressions.
 | `forAll` | creates a child context, assumes `where:`, checks `then:` |
 | `if` | assumes `if:`, checks `then:` |
 | `have` | assumes `iff:`, checks `have:` |
-| `piecewise` | assumes `if:`, checks `then:`; `else:` is checked in the outer context |
-| `given` | assumes one refined-capable given statement, then checks `then:` |
+| `equivalently` | a chain of biconditionals — sugar for pairwise `iff` |
+| `piecewise` | assumes `if:`, checks `then:`; the optional `else:` is checked in the outer context |
+| `given` | assumes one refined-capable given statement (optional `where:`), then checks `then:` |
+
+Each of these clauses also has a builtin *command* form used inline in a
+statement position: `\\not{...}`, `\\allOf{...}`, `\\anyOf{...}`, `\\oneOf{...}`,
+`\\forAll{...}:then{...}`, `\\have{...}:iff{...}`, `\\given{...}:then{...}`, and
+`\\piecewise{...}:then{...}:else{...}`. They are checked with the same scoping
+rules as the corresponding groups, and a malformed one (wrong arity, missing
+required tail, or unknown builtin clause command) is reported.
 
 Declarations can combine `::=` with `:=` to introduce symbols and create local
 syntactic substitutions.
@@ -507,6 +554,8 @@ the construct supports.
 
 - `written:`
 - `called:`
+- `adjective:` (required by `Refines`)
+- `description:`
 - `writing:`
 - `overview:`
 - `related:`
@@ -709,11 +758,13 @@ its right-hand side must already be in scope — whereas `::=` does.
 A spec fact `x "op" T` is valid only when `T`'s type provides that operator
 (`Could not validate spec fact \`{fact}\`: no provided spec operator \`"{op}"\`
 is available for \`{target}\``); infix spec signatures must be defined by
-`Describes`. Operators resolve in order: an in-scope value applied as a call, a
-`Disambiguates` entry, then a provided-symbol capability owned by the operands'
-type. If none apply, `Could not resolve {label}: no matching \`Disambiguates\`
-entry was found` (or `Could not resolve operator \`{symbol}\` from {source}`).
-Member access reports `Could not resolve member \`{name}\` for \`{owner}\``.
+`Describes`. Operators resolve in order: an in-scope value applied as a call; a
+colon-qualified provided-symbol capability owned by a single operand type; a
+`Disambiguates` entry; then a provided-symbol capability owned by the operands'
+common type (with spec-known operands reduced to their `is`-facts). If none
+apply, `Could not resolve {label}: no matching \`Disambiguates\` entry was found`
+(or `Could not resolve operator \`{symbol}\` from {source}`). Member access
+reports `Could not resolve member \`{name}\` for \`{owner}\``.
 
 ### 13. Capabilities, requirements, and casts/builds
 
@@ -725,6 +776,29 @@ checked (`Could not build \`{expression}\``). Type predicates, function-type
 specs, and `is` type arguments are checked
 (`Could not establish predicate ...`, `Could not establish requirement ... for
 function ...`, `\`{name}\` is not a known type`).
+
+### 14. Group-specific validations
+
+- **`Equivalent:`** — every `to:` item must be a command that uses the header's
+  parameters directly (not expressions); all items must be the same definition
+  kind; and their target shape, defined type, `when:` requirements, `extends:`
+  type, and capabilities must agree across members.
+- **`Refines:` `extends:`** — the extends subject must match the `Refines:`
+  subject, a `[[...]]` in it must name that subject, and a `Refines:` must have
+  the form `Refines: <form>`.
+- **Mapping literals** — a mapping-literal parameter must be a name with a spec
+  (`(x_ is ...)`), or a bare name whose type is already known from an `is`;
+  otherwise it is rejected.
+- **Function types** — function-type spec parameters must be written `_`
+  (`Function type parameters must be \`_\``), and a call must match the function's
+  arity (`Could not match function \`{name}\` with {n} argument(s)`).
+- **`satisfies`** — its right-hand side must be a specification
+  (`\`satisfies\` requires a specification on the right-hand side`).
+- **Spec-operator targets** — the target of a `:->` spec operator must be a
+  value, not a type (`the target of a spec operator must be a value, not the type
+  \`{signature}\``).
+- **Inferred parameters** — an `X?` argument may introduce `X` only once
+  (`Inferred parameter \`{name}\` is already introduced`).
 
 ### What the checker does *not* do
 
@@ -1067,12 +1141,17 @@ name something callable:
   value** in scope (for example the operation component of a destructured
   magma). Otherwise `*`, `+`, … keep their built-in arithmetic resolution.
 
-Plain operators resolve in order: (1) the application desugar above, when the
-symbol is bound; (2) a `Disambiguates` entry; (3) a provided-symbol capability
-owned by the operands' common type. So if `y "in" M` makes `y` a
-`\magma.element` and `\magma.element` `Enables:` `capability: x_ * y_ :=> ...`,
-then `y * y` resolves through that capability. If none apply, the operator is
-reported unresolved.
+A binary operator resolves in order: (1) the application desugar above, when the
+symbol is bound; (2) a provided-symbol capability whose operator is
+colon-qualified so a single operand type owns it (`:op`, `op:`, `:op:`), matched
+against the owning operand's type; (3) a `Disambiguates` entry; and (4) a
+provided-symbol capability owned by the operands' *common* type, where a value
+known only through a spec (`y "in" M`) is first reduced to its `is`-facts to make
+the match. So if `y "in" M` makes `y` a `\magma.element` and `\magma.element`
+`Enables:` `capability: x_ * y_ :=> ...`, then `y * y` resolves through that
+capability (step 4). If none apply, the operator is reported unresolved. Prefix
+and postfix operators, and member access, follow the analogous provided-symbol
+and disambiguation paths.
 
 A capability may also declare a **bracketed placeholder operator**
 `x_ [*] y_`, where `[*]` names a symbol drawn from the definition's

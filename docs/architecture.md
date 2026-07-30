@@ -18,7 +18,7 @@ For language syntax details, use these companion documents:
 The repository contains one Rust crate named `mlg` plus an embedded Next.js
 viewer under `web/`.
 
-At a high level, the system does four jobs:
+At a high level, the system does five jobs:
 
 1. Parse `.mlg` files into typed Rust ASTs.
 2. Check parsed files for semantic, reference, symbol, and requirement errors.
@@ -32,9 +32,11 @@ The main runtime paths are:
 ```text
 mlg check
   CLI
-  -> SourceCollection::load
+  -> format the collection (unless formatOnCheck is false)
+  -> SourceCollection::load  (also generates any missing Id: sections)
   -> SourceCollection check passes
-      -> structural parsing
+      -> structural parsing (proto -> structural -> formulation)
+      -> mlg code-fence syntax check
       -> semantic checking
   -> event output
 
@@ -72,6 +74,7 @@ depending on Rust AST internals.
 ├── docs/
 ├── goldens/
 ├── src/
+├── testbed/     # a sample MathLingua collection ("Mathlore") used for testing
 └── web/
 ```
 
@@ -117,9 +120,10 @@ Responsibilities:
 - `src/frontend/` contains lexing and parsing.
 - `src/backend/` contains collection loading, semantic checking, and viewer
   model generation.
-- `src/mlg/` contains command orchestration for `check`, `clean`, `export`,
-  `init`, `lsp`, `release`, `version`, and `view`, plus completion and
-  command-specific utilities.
+- `src/mlg/` contains command orchestration — `check`, `format`, `clean`,
+  `export`, `init`, `lsp`, `release`, `version`, `view`, and the hidden
+  diagnostic commands `debug`, `extract`, `report`, and `whte_rbt.obj` — plus
+  completion and command-specific utilities (`util.rs`).
 
 ## Command Layer
 
@@ -132,13 +136,21 @@ The command layer is split between:
 The implemented top-level commands are:
 
 - `mlg check [PATH...]`
+- `mlg format [PATH...]`
 - `mlg clean`
 - `mlg export [--base-path PATH] [--cname DOMAIN] [--force]`
 - `mlg init`
-- `mlg lsp`
 - `mlg release --summary TEXT [--dry-run] [--diff]`
 - `mlg version`
 - `mlg view [--port PORT]`
+
+The following commands are hidden (`#[command(hide = true)]`) but implemented:
+
+- `mlg lsp` — the editor language server over stdio.
+- `mlg debug` — internal diagnostics.
+- `mlg extract <ID>` — print the top-level item with the given `Id:`.
+- `mlg report <ID...>` — report on items by `Id:`.
+- `mlg whte_rbt.obj` — an easter egg.
 
 The CLI also has global diagnostic filtering flags: `--event-audience`
 (`--event-scope` is an alias), `--event-level`, and `--event-markers`.
@@ -160,13 +172,20 @@ Rules:
 - `backend::collection::SourceCollection` owns collection-root discovery,
   config validation, source-file collection, and the shared check-pass sequence
   used by both `mlg check` and `mlg view`.
-- `SourceCollection::load` accepts only a root path and collects every `.mlg`
-  file under the resolved collection root in deterministic path order.
+- Sources are collected from `<root>/content/` when that directory exists,
+  otherwise from the root itself.
+- `SourceCollection::load` also **writes to disk**: it generates a UUID `Id:`
+  section into any top-level item that lacks one (`ensure_source_file_ids`).
+- Source order is a display-name sort (filename with `_` treated as a space and
+  case ignored), not raw path order, and a directory's `toc` file overrides that
+  order and can hide entries (a `HIDDEN` directive) or re-title them.
+- A `_preface_.mlg` file is special: it is excluded from the page list and
+  rendered as its directory's preface/overview.
 - Explicit `mlg check` paths are resolved relative to the current working
   directory and become a diagnostic filter. The full collection is still parsed
   and checked; only diagnostics located in selected files are shown.
-- File targets must have the `.mlg` extension.
-- Directory targets are traversed recursively.
+- File targets must have the `.mlg` extension; directory targets are traversed
+  recursively.
 
 ### Config Handling
 
@@ -295,14 +314,13 @@ commands, aliases, statement helpers, and command headers.
 
 Main files:
 
-- `token.rs` defines Logos tokens.
+- `token.rs` defines the Logos tokens.
 - `lexer.rs` wraps the Logos token stream for LALRPOP.
 - `grammar.lalrpop` defines the generated expression/form parser.
-- `parser.rs` re-exports hand-written parser entrypoints and helpers.
-- `parser.rs` contains the public formulation parser functions and
-  scanner-based helpers.
-- `ast.rs` and `ast/` define formulation AST nodes.
-- `span.rs` stores byte spans for parsed formulation nodes.
+- `parser.rs` contains the public formulation parser functions and the
+  scanner-based hand-written helpers.
+- `ast.rs` defines the formulation AST nodes (including byte spans).
+- `mod.rs` re-exports the public API.
 
 There is no single formulation root grammar. Different structural sections call
 different parser entrypoints. Examples include:
@@ -329,15 +347,18 @@ The structural layer turns proto groups into the typed MathLingua document AST.
 
 Main files:
 
-- `parser.rs` composes proto parsing with structural recognition.
-- `parser/top_level/` parses top-level groups such as `Describes`, `Defines`,
-  `Theorem`, `Resource`, and `Specify`.
-- `parser/nested/` parses nested support groups such as documentation,
-  metadata, resource items, and specification items.
-- `parser/clauses.rs` parses logical clause groups.
-- `parser/helpers/` contains shared section, text, heading, formulation, group,
-  and clause helpers.
-- `ast.rs` and `ast/` define the typed structural AST.
+- `parser.rs` — a single module that composes proto parsing with structural
+  recognition. It parses every top-level group (`Describes`, `Defines`,
+  `Refines`, `States`, `Theorem`, `Axiom`, `Corollary`, `Disambiguates`,
+  `Relation`, `Equivalent`, `Topic`, `Resource`, `Person`, `Specify`, the prose
+  and clause groups, etc.), their nested support groups (documentation,
+  metadata, `Requires:`/`Enables:` items, resource items, justification items),
+  clause groups, and the shared section/text/heading/formulation helpers.
+- `ast.rs` defines the typed structural AST.
+- `mod.rs` re-exports the public API.
+
+There is no `parser/` or `ast/` subdirectory; the structural layer is the two
+files `parser.rs` and `ast.rs`.
 
 The key structural rule is that group kind is chosen by the first section label,
 not by the bracket heading. The heading is then validated according to the group
@@ -359,6 +380,10 @@ src/backend/
 ├── collection.rs
 ├── config.rs
 ├── release.rs
+├── definition.rs   # go-to-definition (LSP)
+├── rename.rs       # workspace rename (LSP)
+├── extract.rs      # backs `mlg extract`/`mlg report`
+├── text_fence.rs   # syntax-checks ```mlg fences in prose
 ├── semantic/
 │   ├── mod.rs
 │   └── ...
@@ -396,24 +421,31 @@ The public entrypoint is:
 check_documents(files, event_log)
 ```
 
-The checker has three broad passes:
+`check_documents` first validates top-level item `Id:` sections (present, a
+UUID, unique) and that at most one `Writing:` item exists, then runs three broad
+registry passes:
 
-1. Collect command definitions into a global signature registry.
+1. Collect command definitions into a global signature registry (and reject
+   duplicate signatures, missing `Documented:` requirements, etc.).
 2. Validate command-like references against that registry.
-3. Validate symbol usage and command type requirements.
+3. Validate symbol usage and command type requirements (the type checker).
 
 Important files:
 
-- `check.rs` orchestrates the semantic passes.
+- `check.rs` orchestrates the semantic passes (Id/Writing/signature/
+  disambiguation/documented checks).
 - `types.rs` defines checker data structures such as `SignatureRegistry`,
-  `DefinitionEntry`, `TypeFact`, and extension/spec rules.
+  `DefinitionTypeInfo`, `TypeFact`, and extension/spec/provided-symbol rules.
 - `shapes.rs` computes canonical command signatures and argument shapes.
 - `validation.rs` validates references for existence and argument shape.
 - `typecheck.rs` implements symbol scope, facts, substitutions, requirements,
-  subtyping through `extends:`, and spec-operator reduction.
+  subtyping through `extends:`, destructuring, operator/member resolution, and
+  spec-operator reduction.
 - `locator.rs` maps semantic diagnostics back to source locations.
-- `walk/` traverses top-level groups, clauses, statements, expressions, forms,
-  and support sections for reference validation.
+- `definition.rs` and `rename.rs` back LSP go-to-definition and rename; `uses.rs`
+  finds command occurrences (also used by `mlg release`).
+- `walk.rs`/`walk/` traverses top-level groups, clauses, statements,
+  expressions, forms, and support sections for reference validation.
 
 The signature registry is global across all checked files. Duplicate command
 signatures are rejected across `Describes`, `Defines`, `Refines`, `States`, and
@@ -433,8 +465,8 @@ viewer.
 
 Main files:
 
-- `model.rs` defines `CollectionView`, `FileView`, `GroupView`, `SectionView`,
-  and `ArgumentView`.
+- `model.rs` defines `CollectionView`, `DirectoryView`, `PageView`, `FileView`,
+  `GroupView`, `SectionView`, and `ArgumentView`.
 - `builder.rs` receives checked `ParsedSourceFile` values, builds a render
   registry, reruns the proto parser for source layout, and creates the JSON
   view model.
@@ -496,13 +528,18 @@ not parse `.mlg` files and does not run semantic checks.
 main.rs
   -> Cli::parse
   -> mlg::check_in
+  -> format_before_checking (unless formatOnCheck is false; before load, so
+       reported positions match the source the author reads)
   -> SourceCollection::load
       -> find collection root
       -> validate mlg.json when a collection root exists
-      -> collect collection .mlg files
+      -> collect collection .mlg files (from content/ if present)
+      -> generate + write missing Id: sections
   -> SourceCollection::diagnostic_filter for explicit PATH arguments
   -> SourceCollection::run_check_passes_filtered
-      -> frontend::parse_source_file for each .mlg file
+      -> frontend::parse_source_file for each .mlg file (proto -> structural
+           -> formulation)
+      -> backend::text_fence::check_text_fence_syntax (```mlg fences in prose)
       -> backend::semantic::check_documents
       -> replay diagnostics accepted by the filter
   -> EventLog summary

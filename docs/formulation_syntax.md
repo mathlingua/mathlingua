@@ -26,18 +26,24 @@ The formulation subsystem does not have one single root grammar. It exposes seve
 | Parser function | Accepted root syntax |
 | --- | --- |
 | `parse_expression` | general expressions |
-| `parse_declaration_statement` | unified declarations and definitions using `::=`, `:=`, `is`, or a quoted spec operator |
+| `parse_ordinary_declaration_statement` | declarations/definitions using `::=`, `:=`, `is`, or a quoted spec operator (wraps `parse_declaration_statement(input, allow_refined_type = false)`) |
+| `parse_refined_declaration_statement` | same, but the `is` target may be a refined command expression (`allow_refined_type = true`) |
+| `parse_hard_cast_statement` | `<subject> is! <type>` (optionally `<subject> := <value> is! <type>`) |
+| `parse_expression_binding` | `<expression> := <expression>` |
 | `parse_form_or_declaration` | forms and declarations |
-| `parse_is_or_spec` | legacy/internal `<is-subject> is <command-type>` or `<subject> "op" Name` helper |
-| `parse_is_or_refined_statement_spec` | legacy/internal variant where `is` may target a refined command expression |
+| `parse_is_or_spec` | internal `<is-subject> is <command-type>` or `<subject> "op" Name` helper |
+| `parse_is_or_refined_statement_spec` | internal variant where `is` may target a refined command expression |
 | `parse_is_via_statement` | `<is-statement> via <form-or-declaration>` |
-| `parse_command_header` | simple, infix, or refined command headers |
+| `parse_command_header` | simple, infix, infix-spec, or refined command headers |
 | `parse_writing_alias` | `<form-or-declaration> :~> <raw body>` |
-| `parse_expression_alias` | `<lhs> :=> <expression>` |
-| `parse_spec_operator_alias` | `<placeholder-spec> :-> (<is-or-spec> | builtin)` |
+| `parse_expression_alias` | `<lhs> (:=> | :->) <expression>` |
+| `parse_spec_operator_alias` | `<placeholder-spec> :-> (<is-or-spec> \| `member_of` \| placeholder-spec \| builtin)` |
 | `parse_label_header` | dotted label header text |
 | `parse_author_header` | `@` followed by dotted parts |
 | `parse_resource_header` | `$` followed by dotted parts |
+| `parse_topic_header` | `#` followed by dotted parts |
+
+(The base `parse_declaration_statement(input, allow_refined_type)` takes a flag; the two `parse_*_declaration_statement` wrappers above are the public entry points.)
 
 `parse_expression` is not the whole language. Command headers, aliases, and several statement-like forms are parsed separately.
 
@@ -186,28 +192,35 @@ The raw helper parser also treats any non-empty string made only from `-~!#%^&*\
 The lexer has dedicated tokens for:
 
 - `is`
-- `is!`
 - `is?`
 - `is_not?`
 - `via`
+- `member_of`
+- `satisfies`
 - `::=`
 - `:=`
 - `...`
 - `:=>`
 - `:->`
 - `:~>`
+- `|->`
 - `@`
 - `@!`
 - `\`
 - `\.`
 - `./`
+- `\:`
+- `:/`
+- `?:/`
 - `(.`
 - `.)`
 - `[|`
 - `|]`
-- `(` `)` `{` `}` `[` `]` `,` `:` `.` `|` `$`
+- the colon-decorated arithmetic operators `:+:` `:+` `+:` `:-:` `:-` `-:` `:*:` `:*` `*:` `:^:` `:^` `^:`
+- the colon-decorated special-operator forms `:op:` `:op` `op:` (used for owner-typed operator resolution)
+- `(` `)` `{` `}` `[` `]` `,` `;` `:` `.` `|` `$` `?` `:?`
 
-Because these are tokenized before ordinary names, exact spellings like `is` and `via` are effectively reserved in lexer-driven formulation parsing.
+Because these are tokenized before ordinary names, exact spellings like `is` and `via` are effectively reserved in lexer-driven formulation parsing. Note that `is!` (the hard-cast statement) is **not** a lexer token — it is recognized by a top-level scan for ` is! ` in `parse_hard_cast_statement`, so it may be surrounded by ordinary tokens.
 
 ### Build expressions
 
@@ -229,14 +242,22 @@ build is also how a `Defines:` value may state its type without `is`
 
 From lowest precedence to highest:
 
-1. spec and predicate forms
-2. equality `=` and special binary operators such as `<`, `>`, `<=`, `>=`
-3. additive `+ -`
-4. multiplicative `* /`
-5. power `^`
-6. named-operator / infix-command forms
-7. unary `+ -`
-8. atomic forms
+1. mapping `|->` (right-associative)
+2. spec and predicate forms (`is`, `is?`, `is_not?`, quoted `"op"` specs and
+   predicates, infix specs `\:...:/`, `member_of`, `satisfies`, spec literals)
+3. infix command `\.name./`
+4. equality `=` (and `!=`) and special binary operators such as `<`, `>`
+5. additive `+ -`
+6. multiplicative `* /`
+7. power `^`
+8. named-operator forms (`|op|`, member-path `|M.*|`, colon variants)
+9. unary prefix (`+`, `-`, and prefix named operators `name|`)
+10. postfix named operators (`x |f`)
+11. atomic / primary forms
+
+Note that infix-command forms and named-operator forms are at **different**
+levels (3 and 8): an infix command binds looser than arithmetic, while a named
+operator binds tighter than arithmetic.
 
 Associativity:
 
@@ -296,9 +317,35 @@ AtomExpression ::=
   | SetExpression
   | SubsetExpression
   | CommandExpression
-  | Placeholder
+  | BuiltinCommandExpression
+  | MemberCall            -- Name "." Name "(" args ")"
+  | MemberAccess          -- Name "." Name
+  | Build                 -- CommandExpression ("@" | "@!") PrimaryExpression
+  | InferredName          -- Name "?"
+  | MagneticPlaceholder   -- x__
+  | Placeholder           -- x_
   | Name
 ```
+
+This reference does not spell out every production in full. The lower
+(spec/predicate) precedence level in particular includes, besides `is`/`is?`:
+
+- **Mapping expressions** `(<param>) |-> <expression>` (anonymous functions).
+- **Infix specification** statements/predicates `<a> \: chain :/ <b>` and the
+  `?:/` predicate form.
+- **Quoted-operator specs and predicates** `<a> "op" <b>`, `<a> "op"? <b>`, and
+  `<a> "op" <command>`.
+- **`member_of`** and **`satisfies`** expressions.
+- **Spec literals** with an implicit `?` subject: `? is T`, `? "op" name`,
+  `? "op" \cmd` (values of type `\\specification`).
+- **`BuiltinCommandExpression`** — the value form `\\chain{arg; arg}:tail{...}`
+  with `;`-separated arguments (distinct from a builtin *type* `\\Chain`).
+- A command expression may carry a **`#using{...}` / `#given{...}` context**
+  suffix.
+
+Command arguments also support surface sugar: a bare collection literal
+`\foo{x_ : ...}` is read as `\foo{{x_ : ...}}`, and there are mapping-literal and
+build-function-literal argument forms.
 
 ### Atomic forms
 

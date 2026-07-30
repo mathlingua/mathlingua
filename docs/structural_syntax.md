@@ -268,9 +268,12 @@ An empty document is supported by the current implementation because `Document.i
 | `Title` | `TitleGroup` | none | `Title: OpenText` |
 | `SectionTitle` | `SectionTitleGroup` | none | `SectionTitle: OpenText` |
 | `SubsectionTitle` | `SubsectionTitleGroup` | none | `SubsectionTitle: OpenText` |
+| `Text` | `TextGroup` | none | `Text: OpenText` |
+| `Writing` | `TopLevelWritingGroup` | none | `Writing: WritingAlias+` (each alias LHS must be a `Name`, used with `:~>`) |
+| `Disambiguates` | `DisambiguatesGroup` | operator/function form | `Disambiguates:`, zero or more ordered `when?: Clause+`/`to: Expression` branches, `else?: Expression`, `Justified?`, `Documented?`, `Aliases?`, `References?`, `Metadata?` |
 | `Describes` | `DescribesGroup` | command | `Describes: FormOrDeclaration`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: IsOrViaItem`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Defines` | `DefinesGroup` | command | `Defines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
-| `Refines` | `RefinesGroup` | command | `Refines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: DeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
+| `Refines` | `RefinesGroup` | command | `Refines: RefinedDeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `States` | `StatesGroup` | command | `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Axiom` | `AxiomGroup` | command? | `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
 | `Theorem` | `TheoremGroup` | command? | `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+` |
@@ -286,6 +289,11 @@ Notes:
 
 - `command?` means the heading is optional, but if present it must parse as a formulation command header
 - `OpenText*` means the section itself is required but may contain zero text entries
+- **Every** top-level group additionally accepts a final optional `Id?: OpenText`
+  section (a quoted UUID). It is validated for placement and uniqueness and then
+  discarded — no AST node stores it — so it is omitted from the per-group rows
+  above rather than repeated on each. `Refines:` documentation is special-cased:
+  its `Documented:` rejects `called:` and instead requires `adjective:`.
 
 ## Nested Group Categories
 
@@ -339,6 +347,8 @@ Used inside `Documented:`.
 | --- | --- | --- | --- |
 | `written` | `WrittenGroup` | label? | `written: WrittenText+` |
 | `called` | `CalledGroup` | label? | `called: CalledText+`, `written?: WrittenText+` |
+| `adjective` | `AdjectiveGroup` | label? | `adjective: AdjectiveText+` (required by `Refines:`; `Refines:` `Documented:` rejects `called:`) |
+| `description` | `DescriptionGroup` | label? | `description: OpenText` |
 | `writing` | `WritingGroup` | label? | `writing: WritingAlias`, `as: WritingText+` |
 | `overview` | `OverviewGroup` | label? | `overview: OpenText` |
 | `related` | `RelatedGroup` | label? | `related: OpenText+` |
@@ -491,7 +501,7 @@ The structural parser delegates section content to formulation parsers as follow
 | `DeclarationStatement` | `parse_ordinary_declaration_statement` |
 | `RefinedDeclarationStatement` | `parse_refined_declaration_statement` |
 | `IsOrViaItem` | try `parse_is_via_statement`, then `parse_ordinary_declaration_statement` |
-| `BindingOrSpec` | `parse_ordinary_declaration_statement` |
+| `BindingOrSpec` | `parse_refined_declaration_statement` |
 | `AliasKind` | try `parse_expression_alias`, then `parse_spec_operator_alias` |
 | `WritingAlias` | `parse_writing_alias` |
 | `ResourceHeader` | `parse_resource_header` |

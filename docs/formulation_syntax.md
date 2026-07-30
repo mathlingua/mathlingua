@@ -160,7 +160,16 @@ For form declarations, it also recognizes:
 - prefix-form operator: `name|`
 - postfix-form operator: `|name`
 
-`name` uses the identifier-like rule, not the backtick rule in all of these spellings.
+In the infix spellings, the content between the bars may be a dotted **member
+path** whose segments are identifier-like names or operator-symbol runs — for
+example `|M.*|` or `|x.y.z|`. This lets an operator name track down through a
+value's fields (`x |M.*| y` is the member call `M.*(x, y)`). The prefix and
+postfix form-operator spellings remain single identifier-like names.
+
+A bracketed operator `[op]` (e.g. `[*]`) is also accepted as an infix
+form-operator inside a capability declaration; the brackets are kept in the
+operator's text to mark it as a placeholder whose symbol is drawn from the
+definition's inputs/`Describes:`.
 
 ### Special operators
 
@@ -177,6 +186,7 @@ The raw helper parser also treats any non-empty string made only from `-~!#%^&*\
 The lexer has dedicated tokens for:
 
 - `is`
+- `is!`
 - `is?`
 - `is_not?`
 - `via`
@@ -186,6 +196,8 @@ The lexer has dedicated tokens for:
 - `:=>`
 - `:->`
 - `:~>`
+- `@`
+- `@!`
 - `\`
 - `\.`
 - `./`
@@ -196,6 +208,20 @@ The lexer has dedicated tokens for:
 - `(` `)` `{` `}` `[` `]` `,` `:` `.` `|` `$`
 
 Because these are tokenized before ordinary names, exact spellings like `is` and `via` are effectively reserved in lexer-driven formulation parsing.
+
+### Build expressions
+
+A build applies a command type to a value at a stated abstraction level:
+
+- `<command-type> @ <value>` — soft build (coercion), e.g. `\set@{...}`,
+  `\rational@k`.
+- `<command-type> @! <value>` — hard build (coercion + encoding), e.g.
+  `\set@!m`.
+
+`@`/`@!` bind the command type on the left to the primary expression on the
+right. These replace the removed `value as \type` / `value as! \type` casts. A
+build is also how a `Defines:` value may state its type without `is`
+(`X := \set@{...}` is sugar for `... is \set`).
 
 ## Expression Grammar
 

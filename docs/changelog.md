@@ -5,6 +5,87 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Symbol Introduction, Builds, And Operators
+
+### `as`/`as!` Casts Removed; `\type@value` / `\type@!value` Builds
+
+The `value as \type` and `value as! \type` cast expressions are **removed** (the
+`Cast` AST node is gone). A value is now built at a stated type with a command
+type followed by `@` or `@!`:
+
+- `\type@value` — a **soft build**: succeeds when the value already has the
+  type, extends to it, or the value's type has an `Enables:` `relation:` to it
+  marked `represents: \\coercion`.
+- `\type@!value` — a **hard build**: also allows relations marked
+  `represents: \\encoding`.
+
+A build whose value cannot be viewed at the requested type reports
+`Could not build \`{expression}\``. The named counterparts are `x is \type`
+(soft) and `x is! \type` (hard), which introduce a symbol with the same view
+semantics. Set builders after `@` accept `;`-separated specs, e.g.
+`\set@{(a_, b_) : a_ "in" A; b_ "in" B}`.
+
+### `Defines:` Must State Its Type
+
+A `Defines:` target must state its type: either `X := value is <type>` or a
+top-level build `X := \<type>@<value>` (which is sugar for `... is <type>`). A
+bare `X := {…}` is rejected — `` `Defines:` target `X` must state its type: use
+`... is <type>` or a top-level `\...@...` build (e.g. `\set@{...}`) `` — even
+when the type is inferable.
+
+### Operators As Application
+
+`x |op| y` is syntactic sugar for `op(x, y)`; `f| x` and `x |f` for `f(x)`. The
+`|op|` content may be a dotted **member path** (`|M.*|`, `|x.y.z|`) that tracks
+down through a value's fields, so `x |M.*| y` is the member call `M.*(x, y)`. A
+plain **symbolic** operator `x * y` also desugars to `*(x, y)` when `*` names a
+bound value in scope (otherwise `*`, `+`, … keep their built-in arithmetic
+resolution).
+
+### Operand-Type Operator Capabilities
+
+A plain operator resolves in order: the application desugar (when the symbol is
+bound), a `Disambiguates` entry, then a provided-symbol capability owned by the
+operands' common type. So a `\magma.element` that `Enables:`
+`capability: x_ * y_ :=> …` makes `y * y` resolve for two magma elements. Values
+known only through a spec (`y "in" M`) are reduced to their `is`-facts for this
+owner-type match.
+
+### Bracketed Placeholder Operators `[*]`
+
+A capability LHS may write `x_ [*] y_`, where `[*]` names a symbol drawn from the
+definition's inputs/`Describes:` (e.g. the `*` component of `M ::= (X, *)`)
+rather than a literal character. It parses as an infix-operator form whose
+operator text retains the brackets.
+
+### Destructuring Component Binding And Typing
+
+A destructuring target `Name ::= (c1, …, cn)` introduces its components
+(including operator components like `*`) and infers their types: from
+`extends:`/`extends: … via …` and then `specifies:` for a `Describes` target;
+from the parameter's `when:` type for a command parameter `{M ::= (X, *)}`; and
+from the right-hand type for a `given:`/`Defines:` binding `M ::= (X, *) is \T`.
+Such components need no separate `when:` entry, and member access reaches them
+(`M.X`, `M.*`). Only `::=` introduces components; `:=` requires its right-hand
+side already in scope.
+
+### `extends: … via …` Sets Component Types
+
+`extends: M is \set via X` records `X is \set`; `extends: S is \magma via (X, *)`
+maps the `via` tuple positionally onto `\magma`'s components, giving `X is \set`
+and `* is \binary.operation:on{S}`. `specifies:` then only needs to type
+components the `via` does not cover.
+
+### `States:` Requires `called:`/`written:`
+
+Like `Describes`/`Defines`, a `States:` group must include a `called:` or
+`written:` item in `Documented:`.
+
+### Placeholder-Spec Capability Targets
+
+A `:->` capability target may be a spec on the bound placeholder, e.g.
+`capability: x_ "in" A :-> x_ "in" B` (meaning `x "in" A` implies `x "in" B`).
+
 ## Structural Language
 
 ### `Lemma:` and `Conjecture:` Items Removed
@@ -32,15 +113,15 @@ had its cast section renamed and its keywords changed:
 The semantics are unchanged by the rename:
 
 - `represents: \\coercion` records that a value of the described type **may be used
-  where the related type is expected** — an ordinary cast. If `\integer` has a
+  where the related type is expected** — an ordinary coercion. If `\integer` has a
   `relation:` `to:` `\rational` marked `\\coercion`, then `x is \integer` lets you
-  write `x as \rational`, and a `\baz{a}` requiring `a is \rational` accepts a
-  `\integer` argument (the integer coerces to a rational).
+  write the soft build `\rational@x`, and a `\baz{a}` requiring `a is \rational`
+  accepts a `\integer` argument (the integer coerces to a rational).
 - `represents: \\encoding` records an **abstraction boundary**: the described type
-  does *not* coerce to the related type, and an ordinary `as` cast will not cross
-  it. Only the hard cast `x as! \bar` follows an encoding. This expresses e.g. that
-  an `\integer` is *encoded as* a `\set` without an integer *being* a set: `x as
-  \set` will not work, but `x as! \set` will.
+  does *not* coerce to the related type, and a soft build (`@`) will not cross
+  it. Only the hard build `\bar@!x` follows an encoding. This expresses e.g. that
+  an `\integer` is *encoded as* a `\set` without an integer *being* a set:
+  `\set@x` will not work, but `\set@!x` will.
 
 The separate `connection:` group under `Enables:` is **removed**. It is superseded
 by the `relation:` `to:` group, which covers the same directional relationships and
@@ -403,10 +484,10 @@ Collection targets:
   value, where that value may itself have any expression shape.
 - `member_of` is a keyword used by enabled membership capabilities.
 - `x member_of X` is valid only when `X` is a collection literal or has a
-  collection literal attached by an explicit cast.
-- `{x_ : x_ is \real} as \set` casts a collection literal to the described type.
+  collection literal attached by an explicit build.
+- `\set@{x_ : x_ is \real}` builds a collection literal at the described type.
 - `A := {x_ : x_ is \real | x_ > 2} is \set` binds the literal to `A` as a set.
-- If `A := {x_ : x_ is \real} as \set` and `x "in" A`, the checker can
+- If `A := \set@{x_ : x_ is \real}` and `x "in" A`, the checker can
   establish `x is \real`.
 - If `A is \set` without a collection literal, membership establishes
   `x is \\opaque`.
@@ -505,7 +586,7 @@ The checker distinguishes values, definitions, and described types.
 
 - `X is \foo` is used when `\foo` is a `Describes:` entry.
 - `X := \foo` is used when `\foo` is a `Defines:` entry.
-- `X := {...} as \set` is valid where a definition-style binding is expected.
+- `X := \set@{...}` is valid where a definition-style binding is expected.
 - A `Defines:` entry may include an expression and result type, such as
   `Defines: C := A is \set`.
 

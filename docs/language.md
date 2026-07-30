@@ -566,29 +566,172 @@ as:
 
 The body after `:~>` is raw non-empty text, not parsed formulation syntax.
 
-## Semantic Checking
+## Checks Performed by `mlg check`
 
-The semantic checker runs after parsing. It currently performs three broad
-checks.
+`mlg check` runs a fixed pipeline over the collection and reports every problem
+it finds as a `Level::Error` diagnostic (the checker itself emits no warnings).
+It finishes with either `Checked N file(s)` or `Found N issue(s).`. Before
+checking, unless `mlg.json` sets `"formatOnCheck": false`, the collection is
+formatted first (`Formatted N file(s)`), and any top-level item missing an `Id:`
+has one generated and written back.
 
-First, it collects all command definitions. It rejects duplicate command
-signatures and checks that `Describes`, `Defines`, and `Refines` have
-`Documented:` metadata containing at least one `called:` item.
+The stages below run in order; each is enumerated so this section is the
+authoritative catalog of what the tool validates. Error text is shown as a
+template with `{placeholders}`.
 
-Second, it walks every command-like reference and checks that the referenced
-signature exists and that the argument shape matches. Refined command references
-may fall back to checking their base command and individual refinement pieces
-when the composed refined signature is not defined directly.
+### 1. Configuration (`mlg.json`)
 
-Third, it checks symbol usage and type requirements. Unknown symbols are
-reported as `Unrecognized symbol`. Type requirements are reported as
-`Could not establish requirement ...` when the current context does not establish
-the required fact.
+Every field is required and typed. Checks: file is readable
+(`Failed to read mlg.json: {error}`), valid JSON (`Invalid JSON in mlg.json`),
+a JSON object (`mlg.json must be a JSON object`); each required field present
+(`mlg.json is missing required field "{field}"` for `name`, `version`,
+`margin`, `formatOnCheck`, `outputDir`); `name`/`version` are strings, `margin`
+is a positive integer, `formatOnCheck` is a boolean, and `outputDir` is a
+non-empty relative path inside the collection. The removed key `print_margin`
+reports `... was renamed to "margin"`.
 
-The checker is not a proof checker for theorem conclusions. It checks that
-conclusions are syntactically valid, use declared symbols, reference defined
-commands with the right argument shapes, and satisfy any requirements of those
-commands.
+### 2. Collection, directory, and `toc` structure
+
+An explicit target must be a `.mlg` file (`Not a .mlg file`), a real filesystem
+entry (`Unsupported filesystem entry`), and part of the collection
+(`Path is not part of the source collection`). Every directory's `toc` file is
+validated against its actual children: no `Duplicate toc entry \`{name}\``,
+every listed name resolves (`toc entry \`{name}\` does not match an existing
+.mlg file or directory`), and every real child is listed (`Directory toc is
+missing entry \`{name}\``). `toc` lines must be well formed
+(`Missing toc file name`, `toc entries must be direct .mlg file or directory
+names`, `toc entry title cannot be empty`).
+
+### 3. Parsing
+
+Parsing has three layers, each with its own diagnostics:
+
+- **Proto (line/indentation)** — line shape, section indentation, `:` on
+  section lines, argument bullets. Single-quoted formulations are rejected
+  (`Single-quoted formulations are not allowed`).
+- **Structural (groups/sections)** — each group must match its section
+  pattern: a required (non-`?`) section that is missing reports
+  `Expected section \`{name}\``, an out-of-order section reports `Expected
+  \`{a}\` but found \`{b}\``, and an extra section reports `Unexpected section
+  \`{label}\``. Unknown top-level heads report `Unexpected top-level group
+  \`{other}\``. Clauses, formulations, headings, and text bodies each have
+  "expected …" and "invalid …" diagnostics; `Refines` documentation rejects
+  `called:` (`use adjective:`), `Topic` documentation accepts only `called:`,
+  and `represents:` entries must be `\coercion` or `\encoding`. `Disambiguates`
+  headings and branches have their own structural rules.
+- **Formulation (expressions/forms)** — token errors (`invalid token`,
+  `unexpected {token}; expected {expected}`) and construct-specific errors such
+  as `command headers must start with \`\\``, `expected top-level \` is \``,
+  `expected top-level \` is! \``, `expected top-level \`:=\``, `... \` via \``,
+  `... \`:=>\``, `... \`:->\``, `Invalid clause expression in \`{label}\`:
+  {error}`, and set/placeholder/operator shape errors.
+
+### 4. `mlg` code fences in prose
+
+A ```` ```mlg ```` fenced block inside a `Text:` value (or documentation prose)
+is parsed as real source; a failure reports `Syntax error in \`mlg\` code block:
+{message}`. ```` ```mlg-fragment ```` and non-`mlg` fences are skipped.
+
+### 5. Identifiers, uniqueness, and single-instance items
+
+Every top-level item must have `Id:` (`Top-level item must include an \`Id:\`
+section`) holding a quoted UUID (`\`Id:\` section must contain a quoted UUID`,
+`\`Id:\` value \`{value}\` must be a UUID`); Ids must be unique
+(`Duplicate Id \`{value}\`; first used at {loc}`). At most one top-level
+`Writing:` item is allowed. Command signatures must be unique across definition
+kinds (`Duplicate command signature \`{sig}\` ...`), and each operator/function
+key may have at most one `Disambiguates` (`Duplicate disambiguation for
+\`{key}\``). Spec-infix headings (`\:...:/`) are allowed only on `Describes`, and
+refined headings (`::`) only on `Refines`.
+
+### 6. Documentation requirements
+
+`Describes`, `Defines`, and `States` must include a `called:` **or** `written:`
+item in `Documented:` (`{kind} entries must include either a \`called:\` or a
+\`written:\` item in \`Documented:\``). `Refines` must include an `adjective:`
+item instead (`Refines entries must include an \`adjective:\` item ...`).
+
+### 7. Command references and argument shapes
+
+Every command-like reference must resolve to a defined signature
+(`Undefined command signature \`{signature}\``) with a matching argument shape
+(`Command signature \`{sig}\` expects argument shape \`{expected}\` but found
+\`{actual}\``); refined references may fall back to their base command and
+refinement pieces. Command `when:`/context requirements are checked at use
+sites (`Could not establish requirement \`{fact}\` for command \`{signature}\``,
+plus `Command ... does not accept ...`, `Unknown ... parameter ...`,
+`Missing ... value for parameter ...`).
+
+### 8. Target-symbol specification (`Describes`/`Defines`)
+
+Every parameter and target symbol a definition introduces must be given a type.
+A header parameter needs a `when:` fact (`Missing \`when:\` requirement for
+parameter \`{parameter}\``). A `Describes` target symbol must be typed directly
+or through `extends:` (`Missing specification for target symbol \`{symbol}\`;
+specify it directly or through \`extends:\``). A `Defines` target symbol must be
+assigned (`Missing definition for target symbol \`{symbol}\`; assign it with
+\`:=\` ... or top-level \`expresses:\``) at most once (`Duplicate definition for
+target symbol ...`), and a `Defines` value **must state its type** — either
+`... is <type>` or a top-level build `\<type>@<value>`:
+
+```text
+` `Defines:` target `X` must state its type: use `... is <type>` or a
+  top-level `\...@...` build (e.g. `\set@{...}`) `
+```
+
+A bare `X := {…}` is rejected even when the type is inferable.
+
+### 9. `when:` clauses
+
+`when:` may only constrain the definition's own parameters (`... is not allowed
+because \`{subject}\` is not a parameter of this definition`) and only with
+`<subject> is <type>` or `<subject> "op" <target>` forms.
+
+### 10. Specifications vs. statements
+
+An `is` specification or infix specification (`\:...:/`) *introduces* a symbol,
+so it is only allowed in binding positions (`exists:`, `given:`, `forAll:`,
+`where:`, `when:`, `suchThat:`). In a statement position (`then:`, `iff:`,
+`that:`, `if:`, `not:`, `allOf:`, …) it is rejected in favor of the predicate
+form `is?` / `\:...?:/` (`An \`is\` specification introduces a symbol and is only
+allowed in \`exists:\`, \`given:\`, or \`forAll:\`; use the statement form
+\`is?\` here`).
+
+### 11. Symbol scope
+
+Every referenced symbol must be introduced before use, or
+`Unrecognized symbol \`{name}\`` is reported. Introduction sites are listed in
+[Symbol Scope](#symbol-scope) below. Note `:=` does **not** introduce symbols —
+its right-hand side must already be in scope — whereas `::=` does.
+
+### 12. Spec facts and operators
+
+A spec fact `x "op" T` is valid only when `T`'s type provides that operator
+(`Could not validate spec fact \`{fact}\`: no provided spec operator \`"{op}"\`
+is available for \`{target}\``); infix spec signatures must be defined by
+`Describes`. Operators resolve in order: an in-scope value applied as a call, a
+`Disambiguates` entry, then a provided-symbol capability owned by the operands'
+type. If none apply, `Could not resolve {label}: no matching \`Disambiguates\`
+entry was found` (or `Could not resolve operator \`{symbol}\` from {source}`).
+Member access reports `Could not resolve member \`{name}\` for \`{owner}\``.
+
+### 13. Capabilities, requirements, and casts/builds
+
+`Requires:`/`Enables:` capability aliases are validated: a provided spec
+operator's target must be the described item; a `Required definition` must
+reference a `Defines:` entry and establish its stated fact. Build expressions
+`\<type>@<value>` (coercion) and `\<type>@!<value>` (coercion + encoding) are
+checked (`Could not build \`{expression}\``). Type predicates, function-type
+specs, and `is` type arguments are checked
+(`Could not establish predicate ...`, `Could not establish requirement ... for
+function ...`, `\`{name}\` is not a known type`).
+
+### What the checker does *not* do
+
+It is not a proof checker: it never verifies that a theorem's conclusion is
+true. It checks that every formulation parses, references defined commands with
+the right shapes, uses only introduced symbols, and satisfies the stated
+requirements of the commands and operators it mentions.
 
 ## Symbol Scope
 
@@ -715,10 +858,37 @@ Documented:
 This means that if the checker knows `G is \group`, it can prove `G is \set`.
 The implication is recursive, so subtype chains are followed.
 
-The `via` form documents and validates the view used to regard the subtype as
-the supertype. In the current checker, the target fact on the left side of
-`via` is what participates in proof search; the `via` form itself is checked for
-declared symbols but is not otherwise used for term rewriting.
+The `via` form both documents the view used to regard the subtype as the
+supertype **and sets the types of the `via` symbols**, so they need not be
+repeated in `specifies:`:
+
+- `extends: M is \set via X` — a single `via` symbol becomes an instance of the
+  extended type, i.e. it records `X is \set`.
+- `extends: S is \magma via (X, *)` — a `via` tuple maps positionally onto the
+  extended type's own components, so `X` and `*` inherit the types `\magma`
+  gives its components (`X is \set`, `* is \binary.operation:on{S}`).
+
+Because `via` supplies those types, the `specifies:` section only needs to type
+components the `via` does not cover (for `\group` above, just `e`).
+
+### Destructuring targets
+
+A `Describes`/`Defines` target, a command parameter, or a `given:`/`using:`
+binding may destructure a tuple with `::=`:
+
+```text
+Describes: M ::= (X, *)
+[\magma.element:of{M ::= (X, *)}]
+given: M ::= (X, *) is \magma
+```
+
+The component names (including operator components like `*`) are introduced, and
+their types are inferred: from `extends:`/`via` and then `specifies:` for a
+`Describes` target; from the parameter's `when:` type for a command parameter;
+and from the right-hand type for a `given:`/`Defines:` binding. Components typed
+this way do not each need a separate `when:` entry, and member access reaches
+them (`M.X`, `M.*`). Only `::=` introduces these symbols — `:=` requires its
+right-hand side to already be in scope.
 
 An `extends:` section may also use a spec statement:
 
@@ -776,9 +946,9 @@ that requirement even without reducing it to a type fact. A raw fact such as
 `x "in" G` is invalid when the checker knows `G` has a type that does not enable
 `"in"`.
 
-### Cast-Backed Capabilities
+### Build-Backed Capabilities
 
-`Enables:` may use a `from:` group to describe capabilities supplied by a cast
+`Enables:` may use a `from:` group to describe capabilities supplied by a built
 literal rather than by the opaque type itself.
 
 ```text
@@ -793,16 +963,16 @@ Documented:
 . called: "set"
 ```
 
-If a value is introduced as `A := {x_ : x_ is \real} as \set`, the checker
+If a value is introduced as `A := \set@{x_ : x_ is \real}`, the checker
 records the literal for `A`. When it later reduces `a "in" A`, the `from:`
 capability substitutes the source subject `Y` with `A`, producing
-`a member_of A`. The existing `member_of` reducer then reads the cast literal
+`a member_of A`. The existing `member_of` reducer then reads the built literal
 and can establish `a is \real`.
 
-An ordinary non-`from:` capability on an opaque target does not read a cast
+An ordinary non-`from:` capability on an opaque target does not read a built
 literal through `member_of`. For example, `Describes: X` with
 `capability: x_ "in" X :-> x_ member_of X` does not make
-`{...} as \set` expose the literal's element facts. Use a structural target such as
+`\set@{...}` expose the literal's element facts. Use a structural target such as
 `Describes: X ::= {x__ : ...}` or an explicit `from:` capability for that.
 
 A `from:` group may also use `as:` with an expression binding, for example:
@@ -813,59 +983,102 @@ Enables:
   as: f(p_) := q_
 ```
 
-This records and validates the cast view from the source structure to the
-described form. If `F := {(p_, q_) : q_ is \set} as \function`, the binding
+This records and validates the view from the source structure to the
+described form. If `F := \function@{(p_, q_) : q_ is \set}`, the binding
 lets the checker use facts about `q_` from the source literal as facts about
 `F(p_)`; for example it can establish `F(a) is \set` when the source literal
 supports that substitution.
 
-### Cast Expressions
+### Build Expressions (`\type@value` and `\type@!value`)
 
-Expressions may use `value as \type` and `value as! \type`.
+An expression may build a value at a stated type using a command type followed
+by `@` (soft) or `@!` (hard) and the value:
 
-`value as \type` succeeds when the value already has that type, has a parent
-type that extends to it, or the value's type (or a parent type) has an
-`Enables:` relationship of the form `relation: to: ... is \type` with
-`represents: \\coercion`.
+- `\type@value` — a **soft build**. It succeeds when `value` already has that
+  type, has a parent type that extends to it, or the value's type (or a parent)
+  has an `Enables:` `relation:` to `\type` marked `represents: \\coercion`.
+- `\type@!value` — a **hard build**. It performs the same checks and
+  additionally allows `relation:` groups marked `represents: \\encoding`. Use
+  `@!` when the value is being viewed at a lower abstraction level.
 
-`value as! \type` performs the same checks and additionally allows
-`relation:` groups marked with `represents: \\encoding`. Use `as!` when the
-expression is being viewed at a lower abstraction level.
+```text
+X := \set@{x_ : x_ is \real}
+n := \rational@k
+s := \set@!m
+```
 
-`Enables:` may contain `relation:` groups:
+The old `value as \type` / `value as! \type` cast syntax has been removed;
+`\type@value` and `\type@!value` replace them. These are also the only way to
+state a `Defines:` value's type without `is` — a top-level build such as
+`X := \set@{...}` is sugar for `... is \set` (see the target-symbol check
+above). A build whose value cannot be viewed at the requested type reports
+`Could not build \`{expression}\``.
+
+The related symbol-introduction forms are `is` and `is!`: `x is \type`
+introduces `x` with a soft view (coercion) of the type, and `x is! \type`
+introduces it with a hard view (coercion + encoding). They are the named
+counterparts of `@` and `@!`.
+
+`Enables:` may contain `relation:` groups that back builds:
 
 ```text
 [\integer]
 Describes: n
 Enables:
 . relation:
-  to: r := \as.rational{n} is \rational
+  to: r := \rational@n is \rational
   when: n is \integer
   means: n \.embedded.to./ r
   represents: \\coercion
 ```
 
 The `to:` declaration states the target type using `is`. The `:= ...`
-construction is optional; without it, the cast is accepted but the converted
+construction is optional; without it, the relation is accepted but the converted
 value is opaque. The optional `when:` section can contain ordinary declarations
-and hard-cast declarations such as `a0 := a is! \set`.
-The optional `means:` clause records a statement relating the original value
-and the viewed value.
+and hard-view declarations such as `a0 := a is! \set`. The optional `means:`
+clause records a statement relating the original value and the viewed value.
 
 Relations marked `\\coercion` are used when checking whether an already-resolved
 command's arguments satisfy its requirements. For example, if `\integer` has a
 relation to `\rational` marked `\\coercion`, then a command requiring
-`x is \rational` may accept an integer argument. These relationships are not
-used for operator resolution: `+` on integers will not resolve to `+` on
-rationals merely because integers can be viewed as rationals.
+`x is \rational` may accept an integer argument, and `\rational@k` succeeds for
+an integer `k`. These relationships are **not** used for operator resolution:
+`+` on integers will not resolve to `+` on rationals merely because integers can
+be viewed as rationals.
 
-Relations marked `\\encoding` are used only by `as!` casts. They describe a
-lower-level representation that an object may be pushed down to, such as a
-natural number being treated as an underlying set.
+Relations marked `\\encoding` are used only by hard builds (`@!`) and `is!`.
+They describe a lower-level representation an object may be pushed down to, such
+as a natural number treated as an underlying set.
 
 Unmarked `relation:` groups are still valid. They record user-defined
 relationships for readers and for future semantic extensions without affecting
-casts.
+builds.
+
+## Operators as Application
+
+A named operator and a symbolic operator both desugar to application when they
+name something callable:
+
+- **`x |op| y` means `op(x, y)`**, `f| x` and `x |f` mean `f(x)`. The `|op|`
+  content may be a dotted **member path** such as `|M.*|` or `|x.y.z|`, which
+  tracks down through a value's fields: `x |M.*| y` is `M.*(x, y)`, reaching the
+  `*` component of a destructured `M ::= (X, *)`.
+- **A symbolic operator `x * y` desugars to `*(x, y)` when `*` names a bound
+  value** in scope (for example the operation component of a destructured
+  magma). Otherwise `*`, `+`, … keep their built-in arithmetic resolution.
+
+Plain operators resolve in order: (1) the application desugar above, when the
+symbol is bound; (2) a `Disambiguates` entry; (3) a provided-symbol capability
+owned by the operands' common type. So if `y "in" M` makes `y` a
+`\magma.element` and `\magma.element` `Enables:` `capability: x_ * y_ :=> ...`,
+then `y * y` resolves through that capability. If none apply, the operator is
+reported unresolved.
+
+A capability may also declare a **bracketed placeholder operator**
+`x_ [*] y_`, where `[*]` names a symbol drawn from the definition's
+inputs/`Describes:` (here the `*` component of `M ::= (X, *)`) rather than a
+fixed character. The provided operator's name is then the operand's concrete
+operation symbol.
 
 ## Rendering Metadata
 

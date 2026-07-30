@@ -439,6 +439,7 @@ fn type_info_from_parts(
             component_type_facts(target, extends, describes_specifies, &context, registry)
         })
         .unwrap_or_default();
+    let parameter_destructurings = destructured_parameters(heading, &context);
 
     DefinitionTypeInfo {
         signature: header_shape.shape.signature.clone(),
@@ -451,6 +452,7 @@ fn type_info_from_parts(
         substitutions: context.substitutions,
         described: described.map(described_target_subject_key),
         component_types,
+        parameter_destructurings,
     }
 }
 
@@ -5398,6 +5400,28 @@ fn context_with_cast_expression_facts<'a>(
     child
 }
 
+/// Clones `context` and materializes the `is`-facts implied by its specification
+/// facts (`y "in" M` -> `y is \magma.element:of{M}`) so that owner-type matching
+/// via `has_type_signature` sees a value's reduced type. Reductions run through
+/// the existing `reduce_spec_or_member_fact`, which is cycle-guarded.
+fn context_with_spec_reductions(
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> TypeContext {
+    let mut spec_seen = HashSet::new();
+    let reduced: Vec<TypeFact> = context
+        .facts
+        .iter()
+        .filter(|fact| matches!(fact, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }))
+        .flat_map(|fact| reduce_spec_or_member_fact(fact, context, registry, &mut spec_seen))
+        .collect();
+    let mut child = context.clone();
+    for fact in reduced {
+        child.add_fact(fact);
+    }
+    child
+}
+
 fn add_cast_expression_facts(expression: &Expression, context: &mut TypeContext) {
     match &expression.kind {
         ExpressionKind::Name(_)
@@ -6063,6 +6087,15 @@ fn check_disambiguated_binary(
             return;
         }
 
+        // No `Disambiguates` entry: fall back to a provided-symbol capability for
+        // this operator owned by the operands' common type (e.g. `y * y` where
+        // `y` is a magma element and `\magma.element` enables `x_ * y_`).
+        if check_provided_binary_operator_by_operand_type(
+            left, operator, right, context, path, locator, registry, event_log,
+        ) {
+            return;
+        }
+
         emit_error(
             event_log,
             path,
@@ -6175,6 +6208,56 @@ fn check_provided_binary_operator(
     };
 
     let owner_actual = provided_symbol_owner_actual(kind, &actuals);
+    check_provided_symbol_target(
+        rule,
+        &actuals,
+        owner_actual.as_deref(),
+        &requirement_context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
+    true
+}
+
+/// Resolves a plain binary operator through a provided-symbol capability owned by
+/// the operands' common type — e.g. `y * y` where both operands are magma
+/// elements and `\magma.element` enables `x_ * y_`. Both operands must have the
+/// owner type (there is no colon to designate a single owner). Returns `false`
+/// without emitting when no such capability applies, so the caller can report the
+/// operator as unresolved.
+fn check_provided_binary_operator_by_operand_type(
+    left: &Expression,
+    operator: &BinaryOperator,
+    right: &Expression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) -> bool {
+    let (symbol, _) = binary_operator_symbol_and_kind(operator);
+    let key = DisambiguationKey::BinaryOperator(symbol);
+    let argument_expressions = [left, right];
+    let requirement_context =
+        context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let requirement_context = context_with_spec_reductions(&requirement_context, registry);
+    let actuals = argument_expressions
+        .iter()
+        .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
+        .collect::<Vec<_>>();
+    let Some(rule) = find_provided_symbol_rule(
+        &key,
+        NamedOperatorKind::BothColon,
+        &actuals,
+        &requirement_context,
+        registry,
+    ) else {
+        return false;
+    };
+
+    let owner_actual = provided_symbol_owner_actual(NamedOperatorKind::BothColon, &actuals);
     check_provided_symbol_target(
         rule,
         &actuals,
@@ -6531,7 +6614,25 @@ fn check_provided_symbol_target(
             child.add_substitution(source_subject.clone(), context.normalize_key(owner_actual));
         }
     }
+    bind_owner_parameter_destructurings(rule, &mut child, registry);
     check_expression(&rule.target, &child, path, locator, registry, event_log);
+}
+
+/// Makes the owner type's destructuring parameters (`M ::= (X, *)` in
+/// `\magma.element:of{M ::= (X, *)}`) available while a provided-symbol rule's
+/// target is checked, so a target that reaches those components (`x_ |M.*| y_`)
+/// resolves `M.*` to the operation component.
+fn bind_owner_parameter_destructurings(
+    rule: &ProvidedSymbolRule,
+    context: &mut TypeContext,
+    registry: &SignatureRegistry,
+) {
+    let Some(info) = registry.type_infos.get(&rule.owner_signature) else {
+        return;
+    };
+    for parameter in info.parameter_destructurings.clone() {
+        bind_destructured_parameter(&parameter, context, registry);
+    }
 }
 
 fn effective_key_for_expression(
@@ -6793,7 +6894,33 @@ fn effective_key_for_binary_expression(
     }
 
     let (key, _, _) = disambiguation_key_for_binary_operator(operator)?;
-    effective_key_for_disambiguated_target(&key, &actuals, context, registry, resolving)
+    if let Some(result) =
+        effective_key_for_disambiguated_target(&key, &actuals, context, registry, resolving)
+    {
+        return Some(result);
+    }
+
+    // Fall back to a provided-symbol capability owned by the operands' common
+    // type (mirrors `check_provided_binary_operator_by_operand_type`), so
+    // `y * y` yields its result type when `\magma.element` enables `x_ * y_`.
+    let operand_key = DisambiguationKey::BinaryOperator(symbol);
+    let reduced_context = context_with_spec_reductions(context, registry);
+    let rule = find_provided_symbol_rule(
+        &operand_key,
+        NamedOperatorKind::BothColon,
+        &actuals,
+        &reduced_context,
+        registry,
+    )?;
+    let owner_actual = provided_symbol_owner_actual(NamedOperatorKind::BothColon, &actuals);
+    Some(effective_key_for_provided_symbol_target(
+        rule,
+        &actuals,
+        owner_actual.as_deref(),
+        &reduced_context,
+        registry,
+        resolving,
+    ))
 }
 
 fn effective_key_for_disambiguated_target(
@@ -6897,6 +7024,7 @@ fn effective_key_for_provided_symbol_target(
             child.add_substitution(source_subject.clone(), context.normalize_key(owner_actual));
         }
     }
+    bind_owner_parameter_destructurings(rule, &mut child, registry);
 
     effective_key_for_expression_inner(&rule.target, &child, registry, resolving)
 }
@@ -12515,6 +12643,68 @@ fn assume_destructured_parameter_components(
     context: &mut TypeContext,
     registry: &SignatureRegistry,
 ) {
+    for parameter in destructured_parameters(header, context) {
+        bind_destructured_parameter(&parameter, context, registry);
+    }
+}
+
+/// Records a destructured parameter's components in `context`: declares each
+/// component name, adds its type facts (resolved lazily from the parameter's
+/// type), and remembers the component list so member access (`M.*`) can reach
+/// them.
+fn bind_destructured_parameter(
+    parameter: &DestructuredParameter,
+    context: &mut TypeContext,
+    registry: &SignatureRegistry,
+) {
+    context.declare_name(parameter.name.clone());
+    for component in &parameter.components {
+        context.declare_name(component.clone());
+    }
+    for fact in destructured_parameter_component_facts(parameter, context, registry) {
+        context.add_fact(fact);
+    }
+    context.add_destructured_components(parameter.name.clone(), parameter.components.clone());
+}
+
+/// Positionally maps the parameter's type's component types onto the local
+/// component names (substituting that type's subject by the parameter name), so
+/// `{M ::= (X, *)}` with `M is \magma` gives `X is \set`, `* is \binary.operation:on{M}`.
+fn destructured_parameter_component_facts(
+    parameter: &DestructuredParameter,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let Some(info) = registry.type_infos.get(&parameter.type_signature) else {
+        return Vec::new();
+    };
+    if info.component_types.is_empty() {
+        return Vec::new();
+    }
+    let mut sub_context = context.clone();
+    if let Some(described) = &info.described {
+        sub_context.add_substitution(described.clone(), parameter.name.clone());
+    }
+    for (index, fact) in info.component_types.iter().enumerate() {
+        if let Some(local) = parameter.components.get(index) {
+            sub_context.add_substitution(fact_subject(fact).to_owned(), local.clone());
+        }
+    }
+    info.component_types
+        .iter()
+        .map(|fact| sub_context.normalize_fact(fact))
+        .collect()
+}
+
+/// The destructuring parameters of a header (`{M ::= (X, *)}`), each recorded with
+/// its component names and the signature of its declared type. Order-independent:
+/// component types are resolved later from that type (see
+/// `destructured_parameter_component_facts`).
+fn destructured_parameters(
+    header: &CommandHeader,
+    context: &TypeContext,
+) -> Vec<DestructuredParameter> {
+    let mut result = Vec::new();
     for form in header_parameter_forms(header) {
         let FormOrDeclarationKind::TupleDeclaration {
             name: Some(name),
@@ -12523,31 +12713,16 @@ fn assume_destructured_parameter_components(
         else {
             continue;
         };
-        let Some(signature) = declared_type_signature(name, context) else {
+        let Some(type_signature) = declared_type_signature(name, context) else {
             continue;
         };
-        let Some(info) = registry.type_infos.get(&signature) else {
-            continue;
-        };
-        if info.component_types.is_empty() {
-            continue;
-        }
-        let local_components = tuple_form_component_names(tuple);
-        let mut sub_context = context.clone();
-        if let Some(described) = &info.described {
-            sub_context.add_substitution(described.clone(), name.clone());
-        }
-        for (index, fact) in info.component_types.iter().enumerate() {
-            if let Some(local) = local_components.get(index) {
-                sub_context.add_substitution(fact_subject(fact).to_owned(), local.clone());
-            }
-        }
-        for fact in &info.component_types {
-            let localized = sub_context.normalize_fact(fact);
-            context.add_fact(localized);
-        }
-        context.add_destructured_components(name.clone(), local_components);
+        result.push(DestructuredParameter {
+            name: name.clone(),
+            components: tuple_form_component_names(tuple),
+            type_signature,
+        });
     }
+    result
 }
 
 fn collect_tail_parameters(parts: &[CommandHeaderTailPart], parameters: &mut WhenParameters) {

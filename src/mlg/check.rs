@@ -3428,8 +3428,8 @@ then:
             when: M is \structure
             extends: x "in" X
             Enables:
-            . capability: x_ * y_ :=> x_ * y_
-              written: "x_? *? y_?"
+            . capability: x_ * y_ :=> x_ |M.*| y_
+              written: "x_? * y_?"
             Documented:
             . called: "elt"
 
@@ -3463,6 +3463,12 @@ then:
             . M ::= (X, *) is \structure
             . x "in" M
             then: x |M.*| x "in" M
+
+            Theorem:
+            given:
+            . M ::= (Y, +) is \structure
+            . y "in" M
+            then: y * y "in" M
             "#,
         )
         .unwrap();
@@ -3898,8 +3904,6 @@ then:
     Enables:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
-    . capability: x_ = y_ :=> x_ \.set.=./ y_
-    . capability: x_ - y_ :=> x_ \.set.minus./ y_
     Documented:
     . called: "set"
 
@@ -3909,7 +3913,7 @@ then:
 
     Theorem:
     given: A, B is \set
-    then: A - B is? \set
+    then: A * B is? \set
     "#,
         )
         .unwrap();
@@ -3930,11 +3934,13 @@ then:
             .map(|message| message.message.as_str())
             .collect::<Vec<_>>();
 
+        // A plain operator with neither a `Disambiguates` entry nor a
+        // provided-symbol capability owned by the operand type is unresolved.
         assert!(messages.contains(
             &"Could not resolve operator `+`: no matching `Disambiguates` entry was found"
         ));
         assert!(messages.contains(
-            &"Could not resolve operator `-`: no matching `Disambiguates` entry was found"
+            &"Could not resolve operator `*`: no matching `Disambiguates` entry was found"
         ));
         assert_eq!(messages.last(), Some(&"Found 2 issues."));
     }

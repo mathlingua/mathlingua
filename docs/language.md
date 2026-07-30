@@ -61,8 +61,8 @@ comments are skipped but blank lines terminate the current block.
 A section has one of these shapes:
 
 ```text
-label:
-label: inline argument
+name:
+name: inline argument
 ```
 
 Additional arguments are written on following lines indented under the section.
@@ -136,9 +136,9 @@ x
 f(x_)
 g ::= f(x_, y_)
 (x_, y_)
-Pair ::= (x_, y_)
+pt ::= (x_, y_)
 {x_ : ...}
-Set ::= {x_ : ...}
+set ::= {x_ : ...}
 x_ |plus| y_
 neg| x_
 x_ |prime
@@ -163,7 +163,7 @@ Expressions cover ordinary mathematical formulas.
 ```text
 x + y
 f(x, y)
-map[| key := x, value := y |]
+f[| key := x, value := y |]
 (x, y)
 {x_ : x_ "in" A | x_ = y}
 F[A]
@@ -201,9 +201,9 @@ the left, so `a |f| b |g| c` is a left-associated chain.
 Subset expressions are intentionally narrow. The supported forms are:
 
 ```text
-F[A]
-F[A, B]
-F[A[B]]
+x[i]
+x[i, j]
+x[i[j]]
 ```
 
 The names inside subset brackets must be names, not arbitrary expressions.

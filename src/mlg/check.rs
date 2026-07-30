@@ -414,7 +414,7 @@ fn format_issue_count(issue_count: usize) -> String {
 mod tests {
     use super::{check, check_diagnostics_report, check_diagnostics_schema, check_in};
     use crate::backend::config::default_config_contents;
-    use crate::events::{Audience, Event, EventLog, Level};
+    use crate::events::{Audience, Event, EventLocation, EventLog, Level};
     use std::fs;
     use std::io;
     use std::path::{Path, PathBuf};
@@ -3210,6 +3210,89 @@ then:
                 .is_some_and(|message| message.message.contains("subtype of another type"))),
             "expected a non-subtype marker error: {:#?}",
             user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_locates_errors_outside_fenced_examples() {
+        // A ```mlg fence embedded in a `Text:` value contains a definition that
+        // looks just like the real one below but *has* its `when:`. The real
+        // definition is missing `when:`, so the checker must anchor the
+        // missing-`when:` error to the real definition, never to the earlier
+        // look-alike inside the prose fence.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("fence-location.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    Text: "Example:
+           ```mlg
+           [\foo:bar{A}]
+           Describes: X
+           when: A is \set
+           specifies:
+           . X \"in\" A
+           ```"
+    Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+
+    [\foo:bar{A}]
+    Describes: X
+    specifies:
+    . X "in" A
+    Documented:
+    . written: "\operatorname{foo}"
+    Id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("fence-location.mlg")],
+            &mut event_log,
+        );
+
+        let source = fs::read_to_string(&file).unwrap();
+        let lines = source.lines().collect::<Vec<_>>();
+        let real_def_line = lines
+            .iter()
+            .rposition(|line| line.contains("[\\foo:bar"))
+            .expect("real definition present");
+        let fence_line = lines
+            .iter()
+            .position(|line| line.contains("[\\foo:bar"))
+            .expect("fenced look-alike present");
+        assert_ne!(real_def_line, fence_line, "fixture needs both occurrences");
+
+        let error_row = user_events(&event_log)
+            .iter()
+            .find_map(|event| {
+                let message = event.as_message()?;
+                if !message
+                    .message
+                    .contains("Missing `when:` requirement for parameter `A`")
+                {
+                    return None;
+                }
+                match message.location.as_ref()? {
+                    EventLocation::File { span, .. } => span.as_ref()?.start.row,
+                    EventLocation::InMemory { span, .. } => span.as_ref()?.start.row,
+                }
+            })
+            .expect("a located missing-`when:` error");
+
+        assert!(
+            error_row >= real_def_line,
+            "missing-`when:` error at row {error_row} should be at/after the real definition \
+             (line {real_def_line}), not inside the fenced example (line {fence_line})"
         );
     }
 

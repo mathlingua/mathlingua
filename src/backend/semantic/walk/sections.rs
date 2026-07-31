@@ -155,6 +155,9 @@ pub(in crate::backend::semantic) fn walk_alias_kind(
                     let shape = shape_for_infix_command_header(command);
                     visit(&shape);
                 }
+                // A member LHS (`x.inv`, `x.f(a_)`) names no command, so there is
+                // nothing to reference-validate on the left.
+                ExpressionAliasLhs::Member(_) => {}
             }
             // The reduction target (right of `:=>`) can reference commands too, so
             // reference-validate it like any other expression.

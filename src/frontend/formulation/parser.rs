@@ -12,8 +12,8 @@ use super::ast::{
     ExpressionBinding, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionType,
     FunctionTypeSpec, FunctionTypeSpecKind, HardCastStatement, InfixCommandHeader, InfixSpec,
     InfixSpecHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm,
-    IsSubjectKind, IsViaStatement, LabelHeader, Operator, ParenExpressionArgs, ParenHeadingArgs,
-    Placeholder, PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement,
+    IsSubjectKind, IsViaStatement, LabelHeader, MemberAliasLhs, Operator, ParenExpressionArgs,
+    ParenHeadingArgs, Placeholder, PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement,
     RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart,
     RefinedTail, ResourceHeader, SetExpression, SetPredicate, SetTarget, SetTargetElement,
     SetTargetKind, Span, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind,
@@ -2723,6 +2723,8 @@ pub fn parse_expression_alias(input: &str) -> Result<ExpressionAlias, ParseError
                 ));
             }
         }
+    } else if let Some(member) = parse_member_alias_lhs(lhs_text) {
+        ExpressionAliasLhs::Member(member?)
     } else {
         ExpressionAliasLhs::Form(parse_form_or_declaration(lhs_text)?)
     };
@@ -2732,6 +2734,53 @@ pub fn parse_expression_alias(input: &str) -> Result<ExpressionAlias, ParseError
         lhs,
         expression,
     })
+}
+
+/// Parses a member-access capability left-hand side: `x.inv` (member access) or
+/// `x.f(a_)` (member call). Returns `None` when `input` is not a member form so
+/// `parse_expression_alias` can fall back to form parsing; returns `Some(Err(_))`
+/// when it looks like a member form but is malformed.
+fn parse_member_alias_lhs(input: &str) -> Option<Result<MemberAliasLhs, ParseError>> {
+    let input = input.trim();
+    let dot = find_first_top_level_char(input, '.')?;
+    let owner = input[..dot].trim();
+    if !is_name_text(owner) {
+        return None;
+    }
+    let rest = input[dot + 1..].trim();
+    let (member, arguments) = match find_first_top_level_char(rest, '(') {
+        Some(open) => {
+            let member = rest[..open].trim();
+            let (inside, suffix) = match consume_balanced_prefix(&rest[open..], '(', ')') {
+                Ok(parts) => parts,
+                Err(error) => return Some(Err(error)),
+            };
+            if !suffix.trim().is_empty() {
+                return Some(Err(ParseError::custom(
+                    "unexpected text after member call arguments",
+                )));
+            }
+            let arguments = if inside.trim().is_empty() {
+                Vec::new()
+            } else {
+                match parse_placeholder_list(inside) {
+                    Ok(placeholders) => placeholders,
+                    Err(error) => return Some(Err(error)),
+                }
+            };
+            (member, arguments)
+        }
+        None => (rest, Vec::new()),
+    };
+    if !is_name_text(member) {
+        return None;
+    }
+    Some(Ok(MemberAliasLhs {
+        span: span_all(input),
+        owner: owner.to_owned(),
+        member: member.to_owned(),
+        arguments,
+    }))
 }
 
 fn reject_optional_header_tails(header: &CommandHeader) -> Result<(), ParseError> {

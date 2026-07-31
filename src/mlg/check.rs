@@ -3634,6 +3634,175 @@ then:
     }
 
     #[test]
+    fn check_accepts_member_access_and_member_call_capabilities() {
+        // An `Enables:` `capability:` may use a member-access left-hand side —
+        // `x.self` (member access) and `x.twin(a_)` (member call), where `x` is
+        // the described subject — and uses of `p.self` / `p.twin(q)` resolve.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("member-capability.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\elt:of{X}]
+    Describes: x
+    when: X is \set
+    extends: x "in" X
+    Enables:
+    . capability: x.self :=> x
+      written: "x?"
+    . capability: x.twin(a_) :=> a_
+      written: "a_?"
+    Documented:
+    . written: "\operatorname{elt}"
+
+    Theorem:
+    given:
+    . X is \set
+    . p is \elt:of{X}
+    . q "in" X
+    then:
+    . p.self "in"? X
+    . p.twin(q) "in"? X
+    Id: "aaaaaaaa-1111-4aaa-8aaa-aaaaaaaaaaaa"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("member-capability.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_member_capability_with_non_subject_owner() {
+        // The owner of a member capability must be exactly the described subject.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("member-owner.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\elt:of{X}]
+    Describes: x
+    when: X is \set
+    extends: x "in" X
+    Enables:
+    . capability: z.self :=> x
+      written: "x?"
+    Documented:
+    . written: "\operatorname{elt}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("member-owner.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| {
+                    message
+                        .message
+                        .contains("Member capability owner `z` must be the described item `x`")
+                })),
+            "expected a member-owner error: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_establishes_spec_requirement_from_providing_capability() {
+        // `\grp` provides `x_ "in" G :-> x_ is \grp.elt:of{G}`, so membership and
+        // being an element are equivalent. A command requiring `x "in" G` must
+        // therefore be satisfiable by a value known only to be `\grp.elt:of{G}`.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("spec-requirement.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\grp]
+    Describes: G
+    extends: G is \set
+    Enables:
+    . capability: x_ "in" G :-> x_ is \grp.elt:of{G}
+      written: "x_? \in G?"
+    Documented:
+    . written: "\operatorname{grp}"
+
+    [\grp.elt:of{G}]
+    Describes: x
+    when: G is \grp
+    extends: x "in" G
+    Documented:
+    . written: "\operatorname{elt}"
+
+    [\op:of{x}:in{G}]
+    Defines: y is \grp.elt:of{G}
+    when:
+    . G is \grp
+    . x "in" G
+    Documented:
+    . written: "\operatorname{op}"
+
+    Theorem:
+    given:
+    . G is \grp
+    . x is \grp.elt:of{G}
+    then: \op:of{x}:in{G} is? \grp.elt:of{G}
+    Id: "aaaaaaaa-1111-4aaa-8aaa-aaaaaaaaaaaa"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("spec-requirement.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_uses_requires_capabilities_for_type_provided_specs() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("requires-capability.mlg");

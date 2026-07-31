@@ -24,6 +24,23 @@ pub enum ExpressionAliasLhs {
     Form(FormOrDeclaration),
     Command(CommandHeaderNode),
     InfixCommand(InfixCommandHeader),
+    /// A member-access capability left-hand side: `x.inv` (member access) or
+    /// `x.f(a_)` (member call). The owner must be exactly the definition's
+    /// subject.
+    Member(MemberAliasLhs),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MemberAliasLhs {
+    pub span: Span,
+    /// The owner name; the checker requires it to be exactly the enclosing
+    /// definition's `Describes:`/`Defines:`/`Refines:` subject.
+    pub owner: String,
+    /// The member name — `inv` in `x.inv`, `f` in `x.f(a_)`.
+    pub member: String,
+    /// The member call's placeholder arguments — `[a_]` in `x.f(a_)`; empty for a
+    /// plain member access `x.y`.
+    pub arguments: Vec<Placeholder>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

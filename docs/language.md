@@ -599,6 +599,12 @@ Quantifier declarations are local to the clause group that introduces them.
   may opt into type-system cast behavior with `represents: \\coercion` or
   `represents: \\encoding`
 
+A `capability:` left-hand side may be a spec (`x_ "in" X :-> …`), an operator
+form (`x_ * y_ :=> …`), a command, or a **member access** — `x.inv` — or
+**member call** — `x.f(a_) :=> …`. For a member form the owner (`x`) must be
+exactly the described subject; a use like `p.inv` or `p.f(v)` on a value of the
+construct's type then reduces to the capability's target.
+
 For type checking, capabilities from `Requires:` and `Enables:` are combined.
 The separate sections are for communication: `Requires:` describes what the
 construct has by definition, while `Enables:` describes further operations that

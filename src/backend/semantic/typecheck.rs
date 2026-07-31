@@ -8600,6 +8600,22 @@ fn validate_provided_expression_alias(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    // A member capability's owner must be exactly the definition's subject, so
+    // that `x.inv` provides `.inv` on values of this type.
+    if let ExpressionAliasLhs::Member(member) = &alias.lhs
+        && context.normalize_key(&member.owner) != context.normalize_key(owner_subject)
+    {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&member.owner),
+            format!(
+                "Member capability owner `{}` must be the described item `{owner_subject}`",
+                member.owner
+            ),
+        );
+    }
+
     let mut child = context.clone();
     declare_expression_alias_lhs(&alias.lhs, &mut child);
     assume_provided_expression_alias_lhs_owner_types(
@@ -8631,6 +8647,12 @@ fn declare_expression_alias_lhs(lhs: &ExpressionAliasLhs, context: &mut TypeCont
                 declare_form_or_declaration(form, context);
             }
         }
+        ExpressionAliasLhs::Member(member) => {
+            context.declare_name(member.owner.clone());
+            for argument in &member.arguments {
+                context.declare_name(argument.name.clone());
+            }
+        }
     }
 }
 
@@ -8640,6 +8662,11 @@ fn assume_provided_expression_alias_lhs_owner_types(
     owner_subject: &str,
     context: &mut TypeContext,
 ) {
+    if matches!(lhs, ExpressionAliasLhs::Member(_)) {
+        // The owner of a member capability is the definition's subject, which
+        // already carries its type in the checking context; nothing to assume.
+        return;
+    }
     let ExpressionAliasLhs::Form(form) = lhs else {
         return;
     };
@@ -9102,6 +9129,17 @@ fn prove_fact_with_options(
     registry: &SignatureRegistry,
     allow_viewable: bool,
 ) -> bool {
+    let mut spec_seen = HashSet::new();
+    prove_fact_threaded(required, context, registry, allow_viewable, &mut spec_seen)
+}
+
+fn prove_fact_threaded(
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    allow_viewable: bool,
+    spec_seen: &mut HashSet<TypeFact>,
+) -> bool {
     let required = context.normalize_fact(required);
     if builtin_fact_holds(&required, registry) {
         return true;
@@ -9131,7 +9169,7 @@ fn prove_fact_with_options(
         return true;
     }
 
-    context.facts.iter().any(|fact| {
+    if context.facts.iter().any(|fact| {
         fact_implies_with_options(
             fact,
             &required,
@@ -9140,7 +9178,110 @@ fn prove_fact_with_options(
             &mut seen,
             allow_viewable,
         )
-    })
+    }) {
+        return true;
+    }
+
+    // A spec requirement such as `x "in" G` is defined by the capability that
+    // provides its operator (`x_ "in" G :-> x_ is \group.element:of{G}`), and that
+    // definition is an equivalence. So the requirement holds when some providing
+    // capability's reduction target holds — the reverse of `reduce_spec_fact`'s
+    // forward materialization. `spec_seen` guards against reduction cycles.
+    if matches!(&required, TypeFact::Spec { .. }) {
+        spec_requirement_holds_via_provider(&required, context, registry, allow_viewable, spec_seen)
+    } else {
+        false
+    }
+}
+
+/// Whether a spec requirement holds because a capability that provides its
+/// operator reduces it to facts that themselves hold. Each providing capability
+/// is an independent way to satisfy the spec (so the rules are tried
+/// disjunctively), while all of a single capability's target facts must hold.
+fn spec_requirement_holds_via_provider(
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    allow_viewable: bool,
+    spec_seen: &mut HashSet<TypeFact>,
+) -> bool {
+    let TypeFact::Spec {
+        subject,
+        operator,
+        target,
+    } = required
+    else {
+        return false;
+    };
+    if !spec_seen.insert(required.clone()) {
+        return false;
+    }
+    for rule in &registry.spec_rules {
+        if &rule.operator != operator {
+            continue;
+        }
+        if !has_type_signature(target, &rule.owner_signature, context, registry) {
+            continue;
+        }
+        if rule.source_requires_literal && context.collection_literal(target).is_none() {
+            continue;
+        }
+        let targets = spec_rule_direct_targets(rule, subject, target, context);
+        if !targets.is_empty()
+            && targets
+                .iter()
+                .all(|fact| prove_fact_threaded(fact, context, registry, allow_viewable, spec_seen))
+        {
+            return true;
+        }
+    }
+    false
+}
+
+/// The facts a spec rule reduces `subject "op" target` to, substituted but not
+/// recursively reduced. Mirrors the per-rule branch of [`reduce_spec_fact`].
+fn spec_rule_direct_targets(
+    rule: &SpecOperatorRule,
+    subject: &str,
+    target: &str,
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    let mut substitutions = HashMap::from([
+        (rule.placeholder.clone(), subject.to_owned()),
+        (rule.target.clone(), target.to_owned()),
+    ]);
+    if let Some(source_subject) = &rule.source_subject {
+        substitutions.insert(source_subject.clone(), target.to_owned());
+    }
+
+    let mut result = Vec::new();
+    match &rule.target_alias {
+        SpecOperatorAliasTarget::Builtin(_) => {}
+        SpecOperatorAliasTarget::IsOrSpec(target_alias) => {
+            for next in facts_from_is_or_spec(target_alias) {
+                result.push(context.normalize_fact(&substitute_fact(&next, &substitutions)));
+            }
+        }
+        SpecOperatorAliasTarget::MemberOf(target_alias) => {
+            if rule.source_subject.is_none() {
+                return result;
+            }
+            if let Some(next) = fact_from_expression(target_alias) {
+                result.push(context.normalize_fact(&substitute_fact(&next, &substitutions)));
+            }
+        }
+        SpecOperatorAliasTarget::PlaceholderSpec(target_alias) => {
+            if let Some(subject) = placeholder_pattern_name(&target_alias.placeholder_form) {
+                let next = TypeFact::Spec {
+                    subject,
+                    operator: target_alias.operator.clone(),
+                    target: target_alias.name.clone(),
+                };
+                result.push(context.normalize_fact(&substitute_fact(&next, &substitutions)));
+            }
+        }
+    }
+    result
 }
 
 fn prove_fact_allowing_abstraction(
@@ -13561,6 +13702,23 @@ fn provided_symbol_key_and_parameters(
             ))
         }
         ExpressionAliasLhs::InfixCommand(_) => None,
+        // A member capability `x.f(a_)` is keyed by the member name and its
+        // argument arity; the owner (`x`, the subject) is bound separately as the
+        // rule's `owner_subject`, so it is not a parameter here.
+        ExpressionAliasLhs::Member(member) => {
+            let parameters = member
+                .arguments
+                .iter()
+                .map(|argument| argument.name.clone())
+                .collect::<Vec<_>>();
+            Some((
+                DisambiguationKey::Function {
+                    name: member.member.clone(),
+                    arity: parameters.len(),
+                },
+                parameters,
+            ))
+        }
     }
 }
 

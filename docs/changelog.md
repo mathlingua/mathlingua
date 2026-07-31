@@ -73,6 +73,28 @@ operands' common type. So a `\magma.element` that `Enables:`
 known only through a spec (`y "in" M`) are reduced to their `is`-facts for this
 owner-type match.
 
+### Spec Capabilities Are Equivalences
+
+A spec-operator capability `x_ "in" G :-> x_ is \group.element:of{G}` defines its
+operator, so it now reads as an **equivalence**: `x "in" G` both reduces to
+`x is \group.element:of{G}` (as before) *and* is established when
+`x is \group.element:of{G}` holds. So a command requiring `x "in" G` — such as
+`\group.inverse:of{x}:in{G}` — is satisfiable by a value known only to be a
+`\group.element:of{G}`. Requirement proving tries each providing capability
+disjunctively and requires all of a single capability's target facts, with a
+cycle guard.
+
+### Member-Access Capabilities (`x.y`, `x.f(a_)`)
+
+An `Enables:` `capability:` may now use a member-access left-hand side: `x.inv`
+(member access) or `x.f(a_)` (member call). The owner must be exactly the
+definition's `Describes:`/`Defines:`/`Refines:` subject (otherwise `Member
+capability owner \`z\` must be the described item \`x\``). It is collected as a
+provided member keyed by the member name and argument arity and owned by the
+definition's type, so a use `p.inv` / `p.f(v)` on a value of that type resolves
+to the reduction target. Previously a member-access LHS failed to parse and was
+misreported as `expected top-level \`:->\``.
+
 ### Bracketed Placeholder Operators `[*]`
 
 A capability LHS may write `x_ [*] y_`, where `[*]` names a symbol drawn from the

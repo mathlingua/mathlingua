@@ -18,8 +18,20 @@ pub(super) struct SourceLocator<'a> {
     /// mistaken for a real document position. Reported positions still come from
     /// `source`, which is byte-for-byte aligned with `search`.
     search: String,
+    /// Sorted byte offsets where each top-level item begins, used to bound
+    /// symbol and reference searches to the current item so a lookup can never
+    /// spill into the following item.
+    item_boundaries: Vec<usize>,
+    /// Monotonic cursor into `item_boundaries` used by [`Self::begin_item`] to
+    /// advance the window to the next item, including headingless items that
+    /// [`Self::anchor_item_heading`] cannot anchor by signature.
+    item_boundary_cursor: usize,
     item_cursor: usize,
     item_start: usize,
+    /// Exclusive byte offset at which the current item ends (the start of the
+    /// next item, or the end of the source). Symbol and reference searches stay
+    /// within `[.., item_end)` before falling back to the whole source.
+    item_end: usize,
     heading_cursor: usize,
     reference_cursor: usize,
     symbol_cursor: usize,
@@ -30,12 +42,47 @@ impl<'a> SourceLocator<'a> {
         Self {
             source,
             search: mask_text_values(source),
+            item_boundaries: item_boundaries(source),
+            item_boundary_cursor: 0,
             item_cursor: 0,
             item_start: 0,
+            item_end: source.len(),
             heading_cursor: 0,
             reference_cursor: 0,
             symbol_cursor: 0,
         }
+    }
+
+    /// The exclusive end of the item beginning at or after `from`.
+    fn next_boundary_after(&self, from: usize) -> usize {
+        self.item_boundaries
+            .iter()
+            .copied()
+            .find(|&boundary| boundary > from)
+            .unwrap_or(self.source.len())
+    }
+
+    /// Advance the window to the next top-level item. Called for every item —
+    /// including headingless ones such as `Theorem:` and `Text:` — so a
+    /// subsequent symbol or reference search is always bounded to the current
+    /// item and never spills into the next.
+    pub(super) fn begin_item(&mut self) {
+        let start = self
+            .item_boundaries
+            .iter()
+            .copied()
+            .find(|&boundary| boundary >= self.item_boundary_cursor)
+            .unwrap_or(self.source.len());
+        self.item_start = start;
+        self.item_end = self.next_boundary_after(start);
+        self.item_boundary_cursor = self.item_end;
+        self.symbol_cursor = start;
+        self.reference_cursor = start;
+    }
+
+    /// The masked search source narrowed to the current item's window.
+    fn item_window(&self) -> &str {
+        &self.search[..self.item_end.min(self.search.len())]
     }
 
     pub(super) fn anchor_item_heading(&mut self, shape: &SignatureShape) {
@@ -49,6 +96,11 @@ impl<'a> SourceLocator<'a> {
         {
             self.item_cursor = offset.saturating_add(1);
             self.item_start = offset.saturating_add(1);
+            self.item_end = self.next_boundary_after(offset);
+            // Re-sync the boundary cursor to this item's end so the next
+            // `begin_item` stays aligned even if the boundary heuristic and the
+            // document's items drift apart.
+            self.item_boundary_cursor = self.item_end;
             self.reference_cursor = offset.saturating_add(1);
             self.symbol_cursor = offset.saturating_add(1);
         }
@@ -67,19 +119,15 @@ impl<'a> SourceLocator<'a> {
     }
 
     pub(super) fn locate_reference(&mut self, shape: &SignatureShape) -> Option<SourcePosition> {
+        let window = self.item_window();
         let offset = find_signature_occurrence(
-            &self.search,
+            window,
             shape,
             self.reference_cursor,
             OccurrenceKind::Reference,
         )
         .or_else(|| {
-            find_signature_occurrence(
-                &self.search,
-                shape,
-                self.item_start,
-                OccurrenceKind::Reference,
-            )
+            find_signature_occurrence(window, shape, self.item_start, OccurrenceKind::Reference)
         })
         .or_else(|| find_signature_occurrence(&self.search, shape, 0, OccurrenceKind::Reference))?;
         self.reference_cursor = offset.saturating_add(1);
@@ -87,18 +135,73 @@ impl<'a> SourceLocator<'a> {
     }
 
     pub(super) fn locate_symbol(&mut self, name: &str) -> Option<SourcePosition> {
-        let offset = find_symbol_occurrence(&self.search, name, self.symbol_cursor)
-            .or_else(|| find_symbol_occurrence(&self.search, name, self.item_start))
+        let window = self.item_window();
+        let offset = find_symbol_occurrence(window, name, self.symbol_cursor)
+            .or_else(|| find_symbol_occurrence(window, name, self.item_start))
             .or_else(|| find_symbol_occurrence(&self.search, name, 0))?;
         self.symbol_cursor = offset.saturating_add(name.len());
         Some(position_at_offset(self.source, offset))
     }
 }
 
+/// Builds a search copy of `source` in which only ` ```mlg ` / ` ```mlg-fragment `
+/// fenced code blocks are blanked, preserving byte length and newlines.
+///
+/// Unlike [`mask_text_values`], ordinary quoted text (`called:`/`written:` and
+/// other prose) is left intact, because a command named there is a genuine
+/// documentation reference that go-to-definition, find-uses, rename, and release
+/// dependency resolution should still see. Only fenced *examples* are illustrative
+/// and must be ignored.
+pub(super) fn mask_mlg_fences(source: &str) -> String {
+    let mut bytes = source.as_bytes().to_vec();
+    let mut in_fence = false;
+    for (start, end) in line_spans(source) {
+        let trimmed = source[start..end].trim();
+        if in_fence {
+            if trimmed.starts_with("```") {
+                in_fence = false;
+            } else {
+                for byte in &mut bytes[start..end] {
+                    if *byte != b'\n' {
+                        *byte = b' ';
+                    }
+                }
+            }
+        } else if trimmed == "```mlg" || trimmed == "```mlg-fragment" {
+            in_fence = true;
+        }
+    }
+    String::from_utf8(bytes).unwrap_or_else(|_| source.to_owned())
+}
+
+/// The sorted byte offsets at which each top-level item begins: a non-blank line
+/// starting in column 0 that follows a blank line (or the start of the source).
+/// Top-level items are always blank-line separated and their sections never
+/// contain blank lines, so this yields exactly one offset per item.
+fn item_boundaries(source: &str) -> Vec<usize> {
+    let mut boundaries = Vec::new();
+    let mut previous_blank = true;
+    for (start, end) in line_spans(source) {
+        let line = &source[start..end];
+        let blank = line.trim().is_empty();
+        let starts_in_column_zero = line.chars().next().is_some_and(|ch| !ch.is_whitespace());
+        if !blank && starts_in_column_zero && previous_blank {
+            boundaries.push(start);
+        }
+        previous_blank = blank;
+    }
+    boundaries
+}
+
 /// Builds a search copy of `source` in which every quoted text-value region is
 /// replaced by spaces, preserving byte length and newline positions so offsets
 /// stay aligned with `source`.
-fn mask_text_values(source: &str) -> String {
+///
+/// Occurrence searches that must ignore commands, headings, or symbols appearing
+/// inside quoted prose (for example ` ```mlg ` examples embedded in a `Text:`
+/// value) run against this masked copy — the semantic locator as well as
+/// go-to-definition, find-uses, and rename.
+pub(super) fn mask_text_values(source: &str) -> String {
     let mut bytes = source.as_bytes().to_vec();
     for (start, end) in text_value_byte_ranges(source) {
         for byte in &mut bytes[start..end] {
@@ -560,6 +663,38 @@ mod tests {
             &masked[last..last + "[\\foo{A}]".len()],
             "[\\foo{A}]",
             "the real heading must be untouched"
+        );
+    }
+
+    #[test]
+    fn fence_mask_blanks_examples_but_keeps_doc_references() {
+        // Fence-only masking (used by go-to-definition / find-uses / rename /
+        // release) must blank commands inside ```mlg examples while keeping a
+        // command named in ordinary `called:`/`written:` prose intact.
+        let source = concat!(
+            "Text: \"see\n",
+            "       ```mlg\n",
+            "       [\\foo]\n",
+            "       ```\"\n",
+            "\n",
+            "[\\bar]\n",
+            "Describes: X\n",
+            "Documented:\n",
+            ". written: \"uses \\foo\"\n",
+        );
+        let masked = mask_mlg_fences(source);
+        assert_eq!(masked.len(), source.len());
+
+        let fenced = source.find("[\\foo]").unwrap();
+        assert!(
+            masked.as_bytes()[fenced..fenced + "[\\foo]".len()]
+                .iter()
+                .all(|byte| *byte == b' '),
+            "the fenced example must be blanked"
+        );
+        assert!(
+            masked.contains("uses \\foo"),
+            "a command named in `written:` prose must be preserved"
         );
     }
 

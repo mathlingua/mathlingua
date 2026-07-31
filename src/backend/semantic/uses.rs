@@ -54,6 +54,13 @@ pub(crate) fn command_occurrences(
 ) -> Vec<(usize, usize)> {
     let mut occurrences = Vec::new();
 
+    // Blank ` ```mlg ` fenced examples so a command appearing only inside an
+    // illustrative example is not reported as a use, while commands named in
+    // ordinary `called:`/`written:` prose remain genuine references. The masked
+    // copy is byte-aligned with `source`, so the offsets stay valid.
+    let masked = mask_mlg_fences(source);
+    let source = masked.as_str();
+
     for (offset, _) in source.match_indices('\\') {
         let mut best: Option<(usize, usize)> = None;
         for (index, location) in locations.iter().enumerate() {

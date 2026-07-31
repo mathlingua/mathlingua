@@ -30,7 +30,13 @@ pub fn find_definition(
         collect_document_definitions(file, &mut registry, &mut sink);
     }
 
-    let signature = signature_at_offset(target_source, offset, &registry)?;
+    // Search a copy with ` ```mlg ` fenced examples blanked so a command that
+    // only appears inside an illustrative example (embedded in a `Text:` value)
+    // is never treated as a real occurrence. Commands named in ordinary
+    // `called:`/`written:` prose stay visible. Offsets stay aligned with
+    // `target_source`.
+    let masked = mask_mlg_fences(target_source);
+    let signature = signature_at_offset(&masked, offset, &registry)?;
     let entry = registry.definitions.get(&signature)?;
     let position = entry.position?;
     Some(DefinitionSite {

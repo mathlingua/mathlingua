@@ -3297,6 +3297,79 @@ then:
     }
 
     #[test]
+    fn check_keeps_item_errors_within_the_item() {
+        // A definition with several failing spec facts is followed by another
+        // item whose body contains the same `"in"`/symbol text. Every error must
+        // be anchored inside the definition, never spilling onto the next item.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("item-window.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\fun:?on{A}:?to{B}]
+    Describes: f(x__) ::= y_
+    specifies:
+    . x__ "in" A
+    . y_ "in" B
+    satisfies:
+    . forAll: x "in" A
+      then:
+      . existsUnique: y "in" B
+        suchThat: f(x) = y
+    Documented:
+    . written: "\operatorname{fun}"
+
+    [\pair:on{A}:to{B}]
+    Defines: P := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    when: A, B is \set
+    Documented:
+    . written: "P"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("item-window.mlg")],
+            &mut event_log,
+        );
+
+        let source = fs::read_to_string(&file).unwrap();
+        let next_item_line = source
+            .lines()
+            .position(|line| line.contains("[\\pair"))
+            .expect("next item present");
+
+        let error_rows = user_events(&event_log)
+            .iter()
+            .filter_map(|event| {
+                let message = event.as_message()?;
+                if message.level != Level::Error {
+                    return None;
+                }
+                match message.location.as_ref()? {
+                    EventLocation::File { span, .. } => span.as_ref()?.start.row,
+                    EventLocation::InMemory { span, .. } => span.as_ref()?.start.row,
+                }
+            })
+            .collect::<Vec<_>>();
+
+        assert!(!error_rows.is_empty(), "expected located errors");
+        assert!(
+            error_rows.iter().all(|&row| row < next_item_line),
+            "every error row {error_rows:?} must precede the next item (line {next_item_line})"
+        );
+    }
+
+    #[test]
     fn check_uses_requires_capabilities_for_type_provided_specs() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("requires-capability.mlg");

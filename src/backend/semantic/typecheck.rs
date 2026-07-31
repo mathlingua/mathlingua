@@ -1318,6 +1318,7 @@ fn validate_top_level_item_types(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    locator.begin_item();
     anchor_top_level_item(item, locator);
 
     match item {

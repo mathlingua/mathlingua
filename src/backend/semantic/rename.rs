@@ -152,10 +152,16 @@ pub fn plan_rename(
 fn collect_edits(files: &[ParsedSourceFile], mapping: &[(String, String)]) -> Vec<RenameEditPlan> {
     let mut edits = Vec::new();
     for file in files {
+        // Scan a copy with ` ```mlg ` fenced examples blanked so command
+        // occurrences inside illustrative examples are never rewritten; ordinary
+        // `called:`/`written:` prose references are still renamed, and the
+        // rewrite itself reads the original source. The masked copy is
+        // byte-aligned, so offsets are shared.
+        let masked = mask_mlg_fences(&file.source);
         let mut seen_starts: Vec<usize> = Vec::new();
         for (old_sig, new_sig) in mapping {
             let mut search = 0;
-            while let Some(relative) = file.source.get(search..).and_then(|rest| rest.find('\\')) {
+            while let Some(relative) = masked.get(search..).and_then(|rest| rest.find('\\')) {
                 let start = search + relative;
                 search = start + 1;
                 let Some((end, replacement)) =

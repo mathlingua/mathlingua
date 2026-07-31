@@ -763,7 +763,10 @@ Every command-like reference must resolve to a defined signature
 refinement pieces. Command `when:`/context requirements are checked at use
 sites (`Could not establish requirement \`{fact}\` for command \`{signature}\``,
 plus `Command ... does not accept ...`, `Unknown ... parameter ...`,
-`Missing ... value for parameter ...`).
+`Missing ... value for parameter ...`). This includes the reduction target of an
+`Enables:` `capability:` — both the `:->` form (`x_ "in" G :-> x_ is
+\group.element:of{G}`) and the `:=>` form — so a capability that reduces to an
+undefined command is reported.
 
 ### 8. Target-symbol specification (`Describes`/`Defines`)
 

@@ -142,20 +142,42 @@ pub(in crate::backend::semantic) fn walk_alias_kind(
     visit: &mut impl FnMut(&SignatureShape),
 ) {
     match kind {
-        AliasKind::Expression(alias) => match &alias.lhs {
-            ExpressionAliasLhs::Form(form) => {
-                walk_form_or_declaration(form, visit);
+        AliasKind::Expression(alias) => {
+            match &alias.lhs {
+                ExpressionAliasLhs::Form(form) => {
+                    walk_form_or_declaration(form, visit);
+                }
+                ExpressionAliasLhs::Command(command) => {
+                    let shape = shape_for_command_header_node(command);
+                    visit(&shape);
+                }
+                ExpressionAliasLhs::InfixCommand(command) => {
+                    let shape = shape_for_infix_command_header(command);
+                    visit(&shape);
+                }
             }
-            ExpressionAliasLhs::Command(command) => {
-                let shape = shape_for_command_header_node(command);
-                visit(&shape);
-            }
-            ExpressionAliasLhs::InfixCommand(command) => {
-                let shape = shape_for_infix_command_header(command);
-                visit(&shape);
-            }
+            // The reduction target (right of `:=>`) can reference commands too, so
+            // reference-validate it like any other expression.
+            walk_expression(&alias.expression, visit);
+        }
+        AliasKind::SpecOperator(alias) => walk_spec_operator_alias_target(&alias.target, visit),
+    }
+}
+
+/// Walks the reduction target of a spec-operator capability (`x_ "in" X :-> …`)
+/// so that command references in the target — for example the `\group.element:of`
+/// in `x_ is \group.element:of{G}` — are reference-validated like any other use.
+fn walk_spec_operator_alias_target(
+    target: &SpecOperatorAliasTarget,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
+    match target {
+        SpecOperatorAliasTarget::IsOrSpec(is_or_spec) => match is_or_spec.as_ref() {
+            IsOrSpec::Is(statement) => walk_is_statement(statement, visit),
+            IsOrSpec::Spec(_) => {}
         },
-        AliasKind::SpecOperator(_) => {}
+        SpecOperatorAliasTarget::MemberOf(expression) => walk_expression(expression, visit),
+        SpecOperatorAliasTarget::PlaceholderSpec(_) | SpecOperatorAliasTarget::Builtin(_) => {}
     }
 }
 

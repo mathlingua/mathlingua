@@ -3507,6 +3507,133 @@ then:
     }
 
     #[test]
+    fn check_reports_undefined_command_in_spec_capability_target() {
+        // The `:->` reduction target of an `Enables:` `capability:` references
+        // `\grp.element:of`, which is defined nowhere. It must be reported.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("cap-target-undefined.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\grp:of{G}]
+    Describes: Z
+    when: G is \set
+    Enables:
+    . capability: x_ "in" Z :-> x_ is \grp.element:of{G}
+      written: "x_? \in Z?"
+    Documented:
+    . written: "\operatorname{grp}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("cap-target-undefined.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| {
+                    message
+                        .message
+                        .contains("Undefined command signature `\\grp.element:of`")
+                })),
+            "expected an undefined-command error for the capability target: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_reports_undefined_command_in_expression_capability_target() {
+        // The `:=>` reduction target of an operator capability references
+        // `\undefined.elt:of`, which is defined nowhere. It must be reported.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("expr-cap-target-undefined.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \.set.cross./ B]
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    when: A, B is \set
+    Documented:
+    . written: "A? \times B?"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__) ::= y_
+    when: A, B is \set
+    specifies:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . written: "f?"
+
+    [\binary.operation:on{X}]
+    Describes: x_ * y_
+    when: X is \set
+    extends: * is \function:on{X \.set.cross./ X}:to{X}
+    Documented:
+    . written: "\operatorname{binop}"
+
+    [\magma]
+    Describes: M ::= (X, *)
+    extends: M is \set via X
+    specifies:
+    . * is \binary.operation:on{M}
+    Documented:
+    . written: "\operatorname{magma}"
+
+    [\magma.element:of{M ::= (X, *)}]
+    Describes: x
+    when: M is \magma
+    extends: x "in" X
+    Enables:
+    . capability: x_ [*] y_ :=> x_ is \undefined.elt:of{M}
+      written: "x_? *? y_?"
+    Documented:
+    . written: "\operatorname{elt}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("expr-cap-target-undefined.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| {
+                    message
+                        .message
+                        .contains("Undefined command signature `\\undefined.elt:of`")
+                })),
+            "expected an undefined-command error for the `:=>` target: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
     fn check_uses_requires_capabilities_for_type_provided_specs() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("requires-capability.mlg");

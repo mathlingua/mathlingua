@@ -283,17 +283,19 @@ pub(in crate::frontend::structural::parser) fn parse_alias_kind(
     parse_spec_operator_alias(input).map(AliasKind::SpecOperator)
 }
 
-/// Parses an item accepted by `extends:` and related sections.
+/// Parses an item accepted by `extends:`/`specifies:` and related sections.
 ///
 /// `is ... via ...` is more specific, so it is attempted before the broader
-/// `is`/spec parser.
+/// `is`/spec parser. The `is` relation may name a refined command
+/// (`* is \(associative)::binary.operation:on{X}`), so a value can be specified
+/// or extended to a refinement of a type, not just a bare command.
 pub(in crate::frontend::structural::parser) fn parse_is_or_via_item(
     input: &str,
 ) -> Result<IsOrViaItem, FormulationParseError> {
     if let Ok(item) = parse_is_via_statement(input) {
         return Ok(IsOrViaItem::IsVia(item));
     }
-    parse_ordinary_declaration_statement(input).map(IsOrViaItem::Declaration)
+    parse_refined_declaration_statement(input).map(IsOrViaItem::Declaration)
 }
 
 fn parse_describes_target(input: &str) -> Result<DescribesTarget, FormulationParseError> {

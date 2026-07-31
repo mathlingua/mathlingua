@@ -3370,6 +3370,143 @@ then:
     }
 
     #[test]
+    fn check_infers_refines_operator_type_from_refined_base() {
+        // The `\(associative)::binary.operation:on{X}` refinement uses `*` in its
+        // `satisfies:` without respecifying it: `*`'s type (a function) is
+        // inherited from the base `\binary.operation:on{X}`. The operator must
+        // resolve and `*` must count as a specified target symbol.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("refines-operator.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \.set.cross./ B]
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    when: A, B is \set
+    Documented:
+    . written: "A? \times B?"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__) ::= y_
+    when: A, B is \set
+    specifies:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . written: "f?"
+
+    [\binary.operation:on{X}]
+    Describes: x_ * y_
+    when: X is \set
+    extends: * is \function:on{X \.set.cross./ X}:to{X}
+    Documented:
+    . written: "\operatorname{binop}"
+
+    [\(associative)::binary.operation:on{X}]
+    Refines: x_ * y_
+    when: X is \set
+    satisfies:
+    . forAll: a, b, c "in" X
+      then: (a * b) * c = a * (b * c)
+    Documented:
+    . adjective: "associative"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("refines-operator.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_accepts_refined_command_in_specifies() {
+        // A `specifies:` (like `extends:`) may name a refined command as the
+        // type: `* is \(associative)::binary.operation:on{X}`.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("specifies-refined.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \.set.cross./ B]
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    when: A, B is \set
+    Documented:
+    . written: "A? \times B?"
+
+    [\function:?on{A}:?to{B}]
+    Describes: f(x__) ::= y_
+    when: A, B is \set
+    specifies:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . written: "f?"
+
+    [\binary.operation:on{X}]
+    Describes: x_ * y_
+    when: X is \set
+    extends: * is \function:on{X \.set.cross./ X}:to{X}
+    Documented:
+    . written: "\operatorname{binop}"
+
+    [\(associative)::binary.operation:on{X}]
+    Refines: x_ * y_
+    when: X is \set
+    satisfies:
+    . forAll: a, b, c "in" X
+      then: (a * b) * c = a * (b * c)
+    Documented:
+    . adjective: "associative"
+
+    [\semigroup]
+    Describes: S ::= (X, *)
+    extends: S is \set via X
+    specifies: * is \(associative)::binary.operation:on{X}
+    Documented:
+    . written: "\operatorname{semigroup}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("specifies-refined.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_uses_requires_capabilities_for_type_provided_specs() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("requires-capability.mlg");

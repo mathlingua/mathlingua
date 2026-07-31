@@ -153,8 +153,10 @@ supported.
 Set forms contain a placeholder form, such as `{x_ : ...}` or `{x_(i_) : ...}`.
 
 When a declaration is used in a defining context, the declared names become
-available to later checks. For example, `G ::= (X, *, e)` declares `G`, `X`, and
-`e`; operators in tuple elements are not declared as ordinary symbols.
+available to later checks. For example, `G ::= (X, *, e)` declares `G`, `X`, `*`,
+and `e`. An operator form declares its operator symbol as well as its
+placeholders — `x_ * y_` declares `*`, `x_`, and `y_` — so a later use like
+`a * b` resolves as the application `*(a, b)`.
 
 ## Expressions
 
@@ -769,7 +771,11 @@ Every parameter and target symbol a definition introduces must be given a type.
 A header parameter needs a `when:` fact (`Missing \`when:\` requirement for
 parameter \`{parameter}\``). A `Describes` target symbol must be typed directly
 or through `extends:` (`Missing specification for target symbol \`{symbol}\`;
-specify it directly or through \`extends:\``). A `Defines` target symbol must be
+specify it directly or through \`extends:\``). A `Refines` target symbol may also
+be inherited: a symbol the refined base type already specifies (through the base's
+own `extends:`/`specifies:` or described components) counts as specified, so
+`\(associative)::binary.operation:on{X}` need not respecify the `*` that
+`\binary.operation:on{X}` already types. A `Defines` target symbol must be
 assigned (`Missing definition for target symbol \`{symbol}\`; assign it with
 \`:=\` ... or top-level \`expresses:\``) at most once (`Duplicate definition for
 target symbol ...`), and a `Defines` value **must state its type** — either

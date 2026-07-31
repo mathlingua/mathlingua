@@ -42,6 +42,28 @@ plain **symbolic** operator `x * y` also desugars to `*(x, y)` when `*` names a
 bound value in scope (otherwise `*`, `+`, … keep their built-in arithmetic
 resolution).
 
+### Operator Forms Bind Their Operator; Refines Inherits Base Specs
+
+An operator form — `x_ * y_` (infix), `neg| x_` (prefix), `x_ !` (postfix) —
+now introduces the operator symbol itself as a named value, alongside its
+placeholders. So a body that uses the operator, such as a refinement's
+`satisfies: (a * b) * c = a * (b * c)`, resolves `a * b` as the application
+`*(a, b)` instead of reporting `*` as an unresolved built-in operator.
+
+A `Refines:` also inherits the symbol specifications of the base type it refines.
+`\(associative)::binary.operation:on{X}` refines `\binary.operation:on{X}`, whose
+`extends: * is \function:…` already specifies `*`; the refinement therefore need
+not respecify `*`, and its uses of `*` are typed from the base. A refinement
+target symbol is treated as specified when the base type specifies it (through the
+base's own `extends:`/`specifies:` or described components).
+
+### Refined Commands In `extends:`/`specifies:`
+
+The `is` relation of an `extends:` or `specifies:` item may now name a refined
+command as the type, e.g. `specifies: * is \(associative)::binary.operation:on{X}`
+or `extends: S is \(finite)::magma`. Previously only the `Refines:` `extends:`
+accepted refined command references.
+
 ### Operand-Type Operator Capabilities
 
 A plain operator resolves in order: the application desugar (when the symbol is

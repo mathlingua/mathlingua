@@ -1511,7 +1511,9 @@ fn validate_top_level_item_types(
                 check_refines_extends(group, &context, path, locator, registry, event_log);
             }
             check_refines_marker(group, path, locator, registry, event_log);
-            validate_refines_target_symbol_specifications(group, path, locator, event_log);
+            validate_refines_target_symbol_specifications(
+                group, path, locator, registry, event_log,
+            );
             validate_optional_requires(
                 &group.requires,
                 &context,
@@ -2461,6 +2463,7 @@ fn validate_refines_target_symbol_specifications(
     group: &RefinesGroup,
     path: &Path,
     locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
     let mut covered = BTreeSet::new();
@@ -2474,6 +2477,12 @@ fn validate_refines_target_symbol_specifications(
     if let Some(extends) = &group.extends {
         collect_declaration_statement_covered_symbols(&extends.argument, &mut covered);
     }
+    // A `Refines:` refines a base type that describes the same form, so any
+    // symbol the base type already specifies (its operator or components) is
+    // inherited and need not be respecified here. For `\(associative)::binary
+    // .operation:on{X}` refining `\binary.operation:on{X}`, the base's
+    // `extends: * is \function:...` covers `*`.
+    collect_refines_base_specified_symbols(&group.heading, registry, &mut covered);
     validate_declaration_target_symbol_specifications(
         &group.refines.argument,
         &covered,
@@ -2481,6 +2490,34 @@ fn validate_refines_target_symbol_specifications(
         locator,
         event_log,
     );
+}
+
+/// Adds to `covered` every symbol that the base type refined by `heading`
+/// already specifies — the subjects of the base type's own `extends:`/`specifies:`
+/// facts (recorded as type-extension rules) and its described components.
+fn collect_refines_base_specified_symbols(
+    heading: &CommandHeader,
+    registry: &SignatureRegistry,
+    covered: &mut BTreeSet<String>,
+) {
+    let CommandHeader::Refined(_) = heading else {
+        return;
+    };
+    for header_shape in shapes_for_header(heading) {
+        let Some((_, base_signature)) = refined_header_base_type_fact_parts(&header_shape) else {
+            continue;
+        };
+        for rule in &registry.extension_rules {
+            if rule.subtype_signature == base_signature {
+                covered.insert(rule.subject.clone());
+            }
+        }
+        if let Some(info) = registry.type_infos.get(&base_signature) {
+            for fact in &info.component_types {
+                covered.insert(fact_subject(fact).to_string());
+            }
+        }
+    }
 }
 
 fn validate_declaration_target_symbol_specifications(
@@ -11254,7 +11291,10 @@ fn declare_is_subject(subject: &IsSubject, context: &mut TypeContext) {
                 }
             }
         }
-        IsSubjectKind::Operator(_) => {}
+        // An operator subject (`x_ * y_`) introduces the operator symbol (`*`) as
+        // a named value, so that a use like `a * b` resolves as the application
+        // `*(a, b)` rather than an unresolved built-in operator.
+        IsSubjectKind::Operator(operator) => context.declare_name(operator.text.clone()),
     }
 }
 
@@ -11291,12 +11331,27 @@ fn declare_form_or_declaration(form: &FormOrDeclaration, context: &mut TypeConte
             }
             declare_placeholder_form(&form.placeholder_form, context);
         }
-        FormOrDeclarationKind::InfixOperator { left, right, .. } => {
+        // An operator form (`x_ * y_`, `neg| x_`, `x_ !`) introduces both its
+        // placeholders and the operator symbol itself as named values, so a use
+        // like `a * b` resolves as the application `*(a, b)`.
+        FormOrDeclarationKind::InfixOperator {
+            left,
+            operator,
+            right,
+        } => {
             context.declare_name(left.name.clone());
+            context.declare_name(operator.text.clone());
             context.declare_name(right.name.clone());
         }
-        FormOrDeclarationKind::PrefixOperator { placeholder, .. }
-        | FormOrDeclarationKind::PostfixOperator { placeholder, .. } => {
+        FormOrDeclarationKind::PrefixOperator {
+            operator,
+            placeholder,
+        }
+        | FormOrDeclarationKind::PostfixOperator {
+            placeholder,
+            operator,
+        } => {
+            context.declare_name(operator.text.clone());
             context.declare_name(placeholder.name.clone());
         }
     }

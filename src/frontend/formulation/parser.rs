@@ -540,7 +540,9 @@ pub(super) fn is_name_text(input: &str) -> bool {
         .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
 }
 
-/// Returns whether text consists solely of operator characters.
+/// Returns whether `input` is a symbolic operator name: a nonempty run of
+/// operator characters, optionally followed by a `_`-prefixed subscript so that
+/// operators can be indexed (`*_1`, `+_i`), mirroring subscripted value names.
 ///
 /// This deliberately uses a narrow ASCII operator alphabet until the language
 /// has a richer token classification for symbolic operators.
@@ -549,7 +551,19 @@ pub(super) fn is_operator_text(input: &str) -> bool {
         return false;
     }
 
-    input.chars().all(|ch| "-~!#%^&*\\+=|<>/".contains(ch))
+    let (symbol, subscript) = match input.split_once('_') {
+        Some((symbol, subscript)) => (symbol, Some(subscript)),
+        None => (input, None),
+    };
+
+    if symbol.is_empty() || !symbol.chars().all(|ch| "-~!#%^&*\\+=|<>/".contains(ch)) {
+        return false;
+    }
+
+    match subscript {
+        None => true,
+        Some(subscript) => is_name_text(subscript),
+    }
 }
 
 /// Builds a span covering the trimmed input.
@@ -2926,12 +2940,24 @@ mod tests {
     use std::fs;
     use std::path::{Path, PathBuf};
 
+    #[test]
+    fn operator_names_accept_subscripts() {
+        assert!(is_operator_text("*"));
+        assert!(is_operator_text("*_1"));
+        assert!(is_operator_text("+_i"));
+        assert!(is_operator_text("<=_max"));
+        // Not operators: a value name, an empty symbol, a bare subscript.
+        assert!(!is_operator_text("a_1"));
+        assert!(!is_operator_text("_1"));
+        assert!(!is_operator_text("*_"));
+    }
+
     use super::{
-        parse_author_header, parse_command_header, parse_expression, parse_expression_alias,
-        parse_form_or_declaration, parse_hard_cast_statement, parse_is_or_refined_statement_spec,
-        parse_is_or_spec, parse_is_via_statement, parse_label_header,
-        parse_ordinary_declaration_statement, parse_resource_header, parse_spec_operator_alias,
-        parse_topic_header, parse_writing_alias,
+        is_operator_text, parse_author_header, parse_command_header, parse_expression,
+        parse_expression_alias, parse_form_or_declaration, parse_hard_cast_statement,
+        parse_is_or_refined_statement_spec, parse_is_or_spec, parse_is_via_statement,
+        parse_label_header, parse_ordinary_declaration_statement, parse_resource_header,
+        parse_spec_operator_alias, parse_topic_header, parse_writing_alias,
     };
     use crate::frontend::formulation::ast::{
         BinaryOperator, BuiltinCommandArgument, ChainPart, CommandContextArgument,

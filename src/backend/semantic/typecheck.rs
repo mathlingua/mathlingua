@@ -2069,7 +2069,7 @@ fn validate_spec_infix_describes_header(
         return;
     };
 
-    if key_for_form_or_declaration(&header.left) == described_target_subject_key(described) {
+    if form_or_declaration_subject_key(&header.left) == described_target_subject_key(described) {
         return;
     }
 
@@ -2356,12 +2356,20 @@ fn described_spec_infix_subject(
     let CommandHeader::InfixSpec(header) = heading else {
         return None;
     };
-    let subject = key_for_form_or_declaration(&header.left);
+    let subject = form_or_declaration_subject_key(&header.left);
     if subject == described_target_subject_key(described) {
         Some(subject)
     } else {
         None
     }
+}
+
+/// The subject name of a form or declaration — the destructuring name `H` for
+/// `H ::= (X1, *_1, e1)`, or the whole key when the form has no primary name.
+/// Matches [`described_target_subject_key`] so a spec-infix heading's left
+/// operand and the `Describes:` argument compare on the same footing.
+fn form_or_declaration_subject_key(form: &FormOrDeclaration) -> String {
+    primary_form_name(form).unwrap_or_else(|| key_for_form_or_declaration(form))
 }
 
 fn describes_used_names(group: &DescribesGroup) -> BTreeSet<String> {

@@ -3738,6 +3738,80 @@ then:
     }
 
     #[test]
+    fn check_accepts_subscripted_operators_and_destructuring_spec_infix_heading() {
+        // A subscripted operator (`*_1`) is a valid operator name, and a
+        // spec-infix `Describes` heading whose left operand destructures
+        // (`H ::= (X1, *_1, e1) \:sub:/ …`) matches its `Describes:` argument.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("subgroup.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \:subset:/ B]
+    Describes: A
+    when: B is \set
+    extends: A is \set
+    Requires:
+    . capability: x_ "in" A :-> x_ "in" B
+    Documented:
+    . called: "subset of $B?$"
+
+    [\op]
+    Describes: f(x__)
+    Documented:
+    . written: "\operatorname{op}"
+
+    [\binary.operation:on{X}]
+    Describes: x_ * y_
+    when: X is \set
+    extends: * is \op
+    Documented:
+    . called: "binary operation on $X?$"
+
+    [\grp]
+    Describes: G ::= (X, *, e)
+    extends: G is \set via X
+    specifies:
+    . * is \binary.operation:on{X}
+    . e "in" X
+    Documented:
+    . called: "grp"
+
+    [H ::= (X1, *_1, e1) \:sub:/ G ::= (X, *, e)]
+    Describes: H ::= (X1, *_1, e1)
+    when: G is \grp
+    specifies:
+    . X1 \:subset:/ X
+    . *_1 is \binary.operation:on{X1}
+    . e1 "in" X1
+    Documented:
+    . called: "subgroup"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("subgroup.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_establishes_spec_requirement_from_providing_capability() {
         // `\grp` provides `x_ "in" G :-> x_ is \grp.elt:of{G}`, so membership and
         // being an element are equivalent. A command requiring `x "in" G` must

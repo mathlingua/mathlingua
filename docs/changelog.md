@@ -42,6 +42,19 @@ plain **symbolic** operator `x * y` also desugars to `*(x, y)` when `*` names a
 bound value in scope (otherwise `*`, `+`, … keep their built-in arithmetic
 resolution).
 
+### Subscripted Operator Names; Destructuring Spec-Infix Headings
+
+A symbolic operator name may carry a `_`-prefixed subscript, so `*_1`, `+_i`, and
+`<=_max` are valid operators (a run of operator characters followed by a name
+subscript), mirroring subscripted value names. This lets a tuple carry indexed
+operations, e.g. `H ::= (X1, *_1, e1)`.
+
+A spec-infix `Describes` heading whose left operand destructures now matches its
+`Describes:` argument correctly: `[H ::= (X1, *_1, e1) \:sub:/ G ::= (X, *, e)]`
+with `Describes: H ::= (X1, *_1, e1)` compares on the subject name (`H`) rather
+than the full destructuring key, and the described subject is no longer wrongly
+required to appear in `when:`.
+
 ### Operator Forms Bind Their Operator; Refines Inherits Base Specs
 
 An operator form — `x_ * y_` (infix), `neg| x_` (prefix), `x_ !` (postfix) —

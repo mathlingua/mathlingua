@@ -203,7 +203,7 @@ arguments_section!(DescribesSpecifiesSection, IsOrViaItem);
 arguments_section!(SatisfiesSection, Clause);
 arguments_section!(RequiresSection, RequiresItem);
 arguments_section!(EnablesSection, EnablesItem);
-arguments_section!(JustifiedSection, JustifiedItem);
+arguments_section!(JustificationSection, HaveGroup);
 arguments_section!(DocumentedSection, DocumentedItem);
 arguments_section!(AliasesSection, AliasItem);
 arguments_section!(ReferencesSection, ResourceHeader);
@@ -259,9 +259,7 @@ argument_section!(OverviewSection, OpenText);
 argument_section!(DescriptionSection, OpenText);
 arguments_section!(RelatedSection, OpenText);
 zero_or_more_arguments_section!(DiscovererSection, OpenText);
-zero_or_more_arguments_section!(LabelSection, OpenText);
 zero_or_more_arguments_section!(BySection, OpenText);
-argument_section!(CommentSection, OpenText);
 argument_section!(IdSection, OpenText);
 argument_section!(VersionSection, OpenText);
 arguments_section!(SpecifySection, SpecifyItem);
@@ -365,6 +363,14 @@ pub enum IsOrViaItem {
     /// A `have:`/`asserting:` group standing in for a specification the checker
     /// cannot establish on its own (allowed in `specifies:`).
     Have(Box<HaveGroup>),
+    /// A specification wrapped in a `[:label:]` (e.g. `(.x is \foo.)[:1:]`) whose
+    /// `label` may match a `Justification:` entry `[label]`. When it does, that
+    /// entry's `have:`/`asserting:` group is used to establish the inner `item`;
+    /// otherwise the inner `item` is checked inline as normal.
+    Labeled {
+        label: Vec<String>,
+        item: Box<IsOrViaItem>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -407,12 +413,6 @@ pub enum DocumentedItem {
     Description(DescriptionGroup),
     Related(RelatedGroup),
     Discoverer(DiscovererGroup),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum JustifiedItem {
-    Label(LabelGroup),
-    By(ByGroup),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -481,7 +481,7 @@ pub struct DisambiguatesGroup {
     pub heading: FormOrDeclaration,
     pub branches: Vec<DisambiguatesBranch>,
     pub else_: Option<DisambiguatesElseSection>,
-    pub justified: Option<JustifiedSection>,
+    pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
     pub references: Option<ReferencesSection>,
@@ -508,7 +508,7 @@ pub struct DescribesGroup {
     pub satisfies: Option<SatisfiesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
-    pub justified: Option<JustifiedSection>,
+    pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
     pub references: Option<ReferencesSection>,
@@ -524,7 +524,7 @@ pub struct DefinesGroup {
     pub expresses: Option<ExpressesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
-    pub justified: Option<JustifiedSection>,
+    pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
     pub references: Option<ReferencesSection>,
@@ -555,7 +555,7 @@ pub struct RefinesGroup {
     pub satisfies: Option<SatisfiesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
-    pub justified: Option<JustifiedSection>,
+    pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
     pub references: Option<ReferencesSection>,
@@ -571,7 +571,7 @@ pub struct StatesGroup {
     pub that: ThatSection,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
-    pub justified: Option<JustifiedSection>,
+    pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
     pub references: Option<ReferencesSection>,
@@ -589,7 +589,7 @@ pub struct EquivalentGroup {
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub to: EquivalentToSection,
-    pub justified: Option<JustifiedSection>,
+    pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub references: Option<ReferencesSection>,
 }
@@ -601,7 +601,7 @@ pub struct AxiomGroup {
     pub where_: Option<WhereSection>,
     pub then: ThenSection,
     pub iff: Option<IffSection>,
-    pub justified: Option<JustifiedSection>,
+    pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
     pub references: Option<ReferencesSection>,
@@ -615,7 +615,7 @@ pub struct TheoremGroup {
     pub where_: Option<WhereSection>,
     pub then: ThenSection,
     pub iff: Option<IffSection>,
-    pub justified: Option<JustifiedSection>,
+    pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
     pub references: Option<ReferencesSection>,
@@ -630,7 +630,7 @@ pub struct CorollaryGroup {
     pub where_: Option<WhereSection>,
     pub then: ThenSection,
     pub iff: Option<IffSection>,
-    pub justified: Option<JustifiedSection>,
+    pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
     pub references: Option<ReferencesSection>,
@@ -649,7 +649,7 @@ pub struct RelationGroup {
     pub and_: RelationAndSection,
     pub when: Option<WhenSection>,
     pub means: Option<RelationMeansSection>,
-    pub justified: Option<JustifiedSection>,
+    pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
     pub references: Option<ReferencesSection>,
@@ -909,21 +909,6 @@ pub struct RelatedGroup {
 pub struct DiscovererGroup {
     pub heading: Option<LabelHeader>,
     pub discoverer: DiscovererSection,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct LabelGroup {
-    pub heading: Option<LabelHeader>,
-    pub label: LabelSection,
-    pub by: BySection,
-    pub comment: CommentSection,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ByGroup {
-    pub heading: Option<LabelHeader>,
-    pub by: BySection,
-    pub comment: CommentSection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

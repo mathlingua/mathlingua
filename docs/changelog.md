@@ -5,6 +5,31 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## `Justification:` Section And Labeled Specifications
+
+The former `Justified:` section (which held `label:`/`by:` prose notes) is
+**replaced** by a `Justification:` section that accepts **only**
+`have:`/`asserting:`/`because?:`/`by?:` groups, each with a required `[label]`
+heading. The section now appears **after** `Documented:` (it previously came
+before it).
+
+A specification elsewhere in the same group may carry a `[:label:]` — for example
+a `specifies:` item written `(.x is \foo.)[:1:]`. When its label matches a
+`Justification:` entry's `[label]`:
+
+- the labeled specification is established using that entry's
+  `have:`/`asserting:` group — exactly as an inline `have:`/`asserting:` item
+  would be — so an assertion the checker takes as true can discharge a
+  requirement the labeled specification could not reach on its own;
+- the entry's `have:` must **restate the labeled specification exactly** (a
+  mismatch is reported); and
+- **every** entry must be referenced by some labeled specification (an
+  unreferenced entry is reported).
+
+A `[:label:]` with no matching entry is checked inline as an ordinary
+specification. The `because:`/`by:` of an entry are reference-validated but never
+proven, as with any `have:`/`asserting:` group.
+
 ## Symbol Introduction, Builds, And Operators
 
 ### `as`/`as!` Casts Removed; `\type@value` / `\type@!value` Builds
@@ -206,7 +231,7 @@ supertype's refinement, or overrides it with extra properties.
   and signal their intent to readers.
 - `implicitly:` — the body must contain **only** the inherited `extends:` clause
   (plus scaffolding `using:`/`when:`). Adding `satisfies:`, `Requires:`,
-  `Enables:`, or `Justified:` is an error. The `extends:` clause must also
+  `Enables:`, or `Justification:` is an error. The `extends:` clause must also
   literally name the parent type's refinement — the same adjective(s) applied to
   a direct supertype of the refined base type (`\(finite)::group` extends
   `\(finite)::magma`, since `\group` extends `\magma`) — and naming anything else
@@ -328,7 +353,7 @@ between: <declaration | "#topic" | "\signature">
 and: <declaration | "#topic" | "\signature">
 when?: <spec>+
 means?: <statement | text>
-Justified?: ...  Documented?: ...  Aliases?: ...  References?: ...  Metadata?: ...  Id?: ...
+Documented?: ...  Justification?: ...  Aliases?: ...  References?: ...  Metadata?: ...  Id?: ...
 ```
 
 - `between:` and `and:` each name one side of the relationship: an unquoted
@@ -366,7 +391,7 @@ when?: <spec>+
 to:
 . \foo2{A, B}
 . \foo3:with{B}:and{A}
-Justified?: ...  Documented?: ...  References?: ...  Id?: ...
+Documented?: ...  Justification?: ...  References?: ...  Id?: ...
 ```
 
 - The `[...]` heading names the equivalence class and registers a command

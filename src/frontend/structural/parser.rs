@@ -292,10 +292,52 @@ pub(in crate::frontend::structural::parser) fn parse_alias_kind(
 pub(in crate::frontend::structural::parser) fn parse_is_or_via_item(
     input: &str,
 ) -> Result<IsOrViaItem, FormulationParseError> {
+    if let Some((label, inner)) = split_labeled_specification(input) {
+        let item = parse_is_or_via_item(inner)?;
+        return Ok(IsOrViaItem::Labeled {
+            label,
+            item: Box::new(item),
+        });
+    }
     if let Ok(item) = parse_is_via_statement(input) {
         return Ok(IsOrViaItem::IsVia(item));
     }
     parse_refined_declaration_statement(input).map(IsOrViaItem::Declaration)
+}
+
+/// Recognizes a `[:label:]`-labeled grouped specification such as
+/// `(.*_1 is \foo.)[:1:]`. Returns the label parts and the source text of the
+/// grouped inner specification (e.g. `*_1 is \foo`) so the caller can re-parse it
+/// with the declaration parser (which, unlike the expression parser, accepts an
+/// operator subject like `*_1`). Returns `None` when `input` is not a labeled
+/// grouped specification.
+fn split_labeled_specification(input: &str) -> Option<(Vec<String>, &str)> {
+    // Strip the trailing `[:label.parts:]` token.
+    let body = input.trim().strip_suffix(":]")?;
+    let label_start = body.rfind("[:")?;
+    let label_body = &body[label_start + 2..];
+    if label_body.is_empty()
+        || !label_body.split('.').all(|part| {
+            !part.is_empty()
+                && part
+                    .chars()
+                    .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+        })
+    {
+        return None;
+    }
+    let parts = label_body.split('.').map(str::to_owned).collect();
+    // Strip the enclosing `(. .)` (or `( )`) grouping that carries the label.
+    let grouped = body[..label_start].trim();
+    let inner = grouped
+        .strip_prefix("(.")
+        .and_then(|rest| rest.strip_suffix(".)"))
+        .or_else(|| {
+            grouped
+                .strip_prefix('(')
+                .and_then(|rest| rest.strip_suffix(')'))
+        })?;
+    Some((parts, inner.trim()))
 }
 
 fn parse_describes_target(input: &str) -> Result<DescribesTarget, FormulationParseError> {
@@ -1356,25 +1398,6 @@ pub(super) fn parse_refines_documented_item_group(
     }
 }
 
-/// Dispatches nested `Justified:` groups to justification item parsers.
-pub(super) fn parse_justified_item_group(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<JustifiedItem> {
-    match first_section_label(group)? {
-        "label" => parse_label_note(group, tracker).map(JustifiedItem::Label),
-        "by" => parse_by_note(group, tracker).map(JustifiedItem::By),
-        other => {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                group.metadata.row,
-                format!("Unexpected justified group `{other}`"),
-            );
-            None
-        }
-    }
-}
-
 /// Dispatches nested `Metadata:` groups to metadata item parsers.
 pub(super) fn parse_metadata_item_group(
     group: &ProtoGroup,
@@ -1942,58 +1965,6 @@ pub(in crate::frontend::structural::parser) fn parse_discoverer(
         heading,
         discoverer: DiscovererSection {
             arguments: parse_optional_open_texts(sections.get("discoverer").copied(), tracker),
-        },
-    })
-}
-
-// ===============================[ justification ]=====================================
-
-/// Parses a `label:` justification note.
-///
-/// The note may contain optional label/by prose but must include a comment so
-/// the justification has useful explanatory content.
-pub(in crate::frontend::structural::parser) fn parse_label_note(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<LabelGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections(
-        "label",
-        &group.sections,
-        tracker,
-        &["label", "by", "comment"],
-    )?;
-    Some(LabelGroup {
-        heading,
-        label: LabelSection {
-            arguments: parse_optional_open_texts(sections.get("label").copied(), tracker),
-        },
-        by: BySection {
-            arguments: parse_optional_open_texts(sections.get("by").copied(), tracker),
-        },
-        comment: CommentSection {
-            argument: parse_required_open_text(section(&sections, "comment")?, "comment", tracker)?,
-        },
-    })
-}
-
-/// Parses a `by:` justification note.
-///
-/// This mirrors label notes but starts from a `by:` section for author/source
-/// oriented justification entries.
-pub(in crate::frontend::structural::parser) fn parse_by_note(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<ByGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections("by", &group.sections, tracker, &["by", "comment"])?;
-    Some(ByGroup {
-        heading,
-        by: BySection {
-            arguments: parse_optional_open_texts(sections.get("by").copied(), tracker),
-        },
-        comment: CommentSection {
-            argument: parse_required_open_text(section(&sections, "comment")?, "comment", tracker)?,
         },
     })
 }
@@ -2607,8 +2578,8 @@ pub(in crate::frontend::structural::parser) fn parse_disambiguates(
         &group.sections[index..],
         tracker,
         &[
-            "Justified?",
             "Documented?",
+            "Justification?",
             "Aliases?",
             "References?",
             "Metadata?",
@@ -2620,9 +2591,9 @@ pub(in crate::frontend::structural::parser) fn parse_disambiguates(
         heading,
         branches,
         else_,
-        justified: trailing.get("Justified").copied().and_then(|section| {
-            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
-                .map(|arguments| JustifiedSection { arguments })
+        justification: trailing.get("Justification").copied().and_then(|section| {
+            parse_required_groups(section, "Justification", tracker, parse_have_group)
+                .map(|arguments| JustificationSection { arguments })
         }),
         documented: trailing.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -2743,8 +2714,8 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
             "satisfies?",
             "Requires?",
             "Enables?",
-            "Justified?",
             "Documented?",
+            "Justification?",
             "Aliases?",
             "References?",
             "Metadata?",
@@ -2795,9 +2766,9 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
                 .map(|arguments| EnablesSection { arguments })
         }),
-        justified: sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
-                .map(|arguments| JustifiedSection { arguments })
+        justification: sections.get("Justification").copied().and_then(|section| {
+            parse_required_groups(section, "Justification", tracker, parse_have_group)
+                .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -2839,8 +2810,8 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             "expresses?",
             "Requires?",
             "Enables?",
-            "Justified?",
             "Documented?",
+            "Justification?",
             "Aliases?",
             "References?",
             "Metadata?",
@@ -2883,9 +2854,9 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
                 .map(|arguments| EnablesSection { arguments })
         }),
-        justified: sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
-                .map(|arguments| JustifiedSection { arguments })
+        justification: sections.get("Justification").copied().and_then(|section| {
+            parse_required_groups(section, "Justification", tracker, parse_have_group)
+                .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -2970,8 +2941,8 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             "satisfies?",
             "Requires?",
             "Enables?",
-            "Justified?",
             "Documented?",
+            "Justification?",
             "Aliases?",
             "References?",
             "Metadata?",
@@ -3026,9 +2997,9 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
                 .map(|arguments| EnablesSection { arguments })
         }),
-        justified: sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
-                .map(|arguments| JustifiedSection { arguments })
+        justification: sections.get("Justification").copied().and_then(|section| {
+            parse_required_groups(section, "Justification", tracker, parse_have_group)
+                .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(
@@ -3074,8 +3045,8 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             "that",
             "Requires?",
             "Enables?",
-            "Justified?",
             "Documented?",
+            "Justification?",
             "Aliases?",
             "References?",
             "Metadata?",
@@ -3112,9 +3083,9 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
                 .map(|arguments| EnablesSection { arguments })
         }),
-        justified: sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
-                .map(|arguments| JustifiedSection { arguments })
+        justification: sections.get("Justification").copied().and_then(|section| {
+            parse_required_groups(section, "Justification", tracker, parse_have_group)
+                .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -3156,8 +3127,8 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
             "using?",
             "when?",
             "to",
-            "Justified?",
             "Documented?",
+            "Justification?",
             "References?",
             "Id?",
         ],
@@ -3189,9 +3160,9 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
                 parse_expression,
             )?,
         },
-        justified: sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
-                .map(|arguments| JustifiedSection { arguments })
+        justification: sections.get("Justification").copied().and_then(|section| {
+            parse_required_groups(section, "Justification", tracker, parse_have_group)
+                .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -3227,8 +3198,8 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             "and",
             "when?",
             "means?",
-            "Justified?",
             "Documented?",
+            "Justification?",
             "Aliases?",
             "References?",
             "Metadata?",
@@ -3267,9 +3238,9 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             parse_required_relation_means(section, tracker)
                 .map(|argument| RelationMeansSection { argument })
         }),
-        justified: sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
-                .map(|arguments| JustifiedSection { arguments })
+        justification: sections.get("Justification").copied().and_then(|section| {
+            parse_required_groups(section, "Justification", tracker, parse_have_group)
+                .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -3443,7 +3414,7 @@ pub(in crate::frontend::structural::parser) fn parse_axiom(
             where_,
             then,
             iff,
-            justified,
+            justification,
             documented,
             aliases,
             references,
@@ -3455,7 +3426,7 @@ pub(in crate::frontend::structural::parser) fn parse_axiom(
                 where_,
                 then,
                 iff,
-                justified,
+                justification,
                 documented,
                 aliases,
                 references,
@@ -3477,7 +3448,7 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
             where_,
             then,
             iff,
-            justified,
+            justification,
             documented,
             aliases,
             references,
@@ -3489,7 +3460,7 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
                 where_,
                 then,
                 iff,
-                justified,
+                justification,
                 documented,
                 aliases,
                 references,
@@ -3542,7 +3513,7 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
     Option<WhereSection>,
     ThenSection,
     Option<IffSection>,
-    Option<JustifiedSection>,
+    Option<JustificationSection>,
     Option<DocumentedSection>,
     Option<AliasesSection>,
     Option<ReferencesSection>,
@@ -3560,8 +3531,8 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
             "where?",
             "then",
             "iff?",
-            "Justified?",
             "Documented?",
+            "Justification?",
             "Aliases?",
             "References?",
             "Metadata?",
@@ -3592,9 +3563,9 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
             parse_required_clauses(section, "iff", tracker)
                 .map(|arguments| IffSection { arguments })
         }),
-        sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
-                .map(|arguments| JustifiedSection { arguments })
+        sections.get("Justification").copied().and_then(|section| {
+            parse_required_groups(section, "Justification", tracker, parse_have_group)
+                .map(|arguments| JustificationSection { arguments })
         }),
         sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -3635,8 +3606,8 @@ pub(in crate::frontend::structural::parser) fn parse_corollary(
             "where?",
             "then",
             "iff?",
-            "Justified?",
             "Documented?",
+            "Justification?",
             "Aliases?",
             "References?",
             "Metadata?",
@@ -3670,9 +3641,9 @@ pub(in crate::frontend::structural::parser) fn parse_corollary(
             parse_required_clauses(section, "iff", tracker)
                 .map(|arguments| IffSection { arguments })
         }),
-        justified: sections.get("Justified").copied().and_then(|section| {
-            parse_required_groups(section, "Justified", tracker, parse_justified_item_group)
-                .map(|arguments| JustifiedSection { arguments })
+        justification: sections.get("Justification").copied().and_then(|section| {
+            parse_required_groups(section, "Justification", tracker, parse_have_group)
+                .map(|arguments| JustificationSection { arguments })
         }),
         documented: sections.get("Documented").copied().and_then(|section| {
             parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
@@ -3789,7 +3760,7 @@ mod tests {
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, DescribesTarget, Document, DocumentedItem, EnablesItem,
-        IsOrViaItem, JustifiedItem, MetadataItem, RelationKind, RelationMeans, RelationSubject,
+        IsOrViaItem, MetadataItem, RelationKind, RelationMeans, RelationSubject,
         RelationshipDeclaration, RequiresItem, ResourceItem, SpecifyItem, TopLevelItem,
     };
 
@@ -3959,17 +3930,16 @@ Enables:
   capability: plus(x_, y_) :=> x + y
   written:
   . "+"
-Justified:
-. [proof.label]
-  label:
-  . "Closure"
-  by:
-  . "Definition"
-  comment: "standard"
 Documented:
 . [docs.written]
   written:
   . "plus"
+Justification:
+. [proof.label]
+  have:
+  . x = x
+  asserting:
+  . x = x
 Aliases:
 . [alias.expr]
   alias: plus(x_, y_) :=> x + y
@@ -3987,15 +3957,16 @@ Enables:
   relation:
   to: y := \foo{X} is \bar
   represents: \\coercion
-Justified:
-. [proof.by]
-  by:
-  . "Convention"
-  comment: "accepted"
 Documented:
 . [docs.called]
   called:
   . "addition"
+Justification:
+. [proof.by]
+  have:
+  . y = y
+  asserting:
+  . y = y
 Aliases:
 . [alias.spec]
   alias: x_ "in" X :-> x is \element
@@ -4131,14 +4102,18 @@ that:
                     group.enables.as_ref().expect("expected enables").arguments[0],
                     EnablesItem::Capability(_)
                 ));
-                assert!(matches!(
+                assert_eq!(
                     group
-                        .justified
+                        .justification
                         .as_ref()
-                        .expect("expected justified")
-                        .arguments[0],
-                    JustifiedItem::Label(_)
-                ));
+                        .expect("expected justification")
+                        .arguments[0]
+                        .heading
+                        .as_ref()
+                        .expect("expected justification heading")
+                        .parts,
+                    vec!["proof".to_owned(), "label".to_owned()]
+                );
                 assert!(matches!(
                     group
                         .documented
@@ -4170,14 +4145,18 @@ that:
                     group.enables.as_ref().expect("expected enables").arguments[0],
                     EnablesItem::Relation(_)
                 ));
-                assert!(matches!(
+                assert_eq!(
                     group
-                        .justified
+                        .justification
                         .as_ref()
-                        .expect("expected justified")
-                        .arguments[0],
-                    JustifiedItem::By(_)
-                ));
+                        .expect("expected justification")
+                        .arguments[0]
+                        .heading
+                        .as_ref()
+                        .expect("expected justification heading")
+                        .parts,
+                    vec!["proof".to_owned(), "by".to_owned()]
+                );
                 assert!(matches!(
                     group
                         .documented
@@ -5657,15 +5636,16 @@ iff:
   . y = y
   iff:
   . x = x
-Justified:
-. [axiom.justified]
-  by:
-  . "Definition"
-  comment: "classical"
 Documented:
 . [axiom.written]
   written:
   . "axiom"
+Justification:
+. [axiom.justified]
+  have:
+  . y = y
+  asserting:
+  . y = y
 Aliases:
 . [axiom.alias]
   alias: axiom(x_) :=> x
@@ -5708,7 +5688,7 @@ then:
                     group.iff.as_ref().expect("expected iff").arguments[0],
                     Clause::Iff(_)
                 ));
-                assert!(group.justified.is_some());
+                assert!(group.justification.is_some());
                 assert!(group.documented.is_some());
                 assert!(group.aliases.is_some());
                 assert!(group.references.is_some());

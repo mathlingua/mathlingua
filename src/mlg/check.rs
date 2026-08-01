@@ -4017,6 +4017,124 @@ then:
     }
 
     #[test]
+    fn check_labeled_specification_is_established_by_a_justification_entry() {
+        // A labeled specification `(.t is \wrap:of{P}:in{Q}.)[:1:]` is established by
+        // the `Justification:` entry `[1]`, whose `have:` restates it and whose
+        // `asserting:` provides the `P \:subset:/ Q` the requirement needs.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("justification.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \:subset:/ B]
+    Describes: A
+    when: B is \set
+    extends: A is \set
+    Requires:
+    . capability: x_ "in" A :-> x_ "in" B
+    Documented:
+    . called: "subset of $B?$"
+
+    [\wrap:of{A}:in{B}]
+    Defines: w "in" B
+    when:
+    . A is \set
+    . B is \set
+    . A \:subset:/ B
+    Documented:
+    . called: "wrap"
+
+    [\thing:on{P}:and{Q}]
+    Describes: t
+    when: P, Q is \set
+    specifies:
+    . (.t is \wrap:of{P}:in{Q}.)[:1:]
+    Documented:
+    . called: "thing"
+    Justification:
+    . [1]
+      have:
+      . t is \wrap:of{P}:in{Q}
+      asserting:
+      . P \:subset?:/ Q
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("justification.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_unreferenced_justification_entry() {
+        // Every `Justification:` entry must justify some labeled specification; an
+        // entry no label references is reported.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("justification-unused.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\thing]
+    Describes: t
+    using:
+    . z is \set
+    specifies:
+    . z is \set
+    Documented:
+    . called: "thing"
+    Justification:
+    . [1]
+      have:
+      . z is \set
+      asserting:
+      . z is \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("justification-unused.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log)
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| message
+                    .message
+                    .contains("`Justification:` entry `[1]` is not referenced"))),
+            "expected the unreferenced justification entry to be reported: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
     fn check_resolves_backtick_stropped_operator_as_a_value() {
         // A backtick-stropped operator `` `*` `` refers to the bound operator `*`,
         // so it resolves as a value with `*`'s type and can be invoked in function

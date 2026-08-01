@@ -11,6 +11,7 @@ pub(in crate::backend::semantic) fn walk_is_or_via_item(
         }
         IsOrViaItem::Declaration(statement) => walk_declaration_statement(statement, visit),
         IsOrViaItem::Have(group) => walk_have_group(group, visit),
+        IsOrViaItem::Labeled { item, .. } => walk_is_or_via_item(item, visit),
     }
 }
 

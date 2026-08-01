@@ -49,8 +49,8 @@ group kind.
 
 Section labels are case-sensitive and order-sensitive. Optional sections may be
 omitted, but if present they must appear in the order defined for that group.
-For example, `using:` must come before `when:`, and `Documented:` must come
-after `Enables:` and `Justified:` in definition groups.
+For example, `using:` must come before `when:`, and `Justification:` must come
+after `Documented:` in definition groups.
 
 Lines whose trimmed text starts with `--` are comments. At the top level, blank
 lines and comments are skipped before the next group; inside a group or section,
@@ -425,8 +425,8 @@ specifies:
 satisfies:
 Requires:
 Enables:
-Justified:
 Documented:
+Justification:
 Aliases:
 References:
 Metadata:
@@ -479,7 +479,7 @@ Documented:
 - `implicitly:` — the group merely restates the inherited definition. The body
   must contain **nothing beyond** the inherited `extends:` clause (the scaffolding
   `using:`/`when:` sections are allowed). Adding `satisfies:`, `Requires:`,
-  `Enables:`, or `Justified:` is an error — mark it `explicitly:` instead.
+  `Enables:`, or `Justification:` is an error — mark it `explicitly:` instead.
   Furthermore, the `extends:` clause must **literally name the parent type's
   refinement**: the same adjective(s) applied to a supertype of the refined base
   type (above, `\(finite)::magma`, because `\group` extends `\magma`). An
@@ -626,7 +626,14 @@ the construct supports.
 - `related:`
 - `discoverer:`
 
-`Justified:` accepts `label:` and `by:` groups with `comment:` text.
+`Justification:` (placed after `Documented:`) accepts only `have:`/`asserting:`
+groups, each with a required `[label]` heading. A labeled specification elsewhere
+in the group — e.g. a `specifies:` item written `(.x is \foo.)[:1:]` — whose
+`[:label:]` matches an entry's `[label]` is established using that entry's
+`asserting:` items (exactly as an inline `have:`/`asserting:` group would be). The
+entry's `have:` must restate the labeled specification, an unmatched label is
+checked inline as usual, and every entry must be referenced by some labeled
+specification.
 
 `Aliases:` accepts `alias:` groups. `Metadata:` accepts `id:` and `version:`.
 `References:` contains resource headers such as `$book.chapter`.
@@ -862,7 +869,7 @@ function ...`, `\`{name}\` is not a known type`).
   marker sections must take no arguments and are mutually exclusive. Either
   marker requires the refined base type to be a subtype of another type;
   `implicitly:` additionally requires the body to contain only the inherited
-  `extends:` clause (no `satisfies:`/`Requires:`/`Enables:`/`Justified:`) and
+  `extends:` clause (no `satisfies:`/`Requires:`/`Enables:`/`Justification:`) and
   that clause to literally name the parent type's refinement (the same
   adjective(s) applied to a direct supertype of the refined base type), while
   `explicitly:` requires at least one such property beyond the inherited

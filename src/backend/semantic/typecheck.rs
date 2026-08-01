@@ -1,5 +1,6 @@
 use super::*;
 use std::collections::{BTreeSet, HashMap, HashSet};
+use std::rc::Rc;
 
 pub(super) fn collect_definition_type_metadata(
     item: &TopLevelItem,
@@ -1360,6 +1361,7 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::Describes(group) => {
             let mut context = TypeContext::default();
+            context.set_justifications(build_justification_map(&group.justification));
             validate_spec_infix_describes_header(
                 &group.heading,
                 &group.describes.argument,
@@ -1411,6 +1413,7 @@ fn validate_top_level_item_types(
                 &group.specifies,
                 &mut context,
             );
+            validate_describes_justification_usage(group, path, locator, event_log);
             if let Some(extends) = &group.extends {
                 check_is_or_via_item(
                     &extends.argument,
@@ -1913,7 +1916,7 @@ fn check_refines_marker(
     let adds_properties = group.satisfies.is_some()
         || group.requires.is_some()
         || group.enables.is_some()
-        || group.justified.is_some();
+        || group.justification.is_some();
 
     match marker {
         RefinementKind::Implicit => {
@@ -1931,7 +1934,7 @@ fn check_refines_marker(
                     path,
                     location,
                     "A `Refines:` marked `implicitly:` must contain only the inherited `extends:` \
-                     clause; it must not add `satisfies:`, `Requires:`, `Enables:`, or `Justified:`. \
+                     clause; it must not add `satisfies:`, `Requires:`, `Enables:`, or `Justification:`. \
                      Mark it `explicitly:` if the definition is meant to differ",
                 );
             } else if !implicit_extends_names_parent_refinement(group, heading, &parents) {
@@ -2253,6 +2256,18 @@ fn assume_is_or_via_item(
                 }
             }
         }
+        // A labeled specification whose `[:label:]` matches a `Justification:`
+        // entry is established via that entry's `have:`/`asserting:`; then its
+        // facts are contributed. An unmatched label is checked inline as normal.
+        IsOrViaItem::Labeled { label, item } => {
+            if establish_labeled_specification(
+                label, item, context, path, locator, registry, event_log,
+            ) {
+                assume_is_or_via_item_facts(item, context);
+            } else {
+                assume_is_or_via_item(item, context, path, locator, registry, event_log);
+            }
+        }
     }
 }
 
@@ -2274,6 +2289,189 @@ fn check_have_group(
     }
     for clause in &group.have.arguments {
         check_clause(clause, &asserted, path, locator, registry, event_log);
+    }
+}
+
+/// Builds the `[label] -> have:/asserting: group` map for a `Justification:`
+/// section. Entries without a `[label]` heading are skipped (unreferenceable).
+fn build_justification_map(
+    justification: &Option<JustificationSection>,
+) -> HashMap<String, HaveGroup> {
+    let mut map = HashMap::new();
+    if let Some(section) = justification {
+        for group in &section.arguments {
+            if let Some(heading) = &group.heading {
+                map.insert(heading.parts.join("."), group.clone());
+            }
+        }
+    }
+    map
+}
+
+/// The canonical key of the specification an `IsOrViaItem` states, used to check
+/// that a labeled item and the `Justification:` entry it references restate the
+/// same specification. `None` for shapes without a simple key.
+fn spec_key_for_is_or_via_item(item: &IsOrViaItem) -> Option<String> {
+    match item {
+        IsOrViaItem::Declaration(statement) => Some(key_for_declaration_statement(statement)),
+        IsOrViaItem::Labeled { item, .. } => spec_key_for_is_or_via_item(item),
+        IsOrViaItem::IsVia(_) | IsOrViaItem::Have(_) => None,
+    }
+}
+
+/// The canonical key of the specification a `have:` clause states.
+fn spec_key_for_clause(clause: &Clause) -> Option<String> {
+    match clause {
+        Clause::Declaration(statement) => Some(key_for_declaration_statement(statement)),
+        Clause::Expression(expression) => Some(key_for_expression(expression)),
+        _ => None,
+    }
+}
+
+/// Whether a `Justification:` entry's `have:` restates exactly the labeled item it
+/// justifies (a single `have:` clause equal to the item). An item without a simple
+/// key is treated as matching so no spurious mismatch is reported.
+fn justification_have_matches_item(group: &HaveGroup, item: &IsOrViaItem) -> bool {
+    let Some(item_key) = spec_key_for_is_or_via_item(item) else {
+        return true;
+    };
+    let have_keys: Vec<String> = group
+        .have
+        .arguments
+        .iter()
+        .filter_map(spec_key_for_clause)
+        .collect();
+    have_keys.len() == 1 && have_keys[0] == item_key
+}
+
+/// The subject key of an `IsOrViaItem`, for locating diagnostics.
+fn is_or_via_item_subject_key(item: &IsOrViaItem) -> Option<String> {
+    match item {
+        IsOrViaItem::Declaration(statement) => {
+            declaration_subject_keys(statement).into_iter().next()
+        }
+        IsOrViaItem::Labeled { item, .. } => is_or_via_item_subject_key(item),
+        IsOrViaItem::IsVia(_) | IsOrViaItem::Have(_) => None,
+    }
+}
+
+/// Contributes the typing facts of an `IsOrViaItem` to `context` without checking
+/// it — used after a labeled item has already been established via a
+/// `Justification:` entry, so the specification is taken as given.
+fn assume_is_or_via_item_facts(item: &IsOrViaItem, context: &mut TypeContext) {
+    match item {
+        IsOrViaItem::IsVia(statement) => {
+            declare_is_subject(&statement.is_statement.subject, context);
+            for fact in facts_from_is_statement(&statement.is_statement) {
+                context.add_fact(fact);
+            }
+        }
+        IsOrViaItem::Declaration(statement) => {
+            declare_declaration_statement_subjects(statement, context);
+            for fact in facts_from_declaration_statement_in_context(statement, context) {
+                context.add_fact(fact);
+            }
+        }
+        IsOrViaItem::Have(group) => {
+            for statement in have_group_declarations(group) {
+                declare_declaration_statement_subjects(statement, context);
+                for fact in facts_from_declaration_statement_in_context(statement, context) {
+                    context.add_fact(fact);
+                }
+            }
+        }
+        IsOrViaItem::Labeled { item, .. } => assume_is_or_via_item_facts(item, context),
+    }
+}
+
+/// Resolves a `[:label:]`-labeled specification against the `Justification:`
+/// entries in `context`. When the label matches an entry, verifies the entry
+/// restates `item`, establishes `item` via the entry's `have:`/`asserting:`, and
+/// returns `true`; a label with no matching entry returns `false` so the caller
+/// checks the item inline.
+fn establish_labeled_specification(
+    label: &[String],
+    item: &IsOrViaItem,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) -> bool {
+    let key = label.join(".");
+    let Some(group) = context.justification(&key).cloned() else {
+        return false;
+    };
+    if !justification_have_matches_item(&group, item) {
+        let position =
+            is_or_via_item_subject_key(item).and_then(|name| locator.locate_symbol(&name));
+        emit_error(
+            event_log,
+            path,
+            position,
+            format!(
+                "The `have:` of `Justification:` entry `[{key}]` must restate the labeled \
+                 specification exactly"
+            ),
+        );
+    }
+    check_have_group(&group, context, path, locator, registry, event_log);
+    true
+}
+
+/// Collects the labels referenced by labeled specifications inside an
+/// `IsOrViaItem` (the `[:label:]` of any `Labeled` wrapper).
+fn collect_is_or_via_referenced_labels(item: &IsOrViaItem, labels: &mut BTreeSet<String>) {
+    if let IsOrViaItem::Labeled { label, item } = item {
+        labels.insert(label.join("."));
+        collect_is_or_via_referenced_labels(item, labels);
+    }
+}
+
+/// Reports each `Justification:` entry of a `Describes:` group that no labeled
+/// specification references, and each entry that lacks a `[label]` heading (which
+/// can never be referenced). Every entry must justify some labeled item.
+fn validate_describes_justification_usage(
+    group: &DescribesGroup,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let Some(justification) = &group.justification else {
+        return;
+    };
+    let mut referenced = BTreeSet::new();
+    if let Some(extends) = &group.extends {
+        collect_is_or_via_referenced_labels(&extends.argument, &mut referenced);
+    }
+    if let Some(specifies) = &group.specifies {
+        for item in &specifies.arguments {
+            collect_is_or_via_referenced_labels(item, &mut referenced);
+        }
+    }
+    for entry in &justification.arguments {
+        match &entry.heading {
+            Some(heading) if referenced.contains(&heading.parts.join(".")) => {}
+            Some(heading) => {
+                let key = heading.parts.join(".");
+                emit_error(
+                    event_log,
+                    path,
+                    locator.locate_symbol(heading.parts.last().map(String::as_str).unwrap_or("")),
+                    format!(
+                        "`Justification:` entry `[{key}]` is not referenced by any labeled \
+                         specification; every entry must justify a labeled item"
+                    ),
+                );
+            }
+            None => emit_error(
+                event_log,
+                path,
+                None,
+                "Each `Justification:` entry must have a `[label]` heading so a labeled \
+                 specification can reference it",
+            ),
+        }
     }
 }
 
@@ -2883,6 +3081,9 @@ fn collect_is_or_via_covered_symbols(item: &IsOrViaItem, covered: &mut BTreeSet<
                 collect_declaration_statement_covered_symbols(statement, covered);
             }
         }
+        IsOrViaItem::Labeled { item, .. } => {
+            collect_is_or_via_covered_symbols(item, covered);
+        }
     }
 }
 
@@ -3173,6 +3374,7 @@ fn collect_is_or_via_names(item: &IsOrViaItem, names: &mut BTreeSet<String>) {
             collect_declaration_statement_names(statement, names)
         }
         IsOrViaItem::Have(group) => collect_have_group_names(group, names),
+        IsOrViaItem::Labeled { item, .. } => collect_is_or_via_names(item, names),
     }
 }
 
@@ -5166,6 +5368,13 @@ fn check_is_or_via_item(
         }
         IsOrViaItem::Have(group) => {
             check_have_group(group, context, path, locator, registry, event_log);
+        }
+        IsOrViaItem::Labeled { label, item } => {
+            if !establish_labeled_specification(
+                label, item, context, path, locator, registry, event_log,
+            ) {
+                check_is_or_via_item(item, context, path, locator, registry, event_log);
+            }
         }
     }
 }
@@ -11316,6 +11525,10 @@ struct TypeContext {
     /// Maps a destructured value (`M` from `M ::= (X, *)`) to its component names
     /// in tuple order, so member access `M.*` can resolve to the `*` component.
     destructured_components: HashMap<String, Vec<String>>,
+    /// Maps a `Justification:` entry label (its `[label]` heading, dot-joined) to
+    /// its `have:`/`asserting:` group. A labeled specification `(.x.)[:label:]`
+    /// whose label is present here is established via the referenced group.
+    justifications: Rc<HashMap<String, HaveGroup>>,
 }
 
 impl TypeContext {
@@ -11357,6 +11570,14 @@ impl TypeContext {
 
     fn has_name(&self, name: &str) -> bool {
         self.symbols.contains(name) || self.symbols.contains(&unstropped_name(name))
+    }
+
+    fn set_justifications(&mut self, justifications: HashMap<String, HaveGroup>) {
+        self.justifications = Rc::new(justifications);
+    }
+
+    fn justification(&self, label: &str) -> Option<&HaveGroup> {
+        self.justifications.get(label)
     }
 
     fn activate_disambiguation(&self, key: &DisambiguationKey) -> Option<Self> {
@@ -12466,6 +12687,7 @@ fn facts_from_is_or_via_item(item: &IsOrViaItem) -> Vec<TypeFact> {
         IsOrViaItem::Have(group) => have_group_declarations(group)
             .flat_map(facts_from_declaration_statement)
             .collect(),
+        IsOrViaItem::Labeled { item, .. } => facts_from_is_or_via_item(item),
     }
 }
 
@@ -12481,6 +12703,7 @@ fn facts_from_is_or_via_item_in_context(
         IsOrViaItem::Have(group) => have_group_declarations(group)
             .flat_map(|statement| facts_from_declaration_statement_in_context(statement, context))
             .collect(),
+        IsOrViaItem::Labeled { item, .. } => facts_from_is_or_via_item_in_context(item, context),
     }
 }
 

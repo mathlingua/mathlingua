@@ -268,19 +268,19 @@ An empty document is supported by the current implementation because `Document.i
 - **`SubsectionTitle`** — `SubsectionTitleGroup`, heading: none. Sections: `SubsectionTitle: OpenText`
 - **`Text`** — `TextGroup`, heading: none. Sections: `Text: OpenText`
 - **`Writing`** — `TopLevelWritingGroup`, heading: none. Sections: `Writing: WritingAlias+` (each alias LHS must be a `Name`, used with `:~>`)
-- **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when?: Clause+`/`to: Expression` branches, `else?: Expression`, `Justified?`, `Documented?`, `Aliases?`, `References?`, `Metadata?`
-- **`Describes`** — `DescribesGroup`, heading: command. Sections: `Describes: FormOrDeclaration`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: IsOrViaItem`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Refines`** — `RefinesGroup`, heading: command. Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
-- **`States`** — `StatesGroup`, heading: command. Sections: `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Theorem`** — `TheoremGroup`, heading: command?. Sections: `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Corollary`** — `CorollaryGroup`, heading: command?. Sections: `Corollary:`, `of: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when?: Clause+`/`to: Expression` branches, `else?: Expression`, `Documented?`, `Justification?`, `Aliases?`, `References?`, `Metadata?`
+- **`Describes`** — `DescribesGroup`, heading: command. Sections: `Describes: FormOrDeclaration`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: IsOrViaItem`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Refines`** — `RefinesGroup`, heading: command. Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
+- **`States`** — `StatesGroup`, heading: command. Sections: `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Theorem`** — `TheoremGroup`, heading: command?. Sections: `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Corollary`** — `CorollaryGroup`, heading: command?. Sections: `Corollary:`, `of: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Person`** — `PersonGroup`, heading: author. Sections: `Person: OpenText+`, `biography?: OpenText`
 - **`Resource`** — `ResourceGroup`, heading: resource. Sections: `Resource: ResourceItem+`
 - **`Specify`** — `SpecifyGroup`, heading: none. Sections: `Specify: SpecifyItem+`
-- **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RelationSubject`, `and: RelationSubject`, `when?: Clause+`, `means?: RelationMeans`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Equivalent`** — `EquivalentGroup`, heading: command. Sections: `Equivalent: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Justified?: JustifiedItem+`, `Documented?: DocumentedItem+`, `References?: ResourceHeader+`
+- **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RelationSubject`, `and: RelationSubject`, `when?: Clause+`, `means?: RelationMeans`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Equivalent`** — `EquivalentGroup`, heading: command. Sections: `Equivalent: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `References?: ResourceHeader+`
 - **`Topic`** — `TopicGroup`, heading: topic. Sections: `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Documented?: CalledDocumentedItem+`
 
 Notes:
@@ -344,12 +344,15 @@ Used inside `Documented:`.
 - **`related`** — `RelatedGroup`, heading: label?. Sections: `related: OpenText+`
 - **`discoverer`** — `DiscovererGroup`, heading: label?. Sections: `discoverer: OpenText*`
 
-### Justified items
+### Justification items
 
-Used inside `Justified:`.
-
-- **`label`** — `LabelGroup`, heading: label?. Sections: `label: OpenText*`, `by: OpenText*`, `comment: OpenText`
-- **`by`** — `ByGroup`, heading: label?. Sections: `by: OpenText*`, `comment: OpenText`
+Used inside `Justification:` (which appears after `Documented:`). Each item is a
+`HaveGroup` — a `have:`/`asserting:`/`because?:`/`by?:` group (see the `have`
+clause group above) with a required `[label]` heading. A labeled specification
+elsewhere in the group (e.g. a `specifies:` item `(.x is \foo.)[:1:]`) whose
+`[:label:]` matches an entry's `[label]` is established using that entry's
+`have:`/`asserting:`; the entry's `have:` must restate the labeled specification,
+and every entry must be referenced by some labeled specification.
 
 ### Metadata items
 
@@ -449,7 +452,7 @@ Optional on:
 - alias items
 - enables items
 - documented items
-- justified items
+- justification items
 - specify items
 - clause groups
 
@@ -553,11 +556,6 @@ DocumentedItemUnion ::=
     | DiscovererGroup
 ```
 
-```union
-JustifiedItemUnion ::=
-    | LabelGroup
-    | ByGroup
-```
 
 ```union
 MetadataItemUnion ::=
@@ -675,8 +673,8 @@ specifies?: <IsOrViaItemUnion>+
 satisfies?: <ClauseUnion>+
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
-Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
+Justification?: <HaveGroup>+
 Aliases?: <AliasItemUnion>+
 References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
@@ -690,8 +688,8 @@ when?: <ClauseUnion>+
 expresses?: <ClauseUnion>
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
-Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
+Justification?: <HaveGroup>+
 Aliases?: <AliasItemUnion>+
 References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
@@ -706,8 +704,8 @@ specifies?: <RefinedDeclarationStatement>
 satisfies?: <ClauseUnion>+
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
-Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
+Justification?: <HaveGroup>+
 Aliases?: <AliasItemUnion>+
 References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
@@ -721,8 +719,8 @@ when?: <ClauseUnion>+
 that: <ClauseUnion>+
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
-Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
+Justification?: <HaveGroup>+
 Aliases?: <AliasItemUnion>+
 References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
@@ -735,8 +733,8 @@ given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
-Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
+Justification?: <HaveGroup>+
 Aliases?: <AliasItemUnion>+
 References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
@@ -749,8 +747,8 @@ given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
-Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
+Justification?: <HaveGroup>+
 Aliases?: <AliasItemUnion>+
 References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
@@ -764,8 +762,8 @@ given?: <RefinedDeclarationStatement>+
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
 iff?: <ClauseUnion>+
-Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
+Justification?: <HaveGroup>+
 Aliases?: <AliasItemUnion>+
 References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
@@ -797,8 +795,8 @@ between: <RelationSubject>
 and: <RelationSubject>
 when?: <Clause>+
 means?: <RelationMeans>
-Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
+Justification?: <HaveGroup>+
 Aliases?: <AliasItemUnion>+
 References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
@@ -826,8 +824,8 @@ Equivalent: <OpenText>*
 using?: <DeclarationStatement>+
 when?: <Clause>+
 to: <Expression>+
-Justified?: <JustifiedItemUnion>+
 Documented?: <DocumentedItemUnion>+
+Justification?: <HaveGroup>+
 References?: <ResourceHeader>+
 Id?: <OpenText>
 ```

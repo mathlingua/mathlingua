@@ -18,16 +18,17 @@ iff:
   . y = y
   iff:
   . x = x
-Justified:
-. [axiom.justified]
-  by:
-  . "Definition"
-  comment: "classical"
 Documented:
 . called: "Every element equals itself"
 . [axiom.written]
   written:
   . "axiom"
+Justification:
+. [axiom.justified]
+  have:
+  . x = x
+  asserting:
+  . x = x
 Aliases:
 . [axiom.alias]
   alias: axiom(x_) :=> x

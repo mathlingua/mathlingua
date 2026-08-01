@@ -16,6 +16,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
                 walk_expression(&else_.argument, visit);
             }
             walk_optional_aliases(&group.aliases, visit);
+            walk_optional_justification(&group.justification, visit);
         }
         TopLevelItem::Describes(group) => {
             walk_describes_target(&group.describes.argument, visit);
@@ -33,6 +34,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_requires(&group.requires, visit);
             walk_optional_enables(&group.enables, visit);
             walk_optional_aliases(&group.aliases, visit);
+            walk_optional_justification(&group.justification, visit);
         }
         TopLevelItem::Defines(group) => {
             walk_declaration_statement(&group.defines.argument, visit);
@@ -46,6 +48,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_requires(&group.requires, visit);
             walk_optional_enables(&group.enables, visit);
             walk_optional_aliases(&group.aliases, visit);
+            walk_optional_justification(&group.justification, visit);
         }
         TopLevelItem::Refines(group) => {
             walk_declaration_statement(&group.refines.argument, visit);
@@ -60,6 +63,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_requires(&group.requires, visit);
             walk_optional_enables(&group.enables, visit);
             walk_optional_aliases(&group.aliases, visit);
+            walk_optional_justification(&group.justification, visit);
         }
         TopLevelItem::States(group) => {
             walk_optional_is_or_specs(&group.using, visit);
@@ -70,6 +74,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_requires(&group.requires, visit);
             walk_optional_enables(&group.enables, visit);
             walk_optional_aliases(&group.aliases, visit);
+            walk_optional_justification(&group.justification, visit);
         }
         TopLevelItem::Axiom(group) => {
             walk_theorem_like(
@@ -80,6 +85,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
                 visit,
             );
             walk_optional_aliases(&group.aliases, visit);
+            walk_optional_justification(&group.justification, visit);
         }
         TopLevelItem::Theorem(group) => {
             walk_theorem_like(
@@ -90,6 +96,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
                 visit,
             );
             walk_optional_aliases(&group.aliases, visit);
+            walk_optional_justification(&group.justification, visit);
         }
         TopLevelItem::Corollary(group) => {
             walk_theorem_like(
@@ -100,6 +107,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
                 visit,
             );
             walk_optional_aliases(&group.aliases, visit);
+            walk_optional_justification(&group.justification, visit);
         }
         TopLevelItem::Specify(group) => {
             for item in &group.specify.arguments {
@@ -117,6 +125,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
                 walk_clause(clause, visit);
             }
             walk_optional_aliases(&group.aliases, visit);
+            walk_optional_justification(&group.justification, visit);
         }
         TopLevelItem::Equivalent(group) => {
             walk_optional_is_or_specs(&group.using, visit);
@@ -124,6 +133,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             for expression in &group.to.arguments {
                 walk_expression(expression, visit);
             }
+            walk_optional_justification(&group.justification, visit);
         }
         TopLevelItem::Title(_)
         | TopLevelItem::SectionTitle(_)
@@ -133,6 +143,19 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
         | TopLevelItem::Person(_)
         | TopLevelItem::Resource(_)
         | TopLevelItem::Topic(_) => {}
+    }
+}
+
+/// Walks the `have:`/`asserting:` groups of an optional `Justification:` section so
+/// their command references are reference-validated like any other clause content.
+fn walk_optional_justification(
+    justification: &Option<JustificationSection>,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
+    if let Some(section) = justification {
+        for group in &section.arguments {
+            walk_have_group(group, visit);
+        }
     }
 }
 

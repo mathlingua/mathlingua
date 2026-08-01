@@ -28,13 +28,14 @@ Equivalent:
 to:
 . \eq{a, b}
 . \same{a, b}
-Justified:
-. [equiv.just]
-  by:
-  . "Definition"
-  comment: "standard"
 Documented:
 . called: "equal"
+Justification:
+. [equiv.just]
+  have:
+  . a = a
+  asserting:
+  . a = a
 References:
 . $book.equal
 Id: "11111111-1111-4111-8111-111111111111"

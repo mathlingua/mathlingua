@@ -21,17 +21,16 @@ Enables:
   capability: plus(x_, y_) :=> x + y
   written:
   . "+"
-Justified:
-. [proof.label]
-  label:
-  . "Closure"
-  by:
-  . "Definition"
-  comment: "standard"
 Documented:
 . [docs.written]
   written:
   . "plus"
+Justification:
+. [proof.label]
+  have:
+  . x = x
+  asserting:
+  . x = x
 Aliases:
 . [alias.expr]
   alias: plus(x_, y_) :=> x + y
@@ -49,15 +48,16 @@ Enables:
   relation:
   to: y := \foo{X} is \bar
   represents: \\coercion
-Justified:
-. [proof.by]
-  by:
-  . "Convention"
-  comment: "accepted"
 Documented:
 . [docs.called]
   called:
   . "addition"
+Justification:
+. [proof.by]
+  have:
+  . y = y
+  asserting:
+  . y = y
 Aliases:
 . [alias.spec]
   alias: x_ "in" X :-> x is \element

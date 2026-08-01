@@ -42,6 +42,17 @@ plain **symbolic** operator `x * y` also desugars to `*(x, y)` when `*` names a
 bound value in scope (otherwise `*`, `+`, … keep their built-in arithmetic
 resolution).
 
+### Inferred Parameters From Argument Types
+
+A `?`-suffixed name in a `when:` requirement — `A`/`B` in
+`g is \function:on{A?}:to{B?}` — is an inferred parameter, solved at a use site by
+unifying that requirement against a fact already known about its subject. So
+`\restriction:of{g}:on{X}` used with a `g` of type `\function:on{P}:to{Q}` binds
+`A := P`, `B := Q`, making a later requirement like `X \:subset:/ A` resolve to
+`X \:subset:/ P`. The subject's type is followed through extension rules, so an
+argument whose type merely *extends* a function type (e.g. a `\binary.operation`)
+is matched too.
+
 ### `have:`/`asserting:`/`because?:`/`by?:` Assertions
 
 A new clause group lets an author supply an explicit assertion where the

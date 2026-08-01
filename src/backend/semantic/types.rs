@@ -63,6 +63,11 @@ pub(super) struct DefinitionTypeInfo {
     /// Lets a provided-symbol capability's reduction target that mentions those
     /// components (`x_ |M.*| y_`) resolve them when the capability is applied.
     pub(super) parameter_destructurings: Vec<DestructuredParameter>,
+    /// Inferred parameters introduced by `?`-suffixed names in the `when:`
+    /// requirements (e.g. `A`, `B` in `g is \function:on{A?}:to{B?}`). At a use
+    /// site these are solved by unifying the mentioning requirement against a
+    /// fact already known about its subject.
+    pub(super) inferred_parameters: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -3812,6 +3812,80 @@ then:
     }
 
     #[test]
+    fn check_infers_optional_parameters_from_argument_type() {
+        // `\uses:of{g}` requires `g is \fn:on{A?}:to{B?}`; the `?` parameters `A`
+        // and `B` are solved from the passed argument's type — here `\op:on{X}`,
+        // which extends `\fn:on{X}:to{X}` — so the later `S \:subset:/ A`
+        // requirement resolves to `Z \:subset:/ X`.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("infer.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \:subset:/ B]
+    Describes: A
+    when: B is \set
+    extends: A is \set
+    Requires:
+    . capability: x_ "in" A :-> x_ "in" B
+    Documented:
+    . called: "subset of $B?$"
+
+    [\fn:on{A}:to{B}]
+    Describes: f(x__) ::= y_
+    when: A, B is \set
+    Documented:
+    . written: "f?"
+
+    [\op:on{X}]
+    Describes: p(x__) ::= y_
+    when: X is \set
+    extends: p is \fn:on{X}:to{X}
+    Documented:
+    . written: "\operatorname{op}"
+
+    [\uses:of{g(x__)}:sub{S}]
+    Describes: h
+    when:
+    . g is \fn:on{A?}:to{B?}
+    . S \:subset:/ A
+    Documented:
+    . called: "uses"
+
+    Theorem:
+    given:
+    . X, Z is \set
+    . Z \:subset:/ X
+    . r is \op:on{X}
+    . q is \uses:of{r}:sub{Z}
+    then: q is? \uses:of{r}:sub{Z}
+    Id: "aaaaaaaa-1111-4aaa-8aaa-aaaaaaaaaaaa"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("infer.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_have_asserting_group_establishes_specification() {
         // A `have:`/`asserting:` group lets an explicit assertion establish a
         // specification the checker cannot reach on its own: `\wrap:of{P}:in{Q}`

@@ -440,6 +440,7 @@ fn type_info_from_parts(
         })
         .unwrap_or_default();
     let parameter_destructurings = destructured_parameters(heading, &context);
+    let inferred_parameters = collect_inferred_parameter_names(when);
 
     DefinitionTypeInfo {
         signature: header_shape.shape.signature.clone(),
@@ -453,6 +454,38 @@ fn type_info_from_parts(
         described: described.map(described_target_subject_key),
         component_types,
         parameter_destructurings,
+        inferred_parameters,
+    }
+}
+
+/// The `?`-suffixed inferred parameter names appearing in a definition's `when:`
+/// requirements (e.g. `A`, `B` in `g is \function:on{A?}:to{B?}`).
+fn collect_inferred_parameter_names(when: Option<&WhenSection>) -> Vec<String> {
+    let mut names = Vec::new();
+    if let Some(when) = when {
+        for clause in &when.arguments {
+            if let Clause::Declaration(statement) = clause
+                && let Some(DeclarationRelation::Is(ty)) = &statement.relation
+            {
+                collect_inferred_names_in_type_expression(ty, &mut names);
+            }
+        }
+    }
+    names.sort();
+    names.dedup();
+    names
+}
+
+fn collect_inferred_names_in_type_expression(ty: &TypeExpression, names: &mut Vec<String>) {
+    let arguments = match ty {
+        TypeExpression::Command(command) => command_expression_arguments(command),
+        TypeExpression::RefinedCommand(command) => refined_command_expression_arguments(command),
+        _ => return,
+    };
+    for argument in arguments {
+        if let ExpressionKind::InferredName(name) = &argument.kind {
+            names.push(name.clone());
+        }
     }
 }
 
@@ -8945,6 +8978,19 @@ fn check_command_requirements(
         {
             continue;
         }
+        // Solve any inferred parameters this requirement mentions (e.g. `A`/`B`
+        // in `g is \function:on{A?}:to{B?}`) by unifying it against a fact already
+        // known about the subject, so later requirements can use the solved value.
+        if !info.inferred_parameters.is_empty() {
+            let partial = substitute_fact(requirement, &substitutions);
+            infer_parameters_from_requirement(
+                &partial,
+                &info.inferred_parameters,
+                &requirement_context,
+                registry,
+                &mut substitutions,
+            );
+        }
         let instantiated = substitute_fact(requirement, &substitutions);
         if !prove_fact(&instantiated, &requirement_context, registry) {
             emit_error(
@@ -8958,6 +9004,131 @@ fn check_command_requirements(
             );
         }
     }
+}
+
+/// Binds inferred parameters mentioned by an `is` requirement by unifying its
+/// type key against the type key of a fact already known about the same subject.
+/// For `p is \function:on{A}:to{B}` and a known `p is \function:on{X}:to{Y}`, this
+/// binds `A := X`, `B := Y` into `substitutions`.
+fn infer_parameters_from_requirement(
+    requirement: &TypeFact,
+    inferred: &[String],
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    substitutions: &mut HashMap<String, String>,
+) {
+    let TypeFact::Is {
+        subject,
+        ty,
+        signature,
+    } = requirement
+    else {
+        return;
+    };
+    let has_unsolved = inferred
+        .iter()
+        .any(|name| !substitutions.contains_key(name) && key_mentions_name(ty, name));
+    if !has_unsolved {
+        return;
+    }
+    let subject_key = context.normalize_key(subject);
+
+    // Gather the subject's `is` facts, expanding through extension rules so that,
+    // e.g., `* is \binary.operation:on{X}` also yields `* is \function:on{…}` for
+    // matching against `\function:on{A}:to{B}`.
+    let mut queue: Vec<TypeFact> = context
+        .facts
+        .iter()
+        .filter(|fact| {
+            matches!(fact, TypeFact::Is { subject, .. } if context.normalize_key(subject) == subject_key)
+        })
+        .cloned()
+        .collect();
+    let mut seen = HashSet::new();
+    while let Some(fact) = queue.pop() {
+        if !seen.insert(fact.clone()) {
+            continue;
+        }
+        if let TypeFact::Is {
+            ty: fact_ty,
+            signature: fact_signature,
+            ..
+        } = &fact
+            && fact_signature == signature
+            && let Some(bindings) = unify_command_type_keys(ty, fact_ty, inferred)
+        {
+            for (name, value) in bindings {
+                substitutions
+                    .entry(name)
+                    .or_insert_with(|| context.normalize_key(&value));
+            }
+            return;
+        }
+        queue.extend(reduce_extension_fact(&fact, context, registry));
+    }
+}
+
+/// Unifies two command-type keys (`\function:on{A}:to{B}` vs
+/// `\function:on{X}:to{Y}`), binding each inferred-parameter argument to the
+/// corresponding concrete argument. Returns `None` when the keys have different
+/// shapes or a non-inferred argument disagrees.
+fn unify_command_type_keys(
+    required: &str,
+    actual: &str,
+    inferred: &[String],
+) -> Option<Vec<(String, String)>> {
+    let (base_required, args_required) = command_type_key_args(required);
+    let (base_actual, args_actual) = command_type_key_args(actual);
+    if base_required != base_actual || args_required.len() != args_actual.len() {
+        return None;
+    }
+    let mut bindings = Vec::new();
+    for (required_arg, actual_arg) in args_required.iter().zip(&args_actual) {
+        if inferred.iter().any(|name| name == required_arg) {
+            bindings.push((required_arg.clone(), actual_arg.clone()));
+        } else if required_arg != actual_arg {
+            return None;
+        }
+    }
+    Some(bindings)
+}
+
+/// Splits a command-type key into its base (with `{...}` argument groups removed)
+/// and the ordered contents of those groups: `\function:on{A}:to{B}` becomes
+/// (`\function:on:to`, [`A`, `B`]).
+fn command_type_key_args(key: &str) -> (String, Vec<String>) {
+    let bytes = key.as_bytes();
+    let mut base = String::new();
+    let mut args = Vec::new();
+    let mut index = 0;
+    let mut segment_start = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'{' {
+            base.push_str(&key[segment_start..index]);
+            let mut depth = 1usize;
+            let mut end = index + 1;
+            while end < bytes.len() {
+                match bytes[end] {
+                    b'{' => depth += 1,
+                    b'}' => {
+                        depth -= 1;
+                        if depth == 0 {
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+                end += 1;
+            }
+            args.push(key[index + 1..end].to_string());
+            index = end + 1;
+            segment_start = index;
+        } else {
+            index += 1;
+        }
+    }
+    base.push_str(&key[segment_start..]);
+    (base, args)
 }
 
 fn check_command_context_arguments(

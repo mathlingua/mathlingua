@@ -42,6 +42,16 @@ plain **symbolic** operator `x * y` also desugars to `*(x, y)` when `*` names a
 bound value in scope (otherwise `*`, `+`, … keep their built-in arithmetic
 resolution).
 
+### Stropped Operators As Values
+
+A backtick-stropped operator `` `*` `` now resolves to the operator `*` it names,
+so where `*` is bound (a magma's operation, a tuple component `M ::= (X, *)`, …)
+`` `*` `` is that operator as a first-class value — it carries `*`'s type,
+can be passed as an argument (`\restriction:of{`*`}:…`), and can be invoked in
+function form as `` `*`(a, b) `` (equivalent to `a * b`). Stropping is stripped
+for symbol lookup, keying, and type resolution, so `` `*` `` and `*` denote the
+same symbol.
+
 ### Subscripted Operator Names; Destructuring Spec-Infix Headings
 
 A symbolic operator name may carry a `_`-prefixed subscript, so `*_1`, `+_i`, and

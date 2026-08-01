@@ -3812,6 +3812,79 @@ then:
     }
 
     #[test]
+    fn check_resolves_backtick_stropped_operator_as_a_value() {
+        // A backtick-stropped operator `` `*` `` refers to the bound operator `*`,
+        // so it resolves as a value with `*`'s type and can be invoked in function
+        // form as `` `*`(a, b) ``.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("stropped-operator.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \.set.cross./ B]
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    when: A, B is \set
+    Documented:
+    . written: "A? \times B?"
+
+    [\fn:on{A}:to{B}]
+    Describes: f(x__) ::= y_
+    when: A, B is \set
+    specifies:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . written: "f?"
+
+    [\op:on{X}]
+    Describes: x_ * y_
+    when: X is \set
+    extends: * is \fn:on{X \.set.cross./ X}:to{X}
+    Documented:
+    . written: "\operatorname{op}"
+
+    [\magma]
+    Describes: M ::= (X, *)
+    extends: M is \set via X
+    specifies:
+    . * is \op:on{X}
+    Documented:
+    . written: "\operatorname{magma}"
+
+    Theorem:
+    given:
+    . M ::= (X, *) is \magma
+    . a, b "in" X
+    then:
+    . `*` is? \op:on{X}
+    . `*`(a, b) = a * b
+    Id: "aaaaaaaa-1111-4aaa-8aaa-aaaaaaaaaaaa"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("stropped-operator.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_establishes_spec_requirement_from_providing_capability() {
         // `\grp` provides `x_ "in" G :-> x_ is \grp.elt:of{G}`, so membership and
         // being an element are equivalent. A command requiring `x "in" G` must

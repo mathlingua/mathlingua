@@ -111,7 +111,10 @@ Identifier-like names may contain internal underscores, but must start and end
 with an ASCII letter or digit. Symbolic operator names are a run of operator
 characters from `-~!#%^&*\+=|<>/`, optionally followed by a `_`-prefixed
 subscript (`*_1`, `+_i`, `<=_max`) so operators can be indexed. Stropped symbolic
-names wrap an operator name in backticks.
+names wrap an operator name in backticks: `` `*` `` is the operator `*` referred
+to by name, so where `*` is bound (e.g. a magma's operation) `` `*` `` resolves as
+that operator's value — passable as an argument and invocable in function form as
+`` `*`(a, b) ``.
 
 Placeholders end in `_`, and magnetic placeholders end in `__`.
 

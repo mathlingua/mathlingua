@@ -7477,6 +7477,13 @@ fn unstrop_operator_name(name: &str) -> Option<String> {
         .map(ToOwned::to_owned)
 }
 
+/// The symbol a name resolves to. A backtick-stropped operator (`` `*` ``) is
+/// just the operator (`*`) referred to by name, so stropping is removed for
+/// symbol lookup, keying, and type resolution.
+fn unstropped_name(name: &str) -> String {
+    unstrop_operator_name(name).unwrap_or_else(|| name.to_owned())
+}
+
 fn is_plain_function_name(value: &str) -> bool {
     !value.is_empty()
         && value
@@ -11078,7 +11085,7 @@ impl TypeContext {
     }
 
     fn has_name(&self, name: &str) -> bool {
-        self.symbols.contains(name)
+        self.symbols.contains(name) || self.symbols.contains(&unstropped_name(name))
     }
 
     fn activate_disambiguation(&self, key: &DisambiguationKey) -> Option<Self> {
@@ -13294,7 +13301,7 @@ fn key_for_type_expression_in_context(
 
 fn key_for_expression(expression: &Expression) -> String {
     match &expression.kind {
-        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => name.clone(),
+        ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => unstropped_name(name),
         ExpressionKind::FunctionCall { name, arguments } => {
             format!(
                 "{}({})",

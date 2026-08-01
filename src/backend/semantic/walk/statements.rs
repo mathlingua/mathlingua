@@ -10,6 +10,7 @@ pub(in crate::backend::semantic) fn walk_is_or_via_item(
             walk_form_or_declaration(&statement.via, visit);
         }
         IsOrViaItem::Declaration(statement) => walk_declaration_statement(statement, visit),
+        IsOrViaItem::Have(group) => walk_have_group(group, visit),
     }
 }
 

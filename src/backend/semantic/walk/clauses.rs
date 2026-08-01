@@ -1,5 +1,30 @@
 use super::*;
 
+/// Walks every clause and reference inside a `have:`/`asserting:` group so that
+/// command references in all of `have:`, `asserting:`, `because:`, and `by:` are
+/// reference-validated.
+pub(in crate::backend::semantic) fn walk_have_group(
+    group: &HaveGroup,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
+    for clause in &group.have.arguments {
+        walk_clause(clause, visit);
+    }
+    for clause in &group.asserting.arguments {
+        walk_clause(clause, visit);
+    }
+    if let Some(section) = &group.because {
+        for clause in &section.arguments {
+            walk_clause(clause, visit);
+        }
+    }
+    if let Some(section) = &group.by {
+        for expression in &section.arguments {
+            walk_expression(expression, visit);
+        }
+    }
+}
+
 pub(in crate::backend::semantic) fn walk_clause(
     clause: &Clause,
     visit: &mut impl FnMut(&SignatureShape),
@@ -101,6 +126,7 @@ pub(in crate::backend::semantic) fn walk_clause(
                 walk_clause(clause, visit);
             }
         }
+        Clause::Have(group) => walk_have_group(group, visit),
         Clause::Declaration(statement) => walk_declaration_statement(statement, visit),
         Clause::Expression(expression) => walk_expression(expression, visit),
     }

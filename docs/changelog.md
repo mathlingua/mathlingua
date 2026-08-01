@@ -42,6 +42,31 @@ plain **symbolic** operator `x * y` also desugars to `*(x, y)` when `*` names a
 bound value in scope (otherwise `*`, `+`, … keep their built-in arithmetic
 resolution).
 
+### `have:`/`asserting:`/`because?:`/`by?:` Assertions
+
+A new clause group lets an author supply an explicit assertion where the
+(deliberately simple) type system needs help:
+
+```text
+have: *_1 is \restriction:of{`*`}:on{X1 \.set.cross./ X1}
+asserting: (.X1 \.set.cross./ X1.) \:subset?:/ (.X \.set.cross./ X.)
+because: X1 \:subset?:/ X
+by: \cross.of.subset.is.subset.of.cross#given{X := X; Y := X1}
+```
+
+- `have:` — the specification/statement/expression that would otherwise appear in
+  this position.
+- `asserting:` — one or more items **taken as true**; the checker verifies that,
+  under them, the `have:` item holds (an infix-spec or spec *question* such as
+  `A \:subset?:/ B` is assumed as its `A \:subset:/ B` fact).
+- `because?:` — justification clauses, and `by?:` theorem references
+  (`\thm#given{…}`): these are **not** proven as logical consequences; their
+  command/theorem references are still reference-validated.
+
+It is accepted wherever a clause or specification goes — `specifies:`,
+`satisfies:`, `then:`, `suchThat:`, and so on. `have:`/`iff:` remains the
+shorthand iff clause; the `asserting:` section selects the assertion group.
+
 ### Stropped Operators As Values
 
 A backtick-stropped operator `` `*` `` now resolves to the operator `*` it names,

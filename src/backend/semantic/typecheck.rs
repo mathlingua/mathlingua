@@ -2208,7 +2208,74 @@ fn assume_is_or_via_item(
         IsOrViaItem::Declaration(statement) => {
             assume_declaration_statement(statement, context, path, locator, registry, event_log);
         }
+        // Check the `have:` specification against its `asserting:` facts, then
+        // contribute its typing facts to the surrounding context (this is the
+        // sole pass over `specifies:` items, so the check happens here).
+        IsOrViaItem::Have(group) => {
+            check_have_group(group, context, path, locator, registry, event_log);
+            for statement in have_group_declarations(group) {
+                declare_declaration_statement_subjects(statement, context);
+                for fact in facts_from_declaration_statement_in_context(statement, context) {
+                    context.add_fact(fact);
+                }
+            }
+        }
     }
+}
+
+/// Checks a `have:`/`asserting:` group. The `asserting:` items are taken as true
+/// and used to check the `have:` items; `because:`/`by:` are justification whose
+/// command and theorem references are reference-validated elsewhere but which are
+/// never proven as logical consequences.
+fn check_have_group(
+    group: &HaveGroup,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let mut asserted = context.clone();
+    for clause in &group.asserting.arguments {
+        assume_asserted_clause(clause, &mut asserted, path, locator, registry, event_log);
+    }
+    for clause in &group.have.arguments {
+        check_clause(clause, &asserted, path, locator, registry, event_log);
+    }
+}
+
+/// Assumes an `asserting:` clause as true. Unlike [`assume_clause`], a spec or
+/// infix-spec *question* (`A \:subset?:/ B`) is taken as its underlying fact,
+/// because an assertion states that the statement holds.
+fn assume_asserted_clause(
+    clause: &Clause,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    if let Clause::Expression(expression) = clause
+        && let Some(fact) = asserted_fact_from_expression(expression, context)
+    {
+        let fact = context.normalize_fact(&fact);
+        context.add_fact(fact);
+        return;
+    }
+    assume_clause(clause, context, path, locator, registry, event_log);
+}
+
+/// The fact an `asserting:` item states. Like [`fact_from_expression_in_context`]
+/// but an infix-spec question (`A \:subset?:/ B`) yields its `A \:subset:/ B`
+/// fact rather than being ignored as a mere predicate.
+fn asserted_fact_from_expression(
+    expression: &Expression,
+    context: &TypeContext,
+) -> Option<TypeFact> {
+    if let ExpressionKind::InfixSpecStatement { left, spec, right } = &expression.kind {
+        return fact_from_infix_spec_statement_in_context(left, spec, right, context);
+    }
+    fact_from_expression_in_context(expression, context)
 }
 
 fn declare_describes_target(target: &DescribesTarget, context: &mut TypeContext) {
@@ -2778,6 +2845,11 @@ fn collect_is_or_via_covered_symbols(item: &IsOrViaItem, covered: &mut BTreeSet<
         IsOrViaItem::Declaration(statement) => {
             collect_declaration_statement_covered_symbols(statement, covered);
         }
+        IsOrViaItem::Have(group) => {
+            for statement in have_group_declarations(group) {
+                collect_declaration_statement_covered_symbols(statement, covered);
+            }
+        }
     }
 }
 
@@ -3043,6 +3115,7 @@ fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
                 collect_clause_names(clause, names);
             }
         }
+        Clause::Have(group) => collect_have_group_names(group, names),
         Clause::Declaration(statement) => collect_declaration_statement_names(statement, names),
         Clause::Expression(expression) => collect_expression_names(expression, names),
     }
@@ -3065,6 +3138,27 @@ fn collect_is_or_via_names(item: &IsOrViaItem, names: &mut BTreeSet<String>) {
         }
         IsOrViaItem::Declaration(statement) => {
             collect_declaration_statement_names(statement, names)
+        }
+        IsOrViaItem::Have(group) => collect_have_group_names(group, names),
+    }
+}
+
+/// Collects the names referenced anywhere in a `have:` group.
+fn collect_have_group_names(group: &HaveGroup, names: &mut BTreeSet<String>) {
+    for clause in &group.have.arguments {
+        collect_clause_names(clause, names);
+    }
+    for clause in &group.asserting.arguments {
+        collect_clause_names(clause, names);
+    }
+    if let Some(section) = &group.because {
+        for clause in &section.arguments {
+            collect_clause_names(clause, names);
+        }
+    }
+    if let Some(section) = &group.by {
+        for expression in &section.arguments {
+            collect_expression_names(expression, names);
         }
     }
 }
@@ -3866,6 +3960,9 @@ fn check_clause(
             for clause in &group.then.arguments {
                 check_clause(clause, &child, path, locator, registry, event_log);
             }
+        }
+        Clause::Have(group) => {
+            check_have_group(group, context, path, locator, registry, event_log);
         }
         Clause::Declaration(statement) => {
             check_declaration_statement(statement, context, path, locator, registry, event_log);
@@ -5033,6 +5130,9 @@ fn check_is_or_via_item(
         }
         IsOrViaItem::Declaration(statement) => {
             check_declaration_statement(statement, context, path, locator, registry, event_log);
+        }
+        IsOrViaItem::Have(group) => {
+            check_have_group(group, context, path, locator, registry, event_log);
         }
     }
 }
@@ -12192,6 +12292,9 @@ fn facts_from_is_or_via_item(item: &IsOrViaItem) -> Vec<TypeFact> {
     match item {
         IsOrViaItem::IsVia(statement) => facts_from_is_statement(&statement.is_statement),
         IsOrViaItem::Declaration(statement) => facts_from_declaration_statement(statement),
+        IsOrViaItem::Have(group) => have_group_declarations(group)
+            .flat_map(facts_from_declaration_statement)
+            .collect(),
     }
 }
 
@@ -12204,7 +12307,24 @@ fn facts_from_is_or_via_item_in_context(
         IsOrViaItem::Declaration(statement) => {
             facts_from_declaration_statement_in_context(statement, context)
         }
+        IsOrViaItem::Have(group) => have_group_declarations(group)
+            .flat_map(|statement| facts_from_declaration_statement_in_context(statement, context))
+            .collect(),
     }
+}
+
+/// The declaration statements a `have:` group's `have:` clauses stand for — the
+/// specification the group provides. Non-declaration `have:` clauses (bare
+/// statements or expressions) contribute no typing facts.
+fn have_group_declarations(group: &HaveGroup) -> impl Iterator<Item = &DeclarationStatement> {
+    group
+        .have
+        .arguments
+        .iter()
+        .filter_map(|clause| match clause {
+            Clause::Declaration(statement) => Some(statement),
+            _ => None,
+        })
 }
 
 #[derive(Clone, Debug)]

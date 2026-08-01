@@ -631,6 +631,60 @@ pub(in crate::frontend::structural::parser) fn parse_required_formulations<T>(
 ///
 /// Inline section arguments and formulation arguments are accepted.  Text and
 /// nested groups are diagnosed because callers requested formulation content.
+/// Parses `specifies:` items: inline `is`/`is … via …` specifications, plus
+/// `have:`/`asserting:` groups standing in for a specification the checker cannot
+/// establish on its own.
+fn parse_required_specify_items(
+    section: &ProtoSection,
+    tracker: &mut EventLog,
+) -> Option<OneOrMore<IsOrViaItem>> {
+    let starting_issue_count = tracker.issue_count();
+    let mut result = Vec::new();
+    for entry in section_entries(section) {
+        match entry {
+            SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
+                match parse_is_or_via_item(text) {
+                    Ok(item) => result.push(item),
+                    Err(error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid specifies formulation: {error}"),
+                    ),
+                }
+            }
+            SectionEntry::Group { group, row } => {
+                if group.sections.first().map(|section| section.label.as_str()) == Some("have") {
+                    if let Some(have) = parse_have_group(group, tracker) {
+                        result.push(IsOrViaItem::Have(Box::new(have)));
+                    }
+                } else {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        "Expected a specification or a `have:` group in `specifies`".to_owned(),
+                    );
+                }
+            }
+            SectionEntry::Text { row, .. } => {
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    "Expected formulation in section `specifies`".to_owned(),
+                );
+            }
+        }
+    }
+    one_or_more(result.into(), || {
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                "Expected specifies formulations".to_owned(),
+            );
+        }
+    })
+}
+
 pub(in crate::frontend::structural::parser) fn parse_optional_formulations<T>(
     section: Option<&ProtoSection>,
     label: &str,
@@ -1074,6 +1128,52 @@ pub(super) fn parse_have_clause(group: &ProtoGroup, tracker: &mut EventLog) -> O
     })
 }
 
+/// Dispatches a `have:` clause group. `have:`/`asserting:` is the have-assertion
+/// escape hatch; `have:`/`iff:` is the shorthand iff clause.
+fn parse_have_or_assertion(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Clause> {
+    if group
+        .sections
+        .iter()
+        .any(|section| section.label == "asserting")
+    {
+        parse_have_group(group, tracker).map(|group| Clause::Have(Box::new(group)))
+    } else {
+        parse_have_clause(group, tracker).map(Clause::Iff)
+    }
+}
+
+/// Parses a `have:`/`asserting:`/`because?:`/`by?:` group.
+pub(super) fn parse_have_group(group: &ProtoGroup, tracker: &mut EventLog) -> Option<HaveGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections(
+        "have",
+        &group.sections,
+        tracker,
+        &["have", "asserting", "because?", "by?"],
+    )?;
+    Some(HaveGroup {
+        heading,
+        have: HaveSection {
+            arguments: parse_required_clauses(section(&sections, "have")?, "have", tracker)?,
+        },
+        asserting: AssertingSection {
+            arguments: parse_required_clauses(
+                section(&sections, "asserting")?,
+                "asserting",
+                tracker,
+            )?,
+        },
+        because: sections.get("because").copied().and_then(|section| {
+            parse_required_clauses(section, "because", tracker)
+                .map(|arguments| BecauseSection { arguments })
+        }),
+        by: sections.get("by").copied().and_then(|section| {
+            parse_required_formulations(section, "by", tracker, parse_expression)
+                .map(|arguments| HaveBySection { arguments })
+        }),
+    })
+}
+
 /// Parses a `piecewise:` clause group.
 ///
 /// The leading section may hold descriptive text while `if:` and `then:` are
@@ -1375,7 +1475,7 @@ pub(super) fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> 
         "existsUnique" => parse_exists_unique_clause(group, tracker).map(Clause::ExistsUnique),
         "forAll" => parse_for_all_clause(group, tracker).map(Clause::ForAll),
         "if" => parse_if_clause(group, tracker).map(Clause::If),
-        "have" => parse_have_clause(group, tracker).map(Clause::Iff),
+        "have" => parse_have_or_assertion(group, tracker),
         "piecewise" => parse_piecewise_clause(group, tracker).map(Clause::Piecewise),
         "given" => parse_given_clause(group, tracker).map(Clause::Given),
         "equivalently" => parse_equivalently_clause(group, tracker).map(Clause::Equivalently),
@@ -2680,7 +2780,7 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
                 .map(|argument| ExtendsSection { argument })
         }),
         specifies: sections.get("specifies").copied().and_then(|section| {
-            parse_required_formulations(section, "specifies", tracker, parse_is_or_via_item)
+            parse_required_specify_items(section, tracker)
                 .map(|arguments| DescribesSpecifiesSection { arguments })
         }),
         satisfies: sections.get("satisfies").copied().and_then(|section| {

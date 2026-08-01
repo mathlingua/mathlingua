@@ -411,7 +411,7 @@ If a clause section contains:
 - **`existsUnique`** — `ExistsUniqueGroup`, heading: label?. Sections: `existsUnique: BindingOrSpec`, `suchThat?: Clause+`
 - **`forAll`** — `ForAllGroup`, heading: label?. Sections: `forAll: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
 - **`if`** — `IfGroup`, heading: label?. Sections: `if: Clause+`, `then: Clause+`
-- **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`
+- **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`. A `have:` group whose second section is `asserting:` (rather than `iff:`) is instead a `HaveGroup` (`Clause::Have`): `have: Clause+`, `asserting: Clause+`, `because?: Clause+`, `by?: Expression+` — an escape hatch that asserts the `have:` item holds given the `asserting:` items (also accepted as a `specifies:` item). `because:`/`by:` are justification the checker only reference-validates, never proves.
 - **`piecewise`** — `PiecewiseGroup`, heading: label?. Sections: `piecewise: OpenText*`, `if: Clause+`, `then: Clause+`, `else?: Clause+`
 - **`given`** — `GivenGroup`, heading: label?. Sections: `given: RefinedDeclarationStatement`, `where?: Clause+`, `then: Clause+`
 - **`equivalently`** — `EquivalentlyGroup`, heading: label?. Sections: `equivalently: Clause+`

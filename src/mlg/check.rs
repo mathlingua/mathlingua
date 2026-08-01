@@ -3812,6 +3812,137 @@ then:
     }
 
     #[test]
+    fn check_have_asserting_group_establishes_specification() {
+        // A `have:`/`asserting:` group lets an explicit assertion establish a
+        // specification the checker cannot reach on its own: `\wrap:of{P}:in{Q}`
+        // requires `P \:subset:/ Q`, which the `asserting:` item provides.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("have.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \:subset:/ B]
+    Describes: A
+    when: B is \set
+    extends: A is \set
+    Requires:
+    . capability: x_ "in" A :-> x_ "in" B
+    Documented:
+    . called: "subset of $B?$"
+
+    [\wrap:of{A}:in{B}]
+    Defines: w "in" B
+    when:
+    . A is \set
+    . B is \set
+    . A \:subset:/ B
+    Documented:
+    . called: "wrap"
+
+    [\pair.thm]
+    Theorem:
+    given: P, Q is \set
+    then: P is? \set
+    Id: "cccccccc-1111-4ccc-8ccc-cccccccccccc"
+
+    [\thing:on{P}:and{Q}]
+    Describes: t
+    when: P, Q is \set
+    specifies:
+    . have: t is \wrap:of{P}:in{Q}
+      asserting: P \:subset?:/ Q
+      because: P is? \set
+      by: \pair.thm#given{P := P; Q := Q}
+    Documented:
+    . called: "thing"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("have.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_have_asserting_group_requires_the_assertion_to_establish_have() {
+        // If the `asserting:` items do not establish the `have:` item, the
+        // requirement is still reported.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("have-insufficient.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \:subset:/ B]
+    Describes: A
+    when: B is \set
+    extends: A is \set
+    Requires:
+    . capability: x_ "in" A :-> x_ "in" B
+    Documented:
+    . called: "subset of $B?$"
+
+    [\wrap:of{A}:in{B}]
+    Defines: w "in" B
+    when:
+    . A is \set
+    . B is \set
+    . A \:subset:/ B
+    Documented:
+    . called: "wrap"
+
+    [\thing:on{P}:and{Q}]
+    Describes: t
+    when: P, Q is \set
+    specifies:
+    . have: t is \wrap:of{P}:in{Q}
+      asserting: P is? \set
+    Documented:
+    . called: "thing"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("have-insufficient.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log).iter().any(|event| event
+                .as_message()
+                .is_some_and(|message| message.message.contains("`P \\:subset:/ Q`"))),
+            "expected the unestablished requirement to be reported: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
     fn check_resolves_backtick_stropped_operator_as_a_value() {
         // A backtick-stropped operator `` `*` `` refers to the bound operator `*`,
         // so it resolves as a value with `*`'s type and can be invoked in function

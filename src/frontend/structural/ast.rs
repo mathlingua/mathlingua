@@ -223,6 +223,10 @@ arguments_section!(GivenSection, DeclarationStatement);
 arguments_section!(WhereSection, Clause);
 arguments_section!(ThenSection, Clause);
 arguments_section!(IffSection, Clause);
+arguments_section!(HaveSection, Clause);
+arguments_section!(AssertingSection, Clause);
+arguments_section!(BecauseSection, Clause);
+arguments_section!(HaveBySection, Expression);
 argument_section!(AliasSection, AliasKind);
 arguments_section!(WrittenSection, WrittenText);
 argument_section!(CapabilitySection, AliasKind);
@@ -349,6 +353,7 @@ pub enum Clause {
     Equivalently(EquivalentlyGroup),
     Piecewise(PiecewiseGroup),
     Given(GivenGroup),
+    Have(Box<HaveGroup>),
     Declaration(DeclarationStatement),
     Expression(Expression),
 }
@@ -357,6 +362,9 @@ pub enum Clause {
 pub enum IsOrViaItem {
     IsVia(IsViaStatement),
     Declaration(DeclarationStatement),
+    /// A `have:`/`asserting:` group standing in for a specification the checker
+    /// cannot establish on its own (allowed in `specifies:`).
+    Have(Box<HaveGroup>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -743,6 +751,20 @@ pub struct IffGroup {
     pub heading: Option<LabelHeader>,
     pub iff: IffSection,
     pub then: ThenSection,
+}
+
+/// A `have:`/`asserting:`/`because?:`/`by?:` group: an escape hatch that states an
+/// item (`have:`) the checker cannot establish on its own, together with facts
+/// (`asserting:`) it may take as true to establish it, and optional justification
+/// (`because?:` clauses, `by?:` theorem references) that the checker only
+/// well-forms rather than proves.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HaveGroup {
+    pub heading: Option<LabelHeader>,
+    pub have: HaveSection,
+    pub asserting: AssertingSection,
+    pub because: Option<BecauseSection>,
+    pub by: Option<HaveBySection>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

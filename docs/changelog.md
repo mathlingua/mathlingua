@@ -5,6 +5,27 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## `Text*` Prose Placeholders
+
+Four new top-level groups — `TextTheorem:`, `TextAxiom:`, `TextConjecture:`, and
+`TextDefinition:` — hold a Markdown-with-LaTeX body standing in for a structured
+theorem/axiom/conjecture/definition to be written later. Each accepts an optional
+`Documented:` (restricted to `called:`, `written:`, `description:`, and the new
+`notes:` item), an optional `References:`, and a required `Id:`.
+
+They are **opaque to the type-checker**: the body is never parsed as MathLingua,
+so it may mention commands that do not exist yet, and the walker validates no
+references inside them. Their purpose is to let an author lay out a collection's
+prose, citations, and structure first — then fill in structured forms, which is
+easier than going from nothing to structured groups. `notes:` records reminders
+for that later conversion.
+
+In the rendered view a placeholder is a card titled by its `called:`/`written:`
+(or the kind word — "Theorem", "Definition", … — when untitled), with the body
+as rendered Markdown, `References:` visible, and `Documented:`/`Id:` behind the
+supporting-sections toggle. The `notes:` documentation item is also accepted in
+any `Documented:` section.
+
 ## `Justification:` Section And Labeled Specifications
 
 The former `Justified:` section (which held `label:`/`by:` prose notes) is

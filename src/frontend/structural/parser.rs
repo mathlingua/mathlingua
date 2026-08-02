@@ -1969,6 +1969,21 @@ pub(in crate::frontend::structural::parser) fn parse_discoverer(
     })
 }
 
+/// Parses a `notes:` documentation item (one or more prose reminders).
+pub(in crate::frontend::structural::parser) fn parse_notes(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<NotesGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("notes", &group.sections, tracker, &["notes"])?;
+    Some(NotesGroup {
+        heading,
+        notes: NotesSection {
+            arguments: parse_required_open_texts(section(&sections, "notes")?, "notes", tracker)?,
+        },
+    })
+}
+
 // ===============================[ resource_items ]=====================================
 
 /// Parses a resource `title:` item.
@@ -2361,6 +2376,18 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
         "Relation" => parse_relation(group, tracker).map(TopLevelItem::Relation),
         "Equivalent" => parse_equivalent(group, tracker).map(TopLevelItem::Equivalent),
         "Topic" => parse_topic(group, tracker).map(TopLevelItem::Topic),
+        "TextTheorem" => {
+            parse_text_item(group, tracker, TextItemKind::Theorem).map(TopLevelItem::TextItem)
+        }
+        "TextAxiom" => {
+            parse_text_item(group, tracker, TextItemKind::Axiom).map(TopLevelItem::TextItem)
+        }
+        "TextConjecture" => {
+            parse_text_item(group, tracker, TextItemKind::Conjecture).map(TopLevelItem::TextItem)
+        }
+        "TextDefinition" => {
+            parse_text_item(group, tracker, TextItemKind::Definition).map(TopLevelItem::TextItem)
+        }
         other => {
             tracker.user_error_at_row(
                 Some(ORIGIN),
@@ -3398,6 +3425,72 @@ pub(super) fn parse_topic_documented_item_group(
     }
 }
 
+/// Dispatches the `Documented:` items allowed on a `Text*` placeholder group:
+/// `called:`, `written:`, `description:`, and `notes:`.
+pub(super) fn parse_text_documented_item_group(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<DocumentedItem> {
+    match first_section_label(group)? {
+        "called" => parse_called(group, tracker).map(DocumentedItem::Called),
+        "written" => parse_written(group, tracker).map(DocumentedItem::Written),
+        "description" => parse_description(group, tracker).map(DocumentedItem::Description),
+        "notes" => parse_notes(group, tracker).map(DocumentedItem::Notes),
+        other => {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                group.metadata.row,
+                format!(
+                    "`Text*` documentation only accepts `called:`, `written:`, `description:`, \
+                     and `notes:`, not `{other}:`"
+                ),
+            );
+            None
+        }
+    }
+}
+
+/// Parses one of the opaque `Text*` placeholder groups (`TextTheorem:`,
+/// `TextAxiom:`, `TextConjecture:`, `TextDefinition:`). The leading section holds
+/// a markdown-with-LaTeX body; `Documented?:`/`References?:` are optional and
+/// `Id:` is required.
+pub(in crate::frontend::structural::parser) fn parse_text_item(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+    kind: TextItemKind,
+) -> Option<TextItemGroup> {
+    ensure_no_heading(group, tracker)?;
+    let label = kind.label();
+    let sections = identify_sections(
+        label,
+        &group.sections,
+        tracker,
+        &[label, "Documented?", "References?", "Id"],
+    )?;
+    Some(TextItemGroup {
+        kind,
+        text: TextItemSection {
+            argument: parse_required_open_text(section(&sections, label)?, label, tracker)?,
+        },
+        documented: sections.get("Documented").copied().and_then(|section| {
+            parse_required_groups(
+                section,
+                "Documented",
+                tracker,
+                parse_text_documented_item_group,
+            )
+            .map(|arguments| DocumentedSection { arguments })
+        }),
+        references: sections.get("References").copied().and_then(|section| {
+            parse_required_formulations(section, "References", tracker, parse_resource_header)
+                .map(|arguments| ReferencesSection { arguments })
+        }),
+        id: IdSection {
+            argument: parse_required_open_text(section(&sections, "Id")?, "Id", tracker)?,
+        },
+    })
+}
+
 // ===============================[ theorems ]=====================================
 
 /// Parses an `Axiom:` group using the shared theorem-like parser.
@@ -3761,7 +3854,8 @@ mod tests {
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, DescribesTarget, Document, DocumentedItem, EnablesItem,
         IsOrViaItem, MetadataItem, RelationKind, RelationMeans, RelationSubject,
-        RelationshipDeclaration, RequiresItem, ResourceItem, SpecifyItem, TopLevelItem,
+        RelationshipDeclaration, RequiresItem, ResourceItem, SpecifyItem, TextItemKind,
+        TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -4577,6 +4671,58 @@ Documented:
                 assert!(group.documented.is_some());
             }
             other => panic!("expected Topic item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_text_item_placeholders() {
+        let document = parse_ok(
+            r#"
+TextTheorem: "For every group $G$, the identity is **unique**."
+Documented:
+. called: "Uniqueness of identity"
+. written: "\text{Uniqueness}"
+. description: "A placeholder."
+. notes: "Use \group once defined."
+. notes: "Cross-reference the monoid version."
+References:
+. $book.algebra
+Id: "11111111-1111-4111-8111-111111111111"
+
+TextDefinition: "A **prime** is a natural number with exactly two divisors."
+Id: "22222222-2222-4222-8222-222222222222"
+"#,
+        );
+
+        match &document.items[0] {
+            TopLevelItem::TextItem(group) => {
+                assert_eq!(group.kind, TextItemKind::Theorem);
+                assert!(group.text.argument.0.contains("identity is"));
+                let documented = group.documented.as_ref().expect("expected Documented");
+                assert!(matches!(documented.arguments[0], DocumentedItem::Called(_)));
+                let notes: Vec<_> = documented
+                    .arguments
+                    .iter()
+                    .filter_map(|item| match item {
+                        DocumentedItem::Notes(notes) => Some(notes),
+                        _ => None,
+                    })
+                    .collect();
+                assert_eq!(notes.len(), 2);
+                assert_eq!(notes[0].notes.arguments.len(), 1);
+                assert!(group.references.is_some());
+                assert_eq!(group.id.argument.0, "11111111-1111-4111-8111-111111111111");
+            }
+            other => panic!("expected TextItem, got {other:?}"),
+        }
+
+        match &document.items[1] {
+            TopLevelItem::TextItem(group) => {
+                assert_eq!(group.kind, TextItemKind::Definition);
+                assert!(group.documented.is_none());
+                assert_eq!(group.id.argument.0, "22222222-2222-4222-8222-222222222222");
+            }
+            other => panic!("expected TextItem, got {other:?}"),
         }
     }
 

@@ -392,6 +392,37 @@ parentheses), and its purpose.
 - **`Topic`** (topic heading) — names a documentation topic (`#some.name`);
   optional `within:` parent and `Related:` links (quoted
   `"#topic"`/`"\signature"` references).
+- **`TextTheorem`** / **`TextAxiom`** / **`TextConjecture`** / **`TextDefinition`**
+  (no heading) — opaque prose placeholders (see below).
+
+### Text placeholders
+
+`TextTheorem:`, `TextAxiom:`, `TextConjecture:`, and `TextDefinition:` each hold a
+Markdown-with-LaTeX body standing in for a structured
+theorem/axiom/conjecture/definition that will be written later. They are **opaque
+to the type-checker** — the body is never parsed as MathLingua, so it may freely
+mention commands that do not exist yet.
+
+```text
+TextTheorem: "For every group $G$, the identity element is **unique**."
+Documented:
+. called: "Uniqueness of identity"
+. written: "\text{Uniqueness of the identity}"
+. description: "A placeholder for the uniqueness theorem."
+. notes: "Turn this into a structured Theorem once \group exists."
+References:
+. $book.algebra
+Id: "…"
+```
+
+The optional `Documented:` accepts only `called:`, `written:`, `description:`,
+and `notes:`; `References:` records the citations to carry into the structured
+form; `Id:` is required. `notes:` are prose reminders for the later conversion.
+Writing the prose, references, and layout first — then filling in structured
+forms — is easier than going from nothing straight to structured groups. A
+placeholder renders as a card titled by its `called:`/`written:` (or the kind
+word when untitled), with the body as rendered Markdown and `Documented:` behind
+the supporting-sections toggle.
 
 Groups with command headings introduce command signatures: `Describes`,
 `Defines`, `Refines`, `States`, `Equivalent`, and theorem-like groups that have

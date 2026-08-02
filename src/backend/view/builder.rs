@@ -256,8 +256,10 @@ fn group_view(
                 registry,
             )
         })
-        .or_else(|| theorem_like_heading_latex(&kind, group.heading.as_deref(), &group.sections));
-    let body_text = person_body_text(&kind, &group.sections);
+        .or_else(|| theorem_like_heading_latex(&kind, group.heading.as_deref(), &group.sections))
+        .or_else(|| text_item_heading_latex(&kind, &group.sections));
+    let body_text =
+        person_body_text(&kind, &group.sections).or_else(|| text_item_body(&kind, &group.sections));
 
     GroupView {
         id,
@@ -387,6 +389,49 @@ fn person_body_text(kind: &str, sections: &[ProtoSection]) -> Option<String> {
         .and_then(section_text)
         .map(|text| unindent_text(&text))
         .filter(|text| !text.trim().is_empty())
+}
+
+/// The human-readable kind word for a `Text*` placeholder group, or `None` for
+/// any other group.
+fn text_item_kind_word(kind: &str) -> Option<&'static str> {
+    match kind {
+        "TextTheorem" => Some("Theorem"),
+        "TextAxiom" => Some("Axiom"),
+        "TextConjecture" => Some("Conjecture"),
+        "TextDefinition" => Some("Definition"),
+        _ => None,
+    }
+}
+
+/// The markdown-with-LaTeX body of a `Text*` placeholder, rendered as the card's
+/// prose body. `None` for any other group.
+fn text_item_body(kind: &str, sections: &[ProtoSection]) -> Option<String> {
+    text_item_kind_word(kind)?;
+    sections
+        .iter()
+        .find(|section| section.label == kind)
+        .and_then(section_text)
+        .map(|text| unindent_text(&text))
+        .filter(|text| !text.trim().is_empty())
+}
+
+/// A `Text*` placeholder card's title: its `Documented:` `called:`/`written:`
+/// forms when present, otherwise the kind word (`Theorem`, `Definition`, …) so an
+/// untitled placeholder is still labeled. `None` for any other group.
+fn text_item_heading_latex(kind: &str, sections: &[ProtoSection]) -> Option<String> {
+    let kind_word = text_item_kind_word(kind)?;
+    let (called, written) = documented_title_forms(sections);
+    let called_latex = called
+        .as_deref()
+        .and_then(|text| render_documented_text_latex("called", text));
+    let written_latex = written
+        .as_deref()
+        .and_then(|text| render_documented_text_latex("written", text));
+    let title = match (called_latex, written_latex) {
+        (Some(called), Some(written)) => Some(join_title_parts(&called, &written)),
+        (called, written) => called.or(written),
+    };
+    Some(title.unwrap_or_else(|| format!("\\textrm{{{kind_word}}}")))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -608,11 +653,7 @@ fn argument_view(
                 ),
                 None => (
                     None,
-                    render_argument_formulation_latex(
-                        section_label,
-                        &formulation.text,
-                        registry,
-                    ),
+                    render_argument_formulation_latex(section_label, &formulation.text, registry),
                 ),
             };
             ArgumentView::Formulation {
@@ -682,7 +723,11 @@ fn split_labeled_formulation(text: &str) -> Option<(Vec<String>, &str)> {
     let inner = grouped
         .strip_prefix("(.")
         .and_then(|rest| rest.strip_suffix(".)"))
-        .or_else(|| grouped.strip_prefix('(').and_then(|rest| rest.strip_suffix(')')))?;
+        .or_else(|| {
+            grouped
+                .strip_prefix('(')
+                .and_then(|rest| rest.strip_suffix(')'))
+        })?;
     Some((parts, inner.trim()))
 }
 
@@ -1220,7 +1265,10 @@ Id: "44444444-4444-4444-8444-444444444444"
         // The same order holds when `written:` is listed first.
         assert_eq!(
             view.files[0].items[1].heading_latex,
-            Some(r#"\textrm{Reflexivity again}\quad\htmlClass{mlg-title-written}{Y = Y}"#.to_string())
+            Some(
+                r#"\textrm{Reflexivity again}\quad\htmlClass{mlg-title-written}{Y = Y}"#
+                    .to_string()
+            )
         );
         // Only a written form: the title is that form alone, with no separator.
         assert_eq!(

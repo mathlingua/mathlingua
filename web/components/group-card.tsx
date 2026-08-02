@@ -292,12 +292,24 @@ function isSupportSection(section: SectionView): boolean {
   );
 }
 
+/** The four opaque `Text*` placeholder group kinds. */
+function isTextItemKind(kind: string): boolean {
+  return (
+    kind === "TextTheorem" ||
+    kind === "TextAxiom" ||
+    kind === "TextConjecture" ||
+    kind === "TextDefinition"
+  );
+}
+
 /** Sections rendered as first-class card title/body content. */
 function isCardBodySection(groupKind: string, section: SectionView): boolean {
   return (
     (groupKind === "Person" &&
       (section.label === "Person" || section.label === "biography")) ||
-    (groupKind === "Resource" && section.label === "Resource")
+    (groupKind === "Resource" && section.label === "Resource") ||
+    // A `Text*` placeholder's body section renders as the card's markdown body.
+    (isTextItemKind(groupKind) && section.label === groupKind)
   );
 }
 

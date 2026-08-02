@@ -4017,6 +4017,41 @@ then:
     }
 
     #[test]
+    fn check_treats_text_placeholder_groups_as_opaque() {
+        // `Text*` placeholders are opaque prose: their markdown/LaTeX body is never
+        // parsed as MathLingua, so `\group` (undefined here) raises no diagnostic.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("placeholder.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"TextTheorem: "In every $\group$ the identity is unique."
+    Documented:
+    . called: "Uniqueness of identity"
+    . notes: "Turn this into a structured Theorem once \group exists."
+    Id: "11111111-1111-4111-8111-111111111111"
+
+    TextDefinition: "A **prime** has exactly two divisors."
+    Id: "22222222-2222-4222-8222-222222222222"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("placeholder.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_labeled_specification_is_established_by_a_justification_entry() {
         // A labeled specification `(.t is \wrap:of{P}:in{Q}.)[:1:]` is established by
         // the `Justification:` entry `[1]`, whose `have:` restates it and whose

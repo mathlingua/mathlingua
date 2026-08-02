@@ -1707,7 +1707,9 @@ fn validate_top_level_item_types(
         | TopLevelItem::Resource(_)
         // A `Topic:` only names a documentation topic (heading, prose, optional
         // parent, optional rendering override); there is nothing to type-check.
-        | TopLevelItem::Topic(_) => {}
+        | TopLevelItem::Topic(_)
+        // `Text*` placeholders are opaque prose; the checker never inspects them.
+        | TopLevelItem::TextItem(_) => {}
     }
 }
 

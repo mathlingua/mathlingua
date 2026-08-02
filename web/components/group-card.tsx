@@ -287,6 +287,7 @@ function isSupportSection(section: SectionView): boolean {
     section.label === "Documented" ||
     section.label === "Enables" ||
     section.label === "Provides" ||
+    section.label === "Justification" ||
     section.label === "Id"
   );
 }

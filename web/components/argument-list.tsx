@@ -29,7 +29,28 @@ export function ArgumentList({
           key={`${argument.kind}-${index}`}
         >
           {argument.kind === "formulation" ? (
-            argument.latex ? (
+            argument.label ? (
+              <div className={styles.labeledFormulation}>
+                {argument.latex ? (
+                  <span
+                    className={`${styles.formulationLine} ${styles.formulationLineLatex}`}
+                  >
+                    <LatexRenderer
+                      latex={argument.latex}
+                      onReferenceClick={onReferenceClick}
+                    />
+                  </span>
+                ) : (
+                  <MathLinguaInline
+                    className={styles.formulationLine}
+                    text={argument.text}
+                  />
+                )}
+                <span className={styles.formulationLabel}>
+                  [{argument.label}]
+                </span>
+              </div>
+            ) : argument.latex ? (
               <span
                 className={`${styles.formulationLine} ${styles.formulationLineLatex}`}
               >

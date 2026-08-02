@@ -61,6 +61,11 @@ pub enum ArgumentView {
     Formulation {
         text: String,
         latex: Option<String>,
+        /// The `[:label:]` of a labeled specification (e.g. `1` for `(.….)[:1:]`),
+        /// rendered as a right-justified tag beside the formulation. `None` for an
+        /// ordinary formulation.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        label: Option<String>,
     },
     Text {
         text: String,

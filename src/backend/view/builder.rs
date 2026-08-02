@@ -597,10 +597,30 @@ fn argument_view(
     documented_render_kind: Option<DocumentedRenderKind>,
 ) -> ArgumentView {
     match argument {
-        ProtoArgument::Formulation(formulation) => ArgumentView::Formulation {
-            latex: render_argument_formulation_latex(section_label, &formulation.text, registry),
-            text: formulation.text,
-        },
+        ProtoArgument::Formulation(formulation) => {
+            // A labeled specification `(.spec.)[:label:]` renders as the inner
+            // `spec` (the expression parser rejects the labeled/grouped wrapper,
+            // and an operator subject) with the label shown as a separate tag.
+            let (label, latex) = match split_labeled_formulation(&formulation.text) {
+                Some((parts, inner)) => (
+                    Some(parts.join(".")),
+                    render_argument_formulation_latex(section_label, inner, registry),
+                ),
+                None => (
+                    None,
+                    render_argument_formulation_latex(
+                        section_label,
+                        &formulation.text,
+                        registry,
+                    ),
+                ),
+            };
+            ArgumentView::Formulation {
+                latex,
+                label,
+                text: formulation.text,
+            }
+        }
         ProtoArgument::Text(text) => {
             let latex = documented_render_kind
                 .and_then(|kind| render_documented_template_argument(kind, &text.text));
@@ -637,6 +657,33 @@ fn render_argument_formulation_latex(
     } else {
         render_formulation_latex(text, registry)
     }
+}
+
+/// Splits a labeled specification `(.spec.)[:label.parts:]` into its label parts
+/// and the inner `spec` source, mirroring the structural parser's recognition so
+/// the view can render the inner and show the label separately. Returns `None`
+/// when `text` is not a labeled grouped specification.
+fn split_labeled_formulation(text: &str) -> Option<(Vec<String>, &str)> {
+    let body = text.trim().strip_suffix(":]")?;
+    let label_start = body.rfind("[:")?;
+    let label_body = &body[label_start + 2..];
+    if label_body.is_empty()
+        || !label_body.split('.').all(|part| {
+            !part.is_empty()
+                && part
+                    .chars()
+                    .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+        })
+    {
+        return None;
+    }
+    let parts = label_body.split('.').map(str::to_owned).collect();
+    let grouped = body[..label_start].trim();
+    let inner = grouped
+        .strip_prefix("(.")
+        .and_then(|rest| rest.strip_suffix(".)"))
+        .or_else(|| grouped.strip_prefix('(').and_then(|rest| rest.strip_suffix(')')))?;
+    Some((parts, inner.trim()))
 }
 
 // ===============================[ tests ]=====================================

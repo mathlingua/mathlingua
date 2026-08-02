@@ -52,6 +52,28 @@
   font-family: var(--font-body);
 }
 
+/* A labeled specification: the formulation on the left, its `[:label:]` tag
+   pushed to the right edge of the row. */
+.labeledFormulation {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.labeledFormulation .formulationLine {
+  flex: 1 1 auto;
+}
+
+.formulationLabel {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--muted-ink, #6b7280);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .textLine {
   min-width: 0;
   max-width: 100%;

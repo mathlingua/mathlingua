@@ -122,6 +122,11 @@ export type ArgumentView =
       text: string;
       /** Backend-rendered LaTeX when parsing and rendering succeeded. */
       latex: string | null;
+      /**
+       * The `[:label:]` of a labeled specification (e.g. `1`), shown as a
+       * right-justified tag. Absent for an ordinary formulation.
+       */
+      label?: string | null;
     }
   | {
       /** Plain text arguments render as prose. */

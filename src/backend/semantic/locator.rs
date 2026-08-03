@@ -442,18 +442,29 @@ fn infix_spec_match_end(source: &str, offset: usize, signature: &str) -> Option<
     let first = parts.first()?;
     let mut remaining = source.get(offset..)?.strip_prefix("\\:")?;
     if !remaining.starts_with(first) {
-        return None;
+        let wrapped = remaining.starts_with('(');
+        if !wrapped {
+            return None;
+        }
+        remaining = &remaining[1..];
+        remaining = remaining.strip_prefix(first)?;
+        remaining = remaining.strip_prefix(')')?;
+    } else {
+        remaining = &remaining[first.len()..];
     }
-    remaining = &remaining[first.len()..];
     remaining = skip_argument_groups(remaining);
 
     for part in parts.iter().skip(1) {
         let after_colon = remaining.strip_prefix(':')?;
-        let after_marker = after_colon.strip_prefix('?').unwrap_or(after_colon);
-        if !after_marker.starts_with(part) {
-            return None;
+        remaining = after_colon.strip_prefix('?').unwrap_or(after_colon);
+        let wrapped = remaining.starts_with('(');
+        if wrapped {
+            remaining = &remaining[1..];
         }
-        remaining = &after_marker[part.len()..];
+        remaining = remaining.strip_prefix(part)?;
+        if wrapped {
+            remaining = remaining.strip_prefix(')')?;
+        }
         remaining = skip_argument_groups(remaining);
     }
 

@@ -11,6 +11,11 @@ pub(super) fn command_header_signature(header: &CommandHeader) -> String {
             format!("\\.{}./", format_chain(&command.chain))
         }
         CommandHeader::InfixSpec(spec) => {
+            if let Some(command) = refined_command_header_for_infix_spec(spec) {
+                return wrap_refined_infix_spec_signature(&refined_command_header_signature(
+                    &command,
+                ));
+            }
             let mut signature = format!("\\:{}", format_chain(&spec.chain));
             add_header_tail_signature(&mut signature, &spec.tail);
             signature.push_str(":/");
@@ -79,6 +84,22 @@ pub(super) fn infix_command_header_signatures(
 }
 
 pub(super) fn infix_spec_header_signatures(spec: &InfixSpecHeader) -> Vec<CommandHeaderSignature> {
+    if let Some(command) = refined_command_header_for_infix_spec(spec) {
+        let left_parameters = infix_operand_parameters(Some(&spec.left));
+        let right_parameters = infix_operand_parameters(Some(&spec.right));
+        return refined_command_header_signatures(&command)
+            .into_iter()
+            .map(|mut signature| {
+                signature.signature = wrap_refined_infix_spec_signature(&signature.signature);
+                let mut parameters = left_parameters.clone();
+                parameters.extend(signature.parameters);
+                parameters.extend(right_parameters.clone());
+                signature.parameters = parameters;
+                signature
+            })
+            .collect();
+    }
+
     let base_signature = format!("\\:{}", format_chain(&spec.chain));
     let mut base_parameters = infix_operand_parameters(Some(&spec.left));
     base_parameters.extend(heading_group_parameters(&spec.head_args));
@@ -96,6 +117,23 @@ pub(super) fn infix_spec_header_signatures(spec: &InfixSpecHeader) -> Vec<Comman
             }
         })
         .collect()
+}
+
+fn refined_command_header_for_infix_spec(spec: &InfixSpecHeader) -> Option<RefinedCommandHeader> {
+    let refinement = spec.refinement.as_ref()?;
+    Some(RefinedCommandHeader {
+        span: spec.span,
+        prefix_chain: refinement.prefix_chain.clone(),
+        parts: refinement.parts.clone(),
+        refined_tail: RefinedTail::Chain(spec.chain.clone()),
+        head_args: spec.head_args.clone(),
+        tail: spec.tail.clone(),
+        paren_args: Vec::new(),
+    })
+}
+
+fn wrap_refined_infix_spec_signature(signature: &str) -> String {
+    format!("\\:{}:/", signature.strip_prefix('\\').unwrap_or(signature))
 }
 
 pub(super) fn refined_command_header_signatures(
@@ -164,6 +202,34 @@ pub(super) fn infix_command_signature(command: &InfixCommand) -> String {
 }
 
 pub(super) fn infix_spec_signature(spec: &InfixSpec) -> String {
+    if let Some(refinement) = &spec.refinement {
+        let command = RefinedCommandExpression {
+            span: spec.span,
+            prefix_chain: refinement.prefix_chain.clone(),
+            parts: refinement.parts.clone(),
+            refined_tail: RefinedTail::Chain(spec.chain.clone()),
+            head_args: spec.head_args.clone(),
+            tail: spec.tail.clone(),
+            paren_args: Vec::new(),
+        };
+        let mut signature = "\\".to_owned();
+        if let Some(prefix) = &command.prefix_chain {
+            signature.push_str(&format_chain(prefix));
+            signature.push_str("::");
+        }
+        for (index, part) in command.parts.iter().enumerate() {
+            if index > 0 {
+                signature.push_str("::");
+            }
+            signature.push_str(&format_chain(&part.chain));
+            add_expression_tail_signature(&mut signature, &part.tail);
+        }
+        signature.push_str("::");
+        signature.push_str(&refined_tail_signature(&command.refined_tail));
+        add_expression_tail_signature(&mut signature, &command.tail);
+        return wrap_refined_infix_spec_signature(&signature);
+    }
+
     let mut signature = format!("\\:{}", format_chain(&spec.chain));
     add_expression_tail_signature(&mut signature, &spec.tail);
     signature.push_str(":/");

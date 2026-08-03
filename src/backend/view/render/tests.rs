@@ -1,6 +1,6 @@
 use super::{
     build_render_registry, render_documented_text_latex, render_formulation_latex,
-    render_group_heading_latex,
+    render_group_heading_latex, render_group_parameter_destructurings,
 };
 use crate::events::EventLog;
 use crate::frontend::{
@@ -392,6 +392,38 @@ Documented:
 }
 
 #[test]
+fn destructured_parameters_render_as_base_names_in_titles_with_separate_destructuring_lines() {
+    // A definition whose header parameters are destructured (`H ::= (X', *', e')`)
+    // keeps the plain names in its card title (`H \leq G`) and surfaces the
+    // destructuring as separate lines; an expression use also uses plain names.
+    let registry = registry_for(
+        r#"[H ::= (X', *', e') \:submagma:/ G ::= (X, *, e)]
+Describes: H ::= (X', *', e')
+Documented:
+. written: "H? \leq G?"
+"#,
+    );
+
+    let heading = r#"H ::= (X', *', e') \:submagma:/ G ::= (X, *, e)"#;
+
+    assert_eq!(
+        render_group_heading_latex("Describes", Some(heading), None, &registry),
+        Some(r#"H \leq G"#.to_string())
+    );
+    assert_eq!(
+        render_group_parameter_destructurings("Describes", Some(heading), &registry),
+        vec![
+            r#"H ::= \left(X', *', e'\right)"#.to_string(),
+            r#"G ::= \left(X, \ast, e\right)"#.to_string(),
+        ]
+    );
+    assert_eq!(
+        render_formulation_latex(r#"A \:submagma:/ B"#, &registry),
+        Some(r#"A \leq B"#.to_string())
+    );
+}
+
+#[test]
 fn renders_plain_called_placeholders_in_group_headings() {
     let registry = registry_for(
         r#"[A \:subset:/ B]
@@ -453,6 +485,37 @@ Documented:
             &registry
         ),
         Some(r#"\textrm{continuous}\textrm{ }\textrm{function on }A\textrm{ to }B"#.to_string())
+    );
+}
+
+#[test]
+fn renders_refined_spec_infix_headings_and_expressions() {
+    let registry = registry_for(
+        r#"[A \:subset:/ B]
+Describes: A
+Documented:
+. called: "$A?$ subset of $B?$"
+
+[A \:(nonempty)::subset:/ B]
+Refines: A
+Documented:
+. adjective: "nonempty"
+. written: "A? \subsetneq B?"
+"#,
+    );
+
+    assert_eq!(
+        render_group_heading_latex(
+            "Refines",
+            Some(r#"A \:(nonempty)::subset:/ B"#),
+            Some("A"),
+            &registry,
+        ),
+        Some(r#"\textrm{nonempty}\textrm{ }A\textrm{ subset of }B"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"X' \:(nonempty)::subset:/ X"#, &registry),
+        Some(r#"X' \subsetneq X"#.to_string())
     );
 }
 

@@ -381,8 +381,8 @@ parentheses), and its purpose.
   form.
 - **`Defines`** (command heading) — defines a statement, specification, or type
   fact.
-- **`Refines`** (command heading) — defines a refined command in terms of
-  another command.
+- **`Refines`** (refined command or refined spec-infix heading) — defines a
+  refined command in terms of another command.
 - **`States`** (command heading) — defines a named statement with a `that:`
   body.
 - **`Axiom`** (optional command heading) — theorem-like assertion.
@@ -490,10 +490,35 @@ It accepts `using:`, `when:`, `expresses:`, and the same support sections as
 
 ```text
 [\(continuous)::function:on{A}:to{B}]
-Refines: f(x__) is \function:on{A}:to{B}
+Refines: f(x__)
 Documented:
-. called: "continuous"
+. adjective: "continuous"
 ```
+
+A specification operator declared with a `\:...:/` heading can be refined with
+the same parenthesized refinement syntax. The base operator is inferred from
+the heading, just as it is for an ordinary refined command:
+
+```text
+[A \:(nonempty)::subset:/ B]
+Refines: A
+when: B is \set
+Documented:
+. adjective: "nonempty"
+. written: "A? \subset_{+} B?"
+```
+
+The refined operator can then be used in declarations and expressions:
+
+```text
+. X' \:(nonempty)::subset:/ X
+```
+
+An explicit refined spec-infix definition is not required when the refinement
+is inherited through the base operator's `extends:` type. If `\:subset:/`
+extends its left operand to `\set` and `\(nonempty)::set` is defined, then
+`X' \:(nonempty)::subset:/ X` resolves implicitly. It establishes both the base
+`X' \:subset:/ X` fact and `X' is \(nonempty)::set`.
 
 #### `Refines` Refinement Markers (`implicitly:`/`explicitly:`)
 

@@ -11,9 +11,10 @@ use super::ast::{
     DeclarationRelation, DeclarationStatement, Expression, ExpressionAlias, ExpressionAliasLhs,
     ExpressionBinding, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionType,
     FunctionTypeSpec, FunctionTypeSpecKind, HardCastStatement, InfixCommandHeader, InfixSpec,
-    InfixSpecHeader, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm,
-    IsSubjectKind, IsViaStatement, LabelHeader, MemberAliasLhs, Operator, ParenExpressionArgs,
-    ParenHeadingArgs, Placeholder, PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement,
+    InfixSpecExpressionRefinement, InfixSpecHeader, InfixSpecHeaderRefinement,
+    IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind,
+    IsViaStatement, LabelHeader, MemberAliasLhs, Operator, ParenExpressionArgs, ParenHeadingArgs,
+    Placeholder, PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement,
     RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart,
     RefinedTail, ResourceHeader, SetExpression, SetPredicate, SetTarget, SetTargetElement,
     SetTargetKind, Span, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind,
@@ -760,12 +761,13 @@ pub(super) fn parse_infix_spec_header(input: &str) -> Result<InfixSpecHeader, Pa
     }
 
     let left = parse_form_or_declaration(split.left)?;
-    let (chain, head_args, tail) = parse_infix_spec_header_body(split.body)?;
+    let (refinement, chain, head_args, tail) = parse_infix_spec_header_body(split.body)?;
     let right = parse_form_or_declaration(split.right)?;
 
     Ok(InfixSpecHeader {
         span: span_all(input),
         left,
+        refinement,
         chain,
         head_args,
         tail,
@@ -775,7 +777,38 @@ pub(super) fn parse_infix_spec_header(input: &str) -> Result<InfixSpecHeader, Pa
 
 fn parse_infix_spec_header_body(
     input: &str,
-) -> Result<(Chain, Vec<CurlyHeadingArgs>, Vec<CommandHeaderTailPart>), ParseError> {
+) -> Result<
+    (
+        Option<InfixSpecHeaderRefinement>,
+        Chain,
+        Vec<CurlyHeadingArgs>,
+        Vec<CommandHeaderTailPart>,
+    ),
+    ParseError,
+> {
+    if contains_top_level(input, "::") {
+        let refined = parse_refined_command_header(&format!("\\{}", input.trim()))?;
+        let RefinedTail::Chain(chain) = refined.refined_tail else {
+            return Err(ParseError::custom(
+                "refined spec-infix headers must refine a command chain",
+            ));
+        };
+        if !refined.paren_args.is_empty() {
+            return Err(ParseError::custom(
+                "refined spec-infix headers do not accept parenthesized arguments",
+            ));
+        }
+        return Ok((
+            Some(InfixSpecHeaderRefinement {
+                prefix_chain: refined.prefix_chain,
+                parts: refined.parts,
+            }),
+            chain,
+            refined.head_args,
+            refined.tail,
+        ));
+    }
+
     let mut rest = input.trim();
     let (chain_text, remaining) = split_prefix_by_delimiters(rest, &['{', ':']);
     let chain = parse_chain(chain_text)?;
@@ -790,10 +823,35 @@ fn parse_infix_spec_header_body(
         ));
     }
 
-    Ok((chain, head_args, tail))
+    Ok((None, chain, head_args, tail))
 }
 
 fn parse_infix_spec_expression_body(input: &str, predicate: bool) -> Result<InfixSpec, ParseError> {
+    if contains_top_level(input, "::") {
+        let refined = parse_refined_command_expression(&format!("\\{}", input.trim()))?;
+        let RefinedTail::Chain(chain) = refined.refined_tail else {
+            return Err(ParseError::custom(
+                "refined spec-infix expressions must refine a command chain",
+            ));
+        };
+        if !refined.paren_args.is_empty() {
+            return Err(ParseError::custom(
+                "refined spec-infix expressions do not accept parenthesized arguments",
+            ));
+        }
+        return Ok(InfixSpec {
+            span: span_all(input),
+            refinement: Some(InfixSpecExpressionRefinement {
+                prefix_chain: refined.prefix_chain,
+                parts: refined.parts,
+            }),
+            chain,
+            head_args: refined.head_args,
+            tail: refined.tail,
+            predicate,
+        });
+    }
+
     let mut rest = input.trim();
     let (chain_text, remaining) = split_prefix_by_delimiters(rest, &['{', ':']);
     let chain = parse_chain(chain_text)?;
@@ -810,6 +868,7 @@ fn parse_infix_spec_expression_body(input: &str, predicate: bool) -> Result<Infi
 
     Ok(InfixSpec {
         span: span_all(input),
+        refinement: None,
         chain,
         head_args,
         tail,
@@ -2156,6 +2215,23 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     }
     if let Some(expression) = parse_suffixed_command_expression(input) {
         return expression;
+    }
+    if let Some(split) = split_infix_spec_statement(input)
+        && !split.left.is_empty()
+        && !split.body.is_empty()
+        && !split.right.is_empty()
+    {
+        let left = parse_expression(split.left)?;
+        let spec = parse_infix_spec_expression_body(split.body, split.predicate)?;
+        let right = parse_expression(split.right)?;
+        return Ok(Expression::new(
+            span_all(input),
+            ExpressionKind::InfixSpecStatement {
+                left: Box::new(left),
+                spec,
+                right: Box::new(right),
+            },
+        ));
     }
 
     parse_input_expression(input).map_err(ParseError::from)
@@ -4113,6 +4189,37 @@ mod tests {
                 assert_eq!(spec.head_args.len(), 1);
             }
             other => panic!("expected spec-infix expression, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_refined_spec_infix_headers_and_expressions() {
+        let header = parse_command_header(r#"A \:(nonempty)::subset:/ B"#)
+            .expect("expected refined spec-infix header");
+        match header {
+            CommandHeader::InfixSpec(header) => {
+                let refinement = header.refinement.expect("expected refinement");
+                assert_eq!(refinement.parts.len(), 1);
+                assert!(matches!(
+                    refinement.parts[0].chain.parts.as_slice(),
+                    [ChainPart::Name(name)] if name == "nonempty"
+                ));
+                assert!(matches!(
+                    header.chain.parts.as_slice(),
+                    [ChainPart::Name(name)] if name == "subset"
+                ));
+            }
+            other => panic!("expected refined spec-infix header, got {other:?}"),
+        }
+
+        let expression = parse_expression(r#"X' \:(nonempty)::subset:/ X"#)
+            .expect("expected refined spec-infix expression");
+        match expression.kind {
+            ExpressionKind::InfixSpecStatement { spec, .. } => {
+                assert!(spec.refinement.is_some());
+                assert!(!spec.predicate);
+            }
+            other => panic!("expected refined spec-infix expression, got {other:?}"),
         }
     }
 

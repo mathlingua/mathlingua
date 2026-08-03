@@ -226,6 +226,15 @@ pub(in crate::backend::semantic) fn walk_infix_spec_arguments(
     spec: &InfixSpec,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
+    if let Some(refinement) = &spec.refinement {
+        for tail in refinement.parts.iter().flat_map(|part| part.tail.iter()) {
+            for args in &tail.args {
+                for expression in &args.expressions {
+                    walk_expression(expression, visit);
+                }
+            }
+        }
+    }
     for args in &spec.head_args {
         for expression in &args.expressions {
             walk_expression(expression, visit);

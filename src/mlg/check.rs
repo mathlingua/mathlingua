@@ -2190,6 +2190,103 @@ then:
     }
 
     #[test]
+    fn check_accepts_refined_spec_infix_definitions_and_references() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("refined-spec-infix.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . written: "set"
+
+    [A \:subset:/ B]
+    Describes: A
+    when: B is \set
+    Documented:
+    . written: "A? \subset B?"
+
+    [A \:(nonempty)::subset:/ B]
+    Refines: A
+    when: B is \set
+    satisfies:
+    . A \:subset?:/ B
+    Documented:
+    . adjective: "nonempty"
+    . written: "A? \subset_{+} B?"
+
+    Theorem:
+    given:
+    . X is \set
+    . X' \:(nonempty)::subset:/ X
+    then: X' \:subset?:/ X
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("refined-spec-infix.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_resolves_implicit_refined_spec_infix_through_extended_type() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("implicit-refined-spec-infix.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\(nonempty)::set]
+    Refines: X
+    Documented:
+    . adjective: "nonempty"
+
+    [A \:subset:/ B]
+    Describes: A
+    when: B is \set
+    extends: A is \set
+    Documented:
+    . written: "A? \subset B?"
+
+    Theorem:
+    given:
+    . X is \set
+    . X' \:(nonempty)::subset:/ X
+    then: X' is? \(nonempty)::set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("implicit-refined-spec-infix.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_placeholder_spec_capability_target() {
         // A capability may map a placeholder spec on the left of `:->` to a spec that
         // reuses that placeholder on the right: `x_ "in" A :-> x_ "in" B` says that

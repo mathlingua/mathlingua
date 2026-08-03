@@ -768,6 +768,7 @@ InfixSpecEnd: bool = {
 InfixSpec: ast::InfixSpec = {
     <l:@L> "\\:" <chain:Chain> <head_args:CurlyExpressionArgsOpt> <tail:CommandExpressionTailOpt> <predicate:InfixSpecEnd> <r:@R> => ast::InfixSpec {
         span: Span::new(l, r),
+        refinement: None,
         chain,
         head_args,
         tail,

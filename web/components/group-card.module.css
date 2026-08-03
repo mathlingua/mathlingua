@@ -78,6 +78,25 @@
   font-size: 1.08rem;
 }
 
+/* `name ::= …` destructuring lines shown beneath the title, one per line, muted
+   so they read as a supporting note rather than a second title. */
+.parameterDestructurings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-top: 0.3rem;
+}
+
+.parameterDestructuring {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  color: var(--muted-strong);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  line-height: 1.3;
+}
+
 .resourceHeading {
   font-family: var(--font-display);
   font-size: 1.12rem;

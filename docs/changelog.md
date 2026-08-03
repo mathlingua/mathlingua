@@ -5,6 +5,21 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Refined Spec-Infix Commands
+
+`Refines:` now accepts a refined specification-operator heading such as
+`[A \:(nonempty)::subset:/ B]`, in addition to prefix command refinements such
+as `[\(bounded)::function:on{A}:to{B}]`. The corresponding
+`A \:(nonempty)::subset:/ B` syntax is accepted at declaration and expression
+use sites, participates in signature lookup and rendering, and falls back to
+the base `A \:subset:/ B` fact inside the refinement body.
+
+An undeclared refined spec-infix signature can also resolve implicitly through
+the base operator's `extends:` type. Thus, when `\:subset:/` extends `\set` and
+`\(nonempty)::set` is a declared refinement, `\:(nonempty)::subset:/` is valid and
+reduces to both the base subset fact and the refined nonempty-set fact. The base
+operator's and refined type's `when:` requirements are checked at the use site.
+
 ## Prime Marks In Names And Operators
 
 Names and symbolic operators may now carry **prime marks** — one or more trailing

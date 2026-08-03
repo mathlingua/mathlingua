@@ -319,10 +319,26 @@ pub(super) fn infix_spec_substitutions(
     render: &CommandRender,
     registry: &RenderRegistry,
 ) -> HashMap<String, String> {
-    command_substitutions_for_names(
-        &render.parameters,
-        infix_argument_values(left, &spec.head_args, &spec.tail, right, registry),
-    )
+    let refinement_values = spec
+        .refinement
+        .iter()
+        .flat_map(|refinement| refinement.parts.iter())
+        .flat_map(|part| part.tail.iter())
+        .flat_map(|tail| tail.args.iter())
+        .flat_map(|args| args.expressions.iter())
+        .map(|expression| render_expression(expression, registry));
+    let values = std::iter::once(render_expression(left, registry))
+        .chain(refinement_values)
+        .chain(
+            spec.head_args
+                .iter()
+                .flat_map(|args| args.expressions.iter())
+                .map(|expression| render_expression(expression, registry)),
+        )
+        .chain(expression_tail_argument_values(&spec.tail, registry))
+        .chain(std::iter::once(render_expression(right, registry)))
+        .collect();
+    command_substitutions_for_names(&render.parameters, values)
 }
 
 pub(super) fn command_substitutions_for_names(
@@ -340,11 +356,56 @@ pub(super) fn command_header_substitutions(
 
     for form in command_header_forms(header) {
         if let Some(name) = primary_form_name(form) {
-            substitutions.insert(name, render_form_or_declaration(form, registry));
+            substitutions.insert(name, render_form_or_declaration_head(form, registry));
         }
     }
 
     substitutions
+}
+
+/// Whether a header parameter is a *named destructuring* — `H ::= (X', *', e')`,
+/// `g ::= f(x_)`, or `S ::= {x_ : …}` — as opposed to a plain name or an
+/// anonymous form.
+fn is_named_destructuring(form: &FormOrDeclaration) -> bool {
+    matches!(
+        &form.kind,
+        FormOrDeclarationKind::FunctionDeclaration { name: Some(_), .. }
+            | FormOrDeclarationKind::TupleDeclaration { name: Some(_), .. }
+            | FormOrDeclarationKind::SetDeclaration { name: Some(_), .. }
+    )
+}
+
+/// Renders a header parameter for use *inside a title*: a named destructuring
+/// collapses to just its name (`H`) so the title stays readable — the full
+/// destructuring is surfaced separately by [`command_header_parameter_destructurings`].
+/// Every other form renders in full.
+fn render_form_or_declaration_head(form: &FormOrDeclaration, registry: &RenderRegistry) -> String {
+    match &form.kind {
+        FormOrDeclarationKind::FunctionDeclaration {
+            name: Some(name), ..
+        }
+        | FormOrDeclarationKind::TupleDeclaration {
+            name: Some(name), ..
+        }
+        | FormOrDeclarationKind::SetDeclaration {
+            name: Some(name), ..
+        } => escape_math_identifier(name, registry),
+        _ => render_form_or_declaration(form, registry),
+    }
+}
+
+/// The full `name ::= …` rendering of each named-destructuring header parameter,
+/// in header order — shown as lines beneath a card title so the title itself can
+/// use the plain names.
+pub(super) fn command_header_parameter_destructurings(
+    header: &CommandHeader,
+    registry: &RenderRegistry,
+) -> Vec<String> {
+    command_header_forms(header)
+        .into_iter()
+        .filter(|form| is_named_destructuring(form))
+        .map(|form| render_form_or_declaration(form, registry))
+        .collect()
 }
 
 pub(super) fn command_header_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
@@ -392,6 +453,16 @@ pub(super) fn infix_command_header_forms(header: &InfixCommandHeader) -> Vec<&Fo
 pub(super) fn infix_spec_header_forms(header: &InfixSpecHeader) -> Vec<&FormOrDeclaration> {
     let mut forms = Vec::new();
     forms.push(&header.left);
+    if let Some(refinement) = &header.refinement {
+        forms.extend(
+            refinement
+                .parts
+                .iter()
+                .flat_map(|part| part.tail.iter())
+                .flat_map(|part| part.args.iter())
+                .flat_map(|args| args.forms.iter()),
+        );
+    }
     forms.extend(header.head_args.iter().flat_map(|args| args.forms.iter()));
     forms.extend(
         header

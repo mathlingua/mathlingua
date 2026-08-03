@@ -44,6 +44,7 @@ pub(super) struct DefinitionEntry {
 #[derive(Clone, Debug)]
 pub(super) struct DefinitionTypeInfo {
     pub(super) signature: String,
+    pub(super) type_key: String,
     pub(super) parameters: Vec<String>,
     pub(super) hidden_parameters: Vec<String>,
     pub(super) using_parameters: Vec<String>,

@@ -123,6 +123,10 @@ pub(super) fn shapes_for_infix_command_header(command: &InfixCommandHeader) -> V
 }
 
 pub(super) fn shape_for_infix_spec_header(spec: &InfixSpecHeader) -> SignatureShape {
+    if let Some(command) = refined_command_header_for_infix_spec(spec) {
+        return wrap_refined_infix_spec_shape(shape_for_refined_command_header(&command));
+    }
+
     let mut signature = format!("\\:{}", format_chain(&spec.chain));
     let mut arg_groups = Vec::new();
     add_heading_curly_groups(&mut arg_groups, &spec.head_args);
@@ -136,6 +140,21 @@ pub(super) fn shape_for_infix_spec_header(spec: &InfixSpecHeader) -> SignatureSh
 }
 
 pub(super) fn shapes_for_infix_spec_header(spec: &InfixSpecHeader) -> Vec<HeaderShape> {
+    if let Some(command) = refined_command_header_for_infix_spec(spec) {
+        let left = key_for_form_or_declaration(&spec.left);
+        let right = key_for_form_or_declaration(&spec.right);
+        return shapes_for_refined_command_header(&command)
+            .into_iter()
+            .map(|mut header| {
+                header.shape = wrap_refined_infix_spec_shape(header.shape);
+                header.type_key = wrap_refined_infix_spec_key(&header.type_key);
+                header.parameters.insert(0, left.clone());
+                header.parameters.push(right.clone());
+                header
+            })
+            .collect();
+    }
+
     let base_signature = format!("\\:{}", format_chain(&spec.chain));
     let mut base_type_key = base_signature.clone();
     append_heading_curly_key_groups(&mut base_type_key, &spec.head_args);
@@ -167,6 +186,33 @@ pub(super) fn shapes_for_infix_spec_header(spec: &InfixSpecHeader) -> Vec<Header
             }
         })
         .collect()
+}
+
+fn refined_command_header_for_infix_spec(spec: &InfixSpecHeader) -> Option<RefinedCommandHeader> {
+    let refinement = spec.refinement.as_ref()?;
+    Some(RefinedCommandHeader {
+        span: spec.span,
+        prefix_chain: refinement.prefix_chain.clone(),
+        parts: refinement.parts.clone(),
+        refined_tail: RefinedTail::Chain(spec.chain.clone()),
+        head_args: spec.head_args.clone(),
+        tail: spec.tail.clone(),
+        paren_args: Vec::new(),
+    })
+}
+
+fn wrap_refined_infix_spec_shape(mut shape: SignatureShape) -> SignatureShape {
+    shape.signature = wrap_refined_infix_spec_key(&shape.signature);
+    shape.fallback_shapes = shape
+        .fallback_shapes
+        .into_iter()
+        .map(wrap_refined_infix_spec_shape)
+        .collect();
+    shape
+}
+
+fn wrap_refined_infix_spec_key(key: &str) -> String {
+    format!("\\:{}:/", key.strip_prefix('\\').unwrap_or(key))
 }
 
 pub(super) fn shape_for_refined_command_header(command: &RefinedCommandHeader) -> SignatureShape {
@@ -317,6 +363,10 @@ pub(super) fn shape_for_infix_command(command: &InfixCommand) -> SignatureShape 
 }
 
 pub(super) fn shape_for_infix_spec(spec: &InfixSpec) -> SignatureShape {
+    if let Some(command) = refined_command_expression_for_infix_spec(spec) {
+        return wrap_refined_infix_spec_shape(shape_for_refined_command_expression(&command));
+    }
+
     let mut signature = format!("\\:{}", format_chain(&spec.chain));
     let mut arg_groups = Vec::new();
     add_expression_curly_groups(&mut arg_groups, &spec.head_args);
@@ -327,6 +377,19 @@ pub(super) fn shape_for_infix_spec(spec: &InfixSpec) -> SignatureShape {
         arg_groups,
         fallback_shapes: Vec::new(),
     }
+}
+
+fn refined_command_expression_for_infix_spec(spec: &InfixSpec) -> Option<RefinedCommandExpression> {
+    let refinement = spec.refinement.as_ref()?;
+    Some(RefinedCommandExpression {
+        span: spec.span,
+        prefix_chain: refinement.prefix_chain.clone(),
+        parts: refinement.parts.clone(),
+        refined_tail: RefinedTail::Chain(spec.chain.clone()),
+        head_args: spec.head_args.clone(),
+        tail: spec.tail.clone(),
+        paren_args: Vec::new(),
+    })
 }
 
 pub(super) fn shape_for_refined_command_expression(

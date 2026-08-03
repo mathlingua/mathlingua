@@ -142,7 +142,7 @@ pub(super) fn collect_document_definitions(
         let kind = definition.kind;
         let full_shape = shape_for_header(definition.heading);
         let position = locator.locate_heading(&full_shape);
-        if matches!(definition.heading, CommandHeader::InfixSpec(_))
+        if matches!(definition.heading, CommandHeader::InfixSpec(spec) if spec.refinement.is_none())
             && kind != DefinitionKind::Describes
         {
             emit_error(
@@ -153,7 +153,8 @@ pub(super) fn collect_document_definitions(
             );
             continue;
         }
-        if matches!(definition.heading, CommandHeader::Refined(_))
+        if (matches!(definition.heading, CommandHeader::Refined(_))
+            || matches!(definition.heading, CommandHeader::InfixSpec(spec) if spec.refinement.is_some()))
             && kind != DefinitionKind::Refines
         {
             emit_error(

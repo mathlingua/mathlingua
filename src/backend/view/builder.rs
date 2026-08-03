@@ -4,7 +4,8 @@ use super::model::{
 use super::render::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
     join_title_parts, render_documented_text_latex, render_formulation_latex,
-    render_group_heading_latex, render_writing_alias_latex, resolve_topic_heading_latex,
+    render_group_heading_latex, render_group_parameter_destructurings, render_writing_alias_latex,
+    resolve_topic_heading_latex,
 };
 use crate::backend::config::load_config;
 use crate::events::{Audience, Event, EventLog, Level};
@@ -220,6 +221,7 @@ fn description_page_group(source_id: &str, text: String) -> GroupView {
         definition_keys: Vec::new(),
         heading: None,
         heading_latex: None,
+        parameter_destructurings: Vec::new(),
         body_text: None,
         page: Some(PageView {
             kind: "Text".to_string(),
@@ -260,10 +262,13 @@ fn group_view(
         .or_else(|| text_item_heading_latex(&kind, &group.sections));
     let body_text =
         person_body_text(&kind, &group.sections).or_else(|| text_item_body(&kind, &group.sections));
+    let parameter_destructurings =
+        render_group_parameter_destructurings(&kind, group.heading.as_deref(), registry);
 
     GroupView {
         id,
         heading_latex,
+        parameter_destructurings,
         body_text,
         definition_keys: definition_reference_keys_for_heading(group.heading.as_deref()),
         kind,

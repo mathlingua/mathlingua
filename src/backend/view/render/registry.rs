@@ -298,6 +298,28 @@ pub(in crate::backend::view) fn render_group_heading_latex(
     Some(render.render_title(&substitutions))
 }
 
+/// The `name ::= …` destructuring lines to show beneath a definition card's
+/// title, one per named-destructuring header parameter (e.g. `H ::= (X', *', e')`).
+/// Empty when the group has no command heading or no destructured parameters.
+pub(in crate::backend::view) fn render_group_parameter_destructurings(
+    kind: &str,
+    heading: Option<&str>,
+    registry: &RenderRegistry,
+) -> Vec<String> {
+    if !supports_resolved_group_heading(kind) {
+        return Vec::new();
+    }
+
+    let Some(heading) = heading else {
+        return Vec::new();
+    };
+    let Ok(header) = parse_command_header(heading) else {
+        return Vec::new();
+    };
+
+    command_header_parameter_destructurings(&header, registry)
+}
+
 fn supports_resolved_group_heading(kind: &str) -> bool {
     matches!(
         kind,
@@ -318,12 +340,19 @@ pub(super) fn render_refines_group_heading_latex(
     refinement_render: &CommandRender,
     registry: &RenderRegistry,
 ) -> Option<String> {
-    let CommandHeader::Refined(refined_header) = header else {
-        return None;
+    let base_signature = match header {
+        CommandHeader::Refined(refined_header) => {
+            refined_command_header_base_signature(refined_header)
+        }
+        CommandHeader::InfixSpec(spec) if spec.refinement.is_some() => {
+            let mut base = spec.clone();
+            base.refinement = None;
+            command_header_signature(&CommandHeader::InfixSpec(base))
+        }
+        _ => return None,
     };
     let refinement_latex =
         refinement_render.render_called(&command_header_substitutions(header, registry));
-    let base_signature = refined_command_header_base_signature(refined_header);
     let target_render = registry.commands.get(&base_signature)?;
     let target_latex = command_reference_latex(
         &base_signature,

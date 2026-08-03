@@ -35,6 +35,12 @@ pub struct GroupView {
     pub definition_keys: Vec<String>,
     pub heading: Option<String>,
     pub heading_latex: Option<String>,
+    /// The `name ::= …` destructuring of each destructured header parameter (e.g.
+    /// `H ::= (X', *', e')`), rendered as LaTeX and shown as lines beneath the
+    /// title so the title itself can use the plain parameter names. Empty for a
+    /// group with no destructured parameters.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parameter_destructurings: Vec<String>,
     pub body_text: Option<String>,
     pub page: Option<PageView>,
     pub source: String,

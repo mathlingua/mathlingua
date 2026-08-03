@@ -445,6 +445,7 @@ fn type_info_from_parts(
 
     DefinitionTypeInfo {
         signature: header_shape.shape.signature.clone(),
+        type_key: header_shape.type_key.clone(),
         parameters: header_shape.parameters.clone(),
         hidden_parameters: header_shape.hidden_parameters.clone(),
         using_parameters,
@@ -1511,6 +1512,7 @@ fn validate_top_level_item_types(
             declare_header_symbols(&group.heading, &mut context);
             declare_declaration_statement_subjects(&group.refines.argument, &mut context);
             validate_refines_form_only(group, path, locator, event_log);
+            validate_refined_spec_infix_header(group, path, locator, event_log);
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -1521,7 +1523,7 @@ fn validate_top_level_item_types(
             );
             validate_when_section(
                 &group.when,
-                &header_when_parameters(&group.heading),
+                &refines_when_parameters_from_usage(group),
                 path,
                 locator,
                 event_log,
@@ -1986,6 +1988,30 @@ fn validate_refines_form_only(
     );
 }
 
+fn validate_refined_spec_infix_header(
+    group: &RefinesGroup,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let CommandHeader::InfixSpec(header) = &group.heading else {
+        return;
+    };
+    if header.refinement.is_none()
+        || form_or_declaration_subject_key(&header.left)
+            == primary_subject_key(&group.refines.argument.subject)
+    {
+        return;
+    }
+
+    emit_error(
+        event_log,
+        path,
+        locator.locate_heading(&shape_for_header(&group.heading)),
+        "Refined spec-infix heading left operand must match the `Refines:` argument",
+    );
+}
+
 fn validate_disambiguates(
     group: &DisambiguatesGroup,
     path: &Path,
@@ -2071,6 +2097,35 @@ fn assume_refines_base_type(
     refined: &DeclarationStatement,
     context: &mut TypeContext,
 ) {
+    if let CommandHeader::InfixSpec(spec) = heading
+        && spec.refinement.is_some()
+    {
+        let mut base = spec.clone();
+        base.refinement = None;
+        for header_shape in shapes_for_infix_spec_header(&base) {
+            let Some((subject, target)) = header_shape
+                .parameters
+                .first()
+                .cloned()
+                .zip(header_shape.parameters.last().cloned())
+            else {
+                continue;
+            };
+            let args = if header_shape.parameters.len() > 2 {
+                header_shape.parameters[1..header_shape.parameters.len() - 1].to_vec()
+            } else {
+                Vec::new()
+            };
+            context.add_fact(TypeFact::InfixSpec {
+                subject,
+                signature: header_shape.shape.signature,
+                args,
+                target,
+            });
+        }
+        return;
+    }
+
     let CommandHeader::Refined(_) = heading else {
         return;
     };
@@ -2628,6 +2683,19 @@ fn describes_when_parameters_from_usage(group: &DescribesGroup) -> WhenParameter
         }
         if parameters.allowed.contains(&name) {
             parameters.require(name);
+        }
+    }
+    parameters
+}
+
+fn refines_when_parameters_from_usage(group: &RefinesGroup) -> WhenParameters {
+    let mut parameters = header_when_parameters(&group.heading);
+    if let CommandHeader::InfixSpec(header) = &group.heading
+        && header.refinement.is_some()
+    {
+        let subject = form_or_declaration_subject_key(&header.left);
+        if subject == primary_subject_key(&group.refines.argument.subject) {
+            parameters.required.remove(&subject);
         }
     }
     parameters
@@ -5296,6 +5364,32 @@ fn check_spec_fact_supported(
             target,
         } => {
             let Some(definition) = registry.definitions.get(signature) else {
+                let resolutions = implicit_refined_infix_spec_resolution(fact, context, registry);
+                if !resolutions.is_empty() {
+                    for resolution in resolutions {
+                        check_command_requirements(
+                            &resolution.base_signature,
+                            &resolution.base_actuals,
+                            None,
+                            context,
+                            path,
+                            position,
+                            registry,
+                            event_log,
+                        );
+                        check_command_requirements(
+                            &resolution.refined_type_signature,
+                            &resolution.refined_type_actuals,
+                            None,
+                            context,
+                            path,
+                            position,
+                            registry,
+                            event_log,
+                        );
+                    }
+                    return;
+                }
                 emit_error(
                     event_log,
                     path,
@@ -5309,13 +5403,16 @@ fn check_spec_fact_supported(
                 return;
             };
 
-            if definition.kind != DefinitionKind::Describes {
+            if !matches!(
+                definition.kind,
+                DefinitionKind::Describes | DefinitionKind::Refines
+            ) {
                 emit_error(
                     event_log,
                     path,
                     position,
                     format!(
-                        "Could not validate spec fact `{}`: spec-infix signature `{}` must be defined by Describes",
+                        "Could not validate spec fact `{}`: spec-infix signature `{}` must be defined by Describes or Refines",
                         format_fact(&context.normalize_fact(fact)),
                         signature
                     ),
@@ -8194,6 +8291,17 @@ fn active_infix_command(command: &InfixCommand, context: &TypeContext) -> InfixC
 fn active_infix_spec(spec: &InfixSpec, context: &TypeContext) -> InfixSpec {
     let mut active = spec.clone();
     active.tail = active_expression_tail(&spec.tail, context);
+    if let Some(refinement) = &mut active.refinement {
+        refinement.parts = refinement
+            .parts
+            .iter()
+            .cloned()
+            .map(|mut part| {
+                part.tail = active_expression_tail(&part.tail, context);
+                part
+            })
+            .collect();
+    }
     active
 }
 
@@ -10559,6 +10667,7 @@ fn reduce_extension_fact(
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> Vec<TypeFact> {
+    let implicit_refinement = implicit_refined_infix_spec_resolution(fact, context, registry);
     let (subject, signature, actuals) = match fact {
         TypeFact::Is {
             subject,
@@ -10583,21 +10692,178 @@ fn reduce_extension_fact(
         }
         _ => return Vec::new(),
     };
+    let mut result = implicit_refinement
+        .iter()
+        .flat_map(|resolution| {
+            [
+                resolution.base_fact.clone(),
+                resolution.refined_type_fact.clone(),
+            ]
+        })
+        .collect::<Vec<_>>();
+    result.extend(
+        registry
+            .extension_rules
+            .iter()
+            .filter(|rule| rule.subtype_signature == signature.as_str())
+            .map(|rule| {
+                let mut substitutions = rule
+                    .parameters
+                    .iter()
+                    .zip(&actuals)
+                    .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
+                    .collect::<HashMap<_, _>>();
+                substitutions.insert(rule.subject.clone(), subject.clone());
+                context.normalize_fact(&substitute_fact(&rule.target, &substitutions))
+            }),
+    );
+    result
+}
+
+#[derive(Clone, Debug)]
+struct ImplicitRefinedInfixSpecResolution {
+    base_signature: String,
+    base_actuals: Vec<String>,
+    refined_type_signature: String,
+    refined_type_actuals: Vec<String>,
+    base_fact: TypeFact,
+    refined_type_fact: TypeFact,
+}
+
+/// Resolves an undeclared refined spec-infix fact through the type extended by
+/// its declared base operator. For example, if `\:subset:/` extends `\set` and
+/// `\nonempty::set` is a declared refinement, then
+/// `A \:nonempty::subset:/ B` implicitly denotes both `A \:subset:/ B` and
+/// `A is \nonempty::set`.
+fn implicit_refined_infix_spec_resolution(
+    fact: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<ImplicitRefinedInfixSpecResolution> {
+    let TypeFact::InfixSpec {
+        subject,
+        signature,
+        args,
+        target,
+    } = fact
+    else {
+        return Vec::new();
+    };
+    if registry.definitions.contains_key(signature) {
+        return Vec::new();
+    }
+
+    let Some((refinement_prefix, base_signature)) = split_refined_infix_spec_signature(signature)
+    else {
+        return Vec::new();
+    };
+    let Some(base_definition) = registry.definitions.get(&base_signature) else {
+        return Vec::new();
+    };
+    if base_definition.kind != DefinitionKind::Describes {
+        return Vec::new();
+    }
+    let Some(base_info) = registry.type_infos.get(&base_signature) else {
+        return Vec::new();
+    };
+
+    let mut full_actuals = Vec::with_capacity(args.len() + 2);
+    full_actuals.push(context.normalize_key(subject));
+    full_actuals.extend(args.iter().map(|arg| context.normalize_key(arg)));
+    full_actuals.push(context.normalize_key(target));
+    let Some(refinement_actual_count) = full_actuals.len().checked_sub(base_info.parameters.len())
+    else {
+        return Vec::new();
+    };
+    if refinement_actual_count > args.len() {
+        return Vec::new();
+    }
+
+    let refinement_actuals = full_actuals[1..1 + refinement_actual_count].to_vec();
+    let mut base_actuals = Vec::with_capacity(base_info.parameters.len());
+    base_actuals.push(full_actuals[0].clone());
+    base_actuals.extend_from_slice(&full_actuals[1 + refinement_actual_count..]);
+    let base_fact = TypeFact::InfixSpec {
+        subject: subject.clone(),
+        signature: base_signature.clone(),
+        args: args[refinement_actual_count..].to_vec(),
+        target: target.clone(),
+    };
+
     registry
         .extension_rules
         .iter()
-        .filter(|rule| rule.subtype_signature == signature.as_str())
-        .map(|rule| {
-            let mut substitutions = rule
+        .filter(|rule| rule.subtype_signature == base_signature)
+        .filter_map(|rule| {
+            let mut substitutions = base_info
                 .parameters
                 .iter()
-                .zip(&actuals)
-                .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
+                .zip(&base_actuals)
+                .map(|(name, actual)| (name.clone(), actual.clone()))
                 .collect::<HashMap<_, _>>();
-            substitutions.insert(rule.subject.clone(), subject.clone());
-            context.normalize_fact(&substitute_fact(&rule.target, &substitutions))
+            substitutions.insert(rule.subject.clone(), context.normalize_key(subject));
+            let extended = context.normalize_fact(&substitute_fact(&rule.target, &substitutions));
+            let TypeFact::Is {
+                ty: base_ty,
+                signature: base_type_signature,
+                ..
+            } = extended
+            else {
+                return None;
+            };
+
+            let refined_type_signature = format!(
+                "\\{}::{}",
+                refinement_prefix,
+                base_type_signature.strip_prefix('\\')?
+            );
+            let refined_definition = registry.definitions.get(&refined_type_signature)?;
+            if refined_definition.kind != DefinitionKind::Refines {
+                return None;
+            }
+            let refined_info = registry.type_infos.get(&refined_type_signature)?;
+            let mut refined_type_actuals = refinement_actuals.clone();
+            refined_type_actuals.extend(actuals_for_type_key(&base_type_signature, &base_ty)?);
+            if refined_type_actuals.len() != refined_info.parameters.len() {
+                return None;
+            }
+            let refined_substitutions = refined_info
+                .parameters
+                .iter()
+                .zip(&refined_type_actuals)
+                .map(|(name, actual)| (name.clone(), actual.clone()))
+                .collect::<HashMap<_, _>>();
+            let refined_ty = context.normalize_key(&substitute_key(
+                &refined_info.type_key,
+                &refined_substitutions,
+            ));
+
+            Some(ImplicitRefinedInfixSpecResolution {
+                base_signature: base_signature.clone(),
+                base_actuals: base_actuals.clone(),
+                refined_type_signature: refined_type_signature.clone(),
+                refined_type_actuals,
+                base_fact: base_fact.clone(),
+                refined_type_fact: TypeFact::RefinedIs {
+                    subject: subject.clone(),
+                    ty: refined_ty,
+                    signature: refined_type_signature,
+                    base_ty,
+                    base_signature: base_type_signature,
+                },
+            })
         })
         .collect()
+}
+
+fn split_refined_infix_spec_signature(signature: &str) -> Option<(String, String)> {
+    let body = signature.strip_prefix("\\:")?.strip_suffix(":/")?;
+    let segments = split_refined_key(&format!("\\{body}"))?;
+    let (base, refinements) = segments.split_last()?;
+    if refinements.is_empty() {
+        return None;
+    }
+    Some((refinements.join("::"), format!("\\:{base}:/")))
 }
 
 fn reduce_refined_fact(
@@ -13441,6 +13707,11 @@ fn collect_header_form_parameters(header: &CommandHeader, parameters: &mut WhenP
         }
         CommandHeader::InfixSpec(spec) => {
             require_form_when_parameter(&spec.left, parameters);
+            if let Some(refinement) = &spec.refinement {
+                for part in &refinement.parts {
+                    collect_tail_parameters(&part.tail, parameters);
+                }
+            }
             collect_curly_heading_parameters(&spec.head_args, parameters);
             collect_tail_parameters(&spec.tail, parameters);
             require_form_when_parameter(&spec.right, parameters);
@@ -13482,6 +13753,11 @@ fn header_parameter_forms(header: &CommandHeader) -> Vec<&FormOrDeclaration> {
         }
         CommandHeader::InfixSpec(spec) => {
             forms.push(&spec.left);
+            if let Some(refinement) = &spec.refinement {
+                for part in &refinement.parts {
+                    collect_tail_parameter_forms(&part.tail, &mut forms);
+                }
+            }
             collect_curly_parameter_forms(&spec.head_args, &mut forms);
             collect_tail_parameter_forms(&spec.tail, &mut forms);
             forms.push(&spec.right);
@@ -14552,6 +14828,24 @@ fn key_for_infix_command(command: &InfixCommand) -> String {
 }
 
 fn key_for_infix_spec(spec: &InfixSpec) -> String {
+    if let Some(refinement) = &spec.refinement {
+        let command = RefinedCommandExpression {
+            span: spec.span,
+            prefix_chain: refinement.prefix_chain.clone(),
+            parts: refinement.parts.clone(),
+            refined_tail: RefinedTail::Chain(spec.chain.clone()),
+            head_args: spec.head_args.clone(),
+            tail: spec.tail.clone(),
+            paren_args: Vec::new(),
+        };
+        let refined_key = key_for_refined_command_expression(&command);
+        return format!(
+            "\\:{}{}",
+            refined_key.strip_prefix('\\').unwrap_or(&refined_key),
+            if spec.predicate { "?:/" } else { ":/" }
+        );
+    }
+
     let mut key = format!("\\:{}", format_chain(&spec.chain));
     append_expression_args(&mut key, &spec.head_args);
     for tail in &spec.tail {
@@ -14674,9 +14968,17 @@ fn infix_command_arguments(command: &InfixCommand) -> Vec<&Expression> {
 }
 
 fn infix_spec_arguments(spec: &InfixSpec) -> Vec<&Expression> {
-    spec.head_args
+    spec.refinement
         .iter()
+        .flat_map(|refinement| refinement.parts.iter())
+        .flat_map(|part| part.tail.iter())
+        .flat_map(|tail| tail.args.iter())
         .flat_map(|args| args.expressions.iter())
+        .chain(
+            spec.head_args
+                .iter()
+                .flat_map(|args| args.expressions.iter()),
+        )
         .chain(
             spec.tail
                 .iter()

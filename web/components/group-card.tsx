@@ -39,6 +39,7 @@ export function GroupCard({
     ? capitalizeLeadingRenderedLatexWord(group.heading_latex)
     : null;
   const resourceCard = buildResourceCard(group);
+  const parameterDestructurings = group.parameter_destructurings ?? [];
   const hasHeading = resourceCard !== null || headingLatex !== null;
   const bodyText = group.body_text?.trim() ? group.body_text : null;
   const hasSupportSections =
@@ -124,6 +125,18 @@ export function GroupCard({
                   />
                 ) : null}
               </h3>
+              {parameterDestructurings.length > 0 ? (
+                <div className={styles.parameterDestructurings}>
+                  {parameterDestructurings.map((latex, index) => (
+                    <span className={styles.parameterDestructuring} key={index}>
+                      <LatexRenderer
+                        latex={latex}
+                        onReferenceClick={onReferenceClick}
+                      />
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </header>
           ) : null}
           {bodyText ? (

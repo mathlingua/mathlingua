@@ -278,9 +278,9 @@ fn stream_child_output(
     let mut recent_output: Vec<String> = Vec::new();
 
     let handle_line = |line: OutputLine,
-                           was_ready: &mut bool,
-                           recent_output: &mut Vec<String>,
-                           event_log: &mut EventLog| {
+                       was_ready: &mut bool,
+                       recent_output: &mut Vec<String>,
+                       event_log: &mut EventLog| {
         let is_ready = is_ready_line(&line.text);
         if is_ready
             && !*was_ready
@@ -593,8 +593,10 @@ fn startup_failure_message(recent_output: &[String], status: &str, port: Option<
                 "The viewer could not start because port {port} is already in use by another program. \
                  Stop that program, or start the viewer on a different port with `mlg view --port <PORT>`"
             ),
-            None => "The viewer could not start because its port is already in use by another program"
-                .to_string(),
+            None => {
+                "The viewer could not start because its port is already in use by another program"
+                    .to_string()
+            }
         };
     }
 
@@ -646,7 +648,10 @@ mod tests {
     use std::net::TcpListener;
 
     fn failure_message(lines: &[&str], port: Option<u16>) -> String {
-        let output = lines.iter().map(|line| line.to_string()).collect::<Vec<_>>();
+        let output = lines
+            .iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>();
         startup_failure_message(&output, "exit status: 1", port)
     }
 
@@ -742,6 +747,7 @@ mod tests {
                     definition_keys: vec![],
                     heading: None,
                     heading_latex: None,
+                    parameter_destructurings: Vec::new(),
                     body_text: None,
                     page: Some(PageView {
                         kind: "Title".to_string(),

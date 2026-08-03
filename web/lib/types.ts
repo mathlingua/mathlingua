@@ -83,6 +83,12 @@ export type GroupView = {
   heading: string | null;
   /** Backend-rendered LaTeX title for the group card, if available. */
   heading_latex: string | null;
+  /**
+   * `name ::= …` destructuring of each destructured header parameter (e.g.
+   * `H ::= (X', *', e')`), rendered as LaTeX and shown as lines beneath the
+   * title. Absent/empty when there are no destructured parameters.
+   */
+  parameter_destructurings?: string[];
   /** Optional prose rendered directly in the card body. */
   body_text: string | null;
   /** Direct page content for document headings/prose instead of card content. */

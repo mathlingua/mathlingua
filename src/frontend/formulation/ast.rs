@@ -200,10 +200,17 @@ pub struct InfixCommand {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InfixSpec {
     pub span: Span,
+    pub refinement: Option<InfixSpecExpressionRefinement>,
     pub chain: Chain,
     pub head_args: Vec<CurlyExpressionArgs>,
     pub tail: Vec<CommandExpressionTailPart>,
     pub predicate: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InfixSpecExpressionRefinement {
+    pub prefix_chain: Option<Chain>,
+    pub parts: Vec<RefinedExpressionPart>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -288,10 +295,17 @@ pub struct InfixCommandHeader {
 pub struct InfixSpecHeader {
     pub span: Span,
     pub left: FormOrDeclaration,
+    pub refinement: Option<InfixSpecHeaderRefinement>,
     pub chain: Chain,
     pub head_args: Vec<CurlyHeadingArgs>,
     pub tail: Vec<CommandHeaderTailPart>,
     pub right: FormOrDeclaration,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InfixSpecHeaderRefinement {
+    pub prefix_chain: Option<Chain>,
+    pub parts: Vec<RefinedHeaderPart>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -565,12 +565,12 @@ mod tests {
         ExportOptions, MANIFEST_FILE, detect_github_pages_base_path, github_pages_base_path,
         normalize_base_path, normalize_cname, write_github_pages_files, write_static_export_data,
     };
-    use std::process::Command;
     use crate::backend::view::{CollectionView, FileView, GroupView, PageView};
     use serde::Deserialize;
     use serde::de::DeserializeOwned;
     use std::fs;
     use std::path::{Path, PathBuf};
+    use std::process::Command;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -592,6 +592,7 @@ mod tests {
                         definition_keys: Vec::new(),
                         heading: None,
                         heading_latex: None,
+                        parameter_destructurings: Vec::new(),
                         body_text: None,
                         page: Some(PageView {
                             kind: "Title".to_string(),
@@ -606,6 +607,7 @@ mod tests {
                         definition_keys: vec!["\\set".to_string()],
                         heading: Some("\\set".to_string()),
                         heading_latex: Some("\\textrm{set}".to_string()),
+                        parameter_destructurings: Vec::new(),
                         body_text: None,
                         page: None,
                         source: "[\\set]".to_string(),
@@ -694,7 +696,10 @@ mod tests {
             github_pages_base_path("https://gitlab.com/mathlingua/example.git"),
             None
         );
-        assert_eq!(github_pages_base_path("https://github.com/only-owner"), None);
+        assert_eq!(
+            github_pages_base_path("https://github.com/only-owner"),
+            None
+        );
         assert_eq!(github_pages_base_path(""), None);
     }
 

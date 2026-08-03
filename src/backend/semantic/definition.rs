@@ -194,4 +194,15 @@ mod tests {
         assert_eq!(site.path, PathBuf::from("def.mlg"));
         assert_eq!(site.row, 0);
     }
+
+    #[test]
+    fn resolves_refined_infix_spec_command() {
+        let def = "[A \\:(nonempty)::subset:/ B]\nRefines: A\nId: \"a\"\n";
+        let usage = "Theorem:\ngiven: X' \\:(nonempty)::subset:/ X\nthen: X = X\nId: \"b\"\n";
+        let files = vec![parsed("def.mlg", def), parsed("thm.mlg", usage)];
+        let cursor = offset_of(usage, "\\:(nonempty)::subset:/", 15);
+        let site = find_definition(&files, usage, cursor).expect("resolves refined infix spec");
+        assert_eq!(site.path, PathBuf::from("def.mlg"));
+        assert_eq!(site.row, 0);
+    }
 }

@@ -3787,6 +3787,65 @@ then:
     }
 
     #[test]
+    fn check_resolves_members_from_spec_facts_and_instantiates_owner_type_parameters() {
+        // `p "in" D` reduces to `p is \element:of{D}`, which both makes `.copy`
+        // available and binds the capability owner's `C` parameter to `D` in
+        // the target `\copy:of{p}:in{D}`.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("parameterized-member-capability.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\container]
+    Describes: C
+    Requires:
+    . capability: x_ "in" C :-> x_ is \element:of{C}
+    Documented:
+    . written: "\operatorname{container}"
+
+    [\element:of{C}]
+    Describes: x
+    when: C is \container
+    extends: x "in" C
+    Enables:
+    . capability: x.copy :=> \copy:of{x}:in{C}
+      written: "x?^{\prime}"
+    Documented:
+    . written: "\operatorname{element}"
+
+    [\copy:of{x}:in{C}]
+    Defines: y "in" C
+    when:
+    . C is \container
+    . x "in" C
+    Documented:
+    . written: "x+?^{\prime}"
+
+    Theorem:
+    given:
+    . D is \container
+    . p "in" D
+    then: p.copy "in"? D
+    Id: "aaaaaaaa-1111-4aaa-8aaa-aaaaaaaaaaaa"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("parameterized-member-capability.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_rejects_member_capability_with_non_subject_owner() {
         // The owner of a member capability must be exactly the described subject.
         let temp_dir = TestDir::new();

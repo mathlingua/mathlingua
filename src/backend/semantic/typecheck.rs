@@ -7061,6 +7061,7 @@ fn check_provided_member(
     argument_expressions.extend(arguments.iter());
     let requirement_context =
         context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let requirement_context = context_with_spec_reductions(&requirement_context, registry);
     let owner_actual = effective_key_for_expression(owner, &requirement_context, registry);
     let actuals = arguments
         .iter()
@@ -7262,6 +7263,13 @@ fn check_provided_symbol_target(
         child.add_substitution(parameter.clone(), context.normalize_key(actual));
     }
     if let Some(owner_actual) = owner_actual {
+        bind_provided_symbol_owner_type_parameters(
+            rule,
+            owner_actual,
+            context,
+            &mut child,
+            registry,
+        );
         child.declare_name(rule.owner_subject.clone());
         child.add_substitution(
             rule.owner_subject.clone(),
@@ -7290,6 +7298,30 @@ fn bind_owner_parameter_destructurings(
     };
     for parameter in info.parameter_destructurings.clone() {
         bind_destructured_parameter(&parameter, context, registry);
+    }
+}
+
+/// Instantiates the parameters of the type that owns a provided symbol. For a
+/// member declared on `\element:of{C}`, using that member on `p is
+/// \element:of{D}` must substitute `C := D` throughout the capability target.
+fn bind_provided_symbol_owner_type_parameters(
+    rule: &ProvidedSymbolRule,
+    owner_actual: &str,
+    source: &TypeContext,
+    target: &mut TypeContext,
+    registry: &SignatureRegistry,
+) {
+    let Some(info) = registry.type_infos.get(&rule.owner_signature) else {
+        return;
+    };
+    let Some(actuals) =
+        type_actuals_for_signature(owner_actual, &rule.owner_signature, source, registry)
+    else {
+        return;
+    };
+    for (parameter, actual) in info.parameters.iter().zip(actuals) {
+        target.declare_name(parameter.clone());
+        target.add_substitution(parameter.clone(), source.normalize_key(&actual));
     }
 }
 
@@ -7412,30 +7444,32 @@ fn effective_key_for_member_call(
     registry: &SignatureRegistry,
     resolving: &mut HashSet<String>,
 ) -> Option<String> {
+    let reduced_context = context_with_spec_reductions(context, registry);
     let key = DisambiguationKey::Function {
         name: name.to_owned(),
         arity: arguments.len(),
     };
-    let owner_actual = effective_key_for_expression_inner(owner, context, registry, resolving);
-    let actuals = effective_keys_for_expressions(arguments, context, registry, resolving);
+    let owner_actual =
+        effective_key_for_expression_inner(owner, &reduced_context, registry, resolving);
+    let actuals = effective_keys_for_expressions(arguments, &reduced_context, registry, resolving);
     if let Some(rule) =
-        find_member_provided_symbol_rule(&key, &owner_actual, &actuals, context, registry)
+        find_member_provided_symbol_rule(&key, &owner_actual, &actuals, &reduced_context, registry)
     {
         return Some(effective_key_for_provided_symbol_target(
             rule,
             &actuals,
             Some(&owner_actual),
-            context,
+            &reduced_context,
             registry,
             resolving,
         ));
     }
     if let Some(expression) =
-        tuple_component_access_expression(owner, name, arguments, &owner_actual, context)
+        tuple_component_access_expression(owner, name, arguments, &owner_actual, &reduced_context)
     {
         return Some(effective_key_for_expression_inner(
             &expression,
-            context,
+            &reduced_context,
             registry,
             resolving,
         ));
@@ -7672,6 +7706,13 @@ fn effective_key_for_provided_symbol_target(
         child.add_substitution(parameter.clone(), context.normalize_key(actual));
     }
     if let Some(owner_actual) = owner_actual {
+        bind_provided_symbol_owner_type_parameters(
+            rule,
+            owner_actual,
+            context,
+            &mut child,
+            registry,
+        );
         child.declare_name(rule.owner_subject.clone());
         child.add_substitution(
             rule.owner_subject.clone(),
@@ -11448,6 +11489,92 @@ fn has_type_signature(
         .iter()
         .any(|fact| {
             fact_has_type_signature(fact, &subject, signature, context, registry, &mut seen)
+        })
+}
+
+/// Returns the concrete type arguments through which `subject` has `signature`.
+/// This follows the same requirement/extension/refinement paths used by
+/// [`has_type_signature`], but retains the matching type's arguments so a
+/// provided member can instantiate references to its owner's type parameters.
+fn type_actuals_for_signature(
+    subject: &str,
+    signature: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<Vec<String>> {
+    let subject = context.normalize_key(subject);
+    let mut seen = HashSet::new();
+    context
+        .facts
+        .iter()
+        .find_map(|fact| {
+            fact_type_actuals_for_signature(fact, &subject, signature, context, registry, &mut seen)
+        })
+        .or_else(|| {
+            defined_output_facts_for_key(&subject, context, registry)
+                .iter()
+                .find_map(|fact| {
+                    fact_type_actuals_for_signature(
+                        fact, &subject, signature, context, registry, &mut seen,
+                    )
+                })
+        })
+}
+
+fn fact_type_actuals_for_signature(
+    fact: &TypeFact,
+    subject: &str,
+    signature: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> Option<Vec<String>> {
+    let fact = context.normalize_fact(fact);
+    if !seen.insert(fact.clone()) {
+        return None;
+    }
+
+    match &fact {
+        TypeFact::Is {
+            subject: fact_subject,
+            ty,
+            signature: fact_signature,
+        } if fact_subject == subject && fact_signature == signature => {
+            return actuals_for_type_key(signature, ty);
+        }
+        TypeFact::RefinedIs {
+            subject: fact_subject,
+            ty,
+            signature: fact_signature,
+            ..
+        } if fact_subject == subject && fact_signature == signature => {
+            return actuals_for_refined_type_key(signature, ty);
+        }
+        _ => {}
+    }
+
+    command_requirement_facts(&fact, context, registry)
+        .iter()
+        .find_map(|next| {
+            fact_type_actuals_for_signature(next, subject, signature, context, registry, seen)
+        })
+        .or_else(|| {
+            reduce_extension_fact(&fact, context, registry)
+                .iter()
+                .find_map(|next| {
+                    fact_type_actuals_for_signature(
+                        next, subject, signature, context, registry, seen,
+                    )
+                })
+        })
+        .or_else(|| {
+            reduce_refined_fact(&fact, context, registry)
+                .iter()
+                .find_map(|next| {
+                    fact_type_actuals_for_signature(
+                        next, subject, signature, context, registry, seen,
+                    )
+                })
         })
 }
 

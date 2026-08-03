@@ -240,6 +240,12 @@ definition's type, so a use `p.inv` / `p.f(v)` on a value of that type resolves
 to the reduction target. Previously a member-access LHS failed to parse and was
 misreported as `expected top-level \`:->\``.
 
+Member resolution now also recognizes owner types implied by specification
+capabilities and instantiates the owner's type parameters in the member target.
+For example, if `p "in" H` reduces to `p is \group.element:of{H}`, then `p.inv`
+resolves through the group-element capability with its formal group parameter
+bound to `H`.
+
 ### Bracketed Placeholder Operators `[*]`
 
 A capability LHS may write `x_ [*] y_`, where `[*]` names a symbol drawn from the

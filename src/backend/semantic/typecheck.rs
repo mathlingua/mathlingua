@@ -566,19 +566,7 @@ fn facts_from_extends_via(
             let Some(info) = registry.type_infos.get(&signature) else {
                 return Vec::new();
             };
-            let mut sub_context = context.clone();
-            if let Some(described) = &info.described {
-                sub_context.add_substitution(described.clone(), subject);
-            }
-            for (index, fact) in info.component_types.iter().enumerate() {
-                if let Some(local) = via_names.get(index) {
-                    sub_context.add_substitution(fact_subject(fact).to_owned(), local.clone());
-                }
-            }
-            info.component_types
-                .iter()
-                .map(|fact| sub_context.normalize_fact(fact))
-                .collect()
+            instantiate_component_type_facts(info, &subject, &via_names, context)
         }
         _ => Vec::new(),
     }
@@ -1482,6 +1470,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
+            assume_destructured_parameter_components(&group.heading, &mut context, registry);
             complete_introduced_declaration_statement(
                 &group.defines.argument,
                 &mut context,
@@ -1489,6 +1478,11 @@ fn validate_top_level_item_types(
                 locator,
                 registry,
                 event_log,
+            );
+            assume_destructured_declaration_components(
+                &group.defines.argument,
+                &mut context,
+                registry,
             );
             validate_defines_target_symbol_specifications(group, path, locator, event_log);
             validate_optional_requires(
@@ -1503,7 +1497,18 @@ fn validate_top_level_item_types(
             );
             if let Some(expresses) = &group.expresses {
                 for clause in &expresses.arguments {
-                    check_clause(clause, &context, path, locator, registry, event_log);
+                    if let Clause::Declaration(statement) = clause {
+                        assume_declaration_statement(
+                            statement,
+                            &mut context,
+                            path,
+                            locator,
+                            registry,
+                            event_log,
+                        );
+                    } else {
+                        check_clause(clause, &context, path, locator, registry, event_log);
+                    }
                 }
             }
         }
@@ -4831,8 +4836,16 @@ fn check_declaration_definition(
             Some(DeclarationRelation::Is(ty)) => Some(ty),
             _ => None,
         };
+        let expected_subject = primary_subject_key(&statement.subject);
         check_mapping_expression(
-            definition, expected, context, path, locator, registry, event_log,
+            definition,
+            expected,
+            Some(&expected_subject),
+            context,
+            path,
+            locator,
+            registry,
+            event_log,
         );
     } else {
         check_expression(definition, context, path, locator, registry, event_log);
@@ -5176,20 +5189,11 @@ fn assume_destructured_declaration_components(
     }
 
     let subject = primary_subject_key(&statement.subject);
-    let mut sub_context = context.clone();
-    if let Some(described) = &info.described {
-        sub_context.add_substitution(described.clone(), subject.clone());
-    }
-    for (index, fact) in info.component_types.iter().enumerate() {
-        if let Some(local) = component_names.get(index) {
-            sub_context.add_substitution(fact_subject(fact).to_owned(), local.clone());
-        }
-    }
     for local in &component_names {
         context.declare_name(local.clone());
     }
-    for fact in &info.component_types {
-        context.add_fact(sub_context.normalize_fact(fact));
+    for fact in instantiate_component_type_facts(info, &subject, &component_names, context) {
+        context.add_fact(fact);
     }
     context.add_destructured_components(subject, component_names);
 }
@@ -5590,6 +5594,125 @@ fn function_input_spec_from_type(
     }
 }
 
+fn mapping_pattern_names(expression: &Expression) -> Option<Vec<String>> {
+    let mut names = Vec::new();
+    collect_mapping_pattern_names(expression, &mut names).then_some(names)
+}
+
+fn collect_mapping_pattern_names(expression: &Expression, names: &mut Vec<String>) -> bool {
+    match &expression.kind {
+        ExpressionKind::Name(name) => {
+            names.push(name.clone());
+            true
+        }
+        ExpressionKind::Tuple(elements) => elements.iter().all(|element| match element {
+            TupleExpressionElement::Expression(expression) => {
+                collect_mapping_pattern_names(expression, names)
+            }
+            TupleExpressionElement::Operator(_) => false,
+        }),
+        ExpressionKind::Grouped { expression, .. } => {
+            collect_mapping_pattern_names(expression, names)
+        }
+        _ => false,
+    }
+}
+
+fn mapping_pattern_elements(expression: &Expression) -> Option<Vec<&Expression>> {
+    match &expression.kind {
+        ExpressionKind::Tuple(elements) => elements
+            .iter()
+            .map(|element| match element {
+                TupleExpressionElement::Expression(expression) => Some(expression),
+                TupleExpressionElement::Operator(_) => None,
+            })
+            .collect(),
+        ExpressionKind::Grouped { expression, .. } => mapping_pattern_elements(expression),
+        _ => None,
+    }
+}
+
+fn mapping_function_type_for_subject(
+    subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<(Vec<FunctionTypeFactSpec>, bool)> {
+    let subject = context.normalize_key(subject);
+    let mut seen = HashSet::new();
+    context.facts.iter().find_map(|fact| {
+        mapping_function_type_from_fact(fact, &subject, context, registry, &mut seen)
+    })
+}
+
+fn mapping_function_type_from_fact(
+    fact: &TypeFact,
+    subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> Option<(Vec<FunctionTypeFactSpec>, bool)> {
+    let fact = context.normalize_fact(fact);
+    if !seen.insert(fact.clone()) || context.normalize_key(fact_subject(&fact)) != subject {
+        return None;
+    }
+    if let TypeFact::FunctionType {
+        inputs,
+        variadic_tuple_input,
+        ..
+    } = &fact
+    {
+        return Some((inputs.clone(), *variadic_tuple_input));
+    }
+
+    for output in type_instance_output_facts(&fact, context, registry) {
+        if let Some(function_type) =
+            mapping_function_type_from_fact(&output, subject, context, registry, seen)
+        {
+            return Some(function_type);
+        }
+    }
+    for extended in reduce_extension_fact(&fact, context, registry) {
+        if let Some(function_type) =
+            mapping_function_type_from_fact(&extended, subject, context, registry, seen)
+        {
+            return Some(function_type);
+        }
+    }
+    None
+}
+
+fn type_instance_output_facts(
+    fact: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let (subject, signature, actuals) = match fact {
+        TypeFact::Is {
+            subject,
+            ty,
+            signature,
+        } => {
+            let Some(actuals) = actuals_for_type_key(signature, ty) else {
+                return Vec::new();
+            };
+            (subject, signature, actuals)
+        }
+        TypeFact::RefinedIs {
+            subject,
+            ty,
+            signature,
+            ..
+        } => {
+            let Some(actuals) = actuals_for_refined_type_key(signature, ty) else {
+                return Vec::new();
+            };
+            (subject, signature, actuals)
+        }
+        _ => return Vec::new(),
+    };
+    defined_output_facts_for_signature(signature, &actuals, subject, context, registry)
+}
+
 /// Checks a mapping literal `(x_ is \real) |-> x_ + 1`: the parameter is bound to
 /// its spec's type, then the body is checked in that extended scope. `expected` is
 /// the declared type (from an enclosing `is`) used to infer a bare parameter's
@@ -5597,6 +5720,7 @@ fn function_input_spec_from_type(
 fn check_mapping_expression(
     expression: &Expression,
     expected: Option<&TypeExpression>,
+    expected_subject: Option<&str>,
     context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
@@ -5613,6 +5737,43 @@ fn check_mapping_expression(
     | ExpressionKind::Labeled { expression, .. } = &binder.kind
     {
         binder = expression;
+    }
+
+    if let Some(parameters) = mapping_pattern_names(binder)
+        && parameters.len() > 1
+        && let Some(expected_subject) = expected_subject
+        && let Some((inputs, variadic_tuple_input)) =
+            mapping_function_type_for_subject(expected_subject, context, registry)
+    {
+        let mut child = context.clone();
+        for parameter in parameters {
+            child.declare_name(parameter);
+        }
+        if variadic_tuple_input && inputs.len() == 1 {
+            child.add_fact(instantiate_function_type_spec(
+                &inputs[0],
+                &key_for_expression(binder),
+            ));
+        } else if let Some(elements) = mapping_pattern_elements(binder)
+            && elements.len() == inputs.len()
+        {
+            for (input, element) in inputs.iter().zip(elements) {
+                child.add_fact(instantiate_function_type_spec(
+                    input,
+                    &key_for_expression(element),
+                ));
+            }
+        } else {
+            emit_error(
+                event_log,
+                path,
+                locator.locate_symbol("|->"),
+                "mapping literal pattern does not match the function input shape".to_owned(),
+            );
+        }
+        let child = context_with_spec_reductions(&child, registry);
+        check_expression(rhs, &child, path, locator, registry, event_log);
+        return;
     }
 
     let (parameter, explicit_spec): (Option<String>, Option<FunctionTypeFactSpec>) = match &binder
@@ -5955,7 +6116,7 @@ fn check_expression(
         ExpressionKind::Mapping { .. } => {
             // No expected type here, so a bare-parameter mapping (no spec) is an error.
             check_mapping_expression(
-                expression, None, context, path, locator, registry, event_log,
+                expression, None, None, context, path, locator, registry, event_log,
             );
         }
         ExpressionKind::MemberOf {
@@ -13983,18 +14144,27 @@ fn destructured_parameter_component_facts(
     if info.component_types.is_empty() {
         return Vec::new();
     }
-    let mut sub_context = context.clone();
+    instantiate_component_type_facts(info, &parameter.name, &parameter.components, context)
+}
+
+fn instantiate_component_type_facts(
+    info: &DefinitionTypeInfo,
+    subject: &str,
+    component_names: &[String],
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    let mut substitutions = HashMap::new();
     if let Some(described) = &info.described {
-        sub_context.add_substitution(described.clone(), parameter.name.clone());
+        substitutions.insert(described.clone(), subject.to_owned());
     }
     for (index, fact) in info.component_types.iter().enumerate() {
-        if let Some(local) = parameter.components.get(index) {
-            sub_context.add_substitution(fact_subject(fact).to_owned(), local.clone());
+        if let Some(local) = component_names.get(index) {
+            substitutions.insert(fact_subject(fact).to_owned(), local.clone());
         }
     }
     info.component_types
         .iter()
-        .map(|fact| sub_context.normalize_fact(fact))
+        .map(|fact| context.normalize_fact(&substitute_fact(fact, &substitutions)))
         .collect()
 }
 

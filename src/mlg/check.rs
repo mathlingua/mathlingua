@@ -3968,6 +3968,81 @@ then:
     }
 
     #[test]
+    fn check_accepts_pointwise_tuple_pattern_operator_definitions() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("direct-product.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+Describes: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Enables:
+. from: Y ::= {y__ : ...}
+  capability: x_ "in" X :-> x_ member_of Y
+Documented:
+. called: "set"
+
+[\function:on{A}:to{B}]
+Describes: f(x__) ::= y_
+when: A, B is \set
+specifies:
+. x__ "in" A
+. y_ "in" B
+Documented:
+. called: "function"
+
+[A \.cross./ B]
+Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+when: A, B is \set
+Documented:
+. called: "cross"
+
+[\binary.operation:on{X}]
+Describes: x_ * y_
+when: X is \set
+extends: * is \function:on{X \.cross./ X}:to{X}
+Documented:
+. called: "binary operation"
+
+[\group]
+Describes: G ::= (X, *, e)
+extends: G is \set via X
+specifies:
+. * is \binary.operation:on{G}
+. e "in" X
+Documented:
+. called: "group"
+
+[G1 ::= (X1, *_1, e1) \.direct.product./ G2 ::= (X2, *_2, e2)]
+Defines: G3 ::= (X3, *_3, e3) is \group
+when: G1, G2 is \group
+expresses:
+. X3 := {(x1, x2) : x1 "in" X1; x2 "in" X2}
+. (a1_, a2_) *_3 (b1_, b2_) := (a1_ *_1 b1_, a2_ *_2 b2_)
+. e3 := (e1, e2)
+Documented:
+. called: "direct product"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("direct-product.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_infers_optional_parameters_from_argument_type() {
         // `\uses:of{g}` requires `g is \fn:on{A?}:to{B?}`; the `?` parameters `A`
         // and `B` are solved from the passed argument's type — here `\op:on{X}`,

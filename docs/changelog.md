@@ -264,6 +264,15 @@ Such components need no separate `when:` entry, and member access reaches them
 (`M.X`, `M.*`). Only `::=` introduces components; `:=` requires its right-hand
 side already in scope.
 
+Definitions may assign a destructured infix operator pointwise in `expresses:`,
+for example `(a1_, a2_) *_3 (b1_, b2_) := (a1_ *_1 b1_, a2_ *_2 b2_)`.
+The two operand patterns become the operator mapping's parameters, while the
+operator retains the type inferred from its enclosing destructured `Defines:`
+target. Declarations in an `expresses:` block are processed in order, so an
+earlier assignment such as `X3 := {...}` supplies facts needed by later
+assignments. Destructured components of typed heading operands such as `G1 ::=
+(X1, *_1, e1)` are likewise available to those assignments.
+
 ### `extends: … via …` Sets Component Types
 
 `extends: M is \set via X` records `X is \set`; `extends: S is \magma via (X, *)`

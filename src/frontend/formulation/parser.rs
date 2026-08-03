@@ -4,10 +4,10 @@ use std::fmt;
 use lalrpop_util::ParseError as LalrpopParseError;
 
 use super::ast::{
-    AuthorHeader, BuiltinCommandArgs, BuiltinCommandArgument, BuiltinCommandExpression,
-    BuiltinCommandTailPart, Chain, ChainPart, CommandContext, CommandContextArgument,
-    CommandContextKind, CommandExpression, CommandExpressionTailPart, CommandHeader,
-    CommandHeaderNode, CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs,
+    AuthorHeader, BinaryOperator, BuiltinCommandArgs, BuiltinCommandArgument,
+    BuiltinCommandExpression, BuiltinCommandTailPart, Chain, ChainPart, CommandContext,
+    CommandContextArgument, CommandContextKind, CommandExpression, CommandExpressionTailPart,
+    CommandHeader, CommandHeaderNode, CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs,
     DeclarationRelation, DeclarationStatement, Expression, ExpressionAlias, ExpressionAliasLhs,
     ExpressionBinding, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionType,
     FunctionTypeSpec, FunctionTypeSpecKind, HardCastStatement, InfixCommandHeader, InfixSpec,
@@ -18,7 +18,7 @@ use super::ast::{
     RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart,
     RefinedTail, ResourceHeader, SetExpression, SetPredicate, SetTarget, SetTargetElement,
     SetTargetKind, Span, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind,
-    SubjectSpecStatement, TopicHeader, TypeExpression, WritingAlias,
+    SubjectSpecStatement, TopicHeader, TupleExpressionElement, TypeExpression, WritingAlias,
 };
 use super::grammar;
 use super::lexer::{Lexer, Spanned};
@@ -1544,6 +1544,21 @@ pub fn parse_declaration_statement(
     allow_refined_type: bool,
 ) -> Result<DeclarationStatement, ParseError> {
     let input = input.trim();
+    match parse_standard_declaration_statement(input, allow_refined_type) {
+        Ok(statement) => return Ok(statement),
+        Err(error) => {
+            if let Some(statement) = parse_operator_pattern_definition(input) {
+                return statement;
+            }
+            return Err(error);
+        }
+    }
+}
+
+fn parse_standard_declaration_statement(
+    input: &str,
+    allow_refined_type: bool,
+) -> Result<DeclarationStatement, ParseError> {
     let (body, relation) = parse_declaration_relation(input, allow_refined_type)?;
     let (subject_text, expansion_text, definition) = parse_declaration_body(body)?;
     let subject = parse_is_subject(subject_text)?;
@@ -1573,6 +1588,101 @@ pub fn parse_declaration_statement(
         definition,
         relation,
     })
+}
+
+/// Parses a pointwise operator definition whose operands are destructuring
+/// patterns, for example `(a_, b_) * (c_, d_) := (a_ * c_, b_ * d_)`.
+/// Ordinary form parsing only accepts a single placeholder on each side of an
+/// operator, so this fallback represents the definition as an assignment to the
+/// operator whose value is a mapping from the pair of operand patterns.
+fn parse_operator_pattern_definition(
+    input: &str,
+) -> Option<Result<DeclarationStatement, ParseError>> {
+    let index = find_top_level_definition(input)?;
+    if input[..index].ends_with(':') {
+        return None;
+    }
+    let left_text = input[..index].trim();
+    let right_text = input[index + 2..].trim();
+    if left_text.is_empty() || right_text.is_empty() {
+        return None;
+    }
+
+    let left_expression = match parse_expression(left_text) {
+        Ok(expression) => expression,
+        Err(error) => return Some(Err(error)),
+    };
+    let ExpressionKind::Binary {
+        left,
+        operator,
+        right,
+    } = left_expression.kind
+    else {
+        return None;
+    };
+    if !is_operator_definition_pattern(&left) || !is_operator_definition_pattern(&right) {
+        return None;
+    }
+    let operator = operator_as_value(&operator);
+    let right_expression = match parse_expression(right_text) {
+        Ok(expression) => expression,
+        Err(error) => return Some(Err(error)),
+    };
+    let binder_span = Span::new(left.span.start, right.span.end);
+    let binder = Expression::new(
+        binder_span,
+        ExpressionKind::Tuple(vec![
+            TupleExpressionElement::Expression(*left),
+            TupleExpressionElement::Expression(*right),
+        ]),
+    );
+    let definition = Expression::new(
+        span_all(input),
+        ExpressionKind::Mapping {
+            lhs: Box::new(binder),
+            rhs: Box::new(right_expression),
+        },
+    );
+
+    Some(Ok(DeclarationStatement {
+        span: span_all(input),
+        subject: IsSubject {
+            span: operator.span,
+            kind: IsSubjectKind::Operator(operator),
+        },
+        expansion: None,
+        definition: Some(definition),
+        relation: None,
+    }))
+}
+
+fn is_operator_definition_pattern(expression: &Expression) -> bool {
+    match &expression.kind {
+        ExpressionKind::Name(_) => true,
+        ExpressionKind::Tuple(elements) => elements.iter().all(|element| match element {
+            TupleExpressionElement::Expression(expression) => {
+                is_operator_definition_pattern(expression)
+            }
+            TupleExpressionElement::Operator(_) => false,
+        }),
+        ExpressionKind::Grouped { expression, .. } => is_operator_definition_pattern(expression),
+        _ => false,
+    }
+}
+
+fn operator_as_value(operator: &BinaryOperator) -> Operator {
+    match operator {
+        BinaryOperator::Equality(operator)
+        | BinaryOperator::Special(operator)
+        | BinaryOperator::Add(operator)
+        | BinaryOperator::Subtract(operator)
+        | BinaryOperator::Multiply(operator)
+        | BinaryOperator::Divide(operator)
+        | BinaryOperator::Power(operator) => operator.clone(),
+        BinaryOperator::Named(operator) => {
+            Operator::with_kind(operator.span, operator.name.clone(), operator.kind)
+        }
+    }
 }
 
 /// Parses a declaration statement that only accepts ordinary type expressions.

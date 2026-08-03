@@ -118,7 +118,13 @@ fn target_shape_of_item(item: &TopLevelItem) -> TargetShape {
     match item {
         TopLevelItem::Describes(group) => describes_target_shape(&group.describes.argument),
         TopLevelItem::Defines(group) => is_subject_shape(&group.defines.argument.subject),
-        TopLevelItem::Refines(group) => is_subject_shape(&group.refines.argument.subject),
+        TopLevelItem::Refines(group) => group
+            .refines
+            .argument
+            .expansion
+            .as_ref()
+            .map(is_subject_shape)
+            .unwrap_or_else(|| is_subject_shape(&group.refines.argument.subject)),
         TopLevelItem::States(_) => TargetShape::Statement,
         _ => TargetShape::Other,
     }
@@ -440,6 +446,9 @@ fn type_info_from_parts(
             component_type_facts(target, extends, describes_specifies, &context, registry)
         })
         .unwrap_or_default();
+    let component_shapes = described
+        .map(describes_target_component_shapes)
+        .unwrap_or_default();
     let parameter_destructurings = destructured_parameters(heading, &context);
     let inferred_parameters = collect_inferred_parameter_names(when);
 
@@ -455,6 +464,7 @@ fn type_info_from_parts(
         substitutions: context.substitutions,
         described: described.map(described_target_subject_key),
         component_types,
+        component_shapes,
         parameter_destructurings,
         inferred_parameters,
     }
@@ -1516,7 +1526,7 @@ fn validate_top_level_item_types(
             let mut context = TypeContext::default();
             declare_header_symbols(&group.heading, &mut context);
             declare_declaration_statement_subjects(&group.refines.argument, &mut context);
-            validate_refines_form_only(group, path, locator, event_log);
+            validate_refines_target(group, path, locator, registry, event_log);
             validate_refined_spec_infix_header(group, path, locator, event_log);
             assume_optional_using(
                 &group.using,
@@ -1542,6 +1552,12 @@ fn validate_top_level_item_types(
                 event_log,
             );
             assume_refines_base_type(&group.heading, &group.refines.argument, &mut context);
+            assume_refines_destructured_components(
+                &group.heading,
+                &group.refines.argument,
+                &mut context,
+                registry,
+            );
             complete_introduced_declaration_statement(
                 &group.refines.argument,
                 &mut context,
@@ -1972,25 +1988,97 @@ fn check_refines_marker(
     }
 }
 
-fn validate_refines_form_only(
+fn validate_refines_target(
     group: &RefinesGroup,
     path: &Path,
     locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    if group.refines.argument.relation.is_none()
-        && group.refines.argument.expansion.is_none()
-        && group.refines.argument.definition.is_none()
-    {
+    let statement = &group.refines.argument;
+    if statement.relation.is_some() || statement.definition.is_some() {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_heading(&shape_for_header(&group.heading)),
+            "`Refines:` must have the form `Refines: <form>` or `Refines: <name> ::= (<matching components>)`; the refined target is inferred from the heading",
+        );
         return;
     }
 
+    let Some(expansion) = &statement.expansion else {
+        return;
+    };
+    if is_subject_shape(&statement.subject) != TargetShape::Name {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_heading(&shape_for_header(&group.heading)),
+            "The left side of a destructuring `Refines:` entry must be a single name",
+        );
+        return;
+    }
+    let Some(tuple) = is_subject_first_form(expansion).and_then(form_or_declaration_tuple_form)
+    else {
+        emit_refines_destructuring_mismatch(group, None, path, locator, registry, event_log);
+        return;
+    };
+    let actual = tuple_form_component_shapes(tuple);
+    if matching_refines_base_info(&group.heading, &actual, registry).is_none() {
+        emit_refines_destructuring_mismatch(
+            group,
+            Some(&actual),
+            path,
+            locator,
+            registry,
+            event_log,
+        );
+    }
+}
+
+fn emit_refines_destructuring_mismatch(
+    group: &RefinesGroup,
+    actual: Option<&[TargetShape]>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let expected = refines_base_infos(&group.heading, registry)
+        .into_iter()
+        .find(|info| !info.component_shapes.is_empty())
+        .map(|info| format_component_shapes(&info.component_shapes))
+        .unwrap_or_else(|| "a non-destructured form".to_owned());
+    let actual = actual
+        .map(format_component_shapes)
+        .unwrap_or_else(|| "a non-tuple expansion".to_owned());
     emit_error(
         event_log,
         path,
         locator.locate_heading(&shape_for_header(&group.heading)),
-        "Refines entries must have the form `Refines: <form>`; the refined target is inferred from the heading",
+        format!(
+            "`Refines:` destructuring has shape {actual}, but the base `Describes:` target has shape {expected}"
+        ),
     );
+}
+
+fn format_component_shapes(shapes: &[TargetShape]) -> String {
+    format!(
+        "({})",
+        shapes
+            .iter()
+            .map(|shape| match shape {
+                TargetShape::Name => "value".to_owned(),
+                TargetShape::Function(arity) => format!("function/{arity}"),
+                TargetShape::Tuple(arity) => format!("tuple/{arity}"),
+                TargetShape::Set => "set".to_owned(),
+                TargetShape::Operator => "operator".to_owned(),
+                TargetShape::Statement => "statement".to_owned(),
+                TargetShape::Other => "other".to_owned(),
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    )
 }
 
 fn validate_refined_spec_infix_header(
@@ -2146,6 +2234,63 @@ fn assume_refines_base_type(
             signature,
         });
     }
+}
+
+fn refines_base_infos<'a>(
+    heading: &CommandHeader,
+    registry: &'a SignatureRegistry,
+) -> Vec<&'a DefinitionTypeInfo> {
+    if !matches!(heading, CommandHeader::Refined(_)) {
+        return Vec::new();
+    }
+    shapes_for_header(heading)
+        .into_iter()
+        .filter_map(|shape| refined_header_base_type_fact_parts(&shape))
+        .filter_map(|(_, signature)| registry.type_infos.get(&signature))
+        .collect()
+}
+
+fn matching_refines_base_info<'a>(
+    heading: &CommandHeader,
+    component_shapes: &[TargetShape],
+    registry: &'a SignatureRegistry,
+) -> Option<&'a DefinitionTypeInfo> {
+    refines_base_infos(heading, registry)
+        .into_iter()
+        .find(|info| info.component_shapes == component_shapes)
+}
+
+/// Binds a valid `Refines: G ::= (X, *, e)` expansion from the component
+/// metadata of the base type named by the refined heading. Component names are
+/// local aliases; their shapes and positions must match the base `Describes:`
+/// target, while their types are instantiated positionally.
+fn assume_refines_destructured_components(
+    heading: &CommandHeader,
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+    registry: &SignatureRegistry,
+) {
+    let Some(tuple) = statement
+        .expansion
+        .as_ref()
+        .and_then(is_subject_first_form)
+        .and_then(form_or_declaration_tuple_form)
+    else {
+        return;
+    };
+    let component_shapes = tuple_form_component_shapes(tuple);
+    let Some(info) = matching_refines_base_info(heading, &component_shapes, registry) else {
+        return;
+    };
+    let component_names = tuple_form_component_names(tuple);
+    let subject = primary_subject_key(&statement.subject);
+    for component in &component_names {
+        context.declare_name(component.clone());
+    }
+    for fact in instantiate_component_type_facts(info, &subject, &component_names, context) {
+        context.add_fact(fact);
+    }
+    context.add_destructured_components(subject, component_names);
 }
 
 fn refined_header_base_type_fact_parts(header_shape: &HeaderShape) -> Option<(String, String)> {
@@ -2849,6 +2994,9 @@ fn validate_refines_target_symbol_specifications(
 ) {
     let mut covered = BTreeSet::new();
     covered.insert(primary_subject_key(&group.refines.argument.subject));
+    if let Some(expansion) = &group.refines.argument.expansion {
+        collect_is_subject_covered_symbols(expansion, &mut covered);
+    }
     collect_using_covered_symbols(&group.using, &mut covered);
     collect_valid_when_covered_symbols(
         &group.when,
@@ -3228,6 +3376,16 @@ fn tuple_form_component_names(form: &TupleForm) -> Vec<String> {
         .collect()
 }
 
+fn tuple_form_component_shapes(form: &TupleForm) -> Vec<TargetShape> {
+    form.elements
+        .iter()
+        .map(|element| match element {
+            TupleFormElement::Form(form) => form_shape(form),
+            TupleFormElement::Operator(_) => TargetShape::Operator,
+        })
+        .collect()
+}
+
 /// The tuple form of a destructuring form-or-declaration `Name ::= (c1, ..., cn)`.
 fn form_or_declaration_tuple_form(form: &FormOrDeclaration) -> Option<&TupleForm> {
     match &form.kind {
@@ -3249,14 +3407,30 @@ fn is_subject_first_form(subject: &IsSubject) -> Option<&FormOrDeclaration> {
 /// Ordered component names of a describes target `Name ::= (c1, ..., cn)`, or an
 /// empty vector when the target does not destructure a tuple.
 fn describes_target_component_names(target: &DescribesTarget) -> Vec<String> {
-    let form = match target {
-        DescribesTarget::Form(form) => Some(form),
-        DescribesTarget::Declaration(statement) => is_subject_first_form(&statement.subject)
-            .or_else(|| statement.expansion.as_ref().and_then(is_subject_first_form)),
-    };
-    form.and_then(form_or_declaration_tuple_form)
+    describes_target_tuple_form(target)
         .map(tuple_form_component_names)
         .unwrap_or_default()
+}
+
+fn describes_target_component_shapes(target: &DescribesTarget) -> Vec<TargetShape> {
+    describes_target_tuple_form(target)
+        .map(tuple_form_component_shapes)
+        .unwrap_or_default()
+}
+
+fn describes_target_tuple_form(target: &DescribesTarget) -> Option<&TupleForm> {
+    match target {
+        DescribesTarget::Form(form) => form_or_declaration_tuple_form(form),
+        DescribesTarget::Declaration(statement) => is_subject_first_form(&statement.subject)
+            .and_then(form_or_declaration_tuple_form)
+            .or_else(|| {
+                statement
+                    .expansion
+                    .as_ref()
+                    .and_then(is_subject_first_form)
+                    .and_then(form_or_declaration_tuple_form)
+            }),
+    }
 }
 
 fn describes_target_symbols(target: &DescribesTarget) -> BTreeSet<String> {

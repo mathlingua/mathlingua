@@ -59,6 +59,11 @@ pub(super) struct DefinitionTypeInfo {
     /// type (e.g. a parameter `{M ::= (X, *)}` with `M is \magma`) recover the
     /// component types positionally. Empty when the target is not a tuple.
     pub(super) component_types: Vec<TypeFact>,
+    /// Structural shape of each component in a destructuring `Describes:` target.
+    /// Names are intentionally ignored, while distinctions such as a value versus
+    /// an operator component are retained so `Refines: G ::= (...)` can be checked
+    /// positionally against the base type.
+    pub(super) component_shapes: Vec<TargetShape>,
     /// Destructuring parameters in this definition's header (e.g. the `M ::= (X, *)`
     /// in `\magma.element:of{M ::= (X, *)}`), with their component names and types.
     /// Lets a provided-symbol capability's reduction target that mentions those

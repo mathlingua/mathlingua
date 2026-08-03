@@ -301,6 +301,13 @@ A `:->` capability target may be a spec on the bound placeholder, e.g.
 
 ### `Refines:` Refinement Markers (`implicitly:`/`explicitly:`)
 
+A refinement may destructure the refined value, for example `Refines: G ::=
+(X, *, e)`. The component names are local aliases whose positional shapes must
+match the base type's `Describes:` target; an operator component must remain an
+operator component, and the tuple arity must agree. The base component types and
+specifications are inherited onto those local names for use in `satisfies:`,
+`extends:`, `Requires:`, and `Enables:`.
+
 A `Refines:` group may now carry an optional, zero-argument marker section —
 `implicitly:` or `explicitly:` — placed immediately after `Refines:`. The two are
 mutually exclusive and are stored as an `Option<RefinementKind>` on

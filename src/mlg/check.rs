@@ -5106,13 +5106,128 @@ Documented:
 
         assert_eq!(result.files_checked, 1);
         assert!(messages.iter().any(|message| message
-            == "Refines entries must have the form `Refines: <form>`; the refined target is inferred from the heading"));
+            == "`Refines:` must have the form `Refines: <form>` or `Refines: <name> ::= (<matching components>)`; the refined target is inferred from the heading"));
         assert!(
             messages.iter().any(|message| message
                 == "Refined command headings may only be used with Refines entries")
         );
         assert!(messages.iter().any(|message| {
             message == "`Refines` documentation does not accept `called:`; use `adjective:`"
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_accepts_refines_destructuring_matching_the_base_describes_target() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("refines-destructuring.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [A \.cross./ B]
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    when: A, B is \set
+    Documented:
+    . called: "cross"
+
+    [\function:on{A}:to{B}]
+    Describes: f(x__) ::= y_
+    when: A, B is \set
+    specifies:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . called: "function"
+
+    [\binary.operation:on{X}]
+    Describes: x_ * y_
+    when: X is \set
+    extends: * is \function:on{X \.cross./ X}:to{X}
+    Documented:
+    . called: "binary operation"
+
+    [\group]
+    Describes: G ::= (X, *, e)
+    extends: G is \set via X
+    specifies:
+    . * is \binary.operation:on{G}
+    . e "in" G
+    Documented:
+    . called: "group"
+
+    [\(abelian)::group]
+    Refines: G ::= (X, *, e)
+    satisfies:
+    . forAll: x, y "in" G
+      then: x * y = y * x
+    Documented:
+    . adjective: "abelian"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("refines-destructuring.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_refines_destructuring_that_does_not_match_the_base() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("refines-destructuring-mismatch.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Documented:
+    . called: "set"
+
+    [\group]
+    Describes: G ::= (X, *, e)
+    extends: G is \set via X
+    specifies:
+    . * is \set
+    . e is \set
+    Documented:
+    . called: "group"
+
+    [\(bad)::group]
+    Refines: G ::= (X, operation, e)
+    Documented:
+    . adjective: "bad"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("refines-destructuring-mismatch.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message
+                    == "`Refines:` destructuring has shape (value, value, value), but the base `Describes:` target has shape (value, operator, value)"
+            })
         }));
         assert!(event_log.has_errors());
     }

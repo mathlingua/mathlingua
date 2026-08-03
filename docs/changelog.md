@@ -5,6 +5,12 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+Member capabilities now render through their `written:` templates, so a rule
+such as `x.inv :=> ...` with `written: "x+?^{-1}"` renders `x.inv` as
+`x^{-1}`. Subscripted operator symbols also preserve their base notation and
+subscript: for example, `*_1` renders as `\ast_1` in tuple declarations and
+expressions.
+
 ## Refined Spec-Infix Commands
 
 `Refines:` now accepts a refined specification-operator heading such as

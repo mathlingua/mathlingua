@@ -587,7 +587,11 @@ fn is_atomic_latex(text: &str) -> bool {
         match rest.chars().next().expect("rest is not empty") {
             '(' | '{' | '[' => depth += 1,
             ')' | '}' | ']' => depth = depth.saturating_sub(1),
-            ch if depth == 0 && (ch == ',' || ch.is_whitespace()) => return false,
+            // A top-level superscript is not atomic for the purpose of applying
+            // another suffix. In particular, `x.inv` rendered as `x^{-1}` must
+            // become `(x^{-1})^{-1}` when it is itself the owner of `.inv`, not
+            // the invalid/ambiguous `x^{-1}^{-1}`.
+            ch if depth == 0 && (ch == ',' || ch == '^' || ch.is_whitespace()) => return false,
             _ => {}
         }
 

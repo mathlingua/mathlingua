@@ -95,6 +95,33 @@ Documented:
 }
 
 #[test]
+fn renders_member_capabilities_from_written_templates() {
+    let registry = registry_for(
+        r#"[\group.element:of{G}]
+Describes: x
+Enables:
+. capability: x.inv :=> \group.inverse:of{x}:in{G}
+  written: "x+?^{-1}"
+Documented:
+. called: "group element"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex("x.inv", &registry),
+        Some(r#"x^{-1}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("(x * y).inv = y.inv * x.inv", &registry),
+        Some(r#"\left(x \ast y\right)^{-1} = y^{-1} \ast x^{-1}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("(x.inv).inv = x", &registry),
+        Some(r#"\left(x^{-1}\right)^{-1} = x"#.to_string())
+    );
+}
+
+#[test]
 fn renders_documented_text_for_view_details() {
     assert_eq!(
         render_documented_text_latex("called", r#"membership of $x_?$ in $X?$"#),
@@ -639,6 +666,14 @@ fn renders_tuple_declarations_with_operator_symbols() {
     assert_eq!(
         render_formulation_latex("G ::= (X, *, e)", &registry),
         Some(r#"G ::= \left(X, \ast, e\right)"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("G1 ::= (X1, *_1, e1)", &registry),
+        Some(r#"G_1 ::= \left(X_1, \ast_1, e_1\right)"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("a1 *_1 b1", &registry),
+        Some(r#"a_1 \ast_1 b_1"#.to_string())
     );
 }
 

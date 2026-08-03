@@ -7,6 +7,9 @@ pub(in crate::backend::view) struct RenderRegistry {
     /// Render templates for capabilities where the described item is callable,
     /// such as `R(a_, b_) :-> ...` with `written: "a_? \: R \: b_?"`.
     pub(super) provided_calls: Vec<ProvidedCallRender>,
+    /// Render templates for capabilities exposed as members of the described
+    /// item, such as `x.inv :=> ...` with `written: "x+?^{-1}"`.
+    pub(super) provided_members: Vec<ProvidedMemberRender>,
     /// Collection-wide aliases for rendering plain names as LaTeX fragments.
     pub(super) writing: HashMap<String, String>,
     /// Explicit `Documented:called:` rendering overrides for top-level `Topic:`
@@ -35,6 +38,14 @@ pub(super) struct CommandRender {
 pub(super) struct ProvidedCallRender {
     pub(super) owner_subject: String,
     pub(super) function_name: String,
+    pub(super) parameters: Vec<String>,
+    pub(super) written: String,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct ProvidedMemberRender {
+    pub(super) owner_subject: String,
+    pub(super) member_name: String,
     pub(super) parameters: Vec<String>,
     pub(super) written: String,
 }
@@ -498,7 +509,7 @@ fn collect_requires_provided_call_render_rules(
         let RequiresItem::Capability(group) = item else {
             continue;
         };
-        collect_capability_provided_call_render_rule(
+        collect_capability_render_rule(
             &group.capability.argument,
             group.written.as_ref(),
             owner_subject,
@@ -514,13 +525,13 @@ fn collect_enables_provided_call_render_rules(
 ) {
     for item in &enables.arguments {
         match item {
-            EnablesItem::Capability(group) => collect_capability_provided_call_render_rule(
+            EnablesItem::Capability(group) => collect_capability_render_rule(
                 &group.capability.argument,
                 group.written.as_ref(),
                 owner_subject,
                 registry,
             ),
-            EnablesItem::FromCapability(group) => collect_capability_provided_call_render_rule(
+            EnablesItem::FromCapability(group) => collect_capability_render_rule(
                 &group.capability.argument,
                 group.written.as_ref(),
                 owner_subject,
@@ -531,7 +542,7 @@ fn collect_enables_provided_call_render_rules(
     }
 }
 
-fn collect_capability_provided_call_render_rule(
+fn collect_capability_render_rule(
     alias: &AliasKind,
     written: Option<&WrittenSection>,
     owner_subject: &str,
@@ -543,24 +554,41 @@ fn collect_capability_provided_call_render_rule(
     let AliasKind::Expression(alias) = alias else {
         return;
     };
-    let ExpressionAliasLhs::Form(FormOrDeclaration {
-        kind: FormOrDeclarationKind::FunctionDeclaration { name, form },
-        ..
-    }) = &alias.lhs
-    else {
-        return;
-    };
-    let function_name = name.as_ref().unwrap_or(&form.name);
-    if function_name != owner_subject {
-        return;
-    }
+    match &alias.lhs {
+        ExpressionAliasLhs::Form(FormOrDeclaration {
+            kind: FormOrDeclarationKind::FunctionDeclaration { name, form },
+            ..
+        }) => {
+            let function_name = name.as_ref().unwrap_or(&form.name);
+            if function_name != owner_subject {
+                return;
+            }
 
-    registry.provided_calls.push(ProvidedCallRender {
-        owner_subject: owner_subject.to_owned(),
-        function_name: function_name.clone(),
-        parameters: function_form_render_parameters(form),
-        written: join_written_text(written),
-    });
+            registry.provided_calls.push(ProvidedCallRender {
+                owner_subject: owner_subject.to_owned(),
+                function_name: function_name.clone(),
+                parameters: function_form_render_parameters(form),
+                written: join_written_text(written),
+            });
+        }
+        ExpressionAliasLhs::Member(member) => {
+            if member.owner != owner_subject {
+                return;
+            }
+
+            registry.provided_members.push(ProvidedMemberRender {
+                owner_subject: owner_subject.to_owned(),
+                member_name: member.member.clone(),
+                parameters: member
+                    .arguments
+                    .iter()
+                    .map(|placeholder| placeholder.name.clone())
+                    .collect(),
+                written: join_written_text(written),
+            });
+        }
+        _ => {}
+    }
 }
 
 fn function_form_render_parameters(form: &FunctionForm) -> Vec<String> {

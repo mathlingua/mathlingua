@@ -18,10 +18,23 @@ pub(super) fn render_binary_operator(operator: &BinaryOperator) -> String {
 }
 
 pub(super) fn render_operator_text(operator: &str) -> String {
-    match operator {
+    let (base, subscript) = operator
+        .split_once('_')
+        .map_or((operator, None), |(base, subscript)| {
+            (base, Some(subscript))
+        });
+    let rendered_base = match base {
         "*" => "\\ast".to_string(),
         "!=" => "\\ne".to_string(),
-        _ => escape_latex_math(operator),
+        _ => escape_latex_math(base),
+    };
+
+    match subscript.filter(|subscript| !subscript.is_empty()) {
+        Some(subscript) if subscript.chars().count() == 1 => {
+            format!("{rendered_base}_{}", escape_latex_math(subscript))
+        }
+        Some(subscript) => format!("{rendered_base}_{{{}}}", escape_latex_math(subscript)),
+        None => rendered_base,
     }
 }
 

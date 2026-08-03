@@ -29,6 +29,9 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             name,
             arguments,
         } => {
+            if let Some(rendered) = render_provided_member(owner, name, arguments, registry) {
+                return rendered;
+            }
             let args = arguments
                 .iter()
                 .map(|argument| render_expression(argument, registry))
@@ -41,11 +44,16 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 args
             )
         }
-        ExpressionKind::MemberAccess { owner, name } => format!(
-            "{}.{}",
-            render_expression(owner, registry),
-            escape_math_identifier(name, registry)
-        ),
+        ExpressionKind::MemberAccess { owner, name } => {
+            if let Some(rendered) = render_provided_member(owner, name, &[], registry) {
+                return rendered;
+            }
+            format!(
+                "{}.{}",
+                render_expression(owner, registry),
+                escape_math_identifier(name, registry)
+            )
+        }
         ExpressionKind::Tuple(elements) => {
             let values = elements
                 .iter()
@@ -368,6 +376,31 @@ fn render_provided_function_call(
     substitutions.insert(
         render.owner_subject.clone(),
         escape_math_identifier(name, registry),
+    );
+    for (parameter, argument) in render.parameters.iter().zip(arguments) {
+        let rendered_argument = render_expression(argument, registry);
+        substitutions.insert(parameter.clone(), rendered_argument.clone());
+        if !parameter.ends_with('_') {
+            substitutions.insert(format!("{parameter}_"), rendered_argument);
+        }
+    }
+    Some(substitute_math_template(&render.written, &substitutions))
+}
+
+fn render_provided_member(
+    owner: &Expression,
+    name: &str,
+    arguments: &[Expression],
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let render = registry
+        .provided_members
+        .iter()
+        .find(|render| render.member_name == name && render.parameters.len() == arguments.len())?;
+    let mut substitutions = HashMap::new();
+    substitutions.insert(
+        render.owner_subject.clone(),
+        render_expression(owner, registry),
     );
     for (parameter, argument) in render.parameters.iter().zip(arguments) {
         let rendered_argument = render_expression(argument, registry);

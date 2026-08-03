@@ -19,6 +19,8 @@ The identifier atom `[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?` becomes
 and operator lexing gains a prime alternative in its continuation. Primes render
 as LaTeX primes — `X'` as $X'$, `x'_a'` as $x'_{a'}$, `*'` as a primed operator —
 so a primed name reads the same in `mlg view` as it does in source.
+Backtick-stropped operators also now render as the operator itself (`` `*` `` as
+$*$, `` `*'` `` as $*'$) instead of showing the backticks.
 
 ## `Text*` Prose Placeholders
 

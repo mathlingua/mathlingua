@@ -548,6 +548,21 @@ fn renders_dot_delimited_grouped_expressions_without_parentheses() {
 }
 
 #[test]
+fn renders_stropped_operators_without_backticks() {
+    let registry = registry_for("");
+
+    // A backtick-stropped operator renders as the operator itself, not `` `*` ``.
+    assert_eq!(
+        render_formulation_latex("`*`", &registry),
+        Some("*".to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("`*'`", &registry),
+        Some("*'".to_string())
+    );
+}
+
+#[test]
 fn renders_conditional_written_templates_for_optional_infix_tail() {
     let registry = registry_for(
         r#"[A \.intersect:?within{U}./ B]

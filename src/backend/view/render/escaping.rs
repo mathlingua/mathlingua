@@ -1,6 +1,16 @@
 use super::RenderRegistry;
 
 pub(super) fn escape_math_identifier(value: &str, registry: &RenderRegistry) -> String {
+    // A backtick-stropped operator (`` `*` ``, `` `*'` ``) is just the operator
+    // referred to by name, so render the operator itself — without the backticks —
+    // handling any subscript/prime on the unwrapped operator as usual.
+    if let Some(operator) = value
+        .strip_prefix('`')
+        .and_then(|rest| rest.strip_suffix('`'))
+    {
+        return escape_math_identifier(operator, registry);
+    }
+
     if value.contains('_') {
         return render_underscore_identifier(value, registry);
     }

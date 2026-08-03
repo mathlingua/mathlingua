@@ -121,7 +121,8 @@ $X'$, `x'_a'` as $x'_{a'}$). Stropped symbolic names wrap an operator name in
 backticks: `` `*` `` is the operator `*` referred
 to by name, so where `*` is bound (e.g. a magma's operation) `` `*` `` resolves as
 that operator's value — passable as an argument and invocable in function form as
-`` `*`(a, b) ``.
+`` `*`(a, b) ``. It renders as the operator itself, without the backticks
+(`` `*` `` renders as $*$, `` `*'` `` as $*'$).
 
 Placeholders end in `_`, and magnetic placeholders end in `__`.
 

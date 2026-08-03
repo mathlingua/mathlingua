@@ -5,6 +5,21 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Prime Marks In Names And Operators
+
+Names and symbolic operators may now carry **prime marks** — one or more trailing
+`'`. Value names accept primes after an alphanumeric, so a name may end in a
+prime and a subscript may too: `X'`, `X''`, `e'`, `x'_a'`. Symbolic operators
+accept trailing primes alongside the existing subscripts: `*'`, `*''`, `*'_a`. A
+bare `*` is unchanged. Prime marks are ordinary name characters (they never start
+a name), and stropped operators may be primed (`` `*'` ``).
+
+The identifier atom `[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?` becomes
+`[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?` (equivalent for prime-free input),
+and operator lexing gains a prime alternative in its continuation. Primes render
+as LaTeX primes — `X'` as $X'$, `x'_a'` as $x'_{a'}$, `*'` as a primed operator —
+so a primed name reads the same in `mlg view` as it does in source.
+
 ## `Text*` Prose Placeholders
 
 Four new top-level groups — `TextTheorem:`, `TextAxiom:`, `TextConjecture:`, and

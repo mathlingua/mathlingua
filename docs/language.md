@@ -102,16 +102,23 @@ Normal names are either identifier-like names or stropped symbolic names.
 ```text
 x
 x_1
+X'
+x'_a'
 123
 `*`
 `*+`
+`*'`
 ```
 
-Identifier-like names may contain internal underscores, but must start and end
-with an ASCII letter or digit. Symbolic operator names are a run of operator
-characters from `-~!#%^&*\+=|<>/`, optionally followed by a `_`-prefixed
-subscript (`*_1`, `+_i`, `<=_max`) so operators can be indexed. Stropped symbolic
-names wrap an operator name in backticks: `` `*` `` is the operator `*` referred
+Identifier-like names must start with an ASCII letter or digit and may contain
+internal underscores. They may also carry **prime marks** — one or more trailing
+`'` after an alphanumeric — so a name may end in a prime (`X'`, `X''`, `e'`),
+including on a subscript (`x'_a'`). Symbolic operator names are a run of operator
+characters from `-~!#%^&*\+=|<>/`, optionally carrying trailing primes (`*'`,
+`*''`) and/or a `_`-prefixed subscript (`*_1`, `+_i`, `<=_max`, `*'_a`) so
+operators can be primed and indexed. Prime marks render as LaTeX primes (`X'` as
+$X'$, `x'_a'` as $x'_{a'}$). Stropped symbolic names wrap an operator name in
+backticks: `` `*` `` is the operator `*` referred
 to by name, so where `*` is bound (e.g. a magma's operation) `` `*` `` resolves as
 that operator's value — passable as an argument and invocable in function form as
 `` `*`(a, b) ``.

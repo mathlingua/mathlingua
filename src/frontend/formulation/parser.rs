@@ -511,9 +511,11 @@ pub(super) fn consume_balanced_prefix(
 
 /// Returns whether text is valid in a name position.
 ///
-/// Plain names must begin and end with alphanumeric characters and may contain
-/// underscores internally.  Backtick-wrapped operator text is also accepted so
-/// operator names can be referenced by command/name infrastructure.
+/// Plain names must begin with an alphanumeric character, may contain underscores
+/// internally, and may carry prime marks (`X'`, `X''`, `x'_a'`) after an
+/// alphanumeric (so a name may end in a prime). Backtick-wrapped operator text is
+/// also accepted so operator names can be referenced by command/name
+/// infrastructure.
 pub(super) fn is_name_text(input: &str) -> bool {
     if input.is_empty() {
         return false;
@@ -531,18 +533,19 @@ pub(super) fn is_name_text(input: &str) -> bool {
         return false;
     };
 
-    if !first.is_ascii_alphanumeric() || !last.is_ascii_alphanumeric() {
+    if !first.is_ascii_alphanumeric() || !(last.is_ascii_alphanumeric() || last == '\'') {
         return false;
     }
 
     input
         .chars()
-        .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+        .all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '\'')
 }
 
 /// Returns whether `input` is a symbolic operator name: a nonempty run of
-/// operator characters, optionally followed by a `_`-prefixed subscript so that
-/// operators can be indexed (`*_1`, `+_i`), mirroring subscripted value names.
+/// operator characters, optionally carrying trailing prime marks (`*'`, `*''`)
+/// and/or a `_`-prefixed subscript so that operators can be primed and indexed
+/// (`*_1`, `+_i`, `*'_a`), mirroring subscripted/primed value names.
 ///
 /// This deliberately uses a narrow ASCII operator alphabet until the language
 /// has a richer token classification for symbolic operators.
@@ -556,7 +559,13 @@ pub(super) fn is_operator_text(input: &str) -> bool {
         None => (input, None),
     };
 
-    if symbol.is_empty() || !symbol.chars().all(|ch| "-~!#%^&*\\+=|<>/".contains(ch)) {
+    // The operator symbol is operator characters plus any trailing primes.
+    let symbol_core = symbol.trim_end_matches('\'');
+    if symbol_core.is_empty()
+        || !symbol_core
+            .chars()
+            .all(|ch| "-~!#%^&*\\+=|<>/".contains(ch))
+    {
         return false;
     }
 
@@ -2952,12 +2961,34 @@ mod tests {
         assert!(!is_operator_text("*_"));
     }
 
+    #[test]
+    fn names_and_operators_accept_primes() {
+        // Value names may carry prime marks, including on a subscript.
+        assert!(is_name_text("X'"));
+        assert!(is_name_text("X''"));
+        assert!(is_name_text("e'"));
+        assert!(is_name_text("x'_a'"));
+        assert!(is_name_text("x_1"));
+        // A prime cannot start a name; a bare trailing underscore is a placeholder.
+        assert!(!is_name_text("'x"));
+        assert!(!is_name_text("x_"));
+        // Operators may carry trailing primes and still take a subscript.
+        assert!(is_operator_text("*'"));
+        assert!(is_operator_text("*''"));
+        assert!(is_operator_text("*'_a"));
+        assert!(!is_operator_text("'*"));
+        // Primed names and a stropped primed operator parse as expressions.
+        assert!(parse_expression("X''").is_ok());
+        assert!(parse_expression("x'_a'").is_ok());
+        assert!(parse_expression("`*'`").is_ok());
+    }
+
     use super::{
-        is_operator_text, parse_author_header, parse_command_header, parse_expression,
-        parse_expression_alias, parse_form_or_declaration, parse_hard_cast_statement,
-        parse_is_or_refined_statement_spec, parse_is_or_spec, parse_is_via_statement,
-        parse_label_header, parse_ordinary_declaration_statement, parse_resource_header,
-        parse_spec_operator_alias, parse_topic_header, parse_writing_alias,
+        is_name_text, is_operator_text, parse_author_header, parse_command_header,
+        parse_expression, parse_expression_alias, parse_form_or_declaration,
+        parse_hard_cast_statement, parse_is_or_refined_statement_spec, parse_is_or_spec,
+        parse_is_via_statement, parse_label_header, parse_ordinary_declaration_statement,
+        parse_resource_header, parse_spec_operator_alias, parse_topic_header, parse_writing_alias,
     };
     use crate::frontend::formulation::ast::{
         BinaryOperator, BuiltinCommandArgument, ChainPart, CommandContextArgument,

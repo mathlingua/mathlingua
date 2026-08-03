@@ -44,32 +44,32 @@ pub enum Token {
     // a value's fields. The `|` character cannot appear in a segment since it is
     // the delimiter.
     #[regex(
-        r":\|(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+)(?:\.(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+))*\|:",
+        r":\|(?:[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?|[-~!#%\^&*+=<>/]+)(?:\.(?:[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?|[-~!#%\^&*+=<>/]+))*\|:",
         both_named_operator
     )]
     BothNamedOperator(String),
     #[regex(
-        r":\|(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+)(?:\.(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+))*\|",
+        r":\|(?:[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?|[-~!#%\^&*+=<>/]+)(?:\.(?:[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?|[-~!#%\^&*+=<>/]+))*\|",
         left_named_operator
     )]
     LeftNamedOperator(String),
     #[regex(
-        r"\|(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+)(?:\.(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+))*\|:",
+        r"\|(?:[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?|[-~!#%\^&*+=<>/]+)(?:\.(?:[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?|[-~!#%\^&*+=<>/]+))*\|:",
         right_named_operator
     )]
     RightNamedOperator(String),
     #[regex(
-        r"\|(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+)(?:\.(?:[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?|[-~!#%\^&*+=<>/]+))*\|",
+        r"\|(?:[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?|[-~!#%\^&*+=<>/]+)(?:\.(?:[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?|[-~!#%\^&*+=<>/]+))*\|",
         plain_named_operator
     )]
     NamedOperator(String),
     #[regex(
-        r"[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?\|[ \t\r\n\f]+",
+        r"[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?\|[ \t\r\n\f]+",
         prefix_named_operator
     )]
     PrefixNamedOperator(String),
     #[regex(
-        r"\|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?",
+        r"\|[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?",
         postfix_named_operator
     )]
     PostfixNamedOperator(String),
@@ -110,19 +110,19 @@ pub enum Token {
     #[token("^:")]
     RightCaret,
     #[regex(
-        r":[-~!#%^&*+=|<>/](?:[-~!#%^&*+=|<>/]|_(?:[-~!#%^&*+=|<>/]|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?))*:",
+        r":[-~!#%^&*+=|<>/](?:[-~!#%^&*+=|<>/]|'|_(?:[-~!#%^&*+=|<>/]|[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?))*:",
         both_special_operator,
         priority = 1
     )]
     BothSpecialOperator(String),
     #[regex(
-        r":[-~!#%^&*+=|<>/](?:[-~!#%^&*+=|<>/]|_(?:[-~!#%^&*+=|<>/]|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?))*",
+        r":[-~!#%^&*+=|<>/](?:[-~!#%^&*+=|<>/]|'|_(?:[-~!#%^&*+=|<>/]|[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?))*",
         left_special_operator,
         priority = 1
     )]
     LeftSpecialOperator(String),
     #[regex(
-        r"[-~!#%^&*+=|<>/](?:[-~!#%^&*+=|<>/]|_(?:[-~!#%^&*+=|<>/]|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?))*:",
+        r"[-~!#%^&*+=|<>/](?:[-~!#%^&*+=|<>/]|'|_(?:[-~!#%^&*+=|<>/]|[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?))*:",
         right_special_operator,
         priority = 1
     )]
@@ -141,22 +141,22 @@ pub enum Token {
     Satisfies,
     #[token("|->", priority = 10)]
     MapsTo,
-    #[regex(r#""[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?""#, parse_quoted_name)]
+    #[regex(r#""[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?""#, parse_quoted_name)]
     QuotedName(String),
     #[regex(
-        r"[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?__",
+        r"[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?__",
         parse_magnetic_placeholder
     )]
     MagneticPlaceholder(String),
-    #[regex(r"[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?_", parse_placeholder)]
+    #[regex(r"[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?_", parse_placeholder)]
     Placeholder(String),
     #[regex(
-        r"`[-~!#%^&*\\+=|<>/](?:[-~!#%^&*\\+=|<>/]|_(?:[-~!#%^&*\\+=|<>/]|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?))*`|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?",
+        r"`[-~!#%^&*\\+=|<>/](?:[-~!#%^&*\\+=|<>/]|'|_(?:[-~!#%^&*\\+=|<>/]|[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?))*`|[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?",
         parse_name
     )]
     Name(String),
     #[regex(
-        r"(?:[-~!#%^&*+=|<>/](?:[-~!#%^&*+=|<>/]|_(?:[-~!#%^&*+=|<>/]|[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?))+|[~!#%&<>])",
+        r"(?:[-~!#%^&*+=|<>/](?:[-~!#%^&*+=|<>/]|'|_(?:[-~!#%^&*+=|<>/]|[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?))+|[~!#%&<>])",
         parse_special_operator
     )]
     SpecialOperator(String),

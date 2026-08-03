@@ -75,40 +75,44 @@ This document uses the following notation:
 
 A normal formulation name is either:
 
-- a stropped symbolic name: `` `...` `` where the inside text is non-empty and uses only operator characters from `-~!#%^&*\+=|<>/`
+- a stropped symbolic name: `` `...` `` where the inside text is non-empty and uses only operator characters from `-~!#%^&*\+=|<>/`, optionally with trailing primes (`` `*'` ``)
 - an identifier-like name matching:
 
 ```text
-[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?
+[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?
 ```
 
 Consequences:
 
 - names may start with a digit
 - names may contain `_` internally
-- names must end in an ASCII letter or digit
-- `_x`, `x_`, and `x__` are not normal names
+- names may carry trailing prime marks (`'`) after an alphanumeric, so a name may end in a prime (`X'`, `X''`), including on a subscript (`x'_a'`)
+- names must otherwise end in an ASCII letter or digit
+- `_x`, `x_`, `x__`, and `'x` are not normal names
 
 Examples of valid normal names:
 
 - `x`
 - `x_1`
+- `X'`
+- `x'_a'`
 - `123`
 - `` `*` ``
 - `` `*+` ``
+- `` `*'` ``
 
 ### Placeholders
 
 A placeholder is an identifier-like name followed by `_`:
 
 ```text
-[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?_
+[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?_
 ```
 
 A magnetic placeholder is the same base name followed by `__`:
 
 ```text
-[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?__
+[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?__
 ```
 
 Examples:
@@ -122,7 +126,7 @@ Examples:
 The lexer token `QuotedName` is restricted. It is not an arbitrary string literal. It must match:
 
 ```text
-"[A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?"
+"[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?"
 ```
 
 So these are valid in lexer-driven expression parsing:
@@ -191,7 +195,11 @@ The lexer recognizes:
 - single-character operators from `~!#%&<>`
 - the individual punctuation tokens `+ - * / = ^` are also tokens in their own right
 
-The raw helper parser also treats any non-empty string made only from `-~!#%^&*\\+=|<>/` as operator text.
+An operator run may also carry trailing prime marks (`'`) and/or a `_`-prefixed
+subscript, so `*'`, `*''`, `*_1`, and `*'_a` are single operator tokens (a bare
+`*` remains the punctuation token).
+
+The raw helper parser also treats any non-empty string made only from `-~!#%^&*\\+=|<>/`, with optional trailing primes and subscript, as operator text.
 
 ### Reserved keywords and punctuation
 
@@ -849,7 +857,7 @@ InputResourceHeader ::= ResourceHeader
 ### Lexical terminals
 
 ```text
-IdentifierName ::= [A-Za-z0-9]+(?:[A-Za-z0-9_]*[A-Za-z0-9]+)?
+IdentifierName ::= [A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?
 BacktickName ::= "`" OperatorText "`"
 Name ::= IdentifierName | BacktickName
 

@@ -520,6 +520,14 @@ extends its left operand to `\set` and `\(nonempty)::set` is defined, then
 `X' \:(nonempty)::subset:/ X` resolves implicitly. It establishes both the base
 `X' \:subset:/ X` fact and `X' is \(nonempty)::set`.
 
+Ordinary refined types keep their adjectives before the rendered type. A single
+refinement such as `\(a)::type` renders as `<a> <type>`, while
+`\(a, b, c)::type` renders as `(<a>, <b>, and <c>) <type>`. Refined spec-infix
+forms use a different order: the rendered base relation comes first, followed by
+the refinements in parentheses. Thus `X \:(a, b, c)::relation:/ Y` renders as
+`<X relation Y> (<a>, <b>, and <c>)`. An explicit `written:` template remains an
+override for custom notation.
+
 #### `Refines` Refinement Markers (`implicitly:`/`explicitly:`)
 
 A refinement of a base type is automatically available on that type's subtypes:

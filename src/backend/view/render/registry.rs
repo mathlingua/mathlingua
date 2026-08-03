@@ -340,14 +340,17 @@ pub(super) fn render_refines_group_heading_latex(
     refinement_render: &CommandRender,
     registry: &RenderRegistry,
 ) -> Option<String> {
-    let base_signature = match header {
+    let (base_signature, infix_spec) = match header {
         CommandHeader::Refined(refined_header) => {
-            refined_command_header_base_signature(refined_header)
+            (refined_command_header_base_signature(refined_header), false)
         }
         CommandHeader::InfixSpec(spec) if spec.refinement.is_some() => {
             let mut base = spec.clone();
             base.refinement = None;
-            command_header_signature(&CommandHeader::InfixSpec(base))
+            (
+                command_header_signature(&CommandHeader::InfixSpec(base)),
+                true,
+            )
         }
         _ => return None,
     };
@@ -360,10 +363,11 @@ pub(super) fn render_refines_group_heading_latex(
         registry,
     );
 
-    Some(join_called_latex_parts(vec![
-        refinement_latex,
-        target_latex,
-    ]))
+    Some(if infix_spec {
+        append_refinement_suffix(target_latex, vec![refinement_latex])
+    } else {
+        prepend_refinement_prefix(target_latex, vec![refinement_latex])
+    })
 }
 
 pub(super) fn render_parsed_formulation_latex(

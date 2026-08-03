@@ -304,7 +304,7 @@ Documented:
             &registry
         ),
         Some(
-            r#"g \textrm{ is } \textrm{bounded}\textrm{, }\textrm{continuous}\textrm{ }\textrm{function on }X\textrm{ to }Y"#
+            r#"g \textrm{ is } \left(\textrm{bounded}\textrm{ and }\textrm{continuous}\right)\textrm{ }\textrm{function on }X\textrm{ to }Y"#
                 .to_string()
         )
     );
@@ -511,11 +511,57 @@ Documented:
             Some("A"),
             &registry,
         ),
-        Some(r#"\textrm{nonempty}\textrm{ }A\textrm{ subset of }B"#.to_string())
+        Some(r#"A\textrm{ subset of }B\textrm{ }\left(\textrm{nonempty}\right)"#.to_string())
     );
     assert_eq!(
         render_formulation_latex(r#"X' \:(nonempty)::subset:/ X"#, &registry),
         Some(r#"X' \subsetneq X"#.to_string())
+    );
+}
+
+#[test]
+fn renders_implicit_refined_spec_infix_adjectives_after_the_base() {
+    let registry = registry_for(
+        r#"[\set]
+Describes: X
+Documented:
+. called: "set"
+
+[\(a)::set]
+Refines: X
+Documented:
+. adjective: "alpha"
+
+[\(b)::set]
+Refines: X
+Documented:
+. adjective: "beta"
+
+[\(c)::set]
+Refines: X
+Documented:
+. adjective: "gamma"
+
+[A \:subset:/ B]
+Describes: A
+Documented:
+. called: "$A?$ subset of $B?$"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"X is \(a, b, c)::set"#, &registry),
+        Some(
+            r#"X \textrm{ is } \left(\textrm{alpha}\textrm{, }\textrm{beta}\textrm{, and }\textrm{gamma}\right)\textrm{ }\textrm{set}"#
+                .to_string()
+        )
+    );
+    assert_eq!(
+        render_formulation_latex(r#"X \:(a, b, c)::subset:/ Y"#, &registry),
+        Some(
+            r#"X\textrm{ subset of }Y\textrm{ }\left(\textrm{alpha}\textrm{, }\textrm{beta}\textrm{, and }\textrm{gamma}\right)"#
+                .to_string()
+        )
     );
 }
 

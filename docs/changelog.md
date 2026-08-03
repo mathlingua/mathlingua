@@ -20,6 +20,14 @@ the base operator's `extends:` type. Thus, when `\:subset:/` extends `\set` and
 reduces to both the base subset fact and the refined nonempty-set fact. The base
 operator's and refined type's `when:` requirements are checked at the use site.
 
+Implicit refined spec-infix relations now render the base relation first and
+place their adjectives in a parenthesized English list afterward. For example,
+`X \:(a, b, c)::relation:/ Y` renders as `<X relation Y> (<a>, <b>, and <c>)`.
+Ordinary refined types retain their adjective-first rendering: `\(a)::type`
+renders as `<a> <type>`, and `\(a, b, c)::type` renders as
+`(<a>, <b>, and <c>) <type>`. An explicit `written:` template still overrides
+the composed rendering.
+
 ## Prime Marks In Names And Operators
 
 Names and symbolic operators may now carry **prime marks** — one or more trailing

@@ -97,22 +97,84 @@ pub(super) fn render_infix_spec_expression(
     registry: &RenderRegistry,
 ) -> String {
     let signature = infix_spec_signature(spec);
-    let Some(render) = registry.commands.get(&signature) else {
-        return format!(
-            "{} {} {}",
-            render_expression(left, registry),
-            render_infix_spec_like(spec, registry),
-            render_expression(right, registry)
+    if let Some(render) = registry.commands.get(&signature) {
+        let substitutions = infix_spec_substitutions(left, spec, right, render, registry);
+        if let Some(written) = render.effective_written(&substitutions) {
+            return command_reference_latex(
+                &signature,
+                substitute_math_template(written, &substitutions),
+                registry,
+            );
+        }
+    }
+
+    if let Some(refinement) = &spec.refinement {
+        let mut base = spec.clone();
+        base.refinement = None;
+        let base_latex = render_infix_spec_expression(left, &base, right, registry);
+        let refinements = refinement
+            .parts
+            .iter()
+            .map(|part| render_infix_spec_refinement_part(spec, part, left, right, registry))
+            .collect();
+        return append_refinement_suffix(base_latex, refinements);
+    }
+
+    if let Some(render) = registry.commands.get(&signature) {
+        let substitutions = infix_spec_substitutions(left, spec, right, render, registry);
+        return command_reference_latex(&signature, render.render_called(&substitutions), registry);
+    }
+
+    format!(
+        "{} {} {}",
+        render_expression(left, registry),
+        render_infix_spec_like(spec, registry),
+        render_expression(right, registry)
+    )
+}
+
+fn render_infix_spec_refinement_part(
+    spec: &InfixSpec,
+    part: &RefinedExpressionPart,
+    left: &Expression,
+    right: &Expression,
+    registry: &RenderRegistry,
+) -> String {
+    let mut single = spec.clone();
+    if let Some(refinement) = &mut single.refinement {
+        refinement.parts = vec![part.clone()];
+    }
+    let signature = infix_spec_signature(&single);
+    if let Some(render) = registry.commands.get(&signature) {
+        let substitutions = infix_spec_substitutions(left, &single, right, render, registry);
+        return command_reference_latex(&signature, render.render_called(&substitutions), registry);
+    }
+
+    let mut type_prefix = "\\".to_owned();
+    if let Some(prefix) = spec
+        .refinement
+        .as_ref()
+        .and_then(|refinement| refinement.prefix_chain.as_ref())
+    {
+        type_prefix.push_str(&format_chain(prefix));
+        type_prefix.push_str("::");
+    }
+    type_prefix.push_str(&format_chain(&part.chain));
+    add_expression_tail_signature(&mut type_prefix, &part.tail);
+    type_prefix.push_str("::");
+    if let Some((refined_signature, render)) = registry
+        .commands
+        .iter()
+        .find(|(candidate, _)| candidate.starts_with(&type_prefix))
+    {
+        return command_reference_latex(
+            refined_signature,
+            render.render_called(&HashMap::new()),
+            registry,
         );
-    };
-    let substitutions = infix_spec_substitutions(left, spec, right, render, registry);
+    }
 
-    let latex = match render.effective_written(&substitutions) {
-        Some(written) => substitute_math_template(written, &substitutions),
-        None => render.render_called(&substitutions),
-    };
-
-    command_reference_latex(&signature, latex, registry)
+    render_called_template(&format_chain(&part.chain), &HashMap::new())
 }
 
 pub(super) fn render_refined_command_called(
@@ -215,13 +277,40 @@ pub(super) fn refined_command_called_template(
         )
     };
 
-    let latex = if refinement_templates.is_empty() {
-        base_latex
-    } else {
-        join_called_latex_parts(vec![refinement_templates.join("\\textrm{, }"), base_latex])
-    };
+    let latex = prepend_refinement_prefix(base_latex, refinement_templates);
 
     CalledTemplate { latex }
+}
+
+pub(super) fn append_refinement_suffix(base_latex: String, refinements: Vec<String>) -> String {
+    let Some(list) = refinement_list(&refinements) else {
+        return base_latex;
+    };
+    format!("{base_latex}\\textrm{{ }}\\left({list}\\right)")
+}
+
+pub(super) fn prepend_refinement_prefix(base_latex: String, refinements: Vec<String>) -> String {
+    let Some(list) = refinement_list(&refinements) else {
+        return base_latex;
+    };
+    if refinements.len() == 1 {
+        format!("{list}\\textrm{{ }}{base_latex}")
+    } else {
+        format!("\\left({list}\\right)\\textrm{{ }}{base_latex}")
+    }
+}
+
+fn refinement_list(refinements: &[String]) -> Option<String> {
+    let list = match refinements {
+        [] => return None,
+        [only] => only.clone(),
+        [left, right] => format!("{left}\\textrm{{ and }}{right}"),
+        _ => {
+            let (last, head) = refinements.split_last().expect("refinements are nonempty");
+            format!("{}\\textrm{{, and }}{}", head.join("\\textrm{, }"), last)
+        }
+    };
+    Some(list)
 }
 
 pub(super) fn command_substitutions(

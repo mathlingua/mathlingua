@@ -3766,6 +3766,7 @@ then:
     . q "in" X
     then:
     . p.self "in"? X
+    . (p.self).self "in"? X
     . p.twin(q) "in"? X
     Id: "aaaaaaaa-1111-4aaa-8aaa-aaaaaaaaaaaa"
     "#,
@@ -3776,6 +3777,117 @@ then:
         let result = check_in(
             temp_dir.path(),
             &[PathBuf::from("member-capability.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_resolves_members_on_grouped_operator_and_member_results() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("grouped-member-capability.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Describes: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [A \.cross./ B]
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    when: A, B is \set
+    Documented:
+    . called: "cross"
+
+    [\function:on{A}:to{B}]
+    Describes: f(x__) ::= y_
+    when: A, B is \set
+    specifies:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . called: "function"
+
+    [\binary.operation:on{X}]
+    Describes: x_ * y_
+    when: X is \set
+    extends: * is \function:on{X \.cross./ X}:to{X}
+    Documented:
+    . called: "binary operation"
+
+    [\magma]
+    Describes: M ::= (X, *)
+    extends: M is \set via X
+    specifies: * is \binary.operation:on{M}
+    Enables:
+    . capability: x_ "in" M :-> x_ is \magma.element:of{M}
+    Documented:
+    . called: "magma"
+
+    [\magma.element:of{M ::= (X, *)}]
+    Describes: x
+    when: M is \magma
+    extends: x "in" X
+    Enables:
+    . capability: x_ [*] y_ :=> x_ |M.*| y_
+      written: "x_? *? y_?"
+    Documented:
+    . called: "magma element"
+
+    [\group]
+    Describes: G ::= (X, *, e)
+    extends: G is \magma via (X, *)
+    specifies: e "in" X
+    Enables:
+    . capability: x_ "in" G :-> x_ is \group.element:of{G}
+    Documented:
+    . called: "group"
+
+    [\group.element:of{G}]
+    Describes: x
+    when: G is \group
+    extends: x is \magma.element:of{G}
+    Enables:
+    . capability: x.inv :=> \group.inverse:of{x}:in{G}
+      written: "x+?^{-1}"
+    Documented:
+    . called: "group element"
+
+    [\group.inverse:of{x}:in{G}]
+    Defines: y "in" G
+    when:
+    . G is \group
+    . x "in" G
+    Documented:
+    . called: "group inverse"
+
+    Theorem:
+    given:
+    . G is \group
+    . x, y "in" G
+    then: (x * y).inv = y.inv * x.inv
+
+    Theorem:
+    given:
+    . G ::= (X, *, e) is \group
+    . x "in" G
+    then: (x.inv).inv = x
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("grouped-member-capability.mlg")],
             &mut event_log,
         );
 

@@ -246,6 +246,13 @@ For example, if `p "in" H` reduces to `p is \group.element:of{H}`, then `p.inv`
 resolves through the group-element capability with its formal group parameter
 bound to `H`.
 
+Member access also accepts a grouped expression as its owner and carries the
+owner expression's inferred output facts into capability lookup. Thus both
+`(x * y).inv` and `(x.inv).inv` resolve when multiplication and `inv` produce
+group elements. A bracketed placeholder-operator capability such as
+`x_ [*] y_ :=> ...` is registered under the referenced `*` symbol rather than
+the literal bracketed spelling.
+
 ### Bracketed Placeholder Operators `[*]`
 
 A capability LHS may write `x_ [*] y_`, where `[*]` names a symbol drawn from the

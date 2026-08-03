@@ -806,24 +806,33 @@ SetExpression: ast::Expression = {
     ),
 };
 
-PrimaryExpression: ast::Expression = {
-    <expression:LabeledExpression> => expression,
+MemberOwnerExpression: ast::Expression = {
     <expression:GroupedExpression> => expression,
-    <l:@L> <owner:Name> "." <name:Name> "(" <arguments:ExpressionList> ")" <r:@R> => ast::Expression::new(
+    <l:@L> <name:Name> <r:@R> => ast::Expression::new(Span::new(l, r), ExpressionKind::Name(name)),
+};
+
+MemberExpression: ast::Expression = {
+    <l:@L> <owner:MemberOwnerExpression> "." <name:Name> "(" <arguments:ExpressionList> ")" <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::MemberCall {
-            owner: Box::new(ast::Expression::new(Span::new(l, l + owner.len()), ExpressionKind::Name(owner))),
+            owner: Box::new(owner),
             name,
             arguments,
         },
     ),
-    <l:@L> <owner:Name> "." <name:Name> <r:@R> => ast::Expression::new(
+    <l:@L> <owner:MemberOwnerExpression> "." <name:Name> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::MemberAccess {
-            owner: Box::new(ast::Expression::new(Span::new(l, l + owner.len()), ExpressionKind::Name(owner))),
+            owner: Box::new(owner),
             name,
         },
     ),
+};
+
+PrimaryExpression: ast::Expression = {
+    <expression:LabeledExpression> => expression,
+    <expression:GroupedExpression> => expression,
+    <expression:MemberExpression> => expression,
     <l:@L> <name:Name> "(" <arguments:ExpressionList> ")" <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::FunctionCall { name, arguments },

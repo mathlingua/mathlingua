@@ -6926,6 +6926,10 @@ fn check_disambiguated_binary(
     let argument_expressions = [left, right];
     let requirement_context =
         context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let requirement_context =
+        context_with_expression_result_facts(left, &requirement_context, registry);
+    let requirement_context =
+        context_with_expression_result_facts(right, &requirement_context, registry);
     let actuals = argument_expressions
         .iter()
         .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
@@ -7001,6 +7005,10 @@ fn check_provided_binary_operator(
     let argument_expressions = [left, right];
     let requirement_context =
         context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let requirement_context =
+        context_with_expression_result_facts(left, &requirement_context, registry);
+    let requirement_context =
+        context_with_expression_result_facts(right, &requirement_context, registry);
     let actuals = argument_expressions
         .iter()
         .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
@@ -7061,6 +7069,10 @@ fn check_provided_binary_operator_by_operand_type(
     let argument_expressions = [left, right];
     let requirement_context =
         context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let requirement_context =
+        context_with_expression_result_facts(left, &requirement_context, registry);
+    let requirement_context =
+        context_with_expression_result_facts(right, &requirement_context, registry);
     let requirement_context = context_with_spec_reductions(&requirement_context, registry);
     let actuals = argument_expressions
         .iter()
@@ -7222,6 +7234,8 @@ fn check_provided_member(
     argument_expressions.extend(arguments.iter());
     let requirement_context =
         context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let requirement_context =
+        context_with_expression_result_facts(owner, &requirement_context, registry);
     let requirement_context = context_with_spec_reductions(&requirement_context, registry);
     let owner_actual = effective_key_for_expression(owner, &requirement_context, registry);
     let actuals = arguments
@@ -7274,6 +7288,311 @@ fn check_provided_member(
         registry,
         event_log,
     );
+}
+
+/// Materializes the output facts of a composite member owner. Provided-symbol
+/// targets are checked in a child context that binds the owner's type
+/// parameters and destructured components; retaining the target's output fact
+/// lets a following member resolve on expressions such as `(x * y).inv`.
+fn context_with_expression_result_facts(
+    expression: &Expression,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> TypeContext {
+    let mut result = context.clone();
+    let subject = effective_key_for_expression(expression, context, registry);
+    let mut resolving = HashSet::new();
+    let inferred = expression_result_facts(expression, &subject, context, registry, &mut resolving);
+    for fact in inferred {
+        result.add_fact(fact);
+    }
+    result
+}
+
+fn expression_result_facts(
+    expression: &Expression,
+    result_subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Vec<TypeFact> {
+    if let ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } =
+        &expression.kind
+    {
+        return expression_result_facts(expression, result_subject, context, registry, resolving);
+    }
+
+    let resolving_key = format!("{}=>{result_subject}", key_for_expression(expression));
+    if !resolving.insert(resolving_key.clone()) {
+        return Vec::new();
+    }
+
+    let facts = match &expression.kind {
+        ExpressionKind::FunctionCall { name, arguments } => {
+            function_call_output_facts(name, arguments, result_subject, context, registry)
+        }
+        ExpressionKind::MemberCall {
+            owner,
+            name,
+            arguments,
+        } => member_output_facts(
+            owner,
+            name,
+            arguments,
+            result_subject,
+            context,
+            registry,
+            resolving,
+        ),
+        ExpressionKind::MemberAccess { owner, name } => member_output_facts(
+            owner,
+            name,
+            &[],
+            result_subject,
+            context,
+            registry,
+            resolving,
+        ),
+        ExpressionKind::Binary {
+            left,
+            operator,
+            right,
+        } => binary_operator_output_facts(
+            left,
+            operator,
+            right,
+            result_subject,
+            context,
+            registry,
+            resolving,
+        ),
+        ExpressionKind::Command(_) | ExpressionKind::InfixCommand { .. } => {
+            let key = effective_key_for_expression(expression, context, registry);
+            rebind_result_fact_subjects(
+                defined_output_facts_for_key(&key, context, registry),
+                result_subject,
+                context,
+            )
+        }
+        _ => Vec::new(),
+    };
+
+    resolving.remove(&resolving_key);
+    facts
+}
+
+fn function_call_output_facts(
+    name: &str,
+    arguments: &[Expression],
+    result_subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    inferred_function_type_facts_for_subject(name, context, registry)
+        .into_iter()
+        .filter_map(|fact| {
+            let TypeFact::FunctionType {
+                inputs,
+                output,
+                variadic_tuple_input,
+                ..
+            } = fact
+            else {
+                return None;
+            };
+            function_type_argument_subjects_from_keys(
+                inputs.len(),
+                variadic_tuple_input,
+                &arguments.iter().map(key_for_expression).collect::<Vec<_>>(),
+            )?;
+            Some(context.normalize_fact(&instantiate_function_type_spec(&output, result_subject)))
+        })
+        .collect()
+}
+
+fn inferred_function_type_facts_for_subject(
+    subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let subject = context.normalize_key(subject);
+    let mut seen = HashSet::new();
+    let mut result = Vec::new();
+    for fact in &context.facts {
+        collect_inferred_function_type_facts(
+            fact,
+            &subject,
+            context,
+            registry,
+            &mut seen,
+            &mut result,
+        );
+    }
+    result
+}
+
+fn collect_inferred_function_type_facts(
+    fact: &TypeFact,
+    subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+    result: &mut Vec<TypeFact>,
+) {
+    let fact = context.normalize_fact(fact);
+    if !seen.insert(fact.clone()) || context.normalize_key(fact_subject(&fact)) != subject {
+        return;
+    }
+    if matches!(fact, TypeFact::FunctionType { .. }) {
+        result.push(fact.clone());
+    }
+    for output in type_instance_output_facts(&fact, context, registry) {
+        collect_inferred_function_type_facts(&output, subject, context, registry, seen, result);
+    }
+    for extended in reduce_extension_fact(&fact, context, registry) {
+        collect_inferred_function_type_facts(&extended, subject, context, registry, seen, result);
+    }
+}
+
+fn member_output_facts(
+    owner: &Expression,
+    name: &str,
+    arguments: &[Expression],
+    result_subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Vec<TypeFact> {
+    let reduced_context = context_with_spec_reductions(context, registry);
+    let owner_actual = effective_key_for_expression(owner, &reduced_context, registry);
+    let actuals = arguments
+        .iter()
+        .map(|argument| effective_key_for_expression(argument, &reduced_context, registry))
+        .collect::<Vec<_>>();
+    let key = DisambiguationKey::Function {
+        name: name.to_owned(),
+        arity: arguments.len(),
+    };
+    if let Some(rule) =
+        find_member_provided_symbol_rule(&key, &owner_actual, &actuals, &reduced_context, registry)
+    {
+        return provided_symbol_output_facts(
+            rule,
+            &actuals,
+            Some(&owner_actual),
+            result_subject,
+            &reduced_context,
+            registry,
+            resolving,
+        );
+    }
+    let Some(component) =
+        tuple_component_access_expression(owner, name, arguments, &owner_actual, &reduced_context)
+    else {
+        return Vec::new();
+    };
+    expression_result_facts(
+        &component,
+        result_subject,
+        &reduced_context,
+        registry,
+        resolving,
+    )
+}
+
+fn binary_operator_output_facts(
+    left: &Expression,
+    operator: &BinaryOperator,
+    right: &Expression,
+    result_subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Vec<TypeFact> {
+    if let Some(call) = binary_operator_application_desugaring(left, operator, right, context) {
+        let facts = expression_result_facts(&call, result_subject, context, registry, resolving);
+        if !facts.is_empty() {
+            return facts;
+        }
+    }
+
+    let (symbol, kind) = binary_operator_symbol_and_kind(operator);
+    let kind = provided_binary_operator_kind(&symbol, kind).unwrap_or(NamedOperatorKind::BothColon);
+    let key = DisambiguationKey::BinaryOperator(symbol);
+    let result_context = context_with_expression_result_facts(left, context, registry);
+    let result_context = context_with_expression_result_facts(right, &result_context, registry);
+    let reduced_context = context_with_spec_reductions(&result_context, registry);
+    let actuals = [left, right]
+        .iter()
+        .map(|expression| effective_key_for_expression(expression, &reduced_context, registry))
+        .collect::<Vec<_>>();
+    let Some(rule) = find_provided_symbol_rule(&key, kind, &actuals, &reduced_context, registry)
+    else {
+        return Vec::new();
+    };
+    let owner_actual = provided_symbol_owner_actual(kind, &actuals);
+    provided_symbol_output_facts(
+        rule,
+        &actuals,
+        owner_actual.as_deref(),
+        result_subject,
+        &reduced_context,
+        registry,
+        resolving,
+    )
+}
+
+fn provided_symbol_output_facts(
+    rule: &ProvidedSymbolRule,
+    actuals: &[String],
+    owner_actual: Option<&str>,
+    result_subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    resolving: &mut HashSet<String>,
+) -> Vec<TypeFact> {
+    let mut child = context.clone();
+    for parameter in &rule.parameters {
+        child.declare_name(parameter.clone());
+    }
+    for (parameter, actual) in rule.parameters.iter().zip(actuals) {
+        child.add_substitution(parameter.clone(), context.normalize_key(actual));
+    }
+    if let Some(owner_actual) = owner_actual {
+        bind_provided_symbol_owner_type_parameters(
+            rule,
+            owner_actual,
+            context,
+            &mut child,
+            registry,
+        );
+        child.declare_name(rule.owner_subject.clone());
+        child.add_substitution(
+            rule.owner_subject.clone(),
+            context.normalize_key(owner_actual),
+        );
+        if let Some(source_subject) = &rule.source_subject {
+            child.declare_name(source_subject.clone());
+            child.add_substitution(source_subject.clone(), context.normalize_key(owner_actual));
+        }
+    }
+    bind_owner_parameter_destructurings(rule, &mut child, registry);
+    expression_result_facts(&rule.target, result_subject, &child, registry, resolving)
+}
+
+fn rebind_result_fact_subjects(
+    facts: Vec<TypeFact>,
+    result_subject: &str,
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    facts
+        .into_iter()
+        .map(|fact| {
+            let substitutions =
+                HashMap::from([(fact_subject(&fact).to_owned(), result_subject.to_owned())]);
+            context.normalize_fact(&substitute_fact(&fact, &substitutions))
+        })
+        .collect()
 }
 
 fn check_provided_callable_owner_function(
@@ -14783,7 +15102,8 @@ fn provided_symbol_key_and_parameters(
             },
             Vec::new(),
         )),
-        ExpressionAliasLhs::Form(form) => disambiguation_key_and_parameters(form),
+        ExpressionAliasLhs::Form(form) => disambiguation_key_and_parameters(form)
+            .map(|(key, parameters)| (normalize_placeholder_operator_key(key), parameters)),
         ExpressionAliasLhs::Command(CommandHeaderNode {
             chain, paren_args, ..
         }) => {
@@ -14823,6 +15143,17 @@ fn provided_symbol_key_and_parameters(
                 parameters,
             ))
         }
+    }
+}
+
+fn normalize_placeholder_operator_key(key: DisambiguationKey) -> DisambiguationKey {
+    match key {
+        DisambiguationKey::BinaryOperator(operator)
+            if operator.starts_with('[') && operator.ends_with(']') =>
+        {
+            DisambiguationKey::BinaryOperator(operator[1..operator.len() - 1].to_owned())
+        }
+        key => key,
     }
 }
 

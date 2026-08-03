@@ -3849,6 +3849,10 @@ mod tests {
             parse_expression("f(g(x__))").expect("expected magnetic placeholder call expression");
         let member_call = parse_expression("X.f(a)").expect("expected member call expression");
         let member_access = parse_expression("X.a").expect("expected member access expression");
+        let expression_member =
+            parse_expression("(x * y).inv").expect("expected expression member access");
+        let chained_member =
+            parse_expression("(x.inv).inv").expect("expected chained member access");
         let tuple = parse_expression("(x, +, y)").expect("expected tuple expression");
 
         match function_call.kind {
@@ -3906,6 +3910,34 @@ mod tests {
                 assert_eq!(name, "a");
             }
             other => panic!("expected member access, got {other:?}"),
+        }
+
+        match expression_member.kind {
+            ExpressionKind::MemberAccess { owner, name } => {
+                assert_eq!(name, "inv");
+                assert!(matches!(
+                    owner.kind,
+                    ExpressionKind::Grouped {
+                        expression,
+                        dot_delimited: false,
+                    } if matches!(expression.kind, ExpressionKind::Binary { .. })
+                ));
+            }
+            other => panic!("expected expression member access, got {other:?}"),
+        }
+
+        match chained_member.kind {
+            ExpressionKind::MemberAccess { owner, name } => {
+                assert_eq!(name, "inv");
+                assert!(matches!(
+                    owner.kind,
+                    ExpressionKind::Grouped {
+                        expression,
+                        dot_delimited: false,
+                    } if matches!(expression.kind, ExpressionKind::MemberAccess { .. })
+                ));
+            }
+            other => panic!("expected chained member access, got {other:?}"),
         }
 
         match tuple.kind {

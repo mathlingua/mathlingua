@@ -12,8 +12,8 @@ use std::path::{Path, PathBuf};
 /// other kinds (page content, people, resources, and theorem-like items) are
 /// versioned on their own content but never propagate.
 const DEFINITION_KINDS: [&str; 6] = [
+    "Declares",
     "Defines",
-    "Describes",
     "States",
     "Refines",
     "Disambiguates",
@@ -27,7 +27,7 @@ pub(crate) struct ReleaseItem {
     pub(crate) id: String,
     /// The source file the item lives in.
     pub(crate) path: PathBuf,
-    /// The item's group kind (its first section label, e.g. `Describes`).
+    /// The item's group kind (its first section label, e.g. `Defines`).
     pub(crate) kind: String,
     /// The bracketed heading of the item without its `[` `]`, when it has one
     /// (e.g. `\set` or `A \:subset:/ B`). `None` for page content and other
@@ -285,19 +285,19 @@ mod tests {
     #[test]
     fn records_id_kind_and_definition_flag_and_source() {
         let source = format!(
-            "[\\set]\nDescribes: A\nDocumented:\n. called: \"set\"\nId: \"{A}\"\n\n\n\
+            "[\\set]\nDefines: A\nDocumented:\n. called: \"set\"\nId: \"{A}\"\n\n\n\
              Theorem:\nthen: A = A\nId: \"{B}\"\n"
         );
         let items = build_release_items(&[parsed("a.mlg", &source)]);
 
         assert_eq!(items.len(), 2);
-        let describes = item(&items, A);
-        assert_eq!(describes.kind, "Describes");
-        assert!(describes.is_definition);
-        assert_eq!(describes.header.as_deref(), Some("\\set"));
+        let defines = item(&items, A);
+        assert_eq!(defines.kind, "Defines");
+        assert!(defines.is_definition);
+        assert_eq!(defines.header.as_deref(), Some("\\set"));
         assert_eq!(
-            describes.source,
-            format!("[\\set]\nDescribes: A\nDocumented:\n. called: \"set\"\nId: \"{A}\"")
+            defines.source,
+            format!("[\\set]\nDefines: A\nDocumented:\n. called: \"set\"\nId: \"{A}\"")
         );
 
         let theorem = item(&items, B);
@@ -313,7 +313,7 @@ mod tests {
     fn captures_bracket_headers_and_page_previews() {
         let source = format!(
             "Title: \"Intro to Sets\"\nId: \"{A}\"\n\n\n\
-             [A \\:subset:/ B]\nDescribes: A\nDocumented:\n. called: \"subset\"\nId: \"{B}\"\n"
+             [A \\:subset:/ B]\nDefines: A\nDocumented:\n. called: \"subset\"\nId: \"{B}\"\n"
         );
         let items = build_release_items(&[parsed("a.mlg", &source)]);
 
@@ -329,10 +329,10 @@ mod tests {
     #[test]
     fn item_source_by_id_extracts_the_matching_item_slice() {
         let source = format!(
-            "[\\b]\nDescribes: B\nDocumented:\n. called: \"b\"\nId: \"{B}\"\n\n\n\
-             [\\a]\nDescribes: A\nDocumented:\n. called: \"a\"\nId: \"{A}\"\n"
+            "[\\b]\nDefines: B\nDocumented:\n. called: \"b\"\nId: \"{B}\"\n\n\n\
+             [\\a]\nDefines: A\nDocumented:\n. called: \"a\"\nId: \"{A}\"\n"
         );
-        let expected = format!("[\\a]\nDescribes: A\nDocumented:\n. called: \"a\"\nId: \"{A}\"");
+        let expected = format!("[\\a]\nDefines: A\nDocumented:\n. called: \"a\"\nId: \"{A}\"");
 
         assert_eq!(
             item_source_by_id(&source, A).as_deref(),
@@ -344,11 +344,11 @@ mod tests {
     #[test]
     fn resolves_uses_and_excludes_self() {
         let defs = format!(
-            "[\\b]\nDescribes: B\nDocumented:\n. called: \"b\"\nId: \"{B}\"\n\n\n\
-             [\\c]\nDescribes: C\nDocumented:\n. called: \"c\"\nId: \"{C}\"\n"
+            "[\\b]\nDefines: B\nDocumented:\n. called: \"b\"\nId: \"{B}\"\n\n\n\
+             [\\c]\nDefines: C\nDocumented:\n. called: \"c\"\nId: \"{C}\"\n"
         );
         let a = format!(
-            "[\\a]\nDescribes: A\nmeans: A is \\b\nDocumented:\n. called: \"uses \\c\"\nId: \"{A}\"\n"
+            "[\\a]\nDefines: A\nmeans: A is \\b\nDocumented:\n. called: \"uses \\c\"\nId: \"{A}\"\n"
         );
         let items = build_release_items(&[parsed("defs.mlg", &defs), parsed("a.mlg", &a)]);
 
@@ -361,15 +361,15 @@ mod tests {
     #[test]
     fn deduplicates_shared_dependencies_within_an_item() {
         let defs = format!(
-            "[\\b]\nDescribes: B\nDocumented:\n. called: \"b\"\nId: \"{B}\"\n\n\n\
-             [\\c]\nDescribes: C\nDocumented:\n. called: \"c\"\nId: \"{C}\"\n"
+            "[\\b]\nDefines: B\nDocumented:\n. called: \"b\"\nId: \"{B}\"\n\n\n\
+             [\\c]\nDefines: C\nDocumented:\n. called: \"c\"\nId: \"{C}\"\n"
         );
         // `\b` referenced twice; it must appear once in `uses`.
         let a = format!(
-            "[\\a]\nDescribes: A\nmeans: A is \\b\nsatisfies: A is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{A}\"\n"
+            "[\\a]\nDefines: A\nmeans: A is \\b\nsatisfies: A is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{A}\"\n"
         );
         let d = format!(
-            "[\\d]\nDescribes: D\nmeans: D is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{D}\"\n"
+            "[\\d]\nDefines: D\nmeans: D is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{D}\"\n"
         );
         let items = build_release_items(&[
             parsed("defs.mlg", &defs),

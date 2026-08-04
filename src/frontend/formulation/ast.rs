@@ -34,7 +34,7 @@ pub enum ExpressionAliasLhs {
 pub struct MemberAliasLhs {
     pub span: Span,
     /// The owner name; the checker requires it to be exactly the enclosing
-    /// definition's `Describes:`/`Defines:`/`Refines:` subject.
+    /// definition's `Defines:`/`Declares:`/`Refines:` subject.
     pub owner: String,
     /// The member name — `inv` in `x.inv`, `f` in `x.f(a_)`.
     pub member: String,

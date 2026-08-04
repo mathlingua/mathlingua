@@ -321,8 +321,8 @@ const PAGE_KINDS: [&str; 4] = ["Title", "SectionTitle", "SubsectionTitle", "Text
 /// The order top-level kinds are grouped in the release report. Kinds not listed
 /// here sort after these, alphabetically.
 const KIND_ORDER: [&str; 18] = [
+    "Declares",
     "Defines",
-    "Describes",
     "States",
     "Refines",
     "Disambiguates",
@@ -708,12 +708,7 @@ mod tests {
         ReleaseItem {
             id: id.to_string(),
             path: PathBuf::from("content/x.mlg"),
-            kind: if is_definition {
-                "Describes"
-            } else {
-                "Theorem"
-            }
-            .to_string(),
+            kind: if is_definition { "Defines" } else { "Theorem" }.to_string(),
             header: None,
             preview: None,
             source: String::new(),
@@ -832,7 +827,7 @@ mod tests {
     #[test]
     fn label_prefers_header_then_preview_then_id() {
         assert_eq!(
-            item_display_label(&labelled("Describes", Some("\\set"), None)),
+            item_display_label(&labelled("Defines", Some("\\set"), None)),
             "[\\set]"
         );
         assert_eq!(
@@ -864,7 +859,7 @@ mod tests {
                 content_changed: true,
             },
             UpdatedItem {
-                kind: "Describes".to_string(),
+                kind: "Defines".to_string(),
                 label: "[\\set]".to_string(),
                 previous_version: None,
                 new_version: 1,
@@ -892,12 +887,12 @@ mod tests {
         assert!(report.contains("Summary  release notes"));
         // `Updated` is listed before `Summary`.
         assert!(report.find("Updated  ").unwrap() < report.find("Summary  ").unwrap());
-        // Groups appear in KIND_ORDER: Describes, then Axiom, then Text. Each
+        // Groups appear in KIND_ORDER: Defines, then Axiom, then Text. Each
         // kind heading sits at column 0 (preceded by a blank line).
-        let describes = report.find("\n\nDescribes\n").unwrap();
+        let defines = report.find("\n\nDefines\n").unwrap();
         let axiom = report.find("\n\nAxiom\n").unwrap();
         let text = report.find("\n\nText\n").unwrap();
-        assert!(describes < axiom && axiom < text, "{report}");
+        assert!(defines < axiom && axiom < text, "{report}");
         assert!(report.contains("new \u{2192} v1"));
         assert!(report.contains("v1 \u{2192} v2"));
         assert!(report.contains("v2 \u{2192} v3"));
@@ -932,7 +927,7 @@ mod tests {
         // is no changed-vs-propagated distinction to draw.
         let updated = vec![
             UpdatedItem {
-                kind: "Describes".to_string(),
+                kind: "Defines".to_string(),
                 label: "[\\set]".to_string(),
                 previous_version: None,
                 new_version: 1,
@@ -994,11 +989,11 @@ mod tests {
 
     #[test]
     fn diff_section_shows_new_items_as_fully_added() {
-        let diffs = vec![diff_lines("", "[\\set]\nDescribes: X")];
+        let diffs = vec![diff_lines("", "[\\set]\nDefines: X")];
         let section = format_diff_section(&diffs);
         assert!(section.starts_with("Diffs"));
         assert!(section.contains("\n+ [\\set]"), "{section}");
-        assert!(section.contains("\n+ Describes: X"), "{section}");
+        assert!(section.contains("\n+ Defines: X"), "{section}");
     }
 
     #[test]
@@ -1009,11 +1004,11 @@ mod tests {
     const A_ID: &str = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const B_ID: &str = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 
-    /// `\a` (Describes A) uses `\b` (Describes B); `called` controls A's content.
+    /// `\a` (Defines A) uses `\b` (Defines B); `called` controls A's content.
     fn defs_source(a_called: &str) -> String {
         format!(
-            "[\\b]\nDescribes: B\nDocumented:\n. called: \"b\"\nId: \"{B_ID}\"\n\n\n\
-             [\\a]\nDescribes: A\nmeans: A is \\b\nDocumented:\n. called: \"{a_called}\"\nId: \"{A_ID}\"\n"
+            "[\\b]\nDefines: B\nDocumented:\n. called: \"b\"\nId: \"{B_ID}\"\n\n\n\
+             [\\a]\nDefines: A\nmeans: A is \\b\nDocumented:\n. called: \"{a_called}\"\nId: \"{A_ID}\"\n"
         )
     }
 

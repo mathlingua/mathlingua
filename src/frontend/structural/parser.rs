@@ -283,7 +283,7 @@ pub(in crate::frontend::structural::parser) fn parse_alias_kind(
     parse_spec_operator_alias(input).map(AliasKind::SpecOperator)
 }
 
-/// Parses an item accepted by `means:`/`specifies:` and related sections.
+/// Parses an item accepted by `means:`/`declares:` and related sections.
 ///
 /// `is ... via ...` is more specific, so it is attempted before the broader
 /// `is`/spec parser. The `is` relation may name a refined command
@@ -340,12 +340,12 @@ fn split_labeled_specification(input: &str) -> Option<(Vec<String>, &str)> {
     Some((parts, inner.trim()))
 }
 
-fn parse_describes_target(input: &str) -> Result<DescribesTarget, FormulationParseError> {
+fn parse_defines_target(input: &str) -> Result<DefinesTarget, FormulationParseError> {
     if let Ok(form) = parse_form_or_declaration(input) {
-        return Ok(DescribesTarget::Form(form));
+        return Ok(DefinesTarget::Form(form));
     }
 
-    parse_ordinary_declaration_statement(input).map(DescribesTarget::Declaration)
+    parse_ordinary_declaration_statement(input).map(DefinesTarget::Declaration)
 }
 
 /// Parses a quantifier binding or ordinary/refined specification.
@@ -673,7 +673,7 @@ pub(in crate::frontend::structural::parser) fn parse_required_formulations<T>(
 ///
 /// Inline section arguments and formulation arguments are accepted.  Text and
 /// nested groups are diagnosed because callers requested formulation content.
-/// Parses `specifies:` items: inline `is`/`is … via …` specifications, plus
+/// Parses `declares:` items: inline `is`/`is … via …` specifications, plus
 /// `have:`/`asserting:` groups standing in for a specification the checker cannot
 /// establish on its own.
 fn parse_required_specify_items(
@@ -690,7 +690,7 @@ fn parse_required_specify_items(
                     Err(error) => tracker.user_error_at_row(
                         Some(ORIGIN),
                         row,
-                        format!("Invalid specifies formulation: {error}"),
+                        format!("Invalid declares formulation: {error}"),
                     ),
                 }
             }
@@ -703,7 +703,7 @@ fn parse_required_specify_items(
                     tracker.user_error_at_row(
                         Some(ORIGIN),
                         row,
-                        "Expected a specification or a `have:` group in `specifies`".to_owned(),
+                        "Expected a specification or a `have:` group in `declares`".to_owned(),
                     );
                 }
             }
@@ -711,7 +711,7 @@ fn parse_required_specify_items(
                 tracker.user_error_at_row(
                     Some(ORIGIN),
                     row,
-                    "Expected formulation in section `specifies`".to_owned(),
+                    "Expected formulation in section `declares`".to_owned(),
                 );
             }
         }
@@ -721,7 +721,7 @@ fn parse_required_specify_items(
             tracker.user_error_at_row(
                 Some(ORIGIN),
                 section.metadata.row,
-                "Expected specifies formulations".to_owned(),
+                "Expected declares formulations".to_owned(),
             );
         }
     })
@@ -2363,8 +2363,8 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
         "Text" => parse_text_group(group, tracker).map(TopLevelItem::Text),
         "Writing" => parse_top_level_writing(group, tracker).map(TopLevelItem::Writing),
         "Disambiguates" => parse_disambiguates(group, tracker).map(TopLevelItem::Disambiguates),
-        "Describes" => parse_describes(group, tracker).map(TopLevelItem::Describes),
         "Defines" => parse_defines(group, tracker).map(TopLevelItem::Defines),
+        "Declares" => parse_declares(group, tracker).map(TopLevelItem::Declares),
         "Refines" => parse_refines(group, tracker).map(TopLevelItem::Refines),
         "States" => parse_states(group, tracker).map(TopLevelItem::States),
         "Axiom" => parse_axiom(group, tracker).map(TopLevelItem::Axiom),
@@ -2717,27 +2717,27 @@ fn ensure_empty_section(section: &ProtoSection, label: &str, tracker: &mut Event
     }
 }
 
-/// Parses a command-backed `Describes:` group.
+/// Parses a command-backed `Defines:` group.
 ///
-/// This enforces the full `Describes` section order and converts each optional
+/// This enforces the full `Defines` section order and converts each optional
 /// nested section into its typed representation.  Formulation sections are
 /// delegated to the formulation parser while clause/nested sections recurse
 /// through structural helpers.
-pub(in crate::frontend::structural::parser) fn parse_describes(
+pub(in crate::frontend::structural::parser) fn parse_defines(
     group: &ProtoGroup,
     tracker: &mut EventLog,
-) -> Option<DescribesGroup> {
+) -> Option<DefinesGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
-        "Describes",
+        "Defines",
         &group.sections,
         tracker,
         &[
-            "Describes",
+            "Defines",
             "using?",
             "when?",
             "means?",
-            "specifies?",
+            "declares?",
             "satisfies?",
             "Requires?",
             "Enables?",
@@ -2750,14 +2750,14 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
         ],
     )?;
 
-    Some(DescribesGroup {
+    Some(DefinesGroup {
         heading,
-        describes: DescribesSection {
+        defines: DefinesSection {
             argument: parse_required_formulation(
-                section(&sections, "Describes")?,
-                "Describes",
+                section(&sections, "Defines")?,
+                "Defines",
                 tracker,
-                parse_describes_target,
+                parse_defines_target,
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
@@ -2777,9 +2777,9 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
             parse_required_formulation(section, "means", tracker, parse_is_or_via_item)
                 .map(|argument| MeansSection { argument })
         }),
-        specifies: sections.get("specifies").copied().and_then(|section| {
+        declares: sections.get("declares").copied().and_then(|section| {
             parse_required_specify_items(section, tracker)
-                .map(|arguments| DescribesSpecifiesSection { arguments })
+                .map(|arguments| DefinesDeclaresSection { arguments })
         }),
         satisfies: sections.get("satisfies").copied().and_then(|section| {
             parse_required_clauses(section, "satisfies", tracker)
@@ -2816,22 +2816,22 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
     })
 }
 
-/// Parses a command-backed `Defines:` group.
+/// Parses a command-backed `Declares:` group.
 ///
-/// `Defines` groups introduce command signatures for specification/type-like
-/// statements and support the same auxiliary sections as `Describes`, except
+/// `Declares` groups introduce command signatures for specification/type-like
+/// statements and support the same auxiliary sections as `Defines`, except
 /// for the `expresses:` clause in place of form-specific sections.
-pub(in crate::frontend::structural::parser) fn parse_defines(
+pub(in crate::frontend::structural::parser) fn parse_declares(
     group: &ProtoGroup,
     tracker: &mut EventLog,
-) -> Option<DefinesGroup> {
+) -> Option<DeclaresGroup> {
     let heading = parse_required_command_heading(group, tracker)?;
     let sections = identify_sections(
-        "Defines",
+        "Declares",
         &group.sections,
         tracker,
         &[
-            "Defines",
+            "Declares",
             "using?",
             "when?",
             "expresses?",
@@ -2846,12 +2846,12 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
         ],
     )?;
 
-    Some(DefinesGroup {
+    Some(DeclaresGroup {
         heading,
-        defines: DefinesSection {
+        declares: DeclaresSection {
             argument: parse_required_formulation(
-                section(&sections, "Defines")?,
-                "Defines",
+                section(&sections, "Declares")?,
+                "Declares",
                 tracker,
                 parse_ordinary_declaration_statement,
             )?,
@@ -3852,7 +3852,7 @@ mod tests {
         FormOrDeclaration, FormOrDeclarationKind, IsSubjectForm, IsSubjectKind,
     };
     use crate::frontend::structural::ast::{
-        AliasItem, AliasKind, Clause, DescribesTarget, Document, DocumentedItem, EnablesItem,
+        AliasItem, AliasKind, Clause, DefinesTarget, Document, DocumentedItem, EnablesItem,
         IsOrViaItem, MetadataItem, RelationKind, RelationMeans, RelationSubject,
         RelationshipDeclaration, RequiresItem, ResourceItem, SpecifyItem, TextItemKind,
         TopLevelItem,
@@ -3976,7 +3976,7 @@ Documented:
         let document = parse_ok(
             r#"
 [\natural]
-Describes: n
+Defines: n
 Requires:
 . capability: n_ + m_ :=> n_ \.natural.+./ m_
 . definition: \natural.0 is \natural
@@ -3987,13 +3987,13 @@ Documented:
 
         assert_eq!(document.items.len(), 1);
         match &document.items[0] {
-            TopLevelItem::Describes(group) => {
+            TopLevelItem::Defines(group) => {
                 let requires = group.requires.as_ref().expect("expected Requires section");
                 assert_eq!(requires.arguments.len(), 2);
                 assert!(matches!(requires.arguments[0], RequiresItem::Capability(_)));
                 assert!(matches!(requires.arguments[1], RequiresItem::Definition(_)));
             }
-            other => panic!("expected Describes item, got {other:?}"),
+            other => panic!("expected Defines item, got {other:?}"),
         }
     }
 
@@ -4001,7 +4001,7 @@ Documented:
     fn rejects_the_legacy_extends_section_label() {
         let (_, diagnostics) = parse_with_diagnostics(
             r#"[\thing]
-Describes: X
+Defines: X
 extends: X is \set
 "#,
         );
@@ -4019,7 +4019,7 @@ extends: X is \set
         let document = parse_ok(
             r#"
 [\structure]
-Describes: S ::= (X, *)
+Defines: S ::= (X, *)
 using:
 . X is \set
 . X "contains" Element
@@ -4029,7 +4029,7 @@ when:
   . x = x
   . y = y
 means: X is \set via (X, Y)
-specifies:
+declares:
 . Y is \set via (X, Y)
 . y "contains" Y
 satisfies:
@@ -4062,7 +4062,7 @@ Metadata:
 . id: "desc-1"
 
 [\structure.connection]
-Describes: T
+Defines: T
 Enables:
 . [conn.plus]
   relation:
@@ -4085,7 +4085,7 @@ Metadata:
 . version: "1.0"
 
 [\structure.writing]
-Describes: W
+Defines: W
 Documented:
 . [docs.writing]
   writing: plus(x_, y_) :~> x + y
@@ -4093,19 +4093,19 @@ Documented:
   . "inline notation"
 
 [\structure.overview]
-Describes: O
+Defines: O
 Documented:
 . [docs.overview]
   overview: "Binary operation on X"
 
 [\structure.description]
-Describes: P
+Defines: P
 Documented:
 . [docs.description]
   description: "Longer prose for readers"
 
 [\structure.related]
-Describes: R
+Defines: R
 Documented:
 . [docs.related]
   related:
@@ -4113,14 +4113,14 @@ Documented:
   . "ring"
 
 [\structure.discoverer]
-Describes: D
+Defines: D
 Documented:
 . [docs.discoverer]
   discoverer:
   . "Gauss"
 
 [\constant]
-Defines: zero is \element
+Declares: zero is \element
 using:
 . X is \set
 expresses:
@@ -4174,7 +4174,7 @@ that:
         assert_eq!(document.items.len(), 11);
 
         match &document.items[0] {
-            TopLevelItem::Describes(group) => {
+            TopLevelItem::Defines(group) => {
                 assert_eq!(
                     group
                         .using
@@ -4194,9 +4194,9 @@ that:
                 ));
                 assert_eq!(
                     group
-                        .specifies
+                        .declares
                         .as_ref()
-                        .expect("expected specifies")
+                        .expect("expected declares")
                         .arguments
                         .len(),
                     2
@@ -4247,11 +4247,11 @@ that:
                     MetadataItem::Id(_)
                 ));
             }
-            other => panic!("expected describes group, got {other:?}"),
+            other => panic!("expected defines group, got {other:?}"),
         }
 
         match &document.items[1] {
-            TopLevelItem::Describes(group) => {
+            TopLevelItem::Defines(group) => {
                 assert!(matches!(
                     group.enables.as_ref().expect("expected enables").arguments[0],
                     EnablesItem::Relation(_)
@@ -4290,11 +4290,11 @@ that:
                     MetadataItem::Version(_)
                 ));
             }
-            other => panic!("expected describes group, got {other:?}"),
+            other => panic!("expected defines group, got {other:?}"),
         }
 
         match &document.items[2] {
-            TopLevelItem::Describes(group) => {
+            TopLevelItem::Defines(group) => {
                 assert!(matches!(
                     group
                         .documented
@@ -4304,11 +4304,11 @@ that:
                     DocumentedItem::Writing(_)
                 ));
             }
-            other => panic!("expected describes group, got {other:?}"),
+            other => panic!("expected defines group, got {other:?}"),
         }
 
         match &document.items[3] {
-            TopLevelItem::Describes(group) => {
+            TopLevelItem::Defines(group) => {
                 assert!(matches!(
                     group
                         .documented
@@ -4318,11 +4318,11 @@ that:
                     DocumentedItem::Overview(_)
                 ));
             }
-            other => panic!("expected describes group, got {other:?}"),
+            other => panic!("expected defines group, got {other:?}"),
         }
 
         match &document.items[4] {
-            TopLevelItem::Describes(group) => {
+            TopLevelItem::Defines(group) => {
                 assert!(matches!(
                     group
                         .documented
@@ -4332,11 +4332,11 @@ that:
                     DocumentedItem::Description(_)
                 ));
             }
-            other => panic!("expected describes group, got {other:?}"),
+            other => panic!("expected defines group, got {other:?}"),
         }
 
         match &document.items[5] {
-            TopLevelItem::Describes(group) => {
+            TopLevelItem::Defines(group) => {
                 assert!(matches!(
                     group
                         .documented
@@ -4346,11 +4346,11 @@ that:
                     DocumentedItem::Related(_)
                 ));
             }
-            other => panic!("expected describes group, got {other:?}"),
+            other => panic!("expected defines group, got {other:?}"),
         }
 
         match &document.items[6] {
-            TopLevelItem::Describes(group) => {
+            TopLevelItem::Defines(group) => {
                 assert!(matches!(
                     group
                         .documented
@@ -4360,11 +4360,11 @@ that:
                     DocumentedItem::Discoverer(_)
                 ));
             }
-            other => panic!("expected describes group, got {other:?}"),
+            other => panic!("expected defines group, got {other:?}"),
         }
 
         match &document.items[7] {
-            TopLevelItem::Defines(group) => {
+            TopLevelItem::Declares(group) => {
                 assert!(matches!(
                     group
                         .expresses
@@ -4374,7 +4374,7 @@ that:
                     Clause::Piecewise(_)
                 ));
             }
-            other => panic!("expected defines group, got {other:?}"),
+            other => panic!("expected declares group, got {other:?}"),
         }
 
         match &document.items[8] {
@@ -4420,7 +4420,7 @@ that:
         let document = parse_ok(
             r#"
 [\set]
-Describes: X
+Defines: X
 Enables:
 . capability: x_ "in" X :-> \\abstract
 Documented:
@@ -4428,8 +4428,8 @@ Documented:
 "#,
         );
 
-        let TopLevelItem::Describes(group) = &document.items[0] else {
-            panic!("expected describes group");
+        let TopLevelItem::Defines(group) = &document.items[0] else {
+            panic!("expected defines group");
         };
 
         assert!(matches!(
@@ -4443,7 +4443,7 @@ Documented:
         let document = parse_ok(
             r#"
 [\set]
-Describes: X
+Defines: X
 Enables:
 . from: Y ::= {y__ : ...}
   capability: x_ "in" X :-> x_ member_of Y
@@ -4460,8 +4460,8 @@ Documented:
 "#,
         );
 
-        let TopLevelItem::Describes(group) = &document.items[0] else {
-            panic!("expected describes group");
+        let TopLevelItem::Defines(group) = &document.items[0] else {
+            panic!("expected defines group");
         };
         let enables = group.enables.as_ref().expect("expected enables");
         assert!(matches!(
@@ -4477,7 +4477,7 @@ Documented:
         let document = parse_ok(
             r#"
 [\pair]
-Defines: P is \pair
+Declares: P is \pair
 Enables:
 . relation:
   to: x := \pair:of{a0}:and{b0}
@@ -4499,8 +4499,8 @@ Documented:
 "#,
         );
 
-        let TopLevelItem::Defines(group) = &document.items[0] else {
-            panic!("expected defines group");
+        let TopLevelItem::Declares(group) = &document.items[0] else {
+            panic!("expected declares group");
         };
         let enables = group.enables.as_ref().expect("expected enables");
         assert!(matches!(enables.arguments[0], EnablesItem::Relation(_)));
@@ -4538,7 +4538,7 @@ Documented:
         let (_document, diagnostics) = parse_with_diagnostics(
             r#"
 [\integer]
-Describes: n
+Defines: n
 Enables:
 . viewable:
   as: r is \rational
@@ -4559,7 +4559,7 @@ Documented:
         let (_document, diagnostics) = parse_with_diagnostics(
             r#"
 [\integer]
-Describes: n
+Defines: n
 Enables:
 . connection:
   to: s := \as.set{n} is \set
@@ -4958,8 +4958,8 @@ then:
         let expected_names = BTreeSet::from([
             "axioms.text".to_owned(),
             "corollaries.text".to_owned(),
+            "declares.text".to_owned(),
             "defines.text".to_owned(),
-            "describes.text".to_owned(),
             "equivalent.text".to_owned(),
             "outline.text".to_owned(),
             "persons.text".to_owned(),
@@ -5354,7 +5354,7 @@ Specify:
     fn parses_mixed_structural_document() {
         let text = r#"
 [\function]
-Describes: f(x_)
+Defines: f(x_)
 using:
 . x is \type{A}
 when:
@@ -5392,7 +5392,7 @@ Resource:
 
         assert!(!tracker.has_errors(), "{:#?}", tracker.events());
         assert_eq!(document.items.len(), 4);
-        assert!(matches!(document.items[0], TopLevelItem::Describes(_)));
+        assert!(matches!(document.items[0], TopLevelItem::Defines(_)));
         assert!(matches!(document.items[1], TopLevelItem::States(_)));
         assert!(matches!(document.items[2], TopLevelItem::Person(_)));
         assert!(matches!(document.items[3], TopLevelItem::Resource(_)));
@@ -5420,7 +5420,7 @@ Person: "Ada Lovelace"
     fn recovers_after_invalid_group() {
         let text = r#"
 [\function]
-Describes: f(x_)
+Defines: f(x_)
 that:
 . x = x
 
@@ -5595,7 +5595,7 @@ that:
     fn parses_is_statements_as_inline_clauses() {
         let text = r#"
 [\function:on{A}:to{B}]
-Describes: f(x__)
+Defines: f(x__)
 when:
 . A, B is \set
 satisfies:
@@ -5611,7 +5611,7 @@ satisfies:
 
         assert!(!tracker.has_errors(), "{:#?}", tracker.events());
         match &document.items[0] {
-            TopLevelItem::Describes(group) => {
+            TopLevelItem::Defines(group) => {
                 assert!(matches!(
                     group.when.as_ref().expect("expected when").arguments[0],
                     Clause::Declaration(_)
@@ -5625,18 +5625,18 @@ satisfies:
                     Clause::ForAll(_)
                 ));
             }
-            other => panic!("expected describes item, got {other:?}"),
+            other => panic!("expected defines item, got {other:?}"),
         }
     }
 
     #[test]
-    fn parses_describes_function_declaration_target_with_specifies() {
+    fn parses_defines_function_declaration_target_with_declares() {
         let text = r#"
 [\function:on{A}:to{B}]
-Describes: f(x__) ::= y_
+Defines: f(x__) ::= y_
 when:
 . A, B is \set
-specifies:
+declares:
 . x__ "in" A
 . y_ "in" B
 "#;
@@ -5646,8 +5646,8 @@ specifies:
 
         assert!(!tracker.has_errors(), "{:#?}", tracker.events());
         match &document.items[0] {
-            TopLevelItem::Describes(group) => {
-                let DescribesTarget::Declaration(statement) = &group.describes.argument else {
+            TopLevelItem::Defines(group) => {
+                let DefinesTarget::Declaration(statement) = &group.defines.argument else {
                     panic!("expected declaration target");
                 };
                 assert!(statement.expansion.is_some());
@@ -5664,15 +5664,15 @@ specifies:
                 ));
                 assert_eq!(
                     group
-                        .specifies
+                        .declares
                         .as_ref()
-                        .expect("expected specifies")
+                        .expect("expected declares")
                         .arguments
                         .len(),
                     2
                 );
             }
-            other => panic!("expected describes item, got {other:?}"),
+            other => panic!("expected defines item, got {other:?}"),
         }
     }
 

@@ -185,7 +185,7 @@ postfix form-operator spellings remain single identifier-like names.
 A bracketed operator `[op]` (e.g. `[*]`) is also accepted as an infix
 form-operator inside a capability declaration; the brackets are kept in the
 operator's text to mark it as a placeholder whose symbol is drawn from the
-definition's inputs/`Describes:`.
+definition's inputs/`Defines:`.
 
 ### Special operators
 
@@ -247,7 +247,7 @@ A build applies a command type to a value at a stated abstraction level:
 
 `@`/`@!` bind the command type on the left to the primary expression on the
 right. These replace the removed `value as \type` / `value as! \type` casts. A
-build is also how a `Defines:` value may state its type without `is`
+build is also how a `Declares:` value may state its type without `is`
 (`X := \set@{...}` is sugar for `... is \set`).
 
 ## Expression Grammar

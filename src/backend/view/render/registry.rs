@@ -334,8 +334,8 @@ pub(in crate::backend::view) fn render_group_parameter_destructurings(
 fn supports_resolved_group_heading(kind: &str) -> bool {
     matches!(
         kind,
-        "Defines"
-            | "Describes"
+        "Declares"
+            | "Defines"
             | "Refines"
             | "States"
             | "Axiom"
@@ -411,14 +411,14 @@ pub(super) struct RenderEntry {
 
 pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
     match item {
-        TopLevelItem::Describes(group) => render_entries_from_parts(
-            command_header_signatures(&group.heading),
-            primary_describes_target_name(&group.describes.argument),
-            group.documented.as_ref(),
-        ),
         TopLevelItem::Defines(group) => render_entries_from_parts(
             command_header_signatures(&group.heading),
-            primary_declaration_statement_name(&group.defines.argument),
+            primary_defines_target_name(&group.defines.argument),
+            group.documented.as_ref(),
+        ),
+        TopLevelItem::Declares(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
+            primary_declaration_statement_name(&group.declares.argument),
             group.documented.as_ref(),
         ),
         TopLevelItem::Refines(group) => render_refines_entries(
@@ -455,7 +455,7 @@ fn collect_provided_call_render_rules(item: &TopLevelItem, registry: &mut Render
     };
 
     match item {
-        TopLevelItem::Describes(group) => {
+        TopLevelItem::Defines(group) => {
             if let Some(requires) = &group.requires {
                 collect_requires_provided_call_render_rules(requires, &owner_subject, registry);
             }
@@ -463,7 +463,7 @@ fn collect_provided_call_render_rules(item: &TopLevelItem, registry: &mut Render
                 collect_enables_provided_call_render_rules(enables, &owner_subject, registry);
             }
         }
-        TopLevelItem::Defines(group) => {
+        TopLevelItem::Declares(group) => {
             if let Some(requires) = &group.requires {
                 collect_requires_provided_call_render_rules(requires, &owner_subject, registry);
             }
@@ -493,8 +493,10 @@ fn collect_provided_call_render_rules(item: &TopLevelItem, registry: &mut Render
 
 fn top_level_item_subject(item: &TopLevelItem) -> Option<String> {
     match item {
-        TopLevelItem::Describes(group) => primary_describes_target_name(&group.describes.argument),
-        TopLevelItem::Defines(group) => primary_declaration_statement_name(&group.defines.argument),
+        TopLevelItem::Defines(group) => primary_defines_target_name(&group.defines.argument),
+        TopLevelItem::Declares(group) => {
+            primary_declaration_statement_name(&group.declares.argument)
+        }
         TopLevelItem::Refines(group) => primary_declaration_statement_name(&group.refines.argument),
         _ => None,
     }
@@ -603,10 +605,10 @@ fn function_form_render_parameters(form: &FunctionForm) -> Vec<String> {
         .collect()
 }
 
-fn primary_describes_target_name(target: &DescribesTarget) -> Option<String> {
+fn primary_defines_target_name(target: &DefinesTarget) -> Option<String> {
     match target {
-        DescribesTarget::Form(form) => primary_form_name(form),
-        DescribesTarget::Declaration(statement) => primary_declaration_statement_name(statement),
+        DefinesTarget::Form(form) => primary_form_name(form),
+        DefinesTarget::Declaration(statement) => primary_declaration_statement_name(statement),
     }
 }
 

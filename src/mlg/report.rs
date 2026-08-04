@@ -458,9 +458,9 @@ mod tests {
 
     #[test]
     fn the_template_quotes_the_extracted_source() {
-        let template = issue_template("[\\set]\nDescribes: S");
+        let template = issue_template("[\\set]\nDefines: S");
 
-        assert!(template.contains("```mlg\n[\\set]\nDescribes: S\n```"));
+        assert!(template.contains("```mlg\n[\\set]\nDefines: S\n```"));
     }
 
     #[test]
@@ -474,13 +474,13 @@ mod tests {
 
     #[test]
     fn a_plain_source_uses_a_three_backtick_fence() {
-        assert_eq!(fence_for("[\\set]\nDescribes: S"), "```");
+        assert_eq!(fence_for("[\\set]\nDefines: S"), "```");
     }
 
     #[test]
     fn a_source_containing_a_fence_uses_a_longer_one() {
         // The extracted item embeds its own ```mlg fence in quoted text.
-        let source = "Describes: S\nDocumented:\n. written: \"```mlg\\nx\\n```\"";
+        let source = "Defines: S\nDocumented:\n. written: \"```mlg\\nx\\n```\"";
 
         assert_eq!(fence_for(source), "````");
     }

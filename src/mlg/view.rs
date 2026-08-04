@@ -794,7 +794,7 @@ mod tests {
         fs::create_dir_all(&content).expect("expected content dir");
         fs::write(
             &file,
-            "[\\set]\nDescribes: S\nDocumented:\n. called: \"set\"\n",
+            "[\\set]\nDefines: S\nDocumented:\n. called: \"set\"\n",
         )
         .expect("expected source file");
 
@@ -807,7 +807,7 @@ mod tests {
 
         fs::write(
             &file,
-            "[\\set]\nDescribes: S\nDocumented:\n. called: \"updated set\"\n",
+            "[\\set]\nDefines: S\nDocumented:\n. called: \"updated set\"\n",
         )
         .expect("expected updated source file");
 
@@ -886,7 +886,7 @@ mod tests {
         fs::create_dir_all(&content).expect("expected content dir");
         fs::write(
             &file,
-            "[\\set]\nDescribes: S\nDocumented:\n. called: \"set\"\n",
+            "[\\set]\nDefines: S\nDocumented:\n. called: \"set\"\n",
         )
         .expect("expected source file");
 
@@ -895,7 +895,7 @@ mod tests {
             ViewDataRefresh::Updated
         );
 
-        fs::write(&file, "[\\set]\nDescribes: S\n").expect("expected invalid source file");
+        fs::write(&file, "[\\set]\nDefines: S\n").expect("expected invalid source file");
 
         let outcome =
             rebuild_collection_view_data(&root, &path).expect("expected blocked refresh result");

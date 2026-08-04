@@ -2,7 +2,7 @@ use super::check::collect_document_definitions;
 use super::*;
 
 /// The source location of a defined command signature's heading — the file and
-/// zero-based row of the top-level item (`Describes`, `Defines`, ...) whose
+/// zero-based row of the top-level item (`Defines`, `Declares`, ...) whose
 /// `[...]` heading declares that signature.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct DefinitionLocation {
@@ -102,7 +102,7 @@ mod tests {
 
     #[test]
     fn collects_definition_headings_with_locations() {
-        let source = "[\\set]\nDescribes: S\nId: \"11111111-1111-4111-8111-111111111111\"\n";
+        let source = "[\\set]\nDefines: S\nId: \"11111111-1111-4111-8111-111111111111\"\n";
         let files = vec![parsed("a.mlg", source)];
 
         let locations = collect_definition_locations(&files);
@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn resolves_command_uses_to_their_definitions() {
-        let def = "[\\set]\nDescribes: S\nId: \"11111111-1111-4111-8111-111111111111\"\n";
+        let def = "[\\set]\nDefines: S\nId: \"11111111-1111-4111-8111-111111111111\"\n";
         let usage = "Theorem:\nthen: x is \\set\nId: \"22222222-2222-4222-8222-222222222222\"\n";
         let files = vec![parsed("def.mlg", def), parsed("thm.mlg", usage)];
 
@@ -132,8 +132,8 @@ mod tests {
 
     #[test]
     fn ignores_backslashes_that_match_no_signature() {
-        let def = "[\\set]\nDescribes: S\nId: \"11111111-1111-4111-8111-111111111111\"\n";
-        let usage = "[\\thing]\nDescribes: X\nDocumented:\n. written: \"x_? \\in X?\"\nId: \"22222222-2222-4222-8222-222222222222\"\n";
+        let def = "[\\set]\nDefines: S\nId: \"11111111-1111-4111-8111-111111111111\"\n";
+        let usage = "[\\thing]\nDefines: X\nDocumented:\n. written: \"x_? \\in X?\"\nId: \"22222222-2222-4222-8222-222222222222\"\n";
         let files = vec![parsed("def.mlg", def), parsed("thm.mlg", usage)];
 
         let locations = collect_definition_locations(&files);
@@ -149,8 +149,8 @@ mod tests {
 
     #[test]
     fn prefers_the_longer_signature_at_a_shared_start() {
-        let def = "[\\set]\nDescribes: S\nId: \"11111111-1111-4111-8111-111111111111\"\n\n\
-                   [\\set:complement{A}]\nDescribes: C\nwhen: A is \\set\nId: \"22222222-2222-4222-8222-222222222222\"\n";
+        let def = "[\\set]\nDefines: S\nId: \"11111111-1111-4111-8111-111111111111\"\n\n\
+                   [\\set:complement{A}]\nDefines: C\nwhen: A is \\set\nId: \"22222222-2222-4222-8222-222222222222\"\n";
         let usage = "Theorem:\nthen: x is \\set:complement{y}\nId: \"33333333-3333-4333-8333-333333333333\"\n";
         let files = vec![parsed("def.mlg", def), parsed("thm.mlg", usage)];
 

@@ -302,7 +302,7 @@ Main files:
   `TextLiteral`.
 
 The proto parser is responsible for source shape and recovery. It does not know
-whether a group is a `Theorem`, `Describes`, `Resource`, or clause group. That
+whether a group is a `Theorem`, `Defines`, `Resource`, or clause group. That
 classification happens in the structural layer.
 
 ### Formulation Layer
@@ -348,7 +348,7 @@ The structural layer turns proto groups into the typed MathLingua document AST.
 Main files:
 
 - `parser.rs` — a single module that composes proto parsing with structural
-  recognition. It parses every top-level group (`Describes`, `Defines`,
+  recognition. It parses every top-level group (`Defines`, `Declares`,
   `Refines`, `States`, `Theorem`, `Axiom`, `Corollary`, `Disambiguates`,
   `Relation`, `Equivalent`, `Topic`, `Resource`, `Person`, `Specify`, the prose
   and clause groups, etc.), their nested support groups (documentation,
@@ -365,7 +365,7 @@ not by the bracket heading. The heading is then validated according to the group
 kind.
 
 Structural parsing delegates mathematical content to formulation parser
-entrypoints. For example, a `Describes:` argument uses
+entrypoints. For example, a `Defines:` argument uses
 `parse_form_or_declaration`, theorem `given:` uses
 `parse_is_or_refined_statement_spec`, and clause formulations use the clause
 fallback order documented in [structural_syntax.md](structural_syntax.md).
@@ -448,7 +448,7 @@ Important files:
   expressions, forms, and support sections for reference validation.
 
 The signature registry is global across all checked files. Duplicate command
-signatures are rejected across `Describes`, `Defines`, `Refines`, `States`, and
+signatures are rejected across `Defines`, `Declares`, `Refines`, `States`, and
 named theorem-like groups.
 
 The type checker is intentionally conservative. It checks command references,
@@ -612,7 +612,7 @@ The command snapshots the current committed state of the collection into a
   item, keyed by the SHA-256 of the item's source.
 
 An item is (re)versioned when its content hash changed since its last recorded
-entry. In addition, when a *definition* (`Defines`, `Describes`, `States`,
+entry. In addition, when a *definition* (`Declares`, `Defines`, `States`,
 `Refines`, `Disambiguates`) is (re)versioned, every definition it uses is
 re-versioned transitively, deduplicated so each item gains at most one new entry
 per release. The whole update set is computed in memory before anything is

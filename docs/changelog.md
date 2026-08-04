@@ -5,7 +5,16 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
-The definition-inheritance section is now spelled `means:` in both `Describes`
+## Definition And Declaration Names
+
+The former `Defines:` group is now named `Declares:`, and the former
+`Describes:` group is now named `Defines:`. Within the new `Defines:` group,
+the former `specifies:` section is now named `declares:`. The parser, structural
+AST, semantic diagnostics, completions, release metadata, examples, and golden
+fixtures all use the new meanings. `Describes:` and `specifies:` are no longer
+accepted; `Defines:` now has the former `Describes:` semantics.
+
+The definition-inheritance section is now spelled `means:` in both `Defines`
 and `Refines` groups. The structural AST exposes this as `MeansSection` /
 `RefinesMeansSection` through each group's `means` field, completions suggest
 the new label, and the former `extends:` spelling is rejected.
@@ -86,7 +95,7 @@ heading. The section now appears **after** `Documented:` (it previously came
 before it).
 
 A specification elsewhere in the same group may carry a `[:label:]` — for example
-a `specifies:` item written `(.x is \foo.)[:1:]`. When its label matches a
+a `declares:` item written `(.x is \foo.)[:1:]`. When its label matches a
 `Justification:` entry's `[label]`:
 
 - the labeled specification is established using that entry's
@@ -122,11 +131,11 @@ A build whose value cannot be viewed at the requested type reports
 semantics. Set builders after `@` accept `;`-separated specs, e.g.
 `\set@{(a_, b_) : a_ "in" A; b_ "in" B}`.
 
-### `Defines:` Must State Its Type
+### `Declares:` Must State Its Type
 
-A `Defines:` target must state its type: either `X := value is <type>` or a
+A `Declares:` target must state its type: either `X := value is <type>` or a
 top-level build `X := \<type>@<value>` (which is sugar for `... is <type>`). A
-bare `X := {…}` is rejected — `` `Defines:` target `X` must state its type: use
+bare `X := {…}` is rejected — `` `Declares:` target `X` must state its type: use
 `... is <type>` or a top-level `\...@...` build (e.g. `\set@{...}`) `` — even
 when the type is inferable.
 
@@ -171,7 +180,7 @@ by: \cross.of.subset.is.subset.of.cross#given{X := X; Y := X1}
   (`\thm#given{…}`): these are **not** proven as logical consequences; their
   command/theorem references are still reference-validated.
 
-It is accepted wherever a clause or specification goes — `specifies:`,
+It is accepted wherever a clause or specification goes — `declares:`,
 `satisfies:`, `then:`, `suchThat:`, and so on. `have:`/`iff:` remains the
 shorthand iff clause; the `asserting:` section selects the assertion group.
 
@@ -192,9 +201,9 @@ A symbolic operator name may carry a `_`-prefixed subscript, so `*_1`, `+_i`, an
 subscript), mirroring subscripted value names. This lets a tuple carry indexed
 operations, e.g. `H ::= (X1, *_1, e1)`.
 
-A spec-infix `Describes` heading whose left operand destructures now matches its
-`Describes:` argument correctly: `[H ::= (X1, *_1, e1) \:sub:/ G ::= (X, *, e)]`
-with `Describes: H ::= (X1, *_1, e1)` compares on the subject name (`H`) rather
+A spec-infix `Defines` heading whose left operand destructures now matches its
+`Defines:` argument correctly: `[H ::= (X1, *_1, e1) \:sub:/ G ::= (X, *, e)]`
+with `Defines: H ::= (X1, *_1, e1)` compares on the subject name (`H`) rather
 than the full destructuring key, and the described subject is no longer wrongly
 required to appear in `when:`.
 
@@ -208,15 +217,15 @@ placeholders. So a body that uses the operator, such as a refinement's
 
 A `Refines:` also inherits the symbol specifications of the base type it refines.
 `\(associative)::binary.operation:on{X}` refines `\binary.operation:on{X}`, whose
-`means: * is \function:…` already specifies `*`; the refinement therefore need
+`means: * is \function:…` already declares `*`; the refinement therefore need
 not respecify `*`, and its uses of `*` are typed from the base. A refinement
-target symbol is treated as specified when the base type specifies it (through the
-base's own `means:`/`specifies:` or described components).
+target symbol is treated as specified when the base type declares it (through the
+base's own `means:`/`declares:` or described components).
 
-### Refined Commands In `means:`/`specifies:`
+### Refined Commands In `means:`/`declares:`
 
-The `is` relation of a `means:` or `specifies:` item may now name a refined
-command as the type, e.g. `specifies: * is \(associative)::binary.operation:on{X}`
+The `is` relation of a `means:` or `declares:` item may now name a refined
+command as the type, e.g. `declares: * is \(associative)::binary.operation:on{X}`
 or `means: S is \(finite)::magma`. Previously only the `Refines:` `means:`
 accepted refined command references.
 
@@ -244,7 +253,7 @@ cycle guard.
 
 An `Enables:` `capability:` may now use a member-access left-hand side: `x.inv`
 (member access) or `x.f(a_)` (member call). The owner must be exactly the
-definition's `Describes:`/`Defines:`/`Refines:` subject (otherwise `Member
+definition's `Defines:`/`Declares:`/`Refines:` subject (otherwise `Member
 capability owner \`z\` must be the described item \`x\``). It is collected as a
 provided member keyed by the member name and argument arity and owned by the
 definition's type, so a use `p.inv` / `p.f(v)` on a value of that type resolves
@@ -267,7 +276,7 @@ the literal bracketed spelling.
 ### Bracketed Placeholder Operators `[*]`
 
 A capability LHS may write `x_ [*] y_`, where `[*]` names a symbol drawn from the
-definition's inputs/`Describes:` (e.g. the `*` component of `M ::= (X, *)`)
+definition's inputs/`Defines:` (e.g. the `*` component of `M ::= (X, *)`)
 rather than a literal character. It parses as an infix-operator form whose
 operator text retains the brackets.
 
@@ -275,9 +284,9 @@ operator text retains the brackets.
 
 A destructuring target `Name ::= (c1, …, cn)` introduces its components
 (including operator components like `*`) and infers their types: from
-`means:`/`means: … via …` and then `specifies:` for a `Describes` target;
+`means:`/`means: … via …` and then `declares:` for a `Defines` target;
 from the parameter's `when:` type for a command parameter `{M ::= (X, *)}`; and
-from the right-hand type for a `given:`/`Defines:` binding `M ::= (X, *) is \T`.
+from the right-hand type for a `given:`/`Declares:` binding `M ::= (X, *) is \T`.
 Such components need no separate `when:` entry, and member access reaches them
 (`M.X`, `M.*`). Only `::=` introduces components; `:=` requires its right-hand
 side already in scope.
@@ -285,7 +294,7 @@ side already in scope.
 Definitions may assign a destructured infix operator pointwise in `expresses:`,
 for example `(a1_, a2_) *_3 (b1_, b2_) := (a1_ *_1 b1_, a2_ *_2 b2_)`.
 The two operand patterns become the operator mapping's parameters, while the
-operator retains the type inferred from its enclosing destructured `Defines:`
+operator retains the type inferred from its enclosing destructured `Declares:`
 target. Declarations in an `expresses:` block are processed in order, so an
 earlier assignment such as `X3 := {...}` supplies facts needed by later
 assignments. Destructured components of typed heading operands such as `G1 ::=
@@ -295,12 +304,12 @@ assignments. Destructured components of typed heading operands such as `G1 ::=
 
 `means: M is \set via X` records `X is \set`; `means: S is \magma via (X, *)`
 maps the `via` tuple positionally onto `\magma`'s components, giving `X is \set`
-and `* is \binary.operation:on{S}`. `specifies:` then only needs to type
+and `* is \binary.operation:on{S}`. `declares:` then only needs to type
 components the `via` does not cover.
 
 ### `States:` Requires `called:`/`written:`
 
-Like `Describes`/`Defines`, a `States:` group must include a `called:` or
+Like `Defines`/`Declares`, a `States:` group must include a `called:` or
 `written:` item in `Documented:`.
 
 ### Placeholder-Spec Capability Targets
@@ -314,7 +323,7 @@ A `:->` capability target may be a spec on the bound placeholder, e.g.
 
 A refinement may destructure the refined value, for example `Refines: G ::=
 (X, *, e)`. The component names are local aliases whose positional shapes must
-match the base type's `Describes:` target; an operator component must remain an
+match the base type's `Defines:` target; an operator component must remain an
 operator component, and the tuple arity must agree. The base component types and
 specifications are inherited onto those local names for use in `satisfies:`,
 `means:`, `Requires:`, and `Enables:`.
@@ -430,7 +439,7 @@ Id?: <text>
   double quotes so a reference is never confused with a usage: `to: "#topic"` is a
   topic reference and `to: "\sin"` is the `\sin` *definition* (a **signature** — a
   `\command` with its arguments removed, so `\function:on{A}:to{B}` is written
-  `\function:on:to`). A signature names the `Describes`/`Defines`/`Refines`/`States`/
+  `\function:on:to`). A signature names the `Defines`/`Declares`/`Refines`/`States`/
   theorem-like item itself, not a use of it. `called:` (already quoted) rounds out
   the four quoted-text fields (`within:`, `to:`, `means:`, `called:`).
 - `Documented?:` is restricted to a single `called:` field, which only controls
@@ -465,7 +474,7 @@ Documented?: ...  Justification?: ...  Aliases?: ...  References?: ...  Metadata
   `within:`/`to:` convention.
 - `means?:` is either an unquoted **statement** (a clause) of what the
   relationship means, or a **quoted-text** prose description of it.
-- `using?:` brings auxiliary declarations into scope (as on `Describes:`/`States:`)
+- `using?:` brings auxiliary declarations into scope (as on `Defines:`/`States:`)
   and `when?:` gives spec preconditions.
 - It is heading-less (no `[...]`) and takes the same trailing sections as the
   theorem-like items. `mlg check` auto-inserts an `Id:` as for any top-level item.
@@ -496,14 +505,14 @@ Documented?: ...  Justification?: ...  References?: ...  Id?: ...
 ```
 
 - The `[...]` heading names the equivalence class and registers a command
-  signature (referenceable and duplicate-checked, like `Describes:`/`States:`).
+  signature (referenceable and duplicate-checked, like `Defines:`/`States:`).
   `mlg check` auto-inserts an `Id:`.
 - Each `to:` command must use the header parameters directly, as bare names — no
   compound expressions, nested commands, or `using:` symbols.
 - Local validation: every `to:` member must be defined and be one of
-  `Describes`/`Defines`/`States`/`Refines`, and all members must be the same
+  `Defines`/`Declares`/`States`/`Refines`, and all members must be the same
   kind; they must share the same target shape and — by kind — the same `is` type
-  (`Defines`), `means:` target (`Describes`), or base type (`Refines`); they
+  (`Declares`), `means:` target (`Defines`), or base type (`Refines`); they
   must provide the same capabilities (by name and arity); and the item's own
   `when:` must guarantee each member's requirements.
 - Interchangeability: the members are mutually substitutable to the type checker.
@@ -596,13 +605,13 @@ entries in the left outline.
 
 - `called:` is non-math text.
 - `written:` is math-mode text.
-- For `Describes:` and `Defines:`, at least one of `called:` or `written:` is
+- For `Defines:` and `Declares:`, at least one of `called:` or `written:` is
   required.
 - If both are provided, the renderer uses the appropriate one for the context.
 - If only `called:` is provided, the missing `written:` text is generated from it.
 - If only `written:` is provided, the missing `called:` text is generated from it
   by using the written text in math mode.
-- The `called:` text is used for `Describes:` and `Defines:` labels and for the
+- The `called:` text is used for `Defines:` and `Declares:` labels and for the
   right-hand side of rendered `is` statements.
 - The `written:` text is used when the item appears as an expression.
 - Card titles remove placeholder markers such as `?` from rendered title text.
@@ -722,24 +731,24 @@ Rules:
 
 ### Function And Collection Shapes
 
-`Describes:` and `Defines:` support richer target shapes.
+`Defines:` and `Declares:` support richer target shapes.
 
 Function targets:
 
-- `Describes: f(x_) ::= y_` describes a function-like target with one input.
-- `Describes: f(x__) ::= y_` describes a function-like target that accepts any
+- `Defines: f(x_) ::= y_` describes a function-like target with one input.
+- `Defines: f(x__) ::= y_` describes a function-like target that accepts any
   number of inputs, treated as a single tuple.
-- `Describes: f(x_, y_, z_) ::= w_` describes a function-like target that
+- `Defines: f(x_, y_, z_) ::= w_` describes a function-like target that
   accepts exactly three separate arguments.
-- `specifies:` on such a `Describes:` target states the input and output
+- `declares:` on such a `Defines:` target states the input and output
   requirements.
-- `Defines: h(x__) := f(g(x__)) is \function:on{A}:to{C}` is accepted.
+- `Declares: h(x__) := f(g(x__)) is \function:on{A}:to{C}` is accepted.
 
 Collection targets:
 
-- `Describes: X ::= {x__ : ...}` describes a collection shape whose elements
+- `Defines: X ::= {x__ : ...}` describes a collection shape whose elements
   may have any arity and are treated as a tuple.
-- `Describes: X ::= {x_ : ...}` describes a collection shape accepting a single
+- `Defines: X ::= {x_ : ...}` describes a collection shape accepting a single
   value, where that value may itself have any expression shape.
 - `member_of` is a keyword used by enabled membership capabilities.
 - `x member_of X` is valid only when `X` is a collection literal or has a
@@ -759,7 +768,7 @@ Set builder definitions allow general element forms before the colon.
   the binder position.
 - For example, `{(a_, b_) : a_ "in" A, b_ "in" B}` is accepted.
 - This applies in declarations and definitions such as:
-  `Defines: C := {(a_, b_) : ...} is \set`.
+  `Declares: C := {(a_, b_) : ...} is \set`.
 - Specifications after the colon may be separated by `,` **or** `;`. The `;`
   form is also accepted after a build (`\set@{(a_, b_) : a_ "in" A; b_ "in" B}`).
 
@@ -822,12 +831,12 @@ Rules:
 - Required non-optional header parameters must have a corresponding `when:`
   requirement.
 - Optional tail parameters are allowed in `when:` but are not required unless a
-  `Describes:` entry references them in semantic constraints such as
-  `specifies:`, `means:`, or `satisfies:`.
+  `Defines:` entry references them in semantic constraints such as
+  `declares:`, `means:`, or `satisfies:`.
 - Target symbols introduced by a declaration target such as `G ::= (X, *, e)`
   are not `when:` parameters unless they also occur in the command header.
-- Target symbols introduced by `Describes:`, `Defines:`, and `Refines:` targets
-  must have specifications directly, such as through `specifies:`, `using:`, or
+- Target symbols introduced by `Defines:`, `Declares:`, and `Refines:` targets
+  must have specifications directly, such as through `declares:`, `using:`, or
   an `is` relation, or transitively through `means: ... via ...`.
 - `A, B is \set` counts as both `A is \set` and `B is \set`.
 - `P, Q is \\statement` counts as both `P is \\statement` and
@@ -849,7 +858,7 @@ The checker reports any ordinary symbol use that has not been introduced.
   the guard, predicate, or body is checked.
 - Declaration definitions make declaration-side symbols available to the right
   hand side, so `f(x_) := x_` is valid.
-- Declaration relations are checked too, so `Defines: f(x_) := x_ is
+- Declaration relations are checked too, so `Declares: f(x_) := x_ is
   \function:on{A}:to{B}` requires `B` to have been introduced.
 - Membership assumptions bind the member side, but the collection side must
   already be declared.
@@ -876,19 +885,19 @@ The checker uses simple type facts and extension facts.
   a set is required.
 - `means: G is \set via X` records the extension through the given structural
   component.
-- Facts introduced by `given:`, `when:`, `means:`, `specifies:`, and enabled
+- Facts introduced by `given:`, `when:`, `means:`, `declares:`, and enabled
   membership capabilities are available while checking dependent statements.
 - This is type establishment, not theorem proving.
 
-### `Defines:` And `Describes:` Usage
+### `Declares:` And `Defines:` Usage
 
 The checker distinguishes values, definitions, and described types.
 
-- `X is \foo` is used when `\foo` is a `Describes:` entry.
-- `X := \foo` is used when `\foo` is a `Defines:` entry.
+- `X is \foo` is used when `\foo` is a `Defines:` entry.
+- `X := \foo` is used when `\foo` is a `Declares:` entry.
 - `X := \set@{...}` is valid where a definition-style binding is expected.
-- A `Defines:` entry may include an expression and result type, such as
-  `Defines: C := A is \set`.
+- A `Declares:` entry may include an expression and result type, such as
+  `Declares: C := A is \set`.
 
 ## Operators, Symbols, And Disambiguation
 
@@ -968,10 +977,10 @@ Types can now separate definitional requirements from additional capabilities.
 - `Enables:` is intended for additional supported operations that come from
   other definitions.
 - A `Requires.definition:` item succeeds only when the referenced command is a
-  top-level `Defines:` item and that definition's output facts establish the
+  top-level `Declares:` item and that definition's output facts establish the
   requested `is <spec>` fact.
 - A `Requires.definition:` item fails if the referenced command is undefined,
-  is not a `Defines:` entry, or does not establish the requested fact.
+  is not a `Declares:` entry, or does not establish the requested fact.
 - `Enables:` accepts cast-backed `from:` groups.
 - A `from:` group must contain exactly one of `capability:` or `as:`.
 - `from: ... capability:` capabilities are used only when the actual target has
@@ -1039,8 +1048,8 @@ shape of an accepted cast source without adding element constraints.
 
 The checker supports the built-in type predicate `\\type`.
 
-- `\foo is? \\type` succeeds when `\foo` is a top-level `Describes:` entry.
-- `\foo is? \\type` fails when `\foo` is a `Defines:` entry.
+- `\foo is? \\type` succeeds when `\foo` is a top-level `Defines:` entry.
+- `\foo is? \\type` fails when `\foo` is a `Declares:` entry.
 - `\foo is_not? \\type` succeeds when `\foo` is not a described type.
 - Ordinary built-in type facts share the same fact-checking path as
   `\\statement`, `\\expression`, and `\\specification`.
@@ -1287,7 +1296,7 @@ of the collection into a `metadata/` directory next to `content/`.
   the item's source and `version` is a per-item counter.
 - An item gains a new entry when its content hash differs from its latest recorded
   entry.
-- When a definition (`Defines:`, `Describes:`, `States:`, `Refines:`,
+- When a definition (`Declares:`, `Defines:`, `States:`, `Refines:`,
   `Disambiguates:`) is (re)versioned, every definition it uses is re-versioned as
   well, transitively across the dependency graph.
 - The dependency graph is computed as a DAG before anything is written, so a

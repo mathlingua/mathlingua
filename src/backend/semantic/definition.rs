@@ -12,7 +12,7 @@ pub struct DefinitionSite {
 }
 
 /// Resolve the command occurrence at byte `offset` within `target_source` to
-/// the top-level item (`Describes`, `Defines`, `States`, ...) whose `[...]`
+/// the top-level item (`Defines`, `Declares`, `States`, ...) whose `[...]`
 /// heading declares that command's signature.
 ///
 /// `files` must supply every parsed document whose headings should be
@@ -107,7 +107,7 @@ mod tests {
 
     #[test]
     fn resolves_command_in_same_file_to_its_heading() {
-        let source = "[\\function:on{A}:to{B}]\nDescribes: f\nId: \"x\"\n\n\
+        let source = "[\\function:on{A}:to{B}]\nDefines: f\nId: \"x\"\n\n\
                       Theorem:\nthen: \\function:on{x + 1}:to{abc}\nId: \"y\"\n";
         let files = vec![parsed("a.mlg", source)];
         // cursor on the `to` label of the usage
@@ -120,7 +120,7 @@ mod tests {
 
     #[test]
     fn resolves_from_inside_an_argument() {
-        let source = "[\\function:on{A}:to{B}]\nDescribes: f\nId: \"x\"\n\n\
+        let source = "[\\function:on{A}:to{B}]\nDefines: f\nId: \"x\"\n\n\
                       Theorem:\nthen: \\function:on{x + 1}:to{abc}\nId: \"y\"\n";
         let files = vec![parsed("a.mlg", source)];
         // cursor sitting inside `{x + 1}`
@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn resolves_across_files() {
-        let axioms = "[\\set]\nDescribes: S\nId: \"11111111-1111-4111-8111-111111111111\"\n";
+        let axioms = "[\\set]\nDefines: S\nId: \"11111111-1111-4111-8111-111111111111\"\n";
         let usage = "Theorem:\nthen: x is \\set\nId: \"22222222-2222-4222-8222-222222222222\"\n";
         let files = vec![parsed("axioms.mlg", axioms), parsed("thm.mlg", usage)];
         let cursor = offset_of(usage, "\\set", 2);
@@ -143,11 +143,11 @@ mod tests {
 
     #[test]
     fn returns_none_off_a_command() {
-        let source = "[\\set]\nDescribes: S\nId: \"x\"\n";
+        let source = "[\\set]\nDefines: S\nId: \"x\"\n";
         let files = vec![parsed("a.mlg", source)];
-        // cursor on the `Describes` keyword, not a command, even though `\set`
+        // cursor on the `Defines` keyword, not a command, even though `\set`
         // is a known signature
-        let cursor = offset_of(source, "Describes", 2);
+        let cursor = offset_of(source, "Defines", 2);
         assert_eq!(find_definition(&files, source, cursor), None);
     }
 
@@ -163,8 +163,8 @@ mod tests {
     fn resolves_innermost_nested_command() {
         // `\set` appears inside the argument of `\domain{...}`; clicking on the
         // inner `\set` resolves to `\set`, not the enclosing `\domain`.
-        let source = "[\\set]\nDescribes: S\nId: \"a\"\n\n\
-                      [\\domain{R}]\nDefines: D\nId: \"b\"\n\n\
+        let source = "[\\set]\nDefines: S\nId: \"a\"\n\n\
+                      [\\domain{R}]\nDeclares: D\nId: \"b\"\n\n\
                       Theorem:\nthen: \\domain{\\set}\nId: \"c\"\n";
         let files = vec![parsed("a.mlg", source)];
         let inner = offset_of(source, "\\domain{\\set}", 8) + 2; // onto the inner `\set`
@@ -186,7 +186,7 @@ mod tests {
 
     #[test]
     fn resolves_infix_spec_command() {
-        let def = "[m \\:less.than:/ n]\nDescribes: R\nId: \"a\"\n";
+        let def = "[m \\:less.than:/ n]\nDefines: R\nId: \"a\"\n";
         let usage = "Theorem:\nthen: a \\:less.than:/ b\nId: \"b\"\n";
         let files = vec![parsed("def.mlg", def), parsed("thm.mlg", usage)];
         let cursor = offset_of(usage, "\\:less.than", 3); // inside the operator

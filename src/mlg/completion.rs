@@ -3,7 +3,7 @@
 //! Three cursor contexts are handled:
 //!
 //!   * **After / within a top-level group** (e.g. on a blank line under
-//!     `Defines:`): suggest the next valid section(s) for that group, in order.
+//!     `Declares:`): suggest the next valid section(s) for that group, in order.
 //!   * **On a `. ` argument bullet**: suggest the groups that can start there
 //!     (clause groups like `forAll:` / `exists:`, or the item groups valid for
 //!     the enclosing section such as `written:` under `Documented:`).
@@ -54,7 +54,7 @@ pub struct CompletionCandidate {
 pub struct Signature {
     /// The signature text exactly as written between the brackets.
     pub text: String,
-    /// The group label on the line below the heading (`Describes`, `Defines`,
+    /// The group label on the line below the heading (`Defines`, `Declares`,
     /// ...), shown as completion detail.
     pub kind: Option<String>,
 }
@@ -94,13 +94,13 @@ const GROUPS: &[GroupSpec] = &[
         sections: &[("Writing", true), ("Id", false)],
     },
     GroupSpec {
-        head: "Describes",
+        head: "Defines",
         sections: &[
-            ("Describes", true),
+            ("Defines", true),
             ("using", false),
             ("when", false),
             ("means", false),
-            ("specifies", false),
+            ("declares", false),
             ("satisfies", false),
             ("Requires", false),
             ("Enables", false),
@@ -113,9 +113,9 @@ const GROUPS: &[GroupSpec] = &[
         ],
     },
     GroupSpec {
-        head: "Defines",
+        head: "Declares",
         sections: &[
-            ("Defines", true),
+            ("Declares", true),
             ("using", false),
             ("when", false),
             ("expresses", false),
@@ -518,7 +518,7 @@ pub fn collect_signatures(text: &str) -> Vec<Signature> {
 }
 
 /// The group label following a heading — the section name on the next line
-/// (e.g. `Describes` for `Describes: R`), or `None` if it is blank/absent.
+/// (e.g. `Defines` for `Defines: R`), or `None` if it is blank/absent.
 fn heading_kind(lines: &[&str], heading: usize) -> Option<String> {
     let next = lines.get(heading + 1)?;
     if next.trim().is_empty() {
@@ -920,20 +920,20 @@ mod tests {
     }
 
     #[test]
-    fn next_section_after_defines_head() {
-        let text = "[\\f]\nDefines: f(x)\n\nId: \"x\"";
+    fn next_section_after_declares_head() {
+        let text = "[\\f]\nDeclares: f(x)\n\nId: \"x\"";
         // cursor on the blank line 2 (0-based), column 0
         let got = labels(&complete(text, 2, 0));
         assert_eq!(got.first().map(String::as_str), Some("using"));
         assert!(got.contains(&"when".to_string()));
         assert!(got.contains(&"Documented".to_string()));
         // the head itself is not re-offered
-        assert!(!got.contains(&"Defines".to_string()));
+        assert!(!got.contains(&"Declares".to_string()));
     }
 
     #[test]
     fn next_section_skips_already_present() {
-        let text = "Defines: f\nwhen: x\n\n";
+        let text = "Declares: f\nwhen: x\n\n";
         let got = labels(&complete(text, 2, 0));
         assert!(!got.contains(&"using".to_string())); // using is before when
         assert!(!got.contains(&"when".to_string())); // already present
@@ -962,7 +962,7 @@ mod tests {
 
     #[test]
     fn bullet_in_documented_suggests_item_groups() {
-        let text = "Defines: f\nDocumented:\n. ";
+        let text = "Declares: f\nDocumented:\n. ";
         let got = labels(&complete(text, 2, 2));
         assert!(got.contains(&"written".to_string()));
         assert!(got.contains(&"called".to_string()));
@@ -1021,7 +1021,7 @@ mod tests {
     #[test]
     fn next_section_inside_documented_item_group() {
         // A `. from:` item group under Enables offers its `capability`/`as`/...
-        let text = "Defines: f\nEnables:\n. from: $x\n  ";
+        let text = "Declares: f\nEnables:\n. from: $x\n  ";
         let got = labels(&complete(text, 3, 2));
         assert!(got.contains(&"capability".to_string()));
         assert!(got.contains(&"as".to_string()));
@@ -1039,7 +1039,7 @@ mod tests {
     fn empty_item_offers_group_heads() {
         let text = "";
         let got = labels(&complete(text, 0, 0));
-        assert!(got.contains(&"Defines".to_string()));
+        assert!(got.contains(&"Declares".to_string()));
         assert!(got.contains(&"Theorem".to_string()));
         assert!(got.contains(&"Text".to_string()));
     }
@@ -1055,7 +1055,7 @@ mod tests {
     fn command_completion_offers_signature_with_placeholders() {
         // A heading declares `\function:on{A}:to{B}`; typing `\f` offers it as a
         // snippet whose placeholders are the parameter names A and B.
-        let text = "[\\function:on{A}:to{B}]\nDescribes: f\n\n\\f";
+        let text = "[\\function:on{A}:to{B}]\nDefines: f\n\n\\f";
         let got = complete(text, 3, 2);
         assert_eq!(got.len(), 1);
         let candidate = &got[0];
@@ -1066,20 +1066,20 @@ mod tests {
         assert!(candidate.snippet);
         assert_eq!(candidate.replace_chars, 2);
         assert_eq!(candidate.kind, CandidateKind::Command);
-        assert_eq!(candidate.detail, "Describes");
+        assert_eq!(candidate.detail, "Defines");
     }
 
     #[test]
     fn command_completion_prefix_filters() {
-        let text = "[\\relation:on{X}]\nDescribes: R\n\
-                    [\\function:on{A}:to{B}]\nDescribes: f\n\n\\rel";
+        let text = "[\\relation:on{X}]\nDefines: R\n\
+                    [\\function:on{A}:to{B}]\nDefines: f\n\n\\rel";
         let got = labels(&complete(text, 5, 4));
         assert_eq!(got, vec!["\\relation:on{X}".to_string()]);
     }
 
     #[test]
     fn command_completion_backslash_offers_all() {
-        let text = "[\\domain{R}]\nDefines: D\n[\\range{R}]\nDefines: N\n\n\\";
+        let text = "[\\domain{R}]\nDeclares: D\n[\\range{R}]\nDeclares: N\n\n\\";
         let mut got = labels(&complete(text, 5, 1));
         got.sort();
         assert_eq!(
@@ -1090,7 +1090,7 @@ mod tests {
 
     #[test]
     fn command_completion_dedupes_repeated_signatures() {
-        let text = "[\\set]\nDescribes: X\n[\\set]\nStates:\n\n\\se";
+        let text = "[\\set]\nDefines: X\n[\\set]\nStates:\n\n\\se";
         assert_eq!(complete(text, 5, 3).len(), 1);
     }
 
@@ -1098,7 +1098,7 @@ mod tests {
     fn command_context_yields_no_section_completions() {
         // In a `\`-context with no matching signature nothing is offered, rather
         // than falling through to section suggestions.
-        let text = "Defines: f\n\\zz";
+        let text = "Declares: f\n\\zz";
         assert!(complete(text, 1, 3).is_empty());
     }
 
@@ -1114,10 +1114,10 @@ mod tests {
 
     #[test]
     fn collect_signatures_reads_headings() {
-        let text = "[\\domain{R}]\nDefines: D is \\set\n\nText: hi";
+        let text = "[\\domain{R}]\nDeclares: D is \\set\n\nText: hi";
         let signatures = collect_signatures(text);
         assert_eq!(signatures.len(), 1);
         assert_eq!(signatures[0].text, "\\domain{R}");
-        assert_eq!(signatures[0].kind.as_deref(), Some("Defines"));
+        assert_eq!(signatures[0].kind.as_deref(), Some("Declares"));
     }
 }

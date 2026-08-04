@@ -759,7 +759,7 @@ mod tests {
     fn collection_view_title_at(root: &Path) -> String {
         let content = root.join("content");
         let file = content.join("sets.mlg");
-        let source = "[\\set]\nDescribes: S\nDocumented:\n. called: \"set\"\n";
+        let source = "[\\set]\nDefines: S\nDocumented:\n. called: \"set\"\n";
 
         fs::create_dir_all(&content).unwrap();
         fs::write(&file, source).unwrap();
@@ -815,7 +815,7 @@ mod tests {
         let root = temp_dir.path().join("repo");
         let content = root.join("content");
         let file = content.join("sets.mlg");
-        let source = "[\\set]\nDescribes: S\nDocumented:\n. called:\n  . \"set\"\n";
+        let source = "[\\set]\nDefines: S\nDocumented:\n. called:\n  . \"set\"\n";
 
         fs::create_dir_all(&content).unwrap();
         fs::write(&file, source).unwrap();
@@ -837,7 +837,7 @@ mod tests {
         assert_eq!(view.title, "repo");
         assert_eq!(view.files.len(), 1);
         assert_eq!(view.files[0].path, "content/sets.mlg");
-        assert_eq!(view.files[0].items[0].kind, "Describes");
+        assert_eq!(view.files[0].items[0].kind, "Defines");
         assert_eq!(view.files[0].items[0].definition_keys, vec!["5c736574"]);
         assert_eq!(view.files[0].items[0].source, source.trim_end());
         assert_eq!(
@@ -854,7 +854,7 @@ mod tests {
         let content = root.join("content");
         let file = content.join("sets.mlg");
         let source = r#"[\membership]
-Describes: X
+Defines: X
 Documented:
 . called: "membership of $x_?$ in $X?$"
 . written: "x_? \in X?"
@@ -902,7 +902,7 @@ Documented:
         let content = root.join("content");
         let file = content.join("sets.mlg");
         let source = r#"[\set]
-Describes: X
+Defines: X
 Documented:
 . called: "set"
 . description: "Some text
@@ -1066,13 +1066,13 @@ Id: "22222222-2222-4222-8222-222222222222"
         let content = root.join("content");
         let file = content.join("sets.mlg");
         let source = r#"[\set]
-Describes: X
+Defines: X
 Documented:
 . called: "set"
 
 
 [\nonempty.set]
-Describes: X
+Defines: X
 means: X is \set
 Documented:
 . called: "non-empty set"
@@ -1358,7 +1358,7 @@ Second paragraph with $x \in X$."
         // The `Text:` value's continuation lines are aligned under the opening
         // `Text: "` (seven-space indent). Rendering must dedent by that common
         // amount so the embedded ```` ```mlg ```` fence is flush-left, not indented.
-        let source = "Text: \"The Describes: construct is used to specify an abstract concept, called a\n       type in other languages. To start, we specify that a set is an type.\n       We'll expand on it as we continue.\n\n       ```mlg\n       [\\set]\n       Describes: X\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n       \"\nId: \"e798d1a3-1029-44f3-8b92-d794cbb6596c\"\n";
+        let source = "Text: \"The Defines: construct is used to specify an abstract concept, called a\n       type in other languages. To start, we specify that a set is an type.\n       We'll expand on it as we continue.\n\n       ```mlg\n       [\\set]\n       Defines: X\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n       \"\nId: \"e798d1a3-1029-44f3-8b92-d794cbb6596c\"\n";
 
         fs::create_dir_all(&content).unwrap();
         fs::write(&file, source).unwrap();
@@ -1377,12 +1377,12 @@ Second paragraph with $x \in X$."
         let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
 
-        let expected = "The Describes: construct is used to specify an abstract concept, called a\n\
+        let expected = "The Defines: construct is used to specify an abstract concept, called a\n\
                         type in other languages. To start, we specify that a set is an type.\n\
                         We'll expand on it as we continue.\n\n\
                         ```mlg\n\
                         [\\set]\n\
-                        Describes: X\n\
+                        Defines: X\n\
                         Documented:\n\
                         . called: \"set\"\n\
                         Id: \"a0759217-e1f6-412c-982a-0038cd17a3a1\"\n\

@@ -2782,7 +2782,7 @@ pub fn parse_expression_binding(input: &str) -> Result<ExpressionBinding, ParseE
     })
 }
 
-/// Parses a form or declaration used in definition-like `Describes` sections.
+/// Parses a form or declaration used in definition-like `Defines` sections.
 ///
 /// The generated grammar handles the detailed expression/form precedence here;
 /// this wrapper only adapts lexer and error types for callers.

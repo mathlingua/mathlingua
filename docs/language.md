@@ -20,7 +20,7 @@ the same territory.
 A MathLingua source file has two syntax layers.
 
 1. The structural layer is line-oriented. It recognizes groups such as
-   `Describes`, `Theorem`, `Documented`, and `forAll`.
+   `Defines`, `Theorem`, `Documented`, and `forAll`.
 2. The formulation layer is expression-oriented. It recognizes mathematical
    forms such as `f(x_)`, `x "in" A`, `\function:on{A}:to{B}`,
    `(_ "in" A) => (_ "in" B)`, and `G is \set via X`.
@@ -36,7 +36,7 @@ square brackets, followed by one or more sections.
 
 ```text
 [\function:on{A}:to{B}]
-Describes: f(x__)
+Defines: f(x__)
 when:
 . A, B is \set
 Documented:
@@ -188,7 +188,7 @@ x is? \set
 ```
 
 Builtin types and targets are written with two leading backslashes: `\\type`
-(the type of `Describes` types), `\\statement`, `\\expression`,
+(the type of `Defines` types), `\\statement`, `\\expression`,
 `\\specification` (the types of statements, expressions, and specification
 literals), `\\opaque` (an unstructured value), and `\\abstract` (the abstract
 `:->` capability target).
@@ -347,7 +347,7 @@ form or declaration.
 
 - **Infix specification commands** are written `<a> \:name:/ <b>` (with the
   predicate form `\:name?:/`). They are the specification-level analogue of the
-  infix command `\.name./` and are declared by an infix-spec `Describes:` header
+  infix command `\.name./` and are declared by an infix-spec `Defines:` header
   `[A \:subset:/ B]`.
 - **Mapping expressions** are anonymous functions written with `|->`:
   `(x_ is \real) |-> x_ + 1`.
@@ -377,9 +377,9 @@ parentheses), and its purpose.
   one per collection.
 - **`Disambiguates`** (operator/function form heading) — global resolution of an
   ambiguous operator or function into typed branches.
-- **`Describes`** (command heading) — introduces a command for a mathematical
+- **`Defines`** (command heading) — introduces a command for a mathematical
   form.
-- **`Defines`** (command heading) — defines a statement, specification, or type
+- **`Declares`** (command heading) — declares a statement, specification, or type
   fact.
 - **`Refines`** (refined command or refined spec-infix heading) — defines a
   refined command in terms of another command.
@@ -432,12 +432,12 @@ placeholder renders as a card titled by its `called:`/`written:` (or the kind
 word when untitled), with the body as rendered Markdown and `Documented:` behind
 the supporting-sections toggle.
 
-Groups with command headings introduce command signatures: `Describes`,
-`Defines`, `Refines`, `States`, `Equivalent`, and theorem-like groups that have
+Groups with command headings introduce command signatures: `Defines`,
+`Declares`, `Refines`, `States`, `Equivalent`, and theorem-like groups that have
 an optional heading. Duplicate signatures are rejected across all of these
 definition kinds.
 
-`Describes`, `Defines`, and `States` must include a `called:` **or** `written:`
+`Defines`, `Declares`, and `States` must include a `called:` **or** `written:`
 item somewhere in their `Documented:` section. `Refines` must instead include an
 `adjective:` item (and its `Documented:` rejects `called:`). Theorem-like groups
 (`Axiom`, `Theorem`, `Corollary`) may have documentation but require no such
@@ -445,11 +445,11 @@ item.
 
 ## Definition Groups
 
-`Describes` introduces the form associated with a command.
+`Defines` introduces the form associated with a command.
 
 ```text
 [\set]
-Describes: X
+Defines: X
 Documented:
 . called: "set"
 ```
@@ -460,7 +460,7 @@ Optional sections, in order:
 using:
 when:
 means:
-specifies:
+declares:
 satisfies:
 Requires:
 Enables:
@@ -471,20 +471,20 @@ References:
 Metadata:
 ```
 
-(`Refines` uses `means:`/`satisfies:` rather than `specifies:`; only
-`Describes` has a `specifies:` section.)
+(`Refines` uses `means:`/`satisfies:` rather than `declares:`; only
+`Defines` has a `declares:` section.)
 
-`Defines` introduces a command by an `is` or spec statement.
+`Declares` introduces a command by an `is` or spec statement.
 
 ```text
 [\foo{s}]
-Defines: x is \bar{s}
+Declares: x is \bar{s}
 Documented:
 . called: "foo"
 ```
 
 It accepts `using:`, `when:`, `expresses:`, and the same support sections as
-`Describes`.
+`Defines`.
 
 `Refines` introduces a refined command.
 
@@ -566,7 +566,7 @@ of another type (it has a `means:` clause of its own). Using either marker on
 a base that is not a subtype of anything is an error. When the base is not a
 subtype, no marker is written at all.
 
-A `specifies:` section (only `Describes` has one) types the described form's
+A `declares:` section (only `Defines` has one) types the described form's
 parts — including the components of a destructuring target — and those facts are
 assumed when checking the definition body and stored so a value of the type
 carries them (see [Subtyping With `means:`](#subtyping-with-means)).
@@ -661,7 +661,7 @@ Quantifier declarations are local to the clause group that introduces them.
 - `capability:` groups, which define notation that is part of the construct's
   definition
 - `definition:` groups of the form `\command is <spec>`, which require the
-  referenced command to be a top-level `Defines:` entry whose definition
+  referenced command to be a top-level `Declares:` entry whose definition
   establishes the requested fact
 
 `Enables:` accepts:
@@ -700,7 +700,7 @@ the construct supports.
 
 `Justification:` (placed after `Documented:`) accepts only `have:`/`asserting:`
 groups, each with a required `[label]` heading. A labeled specification elsewhere
-in the group — e.g. a `specifies:` item written `(.x is \foo.)[:1:]` — whose
+in the group — e.g. a `declares:` item written `(.x is \foo.)[:1:]` — whose
 `[:label:]` matches an entry's `[label]` is established using that entry's
 `asserting:` items (exactly as an inline `have:`/`asserting:` group would be). The
 entry's `have:` must restate the labeled specification, an unmatched label is
@@ -834,12 +834,12 @@ section`) holding a quoted UUID (`\`Id:\` section must contain a quoted UUID`,
 `Writing:` item is allowed. Command signatures must be unique across definition
 kinds (`Duplicate command signature \`{sig}\` ...`), and each operator/function
 key may have at most one `Disambiguates` (`Duplicate disambiguation for
-\`{key}\``). Spec-infix headings (`\:...:/`) are allowed only on `Describes`, and
+\`{key}\``). Spec-infix headings (`\:...:/`) are allowed only on `Defines`, and
 refined headings (`::`) only on `Refines`.
 
 ### 6. Documentation requirements
 
-`Describes`, `Defines`, and `States` must include a `called:` **or** `written:`
+`Defines`, `Declares`, and `States` must include a `called:` **or** `written:`
 item in `Documented:` (`{kind} entries must include either a \`called:\` or a
 \`written:\` item in \`Documented:\``). `Refines` must include an `adjective:`
 item instead (`Refines entries must include an \`adjective:\` item ...`).
@@ -858,24 +858,24 @@ plus `Command ... does not accept ...`, `Unknown ... parameter ...`,
 \group.element:of{G}`) and the `:=>` form — so a capability that reduces to an
 undefined command is reported.
 
-### 8. Target-symbol specification (`Describes`/`Defines`)
+### 8. Target-symbol specification (`Defines`/`Declares`)
 
 Every parameter and target symbol a definition introduces must be given a type.
 A header parameter needs a `when:` fact (`Missing \`when:\` requirement for
-parameter \`{parameter}\``). A `Describes` target symbol must be typed directly
+parameter \`{parameter}\``). A `Defines` target symbol must be typed directly
 or through `means:` (`Missing specification for target symbol \`{symbol}\`;
 specify it directly or through \`means:\``). A `Refines` target symbol may also
-be inherited: a symbol the refined base type already specifies (through the base's
-own `means:`/`specifies:` or described components) counts as specified, so
+be inherited: a symbol the refined base type already declares (through the base's
+own `means:`/`declares:` or described components) counts as specified, so
 `\(associative)::binary.operation:on{X}` need not respecify the `*` that
-`\binary.operation:on{X}` already types. A `Defines` target symbol must be
+`\binary.operation:on{X}` already types. A `Declares` target symbol must be
 assigned (`Missing definition for target symbol \`{symbol}\`; assign it with
 \`:=\` ... or top-level \`expresses:\``) at most once (`Duplicate definition for
-target symbol ...`), and a `Defines` value **must state its type** — either
+target symbol ...`), and a `Declares` value **must state its type** — either
 `... is <type>` or a top-level build `\<type>@<value>`:
 
 ```text
-` `Defines:` target `X` must state its type: use `... is <type>` or a
+` `Declares:` target `X` must state its type: use `... is <type>` or a
   top-level `\...@...` build (e.g. `\set@{...}`) `
 ```
 
@@ -909,7 +909,7 @@ its right-hand side must already be in scope — whereas `::=` does.
 A spec fact `x "op" T` is valid only when `T`'s type provides that operator
 (`Could not validate spec fact \`{fact}\`: no provided spec operator \`"{op}"\`
 is available for \`{target}\``); infix spec signatures must be defined by
-`Describes`. Operators resolve in order: an in-scope value applied as a call; a
+`Defines`. Operators resolve in order: an in-scope value applied as a call; a
 colon-qualified provided-symbol capability owned by a single operand type; a
 `Disambiguates` entry; then a provided-symbol capability owned by the operands'
 common type (with spec-known operands reduced to their `is`-facts). If none
@@ -921,7 +921,7 @@ reports `Could not resolve member \`{name}\` for \`{owner}\``.
 
 `Requires:`/`Enables:` capability aliases are validated: a provided spec
 operator's target must be the described item; a `Required definition` must
-reference a `Defines:` entry and establish its stated fact. Build expressions
+reference a `Declares:` entry and establish its stated fact. Build expressions
 `\<type>@<value>` (coercion) and `\<type>@!<value>` (coercion + encoding) are
 checked (`Could not build \`{expression}\``). Type predicates, function-type
 specs, and `is` type arguments are checked
@@ -974,7 +974,7 @@ The checker is intentionally conservative about undeclared variables.
 Symbols are introduced by:
 
 - command header forms in definition and named theorem-like groups
-- the main `Describes:`, `Defines:`, and `Refines:` subjects
+- the main `Defines:`, `Declares:`, and `Refines:` subjects
 - assumptions in `using:`, `when:`, theorem `given:`, and local clause groups
 - local declarations such as `A ::= B := B`
 - subject forms in assumed `is` or spec facts
@@ -1007,15 +1007,15 @@ Declaration forms introduce their nested names. In:
 
 ```text
 [\group]
-Describes: G ::= (X, *, e)
+Defines: G ::= (X, *, e)
 means: G is \set via X
-specifies:
+declares:
 . X is \set
 . * is \function:on{X}:to{X}
 . e "in" G
 ```
 
-the `Describes:` form introduces `G`, `X`, and `e`. The structural symbols are
+the `Defines:` form introduces `G`, `X`, and `e`. The structural symbols are
 specified outside of `when:`, and `via X` is a recognized structural view.
 
 ## Type Facts and Requirements
@@ -1027,7 +1027,7 @@ used in an `is` statement.
 
 ```text
 [\function:on{A}:to{B}]
-Describes: f(x__)
+Defines: f(x__)
 when: A, B is \set
 Documented:
 . called: "function"
@@ -1035,7 +1035,7 @@ Documented:
 
 A later reference to `\function:on{G}:to{G}` in either an expression or a type
 assertion requires the checker to prove `G is \set`. Type assertions for
-no-argument `Describes` commands are nominal: `G is \group` records that fact
+no-argument `Defines` commands are nominal: `G is \group` records that fact
 without expanding the internal `\group` requirements at the assertion site.
 
 The checker understands these fact kinds:
@@ -1044,9 +1044,9 @@ The checker understands these fact kinds:
 - spec facts, such as `x "in" G`
 
 It also has built-in types for meta-level checks. In particular, `\\type`
-holds for command references whose top-level entry is a `Describes:` item.
+holds for command references whose top-level entry is a `Defines:` item.
 Thus `\set is? \\type` succeeds when `\set` is described, while
-`\sqrt is? \\type` fails when `\sqrt` is a `Defines:` item.
+`\sqrt is? \\type` fails when `\sqrt` is a `Declares:` item.
 
 The built-in type `\\opaque` is satisfied by any declared value. It is useful
 when a definition only needs an argument to exist but should not learn anything
@@ -1074,14 +1074,14 @@ for command use still looks up the exact command signature being used.
 
 ## Subtyping With `means:`
 
-`means:` introduces subtype and extension implications for `Describes`
+`means:` introduces subtype and extension implications for `Defines`
 definitions.
 
 ```text
 [\group]
-Describes: G ::= (X, *, e)
+Defines: G ::= (X, *, e)
 means: G is \set via X
-specifies:
+declares:
 . X is \set
 . * is \function:on{X}:to{X}
 . e "in" G
@@ -1094,7 +1094,7 @@ The implication is recursive, so subtype chains are followed.
 
 The `via` form both documents the view used to regard the subtype as the
 supertype **and sets the types of the `via` symbols**, so they need not be
-repeated in `specifies:`:
+repeated in `declares:`:
 
 - `means: M is \set via X` — a single `via` symbol becomes an instance of the
   extended type, i.e. it records `X is \set`.
@@ -1102,24 +1102,24 @@ repeated in `specifies:`:
   extended type's own components, so `X` and `*` inherit the types `\magma`
   gives its components (`X is \set`, `* is \binary.operation:on{S}`).
 
-Because `via` supplies those types, the `specifies:` section only needs to type
+Because `via` supplies those types, the `declares:` section only needs to type
 components the `via` does not cover (for `\group` above, just `e`).
 
 ### Destructuring targets
 
-A `Describes`/`Defines` target, a command parameter, or a `given:`/`using:`
+A `Defines`/`Declares` target, a command parameter, or a `given:`/`using:`
 binding may destructure a tuple with `::=`:
 
 ```text
-Describes: M ::= (X, *)
+Defines: M ::= (X, *)
 [\magma.element:of{M ::= (X, *)}]
 given: M ::= (X, *) is \magma
 ```
 
 The component names (including operator components like `*`) are introduced, and
-their types are inferred: from `means:`/`via` and then `specifies:` for a
-`Describes` target; from the parameter's `when:` type for a command parameter;
-and from the right-hand type for a `given:`/`Defines:` binding. Components typed
+their types are inferred: from `means:`/`via` and then `declares:` for a
+`Defines` target; from the parameter's `when:` type for a command parameter;
+and from the right-hand type for a `given:`/`Declares:` binding. Components typed
 this way do not each need a separate `when:` entry, and member access reaches
 them (`M.X`, `M.*`). Only `::=` introduces these symbols — `:=` requires its
 right-hand side to already be in scope.
@@ -1138,7 +1138,7 @@ the right-hand side of an `is` statement:
 
 ```text
 [\function:on{A}:to{B}]
-Describes: f(x__)
+Defines: f(x__)
 when: A, B is \set
 means: f is (_ "in" A) => (_ "in" B)
 Documented:
@@ -1157,7 +1157,7 @@ membership to type facts or other spec facts.
 
 ```text
 [\reals]
-Describes: R
+Defines: R
 Requires:
 . capability: x_ "in" R :-> x is \real
 Documented:
@@ -1187,7 +1187,7 @@ literal rather than by the opaque type itself.
 
 ```text
 [\set]
-Describes: X
+Defines: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
 Enables:
@@ -1204,10 +1204,10 @@ capability substitutes the source subject `Y` with `A`, producing
 and can establish `a is \real`.
 
 An ordinary non-`from:` capability on an opaque target does not read a built
-literal through `member_of`. For example, `Describes: X` with
+literal through `member_of`. For example, `Defines: X` with
 `capability: x_ "in" X :-> x_ member_of X` does not make
 `\set@{...}` expose the literal's element facts. Use a structural target such as
-`Describes: X ::= {x__ : ...}` or an explicit `from:` capability for that.
+`Defines: X ::= {x__ : ...}` or an explicit `from:` capability for that.
 
 A `from:` group may also use `as:` with an expression binding, for example:
 
@@ -1243,7 +1243,7 @@ s := \set@!m
 
 The old `value as \type` / `value as! \type` cast syntax has been removed;
 `\type@value` and `\type@!value` replace them. These are also the only way to
-state a `Defines:` value's type without `is` — a top-level build such as
+state a `Declares:` value's type without `is` — a top-level build such as
 `X := \set@{...}` is sugar for `... is \set` (see the target-symbol check
 above). A build whose value cannot be viewed at the requested type reports
 `Could not build \`{expression}\``.
@@ -1257,7 +1257,7 @@ counterparts of `@` and `@!`.
 
 ```text
 [\integer]
-Describes: n
+Defines: n
 Enables:
 . relation:
   to: r := \rational@n is \rational
@@ -1315,7 +1315,7 @@ and disambiguation paths.
 
 A capability may also declare a **bracketed placeholder operator**
 `x_ [*] y_`, where `[*]` names a symbol drawn from the definition's
-inputs/`Describes:` (here the `*` component of `M ::= (X, *)`) rather than a
+inputs/`Defines:` (here the `*` component of `M ::= (X, *)`) rather than a
 fixed character. The provided operator's name is then the operand's concrete
 operation symbol.
 
@@ -1383,7 +1383,7 @@ fallback branch is omitted, the conditional renders nothing when the variables
 are not all present. Conditional fragments may be nested.
 
 The renderer uses these entries to display commands, forms, and definitions.
-The semantic checker only enforces that `Describes`, `Defines`, and `Refines`
+The semantic checker only enforces that `Defines`, `Declares`, and `Refines`
 include at least one `called:` item.
 
 ### Card titles
@@ -1395,7 +1395,7 @@ rather than as a second, competing title.
 
 ```text
 [\empty.set]
-Describes: X
+Defines: X
 Documented:
 . called: "empty set"
 . written: "\emptyset"

@@ -143,13 +143,13 @@ pub(super) fn collect_document_definitions(
         let full_shape = shape_for_header(definition.heading);
         let position = locator.locate_heading(&full_shape);
         if matches!(definition.heading, CommandHeader::InfixSpec(spec) if spec.refinement.is_none())
-            && kind != DefinitionKind::Describes
+            && kind != DefinitionKind::Defines
         {
             emit_error(
                 event_log,
                 &file.path,
                 position,
-                "Spec-infix headings may only be used with Describes entries",
+                "Spec-infix headings may only be used with Defines entries",
             );
             continue;
         }
@@ -221,13 +221,13 @@ impl<'a> DefinitionItem<'a> {
 
 pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>> {
     match item {
-        TopLevelItem::Describes(group) => Some(DefinitionItem {
-            kind: DefinitionKind::Describes,
+        TopLevelItem::Defines(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Defines,
             heading: &group.heading,
             documented: group.documented.as_ref(),
         }),
-        TopLevelItem::Defines(group) => Some(DefinitionItem {
-            kind: DefinitionKind::Defines,
+        TopLevelItem::Declares(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Declares,
             heading: &group.heading,
             documented: group.documented.as_ref(),
         }),
@@ -325,8 +325,8 @@ pub(super) fn check_documented_rendering(
 ) {
     if !matches!(
         kind,
-        DefinitionKind::Describes
-            | DefinitionKind::Defines
+        DefinitionKind::Defines
+            | DefinitionKind::Declares
             | DefinitionKind::Refines
             | DefinitionKind::States
     ) {

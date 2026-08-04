@@ -18,14 +18,14 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_aliases(&group.aliases, visit);
             walk_optional_justification(&group.justification, visit);
         }
-        TopLevelItem::Describes(group) => {
-            walk_describes_target(&group.describes.argument, visit);
+        TopLevelItem::Defines(group) => {
+            walk_defines_target(&group.defines.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
             if let Some(section) = &group.means {
                 walk_is_or_via_item(&section.argument, visit);
             }
-            if let Some(section) = &group.specifies {
+            if let Some(section) = &group.declares {
                 for item in &section.arguments {
                     walk_is_or_via_item(item, visit);
                 }
@@ -36,8 +36,8 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_aliases(&group.aliases, visit);
             walk_optional_justification(&group.justification, visit);
         }
-        TopLevelItem::Defines(group) => {
-            walk_declaration_statement(&group.defines.argument, visit);
+        TopLevelItem::Declares(group) => {
+            walk_declaration_statement(&group.declares.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
             if let Some(section) = &group.expresses {
@@ -171,10 +171,10 @@ fn walk_relation_subject(subject: &RelationSubject, visit: &mut impl FnMut(&Sign
     }
 }
 
-fn walk_describes_target(target: &DescribesTarget, visit: &mut impl FnMut(&SignatureShape)) {
+fn walk_defines_target(target: &DefinesTarget, visit: &mut impl FnMut(&SignatureShape)) {
     match target {
-        DescribesTarget::Form(form) => walk_form_or_declaration(form, visit),
-        DescribesTarget::Declaration(statement) => walk_declaration_statement(statement, visit),
+        DefinesTarget::Form(form) => walk_form_or_declaration(form, visit),
+        DefinesTarget::Declaration(statement) => walk_declaration_statement(statement, visit),
     }
 }
 

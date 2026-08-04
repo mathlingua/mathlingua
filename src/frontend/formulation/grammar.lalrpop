@@ -142,7 +142,7 @@ InfixFormOperator: ast::Operator = {
     <operator:AnyOperator> => operator,
     <operator:NamedOperatorToken> => ast::Operator::new(operator.span, operator.name),
     // A bracketed operator `[*]` is a placeholder whose symbol is drawn from the
-    // definition's inputs/`Describes:`; the brackets are kept in the operator text
+    // definition's inputs/`Defines:`; the brackets are kept in the operator text
     // to mark it as a placeholder for later resolution.
     <l:@L> "[" <operator:AnyOperator> "]" <r:@R> => ast::Operator::new(Span::new(l, r), format!("[{}]", operator.text)),
 };

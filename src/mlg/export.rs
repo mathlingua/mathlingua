@@ -603,7 +603,7 @@ mod tests {
                     },
                     GroupView {
                         id: "059126b9-dc83-41a2-aa1c-84f8e942f8d6".to_string(),
-                        kind: "Describes".to_string(),
+                        kind: "Defines".to_string(),
                         definition_keys: vec!["\\set".to_string()],
                         heading: Some("\\set".to_string()),
                         heading_latex: Some("\\textrm{set}".to_string()),

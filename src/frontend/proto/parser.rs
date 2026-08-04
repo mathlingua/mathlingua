@@ -446,7 +446,7 @@ mod tests {
 -- comment
 
 [heading]
-Defines: f(x_)
+Declares: f(x_)
 when:
 . x "in" A
 . y "in" B
@@ -467,7 +467,7 @@ then:
         let group = &groups[0];
         assert_eq!(group.heading.as_deref(), Some("heading"));
         assert_eq!(group.sections.len(), 3);
-        assert_eq!(group.sections[0].label, "Defines");
+        assert_eq!(group.sections[0].label, "Declares");
         assert_eq!(group.sections[0].inline_argument.as_deref(), Some("f(x_)"));
 
         let when_arguments = &group.sections[1].arguments;
@@ -529,7 +529,7 @@ then:
     fn reports_unexpected_headers_and_continues() {
         let input = r#"[heading]
 [duplicate]
-Defines: f(x_)
+Declares: f(x_)
 "#;
         let mut event_log = EventLog::new();
         let groups = {
@@ -568,7 +568,7 @@ Defines: f(x_)
     #[test]
     fn reports_malformed_sections_without_panicking() {
         let input = r#"broken section
-Defines: f(x_)
+Declares: f(x_)
 "#;
         let mut event_log = EventLog::new();
         let groups = {
@@ -606,7 +606,7 @@ Defines: f(x_)
     #[test]
     fn parses_multiline_formulations() {
         let input = r#"[heading]
-Defines: (
+Declares: (
   f(
     x_
 )
@@ -633,7 +633,7 @@ when:
         ));
         assert_eq!(
             groups[0].to_string(),
-            "[heading]\nDefines: (\n  f(\n    x_\n)\nwhen:\n. (\n    x \"in\" A\n  )"
+            "[heading]\nDeclares: (\n  f(\n    x_\n)\nwhen:\n. (\n    x \"in\" A\n  )"
         );
     }
 
@@ -676,7 +676,7 @@ when:
         let input = r#"Text: "Here is sample source:
 ```mlg
 [\function:on{A}:to{B}]
-Describes: f(x__) ::= y_
+Defines: f(x__) ::= y_
 Documented:
 . called: \"function\"
 Id: \"123\"
@@ -702,7 +702,7 @@ Id: "11111111-1111-4111-8111-111111111111"
 
     #[test]
     fn reports_single_quoted_formulations_as_invalid() {
-        let input = "Defines: 'f(x_)'\nwhen:\n. 'x in A'\n";
+        let input = "Declares: 'f(x_)'\nwhen:\n. 'x in A'\n";
         let mut event_log = EventLog::new();
         let groups = {
             let mut parser = Parser::new(input, &mut event_log);
@@ -751,7 +751,7 @@ Id: "11111111-1111-4111-8111-111111111111"
 
     #[test]
     fn parses_multiple_top_level_groups_separated_by_blank_lines() {
-        let input = r#"Defines: f(x_)
+        let input = r#"Declares: f(x_)
 when:
 . x in A
 
@@ -765,7 +765,7 @@ that:
 
         assert!(diagnostics.is_empty());
         assert_eq!(groups.len(), 2);
-        assert_eq!(groups[0].sections[0].label, "Defines");
+        assert_eq!(groups[0].sections[0].label, "Declares");
         assert_eq!(groups[1].sections[0].label, "States");
         assert!(matches!(
             &groups[1].sections[0].arguments[0],
@@ -776,13 +776,13 @@ that:
     #[test]
     fn reports_unexpected_top_level_lines_and_recovers() {
         let input = r#"  orphan
-Defines: f(x_)
+Declares: f(x_)
 "#;
 
         let (groups, diagnostics) = parse_input(input);
 
         assert_eq!(groups.len(), 1);
-        assert_eq!(groups[0].sections[0].label, "Defines");
+        assert_eq!(groups[0].sections[0].label, "Declares");
         assert_eq!(diagnostics.len(), 1);
         assert_eq!(
             diagnostics[0].as_message().unwrap().message,
@@ -842,7 +842,7 @@ Defines: f(x_)
 
     #[test]
     fn parses_bracket_and_brace_multiline_formulations() {
-        let input = r#"Defines: [
+        let input = r#"Declares: [
   f(x_)
 ]
 when:

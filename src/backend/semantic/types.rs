@@ -59,7 +59,7 @@ pub(super) struct DefinitionTypeInfo {
     /// type (e.g. a parameter `{M ::= (X, *)}` with `M is \magma`) recover the
     /// component types positionally. Empty when the target is not a tuple.
     pub(super) component_types: Vec<TypeFact>,
-    /// Structural shape of each component in a destructuring `Describes:` target.
+    /// Structural shape of each component in a destructuring `Defines:` target.
     /// Names are intentionally ignored, while distinctions such as a value versus
     /// an operator component are retained so `Refines: G ::= (...)` can be checked
     /// positionally against the base type.
@@ -277,8 +277,8 @@ impl EquivalenceClass {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DefinitionKind {
-    Describes,
     Defines,
+    Declares,
     Refines,
     States,
     Axiom,
@@ -290,8 +290,8 @@ pub(super) enum DefinitionKind {
 impl DefinitionKind {
     pub(super) fn label(self) -> &'static str {
         match self {
-            Self::Describes => "Describes",
             Self::Defines => "Defines",
+            Self::Declares => "Declares",
             Self::Refines => "Refines",
             Self::States => "States",
             Self::Axiom => "Axiom",
@@ -317,7 +317,7 @@ pub(super) struct SignatureRegistry {
     pub(super) viewable_rules: Vec<ViewableRule>,
     pub(super) abstraction_rules: Vec<AbstractionRule>,
     pub(super) collection_type_signatures: Vec<String>,
-    /// Maps a set-defining command signature (a `Defines` whose `:=` value is a
+    /// Maps a set-defining command signature (a `Declares` whose `:=` value is a
     /// set literal) to that set-builder body, so membership in a use of the
     /// command can be reduced to the body's element condition.
     pub(super) collection_bodies: HashMap<String, SetExpression>,

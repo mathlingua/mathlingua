@@ -170,7 +170,7 @@ pub struct AdjectiveText(pub String);
 pub struct WritingText(pub String);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum DescribesTarget {
+pub enum DefinesTarget {
     Form(FormOrDeclaration),
     Declaration(DeclarationStatement),
 }
@@ -195,11 +195,11 @@ pub enum RelationMeans {
     Text(OpenText),
 }
 
-argument_section!(DescribesSection, DescribesTarget);
+argument_section!(DefinesSection, DefinesTarget);
 arguments_section!(UsingSection, DeclarationStatement);
 arguments_section!(WhenSection, Clause);
 argument_section!(MeansSection, IsOrViaItem);
-arguments_section!(DescribesSpecifiesSection, IsOrViaItem);
+arguments_section!(DefinesDeclaresSection, IsOrViaItem);
 arguments_section!(SatisfiesSection, Clause);
 arguments_section!(RequiresSection, RequiresItem);
 arguments_section!(EnablesSection, EnablesItem);
@@ -208,7 +208,7 @@ arguments_section!(DocumentedSection, DocumentedItem);
 arguments_section!(AliasesSection, AliasItem);
 arguments_section!(ReferencesSection, ResourceHeader);
 arguments_section!(MetadataSection, MetadataItem);
-argument_section!(DefinesSection, DeclarationStatement);
+argument_section!(DeclaresSection, DeclarationStatement);
 arguments_section!(ExpressesSection, Clause);
 argument_section!(RefinesSection, DeclarationStatement);
 argument_section!(RefinesMeansSection, DeclarationStatement);
@@ -328,8 +328,8 @@ pub enum TopLevelItem {
     Text(TextGroup),
     Writing(TopLevelWritingGroup),
     Disambiguates(DisambiguatesGroup),
-    Describes(DescribesGroup),
     Defines(DefinesGroup),
+    Declares(DeclaresGroup),
     Refines(RefinesGroup),
     States(StatesGroup),
     Axiom(AxiomGroup),
@@ -368,7 +368,7 @@ pub enum IsOrViaItem {
     IsVia(IsViaStatement),
     Declaration(DeclarationStatement),
     /// A `have:`/`asserting:` group standing in for a specification the checker
-    /// cannot establish on its own (allowed in `specifies:`).
+    /// cannot establish on its own (allowed in `declares:`).
     Have(Box<HaveGroup>),
     /// A specification wrapped in a `[:label:]` (e.g. `(.x is \foo.)[:1:]`) whose
     /// `label` may match a `Justification:` entry `[label]`. When it does, that
@@ -506,13 +506,13 @@ argument_section!(DisambiguatesToSection, Expression);
 argument_section!(DisambiguatesElseSection, Expression);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DescribesGroup {
+pub struct DefinesGroup {
     pub heading: CommandHeader,
-    pub describes: DescribesSection,
+    pub defines: DefinesSection,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub means: Option<MeansSection>,
-    pub specifies: Option<DescribesSpecifiesSection>,
+    pub declares: Option<DefinesDeclaresSection>,
     pub satisfies: Option<SatisfiesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
@@ -524,9 +524,9 @@ pub struct DescribesGroup {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DefinesGroup {
+pub struct DeclaresGroup {
     pub heading: CommandHeader,
-    pub defines: DefinesSection,
+    pub declares: DeclaresSection,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub expresses: Option<ExpressesSection>,

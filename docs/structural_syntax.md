@@ -200,7 +200,7 @@ The structural parser identifies a group by its first section label, not by its 
 
 Examples:
 
-- a top-level group whose first section is `Describes:` is parsed as `DescribesGroup`
+- a top-level group whose first section is `Defines:` is parsed as `DefinesGroup`
 - a nested group inside `Enables:` whose first section is `capability:` is parsed as `CapabilityGroup`
 - a nested group inside `Enables:` whose first section is `from:` is parsed as a cast-backed enables group
 - a clause group whose first section is `if:` is parsed as `IfGroup`
@@ -269,8 +269,8 @@ An empty document is supported by the current implementation because `Document.i
 - **`Text`** — `TextGroup`, heading: none. Sections: `Text: OpenText`
 - **`Writing`** — `TopLevelWritingGroup`, heading: none. Sections: `Writing: WritingAlias+` (each alias LHS must be a `Name`, used with `:~>`)
 - **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when?: Clause+`/`to: Expression` branches, `else?: Expression`, `Documented?`, `Justification?`, `Aliases?`, `References?`, `Metadata?`
-- **`Describes`** — `DescribesGroup`, heading: command. Sections: `Describes: FormOrDeclaration`, `using?: DeclarationStatement+`, `when?: Clause+`, `means?: IsOrViaItem`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: FormOrDeclaration`, `using?: DeclarationStatement+`, `when?: Clause+`, `means?: IsOrViaItem`, `declares?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Refines`** — `RefinesGroup`, heading: refined command or refined spec-infix command (for example, `[A \:(nonempty)::subset:/ B]`). Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `means?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
 - **`States`** — `StatesGroup`, heading: command. Sections: `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
@@ -351,7 +351,7 @@ Used inside `Documented:`.
 Used inside `Justification:` (which appears after `Documented:`). Each item is a
 `HaveGroup` — a `have:`/`asserting:`/`because?:`/`by?:` group (see the `have`
 clause group above) with a required `[label]` heading. A labeled specification
-elsewhere in the group (e.g. a `specifies:` item `(.x is \foo.)[:1:]`) whose
+elsewhere in the group (e.g. a `declares:` item `(.x is \foo.)[:1:]`) whose
 `[:label:]` matches an entry's `[label]` is established using that entry's
 `have:`/`asserting:`; the entry's `have:` must restate the labeled specification,
 and every entry must be referenced by some labeled specification.
@@ -416,7 +416,7 @@ If a clause section contains:
 - **`existsUnique`** — `ExistsUniqueGroup`, heading: label?. Sections: `existsUnique: BindingOrSpec`, `suchThat?: Clause+`
 - **`forAll`** — `ForAllGroup`, heading: label?. Sections: `forAll: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
 - **`if`** — `IfGroup`, heading: label?. Sections: `if: Clause+`, `then: Clause+`
-- **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`. A `have:` group whose second section is `asserting:` (rather than `iff:`) is instead a `HaveGroup` (`Clause::Have`): `have: Clause+`, `asserting: Clause+`, `because?: Clause+`, `by?: Expression+` — an escape hatch that asserts the `have:` item holds given the `asserting:` items (also accepted as a `specifies:` item). `because:`/`by:` are justification the checker only reference-validates, never proves.
+- **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`. A `have:` group whose second section is `asserting:` (rather than `iff:`) is instead a `HaveGroup` (`Clause::Have`): `have: Clause+`, `asserting: Clause+`, `because?: Clause+`, `by?: Expression+` — an escape hatch that asserts the `have:` item holds given the `asserting:` items (also accepted as a `declares:` item). `because:`/`by:` are justification the checker only reference-validates, never proves.
 - **`piecewise`** — `PiecewiseGroup`, heading: label?. Sections: `piecewise: OpenText*`, `if: Clause+`, `then: Clause+`, `else?: Clause+`
 - **`given`** — `GivenGroup`, heading: label?. Sections: `given: RefinedDeclarationStatement`, `where?: Clause+`, `then: Clause+`
 - **`equivalently`** — `EquivalentlyGroup`, heading: label?. Sections: `equivalently: Clause+`
@@ -433,8 +433,8 @@ Structural groups validate their raw proto headings with formulation helper pars
 
 Required on:
 
-- `Describes`
 - `Defines`
+- `Declares`
 - `Refines`
 - `States`
 - `Equivalent`
@@ -617,8 +617,8 @@ TopLevelItemUnion ::=
     | TitleGroup
     | SectionTitleGroup
     | SubsectionTitleGroup
-    | DescribesGroup
     | DefinesGroup
+    | DeclaresGroup
     | RefinesGroup
     | StatesGroup
     | AxiomGroup
@@ -668,11 +668,11 @@ SubsectionTitle: <OpenText>
 
 ```group
 [CommandHeader]
-Describes: <FormOrDeclaration>
+Defines: <FormOrDeclaration>
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 means?: <IsOrViaItemUnion>
-specifies?: <IsOrViaItemUnion>+
+declares?: <IsOrViaItemUnion>+
 satisfies?: <ClauseUnion>+
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
@@ -685,7 +685,7 @@ Metadata?: <MetadataItemUnion>+
 
 ```group
 [CommandHeader]
-Defines: <DeclarationStatement>
+Declares: <DeclarationStatement>
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 expresses?: <ClauseUnion>
@@ -841,10 +841,10 @@ command must use the header parameters directly, as bare names (no compound
 expressions, no `using:` symbols). The item registers its heading as a command
 signature and is validated locally:
 
-- every `to:` member must be defined and be a `Describes`, `Defines`, `States`,
+- every `to:` member must be defined and be a `Defines`, `Declares`, `States`,
   or `Refines` — and all members must be the same one of those kinds;
 - the members must declare the same target shape, and (by kind) the same `is`
-  type (`Defines`), the same `means:` target (`Describes`), or the same base
+  type (`Declares`), the same `means:` target (`Defines`), or the same base
   type (`Refines`);
 - the members must provide the same set of capabilities (by name and arity); and
 - this item's own `when:` must guarantee each member's requirements.
@@ -881,7 +881,7 @@ References (`within:` and each `to:`) are **quoted text** so a reference is neve
 mistaken for a usage. A `"#topic"` value is a topic reference; a `"\signature"`
 value is a **signature** — a `\command` with its arguments removed, e.g.
 `\function:on{A}:to{B}` written as `\function:on:to` — that names a
-`Describes`/`Defines`/`Refines`/`States`/theorem-like definition itself, not a use
+`Defines`/`Declares`/`Refines`/`States`/theorem-like definition itself, not a use
 of it. With `called:` (already quoted), the four quoted-text fields are `within:`,
 `to:`, `means:`, and `called:`.
 
@@ -1184,8 +1184,8 @@ That means extra valid entries in a singular section are currently ignored rathe
 
 Examples of affected sections:
 
-- `Describes:`
 - `Defines:`
+- `Declares:`
 - `means:`
 - `expresses:`
 - `overview:`

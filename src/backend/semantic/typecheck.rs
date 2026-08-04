@@ -32,17 +32,17 @@ pub(super) fn collect_definition_type_metadata(
         .insert(header_shape.shape.signature.clone(), info);
 }
 
-/// Records a set-defining command's body (`Defines: X := {x_ : ...} is \set`) so
+/// Records a set-defining command's body (`Declares: X := {x_ : ...} is \set`) so
 /// membership in a use of the command can reduce to the body's element condition.
 fn collect_collection_body(
     item: &TopLevelItem,
     header_shape: &HeaderShape,
     registry: &mut SignatureRegistry,
 ) {
-    let TopLevelItem::Defines(group) = item else {
+    let TopLevelItem::Declares(group) = item else {
         return;
     };
-    let Some(definition) = &group.defines.argument.definition else {
+    let Some(definition) = &group.declares.argument.definition else {
         return;
     };
     let body = match &definition.kind {
@@ -116,8 +116,8 @@ fn command_bare_name_arguments(command: &CommandExpression) -> Option<Vec<String
 /// The form of the object `item` declares (rule 2 of `Equivalent:`).
 fn target_shape_of_item(item: &TopLevelItem) -> TargetShape {
     match item {
-        TopLevelItem::Describes(group) => describes_target_shape(&group.describes.argument),
-        TopLevelItem::Defines(group) => is_subject_shape(&group.defines.argument.subject),
+        TopLevelItem::Defines(group) => defines_target_shape(&group.defines.argument),
+        TopLevelItem::Declares(group) => is_subject_shape(&group.declares.argument.subject),
         TopLevelItem::Refines(group) => group
             .refines
             .argument
@@ -130,10 +130,10 @@ fn target_shape_of_item(item: &TopLevelItem) -> TargetShape {
     }
 }
 
-fn describes_target_shape(target: &DescribesTarget) -> TargetShape {
+fn defines_target_shape(target: &DefinesTarget) -> TargetShape {
     match target {
-        DescribesTarget::Form(form) => form_shape(form),
-        DescribesTarget::Declaration(statement) => is_subject_shape(&statement.subject),
+        DefinesTarget::Form(form) => form_shape(form),
+        DefinesTarget::Declaration(statement) => is_subject_shape(&statement.subject),
     }
 }
 
@@ -168,10 +168,10 @@ fn collect_collection_type_signature(
     info: &DefinitionTypeInfo,
     registry: &mut SignatureRegistry,
 ) {
-    let TopLevelItem::Describes(group) = item else {
+    let TopLevelItem::Defines(group) = item else {
         return;
     };
-    if !describes_target_is_collection(&group.describes.argument) {
+    if !defines_target_is_collection(&group.defines.argument) {
         return;
     }
     if !registry
@@ -185,13 +185,13 @@ fn collect_collection_type_signature(
     }
 }
 
-fn describes_target_is_collection(target: &DescribesTarget) -> bool {
+fn defines_target_is_collection(target: &DefinesTarget) -> bool {
     match target {
-        DescribesTarget::Form(FormOrDeclaration {
+        DefinesTarget::Form(FormOrDeclaration {
             kind: FormOrDeclarationKind::SetDeclaration { .. },
             ..
         }) => true,
-        DescribesTarget::Declaration(statement) => declaration_has_collection_literal(statement),
+        DefinesTarget::Declaration(statement) => declaration_has_collection_literal(statement),
         _ => false,
     }
 }
@@ -263,25 +263,25 @@ fn definition_type_info(
     registry: &SignatureRegistry,
 ) -> Option<DefinitionTypeInfo> {
     match item {
-        TopLevelItem::Describes(group) => Some(type_info_from_parts(
-            header_shape,
-            &group.heading,
-            group.using.as_ref(),
-            None,
-            group.when.as_ref(),
-            None,
-            Some(&group.describes.argument),
-            group.specifies.as_ref(),
-            group.means.as_ref(),
-            registry,
-        )),
         TopLevelItem::Defines(group) => Some(type_info_from_parts(
             header_shape,
             &group.heading,
             group.using.as_ref(),
             None,
             group.when.as_ref(),
+            None,
             Some(&group.defines.argument),
+            group.declares.as_ref(),
+            group.means.as_ref(),
+            registry,
+        )),
+        TopLevelItem::Declares(group) => Some(type_info_from_parts(
+            header_shape,
+            &group.heading,
+            group.using.as_ref(),
+            None,
+            group.when.as_ref(),
+            Some(&group.declares.argument),
             None,
             None,
             None,
@@ -375,9 +375,9 @@ fn type_info_from_parts(
     using: Option<&UsingSection>,
     given: Option<&GivenSection>,
     when: Option<&WhenSection>,
-    defines: Option<&DeclarationStatement>,
-    described: Option<&DescribesTarget>,
-    describes_specifies: Option<&DescribesSpecifiesSection>,
+    declares: Option<&DeclarationStatement>,
+    described: Option<&DefinesTarget>,
+    defines_declares: Option<&DefinesDeclaresSection>,
     means: Option<&MeansSection>,
     registry: &SignatureRegistry,
 ) -> DefinitionTypeInfo {
@@ -424,7 +424,7 @@ fn type_info_from_parts(
         .iter()
         .map(|fact| context.normalize_fact(fact))
         .collect();
-    let mut outputs: Vec<TypeFact> = defines
+    let mut outputs: Vec<TypeFact> = declares
         .map(|statement| {
             facts_from_declaration_statement_in_context(statement, &context)
                 .into_iter()
@@ -433,19 +433,19 @@ fn type_info_from_parts(
         })
         .unwrap_or_default();
     if let Some(fact) = described
-        .zip(describes_specifies)
-        .and_then(|(target, specifies)| {
-            function_type_fact_from_describes_specifies(target, specifies, &context)
+        .zip(defines_declares)
+        .and_then(|(target, declares)| {
+            function_type_fact_from_defines_declares(target, declares, &context)
         })
     {
         outputs.push(context.normalize_fact(&fact));
     }
 
     let component_types = described
-        .map(|target| component_type_facts(target, means, describes_specifies, &context, registry))
+        .map(|target| component_type_facts(target, means, defines_declares, &context, registry))
         .unwrap_or_default();
     let component_shapes = described
-        .map(describes_target_component_shapes)
+        .map(defines_target_component_shapes)
         .unwrap_or_default();
     let parameter_destructurings = destructured_parameters(heading, &context);
     let inferred_parameters = collect_inferred_parameter_names(when);
@@ -501,17 +501,17 @@ fn collect_inferred_names_in_type_expression(ty: &TypeExpression, names: &mut Ve
 
 /// Type facts for the components of a destructuring describes target, in tuple
 /// order. Each component's type is drawn from `means:` first (its components
-/// inherit the extended type's component types) and then `specifies:` for any
+/// inherit the extended type's component types) and then `declares:` for any
 /// component not covered by `means:`. Facts are normalized so they can be
 /// re-substituted when another definition destructures a value of this type.
 fn component_type_facts(
-    target: &DescribesTarget,
+    target: &DefinesTarget,
     means: Option<&MeansSection>,
-    specifies: Option<&DescribesSpecifiesSection>,
+    declares: Option<&DefinesDeclaresSection>,
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> Vec<TypeFact> {
-    let component_names = describes_target_component_names(target);
+    let component_names = defines_target_component_names(target);
     if component_names.is_empty() {
         return Vec::new();
     }
@@ -525,8 +525,8 @@ fn component_type_facts(
             fact_context.add_fact(fact);
         }
     }
-    if let Some(specifies) = specifies {
-        for item in &specifies.arguments {
+    if let Some(declares) = declares {
+        for item in &declares.arguments {
             for fact in facts_from_is_or_via_item_in_context(item, &fact_context) {
                 fact_context.add_fact(fact);
             }
@@ -582,7 +582,7 @@ fn facts_from_means_via(
 
 /// Adds the component types a `means: … via …` clause assigns (`X is \set`,
 /// etc.) to the checking context, so the definition's own body (e.g.
-/// `specifies: e "in" X`) can rely on them.
+/// `declares: e "in" X`) can rely on them.
 fn assume_means_via_facts(
     means: &Option<MeansSection>,
     context: &mut TypeContext,
@@ -631,7 +631,7 @@ fn collect_spec_operator_rules(
         let mut source_subject = capability.source_subject;
         let mut source_requires_literal = capability.source_requires_literal;
         if source_subject.is_none()
-            && item_describes_collection(item)
+            && item_defines_collection(item)
             && let Some(described) = &info.described
         {
             source_subject = Some(described.clone());
@@ -645,10 +645,10 @@ fn collect_spec_operator_rules(
     }
 }
 
-fn item_describes_collection(item: &TopLevelItem) -> bool {
+fn item_defines_collection(item: &TopLevelItem) -> bool {
     matches!(
         item,
-        TopLevelItem::Describes(group) if describes_target_is_collection(&group.describes.argument)
+        TopLevelItem::Defines(group) if defines_target_is_collection(&group.defines.argument)
     )
 }
 
@@ -883,15 +883,15 @@ fn refinement_extension_targets_from_declaration(
 
 fn means_item(item: &TopLevelItem) -> Option<&IsOrViaItem> {
     match item {
-        TopLevelItem::Describes(group) => group.means.as_ref().map(|section| &section.argument),
+        TopLevelItem::Defines(group) => group.means.as_ref().map(|section| &section.argument),
         _ => None,
     }
 }
 
 fn enables_section(item: &TopLevelItem) -> Option<&EnablesSection> {
     match item {
-        TopLevelItem::Describes(group) => group.enables.as_ref(),
         TopLevelItem::Defines(group) => group.enables.as_ref(),
+        TopLevelItem::Declares(group) => group.enables.as_ref(),
         TopLevelItem::Refines(group) => group.enables.as_ref(),
         TopLevelItem::States(group) => group.enables.as_ref(),
         _ => None,
@@ -900,8 +900,8 @@ fn enables_section(item: &TopLevelItem) -> Option<&EnablesSection> {
 
 fn requires_section(item: &TopLevelItem) -> Option<&RequiresSection> {
     match item {
-        TopLevelItem::Describes(group) => group.requires.as_ref(),
         TopLevelItem::Defines(group) => group.requires.as_ref(),
+        TopLevelItem::Declares(group) => group.requires.as_ref(),
         TopLevelItem::Refines(group) => group.requires.as_ref(),
         TopLevelItem::States(group) => group.requires.as_ref(),
         _ => None,
@@ -964,8 +964,8 @@ fn spec_operator_rule_from_alias(
 
 /// The definition kinds a top-level `Equivalent:` may group.
 const EQUIVALENT_MEMBER_KINDS: [DefinitionKind; 4] = [
-    DefinitionKind::Describes,
     DefinitionKind::Defines,
+    DefinitionKind::Declares,
     DefinitionKind::States,
     DefinitionKind::Refines,
 ];
@@ -1096,7 +1096,7 @@ fn validate_equivalent_item(
                 path,
                 position,
                 format!(
-                    "`Equivalent:` `to:` items must be Describes/Defines/States/Refines, but `{signature}` is a {}",
+                    "`Equivalent:` `to:` items must be Defines/Declares/States/Refines, but `{signature}` is a {}",
                     kind.label()
                 ),
             );
@@ -1130,8 +1130,8 @@ fn validate_equivalent_item(
 }
 
 /// Rules 2–6: the `to:` members must agree in target shape and — depending on
-/// their shared kind — in the type they define (`is`, Defines), the type they
-/// extend (`means:`, Describes), the base they refine (Refines), plus their
+/// their shared kind — in the type they define (`is`, Declares), the type they
+/// extend (`means:`, Defines), the base they refine (Refines), plus their
 /// provided-capability set.
 fn validate_equivalent_member_agreement(
     members: &[EquivalentMember],
@@ -1181,8 +1181,8 @@ fn validate_equivalent_member_agreement(
     // Rules 3–5: members must share their core type identity. Which registry facts
     // express that identity, and the wording of a divergence, depend on the kind.
     let identity_divergence = match kind {
-        DefinitionKind::Defines => Some("define values of different types"),
-        DefinitionKind::Describes => Some("extend different types"),
+        DefinitionKind::Declares => Some("define values of different types"),
+        DefinitionKind::Defines => Some("extend different types"),
         DefinitionKind::Refines => Some("refine different base types"),
         _ => None,
     };
@@ -1236,7 +1236,7 @@ fn require_uniform_members<K: PartialEq>(
 }
 
 /// The set of type signatures that fix a member's core identity for rules 3–5:
-/// the `is` type of a Defines, the `means:` target of a Describes, or the base
+/// the `is` type of a Declares, the `means:` target of a Defines, or the base
 /// type of a Refines. Uses only global type signatures (never definition-local
 /// symbol names), so structurally identical types compare equal.
 fn member_type_identity(
@@ -1245,7 +1245,7 @@ fn member_type_identity(
     registry: &SignatureRegistry,
 ) -> BTreeSet<String> {
     match kind {
-        DefinitionKind::Defines => registry
+        DefinitionKind::Declares => registry
             .type_infos
             .get(signature)
             .map(|info| {
@@ -1255,7 +1255,7 @@ fn member_type_identity(
                     .collect()
             })
             .unwrap_or_default(),
-        DefinitionKind::Describes => registry
+        DefinitionKind::Defines => registry
             .extension_rules
             .iter()
             .filter(|rule| rule.subtype_signature == signature)
@@ -1356,21 +1356,21 @@ fn validate_top_level_item_types(
         TopLevelItem::Disambiguates(group) => {
             validate_disambiguates(group, path, locator, registry, event_log);
         }
-        TopLevelItem::Describes(group) => {
+        TopLevelItem::Defines(group) => {
             let mut context = TypeContext::default();
             context.set_justifications(build_justification_map(&group.justification));
-            validate_spec_infix_describes_header(
+            validate_spec_infix_defines_header(
                 &group.heading,
-                &group.describes.argument,
+                &group.defines.argument,
                 path,
                 locator,
                 event_log,
             );
             declare_header_symbols(&group.heading, &mut context);
-            declare_describes_target(&group.describes.argument, &mut context);
-            assume_described_type(&group.heading, &group.describes.argument, &mut context);
-            check_describes_target(
-                &group.describes.argument,
+            declare_defines_target(&group.defines.argument, &mut context);
+            assume_described_type(&group.heading, &group.defines.argument, &mut context);
+            check_defines_target(
+                &group.defines.argument,
                 &context,
                 path,
                 locator,
@@ -1385,7 +1385,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
-            let when_parameters = describes_when_parameters_from_usage(group);
+            let when_parameters = defines_when_parameters_from_usage(group);
             validate_when_section(&group.when, &when_parameters, path, locator, event_log);
             assume_optional_clauses(
                 &group.when,
@@ -1397,20 +1397,20 @@ fn validate_top_level_item_types(
             );
             assume_destructured_parameter_components(&group.heading, &mut context, registry);
             assume_means_via_facts(&group.means, &mut context, registry);
-            assume_optional_specifies(
-                &group.specifies,
+            assume_optional_declares(
+                &group.declares,
                 &mut context,
                 path,
                 locator,
                 registry,
                 event_log,
             );
-            assume_describes_function_type(
-                &group.describes.argument,
-                &group.specifies,
+            assume_defines_function_type(
+                &group.defines.argument,
+                &group.declares,
                 &mut context,
             );
-            validate_describes_justification_usage(group, path, locator, event_log);
+            validate_defines_justification_usage(group, path, locator, event_log);
             if let Some(means) = &group.means {
                 check_is_or_via_item(
                     &means.argument,
@@ -1421,12 +1421,12 @@ fn validate_top_level_item_types(
                     event_log,
                 );
             }
-            validate_describes_target_symbol_specifications(group, path, locator, event_log);
+            validate_defines_target_symbol_specifications(group, path, locator, event_log);
             validate_optional_requires(
                 &group.requires,
                 &context,
                 Some(&shapes_for_header(&group.heading)),
-                Some(&described_target_subject_key(&group.describes.argument)),
+                Some(&described_target_subject_key(&group.defines.argument)),
                 path,
                 locator,
                 registry,
@@ -1436,7 +1436,7 @@ fn validate_top_level_item_types(
                 &group.enables,
                 &context,
                 &shapes_for_header(&group.heading),
-                &described_target_subject_key(&group.describes.argument),
+                &described_target_subject_key(&group.defines.argument),
                 path,
                 locator,
                 registry,
@@ -1451,10 +1451,10 @@ fn validate_top_level_item_types(
                 event_log,
             );
         }
-        TopLevelItem::Defines(group) => {
+        TopLevelItem::Declares(group) => {
             let mut context = TypeContext::default();
             declare_header_symbols(&group.heading, &mut context);
-            declare_declaration_statement_subjects(&group.defines.argument, &mut context);
+            declare_declaration_statement_subjects(&group.declares.argument, &mut context);
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -1480,7 +1480,7 @@ fn validate_top_level_item_types(
             );
             assume_destructured_parameter_components(&group.heading, &mut context, registry);
             complete_introduced_declaration_statement(
-                &group.defines.argument,
+                &group.declares.argument,
                 &mut context,
                 path,
                 locator,
@@ -1488,11 +1488,11 @@ fn validate_top_level_item_types(
                 event_log,
             );
             assume_destructured_declaration_components(
-                &group.defines.argument,
+                &group.declares.argument,
                 &mut context,
                 registry,
             );
-            validate_defines_target_symbol_specifications(group, path, locator, event_log);
+            validate_declares_target_symbol_specifications(group, path, locator, event_log);
             validate_optional_requires(
                 &group.requires,
                 &context,
@@ -1736,8 +1736,8 @@ fn validate_top_level_item_types(
 
 fn anchor_top_level_item(item: &TopLevelItem, locator: &mut SourceLocator<'_>) {
     let heading = match item {
-        TopLevelItem::Describes(group) => Some(&group.heading),
         TopLevelItem::Defines(group) => Some(&group.heading),
+        TopLevelItem::Declares(group) => Some(&group.heading),
         TopLevelItem::Refines(group) => Some(&group.heading),
         TopLevelItem::States(group) => Some(&group.heading),
         TopLevelItem::Axiom(group) => group.heading.as_ref(),
@@ -2041,7 +2041,7 @@ fn emit_refines_destructuring_mismatch(
         path,
         locator.locate_heading(&shape_for_header(&group.heading)),
         format!(
-            "`Refines:` destructuring has shape {actual}, but the base `Describes:` target has shape {expected}"
+            "`Refines:` destructuring has shape {actual}, but the base `Defines:` target has shape {expected}"
         ),
     );
 }
@@ -2130,7 +2130,7 @@ fn validate_disambiguates(
 
 fn assume_described_type(
     heading: &CommandHeader,
-    described: &DescribesTarget,
+    described: &DefinesTarget,
     context: &mut TypeContext,
 ) {
     if matches!(heading, CommandHeader::InfixSpec(_)) {
@@ -2246,7 +2246,7 @@ fn matching_refines_base_info<'a>(
 
 /// Binds a valid `Refines: G ::= (X, *, e)` expansion from the component
 /// metadata of the base type named by the refined heading. Component names are
-/// local aliases; their shapes and positions must match the base `Describes:`
+/// local aliases; their shapes and positions must match the base `Defines:`
 /// target, while their types are instantiated positionally.
 fn assume_refines_destructured_components(
     heading: &CommandHeader,
@@ -2285,9 +2285,9 @@ fn refined_header_base_type_fact_parts(header_shape: &HeaderShape) -> Option<(St
     Some((ty, signature))
 }
 
-fn validate_spec_infix_describes_header(
+fn validate_spec_infix_defines_header(
     heading: &CommandHeader,
-    described: &DescribesTarget,
+    described: &DefinesTarget,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     event_log: &mut EventLog,
@@ -2304,7 +2304,7 @@ fn validate_spec_infix_describes_header(
         event_log,
         path,
         locator.locate_heading(&shape_for_infix_spec_header(header)),
-        "Spec-infix Describes heading left operand must match the Describes argument",
+        "Spec-infix Defines heading left operand must match the Defines argument",
     );
 }
 
@@ -2393,16 +2393,16 @@ fn assume_optional_using(
     }
 }
 
-fn assume_optional_specifies(
-    specifies: &Option<DescribesSpecifiesSection>,
+fn assume_optional_declares(
+    declares: &Option<DefinesDeclaresSection>,
     context: &mut TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    if let Some(specifies) = specifies {
-        for item in &specifies.arguments {
+    if let Some(declares) = declares {
+        for item in &declares.arguments {
             assume_is_or_via_item(item, context, path, locator, registry, event_log);
         }
     }
@@ -2437,7 +2437,7 @@ fn assume_is_or_via_item(
         }
         // Check the `have:` specification against its `asserting:` facts, then
         // contribute its typing facts to the surrounding context (this is the
-        // sole pass over `specifies:` items, so the check happens here).
+        // sole pass over `declares:` items, so the check happens here).
         IsOrViaItem::Have(group) => {
             check_have_group(group, context, path, locator, registry, event_log);
             for statement in have_group_declarations(group) {
@@ -2619,11 +2619,11 @@ fn collect_is_or_via_referenced_labels(item: &IsOrViaItem, labels: &mut BTreeSet
     }
 }
 
-/// Reports each `Justification:` entry of a `Describes:` group that no labeled
+/// Reports each `Justification:` entry of a `Defines:` group that no labeled
 /// specification references, and each entry that lacks a `[label]` heading (which
 /// can never be referenced). Every entry must justify some labeled item.
-fn validate_describes_justification_usage(
-    group: &DescribesGroup,
+fn validate_defines_justification_usage(
+    group: &DefinesGroup,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     event_log: &mut EventLog,
@@ -2635,8 +2635,8 @@ fn validate_describes_justification_usage(
     if let Some(means) = &group.means {
         collect_is_or_via_referenced_labels(&means.argument, &mut referenced);
     }
-    if let Some(specifies) = &group.specifies {
-        for item in &specifies.arguments {
+    if let Some(declares) = &group.declares {
+        for item in &declares.arguments {
             collect_is_or_via_referenced_labels(item, &mut referenced);
         }
     }
@@ -2700,17 +2700,17 @@ fn asserted_fact_from_expression(
     fact_from_expression_in_context(expression, context)
 }
 
-fn declare_describes_target(target: &DescribesTarget, context: &mut TypeContext) {
+fn declare_defines_target(target: &DefinesTarget, context: &mut TypeContext) {
     match target {
-        DescribesTarget::Form(form) => declare_form_or_declaration(form, context),
-        DescribesTarget::Declaration(statement) => {
+        DefinesTarget::Form(form) => declare_form_or_declaration(form, context),
+        DefinesTarget::Declaration(statement) => {
             declare_declaration_statement_subjects(statement, context)
         }
     }
 }
 
-fn check_describes_target(
-    target: &DescribesTarget,
+fn check_defines_target(
+    target: &DefinesTarget,
     context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
@@ -2718,24 +2718,24 @@ fn check_describes_target(
     event_log: &mut EventLog,
 ) {
     match target {
-        DescribesTarget::Form(form) => {
+        DefinesTarget::Form(form) => {
             check_form_or_declaration(form, context, path, locator, event_log);
         }
-        DescribesTarget::Declaration(statement) => {
+        DefinesTarget::Declaration(statement) => {
             check_declaration_statement(statement, context, path, locator, registry, event_log);
         }
     }
 }
 
-fn assume_describes_function_type(
-    target: &DescribesTarget,
-    specifies: &Option<DescribesSpecifiesSection>,
+fn assume_defines_function_type(
+    target: &DefinesTarget,
+    declares: &Option<DefinesDeclaresSection>,
     context: &mut TypeContext,
 ) {
-    let Some(specifies) = specifies else {
+    let Some(declares) = declares else {
         return;
     };
-    if let Some(fact) = function_type_fact_from_describes_specifies(target, specifies, context) {
+    if let Some(fact) = function_type_fact_from_defines_declares(target, declares, context) {
         context.add_fact(fact);
     }
 }
@@ -2797,10 +2797,10 @@ fn validate_when_section<T>(
     }
 }
 
-fn describes_when_parameters_from_usage(group: &DescribesGroup) -> WhenParameters {
+fn defines_when_parameters_from_usage(group: &DefinesGroup) -> WhenParameters {
     let mut parameters = header_when_parameters(&group.heading);
     let described_spec_infix_subject =
-        described_spec_infix_subject(&group.heading, &group.describes.argument);
+        described_spec_infix_subject(&group.heading, &group.defines.argument);
     if let Some(subject) = &described_spec_infix_subject {
         parameters.required.remove(subject);
     }
@@ -2808,7 +2808,7 @@ fn describes_when_parameters_from_usage(group: &DescribesGroup) -> WhenParameter
     // type, so using them in the body must not turn them into `when:`-required
     // parameters.
     let destructured_components = header_destructured_component_names(&group.heading);
-    for name in describes_used_names(group) {
+    for name in defines_used_names(group) {
         if described_spec_infix_subject.as_ref() == Some(&name) {
             continue;
         }
@@ -2853,7 +2853,7 @@ fn header_destructured_component_names(header: &CommandHeader) -> HashSet<String
 
 fn described_spec_infix_subject(
     heading: &CommandHeader,
-    described: &DescribesTarget,
+    described: &DefinesTarget,
 ) -> Option<String> {
     let CommandHeader::InfixSpec(header) = heading else {
         return None;
@@ -2869,18 +2869,18 @@ fn described_spec_infix_subject(
 /// The subject name of a form or declaration — the destructuring name `H` for
 /// `H ::= (X1, *_1, e1)`, or the whole key when the form has no primary name.
 /// Matches [`described_target_subject_key`] so a spec-infix heading's left
-/// operand and the `Describes:` argument compare on the same footing.
+/// operand and the `Defines:` argument compare on the same footing.
 fn form_or_declaration_subject_key(form: &FormOrDeclaration) -> String {
     primary_form_name(form).unwrap_or_else(|| key_for_form_or_declaration(form))
 }
 
-fn describes_used_names(group: &DescribesGroup) -> BTreeSet<String> {
+fn defines_used_names(group: &DefinesGroup) -> BTreeSet<String> {
     let mut names = BTreeSet::new();
     if let Some(means) = &group.means {
         collect_is_or_via_names(&means.argument, &mut names);
     }
-    if let Some(specifies) = &group.specifies {
-        for item in &specifies.arguments {
+    if let Some(declares) = &group.declares {
+        for item in &declares.arguments {
             collect_is_or_via_names(item, &mut names);
         }
     }
@@ -2892,28 +2892,28 @@ fn describes_used_names(group: &DescribesGroup) -> BTreeSet<String> {
     names
 }
 
-fn validate_describes_target_symbol_specifications(
-    group: &DescribesGroup,
+fn validate_defines_target_symbol_specifications(
+    group: &DefinesGroup,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     event_log: &mut EventLog,
 ) {
     let mut covered = BTreeSet::new();
-    covered.insert(described_target_subject_key(&group.describes.argument));
+    covered.insert(described_target_subject_key(&group.defines.argument));
     collect_using_covered_symbols(&group.using, &mut covered);
     collect_valid_when_covered_symbols(
         &group.when,
         &header_when_parameters(&group.heading),
         &mut covered,
     );
-    collect_specifies_covered_symbols(&group.specifies, &mut covered);
+    collect_declares_covered_symbols(&group.declares, &mut covered);
     collect_means_covered_symbols(&group.means, &mut covered);
-    let symbols = describes_target_symbols(&group.describes.argument);
+    let symbols = defines_target_symbols(&group.defines.argument);
     validate_target_symbol_specifications(&symbols, &covered, path, locator, event_log);
 }
 
-fn validate_defines_target_symbol_specifications(
-    group: &DefinesGroup,
+fn validate_declares_target_symbol_specifications(
+    group: &DeclaresGroup,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     event_log: &mut EventLog,
@@ -2926,9 +2926,9 @@ fn validate_defines_target_symbol_specifications(
         &header_when_parameters(&group.heading),
         &mut covered,
     );
-    collect_declaration_statement_covered_symbols(&group.defines.argument, &mut covered);
-    collect_direct_defines_bindings(
-        &group.defines.argument,
+    collect_declaration_statement_covered_symbols(&group.declares.argument, &mut covered);
+    collect_direct_declares_bindings(
+        &group.declares.argument,
         &mut covered,
         &mut assigned,
         path,
@@ -2944,20 +2944,20 @@ fn validate_defines_target_symbol_specifications(
         event_log,
     );
 
-    // The `Defines:` value is assigned but states no type — a bare `X := {…}` with no
+    // The `Declares:` value is assigned but states no type — a bare `X := {…}` with no
     // `is` and no top-level `\ty@value` build. Report that precisely (and mark the
     // targets covered so the generic "missing definition" message does not also fire).
-    if group.defines.argument.definition.is_some()
-        && !declaration_states_type(&group.defines.argument)
+    if group.declares.argument.definition.is_some()
+        && !declaration_states_type(&group.declares.argument)
     {
-        for symbol in declaration_target_symbols(&group.defines.argument) {
+        for symbol in declaration_target_symbols(&group.declares.argument) {
             if covered.insert(symbol.clone()) {
                 emit_error(
                     event_log,
                     path,
                     locator.locate_symbol(&symbol),
                     format!(
-                        "`Defines:` target `{symbol}` must state its type: use `... is <type>` \
+                        "`Declares:` target `{symbol}` must state its type: use `... is <type>` \
                          or a top-level `\\...@...` build (e.g. `\\set@{{...}}`)"
                     ),
                 );
@@ -2965,8 +2965,8 @@ fn validate_defines_target_symbol_specifications(
         }
     }
 
-    let symbols = declaration_target_symbols(&group.defines.argument);
-    validate_defines_target_symbol_bindings(&symbols, &covered, path, locator, event_log);
+    let symbols = declaration_target_symbols(&group.declares.argument);
+    validate_declares_target_symbol_bindings(&symbols, &covered, path, locator, event_log);
 }
 
 fn validate_refines_target_symbol_specifications(
@@ -2991,7 +2991,7 @@ fn validate_refines_target_symbol_specifications(
         collect_declaration_statement_covered_symbols(&means.argument, &mut covered);
     }
     // A `Refines:` refines a base type that describes the same form, so any
-    // symbol the base type already specifies (its operator or components) is
+    // symbol the base type already declares (its operator or components) is
     // inherited and need not be respecified here. For `\(associative)::binary
     // .operation:on{X}` refining `\binary.operation:on{X}`, the base's
     // `means: * is \function:...` covers `*`.
@@ -3006,7 +3006,7 @@ fn validate_refines_target_symbol_specifications(
 }
 
 /// Adds to `covered` every symbol that the base type refined by `heading`
-/// already specifies — the subjects of the base type's own `means:`/`specifies:`
+/// already declares — the subjects of the base type's own `means:`/`declares:`
 /// facts (recorded as type-extension rules) and its described components.
 fn collect_refines_base_specified_symbols(
     heading: &CommandHeader,
@@ -3066,7 +3066,7 @@ fn validate_target_symbol_specifications(
     }
 }
 
-fn validate_defines_target_symbol_bindings(
+fn validate_declares_target_symbol_bindings(
     symbols: &BTreeSet<String>,
     covered: &BTreeSet<String>,
     path: &Path,
@@ -3082,13 +3082,13 @@ fn validate_defines_target_symbol_bindings(
             path,
             locator.locate_symbol(symbol),
             format!(
-                "Missing definition for target symbol `{symbol}`; assign it with `:=` in `Defines:` or top-level `expresses:`"
+                "Missing definition for target symbol `{symbol}`; assign it with `:=` in `Declares:` or top-level `expresses:`"
             ),
         );
     }
 }
 
-fn collect_direct_defines_bindings(
+fn collect_direct_declares_bindings(
     statement: &DeclarationStatement,
     covered: &mut BTreeSet<String>,
     assigned: &mut HashSet<String>,
@@ -3097,7 +3097,7 @@ fn collect_direct_defines_bindings(
     event_log: &mut EventLog,
 ) {
     for symbol in direct_definition_binding_symbols(statement) {
-        record_defines_binding(&symbol, covered, assigned, path, locator, event_log);
+        record_declares_binding(&symbol, covered, assigned, path, locator, event_log);
     }
 }
 
@@ -3123,12 +3123,12 @@ fn collect_expresses_bindings(
             continue;
         }
         for symbol in declaration_subject_keys(statement) {
-            record_defines_binding(&symbol, covered, assigned, path, locator, event_log);
+            record_declares_binding(&symbol, covered, assigned, path, locator, event_log);
         }
     }
 }
 
-fn record_defines_binding(
+fn record_declares_binding(
     symbol: &str,
     covered: &mut BTreeSet<String>,
     assigned: &mut HashSet<String>,
@@ -3145,7 +3145,7 @@ fn record_defines_binding(
         path,
         locator.locate_symbol(symbol),
         format!(
-            "Duplicate definition for target symbol `{symbol}`; a symbol can have at most one `:=` in a `Defines:` item"
+            "Duplicate definition for target symbol `{symbol}`; a symbol can have at most one `:=` in a `Declares:` item"
         ),
     );
 }
@@ -3194,12 +3194,12 @@ fn collect_using_covered_symbols(using: &Option<UsingSection>, covered: &mut BTr
     }
 }
 
-fn collect_specifies_covered_symbols(
-    specifies: &Option<DescribesSpecifiesSection>,
+fn collect_declares_covered_symbols(
+    declares: &Option<DefinesDeclaresSection>,
     covered: &mut BTreeSet<String>,
 ) {
-    if let Some(specifies) = specifies {
-        for item in &specifies.arguments {
+    if let Some(declares) = declares {
+        for item in &declares.arguments {
             collect_is_or_via_covered_symbols(item, covered);
         }
     }
@@ -3295,7 +3295,7 @@ fn collect_declaration_statement_covered_symbols(
     statement: &DeclarationStatement,
     covered: &mut BTreeSet<String>,
 ) {
-    // A definition covers (specifies the type of) its target subject only when it
+    // A definition covers (declares the type of) its target subject only when it
     // states that type explicitly: an `is`/`"op"` relation, or a top-level
     // `\ty@value` build (whose type is `\ty`). A bare definition — `X := {…}` with no
     // relation and no top-level build — states no type, so it leaves the subject
@@ -3387,22 +3387,22 @@ fn is_subject_first_form(subject: &IsSubject) -> Option<&FormOrDeclaration> {
 
 /// Ordered component names of a describes target `Name ::= (c1, ..., cn)`, or an
 /// empty vector when the target does not destructure a tuple.
-fn describes_target_component_names(target: &DescribesTarget) -> Vec<String> {
-    describes_target_tuple_form(target)
+fn defines_target_component_names(target: &DefinesTarget) -> Vec<String> {
+    defines_target_tuple_form(target)
         .map(tuple_form_component_names)
         .unwrap_or_default()
 }
 
-fn describes_target_component_shapes(target: &DescribesTarget) -> Vec<TargetShape> {
-    describes_target_tuple_form(target)
+fn defines_target_component_shapes(target: &DefinesTarget) -> Vec<TargetShape> {
+    defines_target_tuple_form(target)
         .map(tuple_form_component_shapes)
         .unwrap_or_default()
 }
 
-fn describes_target_tuple_form(target: &DescribesTarget) -> Option<&TupleForm> {
+fn defines_target_tuple_form(target: &DefinesTarget) -> Option<&TupleForm> {
     match target {
-        DescribesTarget::Form(form) => form_or_declaration_tuple_form(form),
-        DescribesTarget::Declaration(statement) => is_subject_first_form(&statement.subject)
+        DefinesTarget::Form(form) => form_or_declaration_tuple_form(form),
+        DefinesTarget::Declaration(statement) => is_subject_first_form(&statement.subject)
             .and_then(form_or_declaration_tuple_form)
             .or_else(|| {
                 statement
@@ -3414,13 +3414,13 @@ fn describes_target_tuple_form(target: &DescribesTarget) -> Option<&TupleForm> {
     }
 }
 
-fn describes_target_symbols(target: &DescribesTarget) -> BTreeSet<String> {
+fn defines_target_symbols(target: &DefinesTarget) -> BTreeSet<String> {
     let mut symbols = BTreeSet::new();
     match target {
-        DescribesTarget::Form(form) => {
+        DefinesTarget::Form(form) => {
             collect_form_or_declaration_target_symbols(form, &mut symbols);
         }
-        DescribesTarget::Declaration(statement) => {
+        DefinesTarget::Declaration(statement) => {
             symbols.extend(declaration_target_symbols(statement));
         }
     }
@@ -5310,7 +5310,7 @@ fn assume_declaration_statement(
 }
 
 /// Binds the components of a destructuring declaration `M ::= (X, *) is \T` (a
-/// `Defines:` target or a `given:`/`using:` binding): the component types come
+/// `Declares:` target or a `given:`/`using:` binding): the component types come
 /// from `\T`'s stored component types, substituted onto the local names. This is
 /// what lets a theorem `given: M ::= (X, *) is \magma` use `X` and `*`. Only
 /// `::=` introduces symbols; `:=` requires its right-hand side to already be in
@@ -5564,14 +5564,14 @@ fn check_spec_fact_supported(
 
             if !matches!(
                 definition.kind,
-                DefinitionKind::Describes | DefinitionKind::Refines
+                DefinitionKind::Defines | DefinitionKind::Refines
             ) {
                 emit_error(
                     event_log,
                     path,
                     position,
                     format!(
-                        "Could not validate spec fact `{}`: spec-infix signature `{}` must be defined by Describes or Refines",
+                        "Could not validate spec fact `{}`: spec-infix signature `{}` must be defined by Defines or Refines",
                         format_fact(&context.normalize_fact(fact)),
                         signature
                     ),
@@ -5651,7 +5651,7 @@ fn check_is_statement(
 
 /// Checks a spec literal (`? is \real`, `? "in" \reals`). A spec literal is a
 /// value of type `\\specification`; the only extra rule is that a `"op"` target
-/// which is a command must name a value (`Defines:`), not a type (`Describes:`).
+/// which is a command must name a value (`Declares:`), not a type (`Defines:`).
 fn check_spec_literal(
     literal: &SpecLiteral,
     context: &TypeContext,
@@ -5669,7 +5669,7 @@ fn check_spec_literal(
             if let ExpressionKind::Command(_) = &target.kind {
                 let target_key = context.normalize_key(&key_for_expression(target));
                 if let Some(signature) = command_signature_from_key(&target_key) {
-                    if signature_has_kind(&signature, DefinitionKind::Describes, registry) {
+                    if signature_has_kind(&signature, DefinitionKind::Defines, registry) {
                         emit_error(
                             event_log,
                             path,
@@ -9321,7 +9321,7 @@ fn command_type_is_nominal_without_arguments(
         && registry
             .definitions
             .get(signature)
-            .is_some_and(|definition| definition.kind == DefinitionKind::Describes)
+            .is_some_and(|definition| definition.kind == DefinitionKind::Defines)
 }
 
 fn validate_optional_enables(
@@ -9644,13 +9644,13 @@ fn validate_definition_requirement(
     );
     check_type_expression(&requirement.ty, context, path, locator, registry, event_log);
 
-    if !signature_has_kind(&shape.signature, DefinitionKind::Defines, registry) {
+    if !signature_has_kind(&shape.signature, DefinitionKind::Declares, registry) {
         emit_error(
             event_log,
             path,
             position,
             format!(
-                "Required definition `{}` must reference a `Defines:` entry",
+                "Required definition `{}` must reference a `Declares:` entry",
                 key_for_command_expression(&active_command)
             ),
         );
@@ -10611,10 +10611,10 @@ fn builtin_fact_holds(required: &TypeFact, registry: &SignatureRegistry) -> bool
 fn key_is_type(key: &str, registry: &SignatureRegistry) -> bool {
     command_signature_from_key(key)
         .as_deref()
-        .is_some_and(|signature| signature_has_kind(signature, DefinitionKind::Describes, registry))
+        .is_some_and(|signature| signature_has_kind(signature, DefinitionKind::Defines, registry))
         || infix_command_signatures_from_key(key)
             .iter()
-            .any(|signature| signature_has_kind(signature, DefinitionKind::Describes, registry))
+            .any(|signature| signature_has_kind(signature, DefinitionKind::Defines, registry))
 }
 
 fn key_is_statement(key: &str, registry: &SignatureRegistry) -> bool {
@@ -11436,7 +11436,7 @@ fn implicit_refined_infix_spec_resolution(
     let Some(base_definition) = registry.definitions.get(&base_signature) else {
         return Vec::new();
     };
-    if base_definition.kind != DefinitionKind::Describes {
+    if base_definition.kind != DefinitionKind::Defines {
         return Vec::new();
     }
     let Some(base_info) = registry.type_infos.get(&base_signature) else {
@@ -13759,13 +13759,13 @@ struct DescribedFunctionTarget {
     variadic_tuple_input: bool,
 }
 
-fn function_type_fact_from_describes_specifies(
-    target: &DescribesTarget,
-    specifies: &DescribesSpecifiesSection,
+fn function_type_fact_from_defines_declares(
+    target: &DefinesTarget,
+    declares: &DefinesDeclaresSection,
     context: &TypeContext,
 ) -> Option<TypeFact> {
     let target = described_function_target(target)?;
-    let specs = function_type_specs_from_describes_specifies(specifies, context);
+    let specs = function_type_specs_from_defines_declares(declares, context);
     let inputs = target
         .inputs
         .iter()
@@ -13781,8 +13781,8 @@ fn function_type_fact_from_describes_specifies(
     })
 }
 
-fn described_function_target(target: &DescribesTarget) -> Option<DescribedFunctionTarget> {
-    let DescribesTarget::Declaration(statement) = target else {
+fn described_function_target(target: &DefinesTarget) -> Option<DescribedFunctionTarget> {
+    let DefinesTarget::Declaration(statement) = target else {
         return None;
     };
 
@@ -13816,12 +13816,12 @@ fn described_function_target(target: &DescribesTarget) -> Option<DescribedFuncti
     })
 }
 
-fn function_type_specs_from_describes_specifies(
-    specifies: &DescribesSpecifiesSection,
+fn function_type_specs_from_defines_declares(
+    declares: &DefinesDeclaresSection,
     context: &TypeContext,
 ) -> HashMap<String, FunctionTypeFactSpec> {
     let mut specs = HashMap::new();
-    for item in &specifies.arguments {
+    for item in &declares.arguments {
         for fact in facts_from_is_or_via_item_in_context(item, context) {
             if let Some((subject, spec)) = function_type_spec_from_fact(&fact) {
                 specs.insert(subject, spec);
@@ -16023,12 +16023,12 @@ fn primary_form_name(form: &FormOrDeclaration) -> Option<String> {
     }
 }
 
-fn described_target_subject_key(target: &DescribesTarget) -> String {
+fn described_target_subject_key(target: &DefinesTarget) -> String {
     match target {
-        DescribesTarget::Form(form) => {
+        DefinesTarget::Form(form) => {
             primary_form_name(form).unwrap_or_else(|| key_for_form_or_declaration(form))
         }
-        DescribesTarget::Declaration(statement) => primary_subject_key(&statement.subject),
+        DefinesTarget::Declaration(statement) => primary_subject_key(&statement.subject),
     }
 }
 

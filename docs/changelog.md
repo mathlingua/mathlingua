@@ -23,6 +23,15 @@ Multiple set-literal specifications retain their semicolon separation in the
 mathematical view rather than being displayed with commas, with a thin space
 after each semicolon for readability.
 
+## Implied Refines Type Rendering
+
+The mathematical view now makes a `Refines:` entry's heading-implied base type
+explicit. For example, `[\(finite)::group]` with
+`Refines: G ::= (X, *, e)` renders the section value as
+`G ::= (X, *, e) is \group`. This is display-only: source syntax and semantic
+checking are unchanged. An explicitly written relation is not duplicated, and
+refined infix-spec headings keep their existing relation rendering.
+
 The definition-inheritance section is now spelled `means:` in both `Defines`
 and `Refines` groups. The structural AST exposes this as `MeansSection` /
 `RefinesMeansSection` through each group's `means` field, completions suggest

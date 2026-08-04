@@ -331,6 +331,30 @@ pub(in crate::backend::view) fn render_group_parameter_destructurings(
     command_header_parameter_destructurings(&header, registry)
 }
 
+/// Renders a `Refines:` argument with its heading-implied base type made explicit.
+///
+/// The source may omit the `is <base>` relation because the base command is
+/// already encoded after the final `::` in a refined command heading. The view
+/// repeats it for readability without changing the parsed source or semantics.
+/// Refined infix-spec headings are excluded because their base is a relation,
+/// not a type suitable for an `is` suffix.
+pub(in crate::backend::view) fn render_refines_section_latex(
+    text: &str,
+    heading: &str,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let statement = parse_refined_declaration_statement(text).ok()?;
+    if statement.relation.is_some() {
+        return Some(render_declaration_statement(&statement, registry));
+    }
+
+    let CommandHeader::Refined(header) = parse_command_header(heading).ok()? else {
+        return None;
+    };
+    let base = refined_command_header_base_signature(&header);
+    render_formulation_latex(&format!("{text} is {base}"), registry)
+}
+
 fn supports_resolved_group_heading(kind: &str) -> bool {
     matches!(
         kind,

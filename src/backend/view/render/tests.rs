@@ -1,6 +1,7 @@
 use super::{
     build_render_registry, render_documented_text_latex, render_formulation_latex,
     render_group_heading_latex, render_group_parameter_destructurings,
+    render_refines_section_latex,
 };
 use crate::events::EventLog;
 use crate::frontend::{
@@ -512,6 +513,30 @@ Documented:
             &registry
         ),
         Some(r#"\textrm{continuous}\textrm{ }\textrm{function on }A\textrm{ to }B"#.to_string())
+    );
+}
+
+#[test]
+fn refines_display_keeps_explicit_types_and_infix_refinements_unchanged() {
+    let registry = registry_for(
+        r#"[\group]
+Defines: G
+Documented:
+. called: "group"
+"#,
+    );
+
+    assert_eq!(
+        render_refines_section_latex(
+            r#"G ::= (X, *, e) is \group"#,
+            r#"\(finite)::group"#,
+            &registry,
+        ),
+        Some(r#"G ::= \left(X, \ast, e\right) \textrm{ is } \textrm{group}"#.to_string())
+    );
+    assert_eq!(
+        render_refines_section_latex("A", r#"A \:(nonempty)::subset:/ B"#, &registry),
+        None
     );
 }
 

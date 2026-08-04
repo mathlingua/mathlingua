@@ -495,6 +495,12 @@ Documented:
 . adjective: "continuous"
 ```
 
+For ordinary refined command headings, the rendered `Refines:` value makes the
+inferred base type explicit even though the source need not repeat it. For
+example, `[\(finite)::group]` with `Refines: G ::= (X, *, e)` is displayed as
+`G ::= (X, *, e) is \group`. If the source already states an `is` relation, the
+renderer does not add another one.
+
 A specification operator declared with a `\:...:/` heading can be refined with
 the same parenthesized refinement syntax. The base operator is inferred from
 the heading, just as it is for an ordinary refined command:

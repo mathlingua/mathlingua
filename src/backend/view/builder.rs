@@ -4,8 +4,8 @@ use super::model::{
 use super::render::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
     join_title_parts, render_documented_text_latex, render_formulation_latex,
-    render_group_heading_latex, render_group_parameter_destructurings, render_writing_alias_latex,
-    resolve_topic_heading_latex,
+    render_group_heading_latex, render_group_parameter_destructurings,
+    render_refines_section_latex, render_writing_alias_latex, resolve_topic_heading_latex,
 };
 use crate::backend::config::load_config;
 use crate::events::{Audience, Event, EventLog, Level};
@@ -264,6 +264,19 @@ fn group_view(
         person_body_text(&kind, &group.sections).or_else(|| text_item_body(&kind, &group.sections));
     let parameter_destructurings =
         render_group_parameter_destructurings(&kind, group.heading.as_deref(), registry);
+    let section_heading = group.heading.clone();
+    let sections = group
+        .sections
+        .into_iter()
+        .map(|section| {
+            section_view(
+                section,
+                registry,
+                SectionContext::Default,
+                section_heading.as_deref(),
+            )
+        })
+        .collect();
 
     GroupView {
         id,
@@ -275,11 +288,7 @@ fn group_view(
         heading: group.heading,
         page,
         source,
-        sections: group
-            .sections
-            .into_iter()
-            .map(|section| section_view(section, registry, SectionContext::Default))
-            .collect(),
+        sections,
     }
 }
 
@@ -449,6 +458,7 @@ fn section_view(
     section: ProtoSection,
     registry: &RenderRegistry,
     context: SectionContext,
+    group_heading: Option<&str>,
 ) -> SectionView {
     let label = section.label;
     if context == SectionContext::Documented && label == "description" {
@@ -463,7 +473,7 @@ fn section_view(
     let inline_latex = section
         .inline_argument
         .as_deref()
-        .and_then(|text| render_section_inline_latex(&label, text, registry));
+        .and_then(|text| render_section_inline_latex(&label, text, group_heading, registry));
     let render_kind = documented_render_kind(&label);
 
     SectionView {
@@ -495,8 +505,16 @@ fn documented_render_kind(label: &str) -> Option<DocumentedRenderKind> {
 fn render_section_inline_latex(
     label: &str,
     text: &str,
+    group_heading: Option<&str>,
     registry: &RenderRegistry,
 ) -> Option<String> {
+    if label == "Refines"
+        && let Some(latex) =
+            group_heading.and_then(|heading| render_refines_section_latex(text, heading, registry))
+    {
+        return Some(latex);
+    }
+
     documented_render_kind(label)
         .and_then(|kind| render_documented_template_argument(kind, text))
         .or_else(|| render_formulation_latex(text, registry))
@@ -686,7 +704,7 @@ fn argument_view(
                     } else {
                         SectionContext::Default
                     };
-                    section_view(section, registry, context)
+                    section_view(section, registry, context, None)
                 })
                 .collect(),
         },
@@ -843,6 +861,51 @@ mod tests {
         assert_eq!(
             view.files[0].items[0].heading_latex,
             Some(r"\textrm{set}".to_string())
+        );
+        assert!(!event_log.has_errors());
+    }
+
+    #[test]
+    fn renders_refines_argument_with_heading_implied_base_type() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("groups.mlg");
+        let source = r#"[\group]
+Defines: G
+Documented:
+. called: "group"
+
+[\(finite)::group]
+Refines: G ::= (X, *, e)
+Documented:
+. adjective: "finite"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
+            .expect("expected view");
+
+        let refines = &view.files[0].items[1].sections[0];
+        assert_eq!(refines.label, "Refines");
+        assert_eq!(
+            refines.inline_latex.as_deref(),
+            Some(
+                r#"G ::= \left(X, \ast, e\right) \textrm{ is } \htmlData{mlg-ref=5c67726f7570}{\textrm{group}}"#
+            )
         );
         assert!(!event_log.has_errors());
     }

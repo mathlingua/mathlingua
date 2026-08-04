@@ -8,7 +8,7 @@ when:
   allOf:
   . x = x
   . y = y
-extends: X, Y is \set via (X, Y)
+means: X, Y is \set via (X, Y)
 specifies:
 . Y is \set via (X, Y)
 . y "contains" Y

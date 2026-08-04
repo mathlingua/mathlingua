@@ -283,7 +283,7 @@ pub(in crate::frontend::structural::parser) fn parse_alias_kind(
     parse_spec_operator_alias(input).map(AliasKind::SpecOperator)
 }
 
-/// Parses an item accepted by `extends:`/`specifies:` and related sections.
+/// Parses an item accepted by `means:`/`specifies:` and related sections.
 ///
 /// `is ... via ...` is more specific, so it is attempted before the broader
 /// `is`/spec parser. The `is` relation may name a refined command
@@ -2736,7 +2736,7 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
             "Describes",
             "using?",
             "when?",
-            "extends?",
+            "means?",
             "specifies?",
             "satisfies?",
             "Requires?",
@@ -2773,9 +2773,9 @@ pub(in crate::frontend::structural::parser) fn parse_describes(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        extends: sections.get("extends").copied().and_then(|section| {
-            parse_required_formulation(section, "extends", tracker, parse_is_or_via_item)
-                .map(|argument| ExtendsSection { argument })
+        means: sections.get("means").copied().and_then(|section| {
+            parse_required_formulation(section, "means", tracker, parse_is_or_via_item)
+                .map(|argument| MeansSection { argument })
         }),
         specifies: sections.get("specifies").copied().and_then(|section| {
             parse_required_specify_items(section, tracker)
@@ -2947,7 +2947,7 @@ fn parse_refinement_kind(
 /// Parses a command-backed `Refines:` group.
 ///
 /// Refines groups define a refined command signature and validate their
-/// `Refines:`/`extends:` bodies with the parser variant that accepts refined
+/// `Refines:`/`means:` bodies with the parser variant that accepts refined
 /// command references.
 pub(in crate::frontend::structural::parser) fn parse_refines(
     group: &ProtoGroup,
@@ -2964,7 +2964,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             "explicitly?",
             "using?",
             "when?",
-            "extends?",
+            "means?",
             "satisfies?",
             "Requires?",
             "Enables?",
@@ -3003,14 +3003,14 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        extends: sections.get("extends").copied().and_then(|section| {
+        means: sections.get("means").copied().and_then(|section| {
             parse_required_formulation(
                 section,
-                "extends",
+                "means",
                 tracker,
                 parse_refined_declaration_statement,
             )
-            .map(|argument| RefinesExtendsSection { argument })
+            .map(|argument| RefinesMeansSection { argument })
         }),
         satisfies: sections.get("satisfies").copied().and_then(|section| {
             parse_required_clauses(section, "satisfies", tracker)
@@ -3998,6 +3998,23 @@ Documented:
     }
 
     #[test]
+    fn rejects_the_legacy_extends_section_label() {
+        let (_, diagnostics) = parse_with_diagnostics(
+            r#"[\thing]
+Describes: X
+extends: X is \set
+"#,
+        );
+
+        assert!(diagnostics.iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message.contains("Unexpected section `extends`")
+                    && message.message.contains("means?:")
+            })
+        }));
+    }
+
+    #[test]
     fn parses_definition_like_groups_with_nested_sections_and_items() {
         let document = parse_ok(
             r#"
@@ -4011,7 +4028,7 @@ when:
   allOf:
   . x = x
   . y = y
-extends: X is \set via (X, Y)
+means: X is \set via (X, Y)
 specifies:
 . Y is \set via (X, Y)
 . y "contains" Y
@@ -4126,7 +4143,7 @@ when:
   existsUnique: x is \element
   suchThat:
   . x = x
-extends: y is \(f)::[[g]]
+means: y is \(f)::[[g]]
 satisfies:
 . [logic.given]
   given: x is \element
@@ -4172,7 +4189,7 @@ that:
                     Clause::AllOf(_)
                 ));
                 assert!(matches!(
-                    group.extends.as_ref().expect("expected extends").argument,
+                    group.means.as_ref().expect("expected means").argument,
                     IsOrViaItem::IsVia(_)
                 ));
                 assert_eq!(
@@ -4363,7 +4380,7 @@ that:
         match &document.items[8] {
             TopLevelItem::Refines(group) => {
                 assert!(group.refines.argument.relation.is_none());
-                assert!(group.extends.is_some());
+                assert!(group.means.is_some());
                 assert!(matches!(
                     group.when.as_ref().expect("expected when").arguments[0],
                     Clause::ExistsUnique(_)

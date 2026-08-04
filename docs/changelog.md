@@ -5,6 +5,11 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+The definition-inheritance section is now spelled `means:` in both `Describes`
+and `Refines` groups. The structural AST exposes this as `MeansSection` /
+`RefinesMeansSection` through each group's `means` field, completions suggest
+the new label, and the former `extends:` spelling is rejected.
+
 Member capabilities now render through their `written:` templates, so a rule
 such as `x.inv :=> ...` with `written: "x+?^{-1}"` renders `x.inv` as
 `x^{-1}`. Subscripted operator symbols also preserve their base notation and
@@ -21,7 +26,7 @@ use sites, participates in signature lookup and rendering, and falls back to
 the base `A \:subset:/ B` fact inside the refinement body.
 
 An undeclared refined spec-infix signature can also resolve implicitly through
-the base operator's `extends:` type. Thus, when `\:subset:/` extends `\set` and
+the base operator's `means:` type. Thus, when `\:subset:/` extends `\set` and
 `\(nonempty)::set` is a declared refinement, `\:(nonempty)::subset:/` is valid and
 reduces to both the base subset fact and the refined nonempty-set fact. The base
 operator's and refined type's `when:` requirements are checked at the use site.
@@ -203,16 +208,16 @@ placeholders. So a body that uses the operator, such as a refinement's
 
 A `Refines:` also inherits the symbol specifications of the base type it refines.
 `\(associative)::binary.operation:on{X}` refines `\binary.operation:on{X}`, whose
-`extends: * is \function:…` already specifies `*`; the refinement therefore need
+`means: * is \function:…` already specifies `*`; the refinement therefore need
 not respecify `*`, and its uses of `*` are typed from the base. A refinement
 target symbol is treated as specified when the base type specifies it (through the
-base's own `extends:`/`specifies:` or described components).
+base's own `means:`/`specifies:` or described components).
 
-### Refined Commands In `extends:`/`specifies:`
+### Refined Commands In `means:`/`specifies:`
 
-The `is` relation of an `extends:` or `specifies:` item may now name a refined
+The `is` relation of a `means:` or `specifies:` item may now name a refined
 command as the type, e.g. `specifies: * is \(associative)::binary.operation:on{X}`
-or `extends: S is \(finite)::magma`. Previously only the `Refines:` `extends:`
+or `means: S is \(finite)::magma`. Previously only the `Refines:` `means:`
 accepted refined command references.
 
 ### Operand-Type Operator Capabilities
@@ -270,7 +275,7 @@ operator text retains the brackets.
 
 A destructuring target `Name ::= (c1, …, cn)` introduces its components
 (including operator components like `*`) and infers their types: from
-`extends:`/`extends: … via …` and then `specifies:` for a `Describes` target;
+`means:`/`means: … via …` and then `specifies:` for a `Describes` target;
 from the parameter's `when:` type for a command parameter `{M ::= (X, *)}`; and
 from the right-hand type for a `given:`/`Defines:` binding `M ::= (X, *) is \T`.
 Such components need no separate `when:` entry, and member access reaches them
@@ -286,9 +291,9 @@ earlier assignment such as `X3 := {...}` supplies facts needed by later
 assignments. Destructured components of typed heading operands such as `G1 ::=
 (X1, *_1, e1)` are likewise available to those assignments.
 
-### `extends: … via …` Sets Component Types
+### `means: … via …` Sets Component Types
 
-`extends: M is \set via X` records `X is \set`; `extends: S is \magma via (X, *)`
+`means: M is \set via X` records `X is \set`; `means: S is \magma via (X, *)`
 maps the `via` tuple positionally onto `\magma`'s components, giving `X is \set`
 and `* is \binary.operation:on{S}`. `specifies:` then only needs to type
 components the `via` does not cover.
@@ -312,7 +317,7 @@ A refinement may destructure the refined value, for example `Refines: G ::=
 match the base type's `Describes:` target; an operator component must remain an
 operator component, and the tuple arity must agree. The base component types and
 specifications are inherited onto those local names for use in `satisfies:`,
-`extends:`, `Requires:`, and `Enables:`.
+`means:`, `Requires:`, and `Enables:`.
 
 A `Refines:` group may now carry an optional, zero-argument marker section —
 `implicitly:` or `explicitly:` — placed immediately after `Refines:`. The two are
@@ -325,18 +330,18 @@ supertype's refinement, or overrides it with extra properties.
   `\(finite)::group` is available because `\group` extends `\magma` and
   `\(finite)::magma` exists). The markers let authors write such a refinement out
   and signal their intent to readers.
-- `implicitly:` — the body must contain **only** the inherited `extends:` clause
+- `implicitly:` — the body must contain **only** the inherited `means:` clause
   (plus scaffolding `using:`/`when:`). Adding `satisfies:`, `Requires:`,
-  `Enables:`, or `Justification:` is an error. The `extends:` clause must also
+  `Enables:`, or `Justification:` is an error. The `means:` clause must also
   literally name the parent type's refinement — the same adjective(s) applied to
   a direct supertype of the refined base type (`\(finite)::group` extends
   `\(finite)::magma`, since `\group` extends `\magma`) — and naming anything else
   is an error.
 - `explicitly:` — the body must add **at least one** property beyond the
-  inherited `extends:` clause; a body that is only the inherited `extends:` must
+  inherited `means:` clause; a body that is only the inherited `means:` must
   be marked `implicitly:` instead.
 - Either marker requires the refined base type to itself be a subtype of another
-  type (to have an `extends:` clause of its own); using a marker on a
+  type (to have a `means:` clause of its own); using a marker on a
   non-subtype base is an error, and non-subtype refinements take no marker.
 - Both markers reject any arguments ("`implicitly:` is a marker section and takes
   no arguments"), and specifying both reports "A `Refines:` may specify at most
@@ -498,7 +503,7 @@ Documented?: ...  Justification?: ...  References?: ...  Id?: ...
 - Local validation: every `to:` member must be defined and be one of
   `Describes`/`Defines`/`States`/`Refines`, and all members must be the same
   kind; they must share the same target shape and — by kind — the same `is` type
-  (`Defines`), `extends:` target (`Describes`), or base type (`Refines`); they
+  (`Defines`), `means:` target (`Describes`), or base type (`Refines`); they
   must provide the same capabilities (by name and arity); and the item's own
   `when:` must guarantee each member's requirements.
 - Interchangeability: the members are mutually substitutable to the type checker.
@@ -709,7 +714,7 @@ Rules:
 - A refined expression may include multiple refinements, such as
   `\(injective, surjective)::function`.
 - A refinement may extend other refinements with:
-  `extends: f is \(injective, surjective)::[[f]]`.
+  `means: f is \(injective, surjective)::[[f]]`.
 - `[[f]]` is valid only in a refined expression of the form
   `\(... )::[[f]]`.
 - `[[f]]` means "the current type of `f`", allowing the extension to apply to
@@ -818,12 +823,12 @@ Rules:
   requirement.
 - Optional tail parameters are allowed in `when:` but are not required unless a
   `Describes:` entry references them in semantic constraints such as
-  `specifies:`, `extends:`, or `satisfies:`.
+  `specifies:`, `means:`, or `satisfies:`.
 - Target symbols introduced by a declaration target such as `G ::= (X, *, e)`
   are not `when:` parameters unless they also occur in the command header.
 - Target symbols introduced by `Describes:`, `Defines:`, and `Refines:` targets
   must have specifications directly, such as through `specifies:`, `using:`, or
-  an `is` relation, or transitively through `extends: ... via ...`.
+  an `is` relation, or transitively through `means: ... via ...`.
 - `A, B is \set` counts as both `A is \set` and `B is \set`.
 - `P, Q is \\statement` counts as both `P is \\statement` and
   `Q is \\statement`.
@@ -867,11 +872,11 @@ Existential clause groups support optional predicates.
 
 The checker uses simple type facts and extension facts.
 
-- `extends: X is \set` lets an item described by the refined type be used where
+- `means: X is \set` lets an item described by the refined type be used where
   a set is required.
-- `extends: G is \set via X` records the extension through the given structural
+- `means: G is \set via X` records the extension through the given structural
   component.
-- Facts introduced by `given:`, `when:`, `extends:`, `specifies:`, and enabled
+- Facts introduced by `given:`, `when:`, `means:`, `specifies:`, and enabled
   membership capabilities are available while checking dependent statements.
 - This is type establishment, not theorem proving.
 

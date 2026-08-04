@@ -198,7 +198,7 @@ pub enum RelationMeans {
 argument_section!(DescribesSection, DescribesTarget);
 arguments_section!(UsingSection, DeclarationStatement);
 arguments_section!(WhenSection, Clause);
-argument_section!(ExtendsSection, IsOrViaItem);
+argument_section!(MeansSection, IsOrViaItem);
 arguments_section!(DescribesSpecifiesSection, IsOrViaItem);
 arguments_section!(SatisfiesSection, Clause);
 arguments_section!(RequiresSection, RequiresItem);
@@ -211,7 +211,7 @@ arguments_section!(MetadataSection, MetadataItem);
 argument_section!(DefinesSection, DeclarationStatement);
 arguments_section!(ExpressesSection, Clause);
 argument_section!(RefinesSection, DeclarationStatement);
-argument_section!(RefinesExtendsSection, DeclarationStatement);
+argument_section!(RefinesMeansSection, DeclarationStatement);
 zero_or_more_arguments_section!(StatesSection, OpenText);
 arguments_section!(ThatSection, Clause);
 zero_or_more_arguments_section!(EquivalentSection, OpenText);
@@ -511,7 +511,7 @@ pub struct DescribesGroup {
     pub describes: DescribesSection,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub extends: Option<ExtendsSection>,
+    pub means: Option<MeansSection>,
     pub specifies: Option<DescribesSpecifiesSection>,
     pub satisfies: Option<SatisfiesSection>,
     pub requires: Option<RequiresSection>,
@@ -559,7 +559,7 @@ pub struct RefinesGroup {
     pub refinement_kind: Option<RefinementKind>,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub extends: Option<RefinesExtendsSection>,
+    pub means: Option<RefinesMeansSection>,
     pub satisfies: Option<SatisfiesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,

@@ -348,7 +348,7 @@ mod tests {
              [\\c]\nDescribes: C\nDocumented:\n. called: \"c\"\nId: \"{C}\"\n"
         );
         let a = format!(
-            "[\\a]\nDescribes: A\nextends: A is \\b\nDocumented:\n. called: \"uses \\c\"\nId: \"{A}\"\n"
+            "[\\a]\nDescribes: A\nmeans: A is \\b\nDocumented:\n. called: \"uses \\c\"\nId: \"{A}\"\n"
         );
         let items = build_release_items(&[parsed("defs.mlg", &defs), parsed("a.mlg", &a)]);
 
@@ -366,10 +366,10 @@ mod tests {
         );
         // `\b` referenced twice; it must appear once in `uses`.
         let a = format!(
-            "[\\a]\nDescribes: A\nextends: A is \\b\nsatisfies: A is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{A}\"\n"
+            "[\\a]\nDescribes: A\nmeans: A is \\b\nsatisfies: A is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{A}\"\n"
         );
         let d = format!(
-            "[\\d]\nDescribes: D\nextends: D is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{D}\"\n"
+            "[\\d]\nDescribes: D\nmeans: D is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{D}\"\n"
         );
         let items = build_release_items(&[
             parsed("defs.mlg", &defs),

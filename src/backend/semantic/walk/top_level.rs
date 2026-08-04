@@ -22,7 +22,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_describes_target(&group.describes.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
-            if let Some(section) = &group.extends {
+            if let Some(section) = &group.means {
                 walk_is_or_via_item(&section.argument, visit);
             }
             if let Some(section) = &group.specifies {
@@ -54,7 +54,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_declaration_statement(&group.refines.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
-            if let Some(section) = &group.extends
+            if let Some(section) = &group.means
                 && !declaration_has_dynamic_refined_tail(&section.argument)
             {
                 walk_declaration_statement(&section.argument, visit);

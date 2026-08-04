@@ -29,8 +29,10 @@ The mathematical view now makes a `Refines:` entry's heading-implied base type
 explicit. For example, `[\(finite)::group]` with
 `Refines: G ::= (X, *, e)` renders the section value as
 `G ::= (X, *, e) is \group`. This is display-only: source syntax and semantic
-checking are unchanged. An explicitly written relation is not duplicated, and
-refined infix-spec headings keep their existing relation rendering.
+checking are unchanged. Parameterized base types such as
+`\binary.operation:on{X}` are included for operator targets as well. An
+explicitly written relation is not duplicated, and refined infix-spec headings
+keep their existing relation rendering.
 
 The definition-inheritance section is now spelled `means:` in both `Defines`
 and `Refines` groups. The structural AST exposes this as `MeansSection` /

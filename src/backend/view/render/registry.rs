@@ -348,11 +348,23 @@ pub(in crate::backend::view) fn render_refines_section_latex(
         return Some(render_declaration_statement(&statement, registry));
     }
 
-    let CommandHeader::Refined(header) = parse_command_header(heading).ok()? else {
+    let header = parse_command_header(heading).ok()?;
+    let CommandHeader::Refined(refined_header) = &header else {
         return None;
     };
-    let base = refined_command_header_base_signature(&header);
-    render_formulation_latex(&format!("{text} is {base}"), registry)
+    let base_signature = refined_command_header_base_signature(refined_header);
+    let base_render = registry.commands.get(&base_signature)?;
+    let base_latex = command_reference_latex(
+        &base_signature,
+        base_render.render_called(&command_header_substitutions(&header, registry)),
+        registry,
+    );
+
+    Some(format!(
+        "{} \\textrm{{ is }} {}",
+        render_declaration_statement(&statement, registry),
+        base_latex
+    ))
 }
 
 fn supports_resolved_group_heading(kind: &str) -> bool {

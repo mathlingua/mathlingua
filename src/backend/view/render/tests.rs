@@ -541,6 +541,26 @@ Documented:
 }
 
 #[test]
+fn refines_display_adds_the_base_type_to_operator_targets() {
+    let registry = registry_for(
+        r#"[\binary.operation:on{X}]
+Defines: x_ * y_
+Documented:
+. called: "binary operation on $X?$"
+"#,
+    );
+
+    assert_eq!(
+        render_refines_section_latex(
+            "x_ * y_",
+            r#"\(commutative)::binary.operation:on{X}"#,
+            &registry,
+        ),
+        Some(r#"x \ast y \textrm{ is } \textrm{binary operation on }X"#.to_string())
+    );
+}
+
+#[test]
 fn renders_refined_spec_infix_headings_and_expressions() {
     let registry = registry_for(
         r#"[A \:subset:/ B]

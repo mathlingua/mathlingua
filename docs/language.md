@@ -499,7 +499,9 @@ For ordinary refined command headings, the rendered `Refines:` value makes the
 inferred base type explicit even though the source need not repeat it. For
 example, `[\(finite)::group]` with `Refines: G ::= (X, *, e)` is displayed as
 `G ::= (X, *, e) is \group`. If the source already states an `is` relation, the
-renderer does not add another one.
+renderer does not add another one. Parameterized base types are preserved too:
+under `[\(commutative)::binary.operation:on{X}]`, `Refines: x_ * y_` is
+displayed as `x * y is \binary.operation:on{X}`.
 
 A specification operator declared with a `\:...:/` heading can be refined with
 the same parenthesized refinement syntax. The base operator is inferred from

@@ -877,6 +877,29 @@ fn renders_set_builder_specs() {
     );
 }
 
+#[test]
+fn renders_soft_build_marker_as_space() {
+    let registry = registry_for(
+        r#"[\set]
+Defines: X
+Documented:
+. called: "set"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"\set@X"#, &registry),
+        Some(r#"\textrm{set}\,X"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\set@{(a_, b_) : a_ "in" A; b_ "in" B}"#, &registry),
+        Some(
+            r#"\textrm{set}\,\left\{ \left(a, b\right) \: : \: a \in A, b \in B \right\}"#
+                .to_string()
+        )
+    );
+}
+
 /// Renders `argument` through a `written:` template that is exactly the single
 /// placeholder `A?`, `A+?`, or `A-?`, so the result is the substituted value alone.
 fn rendered_with_modifier(modifier: &str, argument: &str) -> String {

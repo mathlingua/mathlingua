@@ -14,6 +14,12 @@ AST, semantic diagnostics, completions, release metadata, examples, and golden
 fixtures all use the new meanings. `Describes:` and `specifies:` are no longer
 accepted; `Defines:` now has the former `Describes:` semantics.
 
+## Soft Build Rendering
+
+The `@` in a soft build such as `\set@{...}` remains part of the source syntax,
+but the mathematical view now renders it as an explicit thin space instead of
+showing the `@` glyph. Hard builds written with `@!` keep their visible marker.
+
 The definition-inheritance section is now spelled `means:` in both `Defines`
 and `Refines` groups. The structural AST exposes this as `MeansSection` /
 `RefinesMeansSection` through each group's `means` field, completions suggest

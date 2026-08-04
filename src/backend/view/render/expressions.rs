@@ -221,7 +221,10 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
         ExpressionKind::Build { ty, value, hard } => format!(
             "{}{}{}",
             render_type_expression(ty, registry),
-            if *hard { "@!" } else { "@" },
+            // The soft-build marker is authoring syntax, not mathematical
+            // notation. Use an explicit LaTeX space so it remains visible
+            // between ordinary math atoms such as `set` and a set literal.
+            if *hard { "@!" } else { "\\," },
             render_expression(value, registry)
         ),
     }

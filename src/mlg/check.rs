@@ -2133,6 +2133,49 @@ then:
     }
 
     #[test]
+    fn check_accepts_callable_command_headings_with_placeholder_parameters() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("callable-heading.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\natural]
+    Defines: N
+    Documented:
+    . called: "natural"
+
+    [\natural.constructor]
+    Defines: succ(n_) ::= m_
+    declares:
+    . n_ is \natural
+    . m_ is \natural
+    Documented:
+    . called: "natural constructor"
+
+    [\natural.succ(n_)]
+    Declares: succ(n_) is \natural.constructor
+    Documented:
+    . called: "successor of $n?$"
+    . written: "n?+\!\!+"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("callable-heading.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_composed_refined_command_references_in_given_sections() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("refined-list.mlg");

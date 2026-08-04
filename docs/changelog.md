@@ -14,6 +14,15 @@ AST, semantic diagnostics, completions, release metadata, examples, and golden
 fixtures all use the new meanings. `Describes:` and `specifies:` are no longer
 accepted; `Defines:` now has the former `Describes:` semantics.
 
+## Callable Command Heading Parameters
+
+Trailing parenthesized command-heading parameters now accept standalone
+placeholder spelling. For example, `[\natural.succ(n_)]` defines a callable
+command with parameter `n`; the placeholder is normalized to the existing
+one-argument command shape used for signature checking, substitution, and
+rendering. Existing bare-name and structured-form heading parameters remain
+unchanged.
+
 ## Soft Build Rendering
 
 The `@` in a soft build such as `\set@{...}` remains part of the source syntax,

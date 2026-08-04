@@ -1227,12 +1227,38 @@ pub(super) fn parse_paren_heading_args(
         let (inside, rest) = consume_balanced_prefix(input, '(', ')')?;
         args.push(ParenHeadingArgs {
             span: span_all(&input[..input.len() - rest.len()]),
-            forms: parse_form_list(inside)?,
+            forms: parse_paren_heading_form_list(inside)?,
         });
         input = rest;
     }
 
     Ok((args, input))
+}
+
+/// Parses the parameters inside a command heading's trailing `(...)` group.
+///
+/// Ordinary forms use bare names, but callable headings may spell their input
+/// parameters as placeholders to mirror a function declaration, for example
+/// `\natural.succ(n_)`. A standalone placeholder has the same header shape as
+/// its bare name, so normalize `n_` to the existing name-form representation.
+fn parse_paren_heading_form_list(input: &str) -> Result<Vec<FormOrDeclaration>, ParseError> {
+    let forms = split_top_level(input, ',')?
+        .into_iter()
+        .map(|item| match parse_form_or_declaration(item) {
+            Ok(form) => Ok(form),
+            Err(form_error) => match parse_placeholder(item) {
+                Ok(placeholder) => Ok(FormOrDeclaration::new(
+                    placeholder.span,
+                    FormOrDeclarationKind::Name(placeholder.name),
+                )),
+                Err(_) => Err(form_error),
+            },
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if forms.is_empty() {
+        return Err(ParseError::custom("expected at least one form"));
+    }
+    Ok(forms)
 }
 
 /// Parses colon-prefixed tail parts for command headers.
@@ -3454,6 +3480,26 @@ mod tests {
             }) => {
                 assert_eq!(tail.len(), 2);
                 assert_eq!(paren_args.len(), 1);
+            }
+            other => panic!("expected command header, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_command_headers_with_trailing_placeholder_parameters() {
+        let header =
+            parse_command_header(r#"\natural.succ(n_)"#).expect("expected callable command header");
+
+        match header {
+            CommandHeader::Command(CommandHeaderNode { paren_args, .. }) => {
+                assert_eq!(paren_args.len(), 1);
+                assert!(matches!(
+                    paren_args[0].forms.as_slice(),
+                    [FormOrDeclaration {
+                        kind: FormOrDeclarationKind::Name(name),
+                        ..
+                    }] if name == "n"
+                ));
             }
             other => panic!("expected command header, got {other:?}"),
         }

@@ -267,6 +267,11 @@ may be referenced as either:
 \some.function{A}(x, y)
 ```
 
+Callable headings may use placeholder spelling for their trailing parameters,
+matching function declarations. Thus `[\natural.succ(n_)]` declares the same
+one-argument command shape as a trailing `(n)` group while making the parameter
+role explicit in the source.
+
 Every command tail such as `:to` or `:from` must include at least one curly
 argument group.
 

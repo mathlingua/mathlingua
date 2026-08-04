@@ -894,7 +894,7 @@ Documented:
     assert_eq!(
         render_formulation_latex(r#"\set@{(a_, b_) : a_ "in" A; b_ "in" B}"#, &registry),
         Some(
-            r#"\textrm{set}\,\left\{ \left(a, b\right) \: : \: a \in A, b \in B \right\}"#
+            r#"\textrm{set}\,\left\{ \left(a, b\right) \: : \: a \in A;\, b \in B \right\}"#
                 .to_string()
         )
     );

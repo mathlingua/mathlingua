@@ -426,7 +426,7 @@ pub(super) fn render_set_expression(set: &SetExpression, registry: &RenderRegist
         .iter()
         .map(|spec| render_expression(spec, registry))
         .collect::<Vec<_>>()
-        .join(", ");
+        .join(";\\, ");
 
     match &set.predicate {
         Some(predicate) => format!(

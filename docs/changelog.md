@@ -19,6 +19,9 @@ accepted; `Defines:` now has the former `Describes:` semantics.
 The `@` in a soft build such as `\set@{...}` remains part of the source syntax,
 but the mathematical view now renders it as an explicit thin space instead of
 showing the `@` glyph. Hard builds written with `@!` keep their visible marker.
+Multiple set-literal specifications retain their semicolon separation in the
+mathematical view rather than being displayed with commas, with a thin space
+after each semicolon for readability.
 
 The definition-inheritance section is now spelled `means:` in both `Defines`
 and `Refines` groups. The structural AST exposes this as `MeansSection` /

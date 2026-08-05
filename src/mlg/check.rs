@@ -2176,6 +2176,74 @@ then:
     }
 
     #[test]
+    fn check_accepts_infix_command_headings_with_placeholder_operands() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("operator-heading.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [A \.set.cross./ B]
+    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    when: A, B is \set
+    Documented:
+    . called: "Cartesian product"
+
+    [\function:?on{A}:?to{B}]
+    Defines: f(x__) ::= y_
+    when: A, B is \set
+    declares:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . called: "function"
+
+    [\naturals.set]
+    Declares: N is \set
+    Documented:
+    . called: "natural numbers"
+
+    [\binary.operation:on{X}]
+    Defines: x_ * y_
+    when: X is \set
+    means: * is \function:on{X \.set.cross./ X}:to{X}
+    Documented:
+    . called: "binary operation on $X?$"
+
+    [n_ \.natural.+./ m_]
+    Declares: n_ + m_ ::= p_ is \binary.operation:on{\naturals.set}
+    expresses: p_ := n_
+    Documented:
+    . called: "natural addition"
+
+    Theorem:
+    given: n, m "in" \naturals.set
+    then: n \.natural.+./ m "in" \naturals.set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("operator-heading.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_composed_refined_command_references_in_given_sections() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("refined-list.mlg");

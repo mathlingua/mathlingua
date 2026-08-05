@@ -723,7 +723,8 @@ RefinedHeaderPart ::= RawChain CommandHeaderTail*
 RefinedTail ::= "[[" Name "]]" | RawChain
 
 CurlyHeadingArgs ::= "{" FormOrDeclaration ("," FormOrDeclaration)* "}"
-ParenHeadingArgs ::= "(" FormOrDeclaration ("," FormOrDeclaration)* ")"
+ParenHeadingArgs ::= "(" HeadingParameter ("," HeadingParameter)* ")"
+HeadingParameter ::= FormOrDeclaration | Placeholder
 CommandHeaderTail ::= (":" | ":?") RawChain CurlyHeadingArgs+
 ```
 
@@ -760,7 +761,7 @@ Examples:
 ### Infix command headers
 
 ```text
-InfixCommandHeader ::= FormOrDeclaration? "\." RawChain CurlyHeadingArgs* CommandHeaderTail* "./" FormOrDeclaration?
+InfixCommandHeader ::= HeadingParameter? "\." RawChain CurlyHeadingArgs* CommandHeaderTail* "./" HeadingParameter?
 ```
 
 Notes:
@@ -768,6 +769,9 @@ Notes:
 - infix command headers cannot have trailing `(...)` argument blocks
 - the command core must start with `\.` and end with `./`
 - a left operand requires a matching right operand, and vice versa
+- standalone placeholder operands are normalized to named callable parameters,
+  so `n_ \.natural.+./ m_` binds `n` and `m` without requiring separate
+  `when:` declarations
 
 ## Alias Syntax
 
@@ -1116,13 +1120,15 @@ Notes:
 CommandHeader ::= SimpleCommandHeader | InfixCommandHeader | RefinedCommandHeader
 
 CurlyHeadingArgs ::= "{" FormList "}"
-ParenHeadingArgs ::= "(" FormList ")"
+ParenHeadingArgs ::= "(" HeadingParameterList ")"
+HeadingParameterList ::= HeadingParameter ("," HeadingParameter)*
+HeadingParameter ::= FormOrDeclaration | Placeholder
 
 CommandHeaderTailPart ::= (":" | ":?") RawChain CurlyHeadingArgs+
 CommandHeaderTail ::= CommandHeaderTailPart*
 
 SimpleCommandHeader ::= "\" RawChain CurlyHeadingArgs* CommandHeaderTail ParenHeadingArgs*
-InfixCommandHeader ::= FormOrDeclaration? "\." RawChain CurlyHeadingArgs* CommandHeaderTail "./" FormOrDeclaration?
+InfixCommandHeader ::= HeadingParameter? "\." RawChain CurlyHeadingArgs* CommandHeaderTail "./" HeadingParameter?
 ```
 
 ### Aliases and headers

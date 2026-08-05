@@ -272,6 +272,10 @@ matching function declarations. Thus `[\natural.succ(n_)]` declares the same
 one-argument command shape as a trailing `(n)` group while making the parameter
 role explicit in the source.
 
+Infix command headings accept the same placeholder spelling for their operands.
+For example, `[n_ \.natural.+./ m_]` binds `n` and `m` as the two parameters of
+the infix command, just as `[\sin(x_)]` binds `x` for a callable command.
+
 Every command tail such as `:to` or `:from` must include at least one curly
 argument group.
 

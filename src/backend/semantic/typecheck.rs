@@ -14929,10 +14929,18 @@ fn collect_header_form_parameters(header: &CommandHeader, parameters: &mut WhenP
             collect_tail_parameters(&command.tail, parameters);
         }
         CommandHeader::Infix(command) => {
-            require_optional_form_when_parameter(command.left.as_ref(), parameters);
+            if command.left_placeholder {
+                allow_optional_form_when_parameter(command.left.as_ref(), parameters);
+            } else {
+                require_optional_form_when_parameter(command.left.as_ref(), parameters);
+            }
             collect_curly_heading_parameters(&command.head_args, parameters);
             collect_tail_parameters(&command.tail, parameters);
-            require_optional_form_when_parameter(command.right.as_ref(), parameters);
+            if command.right_placeholder {
+                allow_optional_form_when_parameter(command.right.as_ref(), parameters);
+            } else {
+                require_optional_form_when_parameter(command.right.as_ref(), parameters);
+            }
         }
         CommandHeader::InfixSpec(spec) => {
             require_form_when_parameter(&spec.left, parameters);
@@ -15159,6 +15167,15 @@ fn require_optional_form_when_parameter(
 ) {
     if let Some(form) = form {
         require_form_when_parameter(form, parameters);
+    }
+}
+
+fn allow_optional_form_when_parameter(
+    form: Option<&FormOrDeclaration>,
+    parameters: &mut WhenParameters,
+) {
+    if let Some(form) = form {
+        allow_form_when_parameter(form, parameters);
     }
 }
 

@@ -53,12 +53,13 @@ accepted; `Defines:` now has the former `Describes:` semantics.
 
 ## Callable Command Heading Parameters
 
-Trailing parenthesized command-heading parameters now accept standalone
-placeholder spelling. For example, `[\natural.succ(n_)]` defines a callable
-command with parameter `n`; the placeholder is normalized to the existing
-one-argument command shape used for signature checking, substitution, and
-rendering. Existing bare-name and structured-form heading parameters remain
-unchanged.
+Trailing parenthesized command-heading parameters and infix command operands now
+accept standalone placeholder spelling. For example, `[\natural.succ(n_)]`
+defines a callable command with parameter `n`, while
+`[n_ \.natural.+./ m_]` defines an infix command with parameters `n` and `m`.
+Each placeholder is normalized to the existing named-parameter shape used for
+signature checking, substitution, and rendering. Existing bare-name and
+structured-form heading parameters remain unchanged.
 
 ## Soft Build Rendering
 

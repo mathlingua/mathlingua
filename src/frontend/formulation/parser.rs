@@ -695,10 +695,11 @@ pub(super) fn parse_infix_command_header(input: &str) -> Result<InfixCommandHead
     let start = find_top_level_substring(input, "\\.")
         .ok_or_else(|| ParseError::custom("infix command headers must contain `\\.`"))?;
     let left_text = input[..start].trim();
-    let left = if left_text.is_empty() {
-        None
+    let (left, left_placeholder) = if left_text.is_empty() {
+        (None, false)
     } else {
-        Some(parse_form_or_declaration(left_text)?)
+        let (form, placeholder) = parse_infix_heading_operand(left_text)?;
+        (Some(form), placeholder)
     };
 
     let after_start = &input[start + "\\.".len()..];
@@ -706,10 +707,11 @@ pub(super) fn parse_infix_command_header(input: &str) -> Result<InfixCommandHead
         .ok_or_else(|| ParseError::custom("infix command headers must end with `./`"))?;
     let mut rest = &after_start[..end];
     let right_text = after_start[end + "./".len()..].trim();
-    let right = if right_text.is_empty() {
-        None
+    let (right, right_placeholder) = if right_text.is_empty() {
+        (None, false)
     } else {
-        Some(parse_form_or_declaration(right_text)?)
+        let (form, placeholder) = parse_infix_heading_operand(right_text)?;
+        (Some(form), placeholder)
     };
 
     if left.is_some() != right.is_some() {
@@ -734,10 +736,12 @@ pub(super) fn parse_infix_command_header(input: &str) -> Result<InfixCommandHead
     Ok(InfixCommandHeader {
         span: span_all(input),
         left,
+        left_placeholder,
         chain,
         head_args,
         tail,
         right,
+        right_placeholder,
     })
 }
 
@@ -1245,21 +1249,47 @@ pub(super) fn parse_paren_heading_args(
 fn parse_paren_heading_form_list(input: &str) -> Result<Vec<FormOrDeclaration>, ParseError> {
     let forms = split_top_level(input, ',')?
         .into_iter()
-        .map(|item| match parse_form_or_declaration(item) {
-            Ok(form) => Ok(form),
-            Err(form_error) => match parse_placeholder(item) {
-                Ok(placeholder) => Ok(FormOrDeclaration::new(
-                    placeholder.span,
-                    FormOrDeclarationKind::Name(placeholder.name),
-                )),
-                Err(_) => Err(form_error),
-            },
-        })
+        .map(parse_heading_form_or_placeholder)
         .collect::<Result<Vec<_>, _>>()?;
     if forms.is_empty() {
         return Err(ParseError::custom("expected at least one form"));
     }
     Ok(forms)
+}
+
+/// Parses one command-heading parameter, normalizing standalone placeholder
+/// spelling to the same named parameter shape used for ordinary forms.
+///
+/// This is shared by callable `(...)` parameters and infix operands so
+/// `\sin(x_)` and `n_ \.natural.+./ m_` bind parameters consistently.
+fn parse_heading_form_or_placeholder(input: &str) -> Result<FormOrDeclaration, ParseError> {
+    match parse_form_or_declaration(input) {
+        Ok(form) => Ok(form),
+        Err(form_error) => match parse_placeholder(input) {
+            Ok(placeholder) => Ok(FormOrDeclaration::new(
+                placeholder.span,
+                FormOrDeclarationKind::Name(placeholder.name),
+            )),
+            Err(_) => Err(form_error),
+        },
+    }
+}
+
+/// Parses an infix command-heading operand and records whether it used
+/// placeholder spelling. Placeholder operands are callable parameters, like
+/// parameters in a trailing `(...)` heading group, rather than independent
+/// values that require a `when:` declaration.
+fn parse_infix_heading_operand(input: &str) -> Result<(FormOrDeclaration, bool), ParseError> {
+    if let Ok(placeholder) = parse_placeholder(input) {
+        return Ok((
+            FormOrDeclaration::new(
+                placeholder.span,
+                FormOrDeclarationKind::Name(placeholder.name),
+            ),
+            true,
+        ));
+    }
+    parse_form_or_declaration(input).map(|form| (form, false))
 }
 
 /// Parses colon-prefixed tail parts for command headers.
@@ -5609,6 +5639,31 @@ mod tests {
             header.right.as_ref().map(|form| &form.kind),
             Some(FormOrDeclarationKind::Name(name)) if name == "Y"
         ));
+    }
+
+    #[test]
+    fn parses_infix_command_headers_with_placeholder_operands() {
+        let header = parse_command_header(r#"n_ \.natural.+./ m_"#)
+            .expect("expected infix header with placeholder operands");
+
+        let CommandHeader::Infix(header) = header else {
+            panic!("expected infix command header");
+        };
+
+        assert!(matches!(
+            header.left.as_ref().map(|form| &form.kind),
+            Some(FormOrDeclarationKind::Name(name)) if name == "n"
+        ));
+        assert!(header.left_placeholder);
+        assert!(matches!(
+            header.chain.parts.last(),
+            Some(ChainPart::Operator(operator)) if operator == "+"
+        ));
+        assert!(matches!(
+            header.right.as_ref().map(|form| &form.kind),
+            Some(FormOrDeclarationKind::Name(name)) if name == "m"
+        ));
+        assert!(header.right_placeholder);
     }
 
     #[test]

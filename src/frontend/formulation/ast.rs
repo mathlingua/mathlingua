@@ -316,10 +316,12 @@ pub struct CommandHeaderNode {
 pub struct InfixCommandHeader {
     pub span: Span,
     pub left: Option<FormOrDeclaration>,
+    pub left_placeholder: bool,
     pub chain: Chain,
     pub head_args: Vec<CurlyHeadingArgs>,
     pub tail: Vec<CommandHeaderTailPart>,
     pub right: Option<FormOrDeclaration>,
+    pub right_placeholder: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

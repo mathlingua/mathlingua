@@ -606,8 +606,20 @@ IsSubject ::= IsSubjectFormList | OperatorText
 SpecSubject ::= FormOrDeclaration | OperatorText
 IsSubjectForm ::= FormOrDeclaration | PlaceholderForm
 IsSubjectFormList ::= IsSubjectForm ("," IsSubjectForm)*
-TypeExpression ::= CommandExpression | BuiltinTypeExpression | FunctionTypeExpression
+TypeExpression ::=
+    CommandExpression
+  | BuiltinTypeExpression
+  | FunctionTypeExpression
+  | TupleLiteralType
+  | SetLiteralType
+  | MappingLiteralType
+  | ArrowLiteralType
 BuiltinTypeExpression ::= "\\" "\\" Chain
+SpecLiteral ::= "?" "is" TypeExpression | "?" TopLevelQuotedOperator Expression
+TupleLiteralType ::= "(" SpecLiteral "," SpecLiteral ("," SpecLiteral)* ")"
+SetLiteralType ::= "{" (SpecLiteral | TupleLiteralType) ":" "..." "}"
+MappingLiteralType ::= "(" SpecLiteral ")" "|->" "(" SpecLiteral ")"
+ArrowLiteralType ::= "(" SpecLiteral "," SpecLiteral ("," SpecLiteral)* ")" "->" "(" SpecLiteral ")"
 ```
 
 Notes:
@@ -620,6 +632,10 @@ Notes:
   output spec: `(_ "in" A, _ "in" B) => (_ "in" C)`
 - function type specs use `_` as the parameter and may be either `_ is Type` or
   `_ "operator" Target`
+- structural literal types use `?` spec literals at every leaf; raw nominal
+  tuple, set, mapping, and arrow types are not accepted
+- `|->` has exactly one input spec, while `->` has at least two input specs;
+  both have exactly one output spec
 - if no top-level ` is ` is found, the parser falls back to the quoted-operator spec form
 - the quoted operator is extracted by raw scanning, so it may contain spaces or punctuation
 
@@ -628,6 +644,10 @@ Examples:
 - `f(x_) is \function:on{A}:to{B}`
 - `f(x_), y_ is \function:on{A}:to{B}`
 - `f is (_ "in" A) => (_ "in" B)`
+- `(x, y) is (? is \natural, ? "in" \reals)`
+- `{x : ...} is {? is \natural : ...}`
+- `f is (? is \natural) |-> (? "in" \naturals)`
+- `f is (? is \natural, ? "in" \reals) -> (? is \real)`
 - `+ is \operator`
 - `x "in" A`
 - `x "less than" A`
@@ -637,7 +657,15 @@ Examples:
 Same as `parse_is_or_spec`, except:
 
 ```text
-TypeExpression ::= CommandExpression | BuiltinTypeExpression | RefinedCommandExpression | FunctionTypeExpression
+TypeExpression ::=
+    CommandExpression
+  | BuiltinTypeExpression
+  | RefinedCommandExpression
+  | FunctionTypeExpression
+  | TupleLiteralType
+  | SetLiteralType
+  | MappingLiteralType
+  | ArrowLiteralType
 ```
 
 ### `parse_is_via_statement`

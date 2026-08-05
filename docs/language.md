@@ -1163,6 +1163,39 @@ one spec. Both sides must be parenthesized, and each spec parameter must be
 written as `_`. If the checker knows `f is \function:on{A}:to{B}` and
 `y "in" A`, it can validate `f(y)` and prove `f(y) "in" B`.
 
+Structural type literals use complete spec literals at every leaf. This keeps
+higher-order specification operators intact instead of treating every
+component as an ordinary nominal type:
+
+```text
+(? is \natural, ? "in" \reals)
+{? is \natural : ...}
+{(? is \natural, ? "in" \reals) : ...}
+(? is \natural) |-> (? "in" \naturals)
+(? is \natural, ? "in" \reals) -> (? is \real)
+```
+
+These types match `(x, y)`, `{x : ...}`, `{(x, y) : ...}`, `x_ |-> ...`, and
+`(x_, y_) |-> ...`, respectively. Each `?` is instantiated with the matching
+term component. A raw nominal tuple such as `(\natural, \real)` is not a type
+literal; write `(? is \natural, ? is \real)` instead.
+
+For a function definition, component declarations and a whole-function
+declaration are equivalent alternatives:
+
+```text
+Defines: f(x_) ::= y_
+declares:
+. x_ is \real
+. y_ is \real
+```
+
+```text
+Defines: f(x_) ::= y_
+declares:
+. f is (? is \real) |-> (? is \real)
+```
+
 ## Specification Operators
 
 Required and enabled specification capabilities connect notation such as

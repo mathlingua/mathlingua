@@ -487,6 +487,40 @@ fn collect_inferred_parameter_names(when: Option<&WhenSection>) -> Vec<String> {
 }
 
 fn collect_inferred_names_in_type_expression(ty: &TypeExpression, names: &mut Vec<String>) {
+    match ty {
+        TypeExpression::Tuple(tuple) => {
+            for spec in &tuple.elements {
+                collect_inferred_names_in_function_type_spec(spec, names);
+            }
+            return;
+        }
+        TypeExpression::Set(set) => {
+            match &set.element {
+                SetTypeElement::Spec(spec) => {
+                    collect_inferred_names_in_function_type_spec(spec, names)
+                }
+                SetTypeElement::Tuple(tuple) => {
+                    for spec in &tuple.elements {
+                        collect_inferred_names_in_function_type_spec(spec, names);
+                    }
+                }
+            }
+            return;
+        }
+        TypeExpression::Function(function) => {
+            for spec in function
+                .inputs
+                .iter()
+                .chain(std::iter::once(&function.output))
+            {
+                if let FunctionTypeSpecKind::Is(ty) = &spec.kind {
+                    collect_inferred_names_in_type_expression(ty, names);
+                }
+            }
+            return;
+        }
+        _ => {}
+    }
     let arguments = match ty {
         TypeExpression::Command(command) => command_expression_arguments(command),
         TypeExpression::RefinedCommand(command) => refined_command_expression_arguments(command),
@@ -496,6 +530,12 @@ fn collect_inferred_names_in_type_expression(ty: &TypeExpression, names: &mut Ve
         if let ExpressionKind::InferredName(name) = &argument.kind {
             names.push(name.clone());
         }
+    }
+}
+
+fn collect_inferred_names_in_function_type_spec(spec: &FunctionTypeSpec, names: &mut Vec<String>) {
+    if let FunctionTypeSpecKind::Is(ty) = &spec.kind {
+        collect_inferred_names_in_type_expression(ty, names);
     }
 }
 
@@ -3701,7 +3741,7 @@ fn collect_form_or_declaration_names(form: &FormOrDeclaration, names: &mut BTree
             if let Some(name) = name {
                 names.insert(name.clone());
             }
-            collect_placeholder_form_names(&form.placeholder_form, names);
+            collect_set_target_names(&form.target, names);
         }
         FormOrDeclarationKind::InfixOperator {
             left,
@@ -3883,21 +3923,38 @@ fn collect_type_expression_names(ty: &TypeExpression, names: &mut BTreeSet<Strin
         TypeExpression::RefinedCommand(command) => {
             collect_refined_command_expression_names(command, names);
         }
+        TypeExpression::Tuple(tuple) => {
+            for spec in &tuple.elements {
+                collect_function_type_spec_names(spec, names);
+            }
+        }
+        TypeExpression::Set(set) => match &set.element {
+            SetTypeElement::Spec(spec) => collect_function_type_spec_names(spec, names),
+            SetTypeElement::Tuple(tuple) => {
+                for spec in &tuple.elements {
+                    collect_function_type_spec_names(spec, names);
+                }
+            }
+        },
         TypeExpression::Function(function_type) => {
             for spec in function_type
                 .inputs
                 .iter()
                 .chain(std::iter::once(&function_type.output))
             {
-                names.insert(spec.subject.clone());
-                match &spec.kind {
-                    FunctionTypeSpecKind::Is(ty) => collect_type_expression_names(ty, names),
-                    FunctionTypeSpecKind::Spec { target, .. } => {
-                        names.insert(target.clone());
-                    }
-                }
+                collect_function_type_spec_names(spec, names);
             }
         }
+    }
+}
+
+fn collect_function_type_spec_names(spec: &FunctionTypeSpec, names: &mut BTreeSet<String>) {
+    if spec.subject != "_" && spec.subject != "?" {
+        names.insert(spec.subject.clone());
+    }
+    match &spec.kind {
+        FunctionTypeSpecKind::Is(ty) => collect_type_expression_names(ty, names),
+        FunctionTypeSpecKind::Spec { target, .. } => collect_expression_names(target, names),
     }
 }
 
@@ -5129,9 +5186,57 @@ fn declare_inferred_parameters_in_type_expression(
                 );
             }
         }
-        TypeExpression::Builtin { .. }
-        | TypeExpression::Function(_)
-        | TypeExpression::Parameter { .. } => {}
+        TypeExpression::Tuple(tuple) => {
+            for spec in &tuple.elements {
+                declare_inferred_parameters_in_function_type_spec(
+                    spec, context, path, locator, registry, event_log,
+                );
+            }
+        }
+        TypeExpression::Set(set) => match &set.element {
+            SetTypeElement::Spec(spec) => declare_inferred_parameters_in_function_type_spec(
+                spec, context, path, locator, registry, event_log,
+            ),
+            SetTypeElement::Tuple(tuple) => {
+                for spec in &tuple.elements {
+                    declare_inferred_parameters_in_function_type_spec(
+                        spec, context, path, locator, registry, event_log,
+                    );
+                }
+            }
+        },
+        TypeExpression::Function(function) => {
+            for spec in function
+                .inputs
+                .iter()
+                .chain(std::iter::once(&function.output))
+            {
+                if let FunctionTypeSpecKind::Is(ty) = &spec.kind {
+                    declare_inferred_parameters_in_type_expression(
+                        ty, context, path, locator, registry, event_log,
+                    );
+                }
+            }
+        }
+        TypeExpression::Builtin { .. } | TypeExpression::Parameter { .. } => {}
+    }
+}
+
+fn declare_inferred_parameters_in_function_type_spec(
+    spec: &FunctionTypeSpec,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match &spec.kind {
+        FunctionTypeSpecKind::Is(ty) => declare_inferred_parameters_in_type_expression(
+            ty, context, path, locator, registry, event_log,
+        ),
+        FunctionTypeSpecKind::Spec { target, .. } => declare_inferred_parameters_in_expression(
+            target, context, path, locator, registry, event_log,
+        ),
     }
 }
 
@@ -5732,16 +5837,24 @@ fn function_input_spec_from_type(
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> Option<FunctionTypeFactSpec> {
+    function_input_specs_from_type(ty, context, registry)?
+        .into_iter()
+        .next()
+}
+
+fn function_input_specs_from_type(
+    ty: &TypeExpression,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<Vec<FunctionTypeFactSpec>> {
     match ty {
-        TypeExpression::Function(function_type) => {
-            function_type_spec_as_fact(function_type.inputs.first()?)
-        }
+        TypeExpression::Function(function_type) => function_type_inputs_as_facts(function_type),
         TypeExpression::Command(command) => {
             let active = active_command_expression(command, context);
             let signature = shape_for_command_expression(&active).signature;
             let info = registry.type_infos.get(&signature)?;
             info.outputs.iter().find_map(|fact| match fact {
-                TypeFact::FunctionType { inputs, .. } => inputs.first().cloned(),
+                TypeFact::FunctionType { inputs, .. } => Some(inputs.clone()),
                 _ => None,
             })
         }
@@ -5896,9 +6009,15 @@ fn check_mapping_expression(
 
     if let Some(parameters) = mapping_pattern_names(binder)
         && parameters.len() > 1
-        && let Some(expected_subject) = expected_subject
-        && let Some((inputs, variadic_tuple_input)) =
-            mapping_function_type_for_subject(expected_subject, context, registry)
+        && let Some((inputs, variadic_tuple_input)) = expected
+            .and_then(|ty| {
+                function_input_specs_from_type(ty, context, registry).map(|inputs| (inputs, false))
+            })
+            .or_else(|| {
+                expected_subject.and_then(|subject| {
+                    mapping_function_type_for_subject(subject, context, registry)
+                })
+            })
     {
         let mut child = context.clone();
         for parameter in parameters {
@@ -6552,6 +6671,19 @@ fn add_cast_type_expression_facts(ty: &TypeExpression, context: &mut TypeContext
                 add_cast_expression_facts(expression, context);
             }
         }
+        TypeExpression::Tuple(tuple) => {
+            for spec in &tuple.elements {
+                add_cast_function_type_spec_facts(spec, context);
+            }
+        }
+        TypeExpression::Set(set) => match &set.element {
+            SetTypeElement::Spec(spec) => add_cast_function_type_spec_facts(spec, context),
+            SetTypeElement::Tuple(tuple) => {
+                for spec in &tuple.elements {
+                    add_cast_function_type_spec_facts(spec, context);
+                }
+            }
+        },
         TypeExpression::Function(function_type) => {
             for spec in function_type
                 .inputs
@@ -6565,8 +6697,9 @@ fn add_cast_type_expression_facts(ty: &TypeExpression, context: &mut TypeContext
 }
 
 fn add_cast_function_type_spec_facts(spec: &FunctionTypeSpec, context: &mut TypeContext) {
-    if let FunctionTypeSpecKind::Is(ty) = &spec.kind {
-        add_cast_type_expression_facts(ty, context);
+    match &spec.kind {
+        FunctionTypeSpecKind::Is(ty) => add_cast_type_expression_facts(ty, context),
+        FunctionTypeSpecKind::Spec { target, .. } => add_cast_expression_facts(target, context),
     }
 }
 
@@ -6704,6 +6837,21 @@ fn check_type_expression(
                 check_expression(expression, context, path, locator, registry, event_log);
             }
         }
+        TypeExpression::Tuple(tuple) => {
+            for spec in &tuple.elements {
+                check_function_type_spec(spec, context, path, locator, registry, event_log);
+            }
+        }
+        TypeExpression::Set(set) => match &set.element {
+            SetTypeElement::Spec(spec) => {
+                check_function_type_spec(spec, context, path, locator, registry, event_log)
+            }
+            SetTypeElement::Tuple(tuple) => {
+                for spec in &tuple.elements {
+                    check_function_type_spec(spec, context, path, locator, registry, event_log);
+                }
+            }
+        },
         TypeExpression::Function(function_type) => {
             for spec in function_type
                 .inputs
@@ -6795,12 +6943,12 @@ fn check_function_type_spec(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    if spec.subject != "_" {
+    if spec.subject != "_" && spec.subject != "?" {
         emit_error(
             event_log,
             path,
             locator.locate_symbol(&spec.subject),
-            "Function type parameters must be `_`",
+            "Function type specs must use `_` or `?` as their subject",
         );
     }
 
@@ -6809,7 +6957,7 @@ fn check_function_type_spec(
             check_type_expression(ty, context, path, locator, registry, event_log);
         }
         FunctionTypeSpecKind::Spec { target, .. } => {
-            check_name(target, context, path, locator, event_log);
+            check_expression(target, context, path, locator, registry, event_log);
         }
     }
 }
@@ -9214,6 +9362,19 @@ fn collect_defined_type_expression_names(ty: &TypeExpression, names: &mut Vec<St
                 collect_defined_expression_names(expression, names);
             }
         }
+        TypeExpression::Tuple(tuple) => {
+            for spec in &tuple.elements {
+                collect_defined_function_type_spec_names(spec, names);
+            }
+        }
+        TypeExpression::Set(set) => match &set.element {
+            SetTypeElement::Spec(spec) => collect_defined_function_type_spec_names(spec, names),
+            SetTypeElement::Tuple(tuple) => {
+                for spec in &tuple.elements {
+                    collect_defined_function_type_spec_names(spec, names);
+                }
+            }
+        },
         TypeExpression::Function(function_type) => {
             for spec in function_type
                 .inputs
@@ -9229,7 +9390,9 @@ fn collect_defined_type_expression_names(ty: &TypeExpression, names: &mut Vec<St
 fn collect_defined_function_type_spec_names(spec: &FunctionTypeSpec, names: &mut Vec<String>) {
     match &spec.kind {
         FunctionTypeSpecKind::Is(ty) => collect_defined_type_expression_names(ty, names),
-        FunctionTypeSpecKind::Spec { target, .. } => names.push(target.clone()),
+        FunctionTypeSpecKind::Spec { target, .. } => {
+            collect_defined_expression_names(target, names)
+        }
     }
 }
 
@@ -9905,6 +10068,21 @@ fn check_type_expression_requirements(
                 check_expression(expression, context, path, locator, registry, event_log);
             }
         }
+        TypeExpression::Tuple(tuple) => {
+            for spec in &tuple.elements {
+                check_function_type_spec(spec, context, path, locator, registry, event_log);
+            }
+        }
+        TypeExpression::Set(set) => match &set.element {
+            SetTypeElement::Spec(spec) => {
+                check_function_type_spec(spec, context, path, locator, registry, event_log)
+            }
+            SetTypeElement::Tuple(tuple) => {
+                for spec in &tuple.elements {
+                    check_function_type_spec(spec, context, path, locator, registry, event_log);
+                }
+            }
+        },
         TypeExpression::Function(function_type) => {
             for spec in function_type
                 .inputs
@@ -12824,7 +13002,7 @@ fn check_form_or_declaration(
             if let Some(name) = name {
                 check_name(name, context, path, locator, event_log);
             } else {
-                check_placeholder_form(&form.placeholder_form, context, path, locator, event_log);
+                check_set_target(&form.target, context, path, locator, event_log);
             }
         }
         FormOrDeclarationKind::InfixOperator { .. }
@@ -12851,6 +13029,38 @@ fn check_placeholder_form(
             check_name(&placeholder.name, context, path, locator, event_log);
             for argument in arguments {
                 check_name(&argument.name, context, path, locator, event_log);
+            }
+        }
+    }
+}
+
+fn check_set_target(
+    target: &SetTarget,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    match &target.kind {
+        SetTargetKind::Name(name) => check_name(name, context, path, locator, event_log),
+        SetTargetKind::PlaceholderForm(form) => {
+            check_placeholder_form(form, context, path, locator, event_log)
+        }
+        SetTargetKind::Alias { name, target } | SetTargetKind::Introduction { name, target } => {
+            check_name(name, context, path, locator, event_log);
+            check_set_target(target, context, path, locator, event_log);
+        }
+        SetTargetKind::Function { name, arguments } => {
+            check_name(name, context, path, locator, event_log);
+            for argument in arguments {
+                check_set_target(argument, context, path, locator, event_log);
+            }
+        }
+        SetTargetKind::Tuple(elements) => {
+            for element in elements {
+                if let SetTargetElement::Target(target) = element {
+                    check_set_target(target, context, path, locator, event_log);
+                }
             }
         }
     }
@@ -13007,7 +13217,7 @@ fn declare_form_or_declaration(form: &FormOrDeclaration, context: &mut TypeConte
             if let Some(name) = name {
                 context.declare_name(name.clone());
             }
-            declare_placeholder_form(&form.placeholder_form, context);
+            declare_set_target(&form.target, context);
         }
         // An operator form (`x_ * y_`, `neg| x_`, `x_ !`) introduces both its
         // placeholders and the operator symbol itself as named values, so a use
@@ -13246,6 +13456,19 @@ fn declare_names_from_type_expression(ty: &TypeExpression, context: &mut TypeCon
                 declare_names_from_expression(expression, context);
             }
         }
+        TypeExpression::Tuple(tuple) => {
+            for spec in &tuple.elements {
+                declare_names_from_function_type_spec(spec, context);
+            }
+        }
+        TypeExpression::Set(set) => match &set.element {
+            SetTypeElement::Spec(spec) => declare_names_from_function_type_spec(spec, context),
+            SetTypeElement::Tuple(tuple) => {
+                for spec in &tuple.elements {
+                    declare_names_from_function_type_spec(spec, context);
+                }
+            }
+        },
         TypeExpression::Function(function_type) => {
             for spec in function_type
                 .inputs
@@ -13271,7 +13494,7 @@ fn declare_names_from_set_predicate(predicate: &SetPredicate, context: &mut Type
 fn declare_names_from_function_type_spec(spec: &FunctionTypeSpec, context: &mut TypeContext) {
     match &spec.kind {
         FunctionTypeSpecKind::Is(ty) => declare_names_from_type_expression(ty, context),
-        FunctionTypeSpecKind::Spec { target, .. } => context.declare_name(target.clone()),
+        FunctionTypeSpecKind::Spec { target, .. } => declare_names_from_expression(target, context),
     }
 }
 
@@ -13542,8 +13765,59 @@ fn substitute_type_expression(
         TypeExpression::Command(command) => {
             TypeExpression::Command(substitute_command_expression(command, substitutions))
         }
+        TypeExpression::Tuple(tuple) => TypeExpression::Tuple(TupleType {
+            span: tuple.span,
+            elements: tuple
+                .elements
+                .iter()
+                .map(|spec| substitute_function_type_spec_expression(spec, substitutions))
+                .collect(),
+        }),
+        TypeExpression::Set(set) => TypeExpression::Set(SetType {
+            span: set.span,
+            element: match &set.element {
+                SetTypeElement::Spec(spec) => SetTypeElement::Spec(
+                    substitute_function_type_spec_expression(spec, substitutions),
+                ),
+                SetTypeElement::Tuple(tuple) => SetTypeElement::Tuple(TupleType {
+                    span: tuple.span,
+                    elements: tuple
+                        .elements
+                        .iter()
+                        .map(|spec| substitute_function_type_spec_expression(spec, substitutions))
+                        .collect(),
+                }),
+            },
+        }),
+        TypeExpression::Function(function) => TypeExpression::Function(FunctionType {
+            span: function.span,
+            inputs: function
+                .inputs
+                .iter()
+                .map(|spec| substitute_function_type_spec_expression(spec, substitutions))
+                .collect(),
+            output: substitute_function_type_spec_expression(&function.output, substitutions),
+            notation: function.notation,
+        }),
         other => other.clone(),
     }
+}
+
+fn substitute_function_type_spec_expression(
+    spec: &FunctionTypeSpec,
+    substitutions: &HashMap<String, Expression>,
+) -> FunctionTypeSpec {
+    let mut result = spec.clone();
+    result.kind = match &spec.kind {
+        FunctionTypeSpecKind::Is(ty) => {
+            FunctionTypeSpecKind::Is(Box::new(substitute_type_expression(ty, substitutions)))
+        }
+        FunctionTypeSpecKind::Spec { operator, target } => FunctionTypeSpecKind::Spec {
+            operator: operator.clone(),
+            target: Box::new(substitute_expression(target, substitutions)),
+        },
+    };
+    result
 }
 
 /// Reinterprets an expression used as a type (e.g. the `\real` argument bound to a
@@ -13765,6 +14039,27 @@ fn function_type_fact_from_defines_declares(
     context: &TypeContext,
 ) -> Option<TypeFact> {
     let target = described_function_target(target)?;
+    for item in &declares.arguments {
+        for fact in facts_from_is_or_via_item_in_context(item, context) {
+            if let TypeFact::FunctionType {
+                subject,
+                inputs,
+                output,
+                ..
+            } = fact
+                && context.normalize_key(&subject) == context.normalize_key(&target.subject)
+                && inputs.len() == target.inputs.len()
+            {
+                return Some(TypeFact::FunctionType {
+                    subject: target.subject,
+                    inputs,
+                    output,
+                    variadic_tuple_input: target.variadic_tuple_input,
+                });
+            }
+        }
+    }
+
     let specs = function_type_specs_from_defines_declares(declares, context);
     let inputs = target
         .inputs
@@ -13980,6 +14275,10 @@ fn facts_from_declaration_is(
     statement: &DeclarationStatement,
     ty: &TypeExpression,
 ) -> Vec<TypeFact> {
+    if let Some(facts) = literal_type_facts_from_is_subject(&statement.subject, ty) {
+        return facts;
+    }
+
     if let TypeExpression::Function(function_type) = ty {
         let (Some(inputs), Some(output)) = (
             function_type_inputs_as_facts(function_type),
@@ -14023,6 +14322,13 @@ fn facts_from_declaration_is_in_context(
     ty: &TypeExpression,
     context: &TypeContext,
 ) -> Vec<TypeFact> {
+    if let Some(facts) = literal_type_facts_from_is_subject(&statement.subject, ty) {
+        return facts
+            .iter()
+            .map(|fact| context.normalize_fact(fact))
+            .collect();
+    }
+
     if let TypeExpression::Function(function_type) = ty {
         let (Some(inputs), Some(output)) = (
             function_type_inputs_as_facts(function_type),
@@ -14077,6 +14383,10 @@ fn declaration_substitution(statement: &DeclarationStatement) -> Option<(String,
 }
 
 fn facts_from_is_statement(statement: &IsStatement) -> Vec<TypeFact> {
+    if let Some(facts) = literal_type_facts_from_is_subject(&statement.subject, &statement.ty) {
+        return facts;
+    }
+
     if let TypeExpression::Function(function_type) = &statement.ty {
         let (Some(inputs), Some(output)) = (
             function_type_inputs_as_facts(function_type),
@@ -14113,6 +14423,135 @@ fn facts_from_is_statement(statement: &IsStatement) -> Vec<TypeFact> {
             signature: signature.clone(),
         })
         .collect()
+}
+
+#[derive(Clone, Debug)]
+enum LiteralTypeSubject {
+    Leaf(String),
+    Tuple(Vec<LiteralTypeSubject>),
+    Set(Box<LiteralTypeSubject>),
+}
+
+fn literal_type_facts_from_is_subject(
+    subject: &IsSubject,
+    ty: &TypeExpression,
+) -> Option<Vec<TypeFact>> {
+    if !matches!(ty, TypeExpression::Tuple(_) | TypeExpression::Set(_)) {
+        return None;
+    }
+    let pattern = literal_type_subject(subject)?;
+    literal_type_facts(&pattern, ty)
+}
+
+fn literal_type_subject(subject: &IsSubject) -> Option<LiteralTypeSubject> {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) if forms.len() == 1 => match &forms[0] {
+            IsSubjectForm::Form(form) => Some(literal_type_subject_from_form(form)),
+            IsSubjectForm::PlaceholderForm(form) => {
+                Some(LiteralTypeSubject::Leaf(key_for_placeholder_form(form)))
+            }
+        },
+        IsSubjectKind::Operator(operator) => Some(LiteralTypeSubject::Leaf(operator.text.clone())),
+        _ => None,
+    }
+}
+
+fn literal_type_subject_from_form(form: &FormOrDeclaration) -> LiteralTypeSubject {
+    match &form.kind {
+        FormOrDeclarationKind::TupleDeclaration { form, .. } => LiteralTypeSubject::Tuple(
+            form.elements
+                .iter()
+                .map(|element| match element {
+                    TupleFormElement::Form(form) => literal_type_subject_from_form(form),
+                    TupleFormElement::Operator(operator) => {
+                        LiteralTypeSubject::Leaf(operator.text.clone())
+                    }
+                })
+                .collect(),
+        ),
+        FormOrDeclarationKind::SetDeclaration { form, .. } => {
+            LiteralTypeSubject::Set(Box::new(literal_type_subject_from_set_target(&form.target)))
+        }
+        _ => LiteralTypeSubject::Leaf(
+            primary_form_name(form).unwrap_or_else(|| key_for_form_or_declaration(form)),
+        ),
+    }
+}
+
+fn literal_type_subject_from_set_target(target: &SetTarget) -> LiteralTypeSubject {
+    match &target.kind {
+        SetTargetKind::Name(name) => LiteralTypeSubject::Leaf(name.clone()),
+        SetTargetKind::PlaceholderForm(form) => {
+            LiteralTypeSubject::Leaf(key_for_placeholder_form(form))
+        }
+        SetTargetKind::Alias { target, .. } | SetTargetKind::Introduction { target, .. } => {
+            literal_type_subject_from_set_target(target)
+        }
+        SetTargetKind::Function { .. } => LiteralTypeSubject::Leaf(key_for_set_target(target)),
+        SetTargetKind::Tuple(elements) => LiteralTypeSubject::Tuple(
+            elements
+                .iter()
+                .map(|element| match element {
+                    SetTargetElement::Target(target) => {
+                        literal_type_subject_from_set_target(target)
+                    }
+                    SetTargetElement::Operator(operator) => {
+                        LiteralTypeSubject::Leaf(operator.text.clone())
+                    }
+                })
+                .collect(),
+        ),
+    }
+}
+
+fn literal_type_facts(subject: &LiteralTypeSubject, ty: &TypeExpression) -> Option<Vec<TypeFact>> {
+    match (subject, ty) {
+        (LiteralTypeSubject::Tuple(subjects), TypeExpression::Tuple(tuple))
+            if subjects.len() == tuple.elements.len() =>
+        {
+            let mut facts = Vec::new();
+            for (subject, spec) in subjects.iter().zip(&tuple.elements) {
+                facts.extend(literal_type_spec_facts(subject, spec)?);
+            }
+            Some(facts)
+        }
+        (LiteralTypeSubject::Set(subject), TypeExpression::Set(set)) => match &set.element {
+            SetTypeElement::Spec(spec) => literal_type_spec_facts(subject, spec),
+            SetTypeElement::Tuple(tuple) => {
+                let LiteralTypeSubject::Tuple(subjects) = subject.as_ref() else {
+                    return None;
+                };
+                if subjects.len() != tuple.elements.len() {
+                    return None;
+                }
+                let mut facts = Vec::new();
+                for (subject, spec) in subjects.iter().zip(&tuple.elements) {
+                    facts.extend(literal_type_spec_facts(subject, spec)?);
+                }
+                Some(facts)
+            }
+        },
+        _ => None,
+    }
+}
+
+fn literal_type_spec_facts(
+    subject: &LiteralTypeSubject,
+    spec: &FunctionTypeSpec,
+) -> Option<Vec<TypeFact>> {
+    if let FunctionTypeSpecKind::Is(ty) = &spec.kind
+        && matches!(
+            ty.as_ref(),
+            TypeExpression::Tuple(_) | TypeExpression::Set(_)
+        )
+    {
+        return literal_type_facts(subject, ty);
+    }
+    let LiteralTypeSubject::Leaf(subject) = subject else {
+        return None;
+    };
+    let spec = function_type_spec_as_fact(spec)?;
+    Some(vec![instantiate_function_type_spec(&spec, subject)])
 }
 
 fn fact_from_expression(expression: &Expression) -> Option<TypeFact> {
@@ -14427,7 +14866,7 @@ fn function_type_spec_as_fact(spec: &FunctionTypeSpec) -> Option<FunctionTypeFac
         }
         FunctionTypeSpecKind::Spec { operator, target } => Some(FunctionTypeFactSpec::Spec {
             operator: operator.clone(),
-            target: target.clone(),
+            target: key_for_expression(target),
         }),
     }
 }
@@ -14837,7 +15276,10 @@ fn key_for_type_expression(ty: &TypeExpression) -> Option<(String, String)> {
             shape_for_command_expression(command).signature,
         )),
         TypeExpression::Parameter { name, .. } => Some((name.clone(), name.clone())),
-        TypeExpression::RefinedCommand(_) | TypeExpression::Function(_) => None,
+        TypeExpression::RefinedCommand(_)
+        | TypeExpression::Tuple(_)
+        | TypeExpression::Set(_)
+        | TypeExpression::Function(_) => None,
     }
 }
 
@@ -14858,7 +15300,10 @@ fn key_for_type_expression_in_context(
             ))
         }
         TypeExpression::Parameter { name, .. } => Some((name.clone(), name.clone())),
-        TypeExpression::RefinedCommand(_) | TypeExpression::Function(_) => None,
+        TypeExpression::RefinedCommand(_)
+        | TypeExpression::Tuple(_)
+        | TypeExpression::Set(_)
+        | TypeExpression::Function(_) => None,
     }
 }
 
@@ -15120,6 +15565,30 @@ fn key_for_non_command_type_expression(ty: &TypeExpression) -> String {
         TypeExpression::Builtin { chain, .. } => format!("\\\\{}", format_chain(chain)),
         TypeExpression::Command(command) => key_for_command_expression(command),
         TypeExpression::RefinedCommand(command) => key_for_refined_command_expression(command),
+        TypeExpression::Tuple(tuple) => format!(
+            "({})",
+            tuple
+                .elements
+                .iter()
+                .map(key_for_function_type_spec)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        TypeExpression::Set(set) => format!(
+            "{{{}:...}}",
+            match &set.element {
+                SetTypeElement::Spec(spec) => key_for_function_type_spec(spec),
+                SetTypeElement::Tuple(tuple) => format!(
+                    "({})",
+                    tuple
+                        .elements
+                        .iter()
+                        .map(key_for_function_type_spec)
+                        .collect::<Vec<_>>()
+                        .join(",")
+                ),
+            }
+        ),
         TypeExpression::Function(function_type) => format_function_type(
             &function_type
                 .inputs
@@ -15134,6 +15603,13 @@ fn key_for_non_command_type_expression(ty: &TypeExpression) -> String {
             ),
         ),
     }
+}
+
+fn key_for_function_type_spec(spec: &FunctionTypeSpec) -> String {
+    function_type_spec_as_fact(spec)
+        .as_ref()
+        .map(format_function_type_spec)
+        .unwrap_or_else(|| "?".to_owned())
 }
 
 fn key_for_named_expression_lhs(lhs: &FunctionNamedExpressionElementLhs) -> String {
@@ -15179,7 +15655,7 @@ fn key_for_form_or_declaration(form: &FormOrDeclaration) -> String {
                 .unwrap_or(tuple)
         }
         FormOrDeclarationKind::SetDeclaration { name, form } => {
-            let set = format!("{{{}}}", key_for_placeholder_form(&form.placeholder_form));
+            let set = format!("{{{}}}", key_for_set_target(&form.target));
             name.as_ref()
                 .map(|name| format!("{name}:={set}"))
                 .unwrap_or(set)

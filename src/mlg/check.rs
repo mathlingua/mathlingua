@@ -7084,6 +7084,220 @@ Documented:
     }
 
     #[test]
+    fn check_uses_compact_spec_literal_function_types() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("compact-function-types.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\real]
+    Defines: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    [\integer]
+    Defines: z
+    Documented:
+    . written: "\operatorname{integer}"
+
+    Theorem:
+    given:
+    . f is (? is \real) |-> (? is \integer)
+    . y is \real
+    then:
+    . f(y) is? \integer
+
+    Theorem:
+    given:
+    . A, B is \set
+    . f is (? "in" A) |-> (? "in" B)
+    . y "in" A
+    then:
+    . f(y) "in" B
+
+    Theorem:
+    given:
+    . A is \set
+    . f is (? is \real, ? "in" A) -> (? is \integer)
+    . x is \real
+    . y "in" A
+    then:
+    . f(x, y) is? \integer
+
+    Theorem:
+    given:
+    . A is \set
+    . a is \\opaque
+    . f := (x_, y_) |-> x_ is (? is \real, ? "in" A) -> (? is \real)
+    then: a is? \\opaque
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("compact-function-types.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_uses_whole_function_spec_literal_declaration() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("whole-function-declaration.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Defines: r
+    Documented:
+    . written: "\operatorname{real}"
+
+    [\real.function]
+    Defines: f(x_) ::= y_
+    declares:
+    . f is (? is \real) |-> (? is \real)
+    Documented:
+    . written: "f?"
+
+    Theorem:
+    given:
+    . f is \real.function
+    . x is \real
+    then: f(x) is? \real
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("whole-function-declaration.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_instantiates_tuple_and_set_spec_literal_types() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("structural-literal-types.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\natural]
+    Defines: n
+    Documented:
+    . written: "\operatorname{natural}"
+
+    Theorem:
+    given:
+    . A is \set
+    . (x, y) is (? is \natural, ? "in" A)
+    then:
+    . x is? \natural
+    . y "in" A
+
+    Theorem:
+    given:
+    . {x : ...} is {? is \natural : ...}
+    then: x is? \natural
+
+    Theorem:
+    given:
+    . A is \set
+    . {(x, y) : ...} is {(? is \natural, ? "in" A) : ...}
+    then:
+    . x is? \natural
+    . y "in" A
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("structural-literal-types.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_accepts_spec_literal_function_type_definition_requirements() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("natural-constructor.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\natural.0]
+    Declares: 0 is \natural
+    Documented:
+    . written: "0"
+
+    [\natural.succ(n_)]
+    Declares: succ(n_) is (? is \natural) |-> (? is \natural)
+    Documented:
+    . called: "successor of $n?$"
+    . written: "n?+\!\!+"
+
+    [\natural]
+    Defines: n
+    Requires:
+    . definition: \natural.0 is \natural
+    . definition: \natural.succ is (? is \natural) |-> (? is \natural)
+    Documented:
+    . called: "naturals"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("natural-constructor.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_rejects_named_function_type_parameters() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("function-type-parameters.mlg");
@@ -7114,9 +7328,9 @@ Documented:
 
         assert_eq!(result.files_checked, 1);
         assert!(user_events(&event_log).iter().any(|event| {
-            event
-                .as_message()
-                .is_some_and(|message| message.message == "Function type parameters must be `_`")
+            event.as_message().is_some_and(|message| {
+                message.message == "Function type specs must use `_` or `?` as their subject"
+            })
         }));
         assert!(event_log.has_errors());
     }

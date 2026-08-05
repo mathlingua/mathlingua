@@ -221,6 +221,8 @@ pub enum TypeExpression {
     },
     Command(CommandExpression),
     RefinedCommand(RefinedCommandExpression),
+    Tuple(TupleType),
+    Set(SetType),
     Function(FunctionType),
     /// A bare type-parameter name used as a type, e.g. `T` in `x is T` where a
     /// `when: T is \\type` requirement declares `T` a type parameter.
@@ -231,10 +233,36 @@ pub enum TypeExpression {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TupleType {
+    pub span: Span,
+    pub elements: Vec<FunctionTypeSpec>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SetType {
+    pub span: Span,
+    pub element: SetTypeElement,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SetTypeElement {
+    Spec(FunctionTypeSpec),
+    Tuple(TupleType),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FunctionType {
     pub span: Span,
     pub inputs: Vec<FunctionTypeSpec>,
     pub output: FunctionTypeSpec,
+    pub notation: FunctionTypeNotation,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FunctionTypeNotation {
+    Specs,
+    Mapping,
+    Arrow,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -247,7 +275,10 @@ pub struct FunctionTypeSpec {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FunctionTypeSpecKind {
     Is(Box<TypeExpression>),
-    Spec { operator: String, target: String },
+    Spec {
+        operator: String,
+        target: Box<Expression>,
+    },
 }
 
 // ===============================[ command headers ]=====================================
@@ -673,7 +704,7 @@ pub enum TupleFormElement {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SetForm {
     pub span: Span,
-    pub placeholder_form: PlaceholderForm,
+    pub target: SetTarget,
     pub has_condition_placeholder: bool,
     pub variadic_tuple_target: bool,
 }

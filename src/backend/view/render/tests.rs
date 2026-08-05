@@ -258,6 +258,67 @@ fn renders_quoted_operators_as_temporary_latex_commands() {
 }
 
 #[test]
+fn renders_structural_spec_literal_types() {
+    let registry = registry_for(
+        r#"[\natural]
+Defines: n
+Documented:
+. written: "\mathbb{N}"
+
+[\reals]
+Defines: x
+Documented:
+. written: "\mathbb{R}"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"x is (? is \natural, ? "in" \reals)"#, &registry),
+        Some(
+            r#"x \textrm{ is } \left(? \textrm{ is } \mathbb{N}, ? \in \mathbb{R}\right)"#
+                .to_string()
+        )
+    );
+    assert_eq!(
+        render_formulation_latex(r#"S is {? is \natural : ...}"#, &registry),
+        Some(
+            r#"S \textrm{ is } \left\{? \textrm{ is } \mathbb{N} \: : \: \ldots\right\}"#
+                .to_string()
+        )
+    );
+    assert_eq!(
+        render_formulation_latex(
+            r#"S is {(? is \natural, ? "in" \reals) : ...}"#,
+            &registry
+        ),
+        Some(
+            r#"S \textrm{ is } \left\{\left(? \textrm{ is } \mathbb{N}, ? \in \mathbb{R}\right) \: : \: \ldots\right\}"#
+                .to_string()
+        )
+    );
+    assert_eq!(
+        render_formulation_latex(
+            r#"f is (? is \natural) |-> (? "in" \reals)"#,
+            &registry
+        ),
+        Some(
+            r#"f \textrm{ is } \left(? \textrm{ is } \mathbb{N}\right) \mapsto \left(? \in \mathbb{R}\right)"#
+                .to_string()
+        )
+    );
+    assert_eq!(
+        render_formulation_latex(
+            r#"f is (? is \natural, ? "in" \reals) -> (? is \natural)"#,
+            &registry
+        ),
+        Some(
+            r#"f \textrm{ is } \left(? \textrm{ is } \mathbb{N}, ? \in \mathbb{R}\right) \to \left(? \textrm{ is } \mathbb{N}\right)"#
+                .to_string()
+        )
+    );
+}
+
+#[test]
 fn uses_written_as_called_form_when_called_is_missing() {
     let registry = registry_for(
         r#"[\empty.set]

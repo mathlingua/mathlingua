@@ -740,7 +740,7 @@ fn key_for_form_or_declaration(form: &FormOrDeclaration) -> String {
                 .unwrap_or(tuple)
         }
         FormOrDeclarationKind::SetDeclaration { name, form } => {
-            let set = format!("{{{}}}", key_for_placeholder_form(&form.placeholder_form));
+            let set = format!("{{{}}}", key_for_set_target(&form.target));
             name.as_ref()
                 .map(|name| format!("{name}:={set}"))
                 .unwrap_or(set)
@@ -758,6 +758,37 @@ fn key_for_form_or_declaration(form: &FormOrDeclaration) -> String {
             placeholder,
             operator,
         } => format!("{}{}", placeholder.name, operator.text),
+    }
+}
+
+fn key_for_set_target(target: &SetTarget) -> String {
+    match &target.kind {
+        SetTargetKind::Name(name) => name.clone(),
+        SetTargetKind::PlaceholderForm(form) => key_for_placeholder_form(form),
+        SetTargetKind::Alias { name, target } => format!("{name}:={}", key_for_set_target(target)),
+        SetTargetKind::Introduction { name, target } => {
+            format!("{name}::={}", key_for_set_target(target))
+        }
+        SetTargetKind::Function { name, arguments } => format!(
+            "{}({})",
+            name,
+            arguments
+                .iter()
+                .map(key_for_set_target)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        SetTargetKind::Tuple(elements) => format!(
+            "({})",
+            elements
+                .iter()
+                .map(|element| match element {
+                    SetTargetElement::Target(target) => key_for_set_target(target),
+                    SetTargetElement::Operator(operator) => operator.text.clone(),
+                })
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
     }
 }
 

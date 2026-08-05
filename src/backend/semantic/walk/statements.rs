@@ -91,6 +91,19 @@ pub(in crate::backend::semantic) fn walk_type_expression(
             visit(&shape);
             walk_refined_command_expression_arguments(command, visit);
         }
+        TypeExpression::Tuple(tuple) => {
+            for spec in &tuple.elements {
+                walk_function_type_spec(spec, visit);
+            }
+        }
+        TypeExpression::Set(set) => match &set.element {
+            SetTypeElement::Spec(spec) => walk_function_type_spec(spec, visit),
+            SetTypeElement::Tuple(tuple) => {
+                for spec in &tuple.elements {
+                    walk_function_type_spec(spec, visit);
+                }
+            }
+        },
         TypeExpression::Function(function_type) => {
             for spec in function_type
                 .inputs
@@ -106,6 +119,6 @@ pub(in crate::backend::semantic) fn walk_type_expression(
 fn walk_function_type_spec(spec: &FunctionTypeSpec, visit: &mut impl FnMut(&SignatureShape)) {
     match &spec.kind {
         FunctionTypeSpecKind::Is(ty) => walk_type_expression(ty, visit),
-        FunctionTypeSpecKind::Spec { .. } => {}
+        FunctionTypeSpecKind::Spec { target, .. } => walk_expression(target, visit),
     }
 }

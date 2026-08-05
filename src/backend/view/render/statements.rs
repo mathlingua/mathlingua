@@ -127,7 +127,7 @@ pub(super) fn render_form_or_declaration(
             }
         }
         FormOrDeclarationKind::SetDeclaration { name, form } => {
-            let placeholder = render_placeholder_form(&form.placeholder_form, registry);
+            let placeholder = render_set_target(&form.target, registry);
             let rendered = if form.has_condition_placeholder {
                 format!("\\left\\{{{} \\: : \\: \\ldots\\right\\}}", placeholder)
             } else {
@@ -230,16 +230,33 @@ pub(super) fn render_function_type(
     function_type: &FunctionType,
     registry: &RenderRegistry,
 ) -> String {
-    format!(
-        "\\left({}\\right) \\Rightarrow \\left({}\\right)",
-        function_type
-            .inputs
-            .iter()
-            .map(|spec| render_function_type_spec(spec, registry))
-            .collect::<Vec<_>>()
-            .join(", "),
-        render_function_type_spec(&function_type.output, registry)
-    )
+    match function_type.notation {
+        FunctionTypeNotation::Specs => format!(
+            "\\left({}\\right) \\Rightarrow \\left({}\\right)",
+            function_type
+                .inputs
+                .iter()
+                .map(|spec| render_function_type_spec(spec, registry))
+                .collect::<Vec<_>>()
+                .join(", "),
+            render_function_type_spec(&function_type.output, registry)
+        ),
+        FunctionTypeNotation::Mapping => format!(
+            "\\left({}\\right) \\mapsto \\left({}\\right)",
+            render_compact_function_type_spec(&function_type.inputs[0], registry),
+            render_compact_function_type_spec(&function_type.output, registry)
+        ),
+        FunctionTypeNotation::Arrow => format!(
+            "\\left({}\\right) \\to \\left({}\\right)",
+            function_type
+                .inputs
+                .iter()
+                .map(|spec| render_compact_function_type_spec(spec, registry))
+                .collect::<Vec<_>>()
+                .join(", "),
+            render_compact_function_type_spec(&function_type.output, registry)
+        ),
+    }
 }
 
 fn render_function_type_spec(spec: &FunctionTypeSpec, registry: &RenderRegistry) -> String {
@@ -250,9 +267,43 @@ fn render_function_type_spec(spec: &FunctionTypeSpec, registry: &RenderRegistry)
         FunctionTypeSpecKind::Spec { operator, target } => format!(
             "\\_ {} {}",
             render_quoted_operator(operator),
-            escape_math_identifier(target, registry)
+            render_expression(target, registry)
         ),
     }
+}
+
+fn render_compact_function_type_spec(spec: &FunctionTypeSpec, registry: &RenderRegistry) -> String {
+    match &spec.kind {
+        FunctionTypeSpecKind::Is(ty) => format!(
+            "? \\textrm{{ is }} {}",
+            render_type_expression(ty, registry)
+        ),
+        FunctionTypeSpecKind::Spec { operator, target } => format!(
+            "? {} {}",
+            render_quoted_operator(operator),
+            render_expression(target, registry)
+        ),
+    }
+}
+
+fn render_tuple_type(tuple: &TupleType, registry: &RenderRegistry) -> String {
+    format!(
+        "\\left({}\\right)",
+        tuple
+            .elements
+            .iter()
+            .map(|spec| render_compact_function_type_spec(spec, registry))
+            .collect::<Vec<_>>()
+            .join(", ")
+    )
+}
+
+fn render_set_type(set: &SetType, registry: &RenderRegistry) -> String {
+    let element = match &set.element {
+        SetTypeElement::Spec(spec) => render_compact_function_type_spec(spec, registry),
+        SetTypeElement::Tuple(tuple) => render_tuple_type(tuple, registry),
+    };
+    format!("\\left\\{{{} \\: : \\: \\ldots\\right\\}}", element)
 }
 
 #[derive(Clone, Debug)]
@@ -299,6 +350,14 @@ fn render_type_expression_with_subject(
             }),
         TypeExpression::RefinedCommand(command) => RenderedTypeExpression {
             latex: render_refined_command_called(command, registry),
+            includes_subject: false,
+        },
+        TypeExpression::Tuple(tuple) => RenderedTypeExpression {
+            latex: render_tuple_type(tuple, registry),
+            includes_subject: false,
+        },
+        TypeExpression::Set(set) => RenderedTypeExpression {
+            latex: render_set_type(set, registry),
             includes_subject: false,
         },
         TypeExpression::Function(function_type) => RenderedTypeExpression {

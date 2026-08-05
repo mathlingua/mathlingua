@@ -9,11 +9,32 @@ pub(in crate::backend::semantic) fn walk_form_or_declaration(
         FormOrDeclarationKind::FunctionDeclaration { .. } => {}
         FormOrDeclarationKind::TupleDeclaration { form, .. } => walk_tuple_form(form, visit),
         FormOrDeclarationKind::SetDeclaration { form, .. } => {
-            walk_placeholder_form(&form.placeholder_form, visit);
+            walk_set_target(&form.target, visit);
         }
         FormOrDeclarationKind::InfixOperator { .. }
         | FormOrDeclarationKind::PrefixOperator { .. }
         | FormOrDeclarationKind::PostfixOperator { .. } => {}
+    }
+}
+
+fn walk_set_target(target: &SetTarget, visit: &mut impl FnMut(&SignatureShape)) {
+    match &target.kind {
+        SetTargetKind::Name(_) | SetTargetKind::PlaceholderForm(_) => {}
+        SetTargetKind::Alias { target, .. } | SetTargetKind::Introduction { target, .. } => {
+            walk_set_target(target, visit)
+        }
+        SetTargetKind::Function { arguments, .. } => {
+            for argument in arguments {
+                walk_set_target(argument, visit);
+            }
+        }
+        SetTargetKind::Tuple(elements) => {
+            for element in elements {
+                if let SetTargetElement::Target(target) = element {
+                    walk_set_target(target, visit);
+                }
+            }
+        }
     }
 }
 

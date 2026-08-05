@@ -5,6 +5,27 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Structural Spec-Literal Types
+
+Type expressions now support tuple, set, mapping, and multi-input function
+literals whose leaves are complete specification literals:
+
+```text
+(? is \natural, ? "in" \reals)
+{? is \natural : ...}
+{(? is \natural, ? "in" \reals) : ...}
+(? is \natural) |-> (? "in" \naturals)
+(? is \natural, ? "in" \reals) -> (? is \real)
+```
+
+The checker matches those shapes to tuple, set, and mapping terms and
+instantiates every `?` with the corresponding term component. Quoted
+specification operators are retained as spec facts; they are not reduced to
+ordinary `is` facts. A function definition may therefore declare its argument
+and result components individually or declare the function itself with one of
+the new function types. Raw nominal shapes such as `(\natural, \real)` remain
+invalid.
+
 ## Definition And Declaration Names
 
 The former `Defines:` group is now named `Declares:`, and the former

@@ -10,15 +10,16 @@ use super::ast::{
     CommandHeader, CommandHeaderNode, CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs,
     DeclarationRelation, DeclarationStatement, Expression, ExpressionAlias, ExpressionAliasLhs,
     ExpressionBinding, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionType,
-    FunctionTypeSpec, FunctionTypeSpecKind, HardCastStatement, InfixCommandHeader, InfixSpec,
-    InfixSpecExpressionRefinement, InfixSpecHeader, InfixSpecHeaderRefinement,
-    IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject, IsSubjectForm, IsSubjectKind,
-    IsViaStatement, LabelHeader, MemberAliasLhs, Operator, ParenExpressionArgs, ParenHeadingArgs,
-    Placeholder, PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement,
-    RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart,
-    RefinedTail, ResourceHeader, SetExpression, SetPredicate, SetTarget, SetTargetElement,
-    SetTargetKind, Span, SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind,
-    SubjectSpecStatement, TopicHeader, TupleExpressionElement, TypeExpression, WritingAlias,
+    FunctionTypeNotation, FunctionTypeSpec, FunctionTypeSpecKind, HardCastStatement,
+    InfixCommandHeader, InfixSpec, InfixSpecExpressionRefinement, InfixSpecHeader,
+    InfixSpecHeaderRefinement, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject,
+    IsSubjectForm, IsSubjectKind, IsViaStatement, LabelHeader, MemberAliasLhs, Operator,
+    ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm, PlaceholderFormKind,
+    PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
+    RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, SetExpression,
+    SetPredicate, SetTarget, SetTargetElement, SetTargetKind, SetType, SetTypeElement, Span,
+    SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement,
+    TopicHeader, TupleExpressionElement, TupleType, TypeExpression, WritingAlias,
 };
 use super::grammar;
 use super::lexer::{Lexer, Spanned};
@@ -1920,6 +1921,34 @@ pub(super) fn parse_type_expression(
         return parse_function_type_expression(input, allow_refined).map(TypeExpression::Function);
     }
 
+    if contains_top_level(input, "|->") {
+        return parse_compact_function_type_expression(
+            input,
+            "|->",
+            FunctionTypeNotation::Mapping,
+            allow_refined,
+        )
+        .map(TypeExpression::Function);
+    }
+
+    if contains_top_level(input, "->") {
+        return parse_compact_function_type_expression(
+            input,
+            "->",
+            FunctionTypeNotation::Arrow,
+            allow_refined,
+        )
+        .map(TypeExpression::Function);
+    }
+
+    if input.starts_with('(') {
+        return parse_tuple_type_expression(input, allow_refined).map(TypeExpression::Tuple);
+    }
+
+    if input.starts_with('{') {
+        return parse_set_type_expression(input, allow_refined).map(TypeExpression::Set);
+    }
+
     if allow_refined && contains_top_level(input, "::") {
         return parse_refined_command_expression(input).map(TypeExpression::RefinedCommand);
     }
@@ -1967,7 +1996,119 @@ fn parse_function_type_expression(
         span: span_all(input),
         inputs,
         output: outputs.remove(0),
+        notation: FunctionTypeNotation::Specs,
     })
+}
+
+/// Parses `(? is A) |-> (? is B)` and `(? is A, ? "in" B) -> (? is C)`.
+fn parse_compact_function_type_expression(
+    input: &str,
+    arrow: &str,
+    notation: FunctionTypeNotation,
+    allow_refined: bool,
+) -> Result<FunctionType, ParseError> {
+    let arrow_index = find_top_level_substring(input, arrow)
+        .ok_or_else(|| ParseError::custom(format!("expected top-level `{arrow}`")))?;
+    let input_text = input[..arrow_index].trim();
+    let output_text = input[arrow_index + arrow.len()..].trim();
+    if input_text.is_empty() || output_text.is_empty() {
+        return Err(ParseError::custom(format!(
+            "`{arrow}` requires an input type and an output type"
+        )));
+    }
+
+    let inputs = parse_function_type_spec_group(input_text, allow_refined)?;
+    let mut outputs = parse_function_type_spec_group(output_text, allow_refined)?;
+    require_spec_literal_subjects(&inputs)?;
+    require_spec_literal_subjects(&outputs)?;
+    match notation {
+        FunctionTypeNotation::Mapping if inputs.len() != 1 => {
+            return Err(ParseError::custom(
+                "`|->` function types require exactly one input spec literal",
+            ));
+        }
+        FunctionTypeNotation::Arrow if inputs.len() < 2 => {
+            return Err(ParseError::custom(
+                "`->` function types require at least two input spec literals",
+            ));
+        }
+        _ => {}
+    }
+    if outputs.len() != 1 {
+        return Err(ParseError::custom(
+            "compact function types require exactly one output spec literal",
+        ));
+    }
+
+    Ok(FunctionType {
+        span: span_all(input),
+        inputs,
+        output: outputs.remove(0),
+        notation,
+    })
+}
+
+fn parse_tuple_type_expression(input: &str, allow_refined: bool) -> Result<TupleType, ParseError> {
+    let (inside, rest) = consume_balanced_prefix(input.trim(), '(', ')')?;
+    if !rest.trim().is_empty() {
+        return Err(ParseError::custom(
+            "unexpected trailing text after tuple type",
+        ));
+    }
+    let elements = split_top_level(inside, ',')?
+        .into_iter()
+        .map(|element| parse_function_type_spec(element, allow_refined))
+        .collect::<Result<Vec<_>, _>>()?;
+    if elements.len() < 2 {
+        return Err(ParseError::custom(
+            "tuple literal types require at least two spec literals",
+        ));
+    }
+    require_spec_literal_subjects(&elements)?;
+    Ok(TupleType {
+        span: span_all(input),
+        elements,
+    })
+}
+
+fn parse_set_type_expression(input: &str, allow_refined: bool) -> Result<SetType, ParseError> {
+    let (inside, rest) = consume_balanced_prefix(input.trim(), '{', '}')?;
+    if !rest.trim().is_empty() {
+        return Err(ParseError::custom(
+            "unexpected trailing text after set type",
+        ));
+    }
+    let element_text = inside
+        .trim()
+        .strip_suffix("...")
+        .map(str::trim_end)
+        .and_then(|text| text.strip_suffix(':'))
+        .map(str::trim_end)
+        .filter(|text| !text.is_empty())
+        .ok_or_else(|| {
+            ParseError::custom("set literal types must have the form `{<spec literal> : ...}`")
+        })?;
+    let element = if element_text.starts_with('(') {
+        SetTypeElement::Tuple(parse_tuple_type_expression(element_text, allow_refined)?)
+    } else {
+        let spec = parse_function_type_spec(element_text, allow_refined)?;
+        require_spec_literal_subjects(std::slice::from_ref(&spec))?;
+        SetTypeElement::Spec(spec)
+    };
+    Ok(SetType {
+        span: span_all(input),
+        element,
+    })
+}
+
+fn require_spec_literal_subjects(specs: &[FunctionTypeSpec]) -> Result<(), ParseError> {
+    if specs.iter().all(|spec| spec.subject == "?") {
+        Ok(())
+    } else {
+        Err(ParseError::custom(
+            "structural literal types require `?` spec literals",
+        ))
+    }
 }
 
 /// Parses a parenthesized comma-separated group of function type specs.
@@ -2007,12 +2148,10 @@ fn parse_function_type_spec(
 
     let (subject_text, operator, target_text) =
         split_subject_operator_name(input).ok_or_else(|| {
-            ParseError::custom(
-                "expected function type spec of the form `_ is Type` or `_ \"op\" Name`",
-            )
+            ParseError::custom("expected a spec literal of the form `? is Type` or `? \"op\" Name`")
         })?;
     let subject = parse_function_type_spec_subject(subject_text)?;
-    let target = parse_name_token(target_text)?;
+    let target = parse_expression(target_text)?;
     if operator.is_empty() {
         return Err(ParseError::custom(
             "function type spec operator cannot be empty",
@@ -2024,7 +2163,7 @@ fn parse_function_type_spec(
         subject,
         kind: FunctionTypeSpecKind::Spec {
             operator: operator.to_owned(),
-            target,
+            target: Box::new(target),
         },
     })
 }
@@ -2338,6 +2477,25 @@ pub(super) fn parse_name_token(input: &str) -> Result<String, ParseError> {
 /// specification statement.
 pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     let input = input.trim();
+    if let Some(index) = find_top_level_substring(input, " is ") {
+        let type_text = input[index + 4..].trim();
+        if contains_top_level(type_text, "=>")
+            || contains_top_level(type_text, "|->")
+            || contains_top_level(type_text, "->")
+            || type_text.starts_with('(')
+            || type_text.starts_with('{')
+        {
+            let subject = parse_expression(&input[..index])?;
+            let ty = parse_type_expression(type_text, true)?;
+            return Ok(Expression::new(
+                span_all(input),
+                ExpressionKind::IsType {
+                    subject: Box::new(subject),
+                    ty,
+                },
+            ));
+        }
+    }
     if input.starts_with('{') {
         if let Ok(expression) = parse_set_expression(input) {
             return Ok(expression);
@@ -3206,10 +3364,11 @@ mod tests {
         BinaryOperator, BuiltinCommandArgument, ChainPart, CommandContextArgument,
         CommandContextKind, CommandHeader, CommandHeaderNode, DeclarationRelation, Expression,
         ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
-        FunctionNamedExpressionElementLhs, FunctionTypeSpecKind, IsOrRefinedStatementSpec,
-        IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind, PlaceholderFormKind,
-        RefinedTail, SetPredicate, SetTargetElement, SetTargetKind, SpecLiteral, SpecLiteralForm,
-        SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression,
+        FunctionNamedExpressionElementLhs, FunctionTypeNotation, FunctionTypeSpecKind,
+        IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind,
+        PlaceholderForm, PlaceholderFormKind, RefinedTail, SetPredicate, SetTargetElement,
+        SetTargetKind, SetTypeElement, SpecLiteral, SpecLiteralForm, SpecOperatorAliasTarget,
+        SpecSubjectKind, SubsetCall, TypeExpression,
     };
 
     // ===============================[ support ]=====================================
@@ -4164,8 +4323,11 @@ mod tests {
                 assert!(form.has_condition_placeholder);
                 assert!(form.variadic_tuple_target);
                 assert!(matches!(
-                    form.placeholder_form.kind,
-                    PlaceholderFormKind::Placeholder(ref placeholder) if placeholder.name == "x"
+                    form.target.kind,
+                    SetTargetKind::PlaceholderForm(PlaceholderForm {
+                        kind: PlaceholderFormKind::Placeholder(ref placeholder),
+                        ..
+                    }) if placeholder.name == "x"
                 ));
             }
             other => panic!("expected set declaration, got {other:?}"),
@@ -4592,8 +4754,11 @@ mod tests {
         match set_declaration.kind {
             FormOrDeclarationKind::SetDeclaration { name, form } => {
                 assert_eq!(name.as_deref(), Some("Set"));
-                match form.placeholder_form.kind {
-                    PlaceholderFormKind::Function { arguments, .. } => {
+                match form.target.kind {
+                    SetTargetKind::PlaceholderForm(PlaceholderForm {
+                        kind: PlaceholderFormKind::Function { arguments, .. },
+                        ..
+                    }) => {
                         assert_eq!(arguments.len(), 2);
                     }
                     other => panic!("expected placeholder function form, got {other:?}"),
@@ -5183,7 +5348,8 @@ mod tests {
                         FunctionTypeSpecKind::Spec {
                             ref operator,
                             ref target
-                        } if operator == "in" && target == "A"
+                        } if operator == "in"
+                            && matches!(target.kind, ExpressionKind::Name(ref name) if name == "A")
                     ));
                     assert!(matches!(
                         function_type.inputs[1].kind,
@@ -5194,12 +5360,76 @@ mod tests {
                         FunctionTypeSpecKind::Spec {
                             ref operator,
                             ref target
-                        } if operator == "in" && target == "B"
+                        } if operator == "in"
+                            && matches!(target.kind, ExpressionKind::Name(ref name) if name == "B")
                     ));
                 }
                 other => panic!("expected function type, got {other:?}"),
             },
             other => panic!("expected is statement, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_literal_tuple_set_and_function_types() {
+        let tuple = parse_ordinary_declaration_statement(r#"p is (? is \natural, ? "in" \reals)"#)
+            .expect("expected tuple type");
+        assert!(matches!(
+            tuple.relation,
+            Some(DeclarationRelation::Is(TypeExpression::Tuple(ref tuple)))
+                if tuple.elements.len() == 2
+        ));
+
+        let set = parse_ordinary_declaration_statement(r#"{x : ...} is {? is \natural : ...}"#)
+            .expect("expected set type");
+        assert!(matches!(
+            set.relation,
+            Some(DeclarationRelation::Is(TypeExpression::Set(_)))
+        ));
+
+        let tuple_set = parse_ordinary_declaration_statement(
+            r#"{(x, y) : ...} is {(? is \natural, ? "in" \reals) : ...}"#,
+        )
+        .expect("expected set-of-tuples type");
+        assert!(matches!(
+            tuple_set.relation,
+            Some(DeclarationRelation::Is(TypeExpression::Set(ref set)))
+                if matches!(set.element, SetTypeElement::Tuple(_))
+        ));
+
+        let mapping =
+            parse_ordinary_declaration_statement(r#"f is (? is \natural) |-> (? "in" \naturals)"#)
+                .expect("expected unary mapping type");
+        assert!(matches!(
+            mapping.relation,
+            Some(DeclarationRelation::Is(TypeExpression::Function(ref function)))
+                if function.notation == FunctionTypeNotation::Mapping
+                    && function.inputs.len() == 1
+        ));
+
+        let arrow = parse_ordinary_declaration_statement(
+            r#"f is (? is \natural, ? "in" \reals) -> (? is \real)"#,
+        )
+        .expect("expected multi-argument function type");
+        assert!(matches!(
+            arrow.relation,
+            Some(DeclarationRelation::Is(TypeExpression::Function(ref function)))
+                if function.notation == FunctionTypeNotation::Arrow
+                    && function.inputs.len() == 2
+        ));
+
+        for raw in [
+            r#"p is (\natural, \real)"#,
+            r#"X is {\natural : ...}"#,
+            r#"f is \natural |-> \natural"#,
+            r#"f is (\natural, \real) -> \real"#,
+            r#"p is (_ is \natural, _ is \real)"#,
+            r#"X is {_ is \natural : ...}"#,
+            r#"f is (_ is \natural) |-> (_ is \natural)"#,
+            r#"f is (_ is \natural, _ is \real) -> (_ is \real)"#,
+        ] {
+            parse_ordinary_declaration_statement(raw)
+                .expect_err("raw types must not be accepted in literal type positions");
         }
     }
 

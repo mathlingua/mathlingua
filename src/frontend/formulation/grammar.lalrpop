@@ -317,23 +317,26 @@ SetTarget: ast::SetTarget = {
 };
 
 SetForm: ast::SetForm = {
-    <l:@L> "{" <placeholder_form:PlaceholderForm> "}" <r:@R> => ast::SetForm {
+    <l:@L> "{" <target:SetTarget> "}" <r:@R> => ast::SetForm {
         span: Span::new(l, r),
-        placeholder_form,
+        target,
         has_condition_placeholder: false,
         variadic_tuple_target: false,
     },
-    <l:@L> "{" <placeholder_form:PlaceholderForm> ":" "..." "}" <r:@R> => ast::SetForm {
+    <l:@L> "{" <target:SetTarget> ":" "..." "}" <r:@R> => ast::SetForm {
         span: Span::new(l, r),
-        placeholder_form,
+        target,
         has_condition_placeholder: true,
         variadic_tuple_target: false,
     },
     <l:@L> "{" <placeholder:MagneticPlaceholder> ":" "..." "}" <r:@R> => ast::SetForm {
         span: Span::new(l, r),
-        placeholder_form: ast::PlaceholderForm::new(
+        target: ast::SetTarget::new(
             placeholder.span,
-            PlaceholderFormKind::Placeholder(ast::Placeholder::new(placeholder.span, placeholder.name)),
+            SetTargetKind::PlaceholderForm(ast::PlaceholderForm::new(
+                placeholder.span,
+                PlaceholderFormKind::Placeholder(ast::Placeholder::new(placeholder.span, placeholder.name)),
+            )),
         ),
         has_condition_placeholder: true,
         variadic_tuple_target: true,

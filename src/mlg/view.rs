@@ -2,23 +2,24 @@ use crate::backend::collection::SourceCollection;
 use crate::backend::view::CollectionView;
 use crate::events::{Event, EventLog, EventLogListener};
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since};
+use crate::mlg::view_assets::{ViewerPageConfig, configured_viewer_index, viewer_asset};
 use serde_json::to_writer_pretty;
 use std::fs;
-use std::io::{self, BufRead, BufReader};
+use std::io;
 use std::net::TcpListener;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, ExitStatus, Stdio};
 use std::sync::{
     Arc,
     atomic::{AtomicBool, AtomicUsize, Ordering},
-    mpsc::{self, Receiver, RecvTimeoutError, Sender},
+    mpsc::{self, Receiver, Sender},
 };
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tiny_http::{Header, Method, Request, Response, Server, StatusCode};
 
-const NEXTJS_ORIGIN: &str = "nextjs";
 const ORIGIN: &str = "mlg_view";
 const VIEW_BIND_HOST: &str = "0.0.0.0";
+const COLLECTION_DATA_URL: &str = "/api/collection.json";
 static NEXT_VIEW_SESSION_DIR_ID: AtomicUsize = AtomicUsize::new(0);
 
 pub struct ViewResult {
@@ -56,7 +57,6 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
             collection.source_files().len()
         ),
     );
-
     collection.run_check_passes(event_log, ORIGIN);
 
     if has_blocking_user_issues_since(event_log, starting_event_count) {
@@ -76,7 +76,6 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
             collection.parsed_files().len()
         ),
     );
-
     let Some(collection_view) = collection.build_view(event_log) else {
         event_log.user_error(
             Some(ORIGIN),
@@ -87,15 +86,25 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
         ));
     };
 
+    let listener = bind_view_listener(port, event_log)?;
+    let bound_port = listener.local_addr()?.port();
+    let server = Server::from_listener(listener, None)
+        .map_err(|error| io::Error::other(format!("Could not start viewer server: {error}")))?;
+    let index = configured_viewer_index(&ViewerPageConfig {
+        base_href: "/",
+        route_base_path: "",
+        collection_data_path: Some(COLLECTION_DATA_URL),
+        static_data_base_path: None,
+    })?;
+
     let view_session_dir = create_view_session_dir()?;
     let view_data_path = view_session_dir.join("collection.json");
+    if let Err(error) = write_collection_view_data(&view_data_path, &collection_view) {
+        let _ = fs::remove_dir_all(&view_session_dir);
+        return Err(error);
+    }
 
-    write_collection_view_data(&view_data_path, &collection_view)?;
-    ensure_web_dependencies(event_log)?;
-
-    check_port_is_available(port, event_log)?;
-
-    let url = format!("http://localhost:{port}/");
+    let url = format!("http://localhost:{bound_port}/");
     event_log.user_log(Some(ORIGIN), format!("Starting viewer at {url}"));
 
     let (refresh_sender, refresh_receiver) = mpsc::channel();
@@ -106,26 +115,39 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
         Arc::clone(&stop_refresh),
         refresh_sender,
     );
-    let result = run_next_server(&view_data_path, port, &url, refresh_receiver, event_log);
+
+    event_log.user_log(Some(ORIGIN), format!("Viewer ready at {url}"));
+    let result = run_view_server(
+        &server,
+        &view_data_path,
+        &index,
+        &refresh_receiver,
+        event_log,
+    );
     stop_refresh.store(true, Ordering::Relaxed);
     join_view_data_refresher(refresh_thread, event_log);
     let _ = fs::remove_dir_all(&view_session_dir);
     result
 }
 
-/// Reports an unusable port before the web viewer is started.
-///
-/// Binding here is a pre-flight probe: the listener is dropped immediately and
-/// the real server binds the port a moment later. Something else can still take
-/// the port in that gap, so this is a way to give a clear message in the common
-/// case, not a guarantee — [`describe_child_startup_failure`] covers the rest.
-fn check_port_is_available(port: u16, event_log: &mut EventLog) -> io::Result<()> {
-    let error = match TcpListener::bind((VIEW_BIND_HOST, port)) {
-        Ok(_) => return Ok(()),
-        Err(error) => error,
-    };
+fn bind_view_listener(port: u16, event_log: &mut EventLog) -> io::Result<TcpListener> {
+    match TcpListener::bind((VIEW_BIND_HOST, port)) {
+        Ok(listener) => Ok(listener),
+        Err(error) => {
+            let message = port_error_message(port, &error);
+            event_log.user_error(Some(ORIGIN), message.clone());
+            Err(io::Error::new(error.kind(), message))
+        }
+    }
+}
 
-    let message = match error.kind() {
+#[cfg(test)]
+fn check_port_is_available(port: u16, event_log: &mut EventLog) -> io::Result<()> {
+    bind_view_listener(port, event_log).map(drop)
+}
+
+fn port_error_message(port: u16, error: &io::Error) -> String {
+    match error.kind() {
         io::ErrorKind::AddrInUse => format!(
             "Port {port} is already in use by another program. \
              Stop that program, or start the viewer on a different port with `mlg view --port <PORT>`"
@@ -135,10 +157,7 @@ fn check_port_is_available(port: u16, event_log: &mut EventLog) -> io::Result<()
              Ports below 1024 usually require elevated privileges, so try `mlg view --port <PORT>` with a port above 1024"
         ),
         _ => format!("Port {port} is not available for the viewer: {error}"),
-    };
-
-    event_log.user_error(Some(ORIGIN), message.clone());
-    Err(io::Error::new(error.kind(), message))
+    }
 }
 
 fn finish_view_setup_with_possible_errors(event_log: &mut EventLog) -> io::Result<()> {
@@ -150,233 +169,101 @@ fn finish_view_setup_with_possible_errors(event_log: &mut EventLog) -> io::Resul
     }
 }
 
-fn ensure_web_dependencies(event_log: &mut EventLog) -> io::Result<()> {
-    let web_dir = web_app_directory();
-    if web_dir.join("node_modules").is_dir() {
-        return Ok(());
-    }
-
-    event_log.user_log(Some(ORIGIN), "Installing web viewer dependencies");
-    run_child(
-        {
-            let mut command = Command::new("npm");
-            command.arg("install").current_dir(web_dir);
-            command
-        },
-        NEXTJS_ORIGIN,
-        event_log,
-        None,
-        None,
-        None,
-    )?;
-
-    Ok(())
-}
-
-fn run_next_server(
+fn run_view_server(
+    server: &Server,
     view_data_path: &Path,
-    port: u16,
-    url: &str,
-    refresh_receiver: Receiver<Vec<Event>>,
+    index: &[u8],
+    refresh_receiver: &Receiver<Vec<Event>>,
     event_log: &mut EventLog,
 ) -> io::Result<()> {
-    let mut command = Command::new("npm");
-    command
-        .arg("run")
-        .arg("dev")
-        .arg("--")
-        .arg("--hostname")
-        .arg(VIEW_BIND_HOST)
-        .arg("--port")
-        .arg(port.to_string())
-        .current_dir(web_app_directory())
-        .env("MLG_VIEW_DATA_PATH", view_data_path)
-        .env("NEXT_TELEMETRY_DISABLED", "1");
+    loop {
+        drain_refresh_events(refresh_receiver, event_log);
+        if let Some(request) = server.recv_timeout(Duration::from_millis(100))? {
+            if let Err(error) = serve_view_request(request, view_data_path, index) {
+                event_log.system_warning(
+                    Some(ORIGIN),
+                    format!("Could not complete a viewer request: {error}"),
+                );
+            }
+        }
+    }
+}
 
-    run_child(
-        command,
-        NEXTJS_ORIGIN,
-        event_log,
-        Some(url),
-        Some(refresh_receiver),
-        Some(port),
+fn serve_view_request(request: Request, view_data_path: &Path, index: &[u8]) -> io::Result<()> {
+    if !matches!(request.method(), Method::Get | Method::Head) {
+        return request
+            .respond(Response::empty(StatusCode(405)).with_header(header("Allow", "GET, HEAD")?));
+    }
+
+    let url_path = request.url().split('?').next().unwrap_or("/");
+    let asset_path = url_path.trim_start_matches('/');
+    if asset_path.split('/').any(|part| part == "..") {
+        return request.respond(Response::empty(StatusCode(400)));
+    }
+
+    if url_path == COLLECTION_DATA_URL {
+        let body = fs::read(view_data_path)?;
+        return request.respond(
+            response(body, StatusCode(200), "application/json; charset=utf-8")?
+                .with_header(header("Cache-Control", "no-store")?),
+        );
+    }
+
+    if asset_path == "index.html" || asset_path.is_empty() {
+        return request.respond(index_response(index)?);
+    }
+
+    if let Some(body) = viewer_asset(asset_path) {
+        let mime = mime_guess::from_path(asset_path).first_or_octet_stream();
+        return request.respond(
+            response(body, StatusCode(200), mime.essence_str())?.with_header(header(
+                "Cache-Control",
+                "public, max-age=31536000, immutable",
+            )?),
+        );
+    }
+
+    if looks_like_asset_path(asset_path) {
+        return request.respond(Response::empty(StatusCode(404)));
+    }
+
+    request.respond(index_response(index)?)
+}
+
+fn looks_like_asset_path(path: &str) -> bool {
+    path.starts_with("assets/")
+        || Path::new(path)
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.contains('.'))
+}
+
+fn index_response(index: &[u8]) -> io::Result<Response<std::io::Cursor<Vec<u8>>>> {
+    Ok(
+        response(index.to_vec(), StatusCode(200), "text/html; charset=utf-8")?
+            .with_header(header("Cache-Control", "no-cache")?),
     )
 }
 
-fn run_child(
-    mut command: Command,
-    origin: &str,
-    event_log: &mut EventLog,
-    ready_url: Option<&str>,
-    refresh_receiver: Option<Receiver<Vec<Event>>>,
-    port: Option<u16>,
-) -> io::Result<()> {
-    command.stdout(Stdio::piped()).stderr(Stdio::piped());
-
-    let mut child = match command.spawn() {
-        Ok(child) => child,
-        Err(error) => {
-            event_log.user_error(
-                Some(ORIGIN),
-                format!("Failed to start the web viewer process: {error}"),
-            );
-            return Err(error);
-        }
-    };
-
-    let (sender, receiver) = mpsc::channel();
-    let stdout_thread = child
-        .stdout
-        .take()
-        .map(|stdout| spawn_output_reader(stdout, sender.clone()));
-    let stderr_thread = child
-        .stderr
-        .take()
-        .map(|stderr| spawn_output_reader(stderr, sender));
-
-    let outcome = stream_child_output(
-        &mut child,
-        receiver,
-        refresh_receiver,
-        origin,
-        event_log,
-        ready_url,
-    );
-    join_output_thread(stdout_thread, event_log);
-    join_output_thread(stderr_thread, event_log);
-    let outcome = outcome?;
-
-    if !outcome.was_ready && ready_url.is_some() {
-        let message = describe_child_startup_failure(&outcome, port);
-        event_log.user_error(Some(ORIGIN), message.clone());
-        return Err(io::Error::other(message));
-    }
-
-    if outcome.status.success() {
-        Ok(())
-    } else {
-        event_log.user_error(
-            Some(ORIGIN),
-            format!("The web viewer exited with status {}", outcome.status),
-        );
-        Err(io::Error::other(format!(
-            "The web viewer exited with status {}",
-            outcome.status
-        )))
-    }
+fn response(
+    body: Vec<u8>,
+    status: StatusCode,
+    content_type: &str,
+) -> io::Result<Response<std::io::Cursor<Vec<u8>>>> {
+    Ok(Response::from_data(body)
+        .with_status_code(status)
+        .with_header(header("Content-Type", content_type)?))
 }
 
-fn stream_child_output(
-    child: &mut Child,
-    output_receiver: Receiver<OutputLine>,
-    refresh_receiver: Option<Receiver<Vec<Event>>>,
-    origin: &str,
-    event_log: &mut EventLog,
-    ready_url: Option<&str>,
-) -> io::Result<ChildOutcome> {
-    let mut was_ready = false;
-    let mut recent_output: Vec<String> = Vec::new();
-
-    let handle_line = |line: OutputLine,
-                       was_ready: &mut bool,
-                       recent_output: &mut Vec<String>,
-                       event_log: &mut EventLog| {
-        let is_ready = is_ready_line(&line.text);
-        if is_ready
-            && !*was_ready
-            && let Some(url) = ready_url
-        {
-            event_log.user_log(Some(ORIGIN), format!("Viewer ready at {url}"));
-        }
-        *was_ready |= is_ready;
-
-        if recent_output.len() == RECENT_OUTPUT_LIMIT {
-            recent_output.remove(0);
-        }
-        recent_output.push(line.text.clone());
-
-        log_child_output(line, origin, event_log);
-    };
-
-    loop {
-        drain_refresh_events(refresh_receiver.as_ref(), event_log);
-
-        match output_receiver.recv_timeout(Duration::from_millis(100)) {
-            Ok(line) => handle_line(line, &mut was_ready, &mut recent_output, event_log),
-            Err(RecvTimeoutError::Timeout) => {
-                drain_refresh_events(refresh_receiver.as_ref(), event_log);
-                if let Some(status) = child.try_wait()? {
-                    while let Ok(line) = output_receiver.try_recv() {
-                        handle_line(line, &mut was_ready, &mut recent_output, event_log);
-                    }
-                    drain_refresh_events(refresh_receiver.as_ref(), event_log);
-                    return Ok(ChildOutcome {
-                        status,
-                        was_ready,
-                        recent_output,
-                    });
-                }
-            }
-            Err(RecvTimeoutError::Disconnected) => {
-                drain_refresh_events(refresh_receiver.as_ref(), event_log);
-                return child.wait().map(|status| ChildOutcome {
-                    status,
-                    was_ready,
-                    recent_output,
-                });
-            }
-        }
-    }
+fn header(name: &str, value: &str) -> io::Result<Header> {
+    Header::from_bytes(name.as_bytes(), value.as_bytes())
+        .map_err(|_| io::Error::other(format!("Invalid HTTP header `{name}: {value}`")))
 }
 
-fn drain_refresh_events(receiver: Option<&Receiver<Vec<Event>>>, event_log: &mut EventLog) {
-    let Some(receiver) = receiver else {
-        return;
-    };
-
+fn drain_refresh_events(receiver: &Receiver<Vec<Event>>, event_log: &mut EventLog) {
     while let Ok(events) = receiver.try_recv() {
         for event in events {
             event_log.push(event);
-        }
-    }
-}
-
-fn log_child_output(line: OutputLine, origin: &str, event_log: &mut EventLog) {
-    event_log.system_log(Some(origin), line.text);
-}
-
-fn spawn_output_reader(
-    stream: impl io::Read + Send + 'static,
-    sender: Sender<OutputLine>,
-) -> JoinHandle<io::Result<()>> {
-    thread::spawn(move || {
-        let reader = BufReader::new(stream);
-        for line in reader.lines() {
-            let line = line?;
-            if sender.send(OutputLine { text: line }).is_err() {
-                break;
-            }
-        }
-
-        Ok(())
-    })
-}
-
-fn join_output_thread(thread: Option<JoinHandle<io::Result<()>>>, event_log: &mut EventLog) {
-    let Some(thread) = thread else {
-        return;
-    };
-
-    match thread.join() {
-        Ok(Ok(())) => {}
-        Ok(Err(error)) => {
-            event_log.system_warning(
-                Some(ORIGIN),
-                format!("Failed to read web viewer output: {error}"),
-            );
-        }
-        Err(_) => {
-            event_log.system_warning(Some(ORIGIN), "A web viewer output thread panicked");
         }
     }
 }
@@ -394,7 +281,6 @@ fn write_collection_view_data(path: &Path, collection_view: &CollectionView) -> 
     if result.is_err() {
         let _ = fs::remove_file(&temp_path);
     }
-
     result
 }
 
@@ -449,14 +335,12 @@ fn spawn_view_data_refresher(
 fn join_view_data_refresher(thread: JoinHandle<io::Result<()>>, event_log: &mut EventLog) {
     match thread.join() {
         Ok(Ok(())) => {}
-        Ok(Err(error)) => {
-            event_log.system_warning(
-                Some(ORIGIN),
-                format!("Failed to refresh rendered view data: {error}"),
-            );
-        }
+        Ok(Err(error)) => event_log.system_warning(
+            Some(ORIGIN),
+            format!("Failed to refresh rendered view data: {error}"),
+        ),
         Err(_) => {
-            event_log.system_warning(Some(ORIGIN), "The rendered view refresher thread panicked");
+            event_log.system_warning(Some(ORIGIN), "The rendered view refresher thread panicked")
         }
     }
 }
@@ -540,96 +424,9 @@ fn create_view_session_dir() -> io::Result<PathBuf> {
         .as_nanos();
     let id = NEXT_VIEW_SESSION_DIR_ID.fetch_add(1, Ordering::Relaxed);
     let path =
-        std::env::temp_dir().join(format!("mlg-view-{}-{}-{}", std::process::id(), unique, id));
+        std::env::temp_dir().join(format!("mlg-view-{}-{}-{id}", std::process::id(), unique));
     fs::create_dir(&path)?;
     Ok(path)
-}
-
-fn web_app_directory() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("web")
-}
-
-fn is_ready_line(text: &str) -> bool {
-    text.contains("Ready in") || text.contains("Local:")
-}
-
-struct OutputLine {
-    text: String,
-}
-
-struct ChildOutcome {
-    status: ExitStatus,
-    was_ready: bool,
-    /// The tail of the child's combined stdout/stderr, used to explain a startup
-    /// failure. Bounded so a chatty child cannot grow this without limit.
-    recent_output: Vec<String>,
-}
-
-/// How many trailing output lines are kept to diagnose a startup failure.
-const RECENT_OUTPUT_LIMIT: usize = 50;
-
-/// How many output lines are quoted back to the user for an unrecognized failure.
-const REPORTED_OUTPUT_LINES: usize = 5;
-
-/// Explains why the web viewer exited before it was ready, in the user's terms.
-///
-/// The child is a Next.js process, so the specifics arrive only as text on its
-/// output. Recognized causes get an actionable message; anything else falls back
-/// to quoting the child's own last words, which beats a bare "it exited".
-fn describe_child_startup_failure(outcome: &ChildOutcome, port: Option<u16>) -> String {
-    startup_failure_message(&outcome.recent_output, &outcome.status.to_string(), port)
-}
-
-/// Builds the startup-failure message from the child's output and exit status.
-///
-/// Split from [`describe_child_startup_failure`] so that the wording can be
-/// exercised without spawning a process purely to obtain an `ExitStatus`.
-fn startup_failure_message(recent_output: &[String], status: &str, port: Option<u16>) -> String {
-    let output = recent_output.join("\n");
-
-    if output.contains("EADDRINUSE") || output.contains("address already in use") {
-        return match port {
-            Some(port) => format!(
-                "The viewer could not start because port {port} is already in use by another program. \
-                 Stop that program, or start the viewer on a different port with `mlg view --port <PORT>`"
-            ),
-            None => {
-                "The viewer could not start because its port is already in use by another program"
-                    .to_string()
-            }
-        };
-    }
-
-    if output.contains("EACCES") || output.contains("permission denied") {
-        return match port {
-            Some(port) => format!(
-                "The viewer could not start because it is not permitted to open port {port}. \
-                 Ports below 1024 usually require elevated privileges, so try `mlg view --port <PORT>` with a port above 1024"
-            ),
-            None => "The viewer could not start because it was denied permission".to_string(),
-        };
-    }
-
-    let details = recent_output
-        .iter()
-        .map(|line| line.trim())
-        .filter(|line| !line.is_empty())
-        .rev()
-        .take(REPORTED_OUTPUT_LINES)
-        .collect::<Vec<_>>()
-        .into_iter()
-        .rev()
-        .collect::<Vec<_>>()
-        .join("\n  ");
-
-    if details.is_empty() {
-        return format!(
-            "The web viewer exited before it became ready, without reporting a reason \
-             (it exited with status {status})"
-        );
-    }
-
-    format!("The web viewer exited before it became ready. It reported:\n  {details}")
 }
 
 // ===============================[ tests ]=====================================
@@ -638,8 +435,7 @@ fn startup_failure_message(recent_output: &[String], status: &str, port: Option<
 mod tests {
     use super::{
         VIEW_BIND_HOST, ViewDataRefresh, check_port_is_available, create_view_session_dir,
-        rebuild_collection_view_data, startup_failure_message, web_app_directory,
-        write_collection_view_data,
+        looks_like_asset_path, rebuild_collection_view_data, write_collection_view_data,
     };
     use crate::backend::view::{CollectionView, FileView, GroupView, PageView, SectionView};
     use crate::events::EventLog;
@@ -647,18 +443,6 @@ mod tests {
     use std::fs;
     use std::net::TcpListener;
 
-    fn failure_message(lines: &[&str], port: Option<u16>) -> String {
-        let output = lines
-            .iter()
-            .map(|line| line.to_string())
-            .collect::<Vec<_>>();
-        startup_failure_message(&output, "exit status: 1", port)
-    }
-
-    /// Only the rejection path is covered here. The success path would mean
-    /// releasing an ephemeral port and expecting to re-bind that exact port, which
-    /// is not reliable in a suite that forks subprocesses: a concurrent fork can
-    /// inherit the listening socket and hold the port past its release.
     #[test]
     fn reports_an_occupied_port_as_being_in_use() {
         let listener = TcpListener::bind((VIEW_BIND_HOST, 0)).expect("expected a bound port");
@@ -681,53 +465,10 @@ mod tests {
     }
 
     #[test]
-    fn explains_an_address_in_use_startup_failure() {
-        let message = failure_message(
-            &[
-                " ⨯ Failed to start server",
-                "Error: listen EADDRINUSE: address already in use 0.0.0.0:3999",
-            ],
-            Some(3999),
-        );
-
-        assert!(message.contains("port 3999 is already in use"));
-        assert!(message.contains("mlg view --port"));
-    }
-
-    #[test]
-    fn explains_a_permission_denied_startup_failure() {
-        let message = failure_message(
-            &["Error: listen EACCES: permission denied 0.0.0.0:80"],
-            Some(80),
-        );
-
-        assert!(message.contains("not permitted to open port 80"));
-        assert!(message.contains("above 1024"));
-    }
-
-    #[test]
-    fn quotes_the_child_output_for_an_unrecognized_startup_failure() {
-        let message = failure_message(
-            &[
-                "",
-                "> dev",
-                "Error: Cannot find module 'next'",
-                "   at Module._resolveFilename",
-            ],
-            Some(3000),
-        );
-
-        assert!(message.contains("exited before it became ready"));
-        assert!(message.contains("Cannot find module 'next'"));
-        // Blank lines are dropped rather than padding the quoted output.
-        assert!(!message.contains("\n  \n"));
-    }
-
-    #[test]
-    fn reports_a_silent_startup_failure_without_quoting_empty_output() {
-        let message = failure_message(&[], Some(3000));
-
-        assert!(message.contains("without reporting a reason"));
+    fn distinguishes_viewer_routes_from_missing_assets() {
+        assert!(!looks_like_asset_path("sets/groups"));
+        assert!(looks_like_asset_path("assets/missing.js"));
+        assert!(looks_like_asset_path("favicon.ico"));
     }
 
     #[test]
@@ -765,17 +506,10 @@ mod tests {
         };
 
         write_collection_view_data(&path, &collection).expect("expected json file");
-
         let contents = fs::read_to_string(&path).expect("expected collection data");
         assert!(contents.contains("\"title\": \"demo\""));
         assert!(contents.contains("\"path\": \"content/example.mlg\""));
-
         let _ = fs::remove_dir_all(dir);
-    }
-
-    #[test]
-    fn points_to_the_embedded_web_app_directory() {
-        assert!(web_app_directory().join("package.json").is_file());
     }
 
     #[test]
@@ -797,7 +531,6 @@ mod tests {
             "[\\set]\nDefines: S\nDocumented:\n. called: \"set\"\n",
         )
         .expect("expected source file");
-
         assert_eq!(
             rebuild_collection_view_data(&root, &path).expect("expected initial view data"),
             ViewDataRefresh::Updated
@@ -810,14 +543,12 @@ mod tests {
             "[\\set]\nDefines: S\nDocumented:\n. called: \"updated set\"\n",
         )
         .expect("expected updated source file");
-
         assert_eq!(
             rebuild_collection_view_data(&root, &path).expect("expected refreshed view data"),
             ViewDataRefresh::Updated
         );
         let contents = fs::read_to_string(&path).expect("expected refreshed data");
         assert!(contents.contains("\\\\textrm{updated set}"));
-
         let _ = fs::remove_dir_all(dir);
     }
 
@@ -832,34 +563,25 @@ mod tests {
 
         fs::create_dir_all(&visible_dir).expect("expected visible dir");
         fs::create_dir_all(&hidden_dir).expect("expected hidden dir");
-        fs::write(content.join("alpha_file.mlg"), "Title: \"Alpha\"\n")
-            .expect("expected alpha source file");
-        fs::write(content.join("gamma_file.mlg"), "Title: \"Gamma\"\n")
-            .expect("expected gamma source file");
-        fs::write(content.join("hidden_file.mlg"), "Title: \"Hidden\"\n")
-            .expect("expected hidden source file");
-        fs::write(visible_dir.join("inside.mlg"), "Title: \"Inside\"\n")
-            .expect("expected visible directory source file");
-        fs::write(hidden_dir.join("inside.mlg"), "Title: \"Hidden Inside\"\n")
-            .expect("expected hidden directory source file");
+        fs::write(content.join("alpha_file.mlg"), "Title: \"Alpha\"\n").unwrap();
+        fs::write(content.join("gamma_file.mlg"), "Title: \"Gamma\"\n").unwrap();
+        fs::write(content.join("hidden_file.mlg"), "Title: \"Hidden\"\n").unwrap();
+        fs::write(visible_dir.join("inside.mlg"), "Title: \"Inside\"\n").unwrap();
+        fs::write(hidden_dir.join("inside.mlg"), "Title: \"Hidden Inside\"\n").unwrap();
         fs::write(
             content.join("toc"),
             "gamma_file.mlg -> Custom Gamma\nvisible_dir -> Visible Directory\nhidden_dir -> HIDDEN\nhidden_file.mlg -> HIDDEN\nalpha_file.mlg\n",
         )
-        .expect("expected toc file");
+        .unwrap();
 
         assert_eq!(
             rebuild_collection_view_data(&root, &path).expect("expected view data"),
             ViewDataRefresh::Updated
         );
-
         let contents = fs::read_to_string(&path).expect("expected collection data");
         let json: Value = serde_json::from_str(&contents).expect("expected json");
-        let directories = json["directories"]
-            .as_array()
-            .expect("expected directories");
-        let files = json["files"].as_array().expect("expected files");
-
+        let directories = json["directories"].as_array().unwrap();
+        let files = json["files"].as_array().unwrap();
         assert_eq!(directories.len(), 1);
         assert_eq!(directories[0]["path"], "content/visible_dir");
         assert_eq!(directories[0]["title"], "Visible Directory");
@@ -871,7 +593,6 @@ mod tests {
         assert!(files[2]["title"].is_null());
         assert!(!contents.contains("hidden_file.mlg"));
         assert!(!contents.contains("hidden_dir"));
-
         let _ = fs::remove_dir_all(dir);
     }
 
@@ -888,30 +609,25 @@ mod tests {
             &file,
             "[\\set]\nDefines: S\nDocumented:\n. called: \"set\"\n",
         )
-        .expect("expected source file");
-
+        .unwrap();
         assert_eq!(
-            rebuild_collection_view_data(&root, &path).expect("expected initial view data"),
+            rebuild_collection_view_data(&root, &path).unwrap(),
             ViewDataRefresh::Updated
         );
 
-        fs::write(&file, "[\\set]\nDefines: S\n").expect("expected invalid source file");
-
-        let outcome =
-            rebuild_collection_view_data(&root, &path).expect("expected blocked refresh result");
-        let ViewDataRefresh::Blocked(events) = outcome else {
+        fs::write(&file, "[\\set]\nDefines: S\n").unwrap();
+        let ViewDataRefresh::Blocked(events) = rebuild_collection_view_data(&root, &path).unwrap()
+        else {
             panic!("expected blocked refresh");
         };
         assert!(
             events
                 .iter()
                 .filter_map(|event| event.as_message())
-                .any(|message| message.message.contains("Rendered view was not updated"))
+                .any(|message| { message.message.contains("Rendered view was not updated") })
         );
-
         let contents = fs::read_to_string(&path).expect("expected last good data");
         assert!(contents.contains("\\\\textrm{set}"));
-
         let _ = fs::remove_dir_all(dir);
     }
 }

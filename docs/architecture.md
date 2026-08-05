@@ -15,8 +15,8 @@ For language syntax details, use these companion documents:
 
 ## System Overview
 
-The repository contains one Rust crate named `mlg` plus an embedded Next.js
-viewer under `web/`.
+The repository contains one Rust crate named `mlg` plus a React viewer under
+`web/`. The viewer's prebuilt static assets are embedded in the Rust binary.
 
 At a high level, the system does five jobs:
 
@@ -50,11 +50,11 @@ mlg view
       -> render registry
       -> proto parser for display layout
   -> temporary collection.json
-  -> Next.js viewer
+  -> embedded HTTP server and static viewer assets
 
 mlg export
   -> the same collection checks and view-model generation as `mlg view`
-  -> static Next.js build and route data
+  -> embedded static viewer assets and route data
 
 mlg lsp
   -> collection diagnostics and context-aware completion
@@ -87,11 +87,12 @@ Important roots:
 - `goldens/` contains expected parser outputs used by parser tests.
 - `src/` contains the Rust CLI, parsers, semantic checker, renderer, and event
   system.
-- `web/` contains the embedded Next.js viewer launched by `mlg view`.
+- `web/` contains the React/Vite viewer sources and the generated `web/dist/`
+  assets embedded into `mlg`.
 
-Generated/build artifacts such as `target/`, `web/.next/`, and
-`web/node_modules/` are not architectural source. They may exist locally after
-running builds or the viewer.
+Generated/build artifacts such as `target/` and `web/node_modules/` are not
+architectural source. `web/dist/` is an exception: it is checked in and shipped
+in the crate so installed `mlg` binaries do not require Node.js or npm.
 
 ## Rust Crate Shape
 
@@ -490,7 +491,8 @@ builder is therefore a rendering pass, not a second private checker.
 
 Location: `web/`
 
-The web viewer is a Next.js application launched by `mlg view`.
+The web viewer is a static React application built with Vite. Its generated
+assets are compiled into the Rust executable with `rust-embed`.
 
 Source layout:
 
@@ -498,27 +500,40 @@ Source layout:
 web/
 ├── app/
 ├── components/
+├── dist/
 ├── lib/
+├── public/
+├── index.html
 ├── package.json
-├── next.config.ts
+├── vite.config.ts
 └── tsconfig.json
 ```
 
 Key files:
 
-- `web/app/page.tsx` and `web/app/[...path]/page.tsx` route all viewer paths to
-  the same viewer page.
-- `web/app/viewer-page.tsx` loads the collection view and renders the shell.
-- `web/lib/data.ts` reads the JSON payload from `MLG_VIEW_DATA_PATH`.
+- `web/app/main.tsx` reads the runtime configuration, loads the collection view,
+  and renders the shell.
+- `web/index.html` contains placeholders that Rust replaces with the live or
+  exported viewer configuration.
+- `web/vite.config.ts` provides the frontend development server and its local
+  collection-data endpoint.
+- `web/dist/` contains the committed production build embedded by
+  `src/mlg/view_assets.rs`.
 - `web/lib/types.ts` mirrors the Rust serialized view model.
 - `web/lib/presenter.ts` contains route, label, and file-browser presentation
   helpers.
 - `web/components/` renders the viewer shell, file list, group cards, section
   content, argument lists, and LaTeX.
 
-`mlg view` writes a temporary `collection.json`, sets `MLG_VIEW_DATA_PATH`, and
-starts `npm run dev` in `web/`. The web app reads only that JSON path. It does
-not parse `.mlg` files and does not run semantic checks.
+`mlg view` writes a temporary `collection.json` and serves it with the embedded
+assets from a small Rust HTTP server. The web app reads only that JSON endpoint.
+It does not parse `.mlg` files and does not run semantic checks. Node.js and npm
+are frontend development dependencies, not runtime dependencies of `mlg view`
+or `mlg export`.
+
+After changing frontend code, contributors run `npm install` and `npm run build`
+inside `web/`, then commit the updated `web/dist/` files. This keeps Cargo
+builds, packaged crates, and downloaded binaries self-contained.
 
 ## Check Command Data Flow
 
@@ -574,14 +589,16 @@ main.rs
           -> rerun proto parser for display layout
           -> create CollectionView
   -> write temporary collection.json
-  -> ensure web dependencies
-  -> npm run dev with MLG_VIEW_DATA_PATH
+  -> bind the requested port once
+  -> serve collection.json and the embedded viewer assets from Rust
 ```
 
 The viewer command treats parser and semantic errors as blocking, because the
 rendered output would otherwise be misleading.
 
-The temporary view data directory is removed after the Next.js process exits.
+The viewer watches source files and refreshes the temporary JSON after valid
+changes. The HTTP server continues to serve the last valid view if a refresh
+contains parser or semantic errors.
 
 ## Release Command Data Flow
 
@@ -621,9 +638,8 @@ written, and `mlg.json` is bumped last.
 A real (non-dry-run) release finishes by regenerating the published site: the CLI
 (`src/main.rs`) runs `mlg clean` then `mlg export`, replacing `docs/` so it
 matches the release just recorded. This orchestration lives at the binary level
-because it composes whole commands (each with its own console listener) and drives
-the `npm` build in `mlg export`; the `release` library entry point itself only
-writes the release metadata.
+because it composes whole commands, each with its own console listener; the
+`release` library entry point itself only writes the release metadata.
 
 ## Parser Generation
 
@@ -723,7 +739,7 @@ The current implementation has several important constraints:
   checks have already used the structural AST.
 - The TypeScript view model mirrors Rust serialization manually; schema changes
   must be kept in sync.
-- The web viewer is served as a development Next.js server, not as a prebuilt
-  static app.
+- The TypeScript viewer build is committed in `web/dist/` and embedded in the
+  executable. Frontend source changes must include a refreshed production build.
 - The language has syntax forms parsed by generated grammar and syntax forms
   parsed by scanner helpers. Changes must account for both paths.

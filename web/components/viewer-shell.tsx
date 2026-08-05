@@ -35,6 +35,8 @@ const NARROW_OUTLINE_MEDIA_QUERY = "(max-width: 860px)";
 interface ViewerShellProps {
   /** Full collection view supplied by `mlg view` development mode. */
   initialCollection?: CollectionView;
+  /** Live collection JSON supplied by the embedded `mlg view` server. */
+  collectionDataPath?: string;
   /** Lightweight static export manifest supplied at build time. */
   initialManifest?: CollectionManifest;
   /** Initial browser pathname supplied by the server route. */
@@ -48,6 +50,7 @@ interface ViewerShellProps {
 /** Owns browser history, selected file, outline directory, and chrome state. */
 export function ViewerShell({
   initialCollection,
+  collectionDataPath,
   initialManifest,
   initialPathname,
   routeBasePath: routeBasePathProp = "",
@@ -144,6 +147,32 @@ export function ViewerShell({
   );
 
   useEffect(() => {
+    if (!collectionDataPath || manifest) {
+      return;
+    }
+
+    let cancelled = false;
+    fetchJson<CollectionView>(collectionDataPath)
+      .then((collection) => {
+        if (cancelled) {
+          return;
+        }
+
+        setManifest(manifestFromCollection(collection));
+        setLoadedFiles(
+          Object.fromEntries(collection.files.map((file) => [file.path, file])),
+        );
+      })
+      .catch((error) => {
+        console.error("Failed to load MathLingua collection", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [collectionDataPath, manifest]);
+
+  useEffect(() => {
     if (!staticDataBasePath || manifest) {
       return;
     }
@@ -165,6 +194,11 @@ export function ViewerShell({
       cancelled = true;
     };
   }, [staticDataBasePath, manifest]);
+
+  useEffect(() => {
+    const title = manifest?.title.trim();
+    document.title = title || "MathLingua Viewer";
+  }, [manifest?.title]);
 
   useEffect(() => {
     if (!staticDataBasePath || !manifest) {

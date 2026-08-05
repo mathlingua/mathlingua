@@ -3,16 +3,16 @@ use crate::backend::config::load_config;
 use crate::backend::view::{CollectionView, DirectoryView, GroupView};
 use crate::events::{EventLog, EventLogListener};
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since};
+use crate::mlg::view_assets::{ViewerPageConfig, configured_viewer_index, copy_embedded_viewer};
 use serde::Serialize;
 use serde_json::to_writer_pretty;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const NEXTJS_ORIGIN: &str = "nextjs";
 const ORIGIN: &str = "mlg_export";
 const DATA_DIR: &str = "data";
 const MANIFEST_FILE: &str = "manifest.json";
@@ -69,7 +69,7 @@ pub(super) fn export_in(
 
     // Unless the author pinned a base path (or is publishing to a custom domain),
     // infer one from the GitHub remote. A project site served from
-    // `https://<user>.github.io/<repo>/` needs every `/_next` and `/data` URL under
+    // `https://<user>.github.io/<repo>/` needs every asset and `/data` URL under
     // `/<repo>`; without this the browser requests them from the domain root and the
     // scripts 404. `--base-path /` opts back into a domain-root deployment.
     if base_path.is_none()
@@ -126,9 +126,9 @@ pub(super) fn export_in(
     let data_dir = temp_dir.join(DATA_DIR);
     write_static_export_data(&data_dir, &collection_view)?;
 
-    ensure_web_dependencies(event_log)?;
-    build_static_web_app(&data_dir, &export_options, event_log)?;
-    copy_static_web_app(&output)?;
+    let index = export_viewer_index(&export_options)?;
+    copy_embedded_viewer(&output, &index)?;
+    write_static_route_indexes(&output, &collection_view, &index)?;
     copy_dir_contents(&data_dir, &output.join(DATA_DIR))?;
     write_github_pages_files(&output, &export_options)?;
 
@@ -174,86 +174,53 @@ fn is_empty_directory(path: &Path) -> io::Result<bool> {
     Ok(fs::read_dir(path)?.next().is_none())
 }
 
-fn ensure_web_dependencies(event_log: &mut EventLog) -> io::Result<()> {
-    let web_dir = web_app_directory();
-    if web_dir.join("node_modules").is_dir() {
-        return Ok(());
-    }
-
-    event_log.user_log(Some(ORIGIN), "Installing web viewer dependencies");
-    run_child(
-        {
-            let mut command = Command::new("npm");
-            command.arg("install").current_dir(web_dir);
-            command
-        },
-        NEXTJS_ORIGIN,
-        event_log,
-    )
-}
-
-fn build_static_web_app(
-    data_dir: &Path,
-    options: &ExportOptions,
-    event_log: &mut EventLog,
-) -> io::Result<()> {
-    event_log.user_log(Some(ORIGIN), "Building static viewer");
-
-    let mut command = Command::new("npm");
-    command
-        .arg("run")
-        .arg("build")
-        .current_dir(web_app_directory())
-        .env("MLG_STATIC_EXPORT", "1")
-        .env("MLG_EXPORT_DATA_DIR", data_dir)
-        .env("MLG_EXPORT_BASE_PATH", &options.base_path)
-        .env("NEXT_TELEMETRY_DISABLED", "1");
-
-    run_child(command, NEXTJS_ORIGIN, event_log)
-}
-
-fn run_child(mut command: Command, origin: &str, event_log: &mut EventLog) -> io::Result<()> {
-    command.stdout(Stdio::piped()).stderr(Stdio::piped());
-
-    let output = match command.output() {
-        Ok(output) => output,
-        Err(error) => {
-            event_log.user_error(
-                Some(ORIGIN),
-                format!("Failed to start the web export process: {error}"),
-            );
-            return Err(error);
-        }
-    };
-
-    log_process_output(&output.stdout, origin, event_log);
-    log_process_output(&output.stderr, origin, event_log);
-
-    if output.status.success() {
-        Ok(())
+fn export_viewer_index(options: &ExportOptions) -> io::Result<Vec<u8>> {
+    let base_href = if options.base_path.is_empty() {
+        "/".to_owned()
     } else {
-        event_log.user_error(
-            Some(ORIGIN),
-            format!(
-                "The web export process exited with status {}",
-                output.status
-            ),
-        );
-        Err(io::Error::other(format!(
-            "The web export process exited with status {}",
-            output.status
-        )))
-    }
+        format!("{}/", options.base_path)
+    };
+    let data_path = format!("{}/data", options.base_path);
+    configured_viewer_index(&ViewerPageConfig {
+        base_href: &base_href,
+        route_base_path: &options.base_path,
+        collection_data_path: None,
+        static_data_base_path: Some(&data_path),
+    })
 }
 
-fn log_process_output(output: &[u8], origin: &str, event_log: &mut EventLog) {
-    for line in String::from_utf8_lossy(output).lines() {
-        event_log.system_log(Some(origin), line.to_string());
-    }
-}
+fn write_static_route_indexes(
+    output: &Path,
+    collection: &CollectionView,
+    index: &[u8],
+) -> io::Result<()> {
+    let mut routes = BTreeSet::new();
+    routes.extend(collection.files.iter().map(|file| route_path(&file.path)));
+    routes.extend(
+        collection
+            .directories
+            .iter()
+            .map(|directory| directory_route_path(&directory.path)),
+    );
 
-fn copy_static_web_app(output: &Path) -> io::Result<()> {
-    copy_dir_contents(&web_app_directory().join("out"), output)
+    for route in routes {
+        if route == "index" {
+            continue;
+        }
+        if route
+            .split('/')
+            .any(|segment| matches!(segment, "" | "." | ".."))
+        {
+            return Err(io::Error::other(format!(
+                "Unsafe viewer route `{route}` in static export"
+            )));
+        }
+        let route_dir = output.join(&route);
+        fs::create_dir_all(&route_dir)?;
+        fs::write(route_dir.join("index.html"), index)?;
+    }
+
+    fs::write(output.join("404.html"), index)
 }
 
 fn write_github_pages_files(output: &Path, options: &ExportOptions) -> io::Result<()> {
@@ -372,6 +339,12 @@ fn route_path(file_path: &str) -> String {
     normalize_route_path(without_extension)
 }
 
+fn directory_route_path(directory_path: &str) -> String {
+    let normalized = directory_path.replace('\\', "/");
+    let content_relative = normalized.strip_prefix("content/").unwrap_or(&normalized);
+    normalize_route_path(content_relative)
+}
+
 fn normalize_route_path(path: &str) -> String {
     let normalized = path
         .split('/')
@@ -416,10 +389,6 @@ fn create_export_session_dir() -> io::Result<PathBuf> {
     let path = std::env::temp_dir().join(format!("mlg-export-{}-{unique}", std::process::id()));
     fs::create_dir(&path)?;
     Ok(path)
-}
-
-fn web_app_directory() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("web")
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -562,10 +531,12 @@ struct ExportPage {
 #[cfg(test)]
 mod tests {
     use super::{
-        ExportOptions, MANIFEST_FILE, detect_github_pages_base_path, github_pages_base_path,
-        normalize_base_path, normalize_cname, write_github_pages_files, write_static_export_data,
+        ExportOptions, MANIFEST_FILE, detect_github_pages_base_path, export_viewer_index,
+        github_pages_base_path, normalize_base_path, normalize_cname, write_github_pages_files,
+        write_static_export_data, write_static_route_indexes,
     };
-    use crate::backend::view::{CollectionView, FileView, GroupView, PageView};
+    use crate::backend::view::{CollectionView, DirectoryView, FileView, GroupView, PageView};
+    use crate::mlg::view_assets::copy_embedded_viewer;
     use serde::Deserialize;
     use serde::de::DeserializeOwned;
     use std::fs;
@@ -643,6 +614,53 @@ mod tests {
             data_dir
                 .join("items/059126b9-dc83-41a2-aa1c-84f8e942f8d6.json")
                 .is_file()
+        );
+    }
+
+    #[test]
+    fn writes_embedded_viewer_assets_and_deep_routes() {
+        let temp_dir = TestDir::new();
+        let output = temp_dir.path().join("site");
+        let options = ExportOptions {
+            base_path: "/demo".to_owned(),
+            cname: None,
+        };
+        let collection = CollectionView {
+            title: "Demo".to_owned(),
+            preface: Vec::new(),
+            directories: vec![DirectoryView {
+                path: "content/algebra".to_owned(),
+                title: None,
+                preface: Vec::new(),
+            }],
+            files: vec![FileView {
+                path: "content/algebra/groups.mlg".to_owned(),
+                title: None,
+                items: Vec::new(),
+            }],
+        };
+
+        let index = export_viewer_index(&options).expect("expected viewer index");
+        copy_embedded_viewer(&output, &index).expect("expected embedded assets");
+        write_static_route_indexes(&output, &collection, &index)
+            .expect("expected deep-link indexes");
+
+        let root = fs::read_to_string(output.join("index.html")).unwrap();
+        assert!(root.contains(r#"<base href="/demo/""#));
+        assert!(root.contains(r#""staticDataBasePath":"/demo/data""#));
+        assert!(!root.contains("__MLG_BASE_HREF__"));
+        assert!(!root.contains("__MLG_RUNTIME_CONFIG_JSON__"));
+        assert!(output.join("algebra/index.html").is_file());
+        assert!(output.join("algebra/groups/index.html").is_file());
+        assert!(output.join("404.html").is_file());
+        assert!(
+            fs::read_dir(output.join("assets"))
+                .expect("expected assets directory")
+                .any(|entry| entry
+                    .unwrap()
+                    .path()
+                    .extension()
+                    .is_some_and(|ext| ext == "js"))
         );
     }
 

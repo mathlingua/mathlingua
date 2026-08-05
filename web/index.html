@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="__MLG_BASE_HREF__" />
+    <meta name="description" content="Rendered Mathlingua collection viewer" />
+    <link rel="icon" href="./icon.png" />
+    <link rel="apple-touch-icon" href="./apple-icon.png" />
+    <title>MathLingua Viewer</title>
+    <script>
+      (() => {
+        try {
+          const theme = window.localStorage.getItem("mlg-view-theme");
+          if (
+            !/^(classic|mono|flat-gray|sepia|retro|dark)$/.test(theme ?? "")
+          ) {
+            return;
+          }
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme =
+            theme === "dark" ? "dark" : "light";
+        } catch (_) {}
+      })();
+      window.__MLG_VIEW_CONFIG__ = __MLG_RUNTIME_CONFIG_JSON__;
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/app/main.tsx"></script>
+  </body>
+</html>

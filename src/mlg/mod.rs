@@ -26,4 +26,5 @@ mod report;
 mod util;
 mod version;
 mod view;
+mod view_assets;
 mod whte_rbt_obj;

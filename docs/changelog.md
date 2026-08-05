@@ -5,6 +5,14 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Self-Contained Viewer And Export
+
+`mlg view` now serves the production web viewer and collection JSON directly
+from the Rust process. `mlg export` copies the same embedded assets into the
+static site. Neither command installs packages, invokes npm, or requires Node.js
+on the user's machine; the generated Vite assets are packaged into the `mlg`
+executable.
+
 ## Structural Spec-Literal Types
 
 Type expressions now support tuple, set, mapping, and multi-input function

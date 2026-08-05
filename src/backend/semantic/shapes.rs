@@ -765,6 +765,9 @@ fn key_for_set_target(target: &SetTarget) -> String {
     match &target.kind {
         SetTargetKind::Name(name) => name.clone(),
         SetTargetKind::PlaceholderForm(form) => key_for_placeholder_form(form),
+        SetTargetKind::Expression { .. } => {
+            unreachable!("expression targets only occur in collection literals")
+        }
         SetTargetKind::Alias { name, target } => format!("{name}:={}", key_for_set_target(target)),
         SetTargetKind::Introduction { name, target } => {
             format!("{name}::={}", key_for_set_target(target))

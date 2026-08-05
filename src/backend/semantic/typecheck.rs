@@ -3997,6 +3997,7 @@ fn collect_set_target_names(target: &SetTarget, names: &mut BTreeSet<String>) {
             names.insert(name.clone());
         }
         SetTargetKind::PlaceholderForm(form) => collect_placeholder_form_names(form, names),
+        SetTargetKind::Expression { expression, .. } => collect_expression_names(expression, names),
         SetTargetKind::Alias { name, target } | SetTargetKind::Introduction { name, target } => {
             names.insert(name.clone());
             collect_set_target_names(target, names);
@@ -6243,6 +6244,9 @@ fn check_expression(
                 if let Some(fact) = fact_from_expression_in_context(spec, &child) {
                     child.add_fact(fact);
                 }
+            }
+            if let SetTargetKind::Expression { expression, .. } = &set.target.kind {
+                check_expression(expression, &child, path, locator, registry, event_log);
             }
             if let Some(predicate) = &set.predicate {
                 check_set_predicate(predicate, &mut child, path, locator, registry, event_log);
@@ -9428,6 +9432,18 @@ fn collect_defined_set_target_names(target: &SetTarget, names: &mut Vec<String>)
     match &target.kind {
         SetTargetKind::Name(name) => names.push(name.clone()),
         SetTargetKind::PlaceholderForm(form) => collect_defined_placeholder_form_names(form, names),
+        SetTargetKind::Expression {
+            expression,
+            placeholders,
+        } => {
+            let mut expression_names = Vec::new();
+            collect_defined_expression_names(expression, &mut expression_names);
+            names.extend(
+                expression_names
+                    .into_iter()
+                    .filter(|name| !placeholders.contains(name)),
+            );
+        }
         SetTargetKind::Alias { name, target } | SetTargetKind::Introduction { name, target } => {
             names.push(name.clone());
             collect_defined_set_target_names(target, names);
@@ -12168,6 +12184,7 @@ fn collection_literal_member_pattern(target: &SetTarget) -> Option<String> {
     match &target.kind {
         SetTargetKind::Name(name) => Some(name.clone()),
         SetTargetKind::PlaceholderForm(form) => Some(key_for_placeholder_form(form)),
+        SetTargetKind::Expression { .. } => Some(key_for_set_target(target)),
         SetTargetKind::Alias { name, .. } | SetTargetKind::Introduction { name, .. } => {
             Some(name.clone())
         }
@@ -13074,6 +13091,9 @@ fn check_set_target(
         SetTargetKind::PlaceholderForm(form) => {
             check_placeholder_form(form, context, path, locator, event_log)
         }
+        // Expression targets are checked after their collection specifications
+        // have introduced the local placeholders and their assumptions.
+        SetTargetKind::Expression { .. } => {}
         SetTargetKind::Alias { name, target } | SetTargetKind::Introduction { name, target } => {
             check_name(name, context, path, locator, event_log);
             check_set_target(target, context, path, locator, event_log);
@@ -13294,6 +13314,11 @@ fn declare_set_target(target: &SetTarget, context: &mut TypeContext) {
     match &target.kind {
         SetTargetKind::Name(name) => context.declare_name(name.clone()),
         SetTargetKind::PlaceholderForm(form) => declare_placeholder_form(form, context),
+        SetTargetKind::Expression { placeholders, .. } => {
+            for name in placeholders {
+                context.declare_name(name.clone());
+            }
+        }
         SetTargetKind::Alias { name, target } | SetTargetKind::Introduction { name, target } => {
             context.declare_name(name.clone());
             declare_set_target(target, context);
@@ -13731,9 +13756,28 @@ fn substitute_set_expression(
     set: &SetExpression,
     substitutions: &HashMap<String, Expression>,
 ) -> SetExpression {
+    let target = match &set.target.kind {
+        SetTargetKind::Expression {
+            expression,
+            placeholders,
+        } => {
+            let mut target_substitutions = substitutions.clone();
+            for placeholder in placeholders {
+                target_substitutions.remove(placeholder);
+            }
+            SetTarget::new(
+                set.target.span,
+                SetTargetKind::Expression {
+                    expression: Box::new(substitute_expression(expression, &target_substitutions)),
+                    placeholders: placeholders.clone(),
+                },
+            )
+        }
+        _ => set.target.clone(),
+    };
     SetExpression {
         span: set.span,
-        target: set.target.clone(),
+        target,
         specs: set
             .specs
             .iter()
@@ -14512,6 +14556,7 @@ fn literal_type_subject_from_set_target(target: &SetTarget) -> LiteralTypeSubjec
         SetTargetKind::PlaceholderForm(form) => {
             LiteralTypeSubject::Leaf(key_for_placeholder_form(form))
         }
+        SetTargetKind::Expression { .. } => LiteralTypeSubject::Leaf(key_for_set_target(target)),
         SetTargetKind::Alias { target, .. } | SetTargetKind::Introduction { target, .. } => {
             literal_type_subject_from_set_target(target)
         }
@@ -15867,6 +15912,7 @@ fn key_for_set_target(target: &SetTarget) -> String {
     match &target.kind {
         SetTargetKind::Name(name) => name.clone(),
         SetTargetKind::PlaceholderForm(form) => key_for_placeholder_form(form),
+        SetTargetKind::Expression { expression, .. } => key_for_expression(expression),
         SetTargetKind::Alias { name, target } => {
             format!("{name}:={}", key_for_set_target(target))
         }

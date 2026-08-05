@@ -578,6 +578,12 @@ impl SetTarget {
 pub enum SetTargetKind {
     Name(String),
     PlaceholderForm(PlaceholderForm),
+    /// A collection member produced by evaluating an arbitrary expression.
+    /// `placeholders` records the `_`/`__` names bound by the collection.
+    Expression {
+        expression: Box<Expression>,
+        placeholders: Vec<String>,
+    },
     Alias {
         name: String,
         target: Box<SetTarget>,

@@ -2531,6 +2531,9 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
             return Ok(expression);
         }
     }
+    if let Some(expression) = parse_set_build_expression(input) {
+        return expression;
+    }
     if let Some(expression) = parse_builtin_command_expression(input) {
         return expression;
     }
@@ -2745,9 +2748,26 @@ fn parse_set_expression(input: &str) -> Result<Expression, ParseError> {
         ));
     }
 
-    let colon_index = find_set_comprehension_colon(inside)
-        .ok_or_else(|| ParseError::custom("expected `:` in set expression"))?;
-    let target = parse_set_target_text(&inside[..colon_index])?;
+    let colon_indices = set_comprehension_colons(inside);
+    if colon_indices.is_empty() {
+        return Err(ParseError::custom("expected `:` in set expression"));
+    }
+    let mut last_error = None;
+    for colon_index in colon_indices {
+        match parse_set_expression_at_colon(input, inside, colon_index) {
+            Ok(expression) => return Ok(expression),
+            Err(error) => last_error = Some(error),
+        }
+    }
+    Err(last_error.expect("at least one candidate colon"))
+}
+
+fn parse_set_expression_at_colon(
+    input: &str,
+    inside: &str,
+    colon_index: usize,
+) -> Result<Expression, ParseError> {
+    let target = parse_set_expression_target_text(&inside[..colon_index])?;
     let body = inside[colon_index + 1..].trim();
     if body == "..." {
         return Ok(Expression::new(
@@ -2784,7 +2804,57 @@ fn parse_set_expression(input: &str) -> Result<Expression, ParseError> {
     ))
 }
 
+/// Parses a build whose value is a collection literal through the handwritten
+/// collection parser. This permits the member target to use the full expression
+/// language even though declaration-shaped set targets in the generated grammar
+/// are intentionally narrower.
+fn parse_set_build_expression(input: &str) -> Option<Result<Expression, ParseError>> {
+    let at = find_first_top_level_char(input, '@')?;
+    let type_text = input[..at].trim();
+    let mut value_text = input[at + 1..].trim_start();
+    let hard = value_text.starts_with('!');
+    if hard {
+        value_text = value_text[1..].trim_start();
+    }
+    if !value_text.starts_with('{') {
+        return None;
+    }
+    if consume_balanced_prefix(value_text, '{', '}')
+        .is_ok_and(|(_, rest)| !rest.trim().is_empty())
+    {
+        return None;
+    }
+
+    Some((|| {
+        let ty = match parse_input_expression(type_text)
+            .map_err(ParseError::from)?
+            .kind
+        {
+            ExpressionKind::Command(command) => TypeExpression::Command(command),
+            _ => {
+                return Err(ParseError::custom(
+                    "a collection build requires a command type",
+                ));
+            }
+        };
+        let value = parse_set_expression(value_text)?;
+        Ok(Expression::new(
+            span_all(input),
+            ExpressionKind::Build {
+                ty,
+                value: Box::new(value),
+                hard,
+            },
+        ))
+    })())
+}
+
 fn find_set_comprehension_colon(input: &str) -> Option<usize> {
+    set_comprehension_colons(input).into_iter().next()
+}
+
+fn set_comprehension_colons(input: &str) -> Vec<usize> {
+    let mut result = Vec::new();
     let mut state = ScanState::default();
     for (index, ch) in input.char_indices() {
         if state.is_top_level() && ch == ':' {
@@ -2798,12 +2868,12 @@ fn find_set_comprehension_colon(input: &str) -> Option<usize> {
                 && !rest.starts_with(":~>")
                 && previous != Some(':')
             {
-                return Some(index);
+                result.push(index);
             }
         }
         state.advance(ch);
     }
-    None
+    result
 }
 
 fn split_set_predicate(input: &str) -> (&str, Option<&str>) {
@@ -2921,6 +2991,29 @@ fn parse_set_target_text(input: &str) -> Result<SetTarget, ParseError> {
     }
     let name = parse_name_token(input)?;
     Ok(SetTarget::new(span_all(input), SetTargetKind::Name(name)))
+}
+
+fn parse_set_expression_target_text(input: &str) -> Result<SetTarget, ParseError> {
+    if let Ok(target) = parse_set_target_text(input) {
+        return Ok(target);
+    }
+
+    let expression = parse_expression(input)?;
+    let placeholders = Lexer::new(input)
+        .filter_map(|item| match item.ok()?.1 {
+            Token::Placeholder(name) | Token::MagneticPlaceholder(name) => Some(name),
+            _ => None,
+        })
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect();
+    Ok(SetTarget::new(
+        span_all(input),
+        SetTargetKind::Expression {
+            expression: Box::new(expression),
+            placeholders,
+        },
+    ))
 }
 
 fn parse_set_target_binding_name(input: &str) -> Result<String, ParseError> {
@@ -4220,6 +4313,47 @@ mod tests {
             }
             other => panic!("expected set expression, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn parses_expression_targets_in_built_collection_literals() {
+        let expression =
+            parse_expression(r#"\set@{ \equivalence.class:of{x_}:over{R} : x_ "in" X }"#)
+                .expect("expected collection with an expression target");
+
+        match expression.kind {
+            ExpressionKind::Build { value, .. } => match value.kind {
+                ExpressionKind::Set(set) => match set.target.kind {
+                    SetTargetKind::Expression {
+                        expression,
+                        placeholders,
+                    } => {
+                        assert!(matches!(expression.kind, ExpressionKind::Command(_)));
+                        assert_eq!(placeholders, ["x"]);
+                    }
+                    other => panic!("expected expression set target, got {other:?}"),
+                },
+                other => panic!("expected set value, got {other:?}"),
+            },
+            other => panic!("expected build expression, got {other:?}"),
+        }
+
+        let arithmetic = parse_expression(r#"\set@{x_ + 1 : x_ "in" X}"#)
+            .expect("expected arbitrary expression target");
+        let ExpressionKind::Build { value, .. } = arithmetic.kind else {
+            panic!("expected build expression");
+        };
+        let ExpressionKind::Set(set) = value.kind else {
+            panic!("expected set value");
+        };
+        assert!(matches!(
+            set.target.kind,
+            SetTargetKind::Expression {
+                expression,
+                placeholders,
+            } if matches!(expression.kind, ExpressionKind::Binary { .. })
+                && placeholders == ["x"]
+        ));
     }
 
     #[test]

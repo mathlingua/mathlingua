@@ -137,6 +137,7 @@ pub(in crate::backend::semantic) fn walk_expression(
 fn walk_set_target(target: &SetTarget, visit: &mut impl FnMut(&SignatureShape)) {
     match &target.kind {
         SetTargetKind::Name(_) | SetTargetKind::PlaceholderForm(_) => {}
+        SetTargetKind::Expression { expression, .. } => walk_expression(expression, visit),
         SetTargetKind::Alias { target, .. } | SetTargetKind::Introduction { target, .. } => {
             walk_set_target(target, visit)
         }

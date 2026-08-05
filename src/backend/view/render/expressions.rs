@@ -446,6 +446,7 @@ pub(super) fn render_set_target(target: &SetTarget, registry: &RenderRegistry) -
     match &target.kind {
         SetTargetKind::Name(name) => escape_math_identifier(name, registry),
         SetTargetKind::PlaceholderForm(form) => render_placeholder_form(form, registry),
+        SetTargetKind::Expression { expression, .. } => render_expression(expression, registry),
         SetTargetKind::Alias { name, target } => {
             format!(
                 "{} := {}",

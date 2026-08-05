@@ -6303,6 +6303,51 @@ Documented:
     }
 
     #[test]
+    fn check_accepts_command_expression_targets_in_set_builder_definitions() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("set-builder-expression-target.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Enables:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [\class:of{x}:over{X}]
+    Declares: C is \set
+    when:
+    . X is \set
+    . x "in" X
+    Documented:
+    . called: "class of $x?$ over $X?$"
+
+    [\classes:of{X}]
+    Declares: I := \set@{ \class:of{x_}:over{X} : x_ "in" X }
+    when: X is \set
+    Documented:
+    . called: "classes of $X?$"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("set-builder-expression-target.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_introduced_set_builder_targets_and_definition_predicates() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("cartesian-set-builder.mlg");

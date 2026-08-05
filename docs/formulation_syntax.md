@@ -417,8 +417,9 @@ Operators may appear as tuple elements, for example `(+, x)`.
 #### Set expressions
 
 ```text
-SetExpression ::= "{" SetTarget ":" "..." "}"
-                | "{" SetTarget ":" Expression ("," Expression)* ("|" Expression)? "}"
+SetExpression ::= "{" CollectionTarget ":" "..." "}"
+                | "{" CollectionTarget ":" Expression ("," Expression)* ("|" Expression)? "}"
+CollectionTarget ::= SetTarget | Expression
 ```
 
 Examples:
@@ -426,6 +427,11 @@ Examples:
 - `{x_ : x_ is \real}`
 - `{x_ : x_ is \real | x_ = y}`
 - `{(p_, q_) : ...}`
+- `{\equivalence.class:of{x_}:over{R} : x_ "in" X}`
+
+Any expression may be the produced member to the left of the collection
+separator. Placeholder names within that expression are local to the collection;
+ordinary names continue to refer to the surrounding scope.
 
 #### Subset expressions
 
@@ -1028,8 +1034,9 @@ FunctionNamedExpressionElementLhs ::= Name | SubsetNameCall
 
 TupleExpression ::= "(" TupleExpressionElement "," TupleExpressionElement ("," TupleExpressionElement)* ")"
 
-SetExpression ::= "{" SetTarget ":" "..." "}"
-                | "{" SetTarget ":" Expression ("," Expression)* ("|" Expression)? "}"
+SetExpression ::= "{" CollectionTarget ":" "..." "}"
+                | "{" CollectionTarget ":" Expression ("," Expression)* ("|" Expression)? "}"
+CollectionTarget ::= SetTarget | Expression
 
 SubsetExpression ::= SubsetNameCall
 ```

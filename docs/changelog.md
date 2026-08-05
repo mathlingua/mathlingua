@@ -7,10 +7,11 @@ the feature is valid.
 
 ## Local `let:` Clauses
 
-Clause-valued sections now accept a `let:` group followed by a required `then:`
-section. Each `let:` argument uses the same refined-capable binding syntax as
-quantifier bindings, introduces its symbols in order, and keeps them scoped to
-the `then:` body.
+Clause-valued sections now accept a `let:` group, an optional `where:` guard,
+and a required `then:` section. Each `let:` argument uses the same
+refined-capable binding syntax as quantifier bindings and introduces its symbols
+in order. The bindings are available to `where:`, and its assumptions are
+available while checking `then:`; both remain local to the clause group.
 
 ## Self-Contained Viewer And Export
 

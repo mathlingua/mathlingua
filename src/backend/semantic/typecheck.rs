@@ -3581,6 +3581,11 @@ fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
             for item in &group.let_.arguments {
                 collect_binding_or_spec_names(item, names);
             }
+            if let Some(where_) = &group.where_ {
+                for clause in &where_.arguments {
+                    collect_clause_names(clause, names);
+                }
+            }
             for clause in &group.then.arguments {
                 collect_clause_names(clause, names);
             }
@@ -4439,6 +4444,11 @@ fn check_clause(
             let mut child = context.clone();
             for item in &group.let_.arguments {
                 assume_binding_or_spec(item, &mut child, path, locator, registry, event_log);
+            }
+            if let Some(where_) = &group.where_ {
+                for clause in &where_.arguments {
+                    assume_clause(clause, &mut child, path, locator, registry, event_log);
+                }
             }
             reject_specification_clauses(&group.then.arguments, path, locator, event_log);
             for clause in &group.then.arguments {

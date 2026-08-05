@@ -7756,7 +7756,7 @@ Documented:
     }
 
     #[test]
-    fn check_uses_let_bindings_inside_the_then_clause() {
+    fn check_uses_let_bindings_and_where_assumptions_inside_the_then_clause() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("let-binding.mlg");
 
@@ -7774,7 +7774,8 @@ Documented:
     given: X is \set
     then:
     . let: n "in" X
-      then: n = n
+      where: m := n
+      then: m = n
     "#,
         )
         .unwrap();

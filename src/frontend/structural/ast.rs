@@ -791,6 +791,7 @@ pub struct ForAllGroup {
 pub struct LetGroup {
     pub heading: Option<LabelHeader>,
     pub let_: LetSection,
+    pub where_: Option<WhereSection>,
     pub then: ThenSection,
 }
 

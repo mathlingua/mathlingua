@@ -637,8 +637,9 @@ expressions.
   optional `suchThat:` clauses.
 - **`existsUnique`** — same as `exists`, with unique-existence intent.
 - **`forAll`** — creates a child context, assumes `where:`, checks `then:`.
-- **`let`** — introduces one or more local bindings in a child context and
-  checks `then:` with those bindings available.
+- **`let`** — introduces one or more local bindings in a child context, assumes
+  an optional `where:` guard, and checks `then:` with those bindings and
+  assumptions available.
 - **`if`** — assumes `if:`, checks `then:`.
 - **`have`** — assumes `iff:`, checks `have:`.
 - **`equivalently`** — a chain of biconditionals — sugar for pairwise `iff`.
@@ -651,6 +652,7 @@ For example, a `let:` clause can introduce a member for use in its body:
 
 ```text
 . let: n "in" X
+  where: n != x
   then: n = n
 ```
 

@@ -415,7 +415,7 @@ If a clause section contains:
 - **`exists`** — `ExistsGroup`, heading: label?. Sections: `exists: BindingOrSpec`, `suchThat?: Clause+`
 - **`existsUnique`** — `ExistsUniqueGroup`, heading: label?. Sections: `existsUnique: BindingOrSpec`, `suchThat?: Clause+`
 - **`forAll`** — `ForAllGroup`, heading: label?. Sections: `forAll: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
-- **`let`** — `LetGroup`, heading: label?. Sections: `let: BindingOrSpec`, `then: Clause+`
+- **`let`** — `LetGroup`, heading: label?. Sections: `let: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
 - **`if`** — `IfGroup`, heading: label?. Sections: `if: Clause+`, `then: Clause+`
 - **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`. A `have:` group whose second section is `asserting:` (rather than `iff:`) is instead a `HaveGroup` (`Clause::Have`): `have: Clause+`, `asserting: Clause+`, `because?: Clause+`, `by?: Expression+` — an escape hatch that asserts the `have:` item holds given the `asserting:` items (also accepted as a `declares:` item). `because:`/`by:` are justification the checker only reference-validates, never proves.
 - **`piecewise`** — `PiecewiseGroup`, heading: label?. Sections: `piecewise: OpenText*`, `if: Clause+`, `then: Clause+`, `else?: Clause+`
@@ -1127,6 +1127,7 @@ then: <ClauseUnion>+
 ```group
 [LabelHeader]?
 let: <BindingOrSpecUnion>
+where?: <ClauseUnion>+
 then: <ClauseUnion>+
 ```
 

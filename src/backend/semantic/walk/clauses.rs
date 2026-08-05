@@ -88,6 +88,11 @@ pub(in crate::backend::semantic) fn walk_clause(
             for item in &group.let_.arguments {
                 walk_binding_or_spec(item, visit);
             }
+            if let Some(section) = &group.where_ {
+                for clause in &section.arguments {
+                    walk_clause(clause, visit);
+                }
+            }
             for clause in &group.then.arguments {
                 walk_clause(clause, visit);
             }

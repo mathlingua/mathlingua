@@ -1143,10 +1143,11 @@ pub(super) fn parse_for_all_clause(
 /// Parses a `let:` clause group.
 ///
 /// The leading section introduces local bindings that are available only while
-/// checking the required `then:` section.
+/// checking the optional `where:` guard and required `then:` section. Facts
+/// established by `where:` are available while checking `then:`.
 pub(super) fn parse_let_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<LetGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections("let", &group.sections, tracker, &["let", "then"])?;
+    let sections = identify_sections("let", &group.sections, tracker, &["let", "where?", "then"])?;
     Some(LetGroup {
         heading,
         let_: LetSection {
@@ -1157,6 +1158,10 @@ pub(super) fn parse_let_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Op
                 parse_binding_or_spec,
             )?,
         },
+        where_: sections.get("where").copied().and_then(|section| {
+            parse_required_clauses(section, "where", tracker)
+                .map(|arguments| WhereSection { arguments })
+        }),
         then: ThenSection {
             arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
         },
@@ -5518,6 +5523,7 @@ that:
 States:
 that:
 . let: n "in" X
+  where: n = n
   then: n = n
 "#;
 
@@ -5529,6 +5535,15 @@ that:
             TopLevelItem::States(states) => match &states.that.arguments[0] {
                 Clause::Let(group) => {
                     assert_eq!(group.let_.arguments.len(), 1);
+                    assert_eq!(
+                        group
+                            .where_
+                            .as_ref()
+                            .expect("expected where")
+                            .arguments
+                            .len(),
+                        1
+                    );
                     assert_eq!(group.then.arguments.len(), 1);
                 }
                 other => panic!("expected let clause, got {other:?}"),

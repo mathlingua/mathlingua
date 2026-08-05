@@ -402,7 +402,7 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
         "forAll",
         &[("forAll", true), ("where", false), ("then", true)],
     ),
-    ("let", &[("let", true), ("then", true)]),
+    ("let", &[("let", true), ("where", false), ("then", true)]),
     ("if", &[("if", true), ("then", true)]),
     ("have", &[("have", true), ("iff", true)]),
     (
@@ -1010,6 +1010,14 @@ mod tests {
     fn next_section_inside_let_clause() {
         let text = "Theorem:\nthen:\n. let: n is \\natural\n  ";
         let got = labels(&complete(text, 3, 2));
+        assert!(got.contains(&"where".to_string()));
+        assert!(got.contains(&"then".to_string()));
+    }
+
+    #[test]
+    fn next_section_inside_let_skips_present_where() {
+        let text = "Theorem:\nthen:\n. let: n is \\natural\n  where: n = n\n  ";
+        let got = labels(&complete(text, 4, 2));
         assert_eq!(got, vec!["then".to_string()]);
     }
 

@@ -875,6 +875,7 @@ mod tests {
 States:
 that:
 . let: n "in" X
+  where: n = n
   then: n = n
 "#;
 
@@ -908,7 +909,7 @@ that:
                 .iter()
                 .map(|section| section.label.as_str())
                 .collect::<Vec<_>>(),
-            ["let", "then"]
+            ["let", "where", "then"]
         );
         assert_eq!(sections[0].inline_argument.as_deref(), Some("n \"in\" X"));
         assert!(sections[0].inline_latex.is_some());

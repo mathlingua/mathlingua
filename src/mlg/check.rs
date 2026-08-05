@@ -6385,9 +6385,10 @@ Documented:
     #[test]
     fn check_rejects_specifications_in_statement_clauses() {
         // Specifications (`is`, non-predicate `\:...:/`) introduce symbols and are
-        // only allowed in binding positions (`exists:`/`given:`/`forAll:`). In a
-        // statement position (`if:`/`then:`/`iff:`/`that:`), the predicate forms
-        // (`is?`, `\:...?:/`) must be used instead.
+        // only allowed in binding positions
+        // (`exists:`/`given:`/`forAll:`/`let:`). In a statement position
+        // (`if:`/`then:`/`iff:`/`that:`), the predicate forms (`is?`,
+        // `\:...?:/`) must be used instead.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("spec-in-statement.mlg");
 
@@ -6437,13 +6438,13 @@ Documented:
 
         assert!(
             messages.contains(
-                &"An infix specification (`\\:...:/`) introduces a symbol and is only allowed in `exists:`, `given:`, or `forAll:`; use the predicate form (`\\:...?:/`) here"
+                &"An infix specification (`\\:...:/`) introduces a symbol and is only allowed in `exists:`, `given:`, `forAll:`, or `let:`; use the predicate form (`\\:...?:/`) here"
             ),
             "expected the infix-specification rejection, got {messages:#?}"
         );
         assert!(
             messages.contains(
-                &"An `is` specification introduces a symbol and is only allowed in `exists:`, `given:`, or `forAll:`; use the statement form `is?` here"
+                &"An `is` specification introduces a symbol and is only allowed in `exists:`, `given:`, `forAll:`, or `let:`; use the statement form `is?` here"
             ),
             "expected the `is`-specification rejection, got {messages:#?}"
         );
@@ -7752,6 +7753,85 @@ Documented:
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
+    }
+
+    #[test]
+    fn check_uses_let_bindings_inside_the_then_clause() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("let-binding.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+      written: "x_? \\in X?"
+    Documented:
+    . called: "set"
+
+    Theorem:
+    given: X is \set
+    then:
+    . let: n "in" X
+      then: n = n
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("let-binding.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_keeps_let_bindings_local_to_the_then_clause() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("let-binding-scope.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+      written: "x_? \\in X?"
+    Documented:
+    . called: "set"
+
+    Theorem:
+    given: X is \set
+    then:
+    . let: n "in" X
+      then: n = n
+    . n = n
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("let-binding-scope.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event
+                .as_message()
+                .is_some_and(|message| message.message == "Unrecognized symbol `n`")
+        }));
+        assert!(event_log.has_errors());
     }
 
     #[test]

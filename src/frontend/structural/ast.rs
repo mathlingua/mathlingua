@@ -302,6 +302,7 @@ arguments_section!(ExistsSection, BindingOrSpec);
 arguments_section!(SuchThatSection, Clause);
 arguments_section!(ExistsUniqueSection, BindingOrSpec);
 arguments_section!(ForAllSection, BindingOrSpec);
+arguments_section!(LetSection, BindingOrSpec);
 arguments_section!(IfSection, Clause);
 zero_or_more_arguments_section!(PiecewiseSection, OpenText);
 arguments_section!(ElseSection, Clause);
@@ -353,6 +354,7 @@ pub enum Clause {
     Exists(ExistsGroup),
     ExistsUnique(ExistsUniqueGroup),
     ForAll(ForAllGroup),
+    Let(LetGroup),
     If(IfGroup),
     Iff(IffGroup),
     Equivalently(EquivalentlyGroup),
@@ -782,6 +784,13 @@ pub struct ForAllGroup {
     pub heading: Option<LabelHeader>,
     pub for_all: ForAllSection,
     pub where_: Option<WhereSection>,
+    pub then: ThenSection,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LetGroup {
+    pub heading: Option<LabelHeader>,
+    pub let_: LetSection,
     pub then: ThenSection,
 }
 

@@ -866,6 +866,56 @@ mod tests {
     }
 
     #[test]
+    fn renders_let_clause_groups() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("logic.mlg");
+        let source = r#"[\property]
+States:
+that:
+. let: n "in" X
+  then: n = n
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors(), "{:#?}", parse_log.events());
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
+            .expect("expected view");
+
+        let that = view.files[0].items[0]
+            .sections
+            .iter()
+            .find(|section| section.label == "that")
+            .expect("expected that section");
+        let ArgumentView::Group { sections, .. } = &that.arguments[0] else {
+            panic!("expected rendered let group");
+        };
+        assert_eq!(
+            sections
+                .iter()
+                .map(|section| section.label.as_str())
+                .collect::<Vec<_>>(),
+            ["let", "then"]
+        );
+        assert_eq!(sections[0].inline_argument.as_deref(), Some("n \"in\" X"));
+        assert!(sections[0].inline_latex.is_some());
+        assert!(!event_log.has_errors());
+    }
+
+    #[test]
     fn renders_refines_argument_with_heading_implied_base_type() {
         let temp_dir = TestDir::new();
         let root = temp_dir.path().join("repo");

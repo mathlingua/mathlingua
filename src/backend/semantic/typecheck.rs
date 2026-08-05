@@ -3577,6 +3577,14 @@ fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
                 collect_clause_names(clause, names);
             }
         }
+        Clause::Let(group) => {
+            for item in &group.let_.arguments {
+                collect_binding_or_spec_names(item, names);
+            }
+            for clause in &group.then.arguments {
+                collect_clause_names(clause, names);
+            }
+        }
         Clause::If(group) => {
             for clause in &group.if_.arguments {
                 collect_clause_names(clause, names);
@@ -4232,17 +4240,17 @@ fn check_optional_clauses<T>(
 /// Statement-position clauses (`if:`, `then:`, `iff:`, `where:`, `such_that:`, and
 /// the logical combinators) may only contain statements, not specifications. A
 /// specification (`x is \real`, `A \:subset:/ B`) introduces symbols and is only
-/// valid in a binding position (`exists:`, `given:`, `forAll:`); here the predicate
-/// form (`is?`, `\:...?:/`) must be used instead. (Binding arguments never reach
-/// this path — they are checked directly, not as clauses.)
+/// valid in a binding position (`exists:`, `given:`, `forAll:`, `let:`); here
+/// the predicate form (`is?`, `\:...?:/`) must be used instead. (Binding
+/// arguments never reach this path — they are checked directly, not as clauses.)
 fn reject_specification_clause(
     clause: &Clause,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     event_log: &mut EventLog,
 ) {
-    const IS_MESSAGE: &str = "An `is` specification introduces a symbol and is only allowed in `exists:`, `given:`, or `forAll:`; use the statement form `is?` here";
-    const INFIX_MESSAGE: &str = "An infix specification (`\\:...:/`) introduces a symbol and is only allowed in `exists:`, `given:`, or `forAll:`; use the predicate form (`\\:...?:/`) here";
+    const IS_MESSAGE: &str = "An `is` specification introduces a symbol and is only allowed in `exists:`, `given:`, `forAll:`, or `let:`; use the statement form `is?` here";
+    const INFIX_MESSAGE: &str = "An infix specification (`\\:...:/`) introduces a symbol and is only allowed in `exists:`, `given:`, `forAll:`, or `let:`; use the predicate form (`\\:...?:/`) here";
 
     let (message, subject) = match clause {
         // The logical combinators are position-transparent: their operands inherit
@@ -4284,7 +4292,7 @@ fn reject_specification_clause(
             }
             _ => return,
         },
-        // Structured clauses (if/iff/forAll/exists/given/piecewise) carry their own
+        // Structured clauses (if/iff/forAll/let/exists/given/piecewise) carry their own
         // binding and statement sub-sections, checked separately — stop here.
         _ => return,
     };
@@ -4421,6 +4429,16 @@ fn check_clause(
                 for clause in &where_.arguments {
                     assume_clause(clause, &mut child, path, locator, registry, event_log);
                 }
+            }
+            reject_specification_clauses(&group.then.arguments, path, locator, event_log);
+            for clause in &group.then.arguments {
+                check_clause(clause, &child, path, locator, registry, event_log);
+            }
+        }
+        Clause::Let(group) => {
+            let mut child = context.clone();
+            for item in &group.let_.arguments {
+                assume_binding_or_spec(item, &mut child, path, locator, registry, event_log);
             }
             reject_specification_clauses(&group.then.arguments, path, locator, event_log);
             for clause in &group.then.arguments {

@@ -339,6 +339,7 @@ const CLAUSE_STARTERS: &[&str] = &[
     "exists",
     "existsUnique",
     "forAll",
+    "let",
     "if",
     "have",
     "equivalently",
@@ -401,6 +402,7 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
         "forAll",
         &[("forAll", true), ("where", false), ("then", true)],
     ),
+    ("let", &[("let", true), ("then", true)]),
     ("if", &[("if", true), ("then", true)]),
     ("have", &[("have", true), ("iff", true)]),
     (
@@ -955,6 +957,7 @@ mod tests {
         let got = labels(&complete(text, 2, 2));
         assert!(got.contains(&"forAll".to_string()));
         assert!(got.contains(&"exists".to_string()));
+        assert!(got.contains(&"let".to_string()));
         assert!(got.contains(&"if".to_string()));
         assert!(got.contains(&"have".to_string()));
         assert!(!got.contains(&"iff".to_string()));
@@ -1000,6 +1003,13 @@ mod tests {
     fn next_section_inside_forall_skips_present() {
         let text = "Theorem:\nthen:\n. forAll: x\n  where: y\n  ";
         let got = labels(&complete(text, 4, 2));
+        assert_eq!(got, vec!["then".to_string()]);
+    }
+
+    #[test]
+    fn next_section_inside_let_clause() {
+        let text = "Theorem:\nthen:\n. let: n is \\natural\n  ";
+        let got = labels(&complete(text, 3, 2));
         assert_eq!(got, vec!["then".to_string()]);
     }
 

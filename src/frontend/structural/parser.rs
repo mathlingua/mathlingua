@@ -1140,6 +1140,29 @@ pub(super) fn parse_for_all_clause(
     })
 }
 
+/// Parses a `let:` clause group.
+///
+/// The leading section introduces local bindings that are available only while
+/// checking the required `then:` section.
+pub(super) fn parse_let_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<LetGroup> {
+    let heading = parse_optional_label_heading(group, tracker)?;
+    let sections = identify_sections("let", &group.sections, tracker, &["let", "then"])?;
+    Some(LetGroup {
+        heading,
+        let_: LetSection {
+            arguments: parse_required_formulations(
+                section(&sections, "let")?,
+                "let",
+                tracker,
+                parse_binding_or_spec,
+            )?,
+        },
+        then: ThenSection {
+            arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
+        },
+    })
+}
+
 /// Parses an `if:` clause group.
 pub(super) fn parse_if_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<IfGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
@@ -1497,6 +1520,7 @@ pub(super) fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> 
         "exists" => parse_exists_clause(group, tracker).map(Clause::Exists),
         "existsUnique" => parse_exists_unique_clause(group, tracker).map(Clause::ExistsUnique),
         "forAll" => parse_for_all_clause(group, tracker).map(Clause::ForAll),
+        "let" => parse_let_clause(group, tracker).map(Clause::Let),
         "if" => parse_if_clause(group, tracker).map(Clause::If),
         "have" => parse_have_or_assertion(group, tracker),
         "piecewise" => parse_piecewise_clause(group, tracker).map(Clause::Piecewise),
@@ -5483,6 +5507,32 @@ that:
                     other => panic!("expected existsUnique clause, got {other:?}"),
                 }
             }
+            other => panic!("expected states item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_let_clause_groups() {
+        let text = r#"
+[\property]
+States:
+that:
+. let: n "in" X
+  then: n = n
+"#;
+
+        let mut tracker = EventLog::new();
+        let document = parse_document(text, &mut tracker);
+
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
+        match &document.items[0] {
+            TopLevelItem::States(states) => match &states.that.arguments[0] {
+                Clause::Let(group) => {
+                    assert_eq!(group.let_.arguments.len(), 1);
+                    assert_eq!(group.then.arguments.len(), 1);
+                }
+                other => panic!("expected let clause, got {other:?}"),
+            },
             other => panic!("expected states item, got {other:?}"),
         }
     }

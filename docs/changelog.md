@@ -5,6 +5,13 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Local `let:` Clauses
+
+Clause-valued sections now accept a `let:` group followed by a required `then:`
+section. Each `let:` argument uses the same refined-capable binding syntax as
+quantifier bindings, introduces its symbols in order, and keeps them scoped to
+the `then:` body.
+
 ## Self-Contained Viewer And Export
 
 `mlg view` now serves the production web viewer and collection JSON directly
@@ -865,9 +872,9 @@ A command argument that is a bare collection literal is sugared, so
 ### Specifications Are Not Allowed Where Statements Are Expected
 
 An `is` specification or infix specification introduces a symbol, so it is only
-valid in binding positions (`exists:`, `given:`, `forAll:`, `where:`, `when:`,
-`suchThat:`). In a statement position (`then:`, `iff:`, `that:`, `if:`, `not:`,
-`allOf:`, `anyOf:`, `oneOf:`, `equivalently:`) the predicate form must be used
+valid in binding positions (`exists:`, `given:`, `forAll:`, `let:`, `where:`,
+`when:`, `suchThat:`). In a statement position (`then:`, `iff:`, `that:`, `if:`,
+`not:`, `allOf:`, `anyOf:`, `oneOf:`, `equivalently:`) the predicate form must be used
 instead: `x is? \set` rather than `x is \set`, and `A \:subset?:/ B` rather than
 `A \:subset:/ B`.
 
@@ -910,10 +917,10 @@ Rules:
 The checker reports any ordinary symbol use that has not been introduced.
 
 - Binding and assumption sections such as `given:`, `exists:`, `existsUnique:`,
-  and `forAll:` introduce their declared subjects.
-- Clause-group `given:`, `exists:`, `existsUnique:`, and `forAll:` sections may
-  contain multiple block arguments; each argument is introduced in order before
-  the guard, predicate, or body is checked.
+  `forAll:`, and `let:` introduce their declared subjects.
+- Clause-group `given:`, `exists:`, `existsUnique:`, `forAll:`, and `let:`
+  sections may contain multiple block arguments; each argument is introduced in
+  order before the guard, predicate, or body is checked.
 - Declaration definitions make declaration-side symbols available to the right
   hand side, so `f(x_) := x_` is valid.
 - Declaration relations are checked too, so `Declares: f(x_) := x_ is

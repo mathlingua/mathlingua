@@ -637,6 +637,8 @@ expressions.
   optional `suchThat:` clauses.
 - **`existsUnique`** — same as `exists`, with unique-existence intent.
 - **`forAll`** — creates a child context, assumes `where:`, checks `then:`.
+- **`let`** — introduces one or more local bindings in a child context and
+  checks `then:` with those bindings available.
 - **`if`** — assumes `if:`, checks `then:`.
 - **`have`** — assumes `iff:`, checks `have:`.
 - **`equivalently`** — a chain of biconditionals — sugar for pairwise `iff`.
@@ -644,6 +646,13 @@ expressions.
   in the outer context.
 - **`given`** — assumes one refined-capable given statement (optional `where:`),
   then checks `then:`.
+
+For example, a `let:` clause can introduce a member for use in its body:
+
+```text
+. let: n "in" X
+  then: n = n
+```
 
 Each of these clauses also has a builtin *command* form used inline in a
 statement position: `\\not{...}`, `\\allOf{...}`, `\\anyOf{...}`, `\\oneOf{...}`,
@@ -665,7 +674,8 @@ then:
 If the context knows `A is \real`, then `\foo{B}` may satisfy a requirement for
 `\real` because `A ::= B := B` makes the two keys normalize together.
 
-Quantifier declarations are local to the clause group that introduces them.
+Quantifier and `let:` declarations are local to the clause group that introduces
+them.
 
 ## Support Sections
 
@@ -904,10 +914,10 @@ because \`{subject}\` is not a parameter of this definition`) and only with
 
 An `is` specification or infix specification (`\:...:/`) *introduces* a symbol,
 so it is only allowed in binding positions (`exists:`, `given:`, `forAll:`,
-`where:`, `when:`, `suchThat:`). In a statement position (`then:`, `iff:`,
+`let:`, `where:`, `when:`, `suchThat:`). In a statement position (`then:`, `iff:`,
 `that:`, `if:`, `not:`, `allOf:`, …) it is rejected in favor of the predicate
 form `is?` / `\:...?:/` (`An \`is\` specification introduces a symbol and is only
-allowed in \`exists:\`, \`given:\`, or \`forAll:\`; use the statement form
+allowed in \`exists:\`, \`given:\`, \`forAll:\`, or \`let:\`; use the statement form
 \`is?\` here`).
 
 ### 11. Symbol scope

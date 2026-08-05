@@ -84,6 +84,14 @@ pub(in crate::backend::semantic) fn walk_clause(
                 walk_clause(clause, visit);
             }
         }
+        Clause::Let(group) => {
+            for item in &group.let_.arguments {
+                walk_binding_or_spec(item, visit);
+            }
+            for clause in &group.then.arguments {
+                walk_clause(clause, visit);
+            }
+        }
         Clause::If(group) => {
             for clause in &group.if_.arguments {
                 walk_clause(clause, visit);

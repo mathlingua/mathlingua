@@ -6533,16 +6533,22 @@ fn context_with_spec_reductions(
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> TypeContext {
-    let mut spec_seen = HashSet::new();
-    let reduced: Vec<TypeFact> = context
-        .facts
-        .iter()
-        .filter(|fact| matches!(fact, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }))
-        .flat_map(|fact| reduce_spec_or_member_fact(fact, context, registry, &mut spec_seen))
-        .collect();
     let mut child = context.clone();
-    for fact in reduced {
-        child.add_fact(fact);
+    let mut known = child.facts.iter().cloned().collect::<HashSet<_>>();
+    let mut index = 0;
+    while index < child.facts.len() {
+        let fact = child.facts[index].clone();
+        index += 1;
+        if !matches!(fact, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
+            continue;
+        }
+        let mut seen = HashSet::new();
+        for reduced in reduce_spec_or_member_fact(&fact, &child, registry, &mut seen) {
+            let reduced = child.normalize_fact(&reduced);
+            if known.insert(reduced.clone()) {
+                child.add_fact(reduced);
+            }
+        }
     }
     child
 }
@@ -10726,7 +10732,9 @@ fn spec_requirement_holds_via_provider(
         if !has_type_signature(target, &rule.owner_signature, context, registry) {
             continue;
         }
-        if rule.source_requires_literal && context.collection_literal(target).is_none() {
+        if rule.source_requires_literal
+            && !collection_is_literal_or_has_body(target, context, registry)
+        {
             continue;
         }
         let targets = spec_rule_direct_targets(rule, subject, target, context);
@@ -12010,7 +12018,9 @@ fn reduce_spec_fact(
             continue;
         }
 
-        if rule.source_requires_literal && context.collection_literal(target).is_none() {
+        if rule.source_requires_literal
+            && !collection_is_literal_or_has_body(target, context, registry)
+        {
             continue;
         }
 
@@ -12133,7 +12143,9 @@ fn facts_from_collection_body_membership(
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> Vec<TypeFact> {
-    let Some((signature, actuals)) = command_signature_and_actuals_from_key(collection) else {
+    let Some((signature, actuals)) =
+        collection_body_signature_and_actuals(collection, context, registry)
+    else {
         return Vec::new();
     };
     let Some(body) = registry.collection_bodies.get(&signature) else {
@@ -12154,42 +12166,143 @@ fn facts_from_collection_body_membership(
     facts_from_collection_literal_membership(subject, &instantiated, context)
 }
 
+fn collection_is_literal_or_has_body(
+    collection: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> bool {
+    if context.collection_literal(collection).is_some() {
+        return true;
+    }
+    collection_body_signature_and_actuals(collection, context, registry).is_some()
+}
+
+fn collection_body_signature_and_actuals(
+    collection: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<(String, Vec<String>)> {
+    let collection = context.normalize_key(collection);
+    // Try infix first: the ordinary command-key parser can otherwise consume an
+    // entire infix expression as though it were one command signature.
+    infix_command_signature_and_actuals_from_key(&collection)
+        .into_iter()
+        .chain(command_signature_and_actuals_from_key(&collection))
+        .find(|(signature, _)| registry.collection_bodies.contains_key(signature))
+}
+
 fn facts_from_collection_literal_membership(
     subject: &str,
     literal: &SetExpression,
     context: &TypeContext,
 ) -> Vec<TypeFact> {
-    let Some(pattern) = collection_literal_member_pattern(&literal.target) else {
+    // Bind a produced tuple/function pattern component-wise. For example,
+    // `(n, m) "in" { (a_, b_) : a_ "in" A; b_ "in" B }` establishes
+    // `n "in" A` and `m "in" B`, not merely a fact about the tuple as a whole.
+    let mut substitutions = HashMap::new();
+    if !bind_set_target_to_key(&literal.target, subject, &mut substitutions, context) {
         return Vec::new();
-    };
+    }
 
     let mut child = context.clone();
     declare_set_target(&literal.target, &mut child);
 
-    let substitutions = HashMap::from([(pattern.clone(), subject.to_owned())]);
     let mut result = Vec::new();
     for spec in &literal.specs {
         let Some(fact) = fact_from_expression_in_context(spec, &child) else {
             continue;
         };
         child.add_fact(fact.clone());
-        if child.normalize_key(fact_subject(&fact)) == child.normalize_key(&pattern) {
+        if substitutions
+            .keys()
+            .any(|name| key_mentions_name(fact_subject(&fact), name))
+        {
             result.push(child.normalize_fact(&substitute_fact(&fact, &substitutions)));
         }
     }
     result
 }
 
-fn collection_literal_member_pattern(target: &SetTarget) -> Option<String> {
+fn bind_set_target_to_key(
+    target: &SetTarget,
+    actual: &str,
+    substitutions: &mut HashMap<String, String>,
+    context: &TypeContext,
+) -> bool {
     match &target.kind {
-        SetTargetKind::Name(name) => Some(name.clone()),
-        SetTargetKind::PlaceholderForm(form) => Some(key_for_placeholder_form(form)),
-        SetTargetKind::Expression { .. } => Some(key_for_set_target(target)),
-        SetTargetKind::Alias { name, .. } | SetTargetKind::Introduction { name, .. } => {
-            Some(name.clone())
+        SetTargetKind::Name(name) => bind_cast_name_to_key(name, actual, substitutions, context),
+        SetTargetKind::PlaceholderForm(form) => match &form.kind {
+            PlaceholderFormKind::Placeholder(placeholder) => {
+                bind_cast_name_to_key(&placeholder.name, actual, substitutions, context)
+            }
+            PlaceholderFormKind::Function {
+                placeholder,
+                arguments,
+            } => {
+                let Some((actual_name, actual_arguments)) = function_call_parts_from_key(actual)
+                else {
+                    return false;
+                };
+                arguments.len() == actual_arguments.len()
+                    && bind_cast_name_to_key(
+                        &placeholder.name,
+                        &actual_name,
+                        substitutions,
+                        context,
+                    )
+                    && arguments
+                        .iter()
+                        .zip(actual_arguments)
+                        .all(|(argument, actual_argument)| {
+                            bind_cast_name_to_key(
+                                &argument.name,
+                                &actual_argument,
+                                substitutions,
+                                context,
+                            )
+                        })
+            }
+        },
+        SetTargetKind::Expression { expression, .. } => bind_cast_name_to_key(
+            &key_for_expression(expression),
+            actual,
+            substitutions,
+            context,
+        ),
+        SetTargetKind::Alias { name, target } | SetTargetKind::Introduction { name, target } => {
+            bind_cast_name_to_key(name, actual, substitutions, context)
+                && bind_set_target_to_key(target, actual, substitutions, context)
         }
-        SetTargetKind::Function { .. } | SetTargetKind::Tuple(_) => {
-            Some(key_for_set_target(target))
+        SetTargetKind::Function { name, arguments } => {
+            let Some((actual_name, actual_arguments)) = function_call_parts_from_key(actual) else {
+                return false;
+            };
+            arguments.len() == actual_arguments.len()
+                && bind_cast_name_to_key(name, &actual_name, substitutions, context)
+                && arguments
+                    .iter()
+                    .zip(actual_arguments)
+                    .all(|(argument, actual_argument)| {
+                        bind_set_target_to_key(argument, &actual_argument, substitutions, context)
+                    })
+        }
+        SetTargetKind::Tuple(elements) => {
+            let Some(actual_arguments) = tuple_arguments_from_key(actual) else {
+                return false;
+            };
+            elements.len() == actual_arguments.len()
+                && elements
+                    .iter()
+                    .zip(actual_arguments)
+                    .all(|(element, actual_argument)| match element {
+                        SetTargetElement::Target(target) => {
+                            bind_set_target_to_key(target, &actual_argument, substitutions, context)
+                        }
+                        SetTargetElement::Operator(operator) => {
+                            context.normalize_key(&operator.text)
+                                == context.normalize_key(&actual_argument)
+                        }
+                    })
         }
     }
 }
@@ -13684,12 +13797,24 @@ fn substitute_expression(
             operator: operator.clone(),
             right: boxed(right),
         },
-        ExpressionKind::SpecStatement(statement) => ExpressionKind::SpecStatement(SpecStatement {
-            span: statement.span,
-            subject: boxed(&statement.subject),
-            operator: statement.operator.clone(),
-            name: statement.name.clone(),
-        }),
+        ExpressionKind::SpecStatement(statement) => {
+            // A collection-body parameter can be instantiated by a compound
+            // collection expression, which requires the expression-target form.
+            if let Some(target) = substitutions.get(&statement.name) {
+                ExpressionKind::SpecStatementExpr {
+                    subject: boxed(&statement.subject),
+                    operator: statement.operator.clone(),
+                    target: Box::new(target.clone()),
+                }
+            } else {
+                ExpressionKind::SpecStatement(SpecStatement {
+                    span: statement.span,
+                    subject: boxed(&statement.subject),
+                    operator: statement.operator.clone(),
+                    name: statement.name.clone(),
+                })
+            }
+        }
         ExpressionKind::SpecStatementExpr {
             subject,
             operator,

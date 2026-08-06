@@ -8233,6 +8233,68 @@ Documented:
     }
 
     #[test]
+    fn check_resolves_plain_operator_from_destructured_infix_collection_membership() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("product-member-operator.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Enables:
+    . from: Y ::= {y__ : ...}
+      capability: x_ "in" X :-> x_ member_of Y
+    Documented:
+    . called: "set"
+
+    [A \.cross./ B]
+    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    when: A, B is \set
+    Documented:
+    . called: "product"
+
+    [\natural]
+    Defines: n
+    Enables:
+    . capability: x_ + y_ :=> x_ \.natural.+./ y_
+    Documented:
+    . called: "natural"
+
+    [\naturals]
+    Declares: N := \set@{n_ : n_ is \natural}
+    Documented:
+    . called: "naturals"
+
+    [a_ \.natural.+./ b_]
+    Declares: c is \natural
+    when: a_, b_ is \natural
+    Documented:
+    . written: "a_? + b_?"
+
+    Theorem:
+    given: (n1, n2) "in" (\naturals \.cross./ \naturals)
+    then: n1 + n2 is? \natural
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("product-member-operator.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_reduces_spec_literal_set_membership_to_element_type() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("spec-literal-membership.mlg");

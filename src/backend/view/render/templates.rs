@@ -567,6 +567,15 @@ fn strip_one_wrapping_paren(text: &str) -> Option<&str> {
 /// (`1 + 2`) or commas (`X, Y`), so a value with neither outside of a bracket —
 /// `a`, `x_1`, `\emptyset`, `\mathsf{Field}_{V}`, `f(x)` — is treated as atomic.
 fn is_atomic_latex(text: &str) -> bool {
+    // Reference annotations do not contribute any visible syntax. Inspect their
+    // rendered body so a linked compound expression such as
+    // `\htmlData{mlg-ref=...}{P \text{ and } Q}` is not mistaken for one atom
+    // merely because all of its spaces are inside the wrapper's braces.
+    let mut text = text.trim();
+    while let Some(body) = transparent_html_data_body(text) {
+        text = body.trim();
+    }
+
     let mut depth = 0usize;
     let mut index = 0usize;
 
@@ -599,6 +608,49 @@ fn is_atomic_latex(text: &str) -> bool {
     }
 
     true
+}
+
+/// Returns the visible body of a `\htmlData{...}{...}` wrapper when the wrapper
+/// spans all of `text`.
+fn transparent_html_data_body(text: &str) -> Option<&str> {
+    const HTML_DATA: &str = "\\htmlData";
+
+    let text = text.trim();
+    let metadata_start = text.strip_prefix(HTML_DATA).map(|_| HTML_DATA.len())?;
+    let (_, body_start) = braced_latex_argument(text, metadata_start)?;
+    let (body, end) = braced_latex_argument(text, body_start)?;
+    text[end..].trim().is_empty().then_some(body)
+}
+
+/// Parses the balanced braced argument beginning at `start`, returning its body
+/// and the byte offset immediately after its closing brace.
+fn braced_latex_argument(text: &str, start: usize) -> Option<(&str, usize)> {
+    if !text.get(start..)?.starts_with('{') {
+        return None;
+    }
+
+    let mut depth = 1usize;
+    let mut index = start + 1;
+    while index < text.len() {
+        let rest = &text[index..];
+        match rest.chars().next().expect("rest is not empty") {
+            '\\' => index += escaped_unit_len(rest),
+            '{' => {
+                depth += 1;
+                index += 1;
+            }
+            '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some((&text[start + 1..index], index + 1));
+                }
+                index += 1;
+            }
+            ch => index += ch.len_utf8(),
+        }
+    }
+
+    None
 }
 
 /// The byte length of the next unit of LaTeX at the start of `rest`.

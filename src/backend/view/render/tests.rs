@@ -854,6 +854,43 @@ Documented:
 }
 
 #[test]
+fn ensure_paren_modifier_wraps_a_nested_documented_statement() {
+    let mut registry = registry_for(
+        r#"[\not{P}]
+States:
+when: P is \\statement
+that:
+. not: P
+Documented:
+. written: "\neg P+?"
+
+[P \.and./ Q]
+States:
+when: P, Q is \\statement
+that:
+. allOf:
+  . P
+  . Q
+Documented:
+. written: "P? \text{ and } Q?"
+"#,
+    );
+    registry.link_references = true;
+
+    assert_eq!(
+        render_formulation_latex(r#"\not{P}"#, &registry),
+        Some(r#"\htmlData{mlg-ref=5c6e6f74}{\neg P}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\not{P \.and./ P}"#, &registry),
+        Some(
+            r#"\htmlData{mlg-ref=5c6e6f74}{\neg \left(\htmlData{mlg-ref=5c2e616e642e2f}{P \text{ and } P}\right)}"#
+                .to_string()
+        )
+    );
+}
+
+#[test]
 fn renders_theorem_like_command_headings_from_label_when_documentation_is_missing() {
     let registry = registry_for(
         r#"[\axiom.of.unordered.pair]

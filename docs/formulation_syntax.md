@@ -933,9 +933,13 @@ FormList ::= FormOrDeclaration ("," FormOrDeclaration)*
 TupleExpressionElement ::= Expression | AnyOperator
 TupleFormElement ::= FormOrDeclaration | AnyOperator
 
-SubsetNameCall ::= Name "[" Name "]"
+SubsetNameCall ::= Name "[" (Name | Placeholder) "]"
                  | Name "[" Name "," Name "]"
                  | Name "[" Name "[" Name "]" "]"
+
+VariadicSlice ::= Name "..."
+                | Name "[" ("0" | "1") "..." Name "]"
+                | Name "[" ("0" | "1") "..." Placeholder "..." Name "]"
 ```
 
 ### Forms and declarations
@@ -1019,6 +1023,7 @@ AtomExpression ::=
   | TupleExpression
   | SetExpression
   | SubsetExpression
+  | VariadicSlice
   | CommandExpression
   | Placeholder
   | Name
@@ -1126,7 +1131,9 @@ Notes:
 ```text
 CommandHeader ::= SimpleCommandHeader | InfixCommandHeader | RefinedCommandHeader
 
-CurlyHeadingArgs ::= "{" FormList "}"
+CurlyHeadingArgs ::= "{" (FormList | VariadicParameter) "}"
+VariadicParameter ::= Name "..." Name?
+                    | Name "[" Placeholder ":=" ("0" | "1") "..." Name? "]"
 ParenHeadingArgs ::= "(" HeadingParameterList ")"
 HeadingParameterList ::= HeadingParameter ("," HeadingParameter)*
 HeadingParameter ::= FormOrDeclaration | Placeholder
@@ -1195,9 +1202,13 @@ This is part of the current implementation and should be preserved unless the la
 
 Both tuple expressions and tuple forms require at least two elements.
 
-### Subset syntax is intentionally narrow
+### Subset and variadic syntax are intentionally narrow
 
-Only the three hard-coded name-only shapes are accepted.
+Ordinary subset calls accept the three hard-coded shapes above; a one-index
+call also accepts a placeholder index such as `x[i_]`. Variadic slices accept
+only zero- or one-based ranges. A slice is rejected as an ordinary operand and
+is accepted only by the broadcast operations and variadic builtins documented
+in `language.md`.
 
 ### Named-operator and infix-command precedence is left-associative
 

@@ -24,6 +24,7 @@ pub(in crate::backend::view) struct RenderRegistry {
 pub(super) struct CommandRender {
     pub(super) subject_variable: Option<String>,
     pub(super) parameters: Vec<String>,
+    pub(super) variadic_parameters: Vec<(VariadicParameter, usize)>,
     /// The form used wherever the item is named inline, such as `X is \foo`.
     pub(super) called: String,
     pub(super) called_source: CalledRenderSource,
@@ -806,6 +807,7 @@ fn render_entries_from_signatures(
                 render: CommandRender {
                     subject_variable: subject_variable.clone(),
                     parameters: signature.parameters,
+                    variadic_parameters: signature.variadic_parameters,
                     called: called_text,
                     called_source,
                     written: written.clone(),

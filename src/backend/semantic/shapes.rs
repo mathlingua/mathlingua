@@ -26,7 +26,7 @@ pub(super) fn shape_for_command_header_node(command: &CommandHeaderNode) -> Sign
     for args in &command.paren_args {
         arg_groups.push(ArgGroupShape {
             delimiter: ArgDelimiter::Paren,
-            count: args.forms.len(),
+            count: ArgCount::Exact(args.forms.len()),
         });
     }
     SignatureShape {
@@ -236,7 +236,7 @@ pub(super) fn shape_for_refined_command_header(command: &RefinedCommandHeader) -
     for args in &command.paren_args {
         arg_groups.push(ArgGroupShape {
             delimiter: ArgDelimiter::Paren,
-            count: args.forms.len(),
+            count: ArgCount::Exact(args.forms.len()),
         });
     }
     SignatureShape {
@@ -339,7 +339,7 @@ pub(super) fn shape_for_command_expression(command: &CommandExpression) -> Signa
     for args in &command.paren_args {
         arg_groups.push(ArgGroupShape {
             delimiter: ArgDelimiter::Paren,
-            count: args.expressions.len(),
+            count: ArgCount::Exact(args.expressions.len()),
         });
     }
     SignatureShape {
@@ -415,7 +415,7 @@ pub(super) fn shape_for_refined_command_expression(
     for args in &command.paren_args {
         arg_groups.push(ArgGroupShape {
             delimiter: ArgDelimiter::Paren,
-            count: args.expressions.len(),
+            count: ArgCount::Exact(args.expressions.len()),
         });
     }
     let mut shape = SignatureShape {
@@ -484,10 +484,7 @@ pub(super) fn add_heading_curly_groups(
     groups: &[CurlyHeadingArgs],
 ) {
     for args in groups {
-        arg_groups.push(ArgGroupShape {
-            delimiter: ArgDelimiter::Curly,
-            count: args.forms.len(),
-        });
+        arg_groups.push(heading_arg_group_shape(args));
     }
 }
 
@@ -498,7 +495,7 @@ pub(super) fn add_expression_curly_groups(
     for args in groups {
         arg_groups.push(ArgGroupShape {
             delimiter: ArgDelimiter::Curly,
-            count: args.expressions.len(),
+            count: ArgCount::Exact(args.expressions.len()),
         });
     }
 }
@@ -510,7 +507,7 @@ pub(super) fn add_expression_paren_groups(
     for args in groups {
         arg_groups.push(ArgGroupShape {
             delimiter: ArgDelimiter::Paren,
-            count: args.expressions.len(),
+            count: ArgCount::Exact(args.expressions.len()),
         });
     }
 }
@@ -606,13 +603,19 @@ fn deduplicate_header_variants(variants: Vec<HeaderVariant>) -> Vec<HeaderVarian
 }
 
 fn heading_group_shapes(groups: &[CurlyHeadingArgs]) -> Vec<ArgGroupShape> {
-    groups
-        .iter()
-        .map(|args| ArgGroupShape {
-            delimiter: ArgDelimiter::Curly,
-            count: args.forms.len(),
-        })
-        .collect()
+    groups.iter().map(heading_arg_group_shape).collect()
+}
+
+fn heading_arg_group_shape(args: &CurlyHeadingArgs) -> ArgGroupShape {
+    ArgGroupShape {
+        delimiter: ArgDelimiter::Curly,
+        count: match &args.variadic {
+            Some(variadic) => ArgCount::Variadic {
+                length: variadic.length.clone(),
+            },
+            None => ArgCount::Exact(args.forms.len()),
+        },
+    }
 }
 
 fn paren_heading_group_shapes(groups: &[ParenHeadingArgs]) -> Vec<ArgGroupShape> {
@@ -620,7 +623,7 @@ fn paren_heading_group_shapes(groups: &[ParenHeadingArgs]) -> Vec<ArgGroupShape>
         .iter()
         .map(|args| ArgGroupShape {
             delimiter: ArgDelimiter::Paren,
-            count: args.forms.len(),
+            count: ArgCount::Exact(args.forms.len()),
         })
         .collect()
 }
@@ -628,8 +631,12 @@ fn paren_heading_group_shapes(groups: &[ParenHeadingArgs]) -> Vec<ArgGroupShape>
 fn heading_group_parameters(groups: &[CurlyHeadingArgs]) -> Vec<String> {
     groups
         .iter()
-        .flat_map(|args| args.forms.iter())
-        .filter_map(primary_form_name)
+        .flat_map(|args| {
+            args.variadic
+                .iter()
+                .map(|variadic| variadic.name.clone())
+                .chain(args.forms.iter().filter_map(primary_form_name))
+        })
         .collect()
 }
 
@@ -660,14 +667,22 @@ fn paren_heading_group_key_suffix(groups: &[ParenHeadingArgs]) -> String {
 fn append_heading_curly_key_groups(key: &mut String, groups: &[CurlyHeadingArgs]) {
     for args in groups {
         key.push('{');
-        key.push_str(
-            &args
-                .forms
-                .iter()
-                .map(key_for_form_or_declaration)
-                .collect::<Vec<_>>()
-                .join(","),
-        );
+        if let Some(variadic) = &args.variadic {
+            key.push_str(&variadic.name);
+            key.push_str("...");
+            if let Some(length) = &variadic.length {
+                key.push_str(length);
+            }
+        } else {
+            key.push_str(
+                &args
+                    .forms
+                    .iter()
+                    .map(key_for_form_or_declaration)
+                    .collect::<Vec<_>>()
+                    .join(","),
+            );
+        }
         key.push('}');
     }
 }
@@ -869,9 +884,19 @@ pub(super) fn format_arg_groups(groups: &[ArgGroupShape]) -> String {
     groups
         .iter()
         .map(|group| match group.delimiter {
-            ArgDelimiter::Curly => format!("{{{}}}", group.count),
-            ArgDelimiter::Paren => format!("({})", group.count),
+            ArgDelimiter::Curly => format!("{{{}}}", format_arg_count(&group.count)),
+            ArgDelimiter::Paren => format!("({})", format_arg_count(&group.count)),
         })
         .collect::<Vec<_>>()
         .join("")
+}
+
+fn format_arg_count(count: &ArgCount) -> String {
+    match count {
+        ArgCount::Exact(count) => count.to_string(),
+        ArgCount::Variadic {
+            length: Some(length),
+        } => format!("1+:{length}"),
+        ArgCount::Variadic { length: None } => "1+".to_string(),
+    }
 }

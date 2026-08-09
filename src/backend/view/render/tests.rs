@@ -41,6 +41,47 @@ Documented:
 }
 
 #[test]
+fn renders_variadic_command_arguments_in_written_templates() {
+    let registry = registry_for(
+        r#"[\sequence:of{x...n}]
+Defines: S
+Documented:
+. written: "x? \; (n?)"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"\sequence:of{a, b, c}"#, &registry),
+        Some(r#"a, b, c \; (3)"#.to_string())
+    );
+}
+
+#[test]
+fn renders_variadic_map_and_reduce_builtins() {
+    let registry = registry_for("");
+
+    assert_eq!(
+        render_formulation_latex(r#"\\map{x[1...i_...n]}:to{x[i_] + 1}"#, &registry),
+        Some(r#"x_{1} + 1, x_{2} + 1, \ldots, x_{n} + 1"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(
+            r#"\\map{x[1...i_...n], y[1...i_...n]}:to{x[i_] + y[i_] + 1}"#,
+            &registry
+        ),
+        Some(r#"x_{1} + y_{1} + 1, x_{2} + y_{2} + 1, \ldots, x_{n} + y_{n} + 1"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\\leftReduce{`+`}:on{x[1...n]}"#, &registry),
+        Some(r#"x_{1} + \ldots + x_{n}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\\rightReduce{`+`}:on{x[1...i_...n]}"#, &registry),
+        Some(r#"x_{1} + \ldots + x_{i} + \ldots + x_{n}"#.to_string())
+    );
+}
+
+#[test]
 fn renders_command_context_assignments_as_visible_given_values() {
     let registry = registry_for(
         r#"[\axiom.of.extension]

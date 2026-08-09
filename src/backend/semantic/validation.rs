@@ -58,16 +58,39 @@ pub(super) fn validate_reference_shape(
 }
 
 pub(super) fn argument_groups_match(expected: &[ArgGroupShape], actual: &[ArgGroupShape]) -> bool {
-    if expected == actual {
-        return true;
+    if actual.len() > expected.len() {
+        return false;
     }
 
-    let Some(remaining_expected) = expected.strip_prefix(actual) else {
-        return false;
-    };
+    let mut lengths = HashMap::<String, usize>::new();
+    for (expected, actual) in expected.iter().zip(actual) {
+        if expected.delimiter != actual.delimiter {
+            return false;
+        }
+        let actual_count = match actual.count {
+            ArgCount::Exact(count) => count,
+            ArgCount::Variadic { .. } => {
+                if expected.count != actual.count {
+                    return false;
+                }
+                continue;
+            }
+        };
+        match &expected.count {
+            ArgCount::Exact(expected_count) if *expected_count != actual_count => return false,
+            ArgCount::Exact(_) => {}
+            ArgCount::Variadic { .. } if actual_count == 0 => return false,
+            ArgCount::Variadic {
+                length: Some(length),
+            } => match lengths.insert(length.clone(), actual_count) {
+                Some(previous) if previous != actual_count => return false,
+                _ => {}
+            },
+            ArgCount::Variadic { length: None } => {}
+        }
+    }
 
-    !remaining_expected.is_empty()
-        && remaining_expected
-            .iter()
-            .all(|group| group.delimiter == ArgDelimiter::Paren)
+    expected[actual.len()..]
+        .iter()
+        .all(|group| group.delimiter == ArgDelimiter::Paren)
 }

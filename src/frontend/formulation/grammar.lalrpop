@@ -568,7 +568,7 @@ LabeledExpression: ast::Expression = {
 };
 
 SubsetNameCall: ast::SubsetCall = {
-    <l:@L> <target:Name> "[" <first:Name> "]" <r:@R> => ast::SubsetCall::One {
+    <l:@L> <target:Name> "[" <first:IndexName> "]" <r:@R> => ast::SubsetCall::One {
         span: Span::new(l, r),
         target,
         first,
@@ -584,6 +584,19 @@ SubsetNameCall: ast::SubsetCall = {
         target,
         outer,
         inner_target,
+    },
+};
+
+IndexName: String = {
+    <name:Name> => name,
+    <placeholder:Placeholder> => placeholder.name,
+};
+
+VariadicStart: usize = {
+    <name:Name> =>? match name.as_str() {
+        "0" => Ok(0),
+        "1" => Ok(1),
+        _ => Err(lalrpop_util::ParseError::User { error: LexicalError::InvalidToken }),
     },
 };
 
@@ -850,6 +863,36 @@ PrimaryExpression: ast::Expression = {
         ast::Expression::new(Span::new(l, r), ExpressionKind::Tuple(elements))
     },
     <expression:SetExpression> => expression,
+    <l:@L> <name:Name> "..." <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::VariadicSlice(ast::VariadicSlice {
+            span: Span::new(l, r),
+            name,
+            start: None,
+            index: None,
+            end: None,
+        }),
+    ),
+    <l:@L> <name:Name> "[" <start:VariadicStart> "..." <end:Name> "]" <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::VariadicSlice(ast::VariadicSlice {
+            span: Span::new(l, r),
+            name,
+            start: Some(start),
+            index: None,
+            end: Some(end),
+        }),
+    ),
+    <l:@L> <name:Name> "[" <start:VariadicStart> "..." <index:Placeholder> "..." <end:Name> "]" <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::VariadicSlice(ast::VariadicSlice {
+            span: Span::new(l, r),
+            name,
+            start: Some(start),
+            index: Some(index.name),
+            end: Some(end),
+        }),
+    ),
     <l:@L> <placeholder:Placeholder> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::Name(placeholder.name),

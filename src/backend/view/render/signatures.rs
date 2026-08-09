@@ -29,15 +29,20 @@ pub(super) fn command_header_signature(header: &CommandHeader) -> String {
 pub(super) struct CommandHeaderSignature {
     pub(super) signature: String,
     pub(super) parameters: Vec<String>,
+    pub(super) variadic_parameters: Vec<(VariadicParameter, usize)>,
 }
 
 pub(super) fn command_header_signatures(header: &CommandHeader) -> Vec<CommandHeaderSignature> {
-    match header {
+    let mut signatures = match header {
         CommandHeader::Command(command) => simple_command_header_signatures(command),
         CommandHeader::Infix(command) => infix_command_header_signatures(command),
         CommandHeader::InfixSpec(spec) => infix_spec_header_signatures(spec),
         CommandHeader::Refined(command) => refined_command_header_signatures(command),
+    };
+    for signature in &mut signatures {
+        signature.variadic_parameters = header_variadic_parameters(header, &signature.signature);
     }
+    signatures
 }
 
 pub(super) fn simple_command_header_signatures(
@@ -56,6 +61,7 @@ pub(super) fn simple_command_header_signatures(
             CommandHeaderSignature {
                 signature: format!("{base_signature}{}", variant.signature_suffix),
                 parameters,
+                variadic_parameters: Vec::new(),
             }
         })
         .collect()
@@ -78,6 +84,7 @@ pub(super) fn infix_command_header_signatures(
             CommandHeaderSignature {
                 signature: format!("{base_signature}{}./", variant.signature_suffix),
                 parameters,
+                variadic_parameters: Vec::new(),
             }
         })
         .collect()
@@ -114,6 +121,7 @@ pub(super) fn infix_spec_header_signatures(spec: &InfixSpecHeader) -> Vec<Comman
             CommandHeaderSignature {
                 signature: format!("{base_signature}{}:/", variant.signature_suffix),
                 parameters,
+                variadic_parameters: Vec::new(),
             }
         })
         .collect()
@@ -182,6 +190,7 @@ pub(super) fn refined_command_header_signatures(
                 CommandHeaderSignature {
                     signature,
                     parameters,
+                    variadic_parameters: Vec::new(),
                 }
             })
         })
@@ -307,12 +316,7 @@ fn header_tail_variants(tail: &[CommandHeaderTailPart]) -> Vec<HeaderSignatureVa
                 let mut next = variant.clone();
                 next.signature_suffix.push(':');
                 next.signature_suffix.push_str(&format_chain(&part.chain));
-                next.parameters.extend(
-                    part.args
-                        .iter()
-                        .flat_map(|args| args.forms.iter())
-                        .filter_map(primary_form_name),
-                );
+                next.parameters.extend(heading_group_parameters(&part.args));
                 next
             })
             .collect::<Vec<_>>();
@@ -362,9 +366,88 @@ fn deduplicate_header_signature_variants(
 fn heading_group_parameters(groups: &[CurlyHeadingArgs]) -> Vec<String> {
     groups
         .iter()
-        .flat_map(|args| args.forms.iter())
-        .filter_map(primary_form_name)
+        .flat_map(|args| {
+            args.variadic
+                .iter()
+                .map(|variadic| variadic.name.clone())
+                .chain(args.forms.iter().filter_map(primary_form_name))
+        })
         .collect()
+}
+
+fn header_variadic_parameters(
+    header: &CommandHeader,
+    active_signature: &str,
+) -> Vec<(VariadicParameter, usize)> {
+    fn collect(
+        groups: &[CurlyHeadingArgs],
+        group_index: &mut usize,
+        out: &mut Vec<(VariadicParameter, usize)>,
+    ) {
+        for group in groups {
+            if let Some(variadic) = &group.variadic {
+                out.push((variadic.clone(), *group_index));
+            }
+            *group_index += 1;
+        }
+    }
+    fn collect_tail(
+        parts: &[CommandHeaderTailPart],
+        active_signature: &str,
+        group_index: &mut usize,
+        out: &mut Vec<(VariadicParameter, usize)>,
+    ) {
+        for part in parts {
+            let label = format!(":{}", format_chain(&part.chain));
+            if !part.optional || active_signature.contains(&label) {
+                collect(&part.args, group_index, out);
+            }
+        }
+    }
+    let mut result = Vec::new();
+    let mut group_index = 0usize;
+    match header {
+        CommandHeader::Command(command) => {
+            collect(&command.head_args, &mut group_index, &mut result);
+            collect_tail(
+                &command.tail,
+                active_signature,
+                &mut group_index,
+                &mut result,
+            );
+        }
+        CommandHeader::Infix(command) => {
+            collect(&command.head_args, &mut group_index, &mut result);
+            collect_tail(
+                &command.tail,
+                active_signature,
+                &mut group_index,
+                &mut result,
+            );
+        }
+        CommandHeader::InfixSpec(spec) => {
+            if let Some(refinement) = &spec.refinement {
+                for part in &refinement.parts {
+                    collect_tail(&part.tail, active_signature, &mut group_index, &mut result);
+                }
+            }
+            collect(&spec.head_args, &mut group_index, &mut result);
+            collect_tail(&spec.tail, active_signature, &mut group_index, &mut result);
+        }
+        CommandHeader::Refined(command) => {
+            for part in &command.parts {
+                collect_tail(&part.tail, active_signature, &mut group_index, &mut result);
+            }
+            collect(&command.head_args, &mut group_index, &mut result);
+            collect_tail(
+                &command.tail,
+                active_signature,
+                &mut group_index,
+                &mut result,
+            );
+        }
+    }
+    result
 }
 
 fn paren_heading_group_parameters(groups: &[ParenHeadingArgs]) -> Vec<String> {

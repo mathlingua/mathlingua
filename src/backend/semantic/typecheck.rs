@@ -454,6 +454,12 @@ fn type_info_from_parts(
         signature: header_shape.shape.signature.clone(),
         type_key: header_shape.type_key.clone(),
         parameters: header_shape.parameters.clone(),
+        arg_groups: header_shape.shape.arg_groups.clone(),
+        variadic_parameters: header_variadic_parameters(heading)
+            .into_iter()
+            .filter(|variadic| header_shape.parameters.contains(&variadic.name))
+            .cloned()
+            .collect(),
         hidden_parameters: header_shape.hidden_parameters.clone(),
         using_parameters,
         given_parameters,
@@ -1372,6 +1378,7 @@ fn validate_equivalent_when_compatibility(
         check_command_requirements(
             &member.signature,
             actuals,
+            None,
             member.command_context,
             context,
             path,
@@ -2848,11 +2855,19 @@ fn defines_when_parameters_from_usage(group: &DefinesGroup) -> WhenParameters {
     // type, so using them in the body must not turn them into `when:`-required
     // parameters.
     let destructured_components = header_destructured_component_names(&group.heading);
+    let variadic_auxiliary_names = header_variadic_parameters(&group.heading)
+        .into_iter()
+        .flat_map(|parameter| parameter.index.iter().chain(parameter.length.iter()))
+        .cloned()
+        .collect::<HashSet<_>>();
     for name in defines_used_names(group) {
         if described_spec_infix_subject.as_ref() == Some(&name) {
             continue;
         }
         if destructured_components.contains(&name) {
+            continue;
+        }
+        if variadic_auxiliary_names.contains(&name) {
             continue;
         }
         if parameters.allowed.contains(&name) {
@@ -3804,6 +3819,17 @@ fn collect_expression_names(expression: &Expression, names: &mut BTreeSet<String
         ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => {
             names.insert(name.clone());
         }
+        ExpressionKind::VariadicSlice(slice) => {
+            names.insert(slice.name.clone());
+            names.extend(slice.index.iter().cloned());
+            names.extend(slice.end.iter().cloned());
+        }
+        ExpressionKind::VariadicAssignment { target, value } => {
+            names.insert(target.name.clone());
+            names.extend(target.index.iter().cloned());
+            names.extend(target.end.iter().cloned());
+            collect_expression_names(value, names);
+        }
         ExpressionKind::FunctionCall { name, arguments } => {
             names.insert(name.clone());
             for argument in arguments {
@@ -4160,16 +4186,16 @@ fn validate_when_expression(
     event_log: &mut EventLog,
 ) {
     match &expression.kind {
-        ExpressionKind::IsType { subject, .. } => validate_when_subject(
-            &key_for_expression(subject),
+        ExpressionKind::IsType { subject, .. } => validate_when_expression_subject(
+            subject,
             parameters,
             covered_parameters,
             path,
             locator,
             event_log,
         ),
-        ExpressionKind::SpecStatement(statement) => validate_when_subject(
-            &key_for_expression(&statement.subject),
+        ExpressionKind::SpecStatement(statement) => validate_when_expression_subject(
+            &statement.subject,
             parameters,
             covered_parameters,
             path,
@@ -4188,6 +4214,27 @@ fn validate_when_expression(
         }
         _ => emit_invalid_when_clause_error(path, locator, event_log),
     }
+}
+
+fn validate_when_expression_subject(
+    subject: &Expression,
+    parameters: &WhenParameters,
+    covered_parameters: &mut HashSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let subject = direct_variadic_slice(subject)
+        .map(|slice| slice.name.clone())
+        .unwrap_or_else(|| key_for_expression(subject));
+    validate_when_subject(
+        &subject,
+        parameters,
+        covered_parameters,
+        path,
+        locator,
+        event_log,
+    );
 }
 
 fn validate_when_subject(
@@ -4533,6 +4580,10 @@ fn check_builtin_command_expression(
     event_log: &mut EventLog,
 ) {
     match format_chain(&command.chain).as_str() {
+        "map" => check_variadic_map_builtin(command, context, path, locator, registry, event_log),
+        "leftReduce" | "rightReduce" => {
+            check_variadic_reduce_builtin(command, context, path, locator, registry, event_log)
+        }
         "not" => {
             let clauses = parse_builtin_clause_arguments(
                 command,
@@ -4775,6 +4826,166 @@ fn check_builtin_command_expression(
             format!("Unknown builtin clause command `\\\\{other}`"),
         ),
     }
+}
+
+fn check_variadic_map_builtin(
+    command: &BuiltinCommandExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let mut slices = Vec::new();
+    for text in builtin_head_arguments(command)
+        .into_iter()
+        .filter_map(|argument| match argument {
+            BuiltinCommandArgument::Text(text) => Some(text.as_str()),
+            _ => None,
+        })
+    {
+        for part in text
+            .split(',')
+            .map(str::trim)
+            .filter(|part| !part.is_empty())
+        {
+            match crate::frontend::formulation::parse_expression(part) {
+                Ok(Expression {
+                    kind: ExpressionKind::VariadicSlice(slice),
+                    ..
+                }) => slices.push(slice),
+                _ => emit_builtin_command_error(
+                    command,
+                    path,
+                    locator,
+                    event_log,
+                    format!("`\\map{{...}}` expects variadic slices, found `{part}`"),
+                ),
+            }
+        }
+    }
+    if slices.is_empty() {
+        emit_builtin_command_error(
+            command,
+            path,
+            locator,
+            event_log,
+            "`\\map{...}` expects at least one variadic slice",
+        );
+    }
+    if let Some(first) = slices.first()
+        && !slices.iter().all(|slice| {
+            slice.start == first.start && slice.index == first.index && slice.end == first.end
+        })
+    {
+        emit_builtin_command_error(
+            command,
+            path,
+            locator,
+            event_log,
+            "all `\\map{...}` slices must use exactly the same start, index, and end",
+        );
+    }
+    for slice in &slices {
+        check_name(&slice.name, context, path, locator, event_log);
+        if let Some(end) = &slice.end {
+            check_name(end, context, path, locator, event_log);
+        }
+    }
+
+    let to = builtin_tail_arguments(command, "to");
+    if to.len() != 1 {
+        emit_builtin_command_error(
+            command,
+            path,
+            locator,
+            event_log,
+            "`\\map{...}` requires exactly one `:to{expression}` argument",
+        );
+    }
+    let mut child = context.clone();
+    for index in slices.iter().filter_map(|slice| slice.index.as_ref()) {
+        child.declare_name(index.clone());
+    }
+    for argument in to {
+        if let BuiltinCommandArgument::Text(text) = argument {
+            match crate::frontend::formulation::parse_expression(text) {
+                Ok(expression) => {
+                    check_expression(&expression, &child, path, locator, registry, event_log)
+                }
+                Err(error) => emit_builtin_command_error(
+                    command,
+                    path,
+                    locator,
+                    event_log,
+                    format!("invalid `\\map` result expression: {error}"),
+                ),
+            }
+        }
+    }
+    check_builtin_tail_names(command, &["to"], path, locator, event_log);
+}
+
+fn check_variadic_reduce_builtin(
+    command: &BuiltinCommandExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    _registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let operators = builtin_head_arguments(command);
+    if operators.len() != 1 {
+        emit_builtin_command_error(
+            command,
+            path,
+            locator,
+            event_log,
+            "variadic reductions expect exactly one binary operator",
+        );
+    }
+    if let Some(BuiltinCommandArgument::Text(operator)) = operators.first().copied() {
+        let operator = operator
+            .trim()
+            .strip_prefix('`')
+            .and_then(|operator| operator.strip_suffix('`'))
+            .unwrap_or(operator.trim());
+        check_name(operator, context, path, locator, event_log);
+    }
+    let on = builtin_tail_arguments(command, "on");
+    if on.len() != 1 {
+        emit_builtin_command_error(
+            command,
+            path,
+            locator,
+            event_log,
+            "variadic reductions require exactly one `:on{slice}` argument",
+        );
+    }
+    for argument in on {
+        let BuiltinCommandArgument::Text(text) = argument else {
+            continue;
+        };
+        match crate::frontend::formulation::parse_expression(text) {
+            Ok(Expression {
+                kind: ExpressionKind::VariadicSlice(slice),
+                ..
+            }) => {
+                check_name(&slice.name, context, path, locator, event_log);
+                if let Some(end) = &slice.end {
+                    check_name(end, context, path, locator, event_log);
+                }
+            }
+            _ => emit_builtin_command_error(
+                command,
+                path,
+                locator,
+                event_log,
+                format!("variadic reductions expect a slice after `:on`, found `{text}`"),
+            ),
+        }
+    }
+    check_builtin_tail_names(command, &["on"], path, locator, event_log);
 }
 
 fn assume_builtin_command_expression(
@@ -5664,6 +5875,7 @@ fn check_spec_fact_supported(
                             &resolution.base_signature,
                             &resolution.base_actuals,
                             None,
+                            None,
                             context,
                             path,
                             position,
@@ -5673,6 +5885,7 @@ fn check_spec_fact_supported(
                         check_command_requirements(
                             &resolution.refined_type_signature,
                             &resolution.refined_type_actuals,
+                            None,
                             None,
                             context,
                             path,
@@ -5718,7 +5931,7 @@ fn check_spec_fact_supported(
             actuals.extend(args.iter().cloned());
             actuals.push(target.clone());
             check_command_requirements(
-                signature, &actuals, None, context, path, position, registry, event_log,
+                signature, &actuals, None, None, context, path, position, registry, event_log,
             );
         }
         _ => {}
@@ -6166,6 +6379,20 @@ fn check_expression(
         ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => {
             check_name(name, context, path, locator, event_log);
         }
+        ExpressionKind::VariadicSlice(slice) => {
+            check_variadic_slice_names(slice, context, path, locator, event_log);
+            emit_error(
+                event_log,
+                path,
+                locator.locate_symbol(&slice.name),
+                "a variadic slice is only valid with `:=`, `=`, `!=`, `is`, `is?`, a quoted specification operator, `map`, or a reduce builtin".to_owned(),
+            );
+        }
+        ExpressionKind::VariadicAssignment { target, value } => {
+            check_variadic_slice_names(target, context, path, locator, event_log);
+            check_variadic_operand(value, context, path, locator, registry, event_log);
+            check_matching_variadic_slices(target, value, path, locator, event_log);
+        }
         ExpressionKind::FunctionCall { name, arguments } => {
             let function_types = function_type_facts_for_subject(name, context, registry);
             let has_disambiguation =
@@ -6332,6 +6559,24 @@ fn check_expression(
             operator,
             right,
         } => {
+            if let Some(slice) =
+                direct_variadic_slice(left).or_else(|| direct_variadic_slice(right))
+            {
+                if !variadic_binary_operator_supported(operator) {
+                    emit_error(
+                        event_log,
+                        path,
+                        locator.locate_symbol(&slice.name),
+                        "variadic slices only support the binary operators `=` and `!=`".to_owned(),
+                    );
+                }
+                check_variadic_operand(left, context, path, locator, registry, event_log);
+                check_variadic_operand(right, context, path, locator, registry, event_log);
+                if let Some(left_slice) = direct_variadic_slice(left) {
+                    check_matching_variadic_slices(left_slice, right, path, locator, event_log);
+                }
+                return;
+            }
             if let Some(call) =
                 binary_operator_application_desugaring(left, operator, right, context)
             {
@@ -6350,7 +6595,7 @@ fn check_expression(
             }
         }
         ExpressionKind::SpecStatement(statement) => {
-            check_expression(
+            check_variadic_operand(
                 &statement.subject,
                 context,
                 path,
@@ -6372,7 +6617,7 @@ fn check_expression(
             }
         }
         ExpressionKind::SpecPredicate(statement) => {
-            check_expression(
+            check_variadic_operand(
                 &statement.subject,
                 context,
                 path,
@@ -6400,7 +6645,7 @@ fn check_expression(
             operator,
             target,
         } => {
-            check_expression(subject, context, path, locator, registry, event_log);
+            check_variadic_operand(subject, context, path, locator, registry, event_log);
             check_expression(target, context, path, locator, registry, event_log);
             if let Some(fact) = fact_from_expression(expression) {
                 check_spec_fact_supported(
@@ -6434,7 +6679,7 @@ fn check_expression(
         }
         ExpressionKind::IsPredicate { subject, command }
         | ExpressionKind::IsNotPredicate { subject, command } => {
-            check_expression(subject, context, path, locator, registry, event_log);
+            check_variadic_operand(subject, context, path, locator, registry, event_log);
             check_command_predicate(command, context, path, locator, registry, event_log);
             let active_command = active_command_expression(command, context);
             for expression in command_expression_arguments(&active_command) {
@@ -6442,18 +6687,28 @@ fn check_expression(
             }
         }
         ExpressionKind::IsBuiltinPredicate { subject, ty } => {
-            check_builtin_type_predicate(
-                subject, ty, false, context, path, locator, registry, event_log,
-            );
+            check_variadic_operand(subject, context, path, locator, registry, event_log);
+            if direct_variadic_slice(subject).is_none() {
+                check_builtin_type_predicate(
+                    subject, ty, false, context, path, locator, registry, event_log,
+                );
+            } else {
+                check_type_expression(ty, context, path, locator, registry, event_log);
+            }
         }
         ExpressionKind::IsNotBuiltinPredicate { subject, ty } => {
-            check_builtin_type_predicate(
-                subject, ty, true, context, path, locator, registry, event_log,
-            );
+            check_variadic_operand(subject, context, path, locator, registry, event_log);
+            if direct_variadic_slice(subject).is_none() {
+                check_builtin_type_predicate(
+                    subject, ty, true, context, path, locator, registry, event_log,
+                );
+            } else {
+                check_type_expression(ty, context, path, locator, registry, event_log);
+            }
         }
         ExpressionKind::IsRefinedPredicate { subject, command }
         | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
-            check_expression(subject, context, path, locator, registry, event_log);
+            check_variadic_operand(subject, context, path, locator, registry, event_log);
             check_refined_command_expression(command, context, path, locator, registry, event_log);
             let active_command = active_refined_command_expression(command, context);
             for expression in refined_command_expression_arguments(&active_command) {
@@ -6461,9 +6716,13 @@ fn check_expression(
             }
         }
         ExpressionKind::IsType { subject, ty } => {
-            check_expression(subject, context, path, locator, registry, event_log);
+            check_variadic_operand(subject, context, path, locator, registry, event_log);
             check_type_expression(ty, context, path, locator, registry, event_log);
-            check_function_call_result(subject, ty, context, path, locator, registry, event_log);
+            if direct_variadic_slice(subject).is_none() {
+                check_function_call_result(
+                    subject, ty, context, path, locator, registry, event_log,
+                );
+            }
         }
         ExpressionKind::Build { ty, value, hard } => {
             check_expression(value, context, path, locator, registry, event_log);
@@ -6473,6 +6732,70 @@ fn check_expression(
             );
         }
     }
+}
+
+fn direct_variadic_slice(expression: &Expression) -> Option<&VariadicSlice> {
+    match &expression.kind {
+        ExpressionKind::VariadicSlice(slice) => Some(slice),
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            direct_variadic_slice(expression)
+        }
+        _ => None,
+    }
+}
+
+fn check_variadic_slice_names(
+    slice: &VariadicSlice,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    check_name(&slice.name, context, path, locator, event_log);
+    if let Some(end) = &slice.end {
+        check_name(end, context, path, locator, event_log);
+    }
+}
+
+fn check_variadic_operand(
+    expression: &Expression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    if let Some(slice) = direct_variadic_slice(expression) {
+        check_variadic_slice_names(slice, context, path, locator, event_log);
+    } else {
+        check_expression(expression, context, path, locator, registry, event_log);
+    }
+}
+
+fn variadic_binary_operator_supported(operator: &BinaryOperator) -> bool {
+    matches!(operator, BinaryOperator::Equality(_))
+        || matches!(operator, BinaryOperator::Special(operator) if operator.text == "!=")
+}
+
+fn check_matching_variadic_slices(
+    left: &VariadicSlice,
+    right: &Expression,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let Some(right) = direct_variadic_slice(right) else {
+        return;
+    };
+    if left.start == right.start && left.index == right.index && left.end == right.end {
+        return;
+    }
+    emit_error(
+        event_log,
+        path,
+        locator.locate_symbol(&right.name),
+        "paired variadic slices must use exactly the same start, index binder, and end".to_owned(),
+    );
 }
 
 /// Checks `\ty@value` / `\ty@!value` — the only cast form.
@@ -6557,7 +6880,11 @@ fn add_cast_expression_facts(expression: &Expression, context: &mut TypeContext)
     match &expression.kind {
         ExpressionKind::Name(_)
         | ExpressionKind::InferredName(_)
+        | ExpressionKind::VariadicSlice(_)
         | ExpressionKind::SubsetCall(_) => {}
+        ExpressionKind::VariadicAssignment { value, .. } => {
+            add_cast_expression_facts(value, context);
+        }
         ExpressionKind::FunctionCall { arguments, .. } => {
             for argument in arguments {
                 add_cast_expression_facts(argument, context);
@@ -8966,6 +9293,7 @@ fn check_command_expression(
     check_command_requirements(
         &shape.signature,
         &actuals,
+        Some(&shape.arg_groups),
         active_command.context.as_ref(),
         &requirement_context,
         path,
@@ -9010,6 +9338,7 @@ fn check_command_type_expression(
     check_command_requirements(
         &shape.signature,
         &actuals,
+        Some(&shape.arg_groups),
         active_command.context.as_ref(),
         &requirement_context,
         path,
@@ -9057,6 +9386,7 @@ fn check_infix_command(
     check_command_requirements(
         &shape.signature,
         &actuals,
+        Some(&shape.arg_groups),
         None,
         &requirement_context,
         path,
@@ -9093,6 +9423,7 @@ fn check_refined_command_type_expression(
     check_command_requirements(
         &shape.signature,
         &actuals,
+        Some(&shape.arg_groups),
         None,
         &requirement_context,
         path,
@@ -9126,6 +9457,7 @@ fn check_refined_command_expression(
     check_command_requirements(
         &shape.signature,
         &actuals,
+        Some(&shape.arg_groups),
         None,
         &requirement_context,
         path,
@@ -9247,6 +9579,17 @@ fn expression_names_are_defined(expression: &Expression, context: &TypeContext) 
 fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<String>) {
     match &expression.kind {
         ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => names.push(name.clone()),
+        ExpressionKind::VariadicSlice(slice) => {
+            names.push(slice.name.clone());
+            names.extend(slice.index.iter().cloned());
+            names.extend(slice.end.iter().cloned());
+        }
+        ExpressionKind::VariadicAssignment { target, value } => {
+            names.push(target.name.clone());
+            names.extend(target.index.iter().cloned());
+            names.extend(target.end.iter().cloned());
+            collect_defined_expression_names(value, names);
+        }
         ExpressionKind::FunctionCall { name, arguments } => {
             names.push(name.clone());
             for argument in arguments {
@@ -9848,6 +10191,7 @@ fn validate_definition_requirement(
     check_command_requirements(
         &shape.signature,
         &actuals,
+        Some(&shape.arg_groups),
         active_command.context.as_ref(),
         &requirement_context,
         path,
@@ -10148,6 +10492,7 @@ fn check_type_expression_requirements(
 fn check_command_requirements(
     signature: &str,
     actuals: &[String],
+    actual_arg_groups: Option<&[ArgGroupShape]>,
     command_context: Option<&CommandContext>,
     context: &TypeContext,
     path: &Path,
@@ -10159,12 +10504,8 @@ fn check_command_requirements(
         return;
     };
 
-    let mut substitutions = info
-        .parameters
-        .iter()
-        .zip(actuals)
-        .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
-        .collect::<HashMap<_, _>>();
+    let (mut substitutions, variadic_actuals) =
+        command_parameter_substitutions(info, actuals, actual_arg_groups, context);
 
     let mut requirement_context = context.clone();
     add_command_context_cast_facts(command_context, &mut requirement_context);
@@ -10214,17 +10555,188 @@ fn check_command_requirements(
                 &mut substitutions,
             );
         }
-        let instantiated = substitute_fact(requirement, &substitutions);
-        if !prove_fact(&instantiated, &requirement_context, registry) {
-            emit_error(
-                event_log,
-                path,
-                position,
-                format!(
-                    "Could not establish requirement `{}` for command `{signature}`",
-                    format_fact(&instantiated)
-                ),
+        for instantiated in instantiate_variadic_fact(
+            requirement,
+            &substitutions,
+            &info.variadic_parameters,
+            &variadic_actuals,
+        ) {
+            if !prove_fact(&instantiated, &requirement_context, registry) {
+                emit_error(
+                    event_log,
+                    path,
+                    position,
+                    format!(
+                        "Could not establish requirement `{}` for command `{signature}`",
+                        format_fact(&instantiated)
+                    ),
+                );
+            }
+        }
+    }
+}
+
+fn command_parameter_substitutions(
+    info: &DefinitionTypeInfo,
+    actuals: &[String],
+    actual_arg_groups: Option<&[ArgGroupShape]>,
+    context: &TypeContext,
+) -> (HashMap<String, String>, HashMap<String, Vec<String>>) {
+    if info.variadic_parameters.is_empty() || actual_arg_groups.is_none() {
+        return (
+            info.parameters
+                .iter()
+                .zip(actuals)
+                .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
+                .collect(),
+            HashMap::new(),
+        );
+    }
+
+    let actual_arg_groups = actual_arg_groups.expect("checked above");
+    let mut variadic_counts = HashMap::new();
+    let mut variadics = info.variadic_parameters.iter();
+    for (expected, actual) in info.arg_groups.iter().zip(actual_arg_groups) {
+        if matches!(expected.count, ArgCount::Variadic { .. })
+            && let Some(parameter) = variadics.next()
+            && let ArgCount::Exact(count) = actual.count
+        {
+            variadic_counts.insert(parameter.name.clone(), count);
+        }
+    }
+
+    let mut substitutions = HashMap::new();
+    let mut grouped_actuals = HashMap::new();
+    let mut actual_index = 0usize;
+    for parameter in &info.parameters {
+        if let Some(count) = variadic_counts.get(parameter).copied() {
+            let end = (actual_index + count).min(actuals.len());
+            let values = actuals[actual_index..end]
+                .iter()
+                .map(|actual| context.normalize_key(actual))
+                .collect::<Vec<_>>();
+            actual_index = end;
+            substitutions.insert(parameter.clone(), format!("({})", values.join(",")));
+            grouped_actuals.insert(parameter.clone(), values);
+        } else if let Some(actual) = actuals.get(actual_index) {
+            substitutions.insert(parameter.clone(), context.normalize_key(actual));
+            actual_index += 1;
+        }
+    }
+
+    for variadic in &info.variadic_parameters {
+        let Some(values) = grouped_actuals.get(&variadic.name) else {
+            continue;
+        };
+        if let Some(length) = &variadic.length {
+            substitutions.insert(length.clone(), values.len().to_string());
+            if let Some(last) = values.last() {
+                substitutions.insert(format!("{}[{length}]", variadic.name), last.clone());
+            }
+        }
+        for (offset, value) in values.iter().enumerate() {
+            let starts = if variadic.index.is_some() {
+                vec![variadic.start]
+            } else {
+                vec![0, 1]
+            };
+            for start in starts {
+                substitutions.insert(
+                    format!("{}[{}]", variadic.name, start + offset),
+                    value.clone(),
+                );
+            }
+        }
+    }
+
+    (substitutions, grouped_actuals)
+}
+
+fn instantiate_variadic_fact(
+    fact: &TypeFact,
+    substitutions: &HashMap<String, String>,
+    parameters: &[VariadicParameter],
+    actuals: &HashMap<String, Vec<String>>,
+) -> Vec<TypeFact> {
+    let rendered = format_fact(fact);
+    let referenced = parameters
+        .iter()
+        .filter(|parameter| {
+            rendered.contains(&format!("{}...", parameter.name))
+                || rendered
+                    .match_indices(&format!("{}[", parameter.name))
+                    .any(|(start, _)| {
+                        rendered[start..]
+                            .split(']')
+                            .next()
+                            .is_some_and(|part| part.contains("..."))
+                    })
+        })
+        .collect::<Vec<_>>();
+    if referenced.is_empty() {
+        return vec![substitute_fact(fact, substitutions)];
+    }
+
+    let count = referenced
+        .iter()
+        .filter_map(|parameter| actuals.get(&parameter.name).map(Vec::len))
+        .min()
+        .unwrap_or(0);
+    (0..count)
+        .map(|offset| {
+            let mut element_substitutions = substitutions.clone();
+            for parameter in &referenced {
+                let Some(value) = actuals
+                    .get(&parameter.name)
+                    .and_then(|values| values.get(offset))
+                else {
+                    continue;
+                };
+                add_variadic_element_substitutions(
+                    &mut element_substitutions,
+                    parameter,
+                    offset,
+                    value,
+                );
+            }
+            substitute_fact(fact, &element_substitutions)
+        })
+        .collect()
+}
+
+fn add_variadic_element_substitutions(
+    substitutions: &mut HashMap<String, String>,
+    parameter: &VariadicParameter,
+    offset: usize,
+    value: &str,
+) {
+    substitutions.insert(format!("{}...", parameter.name), value.to_owned());
+    let starts = if parameter.index.is_some() {
+        vec![parameter.start]
+    } else {
+        vec![0, 1]
+    };
+    for start in &starts {
+        substitutions.insert(
+            format!("{}[{}]", parameter.name, start + offset),
+            value.to_owned(),
+        );
+    }
+    if let Some(index) = &parameter.index {
+        substitutions.insert(format!("{}[{index}]", parameter.name), value.to_owned());
+    }
+    if let Some(end) = &parameter.length {
+        for start in starts {
+            substitutions.insert(
+                format!("{}[{start}...{end}]", parameter.name),
+                value.to_owned(),
             );
+            if let Some(index) = &parameter.index {
+                substitutions.insert(
+                    format!("{}[{start}...{index}...{end}]", parameter.name),
+                    value.to_owned(),
+                );
+            }
         }
     }
 }
@@ -12155,10 +12667,13 @@ fn facts_from_collection_body_membership(
         return Vec::new();
     };
 
+    let actual_arg_groups = actual_arg_groups_for_key(collection);
+    let (key_substitutions, _) =
+        command_parameter_substitutions(info, &actuals, actual_arg_groups.as_deref(), context);
     let mut substitutions = HashMap::new();
-    for (parameter, actual) in info.parameters.iter().zip(&actuals) {
-        if let Ok(expression) = crate::frontend::formulation::parse_expression(actual) {
-            substitutions.insert(parameter.clone(), expression);
+    for (parameter, actual) in key_substitutions {
+        if let Ok(expression) = crate::frontend::formulation::parse_expression(&actual) {
+            substitutions.insert(parameter, expression);
         }
     }
 
@@ -12363,12 +12878,9 @@ fn defined_output_facts_for_signature(
         return Vec::new();
     }
 
-    let mut base_substitutions = info
-        .parameters
-        .iter()
-        .zip(actuals)
-        .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
-        .collect::<HashMap<_, _>>();
+    let actual_arg_groups = actual_arg_groups_for_key(key);
+    let (mut base_substitutions, variadic_actuals) =
+        command_parameter_substitutions(info, actuals, actual_arg_groups.as_deref(), context);
     for (index, name) in info.hidden_parameters.iter().enumerate() {
         base_substitutions.insert(name.clone(), "#".repeat(index + 1));
     }
@@ -12383,12 +12895,33 @@ fn defined_output_facts_for_signature(
 
     info.outputs
         .iter()
-        .map(|output| {
+        .flat_map(|output| {
             let mut substitutions = base_substitutions.clone();
             substitutions.insert(fact_subject(output).to_owned(), key.to_owned());
-            output_context.normalize_fact(&substitute_fact(output, &substitutions))
+            instantiate_variadic_fact(
+                output,
+                &substitutions,
+                &info.variadic_parameters,
+                &variadic_actuals,
+            )
+            .into_iter()
+            .map(|fact| output_context.normalize_fact(&fact))
         })
         .collect()
+}
+
+fn actual_arg_groups_for_key(key: &str) -> Option<Vec<ArgGroupShape>> {
+    let expression = crate::frontend::formulation::parse_expression(key).ok()?;
+    match expression.kind {
+        ExpressionKind::Command(command) => Some(shape_for_command_expression(&command).arg_groups),
+        ExpressionKind::InfixCommand { command, .. } => {
+            Some(shape_for_infix_command(&command).arg_groups)
+        }
+        ExpressionKind::InfixSpecStatement { spec, .. } => {
+            Some(shape_for_infix_spec(&spec).arg_groups)
+        }
+        _ => None,
+    }
 }
 
 fn command_signature_and_actuals_from_key(key: &str) -> Option<(String, Vec<String>)> {
@@ -13084,6 +13617,12 @@ fn declare_header_symbols(header: &CommandHeader, context: &mut TypeContext) {
     for form in header_forms(header) {
         declare_form_or_declaration(form, context);
     }
+    for variadic in header_variadic_parameters(header) {
+        context.declare_name(variadic.name.clone());
+        for name in variadic.index.iter().chain(variadic.length.iter()) {
+            context.declare_name(name.clone());
+        }
+    }
 }
 
 fn check_is_subject(
@@ -13456,6 +13995,19 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
     match &expression.kind {
         ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => {
             context.declare_name(name.clone())
+        }
+        ExpressionKind::VariadicSlice(slice) => {
+            context.declare_name(slice.name.clone());
+            for name in slice.index.iter().chain(slice.end.iter()) {
+                context.declare_name(name.clone());
+            }
+        }
+        ExpressionKind::VariadicAssignment { target, value } => {
+            context.declare_name(target.name.clone());
+            for name in target.index.iter().chain(target.end.iter()) {
+                context.declare_name(name.clone());
+            }
+            declare_names_from_expression(value, context);
         }
         ExpressionKind::FunctionCall { name, arguments } => {
             context.declare_name(name.clone());
@@ -14136,9 +14688,9 @@ fn substitute_key(key: &str, substitutions: &HashMap<String, String>) -> String 
             if rest.starts_with(name)
                 && is_name_boundary(key, index, false)
                 && is_name_boundary(key, index + name.len(), true)
+                && replacement.is_none_or(|(length, _)| name.len() > length)
             {
                 replacement = Some((name.len(), value.as_str()));
-                break;
             }
         }
 
@@ -15134,9 +15686,57 @@ fn collect_header_form_parameters(header: &CommandHeader, parameters: &mut WhenP
 }
 
 fn collect_curly_heading_parameters(groups: &[CurlyHeadingArgs], parameters: &mut WhenParameters) {
-    for form in groups.iter().flat_map(|group| group.forms.iter()) {
-        require_form_when_parameter(form, parameters);
+    for group in groups {
+        if let Some(variadic) = &group.variadic {
+            parameters.require(variadic.name.clone());
+            for name in variadic.index.iter().chain(variadic.length.iter()) {
+                parameters.allow(name.clone());
+            }
+        }
+        for form in &group.forms {
+            require_form_when_parameter(form, parameters);
+        }
     }
+}
+
+fn header_variadic_parameters(header: &CommandHeader) -> Vec<&VariadicParameter> {
+    fn collect<'a>(groups: &'a [CurlyHeadingArgs], out: &mut Vec<&'a VariadicParameter>) {
+        out.extend(groups.iter().filter_map(|group| group.variadic.as_ref()));
+    }
+    fn collect_tail<'a>(parts: &'a [CommandHeaderTailPart], out: &mut Vec<&'a VariadicParameter>) {
+        for part in parts {
+            collect(&part.args, out);
+        }
+    }
+
+    let mut result = Vec::new();
+    match header {
+        CommandHeader::Command(command) => {
+            collect(&command.head_args, &mut result);
+            collect_tail(&command.tail, &mut result);
+        }
+        CommandHeader::Infix(command) => {
+            collect(&command.head_args, &mut result);
+            collect_tail(&command.tail, &mut result);
+        }
+        CommandHeader::InfixSpec(spec) => {
+            if let Some(refinement) = &spec.refinement {
+                for part in &refinement.parts {
+                    collect_tail(&part.tail, &mut result);
+                }
+            }
+            collect(&spec.head_args, &mut result);
+            collect_tail(&spec.tail, &mut result);
+        }
+        CommandHeader::Refined(command) => {
+            for part in &command.parts {
+                collect_tail(&part.tail, &mut result);
+            }
+            collect(&command.head_args, &mut result);
+            collect_tail(&command.tail, &mut result);
+        }
+    }
+    result
 }
 
 /// Every parameter form appearing in a command header (curly-brace groups, tail
@@ -15317,6 +15917,20 @@ fn destructured_parameters(
 }
 
 fn collect_tail_parameters(parts: &[CommandHeaderTailPart], parameters: &mut WhenParameters) {
+    for part in parts {
+        for group in &part.args {
+            if let Some(variadic) = &group.variadic {
+                if part.optional {
+                    parameters.allow(variadic.name.clone());
+                } else {
+                    parameters.require(variadic.name.clone());
+                }
+                for name in variadic.index.iter().chain(variadic.length.iter()) {
+                    parameters.allow(name.clone());
+                }
+            }
+        }
+    }
     for form in parts
         .iter()
         .flat_map(|part| part.args.iter().map(move |group| (part.optional, group)))
@@ -15525,6 +16139,12 @@ fn key_for_type_expression_in_context(
 fn key_for_expression(expression: &Expression) -> String {
     match &expression.kind {
         ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => unstropped_name(name),
+        ExpressionKind::VariadicSlice(slice) => key_for_variadic_slice(slice),
+        ExpressionKind::VariadicAssignment { target, value } => format!(
+            "{} := {}",
+            key_for_variadic_slice(target),
+            key_for_expression(value)
+        ),
         ExpressionKind::FunctionCall { name, arguments } => {
             format!(
                 "{}({})",
@@ -15583,7 +16203,7 @@ fn key_for_expression(expression: &Expression) -> String {
         ExpressionKind::Set(set) => key_for_set_expression(set),
         ExpressionKind::Grouped { expression, .. } => key_for_expression(expression),
         ExpressionKind::Labeled { expression, .. } => key_for_expression(expression),
-        ExpressionKind::SubsetCall(subset) => format!("{subset:?}"),
+        ExpressionKind::SubsetCall(subset) => key_for_subset_call(subset),
         ExpressionKind::Command(command) => key_for_command_expression(command),
         ExpressionKind::BuiltinCommand(command) => key_for_builtin_command_expression(command),
         ExpressionKind::InfixCommand {
@@ -15721,6 +16341,37 @@ fn key_for_expression(expression: &Expression) -> String {
                 .unwrap_or_else(|| key_for_non_command_type_expression(ty))
         ),
         ExpressionKind::Build { ty, value, hard } => format_build_expression(ty, value, *hard),
+    }
+}
+
+fn key_for_variadic_slice(slice: &VariadicSlice) -> String {
+    let Some(start) = slice.start else {
+        return format!("{}...", slice.name);
+    };
+    match (&slice.index, &slice.end) {
+        (Some(index), Some(end)) => {
+            format!("{}[{start}...{index}...{end}]", slice.name)
+        }
+        (None, Some(end)) => format!("{}[{start}...{end}]", slice.name),
+        _ => format!("{}...", slice.name),
+    }
+}
+
+fn key_for_subset_call(subset: &SubsetCall) -> String {
+    match subset {
+        SubsetCall::One { target, first, .. } => format!("{target}[{first}]"),
+        SubsetCall::Two {
+            target,
+            first,
+            second,
+            ..
+        } => format!("{target}[{first},{second}]"),
+        SubsetCall::Nested {
+            target,
+            outer,
+            inner_target,
+            ..
+        } => format!("{target}[{outer}[{inner_target}]]"),
     }
 }
 

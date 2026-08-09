@@ -19,7 +19,8 @@ use super::ast::{
     RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, SetExpression,
     SetPredicate, SetTarget, SetTargetElement, SetTargetKind, SetType, SetTypeElement, Span,
     SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement,
-    TopicHeader, TupleExpressionElement, TupleType, TypeExpression, WritingAlias,
+    TopicHeader, TupleExpressionElement, TupleType, TypeExpression, VariadicParameter,
+    WritingAlias,
 };
 use super::grammar;
 use super::lexer::{Lexer, Spanned};
@@ -1208,14 +1209,91 @@ pub(super) fn parse_curly_heading_args(
     while input.trim_start().starts_with('{') {
         input = input.trim_start();
         let (inside, rest) = consume_balanced_prefix(input, '{', '}')?;
+        let variadic = parse_variadic_parameter(inside)?;
         args.push(CurlyHeadingArgs {
             span: span_all(&input[..input.len() - rest.len()]),
-            forms: parse_form_list(inside)?,
+            forms: if variadic.is_some() {
+                Vec::new()
+            } else {
+                parse_form_list(inside)?
+            },
+            variadic,
         });
         input = rest;
     }
 
     Ok((args, input))
+}
+
+/// Parses the supported variadic header spellings. A variadic parameter must be
+/// the only parameter in its curly argument group.
+fn parse_variadic_parameter(input: &str) -> Result<Option<VariadicParameter>, ParseError> {
+    let input = input.trim();
+    if !input.contains("...") {
+        return Ok(None);
+    }
+    if input.contains(',') {
+        return Err(ParseError::custom(
+            "a variadic parameter must be the only parameter in its `{...}` argument group",
+        ));
+    }
+
+    if !input.contains('[') {
+        let split = input
+            .find("...")
+            .ok_or_else(|| ParseError::custom("invalid variadic parameter"))?;
+        let name = parse_name_token(input[..split].trim())?;
+        let suffix = input[split + 3..].trim();
+        let length = if suffix.is_empty() {
+            None
+        } else {
+            Some(parse_name_token(suffix)?)
+        };
+        return Ok(Some(VariadicParameter {
+            span: span_all(input),
+            name,
+            length,
+            index: None,
+            start: 0,
+        }));
+    }
+
+    let open = input
+        .find('[')
+        .ok_or_else(|| ParseError::custom("invalid variadic parameter"))?;
+    let name = parse_name_token(input[..open].trim())?;
+    let bracketed = input[open..]
+        .strip_prefix('[')
+        .and_then(|value| value.strip_suffix(']'))
+        .ok_or_else(|| {
+            ParseError::custom("variadic parameter index must be enclosed in `[...]`")
+        })?;
+    let assignment = find_top_level_definition(bracketed).ok_or_else(|| {
+        ParseError::custom("variadic parameter indices require `i_ := 0...` or `i_ := 1...`")
+    })?;
+    let index = parse_placeholder(bracketed[..assignment].trim())?.name;
+    let range = bracketed[assignment + 2..].trim();
+    let (start, length) = if let Some(length) = range.strip_prefix("0...") {
+        (0, length)
+    } else if let Some(length) = range.strip_prefix("1...") {
+        (1, length)
+    } else {
+        return Err(ParseError::custom(
+            "variadic parameter indices must start at 0 or 1",
+        ));
+    };
+    let length = if length.trim().is_empty() {
+        None
+    } else {
+        Some(parse_name_token(length.trim())?)
+    };
+    Ok(Some(VariadicParameter {
+        span: span_all(input),
+        name,
+        length,
+        index: Some(index),
+        start,
+    }))
 }
 
 /// Parses consecutive `(...)` argument groups in a command header.
@@ -2507,6 +2585,24 @@ pub(super) fn parse_name_token(input: &str) -> Result<String, ParseError> {
 /// specification statement.
 pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     let input = input.trim();
+    if let Some(index) = find_top_level_definition(input) {
+        let target_text = input[..index].trim();
+        let value_text = input[index + 2..].trim();
+        if !target_text.is_empty()
+            && !value_text.is_empty()
+            && let Ok(target) = grammar::InputExpressionParser::new().parse(Lexer::new(target_text))
+            && let ExpressionKind::VariadicSlice(target) = target.kind
+        {
+            let value = parse_expression(value_text)?;
+            return Ok(Expression::new(
+                span_all(input),
+                ExpressionKind::VariadicAssignment {
+                    target,
+                    value: Box::new(value),
+                },
+            ));
+        }
+    }
     if let Some(index) = find_top_level_substring(input, " is ") {
         let type_text = input[index + 4..].trim();
         if contains_top_level(type_text, "=>")
@@ -2819,8 +2915,7 @@ fn parse_set_build_expression(input: &str) -> Option<Result<Expression, ParseErr
     if !value_text.starts_with('{') {
         return None;
     }
-    if consume_balanced_prefix(value_text, '{', '}')
-        .is_ok_and(|(_, rest)| !rest.trim().is_empty())
+    if consume_balanced_prefix(value_text, '{', '}').is_ok_and(|(_, rest)| !rest.trim().is_empty())
     {
         return None;
     }
@@ -3765,6 +3860,71 @@ mod tests {
             }
             other => panic!("expected command header, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn parses_variadic_curly_header_parameters() {
+        let spellings = [
+            (r#"\f{x...}"#, "x", None, None, 0),
+            (r#"\f{x...n}"#, "x", Some("n"), None, 0),
+            (r#"\f{x[i_ := 0...]}"#, "x", None, Some("i"), 0),
+            (r#"\f{x[i_ := 1...]}"#, "x", None, Some("i"), 1),
+            (r#"\f{x[i_ := 0...n]}"#, "x", Some("n"), Some("i"), 0),
+            (r#"\f{x[i_ := 1...n]}"#, "x", Some("n"), Some("i"), 1),
+        ];
+
+        for (source, name, length, index, start) in spellings {
+            let CommandHeader::Command(header) =
+                parse_command_header(source).expect("expected variadic command header")
+            else {
+                panic!("expected command header");
+            };
+            let variadic = header.head_args[0]
+                .variadic
+                .as_ref()
+                .expect("expected variadic parameter");
+            assert_eq!(variadic.name, name);
+            assert_eq!(variadic.length.as_deref(), length);
+            assert_eq!(variadic.index.as_deref(), index);
+            assert_eq!(variadic.start, start);
+        }
+    }
+
+    #[test]
+    fn parses_variadic_slices_and_indexed_elements() {
+        for source in ["x...", "x[1...n]", "x[0...n]", "x[1...i_...n]"] {
+            assert!(matches!(
+                parse_expression(source)
+                    .expect("expected variadic slice")
+                    .kind,
+                ExpressionKind::VariadicSlice(_)
+            ));
+        }
+        assert!(matches!(
+            parse_expression("x[i_]").expect("expected indexed element").kind,
+            ExpressionKind::SubsetCall(SubsetCall::One { ref first, .. }) if first == "i"
+        ));
+    }
+
+    #[test]
+    fn parses_variadic_pointwise_assignment() {
+        let expression = parse_expression("x[1...i_...n] := y[1...i_...n]")
+            .expect("expected a variadic assignment");
+        let ExpressionKind::VariadicAssignment { target, value } = expression.kind else {
+            panic!("expected variadic assignment");
+        };
+        assert_eq!(target.name, "x");
+        assert_eq!(target.start, Some(1));
+        assert_eq!(target.index.as_deref(), Some("i"));
+        assert_eq!(target.end.as_deref(), Some("n"));
+        assert!(matches!(value.kind, ExpressionKind::VariadicSlice(_)));
+    }
+
+    #[test]
+    fn rejects_unsupported_variadic_header_starts() {
+        let error = parse_command_header(r#"\f{x[i_ := 2...n]}"#)
+            .expect_err("expected an unsupported-start error");
+        assert!(error.to_string().contains("must start at 0 or 1"));
     }
 
     #[test]

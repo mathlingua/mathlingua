@@ -279,6 +279,74 @@ the infix command, just as `[\sin(x_)]` binds `x` for a callable command.
 Every command tail such as `:to` or `:from` must include at least one curly
 argument group.
 
+### Variadic command arguments
+
+Only curly argument groups can be variadic. A variadic group occupies the whole
+`{...}` group and accepts one or more expressions:
+
+```text
+x...
+x...n
+x[i_ := 0...]
+x[i_ := 1...]
+x[i_ := 0...n]
+x[i_ := 1...n]
+```
+
+The plain `x...` form does not name the length. `x...n` names the length without
+binding an index. The bracketed forms bind an index and explicitly choose zero-
+or one-based indexing; no other starting index is accepted. This is separate
+from a magnetic `x__` parameter in parentheses: magnetic parameters collect
+arguments into one tuple, while curly variadic parameters spread one or more
+arguments through the command.
+
+Reusing a length name constrains groups to the same number of arguments:
+
+```text
+[\foo{x...n}:bar{y...n}]  # equal lengths
+[\foo{x...n}:bar{y...m}]  # independent lengths
+```
+
+Elements are referenced with subset syntax such as `x[0]`, `x[1]`, or `x[i_]`.
+The supported slice forms are:
+
+```text
+x...
+x[0...n]
+x[1...n]
+x[0...i_...n]
+x[1...i_...n]
+```
+
+A slice broadcasts when it is the left operand of `:=`, `=`, `!=`, `is`, `is?`,
+or a quoted specification operator (including its predicate form). A slice may
+also appear on the right of `:=`, `=`, or `!=`; paired slices must spell exactly
+the same start, binder, and end. In a clause list, the broadcast produces one
+clause per element, so `. x[1...n] = 0` inside `anyOf:` means one alternative
+for every indexed `x`.
+
+The variadic mapping builtin maps aligned slices pointwise:
+
+```text
+\\map{x[1...i_...n]}:to{x[i_] + 1}
+\\map{x[1...i_...n], y[1...i_...n]}:to{x[i_] + y[i_] + 1}
+```
+
+All input slices must have exactly the same range spelling; multiple slices are
+zipped rather than combined as a Cartesian product. The result expression may
+use the bound index.
+
+The reduction builtins accept a binary operator and one slice:
+
+```text
+\\leftReduce{`+`}:on{x[1...n]}
+\\rightReduce{`+`}:on{x[1...i_...n]}
+```
+
+They select left and right association respectively and both render with an
+ellipsis, such as `x_1 + ... + x_n`. A bound slice also displays its middle term,
+such as `x_1 + ... + x_i + ... + x_n`.
+
 In command declaration headings, a tail may be written with `:?` to make that
 tail optional at reference sites:
 

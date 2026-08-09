@@ -287,6 +287,20 @@ pub enum FunctionTypeSpecKind {
 pub struct CurlyHeadingArgs {
     pub span: Span,
     pub forms: Vec<FormOrDeclaration>,
+    /// A variadic parameter occupies an entire curly argument group.
+    pub variadic: Option<VariadicParameter>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VariadicParameter {
+    pub span: Span,
+    pub name: String,
+    /// A shared length name (`n` in `x...n`).
+    pub length: Option<String>,
+    /// The optional bound index (`i` in `x[i_ := 1...n]`).
+    pub index: Option<String>,
+    /// The first index, restricted by the parser to 0 or 1.
+    pub start: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -413,6 +427,14 @@ pub enum ExpressionKind {
     /// scope with the type its argument position requires; later uses are plain
     /// `Name`s.
     InferredName(String),
+    /// A symbolic variadic slice such as `x...`, `x[1...n]`, or
+    /// `x[1...i_...n]`.
+    VariadicSlice(VariadicSlice),
+    /// A pointwise assignment between a variadic slice and an expression.
+    VariadicAssignment {
+        target: VariadicSlice,
+        value: Box<Expression>,
+    },
     FunctionCall {
         name: String,
         arguments: Vec<Expression>,
@@ -536,6 +558,16 @@ pub enum ExpressionKind {
         subject: Box<Expression>,
         collection: Box<Expression>,
     },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VariadicSlice {
+    pub span: Span,
+    pub name: String,
+    /// Absent for `x...`; otherwise 0 or 1.
+    pub start: Option<usize>,
+    pub index: Option<String>,
+    pub end: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

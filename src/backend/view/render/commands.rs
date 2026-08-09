@@ -325,13 +325,11 @@ pub(super) fn command_substitutions(
         substitutions.insert(name.clone(), value);
     }
 
-    for (name, value) in render
-        .parameters
-        .iter()
-        .zip(command_argument_values(command, registry))
-    {
-        substitutions.insert(name.clone(), value);
-    }
+    substitutions.extend(render_parameter_substitutions(
+        render,
+        command_argument_values(command, registry),
+        command_argument_group_values(command, registry),
+    ));
 
     if let Some(context) = &command.context {
         for argument in &context.arguments {
@@ -395,10 +393,60 @@ pub(super) fn infix_command_substitutions(
     render: &CommandRender,
     registry: &RenderRegistry,
 ) -> HashMap<String, String> {
-    command_substitutions_for_names(
-        &render.parameters,
+    render_parameter_substitutions(
+        render,
         infix_argument_values(left, &command.head_args, &command.tail, right, registry),
+        expression_curly_group_values(&command.head_args, &command.tail, registry),
     )
+}
+
+fn render_parameter_substitutions(
+    render: &CommandRender,
+    values: Vec<String>,
+    groups: Vec<Vec<String>>,
+) -> HashMap<String, String> {
+    let variadic_values = render
+        .variadic_parameters
+        .iter()
+        .filter_map(|(parameter, group_index)| {
+            groups
+                .get(*group_index)
+                .cloned()
+                .map(|values| (parameter.name.clone(), (parameter, values)))
+        })
+        .collect::<HashMap<_, _>>();
+
+    let mut substitutions = HashMap::new();
+    let mut value_index = 0usize;
+    for name in &render.parameters {
+        if let Some((parameter, variadic)) = variadic_values.get(name) {
+            value_index += variadic.len();
+            substitutions.insert(name.clone(), variadic.join(", "));
+            if let Some(length) = &parameter.length {
+                substitutions.insert(length.clone(), variadic.len().to_string());
+                if let Some(last) = variadic.last() {
+                    substitutions.insert(format!("{}[{length}]", parameter.name), last.clone());
+                }
+            }
+            for (offset, value) in variadic.iter().enumerate() {
+                let starts = if parameter.index.is_some() {
+                    vec![parameter.start]
+                } else {
+                    vec![0, 1]
+                };
+                for start in starts {
+                    substitutions.insert(
+                        format!("{}[{}]", parameter.name, start + offset),
+                        value.clone(),
+                    );
+                }
+            }
+        } else if let Some(value) = values.get(value_index) {
+            substitutions.insert(name.clone(), value.clone());
+            value_index += 1;
+        }
+    }
+    substitutions
 }
 
 pub(super) fn infix_spec_substitutions(
@@ -427,7 +475,18 @@ pub(super) fn infix_spec_substitutions(
         .chain(expression_tail_argument_values(&spec.tail, registry))
         .chain(std::iter::once(render_expression(right, registry)))
         .collect();
-    command_substitutions_for_names(&render.parameters, values)
+    let mut groups = spec
+        .refinement
+        .iter()
+        .flat_map(|refinement| refinement.parts.iter())
+        .flat_map(|part| expression_curly_group_values(&[], &part.tail, registry))
+        .collect::<Vec<_>>();
+    groups.extend(expression_curly_group_values(
+        &spec.head_args,
+        &spec.tail,
+        registry,
+    ));
+    render_parameter_substitutions(render, values, groups)
 }
 
 pub(super) fn command_substitutions_for_names(
@@ -646,6 +705,36 @@ pub(super) fn command_argument_values(
                 .flat_map(|args| args.expressions.iter()),
         )
         .map(|expression| render_expression(expression, registry))
+        .collect()
+}
+
+fn command_argument_group_values(
+    command: &CommandExpression,
+    registry: &RenderRegistry,
+) -> Vec<Vec<String>> {
+    let mut groups = expression_curly_group_values(&command.head_args, &command.tail, registry);
+    groups.extend(command.paren_args.iter().map(|args| {
+        args.expressions
+            .iter()
+            .map(|expression| render_expression(expression, registry))
+            .collect()
+    }));
+    groups
+}
+
+fn expression_curly_group_values(
+    head: &[CurlyExpressionArgs],
+    tail: &[CommandExpressionTailPart],
+    registry: &RenderRegistry,
+) -> Vec<Vec<String>> {
+    head.iter()
+        .chain(tail.iter().flat_map(|part| part.args.iter()))
+        .map(|args| {
+            args.expressions
+                .iter()
+                .map(|expression| render_expression(expression, registry))
+                .collect()
+        })
         .collect()
 }
 

@@ -5,8 +5,9 @@ pub(in crate::backend::semantic) fn walk_expression(
     visit: &mut impl FnMut(&SignatureShape),
 ) {
     match &expression.kind {
-        ExpressionKind::Name(_) => {}
-        ExpressionKind::InferredName(_) => {}
+        ExpressionKind::Name(_) | ExpressionKind::InferredName(_) => {}
+        ExpressionKind::VariadicSlice(_) => {}
+        ExpressionKind::VariadicAssignment { value, .. } => walk_expression(value, visit),
         ExpressionKind::FunctionCall { arguments, .. } => {
             for argument in arguments {
                 walk_expression(argument, visit);

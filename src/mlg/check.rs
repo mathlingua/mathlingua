@@ -2089,6 +2089,138 @@ then:
     }
 
     #[test]
+    fn check_accepts_variadic_commands_and_independent_lengths() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("variadic-valid.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\foo{x...n}:bar{y...n}]
+    States:
+    when:
+    . x[1...n] is \\statement
+    . y[1...n] is \\statement
+    that:
+    . x[1...n] = y[1...n]
+    . \\map{x[1...i_...n]}:to{x[i_]}
+    Documented:
+    . called: "foo"
+
+    [\foo2{x...n}:bar2{y...m}]
+    States:
+    when:
+    . x[1...n] is \\statement
+    . y[1...m] is \\statement
+    that: x[1...n] = x[1...n]
+    Documented:
+    . called: "foo two"
+
+    Theorem:
+    given: P, Q, R, S is \\statement
+    then:
+    . \foo{P, Q}:bar{R, S}
+    . \foo2{P, Q}:bar2{R}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("variadic-valid.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            !event_log.has_errors(),
+            "expected variadic references to type-check: {:#?}",
+            event_log.events()
+        );
+    }
+
+    #[test]
+    fn check_rejects_mismatched_shared_variadic_lengths() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("variadic-mismatch.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\foo{x...n}:bar{y...n}]
+    States:
+    when:
+    . x[1...n] is \\statement
+    . y[1...n] is \\statement
+    that: x[1...n] = y[1...n]
+    Documented:
+    . called: "foo"
+
+    Theorem:
+    given: P, Q, R is \\statement
+    then: \foo{P, Q}:bar{R}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("variadic-mismatch.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            event_log.events().iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message.contains("expects argument shape")
+                        && message.message.contains("but found")
+                })
+            }),
+            "expected a shared variadic length error: {:#?}",
+            event_log.events()
+        );
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_rejects_variadic_slices_with_unsupported_operators() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("variadic-operator.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\foo{x...}]
+    States:
+    when: x... is \\statement
+    that: x... + 1
+    Documented:
+    . called: "foo"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("variadic-operator.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            event_log.events().iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message
+                        .message
+                        .contains("variadic slices only support the binary operators `=` and `!=`")
+                })
+            }),
+            "expected an unsupported variadic operator error: {:#?}",
+            event_log.events()
+        );
+    }
+
+    #[test]
     fn check_accepts_command_references_that_omit_defined_paren_arguments() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("optional-parens.mlg");

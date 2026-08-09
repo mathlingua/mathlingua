@@ -5,6 +5,12 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
         ExpressionKind::Name(name) => escape_math_identifier(name, registry),
         // The `?` on an inferred parameter is authoring-only; render the bare name.
         ExpressionKind::InferredName(name) => escape_math_identifier(name, registry),
+        ExpressionKind::VariadicSlice(slice) => render_variadic_slice(slice, registry),
+        ExpressionKind::VariadicAssignment { target, value } => format!(
+            "{} := {}",
+            render_variadic_slice(target, registry),
+            render_expression(value, registry)
+        ),
         ExpressionKind::FunctionCall { name, arguments } => {
             if let Some(rendered) = render_provided_function_call(name, arguments, registry) {
                 return rendered;
@@ -235,10 +241,37 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
     }
 }
 
+fn render_variadic_slice(slice: &VariadicSlice, registry: &RenderRegistry) -> String {
+    let name = escape_math_identifier(&slice.name, registry);
+    let Some(start) = slice.start else {
+        return format!("{name}, \\ldots");
+    };
+    let end = slice.end.as_deref().unwrap_or("n");
+    let start = format!("{name}_{{{start}}}");
+    let end = format!("{name}_{{{}}}", escape_math_identifier(end, registry));
+    match slice.index.as_deref() {
+        Some(index) => format!(
+            "{start}, \\ldots, {name}_{{{}}}, \\ldots, {end}",
+            escape_math_identifier(index, registry)
+        ),
+        None => format!("{start}, \\ldots, {end}"),
+    }
+}
+
 fn render_builtin_command_expression(
     command: &BuiltinCommandExpression,
     registry: &RenderRegistry,
 ) -> String {
+    let command_name = format_chain(&command.chain);
+    if command_name == "map" {
+        return render_variadic_map(command, registry)
+            .unwrap_or_else(|| "\\operatorname{map}".to_string());
+    }
+    if matches!(command_name.as_str(), "leftReduce" | "rightReduce") {
+        return render_variadic_reduce(command, registry)
+            .unwrap_or_else(|| format!("\\operatorname{{{command_name}}}"));
+    }
+
     let head = render_builtin_arguments(&command.head_args, registry);
     let tail = |name: &str| {
         command
@@ -249,7 +282,7 @@ fn render_builtin_command_expression(
             .collect::<Vec<_>>()
     };
 
-    match format_chain(&command.chain).as_str() {
+    match command_name.as_str() {
         "not" => format!(
             "\\neg {}",
             head.first()
@@ -330,6 +363,111 @@ fn render_builtin_command_expression(
             head.join("; ")
         ),
     }
+}
+
+fn render_variadic_map(
+    command: &BuiltinCommandExpression,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let slices = builtin_argument_texts(&command.head_args)
+        .flat_map(|text| text.split(','))
+        .map(str::trim)
+        .filter(|text| !text.is_empty())
+        .map(crate::frontend::formulation::parse_expression)
+        .map(|expression| match expression.ok()?.kind {
+            ExpressionKind::VariadicSlice(slice) => Some(slice),
+            _ => None,
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let first = slices.first()?;
+    if !slices.iter().all(|slice| {
+        slice.start == first.start && slice.index == first.index && slice.end == first.end
+    }) {
+        return None;
+    }
+
+    let to = command
+        .tail
+        .iter()
+        .find(|part| format_chain(&part.chain) == "to")?;
+    let body_text = builtin_argument_texts(&to.args).next()?;
+    let body = crate::frontend::formulation::parse_expression(body_text).ok()?;
+    let start = first.start?;
+    let end = first.end.as_deref()?;
+
+    let at = |index: &str| render_variadic_map_body(&body, &slices, index, registry);
+    let mut rendered = vec![at(&start.to_string())];
+    rendered.push(at(&(start + 1).to_string()));
+    rendered.push("\\ldots".to_string());
+    rendered.push(at(end));
+    Some(rendered.join(", "))
+}
+
+fn render_variadic_map_body(
+    body: &Expression,
+    slices: &[VariadicSlice],
+    replacement_index: &str,
+    registry: &RenderRegistry,
+) -> String {
+    let mut rendered = render_expression(body, registry);
+    for slice in slices {
+        let Some(index) = &slice.index else {
+            continue;
+        };
+        let name = escape_math_identifier(&slice.name, registry);
+        let needle = format!("{name}[{}]", escape_math_identifier(index, registry));
+        let replacement = format!(
+            "{name}_{{{}}}",
+            escape_math_identifier(replacement_index, registry)
+        );
+        rendered = rendered.replace(&needle, &replacement);
+    }
+    rendered
+}
+
+fn render_variadic_reduce(
+    command: &BuiltinCommandExpression,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let operator = builtin_argument_texts(&command.head_args).next()?.trim();
+    let operator = operator
+        .strip_prefix('`')
+        .and_then(|operator| operator.strip_suffix('`'))
+        .unwrap_or(operator);
+    let operator = render_operator_text(operator);
+    let on = command
+        .tail
+        .iter()
+        .find(|part| format_chain(&part.chain) == "on")?;
+    let slice = builtin_argument_texts(&on.args)
+        .next()
+        .and_then(|text| crate::frontend::formulation::parse_expression(text).ok())?;
+    let ExpressionKind::VariadicSlice(slice) = slice.kind else {
+        return None;
+    };
+    let name = escape_math_identifier(&slice.name, registry);
+    let start = slice.start?;
+    let end = escape_math_identifier(slice.end.as_deref()?, registry);
+    let mut terms = vec![format!("{name}_{{{start}}}"), "\\ldots".to_string()];
+    if let Some(index) = &slice.index {
+        terms.push(format!(
+            "{name}_{{{}}}",
+            escape_math_identifier(index, registry)
+        ));
+        terms.push("\\ldots".to_string());
+    }
+    terms.push(format!("{name}_{{{end}}}"));
+    Some(terms.join(&format!(" {operator} ")))
+}
+
+fn builtin_argument_texts(groups: &[BuiltinCommandArgs]) -> impl Iterator<Item = &str> {
+    groups
+        .iter()
+        .flat_map(|group| group.arguments.iter())
+        .filter_map(|argument| match argument {
+            BuiltinCommandArgument::Text(text) => Some(text.as_str()),
+            BuiltinCommandArgument::Declaration(_) | BuiltinCommandArgument::Expression(_) => None,
+        })
 }
 
 fn render_builtin_quantifier(symbol: &str, head: &[String], such_that: &[String]) -> String {

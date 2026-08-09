@@ -27,10 +27,20 @@ pub(super) enum ArgDelimiter {
     Paren,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct ArgGroupShape {
     pub(super) delimiter: ArgDelimiter,
-    pub(super) count: usize,
+    pub(super) count: ArgCount,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) enum ArgCount {
+    Exact(usize),
+    /// One or more arguments. Equal non-`None` length names across groups require
+    /// those groups to receive the same number of arguments.
+    Variadic {
+        length: Option<String>,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -46,6 +56,8 @@ pub(super) struct DefinitionTypeInfo {
     pub(super) signature: String,
     pub(super) type_key: String,
     pub(super) parameters: Vec<String>,
+    pub(super) arg_groups: Vec<ArgGroupShape>,
+    pub(super) variadic_parameters: Vec<VariadicParameter>,
     pub(super) hidden_parameters: Vec<String>,
     pub(super) using_parameters: Vec<String>,
     pub(super) given_parameters: Vec<String>,

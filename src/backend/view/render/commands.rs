@@ -422,6 +422,7 @@ fn render_parameter_substitutions(
         if let Some((parameter, variadic)) = variadic_values.get(name) {
             value_index += variadic.len();
             substitutions.insert(name.clone(), variadic.join(", "));
+            insert_variadic_substitution(&mut substitutions, name, variadic);
             if let Some(length) = &parameter.length {
                 substitutions.insert(length.clone(), variadic.len().to_string());
                 if let Some(last) = variadic.last() {
@@ -507,8 +508,59 @@ pub(super) fn command_header_substitutions(
             substitutions.insert(name, render_form_or_declaration_head(form, registry));
         }
     }
+    for parameter in command_header_variadic_parameters(header) {
+        substitutions.insert(
+            parameter.name.clone(),
+            render_variadic_parameter(parameter, registry),
+        );
+        insert_variadic_substitution(
+            &mut substitutions,
+            &parameter.name,
+            &render_variadic_parameter_elements(parameter, registry),
+        );
+    }
 
     substitutions
+}
+
+fn command_header_variadic_parameters(header: &CommandHeader) -> Vec<&VariadicParameter> {
+    fn collect<'a>(groups: &'a [CurlyHeadingArgs], out: &mut Vec<&'a VariadicParameter>) {
+        out.extend(groups.iter().filter_map(|group| group.variadic.as_ref()));
+    }
+    fn collect_tail<'a>(parts: &'a [CommandHeaderTailPart], out: &mut Vec<&'a VariadicParameter>) {
+        for part in parts {
+            collect(&part.args, out);
+        }
+    }
+
+    let mut result = Vec::new();
+    match header {
+        CommandHeader::Command(command) => {
+            collect(&command.head_args, &mut result);
+            collect_tail(&command.tail, &mut result);
+        }
+        CommandHeader::Infix(command) => {
+            collect(&command.head_args, &mut result);
+            collect_tail(&command.tail, &mut result);
+        }
+        CommandHeader::InfixSpec(spec) => {
+            if let Some(refinement) = &spec.refinement {
+                for part in &refinement.parts {
+                    collect_tail(&part.tail, &mut result);
+                }
+            }
+            collect(&spec.head_args, &mut result);
+            collect_tail(&spec.tail, &mut result);
+        }
+        CommandHeader::Refined(command) => {
+            for part in &command.parts {
+                collect_tail(&part.tail, &mut result);
+            }
+            collect(&command.head_args, &mut result);
+            collect_tail(&command.tail, &mut result);
+        }
+    }
+    result
 }
 
 /// Whether a header parameter is a *named destructuring* — `H ::= (X', *', e')`,

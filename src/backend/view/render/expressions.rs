@@ -241,10 +241,10 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
     }
 }
 
-fn render_variadic_slice(slice: &VariadicSlice, registry: &RenderRegistry) -> String {
+pub(super) fn render_variadic_slice(slice: &VariadicSlice, registry: &RenderRegistry) -> String {
     let name = escape_math_identifier(&slice.name, registry);
     let Some(start) = slice.start else {
-        return format!("{name}, \\ldots");
+        return format!("{name}_{{1}}, \\ldots, {name}_{{.}}");
     };
     let end = slice.end.as_deref().unwrap_or("n");
     let start = format!("{name}_{{{start}}}");
@@ -256,6 +256,52 @@ fn render_variadic_slice(slice: &VariadicSlice, registry: &RenderRegistry) -> St
         ),
         None => format!("{start}, \\ldots, {end}"),
     }
+}
+
+pub(super) fn render_variadic_parameter(
+    parameter: &VariadicParameter,
+    registry: &RenderRegistry,
+) -> String {
+    render_variadic_slice(
+        &VariadicSlice {
+            span: parameter.span,
+            name: parameter.name.clone(),
+            start: Some(if parameter.index.is_some() {
+                parameter.start
+            } else {
+                1
+            }),
+            index: parameter.index.clone(),
+            end: Some(parameter.length.clone().unwrap_or_else(|| ".".to_owned())),
+        },
+        registry,
+    )
+}
+
+pub(super) fn render_variadic_parameter_elements(
+    parameter: &VariadicParameter,
+    registry: &RenderRegistry,
+) -> Vec<String> {
+    let name = escape_math_identifier(&parameter.name, registry);
+    let start = if parameter.index.is_some() {
+        parameter.start
+    } else {
+        1
+    };
+    let mut elements = vec![format!("{name}_{{{start}}}"), "\\ldots".to_owned()];
+    if let Some(index) = &parameter.index {
+        elements.push(format!(
+            "{name}_{{{}}}",
+            escape_math_identifier(index, registry)
+        ));
+        elements.push("\\ldots".to_owned());
+    }
+    let end = parameter.length.as_deref().unwrap_or(".");
+    elements.push(format!(
+        "{name}_{{{}}}",
+        escape_math_identifier(end, registry)
+    ));
+    elements
 }
 
 fn render_builtin_command_expression(

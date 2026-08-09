@@ -122,9 +122,16 @@ fn substitute_called_text_segment(
             Some(PlaceholderScan::Placeholder(placeholder)) => {
                 if let Some(value) = substitutions.get(&placeholder.name) {
                     flush_called_text(&mut result, &mut text);
-                    result.push_str(&apply_paren_modifier(value, placeholder.modifier));
+                    result.push_str(&render_template_placeholder(
+                        value,
+                        &placeholder,
+                        substitutions,
+                    ));
                 } else {
                     text.push_str(&placeholder.name);
+                    if let Some(notation) = &placeholder.variadic_notation {
+                        text.push_str(&notation.source());
+                    }
                 }
                 index = placeholder.end;
             }
@@ -157,6 +164,9 @@ fn substitute_called_display_text_segment(segment: &str) -> String {
             Some(PlaceholderScan::Placeholder(placeholder)) => {
                 flush_called_text(&mut result, &mut text);
                 result.push_str(&render_template_placeholder_name(&placeholder.name));
+                if let Some(notation) = &placeholder.variadic_notation {
+                    result.push_str(&notation.source());
+                }
                 index = placeholder.end;
             }
             Some(PlaceholderScan::LiteralName { end }) => {
@@ -204,10 +214,17 @@ pub(super) fn substitute_math_template(
         match scan_placeholder(&chars, index) {
             Some(PlaceholderScan::Placeholder(placeholder)) => {
                 match substitutions.get(&placeholder.name) {
-                    Some(value) => {
-                        result.push_str(&apply_paren_modifier(value, placeholder.modifier))
+                    Some(value) => result.push_str(&render_template_placeholder(
+                        value,
+                        &placeholder,
+                        substitutions,
+                    )),
+                    None => {
+                        result.push_str(&placeholder.name);
+                        if let Some(notation) = &placeholder.variadic_notation {
+                            result.push_str(&notation.source());
+                        }
                     }
-                    None => result.push_str(&placeholder.name),
                 }
                 index = placeholder.end;
             }
@@ -244,6 +261,9 @@ pub(super) fn render_written_display_template(template: &str) -> String {
             // here and so renders the same bare name that `X?` does.
             Some(PlaceholderScan::Placeholder(placeholder)) => {
                 result.push_str(&render_template_placeholder_name(&placeholder.name));
+                if let Some(notation) = &placeholder.variadic_notation {
+                    result.push_str(&notation.source());
+                }
                 index = placeholder.end;
             }
             Some(PlaceholderScan::LiteralName { end }) => {
@@ -422,8 +442,27 @@ pub(super) struct TemplatePlaceholder {
     /// The substitution key, which never includes the `+`/`-` modifier.
     pub(super) name: String,
     pub(super) modifier: ParenModifier,
-    /// Index just past the closing `?`.
+    /// Optional variadic prefix/postfix/infix notation following the `?`.
+    variadic_notation: Option<VariadicNotation>,
+    /// Index just past the closing `?` or its variadic `{...}` suffix.
     pub(super) end: usize,
+}
+
+#[derive(Clone, Debug)]
+enum VariadicNotation {
+    Postfix(String),
+    Prefix(String),
+    Infix(String),
+}
+
+impl VariadicNotation {
+    fn source(&self) -> String {
+        match self {
+            Self::Postfix(text) => format!("{{...{text}}}"),
+            Self::Prefix(text) => format!("{{{text}...}}"),
+            Self::Infix(text) => format!("{{...{text}...}}"),
+        }
+    }
 }
 
 /// What a name-like run of characters starting at `start` turned out to be.
@@ -465,11 +504,108 @@ pub(super) fn scan_placeholder(chars: &[char], start: usize) -> Option<Placehold
         return Some(PlaceholderScan::LiteralName { end: name_end });
     }
 
+    let mut end = index + 1;
+    let variadic_notation = parse_variadic_notation(chars, end).map(|(notation, after)| {
+        end = after;
+        notation
+    });
+
     Some(PlaceholderScan::Placeholder(TemplatePlaceholder {
         name: chars[start..name_end].iter().collect(),
         modifier,
-        end: index + 1,
+        variadic_notation,
+        end,
     }))
+}
+
+fn parse_variadic_notation(chars: &[char], open: usize) -> Option<(VariadicNotation, usize)> {
+    let (body, end) = parse_template_braced_body(chars, open)?;
+    if body.starts_with("...") && body.ends_with("...") && body.len() >= 6 {
+        return Some((
+            VariadicNotation::Infix(body[3..body.len() - 3].to_owned()),
+            end,
+        ));
+    }
+    if let Some(postfix) = body.strip_prefix("...") {
+        return Some((VariadicNotation::Postfix(postfix.to_owned()), end));
+    }
+    if let Some(prefix) = body.strip_suffix("...") {
+        return Some((VariadicNotation::Prefix(prefix.to_owned()), end));
+    }
+    None
+}
+
+fn render_template_placeholder(
+    value: &str,
+    placeholder: &TemplatePlaceholder,
+    substitutions: &HashMap<String, String>,
+) -> String {
+    let variadic_values = variadic_substitution_values(substitutions, &placeholder.name);
+    let rendered = match (&placeholder.variadic_notation, &variadic_values) {
+        (Some(notation), Some(values)) => render_variadic_notation(values, notation),
+        (Some(notation), None) => format!("{value}{}", notation.source()),
+        (None, _) => value.to_owned(),
+    };
+    if placeholder.modifier == ParenModifier::Ensure
+        && variadic_values.is_some_and(|values| values.len() > 1)
+    {
+        return format!(
+            "{LEFT_PAREN}{}{RIGHT_PAREN}",
+            strip_wrapping_parens(&rendered)
+        );
+    }
+    apply_paren_modifier(&rendered, placeholder.modifier)
+}
+
+fn render_variadic_notation(values: &[&str], notation: &VariadicNotation) -> String {
+    match notation {
+        VariadicNotation::Postfix(postfix) => values
+            .iter()
+            .map(|value| format!("{value}{postfix}"))
+            .collect::<String>(),
+        VariadicNotation::Prefix(prefix) => values
+            .iter()
+            .map(|value| format!("{prefix}{value}"))
+            .collect::<String>(),
+        VariadicNotation::Infix(infix) => values.join(infix),
+    }
+}
+
+const VARIADIC_COUNT_PREFIX: &str = "\0mlg:variadic:count:";
+const VARIADIC_ELEMENT_PREFIX: &str = "\0mlg:variadic:element:";
+
+pub(super) fn insert_variadic_substitution(
+    substitutions: &mut HashMap<String, String>,
+    name: &str,
+    values: &[String],
+) {
+    substitutions.insert(
+        format!("{VARIADIC_COUNT_PREFIX}{name}"),
+        values.len().to_string(),
+    );
+    for (index, value) in values.iter().enumerate() {
+        substitutions.insert(
+            format!("{VARIADIC_ELEMENT_PREFIX}{name}:{index}"),
+            value.clone(),
+        );
+    }
+}
+
+fn variadic_substitution_values<'a>(
+    substitutions: &'a HashMap<String, String>,
+    name: &str,
+) -> Option<Vec<&'a str>> {
+    let count = substitutions
+        .get(&format!("{VARIADIC_COUNT_PREFIX}{name}"))?
+        .parse::<usize>()
+        .ok()?;
+    (0..count)
+        .map(|index| {
+            substitutions
+                .get(&format!("{VARIADIC_ELEMENT_PREFIX}{name}:{index}"))
+                .map(String::as_str)
+        })
+        .collect()
 }
 
 /// The LaTeX parentheses this renderer emits and recognizes for grouping.

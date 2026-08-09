@@ -82,6 +82,112 @@ fn renders_variadic_map_and_reduce_builtins() {
 }
 
 #[test]
+fn renders_variadic_parameters_and_slices_symbolically() {
+    let registry = registry_for(
+        r#"[\plain{x...}]
+States:
+that: x... = x...
+Documented:
+. written: "x?"
+
+[\one{x[i_ := 1...n]}]
+States:
+that: x[1...i_...n] = x[1...i_...n]
+Documented:
+. written: "x?"
+
+[\zero{x[i_ := 0...n]}]
+States:
+that: x[0...i_...n] = x[0...i_...n]
+Documented:
+. written: "x?"
+"#,
+    );
+
+    assert_eq!(
+        render_group_heading_latex("States", Some(r#"\plain{x...}"#), None, &registry),
+        Some(r#"x_{1}, \ldots, x_{.}"#.to_string())
+    );
+    assert_eq!(
+        render_group_heading_latex("States", Some(r#"\one{x[i_ := 1...n]}"#), None, &registry),
+        Some(r#"x_{1}, \ldots, x_{i}, \ldots, x_{n}"#.to_string())
+    );
+    assert_eq!(
+        render_group_heading_latex("States", Some(r#"\zero{x[i_ := 0...n]}"#), None, &registry),
+        Some(r#"x_{0}, \ldots, x_{i}, \ldots, x_{n}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("x...", &registry),
+        Some(r#"x_{1}, \ldots, x_{.}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("x[1...i_...n]", &registry),
+        Some(r#"x_{1}, \ldots, x_{i}, \ldots, x_{n}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("x[0...i_...n]", &registry),
+        Some(r#"x_{0}, \ldots, x_{i}, \ldots, x_{n}"#.to_string())
+    );
+}
+
+#[test]
+fn renders_variadic_written_and_called_join_notation() {
+    let registry = registry_for(
+        r#"[\post{x...}]
+States:
+that: x... = x...
+Documented:
+. written: "x?{...A}"
+
+[\pre{x...}]
+States:
+that: x... = x...
+Documented:
+. written: "x?{B...}"
+
+[\between{x...}]
+States:
+that: x... = x...
+Documented:
+. written: "x?{...\text{ and }...}"
+
+[\called{x...}]
+States:
+that: x... = x...
+Documented:
+. called: "all of $x?{...\text{ and }...}$"
+
+[\paren{x...}]
+States:
+that: x... = x...
+Documented:
+. written: "x+?{...C...}"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"\post{a, b, c}"#, &registry),
+        Some("aAbAcA".to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\pre{a, b, c}"#, &registry),
+        Some("BaBbBc".to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\between{a, b, c}"#, &registry),
+        Some(r#"a\text{ and }b\text{ and }c"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\called{a, b, c}"#, &registry),
+        Some(r#"\textrm{all of }a\text{ and }b\text{ and }c"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\paren{a, b, c}"#, &registry),
+        Some(r#"\left(aCbCc\right)"#.to_string())
+    );
+}
+
+#[test]
 fn renders_command_context_assignments_as_visible_given_values() {
     let registry = registry_for(
         r#"[\axiom.of.extension]

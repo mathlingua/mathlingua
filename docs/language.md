@@ -347,6 +347,11 @@ They select left and right association respectively and both render with an
 ellipsis, such as `x_1 + ... + x_n`. A bound slice also displays its middle term,
 such as `x_1 + ... + x_i + ... + x_n`.
 
+Variadic parameters and slices use the corresponding symbolic rendering. In
+particular, `x...` renders as `x_1, ..., x_.`, while
+`x[1...i_...n]` renders as `x_1, ..., x_i, ..., x_n` (and a zero-based range
+starts with `x_0`).
+
 In command declaration headings, a tail may be written with `:?` to make that
 tail optional at reference sites:
 
@@ -1499,6 +1504,24 @@ A modifier only applies when the `+` or `-` sits between the name and the `?`, s
 `A?-B?` is still a placeholder, a literal `-`, and another placeholder. Where a
 template is rendered without values — a card title, for instance — a modifier has
 nothing to act on and shows the same bare name that `A?` does.
+
+### Variadic placeholders
+
+A variadic header parameter may be used in `called:` and `written:` just like an
+ordinary placeholder. With `x...` in the header, `x?`, `x+?`, and `x-?` insert
+the whole variadic value and apply the usual parenthesis rule. At an invocation,
+the concrete arguments are used; in a definition title without concrete values,
+the symbolic rendering is used.
+
+Three suffix forms control how the individual values are combined:
+
+- `x?{...A}` appends `A` to every value.
+- `x?{B...}` prepends `B` to every value.
+- `x?{...C...}` inserts `C` between adjacent values.
+
+The `A`, `B`, or `C` body may be arbitrary template text, including LaTeX. For
+example, `x?{...\text{ and }...}` renders three arguments as
+`x_1 \text{ and } x_2 \text{ and } x_3`.
 
 Both `called:` and `written:` templates support conditional fragments:
 

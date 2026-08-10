@@ -214,7 +214,7 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             ),
             TypeExpression::Command(command) => direct_variadic_slice(subject)
                 .map(|slice| {
-                    render_variadic_slice_with(slice, registry, |subject_latex| {
+                    render_variadic_slice_with(slice, registry, true, |subject_latex| {
                         render_is_command_with_subject_latex(
                             subject_latex.to_owned(),
                             command,
@@ -225,7 +225,7 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 .unwrap_or_else(|| render_is_command(subject, command, registry)),
             TypeExpression::RefinedCommand(command) => direct_variadic_slice(subject)
                 .map(|slice| {
-                    render_variadic_slice_with(slice, registry, |subject_latex| {
+                    render_variadic_slice_with(slice, registry, true, |subject_latex| {
                         render_is_refined_command_with_subject_latex(
                             subject_latex.to_owned(),
                             command,
@@ -332,12 +332,14 @@ fn render_variadic_relation(
         };
 
         match (left_part, right_part) {
-            (Some(left), Some(right)) => rendered.push(format!("{left} {relation} {right}")),
-            _ => rendered.push("\\ldots".to_owned()),
+            (Some(left), Some(right)) => rendered.push(VariadicRenderPart::Element(format!(
+                "{left} {relation} {right}"
+            ))),
+            _ => rendered.push(VariadicRenderPart::Ellipsis),
         }
     }
 
-    Some(rendered.join(", "))
+    Some(join_variadic_render_parts(rendered, true))
 }
 
 fn render_expression_relation(
@@ -368,7 +370,7 @@ fn render_subject_relation(
 ) -> String {
     direct_variadic_slice(subject)
         .map(|slice| {
-            render_variadic_slice_with(slice, registry, |element| {
+            render_variadic_slice_with(slice, registry, true, |element| {
                 format!("{element} {relation} {target}")
             })
         })
@@ -383,16 +385,43 @@ fn render_subject_relation(
 fn render_variadic_slice_with(
     slice: &VariadicSlice,
     registry: &RenderRegistry,
+    space_around_ellipsis: bool,
     render_element: impl Fn(&str) -> String,
 ) -> String {
-    render_variadic_slice_parts(slice, registry)
+    let rendered = render_variadic_slice_parts(slice, registry)
         .into_iter()
         .map(|part| match part {
-            VariadicRenderPart::Element(element) => render_element(&element),
-            VariadicRenderPart::Ellipsis => "\\ldots".to_owned(),
+            VariadicRenderPart::Element(element) => {
+                VariadicRenderPart::Element(render_element(&element))
+            }
+            VariadicRenderPart::Ellipsis => VariadicRenderPart::Ellipsis,
         })
-        .collect::<Vec<_>>()
-        .join(", ")
+        .collect();
+    join_variadic_render_parts(rendered, space_around_ellipsis)
+}
+
+fn join_variadic_render_parts(
+    parts: Vec<VariadicRenderPart>,
+    space_around_ellipsis: bool,
+) -> String {
+    let mut rendered = String::new();
+    let mut previous_was_ellipsis = false;
+    for part in parts {
+        let is_ellipsis = matches!(part, VariadicRenderPart::Ellipsis);
+        if !rendered.is_empty() {
+            if space_around_ellipsis && (previous_was_ellipsis || is_ellipsis) {
+                rendered.push_str(", \\; ");
+            } else {
+                rendered.push_str(", ");
+            }
+        }
+        match part {
+            VariadicRenderPart::Element(element) => rendered.push_str(&element),
+            VariadicRenderPart::Ellipsis => rendered.push_str("\\ldots"),
+        }
+        previous_was_ellipsis = is_ellipsis;
+    }
+    rendered
 }
 
 fn render_variadic_slice_parts(
@@ -427,7 +456,7 @@ fn render_variadic_slice_parts(
 }
 
 pub(super) fn render_variadic_slice(slice: &VariadicSlice, registry: &RenderRegistry) -> String {
-    render_variadic_slice_with(slice, registry, str::to_owned)
+    render_variadic_slice_with(slice, registry, false, str::to_owned)
 }
 
 pub(super) fn render_variadic_parameter(

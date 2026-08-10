@@ -2695,6 +2695,12 @@ fn desugar_command_argument_sugar(input: &str) -> Vec<Spanned<Token, usize, Lexi
                     && brace_match[index] != usize::MAX
                     && index + 1 < brace_match[index]
                     && is_set_target_start(&toks[index + 1].1)
+                    && !group_parses_as_ordinary_command_args(
+                        input,
+                        &toks,
+                        index,
+                        brace_match[index],
+                    )
                     && group_has_top_level_colon(&toks, index + 1, brace_match[index]) =>
             {
                 let close = brace_match[index];
@@ -2776,6 +2782,25 @@ fn is_set_target_start(token: &Token) -> bool {
         token,
         Token::Name(_) | Token::Placeholder(_) | Token::MagneticPlaceholder(_) | Token::LParen
     )
+}
+
+/// Whether a brace group already parses as an ordinary command argument list.
+///
+/// Ordinary arguments take precedence over collection-literal sugar. In
+/// particular, a nested command tail such as `:of` in
+/// `{x, \set:of{x, y}}` is a top-level colon relative to the outer group, but it
+/// does not make that group a set builder.
+fn group_parses_as_ordinary_command_args(
+    input: &str,
+    toks: &[(usize, Token, usize)],
+    open: usize,
+    close: usize,
+) -> bool {
+    let group = &input[toks[open].0..toks[close].2];
+    let probe = format!(r"\probe{group}");
+    grammar::InputExpressionParser::new()
+        .parse(Lexer::new(&probe))
+        .is_ok()
 }
 
 /// Whether the tokens in `[start, end)` contain a `:` at bracket depth zero.
@@ -4085,6 +4110,21 @@ mod tests {
         assert!(matches!(
             tail_cmd.tail[0].args[0].expressions[0].kind,
             ExpressionKind::Set(_)
+        ));
+
+        // A colon in a nested command tail belongs to that command. It must not
+        // turn the surrounding ordinary argument list into collection sugar.
+        let ordinary = parse_expression(r#"\set:of{x, \set:of{x, y}}"#)
+            .expect("expected nested command arguments");
+        let ExpressionKind::Command(ordinary_cmd) = &ordinary.kind else {
+            panic!("expected a command, got {:?}", ordinary.kind);
+        };
+        assert_eq!(ordinary_cmd.tail.len(), 1);
+        assert_eq!(ordinary_cmd.tail[0].args.len(), 1);
+        assert_eq!(ordinary_cmd.tail[0].args[0].expressions.len(), 2);
+        assert!(matches!(
+            ordinary_cmd.tail[0].args[0].expressions[1].kind,
+            ExpressionKind::Command(_)
         ));
 
         // Untouched: standalone set, a plain argument list, and an explicit set arg.
@@ -5560,6 +5600,21 @@ mod tests {
         assert!(composition.definition.is_some());
         assert!(matches!(
             composition.relation,
+            Some(DeclarationRelation::Is(TypeExpression::Command(_)))
+        ));
+
+        let nested_command =
+            parse_ordinary_declaration_statement(r#"p := \set:of{x, \set:of{x, y}} is \set"#)
+                .expect("expected nested command arguments in a declaration definition");
+        assert!(matches!(
+            nested_command.definition,
+            Some(Expression {
+                kind: ExpressionKind::Command(_),
+                ..
+            })
+        ));
+        assert!(matches!(
+            nested_command.relation,
             Some(DeclarationRelation::Is(TypeExpression::Command(_)))
         ));
     }

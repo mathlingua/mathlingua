@@ -350,11 +350,12 @@ Used inside `Documented:`.
 
 Used inside `Justification:` (which appears after `Documented:`). Each item is a
 `HaveGroup` — a `have:`/`asserting:`/`because?:`/`by?:` group (see the `have`
-clause group above) with a required `[label]` heading. A labeled specification
-elsewhere in the group (e.g. a `declares:` item `(.x is \foo.)[:1:]`) whose
-`[:label:]` matches an entry's `[label]` is established using that entry's
-`have:`/`asserting:`; the entry's `have:` must restate the labeled specification,
-and every entry must be referenced by some labeled specification.
+clause group above) with a required `[label]` heading. Any grouped expression,
+statement, or specification elsewhere in the group—including a nested
+formulation or a `satisfies:` clause—may carry the matching `[:label:]`. It is
+established using that entry's `have:`/`asserting:`; the entry's `have:` must
+restate the labeled formulation, and every entry must be referenced by some
+labeled formulation.
 
 ### Metadata items
 

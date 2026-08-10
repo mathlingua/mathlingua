@@ -2573,6 +2573,10 @@ fn justification_have_matches_item(group: &HaveGroup, item: &IsOrViaItem) -> boo
     let Some(item_key) = spec_key_for_is_or_via_item(item) else {
         return true;
     };
+    justification_have_matches_key(group, &item_key)
+}
+
+fn justification_have_matches_key(group: &HaveGroup, item_key: &str) -> bool {
     let have_keys: Vec<String> = group
         .have
         .arguments
@@ -2580,6 +2584,72 @@ fn justification_have_matches_item(group: &HaveGroup, item: &IsOrViaItem) -> boo
         .filter_map(spec_key_for_clause)
         .collect();
     have_keys.len() == 1 && have_keys[0] == item_key
+}
+
+/// Resolves labels stored directly on a declaration statement. Statement
+/// parsers retain these labels in every declaration-bearing context, including
+/// ordinary clauses and quantifier bindings.
+fn establish_labeled_declaration_statement(
+    statement: &DeclarationStatement,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) -> bool {
+    let item_key = key_for_declaration_statement(statement);
+    for label in statement.labels.iter().rev() {
+        let key = label.parts.join(".");
+        let Some(group) = context.justification(&key).cloned() else {
+            continue;
+        };
+        if !justification_have_matches_key(&group, &item_key) {
+            emit_error(
+                event_log,
+                path,
+                declaration_subject_keys(statement)
+                    .into_iter()
+                    .next()
+                    .and_then(|name| locator.locate_symbol(&name)),
+                format!(
+                    "The `have:` of `Justification:` entry `[{key}]` must restate the labeled specification exactly"
+                ),
+            );
+        }
+        check_have_group(&group, context, path, locator, registry, event_log);
+        return true;
+    }
+    false
+}
+
+/// Checks a labeled expression under the assertions supplied by its matching
+/// `Justification:` entry. This works at any expression depth because labeled
+/// expressions are ordinary primary expressions in the formulation grammar.
+fn establish_labeled_expression(
+    label: &Label,
+    expression: &Expression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) -> bool {
+    let key = label.parts.join(".");
+    let Some(group) = context.justification(&key).cloned() else {
+        return false;
+    };
+    if !justification_have_matches_key(&group, &key_for_expression(expression)) {
+        emit_error(
+            event_log,
+            path,
+            None,
+            format!(
+                "The `have:` of `Justification:` entry `[{key}]` must restate the labeled expression exactly"
+            ),
+        );
+    }
+    check_have_group(&group, context, path, locator, registry, event_log);
+    true
 }
 
 /// The subject key of an `IsOrViaItem`, for locating diagnostics.
@@ -2660,9 +2730,432 @@ fn establish_labeled_specification(
 /// Collects the labels referenced by labeled specifications inside an
 /// `IsOrViaItem` (the `[:label:]` of any `Labeled` wrapper).
 fn collect_is_or_via_referenced_labels(item: &IsOrViaItem, labels: &mut BTreeSet<String>) {
-    if let IsOrViaItem::Labeled { label, item } = item {
-        labels.insert(label.join("."));
-        collect_is_or_via_referenced_labels(item, labels);
+    match item {
+        IsOrViaItem::Labeled { label, item } => {
+            labels.insert(label.join("."));
+            collect_is_or_via_referenced_labels(item, labels);
+        }
+        IsOrViaItem::Declaration(statement) => {
+            collect_declaration_referenced_labels(statement, labels)
+        }
+        IsOrViaItem::IsVia(_) | IsOrViaItem::Have(_) => {}
+    }
+}
+
+fn collect_declaration_referenced_labels(
+    statement: &DeclarationStatement,
+    labels: &mut BTreeSet<String>,
+) {
+    labels.extend(statement.labels.iter().map(|label| label.parts.join(".")));
+    if let Some(definition) = &statement.definition {
+        collect_expression_referenced_labels(definition, labels);
+    }
+    match &statement.relation {
+        Some(DeclarationRelation::Spec { target, .. }) => {
+            collect_expression_referenced_labels(target, labels)
+        }
+        Some(DeclarationRelation::InfixSpec { spec, target }) => {
+            for expression in infix_spec_arguments(spec) {
+                collect_expression_referenced_labels(expression, labels);
+            }
+            collect_expression_referenced_labels(target, labels);
+        }
+        Some(DeclarationRelation::Is(ty)) => collect_type_referenced_labels(ty, labels),
+        None => {}
+    }
+}
+
+fn collect_expression_referenced_labels(expression: &Expression, labels: &mut BTreeSet<String>) {
+    match &expression.kind {
+        ExpressionKind::Name(_)
+        | ExpressionKind::InferredName(_)
+        | ExpressionKind::VariadicSlice(_)
+        | ExpressionKind::SubsetCall(_) => {}
+        ExpressionKind::VariadicAssignment { value, .. } => {
+            collect_expression_referenced_labels(value, labels)
+        }
+        ExpressionKind::FunctionCall { arguments, .. } => {
+            for argument in arguments {
+                collect_expression_referenced_labels(argument, labels);
+            }
+        }
+        ExpressionKind::FunctionNamedCall { elements, .. } => {
+            for element in elements {
+                collect_expression_referenced_labels(&element.expression, labels);
+            }
+        }
+        ExpressionKind::MemberCall {
+            owner, arguments, ..
+        } => {
+            collect_expression_referenced_labels(owner, labels);
+            for argument in arguments {
+                collect_expression_referenced_labels(argument, labels);
+            }
+        }
+        ExpressionKind::MemberAccess { owner, .. }
+        | ExpressionKind::Prefix {
+            expression: owner, ..
+        }
+        | ExpressionKind::Postfix {
+            expression: owner, ..
+        }
+        | ExpressionKind::Grouped {
+            expression: owner, ..
+        } => collect_expression_referenced_labels(owner, labels),
+        ExpressionKind::Labeled {
+            expression: inner,
+            label,
+        } => {
+            labels.insert(label.parts.join("."));
+            collect_expression_referenced_labels(inner, labels);
+        }
+        ExpressionKind::Tuple(elements) => {
+            for element in elements {
+                if let TupleExpressionElement::Expression(expression) = element {
+                    collect_expression_referenced_labels(expression, labels);
+                }
+            }
+        }
+        ExpressionKind::Set(set) => {
+            collect_set_target_referenced_labels(&set.target, labels);
+            for spec in &set.specs {
+                collect_expression_referenced_labels(spec, labels);
+            }
+            if let Some(predicate) = &set.predicate {
+                match predicate {
+                    SetPredicate::Expression(expression) => {
+                        collect_expression_referenced_labels(expression, labels)
+                    }
+                    SetPredicate::Definition { target, value, .. } => {
+                        collect_set_target_referenced_labels(target, labels);
+                        collect_expression_referenced_labels(value, labels);
+                    }
+                }
+            }
+        }
+        ExpressionKind::Command(command) => {
+            collect_command_referenced_labels(command, labels);
+        }
+        ExpressionKind::BuiltinCommand(command) => {
+            for args in command
+                .head_args
+                .iter()
+                .chain(command.tail.iter().flat_map(|tail| tail.args.iter()))
+            {
+                for argument in &args.arguments {
+                    match argument {
+                        BuiltinCommandArgument::Expression(expression) => {
+                            collect_expression_referenced_labels(expression, labels)
+                        }
+                        BuiltinCommandArgument::Declaration(statement) => {
+                            collect_declaration_referenced_labels(statement, labels)
+                        }
+                        BuiltinCommandArgument::Text(_) => {}
+                    }
+                }
+            }
+        }
+        ExpressionKind::InfixCommand {
+            left,
+            command,
+            right,
+        } => {
+            collect_expression_referenced_labels(left, labels);
+            for argument in infix_command_arguments(command) {
+                collect_expression_referenced_labels(argument, labels);
+            }
+            collect_expression_referenced_labels(right, labels);
+        }
+        ExpressionKind::InfixSpecStatement { left, spec, right } => {
+            collect_expression_referenced_labels(left, labels);
+            for argument in infix_spec_arguments(spec) {
+                collect_expression_referenced_labels(argument, labels);
+            }
+            collect_expression_referenced_labels(right, labels);
+        }
+        ExpressionKind::Binary { left, right, .. }
+        | ExpressionKind::Satisfies {
+            subject: left,
+            spec: right,
+        }
+        | ExpressionKind::Mapping {
+            lhs: left,
+            rhs: right,
+        }
+        | ExpressionKind::MemberOf {
+            subject: left,
+            collection: right,
+        } => {
+            collect_expression_referenced_labels(left, labels);
+            collect_expression_referenced_labels(right, labels);
+        }
+        ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
+            collect_expression_referenced_labels(&statement.subject, labels)
+        }
+        ExpressionKind::SpecStatementExpr {
+            subject, target, ..
+        } => {
+            collect_expression_referenced_labels(subject, labels);
+            collect_expression_referenced_labels(target, labels);
+        }
+        ExpressionKind::SpecLiteral(literal) => match &literal.form {
+            SpecLiteralForm::Is(ty) => collect_type_referenced_labels(ty, labels),
+            SpecLiteralForm::Spec { target, .. } => {
+                collect_expression_referenced_labels(target, labels)
+            }
+        },
+        ExpressionKind::IsPredicate { subject, command }
+        | ExpressionKind::IsNotPredicate { subject, command } => {
+            collect_expression_referenced_labels(subject, labels);
+            for argument in command_expression_arguments(command) {
+                collect_expression_referenced_labels(argument, labels);
+            }
+        }
+        ExpressionKind::IsRefinedPredicate { subject, command }
+        | ExpressionKind::IsNotRefinedPredicate { subject, command } => {
+            collect_expression_referenced_labels(subject, labels);
+            for argument in refined_command_expression_arguments(command) {
+                collect_expression_referenced_labels(argument, labels);
+            }
+        }
+        ExpressionKind::IsBuiltinPredicate { subject, ty }
+        | ExpressionKind::IsNotBuiltinPredicate { subject, ty }
+        | ExpressionKind::IsType { subject, ty } => {
+            collect_expression_referenced_labels(subject, labels);
+            collect_type_referenced_labels(ty, labels);
+        }
+        ExpressionKind::Build { ty, value, .. } => {
+            collect_type_referenced_labels(ty, labels);
+            collect_expression_referenced_labels(value, labels);
+        }
+    }
+}
+
+fn collect_command_referenced_labels(command: &CommandExpression, labels: &mut BTreeSet<String>) {
+    for argument in command_expression_arguments(command) {
+        collect_expression_referenced_labels(argument, labels);
+    }
+    if let Some(command_context) = &command.context {
+        for argument in &command_context.arguments {
+            match argument {
+                CommandContextArgument::Assignment { value, .. }
+                | CommandContextArgument::Expression(value) => {
+                    collect_expression_referenced_labels(value, labels)
+                }
+                CommandContextArgument::Declaration(statement) => {
+                    collect_declaration_referenced_labels(statement, labels)
+                }
+                CommandContextArgument::Text(_) => {}
+            }
+        }
+    }
+}
+
+fn collect_type_referenced_labels(ty: &TypeExpression, labels: &mut BTreeSet<String>) {
+    match ty {
+        TypeExpression::Builtin { .. } | TypeExpression::Parameter { .. } => {}
+        TypeExpression::Command(command) => collect_command_referenced_labels(command, labels),
+        TypeExpression::RefinedCommand(command) => {
+            for argument in refined_command_expression_arguments(command) {
+                collect_expression_referenced_labels(argument, labels);
+            }
+        }
+        TypeExpression::Tuple(tuple) => {
+            for spec in &tuple.elements {
+                collect_function_type_spec_referenced_labels(spec, labels);
+            }
+        }
+        TypeExpression::Set(set) => match &set.element {
+            SetTypeElement::Spec(spec) => {
+                collect_function_type_spec_referenced_labels(spec, labels)
+            }
+            SetTypeElement::Tuple(tuple) => {
+                for spec in &tuple.elements {
+                    collect_function_type_spec_referenced_labels(spec, labels);
+                }
+            }
+        },
+        TypeExpression::Function(function) => {
+            for spec in function
+                .inputs
+                .iter()
+                .chain(std::iter::once(&function.output))
+            {
+                collect_function_type_spec_referenced_labels(spec, labels);
+            }
+        }
+    }
+}
+
+fn collect_function_type_spec_referenced_labels(
+    spec: &FunctionTypeSpec,
+    labels: &mut BTreeSet<String>,
+) {
+    match &spec.kind {
+        FunctionTypeSpecKind::Is(ty) => collect_type_referenced_labels(ty, labels),
+        FunctionTypeSpecKind::Spec { target, .. } => {
+            collect_expression_referenced_labels(target, labels)
+        }
+    }
+}
+
+fn collect_set_target_referenced_labels(target: &SetTarget, labels: &mut BTreeSet<String>) {
+    match &target.kind {
+        SetTargetKind::Name(_) | SetTargetKind::PlaceholderForm(_) => {}
+        SetTargetKind::Expression { expression, .. } => {
+            collect_expression_referenced_labels(expression, labels)
+        }
+        SetTargetKind::Alias { target, .. } | SetTargetKind::Introduction { target, .. } => {
+            collect_set_target_referenced_labels(target, labels)
+        }
+        SetTargetKind::Function { arguments, .. } => {
+            for argument in arguments {
+                collect_set_target_referenced_labels(argument, labels);
+            }
+        }
+        SetTargetKind::Tuple(elements) => {
+            for element in elements {
+                if let SetTargetElement::Target(target) = element {
+                    collect_set_target_referenced_labels(target, labels);
+                }
+            }
+        }
+    }
+}
+
+fn collect_clause_referenced_labels(clause: &Clause, labels: &mut BTreeSet<String>) {
+    match clause {
+        Clause::Not(group) => collect_clause_referenced_labels(&group.not.argument, labels),
+        Clause::AllOf(group) => {
+            for clause in &group.all_of.arguments {
+                collect_clause_referenced_labels(clause, labels);
+            }
+        }
+        Clause::AnyOf(group) => {
+            for clause in &group.any_of.arguments {
+                collect_clause_referenced_labels(clause, labels);
+            }
+        }
+        Clause::OneOf(group) => {
+            for clause in &group.one_of.arguments {
+                collect_clause_referenced_labels(clause, labels);
+            }
+        }
+        Clause::Equivalently(group) => {
+            for clause in &group.equivalently.arguments {
+                collect_clause_referenced_labels(clause, labels);
+            }
+        }
+        Clause::Exists(group) => {
+            for item in &group.exists.arguments {
+                let BindingOrSpec::Declaration(statement) = item;
+                collect_declaration_referenced_labels(statement, labels);
+            }
+            if let Some(section) = &group.such_that {
+                for clause in &section.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+        }
+        Clause::ExistsUnique(group) => {
+            for item in &group.exists_unique.arguments {
+                let BindingOrSpec::Declaration(statement) = item;
+                collect_declaration_referenced_labels(statement, labels);
+            }
+            if let Some(section) = &group.such_that {
+                for clause in &section.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+        }
+        Clause::ForAll(group) => {
+            for item in &group.for_all.arguments {
+                let BindingOrSpec::Declaration(statement) = item;
+                collect_declaration_referenced_labels(statement, labels);
+            }
+            if let Some(section) = &group.where_ {
+                for clause in &section.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            for clause in &group.then.arguments {
+                collect_clause_referenced_labels(clause, labels);
+            }
+        }
+        Clause::Let(group) => {
+            for item in &group.let_.arguments {
+                let BindingOrSpec::Declaration(statement) = item;
+                collect_declaration_referenced_labels(statement, labels);
+            }
+            if let Some(section) = &group.where_ {
+                for clause in &section.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            for clause in &group.then.arguments {
+                collect_clause_referenced_labels(clause, labels);
+            }
+        }
+        Clause::If(group) => {
+            for clause in group
+                .if_
+                .arguments
+                .iter()
+                .chain(group.then.arguments.iter())
+            {
+                collect_clause_referenced_labels(clause, labels);
+            }
+        }
+        Clause::Iff(group) => {
+            for clause in group
+                .iff
+                .arguments
+                .iter()
+                .chain(group.then.arguments.iter())
+            {
+                collect_clause_referenced_labels(clause, labels);
+            }
+        }
+        Clause::Piecewise(group) => {
+            for clause in group
+                .if_
+                .arguments
+                .iter()
+                .chain(group.then.arguments.iter())
+            {
+                collect_clause_referenced_labels(clause, labels);
+            }
+            if let Some(section) = &group.else_ {
+                for clause in &section.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+        }
+        Clause::Given(group) => {
+            for statement in &group.given.arguments {
+                collect_declaration_referenced_labels(statement, labels);
+            }
+            if let Some(section) = &group.where_ {
+                for clause in &section.arguments {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
+            for clause in &group.then.arguments {
+                collect_clause_referenced_labels(clause, labels);
+            }
+        }
+        Clause::Have(group) => {
+            for clause in group
+                .have
+                .arguments
+                .iter()
+                .chain(group.asserting.arguments.iter())
+            {
+                collect_clause_referenced_labels(clause, labels);
+            }
+        }
+        Clause::Declaration(statement) => collect_declaration_referenced_labels(statement, labels),
+        Clause::Expression(expression) => collect_expression_referenced_labels(expression, labels),
     }
 }
 
@@ -2685,6 +3178,21 @@ fn validate_defines_justification_usage(
     if let Some(declares) = &group.declares {
         for item in &declares.arguments {
             collect_is_or_via_referenced_labels(item, &mut referenced);
+        }
+    }
+    if let Some(using) = &group.using {
+        for statement in &using.arguments {
+            collect_declaration_referenced_labels(statement, &mut referenced);
+        }
+    }
+    if let Some(when) = &group.when {
+        for clause in &when.arguments {
+            collect_clause_referenced_labels(clause, &mut referenced);
+        }
+    }
+    if let Some(satisfies) = &group.satisfies {
+        for clause in &satisfies.arguments {
+            collect_clause_referenced_labels(clause, &mut referenced);
         }
     }
     for entry in &justification.arguments {
@@ -5312,6 +5820,11 @@ fn check_declaration_statement(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    if establish_labeled_declaration_statement(
+        statement, context, path, locator, registry, event_log,
+    ) {
+        return;
+    }
     check_is_subject(&statement.subject, context, path, locator, event_log);
     if let Some(expansion) = &statement.expansion {
         check_is_subject(expansion, context, path, locator, event_log);
@@ -5634,16 +6147,23 @@ fn assume_declaration_statement(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    let established = establish_labeled_declaration_statement(
+        statement, context, path, locator, registry, event_log,
+    );
     declare_inferred_parameters(statement, context, path, locator, registry, event_log);
     declare_is_subject(&statement.subject, context);
     if let Some(expansion) = &statement.expansion {
         declare_is_subject(expansion, context);
     }
-    if let Some(relation) = &statement.relation {
-        check_declaration_relation(relation, context, path, locator, registry, event_log);
+    if !established {
+        if let Some(relation) = &statement.relation {
+            check_declaration_relation(relation, context, path, locator, registry, event_log);
+        }
+        check_declaration_spec_facts_supported(
+            statement, context, path, locator, registry, event_log,
+        );
+        check_declaration_definition(statement, context, path, locator, registry, event_log);
     }
-    check_declaration_spec_facts_supported(statement, context, path, locator, registry, event_log);
-    check_declaration_definition(statement, context, path, locator, registry, event_log);
     register_declaration_collection_literal(statement, context);
     if let Some((left, right)) = declaration_substitution(statement) {
         context.add_substitution(left, right);
@@ -6480,8 +7000,15 @@ fn check_expression(
                 check_set_predicate(predicate, &mut child, path, locator, registry, event_log);
             }
         }
-        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+        ExpressionKind::Grouped { expression, .. } => {
             check_expression(expression, context, path, locator, registry, event_log);
+        }
+        ExpressionKind::Labeled { expression, label } => {
+            if !establish_labeled_expression(
+                label, expression, context, path, locator, registry, event_log,
+            ) {
+                check_expression(expression, context, path, locator, registry, event_log);
+            }
         }
         ExpressionKind::Prefix {
             operator,

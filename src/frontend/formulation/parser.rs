@@ -13,7 +13,7 @@ use super::ast::{
     FunctionTypeNotation, FunctionTypeSpec, FunctionTypeSpecKind, HardCastStatement,
     InfixCommandHeader, InfixSpec, InfixSpecExpressionRefinement, InfixSpecHeader,
     InfixSpecHeaderRefinement, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject,
-    IsSubjectForm, IsSubjectKind, IsViaStatement, LabelHeader, MemberAliasLhs, Operator,
+    IsSubjectForm, IsSubjectKind, IsViaStatement, Label, LabelHeader, MemberAliasLhs, Operator,
     ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm, PlaceholderFormKind,
     PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
     RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, SetExpression,
@@ -1681,6 +1681,12 @@ pub fn parse_declaration_statement(
     allow_refined_type: bool,
 ) -> Result<DeclarationStatement, ParseError> {
     let input = input.trim();
+    if let Some((label, inner)) = split_labeled_formulation(input) {
+        let mut statement = parse_declaration_statement(inner, allow_refined_type)?;
+        statement.span = span_all(input);
+        statement.labels.push(label);
+        return Ok(statement);
+    }
     match parse_standard_declaration_statement(input, allow_refined_type) {
         Ok(statement) => return Ok(statement),
         Err(error) => {
@@ -1720,6 +1726,7 @@ fn parse_standard_declaration_statement(
 
     Ok(DeclarationStatement {
         span: span_all(input),
+        labels: Vec::new(),
         subject,
         expansion,
         definition,
@@ -1783,6 +1790,7 @@ fn parse_operator_pattern_definition(
 
     Some(Ok(DeclarationStatement {
         span: span_all(input),
+        labels: Vec::new(),
         subject: IsSubject {
             span: operator.span,
             kind: IsSubjectKind::Operator(operator),
@@ -1791,6 +1799,43 @@ fn parse_operator_pattern_definition(
         definition: Some(definition),
         relation: None,
     }))
+}
+
+/// Splits a grouped declaration carrying a trailing label. Expressions handle
+/// this shape in the generated grammar, but declarations are parsed by the
+/// hand-written statement parser and therefore need the same wrapper handling
+/// before their inner `:=`, `is`, or specification relation is recognized.
+fn split_labeled_formulation(input: &str) -> Option<(Label, &str)> {
+    let body = input.trim().strip_suffix(":]")?;
+    let label_start = body.rfind("[:")?;
+    let label_body = &body[label_start + 2..];
+    if label_body.is_empty()
+        || !label_body.split('.').all(|part| {
+            !part.is_empty()
+                && part
+                    .chars()
+                    .all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+        })
+    {
+        return None;
+    }
+
+    let grouped = body[..label_start].trim();
+    let inner = grouped
+        .strip_prefix("(.")
+        .and_then(|rest| rest.strip_suffix(".)"))
+        .or_else(|| {
+            grouped
+                .strip_prefix('(')
+                .and_then(|rest| rest.strip_suffix(')'))
+        })?;
+    Some((
+        Label {
+            span: Span::new(label_start, input.len()),
+            parts: label_body.split('.').map(str::to_owned).collect(),
+        },
+        inner.trim(),
+    ))
 }
 
 fn is_operator_definition_pattern(expression: &Expression) -> bool {
@@ -1843,6 +1888,12 @@ pub fn parse_refined_declaration_statement(
 /// the form `x is! T` or `x := value is! T`.
 pub fn parse_hard_cast_statement(input: &str) -> Result<HardCastStatement, ParseError> {
     let input = input.trim();
+    if let Some((label, inner)) = split_labeled_formulation(input) {
+        let mut statement = parse_hard_cast_statement(inner)?;
+        statement.span = span_all(input);
+        statement.labels.push(label);
+        return Ok(statement);
+    }
     let index = find_top_level_substring(input, " is! ")
         .ok_or_else(|| ParseError::custom("expected top-level ` is! `"))?;
     let subject_text = input[..index].trim();
@@ -1869,6 +1920,7 @@ pub fn parse_hard_cast_statement(input: &str) -> Result<HardCastStatement, Parse
 
     Ok(HardCastStatement {
         span: span_all(input),
+        labels: Vec::new(),
         subject: parse_is_subject(subject_text)?,
         definition,
         ty: parse_type_expression(ty_text, true)?,
@@ -5452,6 +5504,26 @@ mod tests {
             }
             other => panic!("expected labeled expression, got {other:?}"),
         }
+
+        // A label remains an ordinary primary expression when nested inside a
+        // larger expression.
+        assert!(parse_expression("f((x + 1)[:some.label:])").is_ok());
+        assert!(parse_expression("y + (.x.)[:some.label:]").is_ok());
+        assert!(parse_expression("(.x => x.)[:mapping:]").is_ok());
+    }
+
+    #[test]
+    fn parses_labeled_declarations_and_specifications() {
+        let statement = parse_ordinary_declaration_statement("(.*' := `*`.)[:1:]")
+            .expect("expected labeled operator definition");
+        assert_eq!(statement.labels.len(), 1);
+        assert_eq!(statement.labels[0].parts, vec!["1".to_string()]);
+
+        let nested = parse_ordinary_declaration_statement("((.x is \\set.)[:inner:])[:outer:]")
+            .expect("expected nested labeled specification");
+        assert_eq!(nested.labels.len(), 2);
+        assert_eq!(nested.labels[0].parts, vec!["inner".to_string()]);
+        assert_eq!(nested.labels[1].parts, vec!["outer".to_string()]);
     }
 
     #[test]
@@ -5659,6 +5731,10 @@ mod tests {
 
         parse_ordinary_declaration_statement(r#"a0 := a is! \set"#)
             .expect_err("ordinary declarations should not accept hard casts");
+
+        let labeled = parse_hard_cast_statement(r#"(.a0 := a is! \set.)[:cast:]"#)
+            .expect("expected labeled hard-cast statement");
+        assert_eq!(labeled.labels[0].parts, vec!["cast".to_string()]);
     }
 
     #[test]

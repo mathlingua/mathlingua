@@ -165,8 +165,10 @@ The former `Justified:` section (which held `label:`/`by:` prose notes) is
 heading. The section now appears **after** `Documented:` (it previously came
 before it).
 
-A specification elsewhere in the same group may carry a `[:label:]` — for example
-a `declares:` item written `(.x is \foo.)[:1:]`. When its label matches a
+A grouped expression, statement, or specification anywhere else in the same
+group may carry a `[:label:]`, including inside nested clauses and expressions.
+For example, a `declares:` item may be written `(.x is \foo.)[:1:]`, and a
+`satisfies:` clause may be written ``(.*' := `*`.)[:2:]``. When its label matches a
 `Justification:` entry's `[label]`:
 
 - the labeled specification is established using that entry's

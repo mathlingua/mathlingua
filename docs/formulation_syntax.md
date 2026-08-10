@@ -147,9 +147,9 @@ Important implementation distinction:
 
 So `x "less than" A` is rejected by `parse_expression`, but accepted by `parse_declaration_statement` and the legacy spec helper.
 
-### Labels inside expressions
+### Labels on grouped formulations
 
-Expression labels use the token form:
+Labels use the token form:
 
 ```text
 [:part(.part)*:]
@@ -159,8 +159,14 @@ Each `part` uses the same identifier-like rule as ordinary non-stropped names.
 
 Important distinction:
 
-- expression labels like `[:a.b:]` are lexer tokens and do not support stropped symbolic parts
+- formulation labels like `[:a.b:]` are lexer tokens and do not support stropped symbolic parts
 - structural label headers parsed by `parse_label_header` do support stropped symbolic name parts because they use the raw helper parser, not the lexer token
+
+A label may follow a parenthesized or dot-parenthesized expression, statement,
+or specification. Declaration-shaped formulations retain the wrapper in their
+statement AST, while expression-shaped formulations use `ExpressionKind::Labeled`.
+Consequently the same syntax is valid at top level and wherever that formulation
+may be nested.
 
 ### Named operators
 
@@ -378,7 +384,9 @@ The AST records whether the grouped form used the dot-delimited spelling.
 LabeledExpression ::= GroupedExpression Label
 ```
 
-Only grouped expressions may be labeled directly.
+Only grouped formulations may be labeled directly. In a declaration-bearing
+context, the same wrapper may contain a declaration or specification such as
+``(.*' := `*`.)[:operation:]`` or `(.x is \real.)[:typed:]`.
 
 Examples:
 

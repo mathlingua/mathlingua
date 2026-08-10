@@ -550,7 +550,7 @@ GroupedExpression: ast::Expression = {
             dot_delimited: false,
         },
     ),
-    <l:@L> "(." <expression:SpecOrPredicateExpression> ".)" <r:@R> => ast::Expression::new(
+    <l:@L> "(." <expression:MappingExpression> ".)" <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::Grouped {
             expression: Box::new(expression),

@@ -801,13 +801,15 @@ the construct supports.
 - `discoverer:`
 
 `Justification:` (placed after `Documented:`) accepts only `have:`/`asserting:`
-groups, each with a required `[label]` heading. A labeled specification elsewhere
-in the group — e.g. a `declares:` item written `(.x is \foo.)[:1:]` — whose
-`[:label:]` matches an entry's `[label]` is established using that entry's
-`asserting:` items (exactly as an inline `have:`/`asserting:` group would be). The
-entry's `have:` must restate the labeled specification, an unmatched label is
-checked inline as usual, and every entry must be referenced by some labeled
-specification.
+groups, each with a required `[label]` heading. Any grouped expression, statement,
+or specification elsewhere in the group may carry a `[:label:]`, including inside
+a nested clause or expression. For example, both a `declares:` item
+`(.x is \foo.)[:1:]` and a `satisfies:` clause
+``(.*' := \restriction:of{`*`}:on{X' \.set.cross./ X'}.)[:2:]`` may reference
+entries. A matching entry establishes the labeled formulation using its
+`asserting:` items (exactly as an inline `have:`/`asserting:` group would); its
+`have:` must restate that formulation, an unmatched label is checked inline as
+usual, and every entry must be referenced by some labeled formulation.
 
 `Aliases:` accepts `alias:` groups. `Metadata:` accepts `id:` and `version:`.
 `References:` contains resource headers such as `$book.chapter`.

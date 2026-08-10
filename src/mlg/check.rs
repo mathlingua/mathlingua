@@ -4754,6 +4754,56 @@ Documented:
     }
 
     #[test]
+    fn check_establishes_labeled_declaration_in_satisfies() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("justification-satisfies.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\thing]
+    Defines: t
+    using:
+    . x is \set
+    . y is \set
+    . z is \set
+    satisfies:
+    . (.y := x.)[:1:]
+    . z := (.x.)[:2:]
+    Documented:
+    . called: "thing"
+    Justification:
+    . [1]
+      have: y := x
+      asserting: x is \set
+    . [2]
+      have: x
+      asserting: x is \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("justification-satisfies.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_resolves_backtick_stropped_operator_as_a_value() {
         // A backtick-stropped operator `` `*` `` refers to the bound operator `*`,
         // so it resolves as a value with `*`'s type and can be invoked in function

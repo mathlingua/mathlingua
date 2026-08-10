@@ -945,6 +945,11 @@ pub enum IsOrRefinedStatementSpec {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DeclarationStatement {
     pub span: Span,
+    /// Labels applied to grouped statement/specification wrappers, from the
+    /// innermost wrapper to the outermost one. Keeping them on the declaration
+    /// makes `(. ... .)[:label:]` valid in every declaration-bearing context,
+    /// rather than only in structural sections with bespoke parsing.
+    pub labels: Vec<Label>,
     pub subject: IsSubject,
     pub expansion: Option<IsSubject>,
     pub definition: Option<Expression>,
@@ -954,6 +959,7 @@ pub struct DeclarationStatement {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HardCastStatement {
     pub span: Span,
+    pub labels: Vec<Label>,
     pub subject: IsSubject,
     pub definition: Option<Expression>,
     pub ty: TypeExpression,

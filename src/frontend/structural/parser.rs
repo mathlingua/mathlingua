@@ -4445,6 +4445,34 @@ that:
     }
 
     #[test]
+    fn parses_labeled_declaration_in_satisfies() {
+        let document = parse_ok(
+            r#"
+[\thing]
+Defines: t
+satisfies:
+. (.*' := `*`.)[:1:]
+Documented:
+. called: "thing"
+Justification:
+. [1]
+  have: *' := `*`
+  asserting: t = t
+"#,
+        );
+
+        let TopLevelItem::Defines(group) = &document.items[0] else {
+            panic!("expected Defines item");
+        };
+        let satisfies = group.satisfies.as_ref().expect("expected satisfies");
+        let Clause::Declaration(statement) = &satisfies.arguments[0] else {
+            panic!("expected labeled declaration clause");
+        };
+        assert_eq!(statement.labels.len(), 1);
+        assert_eq!(statement.labels[0].parts, vec!["1".to_string()]);
+    }
+
+    #[test]
     fn parses_provided_symbol_with_builtin_spec_operator_target() {
         let document = parse_ok(
             r#"

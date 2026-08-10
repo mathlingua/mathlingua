@@ -2040,13 +2040,9 @@ pub(super) fn parse_type_expression(
     }
 
     if contains_top_level(input, "->") {
-        return parse_compact_function_type_expression(
-            input,
-            "->",
-            FunctionTypeNotation::Arrow,
-            allow_refined,
-        )
-        .map(TypeExpression::Function);
+        return Err(ParseError::custom(
+            "compact function types use `|->`, not `->`",
+        ));
     }
 
     if input.starts_with('(') {
@@ -2108,7 +2104,8 @@ fn parse_function_type_expression(
     })
 }
 
-/// Parses `(? is A) |-> (? is B)` and `(? is A, ? "in" B) -> (? is C)`.
+/// Parses compact function types such as
+/// `(? is A) |-> (? is B)` and `(? is A, ? "in" B) |-> (? is C)`.
 fn parse_compact_function_type_expression(
     input: &str,
     arrow: &str,
@@ -2129,18 +2126,10 @@ fn parse_compact_function_type_expression(
     let mut outputs = parse_function_type_spec_group(output_text, allow_refined)?;
     require_spec_literal_subjects(&inputs)?;
     require_spec_literal_subjects(&outputs)?;
-    match notation {
-        FunctionTypeNotation::Mapping if inputs.len() != 1 => {
-            return Err(ParseError::custom(
-                "`|->` function types require exactly one input spec literal",
-            ));
-        }
-        FunctionTypeNotation::Arrow if inputs.len() < 2 => {
-            return Err(ParseError::custom(
-                "`->` function types require at least two input spec literals",
-            ));
-        }
-        _ => {}
+    if inputs.is_empty() {
+        return Err(ParseError::custom(
+            "`|->` function types require at least one input spec literal",
+        ));
     }
     if outputs.len() != 1 {
         return Err(ParseError::custom(
@@ -2607,7 +2596,6 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
         let type_text = input[index + 4..].trim();
         if contains_top_level(type_text, "=>")
             || contains_top_level(type_text, "|->")
-            || contains_top_level(type_text, "->")
             || type_text.starts_with('(')
             || type_text.starts_with('{')
         {
@@ -5731,16 +5719,30 @@ mod tests {
                     && function.inputs.len() == 1
         ));
 
-        let arrow = parse_ordinary_declaration_statement(
-            r#"f is (? is \natural, ? "in" \reals) -> (? is \real)"#,
+        let nary_mapping = parse_ordinary_declaration_statement(
+            r#"f is (? is \natural, ? "in" \reals) |-> (? is \real)"#,
         )
-        .expect("expected multi-argument function type");
+        .expect("expected multi-argument mapping type");
         assert!(matches!(
-            arrow.relation,
+            nary_mapping.relation,
             Some(DeclarationRelation::Is(TypeExpression::Function(ref function)))
-                if function.notation == FunctionTypeNotation::Arrow
+                if function.notation == FunctionTypeNotation::Mapping
                     && function.inputs.len() == 2
         ));
+
+        let empty_mapping = parse_ordinary_declaration_statement(r#"f is () |-> (? is \real)"#)
+            .expect_err("function types require at least one input");
+        assert!(
+            empty_mapping
+                .to_string()
+                .contains("at least one input spec literal")
+        );
+
+        let obsolete_arrow = parse_ordinary_declaration_statement(
+            r#"f is (? is \natural, ? is \real) -> (? is \real)"#,
+        )
+        .expect_err("compact function types must use `|->`");
+        assert!(obsolete_arrow.to_string().contains("use `|->`, not `->`"));
 
         for raw in [
             r#"p is (\natural, \real)"#,

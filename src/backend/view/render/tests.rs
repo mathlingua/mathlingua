@@ -455,11 +455,11 @@ Documented:
     );
     assert_eq!(
         render_formulation_latex(
-            r#"f is (? is \natural, ? "in" \reals) -> (? is \natural)"#,
+            r#"f is (? is \natural, ? "in" \reals) |-> (? is \natural)"#,
             &registry
         ),
         Some(
-            r#"f \textrm{ is } \left(? \textrm{ is } \mathbb{N}, ? \in \mathbb{R}\right) \to \left(? \textrm{ is } \mathbb{N}\right)"#
+            r#"f \textrm{ is } \left(? \textrm{ is } \mathbb{N}, ? \in \mathbb{R}\right) \mapsto \left(? \textrm{ is } \mathbb{N}\right)"#
                 .to_string()
         )
     );

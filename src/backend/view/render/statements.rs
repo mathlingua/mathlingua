@@ -243,11 +243,6 @@ pub(super) fn render_function_type(
         ),
         FunctionTypeNotation::Mapping => format!(
             "\\left({}\\right) \\mapsto \\left({}\\right)",
-            render_compact_function_type_spec(&function_type.inputs[0], registry),
-            render_compact_function_type_spec(&function_type.output, registry)
-        ),
-        FunctionTypeNotation::Arrow => format!(
-            "\\left({}\\right) \\to \\left({}\\right)",
             function_type
                 .inputs
                 .iter()

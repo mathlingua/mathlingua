@@ -7362,6 +7362,13 @@ Documented:
 
     Theorem:
     given:
+    . f is (? is \real) |-> (? is \integer)
+    . y is \real
+    then:
+    . f(y) is? \integer
+
+    Theorem:
+    given:
     . A, B is \set
     . f is (? "in" A) |-> (? "in" B)
     . y "in" A
@@ -7371,7 +7378,7 @@ Documented:
     Theorem:
     given:
     . A is \set
-    . f is (? is \real, ? "in" A) -> (? is \integer)
+    . f is (? is \real, ? "in" A) |-> (? is \integer)
     . x is \real
     . y "in" A
     then:
@@ -7379,10 +7386,23 @@ Documented:
 
     Theorem:
     given:
+    . f is (? is \real, ? is \real, ? is \real) |-> (? is \integer)
+    . x, y, z is \real
+    then:
+    . f(x, y, z) is? \integer
+
+    Theorem:
+    given:
     . A is \set
     . a is \\opaque
-    . f := (x_, y_) |-> x_ is (? is \real, ? "in" A) -> (? is \real)
+    . f := (x_, y_) |-> x_ is (? is \real, ? "in" A) |-> (? is \real)
     then: a is? \\opaque
+
+    Theorem:
+    given: a is \\opaque
+    then:
+    . let: x_ * y_ is (? is \\opaque, ? is \\opaque) |-> (? is \\opaque)
+      then: a is? \\opaque
     "#,
         )
         .unwrap();

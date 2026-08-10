@@ -619,13 +619,11 @@ TypeExpression ::=
   | TupleLiteralType
   | SetLiteralType
   | MappingLiteralType
-  | ArrowLiteralType
 BuiltinTypeExpression ::= "\\" "\\" Chain
 SpecLiteral ::= "?" "is" TypeExpression | "?" TopLevelQuotedOperator Expression
 TupleLiteralType ::= "(" SpecLiteral "," SpecLiteral ("," SpecLiteral)* ")"
 SetLiteralType ::= "{" (SpecLiteral | TupleLiteralType) ":" "..." "}"
-MappingLiteralType ::= "(" SpecLiteral ")" "|->" "(" SpecLiteral ")"
-ArrowLiteralType ::= "(" SpecLiteral "," SpecLiteral ("," SpecLiteral)* ")" "->" "(" SpecLiteral ")"
+MappingLiteralType ::= "(" SpecLiteral ("," SpecLiteral)* ")" "|->" "(" SpecLiteral ")"
 ```
 
 Notes:
@@ -640,8 +638,9 @@ Notes:
   `_ "operator" Target`
 - structural literal types use `?` spec literals at every leaf; raw nominal
   tuple, set, mapping, and arrow types are not accepted
-- `|->` has exactly one input spec, while `->` has at least two input specs;
-  both have exactly one output spec
+- `|->` has one or more input specs and exactly one output spec; the declared
+  input arity is preserved
+- compact function types always use `|->`; `->` is not an alternative spelling
 - if no top-level ` is ` is found, the parser falls back to the quoted-operator spec form
 - the quoted operator is extracted by raw scanning, so it may contain spaces or punctuation
 
@@ -653,7 +652,7 @@ Examples:
 - `(x, y) is (? is \natural, ? "in" \reals)`
 - `{x : ...} is {? is \natural : ...}`
 - `f is (? is \natural) |-> (? "in" \naturals)`
-- `f is (? is \natural, ? "in" \reals) -> (? is \real)`
+- `f is (? is \natural, ? "in" \reals) |-> (? is \real)`
 - `+ is \operator`
 - `x "in" A`
 - `x "less than" A`
@@ -671,7 +670,6 @@ TypeExpression ::=
   | TupleLiteralType
   | SetLiteralType
   | MappingLiteralType
-  | ArrowLiteralType
 ```
 
 ### `parse_is_via_statement`

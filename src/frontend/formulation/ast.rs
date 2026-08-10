@@ -262,7 +262,6 @@ pub struct FunctionType {
 pub enum FunctionTypeNotation {
     Specs,
     Mapping,
-    Arrow,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -1261,13 +1261,19 @@ component as an ordinary nominal type:
 {? is \natural : ...}
 {(? is \natural, ? "in" \reals) : ...}
 (? is \natural) |-> (? "in" \naturals)
-(? is \natural, ? "in" \reals) -> (? is \real)
+(? is \natural, ? "in" \reals) |-> (? is \real)
 ```
 
 These types match `(x, y)`, `{x : ...}`, `{(x, y) : ...}`, `x_ |-> ...`, and
 `(x_, y_) |-> ...`, respectively. Each `?` is instantiated with the matching
 term component. A raw nominal tuple such as `(\natural, \real)` is not a type
 literal; write `(? is \natural, ? is \real)` instead.
+
+The `|->` form accepts one or more input spec literals and exactly one
+output spec literal, so users can state unary, binary, and n-ary function types
+directly. The checker retains that input arity rather than requiring users to
+write nested unary function types. Compact function types always use `|->`,
+matching the syntax for function literals; `->` is not an alternative spelling.
 
 For a function definition, component declarations and a whole-function
 declaration are equivalent alternatives:

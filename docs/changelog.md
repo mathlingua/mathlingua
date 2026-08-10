@@ -23,7 +23,7 @@ executable.
 
 ## Structural Spec-Literal Types
 
-Type expressions now support tuple, set, mapping, and multi-input function
+Type expressions now support tuple, set, mapping, and general function
 literals whose leaves are complete specification literals:
 
 ```text
@@ -31,7 +31,7 @@ literals whose leaves are complete specification literals:
 {? is \natural : ...}
 {(? is \natural, ? "in" \reals) : ...}
 (? is \natural) |-> (? "in" \naturals)
-(? is \natural, ? "in" \reals) -> (? is \real)
+(? is \natural, ? "in" \reals) |-> (? is \real)
 ```
 
 The checker matches those shapes to tuple, set, and mapping terms and
@@ -40,7 +40,10 @@ specification operators are retained as spec facts; they are not reduced to
 ordinary `is` facts. A function definition may therefore declare its argument
 and result components individually or declare the function itself with one of
 the new function types. Raw nominal shapes such as `(\natural, \real)` remain
-invalid.
+invalid. The `|->` notation accepts one or more inputs and preserves the
+declared arity, allowing unary, binary, and n-ary function types without a
+curried spelling. It is the sole compact function-type arrow, matching function
+literal syntax; `->` is not accepted as an alternative.
 
 ## Definition And Declaration Names
 

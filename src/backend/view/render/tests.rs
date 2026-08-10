@@ -131,6 +131,58 @@ Documented:
 }
 
 #[test]
+fn renders_variadic_broadcasts_symbolically() {
+    let registry = registry_for("");
+
+    assert_eq!(
+        render_formulation_latex("x... = 0", &registry),
+        Some(r#"x_{1} = 0, \ldots, x_{.} = 0"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("x[1...n] = 0", &registry),
+        Some(r#"x_{1} = 0, \ldots, x_{n} = 0"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("x[1...i_...n] != 0", &registry),
+        Some(r#"x_{1} \ne 0, \ldots, x_{i} \ne 0, \ldots, x_{n} \ne 0"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("x[0...n] := y", &registry),
+        Some(r#"x_{0} := y, \ldots, x_{n} := y"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("x[1...n] = y[1...n]", &registry),
+        Some(r#"x_{1} = y_{1}, \ldots, x_{n} = y_{n}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex("x[1...i_...n] = y[1...i_...n]", &registry),
+        Some(r#"x_{1} = y_{1}, \ldots, x_{i} = y_{i}, \ldots, x_{n} = y_{n}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"x[1...n] "in" X"#, &registry),
+        Some(r#"x_{1} \in X, \ldots, x_{n} \in X"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"x[1...n] "in"? X"#, &registry),
+        Some(r#"x_{1} \in X, \ldots, x_{n} \in X"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"x[1...n] is \\opaque"#, &registry),
+        Some(
+            r#"x_{1} \textrm{ is } \textrm{opaque}, \ldots, x_{n} \textrm{ is } \textrm{opaque}"#
+                .to_string()
+        )
+    );
+    assert_eq!(
+        render_formulation_latex(r#"x[1...n] is? \\opaque"#, &registry),
+        Some(
+            r#"x_{1} \textrm{ is } \textrm{opaque}, \ldots, x_{n} \textrm{ is } \textrm{opaque}"#
+                .to_string()
+        )
+    );
+}
+
+#[test]
 fn renders_variadic_written_and_called_join_notation() {
     let registry = registry_for(
         r#"[\post{x...}]

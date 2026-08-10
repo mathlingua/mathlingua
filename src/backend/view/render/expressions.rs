@@ -6,11 +6,12 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
         // The `?` on an inferred parameter is authoring-only; render the bare name.
         ExpressionKind::InferredName(name) => escape_math_identifier(name, registry),
         ExpressionKind::VariadicSlice(slice) => render_variadic_slice(slice, registry),
-        ExpressionKind::VariadicAssignment { target, value } => format!(
-            "{} := {}",
-            render_variadic_slice(target, registry),
-            render_expression(value, registry)
-        ),
+        ExpressionKind::VariadicAssignment { target, value } => render_variadic_relation(
+            VariadicRenderOperand::Slice(render_variadic_slice_parts(target, registry)),
+            ":=",
+            render_variadic_operand(value, registry),
+        )
+        .expect("a variadic assignment always has a slice operand"),
         ExpressionKind::FunctionCall { name, arguments } => {
             if let Some(rendered) = render_provided_function_call(name, arguments, registry) {
                 return rendered;
@@ -123,12 +124,7 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             left,
             operator,
             right,
-        } => format!(
-            "{} {} {}",
-            render_expression(left, registry),
-            render_binary_operator(operator),
-            render_expression(right, registry)
-        ),
+        } => render_expression_relation(left, &render_binary_operator(operator), right, registry),
         ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
             render_spec_statement(statement, registry)
         }
@@ -136,11 +132,11 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             subject,
             operator,
             target,
-        } => format!(
-            "{} {} {}",
-            render_expression(subject, registry),
-            render_quoted_operator(operator),
-            render_expression(target, registry)
+        } => render_subject_relation(
+            subject,
+            &render_quoted_operator(operator),
+            &render_expression(target, registry),
+            registry,
         ),
         ExpressionKind::SpecLiteral(literal) => match &literal.form {
             SpecLiteralForm::Is(ty) => {
@@ -173,60 +169,88 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             render_expression(subject, registry),
             render_expression(collection, registry)
         ),
-        ExpressionKind::IsPredicate { subject, command } => format!(
-            "{} \\textrm{{ is }} {}",
-            render_expression(subject, registry),
-            render_predicate_command_expression(command, registry)
+        ExpressionKind::IsPredicate { subject, command } => render_subject_relation(
+            subject,
+            "\\textrm{ is }",
+            &render_predicate_command_expression(command, registry),
+            registry,
         ),
-        ExpressionKind::IsNotPredicate { subject, command } => format!(
-            "{} \\textrm{{ is not }} {}",
-            render_expression(subject, registry),
-            render_predicate_command_expression(command, registry)
+        ExpressionKind::IsNotPredicate { subject, command } => render_subject_relation(
+            subject,
+            "\\textrm{ is not }",
+            &render_predicate_command_expression(command, registry),
+            registry,
         ),
-        ExpressionKind::IsBuiltinPredicate { subject, ty } => format!(
-            "{} \\textrm{{ is }} {}",
-            render_expression(subject, registry),
-            render_type_expression(ty, registry)
+        ExpressionKind::IsBuiltinPredicate { subject, ty } => render_subject_relation(
+            subject,
+            "\\textrm{ is }",
+            &render_type_expression(ty, registry),
+            registry,
         ),
-        ExpressionKind::IsNotBuiltinPredicate { subject, ty } => format!(
-            "{} \\textrm{{ is not }} {}",
-            render_expression(subject, registry),
-            render_type_expression(ty, registry)
+        ExpressionKind::IsNotBuiltinPredicate { subject, ty } => render_subject_relation(
+            subject,
+            "\\textrm{ is not }",
+            &render_type_expression(ty, registry),
+            registry,
         ),
-        ExpressionKind::IsRefinedPredicate { subject, command } => format!(
-            "{} \\textrm{{ is }} {}",
-            render_expression(subject, registry),
-            render_refined_command_called(command, registry)
+        ExpressionKind::IsRefinedPredicate { subject, command } => render_subject_relation(
+            subject,
+            "\\textrm{ is }",
+            &render_refined_command_called(command, registry),
+            registry,
         ),
-        ExpressionKind::IsNotRefinedPredicate { subject, command } => format!(
-            "{} \\textrm{{ is not }} {}",
-            render_expression(subject, registry),
-            render_refined_command_called(command, registry)
+        ExpressionKind::IsNotRefinedPredicate { subject, command } => render_subject_relation(
+            subject,
+            "\\textrm{ is not }",
+            &render_refined_command_called(command, registry),
+            registry,
         ),
         ExpressionKind::IsType { subject, ty } => match ty {
-            TypeExpression::Builtin { chain, .. } => format!(
-                "{} \\textrm{{ is }} {}",
-                render_expression(subject, registry),
-                render_builtin_type_chain(chain)
+            TypeExpression::Builtin { chain, .. } => render_subject_relation(
+                subject,
+                "\\textrm{ is }",
+                &render_builtin_type_chain(chain),
+                registry,
             ),
-            TypeExpression::Command(command) => render_is_command(subject, command, registry),
-            TypeExpression::RefinedCommand(command) => {
-                render_is_refined_command(subject, command, registry)
-            }
-            TypeExpression::Tuple(_) | TypeExpression::Set(_) => format!(
-                "{} \\textrm{{ is }} {}",
-                render_expression(subject, registry),
-                render_type_expression(ty, registry)
+            TypeExpression::Command(command) => direct_variadic_slice(subject)
+                .map(|slice| {
+                    render_variadic_slice_with(slice, registry, |subject_latex| {
+                        render_is_command_with_subject_latex(
+                            subject_latex.to_owned(),
+                            command,
+                            registry,
+                        )
+                    })
+                })
+                .unwrap_or_else(|| render_is_command(subject, command, registry)),
+            TypeExpression::RefinedCommand(command) => direct_variadic_slice(subject)
+                .map(|slice| {
+                    render_variadic_slice_with(slice, registry, |subject_latex| {
+                        render_is_refined_command_with_subject_latex(
+                            subject_latex.to_owned(),
+                            command,
+                            registry,
+                        )
+                    })
+                })
+                .unwrap_or_else(|| render_is_refined_command(subject, command, registry)),
+            TypeExpression::Tuple(_) | TypeExpression::Set(_) => render_subject_relation(
+                subject,
+                "\\textrm{ is }",
+                &render_type_expression(ty, registry),
+                registry,
             ),
-            TypeExpression::Function(function_type) => format!(
-                "{} \\textrm{{ is }} {}",
-                render_expression(subject, registry),
-                render_function_type(function_type, registry)
+            TypeExpression::Function(function_type) => render_subject_relation(
+                subject,
+                "\\textrm{ is }",
+                &render_function_type(function_type, registry),
+                registry,
             ),
-            TypeExpression::Parameter { name, .. } => format!(
-                "{} \\textrm{{ is }} {}",
-                render_expression(subject, registry),
-                escape_math_identifier(name, registry)
+            TypeExpression::Parameter { name, .. } => render_subject_relation(
+                subject,
+                "\\textrm{ is }",
+                &escape_math_identifier(name, registry),
+                registry,
             ),
         },
         ExpressionKind::Build { ty, value, hard } => format!(
@@ -241,21 +265,169 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
     }
 }
 
-pub(super) fn render_variadic_slice(slice: &VariadicSlice, registry: &RenderRegistry) -> String {
+#[derive(Clone)]
+enum VariadicRenderPart {
+    Element(String),
+    Ellipsis,
+}
+
+enum VariadicRenderOperand {
+    Scalar(String),
+    Slice(Vec<VariadicRenderPart>),
+}
+
+fn direct_variadic_slice(expression: &Expression) -> Option<&VariadicSlice> {
+    match &expression.kind {
+        ExpressionKind::VariadicSlice(slice) => Some(slice),
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            direct_variadic_slice(expression)
+        }
+        _ => None,
+    }
+}
+
+fn render_variadic_operand(
+    expression: &Expression,
+    registry: &RenderRegistry,
+) -> VariadicRenderOperand {
+    match direct_variadic_slice(expression) {
+        Some(slice) => VariadicRenderOperand::Slice(render_variadic_slice_parts(slice, registry)),
+        None => VariadicRenderOperand::Scalar(render_expression(expression, registry)),
+    }
+}
+
+fn render_variadic_relation(
+    left: VariadicRenderOperand,
+    relation: &str,
+    right: VariadicRenderOperand,
+) -> Option<String> {
+    let count = match (&left, &right) {
+        (VariadicRenderOperand::Slice(left), VariadicRenderOperand::Slice(right)) => {
+            if left.len() != right.len() {
+                return None;
+            }
+            left.len()
+        }
+        (VariadicRenderOperand::Slice(parts), _) | (_, VariadicRenderOperand::Slice(parts)) => {
+            parts.len()
+        }
+        _ => return None,
+    };
+
+    let mut rendered = Vec::with_capacity(count);
+    for index in 0..count {
+        let left_part = match &left {
+            VariadicRenderOperand::Scalar(value) => Some(value.as_str()),
+            VariadicRenderOperand::Slice(parts) => match &parts[index] {
+                VariadicRenderPart::Element(value) => Some(value.as_str()),
+                VariadicRenderPart::Ellipsis => None,
+            },
+        };
+        let right_part = match &right {
+            VariadicRenderOperand::Scalar(value) => Some(value.as_str()),
+            VariadicRenderOperand::Slice(parts) => match &parts[index] {
+                VariadicRenderPart::Element(value) => Some(value.as_str()),
+                VariadicRenderPart::Ellipsis => None,
+            },
+        };
+
+        match (left_part, right_part) {
+            (Some(left), Some(right)) => rendered.push(format!("{left} {relation} {right}")),
+            _ => rendered.push("\\ldots".to_owned()),
+        }
+    }
+
+    Some(rendered.join(", "))
+}
+
+fn render_expression_relation(
+    left: &Expression,
+    relation: &str,
+    right: &Expression,
+    registry: &RenderRegistry,
+) -> String {
+    render_variadic_relation(
+        render_variadic_operand(left, registry),
+        relation,
+        render_variadic_operand(right, registry),
+    )
+    .unwrap_or_else(|| {
+        format!(
+            "{} {relation} {}",
+            render_expression(left, registry),
+            render_expression(right, registry)
+        )
+    })
+}
+
+fn render_subject_relation(
+    subject: &Expression,
+    relation: &str,
+    target: &str,
+    registry: &RenderRegistry,
+) -> String {
+    direct_variadic_slice(subject)
+        .map(|slice| {
+            render_variadic_slice_with(slice, registry, |element| {
+                format!("{element} {relation} {target}")
+            })
+        })
+        .unwrap_or_else(|| {
+            format!(
+                "{} {relation} {target}",
+                render_expression(subject, registry)
+            )
+        })
+}
+
+fn render_variadic_slice_with(
+    slice: &VariadicSlice,
+    registry: &RenderRegistry,
+    render_element: impl Fn(&str) -> String,
+) -> String {
+    render_variadic_slice_parts(slice, registry)
+        .into_iter()
+        .map(|part| match part {
+            VariadicRenderPart::Element(element) => render_element(&element),
+            VariadicRenderPart::Ellipsis => "\\ldots".to_owned(),
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn render_variadic_slice_parts(
+    slice: &VariadicSlice,
+    registry: &RenderRegistry,
+) -> Vec<VariadicRenderPart> {
     let name = escape_math_identifier(&slice.name, registry);
     let Some(start) = slice.start else {
-        return format!("{name}_{{1}}, \\ldots, {name}_{{.}}");
+        return vec![
+            VariadicRenderPart::Element(format!("{name}_{{1}}")),
+            VariadicRenderPart::Ellipsis,
+            VariadicRenderPart::Element(format!("{name}_{{.}}")),
+        ];
     };
     let end = slice.end.as_deref().unwrap_or("n");
-    let start = format!("{name}_{{{start}}}");
-    let end = format!("{name}_{{{}}}", escape_math_identifier(end, registry));
-    match slice.index.as_deref() {
-        Some(index) => format!(
-            "{start}, \\ldots, {name}_{{{}}}, \\ldots, {end}",
+    let mut parts = vec![
+        VariadicRenderPart::Element(format!("{name}_{{{start}}}")),
+        VariadicRenderPart::Ellipsis,
+    ];
+    if let Some(index) = slice.index.as_deref() {
+        parts.push(VariadicRenderPart::Element(format!(
+            "{name}_{{{}}}",
             escape_math_identifier(index, registry)
-        ),
-        None => format!("{start}, \\ldots, {end}"),
+        )));
+        parts.push(VariadicRenderPart::Ellipsis);
     }
+    parts.push(VariadicRenderPart::Element(format!(
+        "{name}_{{{}}}",
+        escape_math_identifier(end, registry)
+    )));
+    parts
+}
+
+pub(super) fn render_variadic_slice(slice: &VariadicSlice, registry: &RenderRegistry) -> String {
+    render_variadic_slice_with(slice, registry, str::to_owned)
 }
 
 pub(super) fn render_variadic_parameter(
@@ -682,12 +854,9 @@ pub(super) fn render_spec_statement(
     statement: &SpecStatement,
     registry: &RenderRegistry,
 ) -> String {
-    format!(
-        "{} {} {}",
-        render_expression(&statement.subject, registry),
-        render_quoted_operator(&statement.operator),
-        escape_math_identifier(&statement.name, registry)
-    )
+    let operator = render_quoted_operator(&statement.operator);
+    let target = escape_math_identifier(&statement.name, registry);
+    render_subject_relation(&statement.subject, &operator, &target, registry)
 }
 
 pub(super) fn render_simple_set_spec_latex(

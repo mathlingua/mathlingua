@@ -2,6 +2,7 @@ export const VIEWER_THEME_STORAGE_KEY = "mlg-view-theme";
 
 export const VIEWER_THEMES = [
   { id: "classic", label: "Classic" },
+  { id: "classic-dark", label: "Classic Dark" },
   { id: "mono", label: "Mono" },
   { id: "flat-gray", label: "Flat Gray" },
   { id: "sepia", label: "Sepia" },
@@ -22,5 +23,5 @@ export function isViewerTheme(
 export function applyViewerTheme(theme: ViewerTheme) {
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme =
-    theme === "dark" ? "dark" : "light";
+    theme === "dark" || theme === "classic-dark" ? "dark" : "light";
 }

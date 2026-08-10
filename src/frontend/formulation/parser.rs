@@ -184,7 +184,9 @@ fn token_literal(token: &Token) -> &'static str {
         Token::Via => "via",
         Token::MemberOf => "member_of",
         Token::Satisfies => "satisfies",
-        Token::MapsTo => "|->",
+        Token::FunctionArrow => "=>",
+        Token::TypeArrow => "->",
+        Token::LegacyFunctionArrow => "|->",
         Token::CommandStart => "\\",
         Token::Plus => "+",
         Token::Minus => "-",
@@ -2025,23 +2027,17 @@ pub(super) fn parse_type_expression(
         return parse_builtin_type_expression(input);
     }
 
-    if contains_top_level(input, "=>") {
-        return parse_function_type_expression(input, allow_refined).map(TypeExpression::Function);
-    }
-
     if contains_top_level(input, "|->") {
-        return parse_compact_function_type_expression(
-            input,
-            "|->",
-            FunctionTypeNotation::Mapping,
-            allow_refined,
-        )
-        .map(TypeExpression::Function);
+        return Err(ParseError::custom("function types use `->`, not `|->`"));
     }
 
     if contains_top_level(input, "->") {
+        return parse_function_type_expression(input, allow_refined).map(TypeExpression::Function);
+    }
+
+    if contains_top_level(input, "=>") {
         return Err(ParseError::custom(
-            "compact function types use `|->`, not `->`",
+            "function types use `->`; `=>` introduces a function literal",
         ));
     }
 
@@ -2080,8 +2076,8 @@ fn parse_function_type_expression(
     input: &str,
     allow_refined: bool,
 ) -> Result<FunctionType, ParseError> {
-    let arrow_index = find_top_level_substring(input, "=>")
-        .ok_or_else(|| ParseError::custom("expected top-level `=>`"))?;
+    let arrow_index = find_top_level_substring(input, "->")
+        .ok_or_else(|| ParseError::custom("expected top-level `->`"))?;
     let inputs = parse_function_type_spec_group(&input[..arrow_index], allow_refined)?;
     let mut outputs = parse_function_type_spec_group(&input[arrow_index + 2..], allow_refined)?;
 
@@ -2096,51 +2092,23 @@ fn parse_function_type_expression(
         ));
     }
 
-    Ok(FunctionType {
-        span: span_all(input),
-        inputs,
-        output: outputs.remove(0),
-        notation: FunctionTypeNotation::Specs,
-    })
-}
-
-/// Parses compact function types such as
-/// `(? is A) |-> (? is B)` and `(? is A, ? "in" B) |-> (? is C)`.
-fn parse_compact_function_type_expression(
-    input: &str,
-    arrow: &str,
-    notation: FunctionTypeNotation,
-    allow_refined: bool,
-) -> Result<FunctionType, ParseError> {
-    let arrow_index = find_top_level_substring(input, arrow)
-        .ok_or_else(|| ParseError::custom(format!("expected top-level `{arrow}`")))?;
-    let input_text = input[..arrow_index].trim();
-    let output_text = input[arrow_index + arrow.len()..].trim();
-    if input_text.is_empty() || output_text.is_empty() {
-        return Err(ParseError::custom(format!(
-            "`{arrow}` requires an input type and an output type"
-        )));
-    }
-
-    let inputs = parse_function_type_spec_group(input_text, allow_refined)?;
-    let mut outputs = parse_function_type_spec_group(output_text, allow_refined)?;
-    require_spec_literal_subjects(&inputs)?;
-    require_spec_literal_subjects(&outputs)?;
-    if inputs.is_empty() {
-        return Err(ParseError::custom(
-            "`|->` function types require at least one input spec literal",
-        ));
-    }
-    if outputs.len() != 1 {
-        return Err(ParseError::custom(
-            "compact function types require exactly one output spec literal",
-        ));
-    }
+    let output = outputs.remove(0);
+    let has_spec_literal_subject = inputs
+        .iter()
+        .chain(std::iter::once(&output))
+        .any(|spec| spec.subject == "?");
+    let notation = if has_spec_literal_subject {
+        require_spec_literal_subjects(&inputs)?;
+        require_spec_literal_subjects(std::slice::from_ref(&output))?;
+        FunctionTypeNotation::Mapping
+    } else {
+        FunctionTypeNotation::Specs
+    };
 
     Ok(FunctionType {
         span: span_all(input),
         inputs,
-        output: outputs.remove(0),
+        output,
         notation,
     })
 }
@@ -2594,7 +2562,8 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     }
     if let Some(index) = find_top_level_substring(input, " is ") {
         let type_text = input[index + 4..].trim();
-        if contains_top_level(type_text, "=>")
+        if contains_top_level(type_text, "->")
+            || contains_top_level(type_text, "=>")
             || contains_top_level(type_text, "|->")
             || type_text.starts_with('(')
             || type_text.starts_with('{')
@@ -2672,10 +2641,10 @@ enum TokenEdit {
 ///   command-argument group (previous token is a `Name` or `}`) whose content is a
 ///   brace-less set-builder (first token starts a target, contains a top-level `:`)
 ///   gets a synthetic inner brace pair.
-/// - Mapping literal: `\foo[lhs]{rhs}` → `\foo{(lhs) |-> rhs}`. A `[` after a `Name`
+/// - Function literal: `\foo[lhs]{rhs}` → `\foo{(lhs) => rhs}`. A `[` after a `Name`
 ///   (a command chain) whose matching `]` is immediately followed by `{` is that
 ///   sugar (no other construct has this shape).
-/// - Build function literal: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) |-> rhs)`. Same shape
+/// - Build function literal: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) => rhs)`. Same shape
 ///   as the mapping literal but after the `@` build marker, so the literal is grouped
 ///   in parens (a build argument) rather than braces (a command argument).
 ///
@@ -2743,11 +2712,11 @@ fn desugar_command_argument_sugar(input: &str) -> Vec<Spanned<Token, usize, Lexi
             {
                 let close = bracket_match[index];
                 edits[index] = TokenEdit::Replace(vec![Token::LBrace, Token::LParen]);
-                edits[close] = TokenEdit::Replace(vec![Token::RParen, Token::MapsTo]);
+                edits[close] = TokenEdit::Replace(vec![Token::RParen, Token::FunctionArrow]);
                 edits[close + 1] = TokenEdit::Skip; // drop the `{` after `]`
                 changed = true;
             }
-            // Build function-literal sugar: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) |-> rhs)`
+            // Build function-literal sugar: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) => rhs)`
             // (and likewise after the hard `@!`). The `[` follows the build marker
             // (rather than a command chain), and the literal is grouped in parens.
             Token::LBracket
@@ -2762,7 +2731,7 @@ fn desugar_command_argument_sugar(input: &str) -> Vec<Spanned<Token, usize, Lexi
                 let brace_open = close + 1; // `{`
                 let brace_close = brace_match[brace_open]; // `}`
                 edits[index] = TokenEdit::Replace(vec![Token::LParen, Token::LParen]);
-                edits[close] = TokenEdit::Replace(vec![Token::RParen, Token::MapsTo]);
+                edits[close] = TokenEdit::Replace(vec![Token::RParen, Token::FunctionArrow]);
                 edits[brace_open] = TokenEdit::Skip; // drop the `{` after `]`
                 edits[brace_close] = TokenEdit::Replace(vec![Token::RParen]);
                 changed = true;
@@ -3999,7 +3968,7 @@ mod tests {
     fn parses_mapping_literals_and_sugar() {
         // Expression form with an `is` spec.
         let is_map =
-            parse_expression(r#"(x_ is \real) |-> x_ + 1"#).expect("expected mapping literal");
+            parse_expression(r#"(x_ is \real) => x_ + 1"#).expect("expected mapping literal");
         let ExpressionKind::Mapping { lhs, rhs } = &is_map.kind else {
             panic!("expected Mapping, got {:?}", is_map.kind);
         };
@@ -4013,21 +3982,21 @@ mod tests {
 
         // Expression form with an `"op"` spec.
         let op_map =
-            parse_expression(r#"(x_ "in" A) |-> x_ + a"#).expect("expected mapping literal");
+            parse_expression(r#"(x_ "in" A) => x_ + a"#).expect("expected mapping literal");
         assert!(matches!(op_map.kind, ExpressionKind::Mapping { .. }));
 
         // Bare parameter parses (spec inferred later by the checker).
-        let bare = parse_expression(r#"x_ |-> x_ + 1"#).expect("expected bare mapping");
+        let bare = parse_expression(r#"x_ => x_ + 1"#).expect("expected bare mapping");
         let ExpressionKind::Mapping { lhs, .. } = &bare.kind else {
             panic!("expected Mapping, got {:?}", bare.kind);
         };
         assert!(matches!(lhs.kind, ExpressionKind::Name(ref n) if n == "x"));
 
-        // Command sugar `\foo[lhs]{rhs}` == `\foo{(lhs) |-> rhs}`.
+        // Command sugar `\foo[lhs]{rhs}` == `\foo{(lhs) => rhs}`.
         let sugar =
             parse_expression(r#"\foo[x_ is \real]{x_ + 1}"#).expect("expected command sugar");
         let explicit =
-            parse_expression(r#"\foo{(x_ is \real) |-> x_ + 1}"#).expect("expected explicit form");
+            parse_expression(r#"\foo{(x_ is \real) => x_ + 1}"#).expect("expected explicit form");
         let ExpressionKind::Command(sugar_cmd) = &sugar.kind else {
             panic!("expected a command, got {:?}", sugar.kind);
         };
@@ -4050,6 +4019,11 @@ mod tests {
             parse_expression(r#"X[i]"#).expect("subset call").kind,
             ExpressionKind::SubsetCall(_)
         ));
+
+        parse_expression(r#"(x_ is \real) |-> x_"#)
+            .expect_err("the former function-literal arrow must be rejected");
+        parse_expression(r#"(x_ is \real) -> x_"#)
+            .expect_err("the type arrow must not introduce a function literal");
     }
 
     #[test]
@@ -4706,7 +4680,7 @@ mod tests {
         ));
 
         // A grouped mapping literal is a valid build argument.
-        let mapping = parse_expression(r#"\function@((x_ is \real) |-> x_^2 + 1)"#)
+        let mapping = parse_expression(r#"\function@((x_ is \real) => x_^2 + 1)"#)
             .expect("expected build-with-mapping expression");
         match mapping.kind {
             ExpressionKind::Build { value, .. } => {
@@ -4719,7 +4693,7 @@ mod tests {
         let nested = parse_expression(r#"\group@(a, b, c) + 1"#).expect("expected build then add");
         assert!(matches!(nested.kind, ExpressionKind::Binary { .. }));
 
-        // Function-literal sugar: `\cmd@[lhs]{rhs}` == `\cmd@((lhs) |-> rhs)`, i.e. a
+        // Function-literal sugar: `\cmd@[lhs]{rhs}` == `\cmd@((lhs) => rhs)`, i.e. a
         // build whose value is a grouped mapping literal.
         let sugar = parse_expression(r#"\function@[x_ is \real]{x_^2 + 1}"#)
             .expect("expected sugared build expression");
@@ -5646,7 +5620,7 @@ mod tests {
 
     #[test]
     fn parses_function_type_as_is_statement_rhs() {
-        let item = parse_is_or_spec(r#"f is (_ "in" A, _ is \real) => (_ "in" B)"#)
+        let item = parse_is_or_spec(r#"f is (_ "in" A, _ is \real) -> (_ "in" B)"#)
             .expect("expected function type statement");
 
         match item {
@@ -5710,7 +5684,7 @@ mod tests {
         ));
 
         let mapping =
-            parse_ordinary_declaration_statement(r#"f is (? is \natural) |-> (? "in" \naturals)"#)
+            parse_ordinary_declaration_statement(r#"f is (? is \natural) -> (? "in" \naturals)"#)
                 .expect("expected unary mapping type");
         assert!(matches!(
             mapping.relation,
@@ -5720,7 +5694,7 @@ mod tests {
         ));
 
         let nary_mapping = parse_ordinary_declaration_statement(
-            r#"f is (? is \natural, ? "in" \reals) |-> (? is \real)"#,
+            r#"f is (? is \natural, ? "in" \reals) -> (? is \real)"#,
         )
         .expect("expected multi-argument mapping type");
         assert!(matches!(
@@ -5730,19 +5704,32 @@ mod tests {
                     && function.inputs.len() == 2
         ));
 
-        let empty_mapping = parse_ordinary_declaration_statement(r#"f is () |-> (? is \real)"#)
+        let empty_mapping = parse_ordinary_declaration_statement(r#"f is () -> (? is \real)"#)
             .expect_err("function types require at least one input");
         assert!(
             empty_mapping
                 .to_string()
-                .contains("at least one input spec literal")
+                .contains("at least one input spec")
         );
 
-        let obsolete_arrow = parse_ordinary_declaration_statement(
-            r#"f is (? is \natural, ? is \real) -> (? is \real)"#,
+        let obsolete_mapping_arrow = parse_ordinary_declaration_statement(
+            r#"f is (? is \natural, ? is \real) |-> (? is \real)"#,
         )
-        .expect_err("compact function types must use `|->`");
-        assert!(obsolete_arrow.to_string().contains("use `|->`, not `->`"));
+        .expect_err("function types must use `->`");
+        assert!(
+            obsolete_mapping_arrow
+                .to_string()
+                .contains("use `->`, not `|->`")
+        );
+
+        let literal_arrow =
+            parse_ordinary_declaration_statement(r#"f is (? is \natural) => (? is \real)"#)
+                .expect_err("`=>` is reserved for function literals");
+        assert!(
+            literal_arrow
+                .to_string()
+                .contains("`=>` introduces a function literal")
+        );
 
         for raw in [
             r#"p is (\natural, \real)"#,
@@ -5752,7 +5739,6 @@ mod tests {
             r#"p is (_ is \natural, _ is \real)"#,
             r#"X is {_ is \natural : ...}"#,
             r#"f is (_ is \natural) |-> (_ is \natural)"#,
-            r#"f is (_ is \natural, _ is \real) -> (_ is \real)"#,
         ] {
             parse_ordinary_declaration_statement(raw)
                 .expect_err("raw types must not be accepted in literal type positions");
@@ -5761,7 +5747,7 @@ mod tests {
 
     #[test]
     fn rejects_unparenthesized_function_type_sides() {
-        let error = parse_is_or_spec(r#"f is _ "in" A => (_ "in" B)"#)
+        let error = parse_is_or_spec(r#"f is _ "in" A -> (_ "in" B)"#)
             .expect_err("expected function type parse error");
 
         assert!(error.to_string().contains("expected `(`"));

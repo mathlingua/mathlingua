@@ -7211,7 +7211,7 @@ Documented:
     [\function:on{A}:to{B}]
     Defines: f(x__)
     when: A, B is \set
-    means: f is (_ "in" A) => (_ "in" B)
+    means: f is (_ "in" A) -> (_ "in" B)
     Documented:
     . written: "A? \to B?"
 
@@ -7257,7 +7257,7 @@ Documented:
     [\function:on{A}:to{B}]
     Defines: f(x__)
     when: A, B is \set
-    means: f is (_ "in" A) => (_ "in" B)
+    means: f is (_ "in" A) -> (_ "in" B)
     Documented:
     . written: "A? \to B?"
 
@@ -7307,7 +7307,7 @@ Documented:
 
     Theorem:
     given:
-    . f is (_ is \real) => (_ is \integer)
+    . f is (_ is \real) -> (_ is \integer)
     . y is \real
     then:
     . f(y) is? \integer
@@ -7355,14 +7355,14 @@ Documented:
 
     Theorem:
     given:
-    . f is (? is \real) |-> (? is \integer)
+    . f is (? is \real) -> (? is \integer)
     . y is \real
     then:
     . f(y) is? \integer
 
     Theorem:
     given:
-    . f is (? is \real) |-> (? is \integer)
+    . f is (? is \real) -> (? is \integer)
     . y is \real
     then:
     . f(y) is? \integer
@@ -7370,7 +7370,7 @@ Documented:
     Theorem:
     given:
     . A, B is \set
-    . f is (? "in" A) |-> (? "in" B)
+    . f is (? "in" A) -> (? "in" B)
     . y "in" A
     then:
     . f(y) "in" B
@@ -7378,7 +7378,7 @@ Documented:
     Theorem:
     given:
     . A is \set
-    . f is (? is \real, ? "in" A) |-> (? is \integer)
+    . f is (? is \real, ? "in" A) -> (? is \integer)
     . x is \real
     . y "in" A
     then:
@@ -7386,7 +7386,7 @@ Documented:
 
     Theorem:
     given:
-    . f is (? is \real, ? is \real, ? is \real) |-> (? is \integer)
+    . f is (? is \real, ? is \real, ? is \real) -> (? is \integer)
     . x, y, z is \real
     then:
     . f(x, y, z) is? \integer
@@ -7395,13 +7395,13 @@ Documented:
     given:
     . A is \set
     . a is \\opaque
-    . f := (x_, y_) |-> x_ is (? is \real, ? "in" A) |-> (? is \real)
+    . f := (x_, y_) => x_ is (? is \real, ? "in" A) -> (? is \real)
     then: a is? \\opaque
 
     Theorem:
     given: a is \\opaque
     then:
-    . let: x_ * y_ is (? is \\opaque, ? is \\opaque) |-> (? is \\opaque)
+    . let: x_ * y_ is (? is \\opaque, ? is \\opaque) -> (? is \\opaque)
       then: a is? \\opaque
     "#,
         )
@@ -7436,7 +7436,7 @@ Documented:
     [\real.function]
     Defines: f(x_) ::= y_
     declares:
-    . f is (? is \real) |-> (? is \real)
+    . f is (? is \real) -> (? is \real)
     Documented:
     . written: "f?"
 
@@ -7533,7 +7533,7 @@ Documented:
     . written: "0"
 
     [\natural.succ(n_)]
-    Declares: succ(n_) is (? is \natural) |-> (? is \natural)
+    Declares: succ(n_) is (? is \natural) -> (? is \natural)
     Documented:
     . called: "successor of $n?$"
     . written: "n?+\!\!+"
@@ -7542,7 +7542,7 @@ Documented:
     Defines: n
     Requires:
     . definition: \natural.0 is \natural
-    . definition: \natural.succ is (? is \natural) |-> (? is \natural)
+    . definition: \natural.succ is (? is \natural) -> (? is \natural)
     Documented:
     . called: "naturals"
     "#,
@@ -7578,7 +7578,7 @@ Documented:
     [\function:on{A}:to{B}]
     Defines: f(x__)
     when: A, B is \set
-    means: f is (x "in" A) => (_ "in" B)
+    means: f is (x "in" A) -> (_ "in" B)
     Documented:
     . written: "A? \to B?"
     "#,
@@ -8568,7 +8568,7 @@ Documented:
     Theorem:
     given:
     . a is \\opaque
-    . f := (x_ is \real) |-> x_
+    . f := (x_ is \real) => x_
     then: a is? \\opaque
     "#,
         )
@@ -8603,7 +8603,7 @@ Documented:
     Theorem:
     given:
     . a is \\opaque
-    . f := (x_ is \real) |-> undeclared
+    . f := (x_ is \real) => undeclared
     then: a is? \\opaque
     "#,
         )
@@ -8644,7 +8644,7 @@ Documented:
     Theorem:
     given:
     . a is \\opaque
-    . f := x_ |-> x_
+    . f := x_ => x_
     then: a is? \\opaque
     "#,
         )
@@ -8671,7 +8671,7 @@ Documented:
 
     #[test]
     fn check_infers_bare_mapping_parameter_from_is_type() {
-        // `f := x_ |-> x_ is (_ is \real) => (_ is \real)` — the bare parameter's
+        // `f := x_ => x_ is (_ is \real) -> (_ is \real)` — the bare parameter's
         // spec is inferred from the declared function type.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("mapping-inferred.mlg");
@@ -8686,7 +8686,7 @@ Documented:
     Theorem:
     given:
     . a is \\opaque
-    . f := x_ |-> x_ is (_ is \real) => (_ is \real)
+    . f := x_ => x_ is (_ is \real) -> (_ is \real)
     then: a is? \\opaque
     "#,
         )

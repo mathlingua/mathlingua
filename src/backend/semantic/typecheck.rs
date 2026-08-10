@@ -5269,7 +5269,7 @@ fn collect_clause_assumptions(clause: &Clause, context: &mut TypeContext) {
     }
 }
 
-/// Checks a declaration's `:=` value. A mapping-literal value whose declaration
+/// Checks a declaration's `:=` value. A function-literal value whose declaration
 /// has an `is <type>` relation is checked with that type available, so a bare
 /// parameter's spec can be inferred from it.
 fn check_declaration_definition(
@@ -6062,7 +6062,7 @@ fn check_satisfies(
     }
 }
 
-/// The bare parameter name of a mapping literal's left-hand side (placeholders are
+/// The bare parameter name of a function literal's left-hand side (placeholders are
 /// already stripped of their trailing `_` at lex time).
 fn mapping_parameter_name(subject: &Expression) -> Option<String> {
     match &subject.kind {
@@ -6072,7 +6072,7 @@ fn mapping_parameter_name(subject: &Expression) -> Option<String> {
 }
 
 /// The input specification of a function type, as the fact-spec used to type a
-/// mapping literal's parameter. Handles the structural `=>` type and a command
+/// function literal's parameter. Handles the structural `->` type and a command
 /// type (e.g. `\real.function`) that defines a function.
 fn function_input_spec_from_type(
     ty: &TypeExpression,
@@ -6223,7 +6223,7 @@ fn type_instance_output_facts(
     defined_output_facts_for_signature(signature, &actuals, subject, context, registry)
 }
 
-/// Checks a mapping literal `(x_ is \real) |-> x_ + 1`: the parameter is bound to
+/// Checks a function literal `(x_ is \real) => x_ + 1`: the parameter is bound to
 /// its spec's type, then the body is checked in that extended scope. `expected` is
 /// the declared type (from an enclosing `is`) used to infer a bare parameter's
 /// spec; without it a bare parameter is an error.
@@ -6283,8 +6283,8 @@ fn check_mapping_expression(
             emit_error(
                 event_log,
                 path,
-                locator.locate_symbol("|->"),
-                "mapping literal pattern does not match the function input shape".to_owned(),
+                locator.locate_symbol("=>"),
+                "function literal pattern does not match the function input shape".to_owned(),
             );
         }
         let child = context_with_spec_reductions(&child, registry);
@@ -6335,8 +6335,9 @@ fn check_mapping_expression(
         emit_error(
             event_log,
             path,
-            locator.locate_symbol("|->"),
-            "a mapping literal parameter must be a name with a spec, e.g. `(x_ is ...)`".to_owned(),
+            locator.locate_symbol("=>"),
+            "a function literal parameter must be a name with a spec, e.g. `(x_ is ...)`"
+                .to_owned(),
         );
         check_expression(rhs, context, path, locator, registry, event_log);
         return;
@@ -6355,7 +6356,7 @@ fn check_mapping_expression(
             path,
             locator.locate_symbol(&parameter),
             format!(
-                "mapping literal parameter `{parameter}` needs a spec (e.g. `(x_ is ...)`) unless the type is known from an `is`"
+                "function literal parameter `{parameter}` needs a spec (e.g. `(x_ is ...)`) unless the type is known from an `is`"
             ),
         ),
     }
@@ -16277,11 +16278,7 @@ fn key_for_expression(expression: &Expression) -> String {
             key_for_expression(spec)
         ),
         ExpressionKind::Mapping { lhs, rhs } => {
-            format!(
-                "{} |-> {}",
-                key_for_expression(lhs),
-                key_for_expression(rhs)
-            )
+            format!("{} => {}", key_for_expression(lhs), key_for_expression(rhs))
         }
         ExpressionKind::MemberOf {
             subject,

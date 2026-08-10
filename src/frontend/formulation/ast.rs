@@ -508,7 +508,7 @@ pub enum ExpressionKind {
         subject: Box<Expression>,
         spec: Box<Expression>,
     },
-    /// A mapping literal (anonymous function value): `(x_ is \real) |-> x_ + 1`.
+    /// A mapping literal (anonymous function value): `(x_ is \real) => x_ + 1`.
     /// `lhs` is the parameter binder — a parenthesized spec (`(x_ is \real)` /
     /// `(x_ "in" A)`) or a bare name whose spec is inferred from an `is`-type;
     /// `rhs` is the body.

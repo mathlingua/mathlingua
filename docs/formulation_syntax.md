@@ -217,7 +217,8 @@ The lexer has dedicated tokens for:
 - `:=>`
 - `:->`
 - `:~>`
-- `|->`
+- `->`
+- `=>`
 - `@`
 - `@!`
 - `\`
@@ -256,7 +257,7 @@ build is also how a `Declares:` value may state its type without `is`
 
 From lowest precedence to highest:
 
-1. mapping `|->` (right-associative)
+1. function literal `=>` (right-associative)
 2. spec and predicate forms (`is`, `is?`, `is_not?`, quoted `"op"` specs and
    predicates, infix specs `\:...:/`, `member_of`, `satisfies`, spec literals)
 3. infix command `\.name./`
@@ -344,7 +345,7 @@ AtomExpression ::=
 This reference does not spell out every production in full. The lower
 (spec/predicate) precedence level in particular includes, besides `is`/`is?`:
 
-- **Mapping expressions** `(<param>) |-> <expression>` (anonymous functions).
+- **Function literals** `(<param>) => <expression>` (anonymous functions).
 - **Infix specification** statements/predicates `<a> \: chain :/ <b>` and the
   `?:/` predicate form.
 - **Quoted-operator specs and predicates** `<a> "op" <b>`, `<a> "op"? <b>`, and
@@ -358,7 +359,7 @@ This reference does not spell out every production in full. The lower
   suffix.
 
 Command arguments also support surface sugar: a bare collection literal
-`\foo{x_ : ...}` is read as `\foo{{x_ : ...}}`, and there are mapping-literal and
+`\foo{x_ : ...}` is read as `\foo{{x_ : ...}}`, and there are function-literal and
 build-function-literal argument forms.
 
 ### Atomic forms
@@ -618,12 +619,12 @@ TypeExpression ::=
   | FunctionTypeExpression
   | TupleLiteralType
   | SetLiteralType
-  | MappingLiteralType
+  | SpecLiteralFunctionType
 BuiltinTypeExpression ::= "\\" "\\" Chain
 SpecLiteral ::= "?" "is" TypeExpression | "?" TopLevelQuotedOperator Expression
 TupleLiteralType ::= "(" SpecLiteral "," SpecLiteral ("," SpecLiteral)* ")"
 SetLiteralType ::= "{" (SpecLiteral | TupleLiteralType) ":" "..." "}"
-MappingLiteralType ::= "(" SpecLiteral ("," SpecLiteral)* ")" "|->" "(" SpecLiteral ")"
+SpecLiteralFunctionType ::= "(" SpecLiteral ("," SpecLiteral)* ")" "->" "(" SpecLiteral ")"
 ```
 
 Notes:
@@ -633,14 +634,14 @@ Notes:
 - the right-hand side of `is` must parse as a command expression, a built-in
   type expression, or a function type expression, not a general expression
 - a function type has one parenthesized input spec list and one parenthesized
-  output spec: `(_ "in" A, _ "in" B) => (_ "in" C)`
+  output spec: `(_ "in" A, _ "in" B) -> (_ "in" C)`
 - function type specs use `_` as the parameter and may be either `_ is Type` or
   `_ "operator" Target`
 - structural literal types use `?` spec literals at every leaf; raw nominal
   tuple, set, mapping, and arrow types are not accepted
-- `|->` has one or more input specs and exactly one output spec; the declared
+- `->` has one or more input specs and exactly one output spec; the declared
   input arity is preserved
-- compact function types always use `|->`; `->` is not an alternative spelling
+- function types always use `->`; `=>` is reserved for function literals
 - if no top-level ` is ` is found, the parser falls back to the quoted-operator spec form
 - the quoted operator is extracted by raw scanning, so it may contain spaces or punctuation
 
@@ -648,11 +649,11 @@ Examples:
 
 - `f(x_) is \function:on{A}:to{B}`
 - `f(x_), y_ is \function:on{A}:to{B}`
-- `f is (_ "in" A) => (_ "in" B)`
+- `f is (_ "in" A) -> (_ "in" B)`
 - `(x, y) is (? is \natural, ? "in" \reals)`
 - `{x : ...} is {? is \natural : ...}`
-- `f is (? is \natural) |-> (? "in" \naturals)`
-- `f is (? is \natural, ? "in" \reals) |-> (? is \real)`
+- `f is (? is \natural) -> (? "in" \naturals)`
+- `f is (? is \natural, ? "in" \reals) -> (? is \real)`
 - `+ is \operator`
 - `x "in" A`
 - `x "less than" A`
@@ -669,7 +670,7 @@ TypeExpression ::=
   | FunctionTypeExpression
   | TupleLiteralType
   | SetLiteralType
-  | MappingLiteralType
+  | SpecLiteralFunctionType
 ```
 
 ### `parse_is_via_statement`

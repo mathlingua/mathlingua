@@ -139,8 +139,12 @@ pub enum Token {
     MemberOf,
     #[token("satisfies")]
     Satisfies,
+    #[token("=>", priority = 10)]
+    FunctionArrow,
+    #[token("->", priority = 10)]
+    TypeArrow,
     #[token("|->", priority = 10)]
-    MapsTo,
+    LegacyFunctionArrow,
     #[regex(r#""[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?""#, parse_quoted_name)]
     QuotedName(String),
     #[regex(

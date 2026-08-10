@@ -23,15 +23,15 @@ executable.
 
 ## Structural Spec-Literal Types
 
-Type expressions now support tuple, set, mapping, and general function
-literals whose leaves are complete specification literals:
+Type expressions now support structural tuple, set, and function types whose
+leaves are complete specification literals:
 
 ```text
 (? is \natural, ? "in" \reals)
 {? is \natural : ...}
 {(? is \natural, ? "in" \reals) : ...}
-(? is \natural) |-> (? "in" \naturals)
-(? is \natural, ? "in" \reals) |-> (? is \real)
+(? is \natural) -> (? "in" \naturals)
+(? is \natural, ? "in" \reals) -> (? is \real)
 ```
 
 The checker matches those shapes to tuple, set, and mapping terms and
@@ -40,10 +40,11 @@ specification operators are retained as spec facts; they are not reduced to
 ordinary `is` facts. A function definition may therefore declare its argument
 and result components individually or declare the function itself with one of
 the new function types. Raw nominal shapes such as `(\natural, \real)` remain
-invalid. The `|->` notation accepts one or more inputs and preserves the
+invalid. The `->` notation accepts one or more inputs and preserves the
 declared arity, allowing unary, binary, and n-ary function types without a
-curried spelling. It is the sole compact function-type arrow, matching function
-literal syntax; `->` is not accepted as an alternative.
+curried spelling. Anonymous function literals use `=>`, so bare type and value
+arrows mirror the existing `:->` spec-operator and `:=>` expression-alias
+forms. The former `|->` spelling is no longer accepted.
 
 ## Definition And Declaration Names
 
@@ -842,11 +843,11 @@ Set builder definitions allow general element forms before the colon.
 - Specifications after the colon may be separated by `,` **or** `;`. The `;`
   form is also accepted after a build (`\set@{(a_, b_) : a_ "in" A; b_ "in" B}`).
 
-### Mapping Literals
+### Function Literals
 
-An anonymous mapping is written with `|->`:
+An anonymous mapping is written with `=>`:
 
-- `(x_ is \real) |-> x_ + 1` maps an input to an output. A mapping-literal
+- `(x_ is \real) => x_ + 1` maps an input to an output. A function-literal
   parameter must be a name with a spec (`(x_ is ...)`), or a bare name when the
   type is already known from an `is`. A bare parameter without a known type, or
   an undeclared symbol in the body, is rejected.

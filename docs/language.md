@@ -23,7 +23,7 @@ A MathLingua source file has two syntax layers.
    `Defines`, `Theorem`, `Documented`, and `forAll`.
 2. The formulation layer is expression-oriented. It recognizes mathematical
    forms such as `f(x_)`, `x "in" A`, `\function:on{A}:to{B}`,
-   `(_ "in" A) => (_ "in" B)`, and `G is \set via X`.
+   `(_ "in" A) -> (_ "in" B)`, and `G is \set via X`.
 
 Most source lines are first parsed structurally. Whenever a section expects a
 formula, command, alias, or header, the structural parser delegates that text to
@@ -195,7 +195,7 @@ literals), `\\opaque` (an unstructured value), and `\\abstract` (the abstract
 
 The expression precedence, from lowest to highest, is:
 
-1. mapping `|->` (right-associative)
+1. function literal `=>` (right-associative)
 2. spec and predicate forms (`is`, `is?`, quoted `"op"` specs, infix specs
    `\:...:/`, `member_of`, `satisfies`, spec literals)
 3. infix commands `\.name./`
@@ -431,8 +431,8 @@ form or declaration.
   predicate form `\:name?:/`). They are the specification-level analogue of the
   infix command `\.name./` and are declared by an infix-spec `Defines:` header
   `[A \:subset:/ B]`.
-- **Mapping expressions** are anonymous functions written with `|->`:
-  `(x_ is \real) |-> x_ + 1`.
+- **Function literals** are anonymous functions written with `=>`:
+  `(x_ is \real) => x_ + 1`.
 - **Spec literals** are `\\specification` values written with an implicit `?`
   subject — `? is \set`, `? "in" X` — and are instantiated by a `satisfies:`
   clause.
@@ -1048,7 +1048,7 @@ function ...`, `\`{name}\` is not a known type`).
   adjective(s) applied to a direct supertype of the refined base type), while
   `explicitly:` requires at least one such property beyond the inherited
   `means:` clause.
-- **Mapping literals** — a mapping-literal parameter must be a name with a spec
+- **Function literals** — a function-literal parameter must be a name with a spec
   (`(x_ is ...)`), or a bare name whose type is already known from an `is`;
   otherwise it is rejected.
 - **Function types** — function-type spec parameters must be written `_`
@@ -1242,7 +1242,7 @@ the right-hand side of an `is` statement:
 [\function:on{A}:to{B}]
 Defines: f(x__)
 when: A, B is \set
-means: f is (_ "in" A) => (_ "in" B)
+means: f is (_ "in" A) -> (_ "in" B)
 Documented:
 . called: "function"
 ```
@@ -1260,20 +1260,20 @@ component as an ordinary nominal type:
 (? is \natural, ? "in" \reals)
 {? is \natural : ...}
 {(? is \natural, ? "in" \reals) : ...}
-(? is \natural) |-> (? "in" \naturals)
-(? is \natural, ? "in" \reals) |-> (? is \real)
+(? is \natural) -> (? "in" \naturals)
+(? is \natural, ? "in" \reals) -> (? is \real)
 ```
 
-These types match `(x, y)`, `{x : ...}`, `{(x, y) : ...}`, `x_ |-> ...`, and
-`(x_, y_) |-> ...`, respectively. Each `?` is instantiated with the matching
+These types match `(x, y)`, `{x : ...}`, `{(x, y) : ...}`, `x_ => ...`, and
+`(x_, y_) => ...`, respectively. Each `?` is instantiated with the matching
 term component. A raw nominal tuple such as `(\natural, \real)` is not a type
 literal; write `(? is \natural, ? is \real)` instead.
 
-The `|->` form accepts one or more input spec literals and exactly one
+The `->` form accepts one or more input spec literals and exactly one
 output spec literal, so users can state unary, binary, and n-ary function types
 directly. The checker retains that input arity rather than requiring users to
-write nested unary function types. Compact function types always use `|->`,
-matching the syntax for function literals; `->` is not an alternative spelling.
+write nested unary function types. Function literals use `=>`, keeping type and
+value syntax distinct while mirroring the `:->` and `:=>` operator forms.
 
 For a function definition, component declarations and a whole-function
 declaration are equivalent alternatives:
@@ -1288,7 +1288,7 @@ declares:
 ```text
 Defines: f(x_) ::= y_
 declares:
-. f is (? is \real) |-> (? is \real)
+. f is (? is \real) -> (? is \real)
 ```
 
 ## Specification Operators

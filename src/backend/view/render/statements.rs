@@ -232,7 +232,7 @@ pub(super) fn render_function_type(
 ) -> String {
     match function_type.notation {
         FunctionTypeNotation::Specs => format!(
-            "\\left({}\\right) \\Rightarrow \\left({}\\right)",
+            "\\left({}\\right) \\to \\left({}\\right)",
             function_type
                 .inputs
                 .iter()
@@ -242,7 +242,7 @@ pub(super) fn render_function_type(
             render_function_type_spec(&function_type.output, registry)
         ),
         FunctionTypeNotation::Mapping => format!(
-            "\\left({}\\right) \\mapsto \\left({}\\right)",
+            "\\left({}\\right) \\to \\left({}\\right)",
             function_type
                 .inputs
                 .iter()

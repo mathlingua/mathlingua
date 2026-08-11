@@ -893,10 +893,12 @@ separate from documented mapping writing templates.
 
 ```text
 Writing:
-. alpha :~> \alpha
+. "alpha :~> \alpha"
 ```
 
-The body after `:~>` is raw non-empty text, not parsed formulation syntax.
+Each alias is a double-quoted string. Quotes are required because the body after
+`:~>` is raw non-empty LaTeX, not parsed formulation syntax, and could otherwise
+be misread as a formulation.
 
 ## Checks Performed by `mlg check`
 

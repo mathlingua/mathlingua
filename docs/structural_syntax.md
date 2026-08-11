@@ -267,7 +267,7 @@ An empty document is supported by the current implementation because `Document.i
 - **`SectionTitle`** — `SectionTitleGroup`, heading: none. Sections: `SectionTitle: OpenText`
 - **`SubsectionTitle`** — `SubsectionTitleGroup`, heading: none. Sections: `SubsectionTitle: OpenText`
 - **`Text`** — `TextGroup`, heading: none. Sections: `Text: OpenText`
-- **`Writing`** — `TopLevelWritingGroup`, heading: none. Sections: `Writing: WritingAlias+` (each alias LHS must be a `Name`, used with `:~>`)
+- **`Writing`** — `TopLevelWritingGroup`, heading: none. Sections: `Writing: WritingAlias+` (each alias is a double-quoted string of the form `"name :~> body"`; the LHS must be a `Name` and the body is raw LaTeX)
 - **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when: Clause+`/`to: Expression` branches, `else?: Expression`, `Documented?`, `Justification?`, `Aliases?`, `References?`, `Metadata?`
 - **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DefinesTarget`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: IsOrViaItem`, `declares?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `DefinesTarget` is tried as a `FormOrDeclaration` first, then as an ordinary `DeclarationStatement`, allowing typed or value-bearing targets such as `X := value is \set`
 - **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
@@ -493,7 +493,7 @@ The structural parser delegates section content to formulation parsers as follow
 - `BindingOrSpec` — `parse_refined_declaration_statement`
 - `AliasKind` — try `parse_expression_alias`, then `parse_spec_operator_alias`
 - `MappingWritingTarget` — accept a function declaration form or function-call expression; semantic checking restricts it to the enclosing `Defines:` mapping
-- `WritingAlias` — `parse_writing_alias` (used by the collection-wide `Writing:` group)
+- `WritingAlias` — `parse_writing_alias`, applied to the contents of each double-quoted `Writing:` argument (used by the collection-wide `Writing:` group)
 - `ResourceHeader` — `parse_resource_header`
 - `CommandHeader` — `parse_command_header`
 - `AuthorHeader` — `parse_author_header`
@@ -703,7 +703,7 @@ Text: <OpenText>
 ```
 
 ```group
-Writing: <WritingAlias>+
+Writing: "<WritingAlias>"+
 ```
 
 ```group

@@ -944,8 +944,8 @@ fn renders_trailing_digits_in_names_as_subscripts() {
 fn renders_names_with_collection_writing_aliases() {
     let registry = registry_for(
         r#"Writing:
-. alpha :~> \alpha
-. beta :~> \beta
+. "alpha :~> \alpha"
+. "beta :~> \beta"
 "#,
     );
 

@@ -1,7 +1,9 @@
 use std::collections::{HashMap, VecDeque};
 
 use crate::events::EventLog;
-use crate::frontend::formulation::ast::{ExpressionKind, FormOrDeclaration, FormOrDeclarationKind};
+use crate::frontend::formulation::ast::{
+    ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, WritingAlias,
+};
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
     parse_expression, parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
@@ -2537,6 +2539,65 @@ pub(in crate::frontend::structural::parser) fn parse_text_group(
     })
 }
 
+/// Parses one or more required quoted `Writing:` aliases.
+///
+/// Each entry is a double-quoted string whose contents form a `name :~> body`
+/// rule, for example `. "pi :~> \pi"`. Quotes are required because the body to
+/// the right of `:~>` may be arbitrary LaTeX that would otherwise be misparsed
+/// as formulation syntax.
+fn parse_required_writing_aliases(
+    section: &ProtoSection,
+    tracker: &mut EventLog,
+) -> Option<OneOrMore<WritingAlias>> {
+    let starting_issue_count = tracker.issue_count();
+    let mut result = Vec::new();
+    for entry in section_entries(section) {
+        match entry {
+            SectionEntry::Inline { text, row } | SectionEntry::Text { text, row } => {
+                let Some(inner) = strip_quoted_text(text) else {
+                    tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Expected a quoted Writing alias, found `{text}`"),
+                    );
+                    continue;
+                };
+                match parse_writing_alias(&inner) {
+                    Ok(alias) => result.push(alias),
+                    Err(error) => tracker.user_error_at_row(
+                        Some(ORIGIN),
+                        row,
+                        format!("Invalid Writing alias: {error}"),
+                    ),
+                }
+            }
+            SectionEntry::Formulation { row, .. } => {
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    "Expected a quoted Writing alias, found formulation",
+                );
+            }
+            SectionEntry::Group { row, .. } => {
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    "Expected a quoted Writing alias, found nested group",
+                );
+            }
+        }
+    }
+    one_or_more(result.into(), || {
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                "Expected Writing aliases",
+            );
+        }
+    })
+}
+
 /// Parses a collection-wide `Writing:` group.
 ///
 /// These aliases are intentionally narrower than documented `writing:` groups:
@@ -2548,8 +2609,7 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_writing(
     ensure_no_heading(group, tracker)?;
     let sections = identify_sections("Writing", &group.sections, tracker, &["Writing", "Id?"])?;
     let writing_section = section(&sections, "Writing")?;
-    let arguments =
-        parse_required_formulations(writing_section, "Writing", tracker, parse_writing_alias)?;
+    let arguments = parse_required_writing_aliases(writing_section, tracker)?;
 
     let mut all_names = true;
     for alias in &arguments {
@@ -5827,8 +5887,8 @@ with another paragraph."
         let document = parse_ok(
             r#"
 Writing:
-. alpha :~> \alpha
-. beta :~> \beta
+. "alpha :~> \alpha"
+. "beta :~> \beta"
 "#,
         );
 
@@ -5841,6 +5901,23 @@ Writing:
             group.writing.arguments[0].form.kind,
             FormOrDeclarationKind::Name(ref name) if name == "alpha"
         ));
+    }
+
+    #[test]
+    fn rejects_unquoted_top_level_writing_aliases() {
+        let (document, messages) = parse_with_diagnostics(
+            r#"
+Writing:
+. alpha :~> \alpha
+"#,
+        );
+
+        assert!(document.items.is_empty());
+        assert!(messages.iter().any(|event| {
+            event
+                .as_message()
+                .is_some_and(|message| message.message.contains("Expected a quoted Writing alias"))
+        }));
     }
 
     #[test]
@@ -5862,7 +5939,7 @@ Text: "A \"quoted\" word and \alpha."
         let (document, messages) = parse_with_diagnostics(
             r#"
 Writing:
-. f(x_) :~> x
+. "f(x_) :~> x"
 "#,
         );
 

@@ -672,12 +672,9 @@ fn argument_view(
             let (label, latex) = match split_labeled_formulation(&formulation.text) {
                 Some((parts, inner)) => (
                     Some(parts.join(".")),
-                    render_argument_formulation_latex(section_label, inner, registry),
+                    render_formulation_latex(inner, registry),
                 ),
-                None => (
-                    None,
-                    render_argument_formulation_latex(section_label, &formulation.text, registry),
-                ),
+                None => (None, render_formulation_latex(&formulation.text, registry)),
             };
             ArgumentView::Formulation {
                 latex,
@@ -686,8 +683,17 @@ fn argument_view(
             }
         }
         ProtoArgument::Text(text) => {
-            let latex = documented_render_kind
-                .and_then(|kind| render_documented_template_argument(kind, &text.text));
+            // A collection-wide `Writing:` alias is authored as quoted text (its
+            // body may be arbitrary LaTeX), so render the alias from the stripped
+            // contents rather than treating it as a documented template.
+            let latex = if section_label == "Writing" {
+                strip_quoted_text(&text.text)
+                    .as_deref()
+                    .and_then(|inner| render_writing_alias_latex(inner, registry))
+            } else {
+                documented_render_kind
+                    .and_then(|kind| render_documented_template_argument(kind, &text.text))
+            };
             ArgumentView::Text {
                 text: strip_quoted_text(&text.text).unwrap_or(text.text),
                 latex,
@@ -708,18 +714,6 @@ fn argument_view(
                 })
                 .collect(),
         },
-    }
-}
-
-fn render_argument_formulation_latex(
-    section_label: &str,
-    text: &str,
-    registry: &RenderRegistry,
-) -> Option<String> {
-    if section_label == "Writing" {
-        render_writing_alias_latex(text, registry)
-    } else {
-        render_formulation_latex(text, registry)
     }
 }
 
@@ -1529,8 +1523,8 @@ Second paragraph with $x \in X$."
         let content = root.join("content");
         let file = content.join("writing.mlg");
         let source = r#"Writing:
-. alpha :~> \alpha
-. Gamma :~> \Gamma
+. "alpha :~> \alpha"
+. "Gamma :~> \Gamma"
 Id: "11111111-1111-4111-8111-111111111111"
 "#;
 
@@ -1556,18 +1550,24 @@ Id: "11111111-1111-4111-8111-111111111111"
         let writing = &view.files[0].items[0].sections[0];
         assert_eq!(writing.label, "Writing");
         match &writing.arguments[0] {
-            ArgumentView::Formulation { latex, .. } => assert_eq!(
-                latex.as_deref(),
-                Some(r#"\textrm{alpha} \mathrel{:\!\rightsquigarrow} \alpha"#)
-            ),
-            other => panic!("expected formulation argument, got {other:?}"),
+            ArgumentView::Text { latex, text } => {
+                assert_eq!(text, r#"alpha :~> \alpha"#);
+                assert_eq!(
+                    latex.as_deref(),
+                    Some(r#"\textrm{alpha} \mathrel{:\!\rightsquigarrow} \alpha"#)
+                );
+            }
+            other => panic!("expected text argument, got {other:?}"),
         }
         match &writing.arguments[1] {
-            ArgumentView::Formulation { latex, .. } => assert_eq!(
-                latex.as_deref(),
-                Some(r#"\textrm{Gamma} \mathrel{:\!\rightsquigarrow} \Gamma"#)
-            ),
-            other => panic!("expected formulation argument, got {other:?}"),
+            ArgumentView::Text { latex, text } => {
+                assert_eq!(text, r#"Gamma :~> \Gamma"#);
+                assert_eq!(
+                    latex.as_deref(),
+                    Some(r#"\textrm{Gamma} \mathrel{:\!\rightsquigarrow} \Gamma"#)
+                );
+            }
+            other => panic!("expected text argument, got {other:?}"),
         }
     }
 

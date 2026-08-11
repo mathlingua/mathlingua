@@ -456,14 +456,14 @@ mod tests {
             parsed_file(
                 "a.mlg",
                 r#"Writing:
-. alpha :~> \alpha
+. "alpha :~> \alpha"
 Id: "11111111-1111-4111-8111-111111111111"
 "#,
             ),
             parsed_file(
                 "b.mlg",
                 r#"Writing:
-. beta :~> \beta
+. "beta :~> \beta"
 Id: "22222222-2222-4222-8222-222222222222"
 "#,
             ),

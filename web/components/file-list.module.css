@@ -222,17 +222,6 @@
   background: color-mix(in srgb, var(--accent) 11%, transparent);
 }
 
-.outlineLinkActive::before {
-  content: "";
-  position: absolute;
-  top: 0.4rem;
-  bottom: 0.4rem;
-  left: 0;
-  width: 2.5px;
-  border-radius: 0 2px 2px 0;
-  background: var(--accent);
-}
-
 .outlineLinkActive:hover {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }

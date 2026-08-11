@@ -440,7 +440,7 @@ Important files:
 - `shapes.rs` computes canonical command signatures and argument shapes.
 - `validation.rs` validates references for existence and argument shape.
 - `typecheck.rs` implements symbol scope, facts, substitutions, requirements,
-  subtyping through `means:`, destructuring, operator/member resolution, and
+  subtyping through `extends:`, destructuring, operator/member resolution, and
   spec-operator reduction.
 - `locator.rs` maps semantic diagnostics back to source locations.
 - `definition.rs` and `rename.rs` back LSP go-to-definition and rename; `uses.rs`

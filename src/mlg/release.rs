@@ -1008,7 +1008,7 @@ mod tests {
     fn defs_source(a_called: &str) -> String {
         format!(
             "[\\b]\nDefines: B\nDocumented:\n. called: \"b\"\nId: \"{B_ID}\"\n\n\n\
-             [\\a]\nDefines: A\nmeans: A is \\b\nDocumented:\n. called: \"{a_called}\"\nId: \"{A_ID}\"\n"
+             [\\a]\nDefines: A\nextends: A is \\b\nDocumented:\n. called: \"{a_called}\"\nId: \"{A_ID}\"\n"
         )
     }
 

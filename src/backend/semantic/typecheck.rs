@@ -272,7 +272,7 @@ fn definition_type_info(
             None,
             Some(&group.defines.argument),
             group.declares.as_ref(),
-            group.means.as_ref(),
+            group.extends.as_ref(),
             registry,
         )),
         TopLevelItem::Declares(group) => Some(type_info_from_parts(
@@ -378,7 +378,7 @@ fn type_info_from_parts(
     declares: Option<&DeclarationStatement>,
     described: Option<&DefinesTarget>,
     defines_declares: Option<&DefinesDeclaresSection>,
-    means: Option<&MeansSection>,
+    extends: Option<&ExtendsSection>,
     registry: &SignatureRegistry,
 ) -> DefinitionTypeInfo {
     let mut context = TypeContext::default();
@@ -442,7 +442,7 @@ fn type_info_from_parts(
     }
 
     let component_types = described
-        .map(|target| component_type_facts(target, means, defines_declares, &context, registry))
+        .map(|target| component_type_facts(target, extends, defines_declares, &context, registry))
         .unwrap_or_default();
     let component_shapes = described
         .map(defines_target_component_shapes)
@@ -546,13 +546,13 @@ fn collect_inferred_names_in_function_type_spec(spec: &FunctionTypeSpec, names: 
 }
 
 /// Type facts for the components of a destructuring describes target, in tuple
-/// order. Each component's type is drawn from `means:` first (its components
+/// order. Each component's type is drawn from `extends:` first (its components
 /// inherit the extended type's component types) and then `declares:` for any
-/// component not covered by `means:`. Facts are normalized so they can be
+/// component not covered by `extends:`. Facts are normalized so they can be
 /// re-substituted when another definition destructures a value of this type.
 fn component_type_facts(
     target: &DefinesTarget,
-    means: Option<&MeansSection>,
+    extends: Option<&ExtendsSection>,
     declares: Option<&DefinesDeclaresSection>,
     context: &TypeContext,
     registry: &SignatureRegistry,
@@ -563,11 +563,11 @@ fn component_type_facts(
     }
 
     let mut fact_context = context.clone();
-    if let Some(means) = means {
-        for fact in facts_from_is_or_via_item_in_context(&means.argument, &fact_context) {
+    if let Some(extends) = extends {
+        for fact in facts_from_is_or_via_item_in_context(&extends.argument, &fact_context) {
             fact_context.add_fact(fact);
         }
-        for fact in facts_from_means_via(&means.argument, &fact_context, registry) {
+        for fact in facts_from_extends_via(&extends.argument, &fact_context, registry) {
             fact_context.add_fact(fact);
         }
     }
@@ -591,12 +591,12 @@ fn component_type_facts(
         .collect()
 }
 
-/// The type facts a `means: <subject> is <Type> via <via>` clause assigns to
+/// The type facts an `extends: <subject> is <Type> via <via>` clause assigns to
 /// the `via` symbols. `via X` with a plain `\set` gives `X is \set`. `via (X, *)`
 /// onto a tuple type maps the extended type's components positionally, so
 /// `S is \magma via (X, *)` yields `X is \set` and `* is \binary.operation:on{S}`
 /// by following `\magma`'s own component types (with its subject replaced by `S`).
-fn facts_from_means_via(
+fn facts_from_extends_via(
     item: &IsOrViaItem,
     context: &TypeContext,
     registry: &SignatureRegistry,
@@ -626,16 +626,16 @@ fn facts_from_means_via(
     }
 }
 
-/// Adds the component types a `means: … via …` clause assigns (`X is \set`,
+/// Adds the component types an `extends: … via …` clause assigns (`X is \set`,
 /// etc.) to the checking context, so the definition's own body (e.g.
 /// `declares: e "in" X`) can rely on them.
-fn assume_means_via_facts(
-    means: &Option<MeansSection>,
+fn assume_extends_via_facts(
+    extends: &Option<ExtendsSection>,
     context: &mut TypeContext,
     registry: &SignatureRegistry,
 ) {
-    if let Some(means) = means {
-        for fact in facts_from_means_via(&means.argument, context, registry) {
+    if let Some(extends) = extends {
+        for fact in facts_from_extends_via(&extends.argument, context, registry) {
             context.add_fact(fact);
         }
     }
@@ -862,11 +862,11 @@ fn collect_type_extension_rules(
     info: &DefinitionTypeInfo,
     registry: &mut SignatureRegistry,
 ) {
-    let Some(means) = means_item(item) else {
+    let Some(extends) = extends_item(item) else {
         return;
     };
 
-    for fact in facts_from_is_or_via_item(means) {
+    for fact in facts_from_is_or_via_item(extends) {
         let subject = match &fact {
             TypeFact::Is { subject, .. }
             | TypeFact::Spec { subject, .. }
@@ -892,16 +892,16 @@ fn collect_refinement_extension_rules(
     let TopLevelItem::Refines(group) = item else {
         return;
     };
-    let Some(means) = &group.means else {
+    let Some(extends) = &group.extends else {
         return;
     };
 
-    for target in refinement_extension_targets_from_declaration(&means.argument) {
+    for target in refinement_extension_targets_from_declaration(&extends.argument) {
         registry
             .refinement_extension_rules
             .push(RefinementExtensionRule {
                 subtype_signature: info.signature.clone(),
-                subject: primary_subject_key(&means.argument.subject),
+                subject: primary_subject_key(&extends.argument.subject),
                 parameters: info.parameters.clone(),
                 target,
             });
@@ -927,9 +927,9 @@ fn refinement_extension_targets_from_declaration(
     }
 }
 
-fn means_item(item: &TopLevelItem) -> Option<&IsOrViaItem> {
+fn extends_item(item: &TopLevelItem) -> Option<&IsOrViaItem> {
     match item {
-        TopLevelItem::Defines(group) => group.means.as_ref().map(|section| &section.argument),
+        TopLevelItem::Defines(group) => group.extends.as_ref().map(|section| &section.argument),
         _ => None,
     }
 }
@@ -1177,7 +1177,7 @@ fn validate_equivalent_item(
 
 /// Rules 2–6: the `to:` members must agree in target shape and — depending on
 /// their shared kind — in the type they define (`is`, Declares), the type they
-/// extend (`means:`, Defines), the base they refine (Refines), plus their
+/// extend (`extends:`, Defines), the base they refine (Refines), plus their
 /// provided-capability set.
 fn validate_equivalent_member_agreement(
     members: &[EquivalentMember],
@@ -1282,7 +1282,7 @@ fn require_uniform_members<K: PartialEq>(
 }
 
 /// The set of type signatures that fix a member's core identity for rules 3–5:
-/// the `is` type of a Declares, the `means:` target of a Defines, or the base
+/// the `is` type of a Declares, the `extends:` target of a Defines, or the base
 /// type of a Refines. Uses only global type signatures (never definition-local
 /// symbol names), so structurally identical types compare equal.
 fn member_type_identity(
@@ -1443,7 +1443,7 @@ fn validate_top_level_item_types(
                 event_log,
             );
             assume_destructured_parameter_components(&group.heading, &mut context, registry);
-            assume_means_via_facts(&group.means, &mut context, registry);
+            assume_extends_via_facts(&group.extends, &mut context, registry);
             assume_optional_declares(
                 &group.declares,
                 &mut context,
@@ -1458,9 +1458,9 @@ fn validate_top_level_item_types(
                 &mut context,
             );
             validate_defines_justification_usage(group, path, locator, event_log);
-            if let Some(means) = &group.means {
+            if let Some(extends) = &group.extends {
                 check_is_or_via_item(
-                    &means.argument,
+                    &extends.argument,
                     &context,
                     path,
                     locator,
@@ -1611,8 +1611,8 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
-            if group.means.is_some() {
-                check_refines_means(group, &context, path, locator, registry, event_log);
+            if group.extends.is_some() {
+                check_refines_extends(group, &context, path, locator, registry, event_log);
             }
             check_refines_marker(group, path, locator, registry, event_log);
             validate_refines_target_symbol_specifications(
@@ -1799,7 +1799,7 @@ fn anchor_top_level_item(item: &TopLevelItem, locator: &mut SourceLocator<'_>) {
     }
 }
 
-fn check_refines_means(
+fn check_refines_extends(
     group: &RefinesGroup,
     context: &TypeContext,
     path: &Path,
@@ -1807,24 +1807,31 @@ fn check_refines_means(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    let Some(means) = &group.means else {
+    let Some(extends) = &group.extends else {
         return;
     };
     let refines_subject = primary_subject_key(&group.refines.argument.subject);
-    let means_subject = primary_subject_key(&means.argument.subject);
-    if means_subject != refines_subject {
+    let extends_subject = primary_subject_key(&extends.argument.subject);
+    if extends_subject != refines_subject {
         emit_error(
             event_log,
             path,
             locator.locate_heading(&shape_for_header(&group.heading)),
-            "The `means:` subject must match the `Refines:` subject",
+            "The `extends:` subject must match the `Refines:` subject",
         );
     }
 
     let Some(DeclarationRelation::Is(TypeExpression::RefinedCommand(command))) =
-        &means.argument.relation
+        &extends.argument.relation
     else {
-        check_declaration_statement(&means.argument, context, path, locator, registry, event_log);
+        check_declaration_statement(
+            &extends.argument,
+            context,
+            path,
+            locator,
+            registry,
+            event_log,
+        );
         return;
     };
 
@@ -1834,11 +1841,11 @@ fn check_refines_means(
                 event_log,
                 path,
                 locator.locate_heading(&shape_for_header(&group.heading)),
-                "`[[...]]` in a `Refines` `means:` clause must name the `Refines:` subject",
+                "`[[...]]` in a `Refines` `extends:` clause must name the `Refines:` subject",
             );
         }
 
-        check_is_subject(&means.argument.subject, context, path, locator, event_log);
+        check_is_subject(&extends.argument.subject, context, path, locator, event_log);
         let active_command = active_refined_command_expression(command, context);
         for expression in refined_command_expression_arguments(&active_command) {
             check_expression(expression, context, path, locator, registry, event_log);
@@ -1846,7 +1853,14 @@ fn check_refines_means(
         return;
     }
 
-    check_declaration_statement(&means.argument, context, path, locator, registry, event_log);
+    check_declaration_statement(
+        &extends.argument,
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
 }
 
 /// The base type signature (`\group`) of a refined command heading such as
@@ -1868,7 +1882,7 @@ fn refined_command_header_adjective_key(command: &RefinedCommandHeader) -> Strin
 }
 
 /// The `::`-joined adjective chains of a refined command expression (the form of
-/// a `Refines:` `means:` target), rendered the same way as
+/// a `Refines:` `extends:` target), rendered the same way as
 /// [`refined_command_header_adjective_key`] so the two can be compared.
 fn refined_command_expression_adjective_key(command: &RefinedCommandExpression) -> String {
     command
@@ -1879,8 +1893,8 @@ fn refined_command_expression_adjective_key(command: &RefinedCommandExpression) 
         .join("::")
 }
 
-/// The type signature a subtype's `means:` rule points at (the supertype), for
-/// the fact kinds a `means:` clause can produce.
+/// The type signature a subtype's `extends:` rule points at (the supertype), for
+/// the fact kinds an `extends:` clause can produce.
 fn extension_rule_supertype_signature(fact: &TypeFact) -> Option<String> {
     match fact {
         TypeFact::Is { signature, .. } => Some(signature.clone()),
@@ -1890,7 +1904,7 @@ fn extension_rule_supertype_signature(fact: &TypeFact) -> Option<String> {
 }
 
 /// The direct supertypes (parents) of `base_signature`, taken from the type
-/// extension rules the registry collected for the base type's own `means:`.
+/// extension rules the registry collected for the base type's own `extends:`.
 fn direct_parent_signatures(base_signature: &str, registry: &SignatureRegistry) -> Vec<String> {
     registry
         .extension_rules
@@ -1900,19 +1914,19 @@ fn direct_parent_signatures(base_signature: &str, registry: &SignatureRegistry) 
         .collect()
 }
 
-/// Whether an `implicitly:`-marked group's `means:` clause literally names the
+/// Whether an `implicitly:`-marked group's `extends:` clause literally names the
 /// parent type's refinement: the same adjective(s) applied to a direct supertype
 /// of the refined base type.
-fn implicit_means_names_parent_refinement(
+fn implicit_extends_names_parent_refinement(
     group: &RefinesGroup,
     heading: &RefinedCommandHeader,
     parents: &[String],
 ) -> bool {
-    let Some(means) = &group.means else {
+    let Some(extends) = &group.extends else {
         return false;
     };
     let Some(DeclarationRelation::Is(TypeExpression::RefinedCommand(target))) =
-        &means.argument.relation
+        &extends.argument.relation
     else {
         return false;
     };
@@ -1932,12 +1946,12 @@ fn implicit_means_names_parent_refinement(
 /// another type (so that a supertype refinement could be inherited).  Given that:
 ///
 ///   * `implicitly:` asserts the group merely restates the inherited definition,
-///     so its body must contain nothing beyond the inherited `means:` clause
-///     (plus scaffolding `using:`/`when:`), and that `means:` clause must
+///     so its body must contain nothing beyond the inherited `extends:` clause
+///     (plus scaffolding `using:`/`when:`), and that `extends:` clause must
 ///     literally name the parent type's refinement — the same adjective(s)
 ///     applied to a direct supertype of the refined base type.
 ///   * `explicitly:` asserts the group overrides the inherited definition, so it
-///     must add at least one property beyond the inherited `means:` clause;
+///     must add at least one property beyond the inherited `extends:` clause;
 ///     otherwise it is the trivial case that should be marked `implicitly:`.
 fn check_refines_marker(
     group: &RefinesGroup,
@@ -1963,12 +1977,12 @@ fn check_refines_marker(
             path,
             location,
             "`implicitly:` and `explicitly:` may only be used when the `Refines:` base type is a \
-             subtype of another type (has a `means:` clause of its own); the base here is not",
+             subtype of another type (has an `extends:` clause of its own); the base here is not",
         );
         return;
     }
 
-    let has_means = group.means.is_some();
+    let has_extends = group.extends.is_some();
     let adds_properties = group.satisfies.is_some()
         || group.requires.is_some()
         || group.enables.is_some()
@@ -1976,30 +1990,30 @@ fn check_refines_marker(
 
     match marker {
         RefinementKind::Implicit => {
-            if !has_means {
+            if !has_extends {
                 emit_error(
                     event_log,
                     path,
                     location,
                     "A `Refines:` marked `implicitly:` must restate the inherited definition with an \
-                     `means:` clause naming the supertype's refinement",
+                     `extends:` clause naming the supertype's refinement",
                 );
             } else if adds_properties {
                 emit_error(
                     event_log,
                     path,
                     location,
-                    "A `Refines:` marked `implicitly:` must contain only the inherited `means:` \
+                    "A `Refines:` marked `implicitly:` must contain only the inherited `extends:` \
                      clause; it must not add `satisfies:`, `Requires:`, `Enables:`, or `Justification:`. \
                      Mark it `explicitly:` if the definition is meant to differ",
                 );
-            } else if !implicit_means_names_parent_refinement(group, heading, &parents) {
+            } else if !implicit_extends_names_parent_refinement(group, heading, &parents) {
                 emit_error(
                     event_log,
                     path,
                     location,
                     "A `Refines:` marked `implicitly:` must name the parent type's refinement in its \
-                     `means:` clause: the same adjective(s) applied to a supertype of the refined \
+                     `extends:` clause: the same adjective(s) applied to a supertype of the refined \
                      base type",
                 );
             }
@@ -2011,7 +2025,7 @@ fn check_refines_marker(
                     path,
                     location,
                     "A `Refines:` marked `explicitly:` must add at least one property beyond the \
-                     inherited `means:` clause (for example a `satisfies:` section); the trivial \
+                     inherited `extends:` clause (for example a `satisfies:` section); the trivial \
                      case should be marked `implicitly:`",
                 );
             }
@@ -3172,8 +3186,8 @@ fn validate_defines_justification_usage(
         return;
     };
     let mut referenced = BTreeSet::new();
-    if let Some(means) = &group.means {
-        collect_is_or_via_referenced_labels(&means.argument, &mut referenced);
+    if let Some(extends) = &group.extends {
+        collect_is_or_via_referenced_labels(&extends.argument, &mut referenced);
     }
     if let Some(declares) = &group.declares {
         for item in &declares.arguments {
@@ -3439,8 +3453,8 @@ fn form_or_declaration_subject_key(form: &FormOrDeclaration) -> String {
 
 fn defines_used_names(group: &DefinesGroup) -> BTreeSet<String> {
     let mut names = BTreeSet::new();
-    if let Some(means) = &group.means {
-        collect_is_or_via_names(&means.argument, &mut names);
+    if let Some(extends) = &group.extends {
+        collect_is_or_via_names(&extends.argument, &mut names);
     }
     if let Some(declares) = &group.declares {
         for item in &declares.arguments {
@@ -3470,7 +3484,7 @@ fn validate_defines_target_symbol_specifications(
         &mut covered,
     );
     collect_declares_covered_symbols(&group.declares, &mut covered);
-    collect_means_covered_symbols(&group.means, &mut covered);
+    collect_extends_covered_symbols(&group.extends, &mut covered);
     let symbols = defines_target_symbols(&group.defines.argument);
     validate_target_symbol_specifications(&symbols, &covered, path, locator, event_log);
 }
@@ -3550,14 +3564,14 @@ fn validate_refines_target_symbol_specifications(
         &header_when_parameters(&group.heading),
         &mut covered,
     );
-    if let Some(means) = &group.means {
-        collect_declaration_statement_covered_symbols(&means.argument, &mut covered);
+    if let Some(extends) = &group.extends {
+        collect_declaration_statement_covered_symbols(&extends.argument, &mut covered);
     }
     // A `Refines:` refines a base type that describes the same form, so any
     // symbol the base type already declares (its operator or components) is
     // inherited and need not be respecified here. For `\(associative)::binary
     // .operation:on{X}` refining `\binary.operation:on{X}`, the base's
-    // `means: * is \function:...` covers `*`.
+    // `extends: * is \function:...` covers `*`.
     collect_refines_base_specified_symbols(&group.heading, registry, &mut covered);
     validate_declaration_target_symbol_specifications(
         &group.refines.argument,
@@ -3569,7 +3583,7 @@ fn validate_refines_target_symbol_specifications(
 }
 
 /// Adds to `covered` every symbol that the base type refined by `heading`
-/// already declares — the subjects of the base type's own `means:`/`declares:`
+/// already declares — the subjects of the base type's own `extends:`/`declares:`
 /// facts (recorded as type-extension rules) and its described components.
 fn collect_refines_base_specified_symbols(
     heading: &CommandHeader,
@@ -3623,7 +3637,7 @@ fn validate_target_symbol_specifications(
             path,
             locator.locate_symbol(symbol),
             format!(
-                "Missing specification for target symbol `{symbol}`; specify it directly or through `means:`"
+                "Missing specification for target symbol `{symbol}`; specify it directly or through `extends:`"
             ),
         );
     }
@@ -3768,9 +3782,12 @@ fn collect_declares_covered_symbols(
     }
 }
 
-fn collect_means_covered_symbols(means: &Option<MeansSection>, covered: &mut BTreeSet<String>) {
-    if let Some(means) = means {
-        collect_is_or_via_covered_symbols(&means.argument, covered);
+fn collect_extends_covered_symbols(
+    extends: &Option<ExtendsSection>,
+    covered: &mut BTreeSet<String>,
+) {
+    if let Some(extends) = extends {
+        collect_is_or_via_covered_symbols(&extends.argument, covered);
     }
 }
 

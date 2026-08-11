@@ -283,7 +283,7 @@ pub(in crate::frontend::structural::parser) fn parse_alias_kind(
     parse_spec_operator_alias(input).map(AliasKind::SpecOperator)
 }
 
-/// Parses an item accepted by `means:`/`declares:` and related sections.
+/// Parses an item accepted by `extends:`/`declares:` and related sections.
 ///
 /// `is ... via ...` is more specific, so it is attempted before the broader
 /// `is`/spec parser. The `is` relation may name a refined command
@@ -2765,7 +2765,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             "Defines",
             "using?",
             "when?",
-            "means?",
+            "extends?",
             "declares?",
             "satisfies?",
             "Requires?",
@@ -2802,9 +2802,9 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        means: sections.get("means").copied().and_then(|section| {
-            parse_required_formulation(section, "means", tracker, parse_is_or_via_item)
-                .map(|argument| MeansSection { argument })
+        extends: sections.get("extends").copied().and_then(|section| {
+            parse_required_formulation(section, "extends", tracker, parse_is_or_via_item)
+                .map(|argument| ExtendsSection { argument })
         }),
         declares: sections.get("declares").copied().and_then(|section| {
             parse_required_specify_items(section, tracker)
@@ -2976,7 +2976,7 @@ fn parse_refinement_kind(
 /// Parses a command-backed `Refines:` group.
 ///
 /// Refines groups define a refined command signature and validate their
-/// `Refines:`/`means:` bodies with the parser variant that accepts refined
+/// `Refines:`/`extends:` bodies with the parser variant that accepts refined
 /// command references.
 pub(in crate::frontend::structural::parser) fn parse_refines(
     group: &ProtoGroup,
@@ -2993,7 +2993,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             "explicitly?",
             "using?",
             "when?",
-            "means?",
+            "extends?",
             "satisfies?",
             "Requires?",
             "Enables?",
@@ -3032,14 +3032,14 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        means: sections.get("means").copied().and_then(|section| {
+        extends: sections.get("extends").copied().and_then(|section| {
             parse_required_formulation(
                 section,
-                "means",
+                "extends",
                 tracker,
                 parse_refined_declaration_statement,
             )
-            .map(|argument| RefinesMeansSection { argument })
+            .map(|argument| RefinesExtendsSection { argument })
         }),
         satisfies: sections.get("satisfies").copied().and_then(|section| {
             parse_required_clauses(section, "satisfies", tracker)
@@ -4027,20 +4027,26 @@ Documented:
     }
 
     #[test]
-    fn rejects_the_legacy_extends_section_label() {
-        let (_, diagnostics) = parse_with_diagnostics(
+    fn rejects_the_legacy_means_section_label_for_defines_and_refines() {
+        for source in [
             r#"[\thing]
 Defines: X
-extends: X is \set
+means: X is \set
 "#,
-        );
+            r#"[\(special)::thing]
+Refines: X
+means: X is \thing
+"#,
+        ] {
+            let (_, diagnostics) = parse_with_diagnostics(source);
 
-        assert!(diagnostics.iter().any(|event| {
-            event.as_message().is_some_and(|message| {
-                message.message.contains("Unexpected section `extends`")
-                    && message.message.contains("means?:")
-            })
-        }));
+            assert!(diagnostics.iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message.contains("Unexpected section `means`")
+                        && message.message.contains("extends?:")
+                })
+            }));
+        }
     }
 
     #[test]
@@ -4057,7 +4063,7 @@ when:
   allOf:
   . x = x
   . y = y
-means: X is \set via (X, Y)
+extends: X is \set via (X, Y)
 declares:
 . Y is \set via (X, Y)
 . y "contains" Y
@@ -4172,7 +4178,7 @@ when:
   existsUnique: x is \element
   suchThat:
   . x = x
-means: y is \(f)::[[g]]
+extends: y is \(f)::[[g]]
 satisfies:
 . [logic.given]
   given: x is \element
@@ -4218,7 +4224,7 @@ that:
                     Clause::AllOf(_)
                 ));
                 assert!(matches!(
-                    group.means.as_ref().expect("expected means").argument,
+                    group.extends.as_ref().expect("expected extends").argument,
                     IsOrViaItem::IsVia(_)
                 ));
                 assert_eq!(
@@ -4409,7 +4415,7 @@ that:
         match &document.items[8] {
             TopLevelItem::Refines(group) => {
                 assert!(group.refines.argument.relation.is_none());
-                assert!(group.means.is_some());
+                assert!(group.extends.is_some());
                 assert!(matches!(
                     group.when.as_ref().expect("expected when").arguments[0],
                     Clause::ExistsUnique(_)

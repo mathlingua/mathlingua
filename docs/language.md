@@ -900,6 +900,21 @@ Each alias is a double-quoted string. Quotes are required because the body after
 `:~>` is raw non-empty LaTeX, not parsed formulation syntax, and could otherwise
 be misread as a formulation.
 
+Every top-level non-prose item (`Defines:`, `Declares:`, `Refines:`, `States:`,
+`Axiom:`, `Theorem:`, `Conjecture:`, `Relation:`, and `Disambiguates:`) may carry
+its own optional `Writing:` section immediately after `Aliases:`. It uses the same
+double-quoted `"name :~> body"` form and overrides, for that item only, how the
+named identifiers render — layered on top of the collection-wide `Writing:` group.
+
+```text
+[\natural]
+Defines: n
+Documented:
+. called: "natural"
+Writing:
+. "pi :~> \varpi"
+```
+
 ## Checks Performed by `mlg check`
 
 `mlg check` runs a fixed pipeline over the collection and reports every problem

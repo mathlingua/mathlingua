@@ -2539,18 +2539,23 @@ pub(in crate::frontend::structural::parser) fn parse_text_group(
     })
 }
 
-/// Parses one or more required quoted `Writing:` aliases.
+/// Parses one or more required quoted writing aliases.
 ///
 /// Each entry is a double-quoted string whose contents form a `name :~> body`
 /// rule, for example `. "pi :~> \pi"`. Quotes are required because the body to
 /// the right of `:~>` may be arbitrary LaTeX that would otherwise be misparsed
-/// as formulation syntax.
+/// as formulation syntax, and the left-hand side must be a plain `Name`. Shared
+/// by the collection-wide `Writing:` group and each item-level `Writing:` section.
+///
+/// Returns `None` (after reporting the offending entries) if any entry is
+/// unquoted, fails to parse, or uses a non-name left-hand side.
 fn parse_required_writing_aliases(
     section: &ProtoSection,
     tracker: &mut EventLog,
 ) -> Option<OneOrMore<WritingAlias>> {
     let starting_issue_count = tracker.issue_count();
     let mut result = Vec::new();
+    let mut all_valid = true;
     for entry in section_entries(section) {
         match entry {
             SectionEntry::Inline { text, row } | SectionEntry::Text { text, row } => {
@@ -2560,15 +2565,29 @@ fn parse_required_writing_aliases(
                         row,
                         format!("Expected a quoted Writing alias, found `{text}`"),
                     );
+                    all_valid = false;
                     continue;
                 };
                 match parse_writing_alias(&inner) {
-                    Ok(alias) => result.push(alias),
-                    Err(error) => tracker.user_error_at_row(
-                        Some(ORIGIN),
-                        row,
-                        format!("Invalid Writing alias: {error}"),
-                    ),
+                    Ok(alias) if matches!(alias.form.kind, FormOrDeclarationKind::Name(_)) => {
+                        result.push(alias);
+                    }
+                    Ok(_) => {
+                        tracker.user_error_at_row(
+                            Some(ORIGIN),
+                            row,
+                            "Writing aliases must use a name on the left of `:~>`",
+                        );
+                        all_valid = false;
+                    }
+                    Err(error) => {
+                        tracker.user_error_at_row(
+                            Some(ORIGIN),
+                            row,
+                            format!("Invalid Writing alias: {error}"),
+                        );
+                        all_valid = false;
+                    }
                 }
             }
             SectionEntry::Formulation { row, .. } => {
@@ -2577,6 +2596,7 @@ fn parse_required_writing_aliases(
                     row,
                     "Expected a quoted Writing alias, found formulation",
                 );
+                all_valid = false;
             }
             SectionEntry::Group { row, .. } => {
                 tracker.user_error_at_row(
@@ -2584,8 +2604,12 @@ fn parse_required_writing_aliases(
                     row,
                     "Expected a quoted Writing alias, found nested group",
                 );
+                all_valid = false;
             }
         }
+    }
+    if !all_valid {
+        return None;
     }
     one_or_more(result.into(), || {
         if tracker.issue_count() == starting_issue_count {
@@ -2595,6 +2619,21 @@ fn parse_required_writing_aliases(
                 "Expected Writing aliases",
             );
         }
+    })
+}
+
+/// Parses an optional item-level `Writing:` section.
+///
+/// The section appears after `Aliases:` on definition- and result-like items and
+/// overrides, for that item only, how the collection-wide `Writing:` group renders
+/// the named identifiers.
+fn parse_optional_item_writing(
+    sections: &HashMap<String, &ProtoSection>,
+    tracker: &mut EventLog,
+) -> Option<ItemWritingSection> {
+    sections.get("Writing").copied().and_then(|section| {
+        parse_required_writing_aliases(section, tracker)
+            .map(|arguments| ItemWritingSection { arguments })
     })
 }
 
@@ -2610,21 +2649,6 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_writing(
     let sections = identify_sections("Writing", &group.sections, tracker, &["Writing", "Id?"])?;
     let writing_section = section(&sections, "Writing")?;
     let arguments = parse_required_writing_aliases(writing_section, tracker)?;
-
-    let mut all_names = true;
-    for alias in &arguments {
-        if !matches!(alias.form.kind, FormOrDeclarationKind::Name(_)) {
-            tracker.user_error_at_row(
-                Some(ORIGIN),
-                writing_section.metadata.row,
-                "Writing aliases must use a name on the left of `:~>`",
-            );
-            all_names = false;
-        }
-    }
-    if !all_names {
-        return None;
-    }
 
     Some(TopLevelWritingGroup {
         writing: TopLevelWritingSection { arguments },
@@ -2718,6 +2742,7 @@ pub(in crate::frontend::structural::parser) fn parse_disambiguates(
             "Documented?",
             "Justification?",
             "Aliases?",
+            "Writing?",
             "References?",
             "Metadata?",
             "Id?",
@@ -2740,6 +2765,7 @@ pub(in crate::frontend::structural::parser) fn parse_disambiguates(
             parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
+        writing: parse_optional_item_writing(&trailing, tracker),
         references: trailing.get("References").copied().and_then(|section| {
             parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
@@ -2854,6 +2880,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             "Documented?",
             "Justification?",
             "Aliases?",
+            "Writing?",
             "References?",
             "Metadata?",
             "Id?",
@@ -2915,6 +2942,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
+        writing: parse_optional_item_writing(&sections, tracker),
         references: sections.get("References").copied().and_then(|section| {
             parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
@@ -2950,6 +2978,7 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
             "Documented?",
             "Justification?",
             "Aliases?",
+            "Writing?",
             "References?",
             "Metadata?",
             "Id?",
@@ -3003,6 +3032,7 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
             parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
+        writing: parse_optional_item_writing(&sections, tracker),
         references: sections.get("References").copied().and_then(|section| {
             parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
@@ -3081,6 +3111,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             "Documented?",
             "Justification?",
             "Aliases?",
+            "Writing?",
             "References?",
             "Metadata?",
             "Id?",
@@ -3151,6 +3182,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
+        writing: parse_optional_item_writing(&sections, tracker),
         references: sections.get("References").copied().and_then(|section| {
             parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
@@ -3185,6 +3217,7 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             "Documented?",
             "Justification?",
             "Aliases?",
+            "Writing?",
             "References?",
             "Metadata?",
             "Id?",
@@ -3232,6 +3265,7 @@ pub(in crate::frontend::structural::parser) fn parse_states(
             parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
+        writing: parse_optional_item_writing(&sections, tracker),
         references: sections.get("References").copied().and_then(|section| {
             parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
@@ -3338,6 +3372,7 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             "Documented?",
             "Justification?",
             "Aliases?",
+            "Writing?",
             "References?",
             "Metadata?",
             "Id?",
@@ -3387,6 +3422,7 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
+        writing: parse_optional_item_writing(&sections, tracker),
         references: sections.get("References").copied().and_then(|section| {
             parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
@@ -3620,6 +3656,7 @@ pub(in crate::frontend::structural::parser) fn parse_axiom(
             justification,
             documented,
             aliases,
+            writing,
             references,
             metadata,
         )| {
@@ -3632,6 +3669,7 @@ pub(in crate::frontend::structural::parser) fn parse_axiom(
                 justification,
                 documented,
                 aliases,
+                writing,
                 references,
                 metadata,
             }
@@ -3654,6 +3692,7 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
             justification,
             documented,
             aliases,
+            writing,
             references,
             metadata,
         )| {
@@ -3666,6 +3705,7 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
                 justification,
                 documented,
                 aliases,
+                writing,
                 references,
                 metadata,
             }
@@ -3688,6 +3728,7 @@ pub(in crate::frontend::structural::parser) fn parse_conjecture(
             justification,
             documented,
             aliases,
+            writing,
             references,
             metadata,
         )| {
@@ -3700,6 +3741,7 @@ pub(in crate::frontend::structural::parser) fn parse_conjecture(
                 justification,
                 documented,
                 aliases,
+                writing,
                 references,
                 metadata,
             }
@@ -3753,6 +3795,7 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
     Option<JustificationSection>,
     Option<DocumentedSection>,
     Option<AliasesSection>,
+    Option<ItemWritingSection>,
     Option<ReferencesSection>,
     Option<MetadataSection>,
 )> {
@@ -3771,6 +3814,7 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
             "Documented?",
             "Justification?",
             "Aliases?",
+            "Writing?",
             "References?",
             "Metadata?",
             "Id?",
@@ -3812,6 +3856,7 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
             parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
                 .map(|arguments| AliasesSection { arguments })
         }),
+        parse_optional_item_writing(&sections, tracker),
         sections.get("References").copied().and_then(|section| {
             parse_required_formulations(section, "References", tracker, parse_resource_header)
                 .map(|arguments| ReferencesSection { arguments })
@@ -5948,6 +5993,52 @@ Writing:
             event
                 .as_message()
                 .is_some_and(|message| message.message.contains("Writing aliases must use a name"))
+        }));
+    }
+
+    #[test]
+    fn parses_item_level_writing_section_after_aliases() {
+        let document = parse_ok(
+            r#"
+[\natural]
+Defines: n
+Documented:
+. called: "natural"
+Writing:
+. "pi :~> \varpi"
+. "e :~> \mathrm{e}"
+"#,
+        );
+
+        let TopLevelItem::Defines(group) = &document.items[0] else {
+            panic!("expected Defines item, got {:?}", document.items[0]);
+        };
+        let writing = group.writing.as_ref().expect("expected item-level Writing");
+        assert_eq!(writing.arguments.len(), 2);
+        assert_eq!(writing.arguments[0].body, r#"\varpi"#);
+        assert!(matches!(
+            writing.arguments[0].form.kind,
+            FormOrDeclarationKind::Name(ref name) if name == "pi"
+        ));
+    }
+
+    #[test]
+    fn rejects_unquoted_item_level_writing_aliases() {
+        let (_, messages) = parse_with_diagnostics(
+            r#"
+[\natural]
+Defines: n
+Documented:
+. called: "natural"
+Writing:
+. pi :~> \varpi
+"#,
+        );
+
+        assert!(messages.iter().any(|event| {
+            event
+                .as_message()
+                .is_some_and(|message| message.message.contains("Expected a quoted Writing alias"))
         }));
     }
 

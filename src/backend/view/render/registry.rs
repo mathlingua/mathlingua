@@ -212,6 +212,35 @@ fn collect_writing_aliases(item: &TopLevelItem, registry: &mut RenderRegistry) {
     }
 }
 
+impl RenderRegistry {
+    /// Returns a copy of this registry with the given `name -> LaTeX body` writing
+    /// overrides applied on top of the collection-wide aliases.
+    ///
+    /// Item-level `Writing:` sections use this so an identifier renders differently
+    /// within one item without disturbing the rest of the collection. An empty
+    /// override set returns an unchanged clone.
+    pub(in crate::backend::view) fn with_writing_overrides<I>(&self, overrides: I) -> RenderRegistry
+    where
+        I: IntoIterator<Item = (String, String)>,
+    {
+        let mut scoped = self.clone();
+        for (name, body) in overrides {
+            scoped.writing.insert(name, body);
+        }
+        scoped
+    }
+}
+
+/// Parses one item-level `Writing:` alias body into its `(name, LaTeX body)` pair,
+/// or `None` when the text is not a `name :~> body` alias with a plain-name subject.
+pub(in crate::backend::view) fn writing_alias_override(text: &str) -> Option<(String, String)> {
+    let alias = parse_writing_alias(text).ok()?;
+    let FormOrDeclarationKind::Name(name) = alias.form.kind else {
+        return None;
+    };
+    Some((name, alias.body))
+}
+
 fn collect_mapping_writing(item: &TopLevelItem, registry: &mut RenderRegistry) {
     let TopLevelItem::Defines(group) = item else {
         return;

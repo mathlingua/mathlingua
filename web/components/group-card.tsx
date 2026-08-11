@@ -45,7 +45,8 @@ export function GroupCard({
   const hasSupportSections =
     group.sections.some(
       (section) =>
-        isSupportSection(section) && !isCardBodySection(group.kind, section),
+        isSupportSection(group.kind, section) &&
+        !isCardBodySection(group.kind, section),
     ) || resourceCardHasHiddenFields(resourceCard);
   const frontFaceClass = `${styles.cardFace} ${styles.cardFront}${
     onClose ? ` ${styles.cardFaceClosable}` : ""
@@ -59,7 +60,8 @@ export function GroupCard({
       )
     : group.sections.filter(
         (section) =>
-          !isSupportSection(section) && !isCardBodySection(group.kind, section),
+          !isSupportSection(group.kind, section) &&
+          !isCardBodySection(group.kind, section),
       );
   const hasVisibleSections = visibleSections.length > 0;
 
@@ -295,7 +297,14 @@ function CardIcon() {
 }
 
 /** Returns true for support sections hidden behind the card expander. */
-function isSupportSection(section: SectionView): boolean {
+function isSupportSection(groupKind: string, section: SectionView): boolean {
+  // An item-level `Writing:` section only tunes how identifiers render, so it is
+  // support content. The collection-wide `Writing:` group's leading section
+  // carries the group's whole point, so it stays visible.
+  if (section.label === "Writing") {
+    return groupKind !== "Writing";
+  }
+
   return (
     section.label === "Documented" ||
     section.label === "Enables" ||

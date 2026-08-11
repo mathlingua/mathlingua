@@ -6,6 +6,7 @@ use super::render::{
     join_title_parts, render_documented_text_latex, render_formulation_latex,
     render_group_heading_latex, render_group_parameter_destructurings,
     render_refines_section_latex, render_writing_alias_latex, resolve_topic_heading_latex,
+    writing_alias_override,
 };
 use crate::backend::config::load_config;
 use crate::events::{Audience, Event, EventLog, Level};
@@ -247,6 +248,15 @@ fn group_view(
         .sections
         .first()
         .and_then(|section| section.inline_argument.as_deref());
+
+    // An item-level `Writing:` section (never the leading kind section) overrides,
+    // for this item only, how the collection-wide `Writing:` group renders the
+    // named identifiers, so render this card through a scoped registry.
+    let item_writing_overrides = collect_item_writing_overrides(&group.sections);
+    let scoped_registry = (!item_writing_overrides.is_empty())
+        .then(|| registry.with_writing_overrides(item_writing_overrides));
+    let registry = scoped_registry.as_ref().unwrap_or(registry);
+
     let page = page_view(&kind, &group.sections);
     let heading_latex = person_heading_latex(&kind, &group.sections)
         .or_else(|| topic_heading_latex(&kind, group.heading.as_deref(), registry))
@@ -290,6 +300,35 @@ fn group_view(
         source,
         sections,
     }
+}
+
+/// Collects the `name -> LaTeX body` overrides from an item's `Writing:` section.
+///
+/// The leading section (index 0) is the group's own kind — including the
+/// collection-wide `Writing:` group, whose aliases already live in the global
+/// registry — so only later `Writing:` sections are treated as item-level
+/// overrides. Entries whose body is not a plain-name `:~>` alias are skipped.
+fn collect_item_writing_overrides(sections: &[ProtoSection]) -> Vec<(String, String)> {
+    sections
+        .iter()
+        .skip(1)
+        .filter(|section| section.label == "Writing")
+        .flat_map(|section| {
+            let inline = section
+                .inline_argument
+                .as_deref()
+                .and_then(strip_quoted_text);
+            let dotted = section
+                .arguments
+                .iter()
+                .filter_map(|argument| match argument {
+                    ProtoArgument::Text(text) => strip_quoted_text(&text.text),
+                    _ => None,
+                });
+            inline.into_iter().chain(dotted)
+        })
+        .filter_map(|text| writing_alias_override(&text))
+        .collect()
 }
 
 fn person_heading_latex(kind: &str, sections: &[ProtoSection]) -> Option<String> {
@@ -1568,6 +1607,59 @@ Id: "11111111-1111-4111-8111-111111111111"
                 );
             }
             other => panic!("expected text argument, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn item_writing_section_overrides_global_writing_aliases() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("writing.mlg");
+        let source = r#"Writing:
+. "pi :~> \pi"
+Id: "11111111-1111-4111-8111-111111111111"
+
+
+[\my.op]
+Defines: X
+satisfies:
+. pi = pi
+Writing:
+. "pi :~> \varpi"
+Id: "22222222-2222-4222-8222-222222222222"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
+            .expect("expected view");
+
+        // The `Defines:` card is the second item; its `satisfies:` clause uses the
+        // item-level `pi :~> \varpi` override rather than the global `pi :~> \pi`.
+        let defines = &view.files[0].items[1];
+        assert_eq!(defines.kind, "Defines");
+        let satisfies = defines
+            .sections
+            .iter()
+            .find(|section| section.label == "satisfies")
+            .expect("expected a satisfies section");
+        match &satisfies.arguments[0] {
+            ArgumentView::Formulation { latex, .. } => {
+                assert_eq!(latex.as_deref(), Some(r#"\varpi = \varpi"#));
+            }
+            other => panic!("expected formulation argument, got {other:?}"),
         }
     }
 

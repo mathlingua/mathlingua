@@ -264,6 +264,10 @@ arguments_section!(TopicRelatedSection, TopicRelatedItem);
 arguments_section!(CalledSection, CalledText);
 arguments_section!(AdjectiveSection, AdjectiveText);
 argument_section!(WritingSection, MappingWritingTarget);
+// An item-level `Writing:` section (after `Aliases:`). Each entry is a
+// double-quoted `"name :~> body"` alias that overrides, for this item only, how
+// the named identifier is rendered by the collection-wide `Writing:` group.
+arguments_section!(ItemWritingSection, WritingAlias);
 arguments_section!(AsSection, WritingText);
 argument_section!(OverviewSection, OpenText);
 argument_section!(DescriptionSection, OpenText);
@@ -504,6 +508,7 @@ pub struct DisambiguatesGroup {
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
+    pub writing: Option<ItemWritingSection>,
     pub references: Option<ReferencesSection>,
     pub metadata: Option<MetadataSection>,
 }
@@ -531,6 +536,7 @@ pub struct DefinesGroup {
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
+    pub writing: Option<ItemWritingSection>,
     pub references: Option<ReferencesSection>,
     pub metadata: Option<MetadataSection>,
 }
@@ -547,6 +553,7 @@ pub struct DeclaresGroup {
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
+    pub writing: Option<ItemWritingSection>,
     pub references: Option<ReferencesSection>,
     pub metadata: Option<MetadataSection>,
 }
@@ -578,6 +585,7 @@ pub struct RefinesGroup {
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
+    pub writing: Option<ItemWritingSection>,
     pub references: Option<ReferencesSection>,
     pub metadata: Option<MetadataSection>,
 }
@@ -594,6 +602,7 @@ pub struct StatesGroup {
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
+    pub writing: Option<ItemWritingSection>,
     pub references: Option<ReferencesSection>,
     pub metadata: Option<MetadataSection>,
 }
@@ -624,6 +633,7 @@ pub struct AxiomGroup {
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
+    pub writing: Option<ItemWritingSection>,
     pub references: Option<ReferencesSection>,
     pub metadata: Option<MetadataSection>,
 }
@@ -638,6 +648,7 @@ pub struct TheoremGroup {
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
+    pub writing: Option<ItemWritingSection>,
     pub references: Option<ReferencesSection>,
     pub metadata: Option<MetadataSection>,
 }
@@ -653,6 +664,7 @@ pub struct ConjectureGroup {
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
+    pub writing: Option<ItemWritingSection>,
     pub references: Option<ReferencesSection>,
     pub metadata: Option<MetadataSection>,
 }
@@ -710,6 +722,7 @@ pub struct RelationGroup {
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
+    pub writing: Option<ItemWritingSection>,
     pub references: Option<ReferencesSection>,
     pub metadata: Option<MetadataSection>,
 }

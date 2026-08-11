@@ -19,8 +19,25 @@ pub(in crate::backend::view) struct RenderRegistry {
     /// items, keyed by the raw `#some.name` heading string. Topics without an
     /// override are title-cased from their heading at render time.
     pub(super) topic_titles: HashMap<String, String>,
+    /// Bibliographic metadata keyed by the dotted path after the `$` sigil.
+    pub(super) resources: HashMap<String, ResourceRender>,
     /// Whether resolved command renderings should carry clickable reference keys.
     pub(super) link_references: bool,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct ResourceRender {
+    title: String,
+    authors: Vec<String>,
+    url: Option<String>,
+    /// Physical PDF page on which logical page 1 appears.
+    offset: u64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(in crate::backend::view) struct RenderedResourceReference {
+    pub text: String,
+    pub href: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -133,6 +150,7 @@ pub(in crate::backend::view) fn build_render_registry(
         for item in &file.document.items {
             collect_writing_aliases(item, &mut registry);
             collect_mapping_writing(item, &mut registry);
+            collect_resource(item, &mut registry);
         }
     }
 
@@ -147,6 +165,86 @@ pub(in crate::backend::view) fn build_render_registry(
     }
 
     registry
+}
+
+fn collect_resource(item: &TopLevelItem, registry: &mut RenderRegistry) {
+    let TopLevelItem::Resource(group) = item else {
+        return;
+    };
+
+    let mut title = None;
+    let mut authors = Vec::new();
+    let mut url = None;
+    let mut offset = 1;
+
+    for item in &group.resource.arguments {
+        match item {
+            ResourceItem::Title(group) => title = Some(group.title.argument.0.clone()),
+            ResourceItem::Author(group) => {
+                authors.extend(group.author.arguments.iter().map(|author| author.0.clone()))
+            }
+            ResourceItem::Url(group) => url = Some(group.url.argument.0.clone()),
+            ResourceItem::Offset(group) => {
+                offset = group.offset.argument.0.parse::<u64>().unwrap_or(1).max(1)
+            }
+            _ => {}
+        }
+    }
+
+    let key = group.heading.parts.join(".");
+    registry.resources.insert(
+        key.clone(),
+        ResourceRender {
+            title: title.unwrap_or_else(|| title_case_label(&key)),
+            authors,
+            url,
+            offset,
+        },
+    );
+}
+
+/// Resolves a `$resource` citation to its human-readable label and optional URL.
+pub(in crate::backend::view) fn render_resource_reference(
+    reference: &ResourceHeader,
+    registry: &RenderRegistry,
+) -> RenderedResourceReference {
+    let key = reference.parts.join(".");
+    let Some(resource) = registry.resources.get(&key) else {
+        let page = reference
+            .page
+            .map(|page| format!(":page{{{page}}}"))
+            .unwrap_or_default();
+        return RenderedResourceReference {
+            text: format!("${key}{page}"),
+            href: None,
+        };
+    };
+
+    let text = if resource.authors.is_empty() {
+        resource.title.clone()
+    } else {
+        format!("{} ({})", resource.title, resource.authors.join(", "))
+    };
+    let href = resource.url.as_ref().map(|url| {
+        if let Some(page) = reference.page
+            && is_pdf_url(url)
+        {
+            let physical_page = page.saturating_add(resource.offset.saturating_sub(1));
+            return format!(
+                "{}#page={physical_page}",
+                url.split('#').next().unwrap_or(url)
+            );
+        }
+        url.clone()
+    });
+
+    RenderedResourceReference { text, href }
+}
+
+fn is_pdf_url(url: &str) -> bool {
+    url.split(['?', '#'])
+        .next()
+        .is_some_and(|path| path.to_ascii_lowercase().ends_with(".pdf"))
 }
 
 /// Records the explicit `Documented:called:` rendering override for a `Topic:`

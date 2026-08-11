@@ -307,6 +307,7 @@ function isSupportSection(groupKind: string, section: SectionView): boolean {
 
   return (
     section.label === "Documented" ||
+    section.label === "References" ||
     section.label === "Enables" ||
     section.label === "Provides" ||
     section.label === "Justification" ||

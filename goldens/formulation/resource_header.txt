@@ -1,3 +1,5 @@
 $book.ref
 
+$book.ref:page{4}
+
 $book.`*+`

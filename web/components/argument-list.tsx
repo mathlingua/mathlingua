@@ -1,5 +1,6 @@
 import { ArgumentView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
+import { MarkdownInline } from "./markdown-text";
 import { MathLinguaInline } from "./mathlingua-inline";
 import styles from "./argument-list.module.css";
 import sectionStyles from "./section-content.module.css";
@@ -80,6 +81,23 @@ export function ArgumentList({
               <p className={styles.textLine}>{argument.text}</p>
             )
           ) : null}
+          {argument.kind === "reference" ? (
+            argument.href && isSafeReferenceHref(argument.href) ? (
+              <a
+                className={styles.referenceLink}
+                href={argument.href}
+                rel="noreferrer"
+                target="_blank"
+                title={argument.source}
+              >
+                <MarkdownInline text={argument.text} />
+              </a>
+            ) : (
+              <span className={styles.referenceText} title={argument.source}>
+                <MarkdownInline text={argument.text} />
+              </span>
+            )
+          ) : null}
           {argument.kind === "group" ? (
             <div className={styles.nestedGroup}>
               {argument.heading ? (
@@ -126,4 +144,8 @@ export function ArgumentList({
       ))}
     </ul>
   );
+}
+
+function isSafeReferenceHref(href: string): boolean {
+  return /^https?:\/\//i.test(href);
 }

@@ -819,7 +819,11 @@ entries. A matching entry establishes the labeled formulation using its
 usual, and every entry must be referenced by some labeled formulation.
 
 `Aliases:` accepts `alias:` groups. `Metadata:` accepts `id:` and `version:`.
-`References:` contains resource headers such as `$book.chapter`.
+`References:` contains resource references such as `$book.chapter` (the quoted
+form `"$book.chapter"` is accepted too). A resolved reference renders as the
+resource title followed by its authors in parentheses. If the resource has a
+URL, the citation links to it. PDF resources also accept `:page{n}`; the link's
+physical PDF page is `n + offset - 1`, where `offset` defaults to `1`.
 
 ### Mapping writing templates
 
@@ -852,7 +856,8 @@ rule applies when an output placeholder is present:
 `Person` groups use author headings such as `[@ada.lovelace]` and require
 name text on `Person:` with optional `biography:`. `Resource` groups use resource headings such as
 `[$principia]` and contain resource item groups like `title:`, `author:`,
-`url:`, and `year:`.
+`url:`, and `year:`. For PDFs, `offset:` is the physical page on which the
+document's numbered page 1 appears.
 
 Open-text fields are retained as prose. Command-looking text inside prose,
 metadata, references, and rendering templates is not parsed as formulation

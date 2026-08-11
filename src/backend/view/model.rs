@@ -77,6 +77,14 @@ pub enum ArgumentView {
         text: String,
         latex: Option<String>,
     },
+    Reference {
+        /// Original `$resource[:page{n}]` source, without optional quotes.
+        source: String,
+        /// Resolved resource title with its authors, or the source when unresolved.
+        text: String,
+        /// Resource URL, adjusted to the requested physical PDF page when possible.
+        href: Option<String>,
+    },
     Group {
         heading: Option<String>,
         sections: Vec<SectionView>,

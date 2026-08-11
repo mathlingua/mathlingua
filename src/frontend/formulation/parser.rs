@@ -3556,10 +3556,29 @@ pub fn parse_resource_header(input: &str) -> Result<ResourceHeader, ParseError> 
     let rest = input
         .strip_prefix('$')
         .ok_or_else(|| ParseError::custom("resource headers must start with `$`"))?;
-    let parts = parse_dotted_parts(rest)?;
+    let (path, page) = match rest.strip_suffix('}') {
+        Some(without_close) if without_close.rfind(":page{").is_some() => {
+            let argument_start = without_close
+                .rfind(":page{")
+                .expect("page suffix was checked above");
+            let page_text = without_close[argument_start + ":page{".len()..].trim();
+            let page = page_text.parse::<u64>().map_err(|_| {
+                ParseError::custom("resource `page` arguments must be positive integers")
+            })?;
+            if page == 0 {
+                return Err(ParseError::custom(
+                    "resource `page` arguments must be positive integers",
+                ));
+            }
+            (&without_close[..argument_start], Some(page))
+        }
+        _ => (rest, None),
+    };
+    let parts = parse_dotted_parts(path)?;
     Ok(ResourceHeader {
         span: span_all(input),
         parts,
+        page,
     })
 }
 
@@ -4348,6 +4367,29 @@ mod tests {
         assert_eq!(label.parts, vec!["some".to_string(), "label".to_string()]);
         assert_eq!(author.parts, vec!["euclid".to_string()]);
         assert_eq!(resource.parts, vec!["book".to_string(), "ref".to_string()]);
+        assert_eq!(resource.page, None);
+
+        let paged = parse_resource_header("$book.ref:page{4}")
+            .expect("expected a paged resource reference");
+        assert_eq!(paged.parts, vec!["book".to_string(), "ref".to_string()]);
+        assert_eq!(paged.page, Some(4));
+    }
+
+    #[test]
+    fn rejects_invalid_resource_page_arguments() {
+        let zero = parse_resource_header("$book.ref:page{0}")
+            .expect_err("expected page zero to be rejected");
+        let text = parse_resource_header("$book.ref:page{iv}")
+            .expect_err("expected a non-numeric page to be rejected");
+
+        assert_eq!(
+            zero.to_string(),
+            "resource `page` arguments must be positive integers"
+        );
+        assert_eq!(
+            text.to_string(),
+            "resource `page` arguments must be positive integers"
+        );
     }
 
     // ===============================[ expressions ]=====================================

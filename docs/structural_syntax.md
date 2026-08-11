@@ -382,6 +382,12 @@ Important implementation detail:
 
 Used inside top-level `Resource:`.
 
+`References:` entries name these resources with `$` headers. Both
+`$book.chapter` and the quoted `"$book.chapter"` form are accepted. A PDF
+resource reference may append `:page{n}`. Its `offset:` is the physical PDF page
+corresponding to logical page 1, so the linked physical page is
+`n + offset - 1`.
+
 - **`title`** — `ResourceTitleGroup`, heading: none. Sections: `title: OpenText`
 - **`author`** — `ResourceAuthorGroup`, heading: none. Sections: `author: OpenText+`
 - **`offset`** — `ResourceOffsetGroup`, heading: none. Sections: `offset: OpenText`

@@ -888,7 +888,7 @@ AuthorHeader ::= "@" DottedParts
 ### Resource headers
 
 ```text
-ResourceHeader ::= "$" DottedParts
+ResourceHeader ::= "$" DottedParts (":page{" PositiveInteger "}")?
 ```
 
 ### Topic headers
@@ -1272,7 +1272,7 @@ MemberOfExpression ::= InfixCommandExpression "member_of" InfixCommandExpression
 DottedParts ::= Name ("." Name)*
 LabelHeader ::= DottedParts
 AuthorHeader ::= "@" DottedParts
-ResourceHeader ::= "$" DottedParts
+ResourceHeader ::= "$" DottedParts (":page{" PositiveInteger "}")?
 TopicHeader ::= "#" DottedParts
 ```
 

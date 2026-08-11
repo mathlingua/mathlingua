@@ -5,11 +5,12 @@ use super::render::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
     join_title_parts, render_documented_text_latex, render_formulation_latex,
     render_group_heading_latex, render_group_parameter_destructurings,
-    render_refines_section_latex, render_writing_alias_latex, resolve_topic_heading_latex,
-    writing_alias_override,
+    render_refines_section_latex, render_resource_reference, render_writing_alias_latex,
+    resolve_topic_heading_latex, writing_alias_override,
 };
 use crate::backend::config::load_config;
 use crate::events::{Audience, Event, EventLog, Level};
+use crate::frontend::formulation::parse_resource_header;
 use crate::frontend::{
     ParsedSourceFile, ProtoArgument, ProtoGroup, ProtoParser, ProtoSection, SourceFileViewMetadata,
     top_level_group_id, unescape_quoted_text,
@@ -705,6 +706,11 @@ fn argument_view(
 ) -> ArgumentView {
     match argument {
         ProtoArgument::Formulation(formulation) => {
+            if section_label == "References"
+                && let Some(reference) = reference_argument_view(&formulation.text, registry)
+            {
+                return reference;
+            }
             // A labeled specification `(.spec.)[:label:]` renders as the inner
             // `spec` (the expression parser rejects the labeled/grouped wrapper,
             // and an operator subject) with the label shown as a separate tag.
@@ -722,6 +728,11 @@ fn argument_view(
             }
         }
         ProtoArgument::Text(text) => {
+            if section_label == "References"
+                && let Some(reference) = reference_argument_view(&text.text, registry)
+            {
+                return reference;
+            }
             // A collection-wide `Writing:` alias is authored as quoted text (its
             // body may be arbitrary LaTeX), so render the alias from the stripped
             // contents rather than treating it as a documented template.
@@ -754,6 +765,17 @@ fn argument_view(
                 .collect(),
         },
     }
+}
+
+fn reference_argument_view(text: &str, registry: &RenderRegistry) -> Option<ArgumentView> {
+    let source = strip_quoted_text(text).unwrap_or_else(|| text.trim().to_owned());
+    let reference = parse_resource_header(&source).ok()?;
+    let rendered = render_resource_reference(&reference, registry);
+    Some(ArgumentView::Reference {
+        source,
+        text: rendered.text,
+        href: rendered.href,
+    })
 }
 
 /// Splits a labeled specification `(.spec.)[:label.parts:]` into its label parts
@@ -1661,6 +1683,71 @@ Id: "22222222-2222-4222-8222-222222222222"
             }
             other => panic!("expected formulation argument, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn resolves_resource_references_and_pdf_page_offsets() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("repo");
+        let content = root.join("content");
+        let file = content.join("references.mlg");
+        let source = r#"Theorem:
+then: x = x
+References:
+. "$royden.real.analysis"
+. "$royden.real.analysis:page{4}"
+Id: "fb5d306e-e1ed-4970-ba0e-03884d28ae7b"
+
+
+[$royden.real.analysis]
+Resource:
+. title: "Real Analysis"
+. author: "Royden"
+. offset: "3"
+. url: "https://example.com/royden.pdf"
+Id: "32dd9150-8f43-46ee-aa6c-97809fc9ea8d"
+"#;
+
+        fs::create_dir_all(&content).unwrap();
+        fs::write(&file, source).unwrap();
+
+        let mut parse_log = EventLog::new();
+        let document = parse_document(source, &mut parse_log);
+        assert!(!parse_log.has_errors());
+        let parsed_file = ParsedSourceFile {
+            path: file,
+            source: source.to_string(),
+            document,
+            item_ids: top_level_item_ids(source),
+            view_metadata: SourceFileViewMetadata::default(),
+        };
+        let mut event_log = EventLog::new();
+        let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
+            .expect("expected view");
+
+        let references = view.files[0].items[0]
+            .sections
+            .iter()
+            .find(|section| section.label == "References")
+            .expect("expected References section");
+        assert_eq!(references.arguments.len(), 2);
+        assert_eq!(
+            references.arguments[0],
+            ArgumentView::Reference {
+                source: "$royden.real.analysis".to_string(),
+                text: "Real Analysis (Royden)".to_string(),
+                href: Some("https://example.com/royden.pdf".to_string()),
+            }
+        );
+        assert_eq!(
+            references.arguments[1],
+            ArgumentView::Reference {
+                source: "$royden.real.analysis:page{4}".to_string(),
+                text: "Real Analysis (Royden)".to_string(),
+                href: Some("https://example.com/royden.pdf#page=6".to_string()),
+            }
+        );
+        assert!(!event_log.has_errors());
     }
 
     struct TestDir {

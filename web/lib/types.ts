@@ -143,6 +143,16 @@ export type ArgumentView =
       latex: string | null;
     }
   | {
+      /** A resolved bibliographic `$resource` citation. */
+      kind: "reference";
+      /** Original citation source, without optional quotes. */
+      source: string;
+      /** Resource title followed by its authors in parentheses. */
+      text: string;
+      /** Direct or page-adjusted resource URL, when one was declared. */
+      href: string | null;
+    }
+  | {
       /** Nested group arguments recursively contain rendered sections. */
       kind: "group";
       /** Raw nested group heading, if present. */

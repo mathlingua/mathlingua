@@ -83,6 +83,8 @@ pub struct AuthorHeader {
 pub struct ResourceHeader {
     pub span: Span,
     pub parts: Vec<String>,
+    /// Optional logical page number requested from a PDF resource.
+    pub page: Option<u64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

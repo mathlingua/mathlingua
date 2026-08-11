@@ -692,6 +692,59 @@ pub(in crate::frontend::structural::parser) fn parse_required_formulations<T>(
     })
 }
 
+/// Parses one or more resource citations from a `References:` section.
+///
+/// References historically used formulation entries (`. $book.name`). Quoted
+/// entries are accepted as well because citations are identifiers rather than
+/// mathematical expressions and are commonly authored as strings.
+fn parse_required_resource_references(
+    section: &ProtoSection,
+    tracker: &mut EventLog,
+) -> Option<OneOrMore<crate::frontend::formulation::ast::ResourceHeader>> {
+    let starting_issue_count = tracker.issue_count();
+    let mut references = Vec::new();
+
+    for entry in section_entries(section) {
+        let (text, row) = match entry {
+            SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
+                (text.to_owned(), row)
+            }
+            SectionEntry::Text { text, row } => (
+                strip_quoted_text(text).unwrap_or_else(|| text.to_owned()),
+                row,
+            ),
+            SectionEntry::Group { row, .. } => {
+                tracker.user_error_at_row(
+                    Some(ORIGIN),
+                    row,
+                    "Expected a resource reference in section `References`",
+                );
+                continue;
+            }
+        };
+
+        let text = strip_quoted_text(&text).unwrap_or(text);
+        match parse_resource_header(&text) {
+            Ok(reference) => references.push(reference),
+            Err(error) => tracker.user_error_at_row(
+                Some(ORIGIN),
+                row,
+                format!("Invalid References formulation: {error}"),
+            ),
+        }
+    }
+
+    one_or_more(references.into(), || {
+        if tracker.issue_count() == starting_issue_count {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                "Expected References formulations",
+            );
+        }
+    })
+}
+
 /// Parses zero or more formulations from an optional section.
 ///
 /// Inline section arguments and formulation arguments are accepted.  Text and
@@ -2767,7 +2820,7 @@ pub(in crate::frontend::structural::parser) fn parse_disambiguates(
         }),
         writing: parse_optional_item_writing(&trailing, tracker),
         references: trailing.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", tracker, parse_resource_header)
+            parse_required_resource_references(section, tracker)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         metadata: trailing.get("Metadata").copied().and_then(|section| {
@@ -2944,7 +2997,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
         }),
         writing: parse_optional_item_writing(&sections, tracker),
         references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", tracker, parse_resource_header)
+            parse_required_resource_references(section, tracker)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         metadata: sections.get("Metadata").copied().and_then(|section| {
@@ -3034,7 +3087,7 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
         }),
         writing: parse_optional_item_writing(&sections, tracker),
         references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", tracker, parse_resource_header)
+            parse_required_resource_references(section, tracker)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         metadata: sections.get("Metadata").copied().and_then(|section| {
@@ -3184,7 +3237,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
         }),
         writing: parse_optional_item_writing(&sections, tracker),
         references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", tracker, parse_resource_header)
+            parse_required_resource_references(section, tracker)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         metadata: sections.get("Metadata").copied().and_then(|section| {
@@ -3267,7 +3320,7 @@ pub(in crate::frontend::structural::parser) fn parse_states(
         }),
         writing: parse_optional_item_writing(&sections, tracker),
         references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", tracker, parse_resource_header)
+            parse_required_resource_references(section, tracker)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         metadata: sections.get("Metadata").copied().and_then(|section| {
@@ -3340,7 +3393,7 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
                 .map(|arguments| DocumentedSection { arguments })
         }),
         references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", tracker, parse_resource_header)
+            parse_required_resource_references(section, tracker)
                 .map(|arguments| ReferencesSection { arguments })
         }),
     })
@@ -3424,7 +3477,7 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
         }),
         writing: parse_optional_item_writing(&sections, tracker),
         references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", tracker, parse_resource_header)
+            parse_required_resource_references(section, tracker)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         metadata: sections.get("Metadata").copied().and_then(|section| {
@@ -3628,7 +3681,7 @@ pub(in crate::frontend::structural::parser) fn parse_text_item(
             .map(|arguments| DocumentedSection { arguments })
         }),
         references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", tracker, parse_resource_header)
+            parse_required_resource_references(section, tracker)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         id: IdSection {
@@ -3858,7 +3911,7 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
         }),
         parse_optional_item_writing(&sections, tracker),
         sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", tracker, parse_resource_header)
+            parse_required_resource_references(section, tracker)
                 .map(|arguments| ReferencesSection { arguments })
         }),
         sections.get("Metadata").copied().and_then(|section| {
@@ -6162,5 +6215,29 @@ then:
                 .as_message()
                 .is_some_and(|message| message.message.contains("Unexpected clause group `iff`"))
         }));
+    }
+
+    #[test]
+    fn parses_quoted_and_paged_resource_references() {
+        let document = parse_ok(
+            r#"
+Theorem:
+then: x = x
+References:
+. "$royden.real.analysis"
+. "$royden.real.analysis:page{4}"
+"#,
+        );
+
+        let TopLevelItem::Theorem(group) = &document.items[0] else {
+            panic!("expected theorem group");
+        };
+        let references = group.references.as_ref().expect("expected references");
+        assert_eq!(
+            references.arguments[0].parts.join("."),
+            "royden.real.analysis"
+        );
+        assert_eq!(references.arguments[0].page, None);
+        assert_eq!(references.arguments[1].page, Some(4));
     }
 }

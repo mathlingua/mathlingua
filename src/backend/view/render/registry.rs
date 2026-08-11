@@ -279,11 +279,11 @@ fn defines_mapping_render_parts(target: &DefinesTarget) -> Option<(String, Vec<S
 }
 
 fn mapping_render_form_parts(form: &FormOrDeclaration) -> Option<(String, Vec<String>, bool)> {
-    let FormOrDeclarationKind::FunctionDeclaration { name, form } = &form.kind else {
+    let FormOrDeclarationKind::FunctionDeclaration { form, .. } = &form.kind else {
         return None;
     };
     Some((
-        name.clone().unwrap_or_else(|| form.name.clone()),
+        form.name.clone(),
         function_form_render_parameters(form),
         form.magnetic_placeholder.is_some(),
     ))

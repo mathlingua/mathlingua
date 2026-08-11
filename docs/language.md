@@ -148,6 +148,7 @@ name those forms.
 x
 f(x_)
 g ::= f(x_, y_)
+G ::= g(x_) ::= y_
 (x_, y_)
 pt ::= (x_, y_)
 {x_ : ...}
@@ -167,7 +168,10 @@ Set forms contain a placeholder form, such as `{x_ : ...}` or `{x_(i_) : ...}`.
 
 When a declaration is used in a defining context, the declared names become
 available to later checks. For example, `G ::= (X, *, e)` declares `G`, `X`, `*`,
-and `e`. An operator form declares its operator symbol as well as its
+and `e`. A function alias such as `G ::= g(x_)` declares both `G` and `g`;
+`G ::= g(x_) ::= y_` additionally declares the output placeholder `y_`. The
+alias and mapping name denote the same mapping. An operator form declares its
+operator symbol as well as its
 placeholders — `x_ * y_` declares `*`, `x_`, and `y_` — so a later use like
 `a * b` resolves as the application `*(a, b)`.
 
@@ -826,7 +830,7 @@ form with each placeholder replaced by its ordinary name:
 
 ```text
 [\real.sequence]
-Defines: x(i_)
+Defines: X ::= x(i_)
 Documented:
 . writing: x(i)
   as: "x?_{i?}"
@@ -839,6 +843,11 @@ The ordinary form (`x(i)`) renders invocations such as `x(j)`, substituting
 (`x(i_)`) renders the mapping itself, such as in
 `x(i_) is \real.sequence`; its template may use the placeholder key `i_?`.
 The `as:` value is raw LaTeX rendering text.
+
+When the target has a declaration alias, as in `X ::= x(i_)`, the two
+`writing:` forms still use the mapping name `x`, not the alias `X`. The same
+rule applies when an output placeholder is present:
+`X ::= x(i_) ::= y_` still uses `x(i)` and `x(i_)`.
 
 `Person` groups use author headings such as `[@ada.lovelace]` and require
 name text on `Person:` with optional `biography:`. `Resource` groups use resource headings such as

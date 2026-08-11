@@ -407,6 +407,23 @@ pub(super) fn find_top_level_introduce(input: &str) -> Option<usize> {
     find_top_level_substring(input, "::=")
 }
 
+/// Finds the last top-level `::=` declaration marker.
+///
+/// A function declaration can name both the mapping and its output, as in
+/// `X ::= x(i_) ::= y_`. Splitting on the last marker keeps `X ::= x(i_)`
+/// together as the function form and leaves `y_` as its output placeholder.
+fn find_last_top_level_introduce(input: &str) -> Option<usize> {
+    let mut state = ScanState::default();
+    let mut result = None;
+    for (index, ch) in input.char_indices() {
+        if state.is_top_level() && input[index..].starts_with("::=") {
+            result = Some(index);
+        }
+        state.advance(ch);
+    }
+    result
+}
+
 /// Finds the first top-level `:=` definition marker.
 ///
 /// This deliberately ignores `::=` and `:=>` so declaration statements and
@@ -1976,7 +1993,7 @@ fn parse_declaration_body(
     input: &str,
 ) -> Result<(&str, Option<&str>, Option<Expression>), ParseError> {
     let input = input.trim();
-    if let Some(index) = find_top_level_introduce(input) {
+    if let Some(index) = find_last_top_level_introduce(input) {
         let subject = input[..index].trim();
         let rest = input[index + 3..].trim();
         if subject.is_empty() || rest.is_empty() {
@@ -5644,6 +5661,25 @@ mod tests {
                 if matches!(forms.as_slice(), [IsSubjectForm::PlaceholderForm(_)])
         ));
         assert!(function.definition.is_some());
+
+        let aliased_function = parse_ordinary_declaration_statement(r#"X ::= x(i_) ::= y_"#)
+            .expect("expected an aliased function declaration statement");
+        assert!(matches!(
+            &aliased_function.subject.kind,
+            IsSubjectKind::Forms(forms)
+                if matches!(
+                    forms.as_slice(),
+                    [IsSubjectForm::Form(FormOrDeclaration {
+                        kind: FormOrDeclarationKind::FunctionDeclaration { name, form },
+                        ..
+                    })] if name.as_deref() == Some("X") && form.name == "x"
+                )
+        ));
+        assert!(matches!(
+            aliased_function.expansion.as_ref().map(|subject| &subject.kind),
+            Some(IsSubjectKind::Forms(forms))
+                if matches!(forms.as_slice(), [IsSubjectForm::PlaceholderForm(_)])
+        ));
 
         let spec =
             parse_ordinary_declaration_statement(r#"f(x_) "in" \some.collection.of.functions"#)

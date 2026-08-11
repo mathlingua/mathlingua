@@ -3477,6 +3477,7 @@ fn validate_defines_target_symbol_specifications(
 ) {
     let mut covered = BTreeSet::new();
     covered.insert(described_target_subject_key(&group.defines.argument));
+    collect_defines_mapping_alias_names(&group.defines.argument, &mut covered);
     collect_using_covered_symbols(&group.using, &mut covered);
     collect_valid_when_covered_symbols(
         &group.when,
@@ -3487,6 +3488,33 @@ fn validate_defines_target_symbol_specifications(
     collect_extends_covered_symbols(&group.extends, &mut covered);
     let symbols = defines_target_symbols(&group.defines.argument);
     validate_target_symbol_specifications(&symbols, &covered, path, locator, event_log);
+}
+
+/// A function declaration alias names the same mapping as the function form,
+/// so either name covers the other without requiring a second specification.
+fn collect_defines_mapping_alias_names(target: &DefinesTarget, covered: &mut BTreeSet<String>) {
+    let form = match target {
+        DefinesTarget::Form(form) => Some(form),
+        DefinesTarget::Declaration(statement) => match &statement.subject.kind {
+            IsSubjectKind::Forms(forms) => match forms.as_slice() {
+                [IsSubjectForm::Form(form)] => Some(form),
+                _ => None,
+            },
+            IsSubjectKind::Operator(_) => None,
+        },
+    };
+    if let Some(FormOrDeclaration {
+        kind:
+            FormOrDeclarationKind::FunctionDeclaration {
+                name: Some(name),
+                form,
+            },
+        ..
+    }) = form
+    {
+        covered.insert(name.clone());
+        covered.insert(form.name.clone());
+    }
 }
 
 fn validate_declares_target_symbol_specifications(
@@ -4031,7 +4059,10 @@ fn collect_form_or_declaration_target_symbols(
             symbols.insert(name.clone());
         }
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
-            symbols.insert(name.as_ref().unwrap_or(&form.name).clone());
+            if let Some(name) = name {
+                symbols.insert(name.clone());
+            }
+            symbols.insert(form.name.clone());
         }
         FormOrDeclarationKind::TupleDeclaration { name, form } => {
             if let Some(name) = name {
@@ -4269,7 +4300,10 @@ fn collect_form_or_declaration_names(form: &FormOrDeclaration, names: &mut BTree
             names.insert(name.clone());
         }
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
-            names.insert(name.as_ref().unwrap_or(&form.name).clone());
+            if let Some(name) = name {
+                names.insert(name.clone());
+            }
+            names.insert(form.name.clone());
             if let Some(placeholder) = &form.magnetic_placeholder {
                 names.insert(placeholder.name.clone());
             }
@@ -14221,13 +14255,10 @@ fn check_form_or_declaration(
             check_name(name, context, path, locator, event_log);
         }
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
-            check_name(
-                name.as_ref().unwrap_or(&form.name),
-                context,
-                path,
-                locator,
-                event_log,
-            );
+            if let Some(name) = name {
+                check_name(name, context, path, locator, event_log);
+            }
+            check_name(&form.name, context, path, locator, event_log);
         }
         FormOrDeclarationKind::TupleDeclaration { name, form } => {
             if let Some(name) = name {
@@ -14435,7 +14466,11 @@ fn declare_form_or_declaration(form: &FormOrDeclaration, context: &mut TypeConte
     match &form.kind {
         FormOrDeclarationKind::Name(name) => context.declare_name(name.clone()),
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
-            context.declare_name(name.as_ref().unwrap_or(&form.name).clone());
+            if let Some(name) = name {
+                context.declare_name(name.clone());
+                context.add_substitution(name.clone(), form.name.clone());
+            }
+            context.declare_name(form.name.clone());
             if let Some(placeholder) = &form.magnetic_placeholder {
                 context.declare_name(placeholder.name.clone());
             }

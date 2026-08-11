@@ -618,6 +618,9 @@ Notes:
 
 - `::=` is the only declaration-side expansion marker
 - the subject and optional `::=` expansion introduce symbols
+- a chained function declaration `X ::= x(i_) ::= y_` keeps
+  `X ::= x(i_)` as the function form and uses `y_` as its output; it introduces
+  the alias `X`, mapping name `x`, input `i_`, and output `y_`
 - a top-level `:=` introduces a value definition; its right-hand side is parsed as an expression and does not introduce new names
 - when the subject is a function declaration such as `f(x_, y_)`, the `::=` expansion must be a single placeholder output such as `z_`
 - nested `:=` inside expression syntax, such as named function calls, remains expression syntax
@@ -627,6 +630,7 @@ Examples:
 - `G ::= (X, *, e)`
 - `G ::= (X, *, e) := (a, b, c) is \foo`
 - `f(x_, y_) ::= z_ := x_ + y_ is \function`
+- `X ::= x(i_) ::= y_`
 - `f(x_) := x_ + 1 is \real.function`
 - `{x_ : ...} := {x_ : x_ is \real} is \set`
 - `X ::= {x_ : ...} "in" \some.collection.of.sets`

@@ -13,6 +13,8 @@ The `writing:` target must exactly match the defined mapping with either all
 placeholders retained or all placeholders replaced by their ordinary names.
 Invocation templates substitute call arguments, while mapping templates render
 references to the mapping as a value, such as `x(i_) is \real.sequence`.
+For `X ::= x(i_)` and `X ::= x(i_) ::= y_`, `X` is an additional name for the
+mapping, while documented writing forms continue to use `x(i_)` or `x(i)`.
 
 ## Structured Conjecture Groups
 

@@ -119,11 +119,11 @@ fn defines_mapping_parts(target: &DefinesTarget) -> Option<MappingFormParts> {
 }
 
 fn mapping_form_parts(form: &FormOrDeclaration) -> Option<MappingFormParts> {
-    let FormOrDeclarationKind::FunctionDeclaration { name, form } = &form.kind else {
+    let FormOrDeclarationKind::FunctionDeclaration { form, .. } = &form.kind else {
         return None;
     };
     Some(MappingFormParts {
-        name: name.clone().unwrap_or_else(|| form.name.clone()),
+        name: form.name.clone(),
         parameters: form
             .magnetic_placeholder
             .iter()
@@ -487,7 +487,7 @@ Id: "22222222-2222-4222-8222-222222222222"
         let files = vec![parsed_file(
             "mapping.mlg",
             r#"[\real.sequence]
-Defines: x(i_)
+Defines: X ::= x(i_)
 Documented:
 . called: "real sequence"
 . writing: x(i)

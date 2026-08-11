@@ -7322,6 +7322,75 @@ Documented:
     }
 
     #[test]
+    fn check_treats_a_function_declaration_alias_as_an_additional_mapping_name() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("aliased-mapping.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: A
+    Enables:
+    . capability: a_ "in" A :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\sequence:on{A}]
+    Defines: X ::= x(i_)
+    when: A is \set
+    extends: x is (_ "in" A) -> (_ "in" A)
+    Documented:
+    . writing: x(i)
+      as: "x?_{i?}"
+    . writing: x(i_)
+      as: "\left\{x?_{i_?}\right\}"
+    . called: "sequence"
+
+    [\pointed.sequence:on{A}]
+    Defines: X ::= x(i_) ::= y_
+    when: A is \set
+    declares:
+    . i_ "in" A
+    . y_ "in" A
+    Documented:
+    . writing: x(i)
+      as: "x?_{i?}"
+    . writing: x(i_)
+      as: "\left\{x?_{i_?}\right\}"
+    . called: "pointed sequence"
+
+    Theorem:
+    given:
+    . A is \set
+    . x(i_) is \sequence:on{A}
+    . i "in" A
+    then: x(i) "in" A
+
+    Theorem:
+    given:
+    . A is \set
+    . x(i_) is \pointed.sequence:on{A}
+    . i "in" A
+    then: x(i) "in" A
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("aliased-mapping.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_reports_function_type_result_mismatches() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("function-type-result.mlg");

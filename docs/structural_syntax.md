@@ -340,7 +340,7 @@ Used inside `Documented:`.
 - **`called`** — `CalledGroup`, heading: label?. Sections: `called: CalledText+`, `written?: WrittenText+`
 - **`adjective`** — `AdjectiveGroup`, heading: label?. Sections: `adjective: AdjectiveText+` (required by `Refines:`; `Refines:` `Documented:` rejects `called:`)
 - **`description`** — `DescriptionGroup`, heading: label?. Sections: `description: OpenText`
-- **`writing`** — `WritingGroup`, heading: label?. Sections: `writing: MappingWritingTarget`, `as: WritingText+`. It is valid only in a mapping-shaped `Defines:` item; the target must be either that exact placeholder mapping form or the same invocation with placeholders replaced by their ordinary names
+- **`writing`** — `WritingGroup`, heading: label?. Sections: `writing: MappingWritingTarget`, `as: WritingText+`. It is valid only in a mapping-shaped `Defines:` item; the target must be either that exact placeholder mapping form or the same invocation with placeholders replaced by their ordinary names. For an aliased form such as `X ::= x(i_)`, these targets use the mapping name `x`
 - **`overview`** — `OverviewGroup`, heading: label?. Sections: `overview: OpenText`
 - **`related`** — `RelatedGroup`, heading: label?. Sections: `related: OpenText+`
 - **`discoverer`** — `DiscovererGroup`, heading: label?. Sections: `discoverer: OpenText*`
@@ -1014,7 +1014,8 @@ as: <WritingText>+
 
 `MappingWritingTarget` is restricted to the exact mapping form from the
 enclosing `Defines:` item (for example `x(i_)`) or that form with each
-placeholder replaced by its ordinary name (for example `x(i)`).
+placeholder replaced by its ordinary name (for example `x(i)`). A declaration
+alias (`X` in `X ::= x(i_)`) does not replace the mapping name in these forms.
 
 ```group
 [LabelHeader]?

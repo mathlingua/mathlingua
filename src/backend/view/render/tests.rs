@@ -971,7 +971,7 @@ fn renders_names_with_collection_writing_aliases() {
 fn renders_documented_mapping_writing_templates() {
     let registry = registry_for(
         r#"[\real.sequence]
-Defines: x(i_)
+Defines: X ::= x(i_) ::= y_
 Documented:
 . called: "real sequence"
 . writing: x(i)

@@ -304,14 +304,14 @@ fn person_heading_latex(kind: &str, sections: &[ProtoSection]) -> Option<String>
 /// Renders a heading-less theorem-like card's title from its `Documented:` forms.
 ///
 /// Command-headed theorem-like items resolve their title through the command-signature
-/// registry (like definitions); a heading-less `Axiom:`/`Theorem:`
+/// registry (like definitions); a heading-less `Axiom:`/`Theorem:`/`Conjecture:`
 /// instead takes its name from `Documented:`.
 fn theorem_like_heading_latex(
     kind: &str,
     heading: Option<&str>,
     sections: &[ProtoSection],
 ) -> Option<String> {
-    const THEOREM_LIKE: [&str; 2] = ["Axiom", "Theorem"];
+    const THEOREM_LIKE: [&str; 3] = ["Axiom", "Theorem", "Conjecture"];
     if !THEOREM_LIKE.contains(&kind) || heading.is_some() {
         return None;
     }
@@ -1293,6 +1293,13 @@ Id: "11111111-1111-4111-8111-111111111111"
 Theorem:
 then: X = X
 Id: "22222222-2222-4222-8222-222222222222"
+
+
+Conjecture:
+then: Y = Y
+Documented:
+. called: "Twin prime conjecture"
+Id: "33333333-3333-4333-8333-333333333333"
 "#;
 
         fs::create_dir_all(&content).unwrap();
@@ -1319,6 +1326,10 @@ Id: "22222222-2222-4222-8222-222222222222"
         );
         // With no called:, a heading-less theorem-like has no title.
         assert_eq!(view.files[0].items[1].heading_latex, None);
+        assert_eq!(
+            view.files[0].items[2].heading_latex,
+            Some(r#"\textrm{Twin prime conjecture}"#.to_string())
+        );
     }
 
     #[test]

@@ -1245,6 +1245,37 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
     }
 
     #[test]
+    fn check_accepts_conjecture_as_an_unproved_statement() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("conjecture.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\identity.conjecture]
+Conjecture:
+given: x is \\expression
+then: x = x
+Documented:
+. called: "Identity conjecture"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("conjecture.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_relation_item_with_declared_subjects() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("relation.mlg");

@@ -350,7 +350,7 @@ Main files:
 
 - `parser.rs` — a single module that composes proto parsing with structural
   recognition. It parses every top-level group (`Defines`, `Declares`,
-  `Refines`, `States`, `Theorem`, `Axiom`, `Disambiguates`,
+  `Refines`, `States`, `Theorem`, `Axiom`, `Conjecture`, `Disambiguates`,
   `Relation`, `Equivalent`, `Topic`, `Resource`, `Person`, `Specify`, the prose
   and clause groups, etc.), their nested support groups (documentation,
   metadata, `Requires:`/`Enables:` items, resource items, justification items),

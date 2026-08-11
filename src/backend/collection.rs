@@ -365,6 +365,7 @@ fn is_top_level_item_label(label: &str) -> bool {
             | "States"
             | "Axiom"
             | "Theorem"
+            | "Conjecture"
             | "Person"
             | "Resource"
             | "Specify"

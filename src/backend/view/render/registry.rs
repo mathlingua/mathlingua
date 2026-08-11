@@ -371,7 +371,14 @@ pub(in crate::backend::view) fn render_refines_section_latex(
 fn supports_resolved_group_heading(kind: &str) -> bool {
     matches!(
         kind,
-        "Declares" | "Defines" | "Refines" | "States" | "Axiom" | "Theorem" | "Equivalent"
+        "Declares"
+            | "Defines"
+            | "Refines"
+            | "States"
+            | "Axiom"
+            | "Theorem"
+            | "Conjecture"
+            | "Equivalent"
     )
 }
 
@@ -465,6 +472,9 @@ pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
             render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
         }
         TopLevelItem::Theorem(group) => {
+            render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
+        }
+        TopLevelItem::Conjecture(group) => {
             render_theorem_like_entries(group.heading.as_ref(), group.documented.as_ref())
         }
         TopLevelItem::Equivalent(group) => render_entries_from_parts(

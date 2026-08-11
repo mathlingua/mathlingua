@@ -98,6 +98,17 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_aliases(&group.aliases, visit);
             walk_optional_justification(&group.justification, visit);
         }
+        TopLevelItem::Conjecture(group) => {
+            walk_theorem_like(
+                group.given.as_ref(),
+                group.where_.as_ref(),
+                &group.then,
+                group.iff.as_ref(),
+                visit,
+            );
+            walk_optional_aliases(&group.aliases, visit);
+            walk_optional_justification(&group.justification, visit);
+        }
         TopLevelItem::Specify(group) => {
             for item in &group.specify.arguments {
                 walk_specify_item(item, visit);

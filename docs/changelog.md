@@ -5,6 +5,14 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Structured Conjecture Groups
+
+`Conjecture:` is now a supported top-level group with the same assertion shape
+as `Theorem:`: optional command heading, `given:`, `where:`, `iff:`, and support
+sections around a required `then:`. It represents a statement that is not
+claimed to have a proof. An optional `Justification:` records rationale or
+evidence without changing that status.
+
 ## Corollary Group Removal
 
 `Corollary:` is no longer a supported top-level group. Use `Theorem:` for a

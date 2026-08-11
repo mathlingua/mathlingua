@@ -1,0 +1,31 @@
+Conjecture:
+then:
+. [logic.any]
+  anyOf:
+  . x = x
+  . y = y
+
+[\conjecture]
+Conjecture:
+given:
+. X is \set
+where:
+. [logic.not]
+  not: x = y
+then:
+. x = x
+iff:
+. y = y
+Documented:
+. called: "A plausible result"
+Justification:
+. [conjecture.evidence]
+  have: x = x
+  asserting: x = x
+Aliases:
+. [conjecture.alias]
+  alias: conjecture(x_) :=> x
+References:
+. $conjecture.ref
+Metadata:
+. id: "conjecture-1"

@@ -469,6 +469,8 @@ parentheses), and its purpose.
   body.
 - **`Axiom`** (optional command heading) — theorem-like assertion.
 - **`Theorem`** (optional command heading) — theorem-like assertion.
+- **`Conjecture`** (optional command heading) — theorem-shaped assertion that
+  is not claimed to have a proof.
 - **`Person`** (author heading) — person metadata.
 - **`Resource`** (resource heading) — bibliography or web metadata.
 - **`Specify`** (no heading) — numeric-domain specification metadata.
@@ -520,7 +522,8 @@ definition kinds.
 `Defines`, `Declares`, and `States` must include a `called:` **or** `written:`
 item somewhere in their `Documented:` section. `Refines` must instead include an
 `adjective:` item (and its `Documented:` rejects `called:`). Theorem-like groups
-(`Axiom`, `Theorem`) may have documentation but require no such item.
+(`Axiom`, `Theorem`, `Conjecture`) may have documentation but require no such
+item.
 
 ## Definition Groups
 
@@ -673,12 +676,15 @@ that:
 
 ## Theorem-Like Groups
 
-`Axiom` and `Theorem` share the same proof shape. `then:` is required. `given:`,
-`where:`, `iff:`, and support sections are optional.
+`Axiom`, `Theorem`, and `Conjecture` share the same assertion shape. `then:` is
+required. `given:`, `where:`, `iff:`, and support sections are optional. A
+`Conjecture:` records an unproved statement. Its optional `Justification:` can
+capture supporting rationale or evidence, but does not claim a proof.
 
-The head section (`Axiom:`/`Theorem:`) takes no argument. A result's name is
-given in `Documented:` `called:`, exactly as for the definition items, and renders
-as the card's title (whether or not the item has a command heading).
+The head section (`Axiom:`/`Theorem:`/`Conjecture:`) takes no argument. A
+result's name is given in `Documented:` `called:`, exactly as for the definition
+items, and renders as the card's title (whether or not the item has a command
+heading).
 
 ```text
 Theorem:

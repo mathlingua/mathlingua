@@ -173,6 +173,10 @@ const GROUPS: &[GroupSpec] = &[
         sections: THEOREM_LIKE_THEOREM,
     },
     GroupSpec {
+        head: "Conjecture",
+        sections: THEOREM_LIKE_CONJECTURE,
+    },
+    GroupSpec {
         head: "Disambiguates",
         sections: &[
             ("Disambiguates", true),
@@ -284,7 +288,7 @@ const TEXT_ITEM_SECTIONS_DEFINITION: &[Section] = &[
     ("Id", true),
 ];
 
-// `Axiom`/`Theorem` share one shape (see
+// `Axiom`/`Theorem`/`Conjecture` share one shape (see
 // `parse_argument_theorem_like`) differing only in the head label.
 const THEOREM_LIKE_AXIOM: &[Section] = &[
     ("Axiom", true),
@@ -301,6 +305,19 @@ const THEOREM_LIKE_AXIOM: &[Section] = &[
 ];
 const THEOREM_LIKE_THEOREM: &[Section] = &[
     ("Theorem", true),
+    ("given", false),
+    ("where", false),
+    ("then", true),
+    ("iff", false),
+    ("Documented", false),
+    ("Justification", false),
+    ("Aliases", false),
+    ("References", false),
+    ("Metadata", false),
+    ("Id", false),
+];
+const THEOREM_LIKE_CONJECTURE: &[Section] = &[
+    ("Conjecture", true),
     ("given", false),
     ("where", false),
     ("then", true),
@@ -1042,6 +1059,7 @@ mod tests {
         let got = labels(&complete(text, 0, 0));
         assert!(got.contains(&"Declares".to_string()));
         assert!(got.contains(&"Theorem".to_string()));
+        assert!(got.contains(&"Conjecture".to_string()));
         assert!(got.contains(&"Text".to_string()));
         assert!(!got.contains(&"Corollary".to_string()));
     }

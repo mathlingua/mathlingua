@@ -1098,12 +1098,20 @@ fn renders_theorem_like_command_headings_from_label_when_documentation_is_missin
         r#"[\axiom.of.unordered.pair]
 Axiom:
 then: X is \set
+
+[\twin.prime.conjecture]
+Conjecture:
+then: X is \set
 "#,
     );
 
     assert_eq!(
         render_formulation_latex(r#"\axiom.of.unordered.pair"#, &registry),
         Some(r#"\textrm{Axiom of Unordered Pair}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\twin.prime.conjecture"#, &registry),
+        Some(r#"\textrm{Twin Prime Conjecture}"#.to_string())
     );
 }
 

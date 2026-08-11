@@ -295,7 +295,6 @@ pub(super) enum DefinitionKind {
     States,
     Axiom,
     Theorem,
-    Corollary,
     Equivalent,
 }
 
@@ -308,7 +307,6 @@ impl DefinitionKind {
             Self::States => "States",
             Self::Axiom => "Axiom",
             Self::Theorem => "Theorem",
-            Self::Corollary => "Corollary",
             Self::Equivalent => "Equivalent",
         }
     }

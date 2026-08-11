@@ -304,14 +304,14 @@ fn person_heading_latex(kind: &str, sections: &[ProtoSection]) -> Option<String>
 /// Renders a heading-less theorem-like card's title from its `Documented:` forms.
 ///
 /// Command-headed theorem-like items resolve their title through the command-signature
-/// registry (like definitions); a heading-less `Axiom:`/`Theorem:`/`Corollary:`
+/// registry (like definitions); a heading-less `Axiom:`/`Theorem:`
 /// instead takes its name from `Documented:`.
 fn theorem_like_heading_latex(
     kind: &str,
     heading: Option<&str>,
     sections: &[ProtoSection],
 ) -> Option<String> {
-    const THEOREM_LIKE: [&str; 3] = ["Axiom", "Theorem", "Corollary"];
+    const THEOREM_LIKE: [&str; 2] = ["Axiom", "Theorem"];
     if !THEOREM_LIKE.contains(&kind) || heading.is_some() {
         return None;
     }

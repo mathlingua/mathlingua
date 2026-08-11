@@ -251,11 +251,6 @@ pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>>
             heading,
             documented: group.documented.as_ref(),
         }),
-        TopLevelItem::Corollary(group) => group.heading.as_ref().map(|heading| DefinitionItem {
-            kind: DefinitionKind::Corollary,
-            heading,
-            documented: group.documented.as_ref(),
-        }),
         TopLevelItem::Equivalent(group) => Some(DefinitionItem {
             kind: DefinitionKind::Equivalent,
             heading: &group.heading,

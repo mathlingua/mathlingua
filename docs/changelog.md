@@ -5,6 +5,14 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Corollary Group Removal
+
+`Corollary:` is no longer a supported top-level group. Use `Theorem:` for a
+structured consequence, and describe its relationship to an earlier result in
+the theorem's documentation. The structural AST, parser, semantic checker,
+completions, release metadata, renderer, and current language documentation no
+longer include a distinct corollary kind.
+
 ## Local `let:` Clauses
 
 Clause-valued sections now accept a `let:` group, an optional `where:` guard,

@@ -216,9 +216,8 @@ zero_or_more_arguments_section!(StatesSection, OpenText);
 arguments_section!(ThatSection, Clause);
 zero_or_more_arguments_section!(EquivalentSection, OpenText);
 arguments_section!(EquivalentToSection, Expression);
-// The `Axiom:`/`Theorem:`/`Corollary:` head sections take
-// no argument; a result's name lives in `Documented:` `called:` (as for definitions).
-zero_or_more_arguments_section!(OfSection, OpenText);
+// The `Axiom:`/`Theorem:` head sections take no argument; a result's name lives
+// in `Documented:` `called:` (as for definitions).
 arguments_section!(GivenSection, DeclarationStatement);
 arguments_section!(WhereSection, Clause);
 arguments_section!(ThenSection, Clause);
@@ -335,7 +334,6 @@ pub enum TopLevelItem {
     States(StatesGroup),
     Axiom(AxiomGroup),
     Theorem(TheoremGroup),
-    Corollary(CorollaryGroup),
     Person(PersonGroup),
     Resource(ResourceGroup),
     Specify(SpecifyGroup),
@@ -621,21 +619,6 @@ pub struct AxiomGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TheoremGroup {
     pub heading: Option<CommandHeader>,
-    pub given: Option<GivenSection>,
-    pub where_: Option<WhereSection>,
-    pub then: ThenSection,
-    pub iff: Option<IffSection>,
-    pub justification: Option<JustificationSection>,
-    pub documented: Option<DocumentedSection>,
-    pub aliases: Option<AliasesSection>,
-    pub references: Option<ReferencesSection>,
-    pub metadata: Option<MetadataSection>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CorollaryGroup {
-    pub heading: Option<CommandHeader>,
-    pub of: OfSection,
     pub given: Option<GivenSection>,
     pub where_: Option<WhereSection>,
     pub then: ThenSection,

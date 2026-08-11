@@ -173,23 +173,6 @@ const GROUPS: &[GroupSpec] = &[
         sections: THEOREM_LIKE_THEOREM,
     },
     GroupSpec {
-        head: "Corollary",
-        sections: &[
-            ("Corollary", true),
-            ("of", true),
-            ("given", false),
-            ("where", false),
-            ("then", true),
-            ("iff", false),
-            ("Documented", false),
-            ("Justification", false),
-            ("Aliases", false),
-            ("References", false),
-            ("Metadata", false),
-            ("Id", false),
-        ],
-    },
-    GroupSpec {
         head: "Disambiguates",
         sections: &[
             ("Disambiguates", true),
@@ -1060,6 +1043,7 @@ mod tests {
         assert!(got.contains(&"Declares".to_string()));
         assert!(got.contains(&"Theorem".to_string()));
         assert!(got.contains(&"Text".to_string()));
+        assert!(!got.contains(&"Corollary".to_string()));
     }
 
     #[test]

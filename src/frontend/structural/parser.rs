@@ -2398,7 +2398,6 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
         "States" => parse_states(group, tracker).map(TopLevelItem::States),
         "Axiom" => parse_axiom(group, tracker).map(TopLevelItem::Axiom),
         "Theorem" => parse_theorem(group, tracker).map(TopLevelItem::Theorem),
-        "Corollary" => parse_corollary(group, tracker).map(TopLevelItem::Corollary),
         "Person" => parse_person(group, tracker).map(TopLevelItem::Person),
         "Resource" => parse_resource(group, tracker).map(TopLevelItem::Resource),
         "Specify" => parse_specify(group, tracker).map(TopLevelItem::Specify),
@@ -3594,7 +3593,7 @@ pub(in crate::frontend::structural::parser) fn parse_theorem(
 
 /// Rejects a name/argument on a theorem-like head section.
 ///
-/// `Axiom:`/`Theorem:`/`Corollary:` no longer accept a name;
+/// `Axiom:`/`Theorem:` do not accept a name;
 /// a result's name belongs in `Documented:` `called:`, matching the definition items.
 fn ensure_no_named_result_arg(section: Option<&ProtoSection>, name: &str, tracker: &mut EventLog) {
     let Some(section) = section else {
@@ -3706,84 +3705,6 @@ pub(in crate::frontend::structural::parser) fn parse_argument_theorem_like(
                 .map(|arguments| MetadataSection { arguments })
         }),
     ))
-}
-
-/// Parses a `Corollary:` group.
-///
-/// Corollaries mostly share theorem-like structure but additionally require an
-/// `of:` section that records what theorem or statement they follow from.
-pub(in crate::frontend::structural::parser) fn parse_corollary(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<CorollaryGroup> {
-    let heading = parse_optional_command_heading(group, tracker)?;
-    let sections = identify_sections(
-        "Corollary",
-        &group.sections,
-        tracker,
-        &[
-            "Corollary",
-            "of",
-            "given?",
-            "where?",
-            "then",
-            "iff?",
-            "Documented?",
-            "Justification?",
-            "Aliases?",
-            "References?",
-            "Metadata?",
-            "Id?",
-        ],
-    )?;
-    ensure_no_named_result_arg(sections.get("Corollary").copied(), "Corollary", tracker);
-
-    Some(CorollaryGroup {
-        heading,
-        of: OfSection {
-            arguments: parse_optional_open_texts(sections.get("of").copied(), tracker),
-        },
-        given: sections.get("given").copied().and_then(|section| {
-            parse_required_formulations(
-                section,
-                "given",
-                tracker,
-                parse_refined_declaration_statement,
-            )
-            .map(|arguments| GivenSection { arguments })
-        }),
-        where_: sections.get("where").copied().and_then(|section| {
-            parse_required_clauses(section, "where", tracker)
-                .map(|arguments| WhereSection { arguments })
-        }),
-        then: ThenSection {
-            arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
-        },
-        iff: sections.get("iff").copied().and_then(|section| {
-            parse_required_clauses(section, "iff", tracker)
-                .map(|arguments| IffSection { arguments })
-        }),
-        justification: sections.get("Justification").copied().and_then(|section| {
-            parse_required_groups(section, "Justification", tracker, parse_have_group)
-                .map(|arguments| JustificationSection { arguments })
-        }),
-        documented: sections.get("Documented").copied().and_then(|section| {
-            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
-                .map(|arguments| DocumentedSection { arguments })
-        }),
-        aliases: sections.get("Aliases").copied().and_then(|section| {
-            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
-                .map(|arguments| AliasesSection { arguments })
-        }),
-        references: sections.get("References").copied().and_then(|section| {
-            parse_required_formulations(section, "References", tracker, parse_resource_header)
-                .map(|arguments| ReferencesSection { arguments })
-        }),
-        metadata: sections.get("Metadata").copied().and_then(|section| {
-            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
-                .map(|arguments| MetadataSection { arguments })
-        }),
-    })
 }
 
 // ===============================[ metadata ]=====================================
@@ -5020,7 +4941,6 @@ then:
         let files = read_test_files(directory, "text");
         let expected_names = BTreeSet::from([
             "axioms.text".to_owned(),
-            "corollaries.text".to_owned(),
             "declares.text".to_owned(),
             "defines.text".to_owned(),
             "equivalent.text".to_owned(),
@@ -5621,15 +5541,19 @@ then:
                 "expected `{head}:` to reject a name: {diagnostics:#?}"
             );
         }
+    }
 
-        let (_, diagnostics) =
-            parse_with_diagnostics("Corollary: \"Some Result\"\nof: \"A theorem\"\nthen: x = x\n");
+    #[test]
+    fn rejects_corollary_as_a_top_level_group() {
+        let (document, diagnostics) =
+            parse_with_diagnostics("Corollary:\nof: \"A theorem\"\nthen: x = x\n");
+        assert!(document.items.is_empty());
         assert!(
-            diagnostics.iter().any(|event| event
-                .as_message()
-                .is_some_and(|message| message.message.contains("does not take a name")
-                    && message.message.contains("Corollary"))),
-            "expected `Corollary:` to reject a name: {diagnostics:#?}"
+            diagnostics
+                .iter()
+                .any(|event| event.as_message().is_some_and(|message| message
+                    .message
+                    .contains("Unexpected top-level group `Corollary`")))
         );
     }
 
@@ -5922,20 +5846,10 @@ then:
   anyOf:
   . x = x
   . y = y
-
-[\corollary]
-Corollary:
-of:
-. "Previous theorem"
-then:
-. [logic.one]
-  oneOf:
-  . x = x
-  . y = y
 "#,
         );
 
-        assert_eq!(document.items.len(), 3);
+        assert_eq!(document.items.len(), 2);
 
         match &document.items[0] {
             TopLevelItem::Axiom(group) => {
@@ -5965,15 +5879,6 @@ then:
                 assert!(matches!(group.then.arguments[0], Clause::AnyOf(_)));
             }
             other => panic!("expected theorem group, got {other:?}"),
-        }
-
-        match &document.items[2] {
-            TopLevelItem::Corollary(group) => {
-                assert!(group.heading.is_some());
-                assert_eq!(group.of.arguments[0].0, "Previous theorem");
-                assert!(matches!(group.then.arguments[0], Clause::OneOf(_)));
-            }
-            other => panic!("expected corollary group, got {other:?}"),
         }
     }
 

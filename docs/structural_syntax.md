@@ -275,7 +275,6 @@ An empty document is supported by the current implementation because `Document.i
 - **`States`** — `StatesGroup`, heading: command. Sections: `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Theorem`** — `TheoremGroup`, heading: command?. Sections: `Theorem:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
-- **`Corollary`** — `CorollaryGroup`, heading: command?. Sections: `Corollary:`, `of: OpenText*`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Person`** — `PersonGroup`, heading: author. Sections: `Person: OpenText+`, `biography?: OpenText`
 - **`Resource`** — `ResourceGroup`, heading: resource. Sections: `Resource: ResourceItem+`
 - **`Specify`** — `SpecifyGroup`, heading: none. Sections: `Specify: SpecifyItem+`
@@ -445,7 +444,6 @@ Optional on:
 
 - `Axiom`
 - `Theorem`
-- `Corollary`
 
 These headings must parse with `parse_command_header`.
 
@@ -649,7 +647,6 @@ TopLevelItemUnion ::=
     | StatesGroup
     | AxiomGroup
     | TheoremGroup
-    | CorollaryGroup
     | PersonGroup
     | ResourceGroup
     | SpecifyGroup
@@ -815,22 +812,7 @@ References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
 ```
 
-```group
-[CommandHeader]?
-Corollary:
-of: <OpenText>*
-given?: <RefinedDeclarationStatement>+
-where?: <ClauseUnion>+
-then: <ClauseUnion>+
-iff?: <ClauseUnion>+
-Documented?: <DocumentedItemUnion>+
-Justification?: <HaveGroup>+
-Aliases?: <AliasItemUnion>+
-References?: <ResourceHeader>+
-Metadata?: <MetadataItemUnion>+
-```
-
-The theorem-like head sections (`Axiom:`/`Theorem:`/`Corollary:`)
+The theorem-like head sections (`Axiom:`/`Theorem:`)
 take no argument. A result's name is given in `Documented:` `called:`, exactly as
 for the definition items, and renders as the card's title.
 

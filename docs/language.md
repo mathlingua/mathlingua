@@ -469,8 +469,6 @@ parentheses), and its purpose.
   body.
 - **`Axiom`** (optional command heading) — theorem-like assertion.
 - **`Theorem`** (optional command heading) — theorem-like assertion.
-- **`Corollary`** (optional command heading) — theorem-like assertion with
-  `of:` text.
 - **`Person`** (author heading) — person metadata.
 - **`Resource`** (resource heading) — bibliography or web metadata.
 - **`Specify`** (no heading) — numeric-domain specification metadata.
@@ -522,8 +520,7 @@ definition kinds.
 `Defines`, `Declares`, and `States` must include a `called:` **or** `written:`
 item somewhere in their `Documented:` section. `Refines` must instead include an
 `adjective:` item (and its `Documented:` rejects `called:`). Theorem-like groups
-(`Axiom`, `Theorem`, `Corollary`) may have documentation but require no such
-item.
+(`Axiom`, `Theorem`) may have documentation but require no such item.
 
 ## Definition Groups
 
@@ -676,11 +673,10 @@ that:
 
 ## Theorem-Like Groups
 
-`Axiom`, `Theorem`, and `Corollary` share the same proof
-shape. `then:` is required. `given:`, `where:`, `iff:`, and support sections are
-optional. `Corollary` also requires an `of:` section.
+`Axiom` and `Theorem` share the same proof shape. `then:` is required. `given:`,
+`where:`, `iff:`, and support sections are optional.
 
-The head section (`Axiom:`/`Theorem:`/etc.) takes no argument. A result's name is
+The head section (`Axiom:`/`Theorem:`) takes no argument. A result's name is
 given in `Documented:` `called:`, exactly as for the definition items, and renders
 as the card's title (whether or not the item has a command heading).
 

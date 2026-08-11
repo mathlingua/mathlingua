@@ -108,7 +108,7 @@
   margin-left: auto;
   overflow-x: auto;
   padding: 1rem 1.2rem;
-  border: 1px solid var(--line);
+  border: var(--card-border-width) solid var(--line);
   border-radius: var(--radius-code-block);
   background: var(--card-bg);
   font-size: 0.78rem;

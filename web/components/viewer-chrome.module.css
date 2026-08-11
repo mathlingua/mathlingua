@@ -32,6 +32,28 @@
   background: var(--surface-alt);
 }
 
+:global(html[data-theme="atomic"]) .button,
+:global(html[data-theme="atomic-dark"]) .button,
+:global(html[data-theme="atomic"]) .themeIconButton,
+:global(html[data-theme="atomic-dark"]) .themeIconButton {
+  border: 2px solid var(--line);
+  background: var(--accent-soft);
+  box-shadow: var(--control-shadow);
+  color: var(--accent-contrast);
+}
+
+:global(html[data-theme="atomic"]) .button:hover,
+:global(html[data-theme="atomic-dark"]) .button:hover,
+:global(html[data-theme="atomic"]) .themeIconButton:hover,
+:global(html[data-theme="atomic-dark"]) .themeIconButton:hover,
+:global(html[data-theme="atomic"]) .themeIconButton[aria-expanded="true"],
+:global(html[data-theme="atomic-dark"]) .themeIconButton[aria-expanded="true"] {
+  border-color: var(--line);
+  background: var(--accent-soft);
+  color: var(--accent-contrast);
+  transform: translate(-1px, -1px);
+}
+
 .spacer {
   min-width: 0;
 }
@@ -84,7 +106,7 @@
   gap: 0.08rem;
   min-width: 9rem;
   padding: 0.35rem;
-  border: 1px solid var(--line);
+  border: var(--popover-border-width) solid var(--line);
   border-radius: var(--radius-popover);
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -116,6 +138,12 @@
 .themeOptionActive {
   background: var(--accent-soft);
   color: var(--ink);
+}
+
+:global(html[data-theme="atomic"]) .themeOptionActive,
+:global(html[data-theme="atomic-dark"]) .themeOptionActive {
+  color: var(--accent-contrast);
+  font-weight: 800;
 }
 
 .themeOptionLabel {

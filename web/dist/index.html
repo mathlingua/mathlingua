@@ -12,20 +12,32 @@
       (() => {
         try {
           const theme = window.localStorage.getItem("mlg-view-theme");
-          if (
-            !/^(classic|mono|flat-gray|sepia|retro|dark)$/.test(theme ?? "")
-          ) {
+          const themeSchemes = {
+            classic: "light",
+            "classic-dark": "dark",
+            mono: "light",
+            dark: "dark",
+            "flat-gray": "light",
+            "flat-gray-dark": "dark",
+            sepia: "light",
+            "sepia-dark": "dark",
+            retro: "light",
+            "retro-dark": "dark",
+            atomic: "light",
+            "atomic-dark": "dark",
+          };
+          const colorScheme = themeSchemes[theme];
+          if (!colorScheme) {
             return;
           }
           document.documentElement.dataset.theme = theme;
-          document.documentElement.style.colorScheme =
-            theme === "dark" ? "dark" : "light";
+          document.documentElement.style.colorScheme = colorScheme;
         } catch (_) {}
       })();
       window.__MLG_VIEW_CONFIG__ = __MLG_RUNTIME_CONFIG_JSON__;
     </script>
-    <script type="module" crossorigin src="./assets/index-wJJRDLFd.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Ddjq8Deh.css">
+    <script type="module" crossorigin src="./assets/index-CsRaLyhX.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BTHV67A2.css">
   </head>
   <body>
     <div id="root"></div>

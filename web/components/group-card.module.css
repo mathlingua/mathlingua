@@ -30,7 +30,7 @@
   max-width: 100%;
   min-width: 0;
   padding: 1.35rem 1.6rem 1.45rem;
-  border: 1px solid var(--line);
+  border: var(--card-border-width) solid var(--line);
   border-radius: var(--radius-card);
   background: var(--card-bg);
   backface-visibility: hidden;
@@ -61,7 +61,7 @@
   min-width: 0;
   padding-right: 2.35rem;
   padding-bottom: 0.55rem;
-  border-bottom: 1px solid var(--line);
+  border-bottom: var(--divider-border-width) solid var(--line);
 }
 
 .heading {
@@ -76,6 +76,12 @@
 .headingLatex {
   font-family: var(--font-body);
   font-size: 1.08rem;
+}
+
+:global(html[data-theme="atomic"]) .heading,
+:global(html[data-theme="atomic-dark"]) .heading {
+  font-family: var(--font-ui);
+  letter-spacing: -0.01em;
 }
 
 /* `name ::= …` destructuring lines shown beneath the title, one per line, muted

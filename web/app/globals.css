@@ -53,6 +53,11 @@
   --radius-code: 0.24rem;
   --radius-code-block: 0.45rem;
   --radius-inline-ref: 0.22rem;
+  --card-border-width: 1px;
+  --popover-border-width: 1px;
+  --definition-border-width: 1px;
+  --divider-border-width: 1px;
+  --accent-contrast: var(--ink);
   --heading-color: var(--accent);
   --heading-weight: 500;
   --section-heading-color: var(--accent);
@@ -346,6 +351,123 @@ html[data-theme="retro-dark"] {
   --syntax-placeholder: #69c1a1;
   --syntax-punctuation: #a5b68e;
   --syntax-string: #b8cd68;
+}
+
+/* A warm, outlined theme inspired by codex-resets.com: cream paper, rounded
+   display type, saturated utility accents, and deliberately offset ink
+   shadows. The layout remains MathLingua's own two-pane reader. */
+html[data-theme="atomic"] {
+  color-scheme: light;
+  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display:
+    "Arial Rounded MT Bold", "Avenir Next Rounded", "Trebuchet MS", system-ui,
+    sans-serif;
+  --font-ui:
+    "Arial Rounded MT Bold", "Avenir Next Rounded", "Trebuchet MS", system-ui,
+    sans-serif;
+  --page-bg: #fff4dd;
+  --surface: #fffdf7;
+  --surface-alt: #ffe8b8;
+  --ink: #26201a;
+  --muted: #7d6e5d;
+  --muted-strong: #56493c;
+  --line: #26201a;
+  --line-strong: #26201a;
+  --accent: #e84d21;
+  --accent-soft: #ffd84d;
+  --shadow: 4px 4px 0 #26201a;
+  --chrome-bg: rgba(255, 244, 221, 0.96);
+  --card-bg: #fffdf7;
+  --definition-bg: #ffe8b8;
+  --definition-shadow: 6px 6px 0 #26201a;
+  --control-shadow: 2px 2px 0 #26201a;
+  --syntax-comment: #8b7965;
+  --syntax-command: #cf3f1a;
+  --syntax-keyword: #8f4c13;
+  --syntax-label: #8f3561;
+  --syntax-operator: #b83219;
+  --syntax-placeholder: #176c67;
+  --syntax-punctuation: #65584b;
+  --syntax-string: #786512;
+  --radius-card: 0.9rem;
+  --radius-control: 999px;
+  --radius-popover: 0.9rem;
+  --radius-option: 0.65rem;
+  --radius-nav: 0.65rem;
+  --radius-definition: 0.9rem;
+  --radius-code: 0.28rem;
+  --radius-code-block: 0.7rem;
+  --radius-inline-ref: 0.3rem;
+  --card-border-width: 2px;
+  --popover-border-width: 2px;
+  --definition-border-width: 2px;
+  --divider-border-width: 2px;
+  --accent-contrast: #26201a;
+  --heading-color: var(--ink);
+  --heading-weight: 800;
+  --section-heading-color: var(--accent);
+  --section-heading-weight: 800;
+  --card-heading-color: var(--ink);
+  --card-heading-weight: 800;
+  --prose-heading-color: var(--ink);
+  --prose-heading-weight: 800;
+}
+
+html[data-theme="atomic-dark"] {
+  color-scheme: dark;
+  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display:
+    "Arial Rounded MT Bold", "Avenir Next Rounded", "Trebuchet MS", system-ui,
+    sans-serif;
+  --font-ui:
+    "Arial Rounded MT Bold", "Avenir Next Rounded", "Trebuchet MS", system-ui,
+    sans-serif;
+  --page-bg: #1e1a17;
+  --surface: #29241f;
+  --surface-alt: #3a3128;
+  --ink: #f7ead3;
+  --muted: #ad9d88;
+  --muted-strong: #d5c5ae;
+  --line: #f7ead3;
+  --line-strong: #f7ead3;
+  --accent: #ff7a45;
+  --accent-soft: #d6a92f;
+  --shadow: 4px 4px 0 #090706;
+  --chrome-bg: rgba(30, 26, 23, 0.96);
+  --card-bg: #29241f;
+  --definition-bg: #3a3128;
+  --definition-shadow: 6px 6px 0 #090706;
+  --control-shadow: 2px 2px 0 #090706;
+  --syntax-comment: #a99882;
+  --syntax-command: #ff9a70;
+  --syntax-keyword: #efc875;
+  --syntax-label: #efa8c7;
+  --syntax-operator: #ff9272;
+  --syntax-placeholder: #7fc8bd;
+  --syntax-punctuation: #c7b7a1;
+  --syntax-string: #e6cf78;
+  --radius-card: 0.9rem;
+  --radius-control: 999px;
+  --radius-popover: 0.9rem;
+  --radius-option: 0.65rem;
+  --radius-nav: 0.65rem;
+  --radius-definition: 0.9rem;
+  --radius-code: 0.28rem;
+  --radius-code-block: 0.7rem;
+  --radius-inline-ref: 0.3rem;
+  --card-border-width: 2px;
+  --popover-border-width: 2px;
+  --definition-border-width: 2px;
+  --divider-border-width: 2px;
+  --accent-contrast: #211a14;
+  --heading-color: var(--ink);
+  --heading-weight: 800;
+  --section-heading-color: var(--accent);
+  --section-heading-weight: 800;
+  --card-heading-color: var(--ink);
+  --card-heading-weight: 800;
+  --prose-heading-color: var(--ink);
+  --prose-heading-weight: 800;
 }
 
 * {

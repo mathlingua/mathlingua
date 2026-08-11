@@ -50,7 +50,7 @@ impl ParseError {
     ///
     /// Keeping this small constructor local avoids repeated `String` conversion
     /// noise in the parser while preserving an owned error payload.
-    fn custom(message: impl Into<String>) -> Self {
+    pub(crate) fn custom(message: impl Into<String>) -> Self {
         Self::Custom(message.into())
     }
 }

@@ -5,6 +5,15 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Mapping Writing Templates
+
+A mapping-shaped `Defines:` item may now declare documented `writing:`/`as:`
+templates for both its ordinary invocation form and the mapping form itself.
+The `writing:` target must exactly match the defined mapping with either all
+placeholders retained or all placeholders replaced by their ordinary names.
+Invocation templates substitute call arguments, while mapping templates render
+references to the mapping as a value, such as `x(i_) is \real.sequence`.
+
 ## Structured Conjecture Groups
 
 `Conjecture:` is now a supported top-level group with the same assertion shape

@@ -65,12 +65,14 @@ Metadata:
 . version: "1.0"
 
 [\structure.writing]
-Defines: W
+Defines: plus(x_, y_)
 Documented:
 . [docs.inline.notation]
-  writing: plus(x_, y_) :~> x + y
-  as:
-  . "inline notation"
+  writing: plus(x, y)
+  as: "x? + y?"
+. [docs.mapping.notation]
+  writing: plus(x_, y_)
+  as: "\operatorname{plus}(x?, y?)"
 
 [\structure.overview]
 Defines: O

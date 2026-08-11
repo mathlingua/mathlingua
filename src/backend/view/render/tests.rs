@@ -968,6 +968,30 @@ fn renders_names_with_collection_writing_aliases() {
 }
 
 #[test]
+fn renders_documented_mapping_writing_templates() {
+    let registry = registry_for(
+        r#"[\real.sequence]
+Defines: x(i_)
+Documented:
+. called: "real sequence"
+. writing: x(i)
+  as: "x?_{i?}"
+. writing: x(i_)
+  as: "\left\{x?\right\}_{i_?=1}^{\infty}"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex("x(j)", &registry),
+        Some(r#"x_{j}"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"x(i_) is \real.sequence"#, &registry),
+        Some(r#"\left\{x\right\}_{i=1}^{\infty} \textrm{ is } \textrm{real sequence}"#.to_string())
+    );
+}
+
+#[test]
 fn renders_tuple_declarations_with_operator_symbols() {
     let registry = registry_for("");
 

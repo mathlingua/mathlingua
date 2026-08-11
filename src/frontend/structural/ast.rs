@@ -169,6 +169,17 @@ pub struct AdjectiveText(pub String);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WritingText(pub String);
 
+/// The left side of a documented mapping-rendering rule.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MappingWritingTarget {
+    /// The exact placeholder-bearing mapping form from `Defines:` (for example,
+    /// `x(i_)`). This controls how the mapping value itself is rendered.
+    Mapping(FormOrDeclaration),
+    /// The same mapping form with its placeholders replaced by matching ordinary
+    /// names (for example, `x(i)`). This controls invocation rendering.
+    Invocation(Expression),
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DefinesTarget {
     Form(FormOrDeclaration),
@@ -252,7 +263,7 @@ argument_section!(TopicRelatedMeansSection, OpenText);
 arguments_section!(TopicRelatedSection, TopicRelatedItem);
 arguments_section!(CalledSection, CalledText);
 arguments_section!(AdjectiveSection, AdjectiveText);
-argument_section!(WritingSection, WritingAlias);
+argument_section!(WritingSection, MappingWritingTarget);
 arguments_section!(AsSection, WritingText);
 argument_section!(OverviewSection, OpenText);
 argument_section!(DescriptionSection, OpenText);

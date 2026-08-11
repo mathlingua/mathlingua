@@ -340,7 +340,7 @@ Used inside `Documented:`.
 - **`called`** — `CalledGroup`, heading: label?. Sections: `called: CalledText+`, `written?: WrittenText+`
 - **`adjective`** — `AdjectiveGroup`, heading: label?. Sections: `adjective: AdjectiveText+` (required by `Refines:`; `Refines:` `Documented:` rejects `called:`)
 - **`description`** — `DescriptionGroup`, heading: label?. Sections: `description: OpenText`
-- **`writing`** — `WritingGroup`, heading: label?. Sections: `writing: WritingAlias`, `as: WritingText+`
+- **`writing`** — `WritingGroup`, heading: label?. Sections: `writing: MappingWritingTarget`, `as: WritingText+`. It is valid only in a mapping-shaped `Defines:` item; the target must be either that exact placeholder mapping form or the same invocation with placeholders replaced by their ordinary names
 - **`overview`** — `OverviewGroup`, heading: label?. Sections: `overview: OpenText`
 - **`related`** — `RelatedGroup`, heading: label?. Sections: `related: OpenText+`
 - **`discoverer`** — `DiscovererGroup`, heading: label?. Sections: `discoverer: OpenText*`
@@ -492,7 +492,8 @@ The structural parser delegates section content to formulation parsers as follow
 - `IsOrViaItem` — try `parse_is_via_statement`, then `parse_ordinary_declaration_statement`
 - `BindingOrSpec` — `parse_refined_declaration_statement`
 - `AliasKind` — try `parse_expression_alias`, then `parse_spec_operator_alias`
-- `WritingAlias` — `parse_writing_alias`
+- `MappingWritingTarget` — accept a function declaration form or function-call expression; semantic checking restricts it to the enclosing `Defines:` mapping
+- `WritingAlias` — `parse_writing_alias` (used by the collection-wide `Writing:` group)
 - `ResourceHeader` — `parse_resource_header`
 - `CommandHeader` — `parse_command_header`
 - `AuthorHeader` — `parse_author_header`
@@ -1007,9 +1008,13 @@ written?: <WrittenText>+
 
 ```group
 [LabelHeader]?
-writing: <WritingAlias>
+writing: <MappingWritingTarget>
 as: <WritingText>+
 ```
+
+`MappingWritingTarget` is restricted to the exact mapping form from the
+enclosing `Defines:` item (for example `x(i_)`) or that form with each
+placeholder replaced by its ordinary name (for example `x(i)`).
 
 ```group
 [LabelHeader]?

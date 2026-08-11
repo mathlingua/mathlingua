@@ -93,6 +93,9 @@ pub(super) fn render_form_or_declaration(
         FormOrDeclarationKind::Name(name) => escape_math_identifier(name, registry),
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
             let name = name.as_ref().unwrap_or(&form.name);
+            if let Some(rendered) = render_documented_mapping_form(name, form, registry) {
+                return rendered;
+            }
             let args =
                 form.magnetic_placeholder
                     .iter()
@@ -165,6 +168,45 @@ pub(super) fn render_form_or_declaration(
             render_operator_text(&operator.text)
         ),
     }
+}
+
+fn render_documented_mapping_form(
+    name: &str,
+    form: &FunctionForm,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let parameters = form
+        .magnetic_placeholder
+        .iter()
+        .map(|placeholder| placeholder.name.clone())
+        .chain(
+            form.placeholders
+                .iter()
+                .map(|placeholder| placeholder.name.clone()),
+        )
+        .collect::<Vec<_>>();
+    let render = registry.mapping_writing.iter().find(|render| {
+        render.function_name == name
+            && render.parameters == parameters
+            && render.magnetic == form.magnetic_placeholder.is_some()
+            && render.mapping_written.is_some()
+    })?;
+    let mut substitutions = HashMap::new();
+    substitutions.insert(
+        render.function_name.clone(),
+        escape_math_identifier(name, registry),
+    );
+    for parameter in &render.parameters {
+        let rendered_parameter = escape_math_identifier(parameter, registry);
+        substitutions.insert(parameter.clone(), rendered_parameter.clone());
+        if !parameter.ends_with('_') {
+            substitutions.insert(format!("{parameter}_"), rendered_parameter);
+        }
+    }
+    Some(substitute_math_template(
+        render.mapping_written.as_deref()?,
+        &substitutions,
+    ))
 }
 
 pub(super) fn render_is_command(

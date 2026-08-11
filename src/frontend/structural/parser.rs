@@ -348,6 +348,27 @@ fn parse_defines_target(input: &str) -> Result<DefinesTarget, FormulationParseEr
     parse_ordinary_declaration_statement(input).map(DefinesTarget::Declaration)
 }
 
+/// Parses the restricted target of a documented mapping `writing:` rule.
+fn parse_mapping_writing_target(
+    input: &str,
+) -> Result<MappingWritingTarget, FormulationParseError> {
+    if let Ok(form) = parse_form_or_declaration(input)
+        && matches!(form.kind, FormOrDeclarationKind::FunctionDeclaration { .. })
+    {
+        return Ok(MappingWritingTarget::Mapping(form));
+    }
+
+    if let Ok(expression) = parse_expression(input)
+        && matches!(expression.kind, ExpressionKind::FunctionCall { .. })
+    {
+        return Ok(MappingWritingTarget::Invocation(expression));
+    }
+
+    Err(FormulationParseError::custom(
+        "expected a mapping form such as `x(i_)` or its named invocation form such as `x(i)`",
+    ))
+}
+
 /// Parses a quantifier binding or ordinary/refined specification.
 pub(in crate::frontend::structural::parser) fn parse_binding_or_spec(
     input: &str,
@@ -1896,8 +1917,8 @@ pub(in crate::frontend::structural::parser) fn parse_adjective(
 
 /// Parses a `writing:` documentation group.
 ///
-/// The `writing:` section defines the alias and the `as:` section stores the
-/// quoted rendering text associated with that alias.
+/// The `writing:` section identifies either a mapping definition form or its
+/// named invocation form; `as:` stores its rendering template.
 pub(in crate::frontend::structural::parser) fn parse_writing(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1911,7 +1932,7 @@ pub(in crate::frontend::structural::parser) fn parse_writing(
                 section(&sections, "writing")?,
                 "writing",
                 tracker,
-                parse_writing_alias,
+                parse_mapping_writing_target,
             )?,
         },
         as_: AsSection {
@@ -4006,6 +4027,26 @@ means: X is \thing
     }
 
     #[test]
+    fn rejects_documented_writing_targets_that_are_not_mapping_forms_or_invocations() {
+        let (_, diagnostics) = parse_with_diagnostics(
+            r#"[\sequence]
+Defines: x(i_)
+Documented:
+. writing: x
+  as: "x"
+"#,
+        );
+
+        assert!(diagnostics.iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message
+                    .message
+                    .contains("expected a mapping form such as `x(i_)`")
+            })
+        }));
+    }
+
+    #[test]
     fn parses_definition_like_groups_with_nested_sections_and_items() {
         let document = parse_ok(
             r#"
@@ -4076,12 +4117,13 @@ Metadata:
 . version: "1.0"
 
 [\structure.writing]
-Defines: W
+Defines: plus(x_, y_)
 Documented:
 . [docs.writing]
-  writing: plus(x_, y_) :~> x + y
-  as:
-  . "inline notation"
+  writing: plus(x, y)
+  as: "x? + y?"
+. writing: plus(x_, y_)
+  as: "\operatorname{plus}(x?, y?)"
 
 [\structure.overview]
 Defines: O

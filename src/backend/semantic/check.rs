@@ -3,6 +3,7 @@ use super::*;
 pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
     validate_top_level_item_ids(files, event_log);
     validate_top_level_writing_count(files, event_log);
+    validate_documented_mapping_writing(files, event_log);
 
     let mut registry = SignatureRegistry::default();
     for file in files {
@@ -16,6 +17,172 @@ pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
     for file in files {
         validate_document_types(file, &registry, event_log);
     }
+}
+
+/// Restricts documented `writing:` rules to mapping-shaped `Defines:` items and
+/// requires their target to mirror that mapping exactly.
+fn validate_documented_mapping_writing(files: &[ParsedSourceFile], event_log: &mut EventLog) {
+    for file in files {
+        for (index, item) in file.document.items.iter().enumerate() {
+            let row = file
+                .item_ids
+                .get(index)
+                .map(|id| id.group_row)
+                .unwrap_or_default();
+            let documented = documented_section(item);
+            let Some(documented) = documented else {
+                continue;
+            };
+            let writing = documented.arguments.iter().filter_map(|item| match item {
+                DocumentedItem::Writing(group) => Some(group),
+                _ => None,
+            });
+
+            match item {
+                TopLevelItem::Defines(group) => {
+                    let mapping = defines_mapping_parts(&group.defines.argument);
+                    for writing in writing {
+                        let Some(mapping) = &mapping else {
+                            event_log.user_error_at_file_row(
+                                Some(ORIGIN),
+                                file.path.clone(),
+                                row,
+                                "Documented `writing:` is only allowed when `Defines:` targets a mapping",
+                            );
+                            continue;
+                        };
+                        if !mapping_writing_target_matches(&writing.writing.argument, mapping) {
+                            event_log.user_error_at_file_row(
+                                Some(ORIGIN),
+                                file.path.clone(),
+                                row,
+                                format!(
+                                    "Documented `writing:` must be exactly `{}` or `{}`",
+                                    mapping_form_label(mapping, true),
+                                    mapping_form_label(mapping, false),
+                                ),
+                            );
+                        }
+                    }
+                }
+                _ => {
+                    for _ in writing {
+                        event_log.user_error_at_file_row(
+                            Some(ORIGIN),
+                            file.path.clone(),
+                            row,
+                            "Documented `writing:` is only allowed inside a mapping-shaped `Defines:` item",
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn documented_section(item: &TopLevelItem) -> Option<&DocumentedSection> {
+    match item {
+        TopLevelItem::Disambiguates(group) => group.documented.as_ref(),
+        TopLevelItem::Defines(group) => group.documented.as_ref(),
+        TopLevelItem::Declares(group) => group.documented.as_ref(),
+        TopLevelItem::Refines(group) => group.documented.as_ref(),
+        TopLevelItem::States(group) => group.documented.as_ref(),
+        TopLevelItem::Axiom(group) => group.documented.as_ref(),
+        TopLevelItem::Theorem(group) => group.documented.as_ref(),
+        TopLevelItem::Conjecture(group) => group.documented.as_ref(),
+        TopLevelItem::Equivalent(group) => group.documented.as_ref(),
+        TopLevelItem::TextItem(group) => group.documented.as_ref(),
+        TopLevelItem::Relation(group) => group.documented.as_ref(),
+        TopLevelItem::Topic(group) => group.documented.as_ref(),
+        _ => None,
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct MappingFormParts {
+    name: String,
+    parameters: Vec<String>,
+    magnetic: bool,
+}
+
+fn defines_mapping_parts(target: &DefinesTarget) -> Option<MappingFormParts> {
+    match target {
+        DefinesTarget::Form(form) => mapping_form_parts(form),
+        DefinesTarget::Declaration(statement) => match &statement.subject.kind {
+            IsSubjectKind::Forms(forms) => match forms.as_slice() {
+                [IsSubjectForm::Form(form)] => mapping_form_parts(form),
+                _ => None,
+            },
+            IsSubjectKind::Operator(_) => None,
+        },
+    }
+}
+
+fn mapping_form_parts(form: &FormOrDeclaration) -> Option<MappingFormParts> {
+    let FormOrDeclarationKind::FunctionDeclaration { name, form } = &form.kind else {
+        return None;
+    };
+    Some(MappingFormParts {
+        name: name.clone().unwrap_or_else(|| form.name.clone()),
+        parameters: form
+            .magnetic_placeholder
+            .iter()
+            .map(|placeholder| placeholder.name.clone())
+            .chain(
+                form.placeholders
+                    .iter()
+                    .map(|placeholder| placeholder.name.clone()),
+            )
+            .collect(),
+        magnetic: form.magnetic_placeholder.is_some(),
+    })
+}
+
+fn mapping_writing_target_matches(
+    target: &MappingWritingTarget,
+    expected: &MappingFormParts,
+) -> bool {
+    match target {
+        MappingWritingTarget::Mapping(form) => {
+            mapping_form_parts(form).is_some_and(|parts| parts == *expected)
+        }
+        MappingWritingTarget::Invocation(expression) => {
+            let ExpressionKind::FunctionCall { name, arguments } = &expression.kind else {
+                return false;
+            };
+            name == &expected.name
+                && arguments.len() == expected.parameters.len()
+                && arguments
+                    .iter()
+                    .zip(&expected.parameters)
+                    .all(|(argument, parameter)| {
+                        matches!(
+                            &argument.kind,
+                            ExpressionKind::Name(name)
+                                if name == parameter
+                                    && argument.span.end.saturating_sub(argument.span.start)
+                                        == name.len()
+                        )
+                    })
+        }
+    }
+}
+
+fn mapping_form_label(mapping: &MappingFormParts, placeholders: bool) -> String {
+    let arguments = mapping
+        .parameters
+        .iter()
+        .map(|parameter| {
+            if placeholders {
+                let suffix = if mapping.magnetic { "__" } else { "_" };
+                format!("{parameter}{suffix}")
+            } else {
+                parameter.clone()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!("{}({arguments})", mapping.name)
 }
 
 fn validate_top_level_item_ids(files: &[ParsedSourceFile], event_log: &mut EventLog) {
@@ -313,6 +480,105 @@ Id: "22222222-2222-4222-8222-222222222222"
                     .message
                     .contains("Only one top-level `Writing:` item")))
         );
+    }
+
+    #[test]
+    fn accepts_mapping_writing_for_exact_definition_and_invocation_forms() {
+        let files = vec![parsed_file(
+            "mapping.mlg",
+            r#"[\real.sequence]
+Defines: x(i_)
+Documented:
+. called: "real sequence"
+. writing: x(i)
+  as: "x?_{i?}"
+. writing: x(i_)
+  as: "\left\{x?\right\}_{i_?=1}^{\infty}"
+Id: "11111111-1111-4111-8111-111111111111"
+"#,
+        )];
+        let mut event_log = EventLog::new();
+
+        validate_documented_mapping_writing(&files, &mut event_log);
+
+        assert!(!event_log.has_errors(), "{:#?}", event_log.events());
+    }
+
+    #[test]
+    fn rejects_mapping_writing_outside_matching_mapping_defines() {
+        let files = vec![
+            parsed_file(
+                "not-mapping.mlg",
+                r#"[\thing]
+Defines: X
+Documented:
+. called: "thing"
+. writing: x(i)
+  as: "x?_{i?}"
+Id: "11111111-1111-4111-8111-111111111111"
+"#,
+            ),
+            parsed_file(
+                "wrong-form.mlg",
+                r#"[\real.sequence]
+Defines: x(i_)
+Documented:
+. called: "real sequence"
+. writing: x(j)
+  as: "x?_{j?}"
+Id: "22222222-2222-4222-8222-222222222222"
+"#,
+            ),
+            parsed_file(
+                "declares.mlg",
+                r#"[\sequence]
+Declares: X is \type
+Documented:
+. called: "sequence"
+. writing: x(i)
+  as: "x?_{i?}"
+Id: "33333333-3333-4333-8333-333333333333"
+"#,
+            ),
+            parsed_file(
+                "wrong-placeholder-kind.mlg",
+                r#"[\ordinary.mapping]
+Defines: x(i_)
+Documented:
+. called: "ordinary mapping"
+. writing: x(i__)
+  as: "x?_{i_?}"
+Id: "44444444-4444-4444-8444-444444444444"
+"#,
+            ),
+            parsed_file(
+                "partly-replaced-placeholders.mlg",
+                r#"[\binary.mapping]
+Defines: x(i_, j_)
+Documented:
+. called: "binary mapping"
+. writing: x(i_, j)
+  as: "x?_{i_?,j?}"
+Id: "55555555-5555-4555-8555-555555555555"
+"#,
+            ),
+        ];
+        let mut event_log = EventLog::new();
+
+        validate_documented_mapping_writing(&files, &mut event_log);
+
+        let messages = event_log
+            .events()
+            .iter()
+            .filter_map(|event| event.as_message())
+            .map(|message| message.message.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(messages.len(), 5);
+        assert!(messages[0].contains("only allowed when `Defines:` targets a mapping"));
+        assert!(messages[1].contains("must be exactly `x(i_)` or `x(i)`"));
+        assert!(messages[2].contains("only allowed inside a mapping-shaped `Defines:`"));
+        assert!(messages[3].contains("must be exactly `x(i_)` or `x(i)`"));
+        assert!(messages[4].contains("must be exactly `x(i_, j_)` or `x(i, j)`"));
     }
 }
 

@@ -12,6 +12,9 @@ pub(in crate::backend::view) struct RenderRegistry {
     pub(super) provided_members: Vec<ProvidedMemberRender>,
     /// Collection-wide aliases for rendering plain names as LaTeX fragments.
     pub(super) writing: HashMap<String, String>,
+    /// Per-mapping rendering rules declared by documented `writing:`/`as:`
+    /// groups on mapping-shaped `Defines:` items.
+    pub(super) mapping_writing: Vec<MappingWritingRender>,
     /// Explicit `Documented:called:` rendering overrides for top-level `Topic:`
     /// items, keyed by the raw `#some.name` heading string. Topics without an
     /// override are title-cased from their heading at render time.
@@ -49,6 +52,15 @@ pub(super) struct ProvidedMemberRender {
     pub(super) member_name: String,
     pub(super) parameters: Vec<String>,
     pub(super) written: String,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct MappingWritingRender {
+    pub(super) function_name: String,
+    pub(super) parameters: Vec<String>,
+    pub(super) magnetic: bool,
+    pub(super) invocation_written: Option<String>,
+    pub(super) mapping_written: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -120,6 +132,7 @@ pub(in crate::backend::view) fn build_render_registry(
     for file in files {
         for item in &file.document.items {
             collect_writing_aliases(item, &mut registry);
+            collect_mapping_writing(item, &mut registry);
         }
     }
 
@@ -197,6 +210,106 @@ fn collect_writing_aliases(item: &TopLevelItem, registry: &mut RenderRegistry) {
             registry.writing.insert(name.clone(), alias.body.clone());
         }
     }
+}
+
+fn collect_mapping_writing(item: &TopLevelItem, registry: &mut RenderRegistry) {
+    let TopLevelItem::Defines(group) = item else {
+        return;
+    };
+    let Some((function_name, parameters, magnetic)) =
+        defines_mapping_render_parts(&group.defines.argument)
+    else {
+        return;
+    };
+    let Some(documented) = &group.documented else {
+        return;
+    };
+
+    let mut render = MappingWritingRender {
+        function_name: function_name.clone(),
+        parameters: parameters.clone(),
+        magnetic,
+        invocation_written: None,
+        mapping_written: None,
+    };
+    for item in &documented.arguments {
+        let DocumentedItem::Writing(group) = item else {
+            continue;
+        };
+        let written = group
+            .as_
+            .arguments
+            .iter()
+            .map(|text| text.0.as_str())
+            .collect::<Vec<_>>()
+            .join(" ");
+        match &group.writing.argument {
+            MappingWritingTarget::Mapping(form)
+                if mapping_render_form_parts(form).is_some_and(|parts| {
+                    parts == (function_name.clone(), parameters.clone(), magnetic)
+                }) =>
+            {
+                render.mapping_written = Some(written);
+            }
+            MappingWritingTarget::Invocation(expression)
+                if mapping_invocation_matches(expression, &function_name, &parameters) =>
+            {
+                render.invocation_written = Some(written);
+            }
+            _ => {}
+        }
+    }
+
+    if render.invocation_written.is_some() || render.mapping_written.is_some() {
+        registry.mapping_writing.push(render);
+    }
+}
+
+fn defines_mapping_render_parts(target: &DefinesTarget) -> Option<(String, Vec<String>, bool)> {
+    match target {
+        DefinesTarget::Form(form) => mapping_render_form_parts(form),
+        DefinesTarget::Declaration(statement) => match &statement.subject.kind {
+            IsSubjectKind::Forms(forms) => match forms.as_slice() {
+                [IsSubjectForm::Form(form)] => mapping_render_form_parts(form),
+                _ => None,
+            },
+            IsSubjectKind::Operator(_) => None,
+        },
+    }
+}
+
+fn mapping_render_form_parts(form: &FormOrDeclaration) -> Option<(String, Vec<String>, bool)> {
+    let FormOrDeclarationKind::FunctionDeclaration { name, form } = &form.kind else {
+        return None;
+    };
+    Some((
+        name.clone().unwrap_or_else(|| form.name.clone()),
+        function_form_render_parameters(form),
+        form.magnetic_placeholder.is_some(),
+    ))
+}
+
+fn mapping_invocation_matches(
+    expression: &Expression,
+    function_name: &str,
+    parameters: &[String],
+) -> bool {
+    let ExpressionKind::FunctionCall { name, arguments } = &expression.kind else {
+        return false;
+    };
+    name == function_name
+        && arguments.len() == parameters.len()
+        && arguments
+            .iter()
+            .zip(parameters)
+            .all(|(argument, parameter)| {
+                matches!(
+                    &argument.kind,
+                    ExpressionKind::Name(name)
+                        if name == parameter
+                            && argument.span.end.saturating_sub(argument.span.start) == name.len()
+                )
+            })
 }
 
 pub(in crate::backend::view) fn build_linked_render_registry(

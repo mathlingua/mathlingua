@@ -13,6 +13,9 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
         )
         .expect("a variadic assignment always has a slice operand"),
         ExpressionKind::FunctionCall { name, arguments } => {
+            if let Some(rendered) = render_documented_mapping_call(name, arguments, registry) {
+                return rendered;
+            }
             if let Some(rendered) = render_provided_function_call(name, arguments, registry) {
                 return rendered;
             }
@@ -263,6 +266,46 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             render_expression(value, registry)
         ),
     }
+}
+
+fn render_documented_mapping_call(
+    name: &str,
+    arguments: &[Expression],
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let render = registry.mapping_writing.iter().find(|render| {
+        render.function_name == name && render.parameters.len() == arguments.len()
+    })?;
+    let is_mapping_form = arguments
+        .iter()
+        .zip(&render.parameters)
+        .all(|(argument, parameter)| {
+            matches!(
+                &argument.kind,
+                ExpressionKind::Name(argument_name)
+                    if argument_name == parameter
+                        && argument.span.end.saturating_sub(argument.span.start)
+                            == argument_name.len() + if render.magnetic { 2 } else { 1 }
+            )
+        });
+    let template = if is_mapping_form {
+        render.mapping_written.as_deref()?
+    } else {
+        render.invocation_written.as_deref()?
+    };
+    let mut substitutions = HashMap::new();
+    substitutions.insert(
+        render.function_name.clone(),
+        escape_math_identifier(name, registry),
+    );
+    for (parameter, argument) in render.parameters.iter().zip(arguments) {
+        let rendered_argument = render_expression(argument, registry);
+        substitutions.insert(parameter.clone(), rendered_argument.clone());
+        if !parameter.ends_with('_') {
+            substitutions.insert(format!("{parameter}_"), rendered_argument);
+        }
+    }
+    Some(substitute_math_template(template, &substitutions))
 }
 
 #[derive(Clone)]

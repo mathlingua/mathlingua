@@ -817,6 +817,29 @@ usual, and every entry must be referenced by some labeled formulation.
 `Aliases:` accepts `alias:` groups. `Metadata:` accepts `id:` and `version:`.
 `References:` contains resource headers such as `$book.chapter`.
 
+### Mapping writing templates
+
+A documented `writing:`/`as:` group controls how a mapping introduced by
+`Defines:` is rendered. It is valid only when the `Defines:` target is a
+mapping. The `writing:` value must be either the exact mapping form or that same
+form with each placeholder replaced by its ordinary name:
+
+```text
+[\real.sequence]
+Defines: x(i_)
+Documented:
+. writing: x(i)
+  as: "x?_{i?}"
+. writing: x(i_)
+  as: "\left\{x?\right\}_{i_?=1}^{\infty}"
+```
+
+The ordinary form (`x(i)`) renders invocations such as `x(j)`, substituting
+`x?` and `i?` with the invoked mapping and argument. The placeholder form
+(`x(i_)`) renders the mapping itself, such as in
+`x(i_) is \real.sequence`; its template may use the placeholder key `i_?`.
+The `as:` value is raw LaTeX rendering text.
+
 `Person` groups use author headings such as `[@ada.lovelace]` and require
 name text on `Person:` with optional `biography:`. `Resource` groups use resource headings such as
 `[$principia]` and contain resource item groups like `title:`, `author:`,
@@ -856,12 +879,12 @@ currently treated as declarations by the reference walker, so command references
 inside their target are not validated there. Built-in targets are accepted by
 the parser, but the current type-reduction code ignores them.
 
-Writing aliases use `:~>`.
+Collection-wide `Writing:` aliases use `:~>` and apply to plain names. They are
+separate from documented mapping writing templates.
 
 ```text
-writing: f(x_) :~> f(x)
-as:
-. "f(x)"
+Writing:
+. alpha :~> \alpha
 ```
 
 The body after `:~>` is raw non-empty text, not parsed formulation syntax.

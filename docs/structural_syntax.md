@@ -268,8 +268,8 @@ An empty document is supported by the current implementation because `Document.i
 - **`SubsectionTitle`** — `SubsectionTitleGroup`, heading: none. Sections: `SubsectionTitle: OpenText`
 - **`Text`** — `TextGroup`, heading: none. Sections: `Text: OpenText`
 - **`Writing`** — `TopLevelWritingGroup`, heading: none. Sections: `Writing: WritingAlias+` (each alias LHS must be a `Name`, used with `:~>`)
-- **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when?: Clause+`/`to: Expression` branches, `else?: Expression`, `Documented?`, `Justification?`, `Aliases?`, `References?`, `Metadata?`
-- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: FormOrDeclaration`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: IsOrViaItem`, `declares?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when: Clause+`/`to: Expression` branches, `else?: Expression`, `Documented?`, `Justification?`, `Aliases?`, `References?`, `Metadata?`
+- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DefinesTarget`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: IsOrViaItem`, `declares?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `DefinesTarget` is tried as a `FormOrDeclaration` first, then as an ordinary `DeclarationStatement`, allowing typed or value-bearing targets such as `X := value is \set`
 - **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Refines`** — `RefinesGroup`, heading: refined command or refined spec-infix command (for example, `[A \:(nonempty)::subset:/ B]`). Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
 - **`States`** — `StatesGroup`, heading: command. Sections: `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
@@ -456,9 +456,11 @@ Optional on:
 - alias items
 - enables items
 - documented items
-- justification items
 - specify items
 - clause groups
+
+Required on `HaveGroup` items nested directly under `Justification:`; the same
+group uses an optional label in clause or `declares:` positions.
 
 These headings must parse with `parse_label_header`.
 
@@ -483,6 +485,8 @@ These headings must parse with `parse_resource_header`.
 The structural parser delegates section content to formulation parsers as follows:
 
 - `FormOrDeclaration` — `parse_form_or_declaration`
+- `DefinesTarget` — try `parse_form_or_declaration`, then
+  `parse_ordinary_declaration_statement`
 - `DeclarationStatement` — `parse_ordinary_declaration_statement`
 - `RefinedDeclarationStatement` — `parse_refined_declaration_statement`
 - `IsOrViaItem` — try `parse_is_via_statement`, then `parse_ordinary_declaration_statement`
@@ -500,13 +504,16 @@ Declaration statements and `parse_is_via_statement` accept comma-separated form 
 
 ## Compact AST Schema
 
-This section is intentionally dense. It is the closest thing in this file to the old `old_docs/structural_ast.md`, but updated to reflect the current Rust implementation and naming.
+This section is intentionally dense. It is the parser-oriented reference for
+the current Rust structural AST and naming.
 
 Conventions used below:
 
 - `[CommandHeader]` means the heading is required and must parse as a formulation command header.
 - `[CommandHeader]?` means the heading is optional, but if present must parse as a formulation command header.
-- `[LabelHeader]?` means an optional structural label heading.
+- `[LabelHeader]?` means an optional structural label heading. `HaveGroup`
+  headings are optional in ordinary clause/`declares:` positions but required
+  when the group is an item of `Justification:`.
 - `[AuthorHeader]` means a required author heading.
 - `[ResourceHeader]` means a required resource heading.
 - If no heading line is shown, the group must not have a heading.
@@ -518,6 +525,10 @@ Conventions used below:
 IsOrViaItemUnion ::=
     | IsViaStatement
     | DeclarationStatement
+    | HaveGroup
+    | LabeledIsOrViaItem
+
+LabeledIsOrViaItem ::= Grouped(IsOrViaItemUnion) Label
 ```
 
 ```union
@@ -529,6 +540,12 @@ BindingOrSpecUnion ::=
 AliasKindUnion ::=
     | ExpressionAlias
     | SpecOperatorAlias
+```
+
+```union
+DefinesTargetUnion ::=
+    | FormOrDeclaration
+    | DeclarationStatement
 ```
 
 ```union
@@ -554,8 +571,10 @@ EnablesItemUnion ::=
 DocumentedItemUnion ::=
     | WrittenGroup
     | CalledGroup
+    | AdjectiveGroup
     | WritingGroup
     | OverviewGroup
+    | DescriptionGroup
     | RelatedGroup
     | DiscovererGroup
     | NotesGroup
@@ -611,6 +630,7 @@ ClauseUnion ::=
     | PiecewiseGroup
     | GivenGroup
     | EquivalentlyGroup
+    | HaveGroup
     | DeclarationStatement
     | Expression
 ```
@@ -620,6 +640,9 @@ TopLevelItemUnion ::=
     | TitleGroup
     | SectionTitleGroup
     | SubsectionTitleGroup
+    | TextGroup
+    | TopLevelWritingGroup
+    | DisambiguatesGroup
     | DefinesGroup
     | DeclaresGroup
     | RefinesGroup
@@ -633,6 +656,7 @@ TopLevelItemUnion ::=
     | RelationGroup
     | EquivalentGroup
     | TopicGroup
+    | TextItemGroup
 ```
 
 ```union
@@ -645,6 +669,10 @@ WrittenText ::= Text<WrittenText>
 
 ```union
 CalledText ::= Text<CalledText>
+```
+
+```union
+AdjectiveText ::= Text<AdjectiveText>
 ```
 
 ```union
@@ -670,8 +698,33 @@ SubsectionTitle: <OpenText>
 ```
 
 ```group
+Text: <OpenText>
+```
+
+```group
+Writing: <WritingAlias>+
+```
+
+```group
+[FunctionOrOperatorForm]
+Disambiguates:
+(when: <ClauseUnion>+
+ to: <Expression>)*
+else?: <Expression>
+Documented?: <DocumentedItemUnion>+
+Justification?: <HaveGroup>+
+Aliases?: <AliasItemUnion>+
+References?: <ResourceHeader>+
+Metadata?: <MetadataItemUnion>+
+```
+
+`Disambiguates:` requires at least one `when:`/`to:` branch or an `else:`.
+Each `when:` belongs to the immediately following `to:`. Use `else:` for the
+unconditional fallback.
+
+```group
 [CommandHeader]
-Defines: <FormOrDeclaration>
+Defines: <DefinesTargetUnion>
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 extends?: <IsOrViaItemUnion>
@@ -801,14 +854,13 @@ Relation: <OpenText>*
 using?: <DeclarationStatement>+
 between: <RelationSubject>
 and: <RelationSubject>
-when?: <Clause>+
+when?: <ClauseUnion>+
 means?: <RelationMeans>
 Documented?: <DocumentedItemUnion>+
 Justification?: <HaveGroup>+
 Aliases?: <AliasItemUnion>+
 References?: <ResourceHeader>+
 Metadata?: <MetadataItemUnion>+
-Id?: <OpenText>
 ```
 
 A top-level `Relation:` states a bidirectional relationship between the two
@@ -830,12 +882,11 @@ references and a prose `means:` are recorded, not proven).
 [CommandHeader]
 Equivalent: <OpenText>*
 using?: <DeclarationStatement>+
-when?: <Clause>+
+when?: <ClauseUnion>+
 to: <Expression>+
 Documented?: <DocumentedItemUnion>+
 Justification?: <HaveGroup>+
 References?: <ResourceHeader>+
-Id?: <OpenText>
 ```
 
 A top-level `Equivalent:` declares that the `\command`s listed under `to:` are
@@ -864,7 +915,6 @@ Topic: <OpenText>*
 within?: <OpenText>
 Related?: <TopicRelatedItem>+
 Documented?: <CalledDocumentedItem>+
-Id?: <OpenText>
 ```
 
 ```group
@@ -892,6 +942,16 @@ of it. With `called:` (already quoted), the four quoted-text fields are `within:
 documentation fields are rejected. The item is stated, not checked: topic and
 signature references need not resolve, and it registers no command signatures or
 type facts.
+
+```group
+TextTheorem | TextAxiom | TextConjecture | TextDefinition: <OpenText>
+Documented?: <TextDocumentedItem>+
+References?: <ResourceHeader>+
+Id: <OpenText>
+```
+
+`TextDocumentedItem` is restricted to `called:`, `written:`, `description:`,
+and `notes:`.
 
 ### Nested item groups
 
@@ -930,7 +990,7 @@ as: <ExpressionBinding>
 relation: <OpenText>*
 to: <RelationshipDeclaration>
 when?: <RelationWhenItem>+
-means?: <Clause>
+means?: <ClauseUnion>
 represents?: <RelationKind>+
 by?: <OpenText>+
 ```
@@ -959,6 +1019,16 @@ overview: <OpenText>
 
 ```group
 [LabelHeader]?
+adjective: <AdjectiveText>+
+```
+
+```group
+[LabelHeader]?
+description: <OpenText>
+```
+
+```group
+[LabelHeader]?
 related: <OpenText>+
 ```
 
@@ -969,15 +1039,15 @@ discoverer: <OpenText>*
 
 ```group
 [LabelHeader]?
-label: <OpenText>*
-by: <OpenText>*
-comment: <OpenText>
+notes: <OpenText>+
 ```
 
 ```group
 [LabelHeader]?
-by: <OpenText>*
-comment: <OpenText>
+have: <ClauseUnion>+
+asserting: <ClauseUnion>+
+because?: <ClauseUnion>+
+by?: <Expression>+
 ```
 
 ```group
@@ -1146,6 +1216,14 @@ iff: <ClauseUnion>+
 
 ```group
 [LabelHeader]?
+have: <ClauseUnion>+
+asserting: <ClauseUnion>+
+because?: <ClauseUnion>+
+by?: <Expression>+
+```
+
+```group
+[LabelHeader]?
 piecewise: <OpenText>*
 if: <ClauseUnion>+
 then: <ClauseUnion>+
@@ -1157,6 +1235,11 @@ else?: <ClauseUnion>+
 given: <RefinedDeclarationStatement>
 where?: <ClauseUnion>+
 then: <ClauseUnion>+
+```
+
+```group
+[LabelHeader]?
+equivalently: <ClauseUnion>+
 ```
 
 ## Current Implementation Notes and Footguns
@@ -1199,7 +1282,6 @@ Examples of affected sections:
 - `means:`
 - `expresses:`
 - `overview:`
-- `comment:`
 - all singular resource item sections
 
 ### Text parsing is very literal

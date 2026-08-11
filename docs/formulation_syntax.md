@@ -145,7 +145,8 @@ Important implementation distinction:
 - declaration statement parsing, `parse_is_or_spec`, and `parse_spec_operator_alias` do not use that token for the quoted operator
 - those helper parsers accept any top-level `"..."`
 
-So `x "less than" A` is rejected by `parse_expression`, but accepted by `parse_declaration_statement` and the legacy spec helper.
+So `x "less than" A` is rejected by `parse_expression`, but accepted by
+`parse_declaration_statement` and `parse_is_or_spec`.
 
 ### Labels on grouped formulations
 
@@ -291,19 +292,31 @@ Associativity:
 ### Grammar
 
 ```text
-Expression ::= SpecOrPredicateExpression
+Expression ::= MappingExpression
+
+MappingExpression ::=
+    SpecOrPredicateExpression "=>" MappingExpression
+  | SpecOrPredicateExpression
 
 SpecOrPredicateExpression ::=
-    EqualityExpression QuotedName Name
-  | EqualityExpression "is" PredicateTypeExpression
-  | EqualityExpression "is?" BuiltinTypeExpression
-  | EqualityExpression "is_not?" BuiltinTypeExpression
-  | EqualityExpression "is?" CommandExpression
-  | EqualityExpression "is_not?" CommandExpression
-  | EqualityExpression
+    InfixCommandExpression InfixSpec InfixCommandExpression
+  | InfixCommandExpression QuotedName Name
+  | InfixCommandExpression QuotedName "?" Name
+  | InfixCommandExpression QuotedName CommandExpression
+  | InfixCommandExpression "is" PredicateTypeExpression
+  | InfixCommandExpression ("is?" | "is_not?") (CommandExpression | BuiltinTypeExpression)
+  | InfixCommandExpression "member_of" InfixCommandExpression
+  | InfixCommandExpression "satisfies" InfixCommandExpression
+  | "?" "is" PredicateTypeExpression
+  | "?" QuotedName (Name | CommandExpression)
+  | InfixCommandExpression
 
-PredicateTypeExpression ::= CommandExpression | BuiltinTypeExpression
+PredicateTypeExpression ::= CommandExpression | BuiltinTypeExpression | Name
 BuiltinTypeExpression ::= "\\" "\\" Chain
+
+InfixCommandExpression ::=
+    InfixCommandExpression InfixCommand EqualityExpression
+  | EqualityExpression
 
 EqualityExpression ::=
     EqualityExpression ("=" | SpecialOperator) AdditiveExpression
@@ -323,14 +336,16 @@ PowerExpression ::=
 
 HighPrecedenceExpression ::=
     HighPrecedenceExpression NamedOperator UnaryExpression
-  | HighPrecedenceExpression InfixCommand UnaryExpression
   | UnaryExpression
 
 UnaryExpression ::=
-    ("+" | "-") UnaryExpression
-  | AtomExpression
+    PrefixOperator UnaryExpression
+  | PostfixExpression
 
-AtomExpression ::=
+PostfixExpression ::= PrimaryExpression PostfixNamedOperator
+                    | PrimaryExpression
+
+PrimaryExpression ::=
     LabeledExpression
   | GroupedExpression
   | FunctionExpression
@@ -348,10 +363,16 @@ AtomExpression ::=
   | Name
 ```
 
-This reference does not spell out every production in full. The lower
-(spec/predicate) precedence level in particular includes, besides `is`/`is?`:
+This reference does not spell out every production in full. `parse_expression`
+also performs top-level scans before invoking the generated grammar for refined
+predicates and spec-infix expressions, structural literal types, set expressions
+whose targets use the full expression language, collection builds, contextual
+commands, and variadic assignments.
 
-- **Function literals** `(<param>) => <expression>` (anonymous functions).
+The lower (spec/predicate) precedence level includes, besides `is`/`is?`:
+
+- **Function literals** `(<param>) => <expression>` (anonymous functions), at
+  the outermost, right-associative mapping level.
 - **Infix specification** statements/predicates `<a> \: chain :/ <b>` and the
   `?:/` predicate form.
 - **Quoted-operator specs and predicates** `<a> "op" <b>`, `<a> "op"? <b>`, and
@@ -400,7 +421,7 @@ FunctionExpression ::=
     Name "(" Expression ("," Expression)* ")"
   | Name "[|" NamedFunctionElement ("," NamedFunctionElement)* "|]"
 
-NamedFunctionElement ::= NamedFunctionLhs ":=" Expression
+NamedFunctionElement ::= NamedFunctionLhs ":=" SpecOrPredicateExpression
 NamedFunctionLhs ::= Name | SubsetNameCall
 ```
 
@@ -413,7 +434,7 @@ Examples:
 
 ```text
 TupleExpression ::= "(" TupleExpressionElement "," TupleExpressionElement ("," TupleExpressionElement)* ")"
-TupleExpressionElement ::= Expression | Operator
+TupleExpressionElement ::= SpecOrPredicateExpression | Operator
 ```
 
 Important implementation detail:
@@ -427,8 +448,9 @@ Operators may appear as tuple elements, for example `(+, x)`.
 
 ```text
 SetExpression ::= "{" CollectionTarget ":" "..." "}"
-                | "{" CollectionTarget ":" Expression ("," Expression)* ("|" Expression)? "}"
+                | "{" CollectionTarget ":" Expression (("," | ";") Expression)* ("|" SetPredicate)? "}"
 CollectionTarget ::= SetTarget | Expression
+SetPredicate ::= Expression | SetTarget ":=" Expression
 ```
 
 Examples:
@@ -743,11 +765,12 @@ CommandHeaderTail ::= (":" | ":?") RawChain CurlyHeadingArgs+
 
 ## Command Header Syntax
 
-`parse_command_header` chooses among three cases in this order:
+`parse_command_header` chooses among four cases in this order:
 
-1. input contains top-level `\.` -> infix command header
-2. otherwise input contains top-level `::` -> refined command header
-3. otherwise -> simple command header
+1. input contains top-level `\:` -> infix-spec header
+2. otherwise input contains top-level `\.` -> infix command header
+3. otherwise input contains top-level `::` -> refined command header
+4. otherwise -> simple command header
 
 ### Simple command headers
 
@@ -786,6 +809,17 @@ Notes:
   so `n_ \.natural.+./ m_` binds `n` and `m` without requiring separate
   `when:` declarations
 
+### Infix-spec headers
+
+```text
+InfixSpecHeader ::= FormOrDeclaration "\:" InfixSpecHeaderBody ":/" FormOrDeclaration
+```
+
+Both operands are required. The declared spelling ends in `:/`; `?:/` is only
+valid for predicate expressions. The body may use either an ordinary command
+chain or the same parenthesized refinement prefix used by refined command
+headers.
+
 ## Alias Syntax
 
 ### Writing aliases
@@ -803,8 +837,13 @@ Notes:
 ### Expression aliases
 
 ```text
-ExpressionAlias ::= ExpressionAliasLhs ":=>" Expression
-ExpressionAliasLhs ::= FormOrDeclaration | SimpleCommandHeader | InfixCommandHeader
+ExpressionAlias ::= ExpressionAliasLhs (":=>" | ":->") Expression
+ExpressionAliasLhs ::= FormOrDeclaration
+                     | SimpleCommandHeader
+                     | InfixCommandHeader
+                     | MemberAliasLhs
+MemberAliasLhs ::= Name "." Name
+                 | Name "." Name "(" PlaceholderList? ")"
 ```
 
 Important implementation detail:
@@ -815,7 +854,11 @@ Important implementation detail:
 
 ```text
 SpecOperatorAlias ::= PlaceholderSpecStatement ":->" SpecOperatorAliasTarget
-SpecOperatorAliasTarget ::= IsOrSpec | "\\" RawChain
+SpecOperatorAliasTarget ::= IsOrSpec
+                          | MemberOfExpression
+                          | PlaceholderSpecStatement
+                          | "\\" "\\" RawChain
+MemberOfExpression ::= InfixCommandExpression "member_of" InfixCommandExpression
 PlaceholderSpecStatement ::= PlaceholderForm TopLevelQuotedOperator Name
 ```
 
@@ -842,6 +885,12 @@ AuthorHeader ::= "@" DottedParts
 
 ```text
 ResourceHeader ::= "$" DottedParts
+```
+
+### Topic headers
+
+```text
+TopicHeader ::= "#" DottedParts
 ```
 
 ### Dotted parts
@@ -879,13 +928,16 @@ This top-level scanning is used for:
 
 ## Compact Reference Grammar
 
-This section is intentionally dense. It is the closest thing in this file to a parser reference and is meant to play the same role that `old_docs/syntax.lark` used to play, but corrected to match the current Rust implementation.
+This section is intentionally dense. It is the parser-oriented reference for
+the current Rust formulation implementation.
 
 ### Parser roots
 
 ```text
 InputExpression ::= Expression
 InputDeclarationStatement ::= DeclarationStatement
+InputHardCastStatement ::= HardCastStatement
+InputExpressionBinding ::= ExpressionBinding
 InputFormOrDeclaration ::= FormOrDeclaration
 InputIsOrSpec ::= IsOrSpec
 InputIsOrRefinedStatementSpec ::= IsOrRefinedStatementSpec
@@ -897,6 +949,7 @@ InputSpecOperatorAlias ::= SpecOperatorAlias
 InputLabelHeader ::= LabelHeader
 InputAuthorHeader ::= AuthorHeader
 InputResourceHeader ::= ResourceHeader
+InputTopicHeader ::= TopicHeader
 ```
 
 ### Lexical terminals
@@ -912,16 +965,18 @@ MagneticPlaceholder ::= IdentifierName "__"
 QuotedName ::= "\"" IdentifierName "\""
 Label ::= "[:" IdentifierName ("." IdentifierName)* ":]"
 
-NamedOperator ::= "|" IdentifierName "|"
-                | ":|" IdentifierName "|"
-                | "|" IdentifierName "|:"
-                | ":|" IdentifierName "|:"
+NamedOperatorPath ::= NamedOperatorPart ("." NamedOperatorPart)*
+NamedOperatorPart ::= IdentifierName | OperatorText
+NamedOperator ::= "|" NamedOperatorPath "|"
+                | ":|" NamedOperatorPath "|"
+                | "|" NamedOperatorPath "|:"
+                | ":|" NamedOperatorPath "|:"
 
 PrefixFormNamedOperator ::= IdentifierName "|"
 PostfixFormNamedOperator ::= "|" IdentifierName
 
-SpecialOperator ::= token matched by (?:[-~!#%^&*+=|<>/]{2,}|[~!#%&<>])
-OperatorText ::= non-empty raw string whose characters are all in -~!#%^&*\+=|<>/
+SpecialOperator ::= operator token described under "Special operators" above
+OperatorText ::= raw helper operator text described under "Special operators" above
 Ellipsis ::= "..."
 ```
 
@@ -929,7 +984,7 @@ Ellipsis ::= "..."
 
 ```text
 AnyOperator ::= SpecialOperator | "+" | "-" | "*" | "/" | "=" | "^"
-InfixFormOperator ::= AnyOperator | NamedOperator
+InfixFormOperator ::= AnyOperator | NamedOperator | "[" AnyOperator "]"
 PrefixFormOperator ::= AnyOperator | PrefixFormNamedOperator
 PostfixFormOperator ::= AnyOperator | PostfixFormNamedOperator
 
@@ -937,7 +992,7 @@ PlaceholderList ::= Placeholder ("," Placeholder)*
 ExpressionList ::= Expression ("," Expression)*
 FormList ::= FormOrDeclaration ("," FormOrDeclaration)*
 
-TupleExpressionElement ::= Expression | AnyOperator
+TupleExpressionElement ::= SpecOrPredicateExpression | AnyOperator
 TupleFormElement ::= FormOrDeclaration | AnyOperator
 
 SubsetNameCall ::= Name "[" (Name | Placeholder) "]"
@@ -984,19 +1039,31 @@ PlaceholderForm ::= Placeholder
 ### Expressions
 
 ```text
-Expression ::= SpecOrPredicateExpression
+Expression ::= MappingExpression
+
+MappingExpression ::=
+    SpecOrPredicateExpression "=>" MappingExpression
+  | SpecOrPredicateExpression
 
 SpecOrPredicateExpression ::=
-    EqualityExpression QuotedName Name
-  | EqualityExpression "is" PredicateTypeExpression
-  | EqualityExpression "is?" BuiltinTypeExpression
-  | EqualityExpression "is_not?" BuiltinTypeExpression
-  | EqualityExpression "is?" CommandExpression
-  | EqualityExpression "is_not?" CommandExpression
-  | EqualityExpression
+    InfixCommandExpression InfixSpec InfixCommandExpression
+  | InfixCommandExpression QuotedName Name
+  | InfixCommandExpression QuotedName "?" Name
+  | InfixCommandExpression QuotedName CommandExpression
+  | InfixCommandExpression "is" PredicateTypeExpression
+  | InfixCommandExpression ("is?" | "is_not?") (CommandExpression | BuiltinTypeExpression)
+  | InfixCommandExpression "member_of" InfixCommandExpression
+  | InfixCommandExpression "satisfies" InfixCommandExpression
+  | "?" "is" PredicateTypeExpression
+  | "?" QuotedName (Name | CommandExpression)
+  | InfixCommandExpression
 
-PredicateTypeExpression ::= CommandExpression | BuiltinTypeExpression
+PredicateTypeExpression ::= CommandExpression | BuiltinTypeExpression | Name
 BuiltinTypeExpression ::= "\\" "\\" Chain
+
+InfixCommandExpression ::=
+    InfixCommandExpression InfixCommand EqualityExpression
+  | EqualityExpression
 
 EqualityExpression ::=
     EqualityExpression ("=" | SpecialOperator) AdditiveExpression
@@ -1016,14 +1083,16 @@ PowerExpression ::=
 
 HighPrecedenceExpression ::=
     HighPrecedenceExpression NamedOperator UnaryExpression
-  | HighPrecedenceExpression InfixCommand UnaryExpression
   | UnaryExpression
 
 UnaryExpression ::=
-    ("+" | "-") UnaryExpression
-  | AtomExpression
+    PrefixOperator UnaryExpression
+  | PostfixExpression
 
-AtomExpression ::=
+PostfixExpression ::= PrimaryExpression PostfixNamedOperator
+                    | PrimaryExpression
+
+PrimaryExpression ::=
     GroupedExpression Label
   | GroupedExpression
   | FunctionExpression
@@ -1032,6 +1101,11 @@ AtomExpression ::=
   | SubsetExpression
   | VariadicSlice
   | CommandExpression
+  | BuiltinCommandExpression
+  | MemberExpression
+  | CommandExpression ("@" | "@!") PrimaryExpression
+  | Name "?"
+  | MagneticPlaceholder
   | Placeholder
   | Name
 
@@ -1041,14 +1115,15 @@ GroupedExpression ::= "(" Expression ")"
 FunctionExpression ::= Name "(" ExpressionList ")"
                      | Name "[|" FunctionNamedExpressionElement ("," FunctionNamedExpressionElement)* "|]"
 
-FunctionNamedExpressionElement ::= FunctionNamedExpressionElementLhs ":=" Expression
+FunctionNamedExpressionElement ::= FunctionNamedExpressionElementLhs ":=" SpecOrPredicateExpression
 FunctionNamedExpressionElementLhs ::= Name | SubsetNameCall
 
 TupleExpression ::= "(" TupleExpressionElement "," TupleExpressionElement ("," TupleExpressionElement)* ")"
 
 SetExpression ::= "{" CollectionTarget ":" "..." "}"
-                | "{" CollectionTarget ":" Expression ("," Expression)* ("|" Expression)? "}"
+                | "{" CollectionTarget ":" Expression (("," | ";") Expression)* ("|" SetPredicate)? "}"
 CollectionTarget ::= SetTarget | Expression
+SetPredicate ::= Expression | SetTarget ":=" Expression
 
 SubsetExpression ::= SubsetNameCall
 ```
@@ -1067,9 +1142,17 @@ ParenExpressionArgs ::= "(" ExpressionList ")"
 CommandExpressionTailPart ::= ":" Chain CurlyExpressionArgs+
 CommandExpressionTail ::= CommandExpressionTailPart*
 
-CommandExpression ::= "\" Chain CurlyExpressionArgs* CommandExpressionTail ParenExpressionArgs*
+CommandContext ::= ("#using" | "#given") "{" (CommandContextArgument (";" CommandContextArgument)*)? "}"
+CommandContextArgument ::= Name ":=" Expression | DeclarationStatement | Expression | RawText
+
+CommandExpression ::= "\" Chain CurlyExpressionArgs* CommandExpressionTail ParenExpressionArgs* CommandContext?
+
+BuiltinCommandArgs ::= "{" SpecOrPredicateExpression (";" SpecOrPredicateExpression)* "}"
+BuiltinCommandTail ::= ":" Chain BuiltinCommandArgs
+BuiltinCommandExpression ::= "\\" "\\" Chain BuiltinCommandArgs? BuiltinCommandTail*
 
 InfixCommand ::= "\." Chain CurlyExpressionArgs* CommandExpressionTail "./"
+InfixSpec ::= "\:" Chain CurlyExpressionArgs* CommandExpressionTail (":/" | "?:/")
 ```
 
 `RawChain` is used by scanner-based helpers such as command headers, refined
@@ -1097,8 +1180,9 @@ DeclarationBody ::=
 DeclarationRelation ::= " is " TypeExpression | TopLevelQuotedOperator Expression
 
 ExpressionBinding ::= Expression ":=" Expression
+HardCastStatement ::= IsSubject (":=" Expression)? " is! " TypeExpression
 
-IsStatement ::= IsSubject " is " CommandExpression
+IsStatement ::= IsSubject " is " TypeExpression
 SubjectSpecStatement ::= SpecSubject TopLevelQuotedOperator Name
 PlaceholderSpecStatement ::= PlaceholderForm TopLevelQuotedOperator Name
 
@@ -1136,7 +1220,7 @@ Notes:
 ### Command headers
 
 ```text
-CommandHeader ::= SimpleCommandHeader | InfixCommandHeader | RefinedCommandHeader
+CommandHeader ::= SimpleCommandHeader | InfixCommandHeader | InfixSpecHeader | RefinedCommandHeader
 
 CurlyHeadingArgs ::= "{" (FormList | VariadicParameter) "}"
 VariadicParameter ::= Name "..." Name?
@@ -1150,7 +1234,15 @@ CommandHeaderTail ::= CommandHeaderTailPart*
 
 SimpleCommandHeader ::= "\" RawChain CurlyHeadingArgs* CommandHeaderTail ParenHeadingArgs*
 InfixCommandHeader ::= HeadingParameter? "\." RawChain CurlyHeadingArgs* CommandHeaderTail "./" HeadingParameter?
+InfixSpecHeader ::= FormOrDeclaration "\:" InfixSpecHeaderBody ":/" FormOrDeclaration
+InfixSpecHeaderBody ::= RawChain CurlyHeadingArgs* CommandHeaderTail
+                      | RefinedHeaderLeft "::" RawChain CurlyHeadingArgs* CommandHeaderTail
+RefinedHeaderLeft ::= [RawChain "."] "(" RefinedHeaderPart ("," RefinedHeaderPart)* ")"
 ```
+
+An infix-command header must provide either both operands or neither. An
+infix-spec header always requires both operands and uses `:/`; `?:/` is reserved
+for predicate use sites.
 
 ### Aliases and headers
 
@@ -1160,32 +1252,46 @@ WritingAlias ::= FormOrDeclaration ":~>" RawNonEmptyText
 ExpressionAliasLhs ::= FormOrDeclaration
                      | SimpleCommandHeader
                      | InfixCommandHeader
+                     | MemberAliasLhs
 
-ExpressionAlias ::= ExpressionAliasLhs ":=>" Expression
+MemberAliasLhs ::= Name "." Name
+                 | Name "." Name "(" PlaceholderList? ")"
+
+ExpressionAlias ::= ExpressionAliasLhs (":=>" | ":->") Expression
 SpecOperatorAlias ::= PlaceholderSpecStatement ":->" SpecOperatorAliasTarget
-SpecOperatorAliasTarget ::= IsOrSpec | "\\" RawChain
+SpecOperatorAliasTarget ::= IsOrSpec
+                          | MemberOfExpression
+                          | PlaceholderSpecStatement
+                          | "\\" "\\" RawChain
+MemberOfExpression ::= InfixCommandExpression "member_of" InfixCommandExpression
 
 DottedParts ::= Name ("." Name)*
 LabelHeader ::= DottedParts
 AuthorHeader ::= "@" DottedParts
 ResourceHeader ::= "$" DottedParts
+TopicHeader ::= "#" DottedParts
 ```
 
 ### Deliberate omissions from the current implementation
 
 The old grammar drafts implied several forms that the current code does not accept. In particular:
 
-- `parse_expression` does not accept refined command expressions
-- there are no general prefix or postfix non-arithmetic operator expressions
-- infix command expressions are not a separate root form; they only appear through `HighPrecedenceExpression`
-- expression-level `is` accepts ordinary command and built-in type expressions, while `is?` and `is_not?` accept ordinary command predicates or built-in type predicates
+- a refined command expression is not a standalone `parse_expression` atom; it
+  is accepted in refined type/declaration positions, refined predicates, and
+  refined spec-infix bodies
+- prefix and postfix expression operators are the named-operator token forms;
+  arbitrary symbolic operators remain infix except for arithmetic unary `+`/`-`
+- infix commands have their own precedence level below equality and arithmetic
+- expression-level `is` accepts ordinary command, built-in, function, tuple,
+  set, and refined type expressions; `is?` and `is_not?` accept ordinary,
+  refined, or built-in command predicates
 
 ## Current Implementation Notes and Footguns
 
 ### `parse_expression` does not parse refined command expressions
 
 Refined command expressions are accepted through refined declaration statements
-and the legacy `parse_is_or_refined_statement_spec` helper.
+and `parse_is_or_refined_statement_spec`.
 
 ### Helper `is` statements use different subject syntax than `is` expressions
 
@@ -1219,7 +1325,9 @@ in `language.md`.
 
 ### Named-operator and infix-command precedence is left-associative
 
-Ungrouped chains like `a |f| b |g| c` are accepted and associate to the left at the named-operator/infix-command precedence level.
+Ungrouped chains like `a |f| b |g| c` are accepted and associate to the left at
+the named-operator level. Infix-command chains are also left-associative at
+their separate, lower precedence level.
 
 ### Tail parts require `{...}`
 

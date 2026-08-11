@@ -460,7 +460,7 @@ parentheses), and its purpose.
 - **`Disambiguates`** (operator/function form heading) — global resolution of an
   ambiguous operator or function into typed branches.
 - **`Defines`** (command heading) — introduces a command for a mathematical
-  form.
+  form or typed/value-bearing declaration.
 - **`Declares`** (command heading) — declares a statement, specification, or type
   fact.
 - **`Refines`** (refined command or refined spec-infix heading) — defines a
@@ -527,7 +527,8 @@ item.
 
 ## Definition Groups
 
-`Defines` introduces the form associated with a command.
+`Defines` introduces the form or declaration associated with a command. Its
+target may include an `is` type relation and an optional `:=` value definition.
 
 ```text
 [\set]
@@ -1544,8 +1545,9 @@ fallback branch is omitted, the conditional renders nothing when the variables
 are not all present. Conditional fragments may be nested.
 
 The renderer uses these entries to display commands, forms, and definitions.
-The semantic checker only enforces that `Defines`, `Declares`, and `Refines`
-include at least one `called:` item.
+The semantic checker requires `Defines`, `Declares`, and `States` to include at
+least one `called:` or `written:` item. A `Refines:` group instead requires an
+`adjective:` item and rejects `called:`.
 
 ### Card titles
 

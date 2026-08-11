@@ -137,7 +137,7 @@ The command layer is split between:
 The implemented top-level commands are:
 
 - `mlg check [PATH...]`
-- `mlg format [PATH...]`
+- `mlg format`
 - `mlg clean`
 - `mlg export [--base-path PATH] [--cname DOMAIN] [--force]`
 - `mlg init`
@@ -711,11 +711,11 @@ Common changes generally belong in these places:
   `docs/formulation_syntax.md`; then update the relevant frontend parser and
   AST.
 - Add a new structural group:
-  update `src/frontend/structural/ast/`, structural parser dispatch, parser
+  update `src/frontend/structural/ast.rs`, structural parser dispatch, parser
   helpers/tests, semantic walkers if it can contain command references, renderer
   support if it should be visible, and docs.
 - Add a new formulation construct:
-  update `src/frontend/formulation/ast/`, `grammar.lalrpop` or hand-written
+  update `src/frontend/formulation/ast.rs`, `grammar.lalrpop` or hand-written
   parser helpers, semantic walkers/checkers, renderer support, tests, and docs.
 - Add a new semantic rule:
   update `src/backend/semantic/`, especially the relevant walker, shape,

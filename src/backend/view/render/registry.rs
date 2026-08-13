@@ -45,6 +45,7 @@ pub(super) struct CommandRender {
     pub(super) subject_variable: Option<String>,
     pub(super) parameters: Vec<String>,
     pub(super) variadic_parameters: Vec<(VariadicParameter, usize)>,
+    pub(super) mapping_parameter: Option<MappingParameterRender>,
     /// The form used wherever the item is named inline, such as `X is \foo`.
     pub(super) called: String,
     pub(super) called_source: CalledRenderSource,
@@ -53,6 +54,16 @@ pub(super) struct CommandRender {
     /// title can show both forms even when the `written:` form is the one that
     /// names the item inline.
     pub(super) called_template: Option<String>,
+}
+
+/// Template bindings that are specific to a mapping-parameter header.  The
+/// associated mapping is rendered as its body at a mapping-literal invocation,
+/// while selector placeholders render as the concrete parameters selected by
+/// the caller.
+#[derive(Clone, Debug)]
+pub(super) struct MappingParameterRender {
+    pub(super) owner: String,
+    pub(super) selectors: Vec<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -1048,6 +1059,7 @@ fn render_entries_from_signatures(
                     subject_variable: subject_variable.clone(),
                     parameters: signature.parameters,
                     variadic_parameters: signature.variadic_parameters,
+                    mapping_parameter: signature.mapping_parameter,
                     called: called_text,
                     called_source,
                     written: written.clone(),

@@ -106,6 +106,22 @@ Documented:
 }
 
 #[test]
+fn mapping_parameter_written_templates_render_the_body_and_selected_parameter() {
+    let registry = registry_for(
+        r#"[\d{f(x_, y_)}:d{f.x_}]
+Declares: g(x_, y_) is \function
+Documented:
+. written: "\frac{d}{d x_?} f?"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r"\d[x_, y_ is \natural]{x_ + y_}:d{x_}", &registry),
+        Some(r"\frac{d}{d x} x + y".to_owned())
+    );
+}
+
+#[test]
 fn renders_variadic_map_and_reduce_builtins() {
     let registry = registry_for("");
 

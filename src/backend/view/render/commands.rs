@@ -432,6 +432,25 @@ pub(super) fn command_substitutions(
         command_argument_group_values(command, registry),
     ));
 
+    if let Some(mapping_parameter) = &render.mapping_parameter
+        && crate::backend::semantic::mapping_parameter_invocation_signatures(command).is_some()
+    {
+        if let Some(rhs) = command_mapping_literal_rhs(command) {
+            substitutions.insert(
+                mapping_parameter.owner.clone(),
+                render_expression(rhs, registry),
+            );
+        }
+        // Header selectors are authored as `f.x_`, while written-template
+        // placeholders conventionally retain that marker as `x_?`.  The
+        // canonical selector name is `x`, so provide both spellings.
+        for selector in &mapping_parameter.selectors {
+            if let Some(value) = substitutions.get(selector).cloned() {
+                substitutions.insert(format!("{selector}_"), value);
+            }
+        }
+    }
+
     if let Some(context) = &command.context {
         for argument in &context.arguments {
             if let CommandContextArgument::Assignment { name, value, .. } = argument {
@@ -441,6 +460,18 @@ pub(super) fn command_substitutions(
     }
 
     substitutions
+}
+
+fn command_mapping_literal_rhs(command: &CommandExpression) -> Option<&Expression> {
+    command
+        .head_args
+        .iter()
+        .chain(command.tail.iter().flat_map(|part| part.args.iter()))
+        .flat_map(|args| args.expressions.iter())
+        .find_map(|expression| match &expression.kind {
+            ExpressionKind::Mapping { rhs, .. } => Some(rhs.as_ref()),
+            _ => None,
+        })
 }
 
 fn append_command_context_suffix(

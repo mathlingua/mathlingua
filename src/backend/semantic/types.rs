@@ -105,6 +105,12 @@ pub(super) struct DefinitionTypeInfo {
     /// an operator component are retained so `Refines: G ::= (...)` can be checked
     /// positionally against the base type.
     pub(super) component_shapes: Vec<TargetShape>,
+    /// Element pattern and declared element facts for a type described by a set
+    /// target (`Defines: X ::= {x__ : ...}`).  Command arguments that are set
+    /// literals use this metadata for structural compatibility checks instead of
+    /// requiring a nominal `literal is Type` fact.
+    pub(super) set_element_target: Option<SetTarget>,
+    pub(super) set_element_types: Vec<TypeFact>,
     /// Destructuring parameters in this definition's header (e.g. the `M ::= (X, *)`
     /// in `\magma.element:of{M ::= (X, *)}`), with their component names and types.
     /// Lets a provided-symbol capability's reduction target that mentions those

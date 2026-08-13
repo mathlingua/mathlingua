@@ -30,6 +30,7 @@ pub(super) struct CommandHeaderSignature {
     pub(super) signature: String,
     pub(super) parameters: Vec<String>,
     pub(super) variadic_parameters: Vec<(VariadicParameter, usize)>,
+    pub(super) mapping_parameter: Option<MappingParameterRender>,
 }
 
 pub(super) fn command_header_signatures(header: &CommandHeader) -> Vec<CommandHeaderSignature> {
@@ -41,6 +42,7 @@ pub(super) fn command_header_signatures(header: &CommandHeader) -> Vec<CommandHe
     };
     for signature in &mut signatures {
         signature.variadic_parameters = header_variadic_parameters(header, &signature.signature);
+        signature.mapping_parameter = mapping_parameter_render(header);
     }
     if signatures.len() == 1
         && let Some((specialized, _)) =
@@ -68,6 +70,7 @@ pub(super) fn simple_command_header_signatures(
                 signature: format!("{base_signature}{}", variant.signature_suffix),
                 parameters,
                 variadic_parameters: Vec::new(),
+                mapping_parameter: None,
             }
         })
         .collect()
@@ -91,6 +94,7 @@ pub(super) fn infix_command_header_signatures(
                 signature: format!("{base_signature}{}./", variant.signature_suffix),
                 parameters,
                 variadic_parameters: Vec::new(),
+                mapping_parameter: None,
             }
         })
         .collect()
@@ -128,6 +132,7 @@ pub(super) fn infix_spec_header_signatures(spec: &InfixSpecHeader) -> Vec<Comman
                 signature: format!("{base_signature}{}:/", variant.signature_suffix),
                 parameters,
                 variadic_parameters: Vec::new(),
+                mapping_parameter: None,
             }
         })
         .collect()
@@ -197,10 +202,43 @@ pub(super) fn refined_command_header_signatures(
                     signature,
                     parameters,
                     variadic_parameters: Vec::new(),
+                    mapping_parameter: None,
                 }
             })
         })
         .collect()
+}
+
+fn mapping_parameter_render(header: &CommandHeader) -> Option<MappingParameterRender> {
+    let CommandHeader::Command(command) = header else {
+        return None;
+    };
+    let mut owner = None;
+    let mut selectors = Vec::new();
+    for group in command
+        .head_args
+        .iter()
+        .chain(command.tail.iter().flat_map(|part| part.args.iter()))
+    {
+        for form in &group.forms {
+            let FormOrDeclarationKind::MappingParameter {
+                owner: candidate,
+                selector,
+            } = &form.kind
+            else {
+                continue;
+            };
+            if owner.as_ref().is_some_and(|owner| owner != candidate) {
+                return None;
+            }
+            owner = Some(candidate.clone());
+            selectors.push(selector.name().to_owned());
+        }
+    }
+    Some(MappingParameterRender {
+        owner: owner?,
+        selectors,
+    })
 }
 
 pub(super) fn command_expression_signature(command: &CommandExpression) -> String {

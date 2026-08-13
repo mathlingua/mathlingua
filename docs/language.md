@@ -436,6 +436,12 @@ require a separate `when:` entry. The mapping owner may still require one (for
 example, `when: f is \function`), and a selector may appear in `when:` when an
 additional refinement is useful, but omission of that selector entry is valid.
 
+In a `Documented:written:` template for one of these headings, the mapping
+owner placeholder denotes the mapping body rather than the entire anonymous
+mapping, and selector placeholders denote the parameters chosen at the use
+site. For example, `written: "\frac{d}{d x_?} f?"` renders
+`\d[x_, y_ is \natural]{x_ + y_}:d{x_}` as `\frac{d}{d x} x + y`.
+
 Such a heading has both a specialized and a general signature. Exact positions
 are encoded as `#1`, `#2`, and so on, arbitrary positions as `#?`, and a
 variadic subset as `#*`:
@@ -1304,6 +1310,26 @@ A later reference to `\function:on{G}:to{G}` in either an expression or a type
 assertion requires the checker to prove `G is \set`. Type assertions for
 no-argument `Defines` commands are nominal: `G is \group` records that fact
 without expanding the internal `\group` requirements at the assertion site.
+
+Literal command arguments are compatible with a required nominal type when
+their declared structure matches. For a mapping literal, the checker compares
+the number and types of its inputs and the type of its output with the mapping
+shape described by the required type. Tuple literals are compared by component
+count and positional component types. Set literals are compared with the
+required type's described element pattern and element types. This structural
+check applies only to literals; named values continue to require ordinary type
+facts.
+
+When a mapping input or output is specified by membership in a literal-backed
+collection, the collection's element specification participates in this check.
+Thus a parameter known to be `\natural` satisfies an expected `"in"
+\naturals.set` spec when `\naturals.set` describes exactly those elements.
+The mapping body is checked after resolving type-directed operators, so an
+overloaded expression such as `x + y` contributes the output type of the
+selected addition operator. This also works when the operator is declared as a
+callable type: an addition declared as `\binary.operation:on{\naturals.set}`
+inherits its application result from the codomain of the function type reached
+through `extends:`.
 
 The checker understands these fact kinds:
 

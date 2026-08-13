@@ -5,6 +5,27 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Structural Literal Command Arguments
+
+Tuple, set, and mapping literals can now satisfy a command's nominal type
+requirements from their structure. A mapping literal is checked by its input
+arity and input/output specs; a tuple literal is checked by its component count
+and positional component specs; and a set literal is checked against the
+described element pattern and element specs. The checker therefore accepts a
+typed mapping literal where a command requires `f is \function` without first
+requiring an artificial nominal fact about the literal. A mismatched arity,
+shape, input type, element type, or output type still produces the normal
+`Could not establish requirement` diagnostic.
+
+Mapping input and output specs may be collection membership requirements. For
+example, if `\naturals.set` is a literal-backed collection whose elements are
+natural numbers, `x is \natural` satisfies `x "in" \naturals.set` while checking
+a mapping literal. Operator expressions in the mapping body are resolved before
+the output spec is checked. If an operator is declared through a callable type
+such as `\binary.operation:on{X}`, the checker follows that type's `extends:`
+chain to its function codomain and uses the codomain as the application's output
+spec.
+
 ## Variadic Mapping Parameters And Parameter Selection
 
 Function forms now accept ranged variadic inputs such as
@@ -21,7 +42,10 @@ These headers register specialized signatures such as `_(2)`, `#1`, `#?`, and
 arity over variadic arity, exact ordered positions over arbitrary positions,
 and a variadic subset last; equally specific matches are rejected as ambiguous.
 The renderer uses the same ranking, and mapping-literal parameter names remain
-in scope for sibling selector groups.
+in scope for sibling selector groups. Written templates receive the mapping
+body for the owner placeholder and the concrete selected parameter for each
+selector placeholder, so authoring markers such as the trailing `_` do not leak
+into the rendered notation.
 
 Named mapping calls now also accept `=` assignments, catch-all `... = value`,
 and ranged selector text, while preserving the existing `:=` spelling.

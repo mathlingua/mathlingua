@@ -2212,6 +2212,290 @@ then:
     }
 
     #[test]
+    fn check_accepts_mapping_literal_for_structural_command_requirement() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("mapping-literal-requirement.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\natural]
+    Defines: n
+    Enables:
+    . capability: x_ + y_ :=> x_ \.natural.+./ y_
+    Documented:
+    . called: "natural"
+
+    [x_ \.natural.+./ y_]
+    Declares: z is \natural
+    when: x_, y_ is \natural
+    Documented:
+    . written: "x_? + y_?"
+
+    [\function]
+    Defines: f(x__) ::= y_
+    declares:
+    . x__ is \\expression
+    . y_ is \\opaque
+    Documented:
+    . called: "function"
+
+    [\d{f(x_, y_)}:d{f.x_}]
+    Declares: g(x_, y_) is \function
+    when: f is \function
+    Documented:
+    . written: "d"
+
+    Theorem:
+    then: \d[x_, y_ is \natural]{x_ + y_}:d{x_}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("mapping-literal-requirement.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_accepts_mapping_literal_for_collection_function_requirement() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("collection-function-literal-requirement.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Enables:
+    . from: Y ::= {y__ : ...}
+      capability: x_ "in" X :-> x_ member_of Y
+    Documented:
+    . called: "set"
+
+    [\naturals.set]
+    Declares: N := \set@{n_ : n_ is \natural}
+    Documented:
+    . called: "naturals"
+
+    [\function:?on{A}:?to{B}]
+    Defines: f(x__) ::= y_
+    when: A, B is \set
+    declares:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . called: "function"
+
+    [A \.set.cross./ B]
+    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    when: A, B is \set
+    Documented:
+    . called: "cross"
+
+    [\binary.operation:on{X}]
+    Defines: x_ * y_
+    when: X is \set
+    extends: * is \function:on{X \.set.cross./ X}:to{X}
+    Documented:
+    . called: "binary operation"
+
+    [n_ \.natural.+./ m_]
+    Declares: n_ + m_ is \binary.operation:on{\naturals.set}
+    Documented:
+    . written: "n_? + m_?"
+
+    [\natural]
+    Defines: n
+    Enables:
+    . capability: x_ + y_ :=> x_ \.natural.+./ y_
+    Documented:
+    . called: "natural"
+
+    [\d{f(x_, y_)}:d{f.x_}]
+    Declares: g(x_, y_) is \function:on{\naturals.set}:to{\naturals.set}
+    when: f is \function:on{\naturals.set}:to{\naturals.set}
+    Documented:
+    . written: "d"
+
+    Theorem:
+    then: \d[x_, y_ is \natural]{x_ + y_}:d{x_}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("collection-function-literal-requirement.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_accepts_tuple_and_set_literals_for_structural_command_requirements() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("collection-literal-requirements.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\natural]
+    Defines: n
+    Documented:
+    . called: "natural"
+
+    [\natural.pair]
+    Defines: P ::= (a, b)
+    declares:
+    . a, b is \natural
+    Documented:
+    . called: "natural pair"
+
+    [\natural.set]
+    Defines: N ::= {n__ : ...}
+    declares:
+    . n__ is \natural
+    Documented:
+    . called: "natural set"
+
+    [\take.pair{P}]
+    Declares: result is \\opaque
+    when: P is \natural.pair
+    Documented:
+    . called: "take pair"
+
+    [\take.set{N}]
+    Declares: result is \\opaque
+    when: N is \natural.set
+    Documented:
+    . called: "take set"
+
+    Theorem:
+    given: x, y is \natural
+    then:
+    . \take.pair{(x, y)}
+    . \take.set{{n_ : n_ is \natural}}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("collection-literal-requirements.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_literal_components_with_wrong_structural_types() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("literal-requirement-mismatches.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\natural]
+    Defines: n
+    Documented:
+    . called: "natural"
+
+    [\real]
+    Defines: r
+    Documented:
+    . called: "real"
+
+    [\natural.function]
+    Defines: f(x_) ::= y_
+    declares:
+    . x_, y_ is \natural
+    Documented:
+    . called: "natural function"
+
+    [\natural.pair]
+    Defines: P ::= (a, b)
+    declares:
+    . a, b is \natural
+    Documented:
+    . called: "natural pair"
+
+    [\natural.set]
+    Defines: N ::= {n__ : ...}
+    declares:
+    . n__ is \natural
+    Documented:
+    . called: "natural set"
+
+    [\take.function{f}]
+    Declares: result is \\opaque
+    when: f is \natural.function
+    Documented:
+    . called: "take function"
+
+    [\take.pair{P}]
+    Declares: result is \\opaque
+    when: P is \natural.pair
+    Documented:
+    . called: "take pair"
+
+    [\take.set{N}]
+    Declares: result is \\opaque
+    when: N is \natural.set
+    Documented:
+    . called: "take set"
+
+    Theorem:
+    given: r is \real
+    then:
+    . \take.function{(x_ is \real) => x_}
+    . \take.pair{(r, r)}
+    . \take.set{{r_ : r_ is \real}}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("literal-requirement-mismatches.mlg")],
+            &mut event_log,
+        );
+
+        for signature in ["\\take.function", "\\take.pair", "\\take.set"] {
+            assert!(
+                user_events(&event_log)
+                    .iter()
+                    .any(|event| event.as_message().is_some_and(|message| message
+                        .message
+                        .contains("Could not establish requirement")
+                        && message.message.contains(signature))),
+                "expected a literal type mismatch for {signature}: {:#?}",
+                user_events(&event_log)
+            );
+        }
+    }
+
+    #[test]
     fn check_rejects_a_selected_name_that_is_not_a_mapping_parameter() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("invalid-mapping-parameter.mlg");

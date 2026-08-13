@@ -449,6 +449,11 @@ fn type_info_from_parts(
     let component_shapes = described
         .map(defines_target_component_shapes)
         .unwrap_or_default();
+    let set_element_target = described.and_then(defines_target_set_target).cloned();
+    let set_element_types = set_element_target
+        .as_ref()
+        .map(|target| set_element_type_facts(target, defines_declares, &context))
+        .unwrap_or_default();
     let parameter_destructurings = destructured_parameters(heading, &context);
     let inferred_parameters = collect_inferred_parameter_names(when);
 
@@ -471,9 +476,42 @@ fn type_info_from_parts(
         described: described.map(described_target_subject_key),
         component_types,
         component_shapes,
+        set_element_target,
+        set_element_types,
         parameter_destructurings,
         inferred_parameters,
     }
+}
+
+fn defines_target_set_target(target: &DefinesTarget) -> Option<&SetTarget> {
+    let form = match target {
+        DefinesTarget::Form(form) => Some(form),
+        DefinesTarget::Declaration(statement) => is_subject_first_form(&statement.subject)
+            .or_else(|| statement.expansion.as_ref().and_then(is_subject_first_form)),
+    }?;
+    match &form.kind {
+        FormOrDeclarationKind::SetDeclaration { form, .. } => Some(&form.target),
+        _ => None,
+    }
+}
+
+fn set_element_type_facts(
+    target: &SetTarget,
+    declares: Option<&DefinesDeclaresSection>,
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    let Some(declares) = declares else {
+        return Vec::new();
+    };
+    let mut target_names = BTreeSet::new();
+    collect_set_target_names(target, &mut target_names);
+    declares
+        .arguments
+        .iter()
+        .flat_map(|item| facts_from_is_or_via_item_in_context(item, context))
+        .filter(|fact| target_names.contains(fact_subject(fact)))
+        .map(|fact| context.normalize_fact(&fact))
+        .collect()
 }
 
 /// The `?`-suffixed inferred parameter names appearing in a definition's `when:`
@@ -8686,12 +8724,31 @@ fn expression_result_facts(
             registry,
             resolving,
         ),
-        ExpressionKind::Command(_) | ExpressionKind::InfixCommand { .. } => {
+        ExpressionKind::Command(command) => {
             let key = effective_key_for_expression(expression, context, registry);
-            rebind_result_fact_subjects(
+            command_declared_result_facts(
                 defined_output_facts_for_key(&key, context, registry),
+                &command_expression_arguments(command),
                 result_subject,
                 context,
+                registry,
+            )
+        }
+        ExpressionKind::InfixCommand {
+            left,
+            command,
+            right,
+        } => {
+            let key = effective_key_for_expression(expression, context, registry);
+            let mut arguments = vec![left.as_ref()];
+            arguments.extend(infix_command_arguments(command));
+            arguments.push(right.as_ref());
+            command_declared_result_facts(
+                defined_output_facts_for_key(&key, context, registry),
+                &arguments,
+                result_subject,
+                context,
+                registry,
             )
         }
         _ => Vec::new(),
@@ -8699,6 +8756,74 @@ fn expression_result_facts(
 
     resolving.remove(&resolving_key);
     facts
+}
+
+/// Resolves the result of a command whose declaration gives the command itself a
+/// callable type.  For example, natural addition may be declared as a binary
+/// operation; applying it to two naturals yields the output spec inherited from
+/// that operation's function type, rather than a value whose type is itself
+/// `binary.operation`.
+fn command_declared_result_facts(
+    direct: Vec<TypeFact>,
+    arguments: &[&Expression],
+    result_subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<TypeFact> {
+    let mut child = context.clone();
+    for fact in &direct {
+        child.add_fact(fact.clone());
+    }
+
+    let mut inferred = Vec::new();
+    for fact in &direct {
+        let subject = fact_subject(fact);
+        for function_type in inferred_function_type_facts_for_subject(subject, &child, registry) {
+            let TypeFact::FunctionType {
+                inputs,
+                output,
+                variadic_tuple_input,
+                ..
+            } = function_type
+            else {
+                continue;
+            };
+            let Some(argument_subjects) = function_type_argument_subjects_from_keys(
+                inputs.len(),
+                variadic_tuple_input,
+                &arguments
+                    .iter()
+                    .map(|argument| effective_key_for_expression(argument, &child, registry))
+                    .collect::<Vec<_>>(),
+            ) else {
+                continue;
+            };
+            if inputs
+                .iter()
+                .zip(argument_subjects)
+                .all(|(input, argument)| {
+                    prove_fact(
+                        &instantiate_function_type_spec(input, &argument),
+                        &child,
+                        registry,
+                    )
+                })
+            {
+                inferred.push(child.normalize_fact(&instantiate_function_type_spec(
+                    &output,
+                    result_subject,
+                )));
+            }
+        }
+    }
+
+    if inferred.is_empty() {
+        rebind_result_fact_subjects(direct, result_subject, context)
+    } else {
+        inferred.sort_by_key(format_fact);
+        inferred.dedup();
+        inferred
+    }
 }
 
 fn function_call_output_facts(
@@ -11283,7 +11408,7 @@ fn check_command_requirements(
             &info.variadic_parameters,
             &variadic_actuals,
         ) {
-            if !prove_fact(&instantiated, &requirement_context, registry) {
+            if !prove_fact_or_literal(&instantiated, &requirement_context, registry, 0) {
                 emit_error(
                     event_log,
                     path,
@@ -11296,6 +11421,216 @@ fn check_command_requirements(
             }
         }
     }
+}
+
+/// Proves an ordinary fact, with one additional structural rule for literal
+/// command arguments.  A literal does not need a nominal `literal is T` fact:
+/// its components are checked against the structure declared by `T`.
+fn prove_fact_or_literal(
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    depth: usize,
+) -> bool {
+    if prove_fact(required, context, registry) {
+        return true;
+    }
+    if depth >= 16 {
+        return false;
+    }
+    let Ok(expression) = crate::frontend::formulation::parse_expression(fact_subject(required))
+    else {
+        return false;
+    };
+    match &expression.kind {
+        ExpressionKind::Mapping { .. } => {
+            mapping_literal_establishes(&expression, required, context, registry, depth + 1)
+        }
+        ExpressionKind::Tuple(elements) => {
+            tuple_literal_establishes(elements, required, context, registry, depth + 1)
+        }
+        ExpressionKind::Set(set) => {
+            set_literal_establishes(set, required, context, registry, depth + 1)
+        }
+        _ => false,
+    }
+}
+
+fn mapping_literal_establishes(
+    expression: &Expression,
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    depth: usize,
+) -> bool {
+    let expected = if matches!(required, TypeFact::FunctionType { .. }) {
+        Some(required.clone())
+    } else {
+        type_instance_output_facts(required, context, registry)
+            .into_iter()
+            .find(|fact| matches!(fact, TypeFact::FunctionType { .. }))
+    };
+    let Some(TypeFact::FunctionType {
+        inputs,
+        output,
+        variadic_tuple_input,
+        ..
+    }) = expected
+    else {
+        return false;
+    };
+    let ExpressionKind::Mapping { lhs, rhs } = &expression.kind else {
+        return false;
+    };
+    let Some(parameters) = mapping_pattern_names(lhs) else {
+        return false;
+    };
+    if parameters.is_empty() {
+        return false;
+    }
+
+    let mut literal_context = context.clone();
+    for parameter in &parameters {
+        literal_context.declare_name(parameter.clone());
+    }
+    if let Some(ty) = mapping_pattern_shared_type(lhs)
+        && let Some((ty, signature)) = key_for_type_expression_in_context(ty, context)
+    {
+        for parameter in &parameters {
+            literal_context.add_fact(TypeFact::Is {
+                subject: parameter.clone(),
+                ty: ty.clone(),
+                signature: signature.clone(),
+            });
+        }
+    } else {
+        let binders = mapping_pattern_elements(lhs).unwrap_or_else(|| vec![lhs.as_ref()]);
+        for binder in binders {
+            if let Some(fact) = fact_from_expression_in_context(binder, &literal_context) {
+                literal_context.add_fact(fact);
+            }
+        }
+    }
+    let literal_context = context_with_spec_reductions(&literal_context, registry);
+
+    if variadic_tuple_input {
+        if inputs.len() != 1 {
+            return false;
+        }
+        for parameter in &parameters {
+            let required_input = instantiate_function_type_spec(&inputs[0], parameter);
+            if !prove_fact_or_literal(&required_input, &literal_context, registry, depth) {
+                return false;
+            }
+        }
+    } else {
+        if inputs.len() != parameters.len() {
+            return false;
+        }
+        for (input, parameter) in inputs.iter().zip(&parameters) {
+            let required_input = instantiate_function_type_spec(input, parameter);
+            if !prove_fact_or_literal(&required_input, &literal_context, registry, depth) {
+                return false;
+            }
+        }
+    }
+
+    let literal_context = context_with_expression_result_facts(rhs, &literal_context, registry);
+    let output_subject = effective_key_for_expression(rhs, &literal_context, registry);
+    let required_output = instantiate_function_type_spec(&output, &output_subject);
+    prove_fact_or_literal(&required_output, &literal_context, registry, depth)
+}
+
+fn tuple_literal_establishes(
+    elements: &[TupleExpressionElement],
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    depth: usize,
+) -> bool {
+    let TypeFact::Is { ty, signature, .. } = required else {
+        return false;
+    };
+    let Some(info) = registry.type_infos.get(signature) else {
+        return false;
+    };
+    if info.component_shapes.len() != elements.len() {
+        return false;
+    }
+    let element_keys = elements
+        .iter()
+        .map(|element| match element {
+            TupleExpressionElement::Expression(expression) => key_for_expression(expression),
+            TupleExpressionElement::Operator(operator) => operator.text.clone(),
+        })
+        .collect::<Vec<_>>();
+    let mut substitutions = literal_type_parameter_substitutions(info, ty, context);
+    if let Some(described) = &info.described {
+        substitutions.insert(described.clone(), fact_subject(required).to_owned());
+    }
+    for (fact, actual) in info.component_types.iter().zip(&element_keys) {
+        substitutions.insert(fact_subject(fact).to_owned(), actual.clone());
+    }
+    info.component_types.iter().all(|fact| {
+        let instantiated = context.normalize_fact(&substitute_fact(fact, &substitutions));
+        prove_fact_or_literal(&instantiated, context, registry, depth)
+    })
+}
+
+fn set_literal_establishes(
+    set: &SetExpression,
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    depth: usize,
+) -> bool {
+    let TypeFact::Is { ty, signature, .. } = required else {
+        return false;
+    };
+    let Some(info) = registry.type_infos.get(signature) else {
+        return false;
+    };
+    let Some(expected_target) = &info.set_element_target else {
+        return false;
+    };
+    let mut substitutions = literal_type_parameter_substitutions(info, ty, context);
+    if let Some(described) = &info.described {
+        substitutions.insert(described.clone(), fact_subject(required).to_owned());
+    }
+    if !bind_set_target_to_key(
+        expected_target,
+        &key_for_set_target(&set.target),
+        &mut substitutions,
+        context,
+    ) {
+        return false;
+    }
+
+    let mut literal_context = context.clone();
+    declare_set_target(&set.target, &mut literal_context);
+    for spec in &set.specs {
+        if let Some(fact) = fact_from_expression_in_context(spec, &literal_context) {
+            literal_context.add_fact(fact);
+        }
+    }
+    let literal_context = context_with_spec_reductions(&literal_context, registry);
+    info.set_element_types.iter().all(|fact| {
+        let instantiated = literal_context.normalize_fact(&substitute_fact(fact, &substitutions));
+        prove_fact_or_literal(&instantiated, &literal_context, registry, depth)
+    })
+}
+
+fn literal_type_parameter_substitutions(
+    info: &DefinitionTypeInfo,
+    ty: &str,
+    context: &TypeContext,
+) -> HashMap<String, String> {
+    let actuals = actuals_for_type_key(&info.signature, ty).unwrap_or_default();
+    info.parameters
+        .iter()
+        .zip(actuals)
+        .map(|(parameter, actual)| (parameter.clone(), context.normalize_key(&actual)))
+        .collect()
 }
 
 fn command_parameter_substitutions(
@@ -11930,10 +12265,26 @@ fn prove_fact_threaded(
     // definition is an equivalence. So the requirement holds when some providing
     // capability's reduction target holds — the reverse of `reduce_spec_fact`'s
     // forward materialization. `spec_seen` guards against reduction cycles.
-    if matches!(&required, TypeFact::Spec { .. }) {
-        spec_requirement_holds_via_provider(&required, context, registry, allow_viewable, spec_seen)
-    } else {
-        false
+    match &required {
+        TypeFact::Spec { .. } => spec_requirement_holds_via_provider(
+            &required,
+            context,
+            registry,
+            allow_viewable,
+            spec_seen,
+        ),
+        TypeFact::MemberOf {
+            subject,
+            collection,
+        } => {
+            let facts =
+                facts_from_collection_body_membership(subject, collection, context, registry);
+            !facts.is_empty()
+                && facts.iter().all(|fact| {
+                    prove_fact_threaded(fact, context, registry, allow_viewable, spec_seen)
+                })
+        }
+        _ => false,
     }
 }
 

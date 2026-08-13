@@ -906,6 +906,22 @@ that mapping literal. Resolution ranks matching candidates by fixed arity before
 variadic arity, then exact ordered positions before arbitrary `#?`, and finally
 variadic `#*`. Equal best ranks are an ambiguity error.
 
+#### Numeric literals and variadic index expressions
+
+Decimal tokens such as `1.2` are parsed as atomic name expressions rather than
+as member access. Negative integer and decimal spellings retain their signed
+expression key. Their fallback types are supplied by the collection's
+top-level `Specify:` categories after local scope lookup.
+
+An indexed variadic element accepts one expression per axis. The legacy
+name-only forms remain represented as `SubsetCall`; a computed form such as
+`x[i * j]`, `x[\next{i}]`, or `x[i + 1,j]` is represented as `IndexedCall`
+with recursively parsed index expressions. Slice syntax containing `...`
+continues to use `VariadicSlice`. During semantic checking, the index expression
+is checked normally, its result facts are inferred, and that result must have
+the `positiveInt` or `zeroOrPositiveInt` type selected by the variadic header's
+origin.
+
 ### Infix command headers
 
 ```text

@@ -47,6 +47,11 @@ pub(in crate::backend::semantic) fn walk_expression(
             walk_expression(expression, visit);
         }
         ExpressionKind::SubsetCall(_) => {}
+        ExpressionKind::IndexedCall(call) => {
+            for index in &call.indices {
+                walk_expression(index, visit);
+            }
+        }
         ExpressionKind::Command(command) => {
             let shape = shape_for_command_expression(command);
             visit(&shape);

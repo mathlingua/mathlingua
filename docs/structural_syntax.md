@@ -368,15 +368,14 @@ Used inside `Metadata:`.
 
 Used inside top-level `Specify:`.
 
-- **`positive` with an `int` section** — `PositiveIntGroup`, heading: label?. Sections: `positive: OpenText*`, `int: OpenText*`, `is: OpenText*`
-- **`negative` with an `int` section** — `NegativeIntGroup`, heading: label?. Sections: `negative: OpenText*`, `int: OpenText*`, `is: OpenText*`
-- **`zero`** — `ZeroGroup`, heading: label?. Sections: `zero: OpenText*`, `is: OpenText*`
-- **`positive` without an `int` section** — `PositiveDecimalGroup`, heading: label?. Sections: `positive: OpenText*`, `decimal: OpenText*`, `is: OpenText*`
-- **`negative` without an `int` section** — `NegativeDecimalGroup`, heading: label?. Sections: `negative: OpenText*`, `decimal: OpenText*`, `is: OpenText*`
+- **`decimal`** — `NumericSpecificationGroup`. Sections: `decimal:` (empty), `is: TypeExpression`
+- **`zeroOrPositiveInt`** — `NumericSpecificationGroup`. Sections: `zeroOrPositiveInt:` (empty), `is: TypeExpression`
+- **`positiveInt`** — `NumericSpecificationGroup`. Sections: `positiveInt:` (empty), `is: TypeExpression`
+- **`int`** — `NumericSpecificationGroup`. Sections: `int:` (empty), `is: TypeExpression`
 
-Important implementation detail:
-
-- `positive` and `negative` groups are distinguished as `int` vs `decimal` by checking whether any section label is literally `int`
+All four entries are optional, but a category may occur at most once across the
+collection. Unlike the earlier prose-shaped specification groups, `is:` is
+parsed as formulation type syntax and participates in semantic checking.
 
 ### Resource items
 
@@ -600,11 +599,7 @@ MetadataItemUnion ::=
 
 ```union
 SpecifyItemUnion ::=
-    | PositiveIntGroup
-    | NegativeIntGroup
-    | ZeroGroup
-    | PositiveDecimalGroup
-    | NegativeDecimalGroup
+    | NumericSpecificationGroup  # decimal, zeroOrPositiveInt, positiveInt, or int
 ```
 
 ```union
@@ -864,7 +859,15 @@ Resource: <ResourceItemUnion>+
 ```
 
 ```group
-Specify: <SpecifyItemUnion>+
+Specify:
+  decimal?:
+    is: <TypeExpression>
+  zeroOrPositiveInt?:
+    is: <TypeExpression>
+  positiveInt?:
+    is: <TypeExpression>
+  int?:
+    is: <TypeExpression>
 ```
 
 ```group

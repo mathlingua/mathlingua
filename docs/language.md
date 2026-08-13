@@ -302,6 +302,40 @@ the infix command, just as `[\sin(x_)]` binds `x` for a callable command.
 Every command tail such as `:to` or `:from` must include at least one curly
 argument group.
 
+### Numeric literal and index types
+
+A collection configures the fallback types of numeric spellings with one
+top-level `Specify:` group:
+
+```text
+Specify:
+. decimal:
+  is: \real
+. zeroOrPositiveInt:
+  is: \whole
+. positiveInt:
+  is: \natural
+. int:
+  is: \integer
+```
+
+The four `is:` values are ordinary type expressions and must name nominal or
+built-in types. They classify decimal literals such as `1.2`, zero, positive
+integer literals, and negative integer literals respectively. Numeric text is
+still resolved through the current lexical scopes first. An explicit local
+declaration or fact for a numeric spelling therefore takes precedence; the
+corresponding `Specify:` type is consulted only after scope and derived-fact
+lookup fail.
+
+The same configuration determines variadic index types. In
+`x[i_ := 1...n]`, both `i` and `n` have the `positiveInt` type. In
+`x[i_ := 0...n]`, they have the `zeroOrPositiveInt` type. Plain `x...` and
+`x...n` are one-based and use `positiveInt`. Consequently an index can be any
+ordinary expression whose result has the configured type, not only a bare
+name: for example `x[i * j]` is valid when the multiplication result has the
+configured `positiveInt` type. Two-dimensional variadics apply the same rule to
+both axes and their bounds.
+
 ### Variadic command arguments
 
 Only curly argument groups can be variadic. A variadic group occupies the whole
@@ -330,7 +364,8 @@ Reusing a length name constrains groups to the same number of arguments:
 [\foo{x...n}:bar{y...m}]  # independent lengths
 ```
 
-Elements are referenced with subset syntax such as `x[0]`, `x[1]`, or `x[i_]`.
+Elements are referenced with indexed syntax such as `x[0]`, `x[1]`, `x[i_]`,
+or `x[i * j]`.
 The supported slice forms are:
 
 ```text

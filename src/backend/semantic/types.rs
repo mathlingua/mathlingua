@@ -381,4 +381,19 @@ pub(super) struct SignatureRegistry {
     /// set literal) to that set-builder body, so membership in a use of the
     /// command can be reduced to the body's element condition.
     pub(super) collection_bodies: HashMap<String, SetExpression>,
+    pub(super) numeric_specifications: NumericSpecifications,
+}
+
+#[derive(Clone, Debug, Default)]
+pub(super) struct NumericSpecifications {
+    pub(super) decimal: Option<NumericTypeSpecification>,
+    pub(super) zero_or_positive_int: Option<NumericTypeSpecification>,
+    pub(super) positive_int: Option<NumericTypeSpecification>,
+    pub(super) int: Option<NumericTypeSpecification>,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct NumericTypeSpecification {
+    pub(super) ty: String,
+    pub(super) signature: String,
 }

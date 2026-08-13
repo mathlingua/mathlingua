@@ -188,17 +188,11 @@ pub(in crate::backend::semantic) fn walk_specify_item(
     item: &SpecifyItem,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
-    match item {
-        SpecifyItem::PositiveInt(group) => walk_open_text_clauses(&group.is_, visit),
-        SpecifyItem::NegativeInt(group) => walk_open_text_clauses(&group.is_, visit),
-        SpecifyItem::Zero(group) => walk_open_text_clauses(&group.is_, visit),
-        SpecifyItem::PositiveDecimal(group) => walk_open_text_clauses(&group.is_, visit),
-        SpecifyItem::NegativeDecimal(group) => walk_open_text_clauses(&group.is_, visit),
-    }
-}
-
-pub(in crate::backend::semantic) fn walk_open_text_clauses(
-    _section: &IsSection,
-    _visit: &mut impl FnMut(&SignatureShape),
-) {
+    let group = match item {
+        SpecifyItem::Decimal(group)
+        | SpecifyItem::ZeroOrPositiveInt(group)
+        | SpecifyItem::PositiveInt(group)
+        | SpecifyItem::Int(group) => group,
+    };
+    walk_type_expression(&group.is_.argument, visit);
 }

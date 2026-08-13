@@ -93,6 +93,15 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
         }
         ExpressionKind::Labeled { expression, .. } => render_expression(expression, registry),
         ExpressionKind::SubsetCall(call) => render_subset_call(call, registry),
+        ExpressionKind::IndexedCall(call) => format!(
+            "{}[{}]",
+            escape_math_identifier(&call.target, registry),
+            call.indices
+                .iter()
+                .map(|index| render_expression(index, registry))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
         ExpressionKind::Command(command) => render_command_expression(command, registry),
         ExpressionKind::BuiltinCommand(command) => {
             render_builtin_command_expression(command, registry)

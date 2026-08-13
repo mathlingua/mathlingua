@@ -2581,6 +2581,283 @@ then:
     }
 
     #[test]
+    fn check_uses_specify_types_as_numeric_literal_fallbacks() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("specified-numeric-literals.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Defines: x
+    Documented:
+    . called: "real"
+
+    [\whole]
+    Defines: x
+    Documented:
+    . called: "whole"
+
+    [\natural]
+    Defines: x
+    Documented:
+    . called: "natural"
+
+    [\integer]
+    Defines: x
+    Documented:
+    . called: "integer"
+
+    Specify:
+    . decimal:
+      is: \real
+    . zeroOrPositiveInt:
+      is: \whole
+    . positiveInt:
+      is: \natural
+    . int:
+      is: \integer
+
+    [\accept.real{x}]
+    States:
+    when: x is \real
+    that: x = x
+    Documented:
+    . called: "accept real"
+
+    [\accept.whole{x}]
+    States:
+    when: x is \whole
+    that: x = x
+    Documented:
+    . called: "accept whole"
+
+    [\accept.natural{x}]
+    States:
+    when: x is \natural
+    that: x = x
+    Documented:
+    . called: "accept natural"
+
+    [\accept.integer{x}]
+    States:
+    when: x is \integer
+    that: x = x
+    Documented:
+    . called: "accept integer"
+
+    Theorem:
+    then:
+    . \accept.real{1.2}
+    . \accept.whole{0}
+    . \accept.natural{1}
+    . \accept.integer{-1}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("specified-numeric-literals.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            !event_log.has_errors(),
+            "expected specified numeric literal types to satisfy requirements: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_types_variadic_indices_from_specify_and_accepts_computed_indices() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("specified-variadic-indices.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\whole]
+    Defines: x
+    Documented:
+    . called: "whole"
+
+    [\natural]
+    Defines: x
+    Documented:
+    . called: "natural"
+
+    Specify:
+    . zeroOrPositiveInt:
+      is: \whole
+    . positiveInt:
+      is: \natural
+
+    [\mul{x, y}]
+    Declares: z is \natural
+    when: x, y is \natural
+    Documented:
+    . called: "multiply"
+
+    [\accept.whole{x}]
+    States:
+    when: x is \whole
+    that: x = x
+    Documented:
+    . called: "accept whole"
+
+    [\one.based{x[i_ := 1...n]}]
+    States:
+    when: x[1...n] is \\statement
+    that: x[\mul{i, i}]
+    Documented:
+    . called: "one based"
+
+    [\zero.based{x[i_ := 0...n]}]
+    States:
+    when: x[0...n] is \\statement
+    that: \accept.whole{i}
+    Documented:
+    . called: "zero based"
+
+    [\two.dimensional{x[(i_, j_) := (1,1)...(m,n)]}]
+    States:
+    when: x[..., ...] is \\statement
+    that: x[\mul{i, i}, j]
+    Documented:
+    . called: "two dimensional"
+
+    Theorem:
+    given: P, Q is \\statement
+    then:
+    . \one.based{P, Q}
+    . \zero.based{P, Q}
+    . \two.dimensional{P, Q; Q, P}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("specified-variadic-indices.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            !event_log.has_errors(),
+            "expected configured and computed variadic indices to type-check: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_rejects_a_computed_variadic_index_with_the_wrong_specified_type() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("invalid-specified-variadic-index.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Defines: x
+    Documented:
+    . called: "real"
+
+    [\natural]
+    Defines: x
+    Documented:
+    . called: "natural"
+
+    Specify:
+    . positiveInt:
+      is: \natural
+
+    [\real.value{x}]
+    Declares: z is \real
+    when: x is \natural
+    Documented:
+    . called: "real value"
+
+    [\one.based{x[i_ := 1...n]}]
+    States:
+    when: x[1...n] is \\statement
+    that: x[\real.value{i}]
+    Documented:
+    . called: "one based"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("invalid-specified-variadic-index.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message
+                    .message
+                    .contains("Could not establish index requirement")
+                    && message.message.contains("is \\natural")
+                    && message.message.contains("variadic parameter `x`")
+            })
+        }));
+    }
+
+    #[test]
+    fn check_prefers_a_scoped_numeric_definition_over_specify_fallback() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("scoped-numeric-definition.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\real]
+    Defines: x
+    Documented:
+    . called: "real"
+
+    [\natural]
+    Defines: x
+    Documented:
+    . called: "natural"
+
+    Specify:
+    . positiveInt:
+      is: \natural
+
+    [\accept.natural{x}]
+    States:
+    when: x is \natural
+    that: x = x
+    Documented:
+    . called: "accept natural"
+
+    Theorem:
+    given: 1 is \real
+    then: \accept.natural{1}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("scoped-numeric-definition.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message
+                    == "Could not establish requirement `1 is \\natural` for command `\\accept.natural`"
+            })
+        }));
+    }
+
+    #[test]
     fn check_accepts_rectangular_two_dimensional_variadic_arguments() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("variadic-2d-valid.mlg");

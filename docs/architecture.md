@@ -428,8 +428,10 @@ registry passes:
 
 1. Collect command definitions into a global signature registry (and reject
    duplicate signatures, missing `Documented:` requirements, etc.).
-2. Validate command-like references against that registry.
-3. Validate symbol usage and command type requirements (the type checker).
+2. Collect the optional top-level `Specify:` numeric literal/index type
+   categories into that registry.
+3. Validate command-like references against that registry.
+4. Validate symbol usage and command type requirements (the type checker).
 
 Important files:
 
@@ -447,8 +449,9 @@ Important files:
   variadics it rejects empty, ragged, and flat actual groups and binds row and
   column length names independently.
 - `typecheck.rs` implements symbol scope, facts, substitutions, requirements,
-  subtyping through `extends:`, destructuring, operator/member resolution, and
-  spec-operator reduction.
+  subtyping through `extends:`, destructuring, operator/member resolution,
+  spec-operator reduction, numeric-literal fallback, and variadic index-result
+  checking.
 - `locator.rs` maps semantic diagnostics back to source locations.
 - `definition.rs` and `rename.rs` back LSP go-to-definition and rename; `uses.rs`
   finds command occurrences (also used by `mlg release`).
@@ -467,6 +470,15 @@ The type checker is intentionally conservative. It checks command references,
 argument shapes, declared symbols, known type/spec facts, command requirements,
 and subtype/spec implications. It is not a proof checker for theorem
 conclusions.
+
+Numeric spellings are not inserted into every local context as unconditional
+facts. Requirement proof first tries explicit and derived scope facts; only if
+the numeric spelling is not declared in that context does it synthesize a fact
+from the registry's matching `Specify:` category. Header declaration records a
+configured index type for each variadic parameter and facts for its bound index
+and length names. An indexed element then checks its index as a normal
+expression, adds inferred result facts, and proves that the result has the
+recorded type.
 
 ### View Builder and Renderer
 

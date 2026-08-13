@@ -9,6 +9,7 @@ pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
     for file in files {
         collect_document_definitions(file, &mut registry, event_log);
     }
+    collect_numeric_specifications(files, &mut registry, event_log);
 
     for file in files {
         validate_document_references(file, &registry, event_log);

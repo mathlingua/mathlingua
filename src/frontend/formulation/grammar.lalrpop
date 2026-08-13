@@ -51,6 +51,7 @@ extern {
         "->" => Token::TypeArrow,
         "|->" => Token::LegacyFunctionArrow,
         "quoted_name" => Token::QuotedName(<String>),
+        "decimal" => Token::Decimal(<String>),
         "magnetic_placeholder" => Token::MagneticPlaceholder(<String>),
         "placeholder" => Token::Placeholder(<String>),
         "name" => Token::Name(<String>),
@@ -868,6 +869,10 @@ PrimaryExpression: ast::Expression = {
         ast::Expression::new(Span::new(l, r), ExpressionKind::Tuple(elements))
     },
     <expression:SetExpression> => expression,
+    <l:@L> <number:"decimal"> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::Name(number),
+    ),
     <l:@L> <name:Name> "..." <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::VariadicSlice(ast::VariadicSlice {

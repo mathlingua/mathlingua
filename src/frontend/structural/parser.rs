@@ -9,7 +9,8 @@ use crate::frontend::formulation::{
     parse_expression, parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
     parse_hard_cast_statement, parse_is_via_statement, parse_label_header,
     parse_ordinary_declaration_statement, parse_refined_declaration_statement,
-    parse_resource_header, parse_spec_operator_alias, parse_topic_header, parse_writing_alias,
+    parse_resource_header, parse_spec_operator_alias, parse_topic_header, parse_type_expression,
+    parse_writing_alias,
 };
 use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{
@@ -1521,30 +1522,21 @@ pub(super) fn parse_metadata_item_group(
     }
 }
 
-/// Dispatches nested `Specify:` groups to numeric-domain item parsers.
-///
-/// Positive/negative groups are distinguished by the presence of an `int:`
-/// section; otherwise they are parsed as decimal specification items.
+/// Dispatches the four global numeric literal/index categories in `Specify:`.
 pub(super) fn parse_specify_item_group(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<SpecifyItem> {
     match first_section_label(group)? {
-        "positive" => {
-            if group.sections.iter().any(|section| section.label == "int") {
-                parse_positive_int(group, tracker).map(SpecifyItem::PositiveInt)
-            } else {
-                parse_positive_decimal(group, tracker).map(SpecifyItem::PositiveDecimal)
-            }
+        "decimal" => {
+            parse_numeric_specification(group, "decimal", tracker).map(SpecifyItem::Decimal)
         }
-        "negative" => {
-            if group.sections.iter().any(|section| section.label == "int") {
-                parse_negative_int(group, tracker).map(SpecifyItem::NegativeInt)
-            } else {
-                parse_negative_decimal(group, tracker).map(SpecifyItem::NegativeDecimal)
-            }
+        "zeroOrPositiveInt" => parse_numeric_specification(group, "zeroOrPositiveInt", tracker)
+            .map(SpecifyItem::ZeroOrPositiveInt),
+        "positiveInt" => {
+            parse_numeric_specification(group, "positiveInt", tracker).map(SpecifyItem::PositiveInt)
         }
-        "zero" => parse_zero(group, tracker).map(SpecifyItem::Zero),
+        "int" => parse_numeric_specification(group, "int", tracker).map(SpecifyItem::Int),
         other => {
             tracker.user_error_at_row(
                 Some(ORIGIN),
@@ -2319,129 +2311,24 @@ pub(in crate::frontend::structural::parser) fn parse_resource_description(
     })
 }
 
-// ===============================[ spec_items ]=====================================
+// ===============================[ specify items ]=====================================
 
-/// Parses a positive-integer specification item.
-///
-/// The structural shape is identified by a `positive:` section together with an
-/// `int:` section; all prose fields are open and may be empty.
-pub(in crate::frontend::structural::parser) fn parse_positive_int(
+fn parse_numeric_specification(
     group: &ProtoGroup,
+    label: &str,
     tracker: &mut EventLog,
-) -> Option<PositiveIntGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections(
-        "positive_int",
-        &group.sections,
-        tracker,
-        &["positive", "int", "is"],
-    )?;
-    Some(PositiveIntGroup {
-        heading,
-        positive: PositiveSection {
-            arguments: parse_optional_open_texts(sections.get("positive").copied(), tracker),
-        },
-        int: IntSection {
-            arguments: parse_optional_open_texts(sections.get("int").copied(), tracker),
-        },
-        is_: IsSection {
-            arguments: parse_optional_open_texts(sections.get("is").copied(), tracker),
-        },
-    })
-}
-
-/// Parses a negative-integer specification item.
-pub(in crate::frontend::structural::parser) fn parse_negative_int(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<NegativeIntGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections(
-        "negative_int",
-        &group.sections,
-        tracker,
-        &["negative", "int", "is"],
-    )?;
-    Some(NegativeIntGroup {
-        heading,
-        negative: NegativeSection {
-            arguments: parse_optional_open_texts(sections.get("negative").copied(), tracker),
-        },
-        int: IntSection {
-            arguments: parse_optional_open_texts(sections.get("int").copied(), tracker),
-        },
-        is_: IsSection {
-            arguments: parse_optional_open_texts(sections.get("is").copied(), tracker),
-        },
-    })
-}
-
-/// Parses a zero specification item.
-pub(in crate::frontend::structural::parser) fn parse_zero(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<ZeroGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections("zero", &group.sections, tracker, &["zero", "is"])?;
-    Some(ZeroGroup {
-        heading,
-        zero: ZeroSection {
-            arguments: parse_optional_open_texts(sections.get("zero").copied(), tracker),
-        },
-        is_: IsSection {
-            arguments: parse_optional_open_texts(sections.get("is").copied(), tracker),
-        },
-    })
-}
-
-/// Parses a positive-decimal specification item.
-pub(in crate::frontend::structural::parser) fn parse_positive_decimal(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<PositiveDecimalGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections(
-        "positive_decimal",
-        &group.sections,
-        tracker,
-        &["positive", "decimal", "is"],
-    )?;
-    Some(PositiveDecimalGroup {
-        heading,
-        positive: PositiveSection {
-            arguments: parse_optional_open_texts(sections.get("positive").copied(), tracker),
-        },
-        decimal: DecimalSection {
-            arguments: parse_optional_open_texts(sections.get("decimal").copied(), tracker),
-        },
-        is_: IsSection {
-            arguments: parse_optional_open_texts(sections.get("is").copied(), tracker),
-        },
-    })
-}
-
-/// Parses a negative-decimal specification item.
-pub(in crate::frontend::structural::parser) fn parse_negative_decimal(
-    group: &ProtoGroup,
-    tracker: &mut EventLog,
-) -> Option<NegativeDecimalGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections(
-        "negative_decimal",
-        &group.sections,
-        tracker,
-        &["negative", "decimal", "is"],
-    )?;
-    Some(NegativeDecimalGroup {
-        heading,
-        negative: NegativeSection {
-            arguments: parse_optional_open_texts(sections.get("negative").copied(), tracker),
-        },
-        decimal: DecimalSection {
-            arguments: parse_optional_open_texts(sections.get("decimal").copied(), tracker),
-        },
-        is_: IsSection {
-            arguments: parse_optional_open_texts(sections.get("is").copied(), tracker),
+) -> Option<NumericSpecificationGroup> {
+    ensure_no_heading(group, tracker)?;
+    let sections = identify_sections(label, &group.sections, tracker, &[label, "is"])?;
+    ensure_empty_section(section(&sections, label)?, label, tracker);
+    Some(NumericSpecificationGroup {
+        is_: NumericSpecificationIsSection {
+            argument: parse_required_formulation(
+                section(&sections, "is")?,
+                "is",
+                tracker,
+                |input| parse_type_expression(input, false),
+            )?,
         },
     })
 }
@@ -5319,51 +5206,18 @@ Resource:
 . description: "Classic text"
 
 Specify:
-. [numbers.positive.int]
-  positive:
-  . "positive"
-  int:
-  . "integer"
-  is:
-  . "greater than zero"
-
-Specify:
-. [numbers.negative.int]
-  negative:
-  . "negative"
-  int:
-  . "integer"
-  is:
-  . "less than zero"
-
-Specify:
-. [numbers.zero]
-  zero:
-  . "zero"
-  is:
-  . "additive identity"
-
-Specify:
-. [numbers.positive.decimal]
-  positive:
-  . "positive"
-  decimal:
-  . "decimal"
-  is:
-  . "greater than zero"
-
-Specify:
-. [numbers.negative.decimal]
-  negative:
-  . "negative"
-  decimal:
-  . "decimal"
-  is:
-  . "less than zero"
+. decimal:
+  is: \real
+. zeroOrPositiveInt:
+  is: \whole
+. positiveInt:
+  is: \natural
+. int:
+  is: \integer
 "#,
         );
 
-        assert_eq!(document.items.len(), 21);
+        assert_eq!(document.items.len(), 17);
 
         match &document.items[0] {
             TopLevelItem::Person(group) => {
@@ -5524,45 +5378,17 @@ Specify:
             TopLevelItem::Specify(group) => {
                 assert!(matches!(
                     group.specify.arguments[0],
+                    SpecifyItem::Decimal(_)
+                ));
+                assert!(matches!(
+                    group.specify.arguments[1],
+                    SpecifyItem::ZeroOrPositiveInt(_)
+                ));
+                assert!(matches!(
+                    group.specify.arguments[2],
                     SpecifyItem::PositiveInt(_)
                 ));
-            }
-            other => panic!("expected specify group, got {other:?}"),
-        }
-
-        match &document.items[17] {
-            TopLevelItem::Specify(group) => {
-                assert!(matches!(
-                    group.specify.arguments[0],
-                    SpecifyItem::NegativeInt(_)
-                ));
-            }
-            other => panic!("expected specify group, got {other:?}"),
-        }
-
-        match &document.items[18] {
-            TopLevelItem::Specify(group) => {
-                assert!(matches!(group.specify.arguments[0], SpecifyItem::Zero(_)));
-            }
-            other => panic!("expected specify group, got {other:?}"),
-        }
-
-        match &document.items[19] {
-            TopLevelItem::Specify(group) => {
-                assert!(matches!(
-                    group.specify.arguments[0],
-                    SpecifyItem::PositiveDecimal(_)
-                ));
-            }
-            other => panic!("expected specify group, got {other:?}"),
-        }
-
-        match &document.items[20] {
-            TopLevelItem::Specify(group) => {
-                assert!(matches!(
-                    group.specify.arguments[0],
-                    SpecifyItem::NegativeDecimal(_)
-                ));
+                assert!(matches!(group.specify.arguments[3], SpecifyItem::Int(_)));
             }
             other => panic!("expected specify group, got {other:?}"),
         }

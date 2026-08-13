@@ -57,6 +57,15 @@ mod tests {
     }
 
     #[test]
+    fn lexes_decimal_numeric_literals_as_single_tokens() {
+        let tokens: Vec<_> = Lexer::new("1.2")
+            .map(|item| item.expect("expected valid token").1)
+            .collect();
+
+        assert_eq!(tokens, vec![Token::Decimal("1.2".to_string())]);
+    }
+
+    #[test]
     fn lexes_command_related_tokens() {
         let tokens: Vec<_> = Lexer::new(r#"\function:?on{A}:to{B}(x)"#)
             .map(|item| item.expect("expected valid token").1)

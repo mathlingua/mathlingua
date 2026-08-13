@@ -12,7 +12,7 @@ use super::ast::{
     ExpressionBinding, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionForm,
     FunctionNamedExpressionElement, FunctionNamedExpressionElementLhs, FunctionType,
     FunctionTypeNotation, FunctionTypeSpec, FunctionTypeSpecKind, FunctionVariadicParameter,
-    HardCastStatement, InfixCommandHeader, InfixSpec, InfixSpecExpressionRefinement,
+    HardCastStatement, IndexedCall, InfixCommandHeader, InfixSpec, InfixSpecExpressionRefinement,
     InfixSpecHeader, InfixSpecHeaderRefinement, IsOrRefinedStatementSpec, IsOrSpec, IsStatement,
     IsSubject, IsSubjectForm, IsSubjectKind, IsViaStatement, Label, LabelHeader,
     MappingParameterSelector, MemberAliasLhs, Operator, ParenExpressionArgs, ParenHeadingArgs,
@@ -133,6 +133,7 @@ fn expected_description(item: &str) -> String {
 fn token_description(token: &Token) -> String {
     match token {
         Token::Name(name) => format!("name `{name}`"),
+        Token::Decimal(number) => format!("number `{number}`"),
         Token::Placeholder(name) => format!("placeholder `{name}_`"),
         Token::MagneticPlaceholder(name) => format!("placeholder `{name}__`"),
         Token::QuotedName(name) => format!("quoted name `\"{name}\"`"),
@@ -213,6 +214,7 @@ fn token_literal(token: &Token) -> &'static str {
         Token::At => "@",
         Token::AtBang => "@!",
         Token::Name(_)
+        | Token::Decimal(_)
         | Token::Placeholder(_)
         | Token::MagneticPlaceholder(_)
         | Token::QuotedName(_)
@@ -2205,7 +2207,7 @@ fn is_single_placeholder_subject(subject: &IsSubject) -> bool {
 /// MathLingua type references are command-backed definitions.  When enabled,
 /// refined command expressions are accepted before falling back to ordinary
 /// command expressions.
-pub(super) fn parse_type_expression(
+pub(crate) fn parse_type_expression(
     input: &str,
     allow_refined: bool,
 ) -> Result<TypeExpression, ParseError> {
@@ -2729,10 +2731,19 @@ pub(super) fn parse_name_token(input: &str) -> Result<String, ParseError> {
 /// specification statement.
 pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     let input = input.trim();
+    if is_decimal_literal_text(input) || is_negative_integer_literal_text(input) {
+        return Ok(Expression::new(
+            span_all(input),
+            ExpressionKind::Name(input.to_owned()),
+        ));
+    }
     if let Some(expression) = parse_named_function_call(input)? {
         return Ok(expression);
     }
     if let Some(expression) = parse_two_dimensional_variadic_expression(input)? {
+        return Ok(expression);
+    }
+    if let Some(expression) = parse_indexed_call_expression(input)? {
         return Ok(expression);
     }
     if let Some(index) = find_top_level_definition(input) {
@@ -2812,6 +2823,53 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     }
 
     parse_input_expression(input).map_err(ParseError::from)
+}
+
+fn is_decimal_literal_text(input: &str) -> bool {
+    let input = input.strip_prefix('-').unwrap_or(input);
+    let Some((whole, fractional)) = input.split_once('.') else {
+        return false;
+    };
+    !whole.is_empty()
+        && !fractional.is_empty()
+        && whole.chars().all(|ch| ch.is_ascii_digit())
+        && fractional.chars().all(|ch| ch.is_ascii_digit())
+}
+
+fn is_negative_integer_literal_text(input: &str) -> bool {
+    input
+        .strip_prefix('-')
+        .is_some_and(|digits| !digits.is_empty() && digits.chars().all(|ch| ch.is_ascii_digit()))
+}
+
+fn parse_indexed_call_expression(input: &str) -> Result<Option<Expression>, ParseError> {
+    let Some(open) = input.find('[') else {
+        return Ok(None);
+    };
+    let target = input[..open].trim();
+    if !is_name_text(target) {
+        return Ok(None);
+    }
+    let (inside, rest) = consume_balanced_prefix(&input[open..], '[', ']')?;
+    if !rest.trim().is_empty() || inside.contains("...") {
+        return Ok(None);
+    }
+    let parts = split_top_level(inside, ',')?;
+    if !matches!(parts.len(), 1 | 2) || parts.iter().all(|part| parse_index_name(part).is_ok()) {
+        return Ok(None);
+    }
+    let indices = parts
+        .into_iter()
+        .map(parse_expression)
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(Some(Expression::new(
+        span_all(input),
+        ExpressionKind::IndexedCall(IndexedCall {
+            span: span_all(input),
+            target: parse_name_token(target)?,
+            indices,
+        }),
+    )))
 }
 
 fn parse_two_dimensional_variadic_expression(
@@ -4158,7 +4216,8 @@ mod tests {
         IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, MappingParameterSelector,
         NamedOperatorKind, PlaceholderForm, PlaceholderFormKind, RefinedTail, SetPredicate,
         SetTargetElement, SetTargetKind, SetTypeElement, SpecLiteral, SpecLiteralForm,
-        SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression, VariadicSlice,
+        SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression, UnaryOperator,
+        VariadicSlice,
     };
 
     // ===============================[ support ]=====================================
@@ -4475,6 +4534,41 @@ mod tests {
         assert!(matches!(
             parse_expression("x[i_]").expect("expected indexed element").kind,
             ExpressionKind::SubsetCall(SubsetCall::One { ref first, .. }) if first == "i"
+        ));
+        for source in ["x[i * j]", r"x[\next{i}]", "x[i + 1,j]"] {
+            assert!(matches!(
+                parse_expression(source)
+                    .expect("expected a computed indexed element")
+                    .kind,
+                ExpressionKind::IndexedCall(_)
+            ));
+        }
+    }
+
+    #[test]
+    fn parses_numeric_literals_atomically_in_command_arguments() {
+        let ExpressionKind::Command(command) = parse_expression(r"\foo{1.2, -1, -3.5}")
+            .expect("expected numeric command arguments")
+            .kind
+        else {
+            panic!("expected a command expression")
+        };
+        let arguments = &command.head_args[0].expressions;
+        assert!(matches!(
+            &arguments[0].kind,
+            ExpressionKind::Name(value) if value == "1.2"
+        ));
+        assert!(matches!(
+            &arguments[1].kind,
+            ExpressionKind::Prefix { operator: UnaryOperator::Arithmetic(operator), expression }
+                if operator.text == "-"
+                    && matches!(&expression.kind, ExpressionKind::Name(value) if value == "1")
+        ));
+        assert!(matches!(
+            &arguments[2].kind,
+            ExpressionKind::Prefix { operator: UnaryOperator::Arithmetic(operator), expression }
+                if operator.text == "-"
+                    && matches!(&expression.kind, ExpressionKind::Name(value) if value == "3.5")
         ));
     }
 

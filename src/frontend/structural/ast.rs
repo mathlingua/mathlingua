@@ -283,12 +283,7 @@ argument_section!(VersionSection, OpenText);
 // The markdown-with-LaTeX body of an opaque `Text*` placeholder group.
 argument_section!(TextItemSection, OpenText);
 arguments_section!(SpecifySection, SpecifyItem);
-zero_or_more_arguments_section!(PositiveSection, OpenText);
-zero_or_more_arguments_section!(IntSection, OpenText);
-zero_or_more_arguments_section!(IsSection, OpenText);
-zero_or_more_arguments_section!(NegativeSection, OpenText);
-zero_or_more_arguments_section!(ZeroSection, OpenText);
-zero_or_more_arguments_section!(DecimalSection, OpenText);
+argument_section!(NumericSpecificationIsSection, TypeExpression);
 arguments_section!(PersonSection, OpenText);
 argument_section!(BiographySection, OpenText);
 arguments_section!(ResourceSection, ResourceItem);
@@ -447,11 +442,10 @@ pub enum MetadataItem {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SpecifyItem {
-    PositiveInt(PositiveIntGroup),
-    NegativeInt(NegativeIntGroup),
-    Zero(ZeroGroup),
-    PositiveDecimal(PositiveDecimalGroup),
-    NegativeDecimal(NegativeDecimalGroup),
+    Decimal(NumericSpecificationGroup),
+    ZeroOrPositiveInt(NumericSpecificationGroup),
+    PositiveInt(NumericSpecificationGroup),
+    Int(NumericSpecificationGroup),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1014,42 +1008,8 @@ pub struct SpecifyGroup {
 // ===============================[ metadata resource groups ]=====================================
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PositiveIntGroup {
-    pub heading: Option<LabelHeader>,
-    pub positive: PositiveSection,
-    pub int: IntSection,
-    pub is_: IsSection,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct NegativeIntGroup {
-    pub heading: Option<LabelHeader>,
-    pub negative: NegativeSection,
-    pub int: IntSection,
-    pub is_: IsSection,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ZeroGroup {
-    pub heading: Option<LabelHeader>,
-    pub zero: ZeroSection,
-    pub is_: IsSection,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PositiveDecimalGroup {
-    pub heading: Option<LabelHeader>,
-    pub positive: PositiveSection,
-    pub decimal: DecimalSection,
-    pub is_: IsSection,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct NegativeDecimalGroup {
-    pub heading: Option<LabelHeader>,
-    pub negative: NegativeSection,
-    pub decimal: DecimalSection,
-    pub is_: IsSection,
+pub struct NumericSpecificationGroup {
+    pub is_: NumericSpecificationIsSection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

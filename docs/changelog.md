@@ -5,6 +5,21 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Configurable Numeric Literals And Variadic Indices
+
+Top-level `Specify:` now has four typed categories: `decimal`,
+`zeroOrPositiveInt`, `positiveInt`, and `int`, each with an `is:` type
+expression. The checker uses these as global fallbacks for decimal, zero,
+positive-integer, and negative-integer spellings only after explicit lexical
+scope facts fail, so a locally defined numeric spelling takes precedence.
+
+Variadic headers use the same configuration for their index domains. One-based
+and plain `x...` parameters use `positiveInt`; zero-based parameters use
+`zeroOrPositiveInt`; 2D parameters apply the configured type to both axes.
+Indexed elements now accept computed expressions such as `x[i * j]` and
+`x[\next{i}]`. The checker infers the expression's result type and rejects the
+index when it cannot establish the category required by the header.
+
 ## Two-Dimensional Variadic Curly Arguments
 
 Curly command arguments now support rectangular 2D variadic parameters such as

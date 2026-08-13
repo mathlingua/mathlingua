@@ -382,7 +382,7 @@ fn item_starters(section: &str) -> Option<&'static [&'static str]> {
         "Justification" => &["have"],
         "Metadata" => &["id", "version"],
         "Aliases" => &["alias"],
-        "Specify" => &["positive", "negative", "zero"],
+        "Specify" => &["decimal", "zeroOrPositiveInt", "positiveInt", "int"],
         _ => return None,
     })
 }

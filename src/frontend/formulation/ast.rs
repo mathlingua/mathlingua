@@ -479,6 +479,7 @@ pub enum ExpressionKind {
         label: Label,
     },
     SubsetCall(SubsetCall),
+    IndexedCall(IndexedCall),
     Command(CommandExpression),
     BuiltinCommand(BuiltinCommandExpression),
     InfixCommand {
@@ -711,6 +712,13 @@ pub enum SubsetCall {
         outer: String,
         inner_target: String,
     },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IndexedCall {
+    pub span: Span,
+    pub target: String,
+    pub indices: Vec<Expression>,
 }
 
 // ===============================[ forms ]=====================================

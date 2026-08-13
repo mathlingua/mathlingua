@@ -2,6 +2,68 @@ use super::*;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 
+pub(super) fn collect_numeric_specifications(
+    files: &[ParsedSourceFile],
+    registry: &mut SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    for file in files {
+        for (item_index, item) in file.document.items.iter().enumerate() {
+            let TopLevelItem::Specify(group) = item else {
+                continue;
+            };
+            let row = file
+                .item_ids
+                .get(item_index)
+                .map(|id| id.group_row)
+                .unwrap_or_default();
+            for item in &group.specify.arguments {
+                let (label, specification, target) = match item {
+                    SpecifyItem::Decimal(group) => (
+                        "decimal",
+                        &group.is_.argument,
+                        &mut registry.numeric_specifications.decimal,
+                    ),
+                    SpecifyItem::ZeroOrPositiveInt(group) => (
+                        "zeroOrPositiveInt",
+                        &group.is_.argument,
+                        &mut registry.numeric_specifications.zero_or_positive_int,
+                    ),
+                    SpecifyItem::PositiveInt(group) => (
+                        "positiveInt",
+                        &group.is_.argument,
+                        &mut registry.numeric_specifications.positive_int,
+                    ),
+                    SpecifyItem::Int(group) => (
+                        "int",
+                        &group.is_.argument,
+                        &mut registry.numeric_specifications.int,
+                    ),
+                };
+                let Some((ty, signature)) = key_for_type_expression(specification) else {
+                    event_log.user_error_at_file_row(
+                        Some(ORIGIN),
+                        file.path.clone(),
+                        row,
+                        format!("Specify `{label}: is:` must name a nominal or built-in type"),
+                    );
+                    continue;
+                };
+                if target.is_some() {
+                    event_log.user_error_at_file_row(
+                        Some(ORIGIN),
+                        file.path.clone(),
+                        row,
+                        format!("Specify `{label}:` may be declared only once per collection"),
+                    );
+                    continue;
+                }
+                *target = Some(NumericTypeSpecification { ty, signature });
+            }
+        }
+    }
+}
+
 pub(super) fn collect_definition_type_metadata(
     item: &TopLevelItem,
     header_shape: &HeaderShape,
@@ -384,7 +446,7 @@ fn type_info_from_parts(
     registry: &SignatureRegistry,
 ) -> DefinitionTypeInfo {
     let mut context = TypeContext::default();
-    declare_header_symbols(heading, &mut context);
+    declare_header_symbols(heading, &mut context, registry);
     let using_parameters = collect_using_parameter_names(using);
     let given_parameters = collect_given_parameter_names(given);
 
@@ -1106,7 +1168,7 @@ fn validate_equivalent_item(
 
     // Establish the `using:`/`when:` scope (this also validates their references).
     let mut context = TypeContext::default();
-    declare_header_symbols(&group.heading, &mut context);
+    declare_header_symbols(&group.heading, &mut context, registry);
     assume_optional_using(
         &group.using,
         &mut context,
@@ -1453,7 +1515,7 @@ fn validate_top_level_item_types(
                 locator,
                 event_log,
             );
-            declare_header_symbols(&group.heading, &mut context);
+            declare_header_symbols(&group.heading, &mut context, registry);
             declare_defines_target(&group.defines.argument, &mut context);
             assume_described_type(&group.heading, &group.defines.argument, &mut context);
             check_defines_target(
@@ -1540,7 +1602,7 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::Declares(group) => {
             let mut context = TypeContext::default();
-            declare_header_symbols(&group.heading, &mut context);
+            declare_header_symbols(&group.heading, &mut context, registry);
             declare_declaration_statement_subjects(&group.declares.argument, &mut context);
             assume_optional_using(
                 &group.using,
@@ -1609,7 +1671,7 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::Refines(group) => {
             let mut context = TypeContext::default();
-            declare_header_symbols(&group.heading, &mut context);
+            declare_header_symbols(&group.heading, &mut context, registry);
             declare_declaration_statement_subjects(&group.refines.argument, &mut context);
             validate_refines_target(group, path, locator, registry, event_log);
             validate_refined_spec_infix_header(group, path, locator, event_log);
@@ -1679,7 +1741,7 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::States(group) => {
             let mut context = TypeContext::default();
-            declare_header_symbols(&group.heading, &mut context);
+            declare_header_symbols(&group.heading, &mut context, registry);
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -2444,7 +2506,7 @@ fn validate_theorem_like(
 ) {
     let mut context = TypeContext::default();
     if let Some(heading) = sections.heading {
-        declare_header_symbols(heading, &mut context);
+        declare_header_symbols(heading, &mut context, registry);
     }
 
     if let Some(given) = sections.given {
@@ -2825,6 +2887,11 @@ fn collect_expression_referenced_labels(expression: &Expression, labels: &mut BT
         | ExpressionKind::InferredName(_)
         | ExpressionKind::VariadicSlice(_)
         | ExpressionKind::SubsetCall(_) => {}
+        ExpressionKind::IndexedCall(call) => {
+            for index in &call.indices {
+                collect_expression_referenced_labels(index, labels);
+            }
+        }
         ExpressionKind::VariadicAssignment { value, .. } => {
             collect_expression_referenced_labels(value, labels)
         }
@@ -4485,6 +4552,12 @@ fn collect_expression_names(expression: &Expression, names: &mut BTreeSet<String
             collect_expression_names(expression, names);
         }
         ExpressionKind::SubsetCall(subset) => collect_subset_call_names(subset, names),
+        ExpressionKind::IndexedCall(call) => {
+            names.insert(call.target.clone());
+            for index in &call.indices {
+                collect_expression_names(index, names);
+            }
+        }
         ExpressionKind::Command(command) => collect_command_expression_names(command, names),
         ExpressionKind::BuiltinCommand(_) => {}
         ExpressionKind::InfixCommand {
@@ -4837,6 +4910,7 @@ fn validate_when_expression_subject(
         .or_else(|| match &subject.kind {
             ExpressionKind::SubsetCall(SubsetCall::One { target, .. })
             | ExpressionKind::SubsetCall(SubsetCall::Two { target, .. }) => Some(target.clone()),
+            ExpressionKind::IndexedCall(call) => Some(call.target.clone()),
             _ => None,
         })
         .unwrap_or_else(|| key_for_expression(subject));
@@ -7200,7 +7274,22 @@ fn check_expression(
             check_expression(&call, context, path, locator, registry, event_log);
         }
         ExpressionKind::SubsetCall(subset) => {
-            check_subset_call(subset, context, path, locator, event_log);
+            check_subset_call(subset, context, path, locator, registry, event_log);
+        }
+        ExpressionKind::IndexedCall(call) => {
+            check_name(&call.target, context, path, locator, event_log);
+            for index in &call.indices {
+                check_expression(index, context, path, locator, registry, event_log);
+                check_variadic_index_expression(
+                    &call.target,
+                    index,
+                    context,
+                    path,
+                    locator,
+                    registry,
+                    event_log,
+                );
+            }
         }
         ExpressionKind::Command(command) => {
             check_command_expression(command, context, path, locator, registry, event_log);
@@ -7619,6 +7708,11 @@ fn add_cast_expression_facts(expression: &Expression, context: &mut TypeContext)
         | ExpressionKind::InferredName(_)
         | ExpressionKind::VariadicSlice(_)
         | ExpressionKind::SubsetCall(_) => {}
+        ExpressionKind::IndexedCall(call) => {
+            for index in &call.indices {
+                add_cast_expression_facts(index, context);
+            }
+        }
         ExpressionKind::VariadicAssignment { value, .. } => {
             add_cast_expression_facts(value, context);
         }
@@ -10521,6 +10615,12 @@ fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<Str
             collect_defined_expression_names(expression, names)
         }
         ExpressionKind::SubsetCall(subset) => collect_defined_subset_call_names(subset, names),
+        ExpressionKind::IndexedCall(call) => {
+            names.push(call.target.clone());
+            for index in &call.indices {
+                collect_defined_expression_names(index, names);
+            }
+        }
         ExpressionKind::Command(command) => {
             for expression in command_expression_arguments(command) {
                 collect_defined_expression_names(expression, names);
@@ -12402,6 +12502,23 @@ fn prove_fact_threaded(
         return true;
     }
 
+    // Numeric spellings are ordinary names first: an explicit fact in the
+    // current scope wins. Only after local/derived facts fail do the global
+    // `Specify:` categories provide their fallback type.
+    if !context.has_name(fact_subject(&required))
+        && let Some(fact) = numeric_literal_fact(fact_subject(&required), registry)
+        && fact_implies_with_options(
+            &fact,
+            &required,
+            context,
+            registry,
+            &mut seen,
+            allow_viewable,
+        )
+    {
+        return true;
+    }
+
     // A spec requirement such as `x "in" G` is defined by the capability that
     // provides its operator (`x_ "in" G :-> x_ is \group.element:of{G}`), and that
     // definition is an equivalence. So the requirement holds when some providing
@@ -12428,6 +12545,52 @@ fn prove_fact_threaded(
         }
         _ => false,
     }
+}
+
+fn numeric_literal_fact(subject: &str, registry: &SignatureRegistry) -> Option<TypeFact> {
+    let specification = if is_decimal_literal(subject) {
+        registry.numeric_specifications.decimal.as_ref()
+    } else if subject == "0" {
+        registry
+            .numeric_specifications
+            .zero_or_positive_int
+            .as_ref()
+    } else if is_positive_integer_literal(subject) {
+        registry.numeric_specifications.positive_int.as_ref()
+    } else if is_negative_integer_literal(subject) {
+        registry.numeric_specifications.int.as_ref()
+    } else {
+        None
+    }?;
+    Some(TypeFact::Is {
+        subject: subject.to_owned(),
+        ty: specification.ty.clone(),
+        signature: specification.signature.clone(),
+    })
+}
+
+fn is_decimal_literal(value: &str) -> bool {
+    let value = value.strip_prefix('-').unwrap_or(value);
+    let Some((whole, fractional)) = value.split_once('.') else {
+        return false;
+    };
+    !whole.is_empty()
+        && !fractional.is_empty()
+        && whole.chars().all(|ch| ch.is_ascii_digit())
+        && fractional.chars().all(|ch| ch.is_ascii_digit())
+}
+
+fn is_positive_integer_literal(value: &str) -> bool {
+    !value.is_empty()
+        && value != "0"
+        && value.chars().all(|ch| ch.is_ascii_digit())
+        && value.chars().any(|ch| ch != '0')
+}
+
+fn is_negative_integer_literal(value: &str) -> bool {
+    value
+        .strip_prefix('-')
+        .is_some_and(is_positive_integer_literal)
 }
 
 /// Whether a spec requirement holds because a capability that provides its
@@ -14634,6 +14797,10 @@ struct TypeContext {
     substitutions: Vec<(String, String)>,
     collection_literals: HashMap<String, SetExpression>,
     symbols: HashSet<String>,
+    /// The configured numeric type required by each variadic parameter's
+    /// indices. A one-based parameter uses `Specify:positiveInt:is`, while a
+    /// zero-based parameter uses `Specify:zeroOrPositiveInt:is`.
+    variadic_index_types: HashMap<String, NumericTypeSpecification>,
     active_disambiguations: Vec<DisambiguationKey>,
     defer_unresolved_provided_symbols: bool,
     /// Maps a destructured value (`M` from `M ::= (X, *)`) to its component names
@@ -14826,9 +14993,15 @@ fn check_name(
 
 fn is_literal_name(name: &str) -> bool {
     name.chars().all(|ch| ch.is_ascii_digit())
+        || is_decimal_literal(name)
+        || is_negative_integer_literal(name)
 }
 
-fn declare_header_symbols(header: &CommandHeader, context: &mut TypeContext) {
+fn declare_header_symbols(
+    header: &CommandHeader,
+    context: &mut TypeContext,
+    registry: &SignatureRegistry,
+) {
     for form in header_forms(header) {
         declare_form_or_declaration(form, context);
     }
@@ -14836,6 +15009,51 @@ fn declare_header_symbols(header: &CommandHeader, context: &mut TypeContext) {
         context.declare_name(variadic.name.clone());
         for name in variadic_parameter_auxiliary_names(variadic) {
             context.declare_name(name);
+        }
+        let start = variadic
+            .dimensions
+            .as_ref()
+            .map(|dimensions| dimensions.row_start)
+            .unwrap_or_else(|| {
+                if variadic.index.is_none() {
+                    1
+                } else {
+                    variadic.start
+                }
+            });
+        let specification = if start == 0 {
+            registry
+                .numeric_specifications
+                .zero_or_positive_int
+                .as_ref()
+        } else {
+            registry.numeric_specifications.positive_int.as_ref()
+        };
+        let Some(specification) = specification.cloned() else {
+            continue;
+        };
+        context
+            .variadic_index_types
+            .insert(variadic.name.clone(), specification.clone());
+
+        let mut index_names = variadic
+            .index
+            .iter()
+            .chain(variadic.length.iter())
+            .cloned()
+            .collect::<Vec<_>>();
+        if let Some(dimensions) = &variadic.dimensions {
+            index_names.push(dimensions.row_index.clone());
+            index_names.push(dimensions.column_index.clone());
+            index_names.extend(dimensions.row_length.iter().cloned());
+            index_names.extend(dimensions.column_length.iter().cloned());
+        }
+        for name in index_names {
+            context.add_fact(TypeFact::Is {
+                subject: name,
+                ty: specification.ty.clone(),
+                signature: specification.signature.clone(),
+            });
         }
     }
 }
@@ -14987,12 +15205,14 @@ fn check_subset_call(
     context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
     match subset {
         SubsetCall::One { target, first, .. } => {
             check_name(target, context, path, locator, event_log);
             check_name(first, context, path, locator, event_log);
+            check_variadic_index_name(target, first, context, path, locator, registry, event_log);
         }
         SubsetCall::Two {
             target,
@@ -15003,6 +15223,8 @@ fn check_subset_call(
             check_name(target, context, path, locator, event_log);
             check_name(first, context, path, locator, event_log);
             check_name(second, context, path, locator, event_log);
+            check_variadic_index_name(target, first, context, path, locator, registry, event_log);
+            check_variadic_index_name(target, second, context, path, locator, registry, event_log);
         }
         SubsetCall::Nested {
             target,
@@ -15015,6 +15237,60 @@ fn check_subset_call(
             check_name(inner_target, context, path, locator, event_log);
         }
     }
+}
+
+fn check_variadic_index_name(
+    target: &str,
+    index: &str,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let expression = Expression::new(Span::default(), ExpressionKind::Name(index.to_owned()));
+    check_variadic_index_expression(
+        target,
+        &expression,
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
+}
+
+fn check_variadic_index_expression(
+    target: &str,
+    index: &Expression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let Some(specification) = context.variadic_index_types.get(target) else {
+        return;
+    };
+    let child = context_with_expression_result_facts(index, context, registry);
+    let subject = effective_key_for_expression(index, &child, registry);
+    let required = TypeFact::Is {
+        subject: subject.clone(),
+        ty: specification.ty.clone(),
+        signature: specification.signature.clone(),
+    };
+    if prove_fact(&required, &child, registry) {
+        return;
+    }
+    emit_error(
+        event_log,
+        path,
+        locator.locate_symbol(target),
+        format!(
+            "Could not establish index requirement `{subject} is {}` for variadic parameter `{target}`",
+            specification.ty
+        ),
+    );
 }
 
 fn assume_fact_expression(
@@ -15291,6 +15567,12 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
             declare_names_from_expression(expression, context);
         }
         ExpressionKind::SubsetCall(subset) => declare_subset_call_names(subset, context),
+        ExpressionKind::IndexedCall(call) => {
+            context.declare_name(call.target.clone());
+            for index in &call.indices {
+                declare_names_from_expression(index, context);
+            }
+        }
         ExpressionKind::Command(command) => {
             let active_command = active_command_expression(command, context);
             for expression in command_expression_arguments(&active_command) {
@@ -17469,6 +17751,15 @@ fn key_for_expression(expression: &Expression) -> String {
         ExpressionKind::Grouped { expression, .. } => key_for_expression(expression),
         ExpressionKind::Labeled { expression, .. } => key_for_expression(expression),
         ExpressionKind::SubsetCall(subset) => key_for_subset_call(subset),
+        ExpressionKind::IndexedCall(call) => format!(
+            "{}[{}]",
+            call.target,
+            call.indices
+                .iter()
+                .map(key_for_expression)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
         ExpressionKind::Command(command) => key_for_command_expression(command),
         ExpressionKind::BuiltinCommand(command) => key_for_builtin_command_expression(command),
         ExpressionKind::InfixCommand {

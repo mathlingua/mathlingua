@@ -5,6 +5,26 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Variadic Mapping Parameters And Parameter Selection
+
+Function forms now accept ranged variadic inputs such as
+`f(x_[i_:=1...n])` and tuple-valued `f(x__[i_:=1...n])`. Ordinary command
+headers can select exact mapping inputs (`f.x_`), arbitrary inputs under fresh
+names (`f.u?_`), or a variadic subset (`f.x_[i_[j_:=1...m]]`). The checker
+enforces the single-selector-group and associated-explicit-mapping rules and
+verifies that use-site selector names are parameters bound by the mapping
+literal.
+
+These headers register specialized signatures such as `_(2)`, `#1`, `#?`, and
+`#*` beneath a shared general signature. Invocation resolution prefers fixed
+arity over variadic arity, exact ordered positions over arbitrary positions,
+and a variadic subset last; equally specific matches are rejected as ambiguous.
+The renderer uses the same ranking, and mapping-literal parameter names remain
+in scope for sibling selector groups.
+
+Named mapping calls now also accept `=` assignments, catch-all `... = value`,
+and ranged selector text, while preserving the existing `:=` spelling.
+
 ## Mapping Writing Templates
 
 A mapping-shaped `Defines:` item may now declare documented `writing:`/`as:`

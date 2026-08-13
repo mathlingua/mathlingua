@@ -159,7 +159,17 @@ x_ |prime
 ```
 
 Function forms support either one magnetic placeholder or one or more ordinary
-placeholders. Mixed magnetic and ordinary placeholders are not accepted.
+placeholders. They may instead declare a ranged variadic input:
+
+```text
+f(x_[i_ := 1...n])
+f(x__[i_ := 1...n])
+```
+
+`x_` spreads the mapping inputs, while `x__` records that the variadic inputs
+are treated as a tuple. The ranged input must be the mapping's only parameter,
+must bind an index and a length name, and must start at 0 or 1. Mixed magnetic
+and ordinary placeholders are not accepted.
 
 Tuple forms require at least two elements. One-element tuples are not currently
 supported.
@@ -183,6 +193,7 @@ Expressions cover ordinary mathematical formulas.
 x + y
 f(x, y)
 f[| key := x, value := y |]
+f[|x1?_ = 1, x2?_ = 2, ... = 0|]
 (x, y)
 {x_ : x_ "in" A | x_ = y}
 F[A]
@@ -196,6 +207,12 @@ Builtin types and targets are written with two leading backslashes: `\\type`
 `\\specification` (the types of statements, expressions, and specification
 literals), `\\opaque` (an unstructured value), and `\\abstract` (the abstract
 `:->` capability target).
+
+A named mapping call accepts both the legacy `:=` assignment spelling and `=`.
+The catch-all slot `... = value` supplies the value for parameters not named by
+an earlier element. A call may also name a ranged subset, for example
+`f[|x_[i_[1...m]] = 1, ... = 0|]`. Omitting the catch-all represents a partial
+application, such as `f[|x1?_ = 1|]`.
 
 The expression precedence, from lowest to highest, is:
 
@@ -251,7 +268,9 @@ A command signature is the command shape with concrete arguments removed. Both
 
 Argument-group counts are tracked as the command's required shape, but they do
 not disambiguate definitions. Two definitions with the same signature and
-different argument counts are still duplicate command signatures.
+different argument counts are still duplicate command signatures. The one
+exception is a mapping-parameter header, whose mapping arity and selected
+parameter positions form a specialized signature as described below.
 
 Curly argument groups are required where the command definition expects them.
 Trailing parenthesized groups are invocation groups. If a definition includes
@@ -355,6 +374,83 @@ Variadic parameters and slices use the corresponding symbolic rendering. In
 particular, `x...` renders as `x_1, ..., x_.`, while
 `x[1...i_...n]` renders as `x_1, ..., x_i, ..., x_n` (and a zero-based range
 starts with `x_0`).
+
+### Mapping parameters and specialized signatures
+
+A command heading can select parameters from a mapping declared in another
+curly argument group. An exact selector uses the mapping's declared parameter
+name:
+
+```text
+[\integral{f(x_, y_)}:d{f.x_}]
+[\integral{f(x_, y_)}:d{f.y_}]
+```
+
+These headings distinguish integration over the first and second parameters.
+An arbitrary selector has `?` before its trailing `_` and introduces a fresh
+local selector name:
+
+```text
+[\integral{f(x_, y_)}:d{f.u?_}]
+[\integral{f(x_, y_)}:d{f.u?_, f.v?_}]
+```
+
+Here `u` and `v` can match any parameters of `f`. An arbitrary selector name
+must not duplicate a declared parameter name: `f.x?_` is invalid when the
+mapping is `f(x_, y_)`; use exact `f.x_` or choose a fresh name.
+
+A ranged variadic mapping supports either a fixed number of arbitrary selected
+parameters or a variadic subset:
+
+```text
+[\integral{f(x_[i_:=1...n])}:d{f.x1?_, f.x2?_}]
+[\integral{f(x_[i_:=1...n])}:d{f.x_[i_[j_:=1...m]]}]
+```
+
+The second selector denotes the subset
+`x_[i_[1]], x_[i_[2]], ..., x_[i_[m]]`. Its outer name and index must match the
+associated ranged mapping parameter.
+
+At a use site the mapping parameters must be written explicitly. Command
+mapping-literal sugar binds them for the selector group:
+
+```text
+\integral[x_, y_ is \real]{x_^2 + y_^2}:d{x_}
+\integral[x_, y_, z_ is \real]{x_^2 + y_^2 + z_^2}:d{x_, y_}
+```
+
+Every selected value must be one of those bound parameters, so replacing `x_`
+with an unrelated `c` is an error. A header using mapping-parameter selectors
+must obey all of these rules:
+
+- selectors occur in exactly one curly argument group;
+- every value in that group is a mapping-parameter selector and uses an owner
+  such as `f.`;
+- all selectors in the group have the same owner;
+- exactly one other curly group declares that owner with explicit parameters;
+- mapping-parameter selectors are currently supported only by ordinary command
+  headings, not infix or refined headings.
+
+Such a heading has both a specialized and a general signature. Exact positions
+are encoded as `#1`, `#2`, and so on, arbitrary positions as `#?`, and a
+variadic subset as `#*`:
+
+```text
+Heading                                      Specialized signature
+\integral{f(x_, y_)}:d{f.x_}                \integral{_(2)}:d{#1}
+\integral{f(x_, y_)}:d{f.y_}                \integral{_(2)}:d{#2}
+\integral{f(x_, y_)}:d{f.u?_, f.v?_}        \integral{_(2)}:d{#?, #?}
+\integral{f(x_[i_:=1...n])}:d{f.x1?_, f.x2?_}
+                                             \integral{_(*)}:d{#?, #?}
+\integral{f(x_[i_:=1...n])}:d{f.x_[i_[j_:=1...m]]}
+                                             \integral{_(*)}:d{#*}
+```
+
+All five have the general signature `\integral:d`. Specialized signatures must
+be unique, while several definitions may share a general signature. Resolution
+first prefers a matching fixed mapping arity over `_(*)`, then exact selected
+positions in their written order over `#?`, and finally `#*`. If two candidates
+are equally specific, the invocation is ambiguous and is rejected.
 
 In command declaration headings, a tail may be written with `:?` to make that
 tail optional at reference sites:
@@ -993,8 +1089,10 @@ section`) holding a quoted UUID (`\`Id:\` section must contain a quoted UUID`,
 `\`Id:\` value \`{value}\` must be a UUID`); Ids must be unique
 (`Duplicate Id \`{value}\`; first used at {loc}`). At most one top-level
 `Writing:` item is allowed. Command signatures must be unique across definition
-kinds (`Duplicate command signature \`{sig}\` ...`), and each operator/function
-key may have at most one `Disambiguates` (`Duplicate disambiguation for
+kinds (`Duplicate command signature \`{sig}\` ...`); mapping-parameter headers
+use their specialized signature for this check, so distinct specialized
+signatures may share one general signature. Each operator/function key may have
+at most one `Disambiguates` (`Duplicate disambiguation for
 \`{key}\``). Spec-infix headings (`\:...:/`) are allowed only on `Defines`, and
 refined headings (`::`) only on `Refines`.
 
@@ -1011,7 +1109,10 @@ Every command-like reference must resolve to a defined signature
 (`Undefined command signature \`{signature}\``) with a matching argument shape
 (`Command signature \`{sig}\` expects argument shape \`{expected}\` but found
 \`{actual}\``); refined references may fall back to their base command and
-refinement pieces. Command `when:`/context requirements are checked at use
+refinement pieces. Mapping-parameter references resolve among the specialized
+definitions for their general signature and report an ambiguity when no unique
+most-specific candidate exists. Command `when:`/context requirements are
+checked at use
 sites (`Could not establish requirement \`{fact}\` for command \`{signature}\``,
 plus `Command ... does not accept ...`, `Unknown ... parameter ...`,
 `Missing ... value for parameter ...`). This includes the reduction target of an

@@ -421,14 +421,20 @@ FunctionExpression ::=
     Name "(" Expression ("," Expression)* ")"
   | Name "[|" NamedFunctionElement ("," NamedFunctionElement)* "|]"
 
-NamedFunctionElement ::= NamedFunctionLhs ":=" SpecOrPredicateExpression
-NamedFunctionLhs ::= Name | SubsetNameCall
+NamedFunctionElement ::= NamedFunctionLhs (":=" | "=") SpecOrPredicateExpression
+NamedFunctionLhs ::= Name | InferredParameterName | SubsetNameCall
+                   | RangedMappingSelector | "..."
+InferredParameterName ::= Name "?_"
+RangedMappingSelector ::= Placeholder "[" Placeholder
+                          "[" ("0" | "1") "..." Name "]" "]"
 ```
 
 Examples:
 
 - `f(x, y)`
 - `map[| key := x, value := y |]`
+- `f[|x1?_ = 1, x2?_ = 2, ... = 0|]`
+- `f[|x_[i_[1...m]] = 1, ... = 0|]`
 
 #### Tuple expressions
 
@@ -548,6 +554,7 @@ Named operators like `|plus|` are not chain parts.
 ```text
 FormOrDeclaration ::=
     Name
+  | MappingParameter
   | FunctionFormOrDeclaration
   | TupleFormOrDeclaration
   | SetFormOrDeclaration
@@ -558,6 +565,14 @@ FormOrDeclaration ::=
 FunctionFormOrDeclaration ::= [Name "::="] FunctionForm
 FunctionForm ::= Name "(" MagneticPlaceholder ")"
                | Name "(" Placeholder ("," Placeholder)* ")"
+               | Name "(" VariadicMappingParameter ")"
+
+VariadicMappingParameter ::= (Placeholder | MagneticPlaceholder)
+                             "[" Placeholder ":=" ("0" | "1") "..." Name "]"
+MappingParameter ::= Name "." Placeholder
+                   | Name "." Name "?" "_"
+                   | Name "." Placeholder "[" Placeholder
+                     "[" Placeholder ":=" ("0" | "1") "..." Name "]" "]"
 
 TupleFormOrDeclaration ::= [Name "::="] TupleForm
 TupleForm ::= "(" TupleFormElement "," TupleFormElement ("," TupleFormElement)* ")"
@@ -575,6 +590,10 @@ PlaceholderForm ::= Placeholder
 - function forms support either:
   - exactly one magnetic placeholder, or
   - one or more ordinary placeholders
+- a function form may instead contain one ranged variadic mapping parameter;
+  `_` spreads its inputs and `__` treats them as a tuple
+- a ranged variadic mapping parameter must be the only parameter, must name its
+  length, and must start at 0 or 1
 - mixed ordinary and magnetic placeholders are not allowed
 - tuple forms also require at least two elements
 - unnamed function/tuple/set forms are still represented internally as declaration variants with `name: None`
@@ -583,6 +602,11 @@ Examples:
 
 - `x`
 - `f(x_)`
+- `f(x_[i_:=1...n])`
+- `f(x__[i_:=1...n])`
+- `f.x_`
+- `f.u?_`
+- `f.x_[i_[j_:=1...m]]`
 - `g ::= f(x_, y_)`
 - `(x_, y_)`
 - `Pair ::= (x_, y_)`
@@ -797,6 +821,52 @@ Examples:
 - `\function:on{A}:?to{B}`
 - `\foo:?baz{A}:?bar{B}`
 - `\function:on{A}:to{B}(f(x_))`
+
+#### Mapping-parameter command headers
+
+An ordinary command header may associate one mapping-form curly group with one
+mapping-parameter curly group:
+
+```text
+[\integral{f(x_, y_)}:d{f.x_}]
+[\integral{f(x_, y_)}:d{f.u?_, f.v?_}]
+[\integral{f(x_[i_:=1...n])}:d{f.x_[i_[j_:=1...m]]}]
+```
+
+The hand-written form parser represents these selectors explicitly as exact,
+arbitrary, and variadic `MappingParameterSelector` variants. Header validation
+requires:
+
+- exactly one curly group containing selectors;
+- only selectors in that group, all attributed to the same mapping owner;
+- exactly one different curly group containing that owner's mapping form with
+  explicit parameters;
+- exact selector names to occur in the mapping form;
+- arbitrary selector names to be fresh rather than names of exact parameters;
+- a variadic selector's name and outer index to match the associated ranged
+  variadic mapping parameter.
+
+Mapping selectors are currently rejected in infix, infix-spec, and refined
+headers. A valid ordinary header receives a specialized signature in addition
+to its general command signature:
+
+```text
+f(x_, y_) + f.x_                 -> {_(2)} + {#1}
+f(x_, y_) + f.u?_                -> {_(2)} + {#?}
+f(x_[i_:=1...n]) + variadic set  -> {_(*)} + {#*}
+```
+
+For example, `\integral{f(x_, y_)}:d{f.x_}` becomes
+`\integral{_(2)}:d{#1}` and has general signature `\integral:d`. Multiple
+specialized signatures may share the general signature, but specialized
+signatures themselves remain duplicate-checked.
+
+At a use site, command mapping-literal sugar such as
+`\integral[x_, y_ is \real]{x_^2+y_^2}:d{x_}` supplies the explicit mapping
+parameters and selector positions. Selector arguments must all be names bound by
+that mapping literal. Resolution ranks matching candidates by fixed arity before
+variadic arity, then exact ordered positions before arbitrary `#?`, and finally
+variadic `#*`. Equal best ranks are an ambiguity error.
 
 ### Infix command headers
 
@@ -1013,6 +1083,7 @@ VariadicSlice ::= Name "..."
 ```text
 FormOrDeclaration ::=
     Name
+  | MappingParameter
   | FunctionFormOrDeclaration
   | TupleFormOrDeclaration
   | SetFormOrDeclaration
@@ -1025,6 +1096,14 @@ FunctionFormOrDeclaration ::= FunctionForm
 
 FunctionForm ::= Name "(" MagneticPlaceholder ")"
                | Name "(" PlaceholderList ")"
+               | Name "(" VariadicMappingParameter ")"
+
+VariadicMappingParameter ::= (Placeholder | MagneticPlaceholder)
+                             "[" Placeholder ":=" ("0" | "1") "..." Name "]"
+MappingParameter ::= Name "." Placeholder
+                   | Name "." Name "?" "_"
+                   | Name "." Placeholder "[" Placeholder
+                     "[" Placeholder ":=" ("0" | "1") "..." Name "]" "]"
 
 TupleFormOrDeclaration ::= TupleForm
                          | Name "::=" TupleForm
@@ -1119,8 +1198,12 @@ GroupedExpression ::= "(" Expression ")"
 FunctionExpression ::= Name "(" ExpressionList ")"
                      | Name "[|" FunctionNamedExpressionElement ("," FunctionNamedExpressionElement)* "|]"
 
-FunctionNamedExpressionElement ::= FunctionNamedExpressionElementLhs ":=" SpecOrPredicateExpression
-FunctionNamedExpressionElementLhs ::= Name | SubsetNameCall
+FunctionNamedExpressionElement ::= FunctionNamedExpressionElementLhs (":=" | "=") SpecOrPredicateExpression
+FunctionNamedExpressionElementLhs ::= Name | InferredParameterName | SubsetNameCall
+                                    | RangedMappingSelector | "..."
+InferredParameterName ::= Name "?_"
+RangedMappingSelector ::= Placeholder "[" Placeholder
+                          "[" ("0" | "1") "..." Name "]" "]"
 
 TupleExpression ::= "(" TupleExpressionElement "," TupleExpressionElement ("," TupleExpressionElement)* ")"
 

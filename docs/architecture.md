@@ -437,8 +437,11 @@ Important files:
   disambiguation/documented checks).
 - `types.rs` defines checker data structures such as `SignatureRegistry`,
   `DefinitionTypeInfo`, `TypeFact`, and extension/spec/provided-symbol rules.
-- `shapes.rs` computes canonical command signatures and argument shapes.
-- `validation.rs` validates references for existence and argument shape.
+- `shapes.rs` computes canonical command signatures and argument shapes,
+  including specialized mapping-parameter signatures (`_(n)`, `#n`, `#?`,
+  and `#*`) and their general-signature fallback.
+- `validation.rs` validates references for existence and argument shape and
+  ranks mapping-parameter overloads by arity and selector specificity.
 - `typecheck.rs` implements symbol scope, facts, substitutions, requirements,
   subtyping through `extends:`, destructuring, operator/member resolution, and
   spec-operator reduction.
@@ -450,7 +453,11 @@ Important files:
 
 The signature registry is global across all checked files. Duplicate command
 signatures are rejected across `Defines`, `Declares`, `Refines`, `States`, and
-named theorem-like groups.
+named theorem-like groups. Mapping-parameter definitions additionally populate
+a general-signature-to-specialized-signatures index. Several specialized
+definitions may share one general signature, but each specialized signature is
+still globally unique; an invocation must resolve to one uniquely most-specific
+candidate.
 
 The type checker is intentionally conservative. It checks command references,
 argument shapes, declared symbols, known type/spec facts, command requirements,

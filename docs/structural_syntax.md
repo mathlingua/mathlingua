@@ -386,7 +386,11 @@ Used inside top-level `Resource:`.
 `$book.chapter` and the quoted `"$book.chapter"` form are accepted. A PDF
 resource reference may append `:page{n}`. Its `offset:` is the physical PDF page
 corresponding to logical page 1, so the linked physical page is
-`n + offset - 1`.
+`n + offset - 1`. The viewer displays a resolved reference as the resource's
+title followed by its author entries in parentheses. A resource URL becomes the
+link target; for `:page{n}` on a PDF URL, the calculated physical page is added
+as the PDF fragment. `References:` is treated as supporting content and is
+collapsed by default with `Documented:` and `Id:`.
 
 - **`title`** — `ResourceTitleGroup`, heading: none. Sections: `title: OpenText`
 - **`author`** — `ResourceAuthorGroup`, heading: none. Sections: `author: OpenText+`

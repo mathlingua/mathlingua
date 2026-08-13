@@ -20,6 +20,13 @@ the same relations as 1D slices. Written templates can nest the ordinary
 variadic element notation inside row prefix/postfix notation; this supports
 matrix renderings such as `\left[ x?{{...,...}\\} \right]`.
 
+In `when:`, a whole-axis requirement such as `x[..., ...] is \natural` is
+instantiated once per supplied cell instead of being applied to the flattened
+argument list. Symbolic definition-card titles also retain their 2D row shape,
+including one-cell ellipsis rows, so nested templates such as
+`\begin{bmatrix} x?{{...&...}...\\} \end{bmatrix}` render through the same
+matrix path as concrete invocations.
+
 ## Structural Literal Command Arguments
 
 Tuple, set, and mapping literals can now satisfy a command's nominal type
@@ -107,6 +114,14 @@ from the Rust process. `mlg export` copies the same embedded assets into the
 static site. Neither command installs packages, invokes npm, or requires Node.js
 on the user's machine; the generated Vite assets are packaged into the `mlg`
 executable.
+
+## Atomic Viewer Themes
+
+The viewer theme menu now includes Atomic and Atomic Dark alongside the
+existing Classic, Mono, Flat Gray, Sepia, and Retro light/dark pairs. Atomic's
+cards, navigation, typography, source view, supporting-section controls, and
+syntax colors share a coordinated high-contrast treatment. Theme selection is
+persisted in browser local storage like the other viewer themes.
 
 ## Structural Spec-Literal Types
 
@@ -240,7 +255,7 @@ for that later conversion.
 
 In the rendered view a placeholder is a card titled by its `called:`/`written:`
 (or the kind word — "Theorem", "Definition", … — when untitled), with the body
-as rendered Markdown, `References:` visible, and `Documented:`/`Id:` behind the
+as rendered Markdown and `References:`/`Documented:`/`Id:` behind the
 supporting-sections toggle. The `notes:` documentation item is also accepted in
 any `Documented:` section.
 

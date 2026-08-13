@@ -439,9 +439,13 @@ Important files:
   `DefinitionTypeInfo`, `TypeFact`, and extension/spec/provided-symbol rules.
 - `shapes.rs` computes canonical command signatures and argument shapes,
   including specialized mapping-parameter signatures (`_(n)`, `#n`, `#?`,
-  and `#*`) and their general-signature fallback.
+  and `#*`) and their general-signature fallback. It also preserves 2D curly
+  argument row lengths so rectangular and variadic matrix shapes remain
+  distinct from flat variadic groups.
 - `validation.rs` validates references for existence and argument shape and
-  ranks mapping-parameter overloads by arity and selector specificity.
+  ranks mapping-parameter overloads by arity and selector specificity. For 2D
+  variadics it rejects empty, ragged, and flat actual groups and binds row and
+  column length names independently.
 - `typecheck.rs` implements symbol scope, facts, substitutions, requirements,
   subtyping through `extends:`, destructuring, operator/member resolution, and
   spec-operator reduction.
@@ -485,6 +489,12 @@ Main files:
 - `render/commands.rs`, `render/expressions.rs`, `render/statements.rs`,
   `render/names.rs`, and `render/fallbacks.rs` render AST fragments to LaTeX.
 - `render/escaping.rs` handles LaTeX escaping.
+
+Variadic template substitutions retain shape metadata alongside their rendered
+values. Concrete 2D command arguments carry their row lengths, while symbolic
+2D header parameters carry indexed rows plus explicit ellipsis rows. This lets
+`render/templates.rs` apply nested row/column notation consistently to both an
+invocation and its definition-card title.
 
 The view builder deliberately emits a presentation-oriented JSON model instead
 of exposing frontend AST internals to TypeScript. This keeps the web viewer
@@ -531,6 +541,17 @@ Key files:
   helpers.
 - `web/components/` renders the viewer shell, file list, group cards, section
   content, argument lists, and LaTeX.
+
+Group cards divide their sections into primary content and supporting content.
+`Documented:`, `References:`, item-level `Writing:`, `Enables:`, `Provides:`,
+`Justification:`, and `Id:` are collapsed behind the supporting-sections toggle
+by default.
+
+Viewer themes are declared centrally in `web/components/viewer-theme.ts`. The
+current choices are Classic, Mono, Flat Gray, Sepia, Retro, and Atomic, each
+with light and dark variants. Classic is the default; the selected theme is
+stored under `mlg-view-theme` in browser local storage and applied through the
+root `data-theme` attribute and matching `color-scheme`.
 
 `mlg view` writes a temporary `collection.json` and serves it with the embedded
 assets from a small Rust HTTP server. The web app reads only that JSON endpoint.

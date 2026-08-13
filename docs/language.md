@@ -676,7 +676,8 @@ Writing the prose, references, and layout first — then filling in structured
 forms — is easier than going from nothing straight to structured groups. A
 placeholder renders as a card titled by its `called:`/`written:` (or the kind
 word when untitled), with the body as rendered Markdown and `Documented:` behind
-the supporting-sections toggle.
+the supporting-sections toggle. Its `References:` and `Id:` sections are hidden
+behind that toggle as well.
 
 Groups with command headings introduce command signatures: `Defines`,
 `Declares`, `Refines`, `States`, `Equivalent`, and theorem-like groups that have
@@ -984,6 +985,8 @@ form `"$book.chapter"` is accepted too). A resolved reference renders as the
 resource title followed by its authors in parentheses. If the resource has a
 URL, the citation links to it. PDF resources also accept `:page{n}`; the link's
 physical PDF page is `n + offset - 1`, where `offset` defaults to `1`.
+In the viewer, `References:` is a supporting section and is collapsed by
+default alongside `Documented:` and `Id:`.
 
 ### Mapping writing templates
 
@@ -1788,6 +1791,11 @@ every row. For example,
 `\left[ x?{{...,...}\\} \right]` joins columns with commas and appends a
 LaTeX row break to every row, rendering the supplied argument as a matrix in
 square brackets.
+
+The same expansion is used for a definition card's symbolic title. A header
+bounded by `(m,n)` therefore renders symbolic first, indexed, and last rows and
+columns (with ellipsis rows between them) through the nested template instead
+of displaying the raw `{...}` notation.
 
 Both `called:` and `written:` templates support conditional fragments:
 

@@ -488,6 +488,25 @@ Examples:
 - `F[A, B]`
 - `F[A[B]]`
 
+A two-index subset such as `x[i,j]` denotes one element. If either axis
+contains `...`, the hand-written expression pre-parser instead produces a 2D
+variadic slice:
+
+```text
+TwoDimensionalVariadicSlice ::= Name "[" VariadicAxis "," VariadicAxis "]"
+IndexName ::= Name | Placeholder
+VariadicAxis ::= IndexName
+               | "..."
+               | IndexName "..." IndexName
+               | IndexName "..." Placeholder "..." IndexName
+```
+
+At least one axis must contain `...`; otherwise the expression is the ordinary
+two-index subset form. Thus `x[i,j]` selects one cell, while `x[i,...]`,
+`x[...,j]`, and `x[..., ...]` select a row, a column, and the whole matrix.
+Axis endpoints may use names or placeholder spellings, but they are not
+arbitrary expressions.
+
 #### Command expressions
 
 ```text
@@ -495,7 +514,8 @@ CommandExpression ::= "\" Chain CurlyExpressionArgs* CommandExpressionTail* Pare
 
 CommandExpressionTail ::= ":" Chain CurlyExpressionArgs+
 
-CurlyExpressionArgs ::= "{" Expression ("," Expression)* "}"
+CurlyExpressionArgs ::= "{" ExpressionRow (";" ExpressionRow)* "}"
+ExpressionRow ::= Expression ("," Expression)*
 ParenExpressionArgs ::= "(" Expression ("," Expression)* ")"
 ```
 
@@ -504,6 +524,10 @@ Important implementation detail:
 - each tail part must have at least one `{...}` argument block
 - zero or more top-level `{...}` blocks are allowed before the first tail
 - zero or more trailing `(...)` blocks are allowed after all tail parts
+- semicolons are recognized as row separators only in curly command arguments;
+  two or more rows make the argument group 2D
+- every 2D row must be nonempty; semantic shape validation additionally
+  requires equal row lengths
 
 Examples:
 
@@ -785,7 +809,15 @@ RefinedHeaderLeft ::= [RawChain "."] "(" RefinedHeaderPart ("," RefinedHeaderPar
 RefinedHeaderPart ::= RawChain CommandHeaderTail*
 RefinedTail ::= "[[" Name "]]" | RawChain
 
-CurlyHeadingArgs ::= "{" FormOrDeclaration ("," FormOrDeclaration)* "}"
+CurlyHeadingArgs ::= "{" (FormOrDeclaration ("," FormOrDeclaration)* | VariadicParameter) "}"
+VariadicParameter ::= Name "..." Name?
+                    | Name "[" Placeholder ":=" ("0" | "1") "..." Name? "]"
+                    | TwoDimensionalVariadicParameter
+TwoDimensionalVariadicParameter ::=
+    Name "[" "(" Placeholder "," Placeholder ")" ":="
+    StartPair "..." NamePair? "]"
+StartPair ::= "(" "0" "," "0" ")" | "(" "1" "," "1" ")"
+NamePair ::= "(" Name "," Name ")"
 ParenHeadingArgs ::= "(" HeadingParameter ("," HeadingParameter)* ")"
 HeadingParameter ::= FormOrDeclaration | Placeholder
 CommandHeaderTail ::= (":" | ":?") RawChain CurlyHeadingArgs+
@@ -813,6 +845,8 @@ Notes:
 - `:?` marks a command-header tail part as optional; it is accepted only in command headers, not in command expressions
 - optional tail parts expand to all ordered concrete signatures that include or omit that part
 - zero or more parenthesized form-argument blocks may appear at the end
+- a 2D variadic parameter must occupy an entire curly group; both axes must use
+  the same zero- or one-based origin, and the `(m,n)` bounds may be omitted
 
 Examples:
 
@@ -1068,6 +1102,7 @@ PostfixFormOperator ::= AnyOperator | PostfixFormNamedOperator
 
 PlaceholderList ::= Placeholder ("," Placeholder)*
 ExpressionList ::= Expression ("," Expression)*
+ExpressionRowList ::= ExpressionList (";" ExpressionList)*
 FormList ::= FormOrDeclaration ("," FormOrDeclaration)*
 
 TupleExpressionElement ::= SpecOrPredicateExpression | AnyOperator
@@ -1080,7 +1115,17 @@ SubsetNameCall ::= Name "[" (Name | Placeholder) "]"
 VariadicSlice ::= Name "..."
                 | Name "[" ("0" | "1") "..." Name "]"
                 | Name "[" ("0" | "1") "..." Placeholder "..." Name "]"
+                | Name "[" VariadicAxis "," VariadicAxis "]"
+IndexName ::= Name | Placeholder
+VariadicAxis ::= IndexName
+               | "..."
+               | IndexName "..." IndexName
+               | IndexName "..." Placeholder "..." IndexName
 ```
+
+The last `VariadicSlice` alternative is the scanner-parsed 2D form and requires
+at least one axis containing `...`. Without an ellipsis, `Name[Name,Name]` is a
+single `SubsetNameCall` element.
 
 ### Forms and declarations
 
@@ -1227,7 +1272,7 @@ ChainPart ::= Name | "$" Name | SpecialOperator | "="
 RawChain ::= RawChainPart ("." RawChainPart)*
 RawChainPart ::= Name | "$" Name | OperatorText
 
-CurlyExpressionArgs ::= "{" ExpressionList "}"
+CurlyExpressionArgs ::= "{" ExpressionRowList "}"
 ParenExpressionArgs ::= "(" ExpressionList ")"
 
 CommandExpressionTailPart ::= ":" Chain CurlyExpressionArgs+
@@ -1316,6 +1361,10 @@ CommandHeader ::= SimpleCommandHeader | InfixCommandHeader | InfixSpecHeader | R
 CurlyHeadingArgs ::= "{" (FormList | VariadicParameter) "}"
 VariadicParameter ::= Name "..." Name?
                     | Name "[" Placeholder ":=" ("0" | "1") "..." Name? "]"
+                    | Name "[" "(" Placeholder "," Placeholder ")" ":="
+                      StartPair "..." NamePair? "]"
+StartPair ::= "(" "0" "," "0" ")" | "(" "1" "," "1" ")"
+NamePair ::= "(" Name "," Name ")"
 ParenHeadingArgs ::= "(" HeadingParameterList ")"
 HeadingParameterList ::= HeadingParameter ("," HeadingParameter)*
 HeadingParameter ::= FormOrDeclaration | Placeholder
@@ -1333,7 +1382,9 @@ RefinedHeaderLeft ::= [RawChain "."] "(" RefinedHeaderPart ("," RefinedHeaderPar
 
 An infix-command header must provide either both operands or neither. An
 infix-spec header always requires both operands and uses `:/`; `?:/` is reserved
-for predicate use sites.
+for predicate use sites. The 2D `VariadicParameter` alternative is valid only
+as the sole contents of a curly heading group; it is not accepted in
+parenthesized heading arguments.
 
 ### Aliases and headers
 

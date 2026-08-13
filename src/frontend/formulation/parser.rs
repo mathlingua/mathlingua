@@ -21,7 +21,8 @@ use super::ast::{
     RefinedTail, ResourceHeader, SetExpression, SetPredicate, SetTarget, SetTargetElement,
     SetTargetKind, SetType, SetTypeElement, Span, SpecOperatorAlias, SpecOperatorAliasTarget,
     SpecSubject, SpecSubjectKind, SubjectSpecStatement, TopicHeader, TupleExpressionElement,
-    TupleType, TypeExpression, VariadicParameter, WritingAlias,
+    TupleType, TypeExpression, VariadicParameter, VariadicParameterDimensions, VariadicSlice,
+    VariadicSliceAxis, VariadicSliceDimensions, WritingAlias,
 };
 use super::grammar;
 use super::lexer::{Lexer, Spanned};
@@ -1267,9 +1268,7 @@ fn parse_variadic_parameter(input: &str) -> Result<Option<VariadicParameter>, Pa
         return Ok(None);
     }
     if input.contains(',') {
-        return Err(ParseError::custom(
-            "a variadic parameter must be the only parameter in its `{...}` argument group",
-        ));
+        return parse_two_dimensional_variadic_parameter(input).map(Some);
     }
 
     if !input.contains('[') {
@@ -1289,6 +1288,7 @@ fn parse_variadic_parameter(input: &str) -> Result<Option<VariadicParameter>, Pa
             length,
             index: None,
             start: 0,
+            dimensions: None,
         }));
     }
 
@@ -1327,7 +1327,97 @@ fn parse_variadic_parameter(input: &str) -> Result<Option<VariadicParameter>, Pa
         length,
         index: Some(index),
         start,
+        dimensions: None,
     }))
+}
+
+fn parse_two_dimensional_variadic_parameter(input: &str) -> Result<VariadicParameter, ParseError> {
+    let open = input.find('[').ok_or_else(|| {
+        ParseError::custom("2D variadic parameters require an index pair in `[...]`")
+    })?;
+    let name = parse_name_token(input[..open].trim())?;
+    let (bracketed, rest) = consume_balanced_prefix(&input[open..], '[', ']')?;
+    if !rest.trim().is_empty() {
+        return Err(ParseError::custom(
+            "unexpected text after 2D variadic parameter",
+        ));
+    }
+    let assignment = find_top_level_definition(bracketed).ok_or_else(|| {
+        ParseError::custom("2D variadic parameter indices require `(i_, j_) := ...`")
+    })?;
+    let (row_index, column_index) = parse_placeholder_pair(&bracketed[..assignment])?;
+    let range = bracketed[assignment + 2..].trim();
+    let ellipsis = find_top_level_substring(range, "...")
+        .ok_or_else(|| ParseError::custom("2D variadic parameter ranges require `...`"))?;
+    let (row_start, column_start) = parse_start_pair(&range[..ellipsis])?;
+    let end = range[ellipsis + 3..].trim();
+    let (row_length, column_length) = if end.is_empty() {
+        (None, None)
+    } else {
+        let (row, column) = parse_name_pair(end)?;
+        (Some(row), Some(column))
+    };
+    Ok(VariadicParameter {
+        span: span_all(input),
+        name,
+        length: None,
+        index: None,
+        start: 0,
+        dimensions: Some(VariadicParameterDimensions {
+            row_index,
+            column_index,
+            row_start,
+            column_start,
+            row_length,
+            column_length,
+        }),
+    })
+}
+
+fn parse_pair_text(input: &str) -> Result<(&str, &str), ParseError> {
+    let input = input.trim();
+    let (inside, rest) = consume_balanced_prefix(input, '(', ')')?;
+    if !rest.trim().is_empty() {
+        return Err(ParseError::custom("expected a parenthesized pair"));
+    }
+    let parts = split_top_level(inside, ',')?;
+    let [first, second] = parts.as_slice() else {
+        return Err(ParseError::custom(
+            "expected exactly two values in the pair",
+        ));
+    };
+    Ok((first, second))
+}
+
+fn parse_placeholder_pair(input: &str) -> Result<(String, String), ParseError> {
+    let (first, second) = parse_pair_text(input)?;
+    Ok((
+        parse_placeholder(first)?.name,
+        parse_placeholder(second)?.name,
+    ))
+}
+
+fn parse_name_pair(input: &str) -> Result<(String, String), ParseError> {
+    let (first, second) = parse_pair_text(input)?;
+    Ok((parse_name_token(first)?, parse_name_token(second)?))
+}
+
+fn parse_start_pair(input: &str) -> Result<(usize, usize), ParseError> {
+    let (first, second) = parse_pair_text(input)?;
+    let parse_start = |value: &str| match value.trim() {
+        "0" => Ok(0),
+        "1" => Ok(1),
+        _ => Err(ParseError::custom(
+            "2D variadic parameter indices must start at `(0,0)` or `(1,1)`",
+        )),
+    };
+    let starts = (parse_start(first)?, parse_start(second)?);
+    if starts.0 != starts.1 {
+        return Err(ParseError::custom(
+            "2D variadic parameter indices must start at `(0,0)` or `(1,1)`",
+        ));
+    }
+    Ok(starts)
 }
 
 /// Parses consecutive `(...)` argument groups in a command header.
@@ -1459,13 +1549,26 @@ pub(super) fn parse_curly_expression_args(
         let (inside, rest) = consume_balanced_prefix(input, '{', '}')?;
         let group = &input[..input.len() - rest.len()];
         // Collection-literal sugar: `\foo{x_ : ...}` == `\foo{{x_ : ...}}`.
-        let expressions = match parse_collection_literal_argument(group, inside) {
-            Some(set) => vec![set],
-            None => parse_expression_list(inside)?,
+        let (expressions, rows) = match parse_collection_literal_argument(group, inside) {
+            Some(set) => (vec![set], None),
+            None => {
+                let row_texts = split_top_level(inside, ';')?;
+                let matrix = row_texts.len() > 1;
+                let parsed_rows = row_texts
+                    .into_iter()
+                    .map(parse_expression_list)
+                    .collect::<Result<Vec<_>, _>>()?;
+                let row_lengths = parsed_rows.iter().map(Vec::len).collect::<Vec<_>>();
+                (
+                    parsed_rows.into_iter().flatten().collect(),
+                    matrix.then_some(row_lengths),
+                )
+            }
         };
         args.push(CurlyExpressionArgs {
             span: span_all(group),
             expressions,
+            rows,
         });
         input = rest;
     }
@@ -2629,12 +2732,15 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     if let Some(expression) = parse_named_function_call(input)? {
         return Ok(expression);
     }
+    if let Some(expression) = parse_two_dimensional_variadic_expression(input)? {
+        return Ok(expression);
+    }
     if let Some(index) = find_top_level_definition(input) {
         let target_text = input[..index].trim();
         let value_text = input[index + 2..].trim();
         if !target_text.is_empty()
             && !value_text.is_empty()
-            && let Ok(target) = grammar::InputExpressionParser::new().parse(Lexer::new(target_text))
+            && let Ok(target) = parse_expression(target_text)
             && let ExpressionKind::VariadicSlice(target) = target.kind
         {
             let value = parse_expression(value_text)?;
@@ -2683,6 +2789,10 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     if let Some(expression) = parse_suffixed_command_expression(input) {
         return expression;
     }
+    if input.starts_with('\\') && !input.starts_with("\\\\") && input.contains(';') {
+        return parse_simple_command_expression_with_context(input)
+            .map(|command| Expression::new(span_all(input), ExpressionKind::Command(command)));
+    }
     if let Some(split) = split_infix_spec_statement(input)
         && !split.left.is_empty()
         && !split.body.is_empty()
@@ -2702,6 +2812,152 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     }
 
     parse_input_expression(input).map_err(ParseError::from)
+}
+
+fn parse_two_dimensional_variadic_expression(
+    input: &str,
+) -> Result<Option<Expression>, ParseError> {
+    let Some((slice, rest)) = parse_two_dimensional_variadic_slice_prefix(input)? else {
+        return Ok(None);
+    };
+    let rest = rest.trim();
+    if rest.is_empty() {
+        return Ok(Some(Expression::new(
+            span_all(input),
+            ExpressionKind::VariadicSlice(slice),
+        )));
+    }
+    if let Some(value) = rest.strip_prefix(":=") {
+        return Ok(Some(Expression::new(
+            span_all(input),
+            ExpressionKind::VariadicAssignment {
+                target: slice,
+                value: Box::new(parse_expression(value)?),
+            },
+        )));
+    }
+    for operator_text in ["!=", "="] {
+        if let Some(value) = rest.strip_prefix(operator_text) {
+            let template = parse_input_expression(&format!("a {operator_text} b"))
+                .map_err(ParseError::from)?;
+            let ExpressionKind::Binary { operator, .. } = template.kind else {
+                unreachable!("a binary relation parses as binary")
+            };
+            return Ok(Some(Expression::new(
+                span_all(input),
+                ExpressionKind::Binary {
+                    left: Box::new(Expression::new(
+                        slice.span,
+                        ExpressionKind::VariadicSlice(slice),
+                    )),
+                    operator,
+                    right: Box::new(parse_expression(value)?),
+                },
+            )));
+        }
+    }
+
+    // Reuse the ordinary grammar for `is`, `is?`, `is_not?`, and quoted-spec
+    // suffixes, replacing only its synthetic scalar subject with the matrix
+    // selection parsed above.
+    let parsed =
+        parse_input_expression(&format!("matrixSubject {rest}")).map_err(ParseError::from)?;
+    let subject = Box::new(Expression::new(
+        slice.span,
+        ExpressionKind::VariadicSlice(slice),
+    ));
+    let kind = match parsed.kind {
+        ExpressionKind::SpecStatement(mut statement) => {
+            statement.subject = subject;
+            ExpressionKind::SpecStatement(statement)
+        }
+        ExpressionKind::SpecPredicate(mut statement) => {
+            statement.subject = subject;
+            ExpressionKind::SpecPredicate(statement)
+        }
+        ExpressionKind::IsType { ty, .. } => ExpressionKind::IsType { subject, ty },
+        ExpressionKind::IsPredicate { command, .. } => {
+            ExpressionKind::IsPredicate { subject, command }
+        }
+        ExpressionKind::IsNotPredicate { command, .. } => {
+            ExpressionKind::IsNotPredicate { subject, command }
+        }
+        ExpressionKind::IsBuiltinPredicate { ty, .. } => {
+            ExpressionKind::IsBuiltinPredicate { subject, ty }
+        }
+        ExpressionKind::IsNotBuiltinPredicate { ty, .. } => {
+            ExpressionKind::IsNotBuiltinPredicate { subject, ty }
+        }
+        _ => return Ok(None),
+    };
+    Ok(Some(Expression::new(span_all(input), kind)))
+}
+
+fn parse_two_dimensional_variadic_slice_prefix(
+    input: &str,
+) -> Result<Option<(VariadicSlice, &str)>, ParseError> {
+    let input = input.trim();
+    let Some(open) = input.find('[') else {
+        return Ok(None);
+    };
+    let name_text = input[..open].trim();
+    if name_text.is_empty() || !is_name_text(name_text) {
+        return Ok(None);
+    }
+    let (inside, rest) = consume_balanced_prefix(&input[open..], '[', ']')?;
+    let axes = split_top_level(inside, ',')?;
+    let [rows, columns] = axes.as_slice() else {
+        return Ok(None);
+    };
+    if !rows.contains("...") && !columns.contains("...") {
+        return Ok(None);
+    }
+    Ok(Some((
+        VariadicSlice {
+            span: span_all(&input[..input.len() - rest.len()]),
+            name: parse_name_token(name_text)?,
+            start: None,
+            index: None,
+            end: None,
+            dimensions: Some(VariadicSliceDimensions {
+                rows: parse_two_dimensional_variadic_axis(rows)?,
+                columns: parse_two_dimensional_variadic_axis(columns)?,
+            }),
+        },
+        rest,
+    )))
+}
+
+fn parse_two_dimensional_variadic_axis(input: &str) -> Result<VariadicSliceAxis, ParseError> {
+    let input = input.trim();
+    if input == "..." {
+        return Ok(VariadicSliceAxis::All);
+    }
+    if !input.contains("...") {
+        return parse_index_name(input).map(VariadicSliceAxis::Index);
+    }
+    let parts = input.split("...").map(str::trim).collect::<Vec<_>>();
+    match parts.as_slice() {
+        [start, end] if !start.is_empty() && !end.is_empty() => Ok(VariadicSliceAxis::Range {
+            start: parse_index_name(start)?,
+            index: None,
+            end: parse_index_name(end)?,
+        }),
+        [start, index, end] if !start.is_empty() && !index.is_empty() && !end.is_empty() => {
+            Ok(VariadicSliceAxis::Range {
+                start: parse_index_name(start)?,
+                index: Some(parse_placeholder(index)?.name),
+                end: parse_index_name(end)?,
+            })
+        }
+        _ => Err(ParseError::custom(format!(
+            "invalid 2D variadic slice axis `{input}`"
+        ))),
+    }
+}
+
+fn parse_index_name(input: &str) -> Result<String, ParseError> {
+    parse_name_token(input).or_else(|_| parse_placeholder(input).map(|value| value.name))
 }
 
 /// Parses a named mapping invocation. In addition to the legacy `:=` spelling,
@@ -3902,7 +4158,7 @@ mod tests {
         IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, MappingParameterSelector,
         NamedOperatorKind, PlaceholderForm, PlaceholderFormKind, RefinedTail, SetPredicate,
         SetTargetElement, SetTargetKind, SetTypeElement, SpecLiteral, SpecLiteralForm,
-        SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression,
+        SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression, VariadicSlice,
     };
 
     // ===============================[ support ]=====================================
@@ -4220,6 +4476,65 @@ mod tests {
             parse_expression("x[i_]").expect("expected indexed element").kind,
             ExpressionKind::SubsetCall(SubsetCall::One { ref first, .. }) if first == "i"
         ));
+    }
+
+    #[test]
+    fn parses_two_dimensional_variadic_headers_arguments_and_slices() {
+        for source in [
+            r"\foo{x[(i_, j_) := (1,1)...(m,n)]}",
+            r"\foo{x[(i_, j_) := (0,0)...(m,n)]}",
+            r"\foo{x[(i_, j_) := (1,1)...]}",
+            r"\foo{x[(i_, j_) := (0,0)...]}",
+        ] {
+            let CommandHeader::Command(header) =
+                parse_command_header(source).expect("expected a 2D variadic header")
+            else {
+                panic!("expected an ordinary command header")
+            };
+            assert!(
+                header.head_args[0]
+                    .variadic
+                    .as_ref()
+                    .is_some_and(|parameter| parameter.dimensions.is_some())
+            );
+        }
+
+        let ExpressionKind::Command(command) = parse_expression(r"\foo{a, b, c; x, y, z; q, r, s}")
+            .expect("expected a matrix command argument")
+            .kind
+        else {
+            panic!("expected a command expression")
+        };
+        assert_eq!(command.head_args[0].rows.as_deref(), Some(&[3, 3, 3][..]));
+
+        for source in [
+            "x[a...i_...b, c...j_...d]",
+            "x[a...b, c...d]",
+            "x[a...b, ...]",
+            "x[..., c...d]",
+            "x[..., ...]",
+            "x[a, ...]",
+            "x[..., c]",
+            "x[a, c...d]",
+            "x[a...b, c]",
+        ] {
+            let expression = parse_expression(source).expect("expected a 2D slice");
+            assert!(matches!(
+                expression.kind,
+                ExpressionKind::VariadicSlice(VariadicSlice {
+                    dimensions: Some(_),
+                    ..
+                })
+            ));
+        }
+        assert!(matches!(
+            parse_expression("x[a, c]")
+                .expect("expected a matrix element")
+                .kind,
+            ExpressionKind::SubsetCall(SubsetCall::Two { .. })
+        ));
+        assert!(parse_expression(r"\foo(a, b; c, d)").is_err());
+        assert!(parse_command_header(r"\foo(x[(i_, j_) := (1,1)...(m,n)])").is_err());
     }
 
     #[test]

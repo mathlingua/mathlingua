@@ -375,6 +375,59 @@ particular, `x...` renders as `x_1, ..., x_.`, while
 `x[1...i_...n]` renders as `x_1, ..., x_i, ..., x_n` (and a zero-based range
 starts with `x_0`).
 
+#### Two-dimensional variadic curly arguments
+
+A curly argument group may instead declare a rectangular two-dimensional
+variadic parameter. No other argument delimiter supports the 2D form. Both
+indices use the same zero- or one-based origin, and the row and column bounds
+may be named or omitted:
+
+```text
+x[(i_, j_) := (1,1)...(m,n)]
+x[(i_, j_) := (0,0)...(m,n)]
+x[(i_, j_) := (1,1)...]
+x[(i_, j_) := (0,0)...]
+```
+
+For example, `\foo{x[(i_, j_) := (1,1)...(m,n)]}` accepts a
+semicolon-separated rectangular argument:
+
+```text
+\foo{a, b, c;
+     x, y, z;
+     q, r, s}
+```
+
+Commas separate columns and semicolons separate rows. Every row must have the
+same nonzero number of entries, and a flat comma-separated argument does not
+match a 2D parameter. When present, `m` and `n` receive the row and column
+counts. An element is referenced as `x[i,j]`.
+
+A 2D selection gives each axis independently as a single index, a range, or
+`...` for the whole axis:
+
+```text
+x[a...i_...b, c...j_...d]
+x[a...b, c...d]
+x[a...b, ...]       x[..., c...d]
+x[..., ...]
+x[a, ...]           x[..., c]
+x[a, c...d]         x[a...b, c]
+```
+
+At least one axis must be a range or `...`; `x[a,c]` is the ordinary single
+element. A 2D slice broadcasts under the same assignment, equality, inequality,
+type, predicate, and quoted-specification relations as a 1D slice. Thus
+`x[a...b, c...d] is \real` and `x[a...b, c...d] = 1` apply to every
+selected `x[i,j]`. Paired 2D slices must use exactly the same two axis
+selections.
+
+In a command's `when:` section, `x is T` constrains the variadic value as a
+whole. To constrain its cells directly, write `x[..., ...] is T`; the checker
+instantiates that requirement once for every supplied matrix element. The
+indexed form `x[i,j] is T` provides the same per-cell constraint while making
+the bound row and column indices available to the definition.
+
 ### Mapping parameters and specialized signatures
 
 A command heading can select parameters from a mapping declared in another
@@ -1719,6 +1772,22 @@ Three suffix forms control how the individual values are combined:
 The `A`, `B`, or `C` body may be arbitrary template text, including LaTeX. For
 example, `x?{...\text{ and }...}` renders three arguments as
 `x_1 \text{ and } x_2 \text{ and } x_3`.
+
+A 2D variadic placeholder nests the element notation inside a row notation:
+
+```text
+x?{R...{...C}}
+x?{{...C}...R}
+x?{L...{...C}...R}
+```
+
+The inner braces use the same prefix (`{C...}`), postfix (`{...C}`), or infix
+(`{...C...}`) rules across the elements of each row. Text before the inner
+braces is applied at the start of every row and text after it at the end of
+every row. For example,
+`\left[ x?{{...,...}\\} \right]` joins columns with commas and appends a
+LaTeX row break to every row, rendering the supplied argument as a matrix in
+square brackets.
 
 Both `called:` and `written:` templates support conditional fragments:
 

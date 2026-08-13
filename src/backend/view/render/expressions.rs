@@ -312,6 +312,7 @@ fn render_documented_mapping_call(
 enum VariadicRenderPart {
     Element(String),
     Ellipsis,
+    RowBreak,
 }
 
 enum VariadicRenderOperand {
@@ -359,18 +360,31 @@ fn render_variadic_relation(
 
     let mut rendered = Vec::with_capacity(count);
     for index in 0..count {
+        let is_row_break = matches!(
+            &left,
+            VariadicRenderOperand::Slice(parts)
+                if matches!(parts[index], VariadicRenderPart::RowBreak)
+        ) || matches!(
+            &right,
+            VariadicRenderOperand::Slice(parts)
+                if matches!(parts[index], VariadicRenderPart::RowBreak)
+        );
+        if is_row_break {
+            rendered.push(VariadicRenderPart::RowBreak);
+            continue;
+        }
         let left_part = match &left {
             VariadicRenderOperand::Scalar(value) => Some(value.as_str()),
             VariadicRenderOperand::Slice(parts) => match &parts[index] {
                 VariadicRenderPart::Element(value) => Some(value.as_str()),
-                VariadicRenderPart::Ellipsis => None,
+                VariadicRenderPart::Ellipsis | VariadicRenderPart::RowBreak => None,
             },
         };
         let right_part = match &right {
             VariadicRenderOperand::Scalar(value) => Some(value.as_str()),
             VariadicRenderOperand::Slice(parts) => match &parts[index] {
                 VariadicRenderPart::Element(value) => Some(value.as_str()),
-                VariadicRenderPart::Ellipsis => None,
+                VariadicRenderPart::Ellipsis | VariadicRenderPart::RowBreak => None,
             },
         };
 
@@ -438,6 +452,7 @@ fn render_variadic_slice_with(
                 VariadicRenderPart::Element(render_element(&element))
             }
             VariadicRenderPart::Ellipsis => VariadicRenderPart::Ellipsis,
+            VariadicRenderPart::RowBreak => VariadicRenderPart::RowBreak,
         })
         .collect();
     join_variadic_render_parts(rendered, space_around_ellipsis)
@@ -449,9 +464,16 @@ fn join_variadic_render_parts(
 ) -> String {
     let mut rendered = String::new();
     let mut previous_was_ellipsis = false;
+    let mut previous_was_row_break = false;
     for part in parts {
+        if matches!(part, VariadicRenderPart::RowBreak) {
+            rendered.push_str("; \\; ");
+            previous_was_ellipsis = false;
+            previous_was_row_break = true;
+            continue;
+        }
         let is_ellipsis = matches!(part, VariadicRenderPart::Ellipsis);
-        if !rendered.is_empty() {
+        if !rendered.is_empty() && !previous_was_row_break {
             if space_around_ellipsis && (previous_was_ellipsis || is_ellipsis) {
                 rendered.push_str(", \\; ");
             } else {
@@ -461,8 +483,10 @@ fn join_variadic_render_parts(
         match part {
             VariadicRenderPart::Element(element) => rendered.push_str(&element),
             VariadicRenderPart::Ellipsis => rendered.push_str("\\ldots"),
+            VariadicRenderPart::RowBreak => unreachable!(),
         }
         previous_was_ellipsis = is_ellipsis;
+        previous_was_row_break = false;
     }
     rendered
 }
@@ -471,6 +495,9 @@ fn render_variadic_slice_parts(
     slice: &VariadicSlice,
     registry: &RenderRegistry,
 ) -> Vec<VariadicRenderPart> {
+    if let Some(dimensions) = &slice.dimensions {
+        return render_two_dimensional_variadic_slice_parts(slice, dimensions, registry);
+    }
     let name = escape_math_identifier(&slice.name, registry);
     let Some(start) = slice.start else {
         return vec![
@@ -498,6 +525,59 @@ fn render_variadic_slice_parts(
     parts
 }
 
+fn render_two_dimensional_variadic_slice_parts(
+    slice: &VariadicSlice,
+    dimensions: &VariadicSliceDimensions,
+    registry: &RenderRegistry,
+) -> Vec<VariadicRenderPart> {
+    let name = escape_math_identifier(&slice.name, registry);
+    let rows = render_variadic_axis_parts(&dimensions.rows, registry);
+    let columns = render_variadic_axis_parts(&dimensions.columns, registry);
+    let mut result = Vec::new();
+    for (row_offset, row) in rows.iter().enumerate() {
+        if row_offset > 0 {
+            result.push(VariadicRenderPart::RowBreak);
+        }
+        match row {
+            VariadicRenderPart::Ellipsis => result.push(VariadicRenderPart::Ellipsis),
+            VariadicRenderPart::Element(row) => {
+                for column in &columns {
+                    match column {
+                        VariadicRenderPart::Element(column) => result.push(
+                            VariadicRenderPart::Element(format!("{name}_{{{row},{column}}}")),
+                        ),
+                        VariadicRenderPart::Ellipsis => result.push(VariadicRenderPart::Ellipsis),
+                        VariadicRenderPart::RowBreak => unreachable!(),
+                    }
+                }
+            }
+            VariadicRenderPart::RowBreak => unreachable!(),
+        }
+    }
+    result
+}
+
+fn render_variadic_axis_parts(
+    axis: &VariadicSliceAxis,
+    registry: &RenderRegistry,
+) -> Vec<VariadicRenderPart> {
+    let element =
+        |value: &str| VariadicRenderPart::Element(escape_math_identifier(value, registry));
+    match axis {
+        VariadicSliceAxis::All => vec![element("1"), VariadicRenderPart::Ellipsis, element(".")],
+        VariadicSliceAxis::Index(index) => vec![element(index)],
+        VariadicSliceAxis::Range { start, index, end } => {
+            let mut parts = vec![element(start), VariadicRenderPart::Ellipsis];
+            if let Some(index) = index {
+                parts.push(element(index));
+                parts.push(VariadicRenderPart::Ellipsis);
+            }
+            parts.push(element(end));
+            parts
+        }
+    }
+}
+
 pub(super) fn render_variadic_slice(slice: &VariadicSlice, registry: &RenderRegistry) -> String {
     render_variadic_slice_with(slice, registry, false, str::to_owned)
 }
@@ -506,6 +586,36 @@ pub(super) fn render_variadic_parameter(
     parameter: &VariadicParameter,
     registry: &RenderRegistry,
 ) -> String {
+    if let Some(dimensions) = &parameter.dimensions {
+        return render_variadic_slice(
+            &VariadicSlice {
+                span: parameter.span,
+                name: parameter.name.clone(),
+                start: None,
+                index: None,
+                end: None,
+                dimensions: Some(VariadicSliceDimensions {
+                    rows: VariadicSliceAxis::Range {
+                        start: dimensions.row_start.to_string(),
+                        index: Some(dimensions.row_index.clone()),
+                        end: dimensions
+                            .row_length
+                            .clone()
+                            .unwrap_or_else(|| ".".to_owned()),
+                    },
+                    columns: VariadicSliceAxis::Range {
+                        start: dimensions.column_start.to_string(),
+                        index: Some(dimensions.column_index.clone()),
+                        end: dimensions
+                            .column_length
+                            .clone()
+                            .unwrap_or_else(|| ".".to_owned()),
+                    },
+                }),
+            },
+            registry,
+        );
+    }
     render_variadic_slice(
         &VariadicSlice {
             span: parameter.span,
@@ -517,15 +627,73 @@ pub(super) fn render_variadic_parameter(
             }),
             index: parameter.index.clone(),
             end: Some(parameter.length.clone().unwrap_or_else(|| ".".to_owned())),
+            dimensions: None,
         },
         registry,
     )
+}
+
+/// Returns the symbolic rows used when a 2D header parameter is substituted
+/// into its own documented template. Unlike a concrete invocation, the
+/// symbolic expansion has one-cell ellipsis rows between its indexed rows.
+pub(super) fn render_variadic_parameter_matrix_elements(
+    parameter: &VariadicParameter,
+    registry: &RenderRegistry,
+) -> Option<Vec<Vec<String>>> {
+    let dimensions = parameter.dimensions.as_ref()?;
+    let slice = VariadicSlice {
+        span: parameter.span,
+        name: parameter.name.clone(),
+        start: None,
+        index: None,
+        end: None,
+        dimensions: Some(VariadicSliceDimensions {
+            rows: VariadicSliceAxis::Range {
+                start: dimensions.row_start.to_string(),
+                index: Some(dimensions.row_index.clone()),
+                end: dimensions
+                    .row_length
+                    .clone()
+                    .unwrap_or_else(|| ".".to_owned()),
+            },
+            columns: VariadicSliceAxis::Range {
+                start: dimensions.column_start.to_string(),
+                index: Some(dimensions.column_index.clone()),
+                end: dimensions
+                    .column_length
+                    .clone()
+                    .unwrap_or_else(|| ".".to_owned()),
+            },
+        }),
+    };
+
+    let mut rows = vec![Vec::new()];
+    for part in render_variadic_slice_parts(&slice, registry) {
+        match part {
+            VariadicRenderPart::Element(value) => rows.last_mut()?.push(value),
+            VariadicRenderPart::Ellipsis => rows.last_mut()?.push("\\ldots".to_owned()),
+            VariadicRenderPart::RowBreak => rows.push(Vec::new()),
+        }
+    }
+    Some(rows)
 }
 
 pub(super) fn render_variadic_parameter_elements(
     parameter: &VariadicParameter,
     registry: &RenderRegistry,
 ) -> Vec<String> {
+    if let Some(dimensions) = &parameter.dimensions {
+        let name = escape_math_identifier(&parameter.name, registry);
+        let rows = dimensions.row_length.as_deref().unwrap_or(".");
+        let columns = dimensions.column_length.as_deref().unwrap_or(".");
+        return vec![format!(
+            "{name}_{{{},{}}}, \\ldots, {name}_{{{},{}}}",
+            dimensions.row_start,
+            dimensions.column_start,
+            escape_math_identifier(rows, registry),
+            escape_math_identifier(columns, registry)
+        )];
+    }
     let name = escape_math_identifier(&parameter.name, registry);
     let start = if parameter.index.is_some() {
         parameter.start

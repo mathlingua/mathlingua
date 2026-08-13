@@ -174,23 +174,50 @@ pub(super) fn argument_groups_match(expected: &[ArgGroupShape], actual: &[ArgGro
         if expected.delimiter != actual.delimiter {
             return false;
         }
-        let actual_count = match actual.count {
+        let actual_count = match &actual.count {
             ArgCount::Exact(count) => count,
-            ArgCount::Variadic { .. } => {
+            ArgCount::Variadic { .. } | ArgCount::Variadic2D { .. } => {
                 if expected.count != actual.count {
                     return false;
                 }
                 continue;
             }
+            ArgCount::Exact2D { row_lengths } => {
+                let Some(columns) = row_lengths.first().copied() else {
+                    return false;
+                };
+                if columns == 0 || row_lengths.iter().any(|count| *count != columns) {
+                    return false;
+                }
+                match &expected.count {
+                    ArgCount::Variadic2D {
+                        row_length,
+                        column_length,
+                    } => {
+                        let rows = row_lengths.len();
+                        for (name, value) in [(row_length, rows), (column_length, columns)] {
+                            if let Some(name) = name {
+                                match lengths.insert(name.clone(), value) {
+                                    Some(previous) if previous != value => return false,
+                                    _ => {}
+                                }
+                            }
+                        }
+                        continue;
+                    }
+                    _ => return false,
+                }
+            }
         };
         match &expected.count {
-            ArgCount::Exact(expected_count) if *expected_count != actual_count => return false,
+            ArgCount::Exact(expected_count) if *expected_count != *actual_count => return false,
             ArgCount::Exact(_) => {}
-            ArgCount::Variadic { .. } if actual_count == 0 => return false,
+            ArgCount::Exact2D { .. } | ArgCount::Variadic2D { .. } => return false,
+            ArgCount::Variadic { .. } if *actual_count == 0 => return false,
             ArgCount::Variadic {
                 length: Some(length),
-            } => match lengths.insert(length.clone(), actual_count) {
-                Some(previous) if previous != actual_count => return false,
+            } => match lengths.insert(length.clone(), *actual_count) {
+                Some(previous) if previous != *actual_count => return false,
                 _ => {}
             },
             ArgCount::Variadic { length: None } => {}

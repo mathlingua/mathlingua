@@ -535,7 +535,7 @@ pub(super) fn infix_command_substitutions(
 fn render_parameter_substitutions(
     render: &CommandRender,
     values: Vec<String>,
-    groups: Vec<Vec<String>>,
+    groups: Vec<RenderedArgumentGroup>,
 ) -> HashMap<String, String> {
     let variadic_values = render
         .variadic_parameters
@@ -552,26 +552,45 @@ fn render_parameter_substitutions(
     let mut value_index = 0usize;
     for name in &render.parameters {
         if let Some((parameter, variadic)) = variadic_values.get(name) {
-            value_index += variadic.len();
-            substitutions.insert(name.clone(), variadic.join(", "));
-            insert_variadic_substitution(&mut substitutions, name, variadic);
-            if let Some(length) = &parameter.length {
-                substitutions.insert(length.clone(), variadic.len().to_string());
-                if let Some(last) = variadic.last() {
-                    substitutions.insert(format!("{}[{length}]", parameter.name), last.clone());
+            value_index += variadic.values.len();
+            substitutions.insert(name.clone(), variadic.values.join(", "));
+            insert_variadic_substitution(&mut substitutions, name, &variadic.values);
+            if let (Some(dimensions), Some(rows)) = (&parameter.dimensions, &variadic.rows) {
+                let columns = rows.first().copied().unwrap_or(0);
+                insert_variadic_2d_substitution(&mut substitutions, name, &variadic.values, rows);
+                if let Some(length) = &dimensions.row_length {
+                    substitutions.insert(length.clone(), rows.len().to_string());
                 }
-            }
-            for (offset, value) in variadic.iter().enumerate() {
-                let starts = if parameter.index.is_some() {
-                    vec![parameter.start]
-                } else {
-                    vec![0, 1]
-                };
-                for start in starts {
-                    substitutions.insert(
-                        format!("{}[{}]", parameter.name, start + offset),
-                        value.clone(),
-                    );
+                if let Some(length) = &dimensions.column_length {
+                    substitutions.insert(length.clone(), columns.to_string());
+                }
+                for (offset, value) in variadic.values.iter().enumerate() {
+                    if columns == 0 {
+                        continue;
+                    }
+                    let row = dimensions.row_start + offset / columns;
+                    let column = dimensions.column_start + offset % columns;
+                    substitutions.insert(format!("{name}[{row},{column}]"), value.clone());
+                }
+            } else {
+                if let Some(length) = &parameter.length {
+                    substitutions.insert(length.clone(), variadic.values.len().to_string());
+                    if let Some(last) = variadic.values.last() {
+                        substitutions.insert(format!("{}[{length}]", parameter.name), last.clone());
+                    }
+                }
+                for (offset, value) in variadic.values.iter().enumerate() {
+                    let starts = if parameter.index.is_some() {
+                        vec![parameter.start]
+                    } else {
+                        vec![0, 1]
+                    };
+                    for start in starts {
+                        substitutions.insert(
+                            format!("{}[{}]", parameter.name, start + offset),
+                            value.clone(),
+                        );
+                    }
                 }
             }
         } else if let Some(value) = values.get(value_index) {
@@ -580,6 +599,12 @@ fn render_parameter_substitutions(
         }
     }
     substitutions
+}
+
+#[derive(Clone, Debug)]
+struct RenderedArgumentGroup {
+    values: Vec<String>,
+    rows: Option<Vec<usize>>,
 }
 
 pub(super) fn infix_spec_substitutions(
@@ -650,6 +675,16 @@ pub(super) fn command_header_substitutions(
             &parameter.name,
             &render_variadic_parameter_elements(parameter, registry),
         );
+        if let Some(rows) = render_variadic_parameter_matrix_elements(parameter, registry) {
+            let row_lengths = rows.iter().map(Vec::len).collect::<Vec<_>>();
+            let values = rows.into_iter().flatten().collect::<Vec<_>>();
+            insert_variadic_2d_substitution(
+                &mut substitutions,
+                &parameter.name,
+                &values,
+                &row_lengths,
+            );
+        }
     }
 
     substitutions
@@ -895,13 +930,17 @@ pub(super) fn command_argument_values(
 fn command_argument_group_values(
     command: &CommandExpression,
     registry: &RenderRegistry,
-) -> Vec<Vec<String>> {
+) -> Vec<RenderedArgumentGroup> {
     let mut groups = expression_curly_group_values(&command.head_args, &command.tail, registry);
     groups.extend(command.paren_args.iter().map(|args| {
-        args.expressions
-            .iter()
-            .map(|expression| render_expression(expression, registry))
-            .collect()
+        RenderedArgumentGroup {
+            values: args
+                .expressions
+                .iter()
+                .map(|expression| render_expression(expression, registry))
+                .collect(),
+            rows: None,
+        }
     }));
     groups
 }
@@ -910,14 +949,16 @@ fn expression_curly_group_values(
     head: &[CurlyExpressionArgs],
     tail: &[CommandExpressionTailPart],
     registry: &RenderRegistry,
-) -> Vec<Vec<String>> {
+) -> Vec<RenderedArgumentGroup> {
     head.iter()
         .chain(tail.iter().flat_map(|part| part.args.iter()))
-        .map(|args| {
-            args.expressions
+        .map(|args| RenderedArgumentGroup {
+            values: args
+                .expressions
                 .iter()
                 .map(|expression| render_expression(expression, registry))
-                .collect()
+                .collect(),
+            rows: args.rows.clone(),
         })
         .collect()
 }

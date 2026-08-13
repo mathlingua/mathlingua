@@ -936,7 +936,12 @@ pub(super) fn add_expression_curly_groups(
     for args in groups {
         arg_groups.push(ArgGroupShape {
             delimiter: ArgDelimiter::Curly,
-            count: ArgCount::Exact(args.expressions.len()),
+            count: args
+                .rows
+                .clone()
+                .map_or(ArgCount::Exact(args.expressions.len()), |row_lengths| {
+                    ArgCount::Exact2D { row_lengths }
+                }),
         });
     }
 }
@@ -1051,6 +1056,13 @@ fn heading_arg_group_shape(args: &CurlyHeadingArgs) -> ArgGroupShape {
     ArgGroupShape {
         delimiter: ArgDelimiter::Curly,
         count: match &args.variadic {
+            Some(variadic) if variadic.dimensions.is_some() => {
+                let dimensions = variadic.dimensions.as_ref().expect("checked above");
+                ArgCount::Variadic2D {
+                    row_length: dimensions.row_length.clone(),
+                    column_length: dimensions.column_length.clone(),
+                }
+            }
             Some(variadic) => ArgCount::Variadic {
                 length: variadic.length.clone(),
             },
@@ -1124,9 +1136,25 @@ fn append_heading_curly_key_groups(key: &mut String, groups: &[CurlyHeadingArgs]
         key.push('{');
         if let Some(variadic) = &args.variadic {
             key.push_str(&variadic.name);
-            key.push_str("...");
-            if let Some(length) = &variadic.length {
-                key.push_str(length);
+            if let Some(dimensions) = &variadic.dimensions {
+                key.push_str(&format!(
+                    "[({},{}):=({},{})...",
+                    dimensions.row_index,
+                    dimensions.column_index,
+                    dimensions.row_start,
+                    dimensions.column_start
+                ));
+                if let (Some(rows), Some(columns)) =
+                    (&dimensions.row_length, &dimensions.column_length)
+                {
+                    key.push_str(&format!("({rows},{columns})"));
+                }
+                key.push(']');
+            } else {
+                key.push_str("...");
+                if let Some(length) = &variadic.length {
+                    key.push_str(length);
+                }
             }
         } else {
             key.push_str(
@@ -1360,9 +1388,22 @@ pub(super) fn format_arg_groups(groups: &[ArgGroupShape]) -> String {
 fn format_arg_count(count: &ArgCount) -> String {
     match count {
         ArgCount::Exact(count) => count.to_string(),
+        ArgCount::Exact2D { row_lengths } => row_lengths
+            .iter()
+            .map(usize::to_string)
+            .collect::<Vec<_>>()
+            .join(";"),
         ArgCount::Variadic {
             length: Some(length),
         } => format!("1+:{length}"),
         ArgCount::Variadic { length: None } => "1+".to_string(),
+        ArgCount::Variadic2D {
+            row_length,
+            column_length,
+        } => format!(
+            "2D:{}x{}",
+            row_length.as_deref().unwrap_or("1+"),
+            column_length.as_deref().unwrap_or("1+")
+        ),
     }
 }

@@ -251,6 +251,85 @@ fn renders_variadic_broadcasts_symbolically() {
 }
 
 #[test]
+fn renders_two_dimensional_variadics_and_matrix_templates() {
+    let registry = registry_for(
+        r#"[\matrix{x[(i_, j_) := (1,1)...(m,n)]}]
+Axiom:
+then: P
+Documented:
+. written: "\left[ x?{{...,...}\\} \right]"
+
+[\matrix.prefix{x[(i_, j_) := (1,1)...(m,n)]}]
+Axiom:
+then: P
+Documented:
+. written: "x?{R...{...C}}"
+
+[\matrix.postfix{x[(i_, j_) := (1,1)...(m,n)]}]
+Axiom:
+then: P
+Documented:
+. written: "x?{{C...}...R}"
+
+[\matrix.both{x[(i_, j_) := (1,1)...(m,n)]}]
+Axiom:
+then: P
+Documented:
+. written: "x?{L...{...C...}...R}"
+
+[\matrix.bmatrix{x[(i_, j_) := (1,1)...(m,n)]}]
+Axiom:
+then: P
+Documented:
+. written: "\begin{bmatrix} x?{{...&...}...\\} \end{bmatrix}"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r"\matrix{a, b, c; x, y, z; q, r, s}", &registry),
+        Some(r"\left[ a,b,c\\x,y,z\\q,r,s\\ \right]".to_owned())
+    );
+    assert_eq!(
+        render_group_heading_latex(
+            "Axiom",
+            Some(r"\matrix.bmatrix{x[(i_, j_) := (1,1)...(m,n)]}"),
+            None,
+            &registry,
+        ),
+        Some(
+            r"\begin{bmatrix} x_{1,1}&\ldots&x_{1,j}&\ldots&x_{1,n}\\\ldots\\x_{i,1}&\ldots&x_{i,j}&\ldots&x_{i,n}\\\ldots\\x_{m,1}&\ldots&x_{m,j}&\ldots&x_{m,n}\\ \end{bmatrix}"
+                .to_owned()
+        )
+    );
+    assert_eq!(
+        render_formulation_latex("x[a...i_...b, c...j_...d]", &registry),
+        Some(
+            r"x_{a,c}, \ldots, x_{a,j}, \ldots, x_{a,d}; \; \ldots; \; x_{i,c}, \ldots, x_{i,j}, \ldots, x_{i,d}; \; \ldots; \; x_{b,c}, \ldots, x_{b,j}, \ldots, x_{b,d}"
+                .to_owned()
+        )
+    );
+    assert_eq!(
+        render_formulation_latex("x[a...b, c...d] = 1", &registry),
+        Some(
+            r"x_{a,c} = 1, \; \ldots, \; x_{a,d} = 1; \; \ldots; \; x_{b,c} = 1, \; \ldots, \; x_{b,d} = 1"
+                .to_owned()
+        )
+    );
+    assert_eq!(
+        render_formulation_latex(r"\matrix.prefix{a, b; x, y}", &registry),
+        Some("RaCbCRxCyC".to_owned())
+    );
+    assert_eq!(
+        render_formulation_latex(r"\matrix.postfix{a, b; x, y}", &registry),
+        Some("CaCbRCxCyR".to_owned())
+    );
+    assert_eq!(
+        render_formulation_latex(r"\matrix.both{a, b; x, y}", &registry),
+        Some("LaCbRLxCyR".to_owned())
+    );
+}
+
+#[test]
 fn renders_variadic_written_and_called_join_notation() {
     let registry = registry_for(
         r#"[\post{x...}]

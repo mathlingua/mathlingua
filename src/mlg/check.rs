@@ -2268,7 +2268,9 @@ then:
     #[test]
     fn check_accepts_mapping_literal_for_collection_function_requirement() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("collection-function-literal-requirement.mlg");
+        let file = temp_dir
+            .path()
+            .join("collection-function-literal-requirement.mlg");
 
         write_mlg_fixture(
             &file,
@@ -2576,6 +2578,123 @@ then:
             "expected variadic references to type-check: {:#?}",
             event_log.events()
         );
+    }
+
+    #[test]
+    fn check_accepts_rectangular_two_dimensional_variadic_arguments() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("variadic-2d-valid.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\matrix.statement{x[(i_, j_) := (1,1)...(m,n)]}]
+    States:
+    when: x[i, j] is \\statement
+    that: x[i, j] = x[i, j]
+    Documented:
+    . called: "matrix statement"
+
+    Theorem:
+    given: P, Q, R, S is \\statement
+    then: \matrix.statement{P, Q; R, S}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("variadic-2d-valid.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            !event_log.has_errors(),
+            "expected the 2D variadic reference to type-check: {:#?}",
+            event_log.events()
+        );
+    }
+
+    #[test]
+    fn check_expands_whole_two_dimensional_selection_requirements_per_cell() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("variadic-2d-whole-selection.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\matrix]
+    Defines: X
+    Documented:
+    . called: "matrix"
+
+    [\matrix:of{x[(i_, j_) := (1,1)...(m,n)]}]
+    Declares: X is \matrix
+    when: x[..., ...] is \\statement
+    Documented:
+    . written: "\left [ x?{{...\:...}...\\} \right ]"
+
+    Theorem:
+    given: P, Q, R, S, T, U is \\statement
+    then: \matrix:of{P, Q, R; S, T, U}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("variadic-2d-whole-selection.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(
+            !event_log.has_errors(),
+            "expected the whole 2D selection to be checked per cell: {:#?}",
+            event_log.events()
+        );
+    }
+
+    #[test]
+    fn check_rejects_ragged_and_flat_arguments_for_two_dimensional_parameters() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("variadic-2d-invalid.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\matrix.statement{x[(i_, j_) := (1,1)...(m,n)]}]
+    States:
+    when: x[i, j] is \\statement
+    that: x[i, j] = x[i, j]
+    Documented:
+    . called: "matrix statement"
+
+    Theorem:
+    given: P, Q, R, S is \\statement
+    then:
+    . \matrix.statement{P, Q; R}
+    . \matrix.statement{P, Q, R, S}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("variadic-2d-invalid.mlg")],
+            &mut event_log,
+        );
+
+        let shape_errors = user_events(&event_log)
+            .iter()
+            .filter(|event| {
+                event
+                    .as_message()
+                    .is_some_and(|message| message.message.contains("expects argument shape"))
+            })
+            .count();
+        assert_eq!(shape_errors, 2, "events: {:#?}", event_log.events());
     }
 
     #[test]

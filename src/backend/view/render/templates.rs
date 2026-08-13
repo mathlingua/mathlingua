@@ -129,9 +129,7 @@ fn substitute_called_text_segment(
                     ));
                 } else {
                     text.push_str(&placeholder.name);
-                    if let Some(notation) = &placeholder.variadic_notation {
-                        text.push_str(&notation.source());
-                    }
+                    text.push_str(&placeholder_notation_source(&placeholder));
                 }
                 index = placeholder.end;
             }
@@ -164,9 +162,7 @@ fn substitute_called_display_text_segment(segment: &str) -> String {
             Some(PlaceholderScan::Placeholder(placeholder)) => {
                 flush_called_text(&mut result, &mut text);
                 result.push_str(&render_template_placeholder_name(&placeholder.name));
-                if let Some(notation) = &placeholder.variadic_notation {
-                    result.push_str(&notation.source());
-                }
+                result.push_str(&placeholder_notation_source(&placeholder));
                 index = placeholder.end;
             }
             Some(PlaceholderScan::LiteralName { end }) => {
@@ -221,9 +217,7 @@ pub(super) fn substitute_math_template(
                     )),
                     None => {
                         result.push_str(&placeholder.name);
-                        if let Some(notation) = &placeholder.variadic_notation {
-                            result.push_str(&notation.source());
-                        }
+                        result.push_str(&placeholder_notation_source(&placeholder));
                     }
                 }
                 index = placeholder.end;
@@ -261,9 +255,7 @@ pub(super) fn render_written_display_template(template: &str) -> String {
             // here and so renders the same bare name that `X?` does.
             Some(PlaceholderScan::Placeholder(placeholder)) => {
                 result.push_str(&render_template_placeholder_name(&placeholder.name));
-                if let Some(notation) = &placeholder.variadic_notation {
-                    result.push_str(&notation.source());
-                }
+                result.push_str(&placeholder_notation_source(&placeholder));
                 index = placeholder.end;
             }
             Some(PlaceholderScan::LiteralName { end }) => {
@@ -444,6 +436,7 @@ pub(super) struct TemplatePlaceholder {
     pub(super) modifier: ParenModifier,
     /// Optional variadic prefix/postfix/infix notation following the `?`.
     variadic_notation: Option<VariadicNotation>,
+    matrix_notation: Option<MatrixNotation>,
     /// Index just past the closing `?` or its variadic `{...}` suffix.
     pub(super) end: usize,
 }
@@ -462,6 +455,20 @@ impl VariadicNotation {
             Self::Prefix(text) => format!("{{{text}...}}"),
             Self::Infix(text) => format!("{{...{text}...}}"),
         }
+    }
+}
+
+#[derive(Clone, Debug)]
+struct MatrixNotation {
+    row_prefix: String,
+    row_suffix: String,
+    elements: VariadicNotation,
+    source: String,
+}
+
+impl MatrixNotation {
+    fn source(&self) -> String {
+        self.source.clone()
     }
 }
 
@@ -505,17 +512,62 @@ pub(super) fn scan_placeholder(chars: &[char], start: usize) -> Option<Placehold
     }
 
     let mut end = index + 1;
-    let variadic_notation = parse_variadic_notation(chars, end).map(|(notation, after)| {
+    let matrix_notation = parse_matrix_notation(chars, end).map(|(notation, after)| {
         end = after;
         notation
     });
+    let variadic_notation = if matrix_notation.is_none() {
+        parse_variadic_notation(chars, end).map(|(notation, after)| {
+            end = after;
+            notation
+        })
+    } else {
+        None
+    };
 
     Some(PlaceholderScan::Placeholder(TemplatePlaceholder {
         name: chars[start..name_end].iter().collect(),
         modifier,
         variadic_notation,
+        matrix_notation,
         end,
     }))
+}
+
+fn parse_matrix_notation(chars: &[char], open: usize) -> Option<(MatrixNotation, usize)> {
+    let (body, end) = parse_template_braced_body(chars, open)?;
+    let body_chars = body.chars().collect::<Vec<_>>();
+    let inner_open = body_chars.iter().position(|ch| *ch == '{')?;
+    let (inner_body, inner_end) = parse_template_braced_body(&body_chars, inner_open)?;
+    if body_chars[inner_end..].contains(&'{') {
+        return None;
+    }
+    let inner_source = format!("{{{inner_body}}}").chars().collect::<Vec<_>>();
+    let (elements, _) = parse_variadic_notation(&inner_source, 0)?;
+    let before = body_chars[..inner_open].iter().collect::<String>();
+    let after = body_chars[inner_end..].iter().collect::<String>();
+    let row_prefix = if before.is_empty() {
+        String::new()
+    } else {
+        before.strip_suffix("...")?.to_owned()
+    };
+    let row_suffix = if after.is_empty() {
+        String::new()
+    } else {
+        after.strip_prefix("...").unwrap_or(&after).to_owned()
+    };
+    if before.is_empty() && after.is_empty() {
+        return None;
+    }
+    Some((
+        MatrixNotation {
+            row_prefix,
+            row_suffix,
+            elements,
+            source: chars[open..end].iter().collect(),
+        },
+        end,
+    ))
 }
 
 fn parse_variadic_notation(chars: &[char], open: usize) -> Option<(VariadicNotation, usize)> {
@@ -541,10 +593,18 @@ fn render_template_placeholder(
     substitutions: &HashMap<String, String>,
 ) -> String {
     let variadic_values = variadic_substitution_values(substitutions, &placeholder.name);
-    let rendered = match (&placeholder.variadic_notation, &variadic_values) {
-        (Some(notation), Some(values)) => render_variadic_notation(values, notation),
-        (Some(notation), None) => format!("{value}{}", notation.source()),
-        (None, _) => value.to_owned(),
+    let matrix_values = matrix_substitution_values(substitutions, &placeholder.name);
+    let rendered = match (
+        &placeholder.matrix_notation,
+        &matrix_values,
+        &placeholder.variadic_notation,
+        &variadic_values,
+    ) {
+        (Some(notation), Some(rows), _, _) => render_matrix_notation(rows, notation),
+        (Some(notation), None, _, _) => format!("{value}{}", notation.source()),
+        (_, _, Some(notation), Some(values)) => render_variadic_notation(values, notation),
+        (_, _, Some(notation), None) => format!("{value}{}", notation.source()),
+        _ => value.to_owned(),
     };
     if placeholder.modifier == ParenModifier::Ensure
         && variadic_values.is_some_and(|values| values.len() > 1)
@@ -555,6 +615,33 @@ fn render_template_placeholder(
         );
     }
     apply_paren_modifier(&rendered, placeholder.modifier)
+}
+
+fn placeholder_notation_source(placeholder: &TemplatePlaceholder) -> String {
+    placeholder
+        .matrix_notation
+        .as_ref()
+        .map(MatrixNotation::source)
+        .or_else(|| {
+            placeholder
+                .variadic_notation
+                .as_ref()
+                .map(VariadicNotation::source)
+        })
+        .unwrap_or_default()
+}
+
+fn render_matrix_notation(rows: &[Vec<&str>], notation: &MatrixNotation) -> String {
+    rows.iter()
+        .map(|row| {
+            format!(
+                "{}{}{}",
+                notation.row_prefix,
+                render_variadic_notation(row, &notation.elements),
+                notation.row_suffix
+            )
+        })
+        .collect()
 }
 
 fn render_variadic_notation(values: &[&str], notation: &VariadicNotation) -> String {
@@ -573,6 +660,10 @@ fn render_variadic_notation(values: &[&str], notation: &VariadicNotation) -> Str
 
 const VARIADIC_COUNT_PREFIX: &str = "\0mlg:variadic:count:";
 const VARIADIC_ELEMENT_PREFIX: &str = "\0mlg:variadic:element:";
+const VARIADIC_2D_ROWS_PREFIX: &str = "\0mlg:variadic2d:rows:";
+const VARIADIC_2D_COLUMNS_PREFIX: &str = "\0mlg:variadic2d:columns:";
+const VARIADIC_2D_ROW_LENGTH_PREFIX: &str = "\0mlg:variadic2d:row-length:";
+const VARIADIC_2D_ELEMENT_PREFIX: &str = "\0mlg:variadic2d:element:";
 
 pub(super) fn insert_variadic_substitution(
     substitutions: &mut HashMap<String, String>,
@@ -589,6 +680,70 @@ pub(super) fn insert_variadic_substitution(
             value.clone(),
         );
     }
+}
+
+pub(super) fn insert_variadic_2d_substitution(
+    substitutions: &mut HashMap<String, String>,
+    name: &str,
+    values: &[String],
+    row_lengths: &[usize],
+) {
+    substitutions.insert(
+        format!("{VARIADIC_2D_ROWS_PREFIX}{name}"),
+        row_lengths.len().to_string(),
+    );
+    let columns = row_lengths.first().copied().unwrap_or(0);
+    substitutions.insert(
+        format!("{VARIADIC_2D_COLUMNS_PREFIX}{name}"),
+        columns.to_string(),
+    );
+    for (row, length) in row_lengths.iter().enumerate() {
+        substitutions.insert(
+            format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{name}:{row}"),
+            length.to_string(),
+        );
+    }
+    for (index, value) in values.iter().enumerate() {
+        substitutions.insert(
+            format!("{VARIADIC_2D_ELEMENT_PREFIX}{name}:{index}"),
+            value.clone(),
+        );
+    }
+}
+
+fn matrix_substitution_values<'a>(
+    substitutions: &'a HashMap<String, String>,
+    name: &str,
+) -> Option<Vec<Vec<&'a str>>> {
+    let rows = substitutions
+        .get(&format!("{VARIADIC_2D_ROWS_PREFIX}{name}"))?
+        .parse::<usize>()
+        .ok()?;
+    let default_columns = substitutions
+        .get(&format!("{VARIADIC_2D_COLUMNS_PREFIX}{name}"))?
+        .parse::<usize>()
+        .ok()?;
+    let mut offset = 0usize;
+    (0..rows)
+        .map(|row| {
+            let columns = substitutions
+                .get(&format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{name}:{row}"))
+                .and_then(|value| value.parse::<usize>().ok())
+                .unwrap_or(default_columns);
+            let start = offset;
+            offset += columns;
+            (0..columns)
+                .map(|column| {
+                    substitutions
+                        .get(&format!(
+                            "{VARIADIC_2D_ELEMENT_PREFIX}{name}:{}",
+                            start + column
+                        ))
+                        .map(String::as_str)
+                })
+                .collect()
+        })
+        .collect()
 }
 
 fn variadic_substitution_values<'a>(

@@ -5,6 +5,21 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Two-Dimensional Variadic Curly Arguments
+
+Curly command arguments now support rectangular 2D variadic parameters such as
+`x[(i_, j_) := (1,1)...(m,n)]` and the zero-based or unbounded variants.
+Invocations separate columns with commas and rows with semicolons. The checker
+binds row and column counts independently, substitutes `x[i,j]` per element,
+and rejects ragged matrices, empty dimensions, flat arguments, and 2D syntax in
+non-curly argument groups.
+
+Two-axis selections support indexed rows or columns, bounded ranges with
+optional index binders, and `...` for either whole axis. They broadcast under
+the same relations as 1D slices. Written templates can nest the ordinary
+variadic element notation inside row prefix/postfix notation; this supports
+matrix renderings such as `\left[ x?{{...,...}\\} \right]`.
+
 ## Structural Literal Command Arguments
 
 Tuple, set, and mapping literals can now satisfy a command's nominal type

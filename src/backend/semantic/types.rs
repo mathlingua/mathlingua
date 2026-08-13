@@ -36,10 +36,20 @@ pub(super) struct ArgGroupShape {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum ArgCount {
     Exact(usize),
+    /// A semicolon-separated matrix argument. The row lengths are retained so
+    /// ragged inputs can be rejected with the same shape diagnostic.
+    Exact2D {
+        row_lengths: Vec<usize>,
+    },
     /// One or more arguments. Equal non-`None` length names across groups require
     /// those groups to receive the same number of arguments.
     Variadic {
         length: Option<String>,
+    },
+    /// A rectangular, nonempty two-dimensional variadic curly argument.
+    Variadic2D {
+        row_length: Option<String>,
+        column_length: Option<String>,
     },
 }
 

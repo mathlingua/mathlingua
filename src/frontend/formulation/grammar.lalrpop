@@ -629,6 +629,7 @@ CurlyExpressionArgs: ast::CurlyExpressionArgs = {
     <l:@L> "{" <expressions:ExpressionList> "}" <r:@R> => ast::CurlyExpressionArgs {
         span: Span::new(l, r),
         expressions,
+        rows: None,
     },
 };
 
@@ -875,6 +876,7 @@ PrimaryExpression: ast::Expression = {
             start: None,
             index: None,
             end: None,
+            dimensions: None,
         }),
     ),
     <l:@L> <name:Name> "[" <start:VariadicStart> "..." <end:Name> "]" <r:@R> => ast::Expression::new(
@@ -885,6 +887,7 @@ PrimaryExpression: ast::Expression = {
             start: Some(start),
             index: None,
             end: Some(end),
+            dimensions: None,
         }),
     ),
     <l:@L> <name:Name> "[" <start:VariadicStart> "..." <index:Placeholder> "..." <end:Name> "]" <r:@R> => ast::Expression::new(
@@ -895,6 +898,7 @@ PrimaryExpression: ast::Expression = {
             start: Some(start),
             index: Some(index.name),
             end: Some(end),
+            dimensions: None,
         }),
     ),
     <l:@L> <placeholder:Placeholder> <r:@R> => ast::Expression::new(

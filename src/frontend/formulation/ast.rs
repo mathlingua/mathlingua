@@ -112,6 +112,9 @@ pub enum ChainPart {
 pub struct CurlyExpressionArgs {
     pub span: Span,
     pub expressions: Vec<Expression>,
+    /// Row lengths for a semicolon-separated 2D argument. `None` is an
+    /// ordinary one-dimensional curly argument group.
+    pub rows: Option<Vec<usize>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -302,6 +305,18 @@ pub struct VariadicParameter {
     pub index: Option<String>,
     /// The first index, restricted by the parser to 0 or 1.
     pub start: usize,
+    /// Present only for a two-dimensional variadic curly parameter.
+    pub dimensions: Option<VariadicParameterDimensions>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VariadicParameterDimensions {
+    pub row_index: String,
+    pub column_index: String,
+    pub row_start: usize,
+    pub column_start: usize,
+    pub row_length: Option<String>,
+    pub column_length: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -569,6 +584,26 @@ pub struct VariadicSlice {
     pub start: Option<usize>,
     pub index: Option<String>,
     pub end: Option<String>,
+    /// Present for a two-dimensional selection such as
+    /// `x[a...i_...b, c...j_...d]`.
+    pub dimensions: Option<VariadicSliceDimensions>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VariadicSliceDimensions {
+    pub rows: VariadicSliceAxis,
+    pub columns: VariadicSliceAxis,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum VariadicSliceAxis {
+    All,
+    Index(String),
+    Range {
+        start: String,
+        index: Option<String>,
+        end: String,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

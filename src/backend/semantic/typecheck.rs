@@ -3419,8 +3419,7 @@ fn defines_when_parameters_from_usage(group: &DefinesGroup) -> WhenParameters {
     let destructured_components = header_destructured_component_names(&group.heading);
     let variadic_auxiliary_names = header_variadic_parameters(&group.heading)
         .into_iter()
-        .flat_map(|parameter| parameter.index.iter().chain(parameter.length.iter()))
-        .cloned()
+        .flat_map(variadic_parameter_auxiliary_names)
         .collect::<HashSet<_>>();
     for name in defines_used_names(group) {
         if described_spec_infix_subject.as_ref() == Some(&name) {
@@ -4432,13 +4431,11 @@ fn collect_expression_names(expression: &Expression, names: &mut BTreeSet<String
         }
         ExpressionKind::VariadicSlice(slice) => {
             names.insert(slice.name.clone());
-            names.extend(slice.index.iter().cloned());
-            names.extend(slice.end.iter().cloned());
+            names.extend(variadic_slice_referenced_names(slice));
         }
         ExpressionKind::VariadicAssignment { target, value } => {
             names.insert(target.name.clone());
-            names.extend(target.index.iter().cloned());
-            names.extend(target.end.iter().cloned());
+            names.extend(variadic_slice_referenced_names(target));
             collect_expression_names(value, names);
         }
         ExpressionKind::FunctionCall { name, arguments } => {
@@ -4837,6 +4834,11 @@ fn validate_when_expression_subject(
 ) {
     let subject = direct_variadic_slice(subject)
         .map(|slice| slice.name.clone())
+        .or_else(|| match &subject.kind {
+            ExpressionKind::SubsetCall(SubsetCall::One { target, .. })
+            | ExpressionKind::SubsetCall(SubsetCall::Two { target, .. }) => Some(target.clone()),
+            _ => None,
+        })
         .unwrap_or_else(|| key_for_expression(subject));
     validate_when_subject(
         &subject,
@@ -5486,7 +5488,10 @@ fn check_variadic_map_builtin(
     }
     if let Some(first) = slices.first()
         && !slices.iter().all(|slice| {
-            slice.start == first.start && slice.index == first.index && slice.end == first.end
+            slice.start == first.start
+                && slice.index == first.index
+                && slice.end == first.end
+                && slice.dimensions == first.dimensions
         })
     {
         emit_builtin_command_error(
@@ -7434,6 +7439,29 @@ fn direct_variadic_slice(expression: &Expression) -> Option<&VariadicSlice> {
     }
 }
 
+fn variadic_slice_referenced_names(slice: &VariadicSlice) -> Vec<String> {
+    let mut names = slice
+        .index
+        .iter()
+        .chain(slice.end.iter())
+        .cloned()
+        .collect::<Vec<_>>();
+    if let Some(dimensions) = &slice.dimensions {
+        for axis in [&dimensions.rows, &dimensions.columns] {
+            match axis {
+                VariadicSliceAxis::All => {}
+                VariadicSliceAxis::Index(index) => names.push(index.clone()),
+                VariadicSliceAxis::Range { start, index, end } => {
+                    names.push(start.clone());
+                    names.extend(index.iter().cloned());
+                    names.push(end.clone());
+                }
+            }
+        }
+    }
+    names
+}
+
 fn check_variadic_slice_names(
     slice: &VariadicSlice,
     context: &TypeContext,
@@ -7442,6 +7470,21 @@ fn check_variadic_slice_names(
     event_log: &mut EventLog,
 ) {
     check_name(&slice.name, context, path, locator, event_log);
+    if let Some(dimensions) = &slice.dimensions {
+        for axis in [&dimensions.rows, &dimensions.columns] {
+            match axis {
+                VariadicSliceAxis::All => {}
+                VariadicSliceAxis::Index(index) => {
+                    check_name(index, context, path, locator, event_log)
+                }
+                VariadicSliceAxis::Range { start, end, .. } => {
+                    check_name(start, context, path, locator, event_log);
+                    check_name(end, context, path, locator, event_log);
+                }
+            }
+        }
+        return;
+    }
     if let Some(end) = &slice.end {
         check_name(end, context, path, locator, event_log);
     }
@@ -7477,7 +7520,11 @@ fn check_matching_variadic_slices(
     let Some(right) = direct_variadic_slice(right) else {
         return;
     };
-    if left.start == right.start && left.index == right.index && left.end == right.end {
+    if left.start == right.start
+        && left.index == right.index
+        && left.end == right.end
+        && left.dimensions == right.dimensions
+    {
         return;
     }
     emit_error(
@@ -8809,10 +8856,9 @@ fn command_declared_result_facts(
                     )
                 })
             {
-                inferred.push(child.normalize_fact(&instantiate_function_type_spec(
-                    &output,
-                    result_subject,
-                )));
+                inferred.push(
+                    child.normalize_fact(&instantiate_function_type_spec(&output, result_subject)),
+                );
             }
         }
     }
@@ -10416,13 +10462,11 @@ fn collect_defined_expression_names(expression: &Expression, names: &mut Vec<Str
         ExpressionKind::Name(name) | ExpressionKind::InferredName(name) => names.push(name.clone()),
         ExpressionKind::VariadicSlice(slice) => {
             names.push(slice.name.clone());
-            names.extend(slice.index.iter().cloned());
-            names.extend(slice.end.iter().cloned());
+            names.extend(variadic_slice_referenced_names(slice));
         }
         ExpressionKind::VariadicAssignment { target, value } => {
             names.push(target.name.clone());
-            names.extend(target.index.iter().cloned());
-            names.extend(target.end.iter().cloned());
+            names.extend(variadic_slice_referenced_names(target));
             collect_defined_expression_names(value, names);
         }
         ExpressionKind::FunctionCall { name, arguments } => {
@@ -11638,7 +11682,7 @@ fn command_parameter_substitutions(
     actuals: &[String],
     actual_arg_groups: Option<&[ArgGroupShape]>,
     context: &TypeContext,
-) -> (HashMap<String, String>, HashMap<String, Vec<String>>) {
+) -> (HashMap<String, String>, HashMap<String, VariadicActual>) {
     if info.variadic_parameters.is_empty() || actual_arg_groups.is_none() {
         return (
             info.parameters
@@ -11651,14 +11695,26 @@ fn command_parameter_substitutions(
     }
 
     let actual_arg_groups = actual_arg_groups.expect("checked above");
-    let mut variadic_counts = HashMap::new();
+    let mut variadic_shapes = HashMap::new();
     let mut variadics = info.variadic_parameters.iter();
     for (expected, actual) in info.arg_groups.iter().zip(actual_arg_groups) {
-        if matches!(expected.count, ArgCount::Variadic { .. })
-            && let Some(parameter) = variadics.next()
-            && let ArgCount::Exact(count) = actual.count
+        if matches!(
+            expected.count,
+            ArgCount::Variadic { .. } | ArgCount::Variadic2D { .. }
+        ) && let Some(parameter) = variadics.next()
         {
-            variadic_counts.insert(parameter.name.clone(), count);
+            match &actual.count {
+                ArgCount::Exact(count) => {
+                    variadic_shapes.insert(parameter.name.clone(), (*count, None));
+                }
+                ArgCount::Exact2D { row_lengths } => {
+                    variadic_shapes.insert(
+                        parameter.name.clone(),
+                        (row_lengths.iter().sum(), Some(row_lengths.clone())),
+                    );
+                }
+                _ => {}
+            }
         }
     }
 
@@ -11666,7 +11722,7 @@ fn command_parameter_substitutions(
     let mut grouped_actuals = HashMap::new();
     let mut actual_index = 0usize;
     for parameter in &info.parameters {
-        if let Some(count) = variadic_counts.get(parameter).copied() {
+        if let Some((count, rows)) = variadic_shapes.get(parameter).cloned() {
             let end = (actual_index + count).min(actuals.len());
             let values = actuals[actual_index..end]
                 .iter()
@@ -11674,7 +11730,7 @@ fn command_parameter_substitutions(
                 .collect::<Vec<_>>();
             actual_index = end;
             substitutions.insert(parameter.clone(), format!("({})", values.join(",")));
-            grouped_actuals.insert(parameter.clone(), values);
+            grouped_actuals.insert(parameter.clone(), VariadicActual { values, rows });
         } else if let Some(actual) = actuals.get(actual_index) {
             substitutions.insert(parameter.clone(), context.normalize_key(actual));
             actual_index += 1;
@@ -11682,26 +11738,49 @@ fn command_parameter_substitutions(
     }
 
     for variadic in &info.variadic_parameters {
-        let Some(values) = grouped_actuals.get(&variadic.name) else {
+        let Some(actual) = grouped_actuals.get(&variadic.name) else {
             continue;
         };
-        if let Some(length) = &variadic.length {
-            substitutions.insert(length.clone(), values.len().to_string());
-            if let Some(last) = values.last() {
-                substitutions.insert(format!("{}[{length}]", variadic.name), last.clone());
+        let values = &actual.values;
+        if let Some(dimensions) = &variadic.dimensions {
+            if let Some(rows) = &actual.rows {
+                let row_count = rows.len();
+                let column_count = rows.first().copied().unwrap_or(0);
+                if let Some(length) = &dimensions.row_length {
+                    substitutions.insert(length.clone(), row_count.to_string());
+                }
+                if let Some(length) = &dimensions.column_length {
+                    substitutions.insert(length.clone(), column_count.to_string());
+                }
+                for (offset, value) in values.iter().enumerate() {
+                    if column_count == 0 {
+                        continue;
+                    }
+                    let row = dimensions.row_start + offset / column_count;
+                    let column = dimensions.column_start + offset % column_count;
+                    substitutions
+                        .insert(format!("{}[{row},{column}]", variadic.name), value.clone());
+                }
             }
-        }
-        for (offset, value) in values.iter().enumerate() {
-            let starts = if variadic.index.is_some() {
-                vec![variadic.start]
-            } else {
-                vec![0, 1]
-            };
-            for start in starts {
-                substitutions.insert(
-                    format!("{}[{}]", variadic.name, start + offset),
-                    value.clone(),
-                );
+        } else {
+            if let Some(length) = &variadic.length {
+                substitutions.insert(length.clone(), values.len().to_string());
+                if let Some(last) = values.last() {
+                    substitutions.insert(format!("{}[{length}]", variadic.name), last.clone());
+                }
+            }
+            for (offset, value) in values.iter().enumerate() {
+                let starts = if variadic.index.is_some() {
+                    vec![variadic.start]
+                } else {
+                    vec![0, 1]
+                };
+                for start in starts {
+                    substitutions.insert(
+                        format!("{}[{}]", variadic.name, start + offset),
+                        value.clone(),
+                    );
+                }
             }
         }
     }
@@ -11709,17 +11788,24 @@ fn command_parameter_substitutions(
     (substitutions, grouped_actuals)
 }
 
+#[derive(Clone, Debug)]
+struct VariadicActual {
+    values: Vec<String>,
+    rows: Option<Vec<usize>>,
+}
+
 fn instantiate_variadic_fact(
     fact: &TypeFact,
     substitutions: &HashMap<String, String>,
     parameters: &[VariadicParameter],
-    actuals: &HashMap<String, Vec<String>>,
+    actuals: &HashMap<String, VariadicActual>,
 ) -> Vec<TypeFact> {
     let rendered = format_fact(fact);
     let referenced = parameters
         .iter()
         .filter(|parameter| {
-            rendered.contains(&format!("{}...", parameter.name))
+            (parameter.dimensions.is_some() && rendered.contains(&format!("{}[", parameter.name)))
+                || rendered.contains(&format!("{}...", parameter.name))
                 || rendered
                     .match_indices(&format!("{}[", parameter.name))
                     .any(|(start, _)| {
@@ -11736,7 +11822,11 @@ fn instantiate_variadic_fact(
 
     let count = referenced
         .iter()
-        .filter_map(|parameter| actuals.get(&parameter.name).map(Vec::len))
+        .filter_map(|parameter| {
+            actuals
+                .get(&parameter.name)
+                .map(|actual| actual.values.len())
+        })
         .min()
         .unwrap_or(0);
     (0..count)
@@ -11745,7 +11835,7 @@ fn instantiate_variadic_fact(
             for parameter in &referenced {
                 let Some(value) = actuals
                     .get(&parameter.name)
-                    .and_then(|values| values.get(offset))
+                    .and_then(|actual| actual.values.get(offset))
                 else {
                     continue;
                 };
@@ -11754,6 +11844,7 @@ fn instantiate_variadic_fact(
                     parameter,
                     offset,
                     value,
+                    actuals.get(&parameter.name),
                 );
             }
             substitute_fact(fact, &element_substitutions)
@@ -11766,8 +11857,40 @@ fn add_variadic_element_substitutions(
     parameter: &VariadicParameter,
     offset: usize,
     value: &str,
+    actual: Option<&VariadicActual>,
 ) {
     substitutions.insert(format!("{}...", parameter.name), value.to_owned());
+    if let (Some(dimensions), Some(rows)) = (
+        &parameter.dimensions,
+        actual.and_then(|actual| actual.rows.as_ref()),
+    ) {
+        let columns = rows.first().copied().unwrap_or(0);
+        if columns > 0 {
+            let row = dimensions.row_start + offset / columns;
+            let column = dimensions.column_start + offset % columns;
+            substitutions.insert(
+                format!("{}[{row},{column}]", parameter.name),
+                value.to_owned(),
+            );
+            substitutions.insert(
+                format!(
+                    "{}[{},{}]",
+                    parameter.name, dimensions.row_index, dimensions.column_index
+                ),
+                value.to_owned(),
+            );
+            substitutions.insert(
+                format_two_dimensional_parameter_slice(parameter),
+                value.to_owned(),
+            );
+            // A whole-axis selection is the dimension-independent spelling for
+            // every cell.  It is especially useful when the header omits `m`
+            // and `n`, and must expand element-by-element just like the fully
+            // indexed range above.
+            substitutions.insert(format!("{}[...,...]", parameter.name), value.to_owned());
+        }
+        return;
+    }
     let starts = if parameter.index.is_some() {
         vec![parameter.start]
     } else {
@@ -11796,6 +11919,25 @@ fn add_variadic_element_substitutions(
             }
         }
     }
+}
+
+fn format_two_dimensional_parameter_slice(parameter: &VariadicParameter) -> String {
+    let dimensions = parameter
+        .dimensions
+        .as_ref()
+        .expect("called only for a 2D parameter");
+    let rows = dimensions.row_length.as_deref().unwrap_or(".");
+    let columns = dimensions.column_length.as_deref().unwrap_or(".");
+    format!(
+        "{}[{}...{}...{},{}...{}...{}]",
+        parameter.name,
+        dimensions.row_start,
+        dimensions.row_index,
+        rows,
+        dimensions.column_start,
+        dimensions.column_index,
+        columns
+    )
 }
 
 /// Binds inferred parameters mentioned by an `is` requirement by unifying its
@@ -14692,8 +14834,8 @@ fn declare_header_symbols(header: &CommandHeader, context: &mut TypeContext) {
     }
     for variadic in header_variadic_parameters(header) {
         context.declare_name(variadic.name.clone());
-        for name in variadic.index.iter().chain(variadic.length.iter()) {
-            context.declare_name(name.clone());
+        for name in variadic_parameter_auxiliary_names(variadic) {
+            context.declare_name(name);
         }
     }
 }
@@ -15084,14 +15226,14 @@ fn declare_names_from_expression(expression: &Expression, context: &mut TypeCont
         }
         ExpressionKind::VariadicSlice(slice) => {
             context.declare_name(slice.name.clone());
-            for name in slice.index.iter().chain(slice.end.iter()) {
-                context.declare_name(name.clone());
+            for name in variadic_slice_referenced_names(slice) {
+                context.declare_name(name);
             }
         }
         ExpressionKind::VariadicAssignment { target, value } => {
             context.declare_name(target.name.clone());
-            for name in target.index.iter().chain(target.end.iter()) {
-                context.declare_name(name.clone());
+            for name in variadic_slice_referenced_names(target) {
+                context.declare_name(name);
             }
             declare_names_from_expression(value, context);
         }
@@ -16778,6 +16920,19 @@ fn collect_curly_heading_parameters(groups: &[CurlyHeadingArgs], parameters: &mu
             for name in variadic.index.iter().chain(variadic.length.iter()) {
                 parameters.allow(name.clone());
             }
+            if let Some(dimensions) = &variadic.dimensions {
+                for name in [
+                    Some(&dimensions.row_index),
+                    Some(&dimensions.column_index),
+                    dimensions.row_length.as_ref(),
+                    dimensions.column_length.as_ref(),
+                ]
+                .into_iter()
+                .flatten()
+                {
+                    parameters.allow(name.clone());
+                }
+            }
         }
         for form in &group.forms {
             require_form_when_parameter(form, parameters);
@@ -16823,6 +16978,22 @@ fn header_variadic_parameters(header: &CommandHeader) -> Vec<&VariadicParameter>
         }
     }
     result
+}
+
+fn variadic_parameter_auxiliary_names(parameter: &VariadicParameter) -> Vec<String> {
+    let mut names = parameter
+        .index
+        .iter()
+        .chain(parameter.length.iter())
+        .cloned()
+        .collect::<Vec<_>>();
+    if let Some(dimensions) = &parameter.dimensions {
+        names.push(dimensions.row_index.clone());
+        names.push(dimensions.column_index.clone());
+        names.extend(dimensions.row_length.iter().cloned());
+        names.extend(dimensions.column_length.iter().cloned());
+    }
+    names
 }
 
 /// Every parameter form appearing in a command header (curly-brace groups, tail
@@ -17011,8 +17182,8 @@ fn collect_tail_parameters(parts: &[CommandHeaderTailPart], parameters: &mut Whe
                 } else {
                     parameters.require(variadic.name.clone());
                 }
-                for name in variadic.index.iter().chain(variadic.length.iter()) {
-                    parameters.allow(name.clone());
+                for name in variadic_parameter_auxiliary_names(variadic) {
+                    parameters.allow(name);
                 }
             }
         }
@@ -17435,6 +17606,14 @@ fn key_for_expression(expression: &Expression) -> String {
 }
 
 fn key_for_variadic_slice(slice: &VariadicSlice) -> String {
+    if let Some(dimensions) = &slice.dimensions {
+        return format!(
+            "{}[{},{}]",
+            slice.name,
+            key_for_variadic_slice_axis(&dimensions.rows),
+            key_for_variadic_slice_axis(&dimensions.columns)
+        );
+    }
     let Some(start) = slice.start else {
         return format!("{}...", slice.name);
     };
@@ -17444,6 +17623,17 @@ fn key_for_variadic_slice(slice: &VariadicSlice) -> String {
         }
         (None, Some(end)) => format!("{}[{start}...{end}]", slice.name),
         _ => format!("{}...", slice.name),
+    }
+}
+
+fn key_for_variadic_slice_axis(axis: &VariadicSliceAxis) -> String {
+    match axis {
+        VariadicSliceAxis::All => "...".to_owned(),
+        VariadicSliceAxis::Index(index) => index.clone(),
+        VariadicSliceAxis::Range { start, index, end } => match index {
+            Some(index) => format!("{start}...{index}...{end}"),
+            None => format!("{start}...{end}"),
+        },
     }
 }
 
@@ -18094,14 +18284,23 @@ fn key_for_infix_spec(spec: &InfixSpec) -> String {
 fn append_expression_args(key: &mut String, groups: &[CurlyExpressionArgs]) {
     for args in groups {
         key.push('{');
-        key.push_str(
-            &args
-                .expressions
-                .iter()
-                .map(key_for_expression)
-                .collect::<Vec<_>>()
-                .join(","),
-        );
+        let values = args
+            .expressions
+            .iter()
+            .map(key_for_expression)
+            .collect::<Vec<_>>();
+        if let Some(rows) = &args.rows {
+            let mut offset = 0usize;
+            let mut rendered_rows = Vec::new();
+            for count in rows {
+                let end = (offset + count).min(values.len());
+                rendered_rows.push(values[offset..end].join(","));
+                offset = end;
+            }
+            key.push_str(&rendered_rows.join(";"));
+        } else {
+            key.push_str(&values.join(","));
+        }
         key.push('}');
     }
 }
@@ -18362,7 +18561,7 @@ fn split_key_arg_list(input: &str) -> Vec<String> {
 
     for (index, ch) in input.char_indices() {
         match ch {
-            ',' if paren_depth == 0 && brace_depth == 0 && bracket_depth == 0 => {
+            ',' | ';' if paren_depth == 0 && brace_depth == 0 && bracket_depth == 0 => {
                 let arg = input[start..index].trim();
                 if !arg.is_empty() {
                     args.push(arg.to_owned());

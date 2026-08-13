@@ -846,6 +846,10 @@ requires:
 - a variadic selector's name and outer index to match the associated ranged
   variadic mapping parameter.
 
+Mapping-parameter selectors are bound by the associated mapping form. They are
+allowed, but not required, as `when:` subjects; the mapping owner remains an
+ordinary header parameter for `when:` validation.
+
 Mapping selectors are currently rejected in infix, infix-spec, and refined
 headers. A valid ordinary header receives a specialized signature in addition
 to its general command signature:

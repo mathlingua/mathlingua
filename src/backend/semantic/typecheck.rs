@@ -16699,6 +16699,14 @@ fn allow_optional_form_when_parameter(
 }
 
 fn require_form_when_parameter(form: &FormOrDeclaration, parameters: &mut WhenParameters) {
+    // A mapping-parameter selector (`f.x_`, `f.u?_`, or a variadic subset) is
+    // bound by the associated mapping form in the header. It remains an allowed
+    // `when:` subject for an optional refinement, but it does not need a
+    // separate type requirement of its own.
+    if matches!(form.kind, FormOrDeclarationKind::MappingParameter { .. }) {
+        allow_form_when_parameter(form, parameters);
+        return;
+    }
     // A named destructuring parameter `M ::= (X, *)` requires only `M`; its
     // components are typed from `M`'s type, so they are allowed (a `when:` entry
     // may still refine them) but not independently required.

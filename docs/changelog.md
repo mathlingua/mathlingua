@@ -13,7 +13,8 @@ headers can select exact mapping inputs (`f.x_`), arbitrary inputs under fresh
 names (`f.u?_`), or a variadic subset (`f.x_[i_[j_:=1...m]]`). The checker
 enforces the single-selector-group and associated-explicit-mapping rules and
 verifies that use-site selector names are parameters bound by the mapping
-literal.
+literal. Because a selector is bound by that associated mapping, it is allowed
+but not required as a separate `when:` subject.
 
 These headers register specialized signatures such as `_(2)`, `#1`, `#?`, and
 `#*` beneath a shared general signature. Invocation resolution prefers fixed

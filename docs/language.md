@@ -431,6 +431,11 @@ must obey all of these rules:
 - mapping-parameter selectors are currently supported only by ordinary command
   headings, not infix or refined headings.
 
+A selector is already bound through its associated mapping form, so it does not
+require a separate `when:` entry. The mapping owner may still require one (for
+example, `when: f is \function`), and a selector may appear in `when:` when an
+additional refinement is useful, but omission of that selector entry is valid.
+
 Such a heading has both a specialized and a general signature. Exact positions
 are encoded as `#1`, `#2`, and so on, arbitrary positions as `#?`, and a
 variadic subset as `#*`:

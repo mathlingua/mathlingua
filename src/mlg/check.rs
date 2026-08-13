@@ -2167,6 +2167,51 @@ then:
     }
 
     #[test]
+    fn check_does_not_require_mapping_parameter_placeholders_in_when() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("mapping-parameter-when.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\exact.selector{f(x_, y_)}:d{f.x_}]
+    States:
+    when: f is \\opaque
+    that: f is? \\opaque
+    Documented:
+    . called: "exact selector"
+
+    [\arbitrary.selector{f(x_, y_)}:d{f.u?_}]
+    States:
+    when: f is \\opaque
+    that: f is? \\opaque
+    Documented:
+    . called: "arbitrary selector"
+
+    [\variadic.selector{f(x_[i_:=1...n])}:d{f.x_[i_[j_:=1...m]]}]
+    States:
+    when: f is \\opaque
+    that: f is? \\opaque
+    Documented:
+    . called: "variadic selector"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("mapping-parameter-when.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_rejects_a_selected_name_that_is_not_a_mapping_parameter() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("invalid-mapping-parameter.mlg");

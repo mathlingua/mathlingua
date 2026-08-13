@@ -9,18 +9,19 @@ use super::ast::{
     CommandContextArgument, CommandContextKind, CommandExpression, CommandExpressionTailPart,
     CommandHeader, CommandHeaderNode, CommandHeaderTailPart, CurlyExpressionArgs, CurlyHeadingArgs,
     DeclarationRelation, DeclarationStatement, Expression, ExpressionAlias, ExpressionAliasLhs,
-    ExpressionBinding, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionType,
-    FunctionTypeNotation, FunctionTypeSpec, FunctionTypeSpecKind, HardCastStatement,
-    InfixCommandHeader, InfixSpec, InfixSpecExpressionRefinement, InfixSpecHeader,
-    InfixSpecHeaderRefinement, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject,
-    IsSubjectForm, IsSubjectKind, IsViaStatement, Label, LabelHeader, MemberAliasLhs, Operator,
-    ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm, PlaceholderFormKind,
-    PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
-    RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, SetExpression,
-    SetPredicate, SetTarget, SetTargetElement, SetTargetKind, SetType, SetTypeElement, Span,
-    SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement,
-    TopicHeader, TupleExpressionElement, TupleType, TypeExpression, VariadicParameter,
-    WritingAlias,
+    ExpressionBinding, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionForm,
+    FunctionNamedExpressionElement, FunctionNamedExpressionElementLhs, FunctionType,
+    FunctionTypeNotation, FunctionTypeSpec, FunctionTypeSpecKind, FunctionVariadicParameter,
+    HardCastStatement, InfixCommandHeader, InfixSpec, InfixSpecExpressionRefinement,
+    InfixSpecHeader, InfixSpecHeaderRefinement, IsOrRefinedStatementSpec, IsOrSpec, IsStatement,
+    IsSubject, IsSubjectForm, IsSubjectKind, IsViaStatement, Label, LabelHeader,
+    MappingParameterSelector, MemberAliasLhs, Operator, ParenExpressionArgs, ParenHeadingArgs,
+    Placeholder, PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement,
+    RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart,
+    RefinedTail, ResourceHeader, SetExpression, SetPredicate, SetTarget, SetTargetElement,
+    SetTargetKind, SetType, SetTypeElement, Span, SpecOperatorAlias, SpecOperatorAliasTarget,
+    SpecSubject, SpecSubjectKind, SubjectSpecStatement, TopicHeader, TupleExpressionElement,
+    TupleType, TypeExpression, VariadicParameter, WritingAlias,
 };
 use super::grammar;
 use super::lexer::{Lexer, Spanned};
@@ -1249,6 +1250,20 @@ pub(super) fn parse_curly_heading_args(
 fn parse_variadic_parameter(input: &str) -> Result<Option<VariadicParameter>, ParseError> {
     let input = input.trim();
     if !input.contains("...") {
+        return Ok(None);
+    }
+    // `f(x_[i_:=1...n])` is a variadic mapping form whose range is nested
+    // inside the mapping's parentheses, not a variadic curly-group parameter.
+    if find_first_top_level_char(input, '(').is_some() {
+        return Ok(None);
+    }
+    // A top-level member dot identifies a mapping-parameter selector such as
+    // `f.x_[i_[j_:=1...m]]`; its nested ellipsis belongs to that selector, not
+    // to the surrounding curly argument group. A dot beginning `...` is the
+    // ordinary unbracketed variadic spelling and must still be accepted.
+    if let Some(dot) = find_first_top_level_char(input, '.')
+        && !input[dot..].starts_with("...")
+    {
         return Ok(None);
     }
     if input.contains(',') {
@@ -2611,6 +2626,9 @@ pub(super) fn parse_name_token(input: &str) -> Result<String, ParseError> {
 /// specification statement.
 pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     let input = input.trim();
+    if let Some(expression) = parse_named_function_call(input)? {
+        return Ok(expression);
+    }
     if let Some(index) = find_top_level_definition(input) {
         let target_text = input[..index].trim();
         let value_text = input[index + 2..].trim();
@@ -2684,6 +2702,78 @@ pub fn parse_expression(input: &str) -> Result<Expression, ParseError> {
     }
 
     parse_input_expression(input).map_err(ParseError::from)
+}
+
+/// Parses a named mapping invocation. In addition to the legacy `:=` spelling,
+/// mapping parameters use `=` (for example `f[|x_ = 1, ... = 0|]`). The left
+/// side is deliberately retained as source text when it is a ranged selector;
+/// it identifies a parameter slot and is not an expression in its own right.
+fn parse_named_function_call(input: &str) -> Result<Option<Expression>, ParseError> {
+    let Some(open) = find_top_level_substring(input, "[|") else {
+        return Ok(None);
+    };
+    if !input.ends_with("|]") {
+        return Ok(None);
+    }
+
+    let name = input[..open].trim();
+    if parse_name_token(name).is_err() {
+        return Ok(None);
+    }
+    let body = &input[open + 2..input.len() - 2];
+    let mut elements = Vec::new();
+    for item in split_top_level(body, ',')? {
+        let (assignment, marker_len) = if let Some(index) = find_top_level_definition(item) {
+            (index, 2)
+        } else if let Some(index) = find_first_top_level_char(item, '=') {
+            (index, 1)
+        } else {
+            return Err(ParseError::custom("expected `=` in named mapping argument"));
+        };
+        let lhs_text = item[..assignment].trim();
+        let rhs_text = item[assignment + marker_len..].trim();
+        if lhs_text.is_empty() || rhs_text.is_empty() {
+            return Err(ParseError::custom(
+                "named mapping arguments require a parameter and a value",
+            ));
+        }
+
+        let lhs = match grammar::InputExpressionParser::new().parse(Lexer::new(lhs_text)) {
+            Ok(Expression {
+                kind: ExpressionKind::Name(name),
+                ..
+            }) => FunctionNamedExpressionElementLhs::Name(name),
+            Ok(Expression {
+                kind: ExpressionKind::InferredName(name),
+                ..
+            }) => FunctionNamedExpressionElementLhs::Name(format!("{name}?")),
+            Ok(Expression {
+                kind: ExpressionKind::SubsetCall(subset),
+                ..
+            }) => FunctionNamedExpressionElementLhs::SubsetCall(subset),
+            _ => FunctionNamedExpressionElementLhs::Name(
+                lhs_text.strip_suffix('_').unwrap_or(lhs_text).to_owned(),
+            ),
+        };
+        elements.push(FunctionNamedExpressionElement {
+            span: span_all(item),
+            lhs,
+            expression: parse_expression(rhs_text)?,
+        });
+    }
+    if elements.is_empty() {
+        return Err(ParseError::custom(
+            "expected at least one named mapping argument",
+        ));
+    }
+
+    Ok(Some(Expression::new(
+        span_all(input),
+        ExpressionKind::FunctionNamedCall {
+            name: name.to_owned(),
+            elements,
+        },
+    )))
 }
 
 /// Parses an expression through the generated grammar, first desugaring the
@@ -3240,9 +3330,165 @@ pub fn parse_expression_binding(input: &str) -> Result<ExpressionBinding, ParseE
 /// The generated grammar handles the detailed expression/form precedence here;
 /// this wrapper only adapts lexer and error types for callers.
 pub fn parse_form_or_declaration(input: &str) -> Result<FormOrDeclaration, ParseError> {
+    if let Some(form) = parse_mapping_parameter_form(input)? {
+        return Ok(form);
+    }
+    if let Some(form) = parse_variadic_function_form(input)? {
+        return Ok(form);
+    }
     grammar::InputFormOrDeclarationParser::new()
         .parse(Lexer::new(input))
         .map_err(ParseError::from)
+}
+
+fn parse_variadic_function_form(input: &str) -> Result<Option<FormOrDeclaration>, ParseError> {
+    let input = input.trim();
+    let Some(open) = find_first_top_level_char(input, '(') else {
+        return Ok(None);
+    };
+    let (inside, rest) = consume_balanced_prefix(&input[open..], '(', ')')?;
+    if !rest.trim().is_empty() || !inside.contains("...") {
+        return Ok(None);
+    }
+    if find_first_top_level_char(inside, ',').is_some() {
+        return Err(ParseError::custom(
+            "a variadic mapping parameter must be the mapping's only parameter",
+        ));
+    }
+
+    let function_name = parse_name_token(&input[..open])?;
+    let bracket = inside
+        .find('[')
+        .ok_or_else(|| ParseError::custom("variadic mapping parameters require an index range"))?;
+    let raw_parameter = inside[..bracket].trim();
+    let (tuple, parameter_name) = if let Some(name) = raw_parameter.strip_suffix("__") {
+        (true, name)
+    } else if let Some(name) = raw_parameter.strip_suffix('_') {
+        (false, name)
+    } else {
+        return Err(ParseError::custom(
+            "variadic mapping parameters must end with `_` or `__`",
+        ));
+    };
+    let parameter_name = parse_name_token(parameter_name)?;
+    let (range, range_rest) = consume_balanced_prefix(&inside[bracket..], '[', ']')?;
+    if !range_rest.trim().is_empty() {
+        return Err(ParseError::custom(
+            "unexpected text after variadic mapping parameter range",
+        ));
+    }
+    let assignment = find_top_level_definition(range)
+        .ok_or_else(|| ParseError::custom("variadic mapping parameters require `i_:=1...n`"))?;
+    let index = parse_placeholder(range[..assignment].trim())?.name;
+    let range = range[assignment + 2..].trim();
+    let (start, length) = if let Some(length) = range.strip_prefix("0...") {
+        (0, length)
+    } else if let Some(length) = range.strip_prefix("1...") {
+        (1, length)
+    } else {
+        return Err(ParseError::custom(
+            "variadic mapping parameter indices must start at 0 or 1",
+        ));
+    };
+    let length = parse_name_token(length.trim())?;
+
+    Ok(Some(FormOrDeclaration::new(
+        span_all(input),
+        FormOrDeclarationKind::FunctionDeclaration {
+            name: None,
+            form: FunctionForm {
+                span: span_all(input),
+                name: function_name,
+                magnetic_placeholder: None,
+                placeholders: Vec::new(),
+                variadic_parameter: Some(FunctionVariadicParameter {
+                    span: span_all(inside),
+                    name: parameter_name,
+                    tuple,
+                    index,
+                    start,
+                    length,
+                }),
+            },
+        },
+    )))
+}
+
+fn parse_mapping_parameter_form(input: &str) -> Result<Option<FormOrDeclaration>, ParseError> {
+    let input = input.trim();
+    let Some(dot) = find_first_top_level_char(input, '.') else {
+        return Ok(None);
+    };
+    let owner = match parse_name_token(&input[..dot]) {
+        Ok(owner) => owner,
+        Err(_) => return Ok(None),
+    };
+    let selector = input[dot + 1..].trim();
+    if selector.is_empty() {
+        return Ok(None);
+    }
+
+    let selector = if let Some(bracket) = selector.find('[') {
+        let raw_name = selector[..bracket].trim();
+        let name = raw_name
+            .strip_suffix('_')
+            .ok_or_else(|| ParseError::custom("variadic mapping selectors must end with `_`"))?;
+        let name = parse_name_token(name)?;
+        let (outer, rest) = consume_balanced_prefix(&selector[bracket..], '[', ']')?;
+        if !rest.trim().is_empty() {
+            return Err(ParseError::custom(
+                "unexpected text after variadic mapping selector",
+            ));
+        }
+        let inner_open = outer.find('[').ok_or_else(|| {
+            ParseError::custom("variadic mapping selectors require a nested subset index")
+        })?;
+        let outer_index = parse_placeholder(outer[..inner_open].trim())?.name;
+        let (subset, rest) = consume_balanced_prefix(&outer[inner_open..], '[', ']')?;
+        if !rest.trim().is_empty() {
+            return Err(ParseError::custom(
+                "invalid nested variadic mapping selector",
+            ));
+        }
+        let assignment = find_top_level_definition(subset)
+            .ok_or_else(|| ParseError::custom("variadic mapping selectors require `j_:=1...m`"))?;
+        let subset_index = parse_placeholder(subset[..assignment].trim())?.name;
+        let range = subset[assignment + 2..].trim();
+        let (start, length) = if let Some(length) = range.strip_prefix("0...") {
+            (0, length)
+        } else if let Some(length) = range.strip_prefix("1...") {
+            (1, length)
+        } else {
+            return Err(ParseError::custom(
+                "variadic mapping selector indices must start at 0 or 1",
+            ));
+        };
+        MappingParameterSelector::Variadic {
+            span: span_all(selector),
+            name,
+            outer_index,
+            subset_index,
+            start,
+            length: parse_name_token(length.trim())?,
+        }
+    } else if let Some(name) = selector.strip_suffix("?_") {
+        MappingParameterSelector::Arbitrary {
+            span: span_all(selector),
+            name: parse_name_token(name)?,
+        }
+    } else if let Some(name) = selector.strip_suffix('_') {
+        MappingParameterSelector::Exact {
+            span: span_all(selector),
+            name: parse_name_token(name)?,
+        }
+    } else {
+        return Ok(None);
+    };
+
+    Ok(Some(FormOrDeclaration::new(
+        span_all(input),
+        FormOrDeclarationKind::MappingParameter { owner, selector },
+    )))
 }
 
 /// Parses either an `is` statement or a subject/operator/name specification.
@@ -3653,10 +3899,10 @@ mod tests {
         CommandContextKind, CommandHeader, CommandHeaderNode, DeclarationRelation, Expression,
         ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
         FunctionNamedExpressionElementLhs, FunctionTypeNotation, FunctionTypeSpecKind,
-        IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, NamedOperatorKind,
-        PlaceholderForm, PlaceholderFormKind, RefinedTail, SetPredicate, SetTargetElement,
-        SetTargetKind, SetTypeElement, SpecLiteral, SpecLiteralForm, SpecOperatorAliasTarget,
-        SpecSubjectKind, SubsetCall, TypeExpression,
+        IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, MappingParameterSelector,
+        NamedOperatorKind, PlaceholderForm, PlaceholderFormKind, RefinedTail, SetPredicate,
+        SetTargetElement, SetTargetKind, SetTypeElement, SpecLiteral, SpecLiteralForm,
+        SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression,
     };
 
     // ===============================[ support ]=====================================
@@ -4373,6 +4619,104 @@ mod tests {
             .expect("expected a paged resource reference");
         assert_eq!(paged.parts, vec!["book".to_string(), "ref".to_string()]);
         assert_eq!(paged.page, Some(4));
+    }
+
+    #[test]
+    fn parses_mapping_parameter_header_forms() {
+        let exact = parse_form_or_declaration("f.x_").expect("exact mapping parameter");
+        let arbitrary = parse_form_or_declaration("f.u?_").expect("arbitrary mapping parameter");
+        let variadic = parse_form_or_declaration("f.x_[i_[j_:=1...m]]")
+            .expect("variadic mapping parameter subset");
+        assert!(matches!(
+            exact.kind,
+            FormOrDeclarationKind::MappingParameter {
+                selector: MappingParameterSelector::Exact { ref name, .. },
+                ..
+            } if name == "x"
+        ));
+        assert!(matches!(
+            arbitrary.kind,
+            FormOrDeclarationKind::MappingParameter {
+                selector: MappingParameterSelector::Arbitrary { ref name, .. },
+                ..
+            } if name == "u"
+        ));
+        assert!(matches!(
+            variadic.kind,
+            FormOrDeclarationKind::MappingParameter {
+                selector: MappingParameterSelector::Variadic { ref length, .. },
+                ..
+            } if length == "m"
+        ));
+    }
+
+    #[test]
+    fn parses_ranged_variadic_mapping_header_forms() {
+        let ordinary =
+            parse_form_or_declaration("f(x_[i_:=1...n])").expect("ordinary variadic mapping form");
+        let tuple =
+            parse_form_or_declaration("f(x__[i_:=1...n])").expect("tuple variadic mapping form");
+        let FormOrDeclarationKind::FunctionDeclaration { form, .. } = ordinary.kind else {
+            panic!("expected function declaration");
+        };
+        let parameter = form.variadic_parameter.expect("variadic parameter");
+        assert_eq!(parameter.name, "x");
+        assert!(!parameter.tuple);
+        let FormOrDeclarationKind::FunctionDeclaration { form, .. } = tuple.kind else {
+            panic!("expected function declaration");
+        };
+        assert!(form.variadic_parameter.expect("variadic parameter").tuple);
+    }
+
+    #[test]
+    fn parses_mapping_parameter_command_headers() {
+        let header = parse_command_header(r"\integral{f(x_, y_)}:d{f.x_}")
+            .expect("mapping parameter command header");
+        let CommandHeader::Command(header) = header else {
+            panic!("expected ordinary command header");
+        };
+        assert_eq!(header.head_args.len(), 1);
+        assert_eq!(header.tail[0].args[0].forms.len(), 1);
+        assert!(matches!(
+            header.tail[0].args[0].forms[0].kind,
+            FormOrDeclarationKind::MappingParameter { .. }
+        ));
+    }
+
+    #[test]
+    fn parses_mapping_literal_command_invocations() {
+        let expression = parse_expression(r"\integral[x_, y_ is \real]{x_^2 + y_^2}:d{x_}")
+            .expect("mapping literal command invocation");
+        let ExpressionKind::Command(command) = expression.kind else {
+            panic!("expected command expression");
+        };
+        assert!(matches!(
+            command.head_args[0].expressions[0].kind,
+            ExpressionKind::Mapping { .. }
+        ));
+    }
+
+    #[test]
+    fn parses_named_mapping_arguments_with_equals_and_defaults() {
+        let expression = parse_expression("f[|x1?_ = 1, x_[i_[1...m]] = 1, ... = 0|]")
+            .expect("named mapping call");
+        let ExpressionKind::FunctionNamedCall { name, elements } = expression.kind else {
+            panic!("expected named mapping call");
+        };
+        assert_eq!(name, "f");
+        assert_eq!(elements.len(), 3);
+        assert!(matches!(
+            &elements[0].lhs,
+            FunctionNamedExpressionElementLhs::Name(name) if name == "x1?"
+        ));
+        assert!(matches!(
+            &elements[1].lhs,
+            FunctionNamedExpressionElementLhs::Name(name) if name == "x_[i_[1...m]]"
+        ));
+        assert!(matches!(
+            &elements[2].lhs,
+            FunctionNamedExpressionElementLhs::Name(name) if name == "..."
+        ));
     }
 
     #[test]

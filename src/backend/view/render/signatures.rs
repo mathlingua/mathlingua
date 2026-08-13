@@ -42,6 +42,12 @@ pub(super) fn command_header_signatures(header: &CommandHeader) -> Vec<CommandHe
     for signature in &mut signatures {
         signature.variadic_parameters = header_variadic_parameters(header, &signature.signature);
     }
+    if signatures.len() == 1
+        && let Some((specialized, _)) =
+            crate::backend::semantic::mapping_parameter_header_signatures(header)
+    {
+        signatures[0].signature = specialized;
+    }
     signatures
 }
 

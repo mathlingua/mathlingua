@@ -367,11 +367,19 @@ pub(super) fn find_signature_occurrence(
             OccurrenceKind::Reference if is_heading => continue,
             _ => {}
         }
-        if matches_signature_at(source, offset, &shape.signature) {
+        if shape_signature_matches_at(source, offset, shape) {
             return Some(offset);
         }
     }
     None
+}
+
+fn shape_signature_matches_at(source: &str, offset: usize, shape: &SignatureShape) -> bool {
+    matches_signature_at(source, offset, &shape.signature)
+        || shape
+            .fallback_shapes
+            .iter()
+            .any(|fallback| shape_signature_matches_at(source, offset, fallback))
 }
 
 pub(super) fn is_heading_line(source: &str, offset: usize) -> bool {

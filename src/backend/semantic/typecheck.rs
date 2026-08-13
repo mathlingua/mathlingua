@@ -149,7 +149,9 @@ fn is_subject_shape(subject: &IsSubject) -> TargetShape {
 
 fn form_shape(form: &FormOrDeclaration) -> TargetShape {
     match &form.kind {
-        FormOrDeclarationKind::Name(_) => TargetShape::Name,
+        FormOrDeclarationKind::Name(_) | FormOrDeclarationKind::MappingParameter { .. } => {
+            TargetShape::Name
+        }
         FormOrDeclarationKind::FunctionDeclaration { form, .. } => {
             TargetShape::Function(form.placeholders.len())
         }
@@ -4058,6 +4060,9 @@ fn collect_form_or_declaration_target_symbols(
         FormOrDeclarationKind::Name(name) => {
             symbols.insert(name.clone());
         }
+        FormOrDeclarationKind::MappingParameter { selector, .. } => {
+            symbols.insert(selector.name().to_owned());
+        }
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
             if let Some(name) = name {
                 symbols.insert(name.clone());
@@ -4299,6 +4304,10 @@ fn collect_form_or_declaration_names(form: &FormOrDeclaration, names: &mut BTree
         FormOrDeclarationKind::Name(name) => {
             names.insert(name.clone());
         }
+        FormOrDeclarationKind::MappingParameter { owner, selector } => {
+            names.insert(owner.clone());
+            names.insert(selector.name().to_owned());
+        }
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
             if let Some(name) = name {
                 names.insert(name.clone());
@@ -4309,6 +4318,11 @@ fn collect_form_or_declaration_names(form: &FormOrDeclaration, names: &mut BTree
             }
             for placeholder in &form.placeholders {
                 names.insert(placeholder.name.clone());
+            }
+            if let Some(parameter) = &form.variadic_parameter {
+                names.insert(parameter.name.clone());
+                names.insert(parameter.index.clone());
+                names.insert(parameter.length.clone());
             }
         }
         FormOrDeclarationKind::TupleDeclaration { name, form } => {
@@ -5956,14 +5970,9 @@ fn declare_inferred_parameters_in_type_expression(
             let active = active_command_expression(command, context);
             let shape = shape_for_command_expression(&active);
             let arguments = command_expression_arguments(&active);
+            let signature = resolved_command_signature(&shape, registry);
             inject_inferred_parameters(
-                &shape.signature,
-                &arguments,
-                context,
-                path,
-                locator,
-                registry,
-                event_log,
+                &signature, &arguments, context, path, locator, registry, event_log,
             );
             for argument in arguments {
                 declare_inferred_parameters_in_expression(
@@ -6059,14 +6068,9 @@ fn declare_inferred_parameters_in_expression(
             let active = active_command_expression(command, context);
             let shape = shape_for_command_expression(&active);
             let arguments = command_expression_arguments(&active);
+            let signature = resolved_command_signature(&shape, registry);
             inject_inferred_parameters(
-                &shape.signature,
-                &arguments,
-                context,
-                path,
-                locator,
-                registry,
-                event_log,
+                &signature, &arguments, context, path, locator, registry, event_log,
             );
             for argument in arguments {
                 declare_inferred_parameters_in_expression(
@@ -6664,7 +6668,8 @@ fn function_input_specs_from_type(
         TypeExpression::Function(function_type) => function_type_inputs_as_facts(function_type),
         TypeExpression::Command(command) => {
             let active = active_command_expression(command, context);
-            let signature = shape_for_command_expression(&active).signature;
+            let shape = shape_for_command_expression(&active);
+            let signature = resolved_command_signature(&shape, registry);
             let info = registry.type_infos.get(&signature)?;
             info.outputs.iter().find_map(|fact| match fact {
                 TypeFact::FunctionType { inputs, .. } => Some(inputs.clone()),
@@ -6692,8 +6697,25 @@ fn collect_mapping_pattern_names(expression: &Expression, names: &mut Vec<String
             }
             TupleExpressionElement::Operator(_) => false,
         }),
-        ExpressionKind::Grouped { expression, .. } => {
-            collect_mapping_pattern_names(expression, names)
+        ExpressionKind::Grouped { expression, .. }
+        | ExpressionKind::Labeled { expression, .. }
+        | ExpressionKind::IsType {
+            subject: expression,
+            ..
+        }
+        | ExpressionKind::IsBuiltinPredicate {
+            subject: expression,
+            ..
+        }
+        | ExpressionKind::IsPredicate {
+            subject: expression,
+            ..
+        } => collect_mapping_pattern_names(expression, names),
+        ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
+            collect_mapping_pattern_names(&statement.subject, names)
+        }
+        ExpressionKind::SpecStatementExpr { subject, .. } => {
+            collect_mapping_pattern_names(subject, names)
         }
         _ => false,
     }
@@ -6708,7 +6730,12 @@ fn mapping_pattern_elements(expression: &Expression) -> Option<Vec<&Expression>>
                 TupleExpressionElement::Operator(_) => None,
             })
             .collect(),
-        ExpressionKind::Grouped { expression, .. } => mapping_pattern_elements(expression),
+        ExpressionKind::Grouped { expression, .. }
+        | ExpressionKind::Labeled { expression, .. }
+        | ExpressionKind::IsType {
+            subject: expression,
+            ..
+        } => mapping_pattern_elements(expression),
         _ => None,
     }
 }
@@ -6863,6 +6890,29 @@ fn check_mapping_expression(
         return;
     }
 
+    // In the compact binder `x_, y_, z_ is T`, the trailing type applies to
+    // every parameter. This is the mapping literal spelling used by commands
+    // whose overload selects one or more of those parameters.
+    if let Some(parameters) = mapping_pattern_names(binder)
+        && parameters.len() > 1
+        && let Some(ty) = mapping_pattern_shared_type(binder)
+        && let Some((ty_key, signature)) = key_for_type_expression(ty)
+    {
+        check_type_expression(ty, context, path, locator, registry, event_log);
+        let mut child = context.clone();
+        for parameter in parameters {
+            child.declare_name(parameter.clone());
+            child.add_fact(TypeFact::Is {
+                subject: parameter,
+                ty: ty_key.clone(),
+                signature: signature.clone(),
+            });
+        }
+        let child = context_with_spec_reductions(&child, registry);
+        check_expression(rhs, &child, path, locator, registry, event_log);
+        return;
+    }
+
     let (parameter, explicit_spec): (Option<String>, Option<FunctionTypeFactSpec>) = match &binder
         .kind
     {
@@ -6932,6 +6982,28 @@ fn check_mapping_expression(
         ),
     }
     check_expression(rhs, &child, path, locator, registry, event_log);
+}
+
+fn mapping_pattern_shared_type(expression: &Expression) -> Option<&TypeExpression> {
+    match &expression.kind {
+        ExpressionKind::IsType { subject, ty }
+            if mapping_pattern_names(subject).is_some_and(|names| names.len() > 1) =>
+        {
+            Some(ty)
+        }
+        ExpressionKind::Tuple(_) => {
+            mapping_pattern_elements(expression)?
+                .last()
+                .and_then(|element| match &element.kind {
+                    ExpressionKind::IsType { ty, .. } => Some(ty),
+                    _ => None,
+                })
+        }
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            mapping_pattern_shared_type(expression)
+        }
+        _ => None,
+    }
 }
 
 fn check_expression(
@@ -7090,9 +7162,14 @@ fn check_expression(
         ExpressionKind::Command(command) => {
             check_command_expression(command, context, path, locator, registry, event_log);
             let active_command = active_command_expression(command, context);
-            for expression in command_expression_arguments(&active_command) {
-                check_expression(expression, context, path, locator, registry, event_log);
-            }
+            check_command_argument_expressions(
+                &active_command,
+                context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
         }
         ExpressionKind::BuiltinCommand(command) => {
             check_builtin_command_expression(command, context, path, locator, registry, event_log);
@@ -7260,10 +7337,6 @@ fn check_expression(
         | ExpressionKind::IsNotPredicate { subject, command } => {
             check_variadic_operand(subject, context, path, locator, registry, event_log);
             check_command_predicate(command, context, path, locator, registry, event_log);
-            let active_command = active_command_expression(command, context);
-            for expression in command_expression_arguments(&active_command) {
-                check_expression(expression, context, path, locator, registry, event_log);
-            }
         }
         ExpressionKind::IsBuiltinPredicate { subject, ty } => {
             check_variadic_operand(subject, context, path, locator, registry, event_log);
@@ -9861,6 +9934,7 @@ fn check_command_expression(
         event_log,
     );
     let shape = shape_for_command_expression(&active_command);
+    let signature = resolved_command_signature(&shape, registry);
     let position = locator.locate_reference(&shape);
     let argument_expressions = command_expression_arguments(&active_command);
     let requirement_context =
@@ -9870,7 +9944,7 @@ fn check_command_expression(
         .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
         .collect::<Vec<_>>();
     check_command_requirements(
-        &shape.signature,
+        &signature,
         &actuals,
         Some(&shape.arg_groups),
         active_command.context.as_ref(),
@@ -9880,6 +9954,53 @@ fn check_command_expression(
         registry,
         event_log,
     );
+}
+
+/// Checks command arguments while keeping a mapping literal's bound parameters
+/// in scope for selector groups such as `:d{x_, z_}`. Those names are local to
+/// the mapping literal but intentionally referenced by sibling command groups.
+fn check_command_argument_expressions(
+    command: &CommandExpression,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let mut argument_context = context.clone();
+    if placeholder_invocation_for_command_expression(command).is_some() {
+        for expression in command_expression_arguments(command) {
+            if let ExpressionKind::Mapping { lhs, .. } = &expression.kind
+                && let Some(parameters) = mapping_pattern_names(lhs)
+            {
+                for parameter in parameters {
+                    argument_context.declare_name(parameter);
+                }
+            }
+        }
+    }
+    for expression in command_expression_arguments(command) {
+        check_expression(
+            expression,
+            &argument_context,
+            path,
+            locator,
+            registry,
+            event_log,
+        );
+    }
+}
+
+/// Returns the concrete definition signature selected for a command invocation.
+/// Validation reports ambiguity and missing-reference errors; type checking uses
+/// the unresolved use-site shape as a harmless fallback so it does not duplicate
+/// those diagnostics.
+fn resolved_command_signature(shape: &SignatureShape, registry: &SignatureRegistry) -> String {
+    resolve_definition_signature(shape, registry)
+        .ok()
+        .flatten()
+        .unwrap_or(&shape.signature)
+        .to_owned()
 }
 
 fn check_command_type_expression(
@@ -9901,6 +10022,7 @@ fn check_command_type_expression(
         event_log,
     );
     let shape = shape_for_command_expression(&active_command);
+    let signature = resolved_command_signature(&shape, registry);
     let position = locator.locate_reference(&shape);
     let argument_expressions = command_expression_arguments(&active_command);
     let requirement_context =
@@ -9910,12 +10032,12 @@ fn check_command_type_expression(
         .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
         .collect::<Vec<_>>();
     if active_command.context.is_none()
-        && command_type_is_nominal_without_arguments(&shape.signature, &actuals, registry)
+        && command_type_is_nominal_without_arguments(&signature, &actuals, registry)
     {
         return;
     }
     check_command_requirements(
-        &shape.signature,
+        &signature,
         &actuals,
         Some(&shape.arg_groups),
         active_command.context.as_ref(),
@@ -9936,6 +10058,15 @@ fn check_command_predicate(
     event_log: &mut EventLog,
 ) {
     check_command_expression(command, context, path, locator, registry, event_log);
+    let active_command = active_command_expression(command, context);
+    check_command_argument_expressions(
+        &active_command,
+        context,
+        path,
+        locator,
+        registry,
+        event_log,
+    );
 }
 
 fn check_infix_command(
@@ -10568,9 +10699,14 @@ fn validate_relationship_declaration(
         RelationshipDeclaration::Command(command) => {
             check_command_expression(command, context, path, locator, registry, event_log);
             let active_command = active_command_expression(command, context);
-            for expression in command_expression_arguments(&active_command) {
-                check_expression(expression, context, path, locator, registry, event_log);
-            }
+            check_command_argument_expressions(
+                &active_command,
+                context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
         }
         RelationshipDeclaration::Declaration(statement) => {
             declare_declaration_statement_subjects(statement, context);
@@ -10756,6 +10892,7 @@ fn validate_definition_requirement(
     );
     let active_command = active_command_expression(&requirement.command, context);
     let shape = shape_for_command_expression(&active_command);
+    let signature = resolved_command_signature(&shape, registry);
     let position = locator.locate_reference(&shape);
     let argument_expressions = command_expression_arguments(&active_command);
     let requirement_context =
@@ -10768,7 +10905,7 @@ fn validate_definition_requirement(
         })
         .collect::<Vec<_>>();
     check_command_requirements(
-        &shape.signature,
+        &signature,
         &actuals,
         Some(&shape.arg_groups),
         active_command.context.as_ref(),
@@ -10780,7 +10917,7 @@ fn validate_definition_requirement(
     );
     check_type_expression(&requirement.ty, context, path, locator, registry, event_log);
 
-    if !signature_has_kind(&shape.signature, DefinitionKind::Declares, registry) {
+    if !signature_has_kind(&signature, DefinitionKind::Declares, registry) {
         emit_error(
             event_log,
             path,
@@ -10965,6 +11102,7 @@ fn assume_provided_expression_alias_lhs_owner_types(
             }
         }
         FormOrDeclarationKind::Name(_)
+        | FormOrDeclarationKind::MappingParameter { .. }
         | FormOrDeclarationKind::TupleDeclaration { .. }
         | FormOrDeclarationKind::SetDeclaration { .. } => {}
     }
@@ -11030,9 +11168,14 @@ fn check_type_expression_requirements(
         TypeExpression::Command(command) => {
             check_command_expression(command, context, path, locator, registry, event_log);
             let active_command = active_command_expression(command, context);
-            for expression in command_expression_arguments(&active_command) {
-                check_expression(expression, context, path, locator, registry, event_log);
-            }
+            check_command_argument_expressions(
+                &active_command,
+                context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
         }
         TypeExpression::RefinedCommand(command) => {
             check_refined_command_expression(command, context, path, locator, registry, event_log);
@@ -14254,6 +14397,10 @@ fn check_form_or_declaration(
         FormOrDeclarationKind::Name(name) => {
             check_name(name, context, path, locator, event_log);
         }
+        FormOrDeclarationKind::MappingParameter { owner, selector } => {
+            check_name(owner, context, path, locator, event_log);
+            check_name(selector.name(), context, path, locator, event_log);
+        }
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
             if let Some(name) = name {
                 check_name(name, context, path, locator, event_log);
@@ -14465,6 +14612,9 @@ fn declare_is_subject(subject: &IsSubject, context: &mut TypeContext) {
 fn declare_form_or_declaration(form: &FormOrDeclaration, context: &mut TypeContext) {
     match &form.kind {
         FormOrDeclarationKind::Name(name) => context.declare_name(name.clone()),
+        FormOrDeclarationKind::MappingParameter { selector, .. } => {
+            context.declare_name(selector.name().to_owned());
+        }
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
             if let Some(name) = name {
                 context.declare_name(name.clone());
@@ -14476,6 +14626,11 @@ fn declare_form_or_declaration(form: &FormOrDeclaration, context: &mut TypeConte
             }
             for placeholder in &form.placeholders {
                 context.declare_name(placeholder.name.clone());
+            }
+            if let Some(parameter) = &form.variadic_parameter {
+                context.declare_name(parameter.name.clone());
+                context.declare_name(parameter.index.clone());
+                context.declare_name(parameter.length.clone());
             }
         }
         FormOrDeclarationKind::TupleDeclaration { name, form } => {
@@ -17061,6 +17216,9 @@ fn key_for_named_expression_lhs(lhs: &FunctionNamedExpressionElementLhs) -> Stri
 fn key_for_form_or_declaration(form: &FormOrDeclaration) -> String {
     match &form.kind {
         FormOrDeclarationKind::Name(name) => name.clone(),
+        FormOrDeclarationKind::MappingParameter { owner, selector } => {
+            format!("{owner}.{}", selector.name())
+        }
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
             let name = name.as_ref().unwrap_or(&form.name);
             let args = form
@@ -17071,6 +17229,11 @@ fn key_for_form_or_declaration(form: &FormOrDeclaration) -> String {
                     form.placeholders
                         .iter()
                         .map(|placeholder| placeholder.name.clone()),
+                )
+                .chain(
+                    form.variadic_parameter
+                        .iter()
+                        .map(|parameter| parameter.name.clone()),
                 )
                 .collect::<Vec<_>>()
                 .join(",");
@@ -17155,6 +17318,7 @@ fn disambiguation_key_and_parameters(
             vec![placeholder.name.clone()],
         )),
         FormOrDeclarationKind::Name(_)
+        | FormOrDeclarationKind::MappingParameter { .. }
         | FormOrDeclarationKind::FunctionDeclaration { name: Some(_), .. }
         | FormOrDeclarationKind::TupleDeclaration { .. }
         | FormOrDeclarationKind::SetDeclaration { .. } => None,
@@ -17238,6 +17402,11 @@ fn function_form_parameters(form: &FunctionForm) -> Vec<String> {
             form.placeholders
                 .iter()
                 .map(|placeholder| placeholder.name.clone()),
+        )
+        .chain(
+            form.variadic_parameter
+                .iter()
+                .map(|parameter| parameter.name.clone()),
         )
         .collect()
 }
@@ -17931,6 +18100,9 @@ fn refined_header_forms(command: &RefinedCommandHeader) -> Vec<&FormOrDeclaratio
 fn primary_form_name(form: &FormOrDeclaration) -> Option<String> {
     match &form.kind {
         FormOrDeclarationKind::Name(name) => Some(name.clone()),
+        FormOrDeclarationKind::MappingParameter { selector, .. } => {
+            Some(selector.name().to_owned())
+        }
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
             Some(name.as_ref().unwrap_or(&form.name).clone())
         }

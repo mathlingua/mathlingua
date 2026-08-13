@@ -234,12 +234,14 @@ FunctionForm: ast::FunctionForm = {
         name,
         magnetic_placeholder: Some(magnetic),
         placeholders: Vec::new(),
+        variadic_parameter: None,
     },
     <l:@L> <name:Name> "(" <placeholders:PlaceholderList> ")" <r:@R> => ast::FunctionForm {
         span: Span::new(l, r),
         name,
         magnetic_placeholder: None,
         placeholders,
+        variadic_parameter: None,
     },
 };
 

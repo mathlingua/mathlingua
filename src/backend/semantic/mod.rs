@@ -30,3 +30,30 @@ use typecheck::*;
 use types::*;
 use validation::*;
 use walk::*;
+
+/// Specialized mapping-parameter signature data needed by the view registry.
+/// Keeping the semantic pattern types private prevents the renderer from
+/// acquiring a second, subtly different interpretation of header syntax.
+pub(crate) fn mapping_parameter_header_signatures(
+    header: &CommandHeader,
+) -> Option<(String, String)> {
+    placeholder_signature_for_header(header)
+        .ok()
+        .flatten()
+        .map(|(signature, pattern)| (signature, pattern.general_signature))
+}
+
+/// Concrete and general signatures plus actual mapping-slot information for a
+/// command invocation that uses mapping parameters.
+pub(crate) fn mapping_parameter_invocation_signatures(
+    command: &CommandExpression,
+) -> Option<(String, String, usize, Vec<usize>)> {
+    placeholder_invocation_for_command_expression(command).map(|invocation| {
+        (
+            invocation.signature,
+            invocation.general_signature,
+            invocation.mapping_arity,
+            invocation.selected_positions,
+        )
+    })
+}

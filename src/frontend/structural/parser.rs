@@ -2878,6 +2878,7 @@ fn parse_required_disambiguates_heading(
             None
         }
         FormOrDeclarationKind::Name(_)
+        | FormOrDeclarationKind::MappingParameter { .. }
         | FormOrDeclarationKind::TupleDeclaration { .. }
         | FormOrDeclarationKind::SetDeclaration { .. } => {
             tracker.user_error_at_row(

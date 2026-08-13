@@ -57,6 +57,55 @@ Documented:
 }
 
 #[test]
+fn renders_the_most_specific_mapping_parameter_overload() {
+    let registry = registry_for(
+        r#"[\integral{f(x_, y_)}:d{f.x_}]
+Axiom:
+then: P
+Documented:
+. called: "first parameter integral"
+
+[\integral{f(x_, y_)}:d{f.y_}]
+Axiom:
+then: P
+Documented:
+. called: "second parameter integral"
+
+[\integral{f(x_[i_:=1...n])}:d{f.x1?_, f.x2?_}]
+Axiom:
+then: P
+Documented:
+. called: "two parameter integral"
+
+[\integral{f(x_[i_:=1...n])}:d{f.x_[i_[j_:=1...m]]}]
+Axiom:
+then: P
+Documented:
+. called: "variadic parameter integral"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r"\integral[x_, y_ is \real]{x_^2+y_^2}:d{x_}", &registry,),
+        Some(r"\textrm{first parameter integral}".to_owned())
+    );
+    assert_eq!(
+        render_formulation_latex(
+            r"\integral[x_, y_, z_ is \real]{x_^2+y_^2+z_^2}:d{x_, y_}",
+            &registry,
+        ),
+        Some(r"\textrm{two parameter integral}".to_owned())
+    );
+    assert_eq!(
+        render_formulation_latex(
+            r"\integral[x_, y_, z_ is \real]{x_^2+y_^2+z_^2}:d{x_, y_, z_}",
+            &registry,
+        ),
+        Some(r"\textrm{variadic parameter integral}".to_owned())
+    );
+}
+
+#[test]
 fn renders_variadic_map_and_reduce_builtins() {
     let registry = registry_for("");
 

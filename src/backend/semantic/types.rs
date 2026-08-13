@@ -49,6 +49,35 @@ pub(super) struct DefinitionEntry {
     pub(super) shape: SignatureShape,
     pub(super) path: PathBuf,
     pub(super) position: Option<SourcePosition>,
+    pub(super) placeholder_pattern: Option<PlaceholderSignaturePattern>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) struct PlaceholderSignaturePattern {
+    pub(super) general_signature: String,
+    pub(super) mapping_arity: MappingArity,
+    pub(super) selectors: Vec<MappingSelectorPattern>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) enum MappingArity {
+    Exact(usize),
+    Variadic,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) enum MappingSelectorPattern {
+    Exact(usize),
+    Arbitrary,
+    Variadic,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) struct PlaceholderInvocation {
+    pub(super) signature: String,
+    pub(super) general_signature: String,
+    pub(super) mapping_arity: usize,
+    pub(super) selected_positions: Vec<usize>,
 }
 
 #[derive(Clone, Debug)]
@@ -317,6 +346,9 @@ impl DefinitionKind {
 #[derive(Default)]
 pub(super) struct SignatureRegistry {
     pub(super) definitions: HashMap<String, DefinitionEntry>,
+    /// General command signature to the placeholder-specialized definitions
+    /// sharing it, in source registration order.
+    pub(super) placeholder_definitions: HashMap<String, Vec<String>>,
     pub(super) definition_summaries: HashMap<String, DefinitionSummary>,
     pub(super) equivalence_classes: Vec<EquivalenceClass>,
     pub(super) type_infos: HashMap<String, DefinitionTypeInfo>,

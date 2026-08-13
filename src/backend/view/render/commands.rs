@@ -4,8 +4,7 @@ pub(super) fn render_command_expression(
     command: &CommandExpression,
     registry: &RenderRegistry,
 ) -> String {
-    let signature = command_expression_signature(command);
-    let Some(render) = registry.commands.get(&signature) else {
+    let Some((signature, render)) = resolved_command_render(command, registry) else {
         return append_command_context_suffix(
             render_command_like(&command.chain, registry),
             command.context.as_ref(),
@@ -20,7 +19,7 @@ pub(super) fn render_command_expression(
     };
 
     append_command_context_suffix(
-        command_reference_latex(&signature, latex, registry),
+        command_reference_latex(signature, latex, registry),
         command.context.as_ref(),
         registry,
     )
@@ -30,8 +29,7 @@ pub(super) fn render_predicate_command_expression(
     command: &CommandExpression,
     registry: &RenderRegistry,
 ) -> String {
-    let signature = command_expression_signature(command);
-    let Some(render) = registry.commands.get(&signature) else {
+    let Some((signature, render)) = resolved_command_render(command, registry) else {
         return append_command_context_suffix(
             render_command_like(&command.chain, registry),
             command.context.as_ref(),
@@ -48,7 +46,7 @@ pub(super) fn render_predicate_command_expression(
         if !includes_subject {
             return append_command_context_suffix(
                 command_reference_latex(
-                    &signature,
+                    signature,
                     substitute_math_template(written, &substitutions),
                     registry,
                 ),
@@ -59,7 +57,7 @@ pub(super) fn render_predicate_command_expression(
     }
 
     append_command_context_suffix(
-        command_reference_latex(&signature, render.render_called(&substitutions), registry),
+        command_reference_latex(signature, render.render_called(&substitutions), registry),
         command.context.as_ref(),
         registry,
     )
@@ -201,8 +199,7 @@ pub(super) fn command_type_template(
     subject_latex: Option<String>,
     registry: &RenderRegistry,
 ) -> Option<TypeTemplate> {
-    let signature = command_expression_signature(command);
-    let render = registry.commands.get(&signature)?;
+    let (signature, render) = resolved_command_render(command, registry)?;
     let substitutions = command_substitutions(command, render, subject_latex.clone(), registry);
     let written_includes_subject = render
         .effective_written(&substitutions)
@@ -217,7 +214,7 @@ pub(super) fn command_type_template(
 
     Some(TypeTemplate {
         latex: append_command_context_suffix(
-            command_reference_latex(&signature, latex, registry),
+            command_reference_latex(signature, latex, registry),
             command.context.as_ref(),
             registry,
         ),
@@ -230,6 +227,110 @@ fn written_contains_subject_placeholder(written: &str, render: &CommandRender) -
         .subject_variable
         .as_ref()
         .is_some_and(|name| template_contains_placeholder(written, name))
+}
+
+/// Selects the same mapping-parameter overload as semantic validation. The
+/// render registry is intentionally lightweight, so candidates are ranked from
+/// their canonical encoded signatures (`_(n)`, `#n`, `#?`, and `#*`).
+fn resolved_command_render<'a>(
+    command: &CommandExpression,
+    registry: &'a RenderRegistry,
+) -> Option<(&'a str, &'a CommandRender)> {
+    let ordinary = command_expression_signature(command);
+    let Some((actual, general, arity, positions)) =
+        crate::backend::semantic::mapping_parameter_invocation_signatures(command)
+    else {
+        return registry
+            .commands
+            .get_key_value(&ordinary)
+            .map(|(signature, render)| (signature.as_str(), render));
+    };
+
+    if let Some((signature, render)) = registry.commands.get_key_value(&actual) {
+        return Some((signature.as_str(), render));
+    }
+    let mut candidates = registry
+        .commands
+        .iter()
+        .filter_map(|(signature, render)| {
+            mapping_parameter_render_rank(signature, &general, arity, &positions)
+                .map(|rank| (rank, signature.as_str(), render))
+        })
+        .collect::<Vec<_>>();
+    candidates.sort_by(|left, right| right.0.cmp(&left.0));
+    if let Some((best_rank, signature, render)) = candidates.first().copied()
+        && !candidates
+            .iter()
+            .skip(1)
+            .any(|(rank, _, _)| *rank == best_rank)
+    {
+        return Some((signature, render));
+    }
+    registry
+        .commands
+        .get_key_value(&general)
+        .map(|(signature, render)| (signature.as_str(), render))
+}
+
+fn mapping_parameter_render_rank(
+    signature: &str,
+    general: &str,
+    actual_arity: usize,
+    actual_positions: &[usize],
+) -> Option<(u8, u8)> {
+    if mapping_parameter_general_signature(signature)? != general {
+        return None;
+    }
+    let arity_start = signature.find("{_(")? + 3;
+    let arity_end = signature[arity_start..].find(")}")? + arity_start;
+    let arity_rank = match &signature[arity_start..arity_end] {
+        "*" => 1,
+        text if text.parse::<usize>().ok() == Some(actual_arity) => 2,
+        _ => return None,
+    };
+    let selector_start = signature.find("{#")? + 1;
+    let selector_end = signature[selector_start..].find('}')? + selector_start;
+    let selectors = signature[selector_start..selector_end]
+        .split(',')
+        .map(str::trim)
+        .collect::<Vec<_>>();
+    let selector_rank = if selectors.as_slice() == ["#*"] {
+        1
+    } else {
+        if selectors.len() != actual_positions.len() {
+            return None;
+        }
+        let mut rank = 3;
+        for (selector, actual) in selectors.iter().zip(actual_positions) {
+            if *selector == "#?" {
+                rank = rank.min(2);
+            } else if selector.strip_prefix('#')?.parse::<usize>().ok()? != *actual {
+                return None;
+            }
+        }
+        rank
+    };
+    Some((arity_rank, selector_rank))
+}
+
+fn mapping_parameter_general_signature(signature: &str) -> Option<String> {
+    let mut general = String::new();
+    let mut rest = signature;
+    let mut removed = 0;
+    while let Some(start) = rest.find('{') {
+        general.push_str(&rest[..start]);
+        let suffix = &rest[start..];
+        if suffix.starts_with("{_(") || suffix.starts_with("{#") {
+            let end = suffix.find('}')?;
+            rest = &suffix[end + 1..];
+            removed += 1;
+        } else {
+            general.push('{');
+            rest = &suffix[1..];
+        }
+    }
+    general.push_str(rest);
+    (removed == 2).then_some(general)
 }
 
 pub(super) fn refined_command_called_template(

@@ -333,6 +333,13 @@ pub(super) fn collect_document_definitions(
             continue;
         }
         check_documented_rendering(file, kind, definition.documented, position, event_log);
+        let placeholder_pattern = match placeholder_signature_for_header(definition.heading) {
+            Ok(pattern) => pattern.map(|(_, pattern)| pattern),
+            Err(message) => {
+                emit_error(event_log, &file.path, position, message);
+                continue;
+            }
+        };
         for header_shape in shapes_for_header(definition.heading) {
             if let Some(previous) = registry.definitions.get(&header_shape.shape.signature) {
                 emit_error(
@@ -351,15 +358,24 @@ pub(super) fn collect_document_definitions(
             }
 
             let type_shape = header_shape.clone();
+            let registered_signature = header_shape.shape.signature.clone();
             registry.definitions.insert(
-                header_shape.shape.signature.clone(),
+                registered_signature.clone(),
                 DefinitionEntry {
                     kind,
                     shape: header_shape.shape,
                     path: file.path.clone(),
                     position,
+                    placeholder_pattern: placeholder_pattern.clone(),
                 },
             );
+            if let Some(pattern) = &placeholder_pattern {
+                registry
+                    .placeholder_definitions
+                    .entry(pattern.general_signature.clone())
+                    .or_default()
+                    .push(registered_signature);
+            }
             collect_definition_type_metadata(item, &type_shape, registry);
         }
     }

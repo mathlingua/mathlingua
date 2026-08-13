@@ -2120,6 +2120,85 @@ then:
     }
 
     #[test]
+    fn check_resolves_mapping_parameter_command_overloads() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("mapping-parameter-overloads.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\integral{f(x_, y_)}:d{f.x_}]
+    Axiom:
+    then: f is? \\opaque
+
+    [\integral{f(x_, y_)}:d{f.y_}]
+    Axiom:
+    then: f is? \\opaque
+
+    [\integral{f(x_[i_:=1...n])}:d{f.x1?_, f.x2?_}]
+    Axiom:
+    then: f is? \\opaque
+
+    [\integral{f(x_[i_:=1...n])}:d{f.x_[i_[j_:=1...m]]}]
+    Axiom:
+    then: f is? \\opaque
+
+    Theorem:
+    then:
+    . \integral[x_, y_ is \\opaque]{x_}:d{x_}
+    . \integral[x_, y_ is \\opaque]{y_}:d{y_}
+    . \integral[x_, y_, z_ is \\opaque]{x_}:d{x_, y_}
+    . \integral[x_, y_, z_ is \\opaque]{x_}:d{x_, y_, z_}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("mapping-parameter-overloads.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_a_selected_name_that_is_not_a_mapping_parameter() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("invalid-mapping-parameter.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\integral{f(x_, y_)}:d{f.x_}]
+    Axiom:
+    then: f is? \\opaque
+
+    Theorem:
+    given: c is \\opaque
+    then: \integral[x_, y_ is \\opaque]{x_}:d{c}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("invalid-mapping-parameter.mlg")],
+            &mut event_log,
+        );
+
+        assert!(event_log.events().iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message == "Undefined command signature `\\integral:d`"
+            })
+        }));
+    }
+
+    #[test]
     fn check_accepts_variadic_commands_and_independent_lengths() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("variadic-valid.mlg");

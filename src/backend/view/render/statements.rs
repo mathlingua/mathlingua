@@ -91,6 +91,11 @@ pub(super) fn render_form_or_declaration(
 ) -> String {
     match &form.kind {
         FormOrDeclarationKind::Name(name) => escape_math_identifier(name, registry),
+        FormOrDeclarationKind::MappingParameter { owner, selector } => format!(
+            "{}.{}",
+            escape_math_identifier(owner, registry),
+            escape_math_identifier(selector.name(), registry)
+        ),
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
             let name = name.as_ref().unwrap_or(&form.name);
             if let Some(rendered) = render_documented_mapping_form(name, form, registry) {
@@ -102,6 +107,17 @@ pub(super) fn render_form_or_declaration(
                     .map(|placeholder| render_form_placeholder_name(&placeholder.name, registry))
                     .chain(form.placeholders.iter().map(|placeholder| {
                         render_form_placeholder_name(&placeholder.name, registry)
+                    }))
+                    .chain(form.variadic_parameter.iter().map(|parameter| {
+                        let suffix = if parameter.tuple { "__" } else { "_" };
+                        format!(
+                            "{}{}[{} := {}\\ldots {}]",
+                            escape_math_identifier(&parameter.name, registry),
+                            suffix,
+                            escape_math_identifier(&parameter.index, registry),
+                            parameter.start,
+                            escape_math_identifier(&parameter.length, registry)
+                        )
                     }))
                     .collect::<Vec<_>>()
                     .join(", ");

@@ -5,7 +5,7 @@ pub(in crate::backend::semantic) fn walk_form_or_declaration(
     visit: &mut impl FnMut(&SignatureShape),
 ) {
     match &form.kind {
-        FormOrDeclarationKind::Name(_) => {}
+        FormOrDeclarationKind::Name(_) | FormOrDeclarationKind::MappingParameter { .. } => {}
         FormOrDeclarationKind::FunctionDeclaration { .. } => {}
         FormOrDeclarationKind::TupleDeclaration { form, .. } => walk_tuple_form(form, visit),
         FormOrDeclarationKind::SetDeclaration { form, .. } => {

@@ -19,6 +19,9 @@ pub(super) fn primary_is_subject_name(subject: &IsSubject) -> Option<String> {
 pub(super) fn primary_form_name(form: &FormOrDeclaration) -> Option<String> {
     match &form.kind {
         FormOrDeclarationKind::Name(name) => Some(name.clone()),
+        FormOrDeclarationKind::MappingParameter { selector, .. } => {
+            Some(selector.name().to_owned())
+        }
         FormOrDeclarationKind::FunctionDeclaration { name, form } => {
             name.clone().or_else(|| Some(form.name.clone()))
         }

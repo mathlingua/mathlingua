@@ -695,6 +695,12 @@ impl FormOrDeclaration {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FormOrDeclarationKind {
     Name(String),
+    /// A parameter selected from a mapping declared in another command argument,
+    /// such as `f.x_`, `f.u?_`, or `f.x_[i_[j_:=1...m]]`.
+    MappingParameter {
+        owner: String,
+        selector: MappingParameterSelector,
+    },
     FunctionDeclaration {
         name: Option<String>,
         form: FunctionForm,
@@ -728,6 +734,46 @@ pub struct FunctionForm {
     pub name: String,
     pub magnetic_placeholder: Option<MagneticPlaceholder>,
     pub placeholders: Vec<Placeholder>,
+    /// A ranged variadic input such as `x_[i_:=1...n]` or the tuple-valued
+    /// `x__[i_:=1...n]`. This is distinct from the legacy unbounded `x__` form.
+    pub variadic_parameter: Option<FunctionVariadicParameter>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FunctionVariadicParameter {
+    pub span: Span,
+    pub name: String,
+    pub tuple: bool,
+    pub index: String,
+    pub start: usize,
+    pub length: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MappingParameterSelector {
+    /// A specifically named input of the owner mapping (`f.x_`).
+    Exact { span: Span, name: String },
+    /// Any one input, bound locally under a fresh name (`f.u?_`).
+    Arbitrary { span: Span, name: String },
+    /// A variadic subset of a ranged input (`f.x_[i_[j_:=1...m]]`).
+    Variadic {
+        span: Span,
+        name: String,
+        outer_index: String,
+        subset_index: String,
+        start: usize,
+        length: String,
+    },
+}
+
+impl MappingParameterSelector {
+    pub fn name(&self) -> &str {
+        match self {
+            Self::Exact { name, .. }
+            | Self::Arbitrary { name, .. }
+            | Self::Variadic { name, .. } => name,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

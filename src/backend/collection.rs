@@ -1,5 +1,5 @@
 use crate::backend::config::{CONFIG_FILE, validate_config_file};
-use crate::backend::semantic::check_documents;
+use crate::backend::semantic::{DocumentTypeInfo, check_documents_collecting_type_info};
 use crate::backend::view::{CollectionView, build_collection_view};
 use crate::events::{Event, EventLocation, EventLog};
 use crate::frontend::{
@@ -113,9 +113,20 @@ impl SourceCollection {
     }
 
     pub(crate) fn run_check_passes(&mut self, event_log: &mut EventLog, origin: &str) {
+        self.run_check_passes_collecting_type_info(event_log, origin, None);
+    }
+
+    /// Runs the check passes and, when `type_info_for` names a file of this
+    /// collection, returns the types resolved for that file's lines.
+    pub(crate) fn run_check_passes_collecting_type_info(
+        &mut self,
+        event_log: &mut EventLog,
+        origin: &str,
+        type_info_for: Option<&Path>,
+    ) -> DocumentTypeInfo {
         self.parse_structural(event_log, origin);
         self.check_text_fences(event_log, origin);
-        self.check_semantics(event_log);
+        self.check_semantics(event_log, type_info_for)
     }
 
     pub(crate) fn run_check_passes_filtered(
@@ -123,18 +134,26 @@ impl SourceCollection {
         event_log: &mut EventLog,
         origin: &str,
         filter: &SourceFileFilter,
-    ) {
+        type_info_for: Option<&Path>,
+    ) -> DocumentTypeInfo {
         match filter {
-            SourceFileFilter::All => self.run_check_passes(event_log, origin),
+            SourceFileFilter::All => {
+                self.run_check_passes_collecting_type_info(event_log, origin, type_info_for)
+            }
             SourceFileFilter::Only(_) => {
                 let mut pass_event_log = EventLog::new();
-                self.run_check_passes(&mut pass_event_log, origin);
+                let type_info = self.run_check_passes_collecting_type_info(
+                    &mut pass_event_log,
+                    origin,
+                    type_info_for,
+                );
 
                 for event in pass_event_log.events() {
                     if filter.allows(event) {
                         event_log.push(event.clone());
                     }
                 }
+                type_info
             }
         }
     }
@@ -197,8 +216,12 @@ impl SourceCollection {
         }
     }
 
-    fn check_semantics(&self, event_log: &mut EventLog) {
-        check_documents(&self.parsed_files, event_log);
+    fn check_semantics(
+        &self,
+        event_log: &mut EventLog,
+        type_info_for: Option<&Path>,
+    ) -> DocumentTypeInfo {
+        check_documents_collecting_type_info(&self.parsed_files, event_log, type_info_for)
     }
 
     pub(crate) fn build_view(&self, event_log: &mut EventLog) -> Option<CollectionView> {

@@ -1,6 +1,20 @@
 use super::*;
 
 pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
+    check_documents_collecting_type_info(files, event_log, None);
+}
+
+/// Runs the semantic checks and, when `type_info_for` names one of `files`,
+/// also returns the types resolved for that file's lines.
+///
+/// The type information falls out of the same walk that produces diagnostics, so
+/// a caller that wants both — the language server on save, for instance — pays
+/// for one pass rather than two.
+pub fn check_documents_collecting_type_info(
+    files: &[ParsedSourceFile],
+    event_log: &mut EventLog,
+    type_info_for: Option<&Path>,
+) -> DocumentTypeInfo {
     validate_top_level_item_ids(files, event_log);
     validate_top_level_writing_count(files, event_log);
     validate_documented_mapping_writing(files, event_log);
@@ -15,8 +29,31 @@ pub fn check_documents(files: &[ParsedSourceFile], event_log: &mut EventLog) {
         validate_document_references(file, &registry, event_log);
     }
 
+    let mut type_info = DocumentTypeInfo::new();
     for file in files {
+        let recording = type_info_for.is_some_and(|target| is_same_file(target, &file.path));
+        if recording {
+            *registry.recorder.borrow_mut() = Some(TypeRecorder::new(&file.source));
+        }
+
         validate_document_types(file, &registry, event_log);
+
+        if recording && let Some(recorder) = registry.recorder.borrow_mut().take() {
+            type_info = recorder.finish();
+        }
+    }
+    type_info
+}
+
+/// Whether two paths name the same file, tolerating the difference between the
+/// symlinked path an editor reports and the path the collection walked.
+fn is_same_file(left: &Path, right: &Path) -> bool {
+    if left == right {
+        return true;
+    }
+    match (left.canonicalize(), right.canonicalize()) {
+        (Ok(left), Ok(right)) => left == right,
+        _ => false,
     }
 }
 

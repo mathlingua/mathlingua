@@ -59,6 +59,7 @@ mlg export
 mlg lsp
   -> collection diagnostics and context-aware completion
   -> command definition lookup and workspace rename
+  -> per-line type information served on hover
 ```
 
 The Rust code owns parsing, validation, semantic checking, and rendering

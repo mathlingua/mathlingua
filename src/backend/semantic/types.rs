@@ -1,5 +1,7 @@
 use super::*;
 
+use std::cell::RefCell;
+
 pub(super) const BUILTIN_EXPRESSION_SIGNATURE: &str = "\\\\expression";
 pub(super) const BUILTIN_STATEMENT_SIGNATURE: &str = "\\\\statement";
 pub(super) const BUILTIN_SPECIFICATION_SIGNATURE: &str = "\\\\specification";
@@ -382,6 +384,12 @@ pub(super) struct SignatureRegistry {
     /// command can be reduced to the body's element condition.
     pub(super) collection_bodies: HashMap<String, SetExpression>,
     pub(super) numeric_specifications: NumericSpecifications,
+    /// Set only while a type-info pass walks a document, to collect the type the
+    /// checker resolves for each expression it visits. The registry is the one
+    /// value already threaded through every check function, so hanging the
+    /// recorder off it keeps the walk's signatures unchanged; an ordinary check
+    /// leaves it `None` and pays a null check per expression.
+    pub(super) recorder: RefCell<Option<TypeRecorder>>,
 }
 
 #[derive(Clone, Debug, Default)]

@@ -1,5 +1,6 @@
 use crate::backend::rename::{RenameEdit, RenameError, RenamePreparation, RenameSpan};
-use crate::mlg::check::{CheckDiagnostic, check, check_diagnostics_report};
+use crate::backend::semantic::{DocumentTypeInfo, TypeEntry};
+use crate::mlg::check::{CheckDiagnostic, check_collecting_type_info, check_diagnostics_report};
 use crate::mlg::completion::{
     CandidateKind, CompletionCandidate, Signature, collect_signatures, complete_with_signatures,
 };
@@ -7,7 +8,8 @@ use lsp_server::{Connection, ErrorCode, Message, Notification, Response};
 use lsp_types::{
     CompletionItem, CompletionItemKind, CompletionOptions, CompletionParams, CompletionResponse,
     CompletionTextEdit, Diagnostic, DiagnosticSeverity, GotoDefinitionParams,
-    GotoDefinitionResponse, InitializeParams, InsertTextFormat, Location, OneOf, Position,
+    GotoDefinitionResponse, Hover, HoverContents, HoverParams, HoverProviderCapability,
+    InitializeParams, InsertTextFormat, Location, MarkupContent, MarkupKind, OneOf, Position,
     PrepareRenameResponse, PublishDiagnosticsParams, Range, RenameOptions, RenameParams,
     SaveOptions, ServerCapabilities, TextDocumentPositionParams, TextDocumentSyncCapability,
     TextDocumentSyncKind, TextDocumentSyncOptions, TextDocumentSyncSaveOptions, TextEdit, Url,
@@ -16,7 +18,9 @@ use lsp_types::{
         DidChangeTextDocument, DidCloseTextDocument, DidOpenTextDocument, DidSaveTextDocument,
         Notification as _, PublishDiagnostics,
     },
-    request::{Completion, GotoDefinition, PrepareRenameRequest, Rename, Request as _},
+    request::{
+        Completion, GotoDefinition, HoverRequest, PrepareRenameRequest, Rename, Request as _,
+    },
 };
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -56,6 +60,10 @@ pub fn lsp() -> LspResult {
             prepare_provider: Some(true),
             work_done_progress_options: WorkDoneProgressOptions::default(),
         })),
+        // Show the type of every expression on a line, as resolved by the last
+        // check. Hovering is the only way a Zed extension can surface this — the
+        // extension API has no panel of its own.
+        hover_provider: Some(HoverProviderCapability::Simple(true)),
         ..Default::default()
     })
     .expect("server capabilities serialize");
@@ -90,6 +98,9 @@ pub fn lsp() -> LspResult {
                 } else if req.method == Rename::METHOD {
                     let response = state.handle_rename(req.id.clone(), &req.params);
                     let _ = connection.sender.send(Message::Response(response));
+                } else if req.method == HoverRequest::METHOD {
+                    let response = state.handle_hover(req.id.clone(), &req.params);
+                    let _ = connection.sender.send(Message::Response(response));
                 }
             }
             Message::Notification(note) => state.handle_notification(&connection, note),
@@ -106,6 +117,14 @@ struct ServerState {
     last_diagnostic_files: HashSet<Url>,
     /// Current text of open documents, keyed by URI. Used for completion.
     documents: HashMap<Url, String>,
+    /// Types resolved per line by the last check of each document. Checking is
+    /// expensive, so this is refreshed only on open and save — never on edit —
+    /// and served as-is until the next save.
+    type_info: HashMap<Url, DocumentTypeInfo>,
+    /// Documents edited since their type information was resolved. Their line
+    /// numbers may have shifted, so hovers say so rather than pretending to be
+    /// current.
+    edited_since_check: HashSet<Url>,
     /// Whether the client can render completion snippets (tab stops); when it
     /// cannot, command completions fall back to inserting the plain signature.
     snippets: bool,
@@ -117,6 +136,8 @@ impl ServerState {
             workspace_root,
             last_diagnostic_files: HashSet::new(),
             documents: HashMap::new(),
+            type_info: HashMap::new(),
+            edited_since_check: HashSet::new(),
             snippets,
         }
     }
@@ -146,6 +167,7 @@ impl ServerState {
                         .and_then(|c| c.get("text"))
                         .and_then(|t| t.as_str()),
                 ) {
+                    self.edited_since_check.insert(uri.clone());
                     self.documents.insert(uri, text.to_string());
                 }
                 return; // diagnostics refresh on save, not on every edit
@@ -153,6 +175,8 @@ impl ServerState {
             DidCloseTextDocument::METHOD => {
                 if let Some(uri) = note_uri(&note.params) {
                     self.documents.remove(&uri);
+                    self.type_info.remove(&uri);
+                    self.edited_since_check.remove(&uri);
                 }
                 return;
             }
@@ -171,7 +195,7 @@ impl ServerState {
         };
 
         let root = project_root_for(&file_path, self.workspace_root.as_deref());
-        self.refresh_diagnostics(connection, &root);
+        self.refresh_diagnostics(connection, &root, &uri, &file_path);
     }
 
     fn handle_completion(&self, id: lsp_server::RequestId, params: &Value) -> Response {
@@ -309,6 +333,47 @@ impl ServerState {
         Ok(workspace_edit_from_edits(edits))
     }
 
+    fn handle_hover(&self, id: lsp_server::RequestId, params: &Value) -> Response {
+        let result = self
+            .line_types_hover(params)
+            .map(|hover| serde_json::to_value(hover).unwrap_or(Value::Null))
+            .unwrap_or(Value::Null);
+        Response {
+            id,
+            result: Some(result),
+            error: None,
+        }
+    }
+
+    /// The types of every expression, sub-expression, and statement on the
+    /// hovered line, as the last check resolved them.
+    fn line_types_hover(&self, params: &Value) -> Option<Hover> {
+        let params: HoverParams = serde_json::from_value(params.clone()).ok()?;
+        let uri = params.text_document_position_params.text_document.uri;
+        let row = params.text_document_position_params.position.line as usize;
+        let entries = self.type_info.get(&uri)?.get(&row)?;
+
+        let stale = self.edited_since_check.contains(&uri);
+        Some(Hover {
+            contents: HoverContents::Markup(MarkupContent {
+                kind: MarkupKind::Markdown,
+                value: render_line_types(row, entries, stale),
+            }),
+            range: self.line_range(&uri, row),
+        })
+    }
+
+    /// The full extent of `row` in the open document, so the hover highlights the
+    /// whole line its types describe.
+    fn line_range(&self, uri: &Url, row: usize) -> Option<Range> {
+        let text = self.documents.get(uri)?;
+        let line = text.split('\n').nth(row)?;
+        Some(Range {
+            start: Position::new(row as u32, 0),
+            end: Position::new(row as u32, line.chars().count() as u32),
+        })
+    }
+
     /// Command signatures from every open document, deduplicated by text, so a
     /// command declared in one file can be completed while editing another.
     fn all_signatures(&self) -> Vec<Signature> {
@@ -324,8 +389,23 @@ impl ServerState {
         signatures
     }
 
-    fn refresh_diagnostics(&mut self, connection: &Connection, root: &Path) {
-        let result = check(root, &[], None);
+    /// Re-checks the collection, republishing diagnostics and refreshing the type
+    /// information for `file` — the document that was just opened or saved.
+    ///
+    /// This is the only place a check runs. Editing a document deliberately does
+    /// not trigger one: a check walks the whole collection, and doing that per
+    /// keystroke would be unusable.
+    fn refresh_diagnostics(
+        &mut self,
+        connection: &Connection,
+        root: &Path,
+        uri: &Url,
+        file: &Path,
+    ) {
+        let result = check_collecting_type_info(root, &[], None, Some(file));
+        self.type_info.insert(uri.clone(), result.type_info.clone());
+        self.edited_since_check.remove(uri);
+
         let report = check_diagnostics_report(&result, root);
 
         let mut grouped: HashMap<Url, Vec<Diagnostic>> = HashMap::new();
@@ -348,6 +428,59 @@ impl ServerState {
         }
         self.last_diagnostic_files = new_files;
     }
+}
+
+/// The widest expression column a hover will pad to. Beyond this the type moves
+/// to its own line rather than pushing the popup off the side of the editor.
+const MAX_EXPRESSION_COLUMN: usize = 56;
+
+/// Renders a line's entries as a hover popup: one row per expression, indented
+/// under the expression that contains it, with its resolved types alongside.
+fn render_line_types(row: usize, entries: &[TypeEntry], stale: bool) -> String {
+    // Width of the widest expression that fits; anything longer wraps instead of
+    // widening the whole popup to accommodate it.
+    let width = entries
+        .iter()
+        .map(|entry| entry.depth * 2 + entry.text.chars().count())
+        .filter(|length| *length <= MAX_EXPRESSION_COLUMN)
+        .max()
+        .unwrap_or(0);
+
+    let mut body = String::new();
+    for entry in entries {
+        let indent = entry_indent(entry);
+        let label = format!("{indent}{}", entry.text);
+        let types = if entry.types.is_empty() {
+            "(no type resolved)".to_owned()
+        } else {
+            entry.types.join(", ")
+        };
+
+        if label.chars().count() > width {
+            body.push_str(&format!(
+                "{label}\n{:width$}    {types}\n",
+                "",
+                width = width
+            ));
+        } else {
+            let padding = width - label.chars().count();
+            body.push_str(&format!("{label}{:padding$}    {types}\n", ""));
+        }
+    }
+
+    let note = if stale {
+        " — this file has been edited since; save to refresh"
+    } else {
+        ""
+    };
+    format!(
+        "Types on line {} (from the last `mlg check`{note})\n\n```\n{body}```",
+        row + 1
+    )
+}
+
+fn entry_indent(entry: &TypeEntry) -> String {
+    "  ".repeat(entry.depth)
 }
 
 /// Extract the `textDocument.uri` from a notification's params.
@@ -576,4 +709,76 @@ fn position_from(line: Option<usize>, column: Option<usize>) -> Position {
     let line = line.unwrap_or(1).saturating_sub(1) as u32;
     let character = column.unwrap_or(1).saturating_sub(1) as u32;
     Position { line, character }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::render_line_types;
+    use crate::backend::semantic::TypeEntry;
+
+    fn entry(depth: usize, text: &str, types: &[&str]) -> TypeEntry {
+        TypeEntry {
+            depth,
+            text: text.to_owned(),
+            types: types.iter().map(|ty| (*ty).to_owned()).collect(),
+        }
+    }
+
+    #[test]
+    fn renders_sub_expressions_indented_with_their_types_aligned() {
+        let entries = vec![
+            entry(0, "x = y", &[r"is \\statement"]),
+            entry(1, "x", &[r"is \real"]),
+            entry(1, "y", &[r"is \real", r#""in" \reals"#]),
+        ];
+
+        assert_eq!(
+            render_line_types(24, &entries, false),
+            concat!(
+                "Types on line 25 (from the last `mlg check`)\n",
+                "\n",
+                "```\n",
+                "x = y    is \\\\statement\n",
+                "  x      is \\real\n",
+                "  y      is \\real, \"in\" \\reals\n",
+                "```",
+            )
+        );
+    }
+
+    #[test]
+    fn renders_an_expression_the_checker_could_not_type() {
+        let entries = vec![entry(0, "f(x)", &[])];
+
+        assert!(render_line_types(0, &entries, false).contains("f(x)    (no type resolved)"));
+    }
+
+    /// An expression too wide to align against keeps its own line, and the
+    /// narrower entries stay aligned with each other rather than being pushed out
+    /// to accommodate it.
+    #[test]
+    fn wraps_an_over_wide_expression_instead_of_widening_the_popup() {
+        let wide = "a".repeat(super::MAX_EXPRESSION_COLUMN + 1);
+        let entries = vec![
+            entry(0, &wide, &[r"is \real"]),
+            entry(1, "a", &[r"is \real"]),
+        ];
+
+        assert_eq!(
+            render_line_types(0, &entries, false),
+            format!(
+                "Types on line 1 (from the last `mlg check`)\n\n```\n{wide}\n       is \\real\n  a    is \\real\n```"
+            )
+        );
+    }
+
+    #[test]
+    fn says_when_the_types_predate_the_current_edits() {
+        let entries = vec![entry(0, "x", &[r"is \real"])];
+
+        assert!(
+            render_line_types(0, &entries, true)
+                .starts_with("Types on line 1 (from the last `mlg check` — this file has been edited since; save to refresh)")
+        );
+    }
 }

@@ -1,5 +1,6 @@
 use crate::backend::collection::{SourceCollection, find_collection_root};
 use crate::backend::config::load_config;
+use crate::backend::semantic::DocumentTypeInfo;
 use crate::events::{Audience, EventLocation, EventLog, EventLogListener, Level, MarkerRange};
 use crate::mlg::format::format_collection;
 use crate::mlg::util::{has_blocking_user_issues_since, no_errors_since, user_issue_count_since};
@@ -14,6 +15,9 @@ pub struct CheckResult {
     pub successful: bool,
     pub files_checked: usize,
     pub marker_range: MarkerRange,
+    /// The types resolved for each line of the file named by
+    /// [`check_collecting_type_info`]'s `type_info_for`; empty otherwise.
+    pub type_info: DocumentTypeInfo,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -27,13 +31,28 @@ pub fn check(
     paths: &[PathBuf],
     listener: Option<Box<dyn EventLogListener>>,
 ) -> CheckResult {
+    check_collecting_type_info(cwd, paths, listener, None)
+}
+
+/// Checks the collection and, when `type_info_for` names one of its files, also
+/// resolves the type of every expression on each of that file's lines.
+///
+/// The language server uses this so a save produces both the diagnostics and the
+/// type information it serves until the next save, from a single check.
+pub fn check_collecting_type_info(
+    cwd: &Path,
+    paths: &[PathBuf],
+    listener: Option<Box<dyn EventLogListener>>,
+    type_info_for: Option<&Path>,
+) -> CheckResult {
     let mut event_log = EventLog::new();
     if let Some(listener) = listener {
         event_log.add_boxed_listener(listener);
     }
 
     let starting_event_count = event_log.events().len();
-    let summary = check_in(cwd, paths, &mut event_log);
+    let (summary, type_info) =
+        check_in_collecting_type_info(cwd, paths, &mut event_log, type_info_for);
     let successful = no_errors_since(&event_log, starting_event_count);
 
     CheckResult {
@@ -41,10 +60,21 @@ pub fn check(
         successful,
         files_checked: summary.files_checked,
         marker_range: summary.marker_range,
+        type_info,
     }
 }
 
+#[cfg(test)]
 pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) -> CheckSummary {
+    check_in_collecting_type_info(cwd, paths, event_log, None).0
+}
+
+fn check_in_collecting_type_info(
+    cwd: &Path,
+    paths: &[PathBuf],
+    event_log: &mut EventLog,
+    type_info_for: Option<&Path>,
+) -> (CheckSummary, DocumentTypeInfo) {
     let begin = event_log.begin_marker("check_in", Some(ORIGIN));
     let starting_event_count = event_log.events().len();
 
@@ -59,7 +89,8 @@ pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) 
     let diagnostic_filter = collection.diagnostic_filter(cwd, paths, event_log, ORIGIN);
     let files_checked = diagnostic_filter.selected_file_count(&collection);
 
-    collection.run_check_passes_filtered(event_log, ORIGIN, &diagnostic_filter);
+    let type_info =
+        collection.run_check_passes_filtered(event_log, ORIGIN, &diagnostic_filter, type_info_for);
 
     let has_new_blocking_user_issues =
         has_blocking_user_issues_since(event_log, starting_event_count);
@@ -76,10 +107,13 @@ pub(super) fn check_in(cwd: &Path, paths: &[PathBuf], event_log: &mut EventLog) 
 
     let end = event_log.end_marker(&begin, Some(ORIGIN));
 
-    CheckSummary {
-        files_checked,
-        marker_range: MarkerRange::new(begin, end),
-    }
+    (
+        CheckSummary {
+            files_checked,
+            marker_range: MarkerRange::new(begin, end),
+        },
+        type_info,
+    )
 }
 
 /// Run `mlg format` over the collection before checking it, unless the config
@@ -2930,6 +2964,94 @@ then:
             !event_log.has_errors(),
             "expected the whole 2D selection to be checked per cell: {:#?}",
             event_log.events()
+        );
+    }
+
+    #[test]
+    fn check_accepts_computed_cells_for_two_dimensional_variadic_requirements() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("variadic-2d-computed-cell.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Enables:
+    . from: Y ::= {y__ : ...}
+      capability: x_ "in" X :-> x_ member_of Y
+    Documented:
+    . called: "set"
+
+    [\naturals.set]
+    Declares: N := \set@{n_ : n_ is \natural}
+    Documented:
+    . called: "naturals"
+
+    [\function:?on{A}:?to{B}]
+    Defines: f(x__) ::= y_
+    when: A, B is \set
+    declares:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . called: "function"
+
+    [A \.set.cross./ B]
+    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    when: A, B is \set
+    Documented:
+    . called: "cross"
+
+    [\binary.operation:on{X}]
+    Defines: x_ * y_
+    when: X is \set
+    extends: * is \function:on{X \.set.cross./ X}:to{X}
+    Documented:
+    . called: "binary operation"
+
+    [n_ \.natural.+./ m_]
+    Declares: n_ + m_ is \binary.operation:on{\naturals.set}
+    Documented:
+    . written: "n_? + m_?"
+
+    [\natural]
+    Defines: n
+    Enables:
+    . capability: x_ + y_ :=> x_ \.natural.+./ y_
+    Documented:
+    . called: "natural"
+
+    [\matrix]
+    Defines: X
+    Documented:
+    . called: "matrix"
+
+    [\matrix:of{x[(i_, j_) := (1,1)...(m,n)]}]
+    Declares: X is \matrix
+    when: x[..., ...] is \natural
+    Documented:
+    . written: "matrix"
+
+    Theorem:
+    given: a, b, c, x, y, z is \natural
+    then: \matrix:of{a, b, c; x, y, z + z}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("variadic-2d-computed-cell.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
     }
 
@@ -11563,5 +11685,115 @@ Id: "5800ef12-bed3-427b-985f-ae871a6080ff"
             )
         }));
         assert!(event_log.has_errors());
+    }
+}
+
+#[cfg(test)]
+mod type_info_tests {
+    use super::check_collecting_type_info;
+    use super::tests::TestDir;
+    use crate::backend::config::default_config_contents;
+    use crate::backend::semantic::{DocumentTypeInfo, TypeEntry};
+    use std::fs;
+    use std::path::Path;
+
+    const SOURCE: &str = r#"[\set]
+Defines: X
+Documented:
+. called: "set"
+
+
+[\element:of{X}]
+Defines: x
+when: X is \set
+Documented:
+. called: "element"
+
+
+Theorem:
+given:
+. X is \set
+. x is \element:of{X}
+then:
+. x = x
+"#;
+
+    /// The entries recorded for the line whose text is exactly `line`.
+    fn entries_for<'a>(info: &'a DocumentTypeInfo, source: &str, line: &str) -> &'a [TypeEntry] {
+        let row = source
+            .lines()
+            .position(|candidate| candidate.trim() == line)
+            .unwrap_or_else(|| panic!("no line `{line}` in:\n{source}"));
+        info.get(&row)
+            .unwrap_or_else(|| panic!("no type info on row {row} (`{line}`)"))
+    }
+
+    fn rendered(entries: &[TypeEntry]) -> Vec<(usize, &str, Vec<&str>)> {
+        entries
+            .iter()
+            .map(|entry| {
+                (
+                    entry.depth,
+                    entry.text.as_str(),
+                    entry.types.iter().map(String::as_str).collect(),
+                )
+            })
+            .collect()
+    }
+
+    fn check_fixture(root: &Path) -> (DocumentTypeInfo, String) {
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
+        let file = root.join("theory.mlg");
+        fs::write(&file, SOURCE).unwrap();
+
+        let result = check_collecting_type_info(root, &[], None, Some(&file));
+        assert!(result.successful, "fixture should check cleanly");
+        // `check` formats before checking, so read the file back for row numbers.
+        (result.type_info, fs::read_to_string(&file).unwrap())
+    }
+
+    #[test]
+    fn type_info_records_every_sub_expression_of_a_checked_line() {
+        let temp_dir = TestDir::new();
+        let (info, source) = check_fixture(temp_dir.path());
+
+        assert_eq!(
+            rendered(entries_for(&info, &source, r". x = x")),
+            vec![
+                (0, "x = x", vec![r"is \\statement"]),
+                (1, "x", vec![r"is \element:of{X}"]),
+                (1, "x", vec![r"is \element:of{X}"]),
+            ]
+        );
+    }
+
+    #[test]
+    fn type_info_records_assumed_lines_that_are_never_checked() {
+        let temp_dir = TestDir::new();
+        let (info, source) = check_fixture(temp_dir.path());
+
+        // A `given:` line is assumed rather than checked, so it reaches the
+        // recorder through a different path than a `then:` line does.
+        assert_eq!(
+            rendered(entries_for(&info, &source, r". x is \element:of{X}")),
+            vec![(
+                0,
+                r"x is \element:of{X}",
+                vec![r"asserts x is \element:of{X}"]
+            )]
+        );
+    }
+
+    #[test]
+    fn type_info_is_empty_for_a_check_that_asked_about_no_file() {
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path();
+        fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
+        fs::write(root.join("theory.mlg"), SOURCE).unwrap();
+
+        let result = check_collecting_type_info(root, &[], None, None);
+
+        assert!(result.successful);
+        assert!(result.type_info.is_empty());
     }
 }

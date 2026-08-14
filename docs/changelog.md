@@ -5,6 +5,28 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Per-Line Type Information Over The Language Server
+
+`mlg lsp` now answers `textDocument/hover` with the type of every expression,
+sub-expression, and statement on the hovered line.
+
+The information is a by-product of the ordinary type check rather than a second
+analysis: `check_documents_collecting_type_info` installs a recorder on the
+signature registry for one named file, and the walk files each line's entire
+expression tree against the type context in force at that line. A value reports
+the facts its result carries, a name that carries none of its own reports what
+the enclosing scope declared about it, and a statement reports the fact it
+asserts.
+
+Because a formulation AST carries no source positions, lines are identified by
+parsing each row's formulation on its own and matching it against the walk's
+expressions by structural equality, scoped to the enclosing top-level item.
+
+The server resolves types only when a document is opened or saved — never on
+edit, since a check walks the whole collection — and serves the last resolved
+answer until the next save. A hover on a document edited since that check says
+so.
+
 ## Configurable Numeric Literals And Variadic Indices
 
 Top-level `Specify:` now has four typed categories: `decimal`,

@@ -316,9 +316,276 @@ pub(super) fn validate_document_types(
     event_log: &mut EventLog,
 ) {
     let mut locator = SourceLocator::new(&file.source);
-    for item in &file.document.items {
+    for (index, item) in file.document.items.iter().enumerate() {
+        begin_type_info_item(file, index, registry);
         validate_top_level_item_types(item, file.path.as_path(), &mut locator, registry, event_log);
     }
+}
+
+/// Narrows an active type-info recording to the rows of the item about to be
+/// walked, so a formulation spelled identically in two items cannot claim the
+/// other item's line.
+fn begin_type_info_item(file: &ParsedSourceFile, index: usize, registry: &SignatureRegistry) {
+    let mut slot = registry.recorder.borrow_mut();
+    let Some(recorder) = slot.as_mut() else {
+        return;
+    };
+    let start = file
+        .item_ids
+        .get(index)
+        .map(|id| id.group_row)
+        .unwrap_or_default();
+    let end = file
+        .item_ids
+        .get(index + 1)
+        .map(|id| id.group_row)
+        .unwrap_or(usize::MAX);
+    recorder.begin_item(start..end);
+}
+
+/// Records the types of `expression` and every sub-expression beneath it, when
+/// it is the formulation of a line a type-info pass is collecting.
+///
+/// Called wherever the walk first reaches a whole formulation — a clause being
+/// checked, a clause being assumed — and does nothing at all when no type-info
+/// pass is running.
+fn record_line_types(expression: &Expression, context: &TypeContext, registry: &SignatureRegistry) {
+    let claim = match registry.recorder.borrow_mut().as_mut() {
+        Some(recorder) => recorder.claim_expression(expression),
+        None => return,
+    };
+    let Some(claim) = claim else { return };
+
+    // Resolved outside the borrow above: resolving a type reads the registry,
+    // and the recorder is borrowed again only to file the finished entries.
+    let mut entries = Vec::new();
+    collect_type_entries(
+        expression,
+        0,
+        Some(claim.text.clone()),
+        context,
+        registry,
+        &mut entries,
+    );
+    if let Some(recorder) = registry.recorder.borrow_mut().as_mut() {
+        recorder.record(claim, entries);
+    }
+}
+
+/// The declaration-statement counterpart of [`record_line_types`].
+fn record_declaration_line_types(
+    statement: &DeclarationStatement,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) {
+    let claim = match registry.recorder.borrow_mut().as_mut() {
+        Some(recorder) => recorder.claim_declaration(statement),
+        None => return,
+    };
+    let Some(claim) = claim else { return };
+
+    let mut entries = vec![TypeEntry {
+        depth: 0,
+        text: claim.text.clone(),
+        types: facts_from_declaration_statement(statement)
+            .iter()
+            .map(|fact| format!("asserts {}", format_fact(fact)))
+            .collect(),
+    }];
+    if let Some(definition) = &statement.definition {
+        collect_type_entries(definition, 1, None, context, registry, &mut entries);
+    }
+    match &statement.relation {
+        Some(DeclarationRelation::Spec { target, .. })
+        | Some(DeclarationRelation::InfixSpec { target, .. }) => {
+            collect_type_entries(target, 1, None, context, registry, &mut entries);
+        }
+        Some(DeclarationRelation::Is(_)) | None => {}
+    }
+    if let Some(recorder) = registry.recorder.borrow_mut().as_mut() {
+        recorder.record(claim, entries);
+    }
+}
+
+/// Appends `expression` and, beneath it, each of its sub-expressions.
+fn collect_type_entries(
+    expression: &Expression,
+    depth: usize,
+    label: Option<String>,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    entries: &mut Vec<TypeEntry>,
+) {
+    entries.push(TypeEntry {
+        depth,
+        text: label.unwrap_or_else(|| key_for_expression(expression)),
+        types: resolved_type_predicates(expression, context, registry),
+    });
+    for child in sub_expressions(expression) {
+        collect_type_entries(child, depth + 1, None, context, registry, entries);
+    }
+}
+
+/// The immediate sub-expressions of `expression`, in source order.
+fn sub_expressions(expression: &Expression) -> Vec<&Expression> {
+    match &expression.kind {
+        ExpressionKind::Name(_)
+        | ExpressionKind::InferredName(_)
+        | ExpressionKind::VariadicSlice(_)
+        | ExpressionKind::SubsetCall(_)
+        | ExpressionKind::BuiltinCommand(_) => Vec::new(),
+        ExpressionKind::VariadicAssignment { value, .. } => vec![value.as_ref()],
+        ExpressionKind::FunctionCall { arguments, .. } => arguments.iter().collect(),
+        ExpressionKind::FunctionNamedCall { elements, .. } => {
+            elements.iter().map(|element| &element.expression).collect()
+        }
+        ExpressionKind::MemberCall {
+            owner, arguments, ..
+        } => std::iter::once(owner.as_ref()).chain(arguments).collect(),
+        ExpressionKind::MemberAccess { owner, .. } => vec![owner.as_ref()],
+        ExpressionKind::Tuple(elements) => elements
+            .iter()
+            .filter_map(|element| match element {
+                TupleExpressionElement::Expression(expression) => Some(expression),
+                TupleExpressionElement::Operator(_) => None,
+            })
+            .collect(),
+        ExpressionKind::Set(set) => set.specs.iter().collect(),
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            vec![expression.as_ref()]
+        }
+        ExpressionKind::IndexedCall(call) => call.indices.iter().collect(),
+        ExpressionKind::Command(command) => command_expression_arguments(command),
+        ExpressionKind::InfixCommand {
+            left,
+            command,
+            right,
+        } => std::iter::once(left.as_ref())
+            .chain(infix_command_arguments(command))
+            .chain(std::iter::once(right.as_ref()))
+            .collect(),
+        ExpressionKind::InfixSpecStatement { left, right, .. } => {
+            vec![left.as_ref(), right.as_ref()]
+        }
+        ExpressionKind::Prefix { expression, .. } | ExpressionKind::Postfix { expression, .. } => {
+            vec![expression.as_ref()]
+        }
+        ExpressionKind::Binary { left, right, .. } => vec![left.as_ref(), right.as_ref()],
+        ExpressionKind::SpecStatement(statement) | ExpressionKind::SpecPredicate(statement) => {
+            vec![statement.subject.as_ref()]
+        }
+        ExpressionKind::SpecStatementExpr {
+            subject, target, ..
+        } => vec![subject.as_ref(), target.as_ref()],
+        ExpressionKind::SpecLiteral(literal) => match &literal.form {
+            SpecLiteralForm::Spec { target, .. } => vec![target.as_ref()],
+            SpecLiteralForm::Is(_) => Vec::new(),
+        },
+        ExpressionKind::Satisfies { subject, spec } => vec![subject.as_ref(), spec.as_ref()],
+        ExpressionKind::Mapping { lhs, rhs } => vec![lhs.as_ref(), rhs.as_ref()],
+        ExpressionKind::IsPredicate { subject, command }
+        | ExpressionKind::IsNotPredicate { subject, command } => std::iter::once(subject.as_ref())
+            .chain(command_expression_arguments(command))
+            .collect(),
+        ExpressionKind::IsRefinedPredicate { subject, .. }
+        | ExpressionKind::IsNotRefinedPredicate { subject, .. }
+        | ExpressionKind::IsBuiltinPredicate { subject, .. }
+        | ExpressionKind::IsNotBuiltinPredicate { subject, .. }
+        | ExpressionKind::IsType { subject, .. } => vec![subject.as_ref()],
+        ExpressionKind::Build { value, .. } => vec![value.as_ref()],
+        ExpressionKind::MemberOf {
+            subject,
+            collection,
+        } => vec![subject.as_ref(), collection.as_ref()],
+    }
+}
+
+/// What the checker knows about `expression`, rendered as predicates about it.
+///
+/// A value reports the facts its result carries; a name that carries none of its
+/// own reports what the context declared about it; and a statement — which has
+/// no value type — reports the fact it asserts.
+fn resolved_type_predicates(
+    expression: &Expression,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<String> {
+    let subject = effective_key_for_expression(expression, context, registry);
+    let mut resolving = HashSet::new();
+    let mut facts =
+        expression_result_facts(expression, &subject, context, registry, &mut resolving);
+
+    if facts.is_empty() {
+        let normalized = context.normalize_key(&subject);
+        facts = context
+            .facts
+            .iter()
+            .filter(|fact| {
+                let fact_subject = fact_subject(fact);
+                fact_subject == subject || fact_subject == normalized
+            })
+            .cloned()
+            .collect();
+    }
+
+    if facts.is_empty() {
+        if let Some(asserted) = fact_from_expression_in_context(expression, context) {
+            return vec![format!("asserts {}", format_fact(&asserted))];
+        }
+        if is_statement_shaped(expression) || is_statement_command(&subject, registry) {
+            return vec![format!("is {BUILTIN_STATEMENT_SIGNATURE}")];
+        }
+    }
+
+    let mut types: Vec<String> = facts.iter().map(format_fact_predicate).collect();
+    types.sort();
+    types.dedup();
+    types
+}
+
+/// Whether an expression asserts something rather than denoting a value, judged
+/// from its shape alone. Used only as a fallback, when no fact could be resolved
+/// and none could be read off the expression either.
+fn is_statement_shaped(expression: &Expression) -> bool {
+    match &expression.kind {
+        ExpressionKind::IsType { .. }
+        | ExpressionKind::IsPredicate { .. }
+        | ExpressionKind::IsNotPredicate { .. }
+        | ExpressionKind::IsBuiltinPredicate { .. }
+        | ExpressionKind::IsNotBuiltinPredicate { .. }
+        | ExpressionKind::IsRefinedPredicate { .. }
+        | ExpressionKind::IsNotRefinedPredicate { .. }
+        | ExpressionKind::SpecStatement(_)
+        | ExpressionKind::SpecPredicate(_)
+        | ExpressionKind::SpecStatementExpr { .. }
+        | ExpressionKind::InfixSpecStatement { .. }
+        | ExpressionKind::MemberOf { .. }
+        | ExpressionKind::Satisfies { .. } => true,
+        ExpressionKind::Binary { operator, .. } => {
+            matches!(operator, BinaryOperator::Equality(_))
+        }
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            is_statement_shaped(expression)
+        }
+        _ => false,
+    }
+}
+
+/// Whether an expression's key names a command declared by an item that states
+/// something — those have no value type; they are statements.
+fn is_statement_command(key: &str, registry: &SignatureRegistry) -> bool {
+    let Some(signature) = command_signature_from_key(key) else {
+        return false;
+    };
+    registry.definitions.get(&signature).is_some_and(|entry| {
+        matches!(
+            entry.kind,
+            DefinitionKind::States
+                | DefinitionKind::Axiom
+                | DefinitionKind::Theorem
+                | DefinitionKind::Conjecture
+        )
+    })
 }
 
 fn definition_type_info(
@@ -6002,6 +6269,7 @@ fn check_declaration_statement(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    record_declaration_line_types(statement, context, registry);
     if establish_labeled_declaration_statement(
         statement, context, path, locator, registry, event_log,
     ) {
@@ -6319,6 +6587,9 @@ fn assume_declaration_statement(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    // An assumed declaration — a `when: x is \real` line — is never checked, so
+    // like `assume_fact_expression` it needs its own type-info hook.
+    record_declaration_line_types(statement, context, registry);
     let established = establish_labeled_declaration_statement(
         statement, context, path, locator, registry, event_log,
     );
@@ -7131,6 +7402,7 @@ fn check_expression(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    record_line_types(expression, context, registry);
     match &expression.kind {
         // An inferred parameter is declared into scope by the assume phase
         // (`declare_inferred_parameters`); by the time the check pass revisits it,
@@ -8808,6 +9080,22 @@ fn context_with_expression_result_facts(
     result
 }
 
+/// Materializes the inferred output facts for every expression in a command's
+/// argument list.  Requirement substitution uses the expressions' effective
+/// keys, so composite arguments (for example `z + z`) need their result facts
+/// in the same context in which the instantiated requirements are proved.
+fn context_with_expression_results<'a>(
+    expressions: impl IntoIterator<Item = &'a Expression>,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> TypeContext {
+    expressions
+        .into_iter()
+        .fold(context.clone(), |result, expression| {
+            context_with_expression_result_facts(expression, &result, registry)
+        })
+}
+
 fn expression_result_facts(
     expression: &Expression,
     result_subject: &str,
@@ -9137,32 +9425,38 @@ fn provided_symbol_output_facts(
     resolving: &mut HashSet<String>,
 ) -> Vec<TypeFact> {
     let mut child = context.clone();
+    let mut directional_substitutions = HashMap::new();
     for parameter in &rule.parameters {
         child.declare_name(parameter.clone());
     }
     for (parameter, actual) in rule.parameters.iter().zip(actuals) {
-        child.add_substitution(parameter.clone(), context.normalize_key(actual));
+        let actual = context.normalize_key(actual);
+        child.add_substitution(parameter.clone(), actual.clone());
+        directional_substitutions.insert(parameter.clone(), actual);
     }
     if let Some(owner_actual) = owner_actual {
+        let owner_actual = context.normalize_key(owner_actual);
         bind_provided_symbol_owner_type_parameters(
             rule,
-            owner_actual,
+            &owner_actual,
             context,
             &mut child,
             registry,
         );
         child.declare_name(rule.owner_subject.clone());
-        child.add_substitution(
-            rule.owner_subject.clone(),
-            context.normalize_key(owner_actual),
-        );
+        child.add_substitution(rule.owner_subject.clone(), owner_actual.clone());
+        directional_substitutions.insert(rule.owner_subject.clone(), owner_actual.clone());
         if let Some(source_subject) = &rule.source_subject {
             child.declare_name(source_subject.clone());
-            child.add_substitution(source_subject.clone(), context.normalize_key(owner_actual));
+            child.add_substitution(source_subject.clone(), owner_actual.clone());
+            directional_substitutions.insert(source_subject.clone(), owner_actual);
         }
     }
     bind_owner_parameter_destructurings(rule, &mut child, registry);
     expression_result_facts(&rule.target, result_subject, &child, registry, resolving)
+        .into_iter()
+        .map(|fact| substitute_fact(&fact, &directional_substitutions))
+        .collect()
 }
 
 fn rebind_result_fact_subjects(
@@ -9764,33 +10058,45 @@ fn effective_key_for_provided_symbol_target(
     resolving: &mut HashSet<String>,
 ) -> String {
     let mut child = context.clone();
+    let mut directional_substitutions = HashMap::new();
     for parameter in &rule.parameters {
         child.declare_name(parameter.clone());
     }
     for (parameter, actual) in rule.parameters.iter().zip(actuals) {
-        child.add_substitution(parameter.clone(), context.normalize_key(actual));
+        let actual = context.normalize_key(actual);
+        child.add_substitution(parameter.clone(), actual.clone());
+        directional_substitutions.insert(parameter.clone(), actual);
     }
     if let Some(owner_actual) = owner_actual {
+        let owner_actual = context.normalize_key(owner_actual);
         bind_provided_symbol_owner_type_parameters(
             rule,
-            owner_actual,
+            &owner_actual,
             context,
             &mut child,
             registry,
         );
         child.declare_name(rule.owner_subject.clone());
-        child.add_substitution(
-            rule.owner_subject.clone(),
-            context.normalize_key(owner_actual),
-        );
+        child.add_substitution(rule.owner_subject.clone(), owner_actual.clone());
+        directional_substitutions.insert(rule.owner_subject.clone(), owner_actual.clone());
         if let Some(source_subject) = &rule.source_subject {
             child.declare_name(source_subject.clone());
-            child.add_substitution(source_subject.clone(), context.normalize_key(owner_actual));
+            child.add_substitution(source_subject.clone(), owner_actual.clone());
+            directional_substitutions.insert(source_subject.clone(), owner_actual);
         }
     }
     bind_owner_parameter_destructurings(rule, &mut child, registry);
 
-    effective_key_for_expression_inner(&rule.target, &child, registry, resolving)
+    // TypeContext substitutions represent equivalence classes and normalize to
+    // the lexicographically smallest representative.  That is useful for fact
+    // comparison, but a capability target must retain the call-site operands:
+    // `x_ + y_ :=> x_ \.plus./ y_` applied to `z + z` must yield
+    // `z \.plus./ z`, not the formal `x_ \.plus./ y_`.  Reapply the bindings
+    // directionally before the effective key escapes this child context.
+    substitute_key(
+        &effective_key_for_expression_inner(&rule.target, &child, registry, resolving),
+        &directional_substitutions,
+    )
 }
 
 fn binary_operator_symbol_and_kind(operator: &BinaryOperator) -> (String, NamedOperatorKind) {
@@ -10204,6 +10510,11 @@ fn check_command_expression(
     let argument_expressions = command_expression_arguments(&active_command);
     let requirement_context =
         context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let requirement_context = context_with_expression_results(
+        argument_expressions.iter().copied(),
+        &requirement_context,
+        registry,
+    );
     let actuals = argument_expressions
         .iter()
         .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
@@ -10292,6 +10603,11 @@ fn check_command_type_expression(
     let argument_expressions = command_expression_arguments(&active_command);
     let requirement_context =
         context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let requirement_context = context_with_expression_results(
+        argument_expressions.iter().copied(),
+        &requirement_context,
+        registry,
+    );
     let actuals = argument_expressions
         .iter()
         .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
@@ -10354,6 +10670,11 @@ fn check_infix_command(
     argument_expressions.push(right);
     let requirement_context =
         context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let requirement_context = context_with_expression_results(
+        argument_expressions.iter().copied(),
+        &requirement_context,
+        registry,
+    );
     let actuals = argument_expressions
         .iter()
         .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
@@ -10388,6 +10709,11 @@ fn check_refined_command_type_expression(
     let argument_expressions = refined_command_expression_arguments(&active_command);
     let requirement_context =
         context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let requirement_context = context_with_expression_results(
+        argument_expressions.iter().copied(),
+        &requirement_context,
+        registry,
+    );
     let actuals = argument_expressions
         .iter()
         .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
@@ -10425,6 +10751,11 @@ fn check_refined_command_expression(
     let argument_expressions = refined_command_expression_arguments(&active_command);
     let requirement_context =
         context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let requirement_context = context_with_expression_results(
+        argument_expressions.iter().copied(),
+        &requirement_context,
+        registry,
+    );
     let actuals = argument_expressions
         .iter()
         .map(|expression| effective_key_for_expression(expression, &requirement_context, registry))
@@ -11166,6 +11497,11 @@ fn validate_definition_requirement(
     let argument_expressions = command_expression_arguments(&active_command);
     let requirement_context =
         context_with_cast_expression_facts(argument_expressions.iter().copied(), context);
+    let requirement_context = context_with_expression_results(
+        argument_expressions.iter().copied(),
+        &requirement_context,
+        registry,
+    );
     let actuals = argument_expressions
         .iter()
         .map(|expression| {
@@ -15301,6 +15637,9 @@ fn assume_fact_expression(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    // An assumed clause — a `when:` or `given:` line — is never checked as an
+    // expression, so it needs its own hook to reach a type-info pass.
+    record_line_types(expression, context, registry);
     match &expression.kind {
         ExpressionKind::IsType { subject, ty } => {
             check_type_expression(ty, context, path, locator, registry, event_log);

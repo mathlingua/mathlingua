@@ -1,6 +1,7 @@
 use crate::backend::collection::CONTENT_DIR;
 use crate::backend::config::{
-    CONFIG_FILE, config_object, default_config_contents, merge_default_fields, missing_config_fields,
+    CONFIG_FILE, config_object, default_config_contents, merge_default_fields,
+    missing_config_fields,
 };
 use crate::events::{EventLog, EventLogListener};
 use crate::mlg::util::no_errors_since;
@@ -137,7 +138,10 @@ fn reconcile_existing_config(config_path: &Path, event_log: &mut EventLog) -> io
 
     event_log.user_log(
         Some(ORIGIN),
-        format!("Added the default {} to {CONFIG_FILE}", describe_fields(&missing)),
+        format!(
+            "Added the default {} to {CONFIG_FILE}",
+            describe_fields(&missing)
+        ),
     );
     Ok(())
 }

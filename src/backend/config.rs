@@ -170,8 +170,8 @@ pub fn merge_default_fields(object: &serde_json::Map<String, serde_json::Value>)
         }
     }
 
-    let mut contents = serde_json::to_string_pretty(&merged)
-        .expect("a config object always serializes to JSON");
+    let mut contents =
+        serde_json::to_string_pretty(&merged).expect("a config object always serializes to JSON");
     contents.push('\n');
     contents
 }
@@ -748,10 +748,7 @@ mod tests {
 
         // Existing values (including unknown extras) are preserved.
         assert_eq!(reparsed.get("name").and_then(|v| v.as_str()), Some("mine"));
-        assert_eq!(
-            reparsed.get("extra").and_then(|v| v.as_str()),
-            Some("kept")
-        );
+        assert_eq!(reparsed.get("extra").and_then(|v| v.as_str()), Some("kept"));
         // Every previously missing field is now present at its default.
         assert!(missing_config_fields(&reparsed).is_empty());
         assert_eq!(reparsed.get("version").and_then(|v| v.as_str()), Some("0"));

@@ -42,7 +42,6 @@ extern {
         "both_special_operator" => Token::BothSpecialOperator(<String>),
         "left_special_operator" => Token::LeftSpecialOperator(<String>),
         "right_special_operator" => Token::RightSpecialOperator(<String>),
-        "is_not?" => Token::IsNotPredicate,
         "is?" => Token::IsPredicate,
         "is" => Token::Is,
         "member_of" => Token::MemberOf,
@@ -1063,23 +1062,9 @@ SpecOrPredicateExpression: ast::Expression = {
             ty,
         },
     ),
-    <l:@L> <subject:InfixCommandExpression> "is_not?" <ty:BuiltinTypeExpression> <r:@R> => ast::Expression::new(
-        Span::new(l, r),
-        ExpressionKind::IsNotBuiltinPredicate {
-            subject: Box::new(subject),
-            ty,
-        },
-    ),
     <l:@L> <subject:InfixCommandExpression> "is?" <command:CommandExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::IsPredicate {
-            subject: Box::new(subject),
-            command,
-        },
-    ),
-    <l:@L> <subject:InfixCommandExpression> "is_not?" <command:CommandExpression> <r:@R> => ast::Expression::new(
-        Span::new(l, r),
-        ExpressionKind::IsNotPredicate {
             subject: Box::new(subject),
             command,
         },

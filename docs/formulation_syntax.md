@@ -214,7 +214,6 @@ The lexer has dedicated tokens for:
 
 - `is`
 - `is?`
-- `is_not?`
 - `via`
 - `member_of`
 - `satisfies`
@@ -265,7 +264,7 @@ build is also how a `Declares:` value may state its type without `is`
 From lowest precedence to highest:
 
 1. function literal `=>` (right-associative)
-2. spec and predicate forms (`is`, `is?`, `is_not?`, quoted `"op"` specs and
+2. spec and predicate forms (`is`, `is?`, quoted `"op"` specs and
    predicates, infix specs `\:...:/`, `member_of`, `satisfies`, spec literals)
 3. infix command `\.name./`
 4. equality `=` (and `!=`) and special binary operators such as `<`, `>`
@@ -304,7 +303,7 @@ SpecOrPredicateExpression ::=
   | InfixCommandExpression QuotedName "?" Name
   | InfixCommandExpression QuotedName CommandExpression
   | InfixCommandExpression "is" PredicateTypeExpression
-  | InfixCommandExpression ("is?" | "is_not?") (CommandExpression | BuiltinTypeExpression)
+  | InfixCommandExpression "is?" (CommandExpression | BuiltinTypeExpression)
   | InfixCommandExpression "member_of" InfixCommandExpression
   | InfixCommandExpression "satisfies" InfixCommandExpression
   | "?" "is" PredicateTypeExpression
@@ -1199,7 +1198,7 @@ SpecOrPredicateExpression ::=
   | InfixCommandExpression QuotedName "?" Name
   | InfixCommandExpression QuotedName CommandExpression
   | InfixCommandExpression "is" PredicateTypeExpression
-  | InfixCommandExpression ("is?" | "is_not?") (CommandExpression | BuiltinTypeExpression)
+  | InfixCommandExpression "is?" (CommandExpression | BuiltinTypeExpression)
   | InfixCommandExpression "member_of" InfixCommandExpression
   | InfixCommandExpression "satisfies" InfixCommandExpression
   | "?" "is" PredicateTypeExpression
@@ -1441,8 +1440,8 @@ The old grammar drafts implied several forms that the current code does not acce
   arbitrary symbolic operators remain infix except for arithmetic unary `+`/`-`
 - infix commands have their own precedence level below equality and arithmetic
 - expression-level `is` accepts ordinary command, built-in, function, tuple,
-  set, and refined type expressions; `is?` and `is_not?` accept ordinary,
-  refined, or built-in command predicates
+  set, and refined type expressions; `is?` accepts ordinary, refined, or
+  built-in command predicates
 
 ## Current Implementation Notes and Footguns
 

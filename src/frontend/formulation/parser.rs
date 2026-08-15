@@ -181,7 +181,6 @@ fn token_literal(token: &Token) -> &'static str {
         Token::BothCaret => ":^:",
         Token::LeftCaret => ":^",
         Token::RightCaret => "^:",
-        Token::IsNotPredicate => "is_not?",
         Token::IsPredicate => "is?",
         Token::Is => "is",
         Token::Via => "via",
@@ -2915,7 +2914,7 @@ fn parse_two_dimensional_variadic_expression(
         }
     }
 
-    // Reuse the ordinary grammar for `is`, `is?`, `is_not?`, and quoted-spec
+    // Reuse the ordinary grammar for `is`, `is?`, and quoted-spec
     // suffixes, replacing only its synthetic scalar subject with the matrix
     // selection parsed above.
     let parsed =
@@ -2937,14 +2936,8 @@ fn parse_two_dimensional_variadic_expression(
         ExpressionKind::IsPredicate { command, .. } => {
             ExpressionKind::IsPredicate { subject, command }
         }
-        ExpressionKind::IsNotPredicate { command, .. } => {
-            ExpressionKind::IsNotPredicate { subject, command }
-        }
         ExpressionKind::IsBuiltinPredicate { ty, .. } => {
             ExpressionKind::IsBuiltinPredicate { subject, ty }
-        }
-        ExpressionKind::IsNotBuiltinPredicate { ty, .. } => {
-            ExpressionKind::IsNotBuiltinPredicate { subject, ty }
         }
         _ => return Ok(None),
     };
@@ -3580,12 +3573,6 @@ fn parse_set_target_binding_name(input: &str) -> Result<String, ParseError> {
 }
 
 fn parse_refined_predicate_expression(input: &str) -> Option<Result<Expression, ParseError>> {
-    if let Some(expression) =
-        parse_refined_predicate_expression_with_operator(input, " is_not? ", false)
-    {
-        return Some(expression);
-    }
-
     parse_refined_predicate_expression_with_operator(input, " is? ", true)
 }
 
@@ -5664,11 +5651,8 @@ mod tests {
         let spec_predicate =
             parse_expression(r#"x "in"? X"#).expect("expected spec predicate expression");
         let predicate = parse_expression(r#"x is? \even"#).expect("expected predicate expression");
-        let negative = parse_expression(r#"x is_not? \odd"#).expect("expected negative predicate");
         let builtin_predicate =
             parse_expression(r#"\function is? \\type"#).expect("expected builtin predicate");
-        let negative_builtin_predicate = parse_expression(r#"\sqrt is_not? \\type"#)
-            .expect("expected negative builtin predicate");
         let refined_predicate = parse_expression(r#"f is? \(injective)::function"#)
             .expect("expected refined predicate");
 
@@ -5684,16 +5668,8 @@ mod tests {
         ));
         assert!(matches!(predicate.kind, ExpressionKind::IsPredicate { .. }));
         assert!(matches!(
-            negative.kind,
-            ExpressionKind::IsNotPredicate { .. }
-        ));
-        assert!(matches!(
             builtin_predicate.kind,
             ExpressionKind::IsBuiltinPredicate { .. }
-        ));
-        assert!(matches!(
-            negative_builtin_predicate.kind,
-            ExpressionKind::IsNotBuiltinPredicate { .. }
         ));
         assert!(matches!(
             refined_predicate.kind,

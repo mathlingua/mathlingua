@@ -5991,9 +5991,6 @@ Documented:
 
     Theorem:
     then: \set is? \\type
-
-    Theorem:
-    then: \sqrt is_not? \\type
     "#,
         )
         .unwrap();

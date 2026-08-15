@@ -81,9 +81,6 @@ x is \type{A}
 x is? \even
 
 
-x is_not? \odd
-
-
 \set
 
 

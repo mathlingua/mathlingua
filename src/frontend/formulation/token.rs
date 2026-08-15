@@ -127,8 +127,6 @@ pub enum Token {
         priority = 1
     )]
     RightSpecialOperator(String),
-    #[token("is_not?")]
-    IsNotPredicate,
     #[token("is?")]
     IsPredicate,
     #[token("is")]

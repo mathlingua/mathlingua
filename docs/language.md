@@ -136,7 +136,7 @@ Placeholders are used in forms and declarations. Magnetic placeholders are used
 for function-like forms that bind one placeholder with special rendering
 behavior, such as `f(x__)`.
 
-The exact spellings `is`, `is?`, `is_not?`, and `via` are reserved by the
+The exact spellings `is`, `is?`, and `via` are reserved by the
 lexer-driven formulation parser.
 
 ## Forms and Declarations
@@ -598,10 +598,10 @@ x_, y_ is \set
 
 The helper parser for `is` statements requires spaces around ` is `. The
 right-hand side can be an ordinary command type expression or a supported
-built-in type expression. Expression-level `is?` and `is_not?` accept command,
-refined-command, and supported built-in type predicates; the helper parser
-differs mainly in its subject syntax and in the refined-command variant used by
-theorem-style `given:` sections.
+built-in type expression. Expression-level `is?` accepts command, refined-command,
+and supported built-in type predicates; the helper parser differs mainly in its
+subject syntax and in the refined-command variant used by theorem-style `given:`
+sections.
 
 A spec statement uses a quoted operator:
 

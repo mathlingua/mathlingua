@@ -11,8 +11,9 @@ use std::path::{Path, PathBuf};
 /// *definitions*. A change to one of these re-versions the definitions it uses;
 /// other kinds (page content, people, resources, and theorem-like items) are
 /// versioned on their own content but never propagate.
-const DEFINITION_KINDS: [&str; 6] = [
+const DEFINITION_KINDS: [&str; 7] = [
     "Declares",
+    "Realizes",
     "Defines",
     "States",
     "Refines",

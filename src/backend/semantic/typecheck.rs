@@ -81,6 +81,9 @@ pub(super) fn collect_definition_type_metadata(
     collect_viewable_rules(item, &info, registry);
     collect_abstraction_rules(item, &info, registry);
     collect_collection_type_signature(item, &info, registry);
+    collect_abstract_declaration(item, header_shape, registry);
+    let mut info = info;
+    inherit_realized_component_types(item, &mut info, registry);
     collect_collection_body(item, header_shape, registry);
     collect_equivalence_class(item, header_shape, registry);
     registry.definition_summaries.insert(
@@ -92,6 +95,139 @@ pub(super) fn collect_definition_type_metadata(
     registry
         .type_infos
         .insert(header_shape.shape.signature.clone(), info);
+}
+
+/// Gives a realization the component types of the declaration it realizes.
+///
+/// Realizing a declaration means supplying values for the symbols it specified,
+/// so the components keep the types the declaration gave them while the
+/// realization's own `means:` says what they are. Copying the declaration's list
+/// wholesale also keeps the components in tuple order, which is how they are
+/// matched to a destructuring binding.
+fn inherit_realized_component_types(
+    item: &TopLevelItem,
+    info: &mut DefinitionTypeInfo,
+    registry: &SignatureRegistry,
+) {
+    let TopLevelItem::Realizes(group) = item else {
+        return;
+    };
+    let Some(definition) = group.realizes.argument.definition.as_ref() else {
+        return;
+    };
+    let Some(signature) = command_signature_from_key(&key_for_expression(definition)) else {
+        return;
+    };
+    let Some(declared) = registry.type_infos.get(&signature) else {
+        return;
+    };
+    if declared.component_types.is_empty() {
+        return;
+    }
+    info.component_types = declared.component_types.clone();
+    info.component_shapes = declared.component_shapes.clone();
+}
+
+/// Records what a `Declares:` marked `abstractly:` leaves for a `Realizes:` to
+/// supply: every `means:` item that states a specification but no value.
+fn collect_abstract_declaration(
+    item: &TopLevelItem,
+    header_shape: &HeaderShape,
+    registry: &mut SignatureRegistry,
+) {
+    let TopLevelItem::Declares(group) = item else {
+        return;
+    };
+    if !group.abstractly {
+        return;
+    }
+    let expressed = expresses_bound_symbols(&group.expresses);
+    let context = TypeContext::default();
+    let mut abstract_facts = Vec::new();
+    for statement in means_statements(&group.means) {
+        if !statement_is_abstract(statement, &expressed) {
+            continue;
+        }
+        abstract_facts.extend(facts_from_declaration_statement_in_context(
+            statement, &context,
+        ));
+    }
+
+    registry.abstract_declarations.insert(
+        header_shape.shape.signature.clone(),
+        AbstractDeclaration { abstract_facts },
+    );
+}
+
+/// The declaration statements a `means:` section states, skipping items that
+/// carry no statement of their own (a `have:` group).
+fn means_statements(
+    means: &Option<DeclaresMeansSection>,
+) -> impl Iterator<Item = &DeclarationStatement> {
+    means
+        .iter()
+        .flat_map(|means| means.arguments.iter())
+        .filter_map(means_item_statement)
+}
+
+fn means_item_statement(item: &IsOrViaItem) -> Option<&DeclarationStatement> {
+    match item {
+        IsOrViaItem::Declaration(statement) => Some(statement),
+        IsOrViaItem::Labeled { item, .. } => means_item_statement(item),
+        IsOrViaItem::IsVia(_) | IsOrViaItem::Have(_) => None,
+    }
+}
+
+/// Whether a `means:` item leaves its subject abstract: it states a type or
+/// specification but supplies no value, directly or through `expresses:`.
+fn statement_is_abstract(statement: &DeclarationStatement, expressed: &BTreeSet<String>) -> bool {
+    statement.definition.is_none()
+        && statement.relation.is_some()
+        && !declaration_subject_keys(statement)
+            .iter()
+            .all(|subject| expressed.contains(subject))
+}
+
+/// The symbols an `expresses:` section supplies a value for.
+fn expresses_bound_symbols(expresses: &Option<ExpressesSection>) -> BTreeSet<String> {
+    let mut bound = BTreeSet::new();
+    let Some(expresses) = expresses else {
+        return bound;
+    };
+    for clause in &expresses.arguments {
+        collect_clause_bound_symbols(clause, &mut bound);
+    }
+    bound
+}
+
+/// The symbols a clause supplies a value for. A `piecewise:` group defines the
+/// mapping its branches assign to, so its own assignments count too.
+fn collect_clause_bound_symbols(clause: &Clause, bound: &mut BTreeSet<String>) {
+    match clause {
+        Clause::Declaration(statement) => {
+            if statement.definition.is_some() {
+                bound.extend(declaration_subject_keys(statement));
+            }
+        }
+        Clause::Expression(expression) => {
+            if let ExpressionKind::Binary { operator, left, .. } = &expression.kind
+                && matches!(operator, BinaryOperator::Equality(_))
+            {
+                bound.insert(key_for_expression(left));
+            }
+        }
+        Clause::Piecewise(group) => {
+            for clause in &group.then.arguments {
+                collect_clause_bound_symbols(clause, bound);
+            }
+            if let Some(else_) = &group.else_ {
+                for clause in &else_.arguments {
+                    collect_clause_bound_symbols(clause, bound);
+                }
+            }
+        }
+        _ => {}
+    }
 }
 
 /// Records a set-defining command's body (`Declares: X := {x_ : ...} is \set`) so
@@ -180,6 +316,7 @@ fn target_shape_of_item(item: &TopLevelItem) -> TargetShape {
     match item {
         TopLevelItem::Defines(group) => defines_target_shape(&group.defines.argument),
         TopLevelItem::Declares(group) => is_subject_shape(&group.declares.argument.subject),
+        TopLevelItem::Realizes(group) => is_subject_shape(&group.realizes.argument.subject),
         TopLevelItem::Refines(group) => group
             .refines
             .argument
@@ -604,6 +741,7 @@ fn definition_type_info(
             Some(&group.defines),
             group.means.as_ref(),
             group.extends.as_ref(),
+            None,
             registry,
         )),
         TopLevelItem::Declares(group) => Some(type_info_from_parts(
@@ -616,6 +754,20 @@ fn definition_type_info(
             None,
             None,
             None,
+            group.means.as_ref(),
+            registry,
+        )),
+        TopLevelItem::Realizes(group) => Some(type_info_from_parts(
+            header_shape,
+            &group.heading,
+            group.using.as_ref(),
+            None,
+            group.when.as_ref(),
+            Some(&group.realizes.argument),
+            None,
+            None,
+            None,
+            group.means.as_ref(),
             registry,
         )),
         TopLevelItem::Refines(group) => Some(type_info_from_parts(
@@ -624,6 +776,7 @@ fn definition_type_info(
             group.using.as_ref(),
             None,
             group.when.as_ref(),
+            None,
             None,
             None,
             None,
@@ -640,6 +793,7 @@ fn definition_type_info(
             None,
             None,
             None,
+            None,
             registry,
         )),
         TopLevelItem::Axiom(group) => group.heading.as_ref().map(|heading| {
@@ -648,6 +802,7 @@ fn definition_type_info(
                 heading,
                 None,
                 group.given.as_ref(),
+                None,
                 None,
                 None,
                 None,
@@ -667,6 +822,7 @@ fn definition_type_info(
                 None,
                 None,
                 None,
+                None,
                 registry,
             )
         }),
@@ -681,6 +837,7 @@ fn definition_type_info(
                 None,
                 None,
                 None,
+                None,
                 registry,
             )
         }),
@@ -690,6 +847,7 @@ fn definition_type_info(
             group.using.as_ref(),
             None,
             group.when.as_ref(),
+            None,
             None,
             None,
             None,
@@ -710,6 +868,7 @@ fn type_info_from_parts(
     defines: Option<&DefinesSection>,
     defines_means: Option<&DefinesMeansSection>,
     extends: Option<&ExtendsSection>,
+    declares_means: Option<&DeclaresMeansSection>,
     registry: &SignatureRegistry,
 ) -> DefinitionTypeInfo {
     let described = defines.map(|defines| &defines.argument);
@@ -770,12 +929,22 @@ fn type_info_from_parts(
         outputs.push(context.normalize_fact(&fact));
     }
 
-    let component_types = defines
-        .map(|defines| component_type_facts(defines, extends, defines_means, &context, registry))
-        .unwrap_or_default();
-    let component_shapes = described
-        .map(defines_target_component_shapes)
-        .unwrap_or_default();
+    let component_types = match (defines, declares) {
+        (Some(defines), _) => {
+            component_type_facts(defines, extends, defines_means, &context, registry)
+        }
+        // A `Declares:`/`Realizes:` takes its component types from `means:`, so a
+        // value of the declaration can be destructured the same way.
+        (None, Some(statement)) => {
+            declares_component_type_facts(statement, declares_means, &context)
+        }
+        (None, None) => Vec::new(),
+    };
+    let component_shapes = match (described, declares) {
+        (Some(target), _) => defines_target_component_shapes(target),
+        (None, Some(statement)) => declaration_component_shapes(statement),
+        (None, None) => Vec::new(),
+    };
     let set_element_target = described.and_then(defines_target_set_target).cloned();
     let set_element_types = set_element_target
         .as_ref()
@@ -957,6 +1126,62 @@ fn component_type_facts(
                 .map(|fact| fact_context.normalize_fact(fact))
         })
         .collect()
+}
+
+/// Type facts for the components of a destructuring `Declares:`/`Realizes:`
+/// target, in tuple order, taken from the group's `means:`.
+///
+/// This is the `Declares` counterpart of [`component_type_facts`]: it is what
+/// lets `Y ::= (N, 0, succ) := \naturals` type `N`, `0` and `succ`.
+fn declares_component_type_facts(
+    statement: &DeclarationStatement,
+    means: Option<&DeclaresMeansSection>,
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    let component_names = declaration_component_names(statement);
+    if component_names.is_empty() {
+        return Vec::new();
+    }
+
+    let mut fact_context = context.clone();
+    for item in means.into_iter().flat_map(|means| means.arguments.iter()) {
+        for fact in facts_from_is_or_via_item_in_context(item, &fact_context) {
+            fact_context.add_fact(fact);
+        }
+    }
+
+    component_names
+        .iter()
+        .filter_map(|name| {
+            fact_context
+                .facts
+                .iter()
+                .find(|fact| fact_subject(fact) == name)
+                .map(|fact| fact_context.normalize_fact(fact))
+        })
+        .collect()
+}
+
+/// The tuple form a declaration destructures, e.g. `(N, 0, succ(n_))` for
+/// `Nb ::= (N, 0, succ(n_))`.
+fn declaration_tuple_form(statement: &DeclarationStatement) -> Option<&TupleForm> {
+    statement
+        .expansion
+        .as_ref()
+        .and_then(is_subject_first_form)
+        .and_then(form_or_declaration_tuple_form)
+}
+
+fn declaration_component_names(statement: &DeclarationStatement) -> Vec<String> {
+    declaration_tuple_form(statement)
+        .map(tuple_form_component_names)
+        .unwrap_or_default()
+}
+
+fn declaration_component_shapes(statement: &DeclarationStatement) -> Vec<TargetShape> {
+    declaration_tuple_form(statement)
+        .map(tuple_form_component_shapes)
+        .unwrap_or_default()
 }
 
 /// The type facts one subtype clause states.
@@ -1364,6 +1589,7 @@ fn enables_section(item: &TopLevelItem) -> Option<&EnablesSection> {
     match item {
         TopLevelItem::Defines(group) => group.enables.as_ref(),
         TopLevelItem::Declares(group) => group.enables.as_ref(),
+        TopLevelItem::Realizes(group) => group.enables.as_ref(),
         TopLevelItem::Refines(group) => group.enables.as_ref(),
         TopLevelItem::States(group) => group.enables.as_ref(),
         _ => None,
@@ -1374,6 +1600,7 @@ fn requires_section(item: &TopLevelItem) -> Option<&RequiresSection> {
     match item {
         TopLevelItem::Defines(group) => group.requires.as_ref(),
         TopLevelItem::Declares(group) => group.requires.as_ref(),
+        TopLevelItem::Realizes(group) => group.requires.as_ref(),
         TopLevelItem::Refines(group) => group.requires.as_ref(),
         TopLevelItem::States(group) => group.requires.as_ref(),
         _ => None,
@@ -1867,7 +2094,7 @@ fn validate_top_level_item_types(
                 &mut context,
                 registry,
             );
-            assume_optional_means(
+            assume_optional_defines_means(
                 &group.means,
                 &mut context,
                 path,
@@ -1973,7 +2200,9 @@ fn validate_top_level_item_types(
                 &mut context,
                 registry,
             );
+            assume_optional_means(&group.means, &mut context, path, locator, registry, event_log);
             validate_declares_target_symbol_specifications(group, path, locator, event_log);
+            validate_declares_means_items(group, path, locator, event_log);
             validate_optional_requires(
                 &group.requires,
                 &context,
@@ -1984,22 +2213,72 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
-            if let Some(expresses) = &group.expresses {
-                for clause in &expresses.arguments {
-                    if let Clause::Declaration(statement) = clause {
-                        assume_declaration_statement(
-                            statement,
-                            &mut context,
-                            path,
-                            locator,
-                            registry,
-                            event_log,
-                        );
-                    } else {
-                        check_clause(clause, &context, path, locator, registry, event_log);
-                    }
-                }
-            }
+            assume_optional_expresses(
+                &group.expresses,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+        }
+        TopLevelItem::Realizes(group) => {
+            let mut context = TypeContext::default();
+            declare_header_symbols(&group.heading, &mut context, registry);
+            declare_declaration_statement_subjects(&group.realizes.argument, &mut context);
+            assume_optional_using(
+                &group.using,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            validate_when_section(
+                &group.when,
+                &header_when_parameters(&group.heading),
+                path,
+                locator,
+                event_log,
+            );
+            assume_optional_clauses(
+                &group.when,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            assume_destructured_parameter_components(&group.heading, &mut context, registry);
+            assume_realized_declaration_components(group, &mut context, registry);
+            assume_optional_means(&group.means, &mut context, path, locator, registry, event_log);
+            validate_realizes_target(group, path, locator, registry, event_log);
+            validate_concrete_means_items(
+                &group.means,
+                &group.expresses,
+                "leave it abstract in the declaration this realizes",
+                path,
+                locator,
+                event_log,
+            );
+            validate_optional_requires(
+                &group.requires,
+                &context,
+                None,
+                None,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            assume_optional_expresses(
+                &group.expresses,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
         }
         TopLevelItem::Refines(group) => {
             let mut context = TypeContext::default();
@@ -2219,6 +2498,7 @@ fn anchor_top_level_item(item: &TopLevelItem, locator: &mut SourceLocator<'_>) {
     let heading = match item {
         TopLevelItem::Defines(group) => Some(&group.heading),
         TopLevelItem::Declares(group) => Some(&group.heading),
+        TopLevelItem::Realizes(group) => Some(&group.heading),
         TopLevelItem::Refines(group) => Some(&group.heading),
         TopLevelItem::States(group) => Some(&group.heading),
         TopLevelItem::Axiom(group) => group.heading.as_ref(),
@@ -2466,6 +2746,197 @@ fn check_refines_marker(
                 );
             }
         }
+    }
+}
+
+/// Reports each `means:` item of a non-abstract `Declares:` that states a type
+/// but supplies no value.
+///
+/// A concrete declaration has to say what its parts *are*, either directly with
+/// `:=` or indirectly in `expresses:` (`C is \real.function` plus a `piecewise:`
+/// that defines `C`). A specification with neither is what `abstractly:` is for:
+/// it leaves the symbol for a `Realizes:` to supply.
+fn validate_declares_means_items(
+    group: &DeclaresGroup,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    if group.abstractly {
+        return;
+    }
+    validate_concrete_means_items(
+        &group.means,
+        &group.expresses,
+        "mark this `Declares:` `abstractly:`",
+        path,
+        locator,
+        event_log,
+    );
+}
+
+/// Reports each `means:` item of a group that must be concrete — a `Declares:`
+/// without `abstractly:`, or a `Realizes:` — that states a specification but
+/// supplies no value.
+fn validate_concrete_means_items(
+    means: &Option<DeclaresMeansSection>,
+    expresses: &Option<ExpressesSection>,
+    remedy: &str,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let expressed = expresses_bound_symbols(expresses);
+    for statement in means_statements(means) {
+        if statement.definition.is_none() && statement.relation.is_none() {
+            for subject in declaration_subject_keys(statement) {
+                emit_error(
+                    event_log,
+                    path,
+                    locator.locate_symbol(&subject),
+                    format!(
+                        "`means:` item `{subject}` must either define its subject with `:=` or state its type"
+                    ),
+                );
+            }
+            continue;
+        }
+        if !statement_is_abstract(statement, &expressed) {
+            continue;
+        }
+        for subject in declaration_subject_keys(statement) {
+            emit_error(
+                event_log,
+                path,
+                locator.locate_symbol(&subject),
+                format!(
+                    "`{subject}` states a specification but no value; define it with `:=`, define it in `expresses:`, or {remedy}"
+                ),
+            );
+        }
+    }
+}
+
+/// The abstract declaration a `Realizes:` target names, if it names one.
+///
+/// The target is written `Realizes: Nb := \naturals` — a `:=` because a
+/// `Declares:` introduces a value, where a `Defines:` type would be named with
+/// `is`.
+fn realized_declaration<'a>(
+    group: &RealizesGroup,
+    registry: &'a SignatureRegistry,
+) -> Option<(String, &'a AbstractDeclaration)> {
+    let definition = group.realizes.argument.definition.as_ref()?;
+    let signature = command_signature_from_key(&key_for_expression(definition))?;
+    let declaration = registry.abstract_declarations.get(&signature)?;
+    Some((signature, declaration))
+}
+
+/// Validates that a `Realizes:` names an abstract declaration and supplies every
+/// symbol that declaration left abstract.
+fn validate_realizes_target(
+    group: &RealizesGroup,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let statement = &group.realizes.argument;
+    let subject = primary_subject_key(&statement.subject);
+    let Some(definition) = &statement.definition else {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&subject),
+            "A `Realizes:` must name the declaration it realizes with `:=`, as in `Realizes: Nb := \\naturals`".to_owned(),
+        );
+        return;
+    };
+
+    let key = key_for_expression(definition);
+    let Some(signature) = command_signature_from_key(&key) else {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&subject),
+            format!("`Realizes:` must name a command; `{key}` is not one"),
+        );
+        return;
+    };
+
+    if registry.abstract_declarations.contains_key(&signature) {
+        validate_realized_symbols(group, &signature, path, locator, registry, event_log);
+        return;
+    }
+
+    // The command exists but is the wrong kind, or does not exist at all — the
+    // reference walk reports the latter, so only the former is added here.
+    if let Some(entry) = registry.definitions.get(&signature) {
+        let label = entry.kind.label();
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&subject),
+            format!(
+                "`Realizes:` must name a `Declares:` marked `abstractly:`; `{key}` is a `{label}:`"
+            ),
+        );
+    }
+}
+
+/// Reports each symbol the realized declaration left abstract that this
+/// `Realizes:` does not supply.
+fn validate_realized_symbols(
+    group: &RealizesGroup,
+    signature: &str,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let Some(declaration) = registry.abstract_declarations.get(signature) else {
+        return;
+    };
+    let realized = realized_symbols(group);
+    let subject = primary_subject_key(&group.realizes.argument.subject);
+    for fact in &declaration.abstract_facts {
+        let abstract_symbol = fact_subject(fact);
+        if realized.contains(abstract_symbol) {
+            continue;
+        }
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(&subject),
+            format!(
+                "Missing realization for abstract symbol `{abstract_symbol}`; a `Realizes:` must supply every symbol its declaration leaves abstract"
+            ),
+        );
+    }
+}
+
+/// The symbols a `Realizes:` supplies, from its `means:` items and `expresses:`.
+fn realized_symbols(group: &RealizesGroup) -> BTreeSet<String> {
+    let mut realized = expresses_bound_symbols(&group.expresses);
+    for statement in means_statements(&group.means) {
+        realized.extend(declaration_subject_keys(statement));
+    }
+    realized
+}
+
+/// Brings the realized declaration's abstract facts into scope, so a `means:`
+/// item can be checked against the specification it is realizing.
+fn assume_realized_declaration_components(
+    group: &RealizesGroup,
+    context: &mut TypeContext,
+    registry: &SignatureRegistry,
+) {
+    let Some((_, declaration)) = realized_declaration(group, registry) else {
+        return;
+    };
+    for fact in &declaration.abstract_facts {
+        context.declare_name(fact_subject(fact));
+        context.add_fact(fact.clone());
     }
 }
 
@@ -2890,7 +3361,45 @@ fn assume_optional_using(
     }
 }
 
+/// Assumes and checks the items of a `Declares:`/`Realizes:` `means:` section.
 fn assume_optional_means(
+    means: &Option<DeclaresMeansSection>,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    if let Some(means) = means {
+        for item in &means.arguments {
+            assume_is_or_via_item(item, context, path, locator, registry, event_log);
+        }
+    }
+}
+
+/// Assumes an `expresses:` section: declaration clauses introduce their symbols
+/// and facts, and every other clause is checked in place.
+fn assume_optional_expresses(
+    expresses: &Option<ExpressesSection>,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let Some(expresses) = expresses else {
+        return;
+    };
+    for clause in &expresses.arguments {
+        if let Clause::Declaration(statement) = clause {
+            assume_declaration_statement(statement, context, path, locator, registry, event_log);
+        } else {
+            check_clause(clause, context, path, locator, registry, event_log);
+        }
+    }
+}
+
+fn assume_optional_defines_means(
     means: &Option<DefinesMeansSection>,
     context: &mut TypeContext,
     path: &Path,
@@ -4051,12 +4560,32 @@ fn validate_declares_target_symbol_specifications(
         locator,
         event_log,
     );
+    collect_means_bindings(
+        &group.means,
+        &mut covered,
+        &mut assigned,
+        path,
+        locator,
+        event_log,
+    );
+    // A destructuring subject is determined by its components, so once `means:`
+    // supplies each of them the subject itself needs no separate definition.
+    if group.means.is_some()
+        && let Some(expansion) = &group.declares.argument.expansion
+    {
+        let mut components = BTreeSet::new();
+        collect_is_subject_target_symbols(expansion, &mut components);
+        if !components.is_empty() && components.iter().all(|name| covered.contains(name)) {
+            covered.extend(declaration_subject_keys(&group.declares.argument));
+        }
+    }
 
     // The `Declares:` value is assigned but states no type — a bare `X := {…}` with no
     // `is` and no top-level `\ty@value` build. Report that precisely (and mark the
     // targets covered so the generic "missing definition" message does not also fire).
     if group.declares.argument.definition.is_some()
         && !declaration_states_type(&group.declares.argument)
+        && group.means.is_none()
     {
         for symbol in declaration_target_symbols(&group.declares.argument) {
             if covered.insert(symbol.clone()) {
@@ -4075,6 +4604,41 @@ fn validate_declares_target_symbol_specifications(
 
     let symbols = declaration_target_symbols(&group.declares.argument);
     validate_declares_target_symbol_bindings(&symbols, &covered, path, locator, event_log);
+}
+
+/// Records the symbols a `means:` section accounts for.
+///
+/// A `:=` item defines its subject outright. A specification item (`N is \set`)
+/// also counts: in an abstract declaration the symbol is deliberately left for a
+/// `Realizes:`, and in a concrete one the missing value is reported precisely by
+/// [`validate_concrete_means_items`] rather than as a bare missing definition.
+fn collect_means_bindings(
+    means: &Option<DeclaresMeansSection>,
+    covered: &mut BTreeSet<String>,
+    assigned: &mut HashSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    for statement in means_statements(means) {
+        if statement.definition.is_some() {
+            // A `means:` item names one symbol and gives it a value, so its
+            // subject is the binding; a destructuring item also binds the parts
+            // its value supplies.
+            let symbols = if statement.expansion.is_some() {
+                direct_definition_binding_symbols(statement)
+            } else {
+                declaration_subject_keys(statement)
+            };
+            for symbol in symbols {
+                record_declares_binding(&symbol, covered, assigned, path, locator, event_log);
+            }
+            continue;
+        }
+        if statement.relation.is_some() {
+            covered.extend(declaration_subject_keys(statement));
+        }
+    }
 }
 
 fn validate_refines_target_symbol_specifications(
@@ -6867,14 +7431,29 @@ fn assume_declaration_statement(
 /// what lets a theorem `given: M ::= (X, *) is \magma` use `X` and `*`. Only
 /// `::=` introduces symbols; `:=` requires its right-hand side to already be in
 /// scope, so it is deliberately not handled here.
+/// The signature whose component types a destructuring binding draws on: the
+/// `is` type when the binding states one, otherwise the command its `:=` value
+/// comes from.
+fn destructured_value_signature(statement: &DeclarationStatement) -> Option<String> {
+    if let Some(DeclarationRelation::Is(ty)) = &statement.relation {
+        return key_for_type_expression(ty).map(|(_, signature)| signature);
+    }
+    let definition = statement.definition.as_ref()?;
+    command_signature_from_key(&key_for_expression(definition))
+}
+
+/// Brings the components of a destructuring binding into scope with their types.
+///
+/// The type is reached either through an `is` relation — `Y ::= (X, *) is \magma`
+/// — or, when the value comes from a `Declares:`/`Realizes:` command, through the
+/// `:=` that produces it: `Nb ::= (N, 0, succ) := \von.neumann.naturals`. The
+/// second spelling is how a declaration's value is written, so a realization's
+/// components are reached the same way an abstract declaration's are.
 fn assume_destructured_declaration_components(
     statement: &DeclarationStatement,
     context: &mut TypeContext,
     registry: &SignatureRegistry,
 ) {
-    let Some(DeclarationRelation::Is(ty)) = &statement.relation else {
-        return;
-    };
     let component_names = statement
         .expansion
         .as_ref()
@@ -6885,7 +7464,7 @@ fn assume_destructured_declaration_components(
     if component_names.is_empty() {
         return;
     }
-    let Some((_, signature)) = key_for_type_expression(ty) else {
+    let Some(signature) = destructured_value_signature(statement) else {
         return;
     };
     let Some(info) = registry.type_infos.get(&signature) else {

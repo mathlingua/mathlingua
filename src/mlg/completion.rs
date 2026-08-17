@@ -116,8 +116,28 @@ const GROUPS: &[GroupSpec] = &[
         head: "Declares",
         sections: &[
             ("Declares", true),
+            ("abstractly", false),
             ("using", false),
             ("when", false),
+            ("means", false),
+            ("expresses", false),
+            ("Requires", false),
+            ("Enables", false),
+            ("Documented", false),
+            ("Justification", false),
+            ("Aliases", false),
+            ("References", false),
+            ("Metadata", false),
+            ("Id", false),
+        ],
+    },
+    GroupSpec {
+        head: "Realizes",
+        sections: &[
+            ("Realizes", true),
+            ("using", false),
+            ("when", false),
+            ("means", false),
             ("expresses", false),
             ("Requires", false),
             ("Enables", false),
@@ -926,8 +946,10 @@ mod tests {
         let text = "[\\f]\nDeclares: f(x)\n\nId: \"x\"";
         // cursor on the blank line 2 (0-based), column 0
         let got = labels(&complete(text, 2, 0));
-        assert_eq!(got.first().map(String::as_str), Some("using"));
+        assert_eq!(got.first().map(String::as_str), Some("abstractly"));
+        assert!(got.contains(&"using".to_string()));
         assert!(got.contains(&"when".to_string()));
+        assert!(got.contains(&"means".to_string()));
         assert!(got.contains(&"Documented".to_string()));
         // the head itself is not re-offered
         assert!(!got.contains(&"Declares".to_string()));

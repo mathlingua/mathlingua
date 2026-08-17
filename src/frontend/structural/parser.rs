@@ -2417,6 +2417,7 @@ pub(in crate::frontend::structural::parser) fn parse_top_level_group(
         "Disambiguates" => parse_disambiguates(group, tracker).map(TopLevelItem::Disambiguates),
         "Defines" => parse_defines(group, tracker).map(TopLevelItem::Defines),
         "Declares" => parse_declares(group, tracker).map(TopLevelItem::Declares),
+        "Realizes" => parse_realizes(group, tracker).map(TopLevelItem::Realizes),
         "Refines" => parse_refines(group, tracker).map(TopLevelItem::Refines),
         "States" => parse_states(group, tracker).map(TopLevelItem::States),
         "Axiom" => parse_axiom(group, tracker).map(TopLevelItem::Axiom),
@@ -2982,8 +2983,10 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
         tracker,
         &[
             "Declares",
+            "abstractly?",
             "using?",
             "when?",
+            "means?",
             "expresses?",
             "Requires?",
             "Enables?",
@@ -3007,6 +3010,7 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
                 parse_ordinary_declaration_statement,
             )?,
         },
+        abstractly: parse_marker_section(&sections, "abstractly", tracker),
         using: sections.get("using").copied().and_then(|section| {
             parse_required_formulations(
                 section,
@@ -3019,6 +3023,10 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
+        }),
+        means: sections.get("means").copied().and_then(|section| {
+            parse_required_specify_items(section, tracker)
+                .map(|arguments| DeclaresMeansSection { arguments })
         }),
         expresses: sections.get("expresses").copied().and_then(|section| {
             parse_required_clauses(section, "expresses", tracker)
@@ -3094,6 +3102,122 @@ fn parse_refinement_kind(
         (None, Some(_)) => Some(RefinementKind::Explicit),
         (None, None) => None,
     }
+}
+
+/// Reads a zero-argument marker section such as `abstractly:`, reporting any
+/// content it was given.
+fn parse_marker_section(
+    sections: &HashMap<String, &ProtoSection>,
+    label: &str,
+    tracker: &mut EventLog,
+) -> bool {
+    let Some(marker) = section(sections, label) else {
+        return false;
+    };
+    if marker.inline_argument.is_some() || !marker.arguments.is_empty() {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            marker.metadata.row,
+            format!("`{label}:` is a marker section and takes no arguments"),
+        );
+    }
+    true
+}
+
+/// Parses a command-backed `Realizes:` group.
+///
+/// A `Realizes:` supplies concrete values for the symbols an abstract
+/// `Declares:` left open. Its target names the declaration being realized
+/// (`Realizes: Nb := \naturals`), and it shares the rest of its sections with
+/// `Declares:`.
+pub(in crate::frontend::structural::parser) fn parse_realizes(
+    group: &ProtoGroup,
+    tracker: &mut EventLog,
+) -> Option<RealizesGroup> {
+    let heading = parse_required_command_heading(group, tracker)?;
+    let sections = identify_sections(
+        "Realizes",
+        &group.sections,
+        tracker,
+        &[
+            "Realizes",
+            "using?",
+            "when?",
+            "means?",
+            "expresses?",
+            "Requires?",
+            "Enables?",
+            "Documented?",
+            "Justification?",
+            "Aliases?",
+            "Writing?",
+            "References?",
+            "Metadata?",
+            "Id?",
+        ],
+    )?;
+
+    Some(RealizesGroup {
+        heading,
+        realizes: RealizesSection {
+            argument: parse_required_formulation(
+                section(&sections, "Realizes")?,
+                "Realizes",
+                tracker,
+                parse_ordinary_declaration_statement,
+            )?,
+        },
+        using: sections.get("using").copied().and_then(|section| {
+            parse_required_formulations(
+                section,
+                "using",
+                tracker,
+                parse_ordinary_declaration_statement,
+            )
+            .map(|arguments| UsingSection { arguments })
+        }),
+        when: sections.get("when").copied().and_then(|section| {
+            parse_required_clauses(section, "when", tracker)
+                .map(|arguments| WhenSection { arguments })
+        }),
+        means: sections.get("means").copied().and_then(|section| {
+            parse_required_specify_items(section, tracker)
+                .map(|arguments| DeclaresMeansSection { arguments })
+        }),
+        expresses: sections.get("expresses").copied().and_then(|section| {
+            parse_required_clauses(section, "expresses", tracker)
+                .map(|arguments| ExpressesSection { arguments })
+        }),
+        requires: sections.get("Requires").copied().and_then(|section| {
+            parse_required_groups(section, "Requires", tracker, parse_requires_item_group)
+                .map(|arguments| RequiresSection { arguments })
+        }),
+        enables: sections.get("Enables").copied().and_then(|section| {
+            parse_required_groups(section, "Enables", tracker, parse_enables_item_group)
+                .map(|arguments| EnablesSection { arguments })
+        }),
+        justification: sections.get("Justification").copied().and_then(|section| {
+            parse_required_groups(section, "Justification", tracker, parse_have_group)
+                .map(|arguments| JustificationSection { arguments })
+        }),
+        documented: sections.get("Documented").copied().and_then(|section| {
+            parse_required_groups(section, "Documented", tracker, parse_documented_item_group)
+                .map(|arguments| DocumentedSection { arguments })
+        }),
+        aliases: sections.get("Aliases").copied().and_then(|section| {
+            parse_required_groups(section, "Aliases", tracker, parse_alias_item_group)
+                .map(|arguments| AliasesSection { arguments })
+        }),
+        writing: parse_optional_item_writing(&sections, tracker),
+        references: sections.get("References").copied().and_then(|section| {
+            parse_required_resource_references(section, tracker)
+                .map(|arguments| ReferencesSection { arguments })
+        }),
+        metadata: sections.get("Metadata").copied().and_then(|section| {
+            parse_required_groups(section, "Metadata", tracker, parse_metadata_item_group)
+                .map(|arguments| MetadataSection { arguments })
+        }),
+    })
 }
 
 /// Parses a command-backed `Refines:` group.
@@ -5139,6 +5263,7 @@ then:
             "equivalent.text".to_owned(),
             "outline.text".to_owned(),
             "persons.text".to_owned(),
+            "realizes.text".to_owned(),
             "refines.text".to_owned(),
             "relations.text".to_owned(),
             "resources.text".to_owned(),

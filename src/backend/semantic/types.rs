@@ -338,6 +338,7 @@ impl EquivalenceClass {
 pub(super) enum DefinitionKind {
     Defines,
     Declares,
+    Realizes,
     Refines,
     States,
     Axiom,
@@ -351,6 +352,7 @@ impl DefinitionKind {
         match self {
             Self::Defines => "Defines",
             Self::Declares => "Declares",
+            Self::Realizes => "Realizes",
             Self::Refines => "Refines",
             Self::States => "States",
             Self::Axiom => "Axiom",
@@ -379,6 +381,9 @@ pub(super) struct SignatureRegistry {
     pub(super) viewable_rules: Vec<ViewableRule>,
     pub(super) abstraction_rules: Vec<AbstractionRule>,
     pub(super) collection_type_signatures: Vec<String>,
+    /// Maps an abstract `Declares:` signature — one marked `abstractly:` — to the
+    /// symbols it specifies but leaves for a `Realizes:` to supply.
+    pub(super) abstract_declarations: HashMap<String, AbstractDeclaration>,
     /// Maps a set-defining command signature (a `Declares` whose `:=` value is a
     /// set literal) to that set-builder body, so membership in a use of the
     /// command can be reduced to the body's element condition.
@@ -390,6 +395,17 @@ pub(super) struct SignatureRegistry {
     /// recorder off it keeps the walk's signatures unchanged; an ordinary check
     /// leaves it `None` and pays a null check per expression.
     pub(super) recorder: RefCell<Option<TypeRecorder>>,
+}
+
+/// A `Declares:` marked `abstractly:`, together with what a realization owes it.
+///
+/// The declaration states a specification for each abstract symbol but no value;
+/// a `Realizes:` of it must define every one of them.
+#[derive(Clone, Debug, Default)]
+pub(super) struct AbstractDeclaration {
+    /// The facts stated about symbols the declaration does not define, in source
+    /// order. Their subjects are exactly what a `Realizes:` must supply.
+    pub(super) abstract_facts: Vec<TypeFact>,
 }
 
 #[derive(Clone, Debug, Default)]

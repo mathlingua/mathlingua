@@ -270,7 +270,8 @@ An empty document is supported by the current implementation because `Document.i
 - **`Writing`** — `TopLevelWritingGroup`, heading: none. Sections: `Writing: WritingAlias+` (each alias is a double-quoted string of the form `"name :~> body"`; the LHS must be a `Name` and the body is raw LaTeX)
 - **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when: Clause+`/`to: Expression` branches, `else?: Expression`, `Documented?`, `Justification?`, `Aliases?`, `Writing?: "WritingAlias"+`, `References?`, `Metadata?`
 - **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DefinesTarget [via FormOrDeclaration]`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: ExtendsItem+`, `means?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `DefinesTarget` is tried as a `FormOrDeclaration` first, then as a `DeclarationStatement` whose `is` relation may name a refined command, allowing typed or value-bearing targets such as `X := value is \set`. That relation is what the definition extends (see `language.md`), and an `is` relation may be followed by `via <FormOrDeclaration>`, stored on the section rather than the target. An `ExtendsItem` is the same `DeclarationStatement [via FormOrDeclaration]` pair; the `extends?:` section spells out the same clauses and exists to allow more than one, so a target that states a relation and an `extends?:` section are mutually exclusive. `extends_clauses` in `structural::ast` normalizes the two spellings into one borrowed list that every consumer works from
-- **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclarationStatement`, `abstractly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `means?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `abstractly:` is stored as `DeclaresGroup::abstractly`; it marks the `means:` items that state a specification without a value as abstract, for a `RealizesGroup` to supply
+- **`Realizes`** — `RealizesGroup`, heading: command. Sections: `Realizes: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `means?: IsOrViaItem+`, `expresses?: Clause`, and the same support sections as `Declares`. The target names the realized declaration with `:=` (`Realizes: Nb := \naturals`), which must be a `Declares` marked `abstractly:`; `means:` must supply every symbol that declaration left abstract
 - **`Refines`** — `RefinesGroup`, heading: refined command or refined spec-infix command (for example, `[A \:(nonempty)::subset:/ B]`). Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
 - **`States`** — `StatesGroup`, heading: command. Sections: `States: OpenText*`, `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
@@ -750,8 +751,27 @@ Metadata?: <MetadataItemUnion>+
 ```group
 [CommandHeader]
 Declares: <DeclarationStatement>
+abstractly?:
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
+means?: <IsOrViaItemUnion>+
+expresses?: <ClauseUnion>
+Requires?: <RequiresItemUnion>+
+Enables?: <EnablesItemUnion>+
+Documented?: <DocumentedItemUnion>+
+Justification?: <HaveGroup>+
+Aliases?: <AliasItemUnion>+
+Writing?: "<WritingAlias>"+
+References?: <ResourceHeader>+
+Metadata?: <MetadataItemUnion>+
+```
+
+```group
+[CommandHeader]
+Realizes: <DeclarationStatement>
+using?: <DeclarationStatement>+
+when?: <ClauseUnion>+
+means?: <IsOrViaItemUnion>+
 expresses?: <ClauseUnion>
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+

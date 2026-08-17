@@ -1,0 +1,80 @@
+[\naturals]
+Declares: Nb ::= (N, 0, succ(n_))
+abstractly:
+using:
+. X is \set
+when:
+. X is \set
+means:
+. N is \set
+. 0 "in" N
+. succ is \function:on{N}:to{N}
+Requires:
+. capability: x_ "in" N :-> \\abstract
+Enables:
+. capability: plus(x_, y_) :=> x + y
+  written:
+  . "+"
+Documented:
+. called: "naturals"
+Justification:
+. [proof.label]
+  have:
+  . x = x
+  asserting:
+  . x = x
+Aliases:
+. [alias.expr]
+  alias: plus(x_, y_) :=> x + y
+  written:
+  . "+"
+References:
+. $book.naturals
+Metadata:
+. id: "meta"
+Id: "declares-abstract"
+
+[\von.neumann.naturals]
+Realizes: Nb := \naturals
+using:
+. X is \set
+when:
+. X is \set
+means:
+. N := \empty.set
+. 0 := \empty.set
+. succ(n_) := \empty.set
+expresses:
+. [logic.expr]
+  piecewise:
+  . "choose a representative"
+  if:
+  . x = x
+  then:
+  . x = x
+  else:
+  . y = y
+Requires:
+. capability: x_ "in" N :-> \\abstract
+Enables:
+. capability: plus(x_, y_) :=> x + y
+  written:
+  . "+"
+Documented:
+. called: "von Neumann naturals"
+Justification:
+. [proof.label]
+  have:
+  . x = x
+  asserting:
+  . x = x
+Aliases:
+. [alias.expr]
+  alias: plus(x_, y_) :=> x + y
+  written:
+  . "+"
+References:
+. $book.naturals
+Metadata:
+. id: "meta"
+Id: "realizes"

@@ -5,6 +5,80 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Abstract Declarations And `Realizes`
+
+`Declares` gains a `means:` section, immediately above `expresses:`, so a
+declaration whose target destructures a tuple can say what each part is:
+
+```text
+[\foo]
+Declares: X ::= (A, B, C)
+means:
+. A := ...
+. B := ...
+. C is \real.function
+expresses:
+. piecewise: ...
+```
+
+Every item must supply a **value** — directly with `:=`, or indirectly by
+stating a type in `means:` and defining it in `expresses:` (a `piecewise:` that
+says what `C` is). An item that states a specification and never defines it is
+an error unless the declaration is marked abstract.
+
+`abstractly:` is a new zero-argument marker placed immediately after `Declares:`.
+It lets a declaration describe a concrete thing with abstract parts: its
+`is`/`"op"` `means:` items are left open, for a realization to supply.
+
+```text
+[\naturals]
+Declares: Nb ::= (N, 0, succ(n_))
+abstractly:
+means:
+. N is \set
+. 0 "in" N
+. succ is \function:on{N}:to{N}
+```
+
+`Realizes` is a new top-level item that supplies them:
+
+```text
+[\von.neumann.naturals]
+Realizes: Nb := \naturals
+means:
+. N := ...
+. 0 := ...
+. succ(n_) := ...
+```
+
+The three definition kinds line up with a familiar hierarchy: a `Defines` is an
+interface, a `Declares` marked `abstractly:` is an abstract base class, and a
+`Declares` without it is a concrete one. The `:=` in the `Realizes:` target
+follows the general rule that a `Defines` names a type (`X is \foo`) while a
+`Declares` names a value (`Y := \bar`).
+
+Rules:
+
+- A `Realizes:` target must name a `Declares:` marked `abstractly:`
+  (``Realizes:`` must name a `Declares:` marked `abstractly:`; `\set` is a
+  `Defines:``).
+- Its `means:` must supply **every** symbol the declaration left abstract;
+  omitting one reports `Missing realization for abstract symbol `{symbol}``.
+- A realization's `means:` items must themselves be concrete, on the same rule
+  as a non-abstract `Declares:`.
+- A realization's components keep the types its declaration gave them, so
+  `Nb ::= (N, 0, succ) := \von.neumann.naturals` types `N`, `0` and `succ`
+  exactly as destructuring `\naturals` does. Destructuring now follows a `:=`
+  value's command as well as an `is` type, which is how a declaration's value is
+  written.
+- A destructuring `Declares:` subject counts as defined once `means:` supplies
+  each of its components, and an abstract declaration is exempt from the rule
+  that a `Declares:` value must state its type — `means:` states it instead.
+
+`Realizes` participates everywhere `Declares` does: it registers a command
+signature, requires an `Id:` (auto-inserted like any other item), renders as a
+card, is a definition kind for `mlg release`, and is offered by LSP completion.
+
 ## A Spec-Infix Heading's Left Operand Is Not A `when:` Parameter
 
 A spec-infix heading such as `[A \:subset:/ B]` is sugar for a command whose left

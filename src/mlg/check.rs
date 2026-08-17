@@ -4953,6 +4953,217 @@ then:
         );
     }
 
+    /// The shared prelude for the abstract-declaration tests: a set, a function
+    /// type, and a value to realize the naturals with.
+    const REALIZES_PRELUDE: &str = r#"[\set]
+    Defines: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [\function:on{A}:to{B}]
+    Defines: f(x__) is (_ "in" A) -> (_ "in" B)
+    when: A, B is \set
+    Documented:
+    . called: "function"
+
+    [\empty.set]
+    Declares: E := \set@{x : ...}
+    Documented:
+    . called: "empty set"
+
+    [\naturals]
+    Declares: Nb ::= (N, 0, succ(n_))
+    abstractly:
+    means:
+    . N is \set
+    . 0 "in" N
+    . succ is \function:on{N}:to{N}
+    Documented:
+    . called: "naturals"
+
+"#;
+
+    #[test]
+    fn check_accepts_a_realization_of_an_abstract_declaration() {
+        // A `Realizes:` supplies a value for every symbol its declaration left
+        // abstract, and the realized components keep the declaration's types —
+        // so destructuring either one proves the same facts.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("realizes.mlg");
+
+        write_mlg_fixture(
+            &file,
+            &format!(
+                r#"{REALIZES_PRELUDE}    [\von.neumann.naturals]
+    Realizes: Nb := \naturals
+    means:
+    . N := \empty.set
+    . 0 := \empty.set
+    . succ(n_) := \empty.set
+    Documented:
+    . called: "von Neumann naturals"
+
+    Theorem:
+    given: Nb ::= (N, 0, succ(n_)) := \naturals
+    then:
+    . N is? \set
+    . 0 "in"? N
+
+    Theorem:
+    given: Nb ::= (N, 0, succ(n_)) := \von.neumann.naturals
+    then:
+    . N is? \set
+    . 0 "in"? N
+    "#
+            ),
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("realizes.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_reports_an_abstract_symbol_a_realization_omits() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("incomplete-realization.mlg");
+
+        write_mlg_fixture(
+            &file,
+            &format!(
+                r#"{REALIZES_PRELUDE}    [\partial.naturals]
+    Realizes: Nb := \naturals
+    means:
+    . N := \empty.set
+    Documented:
+    . called: "partial naturals"
+    "#
+            ),
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("incomplete-realization.mlg")],
+            &mut event_log,
+        );
+
+        let messages = user_events(&event_log);
+        for symbol in ["0", "succ"] {
+            assert!(
+                messages.iter().any(|event| {
+                    event.as_message().is_some_and(|message| {
+                        message.message
+                            == format!(
+                                "Missing realization for abstract symbol `{symbol}`; a `Realizes:` must supply every symbol its declaration leaves abstract"
+                            )
+                    })
+                }),
+                "expected `{symbol}` to be reported: {messages:#?}"
+            );
+        }
+    }
+
+    #[test]
+    fn check_requires_a_realizes_target_to_name_an_abstract_declaration() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("wrong-realization.mlg");
+
+        write_mlg_fixture(
+            &file,
+            &format!(
+                r#"{REALIZES_PRELUDE}    [\not.a.declaration]
+    Realizes: Nb := \set
+    Documented:
+    . called: "not a declaration"
+    "#
+            ),
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("wrong-realization.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log).iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message
+                        == "`Realizes:` must name a `Declares:` marked `abstractly:`; `\\set` is a `Defines:`"
+                })
+            }),
+            "{:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_requires_a_concrete_declares_means_item_to_supply_a_value() {
+        // Without `abstractly:`, a `means:` item that only states a type leaves
+        // the symbol undefined; `expresses:` is the indirect way to define it.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("concrete-means.mlg");
+
+        write_mlg_fixture(
+            &file,
+            &format!(
+                r#"{REALIZES_PRELUDE}    [\concrete.pair]
+    Declares: P ::= (A, B)
+    means:
+    . A := \empty.set
+    . B is \set
+    Documented:
+    . called: "concrete pair"
+    "#
+            ),
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("concrete-means.mlg")],
+            &mut event_log,
+        );
+
+        let messages = user_events(&event_log);
+        assert!(
+            messages.iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message
+                        == "`B` states a specification but no value; define it with `:=`, define it in `expresses:`, or mark this `Declares:` `abstractly:`"
+                })
+            }),
+            "{messages:#?}"
+        );
+        // `A := ...` binds `A`, and binding every component binds the subject,
+        // so the undefined `B` is the only complaint.
+        assert!(
+            !messages.iter().any(|event| {
+                event
+                    .as_message()
+                    .is_some_and(|message| message.message.contains("Missing definition"))
+            }),
+            "{messages:#?}"
+        );
+    }
+
     #[test]
     fn check_accepts_refined_command_in_means() {
         // A `means:` item (like a `Defines:` target) may name a refined command

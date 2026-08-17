@@ -384,6 +384,7 @@ fn is_top_level_item_label(label: &str) -> bool {
             | "Disambiguates"
             | "Defines"
             | "Declares"
+            | "Realizes"
             | "Refines"
             | "States"
             | "Axiom"

@@ -661,7 +661,10 @@ parentheses), and its purpose.
 - **`Defines`** (command heading) — introduces a command for a mathematical
   form or typed/value-bearing declaration.
 - **`Declares`** (command heading) — declares a statement, specification, or type
-  fact.
+  fact; marked `abstractly:` it leaves parts of its value for a `Realizes` to
+  supply.
+- **`Realizes`** (command heading) — a concrete realization of a `Declares`
+  marked `abstractly:`.
 - **`Refines`** (refined command or refined spec-infix heading) — defines a
   refined command in terms of another command.
 - **`States`** (command heading) — defines a named statement with a `that:`
@@ -754,8 +757,9 @@ References:
 Metadata:
 ```
 
-(`Refines` uses `extends:`/`satisfies:` rather than `means:`; only `Defines`
-has a `means:` section.)
+(`Refines` uses `extends:`/`satisfies:` rather than `means:`. `Defines`,
+`Declares` and `Realizes` each have a `means:` section, with different rules for
+what its items may say — see below.)
 
 `Declares` introduces a command by an `is` or spec statement.
 
@@ -766,8 +770,76 @@ Documented:
 . called: "foo"
 ```
 
-It accepts `using:`, `when:`, `expresses:`, and the same support sections as
-`Defines`.
+It accepts `abstractly:`, `using:`, `when:`, `means:`, `expresses:`, and the same
+support sections as `Defines`.
+
+A declaration whose target destructures a tuple says what each part is in
+`means:`:
+
+```text
+[\foo]
+Declares: X ::= (A, B, C)
+means:
+. A := ...
+. B := ...
+. C is \real.function
+expresses:
+. piecewise: ...
+```
+
+Every item must supply a **value**, either directly with `:=` or indirectly:
+`C is \real.function` states the type and a `piecewise:` in `expresses:` says
+what `C` is. An item that states a specification and never defines it is an
+error (``\`C\` states a specification but no value; define it with \`:=\`, define
+it in \`expresses:\`, or mark this \`Declares:\` \`abstractly:\``).
+
+### Abstract declarations and `Realizes`
+
+`abstractly:` — a zero-argument marker placed immediately after `Declares:` —
+lets a declaration state a concrete thing with abstract parts. Its `is`/`"op"`
+`means:` items are then *left open* for a realization to supply:
+
+```text
+[\naturals]
+Declares: Nb ::= (N, 0, succ(n_))
+abstractly:
+means:
+. N is \set
+. 0 "in" N
+. succ is \function:on{N}:to{N}
+```
+
+A `Realizes` supplies them:
+
+```text
+[\von.neumann.naturals]
+Realizes: Nb := \naturals
+means:
+. N := ...
+. 0 := ...
+. succ(n_) := ...
+```
+
+The three definition kinds line up with a familiar hierarchy: a `Defines` is an
+interface, a `Declares` marked `abstractly:` is an abstract base class, and a
+`Declares` without it is a concrete one.
+
+- The `Realizes:` target names the declaration it realizes with `:=`, not `is`.
+  That is the general rule: a `Defines` names a **type**, so its values are
+  written `X is \foo`; a `Declares` names a **value**, so it is written
+  `Y := \bar`.
+- The named command must be a `Declares:` marked `abstractly:`
+  (``\`Realizes:\` must name a \`Declares:\` marked \`abstractly:\``).
+- The `means:` must supply **every** symbol the declaration left abstract;
+  omitting one is an error (``Missing realization for abstract symbol
+  \`{symbol}\``). As in a concrete `Declares`, a `means:` item may state a type
+  and leave the value to `expresses:`.
+- A realization's components keep the types its declaration gave them, so
+  destructuring a realized value types them exactly as destructuring the
+  abstract declaration does.
+
+`Realizes` accepts the same support sections as `Declares` (`using:`, `when:`,
+`means:`, `expresses:`, `Requires:`, `Enables:`, `Documented:`, and the rest).
 
 `Refines` introduces a refined command.
 

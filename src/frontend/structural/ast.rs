@@ -280,6 +280,8 @@ arguments_section!(UsingSection, DeclarationStatement);
 arguments_section!(WhenSection, Clause);
 arguments_section!(ExtendsSection, ExtendsItem);
 arguments_section!(DefinesMeansSection, IsOrViaItem);
+arguments_section!(DeclaresMeansSection, IsOrViaItem);
+argument_section!(RealizesSection, DeclarationStatement);
 arguments_section!(SatisfiesSection, Clause);
 arguments_section!(RequiresSection, RequiresItem);
 arguments_section!(EnablesSection, EnablesItem);
@@ -409,6 +411,7 @@ pub enum TopLevelItem {
     Disambiguates(DisambiguatesGroup),
     Defines(DefinesGroup),
     Declares(DeclaresGroup),
+    Realizes(RealizesGroup),
     Refines(RefinesGroup),
     States(StatesGroup),
     Axiom(AxiomGroup),
@@ -608,8 +611,37 @@ pub struct DefinesGroup {
 pub struct DeclaresGroup {
     pub heading: CommandHeader,
     pub declares: DeclaresSection,
+    /// The `abstractly:` marker, present when this declaration leaves parts of
+    /// its value for a [`RealizesGroup`] to supply.
+    pub abstractly: bool,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
+    pub means: Option<DeclaresMeansSection>,
+    pub expresses: Option<ExpressesSection>,
+    pub requires: Option<RequiresSection>,
+    pub enables: Option<EnablesSection>,
+    pub justification: Option<JustificationSection>,
+    pub documented: Option<DocumentedSection>,
+    pub aliases: Option<AliasesSection>,
+    pub writing: Option<ItemWritingSection>,
+    pub references: Option<ReferencesSection>,
+    pub metadata: Option<MetadataSection>,
+}
+
+/// A concrete realization of an abstract declaration.
+///
+/// `Realizes: Nb := \naturals` names the `Declares:` group marked `abstractly:`
+/// that it realizes, and its `means:` supplies a definition for every symbol
+/// that declaration left abstract. An abstract `Declares` is to a `Realizes`
+/// roughly what an abstract base class is to a concrete subclass; a `Defines`
+/// is the interface.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RealizesGroup {
+    pub heading: CommandHeader,
+    pub realizes: RealizesSection,
+    pub using: Option<UsingSection>,
+    pub when: Option<WhenSection>,
+    pub means: Option<DeclaresMeansSection>,
     pub expresses: Option<ExpressesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,

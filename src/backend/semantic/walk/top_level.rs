@@ -48,6 +48,22 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_declaration_statement(&group.declares.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
+            walk_optional_means(&group.means, visit);
+            if let Some(section) = &group.expresses {
+                for clause in &section.arguments {
+                    walk_clause(clause, visit);
+                }
+            }
+            walk_optional_requires(&group.requires, visit);
+            walk_optional_enables(&group.enables, visit);
+            walk_optional_aliases(&group.aliases, visit);
+            walk_optional_justification(&group.justification, visit);
+        }
+        TopLevelItem::Realizes(group) => {
+            walk_declaration_statement(&group.realizes.argument, visit);
+            walk_optional_is_or_specs(&group.using, visit);
+            walk_optional_clauses(&group.when, visit);
+            walk_optional_means(&group.means, visit);
             if let Some(section) = &group.expresses {
                 for clause in &section.arguments {
                     walk_clause(clause, visit);
@@ -153,6 +169,18 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
         | TopLevelItem::Topic(_)
         // `Text*` placeholders are opaque prose: no command references to validate.
         | TopLevelItem::TextItem(_) => {}
+    }
+}
+
+/// Walks the items of a `Declares:`/`Realizes:` `means:` section.
+fn walk_optional_means(
+    means: &Option<DeclaresMeansSection>,
+    visit: &mut impl FnMut(&SignatureShape),
+) {
+    if let Some(section) = means {
+        for item in &section.arguments {
+            walk_is_or_via_item(item, visit);
+        }
     }
 }
 

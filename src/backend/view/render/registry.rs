@@ -640,6 +640,7 @@ fn supports_resolved_group_heading(kind: &str) -> bool {
     matches!(
         kind,
         "Declares"
+            | "Realizes"
             | "Defines"
             | "Refines"
             | "States"
@@ -726,6 +727,11 @@ pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
             primary_declaration_statement_name(&group.declares.argument),
             group.documented.as_ref(),
         ),
+        TopLevelItem::Realizes(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
+            primary_declaration_statement_name(&group.realizes.argument),
+            group.documented.as_ref(),
+        ),
         TopLevelItem::Refines(group) => render_refines_entries(
             command_header_signatures(&group.heading),
             primary_declaration_statement_name(&group.refines.argument),
@@ -776,6 +782,14 @@ fn collect_provided_call_render_rules(item: &TopLevelItem, registry: &mut Render
                 collect_enables_provided_call_render_rules(enables, &owner_subject, registry);
             }
         }
+        TopLevelItem::Realizes(group) => {
+            if let Some(requires) = &group.requires {
+                collect_requires_provided_call_render_rules(requires, &owner_subject, registry);
+            }
+            if let Some(enables) = &group.enables {
+                collect_enables_provided_call_render_rules(enables, &owner_subject, registry);
+            }
+        }
         TopLevelItem::Refines(group) => {
             if let Some(requires) = &group.requires {
                 collect_requires_provided_call_render_rules(requires, &owner_subject, registry);
@@ -801,6 +815,9 @@ fn top_level_item_subject(item: &TopLevelItem) -> Option<String> {
         TopLevelItem::Defines(group) => primary_defines_target_name(&group.defines.argument),
         TopLevelItem::Declares(group) => {
             primary_declaration_statement_name(&group.declares.argument)
+        }
+        TopLevelItem::Realizes(group) => {
+            primary_declaration_statement_name(&group.realizes.argument)
         }
         TopLevelItem::Refines(group) => primary_declaration_statement_name(&group.refines.argument),
         _ => None,

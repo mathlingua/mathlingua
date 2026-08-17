@@ -123,6 +123,7 @@ fn documented_section(item: &TopLevelItem) -> Option<&DocumentedSection> {
         TopLevelItem::Disambiguates(group) => group.documented.as_ref(),
         TopLevelItem::Defines(group) => group.documented.as_ref(),
         TopLevelItem::Declares(group) => group.documented.as_ref(),
+        TopLevelItem::Realizes(group) => group.documented.as_ref(),
         TopLevelItem::Refines(group) => group.documented.as_ref(),
         TopLevelItem::States(group) => group.documented.as_ref(),
         TopLevelItem::Axiom(group) => group.documented.as_ref(),
@@ -466,6 +467,11 @@ pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>>
         }),
         TopLevelItem::Declares(group) => Some(DefinitionItem {
             kind: DefinitionKind::Declares,
+            heading: &group.heading,
+            documented: group.documented.as_ref(),
+        }),
+        TopLevelItem::Realizes(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Realizes,
             heading: &group.heading,
             documented: group.documented.as_ref(),
         }),

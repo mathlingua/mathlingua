@@ -14,4 +14,5 @@ pub use parser::{
     parse_hard_cast_statement, parse_is_via_statement, parse_label_header,
     parse_ordinary_declaration_statement, parse_refined_declaration_statement,
     parse_resource_header, parse_spec_operator_alias, parse_topic_header, parse_writing_alias,
+    split_via_view,
 };

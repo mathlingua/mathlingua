@@ -406,13 +406,30 @@ fn collect_mapping_writing(item: &TopLevelItem, registry: &mut RenderRegistry) {
 fn defines_mapping_render_parts(target: &DefinesTarget) -> Option<(String, Vec<String>, bool)> {
     match target {
         DefinesTarget::Form(form) => mapping_render_form_parts(form),
-        DefinesTarget::Declaration(statement) => match &statement.subject.kind {
-            IsSubjectKind::Forms(forms) => match forms.as_slice() {
-                [IsSubjectForm::Form(form)] => mapping_render_form_parts(form),
-                _ => None,
-            },
-            IsSubjectKind::Operator(_) => None,
+        // A target that names the type it extends splits `X ::= x(i_)` into the
+        // subject `X` and the expansion `x(i_)`, so the mapping may live on
+        // either side.
+        DefinesTarget::Declaration(statement) => single_subject_form(&statement.subject)
+            .and_then(mapping_render_form_parts)
+            .or_else(|| {
+                statement
+                    .expansion
+                    .as_ref()
+                    .and_then(single_subject_form)
+                    .and_then(mapping_render_form_parts)
+            }),
+    }
+}
+
+/// The lone form of an `is` subject, when it has exactly one and it is not an
+/// operator.
+fn single_subject_form(subject: &IsSubject) -> Option<&FormOrDeclaration> {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) => match forms.as_slice() {
+            [IsSubjectForm::Form(form)] => Some(form),
+            _ => None,
         },
+        IsSubjectKind::Operator(_) => None,
     }
 }
 

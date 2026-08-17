@@ -2339,9 +2339,8 @@ then:
     . called: "cross"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_
+    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
-    extends: * is \function:on{X \.set.cross./ X}:to{X}
     Documented:
     . called: "binary operation"
 
@@ -3005,9 +3004,8 @@ then:
     . called: "cross"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_
+    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
-    extends: * is \function:on{X \.set.cross./ X}:to{X}
     Documented:
     . called: "binary operation"
 
@@ -3299,9 +3297,8 @@ then:
     . called: "natural numbers"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_
+    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
-    extends: * is \function:on{X \.set.cross./ X}:to{X}
     Documented:
     . called: "binary operation on $X?$"
 
@@ -3457,9 +3454,8 @@ then:
     . adjective: "nonempty"
 
     [A \:subset:/ B]
-    Defines: A
+    Defines: A is \set
     when: B is \set
-    extends: A is \set
     Documented:
     . written: "A? \subset B?"
 
@@ -3504,9 +3500,8 @@ then:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A
+    Defines: A is \set
     when: B is \set
-    extends: A is \set
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
     Documented:
@@ -4045,8 +4040,7 @@ then:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__)
-    extends: f is \function
+    Defines: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4106,8 +4100,7 @@ then:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__)
-    extends: f is \function
+    Defines: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4158,8 +4151,7 @@ then:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__)
-    extends: f is \function
+    Defines: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4214,8 +4206,7 @@ then:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__)
-    extends: f is \function
+    Defines: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4273,8 +4264,7 @@ then:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__)
-    extends: f is \function
+    Defines: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4328,8 +4318,7 @@ then:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__)
-    extends: f is \function
+    Defines: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4382,8 +4371,7 @@ then:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__)
-    extends: f is \function
+    Defines: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4431,8 +4419,7 @@ then:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__)
-    extends: f is \function
+    Defines: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4698,9 +4685,8 @@ then:
     . written: "f?"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_
+    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
-    extends: * is \function:on{X \.set.cross./ X}:to{X}
     Documented:
     . written: "\operatorname{binop}"
 
@@ -4731,9 +4717,135 @@ then:
     }
 
     #[test]
+    fn check_treats_a_defines_target_relation_and_an_extends_section_as_equivalent() {
+        // `Defines: M ::= (X, *) is \set via X` and the same target with a
+        // separate `extends: M is \set via X` say the same thing: both give the
+        // subtype implication and both type the `via` symbol.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("extends-equivalence.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [\magma]
+    Defines: M ::= (X, *) is \set via X
+    declares: * is \set
+    Documented:
+    . called: "magma"
+
+    [\magma.too]
+    Defines: M ::= (X, *)
+    extends: M is \set via X
+    declares: * is \set
+    Documented:
+    . called: "magma too"
+
+    Theorem:
+    given: M ::= (X, *) is \magma
+    then:
+    . M is? \set
+    . X is? \set
+
+    Theorem:
+    given: M ::= (X, *) is \magma.too
+    then:
+    . M is? \set
+    . X is? \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("extends-equivalence.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_applies_every_extends_clause_of_a_defines_group() {
+        // An `extends:` section may name several types, each through a
+        // different `via` view of the target's tuple — the case a single `is`
+        // on the `Defines:` target cannot express.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("multi-extends.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [\left.pair]
+    Defines: L ::= (U, V)
+    declares:
+    . U is \set
+    . V is \set
+    Documented:
+    . called: "left pair"
+
+    [\right.pair]
+    Defines: R ::= (S, T)
+    declares:
+    . S is \set
+    . T is \set
+    Documented:
+    . called: "right pair"
+
+    [\triple]
+    Defines: X ::= (A, B, C)
+    extends:
+    . X is \left.pair via (A, B)
+    . X is \right.pair via (B, C)
+    Documented:
+    . called: "triple"
+
+    Theorem:
+    given: X ::= (A, B, C) is \triple
+    then:
+    . X is? \left.pair
+    . X is? \right.pair
+    . A is? \set
+    . B is? \set
+    . C is? \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("multi-extends.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_refined_command_in_declares() {
-        // A `declares:` (like `extends:`) may name a refined command as the
-        // type: `* is \(associative)::binary.operation:on{X}`.
+        // A `declares:` (like a `Defines:` target) may name a refined command
+        // as the type: `* is \(associative)::binary.operation:on{X}`.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("declares-refined.mlg");
 
@@ -4762,9 +4874,8 @@ then:
     . written: "f?"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_
+    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
-    extends: * is \function:on{X \.set.cross./ X}:to{X}
     Documented:
     . written: "\operatorname{binop}"
 
@@ -4778,8 +4889,7 @@ then:
     . adjective: "associative"
 
     [\semigroup]
-    Defines: S ::= (X, *)
-    extends: S is \set via X
+    Defines: S ::= (X, *) is \set via X
     declares: * is \(associative)::binary.operation:on{X}
     Documented:
     . written: "\operatorname{semigroup}"
@@ -4881,24 +4991,21 @@ then:
     . written: "f?"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_
+    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
-    extends: * is \function:on{X \.set.cross./ X}:to{X}
     Documented:
     . written: "\operatorname{binop}"
 
     [\magma]
-    Defines: M ::= (X, *)
-    extends: M is \set via X
+    Defines: M ::= (X, *) is \set via X
     declares:
     . * is \binary.operation:on{M}
     Documented:
     . written: "\operatorname{magma}"
 
     [\magma.element:of{M ::= (X, *)}]
-    Defines: x
+    Defines: x "in" X
     when: M is \magma
-    extends: x "in" X
     Enables:
     . capability: x_ [*] y_ :=> x_ is \undefined.elt:of{M}
       written: "x_? *? y_?"
@@ -4946,9 +5053,8 @@ then:
     . written: "\operatorname{set}"
 
     [\elt:of{X}]
-    Defines: x
+    Defines: x "in" X
     when: X is \set
-    extends: x "in" X
     Enables:
     . capability: x.self :=> x
       written: "x?"
@@ -5015,15 +5121,13 @@ then:
     . called: "function"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_
+    Defines: x_ * y_ is \function:on{X \.cross./ X}:to{X}
     when: X is \set
-    extends: * is \function:on{X \.cross./ X}:to{X}
     Documented:
     . called: "binary operation"
 
     [\magma]
-    Defines: M ::= (X, *)
-    extends: M is \set via X
+    Defines: M ::= (X, *) is \set via X
     declares: * is \binary.operation:on{M}
     Enables:
     . capability: x_ "in" M :-> x_ is \magma.element:of{M}
@@ -5031,9 +5135,8 @@ then:
     . called: "magma"
 
     [\magma.element:of{M ::= (X, *)}]
-    Defines: x
+    Defines: x "in" X
     when: M is \magma
-    extends: x "in" X
     Enables:
     . capability: x_ [*] y_ :=> x_ |M.*| y_
       written: "x_? *? y_?"
@@ -5041,8 +5144,7 @@ then:
     . called: "magma element"
 
     [\group]
-    Defines: G ::= (X, *, e)
-    extends: G is \magma via (X, *)
+    Defines: G ::= (X, *, e) is \magma via (X, *)
     declares: e "in" X
     Enables:
     . capability: x_ "in" G :-> x_ is \group.element:of{G}
@@ -5050,9 +5152,8 @@ then:
     . called: "group"
 
     [\group.element:of{G}]
-    Defines: x
+    Defines: x is \magma.element:of{G}
     when: G is \group
-    extends: x is \magma.element:of{G}
     Enables:
     . capability: x.inv :=> \group.inverse:of{x}:in{G}
       written: "x+?^{-1}"
@@ -5114,9 +5215,8 @@ then:
     . written: "\operatorname{container}"
 
     [\element:of{C}]
-    Defines: x
+    Defines: x "in" C
     when: C is \container
-    extends: x "in" C
     Enables:
     . capability: x.copy :=> \copy:of{x}:in{C}
       written: "x?^{\prime}"
@@ -5171,9 +5271,8 @@ then:
     . written: "\operatorname{set}"
 
     [\elt:of{X}]
-    Defines: x
+    Defines: x "in" X
     when: X is \set
-    extends: x "in" X
     Enables:
     . capability: z.self :=> x
       written: "x?"
@@ -5221,9 +5320,8 @@ then:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A
+    Defines: A is \set
     when: B is \set
-    extends: A is \set
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
     Documented:
@@ -5235,15 +5333,13 @@ then:
     . written: "\operatorname{op}"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_
+    Defines: x_ * y_ is \op
     when: X is \set
-    extends: * is \op
     Documented:
     . called: "binary operation on $X?$"
 
     [\grp]
-    Defines: G ::= (X, *, e)
-    extends: G is \set via X
+    Defines: G ::= (X, *, e) is \set via X
     declares:
     . * is \binary.operation:on{X}
     . e "in" X
@@ -5310,15 +5406,13 @@ Documented:
 . called: "cross"
 
 [\binary.operation:on{X}]
-Defines: x_ * y_
+Defines: x_ * y_ is \function:on{X \.cross./ X}:to{X}
 when: X is \set
-extends: * is \function:on{X \.cross./ X}:to{X}
 Documented:
 . called: "binary operation"
 
 [\group]
-Defines: G ::= (X, *, e)
-extends: G is \set via X
+Defines: G ::= (X, *, e) is \set via X
 declares:
 . * is \binary.operation:on{G}
 . e "in" X
@@ -5371,9 +5465,8 @@ Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A
+    Defines: A is \set
     when: B is \set
-    extends: A is \set
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
     Documented:
@@ -5386,9 +5479,8 @@ Documented:
     . written: "f?"
 
     [\op:on{X}]
-    Defines: p(x__) ::= y_
+    Defines: p(x__) ::= y_ is \fn:on{X}:to{X}
     when: X is \set
-    extends: p is \fn:on{X}:to{X}
     Documented:
     . written: "\operatorname{op}"
 
@@ -5444,9 +5536,8 @@ Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A
+    Defines: A is \set
     when: B is \set
-    extends: A is \set
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
     Documented:
@@ -5512,9 +5603,8 @@ Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A
+    Defines: A is \set
     when: B is \set
-    extends: A is \set
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
     Documented:
@@ -5610,9 +5700,8 @@ Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A
+    Defines: A is \set
     when: B is \set
-    extends: A is \set
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
     Documented:
@@ -5793,15 +5882,13 @@ Documented:
     . written: "f?"
 
     [\op:on{X}]
-    Defines: x_ * y_
+    Defines: x_ * y_ is \fn:on{X \.set.cross./ X}:to{X}
     when: X is \set
-    extends: * is \fn:on{X \.set.cross./ X}:to{X}
     Documented:
     . written: "\operatorname{op}"
 
     [\magma]
-    Defines: M ::= (X, *)
-    extends: M is \set via X
+    Defines: M ::= (X, *) is \set via X
     declares:
     . * is \op:on{X}
     Documented:
@@ -5851,8 +5938,7 @@ Documented:
     . written: "\operatorname{set}"
 
     [\grp]
-    Defines: G
-    extends: G is \set
+    Defines: G is \set
     Enables:
     . capability: x_ "in" G :-> x_ is \grp.elt:of{G}
       written: "x_? \in G?"
@@ -5860,9 +5946,8 @@ Documented:
     . written: "\operatorname{grp}"
 
     [\grp.elt:of{G}]
-    Defines: x
+    Defines: x "in" G
     when: G is \grp
-    extends: x "in" G
     Documented:
     . written: "\operatorname{elt}"
 
@@ -6392,15 +6477,13 @@ Documented:
     . called: "function"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_
+    Defines: x_ * y_ is \function:on{X \.cross./ X}:to{X}
     when: X is \set
-    extends: * is \function:on{X \.cross./ X}:to{X}
     Documented:
     . called: "binary operation"
 
     [\group]
-    Defines: G ::= (X, *, e)
-    extends: G is \set via X
+    Defines: G ::= (X, *, e) is \set via X
     declares:
     . * is \binary.operation:on{G}
     . e "in" G
@@ -6445,8 +6528,7 @@ Documented:
     . called: "set"
 
     [\group]
-    Defines: G ::= (X, *, e)
-    extends: G is \set via X
+    Defines: G ::= (X, *, e) is \set via X
     declares:
     . * is \set
     . e is \set
@@ -6634,16 +6716,14 @@ Documented:
             . called: "fn"
 
             [\op:on{X}]
-            Defines: x_ * y_
+            Defines: x_ * y_ is \fn:on{X \.cross./ X}:to{X}
             when: X is \set
-            extends: * is \fn:on{X \.cross./ X}:to{X}
             Documented:
             . called: "op"
 
             [\elt:of{M ::= (X, *)}]
-            Defines: x
+            Defines: x "in" X
             when: M is \structure
-            extends: x "in" X
             Enables:
             . capability: x_ * y_ :=> x_ |M.*| y_
               written: "x_? * y_?"
@@ -6651,8 +6731,7 @@ Documented:
             . called: "elt"
 
             [\structure]
-            Defines: M ::= (X, *)
-            extends: M is \set via X
+            Defines: M ::= (X, *) is \set via X
             declares:
             . * is \op:on{M}
             Enables:
@@ -6662,8 +6741,7 @@ Documented:
             . called: "structure"
 
             [\pointed.structure]
-            Defines: S ::= (X, *, e)
-            extends: S is \structure via (X, *)
+            Defines: S ::= (X, *, e) is \structure via (X, *)
             declares:
             . e "in" X
             Documented:
@@ -7083,8 +7161,7 @@ Documented:
     . written: "\emptyset"
 
     [\nonempty.set]
-    Defines: X
-    extends: X is \set
+    Defines: X is \set
     satisfies:
     . X != \empty.set
     Documented:
@@ -7590,9 +7667,8 @@ Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A
+    Defines: A is \set
     when: B is \set
-    extends: A is \set
     satisfies:
     . forAll: a "in" A
       then:
@@ -7651,9 +7727,8 @@ Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A
+    Defines: A is \set
     when: B is \set
-    extends: A is \set
     Documented:
     . written: "A? \subseteq B?"
 
@@ -7764,11 +7839,10 @@ Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:?within{U}:/ B]
-    Defines: A
+    Defines: A is \set
     when:
     . A, B, U is \set
     . B \:subset:/ U
-    extends: A is \set
     satisfies:
     . forAll: a "in" A
       then:
@@ -7817,11 +7891,10 @@ Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:?within{U}:/ B]
-    Defines: A
+    Defines: A is \set
     when:
     . A, B, U is \set
     . B \:subset:/ U
-    extends: A is \set
     satisfies:
     . forAll: a "in" A
       then:
@@ -7878,9 +7951,8 @@ Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A
+    Defines: A is \set
     when: A, B is \set
-    extends: A is \set
     Documented:
     . written: "A? \subseteq B?"
 
@@ -8146,19 +8218,17 @@ Documented:
     . written: "\operatorname{set}"
 
     [\element.of:group{G ::= (X, *, e)}]
-    Defines: x
+    Defines: x "in" X
     when:
     . G is \group
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
-    extends: x "in" X
     Documented:
     . written: "x? \in G?"
 
     [\group]
-    Defines: G ::= (X, *, e)
-    extends: G is \set via X
+    Defines: G ::= (X, *, e) is \set via X
     declares:
     . X is \set
     . * is \function:on{X}:to{X}
@@ -8213,9 +8283,8 @@ Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__)
+    Defines: f(x__) is (_ "in" A) -> (_ "in" B)
     when: A, B is \set
-    extends: f is (_ "in" A) -> (_ "in" B)
     Documented:
     . written: "A? \to B?"
 
@@ -8259,9 +8328,8 @@ Documented:
     . written: "\operatorname{set}"
 
     [\sequence:on{A}]
-    Defines: X ::= x(i_)
+    Defines: X ::= x(i_) is (_ "in" A) -> (_ "in" A)
     when: A is \set
-    extends: x is (_ "in" A) -> (_ "in" A)
     Documented:
     . writing: x(i)
       as: "x?_{i?}"
@@ -8328,9 +8396,8 @@ Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__)
+    Defines: f(x__) is (_ "in" A) -> (_ "in" B)
     when: A, B is \set
-    extends: f is (_ "in" A) -> (_ "in" B)
     Documented:
     . written: "A? \to B?"
 
@@ -8649,9 +8716,8 @@ Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__)
+    Defines: f(x__) is (x "in" A) -> (_ "in" B)
     when: A, B is \set
-    extends: f is (x "in" A) -> (_ "in" B)
     Documented:
     . written: "A? \to B?"
     "#,
@@ -10903,12 +10969,11 @@ Documented:
     . written: "x? \in G?"
 
     [\group]
-    Defines: G ::= (X, *, e)
+    Defines: G ::= (X, *, e) is \set via X
     when:
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
-    extends: G is \set via X
     Enables:
     . capability: x_ "in" G :-> x_ is \element.of:group{G}
     Documented:
@@ -10963,12 +11028,11 @@ Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:?within{U}:/ B]
-    Defines: A
+    Defines: A is \set
     when:
     . A is \set
     . U is \set
     . B is \set
-    extends: A is \set
     Documented:
     . written: "A? \subset B?"
 
@@ -11175,8 +11239,7 @@ Documented:
     . written: "\operatorname{function}"
 
     [\group]
-    Defines: G ::= (X, *, e)
-    extends: G is \set
+    Defines: G ::= (X, *, e) is \set
     declares:
     . X is \set
     . * is \function:on{X}:to{X}

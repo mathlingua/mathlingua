@@ -20,10 +20,18 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
         }
         TopLevelItem::Defines(group) => {
             walk_defines_target(&group.defines.argument, visit);
+            if let Some(via) = &group.defines.via {
+                walk_form_or_declaration(via, visit);
+            }
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
             if let Some(section) = &group.extends {
-                walk_is_or_via_item(&section.argument, visit);
+                for item in &section.arguments {
+                    walk_declaration_statement(&item.statement, visit);
+                    if let Some(via) = &item.via {
+                        walk_form_or_declaration(via, visit);
+                    }
+                }
             }
             if let Some(section) = &group.declares {
                 for item in &section.arguments {

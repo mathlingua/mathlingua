@@ -1241,8 +1241,7 @@ Documented:
 
 
 [\nonempty.set]
-Defines: X
-extends: X is \set
+Defines: X is \set
 Documented:
 . called: "non-empty set"
 "#;
@@ -1262,11 +1261,11 @@ Documented:
         let mut event_log = EventLog::new();
         let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
-        let extends = &view.files[0].items[1].sections[1];
+        let defines = &view.files[0].items[1].sections[0];
 
         assert_eq!(view.files[0].items[0].definition_keys, vec!["5c736574"]);
         assert_eq!(
-            extends.inline_latex,
+            defines.inline_latex,
             Some(r#"X \textrm{ is } \htmlData{mlg-ref=5c736574}{\textrm{set}}"#.to_string())
         );
         assert!(!event_log.has_errors());

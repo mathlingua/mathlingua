@@ -2,7 +2,7 @@ use std::collections::{HashMap, VecDeque};
 
 use crate::events::EventLog;
 use crate::frontend::formulation::ast::{
-    ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, WritingAlias,
+    DeclarationRelation, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, WritingAlias,
 };
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
@@ -10,7 +10,7 @@ use crate::frontend::formulation::{
     parse_hard_cast_statement, parse_is_via_statement, parse_label_header,
     parse_ordinary_declaration_statement, parse_refined_declaration_statement,
     parse_resource_header, parse_spec_operator_alias, parse_topic_header, parse_type_expression,
-    parse_writing_alias,
+    parse_writing_alias, split_via_view,
 };
 use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{
@@ -286,7 +286,7 @@ pub(in crate::frontend::structural::parser) fn parse_alias_kind(
     parse_spec_operator_alias(input).map(AliasKind::SpecOperator)
 }
 
-/// Parses an item accepted by `extends:`/`declares:` and related sections.
+/// Parses an item accepted by `declares:` and related sections.
 ///
 /// `is ... via ...` is more specific, so it is attempted before the broader
 /// `is`/spec parser. The `is` relation may name a refined command
@@ -343,12 +343,72 @@ fn split_labeled_specification(input: &str) -> Option<(Vec<String>, &str)> {
     Some((parts, inner.trim()))
 }
 
+/// Parses the argument of a `Defines:` section.
+///
+/// The target may state the type the definition extends with an `is`/spec
+/// relation (`A is \set`), and an `is` relation may be followed by the `via`
+/// view used to regard the defined item as that type
+/// (`G ::= (X, *, e) is \monoid via (X, *)`).
+fn parse_defines_section(input: &str) -> Result<DefinesSection, FormulationParseError> {
+    let (target_text, via_text) = split_via_view(input);
+    let via = via_text.map(parse_form_or_declaration).transpose()?;
+    let argument = parse_defines_target(target_text)?;
+    if via.is_some() && !defines_target_states_is(&argument) {
+        return Err(FormulationParseError::custom(
+            "`via` requires the `Defines:` target to name the type it extends, \
+             as in `G ::= (X, *, e) is \\monoid via (X, *)`",
+        ));
+    }
+
+    Ok(DefinesSection { argument, via })
+}
+
+/// Whether a `Defines:` target names an extended type with an `is` relation.
+fn defines_target_states_is(target: &DefinesTarget) -> bool {
+    matches!(
+        target,
+        DefinesTarget::Declaration(statement)
+            if matches!(statement.relation, Some(DeclarationRelation::Is(_)))
+    )
+}
+
+/// Whether a `Defines:` target states the type it extends at all, by an `is` or
+/// a specification relation. Such a target may not also have an `extends:`
+/// section: the two spellings say the same thing.
+fn defines_target_states_extends(target: &DefinesTarget) -> bool {
+    matches!(
+        target,
+        DefinesTarget::Declaration(statement) if statement.relation.is_some()
+    )
+}
+
+/// Parses one `extends:` clause: the type extended, with an optional `via` view.
+///
+/// This is the same syntax a `Defines:` target uses for a single clause, minus
+/// the bare-form case, since a clause always states a type.
+fn parse_extends_item(input: &str) -> Result<ExtendsItem, FormulationParseError> {
+    let (statement_text, via_text) = split_via_view(input);
+    let via = via_text.map(parse_form_or_declaration).transpose()?;
+    let statement = parse_refined_declaration_statement(statement_text)?;
+    if via.is_some() && !matches!(statement.relation, Some(DeclarationRelation::Is(_))) {
+        return Err(FormulationParseError::custom(
+            "`via` requires an `is` clause to name the extended type, \
+             as in `G is \\monoid via (X, *)`",
+        ));
+    }
+
+    Ok(ExtendsItem { statement, via })
+}
+
+/// Parses a `Defines:` target: the described form, or a declaration naming the
+/// type it extends. The `is` relation may name a refined command, so a
+/// definition can extend a refinement of a type and not only a bare command.
 fn parse_defines_target(input: &str) -> Result<DefinesTarget, FormulationParseError> {
     if let Ok(form) = parse_form_or_declaration(input) {
         return Ok(DefinesTarget::Form(form));
     }
 
-    parse_ordinary_declaration_statement(input).map(DefinesTarget::Declaration)
+    parse_refined_declaration_statement(input).map(DefinesTarget::Declaration)
 }
 
 /// Parses the restricted target of a documented mapping `writing:` rule.
@@ -2828,16 +2888,31 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
         ],
     )?;
 
+    let defines = parse_required_formulation(
+        section(&sections, "Defines")?,
+        "Defines",
+        tracker,
+        parse_defines_section,
+    )?;
+    let extends = sections.get("extends").copied().and_then(|section| {
+        if defines_target_states_extends(&defines.argument) {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                "A `Defines:` target that names the type it extends cannot also have an \
+                 `extends:` section; use one or the other"
+                    .to_owned(),
+            );
+            return None;
+        }
+        parse_required_formulations(section, "extends", tracker, parse_extends_item)
+            .map(|arguments| ExtendsSection { arguments })
+    });
+
     Some(DefinesGroup {
         heading,
-        defines: DefinesSection {
-            argument: parse_required_formulation(
-                section(&sections, "Defines")?,
-                "Defines",
-                tracker,
-                parse_defines_target,
-            )?,
-        },
+        defines,
+        extends,
         using: sections.get("using").copied().and_then(|section| {
             parse_required_formulations(
                 section,
@@ -2850,10 +2925,6 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
         when: sections.get("when").copied().and_then(|section| {
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
-        }),
-        extends: sections.get("extends").copied().and_then(|section| {
-            parse_required_formulation(section, "extends", tracker, parse_is_or_via_item)
-                .map(|argument| ExtendsSection { argument })
         }),
         declares: sections.get("declares").copied().and_then(|section| {
             parse_required_specify_items(section, tracker)
@@ -3901,13 +3972,12 @@ mod tests {
     use super::parse_document;
     use crate::events::{Event, EventLog};
     use crate::frontend::formulation::ast::{
-        FormOrDeclaration, FormOrDeclarationKind, IsSubjectForm, IsSubjectKind,
+        DeclarationRelation, FormOrDeclaration, FormOrDeclarationKind, IsSubjectForm, IsSubjectKind,
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, DefinesTarget, Document, DocumentedItem, EnablesItem,
-        IsOrViaItem, MetadataItem, RelationKind, RelationMeans, RelationSubject,
-        RelationshipDeclaration, RequiresItem, ResourceItem, SpecifyItem, TextItemKind,
-        TopLevelItem,
+        MetadataItem, RelationKind, RelationMeans, RelationSubject, RelationshipDeclaration,
+        RequiresItem, ResourceItem, SpecifyItem, TextItemKind, TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -4097,7 +4167,7 @@ Documented:
         let document = parse_ok(
             r#"
 [\structure]
-Defines: S ::= (X, *)
+Defines: S ::= (X, *) is \set via (X, Y)
 using:
 . X is \set
 . X "contains" Element
@@ -4106,7 +4176,6 @@ when:
   allOf:
   . x = x
   . y = y
-extends: X is \set via (X, Y)
 declares:
 . Y is \set via (X, Y)
 . y "contains" Y
@@ -4267,9 +4336,10 @@ that:
                     group.when.as_ref().expect("expected when").arguments[0],
                     Clause::AllOf(_)
                 ));
+                assert!(group.defines.via.is_some());
                 assert!(matches!(
-                    group.extends.as_ref().expect("expected extends").argument,
-                    IsOrViaItem::IsVia(_)
+                    group.defines.argument,
+                    DefinesTarget::Declaration(_)
                 ));
                 assert_eq!(
                     group
@@ -5710,6 +5780,169 @@ satisfies:
                         .arguments[0],
                     Clause::ForAll(_)
                 ));
+            }
+            other => panic!("expected defines item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_a_defines_target_that_names_the_type_it_extends() {
+        let text = r#"
+[\group]
+Defines: G ::= (X, *, e) is \monoid via (X, *)
+declares:
+. e "in" X
+"#;
+
+        let mut tracker = EventLog::new();
+        let document = parse_document(text, &mut tracker);
+
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
+        match &document.items[0] {
+            TopLevelItem::Defines(group) => {
+                let DefinesTarget::Declaration(statement) = &group.defines.argument else {
+                    panic!("expected declaration target");
+                };
+                assert!(statement.expansion.is_some());
+                assert!(matches!(
+                    statement.relation,
+                    Some(DeclarationRelation::Is(_))
+                ));
+                assert!(matches!(
+                    group.defines.via.as_ref().expect("expected via").kind,
+                    FormOrDeclarationKind::TupleDeclaration { .. }
+                ));
+            }
+            other => panic!("expected defines item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_a_defines_target_that_states_a_spec_relation() {
+        let text = r#"
+[\element:of{X}]
+Defines: x "in" X
+when: X is \set
+"#;
+
+        let mut tracker = EventLog::new();
+        let document = parse_document(text, &mut tracker);
+
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
+        match &document.items[0] {
+            TopLevelItem::Defines(group) => {
+                let DefinesTarget::Declaration(statement) = &group.defines.argument else {
+                    panic!("expected declaration target");
+                };
+                assert!(matches!(
+                    statement.relation,
+                    Some(DeclarationRelation::Spec { .. })
+                ));
+                assert!(group.defines.via.is_none());
+            }
+            other => panic!("expected defines item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn rejects_a_defines_via_without_an_extended_type() {
+        let text = r#"
+[\group]
+Defines: G ::= (X, *, e) via (X, *)
+"#;
+
+        let (_, diagnostics) = parse_with_diagnostics(text);
+
+        assert!(
+            diagnostics.iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message.contains(
+                        "`via` requires the `Defines:` target to name the type it extends",
+                    )
+                })
+            }),
+            "{diagnostics:#?}"
+        );
+    }
+
+    #[test]
+    fn parses_a_defines_extends_section_with_several_clauses() {
+        let text = r#"
+[\foo]
+Defines: X ::= (A, B, C)
+extends:
+. X is \bar via (A, B)
+. X is \baz via (B, C)
+"#;
+
+        let mut tracker = EventLog::new();
+        let document = parse_document(text, &mut tracker);
+
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
+        match &document.items[0] {
+            TopLevelItem::Defines(group) => {
+                assert!(matches!(group.defines.argument, DefinesTarget::Form(_)));
+                assert!(group.defines.via.is_none());
+                let extends = group.extends.as_ref().expect("expected extends");
+                assert_eq!(extends.arguments.len(), 2);
+                for item in &extends.arguments {
+                    assert!(matches!(
+                        item.statement.relation,
+                        Some(DeclarationRelation::Is(_))
+                    ));
+                    assert!(item.via.is_some());
+                }
+            }
+            other => panic!("expected defines item, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn rejects_a_defines_target_relation_together_with_an_extends_section() {
+        let text = r#"
+[\nonempty.set]
+Defines: X is \set
+extends: X is \set
+"#;
+
+        let (_, diagnostics) = parse_with_diagnostics(text);
+
+        assert!(
+            diagnostics.iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message.contains(
+                        "A `Defines:` target that names the type it extends cannot also have an \
+                         `extends:` section",
+                    )
+                })
+            }),
+            "{diagnostics:#?}"
+        );
+    }
+
+    #[test]
+    fn accepts_an_extends_section_when_the_defines_target_states_no_relation() {
+        let text = r#"
+[\nonempty.set]
+Defines: X
+extends: X is \set
+"#;
+
+        let mut tracker = EventLog::new();
+        let document = parse_document(text, &mut tracker);
+
+        assert!(!tracker.has_errors(), "{:#?}", tracker.events());
+        match &document.items[0] {
+            TopLevelItem::Defines(group) => {
+                assert_eq!(
+                    group
+                        .extends
+                        .as_ref()
+                        .expect("expected extends")
+                        .arguments
+                        .len(),
+                    1
+                );
             }
             other => panic!("expected defines item, got {other:?}"),
         }

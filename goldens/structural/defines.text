@@ -1,5 +1,5 @@
 [\structure]
-Defines: S ::= (X, *)
+Defines: S ::= (X, *) is \set via (X, *)
 using:
 . X, Y is \set
 . X "contains" Element
@@ -8,7 +8,6 @@ when:
   allOf:
   . x = x
   . y = y
-extends: X, Y is \set via (X, Y)
 declares:
 . Y is \set via (X, Y)
 . y "contains" Y

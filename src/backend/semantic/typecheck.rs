@@ -601,7 +601,7 @@ fn definition_type_info(
             None,
             group.when.as_ref(),
             None,
-            Some(&group.defines.argument),
+            Some(&group.defines),
             group.declares.as_ref(),
             group.extends.as_ref(),
             registry,
@@ -707,11 +707,12 @@ fn type_info_from_parts(
     given: Option<&GivenSection>,
     when: Option<&WhenSection>,
     declares: Option<&DeclarationStatement>,
-    described: Option<&DefinesTarget>,
+    defines: Option<&DefinesSection>,
     defines_declares: Option<&DefinesDeclaresSection>,
     extends: Option<&ExtendsSection>,
     registry: &SignatureRegistry,
 ) -> DefinitionTypeInfo {
+    let described = defines.map(|defines| &defines.argument);
     let mut context = TypeContext::default();
     declare_header_symbols(heading, &mut context, registry);
     let using_parameters = collect_using_parameter_names(using);
@@ -772,8 +773,8 @@ fn type_info_from_parts(
         outputs.push(context.normalize_fact(&fact));
     }
 
-    let component_types = described
-        .map(|target| component_type_facts(target, extends, defines_declares, &context, registry))
+    let component_types = defines
+        .map(|defines| component_type_facts(defines, extends, defines_declares, &context, registry))
         .unwrap_or_default();
     let component_shapes = described
         .map(defines_target_component_shapes)
@@ -915,28 +916,29 @@ fn collect_inferred_names_in_function_type_spec(spec: &FunctionTypeSpec, names: 
 }
 
 /// Type facts for the components of a destructuring describes target, in tuple
-/// order. Each component's type is drawn from `extends:` first (its components
-/// inherit the extended type's component types) and then `declares:` for any
-/// component not covered by `extends:`. Facts are normalized so they can be
-/// re-substituted when another definition destructures a value of this type.
+/// order. Each component's type is drawn from the definition's `is … via …`
+/// clauses first (its components inherit the extended type's component types)
+/// and then `declares:` for any component no `via` covers. Facts are normalized
+/// so they can be re-substituted when another definition destructures a value of
+/// this type.
 fn component_type_facts(
-    target: &DefinesTarget,
+    defines: &DefinesSection,
     extends: Option<&ExtendsSection>,
     declares: Option<&DefinesDeclaresSection>,
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> Vec<TypeFact> {
-    let component_names = defines_target_component_names(target);
+    let component_names = defines_target_component_names(&defines.argument);
     if component_names.is_empty() {
         return Vec::new();
     }
 
     let mut fact_context = context.clone();
-    if let Some(extends) = extends {
-        for fact in facts_from_is_or_via_item_in_context(&extends.argument, &fact_context) {
+    for clause in extends_clauses(defines, extends) {
+        for fact in facts_from_extends_clause_in_context(clause, &fact_context) {
             fact_context.add_fact(fact);
         }
-        for fact in facts_from_extends_via(&extends.argument, &fact_context, registry) {
+        for fact in facts_from_extends_via(clause, &fact_context, registry) {
             fact_context.add_fact(fact);
         }
     }
@@ -960,22 +962,74 @@ fn component_type_facts(
         .collect()
 }
 
-/// The type facts an `extends: <subject> is <Type> via <via>` clause assigns to
-/// the `via` symbols. `via X` with a plain `\set` gives `X is \set`. `via (X, *)`
-/// onto a tuple type maps the extended type's components positionally, so
+/// The type facts one subtype clause states.
+///
+/// An operator-form subject (`x_ * y_ is \function:…`) states its facts about
+/// the operator itself, since `*` is how such a target is named everywhere
+/// else — in `declares:`, in a `Refines:` of the same form, and in member
+/// access.
+fn facts_from_extends_clause(clause: ExtendsClause<'_>) -> Vec<TypeFact> {
+    retarget_operator_subject(
+        facts_from_declaration_statement(clause.statement),
+        clause.statement,
+    )
+}
+
+fn facts_from_extends_clause_in_context(
+    clause: ExtendsClause<'_>,
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    retarget_operator_subject(
+        facts_from_declaration_statement_in_context(clause.statement, context),
+        clause.statement,
+    )
+}
+
+/// Rewrites facts about an operator form (`x_ * y_`) to be about the operator
+/// (`*`).
+fn retarget_operator_subject(
+    facts: Vec<TypeFact>,
+    statement: &DeclarationStatement,
+) -> Vec<TypeFact> {
+    let Some(operator) = subject_operator_name(&statement.subject) else {
+        return facts;
+    };
+    let substitutions = HashMap::from([(primary_subject_key(&statement.subject), operator)]);
+    facts
+        .iter()
+        .map(|fact| substitute_fact(fact, &substitutions))
+        .collect()
+}
+
+/// The operator an operator-form subject (`x_ * y_`, `-x_`, `x_!`) names.
+fn subject_operator_name(subject: &IsSubject) -> Option<String> {
+    let form = is_subject_first_form(subject)?;
+    match &form.kind {
+        FormOrDeclarationKind::InfixOperator { operator, .. }
+        | FormOrDeclarationKind::PrefixOperator { operator, .. }
+        | FormOrDeclarationKind::PostfixOperator { operator, .. } => Some(operator.text.clone()),
+        _ => None,
+    }
+}
+
+/// The type facts a `<subject> is <Type> via <via>` clause assigns to the `via`
+/// symbols. `via X` with a plain `\set` gives `X is \set`. `via (X, *)` onto a
+/// tuple type maps the extended type's components positionally, so
 /// `S is \magma via (X, *)` yields `X is \set` and `* is \binary.operation:on{S}`
 /// by following `\magma`'s own component types (with its subject replaced by `S`).
 fn facts_from_extends_via(
-    item: &IsOrViaItem,
+    clause: ExtendsClause<'_>,
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> Vec<TypeFact> {
-    let IsOrViaItem::IsVia(statement) = item else {
+    let Some(via) = clause.via else {
         return Vec::new();
     };
-    let ty = &statement.is_statement.ty;
-    let subject = primary_subject_key(&statement.is_statement.subject);
-    match &statement.via.kind {
+    let Some(DeclarationRelation::Is(ty)) = &clause.statement.relation else {
+        return Vec::new();
+    };
+    let subject = primary_subject_key(&clause.statement.subject);
+    match &via.kind {
         FormOrDeclarationKind::Name(name) => {
             fact_from_type_key_assertion(name.clone(), ty, context)
                 .into_iter()
@@ -995,16 +1049,17 @@ fn facts_from_extends_via(
     }
 }
 
-/// Adds the component types an `extends: … via …` clause assigns (`X is \set`,
-/// etc.) to the checking context, so the definition's own body (e.g.
-/// `declares: e "in" X`) can rely on them.
+/// Adds the component types the definition's `is … via …` clauses assign
+/// (`X is \set`, etc.) to the checking context, so the definition's own body
+/// (e.g. `declares: e "in" X`) can rely on them.
 fn assume_extends_via_facts(
-    extends: &Option<ExtendsSection>,
+    defines: &DefinesSection,
+    extends: Option<&ExtendsSection>,
     context: &mut TypeContext,
     registry: &SignatureRegistry,
 ) {
-    if let Some(extends) = extends {
-        for fact in facts_from_extends_via(&extends.argument, context, registry) {
+    for clause in extends_clauses(defines, extends) {
+        for fact in facts_from_extends_via(clause, context, registry) {
             context.add_fact(fact);
         }
     }
@@ -1231,11 +1286,14 @@ fn collect_type_extension_rules(
     info: &DefinitionTypeInfo,
     registry: &mut SignatureRegistry,
 ) {
-    let Some(extends) = extends_item(item) else {
+    let Some((defines, extends)) = defines_extends_parts(item) else {
         return;
     };
 
-    for fact in facts_from_is_or_via_item(extends) {
+    for fact in extends_clauses(defines, extends)
+        .into_iter()
+        .flat_map(facts_from_extends_clause)
+    {
         let subject = match &fact {
             TypeFact::Is { subject, .. }
             | TypeFact::Spec { subject, .. }
@@ -1296,9 +1354,11 @@ fn refinement_extension_targets_from_declaration(
     }
 }
 
-fn extends_item(item: &TopLevelItem) -> Option<&IsOrViaItem> {
+fn defines_extends_parts(
+    item: &TopLevelItem,
+) -> Option<(&DefinesSection, Option<&ExtendsSection>)> {
     match item {
-        TopLevelItem::Defines(group) => group.extends.as_ref().map(|section| &section.argument),
+        TopLevelItem::Defines(group) => Some((&group.defines, group.extends.as_ref())),
         _ => None,
     }
 }
@@ -1651,8 +1711,8 @@ fn require_uniform_members<K: PartialEq>(
 }
 
 /// The set of type signatures that fix a member's core identity for rules 3–5:
-/// the `is` type of a Declares, the `extends:` target of a Defines, or the base
-/// type of a Refines. Uses only global type signatures (never definition-local
+/// the `is` type of a Declares, the extended type of a Defines target, or the
+/// base type of a Refines. Uses only global type signatures (never definition-local
 /// symbol names), so structurally identical types compare equal.
 fn member_type_identity(
     signature: &str,
@@ -1785,14 +1845,6 @@ fn validate_top_level_item_types(
             declare_header_symbols(&group.heading, &mut context, registry);
             declare_defines_target(&group.defines.argument, &mut context);
             assume_described_type(&group.heading, &group.defines.argument, &mut context);
-            check_defines_target(
-                &group.defines.argument,
-                &context,
-                path,
-                locator,
-                registry,
-                event_log,
-            );
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -1812,7 +1864,12 @@ fn validate_top_level_item_types(
                 event_log,
             );
             assume_destructured_parameter_components(&group.heading, &mut context, registry);
-            assume_extends_via_facts(&group.extends, &mut context, registry);
+            assume_extends_via_facts(
+                &group.defines,
+                group.extends.as_ref(),
+                &mut context,
+                registry,
+            );
             assume_optional_declares(
                 &group.declares,
                 &mut context,
@@ -1827,16 +1884,27 @@ fn validate_top_level_item_types(
                 &mut context,
             );
             validate_defines_justification_usage(group, path, locator, event_log);
-            if let Some(extends) = &group.extends {
-                check_is_or_via_item(
-                    &extends.argument,
-                    &context,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
-                );
-            }
+            // The target and its `extends:` clauses are checked here, rather
+            // than where the target's symbols are declared, because the type a
+            // definition extends may name symbols that only `using:`/`when:`
+            // and the `via` facts bring into scope — as in `Defines: x "in" X`
+            // under `when: M is \magma`.
+            check_defines_target(
+                &group.defines,
+                &context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            check_optional_extends(
+                &group.extends,
+                &context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             validate_defines_target_symbol_specifications(group, path, locator, event_log);
             validate_optional_requires(
                 &group.requires,
@@ -2273,7 +2341,8 @@ fn extension_rule_supertype_signature(fact: &TypeFact) -> Option<String> {
 }
 
 /// The direct supertypes (parents) of `base_signature`, taken from the type
-/// extension rules the registry collected for the base type's own `extends:`.
+/// extension rules the registry collected for the type the base's own
+/// `Defines:` target extends.
 fn direct_parent_signatures(base_signature: &str, registry: &SignatureRegistry) -> Vec<String> {
     registry
         .extension_rules
@@ -2346,7 +2415,8 @@ fn check_refines_marker(
             path,
             location,
             "`implicitly:` and `explicitly:` may only be used when the `Refines:` base type is a \
-             subtype of another type (has an `extends:` clause of its own); the base here is not",
+             subtype of another type (its `Defines:` target names a type it extends); the base \
+             here is not",
         );
         return;
     }
@@ -3560,8 +3630,13 @@ fn validate_defines_justification_usage(
         return;
     };
     let mut referenced = BTreeSet::new();
+    if let DefinesTarget::Declaration(statement) = &group.defines.argument {
+        collect_declaration_referenced_labels(statement, &mut referenced);
+    }
     if let Some(extends) = &group.extends {
-        collect_is_or_via_referenced_labels(&extends.argument, &mut referenced);
+        for item in &extends.arguments {
+            collect_declaration_referenced_labels(&item.statement, &mut referenced);
+        }
     }
     if let Some(declares) = &group.declares {
         for item in &declares.arguments {
@@ -3653,19 +3728,41 @@ fn declare_defines_target(target: &DefinesTarget, context: &mut TypeContext) {
 }
 
 fn check_defines_target(
-    target: &DefinesTarget,
+    defines: &DefinesSection,
     context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    match target {
+    match &defines.argument {
         DefinesTarget::Form(form) => {
             check_form_or_declaration(form, context, path, locator, event_log);
         }
         DefinesTarget::Declaration(statement) => {
             check_declaration_statement(statement, context, path, locator, registry, event_log);
+        }
+    }
+    if let Some(via) = &defines.via {
+        check_form_or_declaration(via, context, path, locator, event_log);
+    }
+}
+
+fn check_optional_extends(
+    extends: &Option<ExtendsSection>,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let Some(extends) = extends else {
+        return;
+    };
+    for item in &extends.arguments {
+        check_declaration_statement(&item.statement, context, path, locator, registry, event_log);
+        if let Some(via) = &item.via {
+            check_form_or_declaration(via, context, path, locator, event_log);
         }
     }
 }
@@ -3826,9 +3923,7 @@ fn form_or_declaration_subject_key(form: &FormOrDeclaration) -> String {
 
 fn defines_used_names(group: &DefinesGroup) -> BTreeSet<String> {
     let mut names = BTreeSet::new();
-    if let Some(extends) = &group.extends {
-        collect_is_or_via_names(&extends.argument, &mut names);
-    }
+    collect_extends_clause_names(&group.defines, group.extends.as_ref(), &mut names);
     if let Some(declares) = &group.declares {
         for item in &declares.arguments {
             collect_is_or_via_names(item, &mut names);
@@ -3858,7 +3953,10 @@ fn validate_defines_target_symbol_specifications(
         &mut covered,
     );
     collect_declares_covered_symbols(&group.declares, &mut covered);
-    collect_extends_covered_symbols(&group.extends, &mut covered);
+    if let DefinesTarget::Declaration(statement) = &group.defines.argument {
+        collect_declaration_statement_covered_symbols(statement, &mut covered);
+    }
+    collect_extends_clause_covered_symbols(&group.defines, group.extends.as_ref(), &mut covered);
     let symbols = defines_target_symbols(&group.defines.argument);
     validate_target_symbol_specifications(&symbols, &covered, path, locator, event_log);
 }
@@ -3866,27 +3964,47 @@ fn validate_defines_target_symbol_specifications(
 /// A function declaration alias names the same mapping as the function form,
 /// so either name covers the other without requiring a second specification.
 fn collect_defines_mapping_alias_names(target: &DefinesTarget, covered: &mut BTreeSet<String>) {
-    let form = match target {
-        DefinesTarget::Form(form) => Some(form),
-        DefinesTarget::Declaration(statement) => match &statement.subject.kind {
-            IsSubjectKind::Forms(forms) => match forms.as_slice() {
-                [IsSubjectForm::Form(form)] => Some(form),
-                _ => None,
-            },
-            IsSubjectKind::Operator(_) => None,
-        },
-    };
-    if let Some(FormOrDeclaration {
-        kind:
-            FormOrDeclarationKind::FunctionDeclaration {
+    if let Some((alias, mapping)) = defines_target_mapping_alias(target) {
+        covered.insert(alias);
+        covered.insert(mapping);
+    }
+}
+
+/// The two names an aliased mapping target goes by — the alias `X` and the
+/// mapping's own name `x` in `X ::= x(i_)`.
+///
+/// A target that names the type it extends splits the two across the
+/// declaration's subject and expansion; one that does not keeps them together in
+/// a single named function declaration.
+fn defines_target_mapping_alias(target: &DefinesTarget) -> Option<(String, String)> {
+    match target {
+        DefinesTarget::Form(FormOrDeclaration {
+            kind:
+                FormOrDeclarationKind::FunctionDeclaration {
+                    name: Some(name),
+                    form,
+                },
+            ..
+        }) => Some((name.clone(), form.name.clone())),
+        DefinesTarget::Declaration(statement) => {
+            let subject = is_subject_first_form(&statement.subject)?;
+            // `X ::= x(i_) ::= y_` keeps both names in the subject.
+            if let FormOrDeclarationKind::FunctionDeclaration {
                 name: Some(name),
                 form,
-            },
-        ..
-    }) = form
-    {
-        covered.insert(name.clone());
-        covered.insert(form.name.clone());
+            } = &subject.kind
+            {
+                return Some((name.clone(), form.name.clone()));
+            }
+            // `X ::= x(i_) is …` splits the alias `X` from the mapping `x(i_)`.
+            let alias = primary_form_name(subject)?;
+            let expansion = is_subject_first_form(statement.expansion.as_ref()?)?;
+            let FormOrDeclarationKind::FunctionDeclaration { form, .. } = &expansion.kind else {
+                return None;
+            };
+            Some((alias, form.name.clone()))
+        }
+        _ => None,
     }
 }
 
@@ -3972,7 +4090,7 @@ fn validate_refines_target_symbol_specifications(
     // symbol the base type already declares (its operator or components) is
     // inherited and need not be respecified here. For `\(associative)::binary
     // .operation:on{X}` refining `\binary.operation:on{X}`, the base's
-    // `extends: * is \function:...` covers `*`.
+    // `Defines: x_ * y_ is \function:...` covers `*`.
     collect_refines_base_specified_symbols(&group.heading, registry, &mut covered);
     validate_declaration_target_symbol_specifications(
         &group.refines.argument,
@@ -3984,8 +4102,9 @@ fn validate_refines_target_symbol_specifications(
 }
 
 /// Adds to `covered` every symbol that the base type refined by `heading`
-/// already declares — the subjects of the base type's own `extends:`/`declares:`
-/// facts (recorded as type-extension rules) and its described components.
+/// already declares — the subjects of the base type's own extended-type and
+/// `declares:` facts (recorded as type-extension rules) and its described
+/// components.
 fn collect_refines_base_specified_symbols(
     heading: &CommandHeader,
     registry: &SignatureRegistry,
@@ -4038,7 +4157,7 @@ fn validate_target_symbol_specifications(
             path,
             locator.locate_symbol(symbol),
             format!(
-                "Missing specification for target symbol `{symbol}`; specify it directly or through `extends:`"
+                "Missing specification for target symbol `{symbol}`; specify it directly or through the type the `Defines:` target extends"
             ),
         );
     }
@@ -4183,12 +4302,19 @@ fn collect_declares_covered_symbols(
     }
 }
 
-fn collect_extends_covered_symbols(
-    extends: &Option<ExtendsSection>,
+/// Adds the symbols the definition specifies through the types it extends: each
+/// clause's subject, and every symbol of its `via` view (whose types the
+/// extended type supplies).
+fn collect_extends_clause_covered_symbols(
+    defines: &DefinesSection,
+    extends: Option<&ExtendsSection>,
     covered: &mut BTreeSet<String>,
 ) {
-    if let Some(extends) = extends {
-        collect_is_or_via_covered_symbols(&extends.argument, covered);
+    for clause in extends_clauses(defines, extends) {
+        collect_declaration_statement_covered_symbols(clause.statement, covered);
+        if let Some(via) = clause.via {
+            collect_form_or_declaration_target_symbols(via, covered);
+        }
     }
 }
 
@@ -4589,6 +4715,34 @@ fn collect_binding_or_spec_names(item: &BindingOrSpec, names: &mut BTreeSet<Stri
     match item {
         BindingOrSpec::Declaration(statement) => {
             collect_declaration_statement_names(statement, names)
+        }
+    }
+}
+
+/// Collects the names the definition's subtype clauses reference — each clause's
+/// subject, the type it extends, and its `via` view. A `Defines:` target's
+/// destructuring and defining value are excluded: they are the shape of the
+/// definition itself rather than a use of a symbol declared elsewhere.
+fn collect_extends_clause_names(
+    defines: &DefinesSection,
+    extends: Option<&ExtendsSection>,
+    names: &mut BTreeSet<String>,
+) {
+    for clause in extends_clauses(defines, extends) {
+        collect_is_subject_names(&clause.statement.subject, names);
+        match &clause.statement.relation {
+            Some(DeclarationRelation::Is(ty)) => collect_type_expression_names(ty, names),
+            Some(DeclarationRelation::Spec { target, .. }) => {
+                collect_expression_names(target, names);
+            }
+            Some(DeclarationRelation::InfixSpec { spec, target }) => {
+                collect_infix_spec_names(spec, names);
+                collect_expression_names(target, names);
+            }
+            None => {}
+        }
+        if let Some(via) = clause.via {
+            collect_form_or_declaration_names(via, names);
         }
     }
 }
@@ -6908,42 +7062,6 @@ fn spec_target_position(
     match &target.kind {
         ExpressionKind::Name(name) => locator.locate_symbol(name),
         _ => None,
-    }
-}
-
-fn check_is_or_via_item(
-    item: &IsOrViaItem,
-    context: &TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    match item {
-        IsOrViaItem::IsVia(statement) => {
-            check_is_statement(
-                &statement.is_statement,
-                context,
-                path,
-                locator,
-                registry,
-                event_log,
-            );
-            check_form_or_declaration(&statement.via, context, path, locator, event_log);
-        }
-        IsOrViaItem::Declaration(statement) => {
-            check_declaration_statement(statement, context, path, locator, registry, event_log);
-        }
-        IsOrViaItem::Have(group) => {
-            check_have_group(group, context, path, locator, registry, event_log);
-        }
-        IsOrViaItem::Labeled { label, item } => {
-            if !establish_labeled_specification(
-                label, item, context, path, locator, registry, event_log,
-            ) {
-                check_is_or_via_item(item, context, path, locator, registry, event_log);
-            }
-        }
     }
 }
 
@@ -16579,17 +16697,6 @@ fn is_name_boundary(text: &str, index: usize, after: bool) -> bool {
         Some('\\') if !after => false,
         Some(ch) => !ch.is_ascii_alphanumeric() && ch != '_',
         None => true,
-    }
-}
-
-fn facts_from_is_or_via_item(item: &IsOrViaItem) -> Vec<TypeFact> {
-    match item {
-        IsOrViaItem::IsVia(statement) => facts_from_is_statement(&statement.is_statement),
-        IsOrViaItem::Declaration(statement) => facts_from_declaration_statement(statement),
-        IsOrViaItem::Have(group) => have_group_declarations(group)
-            .flat_map(facts_from_declaration_statement)
-            .collect(),
-        IsOrViaItem::Labeled { item, .. } => facts_from_is_or_via_item(item),
     }
 }
 

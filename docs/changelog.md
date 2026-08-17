@@ -5,6 +5,65 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## A `Defines` Target May State The Type It Extends
+
+The type a `Defines` group extends can now be written on the `Defines:` target
+itself, with the same `is`/specification statement — including its `via` view —
+that an `extends:` section takes:
+
+```text
+[\group]
+Defines: G ::= (X, *, e) is \monoid via (X, *)
+```
+
+```text
+[A \:subset:/ B]
+Defines: A is \set
+when: B is \set
+```
+
+`Defines: X is \foo` and `Defines: X` with `extends: X is \foo` are equivalent,
+and a group may use one spelling or the other but **not both** (`A \`Defines:\`
+target that names the type it extends cannot also have an \`extends:\` section`).
+The target spelling is the short one and fits the common single-clause case; the
+`extends:` section remains for what a target cannot express — extending several
+types at once, each through a different view of the same tuple:
+
+```text
+[\foo]
+Defines: X ::= (A, B, C)
+extends:
+. X is \bar via (A, B)
+. X is \baz via (B, C)
+```
+
+Consequences:
+
+- `extends:` now takes **one or more** clauses rather than exactly one, and each
+  is an `ExtendsItem` — a `DeclarationStatement` with an optional `via` — rather
+  than an `IsOrViaItem`. `DefinesSection` carries the target's own
+  `via: Option<FormOrDeclaration>` alongside its argument, and
+  `extends_clauses` in `structural::ast` normalizes both spellings into a single
+  borrowed clause list that the checker, the walk, and the registry all work
+  from.
+- A `via` with no `is` clause to accompany it is a parse error.
+- The `Defines:` target accepts refined commands in its `is` relation, as
+  `extends:` does (`Defines: S ::= (X, *) is \(finite)::magma via (X, *)`).
+- The target and the `extends:` clauses are checked after `using:`/`when:` and
+  the `via` facts are assumed, since the type a definition extends may name
+  symbols only those bring into scope — as in `Defines: x "in" X` under
+  `when: M is \magma`.
+- When the subject is an operator form, its facts are recorded about the
+  operator: `Defines: x_ * y_ is \function:on{X \.cross./ X}:to{X}` states its
+  fact about `*`, matching how the operator is named in `declares:`, in a
+  `Refines:` of the same form, and in member access. This is what lets an
+  `extends:` clause whose subject was a component of the target — `extends: * is
+  \function:…` — move onto the target's own form.
+
+`Refines` is unaffected: its target already carries an `is` relation naming the
+base type, so its refinement target cannot merge into the same statement and its
+`extends:` section stays a single clause.
+
 ## Per-Line Type Information Over The Language Server
 
 `mlg lsp` now answers `textDocument/hover` with the type of every expression,

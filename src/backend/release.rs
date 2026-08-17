@@ -347,9 +347,8 @@ mod tests {
             "[\\b]\nDefines: B\nDocumented:\n. called: \"b\"\nId: \"{B}\"\n\n\n\
              [\\c]\nDefines: C\nDocumented:\n. called: \"c\"\nId: \"{C}\"\n"
         );
-        let a = format!(
-            "[\\a]\nDefines: A\nextends: A is \\b\nDocumented:\n. called: \"uses \\c\"\nId: \"{A}\"\n"
-        );
+        let a =
+            format!("[\\a]\nDefines: A is \\b\nDocumented:\n. called: \"uses \\c\"\nId: \"{A}\"\n");
         let items = build_release_items(&[parsed("defs.mlg", &defs), parsed("a.mlg", &a)]);
 
         assert_eq!(item(&items, A).uses, vec![B.to_string(), C.to_string()]);
@@ -366,11 +365,9 @@ mod tests {
         );
         // `\b` referenced twice; it must appear once in `uses`.
         let a = format!(
-            "[\\a]\nDefines: A\nextends: A is \\b\nsatisfies: A is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{A}\"\n"
+            "[\\a]\nDefines: A is \\b\nsatisfies: A is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{A}\"\n"
         );
-        let d = format!(
-            "[\\d]\nDefines: D\nextends: D is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{D}\"\n"
-        );
+        let d = format!("[\\d]\nDefines: D is \\b\nDocumented:\n. called: \"\\c\"\nId: \"{D}\"\n");
         let items = build_release_items(&[
             parsed("defs.mlg", &defs),
             parsed("a.mlg", &a),

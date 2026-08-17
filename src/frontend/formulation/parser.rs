@@ -3825,6 +3825,19 @@ pub fn parse_is_or_refined_statement_spec(
     parse_subject_spec_statement(input).map(IsOrRefinedStatementSpec::Spec)
 }
 
+/// Splits an optional trailing ` via <form>` view off a formulation, as in the
+/// `Defines:` target `G ::= (X, *, e) is \monoid via (X, *)`.
+///
+/// The separator is located at top level so tuples and command arguments can
+/// contain the same text without being split as statement syntax.
+pub fn split_via_view(input: &str) -> (&str, Option<&str>) {
+    let input = input.trim();
+    match find_top_level_substring(input, " via ") {
+        Some(index) => (input[..index].trim(), Some(input[index + 5..].trim())),
+        None => (input, None),
+    }
+}
+
 /// Parses an `is ... via ...` statement.
 ///
 /// The `via` separator is located at top level so tuples and command arguments

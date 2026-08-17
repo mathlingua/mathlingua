@@ -450,9 +450,9 @@ Important files:
   variadics it rejects empty, ragged, and flat actual groups and binds row and
   column length names independently.
 - `typecheck.rs` implements symbol scope, facts, substitutions, requirements,
-  subtyping through `extends:`, destructuring, operator/member resolution,
-  spec-operator reduction, numeric-literal fallback, and variadic index-result
-  checking.
+  subtyping through a `Defines:` target's `is` relation, destructuring,
+  operator/member resolution, spec-operator reduction, numeric-literal fallback,
+  and variadic index-result checking.
 - `locator.rs` maps semantic diagnostics back to source locations.
 - `definition.rs` and `rename.rs` back LSP go-to-definition and rename; `uses.rs`
   finds command occurrences (also used by `mlg release`).

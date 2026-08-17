@@ -806,7 +806,7 @@ The refined operator can then be used in declarations and expressions:
 ```
 
 An explicit refined spec-infix definition is not required when the refinement
-is inherited through the base operator's `extends:` type. If `\:subset:/`
+is inherited through the type the base operator extends. If `\:subset:/`
 extends its left operand to `\set` and `\(nonempty)::set` is defined, then
 `X' \:(nonempty)::subset:/ X` resolves implicitly. It establishes both the base
 `X' \:subset:/ X` fact and `X' is \(nonempty)::set`.
@@ -853,14 +853,14 @@ Documented:
   inherited `extends:`, that is the trivial case and must be marked `implicitly:`.
 
 Both markers are only meaningful when the refined base type is itself a subtype
-of another type (it has an `extends:` clause of its own). Using either marker on
-a base that is not a subtype of anything is an error. When the base is not a
-subtype, no marker is written at all.
+of another type (its own definition names a type it extends). Using either
+marker on a base that is not a subtype of anything is an error. When the base is
+not a subtype, no marker is written at all.
 
 A `declares:` section (only `Defines` has one) types the described form's
 parts — including the components of a destructuring target — and those facts are
 assumed when checking the definition body and stored so a value of the type
-carries them (see [Subtyping With `extends:`](#subtyping-with-extends)).
+carries them (see [Subtyping: The Type A `Defines` Extends](#subtyping-the-type-a-defines-extends)).
 
 `States` defines a command-backed statement body:
 
@@ -1227,10 +1227,11 @@ undefined command is reported.
 Every parameter and target symbol a definition introduces must be given a type.
 A header parameter needs a `when:` fact (`Missing \`when:\` requirement for
 parameter \`{parameter}\``). A `Defines` target symbol must be typed directly
-or through `extends:` (`Missing specification for target symbol \`{symbol}\`;
-specify it directly or through \`extends:\``). A `Refines` target symbol may also
-be inherited: a symbol the refined base type already declares (through the base's
-own `extends:`/`declares:` or described components) counts as specified, so
+or through the type the definition extends (`Missing specification for
+target symbol \`{symbol}\`; specify it directly or through the type the
+\`Defines:\` target extends`). A `Refines` target symbol may also be inherited: a
+symbol the refined base type already declares (through the type that base
+extends, its `declares:`, or its described components) counts as specified, so
 `\(associative)::binary.operation:on{X}` need not respecify the `*` that
 `\binary.operation:on{X}` already types. A `Declares` target symbol must be
 assigned (`Missing definition for target symbol \`{symbol}\`; assign it with
@@ -1296,8 +1297,11 @@ function ...`, `\`{name}\` is not a known type`).
 
 - **`Equivalent:`** — every `to:` item must be a command that uses the header's
   parameters directly (not expressions); all items must be the same definition
-  kind; and their target shape, defined type, `when:` requirements, `extends:`
+  kind; and their target shape, defined type, `when:` requirements, extended
   type, and capabilities must agree across members.
+- **`Defines:` extended type** — a `Defines:` target that states an `is`/spec
+  relation may not also have an `extends:` section; the two spellings are
+  equivalent, so exactly one of them carries the clauses.
 - **`Refines:` `extends:`** — the `extends:` subject must match the `Refines:`
   subject, a `[[...]]` in it must name that subject, and a `Refines:` must have
   the form `Refines: <form>`.
@@ -1371,8 +1375,7 @@ Declaration forms introduce their nested names. In:
 
 ```text
 [\group]
-Defines: G ::= (X, *, e)
-extends: G is \set via X
+Defines: G ::= (X, *, e) is \set via X
 declares:
 . X is \set
 . * is \function:on{X}:to{X}
@@ -1419,8 +1422,8 @@ The mapping body is checked after resolving type-directed operators, so an
 overloaded expression such as `x + y` contributes the output type of the
 selected addition operator. This also works when the operator is declared as a
 callable type: an addition declared as `\binary.operation:on{\naturals.set}`
-inherits its application result from the codomain of the function type reached
-through `extends:`.
+inherits its application result from the codomain of the function type it
+extends.
 
 The checker understands these fact kinds:
 
@@ -1456,15 +1459,19 @@ composed refined command is not defined directly, the checker can validate the
 base command and refinement pieces for existence and arity. Requirement proving
 for command use still looks up the exact command signature being used.
 
-## Subtyping With `extends:`
+## Subtyping: The Type A `Defines` Extends
 
-`extends:` introduces subtype and extension implications for `Defines`
-definitions.
+A `Defines` group states the type it extends in one of two equivalent ways: on
+the `Defines:` target itself, or in an `extends:` section. Both introduce the
+same subtype and extension implications, and **a group may use one or the other
+but not both**.
+
+The target spelling is the short one, and is what most definitions want, because
+the subject is written once:
 
 ```text
 [\group]
-Defines: G ::= (X, *, e)
-extends: G is \set via X
+Defines: G ::= (X, *, e) is \set via X
 declares:
 . X is \set
 . * is \function:on{X}:to{X}
@@ -1476,18 +1483,45 @@ Documented:
 This means that if the checker knows `G is \group`, it can prove `G is \set`.
 The implication is recursive, so subtype chains are followed.
 
-The `via` form both documents the view used to regard the subtype as the
-supertype **and sets the types of the `via` symbols**, so they need not be
-repeated in `declares:`:
+`Defines: X is \foo` and
 
-- `extends: M is \set via X` — a single `via` symbol becomes an instance of the
-  extended type, i.e. it records `X is \set`.
-- `extends: S is \magma via (X, *)` — a `via` tuple maps positionally onto the
+```text
+Defines: X
+extends: X is \foo
+```
+
+mean exactly the same thing. The `extends:` section exists for what a target
+cannot express: **extending several types at once**, typically through different
+views of the same tuple.
+
+```text
+[\foo]
+Defines: X ::= (A, B, C)
+extends:
+. X is \bar via (A, B)
+. X is \baz via (B, C)
+```
+
+The type may name a refined command, as in
+`Defines: S ::= (X, *) is \(finite)::magma via (X, *)`.
+
+An `is` relation may be followed by `via`, which both documents the view used to
+regard the subtype as the supertype **and sets the types of the `via` symbols**,
+so they need not be repeated in `declares:`:
+
+- `M ::= (X, *) is \set via X` — a single `via` symbol becomes an instance of
+  the extended type, i.e. it records `X is \set`.
+- `S ::= (X, *) is \magma via (X, *)` — a `via` tuple maps positionally onto the
   extended type's own components, so `X` and `*` inherit the types `\magma`
   gives its components (`X is \set`, `* is \binary.operation:on{S}`).
 
 Because `via` supplies those types, the `declares:` section only needs to type
-components the `via` does not cover (for `\group` above, just `e`).
+components no `via` covers (for `\group` above, just `e`). A `via` without an
+`is` relation to accompany it is an error.
+
+An operator-form target states its type about the operator itself, so
+`Defines: x_ * y_ is \function:on{X \.cross./ X}:to{X}` records the fact about
+`*`.
 
 ### Destructuring targets
 
@@ -1501,17 +1535,20 @@ given: M ::= (X, *) is \magma
 ```
 
 The component names (including operator components like `*`) are introduced, and
-their types are inferred: from `extends:`/`via` and then `declares:` for a
-`Defines` target; from the parameter's `when:` type for a command parameter;
+their types are inferred: from the extended type's `is`/`via` and then
+`declares:` for a `Defines` target; from the parameter's `when:` type for a command parameter;
 and from the right-hand type for a `given:`/`Declares:` binding. Components typed
 this way do not each need a separate `when:` entry, and member access reaches
 them (`M.X`, `M.*`). Only `::=` introduces these symbols — `:=` requires its
 right-hand side to already be in scope.
 
-An `extends:` section may also use a spec statement:
+A subtype clause may also state a spec relation instead of an `is` relation, in
+either spelling:
 
 ```text
-extends: x "in" X
+[\element:of{X}]
+Defines: x "in" X
+when: X is \set
 ```
 
 That records the corresponding spec fact as an implication for values of the
@@ -1522,9 +1559,8 @@ the right-hand side of an `is` statement:
 
 ```text
 [\function:on{A}:to{B}]
-Defines: f(x__)
+Defines: f(x__) is (_ "in" A) -> (_ "in" B)
 when: A, B is \set
-extends: f is (_ "in" A) -> (_ "in" B)
 Documented:
 . called: "function"
 ```
@@ -1593,8 +1629,8 @@ spec fact through the capability and establish `r is \real`.
 The alias target must satisfy the requirements of any command type it uses in
 the owning context. For example, if `\element.of:group{G}` requires
 `G is \set`, then a capability on `\group` may alias membership to
-`\element.of:group{G}` only when `G is \set` is available, commonly through an
-`extends: G is \set` subtype declaration on `\group`.
+`\element.of:group{G}` only when `G is \set` is available, commonly because
+`\group` is defined as `Defines: G ::= (X, *, e) is \set via X`.
 
 Direct spec requirements are also supported once the target type requires or
 enables the operator. If `\group` has `x_ "in" G` as a capability and a command

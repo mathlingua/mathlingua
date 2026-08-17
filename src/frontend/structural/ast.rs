@@ -180,10 +180,70 @@ pub enum MappingWritingTarget {
     Invocation(Expression),
 }
 
+/// The form or declaration a `Defines:` group describes.
+///
+/// A [`DefinesTarget::Declaration`] target may carry an `is`/specification
+/// relation, which states the type the definition extends — `Defines: A is \set`
+/// makes every `A` of the defined type a `\set`. A bare
+/// [`DefinesTarget::Form`] target extends nothing on its own; it may still name
+/// what it extends in an [`ExtendsSection`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DefinesTarget {
     Form(FormOrDeclaration),
     Declaration(DeclarationStatement),
+}
+
+/// One clause of a definition's subtype declaration: the type the definition
+/// extends, with the optional `via` view used to regard it as that type.
+///
+/// A single clause is normally written on the `Defines:` target itself
+/// (`Defines: G ::= (X, *, e) is \monoid via (X, *)`). An `extends:` section
+/// exists for the case a target cannot express: extending several types at once,
+/// each through a different view of the same tuple.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExtendsItem {
+    pub statement: DeclarationStatement,
+    pub via: Option<FormOrDeclaration>,
+}
+
+/// One subtype clause of a `Defines` group, borrowed from whichever spelling
+/// carried it. See [`extends_clauses`].
+#[derive(Clone, Copy, Debug)]
+pub struct ExtendsClause<'a> {
+    pub statement: &'a DeclarationStatement,
+    pub via: Option<&'a FormOrDeclaration>,
+}
+
+/// The types a `Defines` group extends, from either spelling.
+///
+/// `Defines: X is \foo` and `Defines: X` with `extends: X is \foo` mean the same
+/// thing, so every consumer works from this normalized list rather than from one
+/// spelling or the other. Writing both is rejected while parsing, so at most one
+/// source contributes.
+pub fn extends_clauses<'a>(
+    defines: &'a DefinesSection,
+    extends: Option<&'a ExtendsSection>,
+) -> Vec<ExtendsClause<'a>> {
+    if let Some(extends) = extends {
+        return extends
+            .arguments
+            .iter()
+            .map(|item| ExtendsClause {
+                statement: &item.statement,
+                via: item.via.as_ref(),
+            })
+            .collect();
+    }
+
+    match &defines.argument {
+        DefinesTarget::Declaration(statement) if statement.relation.is_some() => {
+            vec![ExtendsClause {
+                statement,
+                via: defines.via.as_ref(),
+            }]
+        }
+        _ => Vec::new(),
+    }
 }
 
 /// One side of a top-level `Relation:` (`between:`/`and:`). A relationship may
@@ -206,10 +266,19 @@ pub enum RelationMeans {
     Text(OpenText),
 }
 
-argument_section!(DefinesSection, DefinesTarget);
+/// The `Defines:` section: the described target plus the optional `via` view of
+/// the type it extends, as in `Defines: G ::= (X, *, e) is \monoid via (X, *)`.
+/// The `via` form is only meaningful together with an `is` relation on the
+/// target, and a target that states a relation excludes an [`ExtendsSection`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DefinesSection {
+    pub argument: DefinesTarget,
+    pub via: Option<FormOrDeclaration>,
+}
+
 arguments_section!(UsingSection, DeclarationStatement);
 arguments_section!(WhenSection, Clause);
-argument_section!(ExtendsSection, IsOrViaItem);
+arguments_section!(ExtendsSection, ExtendsItem);
 arguments_section!(DefinesDeclaresSection, IsOrViaItem);
 arguments_section!(SatisfiesSection, Clause);
 arguments_section!(RequiresSection, RequiresItem);

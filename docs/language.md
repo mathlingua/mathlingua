@@ -743,7 +743,7 @@ Optional sections, in order:
 using:
 when:
 extends:
-declares:
+means:
 satisfies:
 Requires:
 Enables:
@@ -754,8 +754,8 @@ References:
 Metadata:
 ```
 
-(`Refines` uses `extends:`/`satisfies:` rather than `declares:`; only
-`Defines` has a `declares:` section.)
+(`Refines` uses `extends:`/`satisfies:` rather than `means:`; only `Defines`
+has a `means:` section.)
 
 `Declares` introduces a command by an `is` or spec statement.
 
@@ -857,7 +857,7 @@ of another type (its own definition names a type it extends). Using either
 marker on a base that is not a subtype of anything is an error. When the base is
 not a subtype, no marker is written at all.
 
-A `declares:` section (only `Defines` has one) types the described form's
+A `means:` section (only `Defines` has one) types the described form's
 parts — including the components of a destructuring target — and those facts are
 assumed when checking the definition body and stored so a value of the type
 carries them (see [Subtyping: The Type A `Defines` Extends](#subtyping-the-type-a-defines-extends)).
@@ -1006,7 +1006,7 @@ the construct supports.
 `Justification:` (placed after `Documented:`) accepts only `have:`/`asserting:`
 groups, each with a required `[label]` heading. Any grouped expression, statement,
 or specification elsewhere in the group may carry a `[:label:]`, including inside
-a nested clause or expression. For example, both a `declares:` item
+a nested clause or expression. For example, both a `means:` item
 `(.x is \foo.)[:1:]` and a `satisfies:` clause
 ``(.*' := \restriction:of{`*`}:on{X' \.set.cross./ X'}.)[:2:]`` may reference
 entries. A matching entry establishes the labeled formulation using its
@@ -1226,14 +1226,25 @@ undefined command is reported.
 
 Every parameter and target symbol a definition introduces must be given a type.
 A header parameter needs a `when:` fact (`Missing \`when:\` requirement for
-parameter \`{parameter}\``). A `Defines` target symbol must be typed directly
+parameter \`{parameter}\``) — except the symbol the definition describes. A
+spec-infix heading such as `[A \:subset:/ B]` is sugar for a command whose left
+operand is the symbol being defined, so `A` is stated by the `Defines:` target
+and may not appear in `when:` at all (`\`when:\` requirement for \`A\` is not
+allowed because \`A\` is what this definition describes; state its type on the
+definition's target instead`). `when:` says only what a *use* of the command
+requires of the remaining operands. A `Defines` target symbol must be typed directly
 or through the type the definition extends (`Missing specification for
 target symbol \`{symbol}\`; specify it directly or through the type the
 \`Defines:\` target extends`). A `Refines` target symbol may also be inherited: a
 symbol the refined base type already declares (through the type that base
-extends, its `declares:`, or its described components) counts as specified, so
+extends, its `means:`, or its described components) counts as specified, so
 `\(associative)::binary.operation:on{X}` need not respecify the `*` that
-`\binary.operation:on{X}` already types. A `Declares` target symbol must be
+`\binary.operation:on{X}` already types. Specification is **exactly once**: a
+symbol the subtype clauses already type — including the components a `via`
+reaches — may not be typed again in `means:` (`Duplicate specification for target
+symbol \`{symbol}\`; it is already specified by ...`). All of a group's subtype
+clauses count as one source, so two `extends:` clauses may name the same subject
+or reach the same component through different views. A `Declares` target symbol must be
 assigned (`Missing definition for target symbol \`{symbol}\`; assign it with
 \`:=\` ... or top-level \`expresses:\``) at most once (`Duplicate definition for
 target symbol ...`), and a `Declares` value **must state its type** — either
@@ -1376,13 +1387,13 @@ Declaration forms introduce their nested names. In:
 ```text
 [\group]
 Defines: G ::= (X, *, e) is \set via X
-declares:
-. X is \set
+means:
 . * is \function:on{X}:to{X}
 . e "in" G
 ```
 
-the `Defines:` form introduces `G`, `X`, and `e`. The structural symbols are
+the `Defines:` form introduces `G`, `X`, `*`, and `e`. `via X` types `X`, so
+only `*` and `e` remain for `means:`. The structural symbols are
 specified outside of `when:`, and `via X` is a recognized structural view.
 
 ## Type Facts and Requirements
@@ -1472,8 +1483,7 @@ the subject is written once:
 ```text
 [\group]
 Defines: G ::= (X, *, e) is \set via X
-declares:
-. X is \set
+means:
 . * is \function:on{X}:to{X}
 . e "in" G
 Documented:
@@ -1507,7 +1517,7 @@ The type may name a refined command, as in
 
 An `is` relation may be followed by `via`, which both documents the view used to
 regard the subtype as the supertype **and sets the types of the `via` symbols**,
-so they need not be repeated in `declares:`:
+so they need not be repeated in `means:`:
 
 - `M ::= (X, *) is \set via X` — a single `via` symbol becomes an instance of
   the extended type, i.e. it records `X is \set`.
@@ -1515,9 +1525,10 @@ so they need not be repeated in `declares:`:
   extended type's own components, so `X` and `*` inherit the types `\magma`
   gives its components (`X is \set`, `* is \binary.operation:on{S}`).
 
-Because `via` supplies those types, the `declares:` section only needs to type
-components no `via` covers (for `\group` above, just `e`). A `via` without an
-`is` relation to accompany it is an error.
+Because `via` supplies those types, the `means:` section only needs to type
+components no `via` covers (for `\group` above, `*` and `e`) — and it may not
+retype the ones a `via` does cover, since a symbol is specified exactly once. A
+`via` without an `is` relation to accompany it is an error.
 
 An operator-form target states its type about the operator itself, so
 `Defines: x_ * y_ is \function:on{X \.cross./ X}:to{X}` records the fact about
@@ -1536,7 +1547,7 @@ given: M ::= (X, *) is \magma
 
 The component names (including operator components like `*`) are introduced, and
 their types are inferred: from the extended type's `is`/`via` and then
-`declares:` for a `Defines` target; from the parameter's `when:` type for a command parameter;
+`means:` for a `Defines` target; from the parameter's `when:` type for a command parameter;
 and from the right-hand type for a `given:`/`Declares:` binding. Components typed
 this way do not each need a separate `when:` entry, and member access reaches
 them (`M.X`, `M.*`). Only `::=` introduces these symbols — `:=` requires its
@@ -1598,14 +1609,14 @@ declaration are equivalent alternatives:
 
 ```text
 Defines: f(x_) ::= y_
-declares:
+means:
 . x_ is \real
 . y_ is \real
 ```
 
 ```text
 Defines: f(x_) ::= y_
-declares:
+means:
 . f is (? is \real) -> (? is \real)
 ```
 

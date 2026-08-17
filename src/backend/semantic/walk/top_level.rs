@@ -33,7 +33,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
                     }
                 }
             }
-            if let Some(section) = &group.declares {
+            if let Some(section) = &group.means {
                 for item in &section.arguments {
                     walk_is_or_via_item(item, visit);
                 }

@@ -279,7 +279,7 @@ pub struct DefinesSection {
 arguments_section!(UsingSection, DeclarationStatement);
 arguments_section!(WhenSection, Clause);
 arguments_section!(ExtendsSection, ExtendsItem);
-arguments_section!(DefinesDeclaresSection, IsOrViaItem);
+arguments_section!(DefinesMeansSection, IsOrViaItem);
 arguments_section!(SatisfiesSection, Clause);
 arguments_section!(RequiresSection, RequiresItem);
 arguments_section!(EnablesSection, EnablesItem);
@@ -448,7 +448,7 @@ pub enum IsOrViaItem {
     IsVia(IsViaStatement),
     Declaration(DeclarationStatement),
     /// A `have:`/`asserting:` group standing in for a specification the checker
-    /// cannot establish on its own (allowed in `declares:`).
+    /// cannot establish on its own (allowed in a `Defines:` group's `means:`).
     Have(Box<HaveGroup>),
     /// A specification wrapped in a `[:label:]` (e.g. `(.x is \foo.)[:1:]`) whose
     /// `label` may match a `Justification:` entry `[label]`. When it does, that
@@ -592,7 +592,7 @@ pub struct DefinesGroup {
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub extends: Option<ExtendsSection>,
-    pub declares: Option<DefinesDeclaresSection>,
+    pub means: Option<DefinesMeansSection>,
     pub satisfies: Option<SatisfiesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,

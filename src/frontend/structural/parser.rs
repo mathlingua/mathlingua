@@ -286,7 +286,7 @@ pub(in crate::frontend::structural::parser) fn parse_alias_kind(
     parse_spec_operator_alias(input).map(AliasKind::SpecOperator)
 }
 
-/// Parses an item accepted by `declares:` and related sections.
+/// Parses an item accepted by a `Defines:` group's `means:` and related sections.
 ///
 /// `is ... via ...` is more specific, so it is attempted before the broader
 /// `is`/spec parser. The `is` relation may name a refined command
@@ -810,7 +810,7 @@ fn parse_required_resource_references(
 ///
 /// Inline section arguments and formulation arguments are accepted.  Text and
 /// nested groups are diagnosed because callers requested formulation content.
-/// Parses `declares:` items: inline `is`/`is … via …` specifications, plus
+/// Parses `means:` items: inline `is`/`is … via …` specifications, plus
 /// `have:`/`asserting:` groups standing in for a specification the checker cannot
 /// establish on its own.
 fn parse_required_specify_items(
@@ -827,7 +827,7 @@ fn parse_required_specify_items(
                     Err(error) => tracker.user_error_at_row(
                         Some(ORIGIN),
                         row,
-                        format!("Invalid declares formulation: {error}"),
+                        format!("Invalid means formulation: {error}"),
                     ),
                 }
             }
@@ -840,7 +840,7 @@ fn parse_required_specify_items(
                     tracker.user_error_at_row(
                         Some(ORIGIN),
                         row,
-                        "Expected a specification or a `have:` group in `declares`".to_owned(),
+                        "Expected a specification or a `have:` group in `means`".to_owned(),
                     );
                 }
             }
@@ -848,7 +848,7 @@ fn parse_required_specify_items(
                 tracker.user_error_at_row(
                     Some(ORIGIN),
                     row,
-                    "Expected formulation in section `declares`".to_owned(),
+                    "Expected formulation in section `means`".to_owned(),
                 );
             }
         }
@@ -858,7 +858,7 @@ fn parse_required_specify_items(
             tracker.user_error_at_row(
                 Some(ORIGIN),
                 section.metadata.row,
-                "Expected declares formulations".to_owned(),
+                "Expected means formulations".to_owned(),
             );
         }
     })
@@ -2874,7 +2874,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             "using?",
             "when?",
             "extends?",
-            "declares?",
+            "means?",
             "satisfies?",
             "Requires?",
             "Enables?",
@@ -2926,9 +2926,9 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        declares: sections.get("declares").copied().and_then(|section| {
+        means: sections.get("means").copied().and_then(|section| {
             parse_required_specify_items(section, tracker)
-                .map(|arguments| DefinesDeclaresSection { arguments })
+                .map(|arguments| DefinesMeansSection { arguments })
         }),
         satisfies: sections.get("satisfies").copied().and_then(|section| {
             parse_required_clauses(section, "satisfies", tracker)
@@ -4120,26 +4120,25 @@ Documented:
     }
 
     #[test]
-    fn rejects_the_legacy_means_section_label_for_defines_and_refines() {
-        for source in [
-            r#"[\thing]
-Defines: X
-means: X is \set
-"#,
-            r#"[\(special)::thing]
+    fn rejects_the_means_section_label_for_refines() {
+        // `Refines` has no `means:` section — only `Defines` does, where it
+        // types the target's parts.
+        let source = r#"[\(special)::thing]
 Refines: X
 means: X is \thing
-"#,
-        ] {
-            let (_, diagnostics) = parse_with_diagnostics(source);
+"#;
 
-            assert!(diagnostics.iter().any(|event| {
+        let (_, diagnostics) = parse_with_diagnostics(source);
+
+        assert!(
+            diagnostics.iter().any(|event| {
                 event.as_message().is_some_and(|message| {
                     message.message.contains("Unexpected section `means`")
                         && message.message.contains("extends?:")
                 })
-            }));
-        }
+            }),
+            "{diagnostics:#?}"
+        );
     }
 
     #[test]
@@ -4176,7 +4175,7 @@ when:
   allOf:
   . x = x
   . y = y
-declares:
+means:
 . Y is \set via (X, Y)
 . y "contains" Y
 satisfies:
@@ -4343,9 +4342,9 @@ that:
                 ));
                 assert_eq!(
                     group
-                        .declares
+                        .means
                         .as_ref()
-                        .expect("expected declares")
+                        .expect("expected means")
                         .arguments
                         .len(),
                     2
@@ -5790,7 +5789,7 @@ satisfies:
         let text = r#"
 [\group]
 Defines: G ::= (X, *, e) is \monoid via (X, *)
-declares:
+means:
 . e "in" X
 "#;
 
@@ -5949,13 +5948,13 @@ extends: X is \set
     }
 
     #[test]
-    fn parses_defines_function_declaration_target_with_declares() {
+    fn parses_defines_function_declaration_target_with_means() {
         let text = r#"
 [\function:on{A}:to{B}]
 Defines: f(x__) ::= y_
 when:
 . A, B is \set
-declares:
+means:
 . x__ "in" A
 . y_ "in" B
 "#;
@@ -5983,9 +5982,9 @@ declares:
                 ));
                 assert_eq!(
                     group
-                        .declares
+                        .means
                         .as_ref()
-                        .expect("expected declares")
+                        .expect("expected means")
                         .arguments
                         .len(),
                     2

@@ -602,7 +602,7 @@ fn definition_type_info(
             group.when.as_ref(),
             None,
             Some(&group.defines),
-            group.declares.as_ref(),
+            group.means.as_ref(),
             group.extends.as_ref(),
             registry,
         )),
@@ -708,7 +708,7 @@ fn type_info_from_parts(
     when: Option<&WhenSection>,
     declares: Option<&DeclarationStatement>,
     defines: Option<&DefinesSection>,
-    defines_declares: Option<&DefinesDeclaresSection>,
+    defines_means: Option<&DefinesMeansSection>,
     extends: Option<&ExtendsSection>,
     registry: &SignatureRegistry,
 ) -> DefinitionTypeInfo {
@@ -764,17 +764,14 @@ fn type_info_from_parts(
                 .collect()
         })
         .unwrap_or_default();
-    if let Some(fact) = described
-        .zip(defines_declares)
-        .and_then(|(target, declares)| {
-            function_type_fact_from_defines_declares(target, declares, &context)
-        })
-    {
+    if let Some(fact) = described.zip(defines_means).and_then(|(target, declares)| {
+        function_type_fact_from_defines_means(target, declares, &context)
+    }) {
         outputs.push(context.normalize_fact(&fact));
     }
 
     let component_types = defines
-        .map(|defines| component_type_facts(defines, extends, defines_declares, &context, registry))
+        .map(|defines| component_type_facts(defines, extends, defines_means, &context, registry))
         .unwrap_or_default();
     let component_shapes = described
         .map(defines_target_component_shapes)
@@ -782,7 +779,7 @@ fn type_info_from_parts(
     let set_element_target = described.and_then(defines_target_set_target).cloned();
     let set_element_types = set_element_target
         .as_ref()
-        .map(|target| set_element_type_facts(target, defines_declares, &context))
+        .map(|target| set_element_type_facts(target, defines_means, &context))
         .unwrap_or_default();
     let parameter_destructurings = destructured_parameters(heading, &context);
     let inferred_parameters = collect_inferred_parameter_names(when);
@@ -827,15 +824,15 @@ fn defines_target_set_target(target: &DefinesTarget) -> Option<&SetTarget> {
 
 fn set_element_type_facts(
     target: &SetTarget,
-    declares: Option<&DefinesDeclaresSection>,
+    means: Option<&DefinesMeansSection>,
     context: &TypeContext,
 ) -> Vec<TypeFact> {
-    let Some(declares) = declares else {
+    let Some(means) = means else {
         return Vec::new();
     };
     let mut target_names = BTreeSet::new();
     collect_set_target_names(target, &mut target_names);
-    declares
+    means
         .arguments
         .iter()
         .flat_map(|item| facts_from_is_or_via_item_in_context(item, context))
@@ -918,13 +915,13 @@ fn collect_inferred_names_in_function_type_spec(spec: &FunctionTypeSpec, names: 
 /// Type facts for the components of a destructuring describes target, in tuple
 /// order. Each component's type is drawn from the definition's `is … via …`
 /// clauses first (its components inherit the extended type's component types)
-/// and then `declares:` for any component no `via` covers. Facts are normalized
+/// and then `means:` for any component no `via` covers. Facts are normalized
 /// so they can be re-substituted when another definition destructures a value of
 /// this type.
 fn component_type_facts(
     defines: &DefinesSection,
     extends: Option<&ExtendsSection>,
-    declares: Option<&DefinesDeclaresSection>,
+    means: Option<&DefinesMeansSection>,
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> Vec<TypeFact> {
@@ -942,8 +939,8 @@ fn component_type_facts(
             fact_context.add_fact(fact);
         }
     }
-    if let Some(declares) = declares {
-        for item in &declares.arguments {
+    if let Some(means) = means {
+        for item in &means.arguments {
             for fact in facts_from_is_or_via_item_in_context(item, &fact_context) {
                 fact_context.add_fact(fact);
             }
@@ -966,7 +963,7 @@ fn component_type_facts(
 ///
 /// An operator-form subject (`x_ * y_ is \function:…`) states its facts about
 /// the operator itself, since `*` is how such a target is named everywhere
-/// else — in `declares:`, in a `Refines:` of the same form, and in member
+/// else — in `means:`, in a `Refines:` of the same form, and in member
 /// access.
 fn facts_from_extends_clause(clause: ExtendsClause<'_>) -> Vec<TypeFact> {
     retarget_operator_subject(
@@ -1051,7 +1048,7 @@ fn facts_from_extends_via(
 
 /// Adds the component types the definition's `is … via …` clauses assign
 /// (`X is \set`, etc.) to the checking context, so the definition's own body
-/// (e.g. `declares: e "in" X`) can rely on them.
+/// (e.g. `means: e "in" X`) can rely on them.
 fn assume_extends_via_facts(
     defines: &DefinesSection,
     extends: Option<&ExtendsSection>,
@@ -1870,8 +1867,8 @@ fn validate_top_level_item_types(
                 &mut context,
                 registry,
             );
-            assume_optional_declares(
-                &group.declares,
+            assume_optional_means(
+                &group.means,
                 &mut context,
                 path,
                 locator,
@@ -1880,7 +1877,7 @@ fn validate_top_level_item_types(
             );
             assume_defines_function_type(
                 &group.defines.argument,
-                &group.declares,
+                &group.means,
                 &mut context,
             );
             validate_defines_justification_usage(group, path, locator, event_log);
@@ -2893,16 +2890,16 @@ fn assume_optional_using(
     }
 }
 
-fn assume_optional_declares(
-    declares: &Option<DefinesDeclaresSection>,
+fn assume_optional_means(
+    means: &Option<DefinesMeansSection>,
     context: &mut TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    if let Some(declares) = declares {
-        for item in &declares.arguments {
+    if let Some(means) = means {
+        for item in &means.arguments {
             assume_is_or_via_item(item, context, path, locator, registry, event_log);
         }
     }
@@ -2937,7 +2934,7 @@ fn assume_is_or_via_item(
         }
         // Check the `have:` specification against its `asserting:` facts, then
         // contribute its typing facts to the surrounding context (this is the
-        // sole pass over `declares:` items, so the check happens here).
+        // sole pass over `means:` items, so the check happens here).
         IsOrViaItem::Have(group) => {
             check_have_group(group, context, path, locator, registry, event_log);
             for statement in have_group_declarations(group) {
@@ -3638,8 +3635,8 @@ fn validate_defines_justification_usage(
             collect_declaration_referenced_labels(&item.statement, &mut referenced);
         }
     }
-    if let Some(declares) = &group.declares {
-        for item in &declares.arguments {
+    if let Some(means) = &group.means {
+        for item in &means.arguments {
             collect_is_or_via_referenced_labels(item, &mut referenced);
         }
     }
@@ -3769,13 +3766,13 @@ fn check_optional_extends(
 
 fn assume_defines_function_type(
     target: &DefinesTarget,
-    declares: &Option<DefinesDeclaresSection>,
+    means: &Option<DefinesMeansSection>,
     context: &mut TypeContext,
 ) {
-    let Some(declares) = declares else {
+    let Some(means) = means else {
         return;
     };
-    if let Some(fact) = function_type_fact_from_defines_declares(target, declares, context) {
+    if let Some(fact) = function_type_fact_from_defines_means(target, means, context) {
         context.add_fact(fact);
     }
 }
@@ -3837,13 +3834,25 @@ fn validate_when_section<T>(
     }
 }
 
-fn defines_when_parameters_from_usage(group: &DefinesGroup) -> WhenParameters {
+/// The header parameters a `Defines` group's `when:` may constrain.
+///
+/// A spec-infix heading such as `[A \:subset:/ B]` is sugar for a command whose
+/// left operand is the symbol being defined, so `A` is excluded: what `A` is
+/// belongs on the `Defines:` target, and `when:` says only what a *use* of the
+/// command requires of the remaining operands.
+fn defines_when_parameters(group: &DefinesGroup) -> WhenParameters {
     let mut parameters = header_when_parameters(&group.heading);
-    let described_spec_infix_subject =
-        described_spec_infix_subject(&group.heading, &group.defines.argument);
-    if let Some(subject) = &described_spec_infix_subject {
-        parameters.required.remove(subject);
+    if let Some(subject) = described_spec_infix_subject(&group.heading, &group.defines.argument) {
+        parameters.required.remove(&subject);
+        parameters.allowed.remove(&subject);
+        parameters.described = Some(subject);
     }
+    parameters
+}
+
+fn defines_when_parameters_from_usage(group: &DefinesGroup) -> WhenParameters {
+    let mut parameters = defines_when_parameters(group);
+    let described_spec_infix_subject = parameters.described.clone();
     // Components of a destructuring parameter are typed from the parameter's own
     // type, so using them in the body must not turn them into `when:`-required
     // parameters.
@@ -3869,7 +3878,7 @@ fn defines_when_parameters_from_usage(group: &DefinesGroup) -> WhenParameters {
     parameters
 }
 
-fn refines_when_parameters_from_usage(group: &RefinesGroup) -> WhenParameters {
+fn refines_when_parameters(group: &RefinesGroup) -> WhenParameters {
     let mut parameters = header_when_parameters(&group.heading);
     if let CommandHeader::InfixSpec(header) = &group.heading
         && header.refinement.is_some()
@@ -3877,9 +3886,15 @@ fn refines_when_parameters_from_usage(group: &RefinesGroup) -> WhenParameters {
         let subject = form_or_declaration_subject_key(&header.left);
         if subject == primary_subject_key(&group.refines.argument.subject) {
             parameters.required.remove(&subject);
+            parameters.allowed.remove(&subject);
+            parameters.described = Some(subject);
         }
     }
     parameters
+}
+
+fn refines_when_parameters_from_usage(group: &RefinesGroup) -> WhenParameters {
+    refines_when_parameters(group)
 }
 
 /// Names of every component of a named destructuring parameter `M ::= (X, *)` in
@@ -3924,8 +3939,8 @@ fn form_or_declaration_subject_key(form: &FormOrDeclaration) -> String {
 fn defines_used_names(group: &DefinesGroup) -> BTreeSet<String> {
     let mut names = BTreeSet::new();
     collect_extends_clause_names(&group.defines, group.extends.as_ref(), &mut names);
-    if let Some(declares) = &group.declares {
-        for item in &declares.arguments {
+    if let Some(means) = &group.means {
+        for item in &means.arguments {
             collect_is_or_via_names(item, &mut names);
         }
     }
@@ -3947,18 +3962,15 @@ fn validate_defines_target_symbol_specifications(
     covered.insert(described_target_subject_key(&group.defines.argument));
     collect_defines_mapping_alias_names(&group.defines.argument, &mut covered);
     collect_using_covered_symbols(&group.using, &mut covered);
-    collect_valid_when_covered_symbols(
-        &group.when,
-        &header_when_parameters(&group.heading),
-        &mut covered,
-    );
-    collect_declares_covered_symbols(&group.declares, &mut covered);
+    collect_valid_when_covered_symbols(&group.when, &defines_when_parameters(group), &mut covered);
+    collect_means_covered_symbols(&group.means, &mut covered);
     if let DefinesTarget::Declaration(statement) = &group.defines.argument {
         collect_declaration_statement_covered_symbols(statement, &mut covered);
     }
     collect_extends_clause_covered_symbols(&group.defines, group.extends.as_ref(), &mut covered);
     let symbols = defines_target_symbols(&group.defines.argument);
     validate_target_symbol_specifications(&symbols, &covered, path, locator, event_log);
+    validate_single_symbol_specification(group, &symbols, path, locator, event_log);
 }
 
 /// A function declaration alias names the same mapping as the function form,
@@ -4078,11 +4090,7 @@ fn validate_refines_target_symbol_specifications(
         collect_is_subject_covered_symbols(expansion, &mut covered);
     }
     collect_using_covered_symbols(&group.using, &mut covered);
-    collect_valid_when_covered_symbols(
-        &group.when,
-        &header_when_parameters(&group.heading),
-        &mut covered,
-    );
+    collect_valid_when_covered_symbols(&group.when, &refines_when_parameters(group), &mut covered);
     if let Some(extends) = &group.extends {
         collect_declaration_statement_covered_symbols(&extends.argument, &mut covered);
     }
@@ -4103,7 +4111,7 @@ fn validate_refines_target_symbol_specifications(
 
 /// Adds to `covered` every symbol that the base type refined by `heading`
 /// already declares — the subjects of the base type's own extended-type and
-/// `declares:` facts (recorded as type-extension rules) and its described
+/// `means:` facts (recorded as type-extension rules) and its described
 /// components.
 fn collect_refines_base_specified_symbols(
     heading: &CommandHeader,
@@ -4139,6 +4147,76 @@ fn validate_declaration_target_symbol_specifications(
 ) {
     let symbols = declaration_target_symbols(statement);
     validate_target_symbol_specifications(&symbols, covered, path, locator, event_log);
+}
+
+/// Reports each target symbol whose type a `Defines` group states more than
+/// once.
+///
+/// A symbol carries one type, so stating it twice is redundant at best and
+/// contradictory at worst. The usual case is a `via` that already types a
+/// component — `Defines: G ::= (X, *, e) is \set via X` states `X is \set` — and
+/// a `means:` item that repeats it. Components the subtype clauses do not reach
+/// (`*` and `e` above) still have to be typed in `means:`; that is the
+/// complementary rule in [`validate_target_symbol_specifications`].
+///
+/// All of the group's subtype clauses count as a *single* source. `extends:`
+/// exists precisely so one definition can extend several types, so two clauses
+/// may legitimately name the same subject (`X is \bar via (A, B)` and
+/// `X is \baz via (B, C)`) or reach the same component through different views.
+///
+/// `when:` and `using:` are not specification sources in this sense: `when:`
+/// states what a *use* of the command requires and `using:` introduces auxiliary
+/// symbols, neither of which is the definition saying what its own target is.
+fn validate_single_symbol_specification(
+    group: &DefinesGroup,
+    symbols: &BTreeSet<String>,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let mut sites: Vec<(String, &'static str)> = Vec::new();
+
+    let extends_source = if group.extends.is_some() {
+        "an `extends:` clause"
+    } else {
+        "the `Defines:` target"
+    };
+    let mut extended = BTreeSet::new();
+    for clause in extends_clauses(&group.defines, group.extends.as_ref()) {
+        collect_is_subject_covered_symbols(&clause.statement.subject, &mut extended);
+        if let Some(via) = clause.via {
+            collect_form_or_declaration_target_symbols(via, &mut extended);
+        }
+    }
+    sites.extend(extended.into_iter().map(|symbol| (symbol, extends_source)));
+
+    if let Some(means) = &group.means {
+        for item in &means.arguments {
+            let mut item_symbols = BTreeSet::new();
+            collect_is_or_via_covered_symbols(item, &mut item_symbols);
+            sites.extend(item_symbols.into_iter().map(|symbol| (symbol, "`means:`")));
+        }
+    }
+
+    let mut first: HashMap<&str, &'static str> = HashMap::new();
+    for (symbol, source) in &sites {
+        if !symbols.contains(symbol) {
+            continue;
+        }
+        match first.get(symbol.as_str()) {
+            None => {
+                first.insert(symbol, source);
+            }
+            Some(previous) => emit_error(
+                event_log,
+                path,
+                locator.locate_symbol(symbol),
+                format!(
+                    "Duplicate specification for target symbol `{symbol}`; it is already specified by {previous}"
+                ),
+            ),
+        }
+    }
 }
 
 fn validate_target_symbol_specifications(
@@ -4291,12 +4369,12 @@ fn collect_using_covered_symbols(using: &Option<UsingSection>, covered: &mut BTr
     }
 }
 
-fn collect_declares_covered_symbols(
-    declares: &Option<DefinesDeclaresSection>,
+fn collect_means_covered_symbols(
+    means: &Option<DefinesMeansSection>,
     covered: &mut BTreeSet<String>,
 ) {
-    if let Some(declares) = declares {
-        for item in &declares.arguments {
+    if let Some(means) = means {
+        for item in &means.arguments {
             collect_is_or_via_covered_symbols(item, covered);
         }
     }
@@ -5355,6 +5433,18 @@ fn validate_when_subject(
 ) {
     if parameters.allowed.contains(subject) {
         covered_parameters.insert(subject.to_string());
+        return;
+    }
+
+    if parameters.described.as_deref() == Some(subject) {
+        emit_error(
+            event_log,
+            path,
+            locator.locate_symbol(subject),
+            format!(
+                "`when:` requirement for `{subject}` is not allowed because `{subject}` is what this definition describes; state its type on the definition's target instead"
+            ),
+        );
         return;
     }
 
@@ -16738,13 +16828,13 @@ struct DescribedFunctionTarget {
     variadic_tuple_input: bool,
 }
 
-fn function_type_fact_from_defines_declares(
+fn function_type_fact_from_defines_means(
     target: &DefinesTarget,
-    declares: &DefinesDeclaresSection,
+    means: &DefinesMeansSection,
     context: &TypeContext,
 ) -> Option<TypeFact> {
     let target = described_function_target(target)?;
-    for item in &declares.arguments {
+    for item in &means.arguments {
         for fact in facts_from_is_or_via_item_in_context(item, context) {
             if let TypeFact::FunctionType {
                 subject,
@@ -16765,7 +16855,7 @@ fn function_type_fact_from_defines_declares(
         }
     }
 
-    let specs = function_type_specs_from_defines_declares(declares, context);
+    let specs = function_type_specs_from_defines_means(means, context);
     let inputs = target
         .inputs
         .iter()
@@ -16816,12 +16906,12 @@ fn described_function_target(target: &DefinesTarget) -> Option<DescribedFunction
     })
 }
 
-fn function_type_specs_from_defines_declares(
-    declares: &DefinesDeclaresSection,
+fn function_type_specs_from_defines_means(
+    means: &DefinesMeansSection,
     context: &TypeContext,
 ) -> HashMap<String, FunctionTypeFactSpec> {
     let mut specs = HashMap::new();
-    for item in &declares.arguments {
+    for item in &means.arguments {
         for fact in facts_from_is_or_via_item_in_context(item, context) {
             if let Some((subject, spec)) = function_type_spec_from_fact(&fact) {
                 specs.insert(subject, spec);
@@ -17581,6 +17671,11 @@ fn function_type_spec_as_fact(spec: &FunctionTypeSpec) -> Option<FunctionTypeFac
 struct WhenParameters {
     required: HashSet<String>,
     allowed: HashSet<String>,
+    /// The symbol the definition describes, when the heading also makes it a
+    /// parameter — the left operand of a spec-infix heading. `when:` states what
+    /// a *use* of the command requires of its operands, so the described symbol
+    /// belongs on the `Defines:` target instead and is rejected here.
+    described: Option<String>,
 }
 
 impl WhenParameters {

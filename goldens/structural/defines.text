@@ -8,8 +8,8 @@ when:
   allOf:
   . x = x
   . y = y
-declares:
-. Y is \set via (X, Y)
+means:
+. Y is \set via (Y, Element)
 . y "contains" Y
 satisfies:
 . [logic.satisfies]

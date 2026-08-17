@@ -5,6 +5,97 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## A Spec-Infix Heading's Left Operand Is Not A `when:` Parameter
+
+A spec-infix heading such as `[A \:subset:/ B]` is sugar for a command whose left
+operand is the symbol being defined. That symbol is stated by the `Defines:`
+target, so it may no longer appear in `when:` — previously it was merely not
+*required* there:
+
+```text
+[A \:subset:/ B]
+Defines: A is \set
+when: A, B is \set                 <- `when:` requirement for `A` is not allowed
+```
+
+The correction is `when: B is \set`. `when:` says only what a *use* of the
+command requires of its remaining operands. The message names the cause:
+```
+`when:` requirement for `A` is not allowed because `A` is what this definition
+describes; state its type on the definition's target instead
+```
+
+The same holds for a refined spec-infix `Refines:` whose target is the heading's
+left operand.
+
+## A Symbol Is Specified Exactly Once
+
+A `Defines` target symbol must now be given its type exactly once, not merely at
+least once. The subtype clauses already type the components their `via` reaches,
+so repeating one in `means:` is an error:
+
+```text
+[\group]
+Defines: G ::= (X, *, e) is \set via X
+means:
+. X is \set                        <- Duplicate specification for `X`
+. * is \function:on{X}:to{X}
+. e "in" G
+```
+
+`via X` states `X is \set`, so `means:` carries only the components the clauses
+do not reach — `*` and `e`, which still *must* be specified there. The message is
+`Duplicate specification for target symbol `{symbol}`; it is already specified by
+...`, naming the earlier source (`the `Defines:` target`, `an `extends:` clause`,
+or ``means:``).
+
+All of a group's subtype clauses count as a **single** source. `extends:` exists
+precisely so one definition can extend several types, so two clauses may name the
+same subject, or reach the same component through different views, without that
+counting as two specifications:
+
+```text
+[\triple]
+Defines: X ::= (A, B, C)
+extends:
+. X is \left.pair via (A, B)
+. X is \right.pair via (B, C)
+```
+
+`when:` and `using:` are not specification sources for this rule: `when:` states
+what a *use* of the command requires and `using:` introduces auxiliary symbols,
+neither of which is the definition stating the type of its own target.
+
+## The `Defines` `declares:` Section Is Now `means:`
+
+The section of a `Defines` group that types the described form's parts is now
+spelled `means:`:
+
+```text
+[\group]
+Defines: G ::= (X, *, e) is \set via X
+means:
+. X is \set
+. * is \function:on{X}:to{X}
+. e "in" G
+```
+
+Only the label changes; the section's contents, position (after `extends:`,
+before `satisfies:`), and semantics are the same. The structural AST exposes it
+as `DefinesMeansSection` through `DefinesGroup::means`, and completions suggest
+the new label.
+
+`means:` is not ambiguous with the three other sections of that name — the
+`means:` of an `Enables:` `relation:` group, of a top-level `Relation:`, and of a
+`Documented:`/`Topic:` `related:` entry — because sections are identified against
+their own group's pattern, and each of those groups is dispatched by its own
+first label (`relation`, `to`), never by `means`.
+
+Note that `means:` was, several releases ago, the spelling of what is now
+`extends:`. A `Defines` `means:` section now types the target's parts and does
+**not** state what the definition extends; `Refines` still rejects `means:`
+outright.
+
 ## A `Defines` Target May State The Type It Extends
 
 The type a `Defines` group extends can now be written on the `Defines:` target
@@ -55,7 +146,7 @@ Consequences:
   `when: M is \magma`.
 - When the subject is an operator form, its facts are recorded about the
   operator: `Defines: x_ * y_ is \function:on{X \.cross./ X}:to{X}` states its
-  fact about `*`, matching how the operator is named in `declares:`, in a
+  fact about `*`, matching how the operator is named in `means:`, in a
   `Refines:` of the same form, and in member access. This is what lets an
   `extends:` clause whose subject was a component of the target — `extends: * is
   \function:…` — move onto the target's own form.

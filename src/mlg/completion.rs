@@ -100,7 +100,7 @@ const GROUPS: &[GroupSpec] = &[
             ("using", false),
             ("when", false),
             ("extends", false),
-            ("declares", false),
+            ("means", false),
             ("satisfies", false),
             ("Requires", false),
             ("Enables", false),

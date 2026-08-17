@@ -5251,6 +5251,88 @@ then:
         }
     }
 
+    /// `docs/examples.txt` is the by-example tour of the language. It is a
+    /// living document: this test parses it, so an example cannot drift from
+    /// the syntax the parser accepts, and checks that every top-level item kind
+    /// appears, so a new kind cannot be added without an example.
+    ///
+    /// The file is deliberately not a checkable collection — its examples
+    /// reference commands that are never defined — so only parsing is asserted.
+    #[test]
+    fn parses_the_documented_examples() {
+        let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/examples.txt"));
+        let source = fs::read_to_string(path).expect("expected docs/examples.txt");
+
+        let mut tracker = EventLog::new();
+        let document = parse_document(&source, &mut tracker);
+
+        assert!(
+            !tracker.has_errors(),
+            "docs/examples.txt must parse cleanly: {:#?}",
+            tracker.events()
+        );
+
+        let mut seen = BTreeSet::new();
+        for item in &document.items {
+            seen.insert(top_level_item_kind(item));
+        }
+        let expected = BTreeSet::from([
+            "Axiom",
+            "Conjecture",
+            "Declares",
+            "Defines",
+            "Disambiguates",
+            "Equivalent",
+            "Person",
+            "Realizes",
+            "Refines",
+            "Relation",
+            "Resource",
+            "SectionTitle",
+            "Specify",
+            "States",
+            "SubsectionTitle",
+            "Text",
+            "TextItem",
+            "Theorem",
+            "Title",
+            "Topic",
+            "Writing",
+        ]);
+        assert_eq!(
+            expected.difference(&seen).collect::<Vec<_>>(),
+            Vec::<&&str>::new(),
+            "docs/examples.txt must show every top-level item kind"
+        );
+    }
+
+    /// The variant name of a top-level item, for coverage assertions.
+    fn top_level_item_kind(item: &TopLevelItem) -> &'static str {
+        match item {
+            TopLevelItem::Title(_) => "Title",
+            TopLevelItem::SectionTitle(_) => "SectionTitle",
+            TopLevelItem::SubsectionTitle(_) => "SubsectionTitle",
+            TopLevelItem::Text(_) => "Text",
+            TopLevelItem::Writing(_) => "Writing",
+            TopLevelItem::Disambiguates(_) => "Disambiguates",
+            TopLevelItem::Defines(_) => "Defines",
+            TopLevelItem::Declares(_) => "Declares",
+            TopLevelItem::Realizes(_) => "Realizes",
+            TopLevelItem::Refines(_) => "Refines",
+            TopLevelItem::States(_) => "States",
+            TopLevelItem::Axiom(_) => "Axiom",
+            TopLevelItem::Theorem(_) => "Theorem",
+            TopLevelItem::Conjecture(_) => "Conjecture",
+            TopLevelItem::Person(_) => "Person",
+            TopLevelItem::Resource(_) => "Resource",
+            TopLevelItem::Specify(_) => "Specify",
+            TopLevelItem::Relation(_) => "Relation",
+            TopLevelItem::Equivalent(_) => "Equivalent",
+            TopLevelItem::Topic(_) => "Topic",
+            TopLevelItem::TextItem(_) => "TextItem",
+        }
+    }
+
     #[test]
     fn parses_structural_golden_directory() {
         let directory = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/goldens/structural"));

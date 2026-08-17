@@ -5,6 +5,10 @@ repository. It explains how authors write `.mlg` files, how the structural and
 formulation layers fit together, and what semantic checks the current
 implementation performs.
 
+For a tour of the language by example, read
+[examples.txt](examples.txt): every top-level item and the different ways each
+can be written, in one file, kept valid by a parser test.
+
 For exact parser-level details, keep these references nearby:
 
 - [Structural syntax](structural_syntax.md) describes line structure, groups,

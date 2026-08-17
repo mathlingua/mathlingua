@@ -7,6 +7,8 @@ renderer, CLI, or web viewer.
 
 For language syntax details, use these companion documents:
 
+- [examples.txt](examples.txt) is every top-level item by example, kept valid by
+  a parser test.
 - [language.md](language.md) is the human-facing language guide.
 - [structural_syntax.md](structural_syntax.md) is the parser-level structural
   syntax reference.

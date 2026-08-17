@@ -1,0 +1,619 @@
+-- MathLingua by example
+--
+-- Every top-level item, and the different ways each can be written, in one
+-- place. Read it top to bottom to get the shape of the language.
+--
+-- This file is valid MathLingua syntax and a parser test keeps it that way, so
+-- it cannot drift from the implementation. That test also asserts every
+-- top-level item kind appears here, so a new kind cannot be added without an
+-- example.
+--
+-- It is deliberately *not* a checkable collection: the examples reference
+-- commands that are never defined, so that each one stays short and shows one
+-- idea. `Id:` is omitted except where the syntax requires it — `mlg check`
+-- writes one into every top-level item for you.
+--
+-- Lines starting with `--` are comments and a line of three or more dashes is a
+-- divider; both are ignored by the parser.
+
+-------------------------------------------------------------------------------
+-- Prose and outline
+-------------------------------------------------------------------------------
+
+Title: "Foundations"
+
+SectionTitle: "Sets"
+
+SubsectionTitle: "Membership"
+
+Text: "Prose is Markdown with embedded LaTeX such as $x \in A$."
+
+-- Collection-wide rendering aliases: `name :~> LaTeX body`.
+Writing:
+. "naturals :~> \mathbb{N}"
+. "reals :~> \mathbb{R}"
+
+-- Which types the numeric literal spellings fall back to.
+Specify:
+. decimal:
+  is: \real
+
+Specify:
+. positiveInt:
+  is: \natural
+
+-------------------------------------------------------------------------------
+-- Defines — introduces a command naming a mathematical *type*
+--
+-- A value of the type is written `x is \the.command`.
+-------------------------------------------------------------------------------
+
+-- The simplest form: a name, and what it is called.
+[\set]
+Defines: X
+Documented:
+. called: "set"
+
+-- A target may be a mapping form, a tuple destructuring, or a set builder.
+[\sequence:on{A}]
+Defines: X ::= x(i_)
+when: A is \set
+Documented:
+. called: "sequence"
+
+[\pair]
+Defines: P ::= (a, b)
+Documented:
+. called: "pair"
+
+[\span:of{S}]
+Defines: X ::= {v_ : ...}
+when: S is \set
+Documented:
+. called: "span"
+
+-- The target may state the type the definition extends, with `is`. `via` names
+-- the view used to regard it as that type, and types the `via` symbols.
+[\magma]
+Defines: M ::= (X, *) is \set via X
+means: * is \operation:on{M}
+Documented:
+. called: "magma"
+
+-- `means:` types the parts of the target the `via` does not reach. A symbol is
+-- specified exactly once, so `X` is not repeated here.
+[\group]
+Defines: G ::= (X, *, e) is \magma via (X, *)
+means: e "in" X
+Documented:
+. called: "group"
+
+-- A spec relation works the same way as `is`.
+[\element:of{X}]
+Defines: x "in" X
+when: X is \set
+Documented:
+. called: "element of $X?$"
+
+-- An operator-form target states its type about the operator itself.
+[\operation:on{X}]
+Defines: x_ * y_ is \function:on{X}:to{X}
+when: X is \set
+Documented:
+. called: "operation"
+
+-- `extends:` is the same clause written as a section. Use it to extend several
+-- types at once, each through a different view of the tuple.
+[\bimodule]
+Defines: M ::= (A, B, C)
+extends:
+. M is \left.module via (A, B)
+. M is \right.module via (B, C)
+Documented:
+. called: "bimodule"
+
+-- The type extended may be a refined command.
+[\finite.magma]
+Defines: M ::= (X, *) is \(finite)::magma via (X, *)
+Documented:
+. called: "finite magma"
+
+-- A function type describes call behavior: parenthesized specs on both sides,
+-- each parameter written `_`.
+[\function:on{A}:to{B}]
+Defines: f(x__) is (_ "in" A) -> (_ "in" B)
+when: A, B is \set
+Documented:
+. called: "function"
+
+-- Every support section, in order.
+[\ordered.field]
+Defines: F ::= (X, +, *)
+using: n is \natural
+when: X is \set
+extends: F is \field via (X, +, *)
+means:
+. + is \operation:on{X}
+. * is \operation:on{X}
+satisfies:
+. forAll: a, b "in" X
+  then: a + b = b + a
+Requires:
+. capability: x_ "in" F :-> \\abstract
+Enables:
+. capability: x_ "in" F :-> x_ is \element:of{X}
+Documented:
+. called: "ordered field"
+. written: "\mathbb{F}"
+Justification:
+. [commutes]
+  have: F is \field
+  asserting: F is \field
+Aliases:
+. alias: sum(x_, y_) :=> x + y
+  written: "x_? + y_?"
+Writing:
+. "field :~> \mathbb{F}"
+References:
+. $bourbaki.algebra
+Metadata:
+. id: "ordered-field"
+
+-------------------------------------------------------------------------------
+-- Command headings
+-------------------------------------------------------------------------------
+
+-- Curly arguments, with a `:tail{...}` chain.
+[\module:over{R}:with{S}]
+Defines: M
+when: R, S is \set
+Documented:
+. called: "module"
+
+-- A `?` marks an optional tail; a definition is registered for each combination.
+[\norm:?on{V}:?with{P}]
+Defines: N
+when: V, P is \set
+Documented:
+. called: "norm"
+
+-- Infix command: `\.name./` between two operands.
+[A \.cross./ B]
+Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+when: A, B is \set
+Documented:
+. called: "cross product"
+
+-- Spec-infix command: `\:name:/`, sugar for a command whose left operand is the
+-- symbol being defined. That symbol is stated on the target, never in `when:`.
+[A \:subset:/ B]
+Defines: A is \set
+when: B is \set
+Documented:
+. written: "A? \subseteq B?"
+
+-- Refined command: adjectives before `::`.
+[\(nonempty)::set]
+Refines: X
+Documented:
+. adjective: "nonempty"
+
+-- Refined spec-infix command.
+[A \:(proper)::subset:/ B]
+Refines: A
+when: B is \set
+Documented:
+. adjective: "proper"
+
+-- A mapping parameter selects a member of another argument's mapping.
+[\partial{f.x_}]
+Defines: d
+when: f is \function
+Documented:
+. called: "partial derivative"
+
+-------------------------------------------------------------------------------
+-- Declares — introduces a command naming a *value*
+--
+-- The value is written `y := \the.command`, with `:=` rather than `is`.
+-------------------------------------------------------------------------------
+
+-- A value must state its type: `... is <type>` or a `\type@value` build.
+[\zero]
+Declares: z is \natural
+Documented:
+. called: "zero"
+
+[\empty.set]
+Declares: E := \set@{x : ...}
+Documented:
+. called: "empty set"
+
+-- `means:` says what each part of a destructuring target is. Every item must
+-- supply a value, with `:=` here or indirectly through `expresses:`.
+[\unit.interval]
+Declares: I ::= (L, R)
+means:
+. L := \zero
+. R := \one
+Documented:
+. called: "unit interval"
+
+-- A `means:` item may instead state a type and leave the value to `expresses:`,
+-- which is what `expresses:` is for. Here `f` is typed in `means:` and defined
+-- by the `piecewise:` below.
+[\sign.function:at{x}]
+Declares: S ::= (f, threshold)
+means:
+. f is \function:on{\reals}:to{\reals}
+. threshold := \zero
+expresses:
+. piecewise:
+  if: x \:less.than:/ threshold
+  then: f := \negative.one
+  else: f := \one
+Documented:
+. called: "sign function"
+
+-- `abstractly:` leaves the `is`/`"op"` items of `means:` open for a `Realizes:`
+-- to supply. A `Defines` is an interface, an abstract `Declares` is an abstract
+-- base class, and a plain `Declares` is a concrete one.
+[\naturals]
+Declares: Nb ::= (N, 0, succ(n_))
+abstractly:
+means:
+. N is \set
+. 0 "in" N
+. succ is \function:on{N}:to{N}
+Documented:
+. called: "naturals"
+
+-------------------------------------------------------------------------------
+-- Realizes — a concrete realization of an abstract Declares
+-------------------------------------------------------------------------------
+
+-- The target names the realized declaration with `:=`. `means:` must supply
+-- every symbol that declaration left abstract; omitting one is an error.
+[\von.neumann.naturals]
+Realizes: Nb := \naturals
+means:
+. N := \hereditarily.finite.sets
+. 0 := \empty.set
+. succ(n_) := n_ \.union./ \singleton{n_}
+Documented:
+. called: "von Neumann naturals"
+
+-- A realization may also define indirectly through `expresses:`, and takes the
+-- same support sections as `Declares`.
+[\inductive.naturals]
+Realizes: Nb := \naturals
+using: k is \natural
+when: k is \natural
+means:
+. N is \set
+. 0 := \zero
+. succ is \function:on{N}:to{N}
+expresses:
+. N := \inductive.closure:of{\zero}
+. succ := \add.one
+Documented:
+. called: "inductive naturals"
+
+-------------------------------------------------------------------------------
+-- Refines — defines a refined command in terms of another
+-------------------------------------------------------------------------------
+
+[\(injective)::function:on{A}:to{B}]
+Refines: f(x__)
+when: A, B is \set
+satisfies:
+. forAll: x, y "in" A
+  where: f(x) = f(y)
+  then: x = y
+Documented:
+. adjective: "injective"
+
+-- `extends:` points at the refinement this one inherits from. `implicitly:`
+-- says the group only restates that inherited clause...
+[\(finite)::magma]
+Refines: M ::= (X, *)
+implicitly:
+extends: M is \(finite)::set
+Documented:
+. adjective: "finite"
+
+-- ...and `explicitly:` says it adds at least one property of its own.
+[\(bounded)::magma]
+Refines: M ::= (X, *)
+explicitly:
+extends: M is \(bounded)::set
+satisfies: M is \magma
+Documented:
+. adjective: "bounded"
+
+-- `[[f]]` means "the current type of `f`", so the refinement applies to any
+-- subtype the value happens to have.
+[\(bijective)::function]
+Refines: f(x__)
+extends: f is \(injective, surjective)::[[f]]
+Documented:
+. adjective: "bijective"
+
+-------------------------------------------------------------------------------
+-- States — a named statement
+-------------------------------------------------------------------------------
+
+[\commutes:with{y}]
+States:
+using: n is \natural
+when: y is \element
+that:
+. forAll: x is \element
+  then: x = y
+Documented:
+. called: "commutes with $y?$"
+
+-- The `States:` section may carry prose describing the statement.
+[\associative]
+States:
+. "Associativity"
+. "grouping does not matter"
+that: \true
+Documented:
+. called: "associative"
+
+-------------------------------------------------------------------------------
+-- Theorem-like items — Axiom, Theorem, Conjecture
+-------------------------------------------------------------------------------
+
+-- Without a heading.
+Theorem:
+given:
+. A is \set
+. B is \set
+where: A \:subset:/ B
+then: A \:subset?:/ B
+
+-- With a heading, so the result can be referenced by command.
+[\pairing.axiom]
+Axiom:
+given: A, B is \set
+then: \pair.set:of{A}:and{B} is? \set
+Documented:
+. called: "axiom of pairing"
+
+[\twin.primes]
+Conjecture:
+given: n is \natural
+then: n is? \natural
+Documented:
+. called: "twin prime conjecture"
+
+-- `iff:` states the converse alongside `then:`.
+Theorem:
+given: x is \natural
+then: x is? \natural
+iff: x is? \natural
+
+-------------------------------------------------------------------------------
+-- Clause groups — the statement forms usable in then:/that:/satisfies:/...
+-------------------------------------------------------------------------------
+
+Theorem:
+given: x is \natural
+then:
+. allOf:
+  . x = x
+  . anyOf:
+    . x = x
+    . oneOf:
+      . x = x
+      . not: x = x
+. forAll: y is \natural
+  where: y = y
+  then: y = y
+. exists: y is \natural
+  suchThat: y = y
+. existsUnique: y is \natural
+  suchThat: y = y
+. if: x = x
+  then: x = x
+. let: y := x
+  then: y = y
+. given: y is \natural
+  then: y = y
+. equivalently:
+  . x = x
+  . x = x
+. piecewise:
+  if: x = x
+  then: x = x
+  else: x = x
+. have: x = x
+  iff: x = x
+
+-- A `have:`/`asserting:` group is the escape hatch: it asserts the `have:`
+-- items hold given the `asserting:` items, with optional justification.
+Theorem:
+given: x is \natural
+then:
+. have: x = x
+  asserting: x = x
+  because: x = x
+  by: \some.lemma
+
+-------------------------------------------------------------------------------
+-- Disambiguates — resolves an ambiguous operator or function by type
+-------------------------------------------------------------------------------
+
+[x_ + y_]
+Disambiguates:
+when: x_, y_ is \natural
+to: x_ \.natural.plus./ y_
+when: x_, y_ is \real
+to: x_ \.real.plus./ y_
+else: x_ \.generic.plus./ y_
+Documented:
+. called: "plus"
+
+-------------------------------------------------------------------------------
+-- Equivalent — several commands interchangeable under one name
+-------------------------------------------------------------------------------
+
+[\continuous:at{p}]
+Equivalent:
+. "the epsilon-delta and neighborhood definitions agree"
+using: n is \natural
+when: p is \real
+to:
+. \epsilon.delta.continuous:at{p}
+. \neighborhood.continuous:at{p}
+Documented:
+. called: "continuous at $p?$"
+
+-------------------------------------------------------------------------------
+-- Relation — a relationship between two concepts, topics, or definitions
+-------------------------------------------------------------------------------
+
+-- Each side is a declaration or a quoted `"#topic"` / `"\signature"` reference.
+Relation:
+between: G is \group
+and: R is \ring
+means: "Every ring is a group under its addition."
+Documented:
+. called: "underlying group"
+
+Relation:
+using: n is \natural
+between: "#real.analysis"
+and: "\function:on:to"
+when: n is \natural
+means: G is \group
+
+-------------------------------------------------------------------------------
+-- Topic — documentation subject matter
+-------------------------------------------------------------------------------
+
+[#analysis]
+Topic: "The study of limits, continuity, and convergence."
+
+[#real.analysis]
+Topic: "Analysis over the real numbers."
+within: "#analysis"
+Related:
+. to: "#complex.analysis"
+  . "\function:on:to"
+  means: "Closely connected subjects."
+Documented:
+. called: "Real Analysis"
+
+-------------------------------------------------------------------------------
+-- Person and Resource — bibliography metadata
+-------------------------------------------------------------------------------
+
+[@euclid]
+Person: "Euclid"
+biography: "Greek mathematician"
+
+[@isaac.newton]
+Person:
+. "Isaac Newton"
+. "I. Newton"
+biography: "Worked on calculus and mechanics"
+
+[$bourbaki.algebra]
+Resource:
+. title: "Algebra"
+. author:
+  . "Nicolas Bourbaki"
+. type: "book"
+. edition: "2nd"
+. editor: "An Editor"
+. institution: "An Institution"
+. journal: "A Journal"
+. publisher: "A Publisher"
+. volume: "1"
+. month: "January"
+. year: "1974"
+. offset: "Chapter II"
+. url: "https://example.com/algebra"
+. homepage: "https://example.com"
+. description: "Elements of Mathematics."
+
+-------------------------------------------------------------------------------
+-- Text-only items — results stated in prose, with no formal body
+-------------------------------------------------------------------------------
+
+TextDefinition: "A *monoid* is a semigroup with an identity element."
+Documented:
+. called: "monoid"
+Id: "6f2b0e1c-4a1d-4f2e-9c3a-8d5b7e0f1a24"
+
+TextAxiom: "Every nonempty set of naturals has a least element."
+Id: "b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e"
+
+TextTheorem: "There are infinitely many primes."
+References:
+. $bourbaki.algebra
+Id: "c2d3e4f5-a6b7-4c8d-9e0f-1a2b3c4d5e6f"
+
+TextConjecture: "Every even integer above two is a sum of two primes."
+Id: "d3e4f5a6-b7c8-4d9e-8f0a-2b3c4d5e6f70"
+
+-------------------------------------------------------------------------------
+-- Support sections in detail
+-------------------------------------------------------------------------------
+
+-- `Documented:` — every rendering and prose field.
+[\documented.showcase]
+Defines: X
+Documented:
+. called: "showcase"
+. written: "\operatorname{showcase}"
+. writing: x(i)
+  as: "x?_{i?}"
+. overview: "A one-line summary."
+. description: "A longer description."
+. related: "#analysis"
+. discoverer: "@euclid"
+
+-- `Requires:` — what a use of the command must establish beforehand.
+[\requires.showcase]
+Defines: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+. definition: \requires.showcase is \set
+Documented:
+. called: "requires showcase"
+
+-- `Enables:` — what knowing the type lets the checker do afterwards.
+[\enables.showcase]
+Defines: G
+Enables:
+. capability: x_ "in" G :-> x_ is \element:of{G}
+  written: "x_? \in G?"
+. from: y is \group
+  capability: x_ "in" y :-> \\abstract
+  written: "y?"
+. from: y is \group
+  as: y := G
+. relation: "viewing a group as its carrier set"
+  to: S := \carrier:of{G}
+  when: G is \group
+  means: S = S
+  represents: \\coercion
+  by: "\forgetful.functor"
+Documented:
+. called: "enables showcase"
+
+-- `Justification:` — labelled `have:` groups that a `[:label:]` in the body
+-- points at, so the checker takes the labelled item as given.
+[\justification.showcase]
+Defines: X
+means: (.X is \set.)[:carrier:]
+Documented:
+. called: "justification showcase"
+Justification:
+. [carrier]
+  have: X is \set
+  asserting: X is \set

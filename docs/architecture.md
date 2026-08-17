@@ -351,7 +351,8 @@ Main files:
 
 - `parser.rs` — a single module that composes proto parsing with structural
   recognition. It parses every top-level group (`Defines`, `Declares`,
-  `Refines`, `States`, `Theorem`, `Axiom`, `Conjecture`, `Disambiguates`,
+  `Realizes`, `Refines`, `States`, `Theorem`, `Axiom`, `Conjecture`,
+  `Disambiguates`,
   `Relation`, `Equivalent`, `Topic`, `Resource`, `Person`, `Specify`, the prose
   and clause groups, etc.), their nested support groups (documentation,
   metadata, `Requires:`/`Enables:` items, resource items, justification items),
@@ -452,7 +453,10 @@ Important files:
 - `typecheck.rs` implements symbol scope, facts, substitutions, requirements,
   subtyping through a `Defines:` target's `is` relation, destructuring,
   operator/member resolution, spec-operator reduction, numeric-literal fallback,
-  and variadic index-result checking.
+  and variadic index-result checking. It also records what each `Declares:`
+  marked `abstractly:` leaves open (`SignatureRegistry::abstract_declarations`),
+  which is what a `Realizes:` is checked against and what its components inherit
+  their types from.
 - `locator.rs` maps semantic diagnostics back to source locations.
 - `definition.rs` and `rename.rs` back LSP go-to-definition and rename; `uses.rs`
   finds command occurrences (also used by `mlg release`).
@@ -460,8 +464,8 @@ Important files:
   expressions, forms, and support sections for reference validation.
 
 The signature registry is global across all checked files. Duplicate command
-signatures are rejected across `Defines`, `Declares`, `Refines`, `States`, and
-named theorem-like groups. Mapping-parameter definitions additionally populate
+signatures are rejected across `Defines`, `Declares`, `Realizes`, `Refines`,
+`States`, and named theorem-like groups. Mapping-parameter definitions additionally populate
 a general-signature-to-specialized-signatures index. Several specialized
 definitions may share one general signature, but each specialized signature is
 still globally unique; an invocation must resolve to one uniquely most-specific
@@ -670,8 +674,9 @@ The command snapshots the current committed state of the collection into a
   item, keyed by the SHA-256 of the item's source.
 
 An item is (re)versioned when its content hash changed since its last recorded
-entry. In addition, when a *definition* (`Declares`, `Defines`, `States`,
-`Refines`, `Disambiguates`) is (re)versioned, every definition it uses is
+entry. In addition, when a *definition* (`Declares`, `Realizes`, `Defines`,
+`States`, `Refines`, `Disambiguates`) is (re)versioned, every definition it uses
+is
 re-versioned transitively, deduplicated so each item gains at most one new entry
 per release. The whole update set is computed in memory before anything is
 written, and `mlg.json` is bumped last.

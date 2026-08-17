@@ -1272,8 +1272,8 @@ refined headings (`::`) only on `Refines`.
 
 ### 6. Documentation requirements
 
-`Defines`, `Declares`, and `States` must include a `called:` **or** `written:`
-item in `Documented:` (`{kind} entries must include either a \`called:\` or a
+`Defines`, `Declares`, `Realizes`, and `States` must include a `called:` **or**
+`written:` item in `Documented:` (`{kind} entries must include either a \`called:\` or a
 \`written:\` item in \`Documented:\``). `Refines` must include an `adjective:`
 item instead (`Refines entries must include an \`adjective:\` item ...`).
 
@@ -1294,40 +1294,77 @@ plus `Command ... does not accept ...`, `Unknown ... parameter ...`,
 \group.element:of{G}`) and the `:=>` form — so a capability that reduces to an
 undefined command is reported.
 
-### 8. Target-symbol specification (`Defines`/`Declares`)
+### 8. Target-symbol specification (`Defines`/`Declares`/`Realizes`)
 
-Every parameter and target symbol a definition introduces must be given a type.
-A header parameter needs a `when:` fact (`Missing \`when:\` requirement for
-parameter \`{parameter}\``) — except the symbol the definition describes. A
+Every parameter and target symbol a definition introduces must be given a type,
+exactly once.
+
+**Header parameters.** Each needs a `when:` fact (`Missing \`when:\` requirement
+for parameter \`{parameter}\``) — except the symbol the definition describes. A
 spec-infix heading such as `[A \:subset:/ B]` is sugar for a command whose left
 operand is the symbol being defined, so `A` is stated by the `Defines:` target
-and may not appear in `when:` at all (`\`when:\` requirement for \`A\` is not
-allowed because \`A\` is what this definition describes; state its type on the
-definition's target instead`). `when:` says only what a *use* of the command
-requires of the remaining operands. A `Defines` target symbol must be typed directly
-or through the type the definition extends (`Missing specification for
-target symbol \`{symbol}\`; specify it directly or through the type the
-\`Defines:\` target extends`). A `Refines` target symbol may also be inherited: a
-symbol the refined base type already declares (through the type that base
-extends, its `means:`, or its described components) counts as specified, so
+and may not appear in `when:` at all:
+
+```text
+` `when:` requirement for `A` is not allowed because `A` is what this
+  definition describes; state its type on the definition's target instead `
+```
+
+`when:` says only what a *use* of the command requires of its remaining
+operands.
+
+**`Defines` target symbols.** Each must be typed directly or through the type
+the definition extends (`Missing specification for target symbol \`{symbol}\`;
+specify it directly or through the type the \`Defines:\` target extends`), and
+**at most once**. A symbol the subtype clauses already type — including the
+components a `via` reaches — may not be typed again in `means:`:
+
+```text
+` Duplicate specification for target symbol `X`; it is already specified by
+  the `Defines:` target `
+```
+
+All of a group's subtype clauses count as one source, so two `extends:` clauses
+may name the same subject or reach the same component through different views.
+`when:` and `using:` are not specification sources for this rule.
+
+**`Refines` target symbols.** These may also be inherited: a symbol the refined
+base type already declares (through the type that base extends, its `means:`, or
+its described components) counts as specified, so
 `\(associative)::binary.operation:on{X}` need not respecify the `*` that
-`\binary.operation:on{X}` already types. Specification is **exactly once**: a
-symbol the subtype clauses already type — including the components a `via`
-reaches — may not be typed again in `means:` (`Duplicate specification for target
-symbol \`{symbol}\`; it is already specified by ...`). All of a group's subtype
-clauses count as one source, so two `extends:` clauses may name the same subject
-or reach the same component through different views. A `Declares` target symbol must be
-assigned (`Missing definition for target symbol \`{symbol}\`; assign it with
-\`:=\` ... or top-level \`expresses:\``) at most once (`Duplicate definition for
-target symbol ...`), and a `Declares` value **must state its type** — either
-`... is <type>` or a top-level build `\<type>@<value>`:
+`\binary.operation:on{X}` already types.
+
+**`Declares` target symbols.** Each must be *assigned* (`Missing definition for
+target symbol \`{symbol}\`; assign it with \`:=\` ... or top-level \`expresses:\``)
+at most once (`Duplicate definition for target symbol ...`). A `means:` item
+assigns its subject, and a destructuring subject counts as assigned once `means:`
+supplies each of its components.
+
+A `Declares` value **must state its type** — either `... is <type>` or a
+top-level build `\<type>@<value>`:
 
 ```text
 ` `Declares:` target `X` must state its type: use `... is <type>` or a
   top-level `\...@...` build (e.g. `\set@{...}`) `
 ```
 
-A bare `X := {…}` is rejected even when the type is inferable.
+A bare `X := {…}` is rejected even when the type is inferable. A declaration
+that states its parts in `means:` is exempt: `means:` states the type instead.
+
+**`Declares`/`Realizes` `means:` items.** Each must supply a **value**, directly
+with `:=` or indirectly by stating a type and defining it in `expresses:`. An
+item that does neither is an error:
+
+```text
+` `B` states a specification but no value; define it with `:=`, define it in
+  `expresses:`, or mark this `Declares:` `abstractly:` `
+```
+
+Leaving the value out is what `abstractly:` is for; see
+[Abstract declarations and `Realizes`](#abstract-declarations-and-realizes). An
+item that neither defines nor specifies anything is rejected outright
+(`\`means:\` item \`{subject}\` must either define its subject with \`:=\` or state
+its type`).
 
 ### 9. `when:` clauses
 
@@ -1385,6 +1422,18 @@ function ...`, `\`{name}\` is not a known type`).
 - **`Defines:` extended type** — a `Defines:` target that states an `is`/spec
   relation may not also have an `extends:` section; the two spellings are
   equivalent, so exactly one of them carries the clauses.
+- **`Declares:` `abstractly:`** — a zero-argument marker; giving it content is
+  an error (`\`abstractly:\` is a marker section and takes no arguments`). It is
+  accepted only on `Declares`.
+- **`Realizes:`** — the target must name the declaration it realizes with `:=`
+  (`A \`Realizes:\` must name the declaration it realizes with \`:=\`, as in
+  \`Realizes: Nb := \naturals\``), the value must be a command
+  (`\`Realizes:\` must name a command; \`{key}\` is not one`), that command must be a `Declares:` marked
+  `abstractly:` (`\`Realizes:\` must name a \`Declares:\` marked \`abstractly:\`;
+  \`{key}\` is a \`{kind}:\``), and its `means:` must supply **every** symbol the
+  declaration left abstract (`Missing realization for abstract symbol
+  \`{symbol}\`; a \`Realizes:\` must supply every symbol its declaration leaves
+  abstract`).
 - **`Refines:` `extends:`** — the `extends:` subject must match the `Refines:`
   subject, a `[[...]]` in it must name that subject, and a `Refines:` must have
   the form `Refines: <form>`.

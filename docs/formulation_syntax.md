@@ -38,6 +38,11 @@ The formulation subsystem does not have one single root grammar. It exposes seve
 - **`parse_is_or_refined_statement_spec`** — internal variant where `is` may
   target a refined command expression.
 - **`parse_is_via_statement`** — `<is-statement> via <form-or-declaration>`.
+- **`split_via_view`** — splits an optional trailing ` via <form>` off a
+  formulation without parsing the left side, so a caller can parse that side
+  its own way. Used by the structural parser for a `Defines:` target and each
+  `extends:` clause, whose left sides are declaration statements rather than
+  bare `is` statements.
 - **`parse_command_header`** — simple, infix, infix-spec, or refined command
   headers.
 - **`parse_writing_alias`** — `<form-or-declaration> :~> <raw body>`.
@@ -767,6 +772,11 @@ Notes:
 - the parser looks for the exact top-level substring ` via ` with spaces around it
 - the left side must be an `is` statement, not a quoted-operator spec
 - the right side is a form/declaration such as `X` or `(X, Y)`
+- `split_via_view` performs only the split, on the same top-level ` via ` scan.
+  A `Defines:` target and an `extends:` clause use it because their left sides are
+  full declaration statements (`G ::= (X, *, e) is \monoid`), which
+  `IsStatement` cannot represent; they then reject a `via` whose left side states
+  no `is` relation
 
 ## Refined Command Syntax
 

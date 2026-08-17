@@ -76,8 +76,13 @@ Rules:
   that a `Declares:` value must state its type — `means:` states it instead.
 
 `Realizes` participates everywhere `Declares` does: it registers a command
-signature, requires an `Id:` (auto-inserted like any other item), renders as a
-card, is a definition kind for `mlg release`, and is offered by LSP completion.
+signature, requires an `Id:` (auto-inserted like any other item), requires a
+`called:` or `written:` item in `Documented:`, renders as a card, is a definition
+kind for `mlg release`, and is offered by LSP completion.
+
+Separately, the LSP completion table had drifted from the section orders it
+mirrors: `Writing:` was missing from every definition and theorem-like group, and
+`implicitly:`/`explicitly:` from `Refines`. Both are now offered.
 
 ## A Spec-Infix Heading's Left Operand Is Not A `when:` Parameter
 

@@ -670,6 +670,7 @@ pub(super) fn check_documented_rendering(
         kind,
         DefinitionKind::Defines
             | DefinitionKind::Declares
+            | DefinitionKind::Realizes
             | DefinitionKind::Refines
             | DefinitionKind::States
     ) {

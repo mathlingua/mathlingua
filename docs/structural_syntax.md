@@ -652,6 +652,7 @@ TopLevelItemUnion ::=
     | DisambiguatesGroup
     | DefinesGroup
     | DeclaresGroup
+    | RealizesGroup
     | RefinesGroup
     | StatesGroup
     | AxiomGroup

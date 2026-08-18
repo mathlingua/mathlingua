@@ -32,7 +32,19 @@ pub fn init(cwd: &Path, listener: Option<Box<dyn EventLogListener>>) -> InitResu
     }
 }
 
+/// Initializes a collection, asking about an incomplete config when there is an
+/// interactive terminal to ask at.
 pub(super) fn init_in(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
+    init_in_with(root, io::stdin().is_terminal(), event_log)
+}
+
+/// The body of [`init_in`], with the decision of whether anyone can be asked
+/// passed in rather than read from the ambient stdin, so a test can pin it.
+pub(super) fn init_in_with(
+    root: &Path,
+    interactive: bool,
+    event_log: &mut EventLog,
+) -> io::Result<()> {
     event_log.system_debug(
         Some(ORIGIN),
         format!("Initializing collection at {}", root.display()),
@@ -40,7 +52,7 @@ pub(super) fn init_in(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
 
     let config_path = root.join(CONFIG_FILE);
     if config_path.exists() {
-        reconcile_existing_config(&config_path, event_log)?;
+        reconcile_existing_config(&config_path, interactive, event_log)?;
     } else {
         if let Err(error) = fs::write(&config_path, default_config_contents()) {
             event_log.user_error_at_path(
@@ -81,7 +93,11 @@ pub(super) fn init_in(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
 /// Every field is required, so an older config may be missing some. When it is,
 /// `mlg init` offers to fill the gaps with the defaults — the same values a fresh
 /// `mlg.json` would carry — rather than leaving the author to add them by hand.
-fn reconcile_existing_config(config_path: &Path, event_log: &mut EventLog) -> io::Result<()> {
+fn reconcile_existing_config(
+    config_path: &Path,
+    interactive: bool,
+    event_log: &mut EventLog,
+) -> io::Result<()> {
     let contents = match fs::read_to_string(config_path) {
         Ok(contents) => contents,
         Err(error) => {
@@ -115,7 +131,7 @@ fn reconcile_existing_config(config_path: &Path, event_log: &mut EventLog) -> io
         return Ok(());
     }
 
-    if !should_fill_missing_fields(&missing) {
+    if !should_fill_missing_fields(&missing, interactive) {
         event_log.user_log(
             Some(ORIGIN),
             format!(
@@ -151,8 +167,8 @@ fn reconcile_existing_config(config_path: &Path, event_log: &mut EventLog) -> io
 /// The decision is the user's, so it is only made by asking. Without an
 /// interactive terminal there is no one to ask, so the config is left as it is
 /// (and `mlg check` still reports the missing fields).
-fn should_fill_missing_fields(missing: &[String]) -> bool {
-    io::stdin().is_terminal() && prompt_fill_missing_fields(missing)
+fn should_fill_missing_fields(missing: &[String], interactive: bool) -> bool {
+    interactive && prompt_fill_missing_fields(missing)
 }
 
 /// Asks whether to fill the missing fields in, re-asking until the answer parses.
@@ -211,7 +227,7 @@ fn describe_fields(fields: &[String]) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        CONFIG_FILE, CONTENT_DIR, default_config_contents, describe_fields, init, init_in,
+        CONFIG_FILE, CONTENT_DIR, default_config_contents, describe_fields, init, init_in_with,
         parse_yes_no,
     };
     use crate::backend::config::missing_config_fields;
@@ -228,7 +244,7 @@ mod tests {
         let temp_dir = TestDir::new();
         let mut event_log = EventLog::new();
 
-        init_in(temp_dir.path(), &mut event_log).expect("init should succeed");
+        init_in_with(temp_dir.path(), false, &mut event_log).expect("init should succeed");
 
         assert_eq!(
             event_log.events(),
@@ -268,7 +284,7 @@ mod tests {
         fs::create_dir(temp_dir.path().join(CONTENT_DIR)).unwrap();
         let mut event_log = EventLog::new();
 
-        init_in(temp_dir.path(), &mut event_log).expect("init should succeed");
+        init_in_with(temp_dir.path(), false, &mut event_log).expect("init should succeed");
 
         assert_eq!(
             event_log.events(),
@@ -288,14 +304,16 @@ mod tests {
 
     #[test]
     fn init_leaves_an_incomplete_config_unchanged_without_a_terminal() {
-        // `cargo test` runs without an interactive terminal, so init cannot ask
-        // whether to fill in the gaps; it reports them and touches nothing.
+        // Without an interactive terminal there is no one to ask whether to fill
+        // in the gaps, so init reports them and touches nothing. The decision is
+        // passed in rather than read from the ambient stdin, which is a terminal
+        // when `cargo test` is run from a shell and not when it is piped.
         let temp_dir = TestDir::new();
         let partial = "{\n  \"name\": \"a\",\n  \"version\": \"1\"\n}\n";
         fs::write(temp_dir.path().join(CONFIG_FILE), partial).unwrap();
         let mut event_log = EventLog::new();
 
-        init_in(temp_dir.path(), &mut event_log).expect("init should succeed");
+        init_in_with(temp_dir.path(), false, &mut event_log).expect("init should succeed");
 
         assert_eq!(
             fs::read_to_string(temp_dir.path().join(CONFIG_FILE)).unwrap(),

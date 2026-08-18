@@ -16,14 +16,28 @@ pub struct InitResult {
     pub successful: bool,
 }
 
+/// Initializes a collection at `cwd`.
+///
+/// Whether anyone can be asked about an incomplete config is decided here, at
+/// the command boundary, and passed down. Nothing below this point consults the
+/// ambient stdin, so a caller — a test especially — gets the same result however
+/// it was invoked.
 pub fn init(cwd: &Path, listener: Option<Box<dyn EventLogListener>>) -> InitResult {
+    init_with(cwd, io::stdin().is_terminal(), listener)
+}
+
+pub fn init_with(
+    cwd: &Path,
+    interactive: bool,
+    listener: Option<Box<dyn EventLogListener>>,
+) -> InitResult {
     let mut event_log = EventLog::new();
     if let Some(listener) = listener {
         event_log.add_boxed_listener(listener);
     }
 
     let starting_event_count = event_log.events().len();
-    let io_ok = init_in(cwd, &mut event_log).is_ok();
+    let io_ok = init_in_with(cwd, interactive, &mut event_log).is_ok();
     let successful = io_ok && no_errors_since(&event_log, starting_event_count);
 
     InitResult {
@@ -32,14 +46,8 @@ pub fn init(cwd: &Path, listener: Option<Box<dyn EventLogListener>>) -> InitResu
     }
 }
 
-/// Initializes a collection, asking about an incomplete config when there is an
-/// interactive terminal to ask at.
-pub(super) fn init_in(root: &Path, event_log: &mut EventLog) -> io::Result<()> {
-    init_in_with(root, io::stdin().is_terminal(), event_log)
-}
-
-/// The body of [`init_in`], with the decision of whether anyone can be asked
-/// passed in rather than read from the ambient stdin, so a test can pin it.
+/// The body of [`init`], with the decision of whether anyone can be asked passed
+/// in rather than read from the ambient stdin.
 pub(super) fn init_in_with(
     root: &Path,
     interactive: bool,
@@ -227,8 +235,8 @@ fn describe_fields(fields: &[String]) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        CONFIG_FILE, CONTENT_DIR, default_config_contents, describe_fields, init, init_in_with,
-        parse_yes_no,
+        CONFIG_FILE, CONTENT_DIR, default_config_contents, describe_fields, init_in_with,
+        init_with, parse_yes_no,
     };
     use crate::backend::config::missing_config_fields;
     use crate::events::{Event, EventLog};
@@ -269,7 +277,7 @@ mod tests {
     fn init_returns_a_successful_result_for_a_fresh_directory() {
         let temp_dir = TestDir::new();
 
-        let result = init(temp_dir.path(), None);
+        let result = init_with(temp_dir.path(), false, None);
 
         assert!(result.successful);
         assert!(temp_dir.path().join(CONFIG_FILE).is_file());
@@ -345,7 +353,7 @@ mod tests {
         )
         .unwrap();
 
-        let result = init(temp_dir.path(), None);
+        let result = init_with(temp_dir.path(), false, None);
 
         assert!(result.successful);
         assert!(!result.event_log.has_errors());

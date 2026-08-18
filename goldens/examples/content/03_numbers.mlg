@@ -66,7 +66,7 @@ when: x_, y_ is \natural
 to: x_ \.natural.plus./ y_
 when: x_, y_ is \real
 to: x_ \.real.plus./ y_
-else: \unspecified.sum
+else: x_ :+: y_
 Documented:
 . called: "plus"
 Id: "173a6ede-2b98-4da4-a5b0-40b44635add7"

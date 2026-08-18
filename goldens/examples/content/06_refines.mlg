@@ -48,7 +48,7 @@ Refines: A
 when: B is \set
 Documented:
 . adjective: "proper"
-Id: "9d6668e3-30db-4e78-a3ac-e53ccf6dd887"
+Id: "9d1238e3-30db-4e78-a3ac-e53ccf6dd887"
 
 
 -- A refinement of the base type is available on its subtypes, so a nonempty

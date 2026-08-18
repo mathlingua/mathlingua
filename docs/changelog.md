@@ -5,6 +5,42 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## `goldens/examples/`: A Collection That Exercises Everything
+
+`docs/examples.txt` is replaced by `goldens/examples/`, a complete MathLingua
+collection that illustrates every language feature **and checks cleanly**. The
+old file was only guaranteed to parse; its examples referenced commands that were
+never defined, so nothing verified that they meant anything. The collection has
+no such escape: `mlg check` accepts it with no diagnostics, so every example is
+a working one.
+
+It is organized as ten content files, read in order:
+
+```text
+01_outline     Title/SectionTitle/SubsectionTitle/Text, Writing:, Specify:
+02_core        the handful of definitions everything else builds on
+03_numbers     number types, Declares values, Disambiguates
+04_algebra     what a Defines extends: is/via, means:, the extends: section
+05_declares    Declares values and parts, abstractly:, Realizes
+06_refines     Refines, implicitly:/explicitly:, refined spec-infix
+07_headings    every command heading shape
+08_statements  States, Axiom/Theorem/Conjecture, every clause group
+09_relating    Equivalent, Relation, Topic, Person, Resource, text-only items
+10_support     each support section in detail
+```
+
+A test copies the collection to a temporary directory (a check rewrites its
+input, and a test should not modify the source tree), runs the real checker over
+it, asserts there are no diagnostics, and asserts every top-level item kind
+appears — so neither an example nor a newly added item kind can drift from the
+implementation.
+
+Two gaps in `Id:` auto-insertion surfaced while building it and are fixed: a
+top-level `Writing:` group and the four `Text*` items were excluded from
+`is_top_level_item_label`, so `mlg check` demanded an `Id:` for them but never
+wrote one. `Text*` items had to carry a hand-written `Id:` because their grammar
+requires the section; now, like every other top-level item, they get one.
+
 ## `States:` And `Equivalent:` Are Marker Sections
 
 Neither head section takes an argument any more. Prose describing the item goes

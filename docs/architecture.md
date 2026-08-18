@@ -7,8 +7,9 @@ renderer, CLI, or web viewer.
 
 For language syntax details, use these companion documents:
 
-- [examples.txt](examples.txt) is every top-level item by example, kept valid by
-  a parser test.
+- [`goldens/examples/`](../goldens/examples) is a complete collection that
+  exercises every language feature and checks cleanly; a test keeps it that
+  way.
 - [language.md](language.md) is the human-facing language guide.
 - [structural_syntax.md](structural_syntax.md) is the parser-level structural
   syntax reference.
@@ -75,7 +76,7 @@ depending on Rust AST internals.
 ├── Cargo.toml
 ├── build.rs
 ├── docs/
-├── goldens/
+├── goldens/     # parser goldens, plus goldens/examples/, a checkable collection
 ├── src/
 ├── testbed/     # a sample MathLingua collection ("Mathlore") used for testing
 └── web/
@@ -87,7 +88,9 @@ Important roots:
 - `build.rs` runs LALRPOP before compilation so the generated formulation parser
   exists when Rust code is compiled.
 - `docs/` contains human and parser-level documentation.
-- `goldens/` contains expected parser outputs used by parser tests.
+- `goldens/` contains expected parser outputs used by parser tests, plus
+  `goldens/examples/`, a complete collection illustrating every language feature
+  that `mlg check` accepts with no diagnostics.
 - `src/` contains the Rust CLI, parsers, semantic checker, renderer, and event
   system.
 - `web/` contains the React/Vite viewer sources and the generated `web/dist/`

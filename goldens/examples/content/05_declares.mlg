@@ -1,0 +1,106 @@
+-- The `Declares` family: concrete values, values with parts, abstract
+-- declarations, and the realizations that fill them in.
+
+
+-- A value built with `\type@value` states its type through the build.
+[\empty.set]
+Declares: E := \set@{x : ...}
+Documented:
+. called: "the empty set"
+Id: "57e85a10-0056-47f9-99e6-29fecbcb150a"
+
+
+[\unit.set]
+Declares: U := \set@{x : ...}
+Documented:
+. called: "the unit set"
+Id: "1e934b9d-74dd-4899-87c2-b0aba62c4216"
+
+
+[\the.point]
+Declares: p is \element:of{\unit.set}
+Documented:
+. called: "the distinguished point"
+Id: "99bc0132-e074-4af8-abb4-ebfb31053bd7"
+
+
+-- `means:` says what each part of a destructuring target is. Every item must
+-- supply a value, with `:=` here or indirectly through `expresses:`.
+[\unit.pair]
+Declares: P ::= (L, R)
+means:
+. L := \zero
+. R := \one
+Documented:
+. called: "the unit pair"
+Id: "7a8868cb-2094-4205-977b-21d11a5e629e"
+
+
+-- A `means:` item may instead state a type and leave the value to `expresses:`.
+-- That is what `expresses:` is for: defining something indirectly.
+[\sign.pair]
+Declares: S ::= (low, high)
+means:
+. low is \natural
+. high := \one
+expresses:
+. low := \zero
+Documented:
+. called: "the sign pair"
+Id: "c8118a7a-7309-4654-b2a3-7533ff37c41a"
+
+
+-- `abstractly:` leaves the `is`/`"op"` items of `means:` open, for a
+-- `Realizes:` to supply. A `Defines` is an interface, an abstract `Declares` is
+-- an abstract base class, and a plain `Declares` is a concrete one.
+[\pointed.system]
+Declares: Ps ::= (S, p, f)
+abstractly:
+means:
+. S is \set
+. p "in" S
+. f is \function:on{S}:to{S}
+Documented:
+. called: "a pointed system"
+Id: "1f8c9fc8-0e72-4759-9d5b-8f141a5267b2"
+
+
+-- A `Realizes` names the declaration it realizes with `:=`, and must supply
+-- every symbol that declaration left abstract.
+[\unit.system]
+Realizes: Ps := \pointed.system
+means:
+. S := \unit.set
+. p := \the.point
+. f := \identity:on{\unit.set}
+Documented:
+. called: "the unit pointed system"
+Id: "2fd0eff6-585a-4a78-acee-5ad00b69f90e"
+
+
+-- A realization may define indirectly through `expresses:` too, and takes the
+-- same support sections as `Declares`.
+[\lazy.unit.system]
+Realizes: Ps := \pointed.system
+using: k is \natural
+means:
+. S := \unit.set
+. p := \the.point
+. f is \function:on{S}:to{S}
+expresses:
+. f := \identity:on{\unit.set}
+Documented:
+. called: "the lazily described unit system"
+Id: "c9ec2e4f-2ec0-408a-907a-cdee2c79e1c4"
+
+
+-- A realized value carries the types its declaration gave its components, so
+-- destructuring either one proves the same facts.
+Theorem:
+given: Ps ::= (S, p, f) := \unit.system
+then:
+. S is? \set
+. p "in"? S
+Documented:
+. called: "a realization keeps its declaration's types"
+Id: "6c1f5583-6be5-4fbf-bbdc-fd3276bf6a6a"

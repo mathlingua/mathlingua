@@ -4985,6 +4985,96 @@ then:
 
 "#;
 
+    /// `goldens/examples/` is a complete MathLingua collection that exercises
+    /// every language feature and checks cleanly. It is a living document:
+    /// this test runs the real checker over it, so an example cannot drift from
+    /// what the implementation accepts, and asserts every top-level item kind
+    /// appears, so a new kind cannot be added without an example.
+    ///
+    /// The collection is copied to a temporary directory first because a check
+    /// rewrites its input — it formats each file and writes in any missing
+    /// `Id:` — and a test should not modify the source tree.
+    #[test]
+    fn check_accepts_the_golden_examples_collection() {
+        let source = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/goldens/examples"));
+        let temp_dir = TestDir::new();
+        let root = temp_dir.path().join("examples");
+        copy_tree(source, &root);
+
+        let mut event_log = EventLog::new();
+        let result = check_in(&root, &[], &mut event_log);
+
+        assert_eq!(
+            user_events(&event_log),
+            [
+                Event::user_log(format!("Checked {} files", result.files_checked))
+                    .with_origin("mlg_check")
+            ],
+            "goldens/examples must check cleanly"
+        );
+
+        let mut seen = std::collections::BTreeSet::new();
+        for entry in fs::read_dir(root.join("content")).expect("expected a content directory") {
+            let path = entry.expect("expected a directory entry").path();
+            let text = fs::read_to_string(&path).expect("expected a readable example");
+            for line in text.lines() {
+                if let Some(label) = line.split(':').next()
+                    && !label.is_empty()
+                    && line.starts_with(label)
+                    && line[label.len()..].starts_with(':')
+                {
+                    seen.insert(label.to_owned());
+                }
+            }
+        }
+        for kind in [
+            "Axiom",
+            "Conjecture",
+            "Declares",
+            "Defines",
+            "Disambiguates",
+            "Equivalent",
+            "Person",
+            "Realizes",
+            "Refines",
+            "Relation",
+            "Resource",
+            "SectionTitle",
+            "Specify",
+            "States",
+            "SubsectionTitle",
+            "Text",
+            "TextAxiom",
+            "TextConjecture",
+            "TextDefinition",
+            "TextTheorem",
+            "Theorem",
+            "Title",
+            "Topic",
+            "Writing",
+        ] {
+            assert!(
+                seen.contains(kind),
+                "goldens/examples must show a `{kind}:` item"
+            );
+        }
+    }
+
+    /// Recursively copies a directory, for tests that need to run a command
+    /// that writes to its input.
+    fn copy_tree(from: &Path, to: &Path) {
+        fs::create_dir_all(to).expect("expected to create the destination");
+        for entry in fs::read_dir(from).expect("expected a readable directory") {
+            let entry = entry.expect("expected a directory entry");
+            let target = to.join(entry.file_name());
+            if entry.file_type().expect("expected a file type").is_dir() {
+                copy_tree(&entry.path(), &target);
+            } else {
+                fs::copy(entry.path(), &target).expect("expected to copy a file");
+            }
+        }
+    }
+
     #[test]
     fn check_accepts_a_realization_of_an_abstract_declaration() {
         // A `Realizes:` supplies a value for every symbol its declaration left

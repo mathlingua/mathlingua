@@ -1,0 +1,125 @@
+-- Items that relate definitions to each other or to documentation.
+
+
+[\left.identity:in{M}]
+Defines: e
+when: M is \magma
+Documented:
+. called: "left identity in $M?$"
+Id: "fadd40a3-bcdd-48e1-a884-3daa2350930d"
+
+
+[\right.identity:in{M}]
+Defines: e
+when: M is \magma
+Documented:
+. called: "right identity in $M?$"
+Id: "30e3180b-c8e2-4964-944b-693b83a682b8"
+
+
+-- `Equivalent` declares several commands interchangeable under one name. The
+-- `Equivalent:` section takes no argument; say why in `Documented:`.
+[\identity:in{M}]
+Equivalent:
+when: M is \magma
+to:
+. \left.identity:in{M}
+. \right.identity:in{M}
+Documented:
+. called: "identity in $M?$"
+Id: "5d6aee8a-a36d-4873-8849-42a254e85305"
+
+
+-- `Relation` records a relationship between two concepts, topics, or
+-- definitions. Each side is a declaration or a quoted reference.
+Relation:
+between: G is \group
+and: M is \magma
+means: "Every group is a magma under the same operation."
+Documented:
+. called: "a group underlies a magma"
+Id: "ff71ef02-ec19-4e54-8dc8-4dd4f54ecfa2"
+
+
+-- A quoted `"#topic"` or `"\signature"` names a reference rather than a usage.
+Relation:
+between: "#algebra"
+and: "\group"
+means: "Groups are the subject matter of algebra."
+Id: "960ef264-b87a-4366-a17a-0b5f4d41679b"
+
+
+-- `Topic` names documentation subject matter.
+[#algebra]
+Topic: "The study of operations on sets."
+Documented:
+. called: "Algebra"
+Id: "cd54e9f9-3233-4381-a49c-81151fb7f0fd"
+
+
+[#group.theory]
+Topic: "Algebra of invertible operations."
+within: "#algebra"
+Related:
+. to: "#algebra"
+  . "\group"
+  means: "Group theory is the part of algebra about groups."
+Documented:
+. called: "Group Theory"
+Id: "d38c98a5-6f04-49a0-8009-44bb6e34db82"
+
+
+-- `Person` and `Resource` carry bibliography metadata.
+[@emmy.noether]
+Person: "Emmy Noether"
+biography: "Worked on abstract algebra and invariant theory."
+Id: "0051d110-103e-4fc1-80dc-719045462cab"
+
+
+[@nicolas.bourbaki]
+Person:
+. "Nicolas Bourbaki"
+. "N. Bourbaki"
+Id: "6442745f-258c-4ebb-9382-8fe4e2d2f6d6"
+
+
+[$bourbaki.algebra]
+Resource:
+. title: "Algebra"
+. author:
+  . "Nicolas Bourbaki"
+. type: "book"
+. edition: "2nd"
+. editor: "An Editor"
+. institution: "An Institution"
+. journal: "A Journal"
+. publisher: "A Publisher"
+. volume: "1"
+. month: "January"
+. year: "1974"
+. offset: "Chapter II"
+. url: "https://example.com/algebra"
+. homepage: "https://example.com"
+. description: "Elements of Mathematics."
+Id: "6f862aad-8e36-40f6-ab19-22ae6560da4a"
+
+
+-- Text-only items state a result in prose, with no formal body.
+TextDefinition: "A *monoid* is a magma with an identity element."
+Documented:
+. called: "monoid"
+Id: "5543f2ef-6501-4362-ae0d-8425916f9ac3"
+
+
+TextAxiom: "Every nonempty set of naturals has a least element."
+Id: "61ac5cc0-b37b-48cb-b43d-8d9610d27dd5"
+
+
+TextTheorem: "There are infinitely many primes."
+References:
+. $bourbaki.algebra
+Id: "5bcd9782-411f-49de-be81-901aae86be4f"
+
+
+TextConjecture: "Every even number above two is a sum of two primes."
+Id: "51b55da2-a789-468f-9a2f-f67c8fb021a4"

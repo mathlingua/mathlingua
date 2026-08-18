@@ -1,0 +1,75 @@
+-- The shapes a command heading can take.
+
+
+-- Curly arguments, with a `:tail{...}` chain.
+[\module:over{R}:with{S}]
+Defines: M
+when: R, S is \set
+Documented:
+. called: "module over $R?$ with $S?$"
+Id: "c259c92b-6f91-4b41-95d6-ad435836be8c"
+
+
+-- A `?` marks an optional tail; a definition is registered for each
+-- combination, so `\norm`, `\norm:on{V}` and `\norm:on{V}:with{P}` all resolve.
+[\norm:?on{V}:?with{P}]
+Defines: N
+when: V, P is \set
+Documented:
+. called: "norm"
+Id: "fe2341bc-c21b-4a78-8cec-1089da4af4f2"
+
+
+-- A spec-infix command, `\:name:/`, is sugar for a command whose left operand
+-- is the symbol being defined. That symbol is stated on the `Defines:` target,
+-- and so may not appear in `when:`.
+[A \:subset:/ B]
+Defines: A is \set
+when: B is \set
+Requires:
+. capability: x_ "in" A :-> x_ "in" B
+Documented:
+. written: "A? \subseteq B?"
+Id: "2acb059b-46d8-4cca-a4fc-aaae4bf9b135"
+
+
+-- An optional tail on a spec-infix heading.
+[A \:contained:?within{U}:/ B]
+Defines: A is \set
+when:
+. B, U is \set
+. B \:subset:/ U
+Documented:
+. written: "A? \subseteq_{U?} B?"
+Id: "07e8e611-08e0-490d-8f62-030af8f9e7e8"
+
+
+[\reals.set]
+Declares: R := \set@{r : ...}
+Documented:
+. called: "the set of reals"
+Id: "8ec56012-f504-44d1-a1eb-04301de15075"
+
+
+-- A mapping parameter picks one input of a mapping declared in another curly
+-- group, so `\partial:of{f(x_)}:in{f.x_}` names a partial derivative.
+[\partial:of{f(x_)}:in{f.x_}]
+Declares: v is \real
+when: f is \function:on{\reals.set}:to{\reals.set}
+Documented:
+. called: "partial derivative"
+Id: "086ac065-d2bf-41a9-a291-34a747dc2e6d"
+
+
+-- A subset relation is a spec fact, and the `Requires:` capability above lets
+-- membership in the smaller set reduce to membership in the larger one.
+Theorem:
+given:
+. A is \set
+. B is \set
+. x is \element:of{A}
+where: A \:subset:/ B
+then: x "in"? B
+Documented:
+. called: "a subset passes membership along"
+Id: "b13ec219-c558-42b6-8d28-57d8ea23126e"

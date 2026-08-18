@@ -1,0 +1,47 @@
+-- Prose and outline items, plus the two collection-wide configuration items.
+
+Title: "MathLingua by Example"
+Id: "e339210e-a8dd-4648-b3aa-4ad4abbf3dec"
+
+
+SectionTitle: "Sets"
+Id: "d4d97fa3-a9a5-4f61-9552-0d4fcf75fee2"
+
+
+SubsectionTitle: "Membership"
+Id: "716bb969-0c46-422e-a34b-843734b58cab"
+
+
+Text: "Prose is Markdown with embedded LaTeX such as $x \in A$."
+Id: "724c00ef-7f11-469b-9efd-016d0193842a"
+
+
+-- Collection-wide rendering aliases: `name :~> LaTeX body`.
+Writing:
+. "naturals :~> \mathbb{N}"
+Id: "a90bd793-1b41-4306-a07d-e8b84939f359"
+
+
+-- Which types the numeric literal spellings fall back to.
+Specify:
+. decimal:
+  is: \real
+Id: "a48f3b78-3db7-4b31-9547-67b872edc6e3"
+
+
+Specify:
+. zeroOrPositiveInt:
+  is: \natural
+Id: "0936feac-120e-4bd0-a8eb-9e8f2359610e"
+
+
+Specify:
+. positiveInt:
+  is: \natural
+Id: "bc7cc040-4f2b-40d1-a125-6956d99c6aeb"
+
+
+Specify:
+. int:
+  is: \real
+Id: "c8eadf97-d33e-4585-9c16-93d2365e55e7"

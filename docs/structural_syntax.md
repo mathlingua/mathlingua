@@ -3,7 +3,7 @@
 This file describes the structural language exactly as it is currently implemented in the Rust code.
 For a more readable overview of how structural syntax fits into the whole
 language, start with [language.md](language.md); for the same territory shown as
-worked examples, see [examples.txt](examples.txt).
+worked examples, see [`goldens/examples/`](../goldens/examples).
 
 Intended workflow:
 

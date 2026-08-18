@@ -6,8 +6,9 @@ formulation layers fit together, and what semantic checks the current
 implementation performs.
 
 For a tour of the language by example, read
-[examples.txt](examples.txt): every top-level item and the different ways each
-can be written, in one file, kept valid by a parser test.
+[`goldens/examples/`](../goldens/examples): a complete collection showing every
+top-level item and the different ways each can be written. It checks cleanly, and
+a test keeps it that way, so nothing in it can drift from the implementation.
 
 For exact parser-level details, keep these references nearby:
 

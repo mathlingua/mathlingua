@@ -1,0 +1,62 @@
+-- `Refines` defines a refined command — adjectives applied to another command.
+
+
+-- The plain form: a property added to an existing type.
+[\(nonempty)::set]
+Refines: X
+satisfies:
+. exists: x is \element:of{X}
+  suchThat: x "in" X
+Documented:
+. adjective: "nonempty"
+Id: "dff130c9-4fc4-4bd5-a7b0-dd6ee7a1ff23"
+
+
+[\(commutative)::magma]
+Refines: M ::= (X, *)
+satisfies: M is \magma
+Documented:
+. adjective: "commutative"
+Id: "b6c0c765-d12c-437c-80e1-7a0113e8b789"
+
+
+-- `extends:` names the refinement this one inherits from. `implicitly:` says
+-- the group only restates that inherited clause...
+[\(nonempty)::magma]
+Refines: M ::= (X, *)
+implicitly:
+extends: M is \(nonempty)::set
+Documented:
+. adjective: "nonempty"
+Id: "9411125d-e05c-41ff-9b1e-fc55f9547604"
+
+
+-- ...and `explicitly:` says it adds at least one property of its own.
+[\(nonempty)::monoid]
+Refines: M ::= (X, *, e)
+explicitly:
+extends: M is \(nonempty)::magma
+satisfies: M is \monoid
+Documented:
+. adjective: "nonempty"
+Id: "aeda535b-696d-426a-916c-da930f1d5d94"
+
+
+-- A refined spec-infix command.
+[A \:(proper)::subset:/ B]
+Refines: A
+when: B is \set
+Documented:
+. adjective: "proper"
+Id: "9d6668e3-30db-4e78-a3ac-e53ccf6dd887"
+
+
+-- A refinement of the base type is available on its subtypes, so a nonempty
+-- group is reachable through `\group`'s chain up to `\set`.
+Theorem:
+given: G ::= (X, *, e) is \group
+where: G is? \(nonempty)::monoid
+then: G is? \(nonempty)::magma
+Documented:
+. called: "refinements follow the subtype chain"
+Id: "7474854b-5143-4d83-a0bb-50e943ace450"

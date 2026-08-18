@@ -1,0 +1,59 @@
+-- How a `Defines` says what it extends, and how `means:` types the parts of a
+-- destructuring target.
+
+
+-- The `Defines:` target may state the type this definition extends. `via X`
+-- names the view used to regard a magma as a set, and types `X` at the same
+-- time, so `means:` only has to type what the `via` does not reach.
+[\magma]
+Defines: M ::= (X, *) is \set via X
+means: * is \operation:on{M}
+Documented:
+. called: "magma"
+Id: "0e5be05c-2b6d-48cc-8dec-d656eb6bb8b7"
+
+
+-- A second component, typed in `means:`. `X` is not repeated: a symbol is
+-- specified exactly once.
+[\monoid]
+Defines: M ::= (X, *, e) is \magma via (X, *)
+means: e "in" X
+Documented:
+. called: "monoid"
+Id: "b41b952a-239a-49de-b27a-a896f0494b30"
+
+
+-- A `via` tuple maps positionally onto the extended type's own components, so
+-- `X`, `*` and `e` all inherit their types here and no `means:` is needed.
+[\group]
+Defines: G ::= (X, *, e) is \monoid via (X, *, e)
+Documented:
+. called: "group"
+Id: "bc7fdaea-a45a-4569-8607-78555d8a03eb"
+
+
+-- `extends:` is the same clause written as a section. It exists for what a
+-- target cannot express: extending several types at once, each through a
+-- different view of the tuple.
+[\bimagma]
+Defines: B ::= (X, *, +)
+extends:
+. B is \magma via (X, *)
+. B is \magma via (X, +)
+Documented:
+. called: "bimagma"
+Id: "fde4a779-17a4-48a3-997b-ad20380eb324"
+
+
+-- Subtyping is recursive, so a group is a magma and therefore a set.
+Theorem:
+given: G ::= (X, *, e) is \group
+then:
+. G is? \monoid
+. G is? \magma
+. G is? \set
+. X is? \set
+. e "in"? X
+Documented:
+. called: "a group is a set"
+Id: "da7562a6-f7e7-4e0e-ba84-30ed132faeb1"

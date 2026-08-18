@@ -353,14 +353,15 @@ that:
 Documented:
 . called: "commutes with $y?$"
 
--- The `States:` section may carry prose describing the statement.
+-- `States:` itself takes no argument; prose describing the statement belongs in
+-- `Documented:`.
 [\associative]
 States:
-. "Associativity"
-. "grouping does not matter"
 that: \true
 Documented:
 . called: "associative"
+. overview: "Associativity"
+. description: "Grouping does not matter."
 
 -------------------------------------------------------------------------------
 -- Theorem-like items — Axiom, Theorem, Conjecture
@@ -460,9 +461,10 @@ Documented:
 -- Equivalent — several commands interchangeable under one name
 -------------------------------------------------------------------------------
 
+-- `Equivalent:` takes no argument either; say why the members agree in
+-- `Documented:`.
 [\continuous:at{p}]
 Equivalent:
-. "the epsilon-delta and neighborhood definitions agree"
 using: n is \natural
 when: p is \real
 to:
@@ -470,6 +472,7 @@ to:
 . \neighborhood.continuous:at{p}
 Documented:
 . called: "continuous at $p?$"
+. description: "The epsilon-delta and neighborhood definitions agree."
 
 -------------------------------------------------------------------------------
 -- Relation — a relationship between two concepts, topics, or definitions

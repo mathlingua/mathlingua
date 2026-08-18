@@ -938,7 +938,8 @@ parts — including the components of a destructuring target — and those facts
 assumed when checking the definition body and stored so a value of the type
 carries them (see [Subtyping: The Type A `Defines` Extends](#subtyping-the-type-a-defines-extends)).
 
-`States` defines a command-backed statement body:
+`States` defines a command-backed statement body. The `States:` section itself
+takes no argument; prose describing the statement goes in `Documented:`:
 
 ```text
 [\commutative{S}]
@@ -948,6 +949,9 @@ that:
 . forAll: x, y is \element.of{S}
   then:
   . x * y = y * x
+Documented:
+. called: "commutative"
+. description: "Order does not matter."
 ```
 
 ## Theorem-Like Groups
@@ -1423,6 +1427,10 @@ function ...`, `\`{name}\` is not a known type`).
   parameters directly (not expressions); all items must be the same definition
   kind; and their target shape, defined type, `when:` requirements, extended
   type, and capabilities must agree across members.
+- **Marker sections** — `States:`, `Equivalent:`, `Disambiguates:`, the
+  theorem-like heads, `abstractly:`, and `implicitly:`/`explicitly:` take no
+  argument (`Section \`{label}\` does not accept content`). Prose describing
+  such an item belongs in `Documented:`.
 - **`Defines:` extended type** — a `Defines:` target that states an `is`/spec
   relation may not also have an `extends:` section; the two spellings are
   equivalent, so exactly one of them carries the clauses.

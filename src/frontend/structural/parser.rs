@@ -3360,11 +3360,10 @@ pub(in crate::frontend::structural::parser) fn parse_states(
         ],
     )?;
 
+    ensure_empty_section(section(&sections, "States")?, "States", tracker);
+
     Some(StatesGroup {
         heading,
-        states: StatesSection {
-            arguments: parse_optional_open_texts(sections.get("States").copied(), tracker),
-        },
         using: sections.get("using").copied().and_then(|section| {
             parse_required_formulations(
                 section,
@@ -3441,11 +3440,10 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
         ],
     )?;
 
+    ensure_empty_section(section(&sections, "Equivalent")?, "Equivalent", tracker);
+
     Some(EquivalentGroup {
         heading,
-        equivalent: EquivalentSection {
-            arguments: parse_optional_open_texts(sections.get("Equivalent").copied(), tracker),
-        },
         using: sections.get("using").copied().and_then(|section| {
             parse_required_formulations(
                 section,
@@ -4425,8 +4423,6 @@ satisfies:
 
 [\statement]
 States:
-. "Closure law"
-. "Associativity"
 using:
 . X is \set
 that:
@@ -4671,9 +4667,6 @@ that:
 
         match &document.items[9] {
             TopLevelItem::States(group) => {
-                assert_eq!(group.states.arguments.len(), 2);
-                assert_eq!(group.states.arguments[0].0, "Closure law");
-                assert_eq!(group.states.arguments[1].0, "Associativity");
                 assert!(matches!(group.that.arguments[0], Clause::Exists(_)));
             }
             other => panic!("expected states group, got {other:?}"),
@@ -5192,7 +5185,6 @@ Id: "11111111-1111-4111-8111-111111111111"
             r#"
 [\eq{a, b}]
 Equivalent:
-. "a and b are interchangeable"
 to:
 . \bar{a, b}
 . \baz{a, b}
@@ -5201,7 +5193,6 @@ to:
 
         match &document.items[0] {
             TopLevelItem::Equivalent(group) => {
-                assert_eq!(group.equivalent.arguments.len(), 1);
                 assert_eq!(group.to.arguments.len(), 2);
                 assert!(group.using.is_none());
             }
@@ -5258,6 +5249,35 @@ then:
     ///
     /// The file is deliberately not a checkable collection — its examples
     /// reference commands that are never defined — so only parsing is asserted.
+    #[test]
+    fn rejects_content_in_the_states_and_equivalent_sections() {
+        // Both are marker sections: prose describing the item belongs in
+        // `Documented:`, alongside `called:`.
+        for source in [
+            r#"[\thing]
+States:
+. "Associativity"
+that: x = x
+"#,
+            r#"[\thing]
+Equivalent: "they agree"
+to:
+. \a
+"#,
+        ] {
+            let (_, diagnostics) = parse_with_diagnostics(source);
+
+            assert!(
+                diagnostics.iter().any(|event| {
+                    event
+                        .as_message()
+                        .is_some_and(|message| message.message.ends_with("does not accept content"))
+                }),
+                "{diagnostics:#?}"
+            );
+        }
+    }
+
     #[test]
     fn parses_the_documented_examples() {
         let path = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/examples.txt"));

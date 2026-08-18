@@ -1,7 +1,5 @@
 [\statement]
 States:
-. "Closure law"
-. "Associativity"
 using:
 . X is \set
 that:

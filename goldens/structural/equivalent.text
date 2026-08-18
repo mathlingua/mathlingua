@@ -6,7 +6,6 @@ to:
 
 [\eq{a, b}]
 Equivalent:
-. "a and b are interchangeable"
 to:
 . \bar{a, b}
 . \baz{a, b}

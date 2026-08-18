@@ -5,6 +5,37 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## `States:` And `Equivalent:` Are Marker Sections
+
+Neither head section takes an argument any more. Prose describing the item goes
+in `Documented:`, where the rest of an item's human-facing text already lives:
+
+```text
+[\associative]
+States:
+that: \true
+Documented:
+. called: "associative"
+. overview: "Associativity"
+. description: "Grouping does not matter."
+```
+
+```text
+[\continuous:at{p}]
+Equivalent:
+to:
+. \epsilon.delta.continuous:at{p}
+. \neighborhood.continuous:at{p}
+Documented:
+. called: "continuous at $p?$"
+. description: "The epsilon-delta and neighborhood definitions agree."
+```
+
+Content in either section is now reported as `Section `{label}` does not accept
+content`, the same diagnostic the other marker sections use. `StatesSection` and
+`EquivalentSection` are gone from the structural AST, along with the `states` and
+`equivalent` fields of their groups.
+
 ## Abstract Declarations And `Realizes`
 
 `Declares` gains a `means:` section, immediately above `expresses:`, so a

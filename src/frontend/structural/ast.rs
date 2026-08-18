@@ -294,9 +294,7 @@ argument_section!(DeclaresSection, DeclarationStatement);
 arguments_section!(ExpressesSection, Clause);
 argument_section!(RefinesSection, DeclarationStatement);
 argument_section!(RefinesExtendsSection, DeclarationStatement);
-zero_or_more_arguments_section!(StatesSection, OpenText);
 arguments_section!(ThatSection, Clause);
-zero_or_more_arguments_section!(EquivalentSection, OpenText);
 arguments_section!(EquivalentToSection, Expression);
 // The `Axiom:`/`Theorem:`/`Conjecture:` head sections take no argument; a
 // result's name lives in `Documented:` `called:` (as for definitions).
@@ -688,7 +686,6 @@ pub struct RefinesGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatesGroup {
     pub heading: CommandHeader,
-    pub states: StatesSection,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub that: ThatSection,
@@ -709,7 +706,6 @@ pub struct StatesGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EquivalentGroup {
     pub heading: CommandHeader,
-    pub equivalent: EquivalentSection,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub to: EquivalentToSection,

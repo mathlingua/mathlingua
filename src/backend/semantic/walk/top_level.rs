@@ -33,7 +33,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
                     }
                 }
             }
-            if let Some(section) = &group.means {
+            if let Some(section) = &group.specifies {
                 for item in &section.arguments {
                     walk_is_or_via_item(item, visit);
                 }
@@ -48,7 +48,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_declaration_statement(&group.defines.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
-            walk_optional_means(&group.means, visit);
+            walk_optional_specifies(&group.specifies, visit);
             if let Some(section) = &group.expresses {
                 for clause in &section.arguments {
                     walk_clause(clause, visit);
@@ -63,7 +63,7 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_declaration_statement(&group.realizes.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
-            walk_optional_means(&group.means, visit);
+            walk_optional_specifies(&group.specifies, visit);
             if let Some(section) = &group.expresses {
                 for clause in &section.arguments {
                     walk_clause(clause, visit);
@@ -143,8 +143,8 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_relation_subject(&group.between.argument, visit);
             walk_relation_subject(&group.and_.argument, visit);
             walk_optional_clauses(&group.when, visit);
-            if let Some(RelationMeans::Statement(clause)) =
-                group.means.as_ref().map(|m| &m.argument)
+            if let Some(RelationSpecifies::Statement(clause)) =
+                group.specifies.as_ref().map(|m| &m.argument)
             {
                 walk_clause(clause, visit);
             }
@@ -172,12 +172,12 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
     }
 }
 
-/// Walks the items of a `Defines:`/`Realizes:` `means:` section.
-fn walk_optional_means(
-    means: &Option<DefinesMeansSection>,
+/// Walks the items of a `Defines:`/`Realizes:` `specifies:` section.
+fn walk_optional_specifies(
+    specifies: &Option<DefinesSpecifiesSection>,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
-    if let Some(section) = means {
+    if let Some(section) = specifies {
         for item in &section.arguments {
             walk_is_or_via_item(item, visit);
         }

@@ -5,7 +5,7 @@ using:
 . X is \set
 when:
 . X is \set
-means:
+specifies:
 . N is \set
 . 0 "in" N
 . succ is \function:on{N}:to{N}
@@ -40,7 +40,7 @@ using:
 . X is \set
 when:
 . X is \set
-means:
+specifies:
 . N := \empty.set
 . 0 := \empty.set
 . succ(n_) := \empty.set

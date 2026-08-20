@@ -32,7 +32,7 @@ Id: "b4643f0c-2a8e-4b8c-9c45-daf810276e37"
 -- `Enables:` states what knowing the type lets the checker do afterwards.
 [\enables.showcase]
 Declares: G ::= (X, *) is \set via X
-means: * is \operation:on{G}
+specifies: * is \operation:on{G}
 Enables:
 . capability: x_ "in" G :-> x_ is \element:of{X}
   written: "x_? \in G?"
@@ -51,7 +51,7 @@ Id: "80bdeb53-b07a-411c-b7e2-7bd81e2059cb"
 -- the body points at one, and the checker takes that item as given.
 [\justification.showcase]
 Declares: X ::= (A, B)
-means:
+specifies:
 . A is \set
 . (.B is \set.)[:carrier:]
 Documented:
@@ -68,7 +68,7 @@ Id: "decbcbc2-aa62-430f-aa16-d044ea928c10"
 -- records release bookkeeping.
 [\alias.showcase]
 Declares: G ::= (X, *) is \set via X
-means: * is \operation:on{G}
+specifies: * is \operation:on{G}
 Documented:
 . called: "alias showcase"
 Aliases:

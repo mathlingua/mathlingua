@@ -35,7 +35,7 @@ Id: "5d6aee8a-a36d-4873-8849-42a254e85305"
 Relation:
 between: G is \group
 and: M is \magma
-means: "Every group is a magma under the same operation."
+specifies: "Every group is a magma under the same operation."
 Documented:
 . called: "a group underlies a magma"
 Id: "ff71ef02-ec19-4e54-8dc8-4dd4f54ecfa2"
@@ -45,7 +45,7 @@ Id: "ff71ef02-ec19-4e54-8dc8-4dd4f54ecfa2"
 Relation:
 between: "#algebra"
 and: "\group"
-means: "Groups are the subject matter of algebra."
+specifies: "Groups are the subject matter of algebra."
 Id: "960ef264-b87a-4366-a17a-0b5f4d41679b"
 
 
@@ -63,7 +63,7 @@ within: "#algebra"
 Related:
 . to: "#algebra"
   . "\group"
-  means: "Group theory is the part of algebra about groups."
+  specifies: "Group theory is the part of algebra about groups."
 Documented:
 . called: "Group Theory"
 Id: "d38c98a5-6f04-49a0-8009-44bb6e34db82"

@@ -1321,7 +1321,7 @@ between: a is \\expression
 and: b is \\expression
 when:
 . a = b
-means: a = b
+specifies: a = b
 "#,
         )
         .unwrap();
@@ -1341,7 +1341,7 @@ means: a = b
     }
 
     #[test]
-    fn check_reports_undeclared_symbol_in_relation_means() {
+    fn check_reports_undeclared_symbol_in_relation_specifies() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("relation-scope.mlg");
 
@@ -1350,7 +1350,7 @@ means: a = b
             r#"Relation:
 between: a is \\expression
 and: b is \\expression
-means: c = c
+specifies: c = c
 "#,
         )
         .unwrap();
@@ -1388,7 +1388,7 @@ Topic: "Analysis over the real numbers."
 within: "#analysis"
 Related:
 . to: "#complex.analysis"
-  means: "Closely connected subjects."
+  specifies: "Closely connected subjects."
 Documented:
 . called: "Real Analysis"
 "##,
@@ -1425,7 +1425,7 @@ Topic: "Analysis over the complex numbers."
 Relation:
 between: "#real.analysis"
 and: "#complex.analysis"
-means: "Complex analysis extends real analysis."
+specifies: "Complex analysis extends real analysis."
 "##,
         )
         .unwrap();
@@ -1445,19 +1445,19 @@ means: "Complex analysis extends real analysis."
     }
 
     #[test]
-    fn check_accepts_relation_between_quoted_signatures_with_text_means() {
+    fn check_accepts_relation_between_quoted_signatures_with_text_specifies() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("signature-relation.mlg");
 
         // Quoted `"\..."` subjects are references, not usages, so `\sin`/`\cos`
-        // need not be defined; a prose `means:` is recorded, not checked, so its
+        // need not be defined; a prose `specifies:` is recorded, not checked, so its
         // `c` is not reported as an undeclared symbol.
         write_mlg_fixture(
             &file,
             r##"Relation:
 between: "\sin"
 and: "\cos"
-means: "c makes them cofunctions."
+specifies: "c makes them cofunctions."
 "##,
         )
         .unwrap();
@@ -2267,7 +2267,7 @@ then:
 
     [\function]
     Declares: f(x__) ::= y_
-    means:
+    specifies:
     . x__ is \\expression
     . y_ is \\opaque
     Documented:
@@ -2326,7 +2326,7 @@ then:
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     Documented:
@@ -2396,14 +2396,14 @@ then:
 
     [\natural.pair]
     Declares: P ::= (a, b)
-    means:
+    specifies:
     . a, b is \natural
     Documented:
     . called: "natural pair"
 
     [\natural.set]
     Declares: N ::= {n__ : ...}
-    means:
+    specifies:
     . n__ is \natural
     Documented:
     . called: "natural set"
@@ -2462,21 +2462,21 @@ then:
 
     [\natural.function]
     Declares: f(x_) ::= y_
-    means:
+    specifies:
     . x_, y_ is \natural
     Documented:
     . called: "natural function"
 
     [\natural.pair]
     Declares: P ::= (a, b)
-    means:
+    specifies:
     . a, b is \natural
     Documented:
     . called: "natural pair"
 
     [\natural.set]
     Declares: N ::= {n__ : ...}
-    means:
+    specifies:
     . n__ is \natural
     Documented:
     . called: "natural set"
@@ -2991,7 +2991,7 @@ then:
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     Documented:
@@ -3233,7 +3233,7 @@ then:
 
     [\natural.constructor]
     Declares: succ(n_) ::= m_
-    means:
+    specifies:
     . n_ is \natural
     . m_ is \natural
     Documented:
@@ -3285,7 +3285,7 @@ then:
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     Documented:
@@ -3886,9 +3886,9 @@ then:
     }
 
     #[test]
-    fn check_uses_declares_function_signature_means() {
+    fn check_uses_declares_function_signature_specifies() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("function-signature-means.mlg");
+        let file = temp_dir.path().join("function-signature-specifies.mlg");
 
         write_mlg_fixture(
             &file,
@@ -3902,7 +3902,7 @@ then:
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     Documented:
@@ -3912,7 +3912,7 @@ then:
     [\ternary.function:?on{A}:?to{B}]
     Declares: g(x_, y_, z_) ::= w_
     when: A, B is \set
-    means:
+    specifies:
     . x_ "in" A
     . y_ "in" A
     . z_ "in" A
@@ -3958,7 +3958,7 @@ then:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("function-signature-means.mlg")],
+            &[PathBuf::from("function-signature-specifies.mlg")],
             &mut event_log,
         );
 
@@ -3986,7 +3986,7 @@ then:
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
     when: A is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     satisfies:
@@ -4519,14 +4519,14 @@ then:
            [\foo:bar{A}]
            Declares: X
            when: A is \set
-           means:
+           specifies:
            . X \"in\" A
            ```"
     Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 
     [\foo:bar{A}]
     Declares: X
-    means:
+    specifies:
     . X "in" A
     Documented:
     . written: "\operatorname{foo}"
@@ -4597,7 +4597,7 @@ then:
 
     [\fun:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     satisfies:
@@ -4678,7 +4678,7 @@ then:
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     Documented:
@@ -4735,14 +4735,14 @@ then:
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
-    means: * is \set
+    specifies: * is \set
     Documented:
     . called: "magma"
 
     [\magma.too]
     Declares: M ::= (X, *)
     extends: M is \set via X
-    means: * is \set
+    specifies: * is \set
     Documented:
     . called: "magma too"
 
@@ -4776,8 +4776,8 @@ then:
     }
 
     #[test]
-    fn check_rejects_a_means_item_that_respecifies_an_extended_symbol() {
-        // `via X` already states `X is \set`, so repeating it in `means:` states
+    fn check_rejects_a_specifies_item_that_respecifies_an_extended_symbol() {
+        // `via X` already states `X is \set`, so repeating it in `specifies:` states
         // the same symbol's type twice.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("duplicate-specification.mlg");
@@ -4799,7 +4799,7 @@ then:
 
     [\group]
     Declares: G ::= (X, *, e) is \set via X
-    means:
+    specifies:
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
@@ -4847,7 +4847,7 @@ then:
 
     [\left.pair]
     Declares: L ::= (U, V)
-    means:
+    specifies:
     . U is \set
     . V is \set
     Documented:
@@ -4855,7 +4855,7 @@ then:
 
     [\right.pair]
     Declares: R ::= (S, T)
-    means:
+    specifies:
     . S is \set
     . T is \set
     Documented:
@@ -4905,7 +4905,7 @@ then:
 
     [\left.pair]
     Declares: L ::= (U, V)
-    means:
+    specifies:
     . U is \set
     . V is \set
     Documented:
@@ -4913,7 +4913,7 @@ then:
 
     [\right.pair]
     Declares: R ::= (S, T)
-    means:
+    specifies:
     . S is \set
     . T is \set
     Documented:
@@ -4976,7 +4976,7 @@ then:
     [\naturals]
     Defines: Nb ::= (N, 0, succ(n_))
     abstractly:
-    means:
+    specifies:
     . N is \set
     . 0 "in" N
     . succ is \function:on{N}:to{N}
@@ -5088,7 +5088,7 @@ then:
             &format!(
                 r#"{REALIZES_PRELUDE}    [\von.neumann.naturals]
     Realizes: Nb := \naturals
-    means:
+    specifies:
     . N := \empty.set
     . 0 := \empty.set
     . succ(n_) := \empty.set
@@ -5135,7 +5135,7 @@ then:
             &format!(
                 r#"{REALIZES_PRELUDE}    [\partial.naturals]
     Realizes: Nb := \naturals
-    means:
+    specifies:
     . N := \empty.set
     Documented:
     . called: "partial naturals"
@@ -5204,18 +5204,18 @@ then:
     }
 
     #[test]
-    fn check_requires_a_concrete_defines_means_item_to_supply_a_value() {
-        // Without `abstractly:`, a `means:` item that only states a type leaves
+    fn check_requires_a_concrete_defines_specifies_item_to_supply_a_value() {
+        // Without `abstractly:`, a `specifies:` item that only states a type leaves
         // the symbol undefined; `expresses:` is the indirect way to define it.
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("concrete-means.mlg");
+        let file = temp_dir.path().join("concrete-specifies.mlg");
 
         write_mlg_fixture(
             &file,
             &format!(
                 r#"{REALIZES_PRELUDE}    [\concrete.pair]
     Defines: P ::= (A, B)
-    means:
+    specifies:
     . A := \empty.set
     . B is \set
     Documented:
@@ -5228,7 +5228,7 @@ then:
         let mut event_log = EventLog::new();
         check_in(
             temp_dir.path(),
-            &[PathBuf::from("concrete-means.mlg")],
+            &[PathBuf::from("concrete-specifies.mlg")],
             &mut event_log,
         );
 
@@ -5255,11 +5255,11 @@ then:
     }
 
     #[test]
-    fn check_accepts_refined_command_in_means() {
-        // A `means:` item (like a `Declares:` target) may name a refined command
+    fn check_accepts_refined_command_in_specifies() {
+        // A `specifies:` item (like a `Declares:` target) may name a refined command
         // as the type: `* is \(associative)::binary.operation:on{X}`.
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("means-refined.mlg");
+        let file = temp_dir.path().join("specifies-refined.mlg");
 
         write_mlg_fixture(
             &file,
@@ -5279,7 +5279,7 @@ then:
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     Documented:
@@ -5302,7 +5302,7 @@ then:
 
     [\semigroup]
     Declares: S ::= (X, *) is \set via X
-    means: * is \(associative)::binary.operation:on{X}
+    specifies: * is \(associative)::binary.operation:on{X}
     Documented:
     . written: "\operatorname{semigroup}"
     "#,
@@ -5312,7 +5312,7 @@ then:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("means-refined.mlg")],
+            &[PathBuf::from("specifies-refined.mlg")],
             &mut event_log,
         );
 
@@ -5326,8 +5326,8 @@ then:
     #[test]
     fn check_accepts_refinement_of_an_inherited_component_specification() {
         // `\magma` already specifies `*` as a binary operation. The
-        // `semigroup` means item adds the `associative` refinement to that same
-        // base type, so it is additive rather than a duplicate specification.
+        // `semigroup` `specifies:` item adds the `associative` refinement to that
+        // same base type, so it is additive rather than a duplicate specification.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("refined-inherited-component.mlg");
 
@@ -5349,7 +5349,7 @@ then:
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     Documented:
@@ -5363,7 +5363,7 @@ then:
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
-    means: * is \binary.operation:on{M}
+    specifies: * is \binary.operation:on{M}
     Documented:
     . written: "\operatorname{magma}"
 
@@ -5378,7 +5378,7 @@ then:
 
     [\semigroup]
     Declares: S ::= (X, *) is \magma via (X, *)
-    means: * is \(associative)::binary.operation:on{X}
+    specifies: * is \(associative)::binary.operation:on{X}
     Documented:
     . written: "\operatorname{semigroup}"
     "#,
@@ -5419,7 +5419,7 @@ then:
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     Documented:
@@ -5433,13 +5433,13 @@ then:
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
-    means: * is \binary.operation:on{M}
+    specifies: * is \binary.operation:on{M}
     Documented:
     . written: "\operatorname{magma}"
 
     [\bad.magma]
     Declares: B ::= (X, *) is \magma via (X, *)
-    means: * is \function:on{X}:to{X}
+    specifies: * is \function:on{X}:to{X}
     Documented:
     . written: "\operatorname{bad}"
     "#,
@@ -5538,7 +5538,7 @@ then:
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     Documented:
@@ -5552,7 +5552,7 @@ then:
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
-    means:
+    specifies:
     . * is \binary.operation:on{M}
     Documented:
     . written: "\operatorname{magma}"
@@ -5668,7 +5668,7 @@ then:
     [\function:on{A}:to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     Documented:
@@ -5682,7 +5682,7 @@ then:
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
-    means: * is \binary.operation:on{M}
+    specifies: * is \binary.operation:on{M}
     Enables:
     . capability: x_ "in" M :-> x_ is \magma.element:of{M}
     Documented:
@@ -5699,7 +5699,7 @@ then:
 
     [\group]
     Declares: G ::= (X, *, e) is \magma via (X, *)
-    means: e "in" X
+    specifies: e "in" X
     Enables:
     . capability: x_ "in" G :-> x_ is \group.element:of{G}
     Documented:
@@ -5894,7 +5894,7 @@ then:
 
     [\grp]
     Declares: G ::= (X, *, e) is \set via X
-    means:
+    specifies:
     . * is \binary.operation:on{X}
     . e "in" X
     Documented:
@@ -5903,7 +5903,7 @@ then:
     [H ::= (X1, *_1, e1) \:sub:/ G ::= (X, *, e)]
     Declares: H ::= (X1, *_1, e1)
     when: G is \grp
-    means:
+    specifies:
     . X1 \:subset:/ X
     . *_1 is \binary.operation:on{X1}
     . e1 "in" X1
@@ -5947,7 +5947,7 @@ Documented:
 [\function:on{A}:to{B}]
 Declares: f(x__) ::= y_
 when: A, B is \set
-means:
+specifies:
 . x__ "in" A
 . y_ "in" B
 Documented:
@@ -5967,7 +5967,7 @@ Documented:
 
 [\group]
 Declares: G ::= (X, *, e) is \set via X
-means:
+specifies:
 . * is \binary.operation:on{G}
 . e "in" X
 Documented:
@@ -6115,7 +6115,7 @@ Documented:
     [\thing:on{P}:and{Q}]
     Declares: t
     when: P, Q is \set
-    means:
+    specifies:
     . have: t is \wrap:of{P}:in{Q}
       asserting: P \:subset?:/ Q
       because: P is? \set
@@ -6176,7 +6176,7 @@ Documented:
     [\thing:on{P}:and{Q}]
     Declares: t
     when: P, Q is \set
-    means:
+    specifies:
     . have: t is \wrap:of{P}:in{Q}
       asserting: P is? \set
     Documented:
@@ -6273,7 +6273,7 @@ Documented:
     [\thing:on{P}:and{Q}]
     Declares: t
     when: P, Q is \set
-    means:
+    specifies:
     . (.t is \wrap:of{P}:in{Q}.)[:1:]
     Documented:
     . called: "thing"
@@ -6321,7 +6321,7 @@ Documented:
     Declares: t
     using:
     . z is \set
-    means:
+    specifies:
     . z is \set
     Documented:
     . called: "thing"
@@ -6429,7 +6429,7 @@ Documented:
     [\fn:on{A}:to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     Documented:
@@ -6443,7 +6443,7 @@ Documented:
 
     [\magma]
     Declares: M ::= (X, *) is \set via X
-    means:
+    specifies:
     . * is \op:on{X}
     Documented:
     . written: "\operatorname{magma}"
@@ -7024,7 +7024,7 @@ Documented:
     [\function:on{A}:to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ "in" A
     . y_ "in" B
     Documented:
@@ -7038,7 +7038,7 @@ Documented:
 
     [\group]
     Declares: G ::= (X, *, e) is \set via X
-    means:
+    specifies:
     . * is \binary.operation:on{G}
     . e "in" G
     Documented:
@@ -7083,7 +7083,7 @@ Documented:
 
     [\group]
     Declares: G ::= (X, *, e) is \set via X
-    means:
+    specifies:
     . * is \set
     . e is \set
     Documented:
@@ -7263,7 +7263,7 @@ Documented:
             [\fn:on{A}:to{B}]
             Declares: f(x__) ::= y_
             when: A, B is \set
-            means:
+            specifies:
             . x__ "in" A
             . y_ "in" B
             Documented:
@@ -7286,7 +7286,7 @@ Documented:
 
             [\structure]
             Declares: M ::= (X, *) is \set via X
-            means:
+            specifies:
             . * is \op:on{M}
             Enables:
             . capability: x_ "in" M :-> x_ is \elt:of{M}
@@ -7296,7 +7296,7 @@ Documented:
 
             [\pointed.structure]
             Declares: S ::= (X, *, e) is \structure via (X, *)
-            means:
+            specifies:
             . e "in" X
             Documented:
             . called: "pointed structure"
@@ -8783,7 +8783,7 @@ Documented:
 
     [\group]
     Declares: G ::= (X, *, e) is \set via X
-    means:
+    specifies:
     . * is \function:on{X}:to{X}
     . e "in" G
     Enables:
@@ -8893,7 +8893,7 @@ Documented:
     [\pointed.sequence:on{A}]
     Declares: X ::= x(i_) ::= y_
     when: A is \set
-    means:
+    specifies:
     . i_ "in" A
     . y_ "in" A
     Documented:
@@ -9128,7 +9128,7 @@ Documented:
 
     [\real.function]
     Declares: f(x_) ::= y_
-    means:
+    specifies:
     . f is (? is \real) -> (? is \real)
     Documented:
     . written: "f?"
@@ -9417,7 +9417,7 @@ Documented:
     }
 
     #[test]
-    fn check_rejects_unintroduced_means_relation_symbols() {
+    fn check_rejects_unintroduced_specifies_relation_symbols() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("defines-relation-scope.mlg");
 
@@ -9431,7 +9431,7 @@ Documented:
     [\function:on{A}:to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ is \\expression
     . y_ is \\opaque
     Documented:
@@ -9474,7 +9474,7 @@ Documented:
     [\function:?on{A}:?to{B}]
     Declares: f(x__) ::= y_
     when: A, B is \set
-    means:
+    specifies:
     . x__ is \\expression
     . y_ is \\opaque
     Documented:
@@ -10670,7 +10670,7 @@ Documented:
 
     [\function]
     Declares: f(x__) ::= y_
-    means:
+    specifies:
     . x__ is \\expression
     . y_ is \\opaque
     Enables:
@@ -10726,7 +10726,7 @@ Documented:
     . relation:
       to: r is \rational
       when: n is \integer
-      means: n \.embedded.to./ r
+      specifies: n \.embedded.to./ r
       represents: \\coercion
     Documented:
     . written: "\operatorname{integer}"
@@ -11392,7 +11392,7 @@ Documented:
 
     [\group]
     Declares: G ::= (X, *, e)
-    means:
+    specifies:
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
@@ -11674,7 +11674,7 @@ Documented:
 
     [\group]
     Declares: G ::= (X, *, e)
-    means:
+    specifies:
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
@@ -11777,7 +11777,7 @@ Documented:
 
     [\group]
     Declares: G ::= (X, *, e)
-    means:
+    specifies:
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G
@@ -11835,7 +11835,7 @@ Documented:
 
     [\group]
     Declares: G ::= (X, *, e) is \set
-    means:
+    specifies:
     . X is \set
     . * is \function:on{X}:to{X}
     . e "in" G

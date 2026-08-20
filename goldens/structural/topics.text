@@ -7,9 +7,9 @@ within: "#analysis"
 Related:
 . to: "#complex.analysis"
   . "\sin"
-  means: "Closely connected subjects."
+  specifies: "Closely connected subjects."
 . to: "\function:on:to"
-  means: "Functions studied here."
+  specifies: "Functions studied here."
 Documented:
 . called: "Real Analysis"
 
@@ -20,14 +20,14 @@ within: "#analysis"
 Relation:
 between: "#real.analysis"
 and: "#complex.analysis"
-means: "Complex analysis extends real analysis."
+specifies: "Complex analysis extends real analysis."
 
 Relation:
 between: a is \real
 and: b is \real
-means: a = b
+specifies: a = b
 
 Relation:
 between: "\sin"
 and: "\cos"
-means: "Cofunctions of one another."
+specifies: "Cofunctions of one another."

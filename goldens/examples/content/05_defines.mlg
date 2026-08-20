@@ -24,11 +24,11 @@ Documented:
 Id: "99bc0132-e074-4af8-abb4-ebfb31053bd7"
 
 
--- `means:` says what each part of a destructuring target is. Every item must
--- supply a value, with `:=` here or indirectly through `expresses:`.
+-- `specifies:` says what each part of a destructuring target is. Every item
+-- must supply a value, with `:=` here or indirectly through `expresses:`.
 [\unit.pair]
 Defines: P ::= (L, R)
-means:
+specifies:
 . L := \zero
 . R := \one
 Documented:
@@ -36,11 +36,12 @@ Documented:
 Id: "7a8868cb-2094-4205-977b-21d11a5e629e"
 
 
--- A `means:` item may instead state a type and leave the value to `expresses:`.
--- That is what `expresses:` is for: defining something indirectly.
+-- A `specifies:` item may instead state a type and leave the value to
+-- `expresses:`. That is what `expresses:` is for: defining something
+-- indirectly.
 [\sign.pair]
 Defines: S ::= (low, high)
-means:
+specifies:
 . low is \natural
 . high := \one
 expresses:
@@ -50,13 +51,13 @@ Documented:
 Id: "c8118a7a-7309-4654-b2a3-7533ff37c41a"
 
 
--- `abstractly:` leaves the `is`/`"op"` items of `means:` open, for a
+-- `abstractly:` leaves the `is`/`"op"` items of `specifies:` open, for a
 -- `Realizes:` to supply. A `Declares` is an interface, an abstract `Defines` is
 -- an abstract base class, and a plain `Defines` is a concrete one.
 [\pointed.system]
 Defines: Ps ::= (S, p, f)
 abstractly:
-means:
+specifies:
 . S is \set
 . p "in" S
 . f is \function:on{S}:to{S}
@@ -69,7 +70,7 @@ Id: "1f8c9fc8-0e72-4759-9d5b-8f141a5267b2"
 -- every symbol that declaration left abstract.
 [\unit.system]
 Realizes: Ps := \pointed.system
-means:
+specifies:
 . S := \unit.set
 . p := \the.point
 . f := \identity:on{\unit.set}
@@ -83,7 +84,7 @@ Id: "2fd0eff6-585a-4a78-acee-5ad00b69f90e"
 [\lazy.unit.system]
 Realizes: Ps := \pointed.system
 using: k is \natural
-means:
+specifies:
 . S := \unit.set
 . p := \the.point
 . f is \function:on{S}:to{S}

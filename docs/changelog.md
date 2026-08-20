@@ -5,6 +5,37 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## The `means:` Section Is Now `specifies:`
+
+Every section previously spelled `means:` is now spelled `specifies:`. This is a
+terminology change only; no section moves, changes contents, or changes
+semantics. It affects all four sections that carried the old name:
+
+- the `specifies:` of a `Declares:` group, which types the described form's
+  parts
+- the `specifies:` of a `Defines:`/`Realizes:` group, which supplies a value
+  (or, under `abstractly:`, a specification) for each part
+- the `specifies:` of a top-level `Relation:`, either a statement or prose
+- the `specifies:` of an `Enables:` `relation:` group and of a `Topic:`
+  `Related:` entry
+
+```text
+[\monoid]
+Declares: M ::= (X, *, e) is \magma via (X, *)
+specifies: e "in" X
+```
+
+The structural AST renames the corresponding types and fields —
+`DeclaresMeansSection`, `DefinesMeansSection`, `RelationMeansSection`,
+`RelationshipMeansSection`, and `TopicRelatedMeansSection` become
+`DeclaresSpecifiesSection`, `DefinesSpecifiesSection`,
+`RelationSpecifiesSection`, `RelationshipSpecifiesSection`, and
+`TopicRelatedSpecifiesSection`, the `RelationMeans` enum becomes
+`RelationSpecifies`, and each group's `means` field becomes `specifies`.
+Diagnostics, completions, examples, and the current language documentation use
+the new label. Existing source collections must rename the section when
+migrating.
+
 ## `Defines:` And `Declares:` Swap Names
 
 The two top-level definition labels are swapped so their names better match

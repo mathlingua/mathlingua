@@ -286,7 +286,7 @@ pub(in crate::frontend::structural::parser) fn parse_alias_kind(
     parse_spec_operator_alias(input).map(AliasKind::SpecOperator)
 }
 
-/// Parses an item accepted by a `Declares:` group's `means:` and related sections.
+/// Parses an item accepted by a `Declares:` group's `specifies:` and related sections.
 ///
 /// `is ... via ...` is more specific, so it is attempted before the broader
 /// `is`/spec parser. The `is` relation may name a refined command
@@ -810,7 +810,7 @@ fn parse_required_resource_references(
 ///
 /// Inline section arguments and formulation arguments are accepted.  Text and
 /// nested groups are diagnosed because callers requested formulation content.
-/// Parses `means:` items: inline `is`/`is … via …` specifications, plus
+/// Parses `specifies:` items: inline `is`/`is … via …` specifications, plus
 /// `have:`/`asserting:` groups standing in for a specification the checker cannot
 /// establish on its own.
 fn parse_required_specify_items(
@@ -827,7 +827,7 @@ fn parse_required_specify_items(
                     Err(error) => tracker.user_error_at_row(
                         Some(ORIGIN),
                         row,
-                        format!("Invalid means formulation: {error}"),
+                        format!("Invalid specifies formulation: {error}"),
                     ),
                 }
             }
@@ -840,7 +840,7 @@ fn parse_required_specify_items(
                     tracker.user_error_at_row(
                         Some(ORIGIN),
                         row,
-                        "Expected a specification or a `have:` group in `means`".to_owned(),
+                        "Expected a specification or a `have:` group in `specifies`".to_owned(),
                     );
                 }
             }
@@ -848,7 +848,7 @@ fn parse_required_specify_items(
                 tracker.user_error_at_row(
                     Some(ORIGIN),
                     row,
-                    "Expected formulation in section `means`".to_owned(),
+                    "Expected formulation in section `specifies`".to_owned(),
                 );
             }
         }
@@ -858,7 +858,7 @@ fn parse_required_specify_items(
             tracker.user_error_at_row(
                 Some(ORIGIN),
                 section.metadata.row,
-                "Expected means formulations".to_owned(),
+                "Expected specifies formulations".to_owned(),
             );
         }
     })
@@ -1896,7 +1896,14 @@ pub(in crate::frontend::structural::parser) fn parse_enables_relation_group(
         "relation",
         &group.sections,
         tracker,
-        &["relation", "to", "when?", "means?", "represents?", "by?"],
+        &[
+            "relation",
+            "to",
+            "when?",
+            "specifies?",
+            "represents?",
+            "by?",
+        ],
     )?;
 
     Some(EnablesRelationGroup {
@@ -1916,9 +1923,9 @@ pub(in crate::frontend::structural::parser) fn parse_enables_relation_group(
             parse_required_formulations(section, "when", tracker, parse_relation_when_item)
                 .map(|arguments| RelationWhenSection { arguments })
         }),
-        means: sections.get("means").copied().and_then(|section| {
-            parse_required_clause(section, "means", tracker)
-                .map(|argument| RelationshipMeansSection { argument })
+        specifies: sections.get("specifies").copied().and_then(|section| {
+            parse_required_clause(section, "specifies", tracker)
+                .map(|argument| RelationshipSpecifiesSection { argument })
         }),
         represents: sections.get("represents").copied().and_then(|section| {
             parse_required_formulations(section, "represents", tracker, parse_relation_kind)
@@ -2875,7 +2882,7 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
             "using?",
             "when?",
             "extends?",
-            "means?",
+            "specifies?",
             "satisfies?",
             "Requires?",
             "Enables?",
@@ -2927,9 +2934,9 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        means: sections.get("means").copied().and_then(|section| {
+        specifies: sections.get("specifies").copied().and_then(|section| {
             parse_required_specify_items(section, tracker)
-                .map(|arguments| DeclaresMeansSection { arguments })
+                .map(|arguments| DeclaresSpecifiesSection { arguments })
         }),
         satisfies: sections.get("satisfies").copied().and_then(|section| {
             parse_required_clauses(section, "satisfies", tracker)
@@ -2986,7 +2993,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             "abstractly?",
             "using?",
             "when?",
-            "means?",
+            "specifies?",
             "expresses?",
             "Requires?",
             "Enables?",
@@ -3024,9 +3031,9 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        means: sections.get("means").copied().and_then(|section| {
+        specifies: sections.get("specifies").copied().and_then(|section| {
             parse_required_specify_items(section, tracker)
-                .map(|arguments| DefinesMeansSection { arguments })
+                .map(|arguments| DefinesSpecifiesSection { arguments })
         }),
         expresses: sections.get("expresses").copied().and_then(|section| {
             parse_required_clauses(section, "expresses", tracker)
@@ -3143,7 +3150,7 @@ pub(in crate::frontend::structural::parser) fn parse_realizes(
             "Realizes",
             "using?",
             "when?",
-            "means?",
+            "specifies?",
             "expresses?",
             "Requires?",
             "Enables?",
@@ -3180,9 +3187,9 @@ pub(in crate::frontend::structural::parser) fn parse_realizes(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        means: sections.get("means").copied().and_then(|section| {
+        specifies: sections.get("specifies").copied().and_then(|section| {
             parse_required_specify_items(section, tracker)
-                .map(|arguments| DefinesMeansSection { arguments })
+                .map(|arguments| DefinesSpecifiesSection { arguments })
         }),
         expresses: sections.get("expresses").copied().and_then(|section| {
             parse_required_clauses(section, "expresses", tracker)
@@ -3502,7 +3509,7 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             "between",
             "and",
             "when?",
-            "means?",
+            "specifies?",
             "Documented?",
             "Justification?",
             "Aliases?",
@@ -3540,9 +3547,9 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        means: sections.get("means").copied().and_then(|section| {
-            parse_required_relation_means(section, tracker)
-                .map(|argument| RelationMeansSection { argument })
+        specifies: sections.get("specifies").copied().and_then(|section| {
+            parse_required_relation_specifies(section, tracker)
+                .map(|argument| RelationSpecifiesSection { argument })
         }),
         justification: sections.get("Justification").copied().and_then(|section| {
             parse_required_groups(section, "Justification", tracker, parse_have_group)
@@ -3570,7 +3577,7 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
 
 /// Reports whether a section's single argument is quoted text.
 ///
-/// Both top-level `Relation:` subjects and its `means:` accept either quoted text
+/// Both top-level `Relation:` subjects and its `specifies:` accept either quoted text
 /// (a `"#topic"`/`"\signature"` reference, or a prose description) or an unquoted
 /// formulation; this routes the section to the matching parser. The inline
 /// argument carries its quotes verbatim, so quoting is detected with
@@ -3601,19 +3608,19 @@ fn parse_required_relation_subject(
     }
 }
 
-/// Parses the `means:` of a `Relation:`.
+/// Parses the `specifies:` of a `Relation:`.
 ///
 /// A quoted string is a prose description; anything unquoted is parsed as a
 /// logical clause (a statement of what the relationship means).
-fn parse_required_relation_means(
+fn parse_required_relation_specifies(
     section: &ProtoSection,
     tracker: &mut EventLog,
-) -> Option<RelationMeans> {
+) -> Option<RelationSpecifies> {
     if section_is_quoted_text(section) {
-        parse_required_open_text(section, "means", tracker).map(RelationMeans::Text)
+        parse_required_open_text(section, "specifies", tracker).map(RelationSpecifies::Text)
     } else {
-        parse_required_clause(section, "means", tracker)
-            .map(|clause| RelationMeans::Statement(Box::new(clause)))
+        parse_required_clause(section, "specifies", tracker)
+            .map(|clause| RelationSpecifies::Statement(Box::new(clause)))
     }
 }
 
@@ -3666,20 +3673,24 @@ pub(in crate::frontend::structural::parser) fn parse_topic(
 /// Parses one entry of a `Topic:`'s `Related:` section.
 ///
 /// Each entry lists one or more `to:` references (quoted `"#topic"` or
-/// `"\signature"` strings) and a required `means:` description. References are
+/// `"\signature"` strings) and a required `specifies:` description. References are
 /// quoted text so a bare `\signature` reads as a reference to a definition rather
 /// than a usage; they are recorded, not resolved.
 pub(super) fn parse_related_item_group(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<TopicRelatedItem> {
-    let sections = identify_sections("related", &group.sections, tracker, &["to", "means"])?;
+    let sections = identify_sections("related", &group.sections, tracker, &["to", "specifies"])?;
     Some(TopicRelatedItem {
         to: TopicRelatedToSection {
             arguments: parse_required_open_texts(section(&sections, "to")?, "to", tracker)?,
         },
-        means: TopicRelatedMeansSection {
-            argument: parse_required_open_text(section(&sections, "means")?, "means", tracker)?,
+        specifies: TopicRelatedSpecifiesSection {
+            argument: parse_required_open_text(
+                section(&sections, "specifies")?,
+                "specifies",
+                tracker,
+            )?,
         },
     })
 }
@@ -4098,7 +4109,7 @@ mod tests {
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, DeclaresTarget, Document, DocumentedItem, EnablesItem,
-        MetadataItem, RelationKind, RelationMeans, RelationSubject, RelationshipDeclaration,
+        MetadataItem, RelationKind, RelationSpecifies, RelationSubject, RelationshipDeclaration,
         RequiresItem, ResourceItem, SpecifyItem, TextItemKind, TopLevelItem,
     };
 
@@ -4242,12 +4253,12 @@ Documented:
     }
 
     #[test]
-    fn rejects_the_means_section_label_for_refines() {
-        // `Refines` has no `means:` section — only `Declares` does, where it
+    fn rejects_the_specifies_section_label_for_refines() {
+        // `Refines` has no `specifies:` section — only `Declares` does, where it
         // types the target's parts.
         let source = r#"[\(special)::thing]
 Refines: X
-means: X is \thing
+specifies: X is \thing
 "#;
 
         let (_, diagnostics) = parse_with_diagnostics(source);
@@ -4255,7 +4266,7 @@ means: X is \thing
         assert!(
             diagnostics.iter().any(|event| {
                 event.as_message().is_some_and(|message| {
-                    message.message.contains("Unexpected section `means`")
+                    message.message.contains("Unexpected section `specifies`")
                         && message.message.contains("extends?:")
                 })
             }),
@@ -4297,7 +4308,7 @@ when:
   allOf:
   . x = x
   . y = y
-means:
+specifies:
 . Y is \set via (X, Y)
 . y "contains" Y
 satisfies:
@@ -4462,9 +4473,9 @@ that:
                 ));
                 assert_eq!(
                     group
-                        .means
+                        .specifies
                         .as_ref()
-                        .expect("expected means")
+                        .expect("expected specifies")
                         .arguments
                         .len(),
                     2
@@ -4745,7 +4756,7 @@ Enables:
 . relation:
   to: r := \as.rational{X} is \rational
   when: X is \set
-  means: X \.embedded.to./ r
+  specifies: X \.embedded.to./ r
   represents:
   . \\coercion
 Documented:
@@ -4777,7 +4788,7 @@ Enables:
   when:
   . a0 := a is! \set
   . b0 := b is \foo
-  means: x \:isomorphic.to?:/ p
+  specifies: x \:isomorphic.to?:/ p
   represents:
   . \\coercion
   . \\encoding
@@ -4786,7 +4797,7 @@ Enables:
   to: x is \group
   when:
   . x is \set
-  means: x is \group
+  specifies: x is \group
 Documented:
 . written: "P?"
 "#,
@@ -4823,7 +4834,7 @@ Documented:
         assert!(represents.arguments.contains(&RelationKind::Coercion));
         assert!(represents.arguments.contains(&RelationKind::Encoding));
         assert!(relation.by.is_some());
-        assert!(relation.means.is_some());
+        assert!(relation.specifies.is_some());
     }
 
     #[test]
@@ -4899,7 +4910,7 @@ SectionTitle: "Recovered"
     }
 
     #[test]
-    fn parses_relation_item_with_using_between_and_when_means() {
+    fn parses_relation_item_with_using_between_and_when_specifies() {
         let document = parse_ok(
             r#"
 Relation:
@@ -4909,7 +4920,7 @@ between: a is \real
 and: b is \real
 when:
 . a = b
-means: a = b
+specifies: a = b
 Documented:
 . description: "a and b name the same value."
 "#,
@@ -4919,7 +4930,7 @@ Documented:
             TopLevelItem::Relation(group) => {
                 assert!(group.using.is_some());
                 assert!(group.when.is_some());
-                assert!(group.means.is_some());
+                assert!(group.specifies.is_some());
                 assert!(group.documented.is_some());
             }
             other => panic!("expected Relation item, got {other:?}"),
@@ -4932,7 +4943,7 @@ Documented:
             r#"
 Relation:
 between: a is \real
-means: a = a
+specifies: a = a
 "#,
         );
 
@@ -4954,9 +4965,9 @@ within: "#analysis"
 Related:
 . to: "#complex.analysis"
   . "\sin"
-  means: "Closely connected subjects."
+  specifies: "Closely connected subjects."
 . to: "\function:on:to"
-  means: "Functions studied here."
+  specifies: "Functions studied here."
 Documented:
 . called: "Real Analysis"
 "##,
@@ -4976,7 +4987,7 @@ Documented:
                 assert_eq!(first.to.arguments.len(), 2);
                 assert_eq!(first.to.arguments[0].0, "#complex.analysis");
                 assert_eq!(first.to.arguments[1].0, r"\sin");
-                assert_eq!(first.means.argument.0, "Closely connected subjects.");
+                assert_eq!(first.specifies.argument.0, "Closely connected subjects.");
                 assert_eq!(related.arguments[1].to.arguments[0].0, r"\function:on:to");
                 assert!(group.documented.is_some());
             }
@@ -5037,7 +5048,7 @@ Id: "22222222-2222-4222-8222-222222222222"
     }
 
     #[test]
-    fn topic_related_item_requires_means() {
+    fn topic_related_item_requires_specifies() {
         let (_, diagnostics) = parse_with_diagnostics(
             r##"
 [#real.analysis]
@@ -5050,8 +5061,8 @@ Related:
         assert!(
             diagnostics.iter().any(|event| event
                 .as_message()
-                .is_some_and(|message| message.message.contains("means"))),
-            "expected a diagnostic about the missing `means:` section: {diagnostics:#?}"
+                .is_some_and(|message| message.message.contains("specifies"))),
+            "expected a diagnostic about the missing `specifies:` section: {diagnostics:#?}"
         );
     }
 
@@ -5091,13 +5102,13 @@ Documented:
     }
 
     #[test]
-    fn parses_relation_between_quoted_topic_and_signature_with_text_means() {
+    fn parses_relation_between_quoted_topic_and_signature_with_text_specifies() {
         let document = parse_ok(
             r##"
 Relation:
 between: "#real.analysis"
 and: "\sin"
-means: "The sine function is studied within real analysis."
+specifies: "The sine function is studied within real analysis."
 "##,
         );
 
@@ -5111,11 +5122,11 @@ means: "The sine function is studied within real analysis."
                     RelationSubject::Reference(text) => assert_eq!(text.0, r"\sin"),
                     other => panic!("expected a reference subject, got {other:?}"),
                 }
-                match &group.means.as_ref().expect("means").argument {
-                    RelationMeans::Text(text) => {
+                match &group.specifies.as_ref().expect("specifies").argument {
+                    RelationSpecifies::Text(text) => {
                         assert_eq!(text.0, "The sine function is studied within real analysis.")
                     }
-                    other => panic!("expected a text means, got {other:?}"),
+                    other => panic!("expected a text specifies, got {other:?}"),
                 }
             }
             other => panic!("expected Relation item, got {other:?}"),
@@ -5123,13 +5134,13 @@ means: "The sine function is studied within real analysis."
     }
 
     #[test]
-    fn parses_relation_between_declaration_with_statement_means() {
+    fn parses_relation_between_declaration_with_statement_specifies() {
         let document = parse_ok(
             r#"
 Relation:
 between: a is \real
 and: b is \real
-means: a = b
+specifies: a = b
 "#,
         );
 
@@ -5140,8 +5151,8 @@ means: a = b
                     RelationSubject::Declaration(_)
                 ));
                 assert!(matches!(
-                    &group.means.as_ref().expect("means").argument,
-                    RelationMeans::Statement(_)
+                    &group.specifies.as_ref().expect("specifies").argument,
+                    RelationSpecifies::Statement(_)
                 ));
             }
             other => panic!("expected Relation item, got {other:?}"),
@@ -5905,7 +5916,7 @@ satisfies:
         let text = r#"
 [\group]
 Declares: G ::= (X, *, e) is \monoid via (X, *)
-means:
+specifies:
 . e "in" X
 "#;
 
@@ -6064,13 +6075,13 @@ extends: X is \set
     }
 
     #[test]
-    fn parses_declares_function_declaration_target_with_means() {
+    fn parses_declares_function_declaration_target_with_specifies() {
         let text = r#"
 [\function:on{A}:to{B}]
 Declares: f(x__) ::= y_
 when:
 . A, B is \set
-means:
+specifies:
 . x__ "in" A
 . y_ "in" B
 "#;
@@ -6098,9 +6109,9 @@ means:
                 ));
                 assert_eq!(
                     group
-                        .means
+                        .specifies
                         .as_ref()
-                        .expect("expected means")
+                        .expect("expected specifies")
                         .arguments
                         .len(),
                     2

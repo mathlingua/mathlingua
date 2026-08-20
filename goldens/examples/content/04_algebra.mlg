@@ -1,30 +1,30 @@
--- How a `Declares` says what it extends, and how `means:` types the parts of a
--- destructuring target.
+-- How a `Declares` says what it extends, and how `specifies:` types the parts
+-- of a destructuring target.
 
 
 -- The `Declares:` target may state the type this definition extends. `via X`
 -- names the view used to regard a magma as a set, and types `X` at the same
--- time, so `means:` only has to type what the `via` does not reach.
+-- time, so `specifies:` only has to type what the `via` does not reach.
 [\magma]
 Declares: M ::= (X, *) is \set via X
-means: * is \operation:on{M}
+specifies: * is \operation:on{M}
 Documented:
 . called: "magma"
 Id: "0e5be05c-2b6d-48cc-8dec-d656eb6bb8b7"
 
 
--- A second component, typed in `means:`. `X` is not repeated: a symbol is
+-- A second component, typed in `specifies:`. `X` is not repeated: a symbol is
 -- specified exactly once.
 [\monoid]
 Declares: M ::= (X, *, e) is \magma via (X, *)
-means: e "in" X
+specifies: e "in" X
 Documented:
 . called: "monoid"
 Id: "b41b952a-239a-49de-b27a-a896f0494b30"
 
 
 -- A `via` tuple maps positionally onto the extended type's own components, so
--- `X`, `*` and `e` all inherit their types here and no `means:` is needed.
+-- `X`, `*` and `e` all inherit their types here and no `specifies:` is needed.
 [\group]
 Declares: G ::= (X, *, e) is \monoid via (X, *, e)
 Documented:

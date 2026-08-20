@@ -258,10 +258,10 @@ pub enum RelationSubject {
     Reference(OpenText),
 }
 
-/// The `means:` of a top-level `Relation:`. It is either a logical `Statement`
+/// The `specifies:` of a top-level `Relation:`. It is either a logical `Statement`
 /// (a clause) or a quoted-text prose `Text` description of the relationship.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum RelationMeans {
+pub enum RelationSpecifies {
     Statement(Box<Clause>),
     Text(OpenText),
 }
@@ -279,8 +279,8 @@ pub struct DeclaresSection {
 arguments_section!(UsingSection, DeclarationStatement);
 arguments_section!(WhenSection, Clause);
 arguments_section!(ExtendsSection, ExtendsItem);
-arguments_section!(DeclaresMeansSection, IsOrViaItem);
-arguments_section!(DefinesMeansSection, IsOrViaItem);
+arguments_section!(DeclaresSpecifiesSection, IsOrViaItem);
+arguments_section!(DefinesSpecifiesSection, IsOrViaItem);
 argument_section!(RealizesSection, DeclarationStatement);
 arguments_section!(SatisfiesSection, Clause);
 arguments_section!(RequiresSection, RequiresItem);
@@ -316,19 +316,19 @@ zero_or_more_arguments_section!(EnablesRelationSection, OpenText);
 argument_section!(RelationToSection, RelationshipDeclaration);
 arguments_section!(RelationWhenSection, RelationWhenItem);
 arguments_section!(RelationRepresentsSection, RelationKind);
-argument_section!(RelationshipMeansSection, Clause);
+argument_section!(RelationshipSpecifiesSection, Clause);
 // Top-level `Relation:` item sections (distinct from the `Enables: relation:` group above).
 zero_or_more_arguments_section!(RelationSection, OpenText);
 argument_section!(RelationBetweenSection, RelationSubject);
 argument_section!(RelationAndSection, RelationSubject);
-argument_section!(RelationMeansSection, RelationMeans);
+argument_section!(RelationSpecifiesSection, RelationSpecifies);
 // Top-level `Topic:` item sections. References (`within:`/`to:`) are quoted text
 // so a `#topic` or a bare `\signature` reads as a reference, never a usage.
 // (`TopicRelated*` is distinct from the `related:` documentation item below.)
 zero_or_more_arguments_section!(TopicSection, OpenText);
 argument_section!(TopicWithinSection, OpenText);
 arguments_section!(TopicRelatedToSection, OpenText);
-argument_section!(TopicRelatedMeansSection, OpenText);
+argument_section!(TopicRelatedSpecifiesSection, OpenText);
 arguments_section!(TopicRelatedSection, TopicRelatedItem);
 arguments_section!(CalledSection, CalledText);
 arguments_section!(AdjectiveSection, AdjectiveText);
@@ -449,7 +449,7 @@ pub enum IsOrViaItem {
     IsVia(IsViaStatement),
     Declaration(DeclarationStatement),
     /// A `have:`/`asserting:` group standing in for a specification the checker
-    /// cannot establish on its own (allowed in a `Declares:` group's `means:`).
+    /// cannot establish on its own (allowed in a `Declares:` group's `specifies:`).
     Have(Box<HaveGroup>),
     /// A specification wrapped in a `[:label:]` (e.g. `(.x is \foo.)[:1:]`) whose
     /// `label` may match a `Justification:` entry `[label]`. When it does, that
@@ -593,7 +593,7 @@ pub struct DeclaresGroup {
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub extends: Option<ExtendsSection>,
-    pub means: Option<DeclaresMeansSection>,
+    pub specifies: Option<DeclaresSpecifiesSection>,
     pub satisfies: Option<SatisfiesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
@@ -614,7 +614,7 @@ pub struct DefinesGroup {
     pub abstractly: bool,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub means: Option<DefinesMeansSection>,
+    pub specifies: Option<DefinesSpecifiesSection>,
     pub expresses: Option<ExpressesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
@@ -629,7 +629,7 @@ pub struct DefinesGroup {
 /// A concrete realization of an abstract declaration.
 ///
 /// `Realizes: Nb := \naturals` names the `Defines:` group marked `abstractly:`
-/// that it realizes, and its `means:` supplies a definition for every symbol
+/// that it realizes, and its `specifies:` supplies a definition for every symbol
 /// that declaration left abstract. An abstract `Defines` is to a `Realizes`
 /// roughly what an abstract base class is to a concrete subclass; a `Declares`
 /// is the interface.
@@ -639,7 +639,7 @@ pub struct RealizesGroup {
     pub realizes: RealizesSection,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub means: Option<DefinesMeansSection>,
+    pub specifies: Option<DefinesSpecifiesSection>,
     pub expresses: Option<ExpressesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
@@ -809,7 +809,7 @@ pub struct RelationGroup {
     pub between: RelationBetweenSection,
     pub and_: RelationAndSection,
     pub when: Option<WhenSection>,
-    pub means: Option<RelationMeansSection>,
+    pub specifies: Option<RelationSpecifiesSection>,
     pub justification: Option<JustificationSection>,
     pub documented: Option<DocumentedSection>,
     pub aliases: Option<AliasesSection>,
@@ -837,11 +837,11 @@ pub struct TopicGroup {
 /// One entry of a `Topic:`'s `Related:` section. Each entry points at one or more
 /// other topics or definitions via `to:` — quoted `"#topic"` references or
 /// `"\signature"` references (a `\command` with its arguments removed, such as
-/// `\function:on:to`) — and explains the relationship in `means:`.
+/// `\function:on:to`) — and explains the relationship in `specifies:`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TopicRelatedItem {
     pub to: TopicRelatedToSection,
-    pub means: TopicRelatedMeansSection,
+    pub specifies: TopicRelatedSpecifiesSection,
 }
 
 // ===============================[ clause groups ]=====================================
@@ -1026,7 +1026,7 @@ pub struct EnablesRelationGroup {
     pub relation: EnablesRelationSection,
     pub to: RelationToSection,
     pub when: Option<RelationWhenSection>,
-    pub means: Option<RelationshipMeansSection>,
+    pub specifies: Option<RelationshipSpecifiesSection>,
     pub represents: Option<RelationRepresentsSection>,
     pub by: Option<BySection>,
 }

@@ -69,8 +69,8 @@ pub(in crate::backend::semantic) fn walk_optional_enables(
                             walk_relation_when_item(item, visit);
                         }
                     }
-                    if let Some(means) = &group.means {
-                        walk_clause(&means.argument, visit);
+                    if let Some(specifies) = &group.specifies {
+                        walk_clause(&specifies.argument, visit);
                     }
                 }
             }

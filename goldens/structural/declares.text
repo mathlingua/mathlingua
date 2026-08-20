@@ -8,7 +8,7 @@ when:
   allOf:
   . x = x
   . y = y
-means:
+specifies:
 . Y is \set via (Y, Element)
 . y "contains" Y
 satisfies:

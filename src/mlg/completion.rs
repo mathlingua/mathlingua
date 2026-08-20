@@ -100,7 +100,7 @@ const GROUPS: &[GroupSpec] = &[
             ("using", false),
             ("when", false),
             ("extends", false),
-            ("means", false),
+            ("specifies", false),
             ("satisfies", false),
             ("Requires", false),
             ("Enables", false),
@@ -120,7 +120,7 @@ const GROUPS: &[GroupSpec] = &[
             ("abstractly", false),
             ("using", false),
             ("when", false),
-            ("means", false),
+            ("specifies", false),
             ("expresses", false),
             ("Requires", false),
             ("Enables", false),
@@ -139,7 +139,7 @@ const GROUPS: &[GroupSpec] = &[
             ("Realizes", true),
             ("using", false),
             ("when", false),
-            ("means", false),
+            ("specifies", false),
             ("expresses", false),
             ("Requires", false),
             ("Enables", false),
@@ -239,7 +239,7 @@ const GROUPS: &[GroupSpec] = &[
             ("between", true),
             ("and", true),
             ("when", false),
-            ("means", false),
+            ("specifies", false),
             ("Documented", false),
             ("Justification", false),
             ("Aliases", false),
@@ -387,7 +387,7 @@ const CLAUSE_SECTIONS: &[&str] = &[
     "satisfies",
     "suchThat",
     "that",
-    "means",
+    "specifies",
     "expresses",
 ];
 
@@ -465,7 +465,7 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
             ("relation", true),
             ("to", true),
             ("when", false),
-            ("means", false),
+            ("specifies", false),
             ("represents", false),
             ("by", false),
         ],
@@ -958,7 +958,7 @@ mod tests {
         assert_eq!(got.first().map(String::as_str), Some("abstractly"));
         assert!(got.contains(&"using".to_string()));
         assert!(got.contains(&"when".to_string()));
-        assert!(got.contains(&"means".to_string()));
+        assert!(got.contains(&"specifies".to_string()));
         assert!(got.contains(&"Documented".to_string()));
         // the head itself is not re-offered
         assert!(!got.contains(&"Defines".to_string()));

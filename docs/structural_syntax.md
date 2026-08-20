@@ -270,9 +270,9 @@ An empty document is supported by the current implementation because `Document.i
 - **`Text`** — `TextGroup`, heading: none. Sections: `Text: OpenText`
 - **`Writing`** — `TopLevelWritingGroup`, heading: none. Sections: `Writing: WritingAlias+` (each alias is a double-quoted string of the form `"name :~> body"`; the LHS must be a `Name` and the body is raw LaTeX)
 - **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when: Clause+`/`to: Expression` branches, `else?: Expression`, `Documented?`, `Justification?`, `Aliases?`, `Writing?: "WritingAlias"+`, `References?`, `Metadata?`
-- **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclaresTarget [via FormOrDeclaration]`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: ExtendsItem+`, `means?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `DeclaresTarget` is tried as a `FormOrDeclaration` first, then as a `DeclarationStatement` whose `is` relation may name a refined command, allowing typed or value-bearing targets such as `X := value is \set`. That relation is what the definition extends (see `language.md`), and an `is` relation may be followed by `via <FormOrDeclaration>`, stored on the section rather than the target. An `ExtendsItem` is the same `DeclarationStatement [via FormOrDeclaration]` pair; the `extends?:` section spells out the same clauses and exists to allow more than one, so a target that states a relation and an `extends?:` section are mutually exclusive. `extends_clauses` in `structural::ast` normalizes the two spellings into one borrowed list that every consumer works from
-- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `abstractly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `means?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `abstractly:` is stored as `DefinesGroup::abstractly`; it marks the `means:` items that state a specification without a value as abstract, for a `RealizesGroup` to supply
-- **`Realizes`** — `RealizesGroup`, heading: command. Sections: `Realizes: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `means?: IsOrViaItem+`, `expresses?: Clause`, and the same support sections as `Defines`. The target names the realized declaration with `:=` (`Realizes: Nb := \naturals`), which must be a `Defines` marked `abstractly:`; `means:` must supply every symbol that declaration left abstract
+- **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclaresTarget [via FormOrDeclaration]`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: ExtendsItem+`, `specifies?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `DeclaresTarget` is tried as a `FormOrDeclaration` first, then as a `DeclarationStatement` whose `is` relation may name a refined command, allowing typed or value-bearing targets such as `X := value is \set`. That relation is what the definition extends (see `language.md`), and an `is` relation may be followed by `via <FormOrDeclaration>`, stored on the section rather than the target. An `ExtendsItem` is the same `DeclarationStatement [via FormOrDeclaration]` pair; the `extends?:` section spells out the same clauses and exists to allow more than one, so a target that states a relation and an `extends?:` section are mutually exclusive. `extends_clauses` in `structural::ast` normalizes the two spellings into one borrowed list that every consumer works from
+- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `abstractly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `abstractly:` is stored as `DefinesGroup::abstractly`; it marks the `specifies:` items that state a specification without a value as abstract, for a `RealizesGroup` to supply
+- **`Realizes`** — `RealizesGroup`, heading: command. Sections: `Realizes: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `specifies?: IsOrViaItem+`, `expresses?: Clause`, and the same support sections as `Defines`. The target names the realized declaration with `:=` (`Realizes: Nb := \naturals`), which must be a `Defines` marked `abstractly:`; `specifies:` must supply every symbol that declaration left abstract
 - **`Refines`** — `RefinesGroup`, heading: refined command or refined spec-infix command (for example, `[A \:(nonempty)::subset:/ B]`). Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
 - **`States`** — `StatesGroup`, heading: command. Sections: `States:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
@@ -281,7 +281,7 @@ An empty document is supported by the current implementation because `Document.i
 - **`Person`** — `PersonGroup`, heading: author. Sections: `Person: OpenText+`, `biography?: OpenText`
 - **`Resource`** — `ResourceGroup`, heading: resource. Sections: `Resource: ResourceItem+`
 - **`Specify`** — `SpecifyGroup`, heading: none. Sections: `Specify: SpecifyItem+`
-- **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RelationSubject`, `and: RelationSubject`, `when?: Clause+`, `means?: RelationMeans`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
+- **`Relation`** — `RelationGroup`, heading: none. Sections: `Relation: OpenText*`, `using?: DeclarationStatement+`, `between: RelationSubject`, `and: RelationSubject`, `when?: Clause+`, `specifies?: RelationSpecifies`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Equivalent`** — `EquivalentGroup`, heading: command. Sections: `Equivalent:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `to: Expression+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `References?: ResourceHeader+`
 - **`Topic`** — `TopicGroup`, heading: topic. Sections: `Topic: OpenText*`, `within?: OpenText`, `Related?: TopicRelatedItem+`, `Documented?: CalledDocumentedItem+`
 - **`TextTheorem`** / **`TextAxiom`** / **`TextConjecture`** / **`TextDefinition`** — `TextItemGroup` (one `TextItemKind` per leading label), heading: none. Sections: `<label>: OpenText` (a markdown-with-LaTeX body), `Documented?: TextDocumentedItem+`, `References?: ResourceHeader+`, `Id: OpenText`. These are opaque prose placeholders for a structured theorem/axiom/conjecture/definition to be written later; the type-checker never inspects them. `TextDocumentedItem` is restricted to `called:`, `written:`, `description:`, and `notes:`.
@@ -328,7 +328,7 @@ Used inside `Enables:`.
 - **`capability`** — `CapabilityGroup`, heading: label?. Sections: `capability: AliasKind`, `written?: WrittenText+`
 - **`from`** — `FromCapabilityGroup`, heading: label?. Sections: `from: DeclarationStatement`, `capability: AliasKind`, `written?: WrittenText+`
 - **`from`** — `FromAsGroup`, heading: label?. Sections: `from: DeclarationStatement`, `as: ExpressionBinding`
-- **`relation`** — `RelationGroup`, heading: label?. Sections: `relation: OpenText*`, `to: RelationshipDeclaration`, `when?: RelationWhenItem+`, `means?: Clause`, `represents?: RelationKind+`, `by?: OpenText+`
+- **`relation`** — `RelationGroup`, heading: label?. Sections: `relation: OpenText*`, `to: RelationshipDeclaration`, `when?: RelationWhenItem+`, `specifies?: Clause`, `represents?: RelationKind+`, `by?: OpenText+`
 
 `from:` groups must contain exactly one of `capability:` or `as:`.
 `RelationWhenItem` is either a declaration statement or a hard-cast statement.
@@ -429,7 +429,7 @@ If a clause section contains:
 - **`forAll`** — `ForAllGroup`, heading: label?. Sections: `forAll: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
 - **`let`** — `LetGroup`, heading: label?. Sections: `let: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
 - **`if`** — `IfGroup`, heading: label?. Sections: `if: Clause+`, `then: Clause+`
-- **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`. A `have:` group whose second section is `asserting:` (rather than `iff:`) is instead a `HaveGroup` (`Clause::Have`): `have: Clause+`, `asserting: Clause+`, `because?: Clause+`, `by?: Expression+` — an escape hatch that asserts the `have:` item holds given the `asserting:` items (also accepted as a `means:` item). `because:`/`by:` are justification the checker only reference-validates, never proves.
+- **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`. A `have:` group whose second section is `asserting:` (rather than `iff:`) is instead a `HaveGroup` (`Clause::Have`): `have: Clause+`, `asserting: Clause+`, `because?: Clause+`, `by?: Expression+` — an escape hatch that asserts the `have:` item holds given the `asserting:` items (also accepted as a `specifies:` item). `because:`/`by:` are justification the checker only reference-validates, never proves.
 - **`piecewise`** — `PiecewiseGroup`, heading: label?. Sections: `piecewise: OpenText*`, `if: Clause+`, `then: Clause+`, `else?: Clause+`
 - **`given`** — `GivenGroup`, heading: label?. Sections: `given: RefinedDeclarationStatement`, `where?: Clause+`, `then: Clause+`
 - **`equivalently`** — `EquivalentlyGroup`, heading: label?. Sections: `equivalently: Clause+`
@@ -471,7 +471,7 @@ Optional on:
 - clause groups
 
 Required on `HaveGroup` items nested directly under `Justification:`; the same
-group uses an optional label in clause or `means:` positions.
+group uses an optional label in clause or `specifies:` positions.
 
 These headings must parse with `parse_label_header`.
 
@@ -524,7 +524,7 @@ Conventions used below:
 - `[CommandHeader]` means the heading is required and must parse as a formulation command header.
 - `[CommandHeader]?` means the heading is optional, but if present must parse as a formulation command header.
 - `[LabelHeader]?` means an optional structural label heading. `HaveGroup`
-  headings are optional in ordinary clause/`means:` positions but required
+  headings are optional in ordinary clause/`specifies:` positions but required
   when the group is an item of `Justification:`.
 - `[AuthorHeader]` means a required author heading.
 - `[ResourceHeader]` means a required resource heading.
@@ -738,7 +738,7 @@ Declares: <DeclaresTargetUnion> [via <FormOrDeclaration>]
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 extends?: <DeclarationStatement [via <FormOrDeclaration>]>+
-means?: <IsOrViaItemUnion>+
+specifies?: <IsOrViaItemUnion>+
 satisfies?: <ClauseUnion>+
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
@@ -756,7 +756,7 @@ Defines: <DeclarationStatement>
 abstractly?:
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
-means?: <IsOrViaItemUnion>+
+specifies?: <IsOrViaItemUnion>+
 expresses?: <ClauseUnion>
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
@@ -773,7 +773,7 @@ Metadata?: <MetadataItemUnion>+
 Realizes: <DeclarationStatement>
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
-means?: <IsOrViaItemUnion>+
+specifies?: <IsOrViaItemUnion>+
 expresses?: <ClauseUnion>
 Requires?: <RequiresItemUnion>+
 Enables?: <EnablesItemUnion>+
@@ -898,7 +898,7 @@ using?: <DeclarationStatement>+
 between: <RelationSubject>
 and: <RelationSubject>
 when?: <ClauseUnion>+
-means?: <RelationMeans>
+specifies?: <RelationSpecifies>
 Documented?: <DocumentedItemUnion>+
 Justification?: <HaveGroup>+
 Aliases?: <AliasItemUnion>+
@@ -912,15 +912,15 @@ subjects named in `between:` and `and:` (for example that they are equivalent).
 Each `RelationSubject` is either an unquoted declaration (such as `a is \real`)
 for a concept, or a quoted-text reference — a `"#topic"` or a `"\signature"` (a
 `\command` with its arguments removed, like `\function:on:to`) — so a `Relation:`
-may relate concepts, topics, and definitions in any combination. Its `RelationMeans`
+may relate concepts, topics, and definitions in any combination. Its `RelationSpecifies`
 is likewise either an unquoted clause (a statement of what the relationship means)
 or a quoted-text prose description. Contrast the directional `relation:` group
 nested inside `Enables:` ([`EnablesRelationGroup`], which relates the described
 concept *to* another and, with `represents: \\coercion`/`\\encoding`, registers a
 cast rule): the top-level item is heading-less, standalone, and registers no cast — it
-is checked like a theorem (any declaration subjects and a statement `means:` are
-validated for declared symbols and valid command references; quoted-text
-references and a prose `means:` are recorded, not proven).
+is checked like a theorem (any declaration subjects and a statement `specifies:`
+are validated for declared symbols and valid command references; quoted-text
+references and a prose `specifies:` are recorded, not proven).
 
 ```group
 [CommandHeader]
@@ -963,7 +963,7 @@ Documented?: <CalledDocumentedItem>+
 
 ```group
 to: <OpenText>+
-means: <OpenText>
+specifies: <OpenText>
 ```
 
 A top-level `Topic:` names a documentation topic. Its required heading is a
@@ -972,7 +972,8 @@ A top-level `Topic:` names a documentation topic. Its required heading is a
 ("Real Analysis") unless the `Documented:called:` text overrides it. `Topic:`
 carries optional descriptive prose and `within?:` names a parent topic to make
 this a sub-topic. `Related?:` records how the topic relates to others: each
-`TopicRelatedItem` pairs one or more `to:` targets with a `means:` description.
+`TopicRelatedItem` pairs one or more `to:` targets with a `specifies:`
+description.
 
 References (`within:` and each `to:`) are **quoted text** so a reference is never
 mistaken for a usage. A `"#topic"` value is a topic reference; a `"\signature"`
@@ -980,7 +981,7 @@ value is a **signature** — a `\command` with its arguments removed, e.g.
 `\function:on{A}:to{B}` written as `\function:on:to` — that names a
 `Declares`/`Defines`/`Refines`/`States`/theorem-like definition itself, not a use
 of it. With `called:` (already quoted), the four quoted-text fields are `within:`,
-`to:`, `means:`, and `called:`.
+`to:`, `specifies:`, and `called:`.
 
 `Documented?:` accepts only `called:` (a `CalledDocumentedItem`); other
 documentation fields are rejected. The item is stated, not checked: topic and
@@ -1034,7 +1035,7 @@ as: <ExpressionBinding>
 relation: <OpenText>*
 to: <RelationshipDeclaration>
 when?: <RelationWhenItem>+
-means?: <ClauseUnion>
+specifies?: <ClauseUnion>
 represents?: <RelationKind>+
 by?: <OpenText>+
 ```
@@ -1328,7 +1329,7 @@ Examples of affected sections:
 
 - `Declares:`
 - `Defines:`
-- `means:`
+- `specifies:`
 - `expresses:`
 - `overview:`
 - all singular resource item sections

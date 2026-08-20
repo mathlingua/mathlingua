@@ -157,6 +157,7 @@ fn token_literal(token: &Token) -> &'static str {
         Token::DotLParen => "(.",
         Token::DotRParen => ".)",
         Token::Ellipsis => "...",
+        Token::DirectDot => "..",
         Token::LNamedArguments => "[|",
         Token::RNamedArguments => "|]",
         Token::InfixCommandStart => "\\.",
@@ -5203,6 +5204,10 @@ mod tests {
             parse_expression("f(g(x__))").expect("expected magnetic placeholder call expression");
         let member_call = parse_expression("X.f(a)").expect("expected member call expression");
         let member_access = parse_expression("X.a").expect("expected member access expression");
+        let direct_member_access =
+            parse_expression(r"\reals..0").expect("expected direct member access expression");
+        let direct_member_call = parse_expression(r"\naturals..succ(n)")
+            .expect("expected direct member call expression");
         let expression_member =
             parse_expression("(x * y).inv").expect("expected expression member access");
         let chained_member =
@@ -5264,6 +5269,27 @@ mod tests {
                 assert_eq!(name, "a");
             }
             other => panic!("expected member access, got {other:?}"),
+        }
+
+        match direct_member_access.kind {
+            ExpressionKind::MemberAccess { owner, name } => {
+                assert!(matches!(owner.kind, ExpressionKind::Command(_)));
+                assert_eq!(name, "0");
+            }
+            other => panic!("expected direct member access, got {other:?}"),
+        }
+
+        match direct_member_call.kind {
+            ExpressionKind::MemberCall {
+                owner,
+                name,
+                arguments,
+            } => {
+                assert!(matches!(owner.kind, ExpressionKind::Command(_)));
+                assert_eq!(name, "succ");
+                assert_eq!(arguments.len(), 1);
+            }
+            other => panic!("expected direct member call, got {other:?}"),
         }
 
         match expression_member.kind {

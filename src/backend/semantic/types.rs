@@ -105,6 +105,10 @@ pub(super) struct DefinitionTypeInfo {
     pub(super) requirements: Vec<TypeFact>,
     pub(super) outputs: Vec<TypeFact>,
     pub(super) substitutions: Vec<(String, String)>,
+    /// The subject introduced by a `Defines:`/`Realizes:` target. Component
+    /// facts can refer back to this owner and must replace it when the command
+    /// is destructured or accessed directly.
+    pub(super) defined_subject: Option<String>,
     pub(super) described: Option<String>,
     /// The structural shape of the subject in the `Declares:` target, normalized
     /// so a named form such as `G ::= (X, *, e)` is represented as a name subject

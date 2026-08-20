@@ -1016,6 +1016,7 @@ fn type_info_from_parts(
         requirements,
         outputs,
         substitutions: context.substitutions,
+        defined_subject: defines.map(|statement| primary_subject_key(&statement.subject)),
         described: described.map(described_target_subject_key),
         described_subject_shape,
         described_expansion_shape,
@@ -9990,6 +9991,92 @@ fn tuple_component_access_expression(
     Some(Expression::new(owner.span, kind))
 }
 
+/// Resolves `\object..field` against the destructuring target of a concrete
+/// `Defines:`/`Realizes:` command. Unlike ordinary `value.field`, the component
+/// does not need to be introduced into the caller's scope: its identity is
+/// qualified by the command that owns it.
+fn direct_component_access_expression(
+    owner: &Expression,
+    name: &str,
+    arguments: &[Expression],
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<(Expression, TypeContext)> {
+    let ExpressionKind::Command(command) = &owner.kind else {
+        return None;
+    };
+    let active = active_command_expression(command, context);
+    let shape = shape_for_command_expression(&active);
+    let signature = resolved_command_signature(&shape, registry);
+    if !signature_has_kind(&signature, DefinitionKind::Defines, registry)
+        && !signature_has_kind(&signature, DefinitionKind::Realizes, registry)
+    {
+        return None;
+    }
+    let info = registry.type_infos.get(&signature)?;
+    let component_name = unstropped_name(name);
+    if !info
+        .component_types
+        .iter()
+        .any(|fact| unstropped_name(fact_subject(fact)) == component_name)
+    {
+        return None;
+    }
+
+    let owner_key = key_for_command_expression(&active);
+    let argument_expressions = command_expression_arguments(&active);
+    let actuals = argument_expressions
+        .iter()
+        .map(|argument| effective_key_for_expression(argument, context, registry))
+        .collect::<Vec<_>>();
+    let (mut substitutions, variadic_actuals) =
+        command_parameter_substitutions(info, &actuals, Some(&shape.arg_groups), context);
+    if let Some(owner_subject) = info.described.as_ref().or(info.defined_subject.as_ref()) {
+        substitutions.insert(owner_subject.clone(), owner_key.clone());
+    }
+    for fact in &info.component_types {
+        let component = fact_subject(fact);
+        substitutions.insert(
+            component.to_owned(),
+            direct_component_key(&owner_key, component),
+        );
+    }
+
+    let mut child = context.clone();
+    for (left, right) in &info.substitutions {
+        child.add_substitution(
+            substitute_key(left, &substitutions),
+            substitute_key(right, &substitutions),
+        );
+    }
+    for fact in &info.component_types {
+        for instantiated in instantiate_variadic_fact(
+            fact,
+            &substitutions,
+            &info.variadic_parameters,
+            &variadic_actuals,
+        ) {
+            child.add_fact(child.normalize_fact(&instantiated));
+        }
+    }
+
+    let component_key = direct_component_key(&owner_key, &component_name);
+    child.declare_name(component_key.clone());
+    let kind = if arguments.is_empty() {
+        ExpressionKind::Name(component_key)
+    } else {
+        ExpressionKind::FunctionCall {
+            name: component_key,
+            arguments: arguments.to_vec(),
+        }
+    };
+    Some((Expression::new(owner.span, kind), child))
+}
+
+fn direct_component_key(owner: &str, component: &str) -> String {
+    format!("{owner}..{}", unstropped_name(component))
+}
+
 fn check_provided_member(
     owner: &Expression,
     name: &str,
@@ -10000,6 +10087,24 @@ fn check_provided_member(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
+    if matches!(owner.kind, ExpressionKind::Command(_)) {
+        if let Some((component, child)) =
+            direct_component_access_expression(owner, name, arguments, context, registry)
+        {
+            check_expression(&component, &child, path, locator, registry, event_log);
+        } else {
+            emit_error(
+                event_log,
+                path,
+                locator.locate_symbol(name),
+                format!(
+                    "Could not resolve direct component `{name}`; `..` requires a component of a `Defines:` or `Realizes:` command"
+                ),
+            );
+        }
+        return;
+    }
+
     let key = DisambiguationKey::Function {
         name: name.to_owned(),
         arity: arguments.len(),
@@ -10340,6 +10445,24 @@ fn member_output_facts(
     registry: &SignatureRegistry,
     resolving: &mut HashSet<String>,
 ) -> Vec<TypeFact> {
+    if matches!(owner.kind, ExpressionKind::Command(_)) {
+        let Some((component, child)) =
+            direct_component_access_expression(owner, name, arguments, context, registry)
+        else {
+            return Vec::new();
+        };
+        if arguments.is_empty() {
+            let component_subject = child.normalize_key(&key_for_expression(&component));
+            return child
+                .facts
+                .iter()
+                .filter(|fact| child.normalize_key(fact_subject(fact)) == component_subject)
+                .cloned()
+                .collect();
+        }
+        return expression_result_facts(&component, result_subject, &child, registry, resolving);
+    }
+
     let reduced_context = context_with_spec_reductions(context, registry);
     let owner_actual = effective_key_for_expression(owner, &reduced_context, registry);
     let actuals = arguments
@@ -10807,6 +10930,14 @@ fn effective_key_for_member_call(
     registry: &SignatureRegistry,
     resolving: &mut HashSet<String>,
 ) -> Option<String> {
+    if matches!(owner.kind, ExpressionKind::Command(_)) {
+        let (component, child) =
+            direct_component_access_expression(owner, name, arguments, context, registry)?;
+        return Some(effective_key_for_expression_inner(
+            &component, &child, registry, resolving,
+        ));
+    }
+
     let reduced_context = context_with_spec_reductions(context, registry);
     let key = DisambiguationKey::Function {
         name: name.to_owned(),
@@ -18756,8 +18887,8 @@ fn instantiate_component_type_facts(
     context: &TypeContext,
 ) -> Vec<TypeFact> {
     let mut substitutions = HashMap::new();
-    if let Some(described) = &info.described {
-        substitutions.insert(described.clone(), subject.to_owned());
+    if let Some(owner_subject) = info.described.as_ref().or(info.defined_subject.as_ref()) {
+        substitutions.insert(owner_subject.clone(), subject.to_owned());
     }
     for (index, fact) in info.component_types.iter().enumerate() {
         if let Some(local) = component_names.get(index) {
@@ -19067,8 +19198,13 @@ fn key_for_expression(expression: &Expression) -> String {
             name,
             arguments,
         } => format!(
-            "{}.{}({})",
+            "{}{}{}({})",
             key_for_expression(owner),
+            if matches!(owner.kind, ExpressionKind::Command(_)) {
+                ".."
+            } else {
+                "."
+            },
             name,
             arguments
                 .iter()
@@ -19077,7 +19213,16 @@ fn key_for_expression(expression: &Expression) -> String {
                 .join(",")
         ),
         ExpressionKind::MemberAccess { owner, name } => {
-            format!("{}.{}", key_for_expression(owner), name)
+            format!(
+                "{}{}{}",
+                key_for_expression(owner),
+                if matches!(owner.kind, ExpressionKind::Command(_)) {
+                    ".."
+                } else {
+                    "."
+                },
+                name
+            )
         }
         ExpressionKind::Tuple(elements) => format!(
             "({})",

@@ -11,6 +11,7 @@ extern {
         "(." => Token::DotLParen,
         ".)" => Token::DotRParen,
         "..." => Token::Ellipsis,
+        ".." => Token::DirectDot,
         "[|" => Token::LNamedArguments,
         "|]" => Token::RNamedArguments,
         "\\." => Token::InfixCommandStart,
@@ -833,6 +834,21 @@ MemberOwnerExpression: ast::Expression = {
 };
 
 MemberExpression: ast::Expression = {
+    <l:@L> <owner:CommandExpression> ".." <name:Name> "(" <arguments:ExpressionList> ")" <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::MemberCall {
+            owner: Box::new(ast::Expression::new(owner.span, ExpressionKind::Command(owner))),
+            name,
+            arguments,
+        },
+    ),
+    <l:@L> <owner:CommandExpression> ".." <name:Name> <r:@R> => ast::Expression::new(
+        Span::new(l, r),
+        ExpressionKind::MemberAccess {
+            owner: Box::new(ast::Expression::new(owner.span, ExpressionKind::Command(owner))),
+            name,
+        },
+    ),
     <l:@L> <owner:MemberOwnerExpression> "." <name:Name> "(" <arguments:ExpressionList> ")" <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::MemberCall {

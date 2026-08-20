@@ -25,6 +25,8 @@ pub enum Token {
     DotRParen,
     #[token("...")]
     Ellipsis,
+    #[token("..")]
+    DirectDot,
     #[token("[|")]
     LNamedArguments,
     #[token("|]")]

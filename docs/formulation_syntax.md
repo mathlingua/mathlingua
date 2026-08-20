@@ -225,6 +225,7 @@ The lexer has dedicated tokens for:
 - `::=`
 - `:=`
 - `...`
+- `..`
 - `:=>`
 - `:->`
 - `:~>`
@@ -244,7 +245,7 @@ The lexer has dedicated tokens for:
 - `|]`
 - the colon-decorated arithmetic operators `:+:` `:+` `+:` `:-:` `:-` `-:` `:*:` `:*` `*:` `:^:` `:^` `^:`
 - the colon-decorated special-operator forms `:op:` `:op` `op:` (used for owner-typed operator resolution)
-- `(` `)` `{` `}` `[` `]` `,` `;` `:` `.` `|` `$` `?` `:?`
+- `(` `)` `{` `}` `[` `]` `,` `;` `:` `.` `..` `|` `$` `?` `:?`
 
 Because these are tokenized before ordinary names, exact spellings like `is` and `via` are effectively reserved in lexer-driven formulation parsing. Note that `is!` (the hard-cast statement) is **not** a lexer token — it is recognized by a top-level scan for ` is! ` in `parse_hard_cast_statement`, so it may be surrounded by ordinary tokens.
 
@@ -358,8 +359,8 @@ PrimaryExpression ::=
   | SubsetExpression
   | CommandExpression
   | BuiltinCommandExpression
-  | MemberCall            -- Name "." Name "(" args ")"
-  | MemberAccess          -- Name "." Name
+  | MemberCall            -- Name "." Name "(" args ")" | Command ".." Name "(" args ")"
+  | MemberAccess          -- Name "." Name | Command ".." Name
   | Build                 -- CommandExpression ("@" | "@!") PrimaryExpression
   | InferredName          -- Name "?"
   | MagneticPlaceholder   -- x__
@@ -1271,6 +1272,10 @@ GroupedExpression ::= "(" Expression ")"
 
 FunctionExpression ::= Name "(" ExpressionList ")"
                      | Name "[|" FunctionNamedExpressionElement ("," FunctionNamedExpressionElement)* "|]"
+
+MemberExpression ::= MemberOwnerExpression "." Name ("(" ExpressionList ")")?
+                   | CommandExpression ".." Name ("(" ExpressionList ")")?
+MemberOwnerExpression ::= Name | GroupedExpression
 
 FunctionNamedExpressionElement ::= FunctionNamedExpressionElementLhs (":=" | "=") SpecOrPredicateExpression
 FunctionNamedExpressionElementLhs ::= Name | InferredParameterName | SubsetNameCall

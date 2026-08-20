@@ -5,6 +5,16 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Direct Component Access With `..`
+
+A concrete object command can expose a component from its destructuring target
+without first being bound and destructured. If `\reals` defines
+`Rb ::= (R, 0, 1, +, *, <=)`, then `\reals..0` denotes its `0` component.
+Callable components use the same operator, for example
+`\naturals..succ(n)`. Component types and command parameters are instantiated
+from the owning definition. The owner must be a `Defines:` or `Realizes:`
+command; a bound/destructured value continues to use ordinary `Rb.0` access.
+
 ## Refines Cards Use The Primary Adjective And Resolve `[[subject]]`
 
 When a `Refines:` `adjective:` item lists several texts, the first is now the

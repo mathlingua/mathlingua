@@ -66,6 +66,27 @@ mod tests {
     }
 
     #[test]
+    fn lexes_direct_component_access_without_confusing_it_with_ellipsis() {
+        let tokens: Vec<_> = Lexer::new(r"\reals..0 ... X.a")
+            .map(|item| item.expect("expected valid token").1)
+            .collect();
+
+        assert_eq!(
+            tokens,
+            vec![
+                Token::CommandStart,
+                Token::Name("reals".to_string()),
+                Token::DirectDot,
+                Token::Name("0".to_string()),
+                Token::Ellipsis,
+                Token::Name("X".to_string()),
+                Token::Dot,
+                Token::Name("a".to_string()),
+            ]
+        );
+    }
+
+    #[test]
     fn lexes_command_related_tokens() {
         let tokens: Vec<_> = Lexer::new(r#"\function:?on{A}:to{B}(x)"#)
             .map(|item| item.expect("expected valid token").1)

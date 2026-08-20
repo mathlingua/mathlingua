@@ -39,7 +39,10 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
             name,
             arguments,
         } => {
-            if let Some(rendered) = render_provided_member(owner, name, arguments, registry) {
+            let direct = matches!(owner.kind, ExpressionKind::Command(_));
+            if !direct
+                && let Some(rendered) = render_provided_member(owner, name, arguments, registry)
+            {
                 return rendered;
             }
             let args = arguments
@@ -48,19 +51,22 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 .collect::<Vec<_>>()
                 .join(", ");
             format!(
-                "{}.{}({})",
+                "{}{}{}({})",
                 render_expression(owner, registry),
+                if direct { ".." } else { "." },
                 escape_math_identifier(name, registry),
                 args
             )
         }
         ExpressionKind::MemberAccess { owner, name } => {
-            if let Some(rendered) = render_provided_member(owner, name, &[], registry) {
+            let direct = matches!(owner.kind, ExpressionKind::Command(_));
+            if !direct && let Some(rendered) = render_provided_member(owner, name, &[], registry) {
                 return rendered;
             }
             format!(
-                "{}.{}",
+                "{}{}{}",
                 render_expression(owner, registry),
+                if direct { ".." } else { "." },
                 escape_math_identifier(name, registry)
             )
         }

@@ -7395,6 +7395,51 @@ Documented:
     }
 
     #[test]
+    fn check_accesses_components_directly_from_defined_objects() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("direct-components.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\thing]
+    Declares: x
+    Documented:
+    . called: "thing"
+
+    [\object]
+    Defines: O ::= (first, second, next(x_))
+    abstractly:
+    specifies:
+    . first is \thing
+    . second is \thing
+    . next is (? is \thing) -> (? is \thing)
+    Documented:
+    . called: "object"
+
+    Theorem:
+    then:
+    . \object..first is? \thing
+    . \object..second is? \thing
+    . \object..next(\object..first) is? \thing
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("direct-components.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_disambiguates_with_else_only() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("disambiguates-else-only.mlg");

@@ -460,11 +460,15 @@ pub enum ExpressionKind {
         elements: Vec<FunctionNamedExpressionElement>,
     },
     MemberCall {
+        /// A command owner denotes direct `\object..field(args)` access; other
+        /// owner expressions denote ordinary `value.field(args)` access.
         owner: Box<Expression>,
         name: String,
         arguments: Vec<Expression>,
     },
     MemberAccess {
+        /// A command owner denotes direct `\object..field` access; other owner
+        /// expressions denote ordinary `value.field` access.
         owner: Box<Expression>,
         name: String,
     },

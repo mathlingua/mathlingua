@@ -797,6 +797,14 @@ what `C` is. An item that states a specification and never defines it is an
 error (``\`C\` states a specification but no value; define it with \`:=\`, define
 it in \`expresses:\`, or mark this \`Defines:\` \`abstractly:\``).
 
+A component of a specific object can be accessed without first destructuring
+the object by using `..`. For example, if `\reals` defines
+`Rb ::= (R, 0, 1, +, *, <=)`, then `\reals..0` denotes its `0` component.
+Callable components use the same form, such as `\naturals..succ(n)`. The owner
+must be a `Defines:` or `Realizes:` command; ordinary bound values continue to
+use member access with one dot (`Rb.0`). Operator component names are stropped,
+as in ``\reals..`*` ``.
+
 ### Abstract declarations and `Realizes`
 
 `abstractly:` — a zero-argument marker placed immediately after `Defines:` —

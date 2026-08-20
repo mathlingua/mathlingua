@@ -41,6 +41,31 @@ Documented:
 }
 
 #[test]
+fn renders_direct_component_access_and_calls_with_the_double_dot() {
+    let registry = registry_for(
+        r#"[\reals]
+Defines: Rb ::= (R, 0, succ(n_))
+abstractly:
+specifies:
+. R is \set
+. 0 is \natural
+. succ is (? is \natural) -> (? is \natural)
+Documented:
+. written: "\mathbb{R}"
+"#,
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"\reals..0"#, &registry),
+        Some(r#"\mathbb{R}..0"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\reals..succ(n)"#, &registry),
+        Some(r#"\mathbb{R}..succ(n)"#.to_string())
+    );
+}
+
+#[test]
 fn renders_variadic_command_arguments_in_written_templates() {
     let registry = registry_for(
         r#"[\sequence:of{x...n}]

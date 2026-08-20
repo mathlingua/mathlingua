@@ -5324,6 +5324,148 @@ then:
     }
 
     #[test]
+    fn check_accepts_refinement_of_an_inherited_component_specification() {
+        // `\magma` already specifies `*` as a binary operation. The
+        // `semigroup` means item adds the `associative` refinement to that same
+        // base type, so it is additive rather than a duplicate specification.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("refined-inherited-component.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [A \.set.cross./ B]
+    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    when: A, B is \set
+    Documented:
+    . written: "A? \times B?"
+
+    [\function:?on{A}:?to{B}]
+    Defines: f(x__) ::= y_
+    when: A, B is \set
+    means:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . written: "f?"
+
+    [\binary.operation:on{X}]
+    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
+    when: X is \set
+    Documented:
+    . written: "\operatorname{binop}"
+
+    [\magma]
+    Defines: M ::= (X, *) is \set via X
+    means: * is \binary.operation:on{M}
+    Documented:
+    . written: "\operatorname{magma}"
+
+    [\(associative)::binary.operation:on{X}]
+    Refines: x_ * y_
+    when: X is \set
+    satisfies:
+    . forAll: a, b, c "in" X
+      then: (a * b) * c = a * (b * c)
+    Documented:
+    . adjective: "associative"
+
+    [\semigroup]
+    Defines: S ::= (X, *) is \magma via (X, *)
+    means: * is \(associative)::binary.operation:on{X}
+    Documented:
+    . written: "\operatorname{semigroup}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("refined-inherited-component.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_a_different_type_for_an_inherited_component() {
+        // Refinement is the exception to the single-specification rule, not a
+        // license to replace the inherited binary-operation type with a
+        // different type such as `\function`.
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("different-inherited-component.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Defines: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\function:?on{A}:?to{B}]
+    Defines: f(x__) ::= y_
+    when: A, B is \set
+    means:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . written: "f?"
+
+    [\binary.operation:on{X}]
+    Defines: x_ * y_ is \function:on{X}:to{X}
+    when: X is \set
+    Documented:
+    . written: "\operatorname{binop}"
+
+    [\magma]
+    Defines: M ::= (X, *) is \set via X
+    means: * is \binary.operation:on{M}
+    Documented:
+    . written: "\operatorname{magma}"
+
+    [\bad.magma]
+    Defines: B ::= (X, *) is \magma via (X, *)
+    means: * is \function:on{X}:to{X}
+    Documented:
+    . written: "\operatorname{bad}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("different-inherited-component.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            user_events(&event_log).iter().any(|event| {
+                event.as_message().is_some_and(|message| {
+                    message.message
+                        == "Duplicate specification for target symbol `*`; it is already specified by the `Defines:` target"
+                })
+            }),
+            "{:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
     fn check_reports_undefined_command_in_spec_capability_target() {
         // The `:->` reduction target of an `Enables:` `capability:` references
         // `\grp.element:of`, which is defined nowhere. It must be reported.

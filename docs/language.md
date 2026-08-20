@@ -1326,7 +1326,11 @@ operands.
 the definition extends (`Missing specification for target symbol \`{symbol}\`;
 specify it directly or through the type the \`Defines:\` target extends`), and
 **at most once**. A symbol the subtype clauses already type — including the
-components a `via` reaches — may not be typed again in `means:`:
+components a `via` reaches — may not be typed again in `means:`, unless the
+later type is a refinement of that same base type. Refinements are additive, so
+an inherited `* is \binary.operation:on{X}` may be strengthened by
+`* is \(associative)::binary.operation:on{X}`; replacing it with an unrelated
+type such as `\function` is still a duplicate specification:
 
 ```text
 ` Duplicate specification for target symbol `X`; it is already specified by

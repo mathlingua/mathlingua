@@ -190,10 +190,13 @@ means:
 ```
 
 `via X` states `X is \set`, so `means:` carries only the components the clauses
-do not reach — `*` and `e`, which still *must* be specified there. The message is
-`Duplicate specification for target symbol `{symbol}`; it is already specified by
-...`, naming the earlier source (`the `Defines:` target`, `an `extends:` clause`,
-or ``means:``).
+do not reach — `*` and `e`, which still *must* be specified there. The exception
+is an additive refinement of the already specified base type: an inherited
+`* is \binary.operation:on{X}` may be strengthened with
+`* is \(associative)::binary.operation:on{X}`. A different base type remains a
+duplicate. The message is `Duplicate specification for target symbol
+`{symbol}`; it is already specified by ...`, naming the earlier source (`the
+`Defines:` target`, `an `extends:` clause`, or ``means:``).
 
 All of a group's subtype clauses count as a **single** source. `extends:` exists
 precisely so one definition can extend several types, so two clauses may name the

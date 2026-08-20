@@ -2129,7 +2129,9 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
-            validate_defines_target_symbol_specifications(group, path, locator, event_log);
+            validate_defines_target_symbol_specifications(
+                group, &context, path, locator, registry, event_log,
+            );
             validate_optional_requires(
                 &group.requires,
                 &context,
@@ -4463,8 +4465,10 @@ fn defines_used_names(group: &DefinesGroup) -> BTreeSet<String> {
 
 fn validate_defines_target_symbol_specifications(
     group: &DefinesGroup,
+    context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
     let mut covered = BTreeSet::new();
@@ -4479,7 +4483,9 @@ fn validate_defines_target_symbol_specifications(
     collect_extends_clause_covered_symbols(&group.defines, group.extends.as_ref(), &mut covered);
     let symbols = defines_target_symbols(&group.defines.argument);
     validate_target_symbol_specifications(&symbols, &covered, path, locator, event_log);
-    validate_single_symbol_specification(group, &symbols, path, locator, event_log);
+    validate_single_symbol_specification(
+        group, &symbols, context, path, locator, registry, event_log,
+    );
 }
 
 /// A function declaration alias names the same mapping as the function form,
@@ -4714,7 +4720,8 @@ fn validate_declaration_target_symbol_specifications(
 }
 
 /// Reports each target symbol whose type a `Defines` group states more than
-/// once.
+/// once, except when a later specification adds a refinement to the same base
+/// type.
 ///
 /// A symbol carries one type, so stating it twice is redundant at best and
 /// contradictory at worst. The usual case is a `via` that already types a
@@ -4731,14 +4738,23 @@ fn validate_declaration_target_symbol_specifications(
 /// `when:` and `using:` are not specification sources in this sense: `when:`
 /// states what a *use* of the command requires and `using:` introduces auxiliary
 /// symbols, neither of which is the definition saying what its own target is.
+#[derive(Clone, Debug)]
+struct TargetSpecificationSite {
+    symbol: String,
+    source: &'static str,
+    facts: Vec<TypeFact>,
+}
+
 fn validate_single_symbol_specification(
     group: &DefinesGroup,
     symbols: &BTreeSet<String>,
+    context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    let mut sites: Vec<(String, &'static str)> = Vec::new();
+    let mut sites = Vec::new();
 
     let extends_source = if group.extends.is_some() {
         "an `extends:` clause"
@@ -4746,41 +4762,108 @@ fn validate_single_symbol_specification(
         "the `Defines:` target"
     };
     let mut extended = BTreeSet::new();
+    let mut extended_facts = Vec::new();
     for clause in extends_clauses(&group.defines, group.extends.as_ref()) {
         collect_is_subject_covered_symbols(&clause.statement.subject, &mut extended);
         if let Some(via) = clause.via {
             collect_form_or_declaration_target_symbols(via, &mut extended);
         }
+        extended_facts.extend(facts_from_extends_clause_in_context(clause, context));
+        extended_facts.extend(facts_from_extends_via(clause, context, registry));
     }
-    sites.extend(extended.into_iter().map(|symbol| (symbol, extends_source)));
+    sites.extend(extended.into_iter().map(|symbol| TargetSpecificationSite {
+        facts: facts_for_subject(&extended_facts, &symbol),
+        symbol,
+        source: extends_source,
+    }));
 
     if let Some(means) = &group.means {
         for item in &means.arguments {
             let mut item_symbols = BTreeSet::new();
             collect_is_or_via_covered_symbols(item, &mut item_symbols);
-            sites.extend(item_symbols.into_iter().map(|symbol| (symbol, "`means:`")));
+            let item_facts = facts_from_is_or_via_item_in_context(item, context);
+            sites.extend(
+                item_symbols
+                    .into_iter()
+                    .map(|symbol| TargetSpecificationSite {
+                        facts: facts_for_subject(&item_facts, &symbol),
+                        symbol,
+                        source: "`means:`",
+                    }),
+            );
         }
     }
 
-    let mut first: HashMap<&str, &'static str> = HashMap::new();
-    for (symbol, source) in &sites {
-        if !symbols.contains(symbol) {
+    let mut first: HashMap<String, TargetSpecificationSite> = HashMap::new();
+    for site in sites {
+        if !symbols.contains(&site.symbol) {
             continue;
         }
-        match first.get(symbol.as_str()) {
+        match first.get(&site.symbol) {
             None => {
-                first.insert(symbol, source);
+                first.insert(site.symbol.clone(), site);
             }
-            Some(previous) => emit_error(
-                event_log,
-                path,
-                locator.locate_symbol(symbol),
-                format!(
-                    "Duplicate specification for target symbol `{symbol}`; it is already specified by {previous}"
-                ),
-            ),
+            Some(previous) => {
+                if is_additive_refinement(&site, previous) {
+                    continue;
+                }
+                emit_error(
+                    event_log,
+                    path,
+                    locator.locate_symbol(&site.symbol),
+                    format!(
+                        "Duplicate specification for target symbol `{}`; it is already specified by {}",
+                        site.symbol, previous.source
+                    ),
+                );
+            }
         }
     }
+}
+
+fn facts_for_subject(facts: &[TypeFact], subject: &str) -> Vec<TypeFact> {
+    facts
+        .iter()
+        .filter(|fact| fact_subject(fact) == subject)
+        .cloned()
+        .collect()
+}
+
+/// A refined type is an additive specification of its base type, not a second
+/// definition of the symbol's type. Thus `* is \(associative)::binary.operation`
+/// may follow an inherited `* is \binary.operation`, while a plain or refined
+/// specification based on another type remains a duplicate.
+fn is_additive_refinement(
+    current: &TargetSpecificationSite,
+    previous: &TargetSpecificationSite,
+) -> bool {
+    !current.facts.is_empty()
+        && current.facts.iter().all(|fact| {
+            let TypeFact::RefinedIs {
+                subject,
+                base_signature,
+                ..
+            } = fact
+            else {
+                return false;
+            };
+            previous
+                .facts
+                .iter()
+                .any(|previous_fact| match previous_fact {
+                    TypeFact::Is {
+                        subject: previous_subject,
+                        signature,
+                        ..
+                    } => previous_subject == subject && signature == base_signature,
+                    TypeFact::RefinedIs {
+                        subject: previous_subject,
+                        base_signature: previous_base_signature,
+                        ..
+                    } => previous_subject == subject && previous_base_signature == base_signature,
+                    _ => false,
+                })
+        })
 }
 
 fn validate_target_symbol_specifications(

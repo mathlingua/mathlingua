@@ -7,6 +7,7 @@ import { LatexRenderer } from "./latex-renderer";
 import { MathLinguaSource } from "./mathlingua-source";
 import { MathLinguaInline } from "./mathlingua-inline";
 import { MarkdownInline, MarkdownText } from "./markdown-text";
+import { TypeAnnotations } from "./type-annotations";
 import styles from "./group-card.module.css";
 import sectionStyles from "./section-content.module.css";
 
@@ -20,6 +21,8 @@ interface GroupCardProps {
   onReferenceClick?: (referenceKey: string) => void;
   /** Optional close action shown for inline definition cards. */
   onClose?: () => void;
+  /** Whether resolved expression types are visible. */
+  showTypes?: boolean;
 }
 
 /**
@@ -31,6 +34,7 @@ export function GroupCard({
   group,
   onReferenceClick,
   onClose,
+  showTypes = false,
 }: GroupCardProps) {
   const [showSupportSections, setShowSupportSections] = useState(false);
   const [showSource, setShowSource] = useState(false);
@@ -187,10 +191,14 @@ export function GroupCard({
                       )
                     ) : null}
                   </div>
+                  {showTypes && (section.inline_type_info?.length ?? 0) > 0 ? (
+                    <TypeAnnotations entries={section.inline_type_info ?? []} />
+                  ) : null}
                   {section.arguments.length > 0 ? (
                     <ArgumentList
                       arguments={section.arguments}
                       onReferenceClick={onReferenceClick}
+                      showTypes={showTypes}
                     />
                   ) : null}
                 </section>

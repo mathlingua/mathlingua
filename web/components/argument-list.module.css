@@ -46,6 +46,11 @@
   line-height: 1.35;
 }
 
+.formulationBlock {
+  display: grid;
+  min-width: 0;
+}
+
 .formulationLineLatex {
   overflow-x: auto;
   overflow-y: hidden;

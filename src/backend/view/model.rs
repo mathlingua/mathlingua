@@ -58,7 +58,17 @@ pub struct SectionView {
     pub label: String,
     pub inline_argument: Option<String>,
     pub inline_latex: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub inline_type_info: Vec<TypeEntryView>,
     pub arguments: Vec<ArgumentView>,
+}
+
+/// One expression or subexpression and the types resolved for it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct TypeEntryView {
+    pub depth: usize,
+    pub text: String,
+    pub types: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -67,6 +77,8 @@ pub enum ArgumentView {
     Formulation {
         text: String,
         latex: Option<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        type_info: Vec<TypeEntryView>,
         /// The `[:label:]` of a labeled specification (e.g. `1` for `(.….)[:1:]`),
         /// rendered as a right-justified tag beside the formulation. `None` for an
         /// ordinary formulation.

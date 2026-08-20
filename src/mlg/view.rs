@@ -57,7 +57,7 @@ pub(super) fn view_in(cwd: &Path, port: u16, event_log: &mut EventLog) -> io::Re
             collection.source_files().len()
         ),
     );
-    collection.run_check_passes(event_log, ORIGIN);
+    collection.run_view_check_passes(event_log, ORIGIN);
 
     if has_blocking_user_issues_since(event_log, starting_event_count) {
         event_log.user_error(
@@ -349,7 +349,7 @@ fn rebuild_collection_view_data(cwd: &Path, view_data_path: &Path) -> io::Result
     let mut event_log = EventLog::new();
     let starting_event_count = event_log.events().len();
     let mut collection = SourceCollection::load(cwd, &mut event_log, ORIGIN);
-    collection.run_check_passes(&mut event_log, ORIGIN);
+    collection.run_view_check_passes(&mut event_log, ORIGIN);
 
     if has_blocking_user_issues_since(&event_log, starting_event_count) {
         event_log.user_error(
@@ -499,6 +499,7 @@ mod tests {
                         label: "Title".to_string(),
                         inline_argument: Some("\"Example\"".to_string()),
                         inline_latex: None,
+                        inline_type_info: Vec::new(),
                         arguments: vec![],
                     }],
                 }],
@@ -549,6 +550,43 @@ mod tests {
         );
         let contents = fs::read_to_string(&path).expect("expected refreshed data");
         assert!(contents.contains("\\\\textrm{updated set}"));
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn rebuild_includes_expression_types_for_the_viewer() {
+        let dir = create_view_session_dir().expect("expected temp dir");
+        let root = dir.join("collection");
+        let content = root.join("content");
+        let file = content.join("types.mlg");
+        let path = dir.join("collection.json");
+
+        fs::create_dir_all(&content).expect("expected content dir");
+        fs::write(
+            &file,
+            "[\\set]\nDeclares: S\nDocumented:\n. called: \"set\"\n\n\nTheorem:\ngiven: X is \\set\nthen: X is? \\set\n",
+        )
+        .expect("expected source file");
+
+        assert_eq!(
+            rebuild_collection_view_data(&root, &path).expect("expected view data"),
+            ViewDataRefresh::Updated
+        );
+        let contents = fs::read_to_string(&path).expect("expected collection data");
+        let json: Value = serde_json::from_str(&contents).expect("expected json");
+        let theorem = &json["files"][0]["items"][1];
+        let then = theorem["sections"]
+            .as_array()
+            .and_then(|sections| sections.iter().find(|section| section["label"] == "then"))
+            .expect("expected theorem then section");
+        let entries = then["inline_type_info"]
+            .as_array()
+            .expect("expected inline type information");
+
+        assert_eq!(entries[0]["text"], "X is? \\set");
+        assert_eq!(entries[0]["types"][0], r"is \\statement");
+        assert_eq!(entries[1]["text"], "X");
+        assert_eq!(entries[1]["types"][0], "is \\set");
         let _ = fs::remove_dir_all(dir);
     }
 

@@ -1,5 +1,6 @@
 use super::model::{
     ArgumentView, CollectionView, DirectoryView, FileView, GroupView, PageView, SectionView,
+    TypeEntryView,
 };
 use super::render::{
     RenderRegistry, build_linked_render_registry, definition_reference_keys_for_heading,
@@ -9,6 +10,7 @@ use super::render::{
     render_writing_alias_latex, resolve_topic_heading_latex, writing_alias_override,
 };
 use crate::backend::config::load_config;
+use crate::backend::semantic::{CollectionTypeInfo, DocumentTypeInfo, TypeEntry};
 use crate::events::{Audience, Event, EventLog, Level};
 use crate::frontend::formulation::parse_resource_header;
 use crate::frontend::{
@@ -31,11 +33,37 @@ pub fn build_collection_view(
     preface_files: &[(PathBuf, PathBuf)],
     event_log: &mut EventLog,
 ) -> Option<CollectionView> {
+    build_collection_view_with_type_info(
+        collection_root,
+        parsed_files,
+        directory_metadata,
+        preface_files,
+        &CollectionTypeInfo::new(),
+        event_log,
+    )
+}
+
+pub(crate) fn build_collection_view_with_type_info(
+    collection_root: &Path,
+    parsed_files: &[ParsedSourceFile],
+    directory_metadata: &[(PathBuf, SourceFileViewMetadata)],
+    preface_files: &[(PathBuf, PathBuf)],
+    type_info: &CollectionTypeInfo,
+    event_log: &mut EventLog,
+) -> Option<CollectionView> {
     let registry = build_linked_render_registry(parsed_files);
     let rendered_files = parsed_files
         .iter()
         .filter(|file| !file.view_metadata.hidden)
-        .map(|file| build_file_view(collection_root, file, &registry, event_log))
+        .map(|file| {
+            build_file_view(
+                collection_root,
+                file,
+                type_info.get(&file.path),
+                &registry,
+                event_log,
+            )
+        })
         .collect::<Option<Vec<_>>>()?;
 
     let mut prefaces =
@@ -100,7 +128,7 @@ fn build_directory_prefaces(
         let items = groups
             .into_iter()
             .zip(group_sources)
-            .flat_map(|(group, source)| group_views(group, source, registry))
+            .flat_map(|(group, source)| group_views(group, source, None, registry))
             .collect::<Vec<_>>();
 
         prefaces.insert(relative_path(collection_root, directory), items);
@@ -112,6 +140,7 @@ fn build_directory_prefaces(
 fn build_file_view(
     collection_root: &Path,
     file: &ParsedSourceFile,
+    type_info: Option<&DocumentTypeInfo>,
     registry: &RenderRegistry,
     event_log: &mut EventLog,
 ) -> Option<FileView> {
@@ -132,7 +161,7 @@ fn build_file_view(
         items: groups
             .into_iter()
             .zip(group_sources)
-            .flat_map(|(group, source)| group_views(group, source, registry))
+            .flat_map(|(group, source)| group_views(group, source, type_info, registry))
             .collect(),
     })
 }
@@ -199,10 +228,15 @@ fn is_trailing_source_gap(line: &str) -> bool {
     trimmed.is_empty() || trimmed.starts_with("--")
 }
 
-fn group_views(group: ProtoGroup, source: String, registry: &RenderRegistry) -> Vec<GroupView> {
+fn group_views(
+    group: ProtoGroup,
+    source: String,
+    type_info: Option<&DocumentTypeInfo>,
+    registry: &RenderRegistry,
+) -> Vec<GroupView> {
     let id = top_level_group_id(&group).unwrap_or_default();
     let description = documented_description_text(&group);
-    let card = group_view(group, source, registry, id.clone());
+    let card = group_view(group, source, type_info, registry, id.clone());
 
     match description {
         Some(description) if !description.trim().is_empty() => {
@@ -237,6 +271,7 @@ fn description_page_group(source_id: &str, text: String) -> GroupView {
 fn group_view(
     group: ProtoGroup,
     source: String,
+    type_info: Option<&DocumentTypeInfo>,
     registry: &RenderRegistry,
     id: String,
 ) -> GroupView {
@@ -282,6 +317,7 @@ fn group_view(
         .map(|section| {
             section_view(
                 section,
+                type_info,
                 registry,
                 SectionContext::Default,
                 section_heading.as_deref(),
@@ -496,16 +532,19 @@ enum SectionContext {
 
 fn section_view(
     section: ProtoSection,
+    type_info: Option<&DocumentTypeInfo>,
     registry: &RenderRegistry,
     context: SectionContext,
     group_heading: Option<&str>,
 ) -> SectionView {
+    let row = section.metadata.row;
     let label = section.label;
     if context == SectionContext::Documented && label == "description" {
         return SectionView {
             label,
             inline_argument: Some("see above".to_string()),
             inline_latex: Some(r#"\langle\textrm{see above}\rangle"#.to_string()),
+            inline_type_info: Vec::new(),
             arguments: Vec::new(),
         };
     }
@@ -520,10 +559,13 @@ fn section_view(
         label: label.clone(),
         inline_argument: section.inline_argument,
         inline_latex,
+        inline_type_info: type_entries_for_row(type_info, row),
         arguments: section
             .arguments
             .into_iter()
-            .map(|argument| argument_view(argument, registry, &label, render_kind))
+            .map(|argument| {
+                argument_view(argument, type_info, registry, &label, render_kind)
+            })
             .collect(),
     }
 }
@@ -707,12 +749,14 @@ fn strip_quoted_text(input: &str) -> Option<String> {
 
 fn argument_view(
     argument: ProtoArgument,
+    type_info: Option<&DocumentTypeInfo>,
     registry: &RenderRegistry,
     section_label: &str,
     documented_render_kind: Option<DocumentedRenderKind>,
 ) -> ArgumentView {
     match argument {
         ProtoArgument::Formulation(formulation) => {
+            let row = formulation.metadata.row;
             if section_label == "References"
                 && let Some(reference) = reference_argument_view(&formulation.text, registry)
             {
@@ -732,6 +776,7 @@ fn argument_view(
                 latex,
                 label,
                 text: formulation.text,
+                type_info: type_entries_for_row(type_info, row),
             }
         }
         ProtoArgument::Text(text) => {
@@ -767,10 +812,30 @@ fn argument_view(
                     } else {
                         SectionContext::Default
                     };
-                    section_view(section, registry, context, None)
+                    section_view(section, type_info, registry, context, None)
                 })
                 .collect(),
         },
+    }
+}
+
+fn type_entries_for_row(
+    type_info: Option<&DocumentTypeInfo>,
+    row: usize,
+) -> Vec<TypeEntryView> {
+    type_info
+        .and_then(|info| info.get(&row))
+        .into_iter()
+        .flatten()
+        .map(type_entry_view)
+        .collect()
+}
+
+fn type_entry_view(entry: &TypeEntry) -> TypeEntryView {
+    TypeEntryView {
+        depth: entry.depth,
+        text: entry.text.clone(),
+        types: entry.types.clone(),
     }
 }
 

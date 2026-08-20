@@ -17,6 +17,7 @@ use super::*;
 
 use std::collections::BTreeMap;
 use std::ops::Range;
+use std::path::PathBuf;
 
 use crate::frontend::formulation::parse_ordinary_declaration_statement;
 
@@ -37,6 +38,9 @@ pub struct TypeEntry {
 /// Zero-based source row to the entries resolved on it. Rows carrying no
 /// formulation the checker reached are absent rather than present and empty.
 pub type DocumentTypeInfo = BTreeMap<usize, Vec<TypeEntry>>;
+
+/// Per-line type information for every checked source file, keyed by its path.
+pub type CollectionTypeInfo = BTreeMap<PathBuf, DocumentTypeInfo>;
 
 /// The AST a line's formulation parses to. A line is registered under every
 /// form it parses as, because which one the structural parser chose depends on

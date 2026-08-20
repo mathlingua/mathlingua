@@ -58,7 +58,45 @@
   min-width: 0;
 }
 
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.typesButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--muted-strong);
+  cursor: pointer;
+}
+
+.typesButton:hover,
+.typesButtonActive {
+  border-color: var(--line);
+  background: var(--surface-alt);
+  color: var(--ink);
+}
+
+.typesButtonActive {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.typesIcon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
 .button:focus-visible,
+.typesButton:focus-visible,
 .themeIconButton:focus-visible,
 .themeOption:focus-visible {
   outline: 2px solid var(--accent);

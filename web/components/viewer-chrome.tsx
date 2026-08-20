@@ -11,18 +11,24 @@ interface ViewerChromeProps {
   onToggleOutline: () => void;
   /** Changes the active viewer theme. */
   onThemeChange: (theme: ViewerTheme) => void;
+  /** Toggles inline expression-type annotations. */
+  onToggleTypes: () => void;
   /** Current outline visibility mode. */
   outlineState: OutlineState;
   /** Current visual theme. */
   theme: ViewerTheme;
+  /** Whether inline expression-type annotations are visible. */
+  showTypes: boolean;
 }
 
 /** Renders the top toolbar for the collection viewer. */
 export function ViewerChrome({
   onToggleOutline,
   onThemeChange,
+  onToggleTypes,
   outlineState,
   theme,
+  showTypes,
 }: ViewerChromeProps) {
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const themeMenuRef = useRef<HTMLDivElement>(null);
@@ -92,45 +98,77 @@ export function ViewerChrome({
         </svg>
       </button>
       <div className={styles.spacer} />
-      <div className={styles.themeMenu} ref={themeMenuRef}>
+      <div className={styles.tools}>
         <button
-          aria-expanded={isThemeMenuOpen}
-          aria-haspopup="menu"
-          aria-label={`Theme: ${activeTheme.label}`}
-          className={styles.themeIconButton}
-          onClick={() => setIsThemeMenuOpen((value) => !value)}
-          title="Theme"
+          aria-label={
+            showTypes ? "Hide expression types" : "Show expression types"
+          }
+          aria-pressed={showTypes}
+          className={
+            showTypes
+              ? `${styles.typesButton} ${styles.typesButtonActive}`
+              : styles.typesButton
+          }
+          onClick={onToggleTypes}
+          title={showTypes ? "Hide expression types" : "Show expression types"}
           type="button"
         >
-          <ThemeIcon />
+          <TypeIcon />
         </button>
-        {isThemeMenuOpen ? (
-          <div
-            aria-label="Select theme"
-            className={styles.themePopover}
-            role="menu"
+        <div className={styles.themeMenu} ref={themeMenuRef}>
+          <button
+            aria-expanded={isThemeMenuOpen}
+            aria-haspopup="menu"
+            aria-label={`Theme: ${activeTheme.label}`}
+            className={styles.themeIconButton}
+            onClick={() => setIsThemeMenuOpen((value) => !value)}
+            title="Theme"
+            type="button"
           >
-            {VIEWER_THEMES.map((item) => (
-              <button
-                aria-checked={theme === item.id}
-                className={
-                  theme === item.id
-                    ? `${styles.themeOption} ${styles.themeOptionActive}`
-                    : styles.themeOption
-                }
-                key={item.id}
-                onClick={() => handleThemeChange(item.id)}
-                role="menuitemradio"
-                type="button"
-              >
-                <span className={styles.themeOptionLabel}>{item.label}</span>
-                {theme === item.id ? <CheckIcon /> : null}
-              </button>
-            ))}
-          </div>
-        ) : null}
+            <ThemeIcon />
+          </button>
+          {isThemeMenuOpen ? (
+            <div
+              aria-label="Select theme"
+              className={styles.themePopover}
+              role="menu"
+            >
+              {VIEWER_THEMES.map((item) => (
+                <button
+                  aria-checked={theme === item.id}
+                  className={
+                    theme === item.id
+                      ? `${styles.themeOption} ${styles.themeOptionActive}`
+                      : styles.themeOption
+                  }
+                  key={item.id}
+                  onClick={() => handleThemeChange(item.id)}
+                  role="menuitemradio"
+                  type="button"
+                >
+                  <span className={styles.themeOptionLabel}>{item.label}</span>
+                  {theme === item.id ? <CheckIcon /> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
     </header>
+  );
+}
+
+function TypeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.typesIcon}
+      fill="none"
+      viewBox="0 0 20 20"
+    >
+      <path d="M4 5h12M10 5v10" stroke="currentColor" strokeLinecap="round" />
+      <circle cx="10" cy="15" fill="currentColor" r="1.25" />
+    </svg>
   );
 }
 

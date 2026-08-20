@@ -1,6 +1,9 @@
 use crate::backend::config::{CONFIG_FILE, validate_config_file};
-use crate::backend::semantic::{DocumentTypeInfo, check_documents_collecting_type_info};
-use crate::backend::view::{CollectionView, build_collection_view};
+use crate::backend::semantic::{
+    CollectionTypeInfo, DocumentTypeInfo, check_documents_collecting_all_type_info,
+    check_documents_collecting_type_info,
+};
+use crate::backend::view::{CollectionView, build_collection_view_with_type_info};
 use crate::events::{Event, EventLocation, EventLog};
 use crate::frontend::{
     ParsedSourceFile, ProtoGroup, ProtoParser, SourceFileViewMetadata, parse_source_file,
@@ -28,6 +31,7 @@ pub(crate) struct SourceCollection {
     toc_files: Vec<PathBuf>,
     preface_files: Vec<(PathBuf, PathBuf)>,
     parsed_files: Vec<ParsedSourceFile>,
+    view_type_info: CollectionTypeInfo,
 }
 
 pub(crate) enum SourceFileFilter {
@@ -93,6 +97,7 @@ impl SourceCollection {
             toc_files: source_files.toc_files,
             preface_files: source_files.preface_files,
             parsed_files: Vec::new(),
+            view_type_info: CollectionTypeInfo::new(),
         }
     }
 
@@ -114,6 +119,15 @@ impl SourceCollection {
 
     pub(crate) fn run_check_passes(&mut self, event_log: &mut EventLog, origin: &str) {
         self.run_check_passes_collecting_type_info(event_log, origin, None);
+    }
+
+    /// Runs the ordinary check while retaining every file's expression types
+    /// for `mlg view`/`mlg export`.
+    pub(crate) fn run_view_check_passes(&mut self, event_log: &mut EventLog, origin: &str) {
+        self.parse_structural(event_log, origin);
+        self.check_text_fences(event_log, origin);
+        self.view_type_info =
+            check_documents_collecting_all_type_info(&self.parsed_files, event_log);
     }
 
     /// Runs the check passes and, when `type_info_for` names a file of this
@@ -225,11 +239,12 @@ impl SourceCollection {
     }
 
     pub(crate) fn build_view(&self, event_log: &mut EventLog) -> Option<CollectionView> {
-        build_collection_view(
+        build_collection_view_with_type_info(
             &self.root,
             &self.parsed_files,
             &self.source_directory_view_metadata,
             &self.preface_files,
+            &self.view_type_info,
             event_log,
         )
     }

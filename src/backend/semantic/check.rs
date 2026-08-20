@@ -15,6 +15,32 @@ pub fn check_documents_collecting_type_info(
     event_log: &mut EventLog,
     type_info_for: Option<&Path>,
 ) -> DocumentTypeInfo {
+    let mut all = check_documents_collecting_type_infos(files, event_log, type_info_for, false);
+    type_info_for
+        .and_then(|target| {
+            all.keys()
+                .find(|path| is_same_file(target, path))
+                .cloned()
+        })
+        .and_then(|path| all.remove(&path))
+        .unwrap_or_default()
+}
+
+/// Runs one semantic pass and records expression types for every source file.
+/// The viewer uses this so type annotations do not require one check per page.
+pub fn check_documents_collecting_all_type_info(
+    files: &[ParsedSourceFile],
+    event_log: &mut EventLog,
+) -> CollectionTypeInfo {
+    check_documents_collecting_type_infos(files, event_log, None, true)
+}
+
+fn check_documents_collecting_type_infos(
+    files: &[ParsedSourceFile],
+    event_log: &mut EventLog,
+    type_info_for: Option<&Path>,
+    collect_all: bool,
+) -> CollectionTypeInfo {
     validate_top_level_item_ids(files, event_log);
     validate_top_level_writing_count(files, event_log);
     validate_documented_mapping_writing(files, event_log);
@@ -29,9 +55,10 @@ pub fn check_documents_collecting_type_info(
         validate_document_references(file, &registry, event_log);
     }
 
-    let mut type_info = DocumentTypeInfo::new();
+    let mut type_info = CollectionTypeInfo::new();
     for file in files {
-        let recording = type_info_for.is_some_and(|target| is_same_file(target, &file.path));
+        let recording = collect_all
+            || type_info_for.is_some_and(|target| is_same_file(target, &file.path));
         if recording {
             *registry.recorder.borrow_mut() = Some(TypeRecorder::new(&file.source));
         }
@@ -39,7 +66,7 @@ pub fn check_documents_collecting_type_info(
         validate_document_types(file, &registry, event_log);
 
         if recording && let Some(recorder) = registry.recorder.borrow_mut().take() {
-            type_info = recorder.finish();
+            type_info.insert(file.path.clone(), recorder.finish());
         }
     }
     type_info

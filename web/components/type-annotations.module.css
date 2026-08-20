@@ -1,0 +1,49 @@
+.panel {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+  margin-top: 0.38rem;
+  padding: 0.48rem 0.58rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-option);
+  background: color-mix(in srgb, var(--surface-alt) 72%, transparent);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(4rem, max-content) auto max-content;
+  gap: 0.42rem;
+  align-items: baseline;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 100%;
+  padding-left: calc(var(--type-depth) * 0.72rem);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.expression {
+  max-width: 15rem;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.separator {
+  color: var(--muted);
+}
+
+.types,
+.typesUnknown {
+  color: var(--muted-strong);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.typesUnknown {
+  font-style: italic;
+}

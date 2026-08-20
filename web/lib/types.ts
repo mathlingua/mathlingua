@@ -115,6 +115,8 @@ export type SectionView = {
   inline_argument: string | null;
   /** Backend-rendered LaTeX for the inline argument, if available. */
   inline_latex: string | null;
+  /** Resolved expression types for the inline formulation, when available. */
+  inline_type_info?: TypeEntryView[];
   /** Block arguments nested under this section. */
   arguments: ArgumentView[];
 };
@@ -128,6 +130,8 @@ export type ArgumentView =
       text: string;
       /** Backend-rendered LaTeX when parsing and rendering succeeded. */
       latex: string | null;
+      /** Resolved types for the formulation and each of its subexpressions. */
+      type_info?: TypeEntryView[];
       /**
        * The `[:label:]` of a labeled specification (e.g. `1`), shown as a
        * right-justified tag. Absent for an ordinary formulation.
@@ -160,3 +164,13 @@ export type ArgumentView =
       /** Rendered sections inside the nested group. */
       sections: SectionView[];
     };
+
+/** One expression or subexpression and its resolved type predicates. */
+export type TypeEntryView = {
+  /** Nesting depth beneath the line's outermost formulation. */
+  depth: number;
+  /** MathLingua source spelling of the expression. */
+  text: string;
+  /** Resolved type predicates, such as `is \\real`. */
+  types: string[];
+};

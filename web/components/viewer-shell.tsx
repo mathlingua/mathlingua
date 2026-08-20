@@ -30,6 +30,7 @@ import {
 } from "../lib/presenter";
 
 const NARROW_OUTLINE_MEDIA_QUERY = "(max-width: 860px)";
+const SHOW_TYPES_STORAGE_KEY = "mlg-view-show-types";
 
 /** Props for the client-side viewer state container. */
 interface ViewerShellProps {
@@ -106,6 +107,7 @@ export function ViewerShell({
     ),
   );
   const [theme, setTheme] = useState<ViewerTheme>(DEFAULT_VIEWER_THEME);
+  const [showTypes, setShowTypes] = useState(false);
 
   const selectedNode = readerNodes[selectedNodeIndex] ?? readerNodes[0];
   const currentDirectory = selectedNode?.directory ?? "";
@@ -273,6 +275,7 @@ export function ViewerShell({
 
     setTheme(initialTheme);
     applyViewerTheme(initialTheme);
+    setShowTypes(readStoredBoolean(SHOW_TYPES_STORAGE_KEY));
   }, []);
 
   useEffect(() => {
@@ -342,6 +345,14 @@ export function ViewerShell({
     writeStoredTheme(nextTheme);
   };
 
+  const handleToggleTypes = () => {
+    setShowTypes((current) => {
+      const next = !current;
+      writeStoredBoolean(SHOW_TYPES_STORAGE_KEY, next);
+      return next;
+    });
+  };
+
   const handleLoadDefinition = useCallback(
     (referenceKey: string) => {
       if (
@@ -401,8 +412,10 @@ export function ViewerShell({
     <>
       <ViewerChrome
         onToggleOutline={handleToggleOutline}
+        onToggleTypes={handleToggleTypes}
         onThemeChange={handleThemeChange}
         outlineState={outlineState}
+        showTypes={showTypes}
         theme={theme}
       />
       <main className={styles.pageShell}>
@@ -425,6 +438,7 @@ export function ViewerShell({
           readerNodes={readerNodes}
           selectedFileIndex={selectedFileIndex}
           selectedNodeIndex={selectedNodeIndex}
+          showTypes={showTypes}
         />
       </main>
     </>
@@ -594,5 +608,19 @@ function readStoredTheme(): string | null {
 function writeStoredTheme(theme: ViewerTheme) {
   try {
     window.localStorage.setItem(VIEWER_THEME_STORAGE_KEY, theme);
+  } catch (_) {}
+}
+
+function readStoredBoolean(key: string): boolean {
+  try {
+    return window.localStorage.getItem(key) === "true";
+  } catch (_) {
+    return false;
+  }
+}
+
+function writeStoredBoolean(key: string, value: boolean) {
+  try {
+    window.localStorage.setItem(key, String(value));
   } catch (_) {}
 }

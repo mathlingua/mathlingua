@@ -57,6 +57,8 @@ interface FileListProps {
   selectedFileIndex: number;
   /** Index of the current node in the reading order. */
   selectedNodeIndex: number;
+  /** Whether resolved expression types are visible. */
+  showTypes: boolean;
 }
 
 /** Renders the collection outline beside the selected file's group cards. */
@@ -79,6 +81,7 @@ export function FileList({
   readerNodes,
   selectedFileIndex,
   selectedNodeIndex,
+  showTypes,
 }: FileListProps) {
   const [definitionTrails, setDefinitionTrails] = useState<
     Record<string, string[]>
@@ -330,6 +333,7 @@ export function FileList({
               breadcrumb={breadcrumb}
               onNavigate={(directory) => onNavigateDirectory(directory)}
               preface={currentPreface}
+              showTypes={showTypes}
               title={selectedNode?.title ?? rootLabel}
             />
           ) : (
@@ -362,6 +366,7 @@ export function FileList({
                     <GroupCard
                       anchorId={anchorId}
                       group={item}
+                      showTypes={showTypes}
                       onReferenceClick={(referenceKey) =>
                         handleReferenceClick(anchorId, referenceKey)
                       }
@@ -401,6 +406,7 @@ export function FileList({
                                   `${anchorId}-definition-${trailIndex}`,
                                 )}-definition-${trailIndex}`}
                                 group={definition}
+                                showTypes={showTypes}
                                 onClose={() =>
                                   handleCloseDefinition(anchorId, trailIndex)
                                 }
@@ -540,11 +546,13 @@ function DividerPage({
   breadcrumb,
   onNavigate,
   preface,
+  showTypes,
   title,
 }: {
   breadcrumb: BreadcrumbCrumb[];
   onNavigate: (directory: string) => void;
   preface: GroupView[];
+  showTypes: boolean;
   title: string;
 }) {
   if (preface.length > 0) {
@@ -566,6 +574,7 @@ function DividerPage({
               group={item}
               key={key}
               onReferenceClick={() => {}}
+              showTypes={showTypes}
             />
           );
         })}

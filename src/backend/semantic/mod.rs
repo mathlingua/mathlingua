@@ -18,12 +18,15 @@ mod uses;
 mod validation;
 mod walk;
 
-pub use check::{check_documents, check_documents_collecting_type_info};
+pub use check::{
+    check_documents, check_documents_collecting_all_type_info,
+    check_documents_collecting_type_info,
+};
 pub use definition::{DefinitionSite, find_definition};
 pub use rename::{
     RenameEditPlan, RenameError, RenamePreparation, RenameSpan, plan_rename, prepare_rename,
 };
-pub use typeinfo::{DocumentTypeInfo, TypeEntry};
+pub use typeinfo::{CollectionTypeInfo, DocumentTypeInfo, TypeEntry};
 pub(crate) use uses::{collect_definition_locations, command_occurrences};
 
 use locator::*;

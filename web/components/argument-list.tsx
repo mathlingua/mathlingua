@@ -2,6 +2,7 @@ import { ArgumentView } from "../lib/types";
 import { LatexRenderer } from "./latex-renderer";
 import { MarkdownInline } from "./markdown-text";
 import { MathLinguaInline } from "./mathlingua-inline";
+import { TypeAnnotations } from "./type-annotations";
 import styles from "./argument-list.module.css";
 import sectionStyles from "./section-content.module.css";
 
@@ -11,12 +12,15 @@ interface ArgumentListProps {
   arguments: ArgumentView[];
   /** Called when rendered math references another definition. */
   onReferenceClick?: (referenceKey: string) => void;
+  /** Whether resolved expression types are visible. */
+  showTypes?: boolean;
 }
 
 /** Renders formulation, text, and nested-group section arguments. */
 export function ArgumentList({
   arguments: items,
   onReferenceClick,
+  showTypes = false,
 }: ArgumentListProps) {
   return (
     <ul className={styles.list}>
@@ -30,42 +34,47 @@ export function ArgumentList({
           key={`${argument.kind}-${index}`}
         >
           {argument.kind === "formulation" ? (
-            argument.label ? (
-              <div className={styles.labeledFormulation}>
-                {argument.latex ? (
-                  <span
-                    className={`${styles.formulationLine} ${styles.formulationLineLatex}`}
-                  >
-                    <LatexRenderer
-                      latex={argument.latex}
-                      onReferenceClick={onReferenceClick}
+            <div className={styles.formulationBlock}>
+              {argument.label ? (
+                <div className={styles.labeledFormulation}>
+                  {argument.latex ? (
+                    <span
+                      className={`${styles.formulationLine} ${styles.formulationLineLatex}`}
+                    >
+                      <LatexRenderer
+                        latex={argument.latex}
+                        onReferenceClick={onReferenceClick}
+                      />
+                    </span>
+                  ) : (
+                    <MathLinguaInline
+                      className={styles.formulationLine}
+                      text={argument.text}
                     />
+                  )}
+                  <span className={styles.formulationLabel}>
+                    [{argument.label}]
                   </span>
-                ) : (
-                  <MathLinguaInline
-                    className={styles.formulationLine}
-                    text={argument.text}
+                </div>
+              ) : argument.latex ? (
+                <span
+                  className={`${styles.formulationLine} ${styles.formulationLineLatex}`}
+                >
+                  <LatexRenderer
+                    latex={argument.latex}
+                    onReferenceClick={onReferenceClick}
                   />
-                )}
-                <span className={styles.formulationLabel}>
-                  [{argument.label}]
                 </span>
-              </div>
-            ) : argument.latex ? (
-              <span
-                className={`${styles.formulationLine} ${styles.formulationLineLatex}`}
-              >
-                <LatexRenderer
-                  latex={argument.latex}
-                  onReferenceClick={onReferenceClick}
+              ) : (
+                <MathLinguaInline
+                  className={styles.formulationLine}
+                  text={argument.text}
                 />
-              </span>
-            ) : (
-              <MathLinguaInline
-                className={styles.formulationLine}
-                text={argument.text}
-              />
-            )
+              )}
+              {showTypes && (argument.type_info?.length ?? 0) > 0 ? (
+                <TypeAnnotations entries={argument.type_info ?? []} />
+              ) : null}
+            </div>
           ) : null}
           {argument.kind === "text" ? (
             argument.latex ? (
@@ -130,10 +139,14 @@ export function ArgumentList({
                       )
                     ) : null}
                   </div>
+                  {showTypes && (section.inline_type_info?.length ?? 0) > 0 ? (
+                    <TypeAnnotations entries={section.inline_type_info ?? []} />
+                  ) : null}
                   {section.arguments.length > 0 ? (
                     <ArgumentList
                       arguments={section.arguments}
                       onReferenceClick={onReferenceClick}
+                      showTypes={showTypes}
                     />
                   ) : null}
                 </section>

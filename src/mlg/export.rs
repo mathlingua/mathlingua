@@ -98,7 +98,7 @@ pub(super) fn export_in(
         ),
     );
 
-    collection.run_check_passes(event_log, ORIGIN);
+    collection.run_view_check_passes(event_log, ORIGIN);
 
     if has_blocking_user_issues_since(event_log, starting_event_count) {
         event_log.user_error(

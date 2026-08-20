@@ -6990,7 +6990,7 @@ Documented:
 
         assert_eq!(result.files_checked, 1);
         assert!(messages.iter().any(|message| message
-            == "`Refines:` must have the form `Refines: <form>` or `Refines: <name> ::= (<matching components>)`; the refined target is inferred from the heading"));
+            == "`Refines:` must have the form `Refines: <form>` or `Refines: <matching form> ::= <matching expansion>`; the refined target is inferred from the heading"));
         assert!(
             messages.iter().any(|message| message
                 == "Refined command headings may only be used with Refines entries")
@@ -7059,6 +7059,64 @@ Documented:
         let result = check_in(
             temp_dir.path(),
             &[PathBuf::from("refines-destructuring.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_accepts_full_and_abbreviated_refines_function_targets() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("refines-function-targets.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [\function:?on{A}:?to{B}]
+    Declares: f(x__) ::= y_
+    when: A, B is \set
+    specifies:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . called: "function"
+
+    [\(full)::function:?on{A}:?to{B}]
+    Refines: f(x__) ::= y_
+    when: A, B is \set
+    Documented:
+    . adjective: "full"
+
+    [\(subject)::function:?on{A}:?to{B}]
+    Refines: f(x__)
+    when: A, B is \set
+    Documented:
+    . adjective: "subject"
+
+    [\(name)::function:?on{A}:?to{B}]
+    Refines: f
+    when: A, B is \set
+    Documented:
+    . adjective: "name"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("refines-function-targets.mlg")],
             &mut event_log,
         );
 

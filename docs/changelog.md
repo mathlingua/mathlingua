@@ -5,6 +5,22 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## `Refines:` Targets May Repeat The Full Base Target
+
+A `Refines:` target may now repeat the complete target of the base `Declares:`
+item. For a base declared as `f(x__) ::= y_`, all of the following refinement
+targets are valid:
+
+```text
+Refines: f(x__) ::= y_
+Refines: f(x__)
+Refines: f
+```
+
+The refinement may omit trailing structure it does not need, while every shape
+it includes must agree with the base target. Tuple destructuring keeps its
+existing positional component-shape checks.
+
 ## The `Refines:` `extends:` Section Is Now `specifies:`
 
 The inheritance section inside a `Refines:` group is now spelled `specifies:`.

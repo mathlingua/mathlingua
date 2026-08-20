@@ -106,6 +106,14 @@ pub(super) struct DefinitionTypeInfo {
     pub(super) outputs: Vec<TypeFact>,
     pub(super) substitutions: Vec<(String, String)>,
     pub(super) described: Option<String>,
+    /// The structural shape of the subject in the `Declares:` target, normalized
+    /// so a named form such as `G ::= (X, *, e)` is represented as a name subject
+    /// plus a tuple expansion. `Refines:` may repeat this shape or omit a suffix.
+    pub(super) described_subject_shape: Option<TargetShape>,
+    /// The optional expansion shape in the normalized `Declares:` target, such
+    /// as the output name in `f(x__) ::= y_` or the tuple in
+    /// `G ::= (X, *, e)`.
+    pub(super) described_expansion_shape: Option<TargetShape>,
     /// For a type described with a destructuring target `Name ::= (c1, ..., cn)`,
     /// the type facts of the components in tuple order (each fact's subject is a
     /// component name). Lets another definition that destructures a value of this

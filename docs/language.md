@@ -855,6 +855,13 @@ Documented:
 . adjective: "continuous"
 ```
 
+Its target may repeat the base `Declares:` target exactly or omit trailing
+information it does not need. If `\function` declares `f(x__) ::= y_`, then
+`Refines: f(x__) ::= y_`, `Refines: f(x__)`, and `Refines: f` are all valid.
+Every part that is present must have the same structural shape as the base
+target. Tuple expansions additionally match their component shapes
+positionally, while component names remain local aliases.
+
 For ordinary refined command headings, the rendered `Refines:` value makes the
 inferred base type explicit even though the source need not repeat it. For
 example, `[\(finite)::group]` with `Refines: G ::= (X, *, e)` is displayed as

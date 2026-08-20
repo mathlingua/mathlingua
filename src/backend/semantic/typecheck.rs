@@ -336,6 +336,46 @@ fn declares_target_shape(target: &DeclaresTarget) -> TargetShape {
     }
 }
 
+/// The subject and optional expansion shapes of a `Declares:` target as they are
+/// written in a `Refines:` statement. Named form declarations are stored as one
+/// formulation node, so split them back into their `name ::= form` parts.
+fn declares_target_refines_shapes(target: &DeclaresTarget) -> (TargetShape, Option<TargetShape>) {
+    match target {
+        DeclaresTarget::Form(FormOrDeclaration {
+            kind:
+                FormOrDeclarationKind::FunctionDeclaration {
+                    name: Some(_),
+                    form,
+                    ..
+                },
+            ..
+        }) => (
+            TargetShape::Name,
+            Some(TargetShape::Function(form.placeholders.len())),
+        ),
+        DeclaresTarget::Form(FormOrDeclaration {
+            kind:
+                FormOrDeclarationKind::TupleDeclaration {
+                    name: Some(_),
+                    form,
+                },
+            ..
+        }) => (
+            TargetShape::Name,
+            Some(TargetShape::Tuple(form.elements.len())),
+        ),
+        DeclaresTarget::Form(FormOrDeclaration {
+            kind: FormOrDeclarationKind::SetDeclaration { name: Some(_), .. },
+            ..
+        }) => (TargetShape::Name, Some(TargetShape::Set)),
+        DeclaresTarget::Form(form) => (form_shape(form), None),
+        DeclaresTarget::Declaration(statement) => (
+            is_subject_shape(&statement.subject),
+            statement.expansion.as_ref().map(is_subject_shape),
+        ),
+    }
+}
+
 fn is_subject_shape(subject: &IsSubject) -> TargetShape {
     match &subject.kind {
         IsSubjectKind::Operator(_) => TargetShape::Operator,
@@ -948,6 +988,10 @@ fn type_info_from_parts(
         (None, Some(statement)) => declaration_component_shapes(statement),
         (None, None) => Vec::new(),
     };
+    let (described_subject_shape, described_expansion_shape) = described
+        .map(declares_target_refines_shapes)
+        .map(|(subject, expansion)| (Some(subject), expansion))
+        .unwrap_or((None, None));
     let set_element_target = described.and_then(declares_target_set_target).cloned();
     let set_element_types = set_element_target
         .as_ref()
@@ -973,6 +1017,8 @@ fn type_info_from_parts(
         outputs,
         substitutions: context.substitutions,
         described: described.map(described_target_subject_key),
+        described_subject_shape,
+        described_expansion_shape,
         component_types,
         component_shapes,
         set_element_target,
@@ -2981,39 +3027,97 @@ fn validate_refines_target(
             event_log,
             path,
             locator.locate_heading(&shape_for_header(&group.heading)),
-            "`Refines:` must have the form `Refines: <form>` or `Refines: <name> ::= (<matching components>)`; the refined target is inferred from the heading",
+            "`Refines:` must have the form `Refines: <form>` or `Refines: <matching form> ::= <matching expansion>`; the refined target is inferred from the heading",
         );
         return;
     }
 
-    let Some(expansion) = &statement.expansion else {
-        return;
-    };
-    if is_subject_shape(&statement.subject) != TargetShape::Name {
-        emit_error(
-            event_log,
-            path,
-            locator.locate_heading(&shape_for_header(&group.heading)),
-            "The left side of a destructuring `Refines:` entry must be a single name",
-        );
+    let base_infos = refines_base_infos(&group.heading, registry);
+    if base_infos.is_empty() {
         return;
     }
-    let Some(tuple) = is_subject_first_form(expansion).and_then(form_or_declaration_tuple_form)
-    else {
-        emit_refines_destructuring_mismatch(group, None, path, locator, registry, event_log);
+
+    let subject_shape = is_subject_shape(&statement.subject);
+    let expansion_shape = statement.expansion.as_ref().map(is_subject_shape);
+    let tuple = statement
+        .expansion
+        .as_ref()
+        .and_then(is_subject_first_form)
+        .and_then(form_or_declaration_tuple_form);
+    let component_shapes = tuple.map(tuple_form_component_shapes);
+
+    if base_infos.iter().any(|info| {
+        refines_target_shapes_match(
+            &subject_shape,
+            expansion_shape.as_ref(),
+            component_shapes.as_deref(),
+            info,
+        )
+    }) {
         return;
-    };
-    let actual = tuple_form_component_shapes(tuple);
-    if matching_refines_base_info(&group.heading, &actual, registry).is_none() {
+    }
+
+    if tuple.is_some() {
         emit_refines_destructuring_mismatch(
             group,
-            Some(&actual),
+            component_shapes.as_deref(),
             path,
             locator,
             registry,
             event_log,
         );
+        return;
     }
+
+    let expected = base_infos
+        .iter()
+        .find_map(|info| {
+            info.described_subject_shape.as_ref().map(|subject| {
+                format_refines_target_shape(subject, info.described_expansion_shape.as_ref())
+            })
+        })
+        .unwrap_or_else(|| "an unspecified form".to_owned());
+    let actual = format_refines_target_shape(&subject_shape, expansion_shape.as_ref());
+    emit_error(
+        event_log,
+        path,
+        locator.locate_heading(&shape_for_header(&group.heading)),
+        format!(
+            "`Refines:` target has shape {actual}, but the base `Declares:` target has shape {expected}"
+        ),
+    );
+}
+
+/// A refinement may omit the base target's trailing information: a bare name is
+/// always sufficient, and an exact subject may omit the expansion. Every shape
+/// it does include must match the base declaration. Tuple expansions additionally
+/// preserve each component's positional shape.
+fn refines_target_shapes_match(
+    subject: &TargetShape,
+    expansion: Option<&TargetShape>,
+    component_shapes: Option<&[TargetShape]>,
+    info: &DefinitionTypeInfo,
+) -> bool {
+    if expansion.is_none() && *subject == TargetShape::Name {
+        return true;
+    }
+    if info.described_subject_shape.as_ref() != Some(subject) {
+        return false;
+    }
+    let Some(expansion) = expansion else {
+        return true;
+    };
+    if info.described_expansion_shape.as_ref() != Some(expansion) {
+        return false;
+    }
+    component_shapes.is_none_or(|actual| info.component_shapes == actual)
+}
+
+fn format_refines_target_shape(subject: &TargetShape, expansion: Option<&TargetShape>) -> String {
+    let subject = format_target_shape(subject);
+    expansion
+        .map(|shape| format!("{subject} ::= {}", format_target_shape(shape)))
+        .unwrap_or(subject)
 }
 
 fn emit_refines_destructuring_mismatch(
@@ -3047,18 +3151,22 @@ fn format_component_shapes(shapes: &[TargetShape]) -> String {
         "({})",
         shapes
             .iter()
-            .map(|shape| match shape {
-                TargetShape::Name => "value".to_owned(),
-                TargetShape::Function(arity) => format!("function/{arity}"),
-                TargetShape::Tuple(arity) => format!("tuple/{arity}"),
-                TargetShape::Set => "set".to_owned(),
-                TargetShape::Operator => "operator".to_owned(),
-                TargetShape::Statement => "statement".to_owned(),
-                TargetShape::Other => "other".to_owned(),
-            })
+            .map(format_target_shape)
             .collect::<Vec<_>>()
             .join(", ")
     )
+}
+
+fn format_target_shape(shape: &TargetShape) -> String {
+    match shape {
+        TargetShape::Name => "value".to_owned(),
+        TargetShape::Function(arity) => format!("function/{arity}"),
+        TargetShape::Tuple(arity) => format!("tuple/{arity}"),
+        TargetShape::Set => "set".to_owned(),
+        TargetShape::Operator => "operator".to_owned(),
+        TargetShape::Statement => "statement".to_owned(),
+        TargetShape::Other => "other".to_owned(),
+    }
 }
 
 fn validate_refined_spec_infix_header(

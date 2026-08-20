@@ -636,6 +636,40 @@ pub(in crate::backend::view) fn render_refines_section_latex(
     ))
 }
 
+/// Renders a `Refines:` group's `specifies:` statement with `[[subject]]`
+/// resolved to the base type named by the enclosing refined heading.
+///
+/// Unlike an ordinary formulation, the dynamic refined tail is meaningful only
+/// in that group: in `\(injective)::[[f]]` under a refinement of
+/// `\function:?on{A}:?to{B}`, `[[f]]` denotes that parameterized function type.
+pub(in crate::backend::view) fn render_refines_specifies_latex(
+    text: &str,
+    heading: &str,
+    registry: &RenderRegistry,
+) -> Option<String> {
+    let statement = parse_refined_declaration_statement(text).ok()?;
+    let DeclarationRelation::Is(TypeExpression::RefinedCommand(command)) =
+        statement.relation.as_ref()?
+    else {
+        return None;
+    };
+    if !matches!(command.refined_tail, RefinedTail::Name { .. }) {
+        return None;
+    }
+
+    let header = parse_command_header(heading).ok()?;
+    let CommandHeader::Refined(refined_header) = &header else {
+        return None;
+    };
+    let mut target = statement.clone();
+    target.relation = None;
+    Some(format!(
+        "{} \\textrm{{ is }} {}",
+        render_declaration_statement(&target, registry),
+        render_dynamic_refined_command_called(command, &header, refined_header, registry),
+    ))
+}
+
 fn supports_resolved_group_heading(kind: &str) -> bool {
     matches!(
         kind,
@@ -967,7 +1001,10 @@ pub(super) fn render_refines_entries(
     render_entries_from_signatures(
         signatures,
         subject_variable,
-        Some((join_adjective_text(adjective), CalledRenderSource::Called)),
+        Some((
+            primary_adjective_text(adjective),
+            CalledRenderSource::Called,
+        )),
         written.map(join_written_text),
         None,
     )
@@ -1174,13 +1211,12 @@ pub(super) fn join_called_text(section: &CalledSection) -> String {
         .join(" ")
 }
 
-pub(super) fn join_adjective_text(section: &AdjectiveSection) -> String {
+pub(super) fn primary_adjective_text(section: &AdjectiveSection) -> String {
     section
         .arguments
-        .iter()
-        .map(|text| text.0.as_str())
-        .collect::<Vec<_>>()
-        .join(" ")
+        .first()
+        .map(|text| text.0.clone())
+        .unwrap_or_default()
 }
 
 pub(super) fn join_written_text(section: &WrittenSection) -> String {

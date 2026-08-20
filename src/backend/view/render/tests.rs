@@ -1,7 +1,7 @@
 use super::{
     build_render_registry, render_documented_text_latex, render_formulation_latex,
     render_group_heading_latex, render_group_parameter_destructurings,
-    render_refines_section_latex,
+    render_refines_section_latex, render_refines_specifies_latex,
 };
 use crate::events::EventLog;
 use crate::frontend::{
@@ -907,7 +907,9 @@ Documented:
 [\(continuous)::function:on{A}:to{B}]
 Refines: f
 Documented:
-. adjective: "continuous"
+. adjective:
+  . "continuous"
+  . "unbroken"
 . written: "\operatorname{Continuous}"
 "#,
     );
@@ -920,6 +922,43 @@ Documented:
             &registry
         ),
         Some(r#"\textrm{continuous}\textrm{ }\textrm{function on }A\textrm{ to }B"#.to_string())
+    );
+}
+
+#[test]
+fn renders_dynamic_refined_tail_as_the_enclosing_refines_base() {
+    let registry = registry_for(
+        r#"[\function:?on{A}:?to{B}]
+Declares: f(x__) ::= y_
+Documented:
+. called: "function@[A]{ on $A?$}@[B]{ to $B?}$"
+
+[\(injective)::function:?on{A}:?to{B}]
+Refines: f
+Documented:
+. adjective:
+  . "injective"
+  . "one-to-one"
+
+[\(surjective)::function:?on{A}:?to{B}]
+Refines: f
+Documented:
+. adjective:
+  . "surjective"
+  . "onto"
+"#,
+    );
+
+    assert_eq!(
+        render_refines_specifies_latex(
+            r#"f is \(injective, surjective)::[[f]]"#,
+            r#"\(bijective)::function:?on{A}:?to{B}"#,
+            &registry,
+        ),
+        Some(
+            r#"f \textrm{ is } \left(\textrm{injective}\textrm{ and }\textrm{surjective}\right)\textrm{ }\textrm{function}\textrm{ on }A\textrm{ to }B"#
+                .to_string()
+        )
     );
 }
 

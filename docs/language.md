@@ -889,6 +889,12 @@ The refined operator can then be used in declarations and expressions:
 . X' \:(nonempty)::subset:/ X
 ```
 
+Inside a `Refines:` `specifies:` section, `[[subject]]` denotes the base type
+from the enclosing refined heading, including its parameters. Thus, under
+`[\(bijective)::function:?on{A}:?to{B}]`, the type
+`\(injective, surjective)::[[f]]` is displayed as an injective and surjective
+function on `A` to `B`.
+
 An explicit refined spec-infix definition is not required when the refinement
 is inherited through the type the base operator extends. If `\:subset:/`
 extends its left operand to `\set` and `\(nonempty)::set` is defined, then
@@ -2070,7 +2076,8 @@ A `written:` nested inside a `called:` group documents that called form, so it
 pairs with it in the title just as a top-level `written:` would.
 
 `Refines:` items are named by an `adjective:` rather than a `called:`, so their
-titles are unaffected.
+titles are unaffected. If an `adjective:` item lists multiple alternative texts,
+only the first is used as the card title and the rendered refinement name.
 
 ## Current Footguns
 

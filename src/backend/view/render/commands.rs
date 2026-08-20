@@ -183,6 +183,77 @@ pub(super) fn render_refined_command_called(
     called.latex
 }
 
+/// Renders a refined command whose `[[name]]` tail denotes the base command of
+/// the enclosing `Refines:` heading. The heading supplies both the real base
+/// signature and its parameter substitutions.
+pub(super) fn render_dynamic_refined_command_called(
+    command: &RefinedCommandExpression,
+    header: &CommandHeader,
+    refined_header: &RefinedCommandHeader,
+    registry: &RenderRegistry,
+) -> String {
+    let base_signature = refined_command_header_base_signature(refined_header);
+    let header_substitutions = command_header_substitutions(header, registry);
+    let refinement_templates = command
+        .parts
+        .iter()
+        .map(|part| {
+            let signature = dynamic_refined_part_signature(command, part, &base_signature);
+            let Some(render) = registry.commands.get(&signature) else {
+                return render_called_template(&format_chain(&part.chain), &HashMap::new());
+            };
+
+            let mut substitutions = header_substitutions.clone();
+            let values = expression_tail_argument_values(&part.tail, registry);
+            let missing_parameters = render
+                .parameters
+                .iter()
+                .filter(|name| !substitutions.contains_key(*name))
+                .cloned()
+                .collect::<Vec<_>>();
+            for (name, value) in missing_parameters.into_iter().zip(values) {
+                substitutions.insert(name, value);
+            }
+            command_reference_latex(&signature, render.render_called(&substitutions), registry)
+        })
+        .collect();
+
+    let base_latex = registry.commands.get(&base_signature).map_or_else(
+        || {
+            render_called_template(
+                &refined_tail_signature(&refined_header.refined_tail),
+                &HashMap::new(),
+            )
+        },
+        |render| {
+            command_reference_latex(
+                &base_signature,
+                render.render_called(&header_substitutions),
+                registry,
+            )
+        },
+    );
+
+    prepend_refinement_prefix(base_latex, refinement_templates)
+}
+
+fn dynamic_refined_part_signature(
+    command: &RefinedCommandExpression,
+    part: &RefinedExpressionPart,
+    base_signature: &str,
+) -> String {
+    let mut signature = "\\".to_owned();
+    if let Some(prefix) = &command.prefix_chain {
+        signature.push_str(&format_chain(prefix));
+        signature.push_str("::");
+    }
+    signature.push_str(&format_chain(&part.chain));
+    add_expression_tail_signature(&mut signature, &part.tail);
+    signature.push_str("::");
+    signature.push_str(base_signature.strip_prefix('\\').unwrap_or(base_signature));
+    signature
+}
+
 #[derive(Clone, Debug)]
 pub(super) struct CalledTemplate {
     pub(super) latex: String,

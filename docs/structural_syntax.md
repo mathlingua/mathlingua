@@ -340,7 +340,7 @@ Used inside `Documented:`.
 
 - **`written`** — `WrittenGroup`, heading: label?. Sections: `written: WrittenText+`
 - **`called`** — `CalledGroup`, heading: label?. Sections: `called: CalledText+`, `written?: WrittenText+`
-- **`adjective`** — `AdjectiveGroup`, heading: label?. Sections: `adjective: AdjectiveText+` (required by `Refines:`; `Refines:` `Documented:` rejects `called:`)
+- **`adjective`** — `AdjectiveGroup`, heading: label?. Sections: `adjective: AdjectiveText+` (required by `Refines:`; `Refines:` `Documented:` rejects `called:`; the first text is the primary rendered adjective and later texts are alternatives)
 - **`description`** — `DescriptionGroup`, heading: label?. Sections: `description: OpenText`
 - **`writing`** — `WritingGroup`, heading: label?. Sections: `writing: MappingWritingTarget`, `as: WritingText+`. It is valid only in a mapping-shaped `Declares:` item; the target must be either that exact placeholder mapping form or the same invocation with placeholders replaced by their ordinary names. For an aliased form such as `X ::= x(i_)`, these targets use the mapping name `x`
 - **`overview`** — `OverviewGroup`, heading: label?. Sections: `overview: OpenText`

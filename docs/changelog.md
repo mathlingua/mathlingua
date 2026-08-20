@@ -5,6 +5,19 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Refines Cards Use The Primary Adjective And Resolve `[[subject]]`
+
+When a `Refines:` `adjective:` item lists several texts, the first is now the
+primary display adjective used in the card title and in rendered refined types.
+Later texts remain documented alternatives rather than being concatenated into
+the displayed name.
+
+A dynamic refined tail in that group's `specifies:` section now renders through
+the base type encoded by the enclosing heading. For example, under
+`[\(bijective)::function:?on{A}:?to{B}]`,
+`\(injective, surjective)::[[f]]` renders as an injective and surjective function
+on `A` to `B`, rather than as an injective and surjective `f`.
+
 ## `Refines:` Targets May Repeat The Full Base Target
 
 A `Refines:` target may now repeat the complete target of the base `Declares:`

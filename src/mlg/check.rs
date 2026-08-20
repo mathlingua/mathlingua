@@ -10881,6 +10881,62 @@ Documented:
     }
 
     #[test]
+    fn check_uses_view_relations_declared_on_defined_values() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("defined-value-view.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [\function:on{A}:to{B}]
+    Declares: f(x__) is (_ "in" A) -> (_ "in" B)
+    when: A, B is \set
+    Documented:
+    . called: "function"
+
+    [\naturals]
+    Defines: Nb ::= (N, 0, S(n_))
+    abstractly:
+    specifies:
+    . N is \set
+    . 0 "in" N
+    . S is \function:on{N}:to{N}
+    Enables:
+    . relation:
+      to: N is \set
+      represents: \\coercion
+    Documented:
+    . called: "naturals"
+
+    Theorem:
+    then:
+    . \naturals is? \set
+    . \function:on{\naturals}:to{\naturals} is? \\type
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("defined-value-view.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_soft_build_cast_for_view_requirements() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("explicit-view-cast.mlg");

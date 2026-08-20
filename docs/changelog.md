@@ -5,6 +5,33 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## `Defines:` Values Can Provide Views Through `Enables:`
+
+An `Enables:` `relation:` on a `Defines:` item now applies directly to the
+defined command. This lets a structured value expose one component as a view
+without declaring the whole structure to have that component's type:
+
+```text
+[\naturals]
+Defines: Nb ::= (N, 0, S(n_))
+abstractly:
+specifies:
+. N is \set
+. 0 "in" N
+. S is \function:on{N}:to{N}
+Enables:
+. relation:
+  to: N is \set
+  represents: \\coercion
+```
+
+Here `Nb` remains the structured value; the relation makes `\naturals`
+viewable as a `\set` through `N`. Consequently a requirement such as
+`A is \set` accepts `\naturals`, including the domain and codomain requirements
+of `\function:on{\naturals}:to{\naturals}`. The relation does not add
+`Nb is \set` to the definition's output facts. `\\encoding` relations on
+defined values are likewise available to hard builds and hard views.
+
 ## Direct Component Access With `..`
 
 A concrete object command can expose a component from its destructuring target

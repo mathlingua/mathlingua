@@ -1455,7 +1455,7 @@ fn collect_viewable_rules(
     info: &DefinitionTypeInfo,
     registry: &mut SignatureRegistry,
 ) {
-    let Some(source_subject) = info.described.as_ref() else {
+    let Some(source_subject) = info.described.as_ref().or(info.defined_subject.as_ref()) else {
         return;
     };
     let Some(enables) = enables_section(item) else {
@@ -1489,7 +1489,7 @@ fn collect_abstraction_rules(
     info: &DefinitionTypeInfo,
     registry: &mut SignatureRegistry,
 ) {
-    let Some(source_subject) = info.described.as_ref() else {
+    let Some(source_subject) = info.described.as_ref().or(info.defined_subject.as_ref()) else {
         return;
     };
     let Some(enables) = enables_section(item) else {
@@ -1503,15 +1503,16 @@ fn collect_abstraction_rules(
         if !relation_group_has_kind(group, RelationKind::Encoding) {
             continue;
         };
-        let Some((_, target @ TypeFact::Is { .. })) =
+        let Some((target_subject, target @ TypeFact::Is { .. })) =
             view_target_from_relationship_declaration(&group.to.argument, source_subject)
         else {
             continue;
         };
-        registry.abstraction_rules.push(AbstractionRule {
+        registry.abstraction_rules.push(ViewableRule {
             source_signature: info.signature.clone(),
             source_subject: source_subject.clone(),
             parameters: info.parameters.clone(),
+            target_subject,
             target,
         });
     }
@@ -13951,6 +13952,11 @@ fn prove_fact_threaded(
     }
 
     let mut seen = HashSet::new();
+    if allow_viewable
+        && defined_value_view_implies_required(&required, context, registry, &mut seen)
+    {
+        return true;
+    }
     if defined_output_facts_for_key(fact_subject(&required), context, registry)
         .iter()
         .any(|fact| {
@@ -14174,6 +14180,9 @@ fn prove_fact_allowing_abstraction(
 
     let required = context.normalize_fact(required);
     let mut seen = HashSet::new();
+    if defined_value_abstraction_implies_required(&required, context, registry, &mut seen) {
+        return true;
+    }
     if defined_output_facts_for_key(fact_subject(&required), context, registry)
         .iter()
         .any(|fact| {
@@ -14688,8 +14697,82 @@ fn abstraction_fact_implies_required(
                 .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
                 .collect::<HashMap<_, _>>();
             substitutions.insert(rule.source_subject.clone(), subject.clone());
+            substitutions.insert(rule.target_subject.clone(), subject.clone());
             let abstracted = context.normalize_fact(&substitute_fact(&rule.target, &substitutions));
             fact_implies_with_options(&abstracted, required, context, registry, seen, true)
+        })
+}
+
+/// Applies a coercion relation declared directly on a `Defines:` value.
+///
+/// Type relations normally start from an `is` fact whose type signature owns
+/// the relation. A defined command such as `\naturals` is already a value, so
+/// it has no `\naturals` type fact to start that reduction. Match the command
+/// itself instead and instantiate the relation onto that value. Substituting
+/// both subjects is what makes `Nb` viewable as a `\set` through the relation's
+/// `N is \set` target without recording `Nb is \set` as a definition output.
+fn defined_value_view_implies_required(
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> bool {
+    defined_value_relation_implies_required(
+        required,
+        context,
+        registry,
+        &registry.viewable_rules,
+        seen,
+    )
+}
+
+/// The hard-view counterpart of [`defined_value_view_implies_required`].
+fn defined_value_abstraction_implies_required(
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    seen: &mut HashSet<TypeFact>,
+) -> bool {
+    defined_value_relation_implies_required(
+        required,
+        context,
+        registry,
+        &registry.abstraction_rules,
+        seen,
+    )
+}
+
+fn defined_value_relation_implies_required(
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    rules: &[ViewableRule],
+    seen: &mut HashSet<TypeFact>,
+) -> bool {
+    let subject = context.normalize_key(fact_subject(required));
+    let Some((signature, actuals)) = command_signature_and_actuals_from_key(&subject)
+        .or_else(|| infix_command_signature_and_actuals_from_key(&subject))
+    else {
+        return false;
+    };
+    if !signature_has_kind(&signature, DefinitionKind::Defines, registry) {
+        return false;
+    }
+
+    rules
+        .iter()
+        .filter(|rule| rule.source_signature == signature)
+        .any(|rule| {
+            let mut substitutions = rule
+                .parameters
+                .iter()
+                .zip(&actuals)
+                .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
+                .collect::<HashMap<_, _>>();
+            substitutions.insert(rule.source_subject.clone(), subject.clone());
+            substitutions.insert(rule.target_subject.clone(), subject.clone());
+            let viewed = context.normalize_fact(&substitute_fact(&rule.target, &substitutions));
+            fact_implies(&viewed, required, context, registry, seen)
         })
 }
 

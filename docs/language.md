@@ -1902,6 +1902,28 @@ value is opaque. The optional `when:` section can contain ordinary declarations
 and hard-view declarations such as `a0 := a is! \set`. The optional `specifies:`
 clause records a statement relating the original value and the viewed value.
 
+A relation on a `Defines:` item applies directly to that defined command. Its
+`to:` subject may name a component of the structured target, allowing the value
+to be viewed through that component without assigning the component's type to
+the whole target:
+
+```text
+[\naturals]
+Defines: Nb ::= (N, 0, S(n_))
+abstractly:
+specifies:
+. N is \set
+. 0 "in" N
+. S is \function:on{N}:to{N}
+Enables:
+. relation:
+  to: N is \set
+  represents: \\coercion
+```
+
+This makes `\naturals` usable where a `\set` is required, while `Nb` remains
+the structured value rather than acquiring `\set` as a definition output type.
+
 Relations marked `\\coercion` are used when checking whether an already-resolved
 command's arguments satisfy its requirements. For example, if `\integer` has a
 relation to `\rational` marked `\\coercion`, then a command requiring

@@ -293,7 +293,7 @@ arguments_section!(MetadataSection, MetadataItem);
 argument_section!(DefinesSection, DeclarationStatement);
 arguments_section!(ExpressesSection, Clause);
 argument_section!(RefinesSection, DeclarationStatement);
-argument_section!(RefinesExtendsSection, DeclarationStatement);
+argument_section!(RefinesSpecifiesSection, DeclarationStatement);
 arguments_section!(ThatSection, Clause);
 arguments_section!(EquivalentToSection, Expression);
 // The `Axiom:`/`Theorem:`/`Conjecture:` head sections take no argument; a
@@ -671,7 +671,7 @@ pub struct RefinesGroup {
     pub refinement_kind: Option<RefinementKind>,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub extends: Option<RefinesExtendsSection>,
+    pub specifies: Option<RefinesSpecifiesSection>,
     pub satisfies: Option<SatisfiesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,

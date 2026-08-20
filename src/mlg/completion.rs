@@ -160,7 +160,7 @@ const GROUPS: &[GroupSpec] = &[
             ("explicitly", false),
             ("using", false),
             ("when", false),
-            ("extends", false),
+            ("specifies", false),
             ("satisfies", false),
             ("Requires", false),
             ("Enables", false),
@@ -972,6 +972,14 @@ mod tests {
         assert!(!got.contains(&"when".to_string())); // already present
         assert!(got.contains(&"expresses".to_string()));
         assert!(got.contains(&"Id".to_string()));
+    }
+
+    #[test]
+    fn refines_offers_specifies_instead_of_extends() {
+        let text = "Refines: f\n\n";
+        let got = labels(&complete(text, 1, 0));
+        assert!(got.contains(&"specifies".to_string()));
+        assert!(!got.contains(&"extends".to_string()));
     }
 
     #[test]

@@ -5,6 +5,15 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## The `Refines:` `extends:` Section Is Now `specifies:`
+
+The inheritance section inside a `Refines:` group is now spelled `specifies:`.
+Its position, contents, and semantics are unchanged; only its label and the
+corresponding structural AST names change. `RefinesExtendsSection` is now
+`RefinesSpecifiesSection`, and `RefinesGroup::extends` is now
+`RefinesGroup::specifies`. The `extends:` section of a `Declares:` group is
+unaffected. Existing `Refines:` source must use the new spelling.
+
 ## The `means:` Section Is Now `specifies:`
 
 Every section previously spelled `means:` is now spelled `specifies:`. This is a

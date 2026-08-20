@@ -7,7 +7,7 @@ when:
   existsUnique: x is \element
   suchThat:
   . x = x
-extends: y is \(f)::[[g]]
+specifies: y is \(f)::[[g]]
 satisfies:
 . [logic.given]
   given: x is \element

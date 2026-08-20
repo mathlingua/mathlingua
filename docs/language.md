@@ -761,9 +761,8 @@ References:
 Metadata:
 ```
 
-(`Refines` uses `extends:`/`satisfies:` rather than `specifies:`. `Declares`,
-`Defines` and `Realizes` each have a `specifies:` section, with different rules
-for what its items may say — see below.)
+(`Declares`, `Defines`, `Realizes`, and `Refines` each have a `specifies:`
+section, with different rules for what its items may say — see below.)
 
 `Defines` introduces a value-bearing command by an `is` or spec statement, an
 optional `:=` definition, or both.
@@ -912,23 +911,23 @@ verifies the body is consistent with the marker:
 [\(finite)::group]
 Refines: G(x__)
 implicitly:
-extends: G is \(finite)::magma
+specifies: G is \(finite)::magma
 Documented:
 . adjective: "finite"
 ```
 
 - `implicitly:` — the group merely restates the inherited definition. The body
-  must contain **nothing beyond** the inherited `extends:` clause (the scaffolding
+  must contain **nothing beyond** the inherited `specifies:` clause (the scaffolding
   `using:`/`when:` sections are allowed). Adding `satisfies:`, `Requires:`,
   `Enables:`, or `Justification:` is an error — mark it `explicitly:` instead.
-  Furthermore, the `extends:` clause must **literally name the parent type's
+  Furthermore, the `specifies:` clause must **literally name the parent type's
   refinement**: the same adjective(s) applied to a supertype of the refined base
   type (above, `\(finite)::magma`, because `\group` extends `\magma`). An
-  `extends:` clause that names anything else is an error.
+  `specifies:` clause that names anything else is an error.
 - `explicitly:` — the group overrides the inherited definition with stronger
   meaning, so it must add **at least one** property beyond the inherited
-  `extends:` clause (for example a `satisfies:` section). If the body is only the
-  inherited `extends:`, that is the trivial case and must be marked `implicitly:`.
+  `specifies:` clause (for example a `satisfies:` section). If the body is only the
+  inherited `specifies:`, that is the trivial case and must be marked `implicitly:`.
 
 Both markers are only meaningful when the refined base type is itself a subtype
 of another type (its own definition names a type it extends). Using either
@@ -1453,18 +1452,18 @@ function ...`, `\`{name}\` is not a known type`).
   the declaration left abstract (`Missing realization for abstract symbol
   \`{symbol}\`; a \`Realizes:\` must supply every symbol its declaration leaves
   abstract`).
-- **`Refines:` `extends:`** — the `extends:` subject must match the `Refines:`
+- **`Refines:` `specifies:`** — the `specifies:` subject must match the `Refines:`
   subject, a `[[...]]` in it must name that subject, and a `Refines:` must have
   the form `Refines: <form>`.
 - **`Refines:` refinement markers** — the optional `implicitly:`/`explicitly:`
   marker sections must take no arguments and are mutually exclusive. Either
   marker requires the refined base type to be a subtype of another type;
   `implicitly:` additionally requires the body to contain only the inherited
-  `extends:` clause (no `satisfies:`/`Requires:`/`Enables:`/`Justification:`) and
+  `specifies:` clause (no `satisfies:`/`Requires:`/`Enables:`/`Justification:`) and
   that clause to literally name the parent type's refinement (the same
   adjective(s) applied to a direct supertype of the refined base type), while
   `explicitly:` requires at least one such property beyond the inherited
-  `extends:` clause.
+  `specifies:` clause.
 - **Function literals** — a function-literal parameter must be a name with a spec
   (`(x_ is ...)`), or a bare name whose type is already known from an `is`;
   otherwise it is rejected.

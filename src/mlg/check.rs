@@ -4023,7 +4023,7 @@ then:
     }
 
     #[test]
-    fn check_applies_refines_extends_to_dynamic_refined_base() {
+    fn check_applies_refines_specifies_to_dynamic_refined_base() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("dynamic-refined-base.mlg");
 
@@ -4056,7 +4056,7 @@ then:
 
     [\(bijective)::function]
     Refines: f(x__)
-    extends: f is \(injective, surjective)::[[f]]
+    specifies: f is \(injective, surjective)::[[f]]
     Documented:
     . adjective: "bijective"
 
@@ -4112,7 +4112,7 @@ then:
     [\(injective)::bounded.function]
     Refines: f(x__)
     implicitly:
-    extends: f is \(injective)::function
+    specifies: f is \(injective)::function
     Documented:
     . adjective: "injective"
     "#,
@@ -4163,7 +4163,7 @@ then:
     [\(injective)::bounded.function]
     Refines: f(x__)
     implicitly:
-    extends: f is \(injective)::[[f]]
+    specifies: f is \(injective)::[[f]]
     Documented:
     . adjective: "injective"
     "#,
@@ -4218,7 +4218,7 @@ then:
     [\(injective)::bounded.function]
     Refines: f(x__)
     implicitly:
-    extends: f is \(injective)::[[f]]
+    specifies: f is \(injective)::[[f]]
     satisfies:
     . forAll: x__
       then: f(x__) = f(x__)
@@ -4276,7 +4276,7 @@ then:
     [\(injective)::bounded.function]
     Refines: f(x__)
     explicitly:
-    extends: f is \(injective)::[[f]]
+    specifies: f is \(injective)::[[f]]
     satisfies:
     . forAll: x__
       then: f(x__) = f(x__)
@@ -4330,7 +4330,7 @@ then:
     [\(injective)::bounded.function]
     Refines: f(x__)
     explicitly:
-    extends: f is \(injective)::[[f]]
+    specifies: f is \(injective)::[[f]]
     Documented:
     . adjective: "injective"
     "#,
@@ -4378,7 +4378,7 @@ then:
     [\(injective)::bounded.function]
     Refines: f(x__)
     implicitly: f
-    extends: f is \(injective)::[[f]]
+    specifies: f is \(injective)::[[f]]
     Documented:
     . adjective: "injective"
     "#,
@@ -4427,7 +4427,7 @@ then:
     Refines: f(x__)
     implicitly:
     explicitly:
-    extends: f is \(injective)::[[f]]
+    specifies: f is \(injective)::[[f]]
     Documented:
     . adjective: "injective"
     "#,
@@ -4472,7 +4472,7 @@ then:
     [\(injective)::function]
     Refines: f(x__)
     implicitly:
-    extends: f is \(injective)::[[f]]
+    specifies: f is \(injective)::[[f]]
     Documented:
     . adjective: "injective"
     "#,

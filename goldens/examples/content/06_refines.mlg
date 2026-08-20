@@ -20,12 +20,12 @@ Documented:
 Id: "b6c0c765-d12c-437c-80e1-7a0113e8b789"
 
 
--- `extends:` names the refinement this one inherits from. `implicitly:` says
+-- `specifies:` names the refinement this one inherits from. `implicitly:` says
 -- the group only restates that inherited clause...
 [\(nonempty)::magma]
 Refines: M ::= (X, *)
 implicitly:
-extends: M is \(nonempty)::set
+specifies: M is \(nonempty)::set
 Documented:
 . adjective: "nonempty"
 Id: "9411125d-e05c-41ff-9b1e-fc55f9547604"
@@ -35,7 +35,7 @@ Id: "9411125d-e05c-41ff-9b1e-fc55f9547604"
 [\(nonempty)::monoid]
 Refines: M ::= (X, *, e)
 explicitly:
-extends: M is \(nonempty)::magma
+specifies: M is \(nonempty)::magma
 satisfies: M is \monoid
 Documented:
 . adjective: "nonempty"

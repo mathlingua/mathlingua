@@ -1547,16 +1547,16 @@ fn collect_refinement_extension_rules(
     let TopLevelItem::Refines(group) = item else {
         return;
     };
-    let Some(extends) = &group.extends else {
+    let Some(specifies) = &group.specifies else {
         return;
     };
 
-    for target in refinement_extension_targets_from_declaration(&extends.argument) {
+    for target in refinement_extension_targets_from_declaration(&specifies.argument) {
         registry
             .refinement_extension_rules
             .push(RefinementExtensionRule {
                 subtype_signature: info.signature.clone(),
-                subject: primary_subject_key(&extends.argument.subject),
+                subject: primary_subject_key(&specifies.argument.subject),
                 parameters: info.parameters.clone(),
                 target,
             });
@@ -2346,8 +2346,8 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
-            if group.extends.is_some() {
-                check_refines_extends(group, &context, path, locator, registry, event_log);
+            if group.specifies.is_some() {
+                check_refines_specifies(group, &context, path, locator, registry, event_log);
             }
             check_refines_marker(group, path, locator, registry, event_log);
             validate_refines_target_symbol_specifications(
@@ -2535,7 +2535,7 @@ fn anchor_top_level_item(item: &TopLevelItem, locator: &mut SourceLocator<'_>) {
     }
 }
 
-fn check_refines_extends(
+fn check_refines_specifies(
     group: &RefinesGroup,
     context: &TypeContext,
     path: &Path,
@@ -2543,25 +2543,25 @@ fn check_refines_extends(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    let Some(extends) = &group.extends else {
+    let Some(specifies) = &group.specifies else {
         return;
     };
     let refines_subject = primary_subject_key(&group.refines.argument.subject);
-    let extends_subject = primary_subject_key(&extends.argument.subject);
-    if extends_subject != refines_subject {
+    let specifies_subject = primary_subject_key(&specifies.argument.subject);
+    if specifies_subject != refines_subject {
         emit_error(
             event_log,
             path,
             locator.locate_heading(&shape_for_header(&group.heading)),
-            "The `extends:` subject must match the `Refines:` subject",
+            "The `specifies:` subject must match the `Refines:` subject",
         );
     }
 
     let Some(DeclarationRelation::Is(TypeExpression::RefinedCommand(command))) =
-        &extends.argument.relation
+        &specifies.argument.relation
     else {
         check_declaration_statement(
-            &extends.argument,
+            &specifies.argument,
             context,
             path,
             locator,
@@ -2577,11 +2577,17 @@ fn check_refines_extends(
                 event_log,
                 path,
                 locator.locate_heading(&shape_for_header(&group.heading)),
-                "`[[...]]` in a `Refines` `extends:` clause must name the `Refines:` subject",
+                "`[[...]]` in a `Refines` `specifies:` clause must name the `Refines:` subject",
             );
         }
 
-        check_is_subject(&extends.argument.subject, context, path, locator, event_log);
+        check_is_subject(
+            &specifies.argument.subject,
+            context,
+            path,
+            locator,
+            event_log,
+        );
         let active_command = active_refined_command_expression(command, context);
         for expression in refined_command_expression_arguments(&active_command) {
             check_expression(expression, context, path, locator, registry, event_log);
@@ -2590,7 +2596,7 @@ fn check_refines_extends(
     }
 
     check_declaration_statement(
-        &extends.argument,
+        &specifies.argument,
         context,
         path,
         locator,
@@ -2618,7 +2624,7 @@ fn refined_command_header_adjective_key(command: &RefinedCommandHeader) -> Strin
 }
 
 /// The `::`-joined adjective chains of a refined command expression (the form of
-/// a `Refines:` `extends:` target), rendered the same way as
+/// a `Refines:` `specifies:` target), rendered the same way as
 /// [`refined_command_header_adjective_key`] so the two can be compared.
 fn refined_command_expression_adjective_key(command: &RefinedCommandExpression) -> String {
     command
@@ -2651,19 +2657,19 @@ fn direct_parent_signatures(base_signature: &str, registry: &SignatureRegistry) 
         .collect()
 }
 
-/// Whether an `implicitly:`-marked group's `extends:` clause literally names the
+/// Whether an `implicitly:`-marked group's `specifies:` clause literally names the
 /// parent type's refinement: the same adjective(s) applied to a direct supertype
 /// of the refined base type.
-fn implicit_extends_names_parent_refinement(
+fn implicit_specifies_names_parent_refinement(
     group: &RefinesGroup,
     heading: &RefinedCommandHeader,
     parents: &[String],
 ) -> bool {
-    let Some(extends) = &group.extends else {
+    let Some(specifies) = &group.specifies else {
         return false;
     };
     let Some(DeclarationRelation::Is(TypeExpression::RefinedCommand(target))) =
-        &extends.argument.relation
+        &specifies.argument.relation
     else {
         return false;
     };
@@ -2683,12 +2689,12 @@ fn implicit_extends_names_parent_refinement(
 /// another type (so that a supertype refinement could be inherited).  Given that:
 ///
 ///   * `implicitly:` asserts the group merely restates the inherited definition,
-///     so its body must contain nothing beyond the inherited `extends:` clause
-///     (plus scaffolding `using:`/`when:`), and that `extends:` clause must
+///     so its body must contain nothing beyond the inherited `specifies:` clause
+///     (plus scaffolding `using:`/`when:`), and that `specifies:` clause must
 ///     literally name the parent type's refinement — the same adjective(s)
 ///     applied to a direct supertype of the refined base type.
 ///   * `explicitly:` asserts the group overrides the inherited definition, so it
-///     must add at least one property beyond the inherited `extends:` clause;
+///     must add at least one property beyond the inherited `specifies:` clause;
 ///     otherwise it is the trivial case that should be marked `implicitly:`.
 fn check_refines_marker(
     group: &RefinesGroup,
@@ -2720,7 +2726,7 @@ fn check_refines_marker(
         return;
     }
 
-    let has_extends = group.extends.is_some();
+    let has_specifies = group.specifies.is_some();
     let adds_properties = group.satisfies.is_some()
         || group.requires.is_some()
         || group.enables.is_some()
@@ -2728,30 +2734,30 @@ fn check_refines_marker(
 
     match marker {
         RefinementKind::Implicit => {
-            if !has_extends {
+            if !has_specifies {
                 emit_error(
                     event_log,
                     path,
                     location,
                     "A `Refines:` marked `implicitly:` must restate the inherited definition with an \
-                     `extends:` clause naming the supertype's refinement",
+                     `specifies:` clause naming the supertype's refinement",
                 );
             } else if adds_properties {
                 emit_error(
                     event_log,
                     path,
                     location,
-                    "A `Refines:` marked `implicitly:` must contain only the inherited `extends:` \
+                    "A `Refines:` marked `implicitly:` must contain only the inherited `specifies:` \
                      clause; it must not add `satisfies:`, `Requires:`, `Enables:`, or `Justification:`. \
                      Mark it `explicitly:` if the definition is meant to differ",
                 );
-            } else if !implicit_extends_names_parent_refinement(group, heading, &parents) {
+            } else if !implicit_specifies_names_parent_refinement(group, heading, &parents) {
                 emit_error(
                     event_log,
                     path,
                     location,
                     "A `Refines:` marked `implicitly:` must name the parent type's refinement in its \
-                     `extends:` clause: the same adjective(s) applied to a supertype of the refined \
+                     `specifies:` clause: the same adjective(s) applied to a supertype of the refined \
                      base type",
                 );
             }
@@ -2763,7 +2769,7 @@ fn check_refines_marker(
                     path,
                     location,
                     "A `Refines:` marked `explicitly:` must add at least one property beyond the \
-                     inherited `extends:` clause (for example a `satisfies:` section); the trivial \
+                     inherited `specifies:` clause (for example a `satisfies:` section); the trivial \
                      case should be marked `implicitly:`",
                 );
             }
@@ -4681,8 +4687,8 @@ fn validate_refines_target_symbol_specifications(
     }
     collect_using_covered_symbols(&group.using, &mut covered);
     collect_valid_when_covered_symbols(&group.when, &refines_when_parameters(group), &mut covered);
-    if let Some(extends) = &group.extends {
-        collect_declaration_statement_covered_symbols(&extends.argument, &mut covered);
+    if let Some(specifies) = &group.specifies {
+        collect_declaration_statement_covered_symbols(&specifies.argument, &mut covered);
     }
     // A `Refines:` refines a base type that describes the same form, so any
     // symbol the base type already declares (its operator or components) is

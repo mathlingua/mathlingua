@@ -3230,7 +3230,7 @@ pub(in crate::frontend::structural::parser) fn parse_realizes(
 /// Parses a command-backed `Refines:` group.
 ///
 /// Refines groups define a refined command signature and validate their
-/// `Refines:`/`extends:` bodies with the parser variant that accepts refined
+/// `Refines:`/`specifies:` bodies with the parser variant that accepts refined
 /// command references.
 pub(in crate::frontend::structural::parser) fn parse_refines(
     group: &ProtoGroup,
@@ -3247,7 +3247,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             "explicitly?",
             "using?",
             "when?",
-            "extends?",
+            "specifies?",
             "satisfies?",
             "Requires?",
             "Enables?",
@@ -3287,14 +3287,14 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
             parse_required_clauses(section, "when", tracker)
                 .map(|arguments| WhenSection { arguments })
         }),
-        extends: sections.get("extends").copied().and_then(|section| {
+        specifies: sections.get("specifies").copied().and_then(|section| {
             parse_required_formulation(
                 section,
-                "extends",
+                "specifies",
                 tracker,
                 parse_refined_declaration_statement,
             )
-            .map(|argument| RefinesExtendsSection { argument })
+            .map(|argument| RefinesSpecifiesSection { argument })
         }),
         satisfies: sections.get("satisfies").copied().and_then(|section| {
             parse_required_clauses(section, "satisfies", tracker)
@@ -4253,12 +4253,10 @@ Documented:
     }
 
     #[test]
-    fn rejects_the_specifies_section_label_for_refines() {
-        // `Refines` has no `specifies:` section — only `Declares` does, where it
-        // types the target's parts.
+    fn rejects_the_extends_section_label_for_refines() {
         let source = r#"[\(special)::thing]
 Refines: X
-specifies: X is \thing
+extends: X is \thing
 "#;
 
         let (_, diagnostics) = parse_with_diagnostics(source);
@@ -4266,8 +4264,8 @@ specifies: X is \thing
         assert!(
             diagnostics.iter().any(|event| {
                 event.as_message().is_some_and(|message| {
-                    message.message.contains("Unexpected section `specifies`")
-                        && message.message.contains("extends?:")
+                    message.message.contains("Unexpected section `extends`")
+                        && message.message.contains("specifies?:")
                 })
             }),
             "{diagnostics:#?}"
@@ -4423,7 +4421,7 @@ when:
   existsUnique: x is \element
   suchThat:
   . x = x
-extends: y is \(f)::[[g]]
+specifies: y is \(f)::[[g]]
 satisfies:
 . [logic.given]
   given: x is \element
@@ -4659,7 +4657,7 @@ that:
         match &document.items[8] {
             TopLevelItem::Refines(group) => {
                 assert!(group.refines.argument.relation.is_none());
-                assert!(group.extends.is_some());
+                assert!(group.specifies.is_some());
                 assert!(matches!(
                     group.when.as_ref().expect("expected when").arguments[0],
                     Clause::ExistsUnique(_)

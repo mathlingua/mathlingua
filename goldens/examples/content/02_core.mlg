@@ -1,11 +1,11 @@
 -- The handful of definitions the rest of the collection builds on.
 
 
--- The simplest `Defines`: a name, and what it is called. `Requires:` states
+-- The simplest `Declares`: a name, and what it is called. `Requires:` states
 -- what a use of `\set` must establish; `\\abstract` is the builtin standing for
 -- "no further obligation".
 [\set]
-Defines: X
+Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
 Documented:
@@ -13,10 +13,10 @@ Documented:
 Id: "5c194a16-3f2b-4a32-9a03-6fbafb40a8df"
 
 
--- A `Defines` target may state a spec relation, which is the type every value
+-- A `Declares` target may state a spec relation, which is the type every value
 -- of the defined type inherits.
 [\element:of{X}]
-Defines: x "in" X
+Declares: x "in" X
 when: X is \set
 Documented:
 . called: "element of $X?$"
@@ -26,7 +26,7 @@ Id: "85df16c5-71d3-4e68-b87c-bbb3a85e2df8"
 -- A function type describes call behavior: parenthesized specs on both sides,
 -- with each parameter written `_`.
 [\function:on{A}:to{B}]
-Defines: f(x__) is (_ "in" A) -> (_ "in" B)
+Declares: f(x__) is (_ "in" A) -> (_ "in" B)
 when: A, B is \set
 Documented:
 . called: "function from $A?$ to $B?$"
@@ -35,7 +35,7 @@ Id: "98fa5602-43ab-4c75-b505-1795fa6884c8"
 
 -- An infix command, written `\.name./` between its operands.
 [A \.cross./ B]
-Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
 when: A, B is \set
 Documented:
 . called: "cross product of $A?$ and $B?$"
@@ -45,7 +45,7 @@ Id: "674ead6f-ab2b-4682-b1a2-1921630d7b52"
 -- An operator-form target states its type about the operator itself, so this
 -- says `*` is a function on pairs drawn from `X`.
 [\operation:on{X}]
-Defines: x_ * y_ is \function:on{X \.cross./ X}:to{X}
+Declares: x_ * y_ is \function:on{X \.cross./ X}:to{X}
 when: X is \set
 Documented:
 . called: "operation on $X?$"
@@ -54,7 +54,7 @@ Id: "da1c3fe8-35fc-46b0-95ff-63ec39bfd5ef"
 
 -- A value whose type is a function type, used below to realize a successor.
 [\identity:on{X}]
-Declares: f(x__) is \function:on{X}:to{X}
+Defines: f(x__) is \function:on{X}:to{X}
 when: X is \set
 Documented:
 . called: "the identity on $X?$"

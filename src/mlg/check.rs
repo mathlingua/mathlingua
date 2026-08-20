@@ -779,7 +779,7 @@ mod tests {
 
             ```mlg
             [\function:on{A}:to{B}]
-            Defines: f(x__) ::= y_
+            Declares: f(x__) ::= y_
             Documented:
             . called: \"function\"
             Id: \"123\"
@@ -896,7 +896,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("broken.mlg");
 
-        fs::write(&file, "Declares: 'f(x_)'\n").unwrap();
+        fs::write(&file, "Defines: 'f(x_)'\n").unwrap();
 
         let mut event_log = EventLog::new();
         let result = check_in(
@@ -930,7 +930,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("invalid.mlg");
 
-        fs::write(&file, "Declares: 'f(x_)'\n").unwrap();
+        fs::write(&file, "Defines: 'f(x_)'\n").unwrap();
 
         let result = check(temp_dir.path(), &[PathBuf::from("invalid.mlg")], None);
         let report = check_diagnostics_report(&result, temp_dir.path());
@@ -961,7 +961,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 
         fs::create_dir_all(&content).unwrap();
         fs::write(root.join("mlg.json"), default_config_contents()).unwrap();
-        fs::write(&file, "Declares: 'f(x_)'\n").unwrap();
+        fs::write(&file, "Defines: 'f(x_)'\n").unwrap();
 
         let result = check(&root, &[], None);
         let report = check_diagnostics_report(&result, &root);
@@ -980,7 +980,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
     }
 
     #[test]
-    fn check_diagnostics_schema_defines_report_shape() {
+    fn check_diagnostics_schema_declares_report_shape() {
         let schema = check_diagnostics_schema();
 
         assert_eq!(
@@ -1017,7 +1017,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         write_mlg_fixture(
             &hidden,
             r#"[\thing]
-    Defines: value
+    Declares: value
     Documented:
     . written: "\operatorname{thing}"
 
@@ -1196,7 +1196,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("broken-structural.mlg");
 
-        fs::write(&file, "[\\function]\nDeclares: x |plus|\n").unwrap();
+        fs::write(&file, "[\\function]\nDefines: x |plus|\n").unwrap();
 
         let mut event_log = EventLog::new();
         let result = check_in(
@@ -1218,7 +1218,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
                             crate::events::EventLocation::File { path, .. }
                                 if *path == file.canonicalize().unwrap()
                         )
-                    }) && event.message.starts_with("Invalid Declares formulation:")
+                    }) && event.message.starts_with("Invalid Defines formulation:")
                 })
         );
         assert!(
@@ -1242,7 +1242,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         write_mlg_fixture(
             &file,
             r#"[\function{A, B}]
-    Declares: A ::= B "defines" B
+    Defines: A ::= B "defines" B
     Documented:
     . [docs.called]
       written:
@@ -1271,7 +1271,7 @@ Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
             8,
             1,
             &format!(
-                "Duplicate command signature `\\function` in Theorem; previously defined as Declares in {}:1:2",
+                "Duplicate command signature `\\function` in Theorem; previously defined as Defines in {}:1:2",
                 canonical_file.display()
             )
         ));
@@ -1477,20 +1477,20 @@ means: "c makes them cofunctions."
     }
 
     #[test]
-    fn check_accepts_equivalent_over_matching_defines() {
+    fn check_accepts_equivalent_over_matching_declares() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("equivalent.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\aaa{a}]
-Defines: S
+Declares: S
 when: a is \\expression
 Documented:
 . called: "aaa"
 
 [\bbb{a}]
-Defines: T
+Declares: T
 when: a is \\expression
 Documented:
 . called: "bbb"
@@ -1529,13 +1529,13 @@ to:
         write_mlg_fixture(
             &file,
             r#"[\aaa{a}]
-Defines: S
+Declares: S
 when: a is \\expression
 Documented:
 . called: "aaa"
 
 [\bbb{a}]
-Declares: b is \\expression
+Defines: b is \\expression
 when: a is \\expression
 Documented:
 . called: "bbb"
@@ -1575,13 +1575,13 @@ to:
         write_mlg_fixture(
             &file,
             r#"[\aaa{a}]
-Defines: S
+Declares: S
 when: a is \\expression
 Documented:
 . called: "aaa"
 
 [\bbb{a}]
-Defines: f(x__)
+Declares: f(x__)
 when: a is \\expression
 Documented:
 . called: "bbb"
@@ -1614,20 +1614,20 @@ to:
     }
 
     #[test]
-    fn check_reports_equivalent_declares_type_mismatch() {
+    fn check_reports_equivalent_defines_type_mismatch() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("equivalent-deftype.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\aaa{a}]
-Declares: b is \\expression
+Defines: b is \\expression
 when: a is \\expression
 Documented:
 . called: "aaa"
 
 [\bbb{a}]
-Declares: c is \\statement
+Defines: c is \\statement
 when: a is \\expression
 Documented:
 . called: "bbb"
@@ -1656,7 +1656,7 @@ to:
                 .any(|event| event.as_message().is_some_and(|message| message
                     .message
                     .contains("define values of different types"))),
-            "expected a Declares type-identity error: {:#?}",
+            "expected a Defines type-identity error: {:#?}",
             user_events(&event_log)
         );
     }
@@ -1669,13 +1669,13 @@ to:
         write_mlg_fixture(
             &file,
             r#"[\aaa{a}]
-Defines: S
+Declares: S
 when: a is \\statement
 Documented:
 . called: "aaa"
 
 [\bbb{a}]
-Defines: T
+Declares: T
 when: a is \\statement
 Documented:
 . called: "bbb"
@@ -1718,13 +1718,13 @@ to:
         write_mlg_fixture(
             &file,
             r#"[\aaa{a}]
-Defines: S
+Declares: S
 when: a is \\expression
 Documented:
 . called: "aaa"
 
 [\bbb{a}]
-Defines: T
+Declares: T
 when: a is \\expression
 Documented:
 . called: "bbb"
@@ -1802,13 +1802,13 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\aaa{a}]
-Defines: S
+Declares: S
 when: a is \\expression
 Documented:
 . called: "aaa"
 
 [\bbb{a}]
-Defines: T
+Declares: T
 when: a is \\expression
 Documented:
 . called: "bbb"
@@ -1822,7 +1822,7 @@ to:
 . \bbb{a}
 
 [\uses{p}{a}]
-Defines: W
+Declares: W
 when:
 . a is \\expression
 . p is \aaa{a}
@@ -1863,13 +1863,13 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\aaa{a}]
-Defines: S
+Declares: S
 when: a is \\expression
 Documented:
 . called: "aaa"
 
 [\bbb{a}]
-Defines: T
+Declares: T
 when: a is \\expression
 Documented:
 . called: "bbb"
@@ -1883,7 +1883,7 @@ to:
 . \bbb{a}
 
 [\uses{p}{a}]
-Defines: W
+Declares: W
 when:
 . a is \\expression
 . p is \aaa{a}
@@ -1929,14 +1929,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\setA]
-Defines: X
+Declares: X
 Enables:
 . capability: x_ "belongsA" X :-> \\abstract
 Documented:
 . called: "setA"
 
 [\setB]
-Defines: Y
+Declares: Y
 Enables:
 . capability: x_ "belongsA" Y :-> \\abstract
 Documented:
@@ -1981,14 +1981,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\setA]
-Defines: X
+Declares: X
 Enables:
 . capability: x_ "belongsA" X :-> \\abstract
 Documented:
 . called: "setA"
 
 [\setB]
-Defines: Y
+Declares: Y
 Enables:
 . capability: x_ "belongsA" Y :-> \\abstract
 Documented:
@@ -2001,7 +2001,7 @@ to:
 . \setB
 
 [\other]
-Defines: Z
+Declares: Z
 Documented:
 . called: "other"
 
@@ -2039,7 +2039,7 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\function:on{A}:to{B}]
-    Declares: A ::= B "defines" B
+    Defines: A ::= B "defines" B
     when: A, B is \\opaque
     Documented:
     . [docs.called]
@@ -2079,7 +2079,7 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\foo{A, B}(x)]
-    Declares: A "defines" B
+    Defines: A "defines" B
     Documented:
     . [docs.called]
       written:
@@ -2118,12 +2118,12 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\thing]
-    Defines: value
+    Declares: value
     Documented:
     . written: "\operatorname{thing}"
 
     [\foo{A, B}(x)]
-    Declares: A "defines" B
+    Defines: A "defines" B
     when: A, B is \thing
     Documented:
     . [docs.called]
@@ -2253,20 +2253,20 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\natural]
-    Defines: n
+    Declares: n
     Enables:
     . capability: x_ + y_ :=> x_ \.natural.+./ y_
     Documented:
     . called: "natural"
 
     [x_ \.natural.+./ y_]
-    Declares: z is \natural
+    Defines: z is \natural
     when: x_, y_ is \natural
     Documented:
     . written: "x_? + y_?"
 
     [\function]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     means:
     . x__ is \\expression
     . y_ is \\opaque
@@ -2274,7 +2274,7 @@ then:
     . called: "function"
 
     [\d{f(x_, y_)}:d{f.x_}]
-    Declares: g(x_, y_) is \function
+    Defines: g(x_, y_) is \function
     when: f is \function
     Documented:
     . written: "d"
@@ -2309,7 +2309,7 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Enables:
@@ -2319,12 +2319,12 @@ then:
     . called: "set"
 
     [\naturals.set]
-    Declares: N := \set@{n_ : n_ is \natural}
+    Defines: N := \set@{n_ : n_ is \natural}
     Documented:
     . called: "naturals"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ "in" A
@@ -2333,31 +2333,31 @@ then:
     . called: "function"
 
     [A \.set.cross./ B]
-    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Documented:
     . called: "cross"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
+    Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Documented:
     . called: "binary operation"
 
     [n_ \.natural.+./ m_]
-    Declares: n_ + m_ is \binary.operation:on{\naturals.set}
+    Defines: n_ + m_ is \binary.operation:on{\naturals.set}
     Documented:
     . written: "n_? + m_?"
 
     [\natural]
-    Defines: n
+    Declares: n
     Enables:
     . capability: x_ + y_ :=> x_ \.natural.+./ y_
     Documented:
     . called: "natural"
 
     [\d{f(x_, y_)}:d{f.x_}]
-    Declares: g(x_, y_) is \function:on{\naturals.set}:to{\naturals.set}
+    Defines: g(x_, y_) is \function:on{\naturals.set}:to{\naturals.set}
     when: f is \function:on{\naturals.set}:to{\naturals.set}
     Documented:
     . written: "d"
@@ -2390,32 +2390,32 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\natural]
-    Defines: n
+    Declares: n
     Documented:
     . called: "natural"
 
     [\natural.pair]
-    Defines: P ::= (a, b)
+    Declares: P ::= (a, b)
     means:
     . a, b is \natural
     Documented:
     . called: "natural pair"
 
     [\natural.set]
-    Defines: N ::= {n__ : ...}
+    Declares: N ::= {n__ : ...}
     means:
     . n__ is \natural
     Documented:
     . called: "natural set"
 
     [\take.pair{P}]
-    Declares: result is \\opaque
+    Defines: result is \\opaque
     when: P is \natural.pair
     Documented:
     . called: "take pair"
 
     [\take.set{N}]
-    Declares: result is \\opaque
+    Defines: result is \\opaque
     when: N is \natural.set
     Documented:
     . called: "take set"
@@ -2451,50 +2451,50 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\natural]
-    Defines: n
+    Declares: n
     Documented:
     . called: "natural"
 
     [\real]
-    Defines: r
+    Declares: r
     Documented:
     . called: "real"
 
     [\natural.function]
-    Defines: f(x_) ::= y_
+    Declares: f(x_) ::= y_
     means:
     . x_, y_ is \natural
     Documented:
     . called: "natural function"
 
     [\natural.pair]
-    Defines: P ::= (a, b)
+    Declares: P ::= (a, b)
     means:
     . a, b is \natural
     Documented:
     . called: "natural pair"
 
     [\natural.set]
-    Defines: N ::= {n__ : ...}
+    Declares: N ::= {n__ : ...}
     means:
     . n__ is \natural
     Documented:
     . called: "natural set"
 
     [\take.function{f}]
-    Declares: result is \\opaque
+    Defines: result is \\opaque
     when: f is \natural.function
     Documented:
     . called: "take function"
 
     [\take.pair{P}]
-    Declares: result is \\opaque
+    Defines: result is \\opaque
     when: P is \natural.pair
     Documented:
     . called: "take pair"
 
     [\take.set{N}]
-    Declares: result is \\opaque
+    Defines: result is \\opaque
     when: N is \natural.set
     Documented:
     . called: "take set"
@@ -2621,22 +2621,22 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . called: "real"
 
     [\whole]
-    Defines: x
+    Declares: x
     Documented:
     . called: "whole"
 
     [\natural]
-    Defines: x
+    Declares: x
     Documented:
     . called: "natural"
 
     [\integer]
-    Defines: x
+    Declares: x
     Documented:
     . called: "integer"
 
@@ -2711,12 +2711,12 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\whole]
-    Defines: x
+    Declares: x
     Documented:
     . called: "whole"
 
     [\natural]
-    Defines: x
+    Declares: x
     Documented:
     . called: "natural"
 
@@ -2727,7 +2727,7 @@ then:
       is: \natural
 
     [\mul{x, y}]
-    Declares: z is \natural
+    Defines: z is \natural
     when: x, y is \natural
     Documented:
     . called: "multiply"
@@ -2793,12 +2793,12 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . called: "real"
 
     [\natural]
-    Defines: x
+    Declares: x
     Documented:
     . called: "natural"
 
@@ -2807,7 +2807,7 @@ then:
       is: \natural
 
     [\real.value{x}]
-    Declares: z is \real
+    Defines: z is \real
     when: x is \natural
     Documented:
     . called: "real value"
@@ -2848,12 +2848,12 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . called: "real"
 
     [\natural]
-    Defines: x
+    Declares: x
     Documented:
     . called: "natural"
 
@@ -2934,12 +2934,12 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\matrix]
-    Defines: X
+    Declares: X
     Documented:
     . called: "matrix"
 
     [\matrix:of{x[(i_, j_) := (1,1)...(m,n)]}]
-    Declares: X is \matrix
+    Defines: X is \matrix
     when: x[..., ...] is \\statement
     Documented:
     . written: "\left [ x?{{...\:...}...\\} \right ]"
@@ -2974,7 +2974,7 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Enables:
@@ -2984,12 +2984,12 @@ then:
     . called: "set"
 
     [\naturals.set]
-    Declares: N := \set@{n_ : n_ is \natural}
+    Defines: N := \set@{n_ : n_ is \natural}
     Documented:
     . called: "naturals"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ "in" A
@@ -2998,36 +2998,36 @@ then:
     . called: "function"
 
     [A \.set.cross./ B]
-    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Documented:
     . called: "cross"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
+    Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Documented:
     . called: "binary operation"
 
     [n_ \.natural.+./ m_]
-    Declares: n_ + m_ is \binary.operation:on{\naturals.set}
+    Defines: n_ + m_ is \binary.operation:on{\naturals.set}
     Documented:
     . written: "n_? + m_?"
 
     [\natural]
-    Defines: n
+    Declares: n
     Enables:
     . capability: x_ + y_ :=> x_ \.natural.+./ y_
     Documented:
     . called: "natural"
 
     [\matrix]
-    Defines: X
+    Declares: X
     Documented:
     . called: "matrix"
 
     [\matrix:of{x[(i_, j_) := (1,1)...(m,n)]}]
-    Declares: X is \matrix
+    Defines: X is \matrix
     when: x[..., ...] is \natural
     Documented:
     . written: "matrix"
@@ -3183,12 +3183,12 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\thing]
-    Defines: value
+    Declares: value
     Documented:
     . written: "\operatorname{thing}"
 
     [\some.function{A}(x, y)]
-    Declares: A is \thing
+    Defines: A is \thing
     when: A is \thing
     Documented:
     . [docs.called]
@@ -3227,12 +3227,12 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\natural]
-    Defines: N
+    Declares: N
     Documented:
     . called: "natural"
 
     [\natural.constructor]
-    Defines: succ(n_) ::= m_
+    Declares: succ(n_) ::= m_
     means:
     . n_ is \natural
     . m_ is \natural
@@ -3240,7 +3240,7 @@ then:
     . called: "natural constructor"
 
     [\natural.succ(n_)]
-    Declares: succ(n_) is \natural.constructor
+    Defines: succ(n_) is \natural.constructor
     Documented:
     . called: "successor of $n?$"
     . written: "n?+\!\!+"
@@ -3270,20 +3270,20 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
     [A \.set.cross./ B]
-    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Documented:
     . called: "Cartesian product"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ "in" A
@@ -3292,18 +3292,18 @@ then:
     . called: "function"
 
     [\naturals.set]
-    Declares: N is \set
+    Defines: N is \set
     Documented:
     . called: "natural numbers"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
+    Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Documented:
     . called: "binary operation on $X?$"
 
     [n_ \.natural.+./ m_]
-    Declares: n_ + m_ ::= p_ is \binary.operation:on{\naturals.set}
+    Defines: n_ + m_ ::= p_ is \binary.operation:on{\naturals.set}
     expresses: p_ := n_
     Documented:
     . called: "natural addition"
@@ -3337,14 +3337,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . written: "A? \to B?"
@@ -3394,12 +3394,12 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "set"
 
     [A \:subset:/ B]
-    Defines: A
+    Declares: A
     when: B is \set
     Documented:
     . written: "A? \subset B?"
@@ -3444,7 +3444,7 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . called: "set"
 
@@ -3454,7 +3454,7 @@ then:
     . adjective: "nonempty"
 
     [A \:subset:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when: B is \set
     Documented:
     . written: "A? \subset B?"
@@ -3493,14 +3493,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when: B is \set
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
@@ -3526,11 +3526,11 @@ then:
     }
 
     #[test]
-    fn check_requires_declares_to_state_its_type() {
-        // A `Declares:` value must state the type it defines — either `... is <type>`
+    fn check_requires_defines_to_state_its_type() {
+        // A `Defines:` value must state the type it defines — either `... is <type>`
         // or a top-level `\ty@value` build. A bare `X := {…}` is rejected even though
         // the `member_of` capability would let the collection literal infer `\set`.
-        let set = "[\\set]\nDefines: X\nRequires:\n. capability: x_ \"in\" X :-> \\\\abstract\nEnables:\n. from: Y ::= {y__ : ...}\n  capability: x_ \"in\" X :-> x_ member_of Y\nDocumented:\n. called: \"set\"\n\n";
+        let set = "[\\set]\nDeclares: X\nRequires:\n. capability: x_ \"in\" X :-> \\\\abstract\nEnables:\n. from: Y ::= {y__ : ...}\n  capability: x_ \"in\" X :-> x_ member_of Y\nDocumented:\n. called: \"set\"\n\n";
 
         let accepted = [
             // Explicit `is`.
@@ -3538,13 +3538,13 @@ then:
             // Top-level build (sugar for the `is`).
             r#"X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}"#,
         ];
-        for declares in accepted {
+        for defines in accepted {
             let temp_dir = TestDir::new();
             let file = temp_dir.path().join("cross.mlg");
             write_mlg_fixture(
                 &file,
                 &format!(
-                    "{set}[A \\.set.cross./ B]\nDeclares: {declares}\nwhen: A, B is \\set\nDocumented:\n. called: \"cross\"\n"
+                    "{set}[A \\.set.cross./ B]\nDefines: {defines}\nwhen: A, B is \\set\nDocumented:\n. called: \"cross\"\n"
                 ),
             )
             .unwrap();
@@ -3556,7 +3556,7 @@ then:
             );
             assert!(
                 !event_log.has_errors(),
-                "expected `{declares}` to check, got: {:#?}",
+                "expected `{defines}` to check, got: {:#?}",
                 user_events(&event_log)
             );
         }
@@ -3567,7 +3567,7 @@ then:
         write_mlg_fixture(
             &file,
             &format!(
-                "{set}[A \\.set.cross./ B]\nDeclares: X := {{(a_, b_) : a_ \"in\" A; b_ \"in\" B}}\nwhen: A, B is \\set\nDocumented:\n. called: \"cross\"\n"
+                "{set}[A \\.set.cross./ B]\nDefines: X := {{(a_, b_) : a_ \"in\" A; b_ \"in\" B}}\nwhen: A, B is \\set\nDocumented:\n. called: \"cross\"\n"
             ),
         )
         .unwrap();
@@ -3583,7 +3583,7 @@ then:
                     message.level == Level::Error && message.message.contains("must state its type")
                 })
             }),
-            "expected a bare `Declares:` to be rejected, got: {:#?}",
+            "expected a bare `Defines:` to be rejected, got: {:#?}",
             user_events(&event_log)
         );
     }
@@ -3598,7 +3598,7 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
@@ -3635,7 +3635,7 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
@@ -3675,14 +3675,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . written: "A? \to B?"
@@ -3722,25 +3722,25 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\group]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{group}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . written: "A? \to B?"
 
     [\needs.group{G}]
-    Defines: x
+    Declares: x
     when: G is \group
     Documented:
     . written: "\operatorname{needsGroup}"
@@ -3782,14 +3782,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . written: "A? \to B?"
@@ -3831,7 +3831,7 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
@@ -3839,7 +3839,7 @@ then:
     . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . called: "function"
@@ -3886,21 +3886,21 @@ then:
     }
 
     #[test]
-    fn check_uses_defines_function_signature_means() {
+    fn check_uses_declares_function_signature_means() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("function-signature-means.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ "in" A
@@ -3910,7 +3910,7 @@ then:
     . written: "f?"
 
     [\ternary.function:?on{A}:?to{B}]
-    Defines: g(x_, y_, z_) ::= w_
+    Declares: g(x_, y_, z_) ::= w_
     when: A, B is \set
     means:
     . x_ "in" A
@@ -3922,7 +3922,7 @@ then:
     . written: "g?"
 
     [f \.function.compose./ g]
-    Declares: h(x__) := f(g(x__)) is \function:on{A}:to{C}
+    Defines: h(x__) := f(g(x__)) is \function:on{A}:to{C}
     using: A, B, C is \set
     when:
     . g is \function:on{A}:to{B}
@@ -3970,21 +3970,21 @@ then:
     }
 
     #[test]
-    fn check_requires_used_optional_defines_parameters_in_when() {
+    fn check_requires_used_optional_declares_parameters_in_when() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("used-optional-defines-parameter.mlg");
+        let file = temp_dir.path().join("used-optional-declares-parameter.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A is \set
     means:
     . x__ "in" A
@@ -4004,7 +4004,7 @@ then:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("used-optional-defines-parameter.mlg")],
+            &[PathBuf::from("used-optional-declares-parameter.mlg")],
             &mut event_log,
         );
 
@@ -4030,17 +4030,17 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function]
-    Defines: f(x__)
+    Declares: f(x__)
     Documented:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__) is \function
+    Declares: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4090,17 +4090,17 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function]
-    Defines: f(x__)
+    Declares: f(x__)
     Documented:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__) is \function
+    Declares: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4141,17 +4141,17 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function]
-    Defines: f(x__)
+    Declares: f(x__)
     Documented:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__) is \function
+    Declares: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4196,17 +4196,17 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function]
-    Defines: f(x__)
+    Declares: f(x__)
     Documented:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__) is \function
+    Declares: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4254,17 +4254,17 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function]
-    Defines: f(x__)
+    Declares: f(x__)
     Documented:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__) is \function
+    Declares: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4308,17 +4308,17 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function]
-    Defines: f(x__)
+    Declares: f(x__)
     Documented:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__) is \function
+    Declares: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4361,17 +4361,17 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function]
-    Defines: f(x__)
+    Declares: f(x__)
     Documented:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__) is \function
+    Declares: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4409,17 +4409,17 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function]
-    Defines: f(x__)
+    Declares: f(x__)
     Documented:
     . written: "\operatorname{function}"
 
     [\bounded.function]
-    Defines: f(x__) is \function
+    Declares: f(x__) is \function
     Documented:
     . written: "\operatorname{boundedFunction}"
 
@@ -4460,12 +4460,12 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function]
-    Defines: f(x__)
+    Declares: f(x__)
     Documented:
     . written: "\operatorname{function}"
 
@@ -4508,7 +4508,7 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
@@ -4517,7 +4517,7 @@ then:
     Text: "Example:
            ```mlg
            [\foo:bar{A}]
-           Defines: X
+           Declares: X
            when: A is \set
            means:
            . X \"in\" A
@@ -4525,7 +4525,7 @@ then:
     Id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 
     [\foo:bar{A}]
-    Defines: X
+    Declares: X
     means:
     . X "in" A
     Documented:
@@ -4589,14 +4589,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\fun:?on{A}:?to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     means:
     . x__ "in" A
     . y_ "in" B
@@ -4609,7 +4609,7 @@ then:
     . written: "\operatorname{fun}"
 
     [\pair:on{A}:to{B}]
-    Declares: P := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    Defines: P := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Documented:
     . written: "P"
@@ -4663,20 +4663,20 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \.set.cross./ B]
-    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Documented:
     . written: "A? \times B?"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ "in" A
@@ -4685,7 +4685,7 @@ then:
     . written: "f?"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
+    Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Documented:
     . written: "\operatorname{binop}"
@@ -4717,8 +4717,8 @@ then:
     }
 
     #[test]
-    fn check_treats_a_defines_target_relation_and_an_extends_section_as_equivalent() {
-        // `Defines: M ::= (X, *) is \set via X` and the same target with a
+    fn check_treats_a_declares_target_relation_and_an_extends_section_as_equivalent() {
+        // `Declares: M ::= (X, *) is \set via X` and the same target with a
         // separate `extends: M is \set via X` say the same thing: both give the
         // subtype implication and both type the `via` symbol.
         let temp_dir = TestDir::new();
@@ -4727,20 +4727,20 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
     [\magma]
-    Defines: M ::= (X, *) is \set via X
+    Declares: M ::= (X, *) is \set via X
     means: * is \set
     Documented:
     . called: "magma"
 
     [\magma.too]
-    Defines: M ::= (X, *)
+    Declares: M ::= (X, *)
     extends: M is \set via X
     means: * is \set
     Documented:
@@ -4785,20 +4785,20 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__) is (_ "in" A) -> (_ "in" B)
+    Declares: f(x__) is (_ "in" A) -> (_ "in" B)
     when: A, B is \set
     Documented:
     . called: "function"
 
     [\group]
-    Defines: G ::= (X, *, e) is \set via X
+    Declares: G ::= (X, *, e) is \set via X
     means:
     . X is \set
     . * is \function:on{X}:to{X}
@@ -4820,7 +4820,7 @@ then:
             user_events(&event_log).iter().any(|event| {
                 event.as_message().is_some_and(|message| {
                     message.message
-                        == "Duplicate specification for target symbol `X`; it is already specified by the `Defines:` target"
+                        == "Duplicate specification for target symbol `X`; it is already specified by the `Declares:` target"
                 })
             }),
             "{:#?}",
@@ -4839,14 +4839,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
     [\left.pair]
-    Defines: L ::= (U, V)
+    Declares: L ::= (U, V)
     means:
     . U is \set
     . V is \set
@@ -4854,7 +4854,7 @@ then:
     . called: "left pair"
 
     [\right.pair]
-    Defines: R ::= (S, T)
+    Declares: R ::= (S, T)
     means:
     . S is \set
     . T is \set
@@ -4862,7 +4862,7 @@ then:
     . called: "right pair"
 
     [\triple]
-    Defines: X ::= (A, B, C)
+    Declares: X ::= (A, B, C)
     extends:
     . X is \left.pair via (A, B)
     . X is \right.pair via (B, C)
@@ -4887,24 +4887,24 @@ then:
     }
 
     #[test]
-    fn check_applies_every_extends_clause_of_a_defines_group() {
+    fn check_applies_every_extends_clause_of_a_declares_group() {
         // An `extends:` section may name several types, each through a
         // different `via` view of the target's tuple — the case a single `is`
-        // on the `Defines:` target cannot express.
+        // on the `Declares:` target cannot express.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("multi-extends.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
     [\left.pair]
-    Defines: L ::= (U, V)
+    Declares: L ::= (U, V)
     means:
     . U is \set
     . V is \set
@@ -4912,7 +4912,7 @@ then:
     . called: "left pair"
 
     [\right.pair]
-    Defines: R ::= (S, T)
+    Declares: R ::= (S, T)
     means:
     . S is \set
     . T is \set
@@ -4920,7 +4920,7 @@ then:
     . called: "right pair"
 
     [\triple]
-    Defines: X ::= (A, B, C)
+    Declares: X ::= (A, B, C)
     extends:
     . X is \left.pair via (A, B)
     . X is \right.pair via (B, C)
@@ -4956,25 +4956,25 @@ then:
     /// The shared prelude for the abstract-declaration tests: a set, a function
     /// type, and a value to realize the naturals with.
     const REALIZES_PRELUDE: &str = r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__) is (_ "in" A) -> (_ "in" B)
+    Declares: f(x__) is (_ "in" A) -> (_ "in" B)
     when: A, B is \set
     Documented:
     . called: "function"
 
     [\empty.set]
-    Declares: E := \set@{x : ...}
+    Defines: E := \set@{x : ...}
     Documented:
     . called: "empty set"
 
     [\naturals]
-    Declares: Nb ::= (N, 0, succ(n_))
+    Defines: Nb ::= (N, 0, succ(n_))
     abstractly:
     means:
     . N is \set
@@ -5030,8 +5030,8 @@ then:
         for kind in [
             "Axiom",
             "Conjecture",
-            "Declares",
             "Defines",
+            "Declares",
             "Disambiguates",
             "Equivalent",
             "Person",
@@ -5195,7 +5195,7 @@ then:
             user_events(&event_log).iter().any(|event| {
                 event.as_message().is_some_and(|message| {
                     message.message
-                        == "`Realizes:` must name a `Declares:` marked `abstractly:`; `\\set` is a `Defines:`"
+                        == "`Realizes:` must name a `Defines:` marked `abstractly:`; `\\set` is a `Declares:`"
                 })
             }),
             "{:#?}",
@@ -5204,7 +5204,7 @@ then:
     }
 
     #[test]
-    fn check_requires_a_concrete_declares_means_item_to_supply_a_value() {
+    fn check_requires_a_concrete_defines_means_item_to_supply_a_value() {
         // Without `abstractly:`, a `means:` item that only states a type leaves
         // the symbol undefined; `expresses:` is the indirect way to define it.
         let temp_dir = TestDir::new();
@@ -5214,7 +5214,7 @@ then:
             &file,
             &format!(
                 r#"{REALIZES_PRELUDE}    [\concrete.pair]
-    Declares: P ::= (A, B)
+    Defines: P ::= (A, B)
     means:
     . A := \empty.set
     . B is \set
@@ -5237,7 +5237,7 @@ then:
             messages.iter().any(|event| {
                 event.as_message().is_some_and(|message| {
                     message.message
-                        == "`B` states a specification but no value; define it with `:=`, define it in `expresses:`, or mark this `Declares:` `abstractly:`"
+                        == "`B` states a specification but no value; define it with `:=`, define it in `expresses:`, or mark this `Defines:` `abstractly:`"
                 })
             }),
             "{messages:#?}"
@@ -5256,7 +5256,7 @@ then:
 
     #[test]
     fn check_accepts_refined_command_in_means() {
-        // A `means:` item (like a `Defines:` target) may name a refined command
+        // A `means:` item (like a `Declares:` target) may name a refined command
         // as the type: `* is \(associative)::binary.operation:on{X}`.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("means-refined.mlg");
@@ -5264,20 +5264,20 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \.set.cross./ B]
-    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Documented:
     . written: "A? \times B?"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ "in" A
@@ -5286,7 +5286,7 @@ then:
     . written: "f?"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
+    Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Documented:
     . written: "\operatorname{binop}"
@@ -5301,7 +5301,7 @@ then:
     . adjective: "associative"
 
     [\semigroup]
-    Defines: S ::= (X, *) is \set via X
+    Declares: S ::= (X, *) is \set via X
     means: * is \(associative)::binary.operation:on{X}
     Documented:
     . written: "\operatorname{semigroup}"
@@ -5334,20 +5334,20 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \.set.cross./ B]
-    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Documented:
     . written: "A? \times B?"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ "in" A
@@ -5356,13 +5356,13 @@ then:
     . written: "f?"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
+    Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Documented:
     . written: "\operatorname{binop}"
 
     [\magma]
-    Defines: M ::= (X, *) is \set via X
+    Declares: M ::= (X, *) is \set via X
     means: * is \binary.operation:on{M}
     Documented:
     . written: "\operatorname{magma}"
@@ -5377,7 +5377,7 @@ then:
     . adjective: "associative"
 
     [\semigroup]
-    Defines: S ::= (X, *) is \magma via (X, *)
+    Declares: S ::= (X, *) is \magma via (X, *)
     means: * is \(associative)::binary.operation:on{X}
     Documented:
     . written: "\operatorname{semigroup}"
@@ -5410,14 +5410,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ "in" A
@@ -5426,19 +5426,19 @@ then:
     . written: "f?"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_ is \function:on{X}:to{X}
+    Declares: x_ * y_ is \function:on{X}:to{X}
     when: X is \set
     Documented:
     . written: "\operatorname{binop}"
 
     [\magma]
-    Defines: M ::= (X, *) is \set via X
+    Declares: M ::= (X, *) is \set via X
     means: * is \binary.operation:on{M}
     Documented:
     . written: "\operatorname{magma}"
 
     [\bad.magma]
-    Defines: B ::= (X, *) is \magma via (X, *)
+    Declares: B ::= (X, *) is \magma via (X, *)
     means: * is \function:on{X}:to{X}
     Documented:
     . written: "\operatorname{bad}"
@@ -5457,7 +5457,7 @@ then:
             user_events(&event_log).iter().any(|event| {
                 event.as_message().is_some_and(|message| {
                     message.message
-                        == "Duplicate specification for target symbol `*`; it is already specified by the `Defines:` target"
+                        == "Duplicate specification for target symbol `*`; it is already specified by the `Declares:` target"
                 })
             }),
             "{:#?}",
@@ -5475,14 +5475,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\grp:of{G}]
-    Defines: Z
+    Declares: Z
     when: G is \set
     Enables:
     . capability: x_ "in" Z :-> x_ is \grp.element:of{G}
@@ -5523,20 +5523,20 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \.set.cross./ B]
-    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Documented:
     . written: "A? \times B?"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ "in" A
@@ -5545,20 +5545,20 @@ then:
     . written: "f?"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
+    Declares: x_ * y_ is \function:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Documented:
     . written: "\operatorname{binop}"
 
     [\magma]
-    Defines: M ::= (X, *) is \set via X
+    Declares: M ::= (X, *) is \set via X
     means:
     . * is \binary.operation:on{M}
     Documented:
     . written: "\operatorname{magma}"
 
     [\magma.element:of{M ::= (X, *)}]
-    Defines: x "in" X
+    Declares: x "in" X
     when: M is \magma
     Enables:
     . capability: x_ [*] y_ :=> x_ is \undefined.elt:of{M}
@@ -5600,14 +5600,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\elt:of{X}]
-    Defines: x "in" X
+    Declares: x "in" X
     when: X is \set
     Enables:
     . capability: x.self :=> x
@@ -5653,20 +5653,20 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
     [A \.cross./ B]
-    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Documented:
     . called: "cross"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ "in" A
@@ -5675,13 +5675,13 @@ then:
     . called: "function"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_ is \function:on{X \.cross./ X}:to{X}
+    Declares: x_ * y_ is \function:on{X \.cross./ X}:to{X}
     when: X is \set
     Documented:
     . called: "binary operation"
 
     [\magma]
-    Defines: M ::= (X, *) is \set via X
+    Declares: M ::= (X, *) is \set via X
     means: * is \binary.operation:on{M}
     Enables:
     . capability: x_ "in" M :-> x_ is \magma.element:of{M}
@@ -5689,7 +5689,7 @@ then:
     . called: "magma"
 
     [\magma.element:of{M ::= (X, *)}]
-    Defines: x "in" X
+    Declares: x "in" X
     when: M is \magma
     Enables:
     . capability: x_ [*] y_ :=> x_ |M.*| y_
@@ -5698,7 +5698,7 @@ then:
     . called: "magma element"
 
     [\group]
-    Defines: G ::= (X, *, e) is \magma via (X, *)
+    Declares: G ::= (X, *, e) is \magma via (X, *)
     means: e "in" X
     Enables:
     . capability: x_ "in" G :-> x_ is \group.element:of{G}
@@ -5706,7 +5706,7 @@ then:
     . called: "group"
 
     [\group.element:of{G}]
-    Defines: x is \magma.element:of{G}
+    Declares: x is \magma.element:of{G}
     when: G is \group
     Enables:
     . capability: x.inv :=> \group.inverse:of{x}:in{G}
@@ -5715,7 +5715,7 @@ then:
     . called: "group element"
 
     [\group.inverse:of{x}:in{G}]
-    Declares: y "in" G
+    Defines: y "in" G
     when:
     . G is \group
     . x "in" G
@@ -5762,14 +5762,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\container]
-    Defines: C
+    Declares: C
     Requires:
     . capability: x_ "in" C :-> x_ is \element:of{C}
     Documented:
     . written: "\operatorname{container}"
 
     [\element:of{C}]
-    Defines: x "in" C
+    Declares: x "in" C
     when: C is \container
     Enables:
     . capability: x.copy :=> \copy:of{x}:in{C}
@@ -5778,7 +5778,7 @@ then:
     . written: "\operatorname{element}"
 
     [\copy:of{x}:in{C}]
-    Declares: y "in" C
+    Defines: y "in" C
     when:
     . C is \container
     . x "in" C
@@ -5818,14 +5818,14 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\elt:of{X}]
-    Defines: x "in" X
+    Declares: x "in" X
     when: X is \set
     Enables:
     . capability: z.self :=> x
@@ -5859,22 +5859,22 @@ then:
     #[test]
     fn check_accepts_subscripted_operators_and_destructuring_spec_infix_heading() {
         // A subscripted operator (`*_1`) is a valid operator name, and a
-        // spec-infix `Defines` heading whose left operand destructures
-        // (`H ::= (X1, *_1, e1) \:sub:/ …`) matches its `Defines:` argument.
+        // spec-infix `Declares` heading whose left operand destructures
+        // (`H ::= (X1, *_1, e1) \:sub:/ …`) matches its `Declares:` argument.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("subgroup.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when: B is \set
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
@@ -5882,18 +5882,18 @@ then:
     . called: "subset of $B?$"
 
     [\op]
-    Defines: f(x__)
+    Declares: f(x__)
     Documented:
     . written: "\operatorname{op}"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_ is \op
+    Declares: x_ * y_ is \op
     when: X is \set
     Documented:
     . called: "binary operation on $X?$"
 
     [\grp]
-    Defines: G ::= (X, *, e) is \set via X
+    Declares: G ::= (X, *, e) is \set via X
     means:
     . * is \binary.operation:on{X}
     . e "in" X
@@ -5901,7 +5901,7 @@ then:
     . called: "grp"
 
     [H ::= (X1, *_1, e1) \:sub:/ G ::= (X, *, e)]
-    Defines: H ::= (X1, *_1, e1)
+    Declares: H ::= (X1, *_1, e1)
     when: G is \grp
     means:
     . X1 \:subset:/ X
@@ -5935,7 +5935,7 @@ then:
         write_mlg_fixture(
             &file,
             r#"[\set]
-Defines: X
+Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
 Enables:
@@ -5945,7 +5945,7 @@ Documented:
 . called: "set"
 
 [\function:on{A}:to{B}]
-Defines: f(x__) ::= y_
+Declares: f(x__) ::= y_
 when: A, B is \set
 means:
 . x__ "in" A
@@ -5954,19 +5954,19 @@ Documented:
 . called: "function"
 
 [A \.cross./ B]
-Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
 when: A, B is \set
 Documented:
 . called: "cross"
 
 [\binary.operation:on{X}]
-Defines: x_ * y_ is \function:on{X \.cross./ X}:to{X}
+Declares: x_ * y_ is \function:on{X \.cross./ X}:to{X}
 when: X is \set
 Documented:
 . called: "binary operation"
 
 [\group]
-Defines: G ::= (X, *, e) is \set via X
+Declares: G ::= (X, *, e) is \set via X
 means:
 . * is \binary.operation:on{G}
 . e "in" X
@@ -5974,7 +5974,7 @@ Documented:
 . called: "group"
 
 [G1 ::= (X1, *_1, e1) \.direct.product./ G2 ::= (X2, *_2, e2)]
-Declares: G3 ::= (X3, *_3, e3) is \group
+Defines: G3 ::= (X3, *_3, e3) is \group
 when: G1, G2 is \group
 expresses:
 . X3 := {(x1, x2) : x1 "in" X1; x2 "in" X2}
@@ -6012,14 +6012,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when: B is \set
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
@@ -6027,19 +6027,19 @@ Documented:
     . called: "subset of $B?$"
 
     [\fn:on{A}:to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     Documented:
     . written: "f?"
 
     [\op:on{X}]
-    Defines: p(x__) ::= y_ is \fn:on{X}:to{X}
+    Declares: p(x__) ::= y_ is \fn:on{X}:to{X}
     when: X is \set
     Documented:
     . written: "\operatorname{op}"
 
     [\uses:of{g(x__)}:sub{S}]
-    Defines: h
+    Declares: h
     when:
     . g is \fn:on{A?}:to{B?}
     . S \:subset:/ A
@@ -6083,14 +6083,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when: B is \set
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
@@ -6098,7 +6098,7 @@ Documented:
     . called: "subset of $B?$"
 
     [\wrap:of{A}:in{B}]
-    Declares: w "in" B
+    Defines: w "in" B
     when:
     . A is \set
     . B is \set
@@ -6113,7 +6113,7 @@ Documented:
     Id: "cccccccc-1111-4ccc-8ccc-cccccccccccc"
 
     [\thing:on{P}:and{Q}]
-    Defines: t
+    Declares: t
     when: P, Q is \set
     means:
     . have: t is \wrap:of{P}:in{Q}
@@ -6150,14 +6150,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when: B is \set
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
@@ -6165,7 +6165,7 @@ Documented:
     . called: "subset of $B?$"
 
     [\wrap:of{A}:in{B}]
-    Declares: w "in" B
+    Defines: w "in" B
     when:
     . A is \set
     . B is \set
@@ -6174,7 +6174,7 @@ Documented:
     . called: "wrap"
 
     [\thing:on{P}:and{Q}]
-    Defines: t
+    Declares: t
     when: P, Q is \set
     means:
     . have: t is \wrap:of{P}:in{Q}
@@ -6247,14 +6247,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when: B is \set
     Requires:
     . capability: x_ "in" A :-> x_ "in" B
@@ -6262,7 +6262,7 @@ Documented:
     . called: "subset of $B?$"
 
     [\wrap:of{A}:in{B}]
-    Declares: w "in" B
+    Defines: w "in" B
     when:
     . A is \set
     . B is \set
@@ -6271,7 +6271,7 @@ Documented:
     . called: "wrap"
 
     [\thing:on{P}:and{Q}]
-    Defines: t
+    Declares: t
     when: P, Q is \set
     means:
     . (.t is \wrap:of{P}:in{Q}.)[:1:]
@@ -6311,14 +6311,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\thing]
-    Defines: t
+    Declares: t
     using:
     . z is \set
     means:
@@ -6361,14 +6361,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\thing]
-    Defines: t
+    Declares: t
     using:
     . x is \set
     . y is \set
@@ -6414,20 +6414,20 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \.set.cross./ B]
-    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Documented:
     . written: "A? \times B?"
 
     [\fn:on{A}:to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ "in" A
@@ -6436,13 +6436,13 @@ Documented:
     . written: "f?"
 
     [\op:on{X}]
-    Defines: x_ * y_ is \fn:on{X \.set.cross./ X}:to{X}
+    Declares: x_ * y_ is \fn:on{X \.set.cross./ X}:to{X}
     when: X is \set
     Documented:
     . written: "\operatorname{op}"
 
     [\magma]
-    Defines: M ::= (X, *) is \set via X
+    Declares: M ::= (X, *) is \set via X
     means:
     . * is \op:on{X}
     Documented:
@@ -6485,14 +6485,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\grp]
-    Defines: G is \set
+    Declares: G is \set
     Enables:
     . capability: x_ "in" G :-> x_ is \grp.elt:of{G}
       written: "x_? \in G?"
@@ -6500,13 +6500,13 @@ Documented:
     . written: "\operatorname{grp}"
 
     [\grp.elt:of{G}]
-    Defines: x "in" G
+    Declares: x "in" G
     when: G is \grp
     Documented:
     . written: "\operatorname{elt}"
 
     [\op:of{x}:in{G}]
-    Declares: y is \grp.elt:of{G}
+    Defines: y is \grp.elt:of{G}
     when:
     . G is \grp
     . x "in" G
@@ -6545,7 +6545,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
@@ -6576,21 +6576,21 @@ Documented:
     }
 
     #[test]
-    fn check_validates_requires_definition_against_declares_outputs() {
+    fn check_validates_requires_definition_against_defines_outputs() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("requires-definition.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\natural]
-    Defines: n
+    Declares: n
     Requires:
     . definition: \natural.0 is \natural
     Documented:
     . written: "\mathbb{N}"
 
     [\natural.0]
-    Declares: n is \natural
+    Defines: n is \natural
     Documented:
     . written: "0"
     "#,
@@ -6612,19 +6612,19 @@ Documented:
     }
 
     #[test]
-    fn check_builtin_type_predicate_recognizes_defines_only() {
+    fn check_builtin_type_predicate_recognizes_declares_only() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("builtin-type.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\sqrt]
-    Declares: y is \set
+    Defines: y is \set
     Documented:
     . written: "\sqrt{}"
 
@@ -6656,12 +6656,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\tag:?on{A}]
-    Defines: x
+    Declares: x
     when: A is \set
     Documented:
     . called: "tag"
@@ -6698,14 +6698,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . called: "function"
@@ -6834,7 +6834,7 @@ Documented:
         write_mlg_fixture(
             &content.join("operations.mlg"),
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . called: "set"
     Id: "059126b9-dc83-41a2-aa1c-84f8e942f8d6"
@@ -6851,7 +6851,7 @@ Documented:
     Id: "93149456-ff84-40af-8c41-b06906405ffa"
 
     [\pair:of{a}:and{b}]
-    Declares: P := {x_ : x_ is \set | x = a \.or./ x = b} is \set
+    Defines: P := {x_ : x_ is \set | x = a \.or./ x = b} is \set
     when: a, b is \set
     Documented:
     . called: "pair of $a?$ and $b?$"
@@ -6878,13 +6878,13 @@ Documented:
         write_mlg_fixture(
             &content.join("builtin-clauses.mlg"),
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . called: "real"
     Id: "f1a2b3c4-1111-4a22-8333-111111111111"
 
     [\natural]
-    Defines: n
+    Declares: n
     Documented:
     . called: "natural"
     Id: "f1a2b3c4-2222-4a22-8333-222222222222"
@@ -6915,13 +6915,13 @@ Documented:
         write_mlg_fixture(
             &content.join("builtin-set-predicate.mlg"),
             r#"[\set]
-    Defines: S
+    Declares: S
     Documented:
     . called: "set"
     Id: "f1a2b3c4-4444-4a22-8333-444444444444"
 
     [\foo]
-    Declares: X := {x_ : x_ is \set | \\forall{y is \set}:then{y is? \set}} is \set
+    Defines: X := {x_ : x_ is \set | \\forall{y is \set}:then{y is? \set}} is \set
     Documented:
     . called: "foo"
     . written: "X?"
@@ -6945,12 +6945,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . called: "function"
@@ -6970,7 +6970,7 @@ Documented:
     . adjective: "surjective"
 
     [\(bad)::function]
-    Defines: g
+    Declares: g
     Documented:
     . written: "\operatorname{bad}"
     "#,
@@ -7002,27 +7002,27 @@ Documented:
     }
 
     #[test]
-    fn check_accepts_refines_destructuring_matching_the_base_defines_target() {
+    fn check_accepts_refines_destructuring_matching_the_base_declares_target() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("refines-destructuring.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
     [A \.cross./ B]
-    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Documented:
     . called: "cross"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ "in" A
@@ -7031,13 +7031,13 @@ Documented:
     . called: "function"
 
     [\binary.operation:on{X}]
-    Defines: x_ * y_ is \function:on{X \.cross./ X}:to{X}
+    Declares: x_ * y_ is \function:on{X \.cross./ X}:to{X}
     when: X is \set
     Documented:
     . called: "binary operation"
 
     [\group]
-    Defines: G ::= (X, *, e) is \set via X
+    Declares: G ::= (X, *, e) is \set via X
     means:
     . * is \binary.operation:on{G}
     . e "in" G
@@ -7077,12 +7077,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . called: "set"
 
     [\group]
-    Defines: G ::= (X, *, e) is \set via X
+    Declares: G ::= (X, *, e) is \set via X
     means:
     . * is \set
     . e is \set
@@ -7107,7 +7107,7 @@ Documented:
         assert!(user_events(&event_log).iter().any(|event| {
             event.as_message().is_some_and(|message| {
                 message.message
-                    == "`Refines:` destructuring has shape (value, value, value), but the base `Defines:` target has shape (value, operator, value)"
+                    == "`Refines:` destructuring has shape (value, value, value), but the base `Declares:` target has shape (value, operator, value)"
             })
         }));
         assert!(event_log.has_errors());
@@ -7121,12 +7121,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . written: "\operatorname{real}"
 
     [\foo{s}]
-    Defines: x
+    Declares: x
     when: s is \real
     Documented:
     . written: "\operatorname{foo}"
@@ -7161,22 +7161,22 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: R
+    Declares: R
     Documented:
     . written: "\operatorname{real}"
 
     [\complex]
-    Defines: C
+    Declares: C
     Documented:
     . written: "\operatorname{complex}"
 
     [\integer]
-    Defines: I
+    Declares: I
     Documented:
     . written: "\operatorname{integer}"
 
     [a \.complex.+./ b]
-    Declares: c is \complex
+    Defines: c is \complex
     when:
     . a is \real
     . b is \complex
@@ -7184,7 +7184,7 @@ Documented:
     . written: "a? + b?"
 
     [a \.real.+./ b]
-    Declares: c is \real
+    Defines: c is \real
     when:
     . a is \real
     . b is \integer
@@ -7248,20 +7248,20 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-            Defines: X
+            Declares: X
             Enables:
             . capability: x_ "in" X :-> \\abstract
             Documented:
             . called: "set"
 
             [A \.cross./ B]
-            Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+            Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
             when: A, B is \set
             Documented:
             . written: "A? \times B?"
 
             [\fn:on{A}:to{B}]
-            Defines: f(x__) ::= y_
+            Declares: f(x__) ::= y_
             when: A, B is \set
             means:
             . x__ "in" A
@@ -7270,13 +7270,13 @@ Documented:
             . called: "fn"
 
             [\op:on{X}]
-            Defines: x_ * y_ is \fn:on{X \.cross./ X}:to{X}
+            Declares: x_ * y_ is \fn:on{X \.cross./ X}:to{X}
             when: X is \set
             Documented:
             . called: "op"
 
             [\elt:of{M ::= (X, *)}]
-            Defines: x "in" X
+            Declares: x "in" X
             when: M is \structure
             Enables:
             . capability: x_ * y_ :=> x_ |M.*| y_
@@ -7285,7 +7285,7 @@ Documented:
             . called: "elt"
 
             [\structure]
-            Defines: M ::= (X, *) is \set via X
+            Declares: M ::= (X, *) is \set via X
             means:
             . * is \op:on{M}
             Enables:
@@ -7295,7 +7295,7 @@ Documented:
             . called: "structure"
 
             [\pointed.structure]
-            Defines: S ::= (X, *, e) is \structure via (X, *)
+            Declares: S ::= (X, *, e) is \structure via (X, *)
             means:
             . e "in" X
             Documented:
@@ -7344,14 +7344,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ + y_ :=> x_ \.set.+./ y_
     Documented:
     . called: "set"
 
     [A \.set.+./ B]
-    Declares: C is \set
+    Defines: C is \set
     when: A, B is \set
     Documented:
     . written: "A? + B?"
@@ -7391,7 +7391,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ - y_ :=> x_ \.set.minus./ y_
     . capability: x_ ** y_ :=> x_ \.set.minus./ y_
@@ -7402,7 +7402,7 @@ Documented:
     . called: "set"
 
     [A \.set.minus./ B]
-    Declares: C := A is \set
+    Defines: C := A is \set
     when: A, B is \set
     Documented:
     . called: "set difference of $A?$ and $B?$"
@@ -7491,28 +7491,28 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ - y_ :=> x_ \.set.minus./ y_
     Documented:
     . called: "set"
 
     [A \.set.minus./ B]
-    Declares: C is \set
+    Defines: C is \set
     when: A, B is \set
     Documented:
     . called: "set difference of $A?$ and $B?$"
     . written: "A? \backslash B?"
 
     [A \.set.union./ B]
-    Declares: C is \set
+    Defines: C is \set
     when: A, B is \set
     Documented:
     . called: "union of $A?$ and $B?$"
     . written: "A? \cup B?"
 
     [A \.set.symmetric.difference./ B]
-    Declares: C := (A - B) \.set.union./ (B - A) is \set
+    Defines: C := (A - B) \.set.union./ (B - A) is \set
     when: A, B is \set
     Documented:
     . called: "symmetric difference of $A?$ and $B?$"
@@ -7549,7 +7549,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ != y_ :=> \not{x_ = y_}
     . capability: f(x_) :=> \foo{X, x_}
@@ -7558,13 +7558,13 @@ Documented:
     . called: "set"
 
     [\not{P}]
-    Declares: Q is \\statement
+    Defines: Q is \\statement
     when: P is \\expression
     Documented:
     . written: "\neg P?"
 
     [\foo{X, x}]
-    Declares: Y is \\expression
+    Defines: Y is \\expression
     when:
     . X is \set
     . x is \\expression
@@ -7572,7 +7572,7 @@ Documented:
     . written: "\operatorname{foo}(X?, x?)"
 
     [\some.value{X}]
-    Declares: Y is \\expression
+    Defines: Y is \\expression
     when: X is \set
     Documented:
     . written: "\operatorname{someValue}(X?)"
@@ -7609,7 +7609,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
@@ -7617,7 +7617,7 @@ Documented:
     . called: "set"
 
     [\relation:from{A}:to{B}]
-    Defines: R
+    Declares: R
     when: A, B is \set
     Requires:
     . capability: z_ "in" R :-> \\abstract
@@ -7630,7 +7630,7 @@ Documented:
     . written: "R? \subseteq A? \times B?"
 
     [\needs.specification{P}]
-    Defines: x
+    Declares: x
     when: P is \\specification
     Documented:
     . written: "\operatorname{needsSpecification}(P?)"
@@ -7672,7 +7672,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
@@ -7694,19 +7694,19 @@ Documented:
     . written: "X? = Y?"
 
     [A \.set.minus./ B]
-    Declares: C is \set
+    Defines: C is \set
     when: A, B is \set
     Documented:
     . written: "A? \backslash B?"
 
     [\not{P}]
-    Declares: Q is \\statement
+    Defines: Q is \\statement
     when: P is \\expression
     Documented:
     . written: "\neg P?"
 
     [\empty.set]
-    Declares: X is \set
+    Defines: X is \set
     expresses:
     . not:
       . exists: Y is \set
@@ -7715,7 +7715,7 @@ Documented:
     . written: "\emptyset"
 
     [\nonempty.set]
-    Defines: X is \set
+    Declares: X is \set
     satisfies:
     . X != \empty.set
     Documented:
@@ -7748,7 +7748,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
@@ -7801,17 +7801,17 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . called: "set"
 
     [\number]
-    Defines: n
+    Declares: n
     Documented:
     . called: "number"
 
     [\needs.statement{P}]
-    Defines: x
+    Declares: x
     when: P is \\statement
     Documented:
     . written: "\operatorname{needsStatement}(P?)"
@@ -7851,7 +7851,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ = y_ :=> x_ \.set.=./ y_
     . capability: x_ != y_ :=> \not{x_ = y_}
@@ -7873,7 +7873,7 @@ Documented:
     . written: "\neg P?"
 
     [\needs.statement{P}]
-    Defines: x
+    Declares: x
     when: P is \\statement
     Documented:
     . written: "\operatorname{needsStatement}(P?)"
@@ -7909,12 +7909,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . called: "set"
 
     [A \.set.union./ B]
-    Declares: C is \set
+    Defines: C is \set
     when: A, B is \set
     Documented:
     . called: "union of $A?$ and $B?$"
@@ -7968,18 +7968,18 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: R
+    Declares: R
     Documented:
     . written: "\operatorname{real}"
 
     [\prefix.real{x}]
-    Declares: y is \real
+    Defines: y is \real
     when: x is \real
     Documented:
     . written: "\operatorname{pre}(x?)"
 
     [\postfix.real{x}]
-    Declares: y is \real
+    Defines: y is \real
     when: x is \real
     Documented:
     . written: "\operatorname{post}(x?)"
@@ -8039,14 +8039,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \.set.cross./ B]
-    Declares: C := {(a_, b_) : a_ "in" A, b_ "in" B} is \set
+    Defines: C := {(a_, b_) : a_ "in" A, b_ "in" B} is \set
     when: A, B is \set
     Documented:
     . called: "Cartesian product of $A?$ and $B?$"
@@ -8077,14 +8077,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . called: "set"
 
     [\class:of{x}:over{X}]
-    Declares: C is \set
+    Defines: C is \set
     when:
     . X is \set
     . x "in" X
@@ -8092,7 +8092,7 @@ Documented:
     . called: "class of $x?$ over $X?$"
 
     [\classes:of{X}]
-    Declares: I := \set@{ \class:of{x_}:over{X} : x_ "in" X }
+    Defines: I := \set@{ \class:of{x_}:over{X} : x_ "in" X }
     when: X is \set
     Documented:
     . called: "classes of $X?$"
@@ -8122,7 +8122,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
@@ -8131,7 +8131,7 @@ Documented:
     Id: "059126b9-dc83-41a2-aa1c-84f8e942f8d6"
 
     [\ordered.pair:of{a}:and{b}]
-    Declares: P is \set
+    Defines: P is \set
     when: a, b is \\opaque
     Documented:
     . called: "ordered pair of $a?$ and $b?$"
@@ -8139,7 +8139,7 @@ Documented:
     Id: "10faf153-d005-4feb-b620-c31589aefea1"
 
     [\cartesian.product:of{A}:and{B}]
-    Declares: P is \set
+    Defines: P is \set
     when: A, B is \set
     expresses: P := {z_ ::= (a_, b_) : a_ "in" A; b_ "in" B | z_ := \ordered.pair:of{a_}:and{b_}}
     Documented:
@@ -8172,12 +8172,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . written: "\operatorname{real}"
 
     [\foo{s}]
-    Defines: x
+    Declares: x
     when: s is \real
     Documented:
     . written: "\operatorname{foo}"
@@ -8214,14 +8214,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when: B is \set
     satisfies:
     . forAll: a "in" A
@@ -8231,7 +8231,7 @@ Documented:
     . written: "A? \subseteq B?"
 
     [\needs.set{s}]
-    Defines: x
+    Declares: x
     when: s is \set
     Documented:
     . written: "\operatorname{needsSet}"
@@ -8274,14 +8274,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when: B is \set
     Documented:
     . written: "A? \subseteq B?"
@@ -8336,17 +8336,17 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\thing]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{thing}"
 
     [A \:subset:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when: B is \set
     Documented:
     . written: "A? \subseteq B?"
@@ -8386,14 +8386,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:?within{U}:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when:
     . B, U is \set
     . B \:subset:/ U
@@ -8438,14 +8438,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:?within{U}:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when:
     . B, U is \set
     . B \:subset:/ U
@@ -8464,7 +8464,7 @@ Documented:
     . written: "P? \land Q?"
 
     [A \.set.intersect:?within{U}./ B]
-    Declares: C \:subset:/ U
+    Defines: C \:subset:/ U
     when:
     . A, B, U is \set
     . A \:subset:/ U
@@ -8498,14 +8498,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when: B is \set
     Documented:
     . written: "A? \subseteq B?"
@@ -8519,19 +8519,19 @@ Documented:
     . written: "A? \equiv B?"
 
     [\needs.expression{x}]
-    Defines: y
+    Declares: y
     when: x is \\expression
     Documented:
     . written: "\operatorname{needsExpression}"
 
     [\needs.statement{x}]
-    Defines: y
+    Declares: y
     when: x is \\statement
     Documented:
     . written: "\operatorname{needsStatement}"
 
     [\needs.specification{x}]
-    Defines: y
+    Declares: y
     when: x is \\specification
     Documented:
     . written: "\operatorname{needsSpecification}"
@@ -8576,24 +8576,24 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\needs.statement{x}]
-    Defines: y
+    Declares: y
     when: x is \\statement
     Documented:
     . written: "\operatorname{needsStatement}"
 
     [\needs.specification{x}]
-    Defines: y
+    Declares: y
     when: x is \\specification
     Documented:
     . written: "\operatorname{needsSpecification}"
 
     [\wrap{x}]
-    Defines: y
+    Declares: y
     when: x is \\expression
     Documented:
     . written: "\operatorname{wrap}"
@@ -8641,12 +8641,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [A \:wrong:/ B]
-    Defines: C
+    Declares: C
     when: B is \set
     Documented:
     . written: "\operatorname{wrong}"
@@ -8674,10 +8674,10 @@ Documented:
             .map(|event| event.message.clone())
             .collect::<Vec<_>>();
         assert!(messages.contains(&String::from(
-            "Spec-infix Defines heading left operand must match the Defines argument"
+            "Spec-infix Declares heading left operand must match the Declares argument"
         )));
         assert!(messages.contains(&String::from(
-            "Spec-infix headings may only be used with Defines entries"
+            "Spec-infix headings may only be used with Declares entries"
         )));
         assert!(event_log.has_errors());
     }
@@ -8690,14 +8690,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     satisfies:
     . forAll: x "in" A
@@ -8765,14 +8765,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\element.of:group{G ::= (X, *, e)}]
-    Defines: x "in" X
+    Declares: x "in" X
     when:
     . G is \group
     . X is \set
@@ -8782,7 +8782,7 @@ Documented:
     . written: "x? \in G?"
 
     [\group]
-    Defines: G ::= (X, *, e) is \set via X
+    Declares: G ::= (X, *, e) is \set via X
     means:
     . * is \function:on{X}:to{X}
     . e "in" G
@@ -8792,7 +8792,7 @@ Documented:
     . written: "\operatorname{group}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . written: "A? \to B?"
@@ -8829,14 +8829,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__) is (_ "in" A) -> (_ "in" B)
+    Declares: f(x__) is (_ "in" A) -> (_ "in" B)
     when: A, B is \set
     Documented:
     . written: "A? \to B?"
@@ -8874,14 +8874,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: A
+    Declares: A
     Enables:
     . capability: a_ "in" A :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\sequence:on{A}]
-    Defines: X ::= x(i_) is (_ "in" A) -> (_ "in" A)
+    Declares: X ::= x(i_) is (_ "in" A) -> (_ "in" A)
     when: A is \set
     Documented:
     . writing: x(i)
@@ -8891,7 +8891,7 @@ Documented:
     . called: "sequence"
 
     [\pointed.sequence:on{A}]
-    Defines: X ::= x(i_) ::= y_
+    Declares: X ::= x(i_) ::= y_
     when: A is \set
     means:
     . i_ "in" A
@@ -8942,14 +8942,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__) is (_ "in" A) -> (_ "in" B)
+    Declares: f(x__) is (_ "in" A) -> (_ "in" B)
     when: A, B is \set
     Documented:
     . written: "A? \to B?"
@@ -8989,12 +8989,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . written: "\operatorname{real}"
 
     [\integer]
-    Defines: x
+    Declares: x
     Documented:
     . written: "\operatorname{integer}"
 
@@ -9030,19 +9030,19 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
     [\integer]
-    Defines: z
+    Declares: z
     Documented:
     . written: "\operatorname{integer}"
 
@@ -9122,12 +9122,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
     [\real.function]
-    Defines: f(x_) ::= y_
+    Declares: f(x_) ::= y_
     means:
     . f is (? is \real) -> (? is \real)
     Documented:
@@ -9164,14 +9164,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\natural]
-    Defines: n
+    Declares: n
     Documented:
     . written: "\operatorname{natural}"
 
@@ -9221,18 +9221,18 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\natural.0]
-    Declares: 0 is \natural
+    Defines: 0 is \natural
     Documented:
     . written: "0"
 
     [\natural.succ(n_)]
-    Declares: succ(n_) is (? is \natural) -> (? is \natural)
+    Defines: succ(n_) is (? is \natural) -> (? is \natural)
     Documented:
     . called: "successor of $n?$"
     . written: "n?+\!\!+"
 
     [\natural]
-    Defines: n
+    Declares: n
     Requires:
     . definition: \natural.0 is \natural
     . definition: \natural.succ is (? is \natural) -> (? is \natural)
@@ -9264,12 +9264,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__) is (x "in" A) -> (_ "in" B)
+    Declares: f(x__) is (x "in" A) -> (_ "in" B)
     when: A, B is \set
     Documented:
     . written: "A? \to B?"
@@ -9301,12 +9301,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . written: "A? \to B?"
@@ -9347,12 +9347,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . written: "\operatorname{real}"
 
     [\foo{s}]
-    Defines: x
+    Declares: x
     when: s is \real
     Documented:
     . written: "\operatorname{foo}"
@@ -9389,7 +9389,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . written: "\operatorname{real}"
 
@@ -9419,17 +9419,17 @@ Documented:
     #[test]
     fn check_rejects_unintroduced_means_relation_symbols() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("declares-relation-scope.mlg");
+        let file = temp_dir.path().join("defines-relation-scope.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ is \\expression
@@ -9438,7 +9438,7 @@ Documented:
     . written: "f? \: : \: A? \rightarrow B?"
 
     [\identify.function:on{A}]
-    Declares: f(x__) := x__ is \function:on{A}:to{B}
+    Defines: f(x__) := x__ is \function:on{A}:to{B}
     when: A is \set
     Documented:
     . called: "identity function on $A?$"
@@ -9449,7 +9449,7 @@ Documented:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("declares-relation-scope.mlg")],
+            &[PathBuf::from("defines-relation-scope.mlg")],
             &mut event_log,
         );
 
@@ -9467,12 +9467,12 @@ Documented:
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("relation-location-scope.mlg");
         let source = r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     when: A, B is \set
     means:
     . x__ is \\expression
@@ -9481,7 +9481,7 @@ Documented:
     . written: "f? \: : \: A? \rightarrow B?"
 
     [f \.function.compose./ g]
-    Declares: h(x__) := f(g(x__)) is \function:on{A}:to{C}
+    Defines: h(x__) := f(g(x__)) is \function:on{A}:to{C}
     using: A, B, C is \set
     when:
     . g is \function:on{A}:to{B}
@@ -9490,7 +9490,7 @@ Documented:
     . written: "f? \circ g?"
 
     [\identify.function:on{A}]
-    Declares: f(x__) := x__ is \function:on{A}:to{B}
+    Defines: f(x__) := x__ is \function:on{A}:to{B}
     when: A is \set
     Documented:
     . called: "identity function on $A?$"
@@ -9507,7 +9507,7 @@ Documented:
 
         let compose_row = source
             .lines()
-            .position(|line| line.contains("Declares: h(x__)"))
+            .position(|line| line.contains("Defines: h(x__)"))
             .expect("expected composition row");
         let expected =
             "Could not establish requirement `B is \\set` for command `\\function:on:to`";
@@ -9554,7 +9554,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . written: "\operatorname{real}"
 
@@ -9587,7 +9587,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
@@ -9622,12 +9622,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . written: "\operatorname{real}"
 
     [\foo{s}]
-    Defines: x
+    Declares: x
     when: s is \real
     Documented:
     . written: "\operatorname{foo}"
@@ -9664,7 +9664,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \in X?"
@@ -9720,7 +9720,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \\in X?"
@@ -9759,7 +9759,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
       written: "x_? \\in X?"
@@ -9800,7 +9800,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . written: "\operatorname{real}"
 
@@ -9834,12 +9834,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\thing]
-    Defines: value
+    Declares: value
     Documented:
     . written: "\operatorname{thing}"
 
     [\foo:?baz{A}:?bar{B}]
-    Declares: A ::= B "defines" B
+    Defines: A ::= B "defines" B
     when: A, B is \thing
     Documented:
     . [docs.called]
@@ -9881,7 +9881,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\foo:?baz{A}:?bar{B}]
-    Declares: A ::= B "defines" B
+    Defines: A ::= B "defines" B
     Documented:
     . [docs.called]
       written:
@@ -9922,7 +9922,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
@@ -9969,19 +9969,19 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: x
+    Declares: x
     Documented:
     . written: "\operatorname{real}"
 
     [\reals]
-    Defines: R
+    Declares: R
     Enables:
     . capability: x_ "in" R :-> x is \real
     Documented:
     . written: "\operatorname{reals}"
 
     [\foo{s}]
-    Defines: x
+    Declares: x
     when: s is \real
     Documented:
     . written: "\operatorname{foo}"
@@ -10018,19 +10018,19 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
     [\set]
-    Defines: X ::= {x__ : ...}
+    Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ member_of X
     Documented:
     . written: "\operatorname{set}"
 
     [\needs.real{x}]
-    Defines: y
+    Declares: y
     when: x is \real
     Documented:
     . written: "\operatorname{needsReal}(x?)"
@@ -10084,7 +10084,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Enables:
@@ -10094,25 +10094,25 @@ Documented:
     . called: "set"
 
     [A \.cross./ B]
-    Declares: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
+    Defines: X := \set@{(a_, b_) : a_ "in" A; b_ "in" B}
     when: A, B is \set
     Documented:
     . called: "product"
 
     [\natural]
-    Defines: n
+    Declares: n
     Enables:
     . capability: x_ + y_ :=> x_ \.natural.+./ y_
     Documented:
     . called: "natural"
 
     [\naturals]
-    Declares: N := \set@{n_ : n_ is \natural}
+    Defines: N := \set@{n_ : n_ is \natural}
     Documented:
     . called: "naturals"
 
     [a_ \.natural.+./ b_]
-    Declares: c is \natural
+    Defines: c is \natural
     when: a_, b_ is \natural
     Documented:
     . written: "a_? + b_?"
@@ -10146,25 +10146,25 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
     [\set]
-    Defines: X ::= {x__ : ...}
+    Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ member_of X
     Documented:
     . written: "\operatorname{set}"
 
     [\needs.real{x}]
-    Defines: y
+    Declares: y
     when: x is \real
     Documented:
     . written: "\operatorname{needsReal}(x?)"
 
     [\set:where{spec}]
-    Declares: X := {x_ : x_ satisfies spec} is \set
+    Defines: X := {x_ : x_ satisfies spec} is \set
     when: spec is \\specification
     Documented:
     . written: "\operatorname{setWhere}(spec?)"
@@ -10199,25 +10199,25 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
     [\set]
-    Defines: X ::= {x__ : ...}
+    Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ member_of X
     Documented:
     . written: "\operatorname{set}"
 
     [\needs.real{x}]
-    Defines: y
+    Declares: y
     when: x is \real
     Documented:
     . written: "\operatorname{needsReal}(x?)"
 
     [\set:of{T}]
-    Declares: X := {x_ : x_ is T} is \set
+    Defines: X := {x_ : x_ is T} is \set
     when: T is \\type
     Documented:
     . written: "\operatorname{setOf}(T?)"
@@ -10253,7 +10253,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
@@ -10288,7 +10288,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
@@ -10329,7 +10329,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
@@ -10371,7 +10371,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
@@ -10408,12 +10408,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
     [\collect{S}]
-    Defines: y
+    Declares: y
     when: S is \\expression
     Documented:
     . written: "\operatorname{collect}(S?)"
@@ -10452,19 +10452,19 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
     [\set]
-    Defines: X ::= {x__ : ...}
+    Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ member_of X
     Documented:
     . written: "\operatorname{set}"
 
     [\needs.real{x}]
-    Defines: y
+    Declares: y
     when: x is \real
     Documented:
     . written: "\operatorname{needsReal}(x?)"
@@ -10502,25 +10502,25 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
     [\set]
-    Defines: X ::= {x__ : ...}
+    Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ member_of X
     Documented:
     . written: "\operatorname{set}"
 
     [\needs.set{x}]
-    Defines: y
+    Declares: y
     when: x is \set
     Documented:
     . written: "\operatorname{needsSet}(x?)"
 
     [\set:where{spec}]
-    Declares: X := {x_ : x_ satisfies spec} is \set
+    Defines: X := {x_ : x_ satisfies spec} is \set
     when: spec is \\specification
     Documented:
     . written: "\operatorname{setWhere}(spec?)"
@@ -10555,27 +10555,27 @@ Documented:
 
     #[test]
     fn check_rejects_type_target_for_spec_operator_literal() {
-        // `? "in" \real` uses a `Defines:` type as a spec-operator target; only
-        // values (`Declares:`) are allowed there.
+        // `? "in" \real` uses a `Declares:` type as a spec-operator target; only
+        // values (`Defines:`) are allowed there.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("spec-literal-bad-target.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\real]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{real}"
 
     [\set]
-    Defines: X ::= {x__ : ...}
+    Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ member_of X
     Documented:
     . written: "\operatorname{set}"
 
     [\set:where{spec}]
-    Declares: X := {x_ : x_ satisfies spec} is \set
+    Defines: X := {x_ : x_ satisfies spec} is \set
     when: spec is \\specification
     Documented:
     . written: "\operatorname{setWhere}(spec?)"
@@ -10616,7 +10616,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Enables:
@@ -10626,7 +10626,7 @@ Documented:
     . written: "\operatorname{set}"
 
     [\needs.set{x}]
-    Defines: y
+    Declares: y
     when: x is \set
     Documented:
     . written: "\operatorname{needsSet}(x?)"
@@ -10664,12 +10664,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function]
-    Defines: f(x__) ::= y_
+    Declares: f(x__) ::= y_
     means:
     . x__ is \\expression
     . y_ is \\opaque
@@ -10680,7 +10680,7 @@ Documented:
     . written: "\operatorname{function}"
 
     [\needs.set{x}]
-    Defines: y
+    Declares: y
     when: x is \set
     Documented:
     . written: "\operatorname{needsSet}(x?)"
@@ -10716,12 +10716,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\rational]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{rational}"
 
     [\integer]
-    Defines: n
+    Declares: n
     Enables:
     . relation:
       to: r is \rational
@@ -10741,13 +10741,13 @@ Documented:
     . written: "A? \hookrightarrow B?"
 
     [A \.rational.+./ B]
-    Declares: C is \rational
+    Defines: C is \rational
     when: A, B is \rational
     Documented:
     . written: "A? + B?"
 
     [\needs.rational{x}]
-    Defines: y
+    Declares: y
     when: x is \rational
     Documented:
     . written: "\operatorname{needsRational}(x?)"
@@ -10785,12 +10785,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\rational]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{rational}"
 
     [\integer]
-    Defines: n
+    Declares: n
     Enables:
     . relation:
       to: r is \rational
@@ -10800,7 +10800,7 @@ Documented:
     . written: "\operatorname{integer}"
 
     [\needs.rational{x}]
-    Defines: y
+    Declares: y
     when: x is \rational
     Documented:
     . written: "\operatorname{needsRational}(x?)"
@@ -10836,12 +10836,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\natural]
-    Defines: n
+    Declares: n
     Enables:
     . relation:
       to: n is \set
@@ -10850,7 +10850,7 @@ Documented:
     . written: "\operatorname{natural}"
 
     [\needs.set{x}]
-    Defines: y
+    Declares: y
     when: x is \set
     Documented:
     . written: "\operatorname{needsSet}(x?)"
@@ -10886,12 +10886,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\natural]
-    Defines: n
+    Declares: n
     Enables:
     . relation:
       to: n is \set
@@ -10900,7 +10900,7 @@ Documented:
     . written: "\operatorname{natural}"
 
     [\needs.set{x}]
-    Defines: y
+    Declares: y
     when: x is \set
     Documented:
     . written: "\operatorname{needsSet}(x?)"
@@ -10937,14 +10937,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\rational]
-    Defines: r
+    Declares: r
     Enables:
     . capability: x_ + y_ :=> x_ \.rational.+./ y_
     Documented:
     . written: "\operatorname{rational}"
 
     [\integer]
-    Defines: n
+    Declares: n
     Enables:
     . relation:
       to: r is \rational
@@ -10954,7 +10954,7 @@ Documented:
     . written: "\operatorname{integer}"
 
     [A \.rational.+./ B]
-    Declares: C is \rational
+    Defines: C is \rational
     when: A, B is \rational
     Documented:
     . written: "A? + B?"
@@ -10991,12 +10991,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\rational]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{rational}"
 
     [\integer]
-    Defines: n
+    Declares: n
     Enables:
     . relation:
       to: r is \rational
@@ -11037,12 +11037,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\rational]
-    Defines: r
+    Declares: r
     Documented:
     . written: "\operatorname{rational}"
 
     [\integer]
-    Defines: n
+    Declares: n
     Enables:
     . relation:
       to: r is \rational
@@ -11052,7 +11052,7 @@ Documented:
     . written: "\operatorname{integer}"
 
     [A \.rational.+./ B]
-    Declares: C is \rational
+    Defines: C is \rational
     when: A, B is \rational
     Documented:
     . written: "A? + B?"
@@ -11098,14 +11098,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> x_ member_of X
     Documented:
     . written: "\operatorname{set}"
 
     [A \.set.minus./ B]
-    Declares: C is \set
+    Defines: C is \set
     when: A, B is \set
     Documented:
     . written: "A? \setminus B?"
@@ -11149,12 +11149,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\function]
-    Defines: f
+    Declares: f
     Documented:
     . written: "\operatorname{function}"
 
     [\set]
-    Defines: X
+    Declares: X
     Requires:
     . capability: x_ "in" X :-> \\abstract
     Enables:
@@ -11165,7 +11165,7 @@ Documented:
     . written: "\operatorname{set}"
 
     [A \.set.minus./ B]
-    Declares: C is \set
+    Defines: C is \set
     when: A, B is \set
     Documented:
     . written: "A? \setminus B?"
@@ -11209,14 +11209,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X ::= {x__ : ...}
+    Declares: X ::= {x__ : ...}
     Enables:
     . capability: x_ "in" X :-> x_ member_of X
     Documented:
     . written: "\operatorname{set}"
 
     [\needs.opaque{x}]
-    Defines: y
+    Declares: y
     when: x is \\opaque
     Documented:
     . written: "\operatorname{needsOpaque}(x?)"
@@ -11252,12 +11252,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\accepts.opaque{X}]
-    Defines: Y
+    Declares: Y
     when: X is \\opaque
     Documented:
     . written: "\operatorname{acceptsOpaque}(X?)"
@@ -11291,12 +11291,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\requires.set{X}]
-    Defines: Y
+    Declares: Y
     when: X is \set
     Documented:
     . written: "\operatorname{requiresSet}(X?)"
@@ -11333,14 +11333,14 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\group]
-    Defines: G
+    Declares: G
     Enables:
     . capability: x_ "in" G :-> \\abstract
     Documented:
     . written: "\operatorname{group}"
 
     [\foo{G}:with{x}]
-    Defines: y
+    Declares: y
     when:
     . G is \group
     . x "in" G
@@ -11380,18 +11380,18 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . written: "\operatorname{function}"
 
     [\group]
-    Defines: G ::= (X, *, e)
+    Declares: G ::= (X, *, e)
     means:
     . X is \set
     . * is \function:on{X}:to{X}
@@ -11428,12 +11428,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\group]
-    Defines: G ::= (X, *, e)
+    Declares: G ::= (X, *, e)
     when:
     . X is \set
     . Y is \set
@@ -11496,33 +11496,33 @@ Documented:
     }
 
     #[test]
-    fn check_rejects_defines_when_for_non_header_target_symbols() {
+    fn check_rejects_declares_when_for_non_header_target_symbols() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("defines-target-when-symbols.mlg");
+        let file = temp_dir.path().join("declares-target-when-symbols.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
     . written: "\operatorname{set}"
 
     [\function:on{A}:to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . written: "\operatorname{function}"
 
     [\element.of:group{G}]
-    Defines: x
+    Declares: x
     when: G is \group
     Documented:
     . written: "x? \in G?"
 
     [\group]
-    Defines: G ::= (X, *, e) is \set via X
+    Declares: G ::= (X, *, e) is \set via X
     when:
     . X is \set
     . * is \function:on{X}:to{X}
@@ -11538,7 +11538,7 @@ Documented:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("defines-target-when-symbols.mlg")],
+            &[PathBuf::from("declares-target-when-symbols.mlg")],
             &mut event_log,
         );
 
@@ -11572,19 +11572,19 @@ Documented:
     fn check_rejects_a_when_requirement_on_the_described_spec_infix_subject() {
         // A spec-infix heading is sugar for a command whose left operand is the
         // symbol being defined, so `when:` may constrain only the other
-        // operands; what `A` is belongs on the `Defines:` target.
+        // operands; what `A` is belongs on the `Declares:` target.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("described-subject-when.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when: A, B is \set
     Documented:
     . written: "A? \subseteq B?"
@@ -11619,12 +11619,12 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [A \:subset:?within{U}:/ B]
-    Defines: A is \set
+    Declares: A is \set
     when:
     . U is \set
     . B is \set
@@ -11632,7 +11632,7 @@ Documented:
     . written: "A? \subset B?"
 
     [A \.combine:?using{U}./ B]
-    Declares: C is \set
+    Defines: C is \set
     when: A, B is \set
     Documented:
     . written: "A? \star B?"
@@ -11655,25 +11655,25 @@ Documented:
     }
 
     #[test]
-    fn check_uses_nominal_typing_for_defines_type_requirements() {
+    fn check_uses_nominal_typing_for_declares_type_requirements() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("nominal-defines-type.mlg");
+        let file = temp_dir.path().join("nominal-declares-type.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . written: "\operatorname{function}"
 
     [\group]
-    Defines: G ::= (X, *, e)
+    Declares: G ::= (X, *, e)
     means:
     . X is \set
     . * is \function:on{X}:to{X}
@@ -11684,7 +11684,7 @@ Documented:
     . written: "\operatorname{group}"
 
     [\element.of:group{G}]
-    Defines: x
+    Declares: x
     when: G is \group
     Documented:
     . called: "element of group $G?$"
@@ -11696,7 +11696,7 @@ Documented:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("nominal-defines-type.mlg")],
+            &[PathBuf::from("nominal-declares-type.mlg")],
             &mut event_log,
         );
 
@@ -11708,26 +11708,26 @@ Documented:
     }
 
     #[test]
-    fn check_validates_defines_type_expression_arguments() {
+    fn check_validates_declares_type_expression_arguments() {
         let temp_dir = TestDir::new();
         let file = temp_dir
             .path()
-            .join("defines-type-expression-arguments.mlg");
+            .join("declares-type-expression-arguments.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\thing]
-    Defines: value
+    Declares: value
     Documented:
     . written: "\operatorname{thing}"
 
     [\element.of:group{G}]
-    Defines: x
+    Declares: x
     when: G is \set
     Documented:
     . written: "x? \in G?"
@@ -11743,7 +11743,7 @@ Documented:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("defines-type-expression-arguments.mlg")],
+            &[PathBuf::from("declares-type-expression-arguments.mlg")],
             &mut event_log,
         );
 
@@ -11765,18 +11765,18 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . written: "\operatorname{function}"
 
     [\group]
-    Defines: G ::= (X, *, e)
+    Declares: G ::= (X, *, e)
     means:
     . X is \set
     . * is \function:on{X}:to{X}
@@ -11787,7 +11787,7 @@ Documented:
     . written: "\operatorname{group}"
 
     [\element.of:group{G}]
-    Defines: x
+    Declares: x
     when: G is \set
     Documented:
     . called: "element of group $G?$"
@@ -11823,18 +11823,18 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Documented:
     . written: "\operatorname{set}"
 
     [\function:?on{A}:?to{B}]
-    Defines: f(x__)
+    Declares: f(x__)
     when: A, B is \set
     Documented:
     . written: "\operatorname{function}"
 
     [\group]
-    Defines: G ::= (X, *, e) is \set
+    Declares: G ::= (X, *, e) is \set
     means:
     . X is \set
     . * is \function:on{X}:to{X}
@@ -11845,7 +11845,7 @@ Documented:
     . written: "\operatorname{group}"
 
     [\element.of:group{G}]
-    Defines: x
+    Declares: x
     when: G is \set
     Documented:
     . called: "element of group $G?$"
@@ -11876,7 +11876,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\some.function{A}(x, y)]
-    Declares: A "defines" B
+    Defines: A "defines" B
     Documented:
     . [docs.called]
       written:
@@ -11915,7 +11915,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\some.function{A}(x, y)]
-    Declares: A "defines" B
+    Defines: A "defines" B
     Documented:
     . [docs.called]
       written:
@@ -11947,20 +11947,20 @@ Documented:
     }
 
     #[test]
-    fn check_requires_declares_defines_and_refines_to_have_documented_called_or_written() {
+    fn check_requires_defines_declares_and_refines_to_have_documented_called_or_written() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("documented-rendering.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\missing.rendering]
-    Declares: A "defines" B
+    Defines: A "defines" B
 
     [\describes.missing]
-    Defines: A
+    Declares: A
 
     [\called.only]
-    Defines: A
+    Declares: A
     Documented:
     . [docs.called]
       called:
@@ -11986,14 +11986,14 @@ Documented:
             &canonical_file,
             0,
             1,
-            "Declares entries must include either a `called:` or `written:` item in `Documented:`"
+            "Defines entries must include either a `called:` or `written:` item in `Documented:`"
         ));
         assert!(has_user_error_at(
             &event_log,
             &canonical_file,
             4,
             1,
-            "Defines entries must include either a `called:` or `written:` item in `Documented:`"
+            "Declares entries must include either a `called:` or `written:` item in `Documented:`"
         ));
         assert!(has_user_error_at(
             &event_log,
@@ -12010,12 +12010,12 @@ Documented:
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("states-rendering.mlg");
 
-        // A `States:` group, like `Defines:`/`Declares:`, must render via `called:`
+        // A `States:` group, like `Declares:`/`Defines:`, must render via `called:`
         // or `written:`. This one omits `Documented:` entirely, so it must error.
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
@@ -12058,7 +12058,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-    Defines: X
+    Declares: X
     Enables:
     . capability: x_ "in" X :-> \\abstract
     Documented:
@@ -12097,21 +12097,21 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\written.only]
-    Declares: A is \\opaque
+    Defines: A is \\opaque
     Documented:
     . [docs.written]
       written:
       . "written only"
 
     [\called.only]
-    Defines: A
+    Declares: A
     Documented:
     . [docs.called]
       called:
       . "called only"
 
     [\called.and.written]
-    Defines: A
+    Declares: A
     Documented:
     . [docs.called]
       called:
@@ -12144,20 +12144,20 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\set]
-Defines: X
+Declares: X
 Documented:
 . called: "set"
 Id: "0d50b7b0-30b6-4bb1-9fa9-6ac3fcb435f0"
 
 [\ordered.pair]
-Defines: p
+Declares: p
 using: A, B is \set
 Documented:
 . called: "ordered pair"
 Id: "c48e8057-c05f-458d-b7ad-09df94d4e9a4"
 
 [\ordered.pair:of{A}:and{B}]
-Declares: p is \ordered.pair#using{A := A; B := B}
+Defines: p is \ordered.pair#using{A := A; B := B}
 when: A, B is \set
 Documented:
 . called: "ordered pair of $A?$ and $B?$"
@@ -12199,26 +12199,26 @@ Id: "c812728f-5e16-4774-a62d-00c911127a75"
         write_mlg_fixture(
             &file,
             r#"[\set]
-Defines: X
+Declares: X
 Documented:
 . called: "set"
 Id: "0d50b7b0-30b6-4bb1-9fa9-6ac3fcb435f0"
 
 [\pair]
-Defines: P
+Declares: P
 Documented:
 . called: "pair"
 Id: "7e446cf6-995e-45aa-9b05-e07bf4be82e1"
 
 [\set.theoretic.pair:of{a}:and{b}]
-Declares: P is \set
+Defines: P is \set
 when: a, b is \set
 Documented:
 . called: "set-theoretic pair of $a?$ and $b?$"
 Id: "9f79d83e-8423-4343-b547-e391b3305994"
 
 [\pair:on{a}:and{b}]
-Declares: P is \pair
+Defines: P is \pair
 when: a, b is \set
 Enables:
 . relation:
@@ -12250,27 +12250,27 @@ Id: "a95d2ea7-d1fd-41a5-b55c-b6c18c0d05b7"
     }
 
     #[test]
-    fn check_accepts_declares_expansion_symbols_bound_by_definitions() {
+    fn check_accepts_defines_expansion_symbols_bound_by_definitions() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("declares-bindings.mlg");
+        let file = temp_dir.path().join("defines-bindings.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-Defines: X
+Declares: X
 Documented:
 . called: "set"
 Id: "b977c5dd-d79e-426c-8cc8-b028a716c47a"
 
 [\foo:of{a}:and{b}]
-Declares: Z ::= (x, y) := (a, b) is \set
+Defines: Z ::= (x, y) := (a, b) is \set
 when: a, b is \set
 Documented:
 . called: "foo"
 Id: "5800ef12-bed3-427b-985f-ae871a6080ff"
 
 [\foo2:of{a}:and{b}]
-Declares: Z ::= (x, y) is \set
+Defines: Z ::= (x, y) is \set
 when: a, b is \set
 expresses:
 . x := a
@@ -12285,7 +12285,7 @@ Id: "5800ef12-bed3-427b-985f-ae871a6080f1"
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("declares-bindings.mlg")],
+            &[PathBuf::from("defines-bindings.mlg")],
             &mut event_log,
         );
 
@@ -12297,20 +12297,20 @@ Id: "5800ef12-bed3-427b-985f-ae871a6080f1"
     }
 
     #[test]
-    fn check_reports_duplicate_declares_expansion_symbol_bindings() {
+    fn check_reports_duplicate_defines_expansion_symbol_bindings() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("declares-duplicate-bindings.mlg");
+        let file = temp_dir.path().join("defines-duplicate-bindings.mlg");
 
         write_mlg_fixture(
             &file,
             r#"[\set]
-Defines: X
+Declares: X
 Documented:
 . called: "set"
 Id: "b977c5dd-d79e-426c-8cc8-b028a716c47a"
 
 [\foo:of{a}:and{b}]
-Declares: Z ::= (x, y) is \set
+Defines: Z ::= (x, y) is \set
 when: a, b is \set
 expresses:
 . x := a
@@ -12326,7 +12326,7 @@ Id: "5800ef12-bed3-427b-985f-ae871a6080ff"
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("declares-duplicate-bindings.mlg")],
+            &[PathBuf::from("defines-duplicate-bindings.mlg")],
             &mut event_log,
         );
 
@@ -12353,13 +12353,13 @@ mod type_info_tests {
     use std::path::Path;
 
     const SOURCE: &str = r#"[\set]
-Defines: X
+Declares: X
 Documented:
 . called: "set"
 
 
 [\element:of{X}]
-Defines: x
+Declares: x
 when: X is \set
 Documented:
 . called: "element"

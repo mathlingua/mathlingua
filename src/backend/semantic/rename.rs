@@ -397,7 +397,7 @@ mod tests {
 
     #[test]
     fn renames_heading_and_uses_across_files() {
-        let def = "[\\set]\nDefines: S\nId: \"a\"\n";
+        let def = "[\\set]\nDeclares: S\nId: \"a\"\n";
         let usage = "Theorem:\nthen: x is \\set\nId: \"b\"\n";
         let def_file = parsed("def.mlg", def);
         let usage_file = parsed("thm.mlg", usage);
@@ -418,7 +418,7 @@ mod tests {
             .collect();
         assert_eq!(
             apply(def, &def_edits),
-            "[\\collection]\nDefines: S\nId: \"a\"\n"
+            "[\\collection]\nDeclares: S\nId: \"a\"\n"
         );
         assert_eq!(
             apply(usage, &usage_edits),
@@ -428,7 +428,7 @@ mod tests {
 
     #[test]
     fn preserves_arguments_when_renaming_command_name() {
-        let source = "[\\function:on{A}:to{B}]\nDefines: f\nId: \"x\"\n\n\
+        let source = "[\\function:on{A}:to{B}]\nDeclares: f\nId: \"x\"\n\n\
                       Theorem:\nthen: \\function:on{x + 1}:to{abc}\nId: \"y\"\n";
         let file = parsed("a.mlg", source);
         let files = vec![file.clone()];
@@ -444,7 +444,7 @@ mod tests {
 
     #[test]
     fn can_rename_a_middle_label_keeping_parameters() {
-        let source = "[\\function:on{A}:to{B}]\nDefines: f\nId: \"x\"\n\n\
+        let source = "[\\function:on{A}:to{B}]\nDeclares: f\nId: \"x\"\n\n\
                       Theorem:\nthen: \\function:on{p}:to{q}\nId: \"y\"\n";
         let file = parsed("a.mlg", source);
         let files = vec![file.clone()];
@@ -460,7 +460,7 @@ mod tests {
 
     #[test]
     fn blocks_renames_that_change_a_parameter_name() {
-        let source = "[\\function:on{A}:to{B}]\nDefines: f\nId: \"x\"\n";
+        let source = "[\\function:on{A}:to{B}]\nDeclares: f\nId: \"x\"\n";
         let file = parsed("a.mlg", source);
         let files = vec![file.clone()];
 
@@ -471,7 +471,7 @@ mod tests {
 
     #[test]
     fn blocks_renames_that_drop_a_parameter() {
-        let source = "[\\function:on{A}:to{B}]\nDefines: f\nId: \"x\"\n";
+        let source = "[\\function:on{A}:to{B}]\nDeclares: f\nId: \"x\"\n";
         let file = parsed("a.mlg", source);
         let files = vec![file.clone()];
 
@@ -485,11 +485,11 @@ mod tests {
 
     #[test]
     fn blocks_renames_off_a_heading() {
-        let source = "[\\set]\nDefines: S\nId: \"x\"\n";
+        let source = "[\\set]\nDeclares: S\nId: \"x\"\n";
         let file = parsed("a.mlg", source);
         let files = vec![file.clone()];
 
-        let cursor = offset_of(source, "Defines", 2);
+        let cursor = offset_of(source, "Declares", 2);
         assert_eq!(
             plan_rename(&files, &file, cursor, "\\collection").unwrap_err(),
             RenameError::NotOnHeading
@@ -498,7 +498,7 @@ mod tests {
 
     #[test]
     fn prepare_reports_the_signature_span() {
-        let source = "[\\function:on{A}:to{B}]\nDefines: f\nId: \"x\"\n";
+        let source = "[\\function:on{A}:to{B}]\nDeclares: f\nId: \"x\"\n";
         let file = parsed("a.mlg", source);
 
         let cursor = offset_of(source, "[\\function", 2);
@@ -510,9 +510,9 @@ mod tests {
 
     #[test]
     fn prepare_declines_off_a_heading() {
-        let source = "[\\set]\nDefines: S\nId: \"x\"\n";
+        let source = "[\\set]\nDeclares: S\nId: \"x\"\n";
         let file = parsed("a.mlg", source);
-        let cursor = offset_of(source, "Defines", 2);
+        let cursor = offset_of(source, "Declares", 2);
         assert!(prepare_rename(&file, cursor).is_none());
     }
 }

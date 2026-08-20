@@ -102,7 +102,7 @@ mod tests {
         ReleaseItem {
             id: id.to_string(),
             path: PathBuf::from("content/x.mlg"),
-            kind: "Defines".to_string(),
+            kind: "Declares".to_string(),
             header: None,
             preview: None,
             source: format!("source of {id}"),

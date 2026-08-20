@@ -528,7 +528,7 @@ mod tests {
         fs::create_dir_all(&content).expect("expected content dir");
         fs::write(
             &file,
-            "[\\set]\nDefines: S\nDocumented:\n. called: \"set\"\n",
+            "[\\set]\nDeclares: S\nDocumented:\n. called: \"set\"\n",
         )
         .expect("expected source file");
         assert_eq!(
@@ -540,7 +540,7 @@ mod tests {
 
         fs::write(
             &file,
-            "[\\set]\nDefines: S\nDocumented:\n. called: \"updated set\"\n",
+            "[\\set]\nDeclares: S\nDocumented:\n. called: \"updated set\"\n",
         )
         .expect("expected updated source file");
         assert_eq!(
@@ -607,7 +607,7 @@ mod tests {
         fs::create_dir_all(&content).expect("expected content dir");
         fs::write(
             &file,
-            "[\\set]\nDefines: S\nDocumented:\n. called: \"set\"\n",
+            "[\\set]\nDeclares: S\nDocumented:\n. called: \"set\"\n",
         )
         .unwrap();
         assert_eq!(
@@ -615,7 +615,7 @@ mod tests {
             ViewDataRefresh::Updated
         );
 
-        fs::write(&file, "[\\set]\nDefines: S\n").unwrap();
+        fs::write(&file, "[\\set]\nDeclares: S\n").unwrap();
         let ViewDataRefresh::Blocked(events) = rebuild_collection_view_data(&root, &path).unwrap()
         else {
             panic!("expected blocked refresh");

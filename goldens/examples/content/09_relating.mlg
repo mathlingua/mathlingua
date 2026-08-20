@@ -2,7 +2,7 @@
 
 
 [\left.identity:in{M}]
-Defines: e
+Declares: e
 when: M is \magma
 Documented:
 . called: "left identity in $M?$"
@@ -10,7 +10,7 @@ Id: "fadd40a3-bcdd-48e1-a884-3daa2350930d"
 
 
 [\right.identity:in{M}]
-Defines: e
+Declares: e
 when: M is \magma
 Documented:
 . called: "right identity in $M?$"

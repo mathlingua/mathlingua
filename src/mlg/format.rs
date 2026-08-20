@@ -770,7 +770,7 @@ mod tests {
 
     #[test]
     fn reflows_over_long_inline_description() {
-        let source = "[\\foo]\nDefines: X\nDocumented:\n. description: \"The primitive object of the theory. Belonging is here.\"\nId: \"x\"\n";
+        let source = "[\\foo]\nDeclares: X\nDocumented:\n. description: \"The primitive object of the theory. Belonging is here.\"\nId: \"x\"\n";
         let formatted = format_source(source, 60).expect("expected a change");
         let lines: Vec<&str> = formatted.split('\n').collect();
         // Wrapped onto two lines, continuation indented to the content column (16).
@@ -942,7 +942,7 @@ mod tests {
     fn leaves_text_with_multiline_latex_unchanged() {
         // The exact example from the feature request: a description containing
         // `$$…$$` and `\[…\]` display-math blocks must be left untouched.
-        let source = "[\\foo]\nDefines: x\nDocumented:\n. called: \"family indexed by $I?$\"\n. written: \"\\{A?_i\\}_{i \\in I?}\"\n. description: \"A family of sets is a function $A$ with domain $I$. When $A$ is\n                a family over $I$ one writes $\\{A_i\\}_{i \\in I}$ and $A_i$ for\n                $A(i)$.\n                $$\n                  \\int f(x) \\: dx\n                $$\n                Some more text\n                \\[\n                  \\int f(x) \\: dx\n                \\]\"\nId: \"a2451abb-cfc3-4655-a641-ff6826592e7d\"\n";
+        let source = "[\\foo]\nDeclares: x\nDocumented:\n. called: \"family indexed by $I?$\"\n. written: \"\\{A?_i\\}_{i \\in I?}\"\n. description: \"A family of sets is a function $A$ with domain $I$. When $A$ is\n                a family over $I$ one writes $\\{A_i\\}_{i \\in I}$ and $A_i$ for\n                $A(i)$.\n                $$\n                  \\int f(x) \\: dx\n                $$\n                Some more text\n                \\[\n                  \\int f(x) \\: dx\n                \\]\"\nId: \"a2451abb-cfc3-4655-a641-ff6826592e7d\"\n";
         assert_eq!(format_source(source, 100), None);
     }
 
@@ -951,8 +951,8 @@ mod tests {
         // Each `* ` item keeps its own line and marker; a long item wraps with its
         // continuation lines hanging-indented to align past the marker. The lead-in
         // sentence and the earlier paragraph still reflow as ordinary prose.
-        let source = "Text: \"So far, our definitions have used `Defines: X`. That is, our\n       definitions do not specify a shape the entity being defined could have.\n\n       Mathlingua supports the following structures:\n       * `f(x_)` for mappings, i.e. entities that map and input to an output\n       * `(x, f(x_), (a, b)) for tuples, i.e. entities that are a fixed named sequence of items\n       * `{x_ : ...}` for collections, i.e. entities that are a collection of items\"\nId: \"c4eaa2cf-c945-47b8-a7bd-4d88b7834ba8\"\n";
-        let expected = "Text: \"So far, our definitions have used `Defines: X`. That is, our definitions\n       do not specify a shape the entity being defined could have.\n\n       Mathlingua supports the following structures:\n       * `f(x_)` for mappings, i.e. entities that map and input to an output\n       * `(x, f(x_), (a, b)) for tuples, i.e. entities that are a fixed named\n         sequence of items\n       * `{x_ : ...}` for collections, i.e. entities that are a collection of\n         items\"\nId: \"c4eaa2cf-c945-47b8-a7bd-4d88b7834ba8\"\n";
+        let source = "Text: \"So far, our definitions have used `Declares: X`. That is, our\n       definitions do not specify a shape the entity being defined could have.\n\n       Mathlingua supports the following structures:\n       * `f(x_)` for mappings, i.e. entities that map and input to an output\n       * `(x, f(x_), (a, b)) for tuples, i.e. entities that are a fixed named sequence of items\n       * `{x_ : ...}` for collections, i.e. entities that are a collection of items\"\nId: \"c4eaa2cf-c945-47b8-a7bd-4d88b7834ba8\"\n";
+        let expected = "Text: \"So far, our definitions have used `Declares: X`. That is, our definitions\n       do not specify a shape the entity being defined could have.\n\n       Mathlingua supports the following structures:\n       * `f(x_)` for mappings, i.e. entities that map and input to an output\n       * `(x, f(x_), (a, b)) for tuples, i.e. entities that are a fixed named\n         sequence of items\n       * `{x_ : ...}` for collections, i.e. entities that are a collection of\n         items\"\nId: \"c4eaa2cf-c945-47b8-a7bd-4d88b7834ba8\"\n";
         assert_eq!(format_source(source, 80).as_deref(), Some(expected));
         // Idempotent.
         assert_eq!(format_source(expected, 80), None);
@@ -987,8 +987,8 @@ mod tests {
         // paragraph reflows to the margin, the fence passes through verbatim, and each
         // blank-line separator collapses to exactly one blank line (no stray indent
         // line before the fence, no lost blank line after it).
-        let source = "Text: \"The Defines: construct is used to specify an abstract concept, called a\n       type in other languages. To start, we specify that a set is an type.\n       We'll expand on it as we continue.\n\n       Here is the minimal content needed to define an abstract concept in Mathlingua.\n\n       ```mlg\n       [\\set]\n       Defines: X\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n\n       The `\\set` declares the name used to identify this type.  The `Defines:`\n       construct is used to define abstract concepts, i.e. types.\"\nId: \"e798d1a3-1029-44f3-8b92-d794cbb6596c\"\n";
-        let expected = "Text: \"The Defines: construct is used to specify an abstract concept, called a\n       type in other languages. To start, we specify that a set is an type.\n       We'll expand on it as we continue.\n\n       Here is the minimal content needed to define an abstract concept in\n       Mathlingua.\n\n       ```mlg\n       [\\set]\n       Defines: X\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n\n       The `\\set` declares the name used to identify this type. The `Defines:`\n       construct is used to define abstract concepts, i.e. types.\"\nId: \"e798d1a3-1029-44f3-8b92-d794cbb6596c\"\n";
+        let source = "Text: \"The Declares: construct is used to specify an abstract concept, called a\n       type in other languages. To start, we specify that a set is an type.\n       We'll expand on it as we continue.\n\n       Here is the minimal content needed to define an abstract concept in Mathlingua.\n\n       ```mlg\n       [\\set]\n       Declares: X\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n\n       The `\\set` declares the name used to identify this type.  The `Declares:`\n       construct is used to define abstract concepts, i.e. types.\"\nId: \"e798d1a3-1029-44f3-8b92-d794cbb6596c\"\n";
+        let expected = "Text: \"The Declares: construct is used to specify an abstract concept, called a\n       type in other languages. To start, we specify that a set is an type.\n       We'll expand on it as we continue.\n\n       Here is the minimal content needed to define an abstract concept in\n       Mathlingua.\n\n       ```mlg\n       [\\set]\n       Declares: X\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n\n       The `\\set` declares the name used to identify this type. The `Declares:`\n       construct is used to define abstract concepts, i.e. types.\"\nId: \"e798d1a3-1029-44f3-8b92-d794cbb6596c\"\n";
         assert_eq!(format_source(source, 80).as_deref(), Some(expected));
         // Idempotent.
         assert_eq!(format_source(expected, 80), None);

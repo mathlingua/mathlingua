@@ -661,11 +661,11 @@ mod tests {
             "Text: \"see\n",
             "       ```mlg\n",
             "       [\\foo{A}]\n",
-            "       Defines: A\n",
+            "       Declares: A\n",
             "       ```\"\n",
             "\n",
             "[\\foo{A}]\n",
-            "Defines: X\n",
+            "Declares: X\n",
         );
         let masked = mask_text_values(source);
 
@@ -697,7 +697,7 @@ mod tests {
             "       ```\"\n",
             "\n",
             "[\\bar]\n",
-            "Defines: X\n",
+            "Declares: X\n",
             "Documented:\n",
             ". written: \"uses \\foo\"\n",
         );
@@ -721,7 +721,8 @@ mod tests {
     fn does_not_mask_formula_operator_quotes() {
         // `"in"` operator quotes on a formula line are not a text value; nothing
         // on these lines should be masked.
-        let source = "[\\set]\nDefines: X\nRequires:\n. capability: x_ \"in\" X :-> \\\\abstract\n";
+        let source =
+            "[\\set]\nDeclares: X\nRequires:\n. capability: x_ \"in\" X :-> \\\\abstract\n";
         assert_eq!(
             mask_text_values(source),
             source,

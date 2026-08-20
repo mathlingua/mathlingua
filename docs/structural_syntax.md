@@ -201,7 +201,7 @@ The structural parser identifies a group by its first section label, not by its 
 
 Examples:
 
-- a top-level group whose first section is `Defines:` is parsed as `DefinesGroup`
+- a top-level group whose first section is `Declares:` is parsed as `DeclaresGroup`
 - a nested group inside `Enables:` whose first section is `capability:` is parsed as `CapabilityGroup`
 - a nested group inside `Enables:` whose first section is `from:` is parsed as a cast-backed enables group
 - a clause group whose first section is `if:` is parsed as `IfGroup`
@@ -270,9 +270,9 @@ An empty document is supported by the current implementation because `Document.i
 - **`Text`** — `TextGroup`, heading: none. Sections: `Text: OpenText`
 - **`Writing`** — `TopLevelWritingGroup`, heading: none. Sections: `Writing: WritingAlias+` (each alias is a double-quoted string of the form `"name :~> body"`; the LHS must be a `Name` and the body is raw LaTeX)
 - **`Disambiguates`** — `DisambiguatesGroup`, heading: operator/function form. Sections: `Disambiguates:`, zero or more ordered `when: Clause+`/`to: Expression` branches, `else?: Expression`, `Documented?`, `Justification?`, `Aliases?`, `Writing?: "WritingAlias"+`, `References?`, `Metadata?`
-- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DefinesTarget [via FormOrDeclaration]`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: ExtendsItem+`, `means?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `DefinesTarget` is tried as a `FormOrDeclaration` first, then as a `DeclarationStatement` whose `is` relation may name a refined command, allowing typed or value-bearing targets such as `X := value is \set`. That relation is what the definition extends (see `language.md`), and an `is` relation may be followed by `via <FormOrDeclaration>`, stored on the section rather than the target. An `ExtendsItem` is the same `DeclarationStatement [via FormOrDeclaration]` pair; the `extends?:` section spells out the same clauses and exists to allow more than one, so a target that states a relation and an `extends?:` section are mutually exclusive. `extends_clauses` in `structural::ast` normalizes the two spellings into one borrowed list that every consumer works from
-- **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclarationStatement`, `abstractly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `means?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `abstractly:` is stored as `DeclaresGroup::abstractly`; it marks the `means:` items that state a specification without a value as abstract, for a `RealizesGroup` to supply
-- **`Realizes`** — `RealizesGroup`, heading: command. Sections: `Realizes: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `means?: IsOrViaItem+`, `expresses?: Clause`, and the same support sections as `Declares`. The target names the realized declaration with `:=` (`Realizes: Nb := \naturals`), which must be a `Declares` marked `abstractly:`; `means:` must supply every symbol that declaration left abstract
+- **`Declares`** — `DeclaresGroup`, heading: command. Sections: `Declares: DeclaresTarget [via FormOrDeclaration]`, `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: ExtendsItem+`, `means?: IsOrViaItem+`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `DeclaresTarget` is tried as a `FormOrDeclaration` first, then as a `DeclarationStatement` whose `is` relation may name a refined command, allowing typed or value-bearing targets such as `X := value is \set`. That relation is what the definition extends (see `language.md`), and an `is` relation may be followed by `via <FormOrDeclaration>`, stored on the section rather than the target. An `ExtendsItem` is the same `DeclarationStatement [via FormOrDeclaration]` pair; the `extends?:` section spells out the same clauses and exists to allow more than one, so a target that states a relation and an `extends?:` section are mutually exclusive. `extends_clauses` in `structural::ast` normalizes the two spellings into one borrowed list that every consumer works from
+- **`Defines`** — `DefinesGroup`, heading: command. Sections: `Defines: DeclarationStatement`, `abstractly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `means?: IsOrViaItem+`, `expresses?: Clause`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `abstractly:` is stored as `DefinesGroup::abstractly`; it marks the `means:` items that state a specification without a value as abstract, for a `RealizesGroup` to supply
+- **`Realizes`** — `RealizesGroup`, heading: command. Sections: `Realizes: DeclarationStatement`, `using?: DeclarationStatement+`, `when?: Clause+`, `means?: IsOrViaItem+`, `expresses?: Clause`, and the same support sections as `Defines`. The target names the realized declaration with `:=` (`Realizes: Nb := \naturals`), which must be a `Defines` marked `abstractly:`; `means:` must supply every symbol that declaration left abstract
 - **`Refines`** — `RefinesGroup`, heading: refined command or refined spec-infix command (for example, `[A \:(nonempty)::subset:/ B]`). Sections: `Refines: RefinedDeclarationStatement`, `implicitly?` (marker, no arguments), `explicitly?` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `extends?: RefinedDeclarationStatement`, `satisfies?: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`. `implicitly:`/`explicitly:` are optional, mutually exclusive, zero-argument marker sections stored as an `Option<RefinementKind>` (`Implicit`/`Explicit`); see the validation rules under `Refines` refinement markers in `language.md`
 - **`States`** — `StatesGroup`, heading: command. Sections: `States:` (marker, no arguments), `using?: DeclarationStatement+`, `when?: Clause+`, `that: Clause+`, `Requires?: RequiresItem+`, `Enables?: EnablesItem+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
 - **`Axiom`** — `AxiomGroup`, heading: command?. Sections: `Axiom:`, `given?: RefinedDeclarationStatement+`, `where?: Clause+`, `then: Clause+`, `iff?: Clause+`, `Documented?: DocumentedItem+`, `Justification?: HaveGroup+`, `Aliases?: AliasItem+`, `Writing?: "WritingAlias"+`, `References?: ResourceHeader+`, `Metadata?: MetadataItem+`
@@ -342,7 +342,7 @@ Used inside `Documented:`.
 - **`called`** — `CalledGroup`, heading: label?. Sections: `called: CalledText+`, `written?: WrittenText+`
 - **`adjective`** — `AdjectiveGroup`, heading: label?. Sections: `adjective: AdjectiveText+` (required by `Refines:`; `Refines:` `Documented:` rejects `called:`)
 - **`description`** — `DescriptionGroup`, heading: label?. Sections: `description: OpenText`
-- **`writing`** — `WritingGroup`, heading: label?. Sections: `writing: MappingWritingTarget`, `as: WritingText+`. It is valid only in a mapping-shaped `Defines:` item; the target must be either that exact placeholder mapping form or the same invocation with placeholders replaced by their ordinary names. For an aliased form such as `X ::= x(i_)`, these targets use the mapping name `x`
+- **`writing`** — `WritingGroup`, heading: label?. Sections: `writing: MappingWritingTarget`, `as: WritingText+`. It is valid only in a mapping-shaped `Declares:` item; the target must be either that exact placeholder mapping form or the same invocation with placeholders replaced by their ordinary names. For an aliased form such as `X ::= x(i_)`, these targets use the mapping name `x`
 - **`overview`** — `OverviewGroup`, heading: label?. Sections: `overview: OpenText`
 - **`related`** — `RelatedGroup`, heading: label?. Sections: `related: OpenText+`
 - **`discoverer`** — `DiscovererGroup`, heading: label?. Sections: `discoverer: OpenText*`
@@ -446,8 +446,8 @@ Structural groups validate their raw proto headings with formulation helper pars
 
 Required on:
 
-- `Defines`
 - `Declares`
+- `Defines`
 - `Refines`
 - `States`
 - `Equivalent`
@@ -496,14 +496,14 @@ These headings must parse with `parse_resource_header`.
 The structural parser delegates section content to formulation parsers as follows:
 
 - `FormOrDeclaration` — `parse_form_or_declaration`
-- `DefinesTarget` — try `parse_form_or_declaration`, then
+- `DeclaresTarget` — try `parse_form_or_declaration`, then
   `parse_ordinary_declaration_statement`
 - `DeclarationStatement` — `parse_ordinary_declaration_statement`
 - `RefinedDeclarationStatement` — `parse_refined_declaration_statement`
 - `IsOrViaItem` — try `parse_is_via_statement`, then `parse_ordinary_declaration_statement`
 - `BindingOrSpec` — `parse_refined_declaration_statement`
 - `AliasKind` — try `parse_expression_alias`, then `parse_spec_operator_alias`
-- `MappingWritingTarget` — accept a function declaration form or function-call expression; semantic checking restricts it to the enclosing `Defines:` mapping
+- `MappingWritingTarget` — accept a function declaration form or function-call expression; semantic checking restricts it to the enclosing `Declares:` mapping
 - `WritingAlias` — `parse_writing_alias`, applied to the contents of each double-quoted `Writing:` argument (used by the collection-wide `Writing:` group)
 - `ResourceHeader` — `parse_resource_header`
 - `CommandHeader` — `parse_command_header`
@@ -555,7 +555,7 @@ AliasKindUnion ::=
 ```
 
 ```union
-DefinesTargetUnion ::=
+DeclaresTargetUnion ::=
     | FormOrDeclaration
     | DeclarationStatement
 ```
@@ -651,8 +651,8 @@ TopLevelItemUnion ::=
     | TextGroup
     | TopLevelWritingGroup
     | DisambiguatesGroup
-    | DefinesGroup
     | DeclaresGroup
+    | DefinesGroup
     | RealizesGroup
     | RefinesGroup
     | StatesGroup
@@ -734,7 +734,7 @@ unconditional fallback.
 
 ```group
 [CommandHeader]
-Defines: <DefinesTargetUnion> [via <FormOrDeclaration>]
+Declares: <DeclaresTargetUnion> [via <FormOrDeclaration>]
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
 extends?: <DeclarationStatement [via <FormOrDeclaration>]>+
@@ -752,7 +752,7 @@ Metadata?: <MetadataItemUnion>+
 
 ```group
 [CommandHeader]
-Declares: <DeclarationStatement>
+Defines: <DeclarationStatement>
 abstractly?:
 using?: <DeclarationStatement>+
 when?: <ClauseUnion>+
@@ -939,10 +939,10 @@ command must use the header parameters directly, as bare names (no compound
 expressions, no `using:` symbols). The item registers its heading as a command
 signature and is validated locally:
 
-- every `to:` member must be defined and be a `Defines`, `Declares`, `States`,
+- every `to:` member must be defined and be a `Declares`, `Defines`, `States`,
   or `Refines` — and all members must be the same one of those kinds;
 - the members must declare the same target shape, and (by kind) the same `is`
-  type (`Declares`), the same extended types (`Defines`), or the same base type
+  type (`Defines`), the same extended types (`Declares`), or the same base type
   (`Refines`);
 - the members must provide the same set of capabilities (by name and arity); and
 - this item's own `when:` must guarantee each member's requirements.
@@ -978,7 +978,7 @@ References (`within:` and each `to:`) are **quoted text** so a reference is neve
 mistaken for a usage. A `"#topic"` value is a topic reference; a `"\signature"`
 value is a **signature** — a `\command` with its arguments removed, e.g.
 `\function:on{A}:to{B}` written as `\function:on:to` — that names a
-`Defines`/`Declares`/`Refines`/`States`/theorem-like definition itself, not a use
+`Declares`/`Defines`/`Refines`/`States`/theorem-like definition itself, not a use
 of it. With `called:` (already quoted), the four quoted-text fields are `within:`,
 `to:`, `means:`, and `called:`.
 
@@ -1057,7 +1057,7 @@ as: <WritingText>+
 ```
 
 `MappingWritingTarget` is restricted to the exact mapping form from the
-enclosing `Defines:` item (for example `x(i_)`) or that form with each
+enclosing `Declares:` item (for example `x(i_)`) or that form with each
 placeholder replaced by its ordinary name (for example `x(i)`). A declaration
 alias (`X` in `X ::= x(i_)`) does not replace the mapping name in these forms.
 
@@ -1326,8 +1326,8 @@ That means extra valid entries in a singular section are currently ignored rathe
 
 Examples of affected sections:
 
-- `Defines:`
 - `Declares:`
+- `Defines:`
 - `means:`
 - `expresses:`
 - `overview:`

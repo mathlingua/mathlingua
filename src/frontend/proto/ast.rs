@@ -233,7 +233,7 @@ mod tests {
             heading: Some("heading".to_string()),
             sections: vec![
                 Section {
-                    label: "Declares".to_string(),
+                    label: "Defines".to_string(),
                     inline_argument: Some("f(x_)".to_string()),
                     arguments: vec![],
                     metadata: metadata(0, false),
@@ -269,7 +269,7 @@ mod tests {
 
         assert_eq!(
             group.to_string(),
-            "[heading]\nDeclares: f(x_)\nwhen:\n. x in A\n. \"note\"\n. exists: z"
+            "[heading]\nDefines: f(x_)\nwhen:\n. x in A\n. \"note\"\n. exists: z"
         );
     }
 }

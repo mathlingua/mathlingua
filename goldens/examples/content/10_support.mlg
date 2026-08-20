@@ -3,7 +3,7 @@
 
 -- `Documented:` carries all of an item's human-facing text and rendering.
 [\documented.showcase]
-Defines: X ::= x(i_)
+Declares: X ::= x(i_)
 Documented:
 . called: "documented showcase"
 . written: "\operatorname{showcase}"
@@ -20,7 +20,7 @@ Id: "0b81f148-f5c4-411d-bbaa-6f5dd4566db6"
 -- A `capability:` provides a spec operator; a `definition:` requires that a
 -- named command exist with a given type.
 [\requires.showcase]
-Defines: X
+Declares: X
 Requires:
 . capability: x_ "in" X :-> \\abstract
 . definition: \zero is \natural
@@ -31,7 +31,7 @@ Id: "b4643f0c-2a8e-4b8c-9c45-daf810276e37"
 
 -- `Enables:` states what knowing the type lets the checker do afterwards.
 [\enables.showcase]
-Defines: G ::= (X, *) is \set via X
+Declares: G ::= (X, *) is \set via X
 means: * is \operation:on{G}
 Enables:
 . capability: x_ "in" G :-> x_ is \element:of{X}
@@ -50,7 +50,7 @@ Id: "80bdeb53-b07a-411c-b7e2-7bd81e2059cb"
 -- `Justification:` holds labelled `have:` groups. A `[:label:]` on an item in
 -- the body points at one, and the checker takes that item as given.
 [\justification.showcase]
-Defines: X ::= (A, B)
+Declares: X ::= (A, B)
 means:
 . A is \set
 . (.B is \set.)[:carrier:]
@@ -67,7 +67,7 @@ Id: "decbcbc2-aa62-430f-aa16-d044ea928c10"
 -- item-local rendering aliases; `References:` cites resources; `Metadata:`
 -- records release bookkeeping.
 [\alias.showcase]
-Defines: G ::= (X, *) is \set via X
+Declares: G ::= (X, *) is \set via X
 means: * is \operation:on{G}
 Documented:
 . called: "alias showcase"

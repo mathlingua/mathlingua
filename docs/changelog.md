@@ -5,6 +5,24 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## `Defines:` And `Declares:` Swap Names
+
+The two top-level definition labels are swapped so their names better match
+their roles. This is a terminology change only; their semantics and section
+layouts do not move independently of them:
+
+- `Declares:` now names the type/interface-style construct formerly spelled
+  `Defines:`. It supports `extends:`, `satisfies:`, and type-specifying `means:`
+  items.
+- `Defines:` now names the value/declaration-style construct formerly spelled
+  `Declares:`. It supports `abstractly:`, value-supplying `means:`, and
+  `expresses:`; `Realizes:` continues to realize an abstract instance of this
+  construct.
+
+The structural AST, semantic definition kinds, diagnostics, completion labels,
+rendered item kinds, examples, and current language documentation use the new
+names. Existing source collections must swap these two labels when migrating.
+
 ## `goldens/examples/`: A Collection That Exercises Everything
 
 `docs/examples.txt` is replaced by `goldens/examples/`, a complete MathLingua
@@ -19,9 +37,9 @@ It is organized as ten content files, read in order:
 ```text
 01_outline     Title/SectionTitle/SubsectionTitle/Text, Writing:, Specify:
 02_core        the handful of definitions everything else builds on
-03_numbers     number types, Declares values, Disambiguates
-04_algebra     what a Defines extends: is/via, means:, the extends: section
-05_declares    Declares values and parts, abstractly:, Realizes
+03_numbers     number types, Defines values, Disambiguates
+04_algebra     what a Declares extends: is/via, means:, the extends: section
+05_defines     Defines values and parts, abstractly:, Realizes
 06_refines     Refines, implicitly:/explicitly:, refined spec-infix
 07_headings    every command heading shape
 08_statements  States, Axiom/Theorem/Conjecture, every clause group

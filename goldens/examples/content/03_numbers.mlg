@@ -3,38 +3,38 @@
 
 
 [\natural]
-Defines: n
+Declares: n
 Documented:
 . called: "natural number"
 Id: "1a102108-da2b-47b8-9435-8dce9a5d5f36"
 
 
 [\real]
-Defines: r
+Declares: r
 Documented:
 . called: "real number"
 Id: "a6deadf6-fcfa-4de9-bf31-d9fce2181151"
 
 
--- `Declares` introduces a command naming a *value*, so a use is written
+-- `Defines` introduces a command naming a *value*, so a use is written
 -- `y := \the.command` rather than `y is \the.command`. A declared value must
 -- state its type.
 [\zero]
-Declares: z is \natural
+Defines: z is \natural
 Documented:
 . called: "zero"
 Id: "d5c731fe-427f-4ccd-bb74-e2a576ac565d"
 
 
 [\one]
-Declares: u is \natural
+Defines: u is \natural
 Documented:
 . called: "one"
 Id: "8e3440d0-13a0-428a-98c2-252004727775"
 
 
 [n \.natural.plus./ m]
-Declares: s is \natural
+Defines: s is \natural
 when: n, m is \natural
 Documented:
 . written: "n? + m?"
@@ -42,7 +42,7 @@ Id: "f994c277-b741-484e-9024-b2818fae4a9b"
 
 
 [r \.real.plus./ s]
-Declares: t is \real
+Defines: t is \real
 when: r, s is \real
 Documented:
 . written: "r? + s?"
@@ -52,7 +52,7 @@ Id: "b8441c4c-a230-4ac1-a540-3edebae751f8"
 -- An `else:` branch is checked with nothing assumed about the operands, so its
 -- target must be requirement-free — here, a command taking no arguments.
 [\unspecified.sum]
-Declares: g is \real
+Defines: g is \real
 Documented:
 . called: "unspecified sum"
 Id: "969760a2-f402-4b97-b227-b578f7095d1e"

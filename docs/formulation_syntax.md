@@ -40,7 +40,7 @@ The formulation subsystem does not have one single root grammar. It exposes seve
 - **`parse_is_via_statement`** — `<is-statement> via <form-or-declaration>`.
 - **`split_via_view`** — splits an optional trailing ` via <form>` off a
   formulation without parsing the left side, so a caller can parse that side
-  its own way. Used by the structural parser for a `Defines:` target and each
+  its own way. Used by the structural parser for a `Declares:` target and each
   `extends:` clause, whose left sides are declaration statements rather than
   bare `is` statements.
 - **`parse_command_header`** — simple, infix, infix-spec, or refined command
@@ -197,7 +197,7 @@ postfix form-operator spellings remain single identifier-like names.
 A bracketed operator `[op]` (e.g. `[*]`) is also accepted as an infix
 form-operator inside a capability declaration; the brackets are kept in the
 operator's text to mark it as a placeholder whose symbol is drawn from the
-definition's inputs/`Defines:`.
+definition's inputs/`Declares:`.
 
 ### Special operators
 
@@ -259,7 +259,7 @@ A build applies a command type to a value at a stated abstraction level:
 
 `@`/`@!` bind the command type on the left to the primary expression on the
 right. These replace the removed `value as \type` / `value as! \type` casts. A
-build is also how a `Declares:` value may state its type without `is`
+build is also how a `Defines:` value may state its type without `is`
 (`X := \set@{...}` is sugar for `... is \set`).
 
 ## Expression Grammar
@@ -773,7 +773,7 @@ Notes:
 - the left side must be an `is` statement, not a quoted-operator spec
 - the right side is a form/declaration such as `X` or `(X, Y)`
 - `split_via_view` performs only the split, on the same top-level ` via ` scan.
-  A `Defines:` target and an `extends:` clause use it because their left sides are
+  A `Declares:` target and an `extends:` clause use it because their left sides are
   full declaration statements (`G ::= (X, *, e) is \monoid`), which
   `IsStatement` cannot represent; they then reject a `via` whose left side states
   no `is` relation

@@ -112,13 +112,13 @@ pub(super) struct DefinitionTypeInfo {
     /// type (e.g. a parameter `{M ::= (X, *)}` with `M is \magma`) recover the
     /// component types positionally. Empty when the target is not a tuple.
     pub(super) component_types: Vec<TypeFact>,
-    /// Structural shape of each component in a destructuring `Defines:` target.
+    /// Structural shape of each component in a destructuring `Declares:` target.
     /// Names are intentionally ignored, while distinctions such as a value versus
     /// an operator component are retained so `Refines: G ::= (...)` can be checked
     /// positionally against the base type.
     pub(super) component_shapes: Vec<TargetShape>,
     /// Element pattern and declared element facts for a type described by a set
-    /// target (`Defines: X ::= {x__ : ...}`).  Command arguments that are set
+    /// target (`Declares: X ::= {x__ : ...}`).  Command arguments that are set
     /// literals use this metadata for structural compatibility checks instead of
     /// requiring a nominal `literal is Type` fact.
     pub(super) set_element_target: Option<SetTarget>,
@@ -336,8 +336,8 @@ impl EquivalenceClass {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DefinitionKind {
-    Defines,
     Declares,
+    Defines,
     Realizes,
     Refines,
     States,
@@ -350,8 +350,8 @@ pub(super) enum DefinitionKind {
 impl DefinitionKind {
     pub(super) fn label(self) -> &'static str {
         match self {
-            Self::Defines => "Defines",
             Self::Declares => "Declares",
+            Self::Defines => "Defines",
             Self::Realizes => "Realizes",
             Self::Refines => "Refines",
             Self::States => "States",
@@ -381,10 +381,10 @@ pub(super) struct SignatureRegistry {
     pub(super) viewable_rules: Vec<ViewableRule>,
     pub(super) abstraction_rules: Vec<AbstractionRule>,
     pub(super) collection_type_signatures: Vec<String>,
-    /// Maps an abstract `Declares:` signature — one marked `abstractly:` — to the
+    /// Maps an abstract `Defines:` signature — one marked `abstractly:` — to the
     /// symbols it specifies but leaves for a `Realizes:` to supply.
     pub(super) abstract_declarations: HashMap<String, AbstractDeclaration>,
-    /// Maps a set-defining command signature (a `Declares` whose `:=` value is a
+    /// Maps a set-defining command signature (a `Defines` whose `:=` value is a
     /// set literal) to that set-builder body, so membership in a use of the
     /// command can be reduced to the body's element condition.
     pub(super) collection_bodies: HashMap<String, SetExpression>,
@@ -397,7 +397,7 @@ pub(super) struct SignatureRegistry {
     pub(super) recorder: RefCell<Option<TypeRecorder>>,
 }
 
-/// A `Declares:` marked `abstractly:`, together with what a realization owes it.
+/// A `Defines:` marked `abstractly:`, together with what a realization owes it.
 ///
 /// The declaration states a specification for each abstract symbol but no value;
 /// a `Realizes:` of it must define every one of them.

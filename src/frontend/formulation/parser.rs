@@ -3626,7 +3626,7 @@ pub fn parse_expression_binding(input: &str) -> Result<ExpressionBinding, ParseE
     })
 }
 
-/// Parses a form or declaration used in definition-like `Defines` sections.
+/// Parses a form or declaration used in definition-like `Declares` sections.
 ///
 /// The generated grammar handles the detailed expression/form precedence here;
 /// this wrapper only adapts lexer and error types for callers.
@@ -3826,7 +3826,7 @@ pub fn parse_is_or_refined_statement_spec(
 }
 
 /// Splits an optional trailing ` via <form>` view off a formulation, as in the
-/// `Defines:` target `G ::= (X, *, e) is \monoid via (X, *)`.
+/// `Declares:` target `G ::= (X, *, e) is \monoid via (X, *)`.
 ///
 /// The separator is located at top level so tuples and command arguments can
 /// contain the same text without being split as statement syntax.

@@ -13,7 +13,7 @@ pub(in crate::backend::view) struct RenderRegistry {
     /// Collection-wide aliases for rendering plain names as LaTeX fragments.
     pub(super) writing: HashMap<String, String>,
     /// Per-mapping rendering rules declared by documented `writing:`/`as:`
-    /// groups on mapping-shaped `Defines:` items.
+    /// groups on mapping-shaped `Declares:` items.
     pub(super) mapping_writing: Vec<MappingWritingRender>,
     /// Explicit `Documented:called:` rendering overrides for top-level `Topic:`
     /// items, keyed by the raw `#some.name` heading string. Topics without an
@@ -351,11 +351,11 @@ pub(in crate::backend::view) fn writing_alias_override(text: &str) -> Option<(St
 }
 
 fn collect_mapping_writing(item: &TopLevelItem, registry: &mut RenderRegistry) {
-    let TopLevelItem::Defines(group) = item else {
+    let TopLevelItem::Declares(group) = item else {
         return;
     };
     let Some((function_name, parameters, magnetic)) =
-        defines_mapping_render_parts(&group.defines.argument)
+        declares_mapping_render_parts(&group.declares.argument)
     else {
         return;
     };
@@ -403,13 +403,13 @@ fn collect_mapping_writing(item: &TopLevelItem, registry: &mut RenderRegistry) {
     }
 }
 
-fn defines_mapping_render_parts(target: &DefinesTarget) -> Option<(String, Vec<String>, bool)> {
+fn declares_mapping_render_parts(target: &DeclaresTarget) -> Option<(String, Vec<String>, bool)> {
     match target {
-        DefinesTarget::Form(form) => mapping_render_form_parts(form),
+        DeclaresTarget::Form(form) => mapping_render_form_parts(form),
         // A target that names the type it extends splits `X ::= x(i_)` into the
         // subject `X` and the expansion `x(i_)`, so the mapping may live on
         // either side.
-        DefinesTarget::Declaration(statement) => single_subject_form(&statement.subject)
+        DeclaresTarget::Declaration(statement) => single_subject_form(&statement.subject)
             .and_then(mapping_render_form_parts)
             .or_else(|| {
                 statement
@@ -639,9 +639,9 @@ pub(in crate::backend::view) fn render_refines_section_latex(
 fn supports_resolved_group_heading(kind: &str) -> bool {
     matches!(
         kind,
-        "Declares"
+        "Defines"
             | "Realizes"
-            | "Defines"
+            | "Declares"
             | "Refines"
             | "States"
             | "Axiom"
@@ -717,14 +717,14 @@ pub(super) struct RenderEntry {
 
 pub(super) fn render_entries(item: &TopLevelItem) -> Vec<RenderEntry> {
     match item {
-        TopLevelItem::Defines(group) => render_entries_from_parts(
-            command_header_signatures(&group.heading),
-            primary_defines_target_name(&group.defines.argument),
-            group.documented.as_ref(),
-        ),
         TopLevelItem::Declares(group) => render_entries_from_parts(
             command_header_signatures(&group.heading),
-            primary_declaration_statement_name(&group.declares.argument),
+            primary_declares_target_name(&group.declares.argument),
+            group.documented.as_ref(),
+        ),
+        TopLevelItem::Defines(group) => render_entries_from_parts(
+            command_header_signatures(&group.heading),
+            primary_declaration_statement_name(&group.defines.argument),
             group.documented.as_ref(),
         ),
         TopLevelItem::Realizes(group) => render_entries_from_parts(
@@ -766,7 +766,7 @@ fn collect_provided_call_render_rules(item: &TopLevelItem, registry: &mut Render
     };
 
     match item {
-        TopLevelItem::Defines(group) => {
+        TopLevelItem::Declares(group) => {
             if let Some(requires) = &group.requires {
                 collect_requires_provided_call_render_rules(requires, &owner_subject, registry);
             }
@@ -774,7 +774,7 @@ fn collect_provided_call_render_rules(item: &TopLevelItem, registry: &mut Render
                 collect_enables_provided_call_render_rules(enables, &owner_subject, registry);
             }
         }
-        TopLevelItem::Declares(group) => {
+        TopLevelItem::Defines(group) => {
             if let Some(requires) = &group.requires {
                 collect_requires_provided_call_render_rules(requires, &owner_subject, registry);
             }
@@ -812,10 +812,8 @@ fn collect_provided_call_render_rules(item: &TopLevelItem, registry: &mut Render
 
 fn top_level_item_subject(item: &TopLevelItem) -> Option<String> {
     match item {
-        TopLevelItem::Defines(group) => primary_defines_target_name(&group.defines.argument),
-        TopLevelItem::Declares(group) => {
-            primary_declaration_statement_name(&group.declares.argument)
-        }
+        TopLevelItem::Declares(group) => primary_declares_target_name(&group.declares.argument),
+        TopLevelItem::Defines(group) => primary_declaration_statement_name(&group.defines.argument),
         TopLevelItem::Realizes(group) => {
             primary_declaration_statement_name(&group.realizes.argument)
         }
@@ -927,10 +925,10 @@ fn function_form_render_parameters(form: &FunctionForm) -> Vec<String> {
         .collect()
 }
 
-fn primary_defines_target_name(target: &DefinesTarget) -> Option<String> {
+fn primary_declares_target_name(target: &DeclaresTarget) -> Option<String> {
     match target {
-        DefinesTarget::Form(form) => primary_form_name(form),
-        DefinesTarget::Declaration(statement) => primary_declaration_statement_name(statement),
+        DeclaresTarget::Form(form) => primary_form_name(form),
+        DeclaresTarget::Declaration(statement) => primary_declaration_statement_name(statement),
     }
 }
 

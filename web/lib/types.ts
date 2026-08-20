@@ -75,7 +75,7 @@ export type FileView = {
 export type GroupView = {
   /** Stable UUID from the top-level `Id:` section. */
   id: string;
-  /** Structural group kind, such as `Defines`, `Refines`, or `Theorem`. */
+  /** Structural group kind, such as `Declares`, `Refines`, or `Theorem`. */
   kind: string;
   /** Reference keys that resolve to this group when rendered math is clicked. */
   definition_keys: string[];

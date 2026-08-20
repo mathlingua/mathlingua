@@ -151,7 +151,7 @@ mod tests {
         let project = TempProject::new();
         project.write(
             "axioms.mlg",
-            "[\\set]\nDefines: S\nId: \"11111111-1111-4111-8111-111111111111\"\n",
+            "[\\set]\nDeclares: S\nId: \"11111111-1111-4111-8111-111111111111\"\n",
         );
         let usage = "Theorem:\nthen: x is \\set\nId: \"22222222-2222-4222-8222-222222222222\"\n";
         let usage_path = project.write("thm.mlg", usage);
@@ -170,7 +170,7 @@ mod tests {
         // The definition exists only in the unsaved buffer, not on disk.
         let project = TempProject::new();
         let path = project.write("a.mlg", "Text: \"placeholder\"\nId: \"x\"\n");
-        let buffer = "[\\gadget]\nDefines: g\nId: \"a\"\n\nTheorem:\nthen: \\gadget\nId: \"b\"\n";
+        let buffer = "[\\gadget]\nDeclares: g\nId: \"a\"\n\nTheorem:\nthen: \\gadget\nId: \"b\"\n";
 
         let offset = buffer.rfind("\\gadget").unwrap() + 3;
         let site = resolve_definition(&project.root, &path, buffer, offset)

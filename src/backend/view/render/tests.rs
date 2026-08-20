@@ -28,7 +28,7 @@ fn registry_for(source: &str) -> super::RenderRegistry {
 fn renders_command_expressions_from_written_templates() {
     let registry = registry_for(
         r#"[\empty.set]
-Declares: X is \set
+Defines: X is \set
 Documented:
 . written: "\emptyset"
 "#,
@@ -44,7 +44,7 @@ Documented:
 fn renders_variadic_command_arguments_in_written_templates() {
     let registry = registry_for(
         r#"[\sequence:of{x...n}]
-Defines: S
+Declares: S
 Documented:
 . written: "x? \; (n?)"
 "#,
@@ -109,7 +109,7 @@ Documented:
 fn mapping_parameter_written_templates_render_the_body_and_selected_parameter() {
     let registry = registry_for(
         r#"[\d{f(x_, y_)}:d{f.x_}]
-Declares: g(x_, y_) is \function
+Defines: g(x_, y_) is \function
 Documented:
 . written: "\frac{d}{d x_?} f?"
 "#,
@@ -407,7 +407,7 @@ Documented:
 fn renders_command_context_assignments_as_visible_using_values() {
     let registry = registry_for(
         r#"[\ordered.pair]
-Defines: p
+Declares: p
 using: A, B is \set
 Documented:
 . called: "ordered pair"
@@ -424,7 +424,7 @@ Documented:
 fn renders_callable_owner_capabilities_from_written_templates() {
     let registry = registry_for(
         r#"[\relation:from{A}:to{B}]
-Defines: R
+Declares: R
 when: A, B is \set
 Enables:
 . capability: R(a_, b_) :-> (a_, b_) "in" R
@@ -445,7 +445,7 @@ Documented:
 fn renders_member_capabilities_from_written_templates() {
     let registry = registry_for(
         r#"[\group.element:of{G}]
-Defines: x
+Declares: x
 Enables:
 . capability: x.inv :=> \group.inverse:of{x}:in{G}
   written: "x+?^{-1}"
@@ -484,7 +484,7 @@ fn renders_documented_text_for_view_details() {
 fn renders_is_statements_from_called_templates() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
-Defines: f(x__)
+Declares: f(x__)
 Documented:
 . called: "function on $A?$ to $B?$"
 . written: "f? : A? \rightarrow B?"
@@ -501,7 +501,7 @@ Documented:
 fn renders_is_predicates_with_called_when_written_contains_subject() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
-Defines: f(x__)
+Declares: f(x__)
 Documented:
 . called: "function on $A?$ to $B?$"
 . written: "f? : A? \rightarrow B?"
@@ -518,7 +518,7 @@ Documented:
 fn renders_called_templates_as_text_when_called_is_present() {
     let registry = registry_for(
         r#"[\group]
-Defines: G ::= (X, *, e)
+Declares: G ::= (X, *, e)
 Documented:
 . called: "group"
 "#,
@@ -538,7 +538,7 @@ Documented:
 fn renders_comma_separated_is_or_spec_subjects_with_called_commands() {
     let registry = registry_for(
         r#"[\set]
-Defines: X
+Declares: X
 Documented:
 . called: "set"
 . written: "\operatorname{Set}"
@@ -555,7 +555,7 @@ Documented:
 fn renders_is_via_statements_from_called_templates() {
     let registry = registry_for(
         r#"[\set]
-Defines: X
+Declares: X
 Documented:
 . called: "set"
 "#,
@@ -607,12 +607,12 @@ fn renders_quoted_operators_as_temporary_latex_commands() {
 fn renders_structural_spec_literal_types() {
     let registry = registry_for(
         r#"[\natural]
-Defines: n
+Declares: n
 Documented:
 . written: "\mathbb{N}"
 
 [\reals]
-Defines: x
+Declares: x
 Documented:
 . written: "\mathbb{R}"
 "#,
@@ -668,7 +668,7 @@ Documented:
 fn uses_written_as_called_form_when_called_is_missing() {
     let registry = registry_for(
         r#"[\empty.set]
-Declares: X is \set
+Defines: X is \set
 Documented:
 . written: "\emptyset"
 "#,
@@ -683,7 +683,7 @@ Documented:
         Some(r#"X \textrm{ is } \emptyset"#.to_string())
     );
     assert_eq!(
-        render_group_heading_latex("Declares", Some(r#"\empty.set"#), None, &registry),
+        render_group_heading_latex("Defines", Some(r#"\empty.set"#), None, &registry),
         Some(r#"\emptyset"#.to_string())
     );
 }
@@ -692,7 +692,7 @@ Documented:
 fn renders_called_templates_with_math_substitutions() {
     let registry = registry_for(
         r#"[\field:over{V}]
-Defines: F
+Declares: F
 Documented:
 . called: "field over $V?$"
 . written: "\mathsf{Field}_{V?}"
@@ -709,7 +709,7 @@ Documented:
 fn renders_refined_command_types_from_called_templates() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
-Defines: f(x__)
+Declares: f(x__)
 Documented:
 . called: "function on $A?$ to $B?$"
   written:
@@ -749,7 +749,7 @@ Documented:
 fn renders_refined_predicates_and_missing_placeholders_without_question_marks() {
     let registry = registry_for(
         r#"[\function:?on{A}:?to{B}]
-Defines: f(x__)
+Declares: f(x__)
 Documented:
 . called: "function on $A?$ to $B?$"
 . written: "f? \: : \: A? \rightarrow B?"
@@ -778,7 +778,7 @@ Documented:
 fn renders_definition_group_headings_from_both_documented_forms() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
-Defines: f(x__)
+Declares: f(x__)
 Documented:
 . called: "function on $A?$ to $B?$"
 . written: "f? \: : \: A? \rightarrow B?"
@@ -787,7 +787,7 @@ Documented:
 
     assert_eq!(
         render_group_heading_latex(
-            "Defines",
+            "Declares",
             Some(r#"\function:on{A}:to{B}"#),
             None,
             &registry
@@ -800,7 +800,7 @@ Documented:
 fn definition_group_heading_order_is_called_then_written_however_they_are_listed() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
-Defines: f(x__)
+Declares: f(x__)
 Documented:
 . written: "f? \: : \: A? \rightarrow B?"
 . called: "function on $A?$ to $B?$"
@@ -811,7 +811,7 @@ Documented:
     // `<called>: <written>`, exactly as when `called:` is listed first.
     assert_eq!(
         render_group_heading_latex(
-            "Defines",
+            "Declares",
             Some(r#"\function:on{A}:to{B}"#),
             None,
             &registry
@@ -833,7 +833,7 @@ fn destructured_parameters_render_as_base_names_in_titles_with_separate_destruct
     // destructuring as separate lines; an expression use also uses plain names.
     let registry = registry_for(
         r#"[H ::= (X', *', e') \:submagma:/ G ::= (X, *, e)]
-Defines: H ::= (X', *', e')
+Declares: H ::= (X', *', e')
 Documented:
 . written: "H? \leq G?"
 "#,
@@ -842,11 +842,11 @@ Documented:
     let heading = r#"H ::= (X', *', e') \:submagma:/ G ::= (X, *, e)"#;
 
     assert_eq!(
-        render_group_heading_latex("Defines", Some(heading), None, &registry),
+        render_group_heading_latex("Declares", Some(heading), None, &registry),
         Some(r#"H \leq G"#.to_string())
     );
     assert_eq!(
-        render_group_parameter_destructurings("Defines", Some(heading), &registry),
+        render_group_parameter_destructurings("Declares", Some(heading), &registry),
         vec![
             r#"H ::= \left(X', *', e'\right)"#.to_string(),
             r#"G ::= \left(X, \ast, e\right)"#.to_string(),
@@ -862,14 +862,14 @@ Documented:
 fn renders_plain_called_placeholders_in_group_headings() {
     let registry = registry_for(
         r#"[A \:subset:/ B]
-Defines: A
+Declares: A
 Documented:
 . called: "A? subset of B?"
 "#,
     );
 
     assert_eq!(
-        render_group_heading_latex("Defines", Some(r#"A \:subset:/ B"#), None, &registry),
+        render_group_heading_latex("Declares", Some(r#"A \:subset:/ B"#), None, &registry),
         Some(r#"A\textrm{ subset of }B"#.to_string())
     );
 }
@@ -878,7 +878,7 @@ Documented:
 fn renders_definition_group_heading_forms_without_capitalizing() {
     let registry = registry_for(
         r#"[\set]
-Defines: X
+Declares: X
 Documented:
 . called: "set"
 . written: "\operatorname{Set}"
@@ -886,7 +886,7 @@ Documented:
     );
 
     assert_eq!(
-        render_group_heading_latex("Defines", Some(r#"\set"#), None, &registry),
+        render_group_heading_latex("Declares", Some(r#"\set"#), None, &registry),
         Some(r#"\textrm{set}\quad\htmlClass{mlg-title-written}{\operatorname{Set}}"#.to_string())
     );
     assert_eq!(
@@ -899,7 +899,7 @@ Documented:
 fn renders_refines_group_headings_from_refinement_and_refined_called_text() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
-Defines: f(x__)
+Declares: f(x__)
 Documented:
 . called: "function on $A?$ to $B?$"
 . written: "f? \: : \: A? \rightarrow B?"
@@ -927,7 +927,7 @@ Documented:
 fn refines_display_keeps_explicit_types_and_infix_refinements_unchanged() {
     let registry = registry_for(
         r#"[\group]
-Defines: G
+Declares: G
 Documented:
 . called: "group"
 "#,
@@ -951,7 +951,7 @@ Documented:
 fn refines_display_adds_the_base_type_to_operator_targets() {
     let registry = registry_for(
         r#"[\binary.operation:on{X}]
-Defines: x_ * y_
+Declares: x_ * y_
 Documented:
 . called: "binary operation on $X?$"
 "#,
@@ -971,7 +971,7 @@ Documented:
 fn renders_refined_spec_infix_headings_and_expressions() {
     let registry = registry_for(
         r#"[A \:subset:/ B]
-Defines: A
+Declares: A
 Documented:
 . called: "$A?$ subset of $B?$"
 
@@ -1002,7 +1002,7 @@ Documented:
 fn renders_implicit_refined_spec_infix_adjectives_after_the_base() {
     let registry = registry_for(
         r#"[\set]
-Defines: X
+Declares: X
 Documented:
 . called: "set"
 
@@ -1022,7 +1022,7 @@ Documented:
 . adjective: "gamma"
 
 [A \:subset:/ B]
-Defines: A
+Declares: A
 Documented:
 . called: "$A?$ subset of $B?$"
 "#,
@@ -1115,7 +1115,7 @@ fn renders_names_with_collection_writing_aliases() {
 fn renders_documented_mapping_writing_templates() {
     let registry = registry_for(
         r#"[\real.sequence]
-Defines: X ::= x(i_) ::= y_
+Declares: X ::= x(i_) ::= y_
 Documented:
 . called: "real sequence"
 . writing: x(i)
@@ -1186,7 +1186,7 @@ fn renders_stropped_operators_without_backticks() {
 fn renders_conditional_written_templates_for_optional_infix_tail() {
     let registry = registry_for(
         r#"[A \.intersect:?within{U}./ B]
-Defines: I
+Declares: I
 Documented:
 . called: "intersection"
 . written: "A? \cap@[U]{_{U?}} B?"
@@ -1287,19 +1287,19 @@ then: X is \set
 fn renders_conditional_templates_with_fallbacks_multiple_vars_and_nesting() {
     let registry = registry_for(
         r#"[\decorate:?with{U}]
-Defines: D
+Declares: D
 Documented:
 . called: "decorated"
 . written: "d@[U]{_{U?}}:{_X}"
 
 [\both{x}:?and{y}]
-Defines: B
+Declares: B
 Documented:
 . called: "both"
 . written: "@[x, y]{x? + y?}:{missing}"
 
 [\nest{x}:?with{y}]
-Defines: N
+Declares: N
 Documented:
 . called: "nested"
 . written: "@[x]{x? + @[y]{y?}:{*}}:{0}"
@@ -1336,7 +1336,7 @@ Documented:
 fn renders_conditionals_in_called_templates() {
     let registry = registry_for(
         r#"[\ambient:?within{U}]
-Defines: A
+Declares: A
 Documented:
 . called: "ambient@[U]{ within $U?$}:{ without ambient}"
 . written: "\operatorname{Ambient}@[U]{_{U?}}"
@@ -1364,7 +1364,7 @@ fn written_that_is_a_whole_unbound_conditional_falls_back_to_called() {
     // rendering falls back to `called:`. With the arguments bound it is used.
     let registry = registry_for(
         r#"[\function:?on{A}:?to{B}]
-Defines: f(x__)
+Declares: f(x__)
 Documented:
 . called: "func@[A]{ on $A?$}@[B]{ to $B?$}"
 . written: "@[A, B]{f? : A? \rightarrow B?}"
@@ -1402,7 +1402,7 @@ fn renders_set_builder_specs() {
 fn renders_soft_build_marker_as_space() {
     let registry = registry_for(
         r#"[\set]
-Defines: X
+Declares: X
 Documented:
 . called: "set"
 "#,
@@ -1425,7 +1425,7 @@ Documented:
 /// placeholder `A?`, `A+?`, or `A-?`, so the result is the substituted value alone.
 fn rendered_with_modifier(modifier: &str, argument: &str) -> String {
     let registry = registry_for(&format!(
-        "[\\f:of{{A}}]\nDefines: X\nDocumented:\n. written: \"A{modifier}?\"\n"
+        "[\\f:of{{A}}]\nDeclares: X\nDocumented:\n. written: \"A{modifier}?\"\n"
     ));
 
     render_formulation_latex(&format!(r#"\f:of{{{argument}}}"#), &registry)
@@ -1518,7 +1518,7 @@ fn paren_modifiers_render_as_bare_names_without_substitutions() {
 fn a_name_followed_by_plus_or_minus_is_still_ordinary_text() {
     let registry = registry_for(
         r#"[\g:of{A}:and{B}]
-Defines: X
+Declares: X
 Documented:
 . written: "A?-B? \: A?+B?"
 "#,
@@ -1536,7 +1536,7 @@ Documented:
 fn a_composed_card_title_does_not_change_how_the_item_is_named_inline() {
     let registry = registry_for(
         r#"[\empty.set]
-Defines: X
+Declares: X
 Documented:
 . called: "empty set"
 . written: "\emptyset"
@@ -1545,7 +1545,7 @@ Documented:
 
     // The card title shows both forms.
     assert_eq!(
-        render_group_heading_latex("Defines", Some(r#"\empty.set"#), None, &registry),
+        render_group_heading_latex("Declares", Some(r#"\empty.set"#), None, &registry),
         Some(r#"\textrm{empty set}\quad\htmlClass{mlg-title-written}{\emptyset}"#.to_string())
     );
 
@@ -1565,7 +1565,7 @@ Documented:
 fn a_written_nested_inside_called_pairs_with_it_in_the_title() {
     let registry = registry_for(
         r#"[\function:on{A}:to{B}]
-Defines: f(x__)
+Declares: f(x__)
 Documented:
 . called: "function on $A?$ to $B?$"
   written:
@@ -1575,7 +1575,7 @@ Documented:
 
     assert_eq!(
         render_group_heading_latex(
-            "Defines",
+            "Declares",
             Some(r#"\function:on{A}:to{B}"#),
             None,
             &registry

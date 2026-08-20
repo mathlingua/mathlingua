@@ -172,7 +172,7 @@ pub struct WritingText(pub String);
 /// The left side of a documented mapping-rendering rule.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MappingWritingTarget {
-    /// The exact placeholder-bearing mapping form from `Defines:` (for example,
+    /// The exact placeholder-bearing mapping form from `Declares:` (for example,
     /// `x(i_)`). This controls how the mapping value itself is rendered.
     Mapping(FormOrDeclaration),
     /// The same mapping form with its placeholders replaced by matching ordinary
@@ -180,15 +180,15 @@ pub enum MappingWritingTarget {
     Invocation(Expression),
 }
 
-/// The form or declaration a `Defines:` group describes.
+/// The form or declaration a `Declares:` group describes.
 ///
-/// A [`DefinesTarget::Declaration`] target may carry an `is`/specification
-/// relation, which states the type the definition extends — `Defines: A is \set`
+/// A [`DeclaresTarget::Declaration`] target may carry an `is`/specification
+/// relation, which states the type the definition extends — `Declares: A is \set`
 /// makes every `A` of the defined type a `\set`. A bare
-/// [`DefinesTarget::Form`] target extends nothing on its own; it may still name
+/// [`DeclaresTarget::Form`] target extends nothing on its own; it may still name
 /// what it extends in an [`ExtendsSection`].
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum DefinesTarget {
+pub enum DeclaresTarget {
     Form(FormOrDeclaration),
     Declaration(DeclarationStatement),
 }
@@ -196,8 +196,8 @@ pub enum DefinesTarget {
 /// One clause of a definition's subtype declaration: the type the definition
 /// extends, with the optional `via` view used to regard it as that type.
 ///
-/// A single clause is normally written on the `Defines:` target itself
-/// (`Defines: G ::= (X, *, e) is \monoid via (X, *)`). An `extends:` section
+/// A single clause is normally written on the `Declares:` target itself
+/// (`Declares: G ::= (X, *, e) is \monoid via (X, *)`). An `extends:` section
 /// exists for the case a target cannot express: extending several types at once,
 /// each through a different view of the same tuple.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -206,7 +206,7 @@ pub struct ExtendsItem {
     pub via: Option<FormOrDeclaration>,
 }
 
-/// One subtype clause of a `Defines` group, borrowed from whichever spelling
+/// One subtype clause of a `Declares` group, borrowed from whichever spelling
 /// carried it. See [`extends_clauses`].
 #[derive(Clone, Copy, Debug)]
 pub struct ExtendsClause<'a> {
@@ -214,14 +214,14 @@ pub struct ExtendsClause<'a> {
     pub via: Option<&'a FormOrDeclaration>,
 }
 
-/// The types a `Defines` group extends, from either spelling.
+/// The types a `Declares` group extends, from either spelling.
 ///
-/// `Defines: X is \foo` and `Defines: X` with `extends: X is \foo` mean the same
+/// `Declares: X is \foo` and `Declares: X` with `extends: X is \foo` mean the same
 /// thing, so every consumer works from this normalized list rather than from one
 /// spelling or the other. Writing both is rejected while parsing, so at most one
 /// source contributes.
 pub fn extends_clauses<'a>(
-    defines: &'a DefinesSection,
+    declares: &'a DeclaresSection,
     extends: Option<&'a ExtendsSection>,
 ) -> Vec<ExtendsClause<'a>> {
     if let Some(extends) = extends {
@@ -235,11 +235,11 @@ pub fn extends_clauses<'a>(
             .collect();
     }
 
-    match &defines.argument {
-        DefinesTarget::Declaration(statement) if statement.relation.is_some() => {
+    match &declares.argument {
+        DeclaresTarget::Declaration(statement) if statement.relation.is_some() => {
             vec![ExtendsClause {
                 statement,
-                via: defines.via.as_ref(),
+                via: declares.via.as_ref(),
             }]
         }
         _ => Vec::new(),
@@ -266,21 +266,21 @@ pub enum RelationMeans {
     Text(OpenText),
 }
 
-/// The `Defines:` section: the described target plus the optional `via` view of
-/// the type it extends, as in `Defines: G ::= (X, *, e) is \monoid via (X, *)`.
+/// The `Declares:` section: the described target plus the optional `via` view of
+/// the type it extends, as in `Declares: G ::= (X, *, e) is \monoid via (X, *)`.
 /// The `via` form is only meaningful together with an `is` relation on the
 /// target, and a target that states a relation excludes an [`ExtendsSection`].
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DefinesSection {
-    pub argument: DefinesTarget,
+pub struct DeclaresSection {
+    pub argument: DeclaresTarget,
     pub via: Option<FormOrDeclaration>,
 }
 
 arguments_section!(UsingSection, DeclarationStatement);
 arguments_section!(WhenSection, Clause);
 arguments_section!(ExtendsSection, ExtendsItem);
-arguments_section!(DefinesMeansSection, IsOrViaItem);
 arguments_section!(DeclaresMeansSection, IsOrViaItem);
+arguments_section!(DefinesMeansSection, IsOrViaItem);
 argument_section!(RealizesSection, DeclarationStatement);
 arguments_section!(SatisfiesSection, Clause);
 arguments_section!(RequiresSection, RequiresItem);
@@ -290,7 +290,7 @@ arguments_section!(DocumentedSection, DocumentedItem);
 arguments_section!(AliasesSection, AliasItem);
 arguments_section!(ReferencesSection, ResourceHeader);
 arguments_section!(MetadataSection, MetadataItem);
-argument_section!(DeclaresSection, DeclarationStatement);
+argument_section!(DefinesSection, DeclarationStatement);
 arguments_section!(ExpressesSection, Clause);
 argument_section!(RefinesSection, DeclarationStatement);
 argument_section!(RefinesExtendsSection, DeclarationStatement);
@@ -407,8 +407,8 @@ pub enum TopLevelItem {
     Text(TextGroup),
     Writing(TopLevelWritingGroup),
     Disambiguates(DisambiguatesGroup),
-    Defines(DefinesGroup),
     Declares(DeclaresGroup),
+    Defines(DefinesGroup),
     Realizes(RealizesGroup),
     Refines(RefinesGroup),
     States(StatesGroup),
@@ -449,7 +449,7 @@ pub enum IsOrViaItem {
     IsVia(IsViaStatement),
     Declaration(DeclarationStatement),
     /// A `have:`/`asserting:` group standing in for a specification the checker
-    /// cannot establish on its own (allowed in a `Defines:` group's `means:`).
+    /// cannot establish on its own (allowed in a `Declares:` group's `means:`).
     Have(Box<HaveGroup>),
     /// A specification wrapped in a `[:label:]` (e.g. `(.x is \foo.)[:1:]`) whose
     /// `label` may match a `Justification:` entry `[label]`. When it does, that
@@ -587,13 +587,13 @@ argument_section!(DisambiguatesToSection, Expression);
 argument_section!(DisambiguatesElseSection, Expression);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DefinesGroup {
+pub struct DeclaresGroup {
     pub heading: CommandHeader,
-    pub defines: DefinesSection,
+    pub declares: DeclaresSection,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
     pub extends: Option<ExtendsSection>,
-    pub means: Option<DefinesMeansSection>,
+    pub means: Option<DeclaresMeansSection>,
     pub satisfies: Option<SatisfiesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
@@ -606,15 +606,15 @@ pub struct DefinesGroup {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DeclaresGroup {
+pub struct DefinesGroup {
     pub heading: CommandHeader,
-    pub declares: DeclaresSection,
+    pub defines: DefinesSection,
     /// The `abstractly:` marker, present when this declaration leaves parts of
     /// its value for a [`RealizesGroup`] to supply.
     pub abstractly: bool,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub means: Option<DeclaresMeansSection>,
+    pub means: Option<DefinesMeansSection>,
     pub expresses: Option<ExpressesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,
@@ -628,10 +628,10 @@ pub struct DeclaresGroup {
 
 /// A concrete realization of an abstract declaration.
 ///
-/// `Realizes: Nb := \naturals` names the `Declares:` group marked `abstractly:`
+/// `Realizes: Nb := \naturals` names the `Defines:` group marked `abstractly:`
 /// that it realizes, and its `means:` supplies a definition for every symbol
-/// that declaration left abstract. An abstract `Declares` is to a `Realizes`
-/// roughly what an abstract base class is to a concrete subclass; a `Defines`
+/// that declaration left abstract. An abstract `Defines` is to a `Realizes`
+/// roughly what an abstract base class is to a concrete subclass; a `Declares`
 /// is the interface.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RealizesGroup {
@@ -639,7 +639,7 @@ pub struct RealizesGroup {
     pub realizes: RealizesSection,
     pub using: Option<UsingSection>,
     pub when: Option<WhenSection>,
-    pub means: Option<DeclaresMeansSection>,
+    pub means: Option<DefinesMeansSection>,
     pub expresses: Option<ExpressesSection>,
     pub requires: Option<RequiresSection>,
     pub enables: Option<EnablesSection>,

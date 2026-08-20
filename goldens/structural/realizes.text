@@ -1,5 +1,5 @@
 [\naturals]
-Declares: Nb ::= (N, 0, succ(n_))
+Defines: Nb ::= (N, 0, succ(n_))
 abstractly:
 using:
 . X is \set

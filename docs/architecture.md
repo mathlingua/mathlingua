@@ -309,7 +309,7 @@ Main files:
   `TextLiteral`.
 
 The proto parser is responsible for source shape and recovery. It does not know
-whether a group is a `Theorem`, `Defines`, `Resource`, or clause group. That
+whether a group is a `Theorem`, `Declares`, `Resource`, or clause group. That
 classification happens in the structural layer.
 
 ### Formulation Layer
@@ -355,7 +355,7 @@ The structural layer turns proto groups into the typed MathLingua document AST.
 Main files:
 
 - `parser.rs` — a single module that composes proto parsing with structural
-  recognition. It parses every top-level group (`Defines`, `Declares`,
+  recognition. It parses every top-level group (`Declares`, `Defines`,
   `Realizes`, `Refines`, `States`, `Theorem`, `Axiom`, `Conjecture`,
   `Disambiguates`,
   `Relation`, `Equivalent`, `Topic`, `Resource`, `Person`, `Specify`, the prose
@@ -373,7 +373,7 @@ not by the bracket heading. The heading is then validated according to the group
 kind.
 
 Structural parsing delegates mathematical content to formulation parser
-entrypoints. For example, a `Defines:` argument uses
+entrypoints. For example, a `Declares:` argument uses
 `parse_form_or_declaration`, theorem `given:` uses
 `parse_is_or_refined_statement_spec`, and clause formulations use the clause
 fallback order documented in [structural_syntax.md](structural_syntax.md).
@@ -456,9 +456,9 @@ Important files:
   variadics it rejects empty, ragged, and flat actual groups and binds row and
   column length names independently.
 - `typecheck.rs` implements symbol scope, facts, substitutions, requirements,
-  subtyping through a `Defines:` target's `is` relation, destructuring,
+  subtyping through a `Declares:` target's `is` relation, destructuring,
   operator/member resolution, spec-operator reduction, numeric-literal fallback,
-  and variadic index-result checking. It also records what each `Declares:`
+  and variadic index-result checking. It also records what each `Defines:`
   marked `abstractly:` leaves open (`SignatureRegistry::abstract_declarations`),
   which is what a `Realizes:` is checked against and what its components inherit
   their types from.
@@ -469,7 +469,7 @@ Important files:
   expressions, forms, and support sections for reference validation.
 
 The signature registry is global across all checked files. Duplicate command
-signatures are rejected across `Defines`, `Declares`, `Realizes`, `Refines`,
+signatures are rejected across `Declares`, `Defines`, `Realizes`, `Refines`,
 `States`, and named theorem-like groups. Mapping-parameter definitions additionally populate
 a general-signature-to-specialized-signatures index. Several specialized
 definitions may share one general signature, but each specialized signature is
@@ -679,7 +679,7 @@ The command snapshots the current committed state of the collection into a
   item, keyed by the SHA-256 of the item's source.
 
 An item is (re)versioned when its content hash changed since its last recorded
-entry. In addition, when a *definition* (`Declares`, `Realizes`, `Defines`,
+entry. In addition, when a *definition* (`Defines`, `Realizes`, `Declares`,
 `States`, `Refines`, `Disambiguates`) is (re)versioned, every definition it uses
 is
 re-versioned transitively, deduplicated so each item gains at most one new entry

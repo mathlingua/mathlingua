@@ -387,8 +387,8 @@ fn is_top_level_item_label(label: &str) -> bool {
             | "TextConjecture"
             | "TextDefinition"
             | "Disambiguates"
-            | "Defines"
             | "Declares"
+            | "Defines"
             | "Realizes"
             | "Refines"
             | "States"
@@ -993,9 +993,9 @@ mod tests {
         let extra = temp_dir.path().join("extra.mlg");
 
         fs::create_dir_all(&nested).unwrap();
-        fs::write(docs.join("a.mlg"), "Declares: A\n").unwrap();
-        fs::write(nested.join("b.mlg"), "Declares: B\n").unwrap();
-        fs::write(&extra, "Declares: C\n").unwrap();
+        fs::write(docs.join("a.mlg"), "Defines: A\n").unwrap();
+        fs::write(nested.join("b.mlg"), "Defines: B\n").unwrap();
+        fs::write(&extra, "Defines: C\n").unwrap();
 
         let mut event_log = EventLog::new();
         let collection =
@@ -1196,9 +1196,9 @@ mod tests {
         let extra = temp_dir.path().join("extra.mlg");
 
         fs::create_dir_all(&nested).unwrap();
-        fs::write(docs.join("a.mlg"), "Declares: A\n").unwrap();
-        fs::write(nested.join("b.mlg"), "Declares: B\n").unwrap();
-        fs::write(&extra, "Declares: C\n").unwrap();
+        fs::write(docs.join("a.mlg"), "Defines: A\n").unwrap();
+        fs::write(nested.join("b.mlg"), "Defines: B\n").unwrap();
+        fs::write(&extra, "Defines: C\n").unwrap();
 
         let mut event_log = EventLog::new();
         let collection =

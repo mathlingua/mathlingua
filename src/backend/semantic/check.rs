@@ -57,7 +57,7 @@ fn is_same_file(left: &Path, right: &Path) -> bool {
     }
 }
 
-/// Restricts documented `writing:` rules to mapping-shaped `Defines:` items and
+/// Restricts documented `writing:` rules to mapping-shaped `Declares:` items and
 /// requires their target to mirror that mapping exactly.
 fn validate_documented_mapping_writing(files: &[ParsedSourceFile], event_log: &mut EventLog) {
     for file in files {
@@ -77,15 +77,15 @@ fn validate_documented_mapping_writing(files: &[ParsedSourceFile], event_log: &m
             });
 
             match item {
-                TopLevelItem::Defines(group) => {
-                    let mapping = defines_mapping_parts(&group.defines.argument);
+                TopLevelItem::Declares(group) => {
+                    let mapping = declares_mapping_parts(&group.declares.argument);
                     for writing in writing {
                         let Some(mapping) = &mapping else {
                             event_log.user_error_at_file_row(
                                 Some(ORIGIN),
                                 file.path.clone(),
                                 row,
-                                "Documented `writing:` is only allowed when `Defines:` targets a mapping",
+                                "Documented `writing:` is only allowed when `Declares:` targets a mapping",
                             );
                             continue;
                         };
@@ -109,7 +109,7 @@ fn validate_documented_mapping_writing(files: &[ParsedSourceFile], event_log: &m
                             Some(ORIGIN),
                             file.path.clone(),
                             row,
-                            "Documented `writing:` is only allowed inside a mapping-shaped `Defines:` item",
+                            "Documented `writing:` is only allowed inside a mapping-shaped `Declares:` item",
                         );
                     }
                 }
@@ -121,8 +121,8 @@ fn validate_documented_mapping_writing(files: &[ParsedSourceFile], event_log: &m
 fn documented_section(item: &TopLevelItem) -> Option<&DocumentedSection> {
     match item {
         TopLevelItem::Disambiguates(group) => group.documented.as_ref(),
-        TopLevelItem::Defines(group) => group.documented.as_ref(),
         TopLevelItem::Declares(group) => group.documented.as_ref(),
+        TopLevelItem::Defines(group) => group.documented.as_ref(),
         TopLevelItem::Realizes(group) => group.documented.as_ref(),
         TopLevelItem::Refines(group) => group.documented.as_ref(),
         TopLevelItem::States(group) => group.documented.as_ref(),
@@ -144,13 +144,13 @@ struct MappingFormParts {
     magnetic: bool,
 }
 
-fn defines_mapping_parts(target: &DefinesTarget) -> Option<MappingFormParts> {
+fn declares_mapping_parts(target: &DeclaresTarget) -> Option<MappingFormParts> {
     match target {
-        DefinesTarget::Form(form) => mapping_form_parts(form),
+        DeclaresTarget::Form(form) => mapping_form_parts(form),
         // A target that names the type it extends splits `X ::= x(i_)` into the
         // subject `X` and the expansion `x(i_)`, so the mapping may live on
         // either side.
-        DefinesTarget::Declaration(statement) => single_subject_form(&statement.subject)
+        DeclaresTarget::Declaration(statement) => single_subject_form(&statement.subject)
             .and_then(mapping_form_parts)
             .or_else(|| {
                 statement
@@ -366,13 +366,13 @@ pub(super) fn collect_document_definitions(
         let full_shape = shape_for_header(definition.heading);
         let position = locator.locate_heading(&full_shape);
         if matches!(definition.heading, CommandHeader::InfixSpec(spec) if spec.refinement.is_none())
-            && kind != DefinitionKind::Defines
+            && kind != DefinitionKind::Declares
         {
             emit_error(
                 event_log,
                 &file.path,
                 position,
-                "Spec-infix headings may only be used with Defines entries",
+                "Spec-infix headings may only be used with Declares entries",
             );
             continue;
         }
@@ -460,13 +460,13 @@ impl<'a> DefinitionItem<'a> {
 
 pub(super) fn definition_item(item: &TopLevelItem) -> Option<DefinitionItem<'_>> {
     match item {
-        TopLevelItem::Defines(group) => Some(DefinitionItem {
-            kind: DefinitionKind::Defines,
+        TopLevelItem::Declares(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Declares,
             heading: &group.heading,
             documented: group.documented.as_ref(),
         }),
-        TopLevelItem::Declares(group) => Some(DefinitionItem {
-            kind: DefinitionKind::Declares,
+        TopLevelItem::Defines(group) => Some(DefinitionItem {
+            kind: DefinitionKind::Defines,
             heading: &group.heading,
             documented: group.documented.as_ref(),
         }),
@@ -564,7 +564,7 @@ Id: "22222222-2222-4222-8222-222222222222"
         let files = vec![parsed_file(
             "mapping.mlg",
             r#"[\real.sequence]
-Defines: X ::= x(i_)
+Declares: X ::= x(i_)
 Documented:
 . called: "real sequence"
 . writing: x(i)
@@ -582,12 +582,12 @@ Id: "11111111-1111-4111-8111-111111111111"
     }
 
     #[test]
-    fn rejects_mapping_writing_outside_matching_mapping_defines() {
+    fn rejects_mapping_writing_outside_matching_mapping_declares() {
         let files = vec![
             parsed_file(
                 "not-mapping.mlg",
                 r#"[\thing]
-Defines: X
+Declares: X
 Documented:
 . called: "thing"
 . writing: x(i)
@@ -598,7 +598,7 @@ Id: "11111111-1111-4111-8111-111111111111"
             parsed_file(
                 "wrong-form.mlg",
                 r#"[\real.sequence]
-Defines: x(i_)
+Declares: x(i_)
 Documented:
 . called: "real sequence"
 . writing: x(j)
@@ -607,9 +607,9 @@ Id: "22222222-2222-4222-8222-222222222222"
 "#,
             ),
             parsed_file(
-                "declares.mlg",
+                "defines.mlg",
                 r#"[\sequence]
-Declares: X is \type
+Defines: X is \type
 Documented:
 . called: "sequence"
 . writing: x(i)
@@ -620,7 +620,7 @@ Id: "33333333-3333-4333-8333-333333333333"
             parsed_file(
                 "wrong-placeholder-kind.mlg",
                 r#"[\ordinary.mapping]
-Defines: x(i_)
+Declares: x(i_)
 Documented:
 . called: "ordinary mapping"
 . writing: x(i__)
@@ -631,7 +631,7 @@ Id: "44444444-4444-4444-8444-444444444444"
             parsed_file(
                 "partly-replaced-placeholders.mlg",
                 r#"[\binary.mapping]
-Defines: x(i_, j_)
+Declares: x(i_, j_)
 Documented:
 . called: "binary mapping"
 . writing: x(i_, j)
@@ -651,9 +651,9 @@ Id: "55555555-5555-4555-8555-555555555555"
             .map(|message| message.message.as_str())
             .collect::<Vec<_>>();
         assert_eq!(messages.len(), 5);
-        assert!(messages[0].contains("only allowed when `Defines:` targets a mapping"));
+        assert!(messages[0].contains("only allowed when `Declares:` targets a mapping"));
         assert!(messages[1].contains("must be exactly `x(i_)` or `x(i)`"));
-        assert!(messages[2].contains("only allowed inside a mapping-shaped `Defines:`"));
+        assert!(messages[2].contains("only allowed inside a mapping-shaped `Declares:`"));
         assert!(messages[3].contains("must be exactly `x(i_)` or `x(i)`"));
         assert!(messages[4].contains("must be exactly `x(i_, j_)` or `x(i, j)`"));
     }
@@ -668,8 +668,8 @@ pub(super) fn check_documented_rendering(
 ) {
     if !matches!(
         kind,
-        DefinitionKind::Defines
-            | DefinitionKind::Declares
+        DefinitionKind::Declares
+            | DefinitionKind::Defines
             | DefinitionKind::Realizes
             | DefinitionKind::Refines
             | DefinitionKind::States

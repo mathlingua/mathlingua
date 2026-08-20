@@ -18,9 +18,9 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_aliases(&group.aliases, visit);
             walk_optional_justification(&group.justification, visit);
         }
-        TopLevelItem::Defines(group) => {
-            walk_defines_target(&group.defines.argument, visit);
-            if let Some(via) = &group.defines.via {
+        TopLevelItem::Declares(group) => {
+            walk_declares_target(&group.declares.argument, visit);
+            if let Some(via) = &group.declares.via {
                 walk_form_or_declaration(via, visit);
             }
             walk_optional_is_or_specs(&group.using, visit);
@@ -44,8 +44,8 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
             walk_optional_aliases(&group.aliases, visit);
             walk_optional_justification(&group.justification, visit);
         }
-        TopLevelItem::Declares(group) => {
-            walk_declaration_statement(&group.declares.argument, visit);
+        TopLevelItem::Defines(group) => {
+            walk_declaration_statement(&group.defines.argument, visit);
             walk_optional_is_or_specs(&group.using, visit);
             walk_optional_clauses(&group.when, visit);
             walk_optional_means(&group.means, visit);
@@ -172,9 +172,9 @@ pub(in crate::backend::semantic) fn walk_top_level_item(
     }
 }
 
-/// Walks the items of a `Declares:`/`Realizes:` `means:` section.
+/// Walks the items of a `Defines:`/`Realizes:` `means:` section.
 fn walk_optional_means(
-    means: &Option<DeclaresMeansSection>,
+    means: &Option<DefinesMeansSection>,
     visit: &mut impl FnMut(&SignatureShape),
 ) {
     if let Some(section) = means {
@@ -207,10 +207,10 @@ fn walk_relation_subject(subject: &RelationSubject, visit: &mut impl FnMut(&Sign
     }
 }
 
-fn walk_defines_target(target: &DefinesTarget, visit: &mut impl FnMut(&SignatureShape)) {
+fn walk_declares_target(target: &DeclaresTarget, visit: &mut impl FnMut(&SignatureShape)) {
     match target {
-        DefinesTarget::Form(form) => walk_form_or_declaration(form, visit),
-        DefinesTarget::Declaration(statement) => walk_declaration_statement(statement, visit),
+        DeclaresTarget::Form(form) => walk_form_or_declaration(form, visit),
+        DeclaresTarget::Declaration(statement) => walk_declaration_statement(statement, visit),
     }
 }
 

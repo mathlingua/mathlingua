@@ -1,108 +1,14 @@
-[\structure]
-Defines: S ::= (X, *) is \set via (X, *)
+[\constant]
+Defines: zero is \element
 using:
-. X, Y is \set
-. X "contains" Element
-when:
-. [logic.set.ops.when]
-  allOf:
+. X is \set
+expresses:
+. [logic.expr]
+  piecewise:
+  . "choose a representative"
+  if:
   . x = x
-  . y = y
-means:
-. Y is \set via (Y, Element)
-. y "contains" Y
-satisfies:
-. [logic.satisfies]
-  not:
-  . x = y
-Enables:
-. [capability.plus]
-  capability: plus(x_, y_) :=> x + y
-  written:
-  . "+"
-Documented:
-. [docs.written]
-  written:
-  . "plus"
-Justification:
-. [proof.label]
-  have:
-  . x = x
-  asserting:
-  . x = x
-Aliases:
-. [alias.expr]
-  alias: plus(x_, y_) :=> x + y
-  written:
-  . "+"
-References:
-. $book.plus
-Metadata:
-. id: "desc-1"
-
-[\structure.connection]
-Defines: T
-Enables:
-. [conn.plus]
-  relation:
-  to: y := \foo{X} is \bar
-  represents: \\coercion
-Documented:
-. [docs.called]
-  called:
-  . "addition"
-Justification:
-. [proof.by]
-  have:
-  . y = y
-  asserting:
-  . y = y
-Aliases:
-. [alias.spec]
-  alias: x_ "in" X :-> x is \element
-Metadata:
-. version: "1.0"
-
-[\structure.writing]
-Defines: plus(x_, y_)
-Documented:
-. [docs.inline.notation]
-  writing: plus(x, y)
-  as: "x? + y?"
-. [docs.mapping.notation]
-  writing: plus(x_, y_)
-  as: "\operatorname{plus}(x?, y?)"
-
-[\structure.overview]
-Defines: O
-Documented:
-. [docs.overview]
-  overview: "Binary operation on X"
-
-[\structure.related]
-Defines: R
-Documented:
-. [docs.related]
-  related:
-  . "group"
-  . "ring"
-
-[\structure.discoverer]
-Defines: D
-Documented:
-. [docs.discoverer]
-  discoverer:
-  . "Gauss"
-
-[\function:on{A}:to{B}]
-Defines: f(x__)
-when:
-. A, B is \set
-satisfies:
-. forAll: x "in" A
   then:
-  . existsUnique: y "in" B
-    suchThat:
-    . f(x) = y
-Documented:
-. called: "Function on $A?$ to $B?$"
+  . x = x
+  else:
+  . y = y

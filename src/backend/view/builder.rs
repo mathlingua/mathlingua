@@ -832,7 +832,7 @@ mod tests {
     fn collection_view_title_at(root: &Path) -> String {
         let content = root.join("content");
         let file = content.join("sets.mlg");
-        let source = "[\\set]\nDefines: S\nDocumented:\n. called: \"set\"\n";
+        let source = "[\\set]\nDeclares: S\nDocumented:\n. called: \"set\"\n";
 
         fs::create_dir_all(&content).unwrap();
         fs::write(&file, source).unwrap();
@@ -888,7 +888,7 @@ mod tests {
         let root = temp_dir.path().join("repo");
         let content = root.join("content");
         let file = content.join("sets.mlg");
-        let source = "[\\set]\nDefines: S\nDocumented:\n. called:\n  . \"set\"\n";
+        let source = "[\\set]\nDeclares: S\nDocumented:\n. called:\n  . \"set\"\n";
 
         fs::create_dir_all(&content).unwrap();
         fs::write(&file, source).unwrap();
@@ -910,7 +910,7 @@ mod tests {
         assert_eq!(view.title, "repo");
         assert_eq!(view.files.len(), 1);
         assert_eq!(view.files[0].path, "content/sets.mlg");
-        assert_eq!(view.files[0].items[0].kind, "Defines");
+        assert_eq!(view.files[0].items[0].kind, "Declares");
         assert_eq!(view.files[0].items[0].definition_keys, vec!["5c736574"]);
         assert_eq!(view.files[0].items[0].source, source.trim_end());
         assert_eq!(
@@ -978,7 +978,7 @@ that:
         let content = root.join("content");
         let file = content.join("groups.mlg");
         let source = r#"[\group]
-Defines: G
+Declares: G
 Documented:
 . called: "group"
 
@@ -1023,7 +1023,7 @@ Documented:
         let content = root.join("content");
         let file = content.join("sets.mlg");
         let source = r#"[\membership]
-Defines: X
+Declares: X
 Documented:
 . called: "membership of $x_?$ in $X?$"
 . written: "x_? \in X?"
@@ -1071,7 +1071,7 @@ Documented:
         let content = root.join("content");
         let file = content.join("sets.mlg");
         let source = r#"[\set]
-Defines: X
+Declares: X
 Documented:
 . called: "set"
 . description: "Some text
@@ -1235,13 +1235,13 @@ Id: "22222222-2222-4222-8222-222222222222"
         let content = root.join("content");
         let file = content.join("sets.mlg");
         let source = r#"[\set]
-Defines: X
+Declares: X
 Documented:
 . called: "set"
 
 
 [\nonempty.set]
-Defines: X is \set
+Declares: X is \set
 Documented:
 . called: "non-empty set"
 "#;
@@ -1261,11 +1261,11 @@ Documented:
         let mut event_log = EventLog::new();
         let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
-        let defines = &view.files[0].items[1].sections[0];
+        let declares = &view.files[0].items[1].sections[0];
 
         assert_eq!(view.files[0].items[0].definition_keys, vec!["5c736574"]);
         assert_eq!(
-            defines.inline_latex,
+            declares.inline_latex,
             Some(r#"X \textrm{ is } \htmlData{mlg-ref=5c736574}{\textrm{set}}"#.to_string())
         );
         assert!(!event_log.has_errors());
@@ -1537,7 +1537,7 @@ Second paragraph with $x \in X$."
         // The `Text:` value's continuation lines are aligned under the opening
         // `Text: "` (seven-space indent). Rendering must dedent by that common
         // amount so the embedded ```` ```mlg ```` fence is flush-left, not indented.
-        let source = "Text: \"The Defines: construct is used to specify an abstract concept, called a\n       type in other languages. To start, we specify that a set is an type.\n       We'll expand on it as we continue.\n\n       ```mlg\n       [\\set]\n       Defines: X\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n       \"\nId: \"e798d1a3-1029-44f3-8b92-d794cbb6596c\"\n";
+        let source = "Text: \"The Declares: construct is used to specify an abstract concept, called a\n       type in other languages. To start, we specify that a set is an type.\n       We'll expand on it as we continue.\n\n       ```mlg\n       [\\set]\n       Declares: X\n       Documented:\n       . called: \\\"set\\\"\n       Id: \\\"a0759217-e1f6-412c-982a-0038cd17a3a1\\\"\n       ```\n       \"\nId: \"e798d1a3-1029-44f3-8b92-d794cbb6596c\"\n";
 
         fs::create_dir_all(&content).unwrap();
         fs::write(&file, source).unwrap();
@@ -1556,12 +1556,12 @@ Second paragraph with $x \in X$."
         let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
 
-        let expected = "The Defines: construct is used to specify an abstract concept, called a\n\
+        let expected = "The Declares: construct is used to specify an abstract concept, called a\n\
                         type in other languages. To start, we specify that a set is an type.\n\
                         We'll expand on it as we continue.\n\n\
                         ```mlg\n\
                         [\\set]\n\
-                        Defines: X\n\
+                        Declares: X\n\
                         Documented:\n\
                         . called: \"set\"\n\
                         Id: \"a0759217-e1f6-412c-982a-0038cd17a3a1\"\n\
@@ -1643,7 +1643,7 @@ Id: "11111111-1111-4111-8111-111111111111"
 
 
 [\my.op]
-Defines: X
+Declares: X
 satisfies:
 . pi = pi
 Writing:
@@ -1667,11 +1667,11 @@ Id: "22222222-2222-4222-8222-222222222222"
         let view = build_collection_view(&root, &[parsed_file], &[], &[], &mut event_log)
             .expect("expected view");
 
-        // The `Defines:` card is the second item; its `satisfies:` clause uses the
+        // The `Declares:` card is the second item; its `satisfies:` clause uses the
         // item-level `pi :~> \varpi` override rather than the global `pi :~> \pi`.
-        let defines = &view.files[0].items[1];
-        assert_eq!(defines.kind, "Defines");
-        let satisfies = defines
+        let declares = &view.files[0].items[1];
+        assert_eq!(declares.kind, "Declares");
+        let satisfies = declares
             .sections
             .iter()
             .find(|section| section.label == "satisfies")

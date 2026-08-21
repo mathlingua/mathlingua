@@ -78,7 +78,6 @@ extern {
         "$" => Token::Dollar,
         "?" => Token::Question,
         "@" => Token::At,
-        "@!" => Token::AtBang,
     }
 }
 
@@ -938,15 +937,6 @@ PrimaryExpression: ast::Expression = {
         ExpressionKind::Build {
             ty: ast::TypeExpression::Command(command),
             value: Box::new(value),
-            hard: false,
-        },
-    ),
-    <l:@L> <command:CommandExpression> "@!" <value:PrimaryExpression> <r:@R> => ast::Expression::new(
-        Span::new(l, r),
-        ExpressionKind::Build {
-            ty: ast::TypeExpression::Command(command),
-            value: Box::new(value),
-            hard: true,
         },
     ),
     <l:@L> <command:CommandExpression> <r:@R> => ast::Expression::new(

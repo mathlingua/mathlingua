@@ -62,44 +62,14 @@ pub(in crate::backend::semantic) fn walk_optional_enables(
                     walk_expression(&group.as_.argument.left, visit);
                     walk_expression(&group.as_.argument.right, visit);
                 }
-                EnablesItem::Relation(group) => {
-                    walk_relationship_declaration(&group.to.argument, visit);
-                    if let Some(when) = &group.when {
-                        for item in &when.arguments {
-                            walk_relation_when_item(item, visit);
-                        }
-                    }
-                    if let Some(specifies) = &group.specifies {
-                        walk_clause(&specifies.argument, visit);
+                EnablesItem::View(group) => {
+                    walk_declaration_statement(&group.as_.argument, visit);
+                    if let Some(signifies) = &group.signifies {
+                        walk_clause(&signifies.argument, visit);
                     }
                 }
             }
         }
-    }
-}
-
-fn walk_relationship_command(command: &CommandExpression, visit: &mut impl FnMut(&SignatureShape)) {
-    let shape = shape_for_command_expression(command);
-    visit(&shape);
-    walk_command_expression_arguments(command, visit);
-}
-
-fn walk_relationship_declaration(
-    declaration: &RelationshipDeclaration,
-    visit: &mut impl FnMut(&SignatureShape),
-) {
-    match declaration {
-        RelationshipDeclaration::Command(command) => walk_relationship_command(command, visit),
-        RelationshipDeclaration::Declaration(statement) => {
-            walk_declaration_statement(statement, visit)
-        }
-    }
-}
-
-fn walk_relation_when_item(item: &RelationWhenItem, visit: &mut impl FnMut(&SignatureShape)) {
-    match item {
-        RelationWhenItem::Declaration(statement) => walk_declaration_statement(statement, visit),
-        RelationWhenItem::HardCast(statement) => walk_hard_cast_statement(statement, visit),
     }
 }
 

@@ -893,7 +893,7 @@ fn collect_enables_provided_call_render_rules(
                 owner_subject,
                 registry,
             ),
-            EnablesItem::FromAs(_) | EnablesItem::Relation(_) => {}
+            EnablesItem::FromAs(_) | EnablesItem::View(_) => {}
         }
     }
 }

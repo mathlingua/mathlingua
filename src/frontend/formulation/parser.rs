@@ -12,17 +12,17 @@ use super::ast::{
     ExpressionBinding, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionForm,
     FunctionNamedExpressionElement, FunctionNamedExpressionElementLhs, FunctionType,
     FunctionTypeNotation, FunctionTypeSpec, FunctionTypeSpecKind, FunctionVariadicParameter,
-    HardCastStatement, IndexedCall, InfixCommandHeader, InfixSpec, InfixSpecExpressionRefinement,
-    InfixSpecHeader, InfixSpecHeaderRefinement, IsOrRefinedStatementSpec, IsOrSpec, IsStatement,
-    IsSubject, IsSubjectForm, IsSubjectKind, IsViaStatement, Label, LabelHeader,
-    MappingParameterSelector, MemberAliasLhs, Operator, ParenExpressionArgs, ParenHeadingArgs,
-    Placeholder, PlaceholderForm, PlaceholderFormKind, PlaceholderSpecStatement,
-    RefinedCommandExpression, RefinedCommandHeader, RefinedExpressionPart, RefinedHeaderPart,
-    RefinedTail, ResourceHeader, SetExpression, SetPredicate, SetTarget, SetTargetElement,
-    SetTargetKind, SetType, SetTypeElement, Span, SpecOperatorAlias, SpecOperatorAliasTarget,
-    SpecSubject, SpecSubjectKind, SubjectSpecStatement, TopicHeader, TupleExpressionElement,
-    TupleType, TypeExpression, VariadicParameter, VariadicParameterDimensions, VariadicSlice,
-    VariadicSliceAxis, VariadicSliceDimensions, WritingAlias,
+    IndexedCall, InfixCommandHeader, InfixSpec, InfixSpecExpressionRefinement, InfixSpecHeader,
+    InfixSpecHeaderRefinement, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject,
+    IsSubjectForm, IsSubjectKind, IsViaStatement, Label, LabelHeader, MappingParameterSelector,
+    MemberAliasLhs, Operator, ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm,
+    PlaceholderFormKind, PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
+    RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, SetExpression,
+    SetPredicate, SetTarget, SetTargetElement, SetTargetKind, SetType, SetTypeElement, Span,
+    SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement,
+    TopicHeader, TupleExpressionElement, TupleType, TypeExpression, VariadicParameter,
+    VariadicParameterDimensions, VariadicSlice, VariadicSliceAxis, VariadicSliceDimensions,
+    WritingAlias,
 };
 use super::grammar;
 use super::lexer::{Lexer, Spanned};
@@ -212,7 +212,6 @@ fn token_literal(token: &Token) -> &'static str {
         Token::Dollar => "$",
         Token::Question => "?",
         Token::At => "@",
-        Token::AtBang => "@!",
         Token::Name(_)
         | Token::Decimal(_)
         | Token::Placeholder(_)
@@ -2018,52 +2017,6 @@ pub fn parse_refined_declaration_statement(
     parse_declaration_statement(input, true)
 }
 
-/// Parses an `is!` hard-cast assumption.
-///
-/// Hard casts are deliberately not part of ordinary declaration parsing. They
-/// are only exposed to structural sections that explicitly allow assumptions of
-/// the form `x is! T` or `x := value is! T`.
-pub fn parse_hard_cast_statement(input: &str) -> Result<HardCastStatement, ParseError> {
-    let input = input.trim();
-    if let Some((label, inner)) = split_labeled_formulation(input) {
-        let mut statement = parse_hard_cast_statement(inner)?;
-        statement.span = span_all(input);
-        statement.labels.push(label);
-        return Ok(statement);
-    }
-    let index = find_top_level_substring(input, " is! ")
-        .ok_or_else(|| ParseError::custom("expected top-level ` is! `"))?;
-    let subject_text = input[..index].trim();
-    let ty_text = input[index + 5..].trim();
-    if subject_text.is_empty() || ty_text.is_empty() {
-        return Err(ParseError::custom(
-            "`is!` requires a subject before it and a type after it",
-        ));
-    }
-
-    let (subject_text, definition) =
-        if let Some(definition_index) = find_top_level_definition(subject_text) {
-            let left = subject_text[..definition_index].trim();
-            let right = subject_text[definition_index + 2..].trim();
-            if left.is_empty() || right.is_empty() {
-                return Err(ParseError::custom(
-                    "`:=` in an `is!` assumption requires text on both sides",
-                ));
-            }
-            (left, Some(parse_expression(right)?))
-        } else {
-            (subject_text, None)
-        };
-
-    Ok(HardCastStatement {
-        span: span_all(input),
-        labels: Vec::new(),
-        subject: parse_is_subject(subject_text)?,
-        definition,
-        ty: parse_type_expression(ty_text, true)?,
-    })
-}
-
 fn parse_declaration_relation(
     input: &str,
     allow_refined_type: bool,
@@ -3189,12 +3142,12 @@ fn desugar_command_argument_sugar(input: &str) -> Vec<Spanned<Token, usize, Lexi
                 edits[close + 1] = TokenEdit::Skip; // drop the `{` after `]`
                 changed = true;
             }
-            // Build function-literal sugar: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) => rhs)`
-            // (and likewise after the hard `@!`). The `[` follows the build marker
+            // Build function-literal sugar: `\cmd@[lhs]{rhs}` → `\cmd@((lhs) => rhs)`.
+            // The `[` follows the build marker
             // (rather than a command chain), and the literal is grouped in parens.
             Token::LBracket
                 if index > 0
-                    && matches!(toks[index - 1].1, Token::At | Token::AtBang)
+                    && matches!(toks[index - 1].1, Token::At)
                     && bracket_match[index] != usize::MAX
                     && bracket_match[index] + 1 < count
                     && matches!(toks[bracket_match[index] + 1].1, Token::LBrace)
@@ -3356,11 +3309,7 @@ fn parse_set_expression_at_colon(
 fn parse_set_build_expression(input: &str) -> Option<Result<Expression, ParseError>> {
     let at = find_first_top_level_char(input, '@')?;
     let type_text = input[..at].trim();
-    let mut value_text = input[at + 1..].trim_start();
-    let hard = value_text.starts_with('!');
-    if hard {
-        value_text = value_text[1..].trim_start();
-    }
+    let value_text = input[at + 1..].trim_start();
     if !value_text.starts_with('{') {
         return None;
     }
@@ -3387,7 +3336,6 @@ fn parse_set_build_expression(input: &str) -> Option<Result<Expression, ParseErr
             ExpressionKind::Build {
                 ty,
                 value: Box::new(value),
-                hard,
             },
         ))
     })())
@@ -4205,9 +4153,9 @@ mod tests {
     use super::{
         is_name_text, is_operator_text, parse_author_header, parse_command_header,
         parse_expression, parse_expression_alias, parse_form_or_declaration,
-        parse_hard_cast_statement, parse_is_or_refined_statement_spec, parse_is_or_spec,
-        parse_is_via_statement, parse_label_header, parse_ordinary_declaration_statement,
-        parse_resource_header, parse_spec_operator_alias, parse_topic_header, parse_writing_alias,
+        parse_is_or_refined_statement_spec, parse_is_or_spec, parse_is_via_statement,
+        parse_label_header, parse_ordinary_declaration_statement, parse_resource_header,
+        parse_spec_operator_alias, parse_topic_header, parse_writing_alias,
     };
     use crate::frontend::formulation::ast::{
         BinaryOperator, BuiltinCommandArgument, ChainPart, CommandContextArgument,
@@ -5562,27 +5510,17 @@ mod tests {
     }
 
     #[test]
-    fn parses_soft_and_hard_build_casts() {
-        // `\ty@value` (soft) follows coercion; `\ty@!value` (hard) also follows encoding.
-        let soft = parse_expression(r#"\set@{x_ : x_ is \real}"#).expect("expected soft build");
-        match soft.kind {
-            ExpressionKind::Build { ty, value, hard } => {
-                assert!(!hard);
+    fn parses_build_casts_and_rejects_removed_hard_builds() {
+        let build = parse_expression(r#"\set@{x_ : x_ is \real}"#).expect("expected build");
+        match build.kind {
+            ExpressionKind::Build { ty, value } => {
                 assert!(matches!(value.kind, ExpressionKind::Set(_)));
                 assert!(matches!(ty, TypeExpression::Command(_)));
             }
-            other => panic!("expected soft build, got {other:?}"),
+            other => panic!("expected build, got {other:?}"),
         }
 
-        let hard = parse_expression(r#"\set@!n"#).expect("expected hard build");
-        match hard.kind {
-            ExpressionKind::Build { ty, value, hard } => {
-                assert!(hard);
-                assert!(matches!(value.kind, ExpressionKind::Name(ref name) if name == "n"));
-                assert!(matches!(ty, TypeExpression::Command(_)));
-            }
-            other => panic!("expected hard build, got {other:?}"),
-        }
+        parse_expression(r#"\set@!n"#).expect_err("`@!` is no longer supported");
     }
 
     #[test]
@@ -6564,23 +6502,9 @@ mod tests {
     }
 
     #[test]
-    fn parses_hard_cast_assumptions() {
-        let statement =
-            parse_hard_cast_statement(r#"a0 := a is! \set"#).expect("expected hard-cast statement");
-
-        assert!(statement.definition.is_some());
-        assert!(matches!(statement.ty, TypeExpression::Command(_)));
-        assert!(matches!(
-            statement.subject.kind,
-            IsSubjectKind::Forms(ref forms) if forms.len() == 1
-        ));
-
+    fn rejects_removed_hard_cast_assumptions() {
         parse_ordinary_declaration_statement(r#"a0 := a is! \set"#)
-            .expect_err("ordinary declarations should not accept hard casts");
-
-        let labeled = parse_hard_cast_statement(r#"(.a0 := a is! \set.)[:cast:]"#)
-            .expect("expected labeled hard-cast statement");
-        assert_eq!(labeled.labels[0].parts, vec!["cast".to_string()]);
+            .expect_err("`is!` is no longer supported");
     }
 
     #[test]

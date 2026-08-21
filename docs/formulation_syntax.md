@@ -29,8 +29,6 @@ The formulation subsystem does not have one single root grammar. It exposes seve
   `parse_declaration_statement(input, allow_refined_type = false)`).
 - **`parse_refined_declaration_statement`** — same, but the `is` target may be a
   refined command expression (`allow_refined_type = true`).
-- **`parse_hard_cast_statement`** — `<subject> is! <type>` (optionally
-  `<subject> := <value> is! <type>`).
 - **`parse_expression_binding`** — `<expression> := <expression>`.
 - **`parse_form_or_declaration`** — forms and declarations.
 - **`parse_is_or_spec`** — internal `<is-subject> is <command-type>` or
@@ -232,7 +230,6 @@ The lexer has dedicated tokens for:
 - `->`
 - `=>`
 - `@`
-- `@!`
 - `\`
 - `\.`
 - `./`
@@ -247,19 +244,17 @@ The lexer has dedicated tokens for:
 - the colon-decorated special-operator forms `:op:` `:op` `op:` (used for owner-typed operator resolution)
 - `(` `)` `{` `}` `[` `]` `,` `;` `:` `.` `..` `|` `$` `?` `:?`
 
-Because these are tokenized before ordinary names, exact spellings like `is` and `via` are effectively reserved in lexer-driven formulation parsing. Note that `is!` (the hard-cast statement) is **not** a lexer token — it is recognized by a top-level scan for ` is! ` in `parse_hard_cast_statement`, so it may be surrounded by ordinary tokens.
+Because these are tokenized before ordinary names, exact spellings like `is` and `via` are effectively reserved in lexer-driven formulation parsing.
 
 ### Build expressions
 
-A build applies a command type to a value at a stated abstraction level:
+A build applies a command type to a value:
 
-- `<command-type> @ <value>` — soft build (coercion), e.g. `\set@{...}`,
+- `<command-type> @ <value>`, e.g. `\set@{...}`,
   `\rational@k`.
-- `<command-type> @! <value>` — hard build (coercion + encoding), e.g.
-  `\set@!m`.
 
-`@`/`@!` bind the command type on the left to the primary expression on the
-right. These replace the removed `value as \type` / `value as! \type` casts. A
+`@` binds the command type on the left to the primary expression on the
+right. A
 build is also how a `Defines:` value may state its type without `is`
 (`X := \set@{...}` is sugar for `... is \set`).
 
@@ -361,7 +356,7 @@ PrimaryExpression ::=
   | BuiltinCommandExpression
   | MemberCall            -- Name "." Name "(" args ")" | Command ".." Name "(" args ")"
   | MemberAccess          -- Name "." Name | Command ".." Name
-  | Build                 -- CommandExpression ("@" | "@!") PrimaryExpression
+  | Build                 -- CommandExpression "@" PrimaryExpression
   | InferredName          -- Name "?"
   | MagneticPlaceholder   -- x__
   | Placeholder           -- x_
@@ -1074,7 +1069,6 @@ the current Rust formulation implementation.
 ```text
 InputExpression ::= Expression
 InputDeclarationStatement ::= DeclarationStatement
-InputHardCastStatement ::= HardCastStatement
 InputExpressionBinding ::= ExpressionBinding
 InputFormOrDeclaration ::= FormOrDeclaration
 InputIsOrSpec ::= IsOrSpec
@@ -1261,7 +1255,7 @@ PrimaryExpression ::=
   | CommandExpression
   | BuiltinCommandExpression
   | MemberExpression
-  | CommandExpression ("@" | "@!") PrimaryExpression
+  | CommandExpression "@" PrimaryExpression
   | Name "?"
   | MagneticPlaceholder
   | Placeholder
@@ -1346,7 +1340,6 @@ DeclarationBody ::=
 DeclarationRelation ::= " is " TypeExpression | TopLevelQuotedOperator Expression
 
 ExpressionBinding ::= Expression ":=" Expression
-HardCastStatement ::= IsSubject (":=" Expression)? " is! " TypeExpression
 
 IsStatement ::= IsSubject " is " TypeExpression
 SubjectSpecStatement ::= SpecSubject TopLevelQuotedOperator Name

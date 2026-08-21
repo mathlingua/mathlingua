@@ -136,7 +136,7 @@ mod tests {
     #[test]
     fn lexes_alias_tokens_named_argument_delimiters_and_predicates() {
         let tokens: Vec<_> = Lexer::new(
-            r#"(.x.) [| |] :|left| |mid| |right|: :|both|: ::= := :=> :-> :~> => -> |-> is via @ @! is? is_not? \. ./ \: :/ ?:/"#,
+            r#"(.x.) [| |] :|left| |mid| |right|: :|both|: ::= := :=> :-> :~> => -> |-> is via @ is? is_not? \. ./ \: :/ ?:/"#,
         )
         .map(|item| item.expect("expected valid token").1)
         .collect();
@@ -164,7 +164,6 @@ mod tests {
                 Token::Is,
                 Token::Via,
                 Token::At,
-                Token::AtBang,
                 Token::IsPredicate,
                 Token::Name("is_not".to_string()),
                 Token::Question,

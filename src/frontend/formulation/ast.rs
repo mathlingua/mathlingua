@@ -566,14 +566,10 @@ pub enum ExpressionKind {
         subject: Box<Expression>,
         ty: TypeExpression,
     },
-    /// `\cmd@<value>` (soft) or `\cmd@!<value>` (hard) — casts/builds a value to type
-    /// `\cmd`. The soft form follows subclassing and `\\coercion`; the hard form
-    /// (`hard = true`) additionally follows `\\encoding`. This is the only cast form;
-    /// `is`/`is!` play the same role when introducing a named symbol.
+    /// `\cmd@<value>` casts/builds a value to type `\cmd`.
     Build {
         ty: TypeExpression,
         value: Box<Expression>,
-        hard: bool,
     },
     MemberOf {
         subject: Box<Expression>,
@@ -1049,15 +1045,6 @@ pub struct DeclarationStatement {
     pub expansion: Option<IsSubject>,
     pub definition: Option<Expression>,
     pub relation: Option<DeclarationRelation>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct HardCastStatement {
-    pub span: Span,
-    pub labels: Vec<Label>,
-    pub subject: IsSubject,
-    pub definition: Option<Expression>,
-    pub ty: TypeExpression,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

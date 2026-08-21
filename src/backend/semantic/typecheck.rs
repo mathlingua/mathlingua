@@ -78,8 +78,7 @@ pub(super) fn collect_definition_type_metadata(
     collect_spec_operator_rules(item, &info, registry);
     collect_provided_symbol_rules(item, &info, registry);
     collect_cast_as_rules(item, &info, registry);
-    collect_viewable_rules(item, &info, registry);
-    collect_abstraction_rules(item, &info, registry);
+    collect_view_rules(item, &info, registry);
     collect_collection_type_signature(item, &info, registry);
     collect_abstract_declaration(item, header_shape, registry);
     let mut info = info;
@@ -950,6 +949,20 @@ fn type_info_from_parts(
         }
     }
 
+    // Concrete component definitions in a `Defines:`/`Realizes:` `specifies:`
+    // section remain available when a view follows through a named component.
+    if let Some(specifies) = defines_specifies {
+        for statement in specifies
+            .arguments
+            .iter()
+            .filter_map(specifies_item_statement)
+        {
+            if let Some((left, right)) = declaration_substitution(statement) {
+                context.add_substitution(left, right);
+            }
+        }
+    }
+
     let requirements = context
         .facts
         .iter()
@@ -1450,7 +1463,7 @@ fn collect_cast_as_rules(
     }
 }
 
-fn collect_viewable_rules(
+fn collect_view_rules(
     item: &TopLevelItem,
     info: &DefinitionTypeInfo,
     registry: &mut SignatureRegistry,
@@ -1463,97 +1476,28 @@ fn collect_viewable_rules(
     };
 
     for item in &enables.arguments {
-        let EnablesItem::Relation(group) = item else {
+        let EnablesItem::View(group) = item else {
             continue;
         };
-        if !relation_group_has_kind(group, RelationKind::Coercion) {
+        let statement = &group.as_.argument;
+        let Some(view_expression) = statement.definition.clone() else {
             continue;
         };
-        let Some((target_subject, target @ TypeFact::Is { .. })) =
-            view_target_from_relationship_declaration(&group.to.argument, source_subject)
+        let Some(target @ TypeFact::Is { .. }) = facts_from_declaration_statement(statement)
+            .into_iter()
+            .find(|fact| matches!(fact, TypeFact::Is { .. }))
         else {
             continue;
         };
+        let target_subject = fact_subject(&target).to_owned();
         registry.viewable_rules.push(ViewableRule {
             source_signature: info.signature.clone(),
             source_subject: source_subject.clone(),
             parameters: info.parameters.clone(),
             target_subject,
+            view_expression,
             target,
         });
-    }
-}
-
-fn collect_abstraction_rules(
-    item: &TopLevelItem,
-    info: &DefinitionTypeInfo,
-    registry: &mut SignatureRegistry,
-) {
-    let Some(source_subject) = info.described.as_ref().or(info.defined_subject.as_ref()) else {
-        return;
-    };
-    let Some(enables) = enables_section(item) else {
-        return;
-    };
-
-    for item in &enables.arguments {
-        let EnablesItem::Relation(group) = item else {
-            continue;
-        };
-        if !relation_group_has_kind(group, RelationKind::Encoding) {
-            continue;
-        };
-        let Some((target_subject, target @ TypeFact::Is { .. })) =
-            view_target_from_relationship_declaration(&group.to.argument, source_subject)
-        else {
-            continue;
-        };
-        registry.abstraction_rules.push(ViewableRule {
-            source_signature: info.signature.clone(),
-            source_subject: source_subject.clone(),
-            parameters: info.parameters.clone(),
-            target_subject,
-            target,
-        });
-    }
-}
-
-fn relation_group_has_kind(group: &EnablesRelationGroup, kind: RelationKind) -> bool {
-    group
-        .represents
-        .as_ref()
-        .is_some_and(|section| section.arguments.iter().any(|argument| *argument == kind))
-}
-
-fn view_target_from_relationship_declaration(
-    declaration: &RelationshipDeclaration,
-    source_subject: &str,
-) -> Option<(String, TypeFact)> {
-    match declaration {
-        RelationshipDeclaration::Command(command) => {
-            let ty = TypeExpression::Command(command.clone());
-            let (ty, signature) = key_for_type_expression(&ty)?;
-            let subject = source_subject.to_owned();
-            Some((
-                subject.clone(),
-                TypeFact::Is {
-                    subject,
-                    ty,
-                    signature,
-                },
-            ))
-        }
-        RelationshipDeclaration::Declaration(statement) => {
-            facts_from_declaration_statement(statement)
-                .into_iter()
-                .find_map(|fact| {
-                    if matches!(fact, TypeFact::Is { .. }) {
-                        Some((fact_subject(&fact).to_owned(), fact))
-                    } else {
-                        None
-                    }
-                })
-        }
     }
 }
 
@@ -1691,7 +1635,7 @@ fn capability_aliases(item: &TopLevelItem) -> Vec<CapabilityAliasRef<'_>> {
                 source_subject: Some(primary_subject_key(&group.from.argument.subject)),
                 source_requires_literal: true,
             }),
-            EnablesItem::FromAs(_) | EnablesItem::Relation(_) => None,
+            EnablesItem::FromAs(_) | EnablesItem::View(_) => None,
         }));
     }
     result
@@ -2266,6 +2210,16 @@ fn validate_top_level_item_types(
             );
             validate_defines_target_symbol_specifications(group, path, locator, event_log);
             validate_defines_specifies_items(group, path, locator, event_log);
+            validate_optional_enables(
+                &group.enables,
+                &context,
+                &shapes_for_header(&group.heading),
+                &primary_subject_key(&group.defines.argument.subject),
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             validate_optional_requires(
                 &group.requires,
                 &context,
@@ -2329,6 +2283,16 @@ fn validate_top_level_item_types(
                 "leave it abstract in the declaration this realizes",
                 path,
                 locator,
+                event_log,
+            );
+            validate_optional_enables(
+                &group.enables,
+                &context,
+                &shapes_for_header(&group.heading),
+                &primary_subject_key(&group.realizes.argument.subject),
+                path,
+                locator,
+                registry,
                 event_log,
             );
             validate_optional_requires(
@@ -2401,6 +2365,16 @@ fn validate_top_level_item_types(
             validate_refines_target_symbol_specifications(
                 group, path, locator, registry, event_log,
             );
+            validate_optional_enables(
+                &group.enables,
+                &context,
+                &shapes_for_header(&group.heading),
+                &primary_subject_key(&group.refines.argument.subject),
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             validate_optional_requires(
                 &group.requires,
                 &context,
@@ -2450,6 +2424,16 @@ fn validate_top_level_item_types(
             for clause in &group.that.arguments {
                 check_clause(clause, &context, path, locator, registry, event_log);
             }
+            validate_optional_enables(
+                &group.enables,
+                &context,
+                &shapes_for_header(&group.heading),
+                "",
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             validate_optional_requires(
                 &group.requires,
                 &context,
@@ -8786,12 +8770,10 @@ fn check_expression(
                 );
             }
         }
-        ExpressionKind::Build { ty, value, hard } => {
+        ExpressionKind::Build { ty, value } => {
             check_expression(value, context, path, locator, registry, event_log);
             check_type_expression(ty, context, path, locator, registry, event_log);
-            check_build_expression(
-                value, ty, *hard, context, path, locator, registry, event_log,
-            );
+            check_build_expression(value, ty, context, path, locator, registry, event_log);
         }
     }
 }
@@ -8902,11 +8884,10 @@ fn check_matching_variadic_slices(
     );
 }
 
-/// Checks `\ty@value` / `\ty@!value` — the only cast form.
+/// Checks `\ty@value`.
 fn check_build_expression(
     value: &Expression,
     ty: &TypeExpression,
-    hard: bool,
     context: &TypeContext,
     path: &Path,
     locator: &mut SourceLocator<'_>,
@@ -8919,14 +8900,7 @@ fn check_build_expression(
     let Some(required) = fact_from_type_assertion_in_context(value, ty, context) else {
         return;
     };
-    // The soft build `\ty@value` follows subclassing and `\\coercion`; the hard build
-    // `\ty@!value` additionally follows `\\encoding`.
-    let succeeds = if hard {
-        prove_fact_allowing_abstraction(&required, context, registry)
-    } else {
-        prove_fact(&required, context, registry)
-    };
-    if succeeds {
+    if prove_fact(&required, context, registry) {
         return;
     }
 
@@ -8934,10 +8908,7 @@ fn check_build_expression(
         event_log,
         path,
         cast_expression_position(value, context, locator),
-        format!(
-            "Could not build `{}`",
-            format_build_expression(ty, value, hard)
-        ),
+        format!("Could not build `{}`", format_build_expression(ty, value)),
     );
 }
 
@@ -10045,10 +10016,17 @@ fn direct_component_access_expression(
 
     let mut child = context.clone();
     for (left, right) in &info.substitutions {
-        child.add_substitution(
-            substitute_key(left, &substitutions),
-            substitute_key(right, &substitutions),
-        );
+        let left = substitute_key(left, &substitutions);
+        let right = substitute_key(right, &substitutions);
+        child.add_substitution(left.clone(), right.clone());
+        if let Ok(expression) = crate::frontend::formulation::parse_expression(&right) {
+            add_cast_expression_facts(&expression, &mut child);
+            if let Some(literal) = cast_expression_set_literal(&expression) {
+                child.add_collection_literal(left, literal.clone());
+            } else if let ExpressionKind::Set(literal) = expression.kind {
+                child.add_collection_literal(left, literal);
+            }
+        }
     }
     for fact in &info.component_types {
         for instantiated in instantiate_variadic_fact(
@@ -12398,26 +12376,38 @@ fn validate_optional_enables(
                     event_log,
                 );
             }
-            EnablesItem::Relation(group) => {
-                let mut child = context.clone();
-                if let Some(when) = &group.when {
-                    for item in &when.arguments {
-                        assume_relation_when_item(
-                            item, &mut child, path, locator, registry, event_log,
-                        );
-                    }
-                }
-                validate_relationship_declaration(
-                    &group.to.argument,
-                    &mut child,
-                    path,
-                    locator,
-                    registry,
-                    event_log,
+            EnablesItem::View(group) => {
+                let statement = &group.as_.argument;
+                let valid_subject = matches!(
+                    &statement.subject.kind,
+                    IsSubjectKind::Forms(forms)
+                        if matches!(forms.as_slice(), [IsSubjectForm::Form(FormOrDeclaration {
+                            kind: FormOrDeclarationKind::Name(_),
+                            ..
+                        })])
                 );
-                if let Some(specifies) = &group.specifies {
+                let valid_shape = valid_subject
+                    && statement.expansion.is_none()
+                    && statement.definition.is_some()
+                    && matches!(statement.relation, Some(DeclarationRelation::Is(_)));
+                if !valid_shape {
+                    emit_error(
+                        event_log,
+                        path,
+                        locator.locate_symbol("as"),
+                        "A view `as:` must have the form `<symbol> := <expression> is <type>`",
+                    );
+                    continue;
+                }
+
+                let mut child = context.clone();
+                declare_declaration_statement_subjects(statement, &mut child);
+                complete_introduced_declaration_statement(
+                    statement, &mut child, path, locator, registry, event_log,
+                );
+                if let Some(signifies) = &group.signifies {
                     check_clause(
-                        &specifies.argument,
+                        &signifies.argument,
                         &child,
                         path,
                         locator,
@@ -12427,81 +12417,6 @@ fn validate_optional_enables(
                 }
             }
         }
-    }
-}
-
-fn validate_relationship_declaration(
-    declaration: &RelationshipDeclaration,
-    context: &mut TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    match declaration {
-        RelationshipDeclaration::Command(command) => {
-            check_command_expression(command, context, path, locator, registry, event_log);
-            let active_command = active_command_expression(command, context);
-            check_command_argument_expressions(
-                &active_command,
-                context,
-                path,
-                locator,
-                registry,
-                event_log,
-            );
-        }
-        RelationshipDeclaration::Declaration(statement) => {
-            declare_declaration_statement_subjects(statement, context);
-            complete_introduced_declaration_statement(
-                statement, context, path, locator, registry, event_log,
-            );
-        }
-    }
-}
-
-fn assume_relation_when_item(
-    item: &RelationWhenItem,
-    context: &mut TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    match item {
-        RelationWhenItem::Declaration(statement) => {
-            assume_declaration_statement(statement, context, path, locator, registry, event_log);
-        }
-        RelationWhenItem::HardCast(statement) => {
-            validate_hard_cast_statement(statement, context, path, locator, registry, event_log);
-        }
-    }
-}
-
-fn validate_hard_cast_statement(
-    statement: &HardCastStatement,
-    context: &mut TypeContext,
-    path: &Path,
-    locator: &mut SourceLocator<'_>,
-    registry: &SignatureRegistry,
-    event_log: &mut EventLog,
-) {
-    declare_is_subject(&statement.subject, context);
-    if let Some(definition) = &statement.definition {
-        check_expression(definition, context, path, locator, registry, event_log);
-        context.add_substitution(
-            primary_subject_key(&statement.subject),
-            key_for_expression(definition),
-        );
-    }
-    check_type_expression(&statement.ty, context, path, locator, registry, event_log);
-    let is_statement = IsStatement {
-        span: statement.span,
-        subject: statement.subject.clone(),
-        ty: statement.ty.clone(),
-    };
-    for fact in facts_from_is_statement(&is_statement) {
-        context.add_fact(fact);
     }
 }
 
@@ -13986,6 +13901,11 @@ fn prove_fact_threaded(
         return true;
     }
 
+    if allow_viewable && simple_view_fact_implies_required(&required, context, registry, spec_seen)
+    {
+        return true;
+    }
+
     // Numeric spellings are ordinary names first: an explicit fact in the
     // current scope wins. Only after local/derived facts fail do the global
     // `Specify:` categories provide their fallback type.
@@ -14167,34 +14087,6 @@ fn spec_rule_direct_targets(
         }
     }
     result
-}
-
-fn prove_fact_allowing_abstraction(
-    required: &TypeFact,
-    context: &TypeContext,
-    registry: &SignatureRegistry,
-) -> bool {
-    if prove_fact(required, context, registry) {
-        return true;
-    }
-
-    let required = context.normalize_fact(required);
-    let mut seen = HashSet::new();
-    if defined_value_abstraction_implies_required(&required, context, registry, &mut seen) {
-        return true;
-    }
-    if defined_output_facts_for_key(fact_subject(&required), context, registry)
-        .iter()
-        .any(|fact| {
-            fact_implies_allowing_abstraction(fact, &required, context, registry, &mut seen)
-        })
-    {
-        return true;
-    }
-
-    context.facts.iter().any(|fact| {
-        fact_implies_allowing_abstraction(fact, &required, context, registry, &mut seen)
-    })
 }
 
 fn builtin_fact_holds(required: &TypeFact, registry: &SignatureRegistry) -> bool {
@@ -14583,6 +14475,13 @@ fn fact_implies_with_options(
         return true;
     }
 
+    if allow_viewable
+        && let Some((viewed, child)) = rewrite_fact_through_simple_view(&fact, context, registry)
+        && fact_implies_with_options(&viewed, required, &child, registry, seen, true)
+    {
+        return true;
+    }
+
     if equivalence_fact_implies_required(&fact, required, context, registry) {
         return true;
     }
@@ -14618,151 +14517,44 @@ fn fact_implies_with_options(
     false
 }
 
-fn fact_implies_allowing_abstraction(
-    fact: &TypeFact,
-    required: &TypeFact,
-    context: &TypeContext,
-    registry: &SignatureRegistry,
-    seen: &mut HashSet<TypeFact>,
-) -> bool {
-    let fact = context.normalize_fact(fact);
-    if fact_implies_with_options(
-        &fact,
-        required,
-        context,
-        registry,
-        &mut HashSet::new(),
-        true,
-    ) {
-        return true;
-    }
-    if !seen.insert(fact.clone()) {
-        return false;
-    }
-
-    if abstraction_fact_implies_required(&fact, required, context, registry, seen) {
-        return true;
-    }
-
-    for extended in reduce_extension_fact(&fact, context, registry) {
-        if fact_implies_allowing_abstraction(&extended, required, context, registry, seen) {
-            return true;
-        }
-    }
-
-    for reduced in reduce_refined_fact(&fact, context, registry) {
-        if fact_implies_allowing_abstraction(&reduced, required, context, registry, seen) {
-            return true;
-        }
-    }
-
-    if matches!(fact, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
-        let mut spec_seen = HashSet::new();
-        for reduced in reduce_spec_or_member_fact(&fact, context, registry, &mut spec_seen) {
-            if fact_implies_allowing_abstraction(&reduced, required, context, registry, seen) {
-                return true;
-            }
-        }
-    }
-
-    false
-}
-
-fn abstraction_fact_implies_required(
-    fact: &TypeFact,
-    required: &TypeFact,
-    context: &TypeContext,
-    registry: &SignatureRegistry,
-    seen: &mut HashSet<TypeFact>,
-) -> bool {
-    let TypeFact::Is {
-        subject,
-        ty,
-        signature,
-    } = fact
-    else {
-        return false;
-    };
-    let actuals = actuals_for_type_key(signature, ty).unwrap_or_default();
-
-    registry
-        .abstraction_rules
-        .iter()
-        .filter(|rule| rule.source_signature == *signature)
-        .any(|rule| {
-            let mut substitutions = rule
-                .parameters
-                .iter()
-                .zip(&actuals)
-                .map(|(name, actual)| (name.clone(), context.normalize_key(actual)))
-                .collect::<HashMap<_, _>>();
-            substitutions.insert(rule.source_subject.clone(), subject.clone());
-            substitutions.insert(rule.target_subject.clone(), subject.clone());
-            let abstracted = context.normalize_fact(&substitute_fact(&rule.target, &substitutions));
-            fact_implies_with_options(&abstracted, required, context, registry, seen, true)
-        })
-}
-
-/// Applies a coercion relation declared directly on a `Defines:` value.
+/// Applies a view declared directly on a `Defines:` value.
 ///
-/// Type relations normally start from an `is` fact whose type signature owns
-/// the relation. A defined command such as `\naturals` is already a value, so
-/// it has no `\naturals` type fact to start that reduction. Match the command
-/// itself instead and instantiate the relation onto that value. Substituting
-/// both subjects is what makes `Nb` viewable as a `\set` through the relation's
-/// `N is \set` target without recording `Nb is \set` as a definition output.
+/// Type views normally start from an `is` fact whose type signature owns the
+/// view. A defined command is already a value, so match the command itself and
+/// instantiate the view onto that value.
 fn defined_value_view_implies_required(
     required: &TypeFact,
     context: &TypeContext,
     registry: &SignatureRegistry,
     seen: &mut HashSet<TypeFact>,
 ) -> bool {
-    defined_value_relation_implies_required(
-        required,
-        context,
-        registry,
-        &registry.viewable_rules,
-        seen,
-    )
+    defined_value_view_facts_for_key(fact_subject(required), context, registry)
+        .iter()
+        .any(|viewed| fact_implies(viewed, required, context, registry, seen))
 }
 
-/// The hard-view counterpart of [`defined_value_view_implies_required`].
-fn defined_value_abstraction_implies_required(
-    required: &TypeFact,
+fn defined_value_view_facts_for_key(
+    subject: &str,
     context: &TypeContext,
     registry: &SignatureRegistry,
-    seen: &mut HashSet<TypeFact>,
-) -> bool {
-    defined_value_relation_implies_required(
-        required,
-        context,
-        registry,
-        &registry.abstraction_rules,
-        seen,
-    )
-}
-
-fn defined_value_relation_implies_required(
-    required: &TypeFact,
-    context: &TypeContext,
-    registry: &SignatureRegistry,
-    rules: &[ViewableRule],
-    seen: &mut HashSet<TypeFact>,
-) -> bool {
-    let subject = context.normalize_key(fact_subject(required));
+) -> Vec<TypeFact> {
+    let subject = context.normalize_key(subject);
     let Some((signature, actuals)) = command_signature_and_actuals_from_key(&subject)
         .or_else(|| infix_command_signature_and_actuals_from_key(&subject))
     else {
-        return false;
+        return Vec::new();
     };
-    if !signature_has_kind(&signature, DefinitionKind::Defines, registry) {
-        return false;
+    if !signature_has_kind(&signature, DefinitionKind::Defines, registry)
+        && !signature_has_kind(&signature, DefinitionKind::Realizes, registry)
+    {
+        return Vec::new();
     }
 
-    rules
+    registry
+        .viewable_rules
         .iter()
         .filter(|rule| rule.source_signature == signature)
-        .any(|rule| {
+        .map(|rule| {
             let mut substitutions = rule
                 .parameters
                 .iter()
@@ -14771,9 +14563,137 @@ fn defined_value_relation_implies_required(
                 .collect::<HashMap<_, _>>();
             substitutions.insert(rule.source_subject.clone(), subject.clone());
             substitutions.insert(rule.target_subject.clone(), subject.clone());
-            let viewed = context.normalize_fact(&substitute_fact(&rule.target, &substitutions));
-            fact_implies(&viewed, required, context, registry, seen)
+            context.normalize_fact(&substitute_fact(&rule.target, &substitutions))
         })
+        .collect()
+}
+
+/// Rewrites a fact through a view whose right-hand side is a name or a tuple of
+/// names. A named component is qualified by the concrete owner (`value..N`) and
+/// checked in the component context; arbitrary expressions intentionally do not
+/// participate in this propagation.
+fn simple_view_fact_implies_required(
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+    spec_seen: &mut HashSet<TypeFact>,
+) -> bool {
+    let Some((rewritten, child)) = rewrite_fact_through_simple_view(required, context, registry)
+    else {
+        return false;
+    };
+    prove_fact_threaded(&rewritten, &child, registry, true, spec_seen)
+}
+
+fn rewrite_fact_through_simple_view(
+    fact: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<(TypeFact, TypeContext)> {
+    let viewed_key = match fact {
+        TypeFact::Spec { target, .. } => target,
+        TypeFact::MemberOf { collection, .. } => collection,
+        _ => return None,
+    };
+    let (replacement, child) = simple_view_target_for_key(viewed_key, context, registry)?;
+    let replacement = effective_key_for_expression(&replacement, &child, registry);
+    let rewritten = match fact {
+        TypeFact::Spec {
+            subject, operator, ..
+        } => TypeFact::Spec {
+            subject: subject.clone(),
+            operator: operator.clone(),
+            target: replacement,
+        },
+        TypeFact::MemberOf { subject, .. } => TypeFact::MemberOf {
+            subject: subject.clone(),
+            collection: replacement,
+        },
+        _ => unreachable!(),
+    };
+    let rewritten = child.normalize_fact(&rewritten);
+    if rewritten == *fact {
+        return None;
+    }
+    Some((rewritten, child))
+}
+
+fn simple_view_target_for_key(
+    owner_key: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<(Expression, TypeContext)> {
+    let owner_key = context.normalize_key(owner_key);
+    let (signature, actuals) = command_signature_and_actuals_from_key(&owner_key)
+        .or_else(|| infix_command_signature_and_actuals_from_key(&owner_key))?;
+    if !signature_has_kind(&signature, DefinitionKind::Defines, registry)
+        && !signature_has_kind(&signature, DefinitionKind::Realizes, registry)
+    {
+        return None;
+    }
+    let owner = crate::frontend::formulation::parse_expression(&owner_key).ok()?;
+
+    registry
+        .viewable_rules
+        .iter()
+        .filter(|rule| rule.source_signature == signature)
+        .find_map(|rule| {
+            let expression_substitutions = rule
+                .parameters
+                .iter()
+                .zip(&actuals)
+                .filter_map(|(name, actual)| {
+                    crate::frontend::formulation::parse_expression(actual)
+                        .ok()
+                        .map(|expression| (name.clone(), expression))
+                })
+                .collect::<HashMap<_, _>>();
+            let view = substitute_expression(&rule.view_expression, &expression_substitutions);
+            qualify_simple_view_expression(&owner, &view, &rule.source_subject, context, registry)
+        })
+}
+
+fn qualify_simple_view_expression(
+    owner: &Expression,
+    view: &Expression,
+    owner_subject: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<(Expression, TypeContext)> {
+    match &view.kind {
+        ExpressionKind::Name(name) if name == owner_subject => {
+            Some((owner.clone(), context.clone()))
+        }
+        ExpressionKind::Name(name) => {
+            direct_component_access_expression(owner, name, &[], context, registry)
+        }
+        ExpressionKind::Tuple(elements) => {
+            let mut child = context.clone();
+            let mut qualified = Vec::with_capacity(elements.len());
+            for element in elements {
+                let TupleExpressionElement::Expression(expression) = element else {
+                    return None;
+                };
+                let (expression, next) = qualify_simple_view_expression(
+                    owner,
+                    expression,
+                    owner_subject,
+                    &child,
+                    registry,
+                )?;
+                child = next;
+                qualified.push(TupleExpressionElement::Expression(expression));
+            }
+            Some((
+                Expression::new(view.span, ExpressionKind::Tuple(qualified)),
+                child,
+            ))
+        }
+        ExpressionKind::Grouped { expression, .. } | ExpressionKind::Labeled { expression, .. } => {
+            qualify_simple_view_expression(owner, expression, owner_subject, context, registry)
+        }
+        _ => None,
+    }
 }
 
 fn viewable_fact_implies_required(
@@ -15933,6 +15853,11 @@ fn has_type_signature(
         .any(|fact| {
             fact_has_type_signature(fact, &subject, signature, context, registry, &mut seen)
         })
+        || defined_value_view_facts_for_key(&subject, context, registry)
+            .iter()
+            .any(|fact| {
+                fact_has_type_signature(fact, &subject, signature, context, registry, &mut seen)
+            })
 }
 
 /// Returns the concrete type arguments through which `subject` has `signature`.
@@ -16870,13 +16795,11 @@ fn assume_fact_expression(
             check_type_expression(ty, context, path, locator, registry, event_log);
             declare_names_from_expression(subject, context);
         }
-        ExpressionKind::Build { value, ty, hard } => {
+        ExpressionKind::Build { value, ty } => {
             check_type_expression(ty, context, path, locator, registry, event_log);
             declare_names_from_expression(value, context);
             register_expression_collection_literal(value, context);
-            check_build_expression(
-                value, ty, *hard, context, path, locator, registry, event_log,
-            );
+            check_build_expression(value, ty, context, path, locator, registry, event_log);
         }
         ExpressionKind::SpecStatement(statement) => {
             check_name(&statement.name, context, path, locator, event_log);
@@ -17484,10 +17407,9 @@ fn substitute_expression(
                 ty: substitute_type_expression(ty, substitutions),
             }
         }
-        ExpressionKind::Build { value, ty, hard } => ExpressionKind::Build {
+        ExpressionKind::Build { value, ty } => ExpressionKind::Build {
             value: boxed(value),
             ty: substitute_type_expression(ty, substitutions),
-            hard: *hard,
         },
         ExpressionKind::MemberOf {
             subject,
@@ -19464,7 +19386,7 @@ fn key_for_expression(expression: &Expression) -> String {
                 .map(|(key, _)| key)
                 .unwrap_or_else(|| key_for_non_command_type_expression(ty))
         ),
-        ExpressionKind::Build { ty, value, hard } => format_build_expression(ty, value, *hard),
+        ExpressionKind::Build { ty, value } => format_build_expression(ty, value),
     }
 }
 
@@ -19518,13 +19440,13 @@ fn key_for_subset_call(subset: &SubsetCall) -> String {
     }
 }
 
-fn format_build_expression(ty: &TypeExpression, value: &Expression, hard: bool) -> String {
+fn format_build_expression(ty: &TypeExpression, value: &Expression) -> String {
     format!(
         "{}{}{}",
         key_for_type_expression(ty)
             .map(|(key, _)| key)
             .unwrap_or_else(|| key_for_non_command_type_expression(ty)),
-        if hard { "@!" } else { "@" },
+        "@",
         key_for_expression(value)
     )
 }

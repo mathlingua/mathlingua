@@ -44,9 +44,8 @@ Metadata:
 Declares: T
 Enables:
 . [conn.plus]
-  relation:
-  to: y := \foo{X} is \bar
-  represents: \\coercion
+  view:
+  as: y := X is \bar
 Documented:
 . [docs.called]
   called:

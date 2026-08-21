@@ -1079,9 +1079,8 @@ them.
   source
 - `from:` plus `as:`, which defines how facts from a cast source are viewed as
   facts about the described form
-- `relation:` groups, which record relationships to another declaration and
-  may opt into type-system cast behavior with `represents: \\coercion` or
-  `represents: \\encoding`
+- `view:` groups, which state another type through which the described or
+  defined object may be used
 
 A `capability:` left-hand side may be a spec (`x_ "in" X :-> …`), an operator
 form (`x_ * y_ :=> …`), a command, or a **member access** — `x.inv` — or
@@ -1271,12 +1270,12 @@ Parsing has three layers, each with its own diagnostics:
   \`{other}\``. Clauses, formulations, headings, and text bodies each have
   "expected …" and "invalid …" diagnostics; `Refines` documentation rejects
   `called:` (`use adjective:`), `Topic` documentation accepts only `called:`,
-  and `represents:` entries must be `\coercion` or `\encoding`. `Disambiguates`
+  and `view:` groups require an `as:` declaration of the documented shape. `Disambiguates`
   headings and branches have their own structural rules.
 - **Formulation (expressions/forms)** — token errors (`invalid token`,
   `unexpected {token}; expected {expected}`) and construct-specific errors such
   as `command headers must start with \`\\``, `expected top-level \` is \``,
-  `expected top-level \` is! \``, `expected top-level \`:=\``, `... \` via \``,
+  `expected top-level \`:=\``, `... \` via \``,
   `... \`:=>\``, `... \`:->\``, `Invalid clause expression in \`{label}\`:
   {error}`, and set/placeholder/operator shape errors.
 
@@ -1442,7 +1441,7 @@ reports `Could not resolve member \`{name}\` for \`{owner}\``.
 `Requires:`/`Enables:` capability aliases are validated: a provided spec
 operator's target must be the described item; a `Required definition` must
 reference a `Defines:` entry and establish its stated fact. Build expressions
-`\<type>@<value>` (coercion) and `\<type>@!<value>` (coercion + encoding) are
+`\<type>@<value>` build expressions are
 checked (`Could not build \`{expression}\``). Type predicates, function-type
 specs, and `is` type arguments are checked
 (`Could not establish predicate ...`, `Could not establish requirement ... for
@@ -1853,59 +1852,46 @@ lets the checker use facts about `q_` from the source literal as facts about
 `F(p_)`; for example it can establish `F(a) is \set` when the source literal
 supports that substitution.
 
-### Build Expressions (`\type@value` and `\type@!value`)
+### Build Expressions (`\type@value`)
 
 An expression may build a value at a stated type using a command type followed
-by `@` (soft) or `@!` (hard) and the value:
-
-- `\type@value` — a **soft build**. It succeeds when `value` already has that
-  type, has a parent type that extends to it, or the value's type (or a parent)
-  has an `Enables:` `relation:` to `\type` marked `represents: \\coercion`.
-- `\type@!value` — a **hard build**. It performs the same checks and
-  additionally allows `relation:` groups marked `represents: \\encoding`. Use
-  `@!` when the value is being viewed at a lower abstraction level.
+by `@` and the value. It succeeds when the value already has that type, reaches
+it through type extension, or has an applicable `Enables:` `view:`.
 
 ```text
 X := \set@{x_ : x_ is \real}
 n := \rational@k
-s := \set@!m
 ```
 
-The old `value as \type` / `value as! \type` cast syntax has been removed;
-`\type@value` and `\type@!value` replace them. These are also the only way to
-state a `Defines:` value's type without `is` — a top-level build such as
+This is also a way to state a `Defines:` value's type without `is` — a top-level build such as
 `X := \set@{...}` is sugar for `... is \set` (see the target-symbol check
 above). A build whose value cannot be viewed at the requested type reports
 `Could not build \`{expression}\``.
 
-The related symbol-introduction forms are `is` and `is!`: `x is \type`
-introduces `x` with a soft view (coercion) of the type, and `x is! \type`
-introduces it with a hard view (coercion + encoding). They are the named
-counterparts of `@` and `@!`.
+### View Groups
 
-`Enables:` may contain `relation:` groups that back builds:
+An `Enables:` `view:` group declares a type through which the described or
+defined object can be used:
 
 ```text
 [\integer]
 Declares: n
 Enables:
-. relation:
-  to: r := \rational@n is \rational
-  when: n is \integer
-  specifies: n \.embedded.to./ r
-  represents: \\coercion
+. view:
+  as: r := \as.rational{n} is \rational
+  signifies: n \.embedded.to./ r
 ```
 
-The `to:` declaration states the target type using `is`. The `:= ...`
-construction is optional; without it, the relation is accepted but the converted
-value is opaque. The optional `when:` section can contain ordinary declarations
-and hard-view declarations such as `a0 := a is! \set`. The optional `specifies:`
-clause records a statement relating the original value and the viewed value.
+`view:` is a zero-argument marker. Its required `as:` line has exactly the form
+`<symbol> := <expression> is <type>`: it introduces one symbol for the new view,
+defines that symbol by the expression, and gives it a type. The relation must be
+ordinary `is`; quoted specification operators are not accepted. The optional
+`signifies:` statement is checked with the introduced symbol, its definition,
+and its type in scope.
 
-A relation on a `Defines:` item applies directly to that defined command. Its
-`to:` subject may name a component of the structured target, allowing the value
-to be viewed through that component without assigning the component's type to
-the whole target:
+A view on a `Defines:` item applies directly to that defined command. A
+structured value can expose one component without assigning that component's
+type to the whole target:
 
 ```text
 [\naturals]
@@ -1916,29 +1902,22 @@ specifies:
 . 0 "in" N
 . S is \function:on{N}:to{N}
 Enables:
-. relation:
-  to: N is \set
-  represents: \\coercion
+. view:
+  as: X := N is \set
 ```
 
 This makes `\naturals` usable where a `\set` is required, while `Nb` remains
 the structured value rather than acquiring `\set` as a definition output type.
 
-Relations marked `\\coercion` are used when checking whether an already-resolved
-command's arguments satisfy its requirements. For example, if `\integer` has a
-relation to `\rational` marked `\\coercion`, then a command requiring
-`x is \rational` may accept an integer argument, and `\rational@k` succeeds for
-an integer `k`. These relationships are **not** used for operator resolution:
-`+` on integers will not resolve to `+` on rationals merely because integers can
-be viewed as rationals.
+When the right-hand side of `:=` is a name or a tuple made only of names, type
+information follows through those names. Thus a fact about `\naturals` as a set
+is checked against `\naturals..N`; if `N` is defined by a set-builder, membership
+can continue reducing through that definition. When the right-hand side is any
+other expression, the checker knows only the introduced view symbol's advertised
+type; it does not equate downstream facts with the expression.
 
-Relations marked `\\encoding` are used only by hard builds (`@!`) and `is!`.
-They describe a lower-level representation an object may be pushed down to, such
-as a natural number treated as an underlying set.
-
-Unmarked `relation:` groups are still valid. They record user-defined
-relationships for readers and for future semantic extensions without affecting
-builds.
+Views are used for resolved command requirements and builds, but not to choose
+an overloaded operator or a `Disambiguates:` branch.
 
 ## Operators as Application
 

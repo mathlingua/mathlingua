@@ -406,7 +406,7 @@ fn item_starters(section: &str) -> Option<&'static [&'static str]> {
             "discoverer",
             "notes",
         ],
-        "Enables" => &["capability", "from", "relation"],
+        "Enables" => &["capability", "from", "view"],
         "Requires" => &["capability", "definition"],
         "Justification" => &["have"],
         "Metadata" => &["id", "version"],
@@ -418,7 +418,7 @@ fn item_starters(section: &str) -> Option<&'static [&'static str]> {
 
 /// Section orders for the nested groups that appear on argument bullets:
 /// clause groups (`forAll:`, `exists:`, ...) and typed item groups (`from:`,
-/// `relation:`, ...). Mirrors their `identify_sections(...)` calls in the
+/// `view:`, ...). Mirrors their `identify_sections(...)` calls in the
 /// parser. Single-section groups are omitted (they have no "next section").
 const NESTED_GROUPS: &[(&str, &[Section])] = &[
     // clause groups
@@ -460,15 +460,8 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
         ],
     ),
     (
-        "relation",
-        &[
-            ("relation", true),
-            ("to", true),
-            ("when", false),
-            ("specifies", false),
-            ("represents", false),
-            ("by", false),
-        ],
+        "view",
+        &[("view", true), ("as", true), ("signifies", false)],
     ),
     ("called", &[("called", true), ("written", false)]),
     ("writing", &[("writing", true), ("as", true)]),

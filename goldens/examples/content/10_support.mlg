@@ -38,10 +38,8 @@ Enables:
   written: "x_? \in G?"
 . from: Y ::= {y__ : ...}
   capability: x_ "in" G :-> x_ member_of Y
-. relation:
-  to: S := \unit.set
-  when: G is \enables.showcase
-  represents: \\coercion
+. view:
+  as: S := \unit.set is \set
 Documented:
 . called: "enables showcase"
 Id: "80bdeb53-b07a-411c-b7e2-7bd81e2059cb"

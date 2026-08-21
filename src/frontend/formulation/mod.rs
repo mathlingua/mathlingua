@@ -11,8 +11,7 @@ pub(crate) use parser::parse_type_expression;
 pub use parser::{
     ParseError, parse_author_header, parse_command_header, parse_expression,
     parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
-    parse_hard_cast_statement, parse_is_via_statement, parse_label_header,
-    parse_ordinary_declaration_statement, parse_refined_declaration_statement,
-    parse_resource_header, parse_spec_operator_alias, parse_topic_header, parse_writing_alias,
-    split_via_view,
+    parse_is_via_statement, parse_label_header, parse_ordinary_declaration_statement,
+    parse_refined_declaration_statement, parse_resource_header, parse_spec_operator_alias,
+    parse_topic_header, parse_writing_alias, split_via_view,
 };

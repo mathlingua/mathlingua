@@ -7,10 +7,9 @@ use crate::frontend::formulation::ast::{
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
     parse_expression, parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
-    parse_hard_cast_statement, parse_is_via_statement, parse_label_header,
-    parse_ordinary_declaration_statement, parse_refined_declaration_statement,
-    parse_resource_header, parse_spec_operator_alias, parse_topic_header, parse_type_expression,
-    parse_writing_alias, split_via_view,
+    parse_is_via_statement, parse_label_header, parse_ordinary_declaration_statement,
+    parse_refined_declaration_statement, parse_resource_header, parse_spec_operator_alias,
+    parse_topic_header, parse_type_expression, parse_writing_alias, split_via_view,
 };
 use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{
@@ -1477,7 +1476,7 @@ pub(super) fn parse_requires_item_group(
     }
 }
 
-/// Dispatches nested `Enables:` groups to capability, from, or relation parsers.
+/// Dispatches nested `Enables:` groups to capability, from, or view parsers.
 pub(super) fn parse_enables_item_group(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -1487,9 +1486,9 @@ pub(super) fn parse_enables_item_group(
             .map(Box::new)
             .map(EnablesItem::Capability),
         "from" => parse_from_group(group, tracker),
-        "relation" => parse_enables_relation_group(group, tracker)
+        "view" => parse_enables_view_group(group, tracker)
             .map(Box::new)
-            .map(EnablesItem::Relation),
+            .map(EnablesItem::View),
         other => {
             tracker.user_error_at_row(
                 Some(ORIGIN),
@@ -1886,91 +1885,34 @@ pub(in crate::frontend::structural::parser) fn parse_from_group(
     }
 }
 
-/// Parses a `relation:` nested group inside `Enables:`.
-pub(in crate::frontend::structural::parser) fn parse_enables_relation_group(
+/// Parses a zero-argument `view:` group inside `Enables:`.
+pub(in crate::frontend::structural::parser) fn parse_enables_view_group(
     group: &ProtoGroup,
     tracker: &mut EventLog,
-) -> Option<EnablesRelationGroup> {
+) -> Option<EnablesViewGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
     let sections = identify_sections(
-        "relation",
+        "view",
         &group.sections,
         tracker,
-        &[
-            "relation",
-            "to",
-            "when?",
-            "specifies?",
-            "represents?",
-            "by?",
-        ],
+        &["view", "as", "signifies?"],
     )?;
+    parse_marker_section(&sections, "view", tracker);
 
-    Some(EnablesRelationGroup {
+    Some(EnablesViewGroup {
         heading,
-        relation: EnablesRelationSection {
-            arguments: parse_optional_open_texts(sections.get("relation").copied(), tracker),
-        },
-        to: RelationToSection {
+        as_: ViewAsSection {
             argument: parse_required_formulation(
-                section(&sections, "to")?,
-                "to",
+                section(&sections, "as")?,
+                "as",
                 tracker,
-                parse_relationship_declaration,
+                parse_ordinary_declaration_statement,
             )?,
         },
-        when: sections.get("when").copied().and_then(|section| {
-            parse_required_formulations(section, "when", tracker, parse_relation_when_item)
-                .map(|arguments| RelationWhenSection { arguments })
+        signifies: sections.get("signifies").copied().and_then(|section| {
+            parse_required_clause(section, "signifies", tracker)
+                .map(|argument| ViewSignifiesSection { argument })
         }),
-        specifies: sections.get("specifies").copied().and_then(|section| {
-            parse_required_clause(section, "specifies", tracker)
-                .map(|argument| RelationshipSpecifiesSection { argument })
-        }),
-        represents: sections.get("represents").copied().and_then(|section| {
-            parse_required_formulations(section, "represents", tracker, parse_relation_kind)
-                .map(|arguments| RelationRepresentsSection { arguments })
-        }),
-        by: parse_optional_by_relationship_section(&sections, tracker),
-    })
-}
-
-fn parse_relation_when_item(input: &str) -> Result<RelationWhenItem, FormulationParseError> {
-    if let Ok(statement) = parse_hard_cast_statement(input) {
-        return Ok(RelationWhenItem::HardCast(statement));
-    }
-    parse_ordinary_declaration_statement(input).map(RelationWhenItem::Declaration)
-}
-
-fn parse_relation_kind(input: &str) -> Result<RelationKind, FormulationParseError> {
-    match input.trim() {
-        r#"\\coercion"# => Ok(RelationKind::Coercion),
-        r#"\\encoding"# => Ok(RelationKind::Encoding),
-        _ => Err(FormulationParseError::Custom(
-            "`represents:` entries must be `\\\\coercion` or `\\\\encoding`".to_owned(),
-        )),
-    }
-}
-
-fn parse_relationship_declaration(
-    input: &str,
-) -> Result<RelationshipDeclaration, FormulationParseError> {
-    if let Ok(expression) = parse_expression(input) {
-        if let ExpressionKind::Command(command) = expression.kind {
-            return Ok(RelationshipDeclaration::Command(command));
-        }
-    }
-    parse_ordinary_declaration_statement(input).map(RelationshipDeclaration::Declaration)
-}
-
-fn parse_optional_by_relationship_section(
-    sections: &HashMap<String, &ProtoSection>,
-    tracker: &mut EventLog,
-) -> Option<BySection> {
-    sections.get("by").copied().and_then(|section| {
-        parse_required_open_texts(section, "by", tracker).map(|arguments| BySection {
-            arguments: arguments.into(),
-        })
     })
 }
 
@@ -3493,7 +3435,7 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
 ///
 /// A `Relation:` states a bidirectional relationship between the two concepts
 /// declared in the required `between:` and `and:` sections. It takes no command
-/// heading and — unlike the `Enables: relation:` group — registers no cast rule.
+/// heading and registers no view rule.
 pub(in crate::frontend::structural::parser) fn parse_relation(
     group: &ProtoGroup,
     tracker: &mut EventLog,
@@ -4109,8 +4051,8 @@ mod tests {
     };
     use crate::frontend::structural::ast::{
         AliasItem, AliasKind, Clause, DeclaresTarget, Document, DocumentedItem, EnablesItem,
-        MetadataItem, RelationKind, RelationSpecifies, RelationSubject, RelationshipDeclaration,
-        RequiresItem, ResourceItem, SpecifyItem, TextItemKind, TopLevelItem,
+        MetadataItem, RelationSpecifies, RelationSubject, RequiresItem, ResourceItem, SpecifyItem,
+        TextItemKind, TopLevelItem,
     };
 
     fn split_test_chunks(text: &str) -> Vec<String> {
@@ -4342,9 +4284,8 @@ Metadata:
 Declares: T
 Enables:
 . [conn.plus]
-  relation:
-  to: y := \foo{X} is \bar
-  represents: \\coercion
+  view:
+  as: y := X is \bar
 Documented:
 . [docs.called]
   called:
@@ -4531,7 +4472,7 @@ that:
             TopLevelItem::Declares(group) => {
                 assert!(matches!(
                     group.enables.as_ref().expect("expected enables").arguments[0],
-                    EnablesItem::Relation(_)
+                    EnablesItem::View(_)
                 ));
                 assert_eq!(
                     group
@@ -4741,7 +4682,7 @@ Documented:
     }
 
     #[test]
-    fn parses_from_capability_from_as_and_relation_enables_items() {
+    fn parses_from_capability_from_as_and_view_enables_items() {
         let document = parse_ok(
             r#"
 [\set]
@@ -4751,12 +4692,9 @@ Enables:
   capability: x_ "in" X :-> x_ member_of Y
 . from: P ::= {(p_, q_) : ...}
   as: f(p_) := q_
-. relation:
-  to: r := \as.rational{X} is \rational
-  when: X is \set
-  specifies: X \.embedded.to./ r
-  represents:
-  . \\coercion
+. view:
+  as: r := X is \rational
+  signifies: X \.embedded.to./ r
 Documented:
 . called: "set"
 "#,
@@ -4771,31 +4709,21 @@ Documented:
             EnablesItem::FromCapability(_)
         ));
         assert!(matches!(enables.arguments[1], EnablesItem::FromAs(_)));
-        assert!(matches!(enables.arguments[2], EnablesItem::Relation(_)));
+        assert!(matches!(enables.arguments[2], EnablesItem::View(_)));
     }
 
     #[test]
-    fn parses_relationship_enables_items() {
+    fn parses_view_enables_items() {
         let document = parse_ok(
             r#"
 [\pair]
 Defines: P is \pair
 Enables:
-. relation:
-  to: x := \pair:of{a0}:and{b0}
-  when:
-  . a0 := a is! \set
-  . b0 := b is \foo
-  specifies: x \:isomorphic.to?:/ p
-  represents:
-  . \\coercion
-  . \\encoding
-  by: "\some.theorem"
-. relation:
-  to: x is \group
-  when:
-  . x is \set
-  specifies: x is \group
+. view:
+  as: x := a is \set
+  signifies: x \:isomorphic.to?:/ p
+. view:
+  as: y := b is \group
 Documented:
 . written: "P?"
 "#,
@@ -4805,34 +4733,39 @@ Documented:
             panic!("expected defines group");
         };
         let enables = group.enables.as_ref().expect("expected enables");
-        assert!(matches!(enables.arguments[0], EnablesItem::Relation(_)));
-        assert!(matches!(enables.arguments[1], EnablesItem::Relation(_)));
+        assert!(matches!(enables.arguments[0], EnablesItem::View(_)));
+        assert!(matches!(enables.arguments[1], EnablesItem::View(_)));
 
-        let EnablesItem::Relation(relation) = &enables.arguments[0] else {
-            panic!("expected relation");
+        let EnablesItem::View(view) = &enables.arguments[0] else {
+            panic!("expected view");
         };
-        assert_eq!(
-            relation
-                .when
-                .as_ref()
-                .expect("expected when")
-                .arguments
-                .len(),
-            2
-        );
+        assert!(view.as_.argument.definition.is_some());
         assert!(matches!(
-            relation.to.argument,
-            RelationshipDeclaration::Declaration(_)
+            view.as_.argument.relation,
+            Some(DeclarationRelation::Is(_))
         ));
-        let represents = relation
-            .represents
-            .as_ref()
-            .expect("expected represents markers");
-        assert_eq!(represents.arguments.len(), 2);
-        assert!(represents.arguments.contains(&RelationKind::Coercion));
-        assert!(represents.arguments.contains(&RelationKind::Encoding));
-        assert!(relation.by.is_some());
-        assert!(relation.specifies.is_some());
+        assert!(view.signifies.is_some());
+    }
+
+    #[test]
+    fn view_marker_rejects_arguments() {
+        let (_document, diagnostics) = parse_with_diagnostics(
+            r#"
+[\integer]
+Declares: n
+Enables:
+. view: unexpected
+  as: k := n is \integer
+Documented:
+. called: "integer"
+"#,
+        );
+
+        assert!(diagnostics.iter().any(|event| {
+            matches!(event, Event::Message(message) if
+                message.message.contains("`view:` is a marker section and takes no arguments")
+            )
+        }));
     }
 
     #[test]

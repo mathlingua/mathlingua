@@ -5,11 +5,17 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
-## `Defines:` Values Can Provide Views Through `Enables:`
+## `Enables: view:` Replaces Cast Relations
 
-An `Enables:` `relation:` on a `Defines:` item now applies directly to the
-defined command. This lets a structured value expose one component as a view
-without declaring the whole structure to have that component's type:
+The nested `Enables: relation:/to:/when:/represents:` group has been removed.
+So have the `\\coercion` and `\\encoding` markers, hard builds (`@!`), and
+hard type introductions (`is!`). Ordinary `@` builds and `is` declarations
+remain.
+
+An `Enables:` `view:` group now states a type through which an object may be
+used. It has a zero-argument `view:` marker, a required `as:` declaration of
+the exact form `<symbol> := <expression> is <type>`, and an optional
+`signifies:` statement checked in that declaration's scope:
 
 ```text
 [\naturals]
@@ -20,17 +26,19 @@ specifies:
 . 0 "in" N
 . S is \function:on{N}:to{N}
 Enables:
-. relation:
-  to: N is \set
-  represents: \\coercion
+. view:
+  as: X := N is \set
 ```
 
-Here `Nb` remains the structured value; the relation makes `\naturals`
+Here `Nb` remains the structured value; the view makes `\naturals`
 viewable as a `\set` through `N`. Consequently a requirement such as
 `A is \set` accepts `\naturals`, including the domain and codomain requirements
-of `\function:on{\naturals}:to{\naturals}`. The relation does not add
-`Nb is \set` to the definition's output facts. `\\encoding` relations on
-defined values are likewise available to hard builds and hard views.
+of `\function:on{\naturals}:to{\naturals}`. The view does not add
+`Nb is \set` to the definition's output facts.
+
+If the `:=` right-hand side is a name or tuple of names, the checker follows
+facts through the corresponding qualified component(s), such as
+`\naturals..N`. Other expressions advertise only the introduced symbol's type.
 
 ## Direct Component Access With `..`
 

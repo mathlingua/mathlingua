@@ -328,11 +328,11 @@ Used inside `Enables:`.
 - **`capability`** — `CapabilityGroup`, heading: label?. Sections: `capability: AliasKind`, `written?: WrittenText+`
 - **`from`** — `FromCapabilityGroup`, heading: label?. Sections: `from: DeclarationStatement`, `capability: AliasKind`, `written?: WrittenText+`
 - **`from`** — `FromAsGroup`, heading: label?. Sections: `from: DeclarationStatement`, `as: ExpressionBinding`
-- **`relation`** — `RelationGroup`, heading: label?. Sections: `relation: OpenText*`, `to: RelationshipDeclaration`, `when?: RelationWhenItem+`, `specifies?: Clause`, `represents?: RelationKind+`, `by?: OpenText+`
+- **`view`** — `EnablesViewGroup`, heading: label?. Sections: zero-argument `view:`, `as: DeclarationStatement`, `signifies?: Clause`
 
 `from:` groups must contain exactly one of `capability:` or `as:`.
-`RelationWhenItem` is either a declaration statement or a hard-cast statement.
-`RelationKind` is one of `\\coercion` or `\\encoding`.
+The `as:` declaration must have the exact shape `<symbol> := <expression> is <type>`.
+The optional `signifies:` clause is checked with that symbol, definition, and type in scope.
 
 ### Documented items
 
@@ -914,10 +914,8 @@ for a concept, or a quoted-text reference — a `"#topic"` or a `"\signature"` (
 `\command` with its arguments removed, like `\function:on:to`) — so a `Relation:`
 may relate concepts, topics, and definitions in any combination. Its `RelationSpecifies`
 is likewise either an unquoted clause (a statement of what the relationship means)
-or a quoted-text prose description. Contrast the directional `relation:` group
-nested inside `Enables:` ([`EnablesRelationGroup`], which relates the described
-concept *to* another and, with `represents: \\coercion`/`\\encoding`, registers a
-cast rule): the top-level item is heading-less, standalone, and registers no cast — it
+or a quoted-text prose description. The top-level item is heading-less,
+standalone, and registers no view — it
 is checked like a theorem (any declaration subjects and a statement `specifies:`
 are validated for declared symbols and valid command references; quoted-text
 references and a prose `specifies:` are recorded, not proven).
@@ -1032,12 +1030,9 @@ as: <ExpressionBinding>
 
 ```group
 [LabelHeader]?
-relation: <OpenText>*
-to: <RelationshipDeclaration>
-when?: <RelationWhenItem>+
-specifies?: <ClauseUnion>
-represents?: <RelationKind>+
-by?: <OpenText>+
+view:
+as: <symbol> := <Expression> is <TypeExpression>
+signifies?: <ClauseUnion>
 ```
 
 ```group

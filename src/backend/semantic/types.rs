@@ -236,6 +236,7 @@ pub(super) struct ViewableRule {
     pub(super) source_subject: String,
     pub(super) parameters: Vec<String>,
     pub(super) target_subject: String,
+    pub(super) view_expression: Expression,
     pub(super) target: TypeFact,
 }
 
@@ -383,7 +384,6 @@ pub(super) struct SignatureRegistry {
     pub(super) provided_symbols: Vec<ProvidedSymbolRule>,
     pub(super) cast_as_rules: Vec<CastAsRule>,
     pub(super) viewable_rules: Vec<ViewableRule>,
-    pub(super) abstraction_rules: Vec<ViewableRule>,
     pub(super) collection_type_signatures: Vec<String>,
     /// Maps an abstract `Defines:` signature — one marked `abstractly:` — to the
     /// symbols it specifies but leaves for a `Realizes:` to supply.

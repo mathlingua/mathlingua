@@ -208,8 +208,6 @@ pub enum Token {
     Dollar,
     #[token("?")]
     Question,
-    #[token("@!")]
-    AtBang,
     #[token("@")]
     At,
 }

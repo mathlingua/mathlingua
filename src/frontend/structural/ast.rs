@@ -1,7 +1,7 @@
 use crate::frontend::formulation::ast::{
     AuthorHeader, CommandExpression, CommandHeader, DeclarationStatement, Expression,
-    ExpressionAlias, ExpressionBinding, FormOrDeclaration, HardCastStatement, IsViaStatement,
-    LabelHeader, ResourceHeader, SpecOperatorAlias, TopicHeader, TypeExpression, WritingAlias,
+    ExpressionAlias, ExpressionBinding, FormOrDeclaration, IsViaStatement, LabelHeader,
+    ResourceHeader, SpecOperatorAlias, TopicHeader, TypeExpression, WritingAlias,
 };
 
 // ===============================[ repeated ]=====================================
@@ -312,12 +312,9 @@ argument_section!(CapabilitySection, AliasKind);
 argument_section!(DefinitionSection, DefinitionRequirement);
 argument_section!(FromSection, DeclarationStatement);
 argument_section!(CastAsSection, ExpressionBinding);
-zero_or_more_arguments_section!(EnablesRelationSection, OpenText);
-argument_section!(RelationToSection, RelationshipDeclaration);
-arguments_section!(RelationWhenSection, RelationWhenItem);
-arguments_section!(RelationRepresentsSection, RelationKind);
-argument_section!(RelationshipSpecifiesSection, Clause);
-// Top-level `Relation:` item sections (distinct from the `Enables: relation:` group above).
+argument_section!(ViewAsSection, DeclarationStatement);
+argument_section!(ViewSignifiesSection, Clause);
+// Top-level `Relation:` item sections.
 zero_or_more_arguments_section!(RelationSection, OpenText);
 argument_section!(RelationBetweenSection, RelationSubject);
 argument_section!(RelationAndSection, RelationSubject);
@@ -488,7 +485,7 @@ pub enum EnablesItem {
     Capability(Box<CapabilityGroup>),
     FromCapability(Box<FromCapabilityGroup>),
     FromAs(Box<FromAsGroup>),
-    Relation(Box<EnablesRelationGroup>),
+    View(Box<EnablesViewGroup>),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -799,9 +796,8 @@ pub struct TextItemGroup {
 }
 
 /// A top-level `Relation:` item, which states a bidirectional relationship
-/// between the two concepts declared in `between:` and `and:`. Unlike the
-/// directional `Enables: relation:` group ([`EnablesRelationGroup`]), it is a
-/// heading-less, standalone item and does not register a cast/view rule.
+/// between the two concepts declared in `between:` and `and:`. It is a
+/// heading-less, standalone item and does not register a view rule.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RelationGroup {
     pub relation: RelationSection,
@@ -998,37 +994,10 @@ pub struct FromAsGroup {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum RelationshipDeclaration {
-    Command(CommandExpression),
-    Declaration(DeclarationStatement),
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum RelationWhenItem {
-    Declaration(DeclarationStatement),
-    HardCast(HardCastStatement),
-}
-
-/// The kind of type-system cast a nested `Enables: relation:` registers via its
-/// `represents:` field: `\\coercion` (a value of the described type may be used
-/// wherever the related type is expected, and `as` casts to it) or `\\encoding`
-/// (an abstraction boundary — no automatic coercion; only an explicit `as!` cast
-/// drops through the encoding). The variants mirror those surface keywords.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RelationKind {
-    Coercion,
-    Encoding,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct EnablesRelationGroup {
+pub struct EnablesViewGroup {
     pub heading: Option<LabelHeader>,
-    pub relation: EnablesRelationSection,
-    pub to: RelationToSection,
-    pub when: Option<RelationWhenSection>,
-    pub specifies: Option<RelationshipSpecifiesSection>,
-    pub represents: Option<RelationRepresentsSection>,
-    pub by: Option<BySection>,
+    pub as_: ViewAsSection,
+    pub signifies: Option<ViewSignifiesSection>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

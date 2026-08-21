@@ -10823,14 +10823,18 @@ Documented:
     Documented:
     . written: "\operatorname{rational}"
 
+    [\as.rational{x}]
+    Defines: r is \rational
+    when: x is \integer
+    Documented:
+    . written: "\operatorname{asRational}(x?)"
+
     [\integer]
     Declares: n
     Enables:
-    . relation:
-      to: r is \rational
-      when: n is \integer
-      specifies: n \.embedded.to./ r
-      represents: \\coercion
+    . view:
+      as: r := \as.rational{n} is \rational
+      signifies: n \.embedded.to./ r
     Documented:
     . written: "\operatorname{integer}"
 
@@ -10881,7 +10885,7 @@ Documented:
     }
 
     #[test]
-    fn check_uses_view_relations_declared_on_defined_values() {
+    fn check_uses_views_declared_on_defined_values() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("defined-value-view.mlg");
 
@@ -10908,9 +10912,8 @@ Documented:
     . 0 "in" N
     . S is \function:on{N}:to{N}
     Enables:
-    . relation:
-      to: N is \set
-      represents: \\coercion
+    . view:
+      as: X := N is \set
     Documented:
     . called: "naturals"
 
@@ -10937,6 +10940,64 @@ Documented:
     }
 
     #[test]
+    fn check_follows_named_view_components_for_membership_facts() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("named-view-component.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\von.neumann.natural]
+    Declares: n
+    Documented:
+    . called: "von Neumann natural"
+
+    [\set]
+    Declares: X ::= {x__ : ...}
+    Enables:
+    . capability: x_ "in" X :-> x_ member_of X
+    Documented:
+    . called: "set"
+
+    [\naturals]
+    Defines: Nb ::= (N, Z)
+    abstractly:
+    specifies:
+    . N := \set@{n_ : n_ is \von.neumann.natural} is \set
+    . Z is \von.neumann.natural
+    Enables:
+    . view:
+      as: X := N is \set
+    Documented:
+    . called: "naturals"
+
+    [\needs.natural{x}]
+    Declares: y
+    when: x is \von.neumann.natural
+    Documented:
+    . called: "needs natural"
+
+    Theorem:
+    given: x "in" \naturals
+    then: \needs.natural{x}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("named-view-component.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_accepts_soft_build_cast_for_view_requirements() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("explicit-view-cast.mlg");
@@ -10951,10 +11012,8 @@ Documented:
     [\integer]
     Declares: n
     Enables:
-    . relation:
-      to: r is \rational
-      when: n is \integer
-      represents: \\coercion
+    . view:
+      as: r := n is \rational
     Documented:
     . written: "\operatorname{integer}"
 
@@ -10988,107 +11047,6 @@ Documented:
     }
 
     #[test]
-    fn check_hard_build_cast_uses_abstraction_relationships() {
-        let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("hard-cast-abstraction.mlg");
-
-        write_mlg_fixture(
-            &file,
-            r#"[\set]
-    Declares: X
-    Documented:
-    . written: "\operatorname{set}"
-
-    [\natural]
-    Declares: n
-    Enables:
-    . relation:
-      to: n is \set
-      represents: \\encoding
-    Documented:
-    . written: "\operatorname{natural}"
-
-    [\needs.set{x}]
-    Declares: y
-    when: x is \set
-    Documented:
-    . written: "\operatorname{needsSet}(x?)"
-
-    Theorem:
-    given: n is \natural
-    then:
-    . \needs.set{\set@!n}
-    . (\set@!n) is? \set
-    "#,
-        )
-        .unwrap();
-
-        let mut event_log = EventLog::new();
-        let result = check_in(
-            temp_dir.path(),
-            &[PathBuf::from("hard-cast-abstraction.mlg")],
-            &mut event_log,
-        );
-
-        assert_eq!(result.files_checked, 1);
-        assert_eq!(
-            user_events(&event_log),
-            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
-        );
-    }
-
-    #[test]
-    fn check_soft_build_cast_does_not_use_abstraction_relationships() {
-        let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("plain-cast-no-abstraction.mlg");
-
-        write_mlg_fixture(
-            &file,
-            r#"[\set]
-    Declares: X
-    Documented:
-    . written: "\operatorname{set}"
-
-    [\natural]
-    Declares: n
-    Enables:
-    . relation:
-      to: n is \set
-      represents: \\encoding
-    Documented:
-    . written: "\operatorname{natural}"
-
-    [\needs.set{x}]
-    Declares: y
-    when: x is \set
-    Documented:
-    . written: "\operatorname{needsSet}(x?)"
-
-    Theorem:
-    given: n is \natural
-    then: \needs.set{\set@n}
-    "#,
-        )
-        .unwrap();
-
-        let mut event_log = EventLog::new();
-        let result = check_in(
-            temp_dir.path(),
-            &[PathBuf::from("plain-cast-no-abstraction.mlg")],
-            &mut event_log,
-        );
-
-        assert_eq!(result.files_checked, 1);
-        let events = user_events(&event_log);
-        assert!(events.iter().any(|event| {
-            matches!(event, Event::Message(message) if
-                message.message.contains("Could not build `\\set@n`")
-            )
-        }));
-        assert!(event_log.has_errors());
-    }
-
-    #[test]
     fn check_does_not_use_view_casts_for_operator_resolution() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("view-does-not-resolve-operators.mlg");
@@ -11105,10 +11063,8 @@ Documented:
     [\integer]
     Declares: n
     Enables:
-    . relation:
-      to: r is \rational
-      when: n is \integer
-      represents: \\coercion
+    . view:
+      as: r := n is \rational
     Documented:
     . written: "\operatorname{integer}"
 
@@ -11143,7 +11099,7 @@ Documented:
     }
 
     #[test]
-    fn check_reports_relation_represents_with_unknown_marker() {
+    fn check_rejects_removed_relation_enables_group() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("relation-represents-marker.mlg");
 
@@ -11178,9 +11134,7 @@ Documented:
         let events = user_events(&event_log);
         assert!(events.iter().any(|event| {
             matches!(event, Event::Message(message) if
-                message
-                    .message
-                    .contains("`represents:` entries must be `\\\\coercion` or `\\\\encoding`")
+                message.message.contains("Unexpected enables group `relation`")
             )
         }));
         assert!(event_log.has_errors());
@@ -11203,10 +11157,8 @@ Documented:
     [\integer]
     Declares: n
     Enables:
-    . relation:
-      to: r is \rational
-      when: n is \integer
-      represents: \\coercion
+    . view:
+      as: r := n is \rational
     Documented:
     . written: "\operatorname{integer}"
 
@@ -12351,7 +12303,7 @@ Id: "c812728f-5e16-4774-a62d-00c911127a75"
     }
 
     #[test]
-    fn check_accepts_relationship_enables_with_hard_cast_assumptions() {
+    fn check_accepts_complex_view_expression() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("relationships.mlg");
 
@@ -12380,13 +12332,8 @@ Id: "9f79d83e-8423-4343-b547-e391b3305994"
 Defines: P is \pair
 when: a, b is \set
 Enables:
-. relation:
-  to: \set.theoretic.pair:of{a0}:and{b0}
-  when:
-  . a0 := a is! \set
-  . b0 := b is! \set
-  represents: \\encoding
-  by: "\some.theorem"
+. view:
+  as: p := \set.theoretic.pair:of{a}:and{b} is \set
 Documented:
 . written: "(a?, b?)"
 Id: "a95d2ea7-d1fd-41a5-b55c-b6c18c0d05b7"

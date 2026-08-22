@@ -81,6 +81,8 @@ pub enum Token {
     ExpressionAlias,
     #[token(":->")]
     SpecOperatorAlias,
+    #[token(":<->:")]
+    IffSpecOperatorAlias,
     #[token(":~>")]
     WritingAlias,
     #[token("::=")]

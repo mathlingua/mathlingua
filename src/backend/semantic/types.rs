@@ -208,6 +208,7 @@ pub(super) struct SpecOperatorRule {
     pub(super) placeholder: String,
     pub(super) operator: String,
     pub(super) target: String,
+    pub(super) kind: SpecOperatorAliasKind,
     pub(super) target_alias: SpecOperatorAliasTarget,
 }
 

@@ -52,6 +52,9 @@ pub struct ExpressionAlias {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SpecOperatorAliasTarget {
+    /// Several conclusions separated by `;`. Every conclusion follows from the
+    /// source; for an equivalence, all conclusions together imply the source.
+    Conjunction(Vec<SpecOperatorAliasTarget>),
     IsOrSpec(Box<IsOrSpec>),
     MemberOf(Box<Expression>),
     /// A spec whose subject reuses the placeholder introduced on the left of `:->`,
@@ -60,9 +63,16 @@ pub enum SpecOperatorAliasTarget {
     Builtin(Chain),
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SpecOperatorAliasKind {
+    Implies,
+    Iff,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SpecOperatorAlias {
     pub span: Span,
+    pub kind: SpecOperatorAliasKind,
     pub placeholder_spec: PlaceholderSpecStatement,
     pub target: SpecOperatorAliasTarget,
 }

@@ -5,6 +5,20 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Directed And Equivalent Spec Capabilities
+
+Spec capabilities now distinguish implication from equivalence. `a :-> b`
+adds only the directed inference from `a` to `b`; `a :<->: b` adds both
+directions. Either form accepts multiple conclusions separated by `;`, and the
+reverse direction of `:<->:` requires all of them.
+
+Set-builder membership now follows the same distinction. For
+`{x_ : specs}`, membership and the element specifications are equivalent. For
+`{x_ : specs | condition}`, membership implies the specifications and the
+condition, while reverse inference succeeds only after both are established.
+When that reverse check fails, requirement diagnostics report the missing set
+condition.
+
 ## `Enables: view:` Replaces Cast Relations
 
 The nested `Enables: relation:/to:/when:/represents:` group has been removed.
@@ -881,16 +895,15 @@ operands' common type. So a `\magma.element` that `Enables:`
 known only through a spec (`y "in" M`) are reduced to their `is`-facts for this
 owner-type match.
 
-### Spec Capabilities Are Equivalences
+### Spec Capability Equivalence Is Explicit
 
-A spec-operator capability `x_ "in" G :-> x_ is \group.element:of{G}` defines its
-operator, so it now reads as an **equivalence**: `x "in" G` both reduces to
-`x is \group.element:of{G}` (as before) *and* is established when
-`x is \group.element:of{G}` holds. So a command requiring `x "in" G` — such as
-`\group.inverse:of{x}:in{G}` — is satisfiable by a value known only to be a
-`\group.element:of{G}`. Requirement proving tries each providing capability
-disjunctively and requires all of a single capability's target facts, with a
-cycle guard.
+A spec-operator capability
+`x_ "in" G :<->: x_ is \group.element:of{G}` defines an equivalence:
+`x "in" G` reduces to `x is \group.element:of{G}`, and the membership is also
+established when the element type holds. The one-way spelling `:->` performs
+only the first inference. Requirement proving tries each equivalent providing
+capability disjunctively and requires all of a capability's target facts, with
+a cycle guard.
 
 ### Member-Access Capabilities (`x.y`, `x.f(a_)`)
 
@@ -1666,6 +1679,11 @@ Rules for `:->`:
 - The right-hand side must be the item being defined by the capability.
 - The left-hand side does not receive an implicit type from the described item.
 - This is used for specification operators such as membership.
+- The checker infers only from the left-hand specification to the right-hand
+  target or targets.
+
+Rules for `:<->:` are the same, except that the checker may also infer the
+left-hand specification after establishing every right-hand target.
 
 Function and value capabilities:
 

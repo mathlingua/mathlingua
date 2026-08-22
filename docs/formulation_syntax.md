@@ -45,8 +45,9 @@ The formulation subsystem does not have one single root grammar. It exposes seve
   headers.
 - **`parse_writing_alias`** — `<form-or-declaration> :~> <raw body>`.
 - **`parse_expression_alias`** — `<lhs> (:=> or :->) <expression>`.
-- **`parse_spec_operator_alias`** — `<placeholder-spec> :-> <target>`, where the
-  target is an is-or-spec, `member_of`, a placeholder-spec, or a builtin.
+- **`parse_spec_operator_alias`** — `<placeholder-spec> (:-> or :<->:) <targets>`,
+  where each semicolon-separated target is an is-or-spec, `member_of`, a
+  placeholder-spec, or a builtin.
 - **`parse_label_header`** — dotted label header text.
 - **`parse_author_header`** — `@` followed by dotted parts.
 - **`parse_resource_header`** — `$` followed by dotted parts.
@@ -226,6 +227,7 @@ The lexer has dedicated tokens for:
 - `..`
 - `:=>`
 - `:->`
+- `:<->:`
 - `:~>`
 - `->`
 - `=>`
@@ -986,7 +988,8 @@ Important implementation detail:
 ### Spec-operator aliases
 
 ```text
-SpecOperatorAlias ::= PlaceholderSpecStatement ":->" SpecOperatorAliasTarget
+SpecOperatorAlias ::= PlaceholderSpecStatement (":->" | ":<->:") SpecOperatorAliasTargets
+SpecOperatorAliasTargets ::= SpecOperatorAliasTarget (";" SpecOperatorAliasTarget)*
 SpecOperatorAliasTarget ::= IsOrSpec
                           | MemberOfExpression
                           | PlaceholderSpecStatement
@@ -1054,6 +1057,7 @@ This top-level scanning is used for:
 - `:=`
 - `:=>`
 - `:->`
+- `:<->:`
 - `:~>`
 - comma splitting
 - dot splitting
@@ -1423,7 +1427,8 @@ MemberAliasLhs ::= Name "." Name
                  | Name "." Name "(" PlaceholderList? ")"
 
 ExpressionAlias ::= ExpressionAliasLhs (":=>" | ":->") Expression
-SpecOperatorAlias ::= PlaceholderSpecStatement ":->" SpecOperatorAliasTarget
+SpecOperatorAlias ::= PlaceholderSpecStatement (":->" | ":<->:") SpecOperatorAliasTargets
+SpecOperatorAliasTargets ::= SpecOperatorAliasTarget (";" SpecOperatorAliasTarget)*
 SpecOperatorAliasTarget ::= IsOrSpec
                           | MemberOfExpression
                           | PlaceholderSpecStatement

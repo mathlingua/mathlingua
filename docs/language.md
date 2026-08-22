@@ -211,7 +211,7 @@ Builtin types and targets are written with two leading backslashes: `\\type`
 (the type of `Declares` types), `\\statement`, `\\expression`,
 `\\specification` (the types of statements, expressions, and specification
 literals), `\\opaque` (an unstructured value), and `\\abstract` (the abstract
-`:->` capability target).
+`:->` or `:<->:` capability target).
 
 A named mapping call accepts both the legacy `:=` assignment spelling and `=`.
 The catch-all slot `... = value` supplies the value for parameters not named by
@@ -1175,22 +1175,25 @@ an infix command header. Refined command headers are not accepted on the
 left-hand side. The right-hand expression is parsed, but the current semantic
 reference walker does not validate command references inside that expression.
 
-Spec-operator aliases use `:->`.
+Spec-operator aliases use `:->` for implication and `:<->:` for equivalence.
 
 ```text
 capability: x_ "in" R :-> x is \real
+capability: x_ "in" S :<->: x is \integer
 capability: x_ "in" X :-> \\abstract
 ```
 
 When a described command enables a spec-operator alias, the type checker can
 reduce matching spec facts. If the context knows `R is \reals` and `r "in" R`,
-the alias above lets the checker establish `r is \real`.
+the first alias above lets the checker establish `r is \real`; knowing only
+`r is \real` does not establish `r "in" R`. The `:<->:` form permits inference
+in both directions. Either arrow may have several conclusions separated by
+`;`; reversing an equivalence requires every conclusion.
 
 The target of a spec-operator alias may also be a built-in keyword written with
-two leading backslashes, such as `\\abstract`. Spec-operator aliases are
-currently treated as declarations by the reference walker, so command references
-inside their target are not validated there. Built-in targets are accepted by
-the parser, but the current type-reduction code ignores them.
+two leading backslashes, such as `\\abstract`. Command references in every
+semicolon-separated target are reference-validated. Built-in targets are
+accepted by the parser but do not add ordinary reduction facts.
 
 Collection-wide `Writing:` aliases use `:~>` and apply to plain names. They are
 separate from documented mapping writing templates.
@@ -1319,7 +1322,7 @@ checked at use
 sites (`Could not establish requirement \`{fact}\` for command \`{signature}\``,
 plus `Command ... does not accept ...`, `Unknown ... parameter ...`,
 `Missing ... value for parameter ...`). This includes the reduction target of an
-`Enables:` `capability:` — both the `:->` form (`x_ "in" G :-> x_ is
+`Enables:` `capability:` — the `:->`/`:<->:` forms (`x_ "in" G :-> x_ is
 \group.element:of{G}`) and the `:=>` form — so a capability that reduces to an
 undefined command is reported.
 
@@ -1492,9 +1495,9 @@ function ...`, `\`{name}\` is not a known type`).
   arity (`Could not match function \`{name}\` with {n} argument(s)`).
 - **`satisfies`** — its right-hand side must be a specification
   (`\`satisfies\` requires a specification on the right-hand side`).
-- **Spec-operator targets** — the target of a `:->` spec operator must be a
-  value, not a type (`the target of a spec operator must be a value, not the type
-  \`{signature}\``).
+- **Spec-operator targets** — each target of a `:->` or `:<->:` spec operator
+  must be a value, not a type (`the target of a spec operator must be a value,
+  not the type \`{signature}\``).
 - **Inferred parameters** — an `X?` argument may introduce `X` only once
   (`Inferred parameter \`{name}\` is already introduced`).
 
@@ -1583,6 +1586,13 @@ count and positional component types. Set literals are compared with the
 required type's described element pattern and element types. This structural
 check applies only to literals; named values continue to require ordinary type
 facts.
+
+For a builder without a condition, `x member_of {x_ : specs}` is equivalent to
+the listed specifications after binding `x_` to `x`. For a conditioned builder,
+membership implies both the specifications and the `|` condition, while the
+reverse direction requires the checker to establish all of them. If the
+specifications hold but a condition does not, the requirement diagnostic names
+the missing condition so it can be supplied or justified explicitly.
 
 When a mapping input or output is specified by membership in a literal-backed
 collection, the collection's element specification participates in this check.
@@ -1821,7 +1831,7 @@ Requires:
 . capability: x_ "in" X :-> \\abstract
 Enables:
 . from: Y ::= {y__ : ...}
-  capability: x_ "in" X :-> x_ member_of Y
+  capability: x_ "in" X :<->: x_ member_of Y
 Documented:
 . called: "set"
 ```
@@ -1834,7 +1844,7 @@ and can establish `a is \real`.
 
 An ordinary non-`from:` capability on an opaque target does not read a built
 literal through `member_of`. For example, `Declares: X` with
-`capability: x_ "in" X :-> x_ member_of X` does not make
+`capability: x_ "in" X :<->: x_ member_of X` does not make
 `\set@{...}` expose the literal's element facts. Use a structural target such as
 `Declares: X ::= {x__ : ...}` or an explicit `from:` capability for that.
 

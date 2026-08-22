@@ -2314,7 +2314,7 @@ then:
     . capability: x_ "in" X :-> \\abstract
     Enables:
     . from: Y ::= {y__ : ...}
-      capability: x_ "in" X :-> x_ member_of Y
+      capability: x_ "in" X :<->: x_ member_of Y
     Documented:
     . called: "set"
 
@@ -2979,7 +2979,7 @@ then:
     . capability: x_ "in" X :-> \\abstract
     Enables:
     . from: Y ::= {y__ : ...}
-      capability: x_ "in" X :-> x_ member_of Y
+      capability: x_ "in" X :<->: x_ member_of Y
     Documented:
     . called: "set"
 
@@ -5684,7 +5684,7 @@ then:
     Declares: M ::= (X, *) is \set via X
     specifies: * is \binary.operation:on{M}
     Enables:
-    . capability: x_ "in" M :-> x_ is \magma.element:of{M}
+    . capability: x_ "in" M :<->: x_ is \magma.element:of{M}
     Documented:
     . called: "magma"
 
@@ -5701,7 +5701,7 @@ then:
     Declares: G ::= (X, *, e) is \magma via (X, *)
     specifies: e "in" X
     Enables:
-    . capability: x_ "in" G :-> x_ is \group.element:of{G}
+    . capability: x_ "in" G :<->: x_ is \group.element:of{G}
     Documented:
     . called: "group"
 
@@ -6476,7 +6476,7 @@ Documented:
 
     #[test]
     fn check_establishes_spec_requirement_from_providing_capability() {
-        // `\grp` provides `x_ "in" G :-> x_ is \grp.elt:of{G}`, so membership and
+        // `\grp` provides `x_ "in" G :<->: x_ is \grp.elt:of{G}`, so membership and
         // being an element are equivalent. A command requiring `x "in" G` must
         // therefore be satisfiable by a value known only to be `\grp.elt:of{G}`.
         let temp_dir = TestDir::new();
@@ -6494,7 +6494,7 @@ Documented:
     [\grp]
     Declares: G is \set
     Enables:
-    . capability: x_ "in" G :-> x_ is \grp.elt:of{G}
+    . capability: x_ "in" G :<->: x_ is \grp.elt:of{G}
       written: "x_? \in G?"
     Documented:
     . written: "\operatorname{grp}"
@@ -6535,6 +6535,244 @@ Documented:
             user_events(&event_log),
             [Event::user_log("Checked 1 file").with_origin("mlg_check")]
         );
+    }
+
+    #[test]
+    fn check_does_not_reverse_one_way_spec_operator_capability() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("one-way-spec-requirement.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [\foo]
+    Declares: X is \set
+    Enables:
+    . capability: x_ "in" X :-> x_ is \bar
+    Documented:
+    . called: "foo"
+
+    [\bar]
+    Declares: x
+    Documented:
+    . called: "bar"
+
+    [\needs.member{x}:of{X}]
+    Declares: y
+    when:
+    . X is \foo
+    . x "in" X
+    Documented:
+    . called: "needs member"
+
+    Theorem:
+    given:
+    . X is \foo
+    . x is \bar
+    then: \needs.member{x}:of{X}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("one-way-spec-requirement.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message
+                    .message
+                    .contains("Could not establish requirement `x \"in\" X`")
+            })
+        }));
+    }
+
+    #[test]
+    fn check_iff_spec_operator_requires_and_produces_every_target() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("multi-target-iff-spec.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [\both]
+    Declares: X is \set
+    Enables:
+    . capability: x_ "in" X :<->: x_ is \foo; x_ is \bar
+    Documented:
+    . called: "both"
+
+    [\foo]
+    Declares: x
+    Documented:
+    . called: "foo"
+
+    [\bar]
+    Declares: x
+    Documented:
+    . called: "bar"
+
+    [\needs.both{x}]
+    Declares: y
+    when:
+    . x is \foo
+    . x is \bar
+    Documented:
+    . called: "needs both"
+
+    [\needs.member{x}:of{X}]
+    Declares: y
+    when:
+    . X is \both
+    . x "in" X
+    Documented:
+    . called: "needs member"
+
+    Theorem:
+    given:
+    . X is \both
+    . x "in" X
+    then: \needs.both{x}
+
+    Theorem:
+    given:
+    . X is \both
+    . y is \foo
+    . y is \bar
+    then: \needs.member{y}:of{X}
+
+    Theorem:
+    given:
+    . X is \both
+    . z is \foo
+    then: \needs.member{z}:of{X}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("multi-target-iff-spec.mlg")],
+            &mut event_log,
+        );
+
+        let errors = user_events(&event_log)
+            .iter()
+            .filter_map(Event::as_message)
+            .filter(|event| event.message.contains("Could not establish requirement"))
+            .map(|event| event.message.clone())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            errors,
+            ["Could not establish requirement `z \"in\" X` for command `\\needs.member:of`"]
+        );
+    }
+
+    #[test]
+    fn check_set_builder_reverse_membership_requires_its_condition() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("conditioned-set-membership.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X ::= {x__ : ...}
+    Enables:
+    . capability: x_ "in" X :<->: x_ member_of X
+    Documented:
+    . called: "set"
+
+    [\foo]
+    Declares: x
+    Documented:
+    . called: "foo"
+
+    [\bar]
+    Declares: x
+    Documented:
+    . called: "bar"
+
+    [\needs.member{x}:of{X}]
+    Declares: y
+    when:
+    . X is \set
+    . x "in" X
+    Documented:
+    . called: "needs member"
+
+    [\needs.bar{x}]
+    Declares: y
+    when: x is \bar
+    Documented:
+    . called: "needs bar"
+
+    Theorem:
+    given:
+    . A := {a_ : a_ is \foo} is \set
+    . x is \foo
+    then: \needs.member{x}:of{A}
+
+    Theorem:
+    given:
+    . B := {b_ : b_ is \foo | b_ is \bar} is \set
+    . y is \foo
+    then: \needs.member{y}:of{B}
+
+    Theorem:
+    given:
+    . C := {c_ : c_ is \foo | c_ is \bar} is \set
+    . z is \foo
+    . z is \bar
+    then: \needs.member{z}:of{C}
+
+    Theorem:
+    given:
+    . D := {d_ : d_ is \foo | d_ is \bar} is \set
+    . w "in" D
+    then: \needs.bar{w}
+
+    Theorem:
+    given:
+    . q is \foo
+    . E := {e_ : e_ is \foo | q} is \set
+    . v is \foo
+    then: \needs.member{v}:of{E}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("conditioned-set-membership.mlg")],
+            &mut event_log,
+        );
+
+        let errors = user_events(&event_log)
+            .iter()
+            .filter_map(Event::as_message)
+            .filter(|event| event.message.contains("Could not establish requirement"))
+            .map(|event| event.message.clone())
+            .collect::<Vec<_>>();
+        assert_eq!(errors.len(), 2, "unexpected errors: {errors:?}");
+        assert!(errors[0].contains("could not establish set condition(s): `y is \\bar`"));
+        assert!(errors[1].contains("could not establish set condition(s): `q`"));
     }
 
     #[test]

@@ -1655,6 +1655,7 @@ fn spec_operator_rule_from_alias(
         placeholder,
         operator: alias.placeholder_spec.operator.clone(),
         target: alias.placeholder_spec.name.clone(),
+        kind: alias.kind,
         target_alias: alias.target.clone(),
     })
 }
@@ -12652,18 +12653,36 @@ fn validate_spec_operator_alias(
     let mut child = context.clone();
     declare_placeholder_form(&alias.placeholder_spec.placeholder_form, &mut child);
 
-    match &alias.target {
+    validate_spec_operator_alias_target(&alias.target, &child, path, locator, registry, event_log);
+}
+
+fn validate_spec_operator_alias_target(
+    target: &SpecOperatorAliasTarget,
+    context: &TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match target {
+        SpecOperatorAliasTarget::Conjunction(targets) => {
+            for target in targets {
+                validate_spec_operator_alias_target(
+                    target, context, path, locator, registry, event_log,
+                );
+            }
+        }
         SpecOperatorAliasTarget::IsOrSpec(target) => {
-            check_is_or_spec_alias_target(target, &child, path, locator, registry, event_log);
+            check_is_or_spec_alias_target(target, context, path, locator, registry, event_log);
         }
         SpecOperatorAliasTarget::MemberOf(expression) => {
-            check_expression(expression, &child, path, locator, registry, event_log);
+            check_expression(expression, context, path, locator, registry, event_log);
         }
         SpecOperatorAliasTarget::PlaceholderSpec(spec) => {
-            // The subject placeholder is bound on the left of `:->` (declared into
-            // `child` above); only the target name needs checking. The spec is the
-            // rule's conclusion, so it is not required to be independently supported.
-            check_name(&spec.name, &child, path, locator, event_log);
+            // The subject placeholder is bound on the left of the arrow and is
+            // already declared in this context; only the target name needs checking.
+            // The spec is the rule's conclusion, so it need not be independently supported.
+            check_name(&spec.name, context, path, locator, event_log);
         }
         SpecOperatorAliasTarget::Builtin(_) => {}
     }
@@ -12947,18 +12966,132 @@ fn check_command_requirements(
             &variadic_actuals,
         ) {
             if !prove_fact_or_literal(&instantiated, &requirement_context, registry, 0) {
+                let missing_conditions =
+                    missing_membership_conditions(&instantiated, &requirement_context, registry);
+                let condition_note = if missing_conditions.is_empty() {
+                    String::new()
+                } else {
+                    format!(
+                        "; could not establish set condition(s): {}",
+                        missing_conditions
+                            .iter()
+                            .map(|condition| format!("`{condition}`"))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )
+                };
                 emit_error(
                     event_log,
                     path,
                     position,
                     format!(
-                        "Could not establish requirement `{}` for command `{signature}`",
-                        format_fact(&instantiated)
+                        "Could not establish requirement `{}` for command `{signature}`{}",
+                        format_fact(&instantiated),
+                        condition_note,
                     ),
                 );
             }
         }
     }
+}
+
+fn missing_membership_conditions(
+    required: &TypeFact,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<String> {
+    let candidates = match required {
+        TypeFact::MemberOf { .. } => vec![required.clone()],
+        TypeFact::Spec {
+            subject,
+            operator,
+            target,
+        } => registry
+            .spec_rules
+            .iter()
+            .filter(|rule| {
+                rule.kind == SpecOperatorAliasKind::Iff
+                    && &rule.operator == operator
+                    && has_type_signature(target, &rule.owner_signature, context, registry)
+                    && (!rule.source_requires_literal
+                        || collection_is_literal_or_has_body(target, context, registry))
+            })
+            .flat_map(|rule| spec_rule_direct_targets(rule, subject, target, context))
+            .collect(),
+        _ => Vec::new(),
+    };
+
+    let mut result = Vec::new();
+    for candidate in candidates {
+        let TypeFact::MemberOf {
+            subject,
+            collection,
+        } = candidate
+        else {
+            continue;
+        };
+        let literal = context
+            .collection_literal(&collection)
+            .cloned()
+            .or_else(|| instantiated_collection_body(&collection, context, registry));
+        let Some(literal) = literal else {
+            continue;
+        };
+        for condition in
+            missing_collection_literal_conditions(&subject, &literal, context, registry)
+        {
+            if !result.contains(&condition) {
+                result.push(condition);
+            }
+        }
+    }
+    result
+}
+
+fn missing_collection_literal_conditions(
+    subject: &str,
+    literal: &SetExpression,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Vec<String> {
+    let Some(SetPredicate::Expression(predicate)) = &literal.predicate else {
+        return Vec::new();
+    };
+    let mut substitutions = HashMap::new();
+    if !bind_set_target_to_key(&literal.target, subject, &mut substitutions, context) {
+        return vec![key_for_expression(predicate)];
+    }
+    let facts = collection_literal_predicate_facts(subject, literal, context);
+    if facts.is_empty() {
+        return vec![substitute_key(
+            &key_for_expression(predicate),
+            &substitutions,
+        )];
+    }
+    facts
+        .into_iter()
+        .filter(|condition| !prove_fact(condition, context, registry))
+        .map(|condition| format_fact(&condition))
+        .collect()
+}
+
+fn collection_literal_predicate_facts(
+    subject: &str,
+    literal: &SetExpression,
+    context: &TypeContext,
+) -> Vec<TypeFact> {
+    let mut substitutions = HashMap::new();
+    if !bind_set_target_to_key(&literal.target, subject, &mut substitutions, context) {
+        return Vec::new();
+    }
+    let mut child = context.clone();
+    declare_set_target(&literal.target, &mut child);
+    for spec in &literal.specs {
+        if let Some(fact) = fact_from_expression_in_context(spec, &child) {
+            child.add_fact(fact);
+        }
+    }
+    facts_from_collection_literal_predicate(literal, &child, &substitutions)
 }
 
 /// Proves an ordinary fact, with one additional structural rule for literal
@@ -13923,11 +14056,9 @@ fn prove_fact_threaded(
         return true;
     }
 
-    // A spec requirement such as `x "in" G` is defined by the capability that
-    // provides its operator (`x_ "in" G :-> x_ is \group.element:of{G}`), and that
-    // definition is an equivalence. So the requirement holds when some providing
-    // capability's reduction target holds — the reverse of `reduce_spec_fact`'s
-    // forward materialization. `spec_seen` guards against reduction cycles.
+    // An iff capability can prove its source requirement from all of its targets,
+    // the reverse of `reduce_spec_fact`'s forward materialization. One-way `:->`
+    // rules are deliberately ignored here. `spec_seen` guards reduction cycles.
     match &required {
         TypeFact::Spec { .. } => spec_requirement_holds_via_provider(
             &required,
@@ -13940,14 +14071,45 @@ fn prove_fact_threaded(
             subject,
             collection,
         } => {
-            let facts =
-                facts_from_collection_body_membership(subject, collection, context, registry);
-            !facts.is_empty()
+            let literal = collection_literal_for_membership(collection, context, registry);
+            let facts = literal
+                .as_ref()
+                .map(|literal| facts_from_collection_literal_membership(subject, literal, context))
+                .unwrap_or_default();
+            collection_membership_predicate_is_reversible(subject, literal.as_ref(), context)
+                && !facts.is_empty()
                 && facts.iter().all(|fact| {
                     prove_fact_threaded(fact, context, registry, allow_viewable, spec_seen)
                 })
         }
         _ => false,
+    }
+}
+
+fn collection_literal_for_membership(
+    collection: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<SetExpression> {
+    if let Some(literal) = context.collection_literal(collection) {
+        return Some(literal.clone());
+    }
+    instantiated_collection_body(collection, context, registry)
+}
+
+fn collection_membership_predicate_is_reversible(
+    subject: &str,
+    literal: Option<&SetExpression>,
+    context: &TypeContext,
+) -> bool {
+    let Some(literal) = literal else {
+        return false;
+    };
+    match &literal.predicate {
+        None | Some(SetPredicate::Definition { .. }) => true,
+        Some(SetPredicate::Expression(_)) => {
+            !collection_literal_predicate_facts(subject, literal, context).is_empty()
+        }
     }
 }
 
@@ -14020,6 +14182,9 @@ fn spec_requirement_holds_via_provider(
         return false;
     }
     for rule in &registry.spec_rules {
+        if rule.kind != SpecOperatorAliasKind::Iff {
+            continue;
+        }
         if &rule.operator != operator {
             continue;
         }
@@ -14059,8 +14224,27 @@ fn spec_rule_direct_targets(
         substitutions.insert(source_subject.clone(), target.to_owned());
     }
 
+    spec_alias_target_facts(&rule.target_alias, rule, &substitutions, context)
+}
+
+fn spec_alias_target_facts(
+    alias: &SpecOperatorAliasTarget,
+    rule: &SpecOperatorRule,
+    substitutions: &HashMap<String, String>,
+    context: &TypeContext,
+) -> Vec<TypeFact> {
     let mut result = Vec::new();
-    match &rule.target_alias {
+    match alias {
+        SpecOperatorAliasTarget::Conjunction(targets) => {
+            for target_alias in targets {
+                result.extend(spec_alias_target_facts(
+                    target_alias,
+                    rule,
+                    substitutions,
+                    context,
+                ));
+            }
+        }
         SpecOperatorAliasTarget::Builtin(_) => {}
         SpecOperatorAliasTarget::IsOrSpec(target_alias) => {
             for next in facts_from_is_or_spec(target_alias) {
@@ -15395,57 +15579,10 @@ fn reduce_spec_fact(
             continue;
         }
 
-        let mut substitutions = HashMap::from([
-            (rule.placeholder.clone(), subject.clone()),
-            (rule.target.clone(), target.clone()),
-        ]);
-        if let Some(source_subject) = &rule.source_subject {
-            substitutions.insert(source_subject.clone(), target.clone());
-        }
-
-        match &rule.target_alias {
-            SpecOperatorAliasTarget::Builtin(_) => {}
-            SpecOperatorAliasTarget::IsOrSpec(target_alias) => {
-                for next in facts_from_is_or_spec(target_alias) {
-                    let next = substitute_fact(&next, &substitutions);
-                    let next = context.normalize_fact(&next);
-                    result.push(next.clone());
-                    if matches!(next, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
-                        result.extend(reduce_spec_or_member_fact(&next, context, registry, seen));
-                    }
-                }
-            }
-            SpecOperatorAliasTarget::MemberOf(target_alias) => {
-                if rule.source_subject.is_none() {
-                    continue;
-                }
-                if let Some(next) = fact_from_expression(target_alias) {
-                    let next = substitute_fact(&next, &substitutions);
-                    let next = context.normalize_fact(&next);
-                    result.push(next.clone());
-                    if matches!(next, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
-                        result.extend(reduce_spec_or_member_fact(&next, context, registry, seen));
-                    }
-                }
-            }
-            SpecOperatorAliasTarget::PlaceholderSpec(target_alias) => {
-                // `x_ "in" A :-> x_ "in" B`: the conclusion is a spec on the bound
-                // placeholder. Substitution then rewrites the placeholder to the
-                // triggering fact's subject (and the left target to its target).
-                let Some(subject) = placeholder_pattern_name(&target_alias.placeholder_form) else {
-                    continue;
-                };
-                let next = TypeFact::Spec {
-                    subject,
-                    operator: target_alias.operator.clone(),
-                    target: target_alias.name.clone(),
-                };
-                let next = substitute_fact(&next, &substitutions);
-                let next = context.normalize_fact(&next);
-                result.push(next.clone());
-                if matches!(next, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
-                    result.extend(reduce_spec_or_member_fact(&next, context, registry, seen));
-                }
+        for next in spec_rule_direct_targets(rule, subject, target, context) {
+            result.push(next.clone());
+            if matches!(next, TypeFact::Spec { .. } | TypeFact::MemberOf { .. }) {
+                result.extend(reduce_spec_or_member_fact(&next, context, registry, seen));
             }
         }
     }
@@ -15514,16 +15651,27 @@ fn facts_from_collection_body_membership(
     context: &TypeContext,
     registry: &SignatureRegistry,
 ) -> Vec<TypeFact> {
+    let Some(instantiated) = instantiated_collection_body(collection, context, registry) else {
+        return Vec::new();
+    };
+    facts_from_collection_literal_membership(subject, &instantiated, context)
+}
+
+fn instantiated_collection_body(
+    collection: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<SetExpression> {
     let Some((signature, actuals)) =
         collection_body_signature_and_actuals(collection, context, registry)
     else {
-        return Vec::new();
+        return None;
     };
     let Some(body) = registry.collection_bodies.get(&signature) else {
-        return Vec::new();
+        return None;
     };
     let Some(info) = registry.type_infos.get(&signature) else {
-        return Vec::new();
+        return None;
     };
 
     let actual_arg_groups = actual_arg_groups_for_key(collection);
@@ -15536,8 +15684,7 @@ fn facts_from_collection_body_membership(
         }
     }
 
-    let instantiated = substitute_set_expression(body, &substitutions);
-    facts_from_collection_literal_membership(subject, &instantiated, context)
+    Some(substitute_set_expression(body, &substitutions))
 }
 
 fn collection_is_literal_or_has_body(
@@ -15594,7 +15741,26 @@ fn facts_from_collection_literal_membership(
             result.push(child.normalize_fact(&substitute_fact(&fact, &substitutions)));
         }
     }
+    result.extend(facts_from_collection_literal_predicate(
+        literal,
+        &child,
+        &substitutions,
+    ));
     result
+}
+
+fn facts_from_collection_literal_predicate(
+    literal: &SetExpression,
+    context: &TypeContext,
+    substitutions: &HashMap<String, String>,
+) -> Vec<TypeFact> {
+    let Some(SetPredicate::Expression(predicate)) = &literal.predicate else {
+        return Vec::new();
+    };
+    let Some(fact) = fact_from_expression_in_context(predicate, context) else {
+        return Vec::new();
+    };
+    vec![context.normalize_fact(&substitute_fact(&fact, substitutions))]
 }
 
 fn bind_set_target_to_key(

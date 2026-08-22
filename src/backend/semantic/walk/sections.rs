@@ -145,6 +145,11 @@ fn walk_spec_operator_alias_target(
     visit: &mut impl FnMut(&SignatureShape),
 ) {
     match target {
+        SpecOperatorAliasTarget::Conjunction(targets) => {
+            for target in targets {
+                walk_spec_operator_alias_target(target, visit);
+            }
+        }
         SpecOperatorAliasTarget::IsOrSpec(is_or_spec) => match is_or_spec.as_ref() {
             IsOrSpec::Is(statement) => walk_is_statement(statement, visit),
             IsOrSpec::Spec(_) => {}

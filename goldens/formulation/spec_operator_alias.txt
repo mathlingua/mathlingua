@@ -3,3 +3,7 @@ x_ "in" X :-> x is \type{A}
 x_ "in" X :-> + "on" Nat
 
 x_ "in" A :-> x_ "in" B
+
+x_ "in" X :<->: x_ is \foo
+
+x_ "in" X :<->: x_ is \foo; x_ is \bar

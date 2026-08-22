@@ -19,10 +19,10 @@ use super::ast::{
     PlaceholderFormKind, PlaceholderSpecStatement, RefinedCommandExpression, RefinedCommandHeader,
     RefinedExpressionPart, RefinedHeaderPart, RefinedTail, ResourceHeader, SetExpression,
     SetPredicate, SetTarget, SetTargetElement, SetTargetKind, SetType, SetTypeElement, Span,
-    SpecOperatorAlias, SpecOperatorAliasTarget, SpecSubject, SpecSubjectKind, SubjectSpecStatement,
-    TopicHeader, TupleExpressionElement, TupleType, TypeExpression, VariadicParameter,
-    VariadicParameterDimensions, VariadicSlice, VariadicSliceAxis, VariadicSliceDimensions,
-    WritingAlias,
+    SpecOperatorAlias, SpecOperatorAliasKind, SpecOperatorAliasTarget, SpecSubject,
+    SpecSubjectKind, SubjectSpecStatement, TopicHeader, TupleExpressionElement, TupleType,
+    TypeExpression, VariadicParameter, VariadicParameterDimensions, VariadicSlice,
+    VariadicSliceAxis, VariadicSliceDimensions, WritingAlias,
 };
 use super::grammar;
 use super::lexer::{Lexer, Spanned};
@@ -167,6 +167,7 @@ fn token_literal(token: &Token) -> &'static str {
         Token::InfixSpecEnd => ":/",
         Token::ExpressionAlias => ":=>",
         Token::SpecOperatorAlias => ":->",
+        Token::IffSpecOperatorAlias => ":<->:",
         Token::WritingAlias => ":~>",
         Token::Introduce => "::=",
         Token::Declare => ":=",
@@ -3357,6 +3358,7 @@ fn set_comprehension_colons(input: &str) -> Vec<usize> {
                 && !rest.starts_with(":?")
                 && !rest.starts_with(":=>")
                 && !rest.starts_with(":->")
+                && !rest.starts_with(":<->:")
                 && !rest.starts_with(":~>")
                 && previous != Some(':')
             {
@@ -3979,20 +3981,35 @@ fn command_header_has_optional_tail(header: &CommandHeader) -> bool {
     }
 }
 
-/// Parses a specification-operator alias of the form `<placeholder spec> :-> <target>`.
+/// Parses a specification-operator alias of the form
+/// `<placeholder spec> (:-> | :<->:) <target>`.
 ///
 /// These aliases bridge operator-like placeholder declarations to either an
 /// `is` statement or a specification target, so both sides need bespoke parsing
 /// around the generated formulation grammar.
 pub fn parse_spec_operator_alias(input: &str) -> Result<SpecOperatorAlias, ParseError> {
     let input = input.trim();
-    let index = find_top_level_substring(input, ":->")
-        .ok_or_else(|| ParseError::custom("expected top-level `:->`"))?;
+    let (index, arrow, kind) = find_top_level_substring(input, ":<->:")
+        .map(|index| (index, ":<->:", SpecOperatorAliasKind::Iff))
+        .or_else(|| {
+            find_top_level_substring(input, ":->")
+                .map(|index| (index, ":->", SpecOperatorAliasKind::Implies))
+        })
+        .ok_or_else(|| ParseError::custom("expected top-level `:->` or `:<->:`"))?;
     let placeholder_spec = parse_placeholder_spec_statement(input[..index].trim())?;
-    let target = parse_spec_operator_alias_target(input[index + 3..].trim())?;
+    let target_text = input[index + arrow.len()..].trim();
+    let targets = split_top_level(target_text, ';')?
+        .into_iter()
+        .map(parse_spec_operator_alias_target)
+        .collect::<Result<Vec<_>, _>>()?;
+    let target = match targets.as_slice() {
+        [target] => target.clone(),
+        _ => SpecOperatorAliasTarget::Conjunction(targets),
+    };
 
     Ok(SpecOperatorAlias {
         span: span_all(input),
+        kind,
         placeholder_spec,
         target,
     })
@@ -4165,8 +4182,8 @@ mod tests {
         IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, MappingParameterSelector,
         NamedOperatorKind, PlaceholderForm, PlaceholderFormKind, RefinedTail, SetPredicate,
         SetTargetElement, SetTargetKind, SetTypeElement, SpecLiteral, SpecLiteralForm,
-        SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression, UnaryOperator,
-        VariadicSlice,
+        SpecOperatorAliasKind, SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall,
+        TypeExpression, UnaryOperator, VariadicSlice,
     };
 
     // ===============================[ support ]=====================================
@@ -4960,6 +4977,19 @@ mod tests {
             .expect("expected spec operator alias");
 
         assert_eq!(alias.placeholder_spec.operator, "in");
+        assert_eq!(alias.kind, SpecOperatorAliasKind::Implies);
+    }
+
+    #[test]
+    fn parses_iff_spec_operator_aliases_with_multiple_targets() {
+        let alias = parse_spec_operator_alias(r#"x_ "in" X :<->: x_ is \foo; x_ is \bar"#)
+            .expect("expected iff spec operator alias");
+
+        assert_eq!(alias.kind, SpecOperatorAliasKind::Iff);
+        assert!(matches!(
+            alias.target,
+            SpecOperatorAliasTarget::Conjunction(ref targets) if targets.len() == 2
+        ));
     }
 
     #[test]

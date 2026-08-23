@@ -570,8 +570,8 @@ Group cards divide their sections into primary content and supporting content.
 by default.
 
 Viewer themes are declared centrally in `web/components/viewer-theme.ts`. The
-current choices are Classic, Mono, Flat Gray, Sepia, Retro, and Atomic, each
-with light and dark variants. Classic is the default; the selected theme is
+current choices are Classic, Mono, Flat Gray, Sepia, Retro, LCD, and Atomic,
+each with light and dark variants. Classic is the default; the selected theme is
 stored under `mlg-view-theme` in browser local storage and applied through the
 root `data-theme` attribute and matching `color-scheme`.
 

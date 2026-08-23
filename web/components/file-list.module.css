@@ -240,6 +240,15 @@
   transform: translate(-1px, -1px);
 }
 
+:global(html[data-theme="lcd"]) .outlineLinkActive,
+:global(html[data-theme="lcd-dark"]) .outlineLinkActive,
+:global(html[data-theme="lcd"]) .outlineLinkActive:hover,
+:global(html[data-theme="lcd-dark"]) .outlineLinkActive:hover {
+  background: var(--ink);
+  box-shadow: var(--control-shadow);
+  color: var(--surface);
+}
+
 /* Leaf-page marker: a small dot that aligns files with folder-icon rows. */
 .outlineFileDot {
   flex: 0 0 auto;

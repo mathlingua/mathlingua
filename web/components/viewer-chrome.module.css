@@ -54,6 +54,32 @@
   transform: translate(-1px, -1px);
 }
 
+:global(html[data-theme="lcd"]) .button,
+:global(html[data-theme="lcd-dark"]) .button,
+:global(html[data-theme="lcd"]) .typesButton,
+:global(html[data-theme="lcd-dark"]) .typesButton,
+:global(html[data-theme="lcd"]) .themeIconButton,
+:global(html[data-theme="lcd-dark"]) .themeIconButton {
+  border: 1px solid var(--line-strong);
+  background: var(--surface-alt);
+  box-shadow: var(--control-shadow);
+}
+
+:global(html[data-theme="lcd"]) .button:hover,
+:global(html[data-theme="lcd-dark"]) .button:hover,
+:global(html[data-theme="lcd"]) .typesButton:hover,
+:global(html[data-theme="lcd-dark"]) .typesButton:hover,
+:global(html[data-theme="lcd"]) .typesButtonActive,
+:global(html[data-theme="lcd-dark"]) .typesButtonActive,
+:global(html[data-theme="lcd"]) .themeIconButton:hover,
+:global(html[data-theme="lcd-dark"]) .themeIconButton:hover,
+:global(html[data-theme="lcd"]) .themeIconButton[aria-expanded="true"],
+:global(html[data-theme="lcd-dark"]) .themeIconButton[aria-expanded="true"] {
+  border-color: var(--ink);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
 .spacer {
   min-width: 0;
 }
@@ -182,6 +208,13 @@
 :global(html[data-theme="atomic-dark"]) .themeOptionActive {
   color: var(--accent-contrast);
   font-weight: 800;
+}
+
+:global(html[data-theme="lcd"]) .themeOptionActive,
+:global(html[data-theme="lcd-dark"]) .themeOptionActive {
+  background: var(--ink);
+  color: var(--surface);
+  font-weight: 700;
 }
 
 .themeOptionLabel {

@@ -353,6 +353,116 @@ html[data-theme="retro-dark"] {
   --syntax-string: #b8cd68;
 }
 
+/* Low-resolution LCD themes: a compact monospace face, square controls, hard
+   one-pixel edges, and a subtle matrix of dormant screen cells. */
+html[data-theme="lcd"] {
+  color-scheme: light;
+  --font-body: "Courier New", Courier, "Lucida Console", monospace;
+  --font-display: "Courier New", Courier, "Lucida Console", monospace;
+  --font-ui: "Courier New", Courier, "Lucida Console", monospace;
+  --page-bg: #b8b8b8;
+  --surface: #dedede;
+  --surface-alt: #c8c8c8;
+  --ink: #171717;
+  --muted: #666666;
+  --muted-strong: #404040;
+  --line: #777777;
+  --line-strong: #3c3c3c;
+  --accent: #2a2a2a;
+  --accent-soft: #adadad;
+  --shadow: 3px 3px 0 #444444;
+  --chrome-bg: rgba(216, 216, 216, 0.97);
+  --card-bg: #e2e2e2;
+  --definition-bg: #d0d0d0;
+  --definition-shadow: 3px 3px 0 #444444;
+  --control-shadow: 1px 1px 0 #444444;
+  --syntax-comment: #767676;
+  --syntax-command: #202020;
+  --syntax-keyword: #484848;
+  --syntax-label: #333333;
+  --syntax-operator: #555555;
+  --syntax-placeholder: #3b3b3b;
+  --syntax-punctuation: #6b6b6b;
+  --syntax-string: #414141;
+  --lcd-pixel: rgba(0, 0, 0, 0.24);
+  --radius-card: 1px;
+  --radius-control: 1px;
+  --radius-popover: 1px;
+  --radius-option: 0;
+  --radius-nav: 0;
+  --radius-definition: 1px;
+  --radius-code: 0;
+  --radius-code-block: 1px;
+  --radius-inline-ref: 0;
+  --card-border-width: 1px;
+  --popover-border-width: 1px;
+  --definition-border-width: 1px;
+  --divider-border-width: 1px;
+  --accent-contrast: #f2f2f2;
+  --heading-color: var(--ink);
+  --heading-weight: 700;
+  --section-heading-color: var(--accent);
+  --section-heading-weight: 700;
+  --card-heading-color: var(--ink);
+  --card-heading-weight: 700;
+  --prose-heading-color: var(--ink);
+  --prose-heading-weight: 700;
+}
+
+html[data-theme="lcd-dark"] {
+  color-scheme: dark;
+  --font-body: "Courier New", Courier, "Lucida Console", monospace;
+  --font-display: "Courier New", Courier, "Lucida Console", monospace;
+  --font-ui: "Courier New", Courier, "Lucida Console", monospace;
+  --page-bg: #060606;
+  --surface: #111111;
+  --surface-alt: #1d1d1d;
+  --ink: #e0e0e0;
+  --muted: #858585;
+  --muted-strong: #b4b4b4;
+  --line: #3b3b3b;
+  --line-strong: #686868;
+  --accent: #ffffff;
+  --accent-soft: #2d2d2d;
+  --shadow: 3px 3px 0 #000000;
+  --chrome-bg: rgba(10, 10, 10, 0.97);
+  --card-bg: #141414;
+  --definition-bg: #191919;
+  --definition-shadow: 3px 3px 0 #000000;
+  --control-shadow: 1px 1px 0 #000000;
+  --syntax-comment: #777777;
+  --syntax-command: #f0f0f0;
+  --syntax-keyword: #c8c8c8;
+  --syntax-label: #dddddd;
+  --syntax-operator: #b7b7b7;
+  --syntax-placeholder: #a6a6a6;
+  --syntax-punctuation: #929292;
+  --syntax-string: #d1d1d1;
+  --lcd-pixel: rgba(0, 0, 0, 0.58);
+  --radius-card: 1px;
+  --radius-control: 1px;
+  --radius-popover: 1px;
+  --radius-option: 0;
+  --radius-nav: 0;
+  --radius-definition: 1px;
+  --radius-code: 0;
+  --radius-code-block: 1px;
+  --radius-inline-ref: 0;
+  --card-border-width: 1px;
+  --popover-border-width: 1px;
+  --definition-border-width: 1px;
+  --divider-border-width: 1px;
+  --accent-contrast: #060606;
+  --heading-color: var(--accent);
+  --heading-weight: 700;
+  --section-heading-color: var(--accent);
+  --section-heading-weight: 700;
+  --card-heading-color: var(--ink);
+  --card-heading-weight: 700;
+  --prose-heading-color: var(--ink);
+  --prose-heading-weight: 700;
+}
+
 /* A warm, outlined theme inspired by codex-resets.com: cream paper, rounded
    display type, saturated utility accents, and deliberately offset ink
    shadows. The layout remains MathLingua's own two-pane reader. */
@@ -484,6 +594,22 @@ body {
   background: var(--page-bg);
   color: var(--ink);
   font-family: var(--font-body);
+}
+
+html[data-theme="lcd"] body::after,
+html[data-theme="lcd-dark"] body::after {
+  content: "";
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  pointer-events: none;
+  background-image: conic-gradient(
+    from 90deg at 1px 1px,
+    transparent 0 75%,
+    var(--lcd-pixel) 0
+  );
+  background-size: 4px 4px;
+  opacity: 0.24;
 }
 
 a {

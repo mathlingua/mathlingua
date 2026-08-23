@@ -15,6 +15,8 @@ export const VIEWER_THEMES = [
   { id: "sepia-dark", label: "Sepia Dark", colorScheme: "dark" },
   { id: "retro", label: "Retro", colorScheme: "light" },
   { id: "retro-dark", label: "Retro Dark", colorScheme: "dark" },
+  { id: "lcd", label: "LCD", colorScheme: "light" },
+  { id: "lcd-dark", label: "LCD Dark", colorScheme: "dark" },
   { id: "atomic", label: "Atomic", colorScheme: "light" },
   {
     id: "atomic-dark",

@@ -5,6 +5,14 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## LCD Viewer Themes
+
+The viewer theme menu now includes LCD and LCD Dark. The pair uses a grayscale
+monochrome palette, monospaced display type, square one-pixel geometry, hard
+shadows, and a subtle screen-cell matrix that recalls the dark squares of early
+liquid-crystal displays. Both variants participate in the existing theme
+persistence and pre-render color-scheme setup.
+
 ## Directed And Equivalent Spec Capabilities
 
 Spec capabilities now distinguish implication from equivalence. `a :-> b`

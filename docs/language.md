@@ -757,6 +757,7 @@ Enables:
 Documented:
 Justification:
 Aliases:
+Writing:
 References:
 Metadata:
 ```
@@ -943,7 +944,7 @@ Documented:
   `Enables:`, or `Justification:` is an error — mark it `explicitly:` instead.
   Furthermore, the `specifies:` clause must **literally name the parent type's
   refinement**: the same adjective(s) applied to a supertype of the refined base
-  type (above, `\(finite)::magma`, because `\group` extends `\magma`). An
+  type (above, `\(finite)::magma`, because `\group` extends `\magma`). A
   `specifies:` clause that names anything else is an error.
 - `explicitly:` — the group overrides the inherited definition with stronger
   meaning, so it must add **at least one** property beyond the inherited
@@ -1103,6 +1104,7 @@ the construct supports.
 - `overview:`
 - `related:`
 - `discoverer:`
+- `notes:`
 
 `Justification:` (placed after `Documented:`) accepts only `have:`/`asserting:`
 groups, each with a required `[label]` heading. Any grouped expression, statement,
@@ -1444,9 +1446,8 @@ reports `Could not resolve member \`{name}\` for \`{owner}\``.
 `Requires:`/`Enables:` capability aliases are validated: a provided spec
 operator's target must be the described item; a `Required definition` must
 reference a `Defines:` entry and establish its stated fact. Build expressions
-`\<type>@<value>` build expressions are
-checked (`Could not build \`{expression}\``). Type predicates, function-type
-specs, and `is` type arguments are checked
+`\<type>@<value>` are checked (`Could not build \`{expression}\``). Type
+predicates, function-type specs, and `is` type arguments are checked
 (`Could not establish predicate ...`, `Could not establish requirement ... for
 function ...`, `\`{name}\` is not a known type`).
 

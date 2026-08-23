@@ -62,6 +62,18 @@ If the `:=` right-hand side is a name or tuple of names, the checker follows
 facts through the corresponding qualified component(s), such as
 `\naturals..N`. Other expressions advertise only the introduced symbol's type.
 
+## Viewer Type Annotations
+
+The web viewer now includes an interactive type inspection toggle in the viewer
+chrome. When "Types" is enabled, cards render per-line inferred type annotations
+for sub-expressions directly alongside the source expressions.
+
+The type information is computed during the semantic check pass, mapped to line
+numbers and byte spans (`TypeAnnotation`), and serialized into the view model by
+the view builder pass. Both `mlg view` and `mlg export` package this metadata so
+readers can inspect resolved expression types in the browser without running the
+compiler locally.
+
 ## Direct Component Access With `..`
 
 A concrete object command can expose a component from its destructuring target

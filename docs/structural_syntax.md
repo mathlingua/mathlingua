@@ -204,6 +204,7 @@ Examples:
 - a top-level group whose first section is `Declares:` is parsed as `DeclaresGroup`
 - a nested group inside `Enables:` whose first section is `capability:` is parsed as `CapabilityGroup`
 - a nested group inside `Enables:` whose first section is `from:` is parsed as a cast-backed enables group
+- a nested group inside `Enables:` whose first section is `view:` is parsed as `EnablesViewGroup`
 - a clause group whose first section is `if:` is parsed as `IfGroup`
 
 The heading is then validated according to that group kind.
@@ -576,7 +577,7 @@ EnablesItemUnion ::=
     | CapabilityGroup
     | FromCapabilityGroup
     | FromAsGroup
-    | RelationGroup
+    | EnablesViewGroup
 ```
 
 ```union
@@ -1104,37 +1105,23 @@ version: <OpenText>
 ```
 
 ```group
-[LabelHeader]?
-positive: <OpenText>*
-int: <OpenText>*
-is: <OpenText>*
+decimal:
+is: <TypeExpression>
 ```
 
 ```group
-[LabelHeader]?
-negative: <OpenText>*
-int: <OpenText>*
-is: <OpenText>*
+zeroOrPositiveInt:
+is: <TypeExpression>
 ```
 
 ```group
-[LabelHeader]?
-zero: <OpenText>*
-is: <OpenText>*
+positiveInt:
+is: <TypeExpression>
 ```
 
 ```group
-[LabelHeader]?
-positive: <OpenText>*
-decimal: <OpenText>*
-is: <OpenText>*
-```
-
-```group
-[LabelHeader]?
-negative: <OpenText>*
-decimal: <OpenText>*
-is: <OpenText>*
+int:
+is: <TypeExpression>
 ```
 
 ### Resource item groups

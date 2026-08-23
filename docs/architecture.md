@@ -562,12 +562,17 @@ Key files:
 - `web/lib/presenter.ts` contains route, label, and file-browser presentation
   helpers.
 - `web/components/` renders the viewer shell, file list, group cards, section
-  content, argument lists, and LaTeX.
+  content, argument lists, type annotations, and LaTeX.
 
 Group cards divide their sections into primary content and supporting content.
-`Documented:`, `References:`, item-level `Writing:`, `Enables:`, `Provides:`,
+`Documented:`, `References:`, item-level `Writing:`, `Enables:`,
 `Justification:`, and `Id:` are collapsed behind the supporting-sections toggle
 by default.
+
+The viewer chrome includes an interactive "Types" toggle to display resolved
+expression types inline across cards and argument lists. Type annotations are
+computed during the semantic check pass, mapped to lines and byte spans, and
+serialized into the view model by `src/backend/view/builder.rs`.
 
 Viewer themes are declared centrally in `web/components/viewer-theme.ts`. The
 current choices are Classic, Mono, Flat Gray, Sepia, Retro, LCD, and Atomic,

@@ -380,8 +380,8 @@ The lower (spec/predicate) precedence level includes, besides `is`/`is?`:
 - **Quoted-operator specs and predicates** `<a> "op" <b>`, `<a> "op"? <b>`, and
   `<a> "op" <command>`.
 - **`member_of`** and **`satisfies`** expressions.
-- **Spec literals** with an implicit `?` subject: `? is T`, `? "op" name`,
-  `? "op" \cmd` (values of type `\\specification`).
+- **Spec literals** with an anonymous `_` subject: `_ is T`, `_ "op" name`,
+  `_ "op" \cmd` (values of type `\\specification`).
 - **`BuiltinCommandExpression`** — the value form `\\chain{arg; arg}:tail{...}`
   with `;`-separated arguments (distinct from a builtin *type* `\\Chain`).
 - A command expression may carry a **`#using{...}` / `#given{...}` context**
@@ -705,7 +705,7 @@ TypeExpression ::=
   | SetLiteralType
   | SpecLiteralFunctionType
 BuiltinTypeExpression ::= "\\" "\\" Chain
-SpecLiteral ::= "?" "is" TypeExpression | "?" TopLevelQuotedOperator Expression
+SpecLiteral ::= "_" "is" TypeExpression | "_" TopLevelQuotedOperator Expression
 TupleLiteralType ::= "(" SpecLiteral "," SpecLiteral ("," SpecLiteral)* ")"
 SetLiteralType ::= "{" (SpecLiteral | TupleLiteralType) ":" "..." "}"
 SpecLiteralFunctionType ::= "(" SpecLiteral ("," SpecLiteral)* ")" "->" "(" SpecLiteral ")"
@@ -721,7 +721,7 @@ Notes:
   output spec: `(_ "in" A, _ "in" B) -> (_ "in" C)`
 - function type specs use `_` as the parameter and may be either `_ is Type` or
   `_ "operator" Target`
-- structural literal types use `?` spec literals at every leaf; raw nominal
+- structural literal types use `_` spec literals at every leaf; raw nominal
   tuple, set, mapping, and arrow types are not accepted
 - `->` has one or more input specs and exactly one output spec; the declared
   input arity is preserved
@@ -734,10 +734,10 @@ Examples:
 - `f(x_) is \function:on{A}:to{B}`
 - `f(x_), y_ is \function:on{A}:to{B}`
 - `f is (_ "in" A) -> (_ "in" B)`
-- `(x, y) is (? is \natural, ? "in" \reals)`
-- `{x : ...} is {? is \natural : ...}`
-- `f is (? is \natural) -> (? "in" \naturals)`
-- `f is (? is \natural, ? "in" \reals) -> (? is \real)`
+- `(x, y) is (_ is \natural, _ "in" \reals)`
+- `{x : ...} is {_ is \natural : ...}`
+- `f is (_ is \natural) -> (_ "in" \naturals)`
+- `f is (_ is \natural, _ "in" \reals) -> (_ is \real)`
 - `+ is \operator`
 - `x "in" A`
 - `x "less than" A`

@@ -49,7 +49,7 @@ abstractly:
 specifies:
 . R is \set
 . 0 is \natural
-. succ is (? is \natural) -> (? is \natural)
+. succ is (_ is \natural) -> (_ is \natural)
 Documented:
 . written: "\mathbb{R}"
 "#,
@@ -644,48 +644,52 @@ Documented:
     );
 
     assert_eq!(
-        render_formulation_latex(r#"x is (? is \natural, ? "in" \reals)"#, &registry),
+        render_formulation_latex(r#"x is (_ is \natural, _ "in" \reals)"#, &registry),
         Some(
-            r#"x \textrm{ is } \left(? \textrm{ is } \mathbb{N}, ? \in \mathbb{R}\right)"#
+            r#"x \textrm{ is } \left(\cdot \textrm{ is } \mathbb{N}, \cdot \in \mathbb{R}\right)"#
                 .to_string()
         )
     );
     assert_eq!(
-        render_formulation_latex(r#"S is {? is \natural : ...}"#, &registry),
+        render_formulation_latex(r#"S is {_ is \natural : ...}"#, &registry),
         Some(
-            r#"S \textrm{ is } \left\{? \textrm{ is } \mathbb{N} \: : \: \ldots\right\}"#
-                .to_string()
-        )
-    );
-    assert_eq!(
-        render_formulation_latex(
-            r#"S is {(? is \natural, ? "in" \reals) : ...}"#,
-            &registry
-        ),
-        Some(
-            r#"S \textrm{ is } \left\{\left(? \textrm{ is } \mathbb{N}, ? \in \mathbb{R}\right) \: : \: \ldots\right\}"#
+            r#"S \textrm{ is } \left\{\cdot \textrm{ is } \mathbb{N} \: : \: \ldots\right\}"#
                 .to_string()
         )
     );
     assert_eq!(
         render_formulation_latex(
-            r#"f is (? is \natural) -> (? "in" \reals)"#,
+            r#"S is {(_ is \natural, _ "in" \reals) : ...}"#,
             &registry
         ),
         Some(
-            r#"f \textrm{ is } \left(? \textrm{ is } \mathbb{N}\right) \to \left(? \in \mathbb{R}\right)"#
+            r#"S \textrm{ is } \left\{\left(\cdot \textrm{ is } \mathbb{N}, \cdot \in \mathbb{R}\right) \: : \: \ldots\right\}"#
                 .to_string()
         )
     );
     assert_eq!(
         render_formulation_latex(
-            r#"f is (? is \natural, ? "in" \reals) -> (? is \natural)"#,
+            r#"f is (_ is \natural) -> (_ "in" \reals)"#,
             &registry
         ),
         Some(
-            r#"f \textrm{ is } \left(? \textrm{ is } \mathbb{N}, ? \in \mathbb{R}\right) \to \left(? \textrm{ is } \mathbb{N}\right)"#
+            r#"f \textrm{ is } \left(\cdot \textrm{ is } \mathbb{N}\right) \to \left(\cdot \in \mathbb{R}\right)"#
                 .to_string()
         )
+    );
+    assert_eq!(
+        render_formulation_latex(
+            r#"f is (_ is \natural, _ "in" \reals) -> (_ is \natural)"#,
+            &registry
+        ),
+        Some(
+            r#"f \textrm{ is } \left(\cdot \textrm{ is } \mathbb{N}, \cdot \in \mathbb{R}\right) \to \left(\cdot \textrm{ is } \mathbb{N}\right)"#
+            .to_string()
+        )
+    );
+    assert_eq!(
+        render_formulation_latex(r#"x satisfies (_ is \natural)"#, &registry),
+        Some(r#"x \textrm{ satisfies } \left(\cdot \textrm{ is } \mathbb{N}\right)"#.to_string())
     );
 }
 

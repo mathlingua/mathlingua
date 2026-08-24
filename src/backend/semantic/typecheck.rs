@@ -5936,7 +5936,7 @@ fn collect_type_expression_names(ty: &TypeExpression, names: &mut BTreeSet<Strin
 }
 
 fn collect_function_type_spec_names(spec: &FunctionTypeSpec, names: &mut BTreeSet<String>) {
-    if spec.subject != "_" && spec.subject != "?" {
+    if spec.subject != "_" {
         names.insert(spec.subject.clone());
     }
     match &spec.kind {
@@ -7950,7 +7950,7 @@ fn check_is_statement(
     check_type_expression(&statement.ty, context, path, locator, registry, event_log);
 }
 
-/// Checks a spec literal (`? is \real`, `? "in" \reals`). A spec literal is a
+/// Checks a spec literal (`_ is \real`, `_ "in" \reals`). A spec literal is a
 /// value of type `\\specification`; the only extra rule is that a `"op"` target
 /// which is a command must name a value (`Defines:`), not a type (`Declares:`).
 fn check_spec_literal(
@@ -9389,12 +9389,12 @@ fn check_function_type_spec(
     registry: &SignatureRegistry,
     event_log: &mut EventLog,
 ) {
-    if spec.subject != "_" && spec.subject != "?" {
+    if spec.subject != "_" {
         emit_error(
             event_log,
             path,
             locator.locate_symbol(&spec.subject),
-            "Function type specs must use `_` or `?` as their subject",
+            "Function type specs must use `_` as their subject",
         );
     }
 
@@ -15629,7 +15629,7 @@ fn reduce_member_of_fact(
         }
     }
 
-    // Membership in a use of a set-defining command (`y "in" \set:where{? is \real}`,
+    // Membership in a use of a set-defining command (`y "in" \set:where{_ is \real}`,
     // `y "in" \set:of{\real}`): instantiate the stored body with the call's actual
     // arguments and derive the member's element facts. Gated on a registered body,
     // so abstract set variables and body-less collection types stay opaque below.
@@ -17708,7 +17708,6 @@ fn substitute_type_expression(
                 .map(|spec| substitute_function_type_spec_expression(spec, substitutions))
                 .collect(),
             output: substitute_function_type_spec_expression(&function.output, substitutions),
-            notation: function.notation,
         }),
         other => other.clone(),
     }
@@ -18497,13 +18496,13 @@ fn fact_from_expression(expression: &Expression) -> Option<TypeFact> {
 }
 
 /// The specification a `satisfies` expression's right-hand side denotes, if it is
-/// a concrete spec literal, with its `?` placeholder replaced by `subject`.
+/// a concrete spec literal, with its `_` placeholder replaced by `subject`.
 /// Returns `None` for an abstract spec (e.g. a `\\specification` parameter), which
 /// stays inert until instantiated.
 fn fact_from_satisfies(subject: &Expression, spec: &Expression) -> Option<TypeFact> {
     let literal = spec_literal_of(spec)?;
     let base = fact_from_spec_literal(literal)?;
-    let substitutions = HashMap::from([("?".to_owned(), key_for_expression(subject))]);
+    let substitutions = HashMap::from([("_".to_owned(), key_for_expression(subject))]);
     Some(substitute_fact(&base, &substitutions))
 }
 
@@ -18518,19 +18517,19 @@ fn spec_literal_of(expression: &Expression) -> Option<&SpecLiteral> {
     }
 }
 
-/// The fact a spec literal asserts about its `?` placeholder (subject key `"?"`).
+/// The fact a spec literal asserts about its `_` placeholder (subject key `"_"`).
 fn fact_from_spec_literal(literal: &SpecLiteral) -> Option<TypeFact> {
     match &literal.form {
         SpecLiteralForm::Is(ty) => {
             let (ty_key, signature) = key_for_type_expression(ty)?;
             Some(TypeFact::Is {
-                subject: "?".to_owned(),
+                subject: "_".to_owned(),
                 ty: ty_key,
                 signature,
             })
         }
         SpecLiteralForm::Spec { operator, target } => Some(TypeFact::Spec {
-            subject: "?".to_owned(),
+            subject: "_".to_owned(),
             operator: operator.clone(),
             target: key_for_expression(target),
         }),
@@ -19478,13 +19477,13 @@ fn key_for_expression(expression: &Expression) -> String {
         ),
         ExpressionKind::SpecLiteral(literal) => match &literal.form {
             SpecLiteralForm::Is(ty) => format!(
-                "? is {}",
+                "_ is {}",
                 key_for_type_expression(ty)
                     .map(|(key, _)| key)
                     .unwrap_or_else(|| key_for_non_command_type_expression(ty))
             ),
             SpecLiteralForm::Spec { operator, target } => {
-                format!("?\"{}\"{}", operator, key_for_expression(target))
+                format!("_\"{}\"{}", operator, key_for_expression(target))
             }
         },
         ExpressionKind::Satisfies { subject, spec } => format!(

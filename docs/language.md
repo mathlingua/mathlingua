@@ -637,8 +637,8 @@ form or declaration.
   `[A \:subset:/ B]`.
 - **Function literals** are anonymous functions written with `=>`:
   `(x_ is \real) => x_ + 1`.
-- **Spec literals** are `\\specification` values written with an implicit `?`
-  subject — `? is \set`, `? "in" X` — and are instantiated by a `satisfies:`
+- **Spec literals** are `\\specification` values written with an anonymous `_`
+  subject — `_ is \set`, `_ "in" X` — and are instantiated by a `satisfies:`
   clause.
 - **Inferred parameters** are command arguments written `X?`: the first
   occurrence introduces `X` with the type its position requires; later uses are
@@ -1756,17 +1756,17 @@ higher-order specification operators intact instead of treating every
 component as an ordinary nominal type:
 
 ```text
-(? is \natural, ? "in" \reals)
-{? is \natural : ...}
-{(? is \natural, ? "in" \reals) : ...}
-(? is \natural) -> (? "in" \naturals)
-(? is \natural, ? "in" \reals) -> (? is \real)
+(_ is \natural, _ "in" \reals)
+{_ is \natural : ...}
+{(_ is \natural, _ "in" \reals) : ...}
+(_ is \natural) -> (_ "in" \naturals)
+(_ is \natural, _ "in" \reals) -> (_ is \real)
 ```
 
 These types match `(x, y)`, `{x : ...}`, `{(x, y) : ...}`, `x_ => ...`, and
-`(x_, y_) => ...`, respectively. Each `?` is instantiated with the matching
+`(x_, y_) => ...`, respectively. Each `_` is instantiated with the matching
 term component. A raw nominal tuple such as `(\natural, \real)` is not a type
-literal; write `(? is \natural, ? is \real)` instead.
+literal; write `(_ is \natural, _ is \real)` instead.
 
 The `->` form accepts one or more input spec literals and exactly one
 output spec literal, so users can state unary, binary, and n-ary function types
@@ -1787,7 +1787,7 @@ specifies:
 ```text
 Declares: f(x_) ::= y_
 specifies:
-. f is (? is \real) -> (? is \real)
+. f is (_ is \real) -> (_ is \real)
 ```
 
 ## Specification Operators

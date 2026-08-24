@@ -11,8 +11,8 @@ use super::ast::{
     DeclarationRelation, DeclarationStatement, Expression, ExpressionAlias, ExpressionAliasLhs,
     ExpressionBinding, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind, FunctionForm,
     FunctionNamedExpressionElement, FunctionNamedExpressionElementLhs, FunctionType,
-    FunctionTypeNotation, FunctionTypeSpec, FunctionTypeSpecKind, FunctionVariadicParameter,
-    IndexedCall, InfixCommandHeader, InfixSpec, InfixSpecExpressionRefinement, InfixSpecHeader,
+    FunctionTypeSpec, FunctionTypeSpecKind, FunctionVariadicParameter, IndexedCall,
+    InfixCommandHeader, InfixSpec, InfixSpecExpressionRefinement, InfixSpecHeader,
     InfixSpecHeaderRefinement, IsOrRefinedStatementSpec, IsOrSpec, IsStatement, IsSubject,
     IsSubjectForm, IsSubjectKind, IsViaStatement, Label, LabelHeader, MappingParameterSelector,
     MemberAliasLhs, Operator, ParenExpressionArgs, ParenHeadingArgs, Placeholder, PlaceholderForm,
@@ -213,6 +213,7 @@ fn token_literal(token: &Token) -> &'static str {
         Token::Dollar => "$",
         Token::Question => "?",
         Token::At => "@",
+        Token::AnonymousPlaceholder => "_",
         Token::Name(_)
         | Token::Decimal(_)
         | Token::Placeholder(_)
@@ -2236,23 +2237,20 @@ fn parse_function_type_expression(
     }
 
     let output = outputs.remove(0);
-    let has_spec_literal_subject = inputs
+    let has_question_mark_subject = inputs
         .iter()
         .chain(std::iter::once(&output))
         .any(|spec| spec.subject == "?");
-    let notation = if has_spec_literal_subject {
-        require_spec_literal_subjects(&inputs)?;
-        require_spec_literal_subjects(std::slice::from_ref(&output))?;
-        FunctionTypeNotation::Mapping
-    } else {
-        FunctionTypeNotation::Specs
-    };
+    if has_question_mark_subject {
+        return Err(ParseError::custom(
+            "spec literals must use `_`; `?` is not supported",
+        ));
+    }
 
     Ok(FunctionType {
         span: span_all(input),
         inputs,
         output,
-        notation,
     })
 }
 
@@ -2310,11 +2308,11 @@ fn parse_set_type_expression(input: &str, allow_refined: bool) -> Result<SetType
 }
 
 fn require_spec_literal_subjects(specs: &[FunctionTypeSpec]) -> Result<(), ParseError> {
-    if specs.iter().all(|spec| spec.subject == "?") {
+    if specs.iter().all(|spec| spec.subject == "_") {
         Ok(())
     } else {
         Err(ParseError::custom(
-            "structural literal types require `?` spec literals",
+            "structural literal types require `_` spec literals",
         ))
     }
 }
@@ -2356,7 +2354,7 @@ fn parse_function_type_spec(
 
     let (subject_text, operator, target_text) =
         split_subject_operator_name(input).ok_or_else(|| {
-            ParseError::custom("expected a spec literal of the form `? is Type` or `? \"op\" Name`")
+            ParseError::custom("expected a spec literal of the form `_ is Type` or `_ \"op\" Name`")
         })?;
     let subject = parse_function_type_spec_subject(subject_text)?;
     let target = parse_expression(target_text)?;
@@ -4178,12 +4176,12 @@ mod tests {
         BinaryOperator, BuiltinCommandArgument, ChainPart, CommandContextArgument,
         CommandContextKind, CommandHeader, CommandHeaderNode, DeclarationRelation, Expression,
         ExpressionAliasLhs, ExpressionKind, FormOrDeclaration, FormOrDeclarationKind,
-        FunctionNamedExpressionElementLhs, FunctionTypeNotation, FunctionTypeSpecKind,
-        IsOrRefinedStatementSpec, IsOrSpec, IsSubjectForm, IsSubjectKind, MappingParameterSelector,
-        NamedOperatorKind, PlaceholderForm, PlaceholderFormKind, RefinedTail, SetPredicate,
-        SetTargetElement, SetTargetKind, SetTypeElement, SpecLiteral, SpecLiteralForm,
-        SpecOperatorAliasKind, SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall,
-        TypeExpression, UnaryOperator, VariadicSlice,
+        FunctionNamedExpressionElementLhs, FunctionTypeSpecKind, IsOrRefinedStatementSpec,
+        IsOrSpec, IsSubjectForm, IsSubjectKind, MappingParameterSelector, NamedOperatorKind,
+        PlaceholderForm, PlaceholderFormKind, RefinedTail, SetPredicate, SetTargetElement,
+        SetTargetKind, SetTypeElement, SpecLiteral, SpecLiteralForm, SpecOperatorAliasKind,
+        SpecOperatorAliasTarget, SpecSubjectKind, SubsetCall, TypeExpression, UnaryOperator,
+        VariadicSlice,
     };
 
     // ===============================[ support ]=====================================
@@ -4887,8 +4885,8 @@ mod tests {
 
     #[test]
     fn parses_spec_literals_and_satisfies() {
-        // `? is <type>`
-        let is_literal = parse_expression(r#"? is \real"#).expect("expected spec literal");
+        // `_ is <type>`
+        let is_literal = parse_expression(r#"_ is \real"#).expect("expected spec literal");
         assert!(matches!(
             is_literal.kind,
             ExpressionKind::SpecLiteral(SpecLiteral {
@@ -4897,8 +4895,8 @@ mod tests {
             })
         ));
 
-        // `? "op" <name>`
-        let name_literal = parse_expression(r#"? "in" R"#).expect("expected spec literal");
+        // `_ "op" <name>`
+        let name_literal = parse_expression(r#"_ "in" R"#).expect("expected spec literal");
         assert!(matches!(
             &name_literal.kind,
             ExpressionKind::SpecLiteral(SpecLiteral {
@@ -4907,8 +4905,8 @@ mod tests {
             }) if operator == "in" && matches!(target.kind, ExpressionKind::Name(ref n) if n == "R")
         ));
 
-        // `? "op" <command>` (command right-hand side)
-        let cmd_literal = parse_expression(r#"? "in" \reals"#).expect("expected spec literal");
+        // `_ "op" <command>` (command right-hand side)
+        let cmd_literal = parse_expression(r#"_ "in" \reals"#).expect("expected spec literal");
         assert!(matches!(
             &cmd_literal.kind,
             ExpressionKind::SpecLiteral(SpecLiteral {
@@ -4917,14 +4915,18 @@ mod tests {
             }) if operator == "in" && matches!(target.kind, ExpressionKind::Command(_))
         ));
 
-        // `x satisfies (? is \real)`
+        // `x satisfies (_ is \real)`
         let satisfies =
-            parse_expression(r#"x satisfies (? is \real)"#).expect("expected satisfies expression");
+            parse_expression(r#"x satisfies (_ is \real)"#).expect("expected satisfies expression");
         let ExpressionKind::Satisfies { subject, spec } = satisfies.kind else {
             panic!("expected Satisfies, got {:?}", satisfies.kind);
         };
         assert!(matches!(subject.kind, ExpressionKind::Name(ref n) if n == "x"));
         assert!(matches!(spec.kind, ExpressionKind::Grouped { .. }));
+
+        for obsolete in [r#"? is \real"#, r#"? "in" R"#, r#"? "in" \reals"#] {
+            parse_expression(obsolete).expect_err("`?` spec literals are no longer supported");
+        }
 
         // `x "in" \reals` — command right-hand side of a spec statement
         let member = parse_expression(r#"x "in" \reals"#).expect("expected spec statement");
@@ -6589,7 +6591,7 @@ mod tests {
 
     #[test]
     fn parses_literal_tuple_set_and_function_types() {
-        let tuple = parse_ordinary_declaration_statement(r#"p is (? is \natural, ? "in" \reals)"#)
+        let tuple = parse_ordinary_declaration_statement(r#"p is (_ is \natural, _ "in" \reals)"#)
             .expect("expected tuple type");
         assert!(matches!(
             tuple.relation,
@@ -6597,7 +6599,7 @@ mod tests {
                 if tuple.elements.len() == 2
         ));
 
-        let set = parse_ordinary_declaration_statement(r#"{x : ...} is {? is \natural : ...}"#)
+        let set = parse_ordinary_declaration_statement(r#"{x : ...} is {_ is \natural : ...}"#)
             .expect("expected set type");
         assert!(matches!(
             set.relation,
@@ -6605,7 +6607,7 @@ mod tests {
         ));
 
         let tuple_set = parse_ordinary_declaration_statement(
-            r#"{(x, y) : ...} is {(? is \natural, ? "in" \reals) : ...}"#,
+            r#"{(x, y) : ...} is {(_ is \natural, _ "in" \reals) : ...}"#,
         )
         .expect("expected set-of-tuples type");
         assert!(matches!(
@@ -6615,27 +6617,25 @@ mod tests {
         ));
 
         let mapping =
-            parse_ordinary_declaration_statement(r#"f is (? is \natural) -> (? "in" \naturals)"#)
+            parse_ordinary_declaration_statement(r#"f is (_ is \natural) -> (_ "in" \naturals)"#)
                 .expect("expected unary mapping type");
         assert!(matches!(
             mapping.relation,
             Some(DeclarationRelation::Is(TypeExpression::Function(ref function)))
-                if function.notation == FunctionTypeNotation::Mapping
-                    && function.inputs.len() == 1
+                if function.inputs.len() == 1
         ));
 
         let nary_mapping = parse_ordinary_declaration_statement(
-            r#"f is (? is \natural, ? "in" \reals) -> (? is \real)"#,
+            r#"f is (_ is \natural, _ "in" \reals) -> (_ is \real)"#,
         )
         .expect("expected multi-argument mapping type");
         assert!(matches!(
             nary_mapping.relation,
             Some(DeclarationRelation::Is(TypeExpression::Function(ref function)))
-                if function.notation == FunctionTypeNotation::Mapping
-                    && function.inputs.len() == 2
+                if function.inputs.len() == 2
         ));
 
-        let empty_mapping = parse_ordinary_declaration_statement(r#"f is () -> (? is \real)"#)
+        let empty_mapping = parse_ordinary_declaration_statement(r#"f is () -> (_ is \real)"#)
             .expect_err("function types require at least one input");
         assert!(
             empty_mapping
@@ -6644,7 +6644,7 @@ mod tests {
         );
 
         let obsolete_mapping_arrow = parse_ordinary_declaration_statement(
-            r#"f is (? is \natural, ? is \real) |-> (? is \real)"#,
+            r#"f is (_ is \natural, _ is \real) |-> (_ is \real)"#,
         )
         .expect_err("function types must use `->`");
         assert!(
@@ -6654,7 +6654,7 @@ mod tests {
         );
 
         let literal_arrow =
-            parse_ordinary_declaration_statement(r#"f is (? is \natural) => (? is \real)"#)
+            parse_ordinary_declaration_statement(r#"f is (_ is \natural) => (_ is \real)"#)
                 .expect_err("`=>` is reserved for function literals");
         assert!(
             literal_arrow
@@ -6667,9 +6667,10 @@ mod tests {
             r#"X is {\natural : ...}"#,
             r#"f is \natural |-> \natural"#,
             r#"f is (\natural, \real) -> \real"#,
-            r#"p is (_ is \natural, _ is \real)"#,
-            r#"X is {_ is \natural : ...}"#,
             r#"f is (_ is \natural) |-> (_ is \natural)"#,
+            r#"p is (? is \natural, ? is \real)"#,
+            r#"X is {? is \natural : ...}"#,
+            r#"f is (? is \natural) -> (? is \natural)"#,
         ] {
             parse_ordinary_declaration_statement(raw)
                 .expect_err("raw types must not be accepted in literal type positions");

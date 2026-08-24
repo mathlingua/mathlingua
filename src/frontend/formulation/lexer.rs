@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn lexes_placeholders_names_and_operators() {
-        let tokens: Vec<_> = Lexer::new("f(x_, y__) + |op| neg| |prime")
+        let tokens: Vec<_> = Lexer::new("f(_, x_, y__) + |op| neg| |prime")
             .map(|item| item.expect("expected valid token").1)
             .collect();
 
@@ -44,6 +44,8 @@ mod tests {
             vec![
                 Token::Name("f".to_string()),
                 Token::LParen,
+                Token::AnonymousPlaceholder,
+                Token::Comma,
                 Token::Placeholder("x".to_string()),
                 Token::Comma,
                 Token::MagneticPlaceholder("y".to_string()),

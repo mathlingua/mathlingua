@@ -53,6 +53,7 @@ extern {
         "quoted_name" => Token::QuotedName(<String>),
         "decimal" => Token::Decimal(<String>),
         "magnetic_placeholder" => Token::MagneticPlaceholder(<String>),
+        "_" => Token::AnonymousPlaceholder,
         "placeholder" => Token::Placeholder(<String>),
         "name" => Token::Name(<String>),
         "special_operator" => Token::SpecialOperator(<String>),
@@ -1104,14 +1105,14 @@ SpecOrPredicateExpression: ast::Expression = {
             spec: Box::new(spec),
         },
     ),
-    <l:@L> "?" "is" <ty:PredicateTypeExpression> <r:@R> => ast::Expression::new(
+    <l:@L> "_" "is" <ty:PredicateTypeExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::SpecLiteral(ast::SpecLiteral {
             span: Span::new(l, r),
             form: ast::SpecLiteralForm::Is(ty),
         }),
     ),
-    <l:@L> "?" <operator:QuotedName> <nl:@L> <name:Name> <nr:@R> <r:@R> => ast::Expression::new(
+    <l:@L> "_" <operator:QuotedName> <nl:@L> <name:Name> <nr:@R> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::SpecLiteral(ast::SpecLiteral {
             span: Span::new(l, r),
@@ -1121,7 +1122,7 @@ SpecOrPredicateExpression: ast::Expression = {
             },
         }),
     ),
-    <l:@L> "?" <operator:QuotedName> <target:CommandExpression> <r:@R> => ast::Expression::new(
+    <l:@L> "_" <operator:QuotedName> <target:CommandExpression> <r:@R> => ast::Expression::new(
         Span::new(l, r),
         ExpressionKind::SpecLiteral(ast::SpecLiteral {
             span: Span::new(l, r),

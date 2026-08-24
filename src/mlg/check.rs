@@ -7650,7 +7650,7 @@ Documented:
     specifies:
     . first is \thing
     . second is \thing
-    . next is (? is \thing) -> (? is \thing)
+    . next is (_ is \thing) -> (_ is \thing)
     Documented:
     . called: "object"
 
@@ -9389,14 +9389,14 @@ Documented:
 
     Theorem:
     given:
-    . f is (? is \real) -> (? is \integer)
+    . f is (_ is \real) -> (_ is \integer)
     . y is \real
     then:
     . f(y) is? \integer
 
     Theorem:
     given:
-    . f is (? is \real) -> (? is \integer)
+    . f is (_ is \real) -> (_ is \integer)
     . y is \real
     then:
     . f(y) is? \integer
@@ -9404,7 +9404,7 @@ Documented:
     Theorem:
     given:
     . A, B is \set
-    . f is (? "in" A) -> (? "in" B)
+    . f is (_ "in" A) -> (_ "in" B)
     . y "in" A
     then:
     . f(y) "in" B
@@ -9412,7 +9412,7 @@ Documented:
     Theorem:
     given:
     . A is \set
-    . f is (? is \real, ? "in" A) -> (? is \integer)
+    . f is (_ is \real, _ "in" A) -> (_ is \integer)
     . x is \real
     . y "in" A
     then:
@@ -9420,7 +9420,7 @@ Documented:
 
     Theorem:
     given:
-    . f is (? is \real, ? is \real, ? is \real) -> (? is \integer)
+    . f is (_ is \real, _ is \real, _ is \real) -> (_ is \integer)
     . x, y, z is \real
     then:
     . f(x, y, z) is? \integer
@@ -9429,13 +9429,13 @@ Documented:
     given:
     . A is \set
     . a is \\opaque
-    . f := (x_, y_) => x_ is (? is \real, ? "in" A) -> (? is \real)
+    . f := (x_, y_) => x_ is (_ is \real, _ "in" A) -> (_ is \real)
     then: a is? \\opaque
 
     Theorem:
     given: a is \\opaque
     then:
-    . let: x_ * y_ is (? is \\opaque, ? is \\opaque) -> (? is \\opaque)
+    . let: x_ * y_ is (_ is \\opaque, _ is \\opaque) -> (_ is \\opaque)
       then: a is? \\opaque
     "#,
         )
@@ -9470,7 +9470,7 @@ Documented:
     [\real.function]
     Declares: f(x_) ::= y_
     specifies:
-    . f is (? is \real) -> (? is \real)
+    . f is (_ is \real) -> (_ is \real)
     Documented:
     . written: "f?"
 
@@ -9519,20 +9519,20 @@ Documented:
     Theorem:
     given:
     . A is \set
-    . (x, y) is (? is \natural, ? "in" A)
+    . (x, y) is (_ is \natural, _ "in" A)
     then:
     . x is? \natural
     . y "in" A
 
     Theorem:
     given:
-    . {x : ...} is {? is \natural : ...}
+    . {x : ...} is {_ is \natural : ...}
     then: x is? \natural
 
     Theorem:
     given:
     . A is \set
-    . {(x, y) : ...} is {(? is \natural, ? "in" A) : ...}
+    . {(x, y) : ...} is {(_ is \natural, _ "in" A) : ...}
     then:
     . x is? \natural
     . y "in" A
@@ -9567,7 +9567,7 @@ Documented:
     . written: "0"
 
     [\natural.succ(n_)]
-    Defines: succ(n_) is (? is \natural) -> (? is \natural)
+    Defines: succ(n_) is (_ is \natural) -> (_ is \natural)
     Documented:
     . called: "successor of $n?$"
     . written: "n?+\!\!+"
@@ -9576,7 +9576,7 @@ Documented:
     Declares: n
     Requires:
     . definition: \natural.0 is \natural
-    . definition: \natural.succ is (? is \natural) -> (? is \natural)
+    . definition: \natural.succ is (_ is \natural) -> (_ is \natural)
     Documented:
     . called: "naturals"
     "#,
@@ -9628,7 +9628,7 @@ Documented:
         assert_eq!(result.files_checked, 1);
         assert!(user_events(&event_log).iter().any(|event| {
             event.as_message().is_some_and(|message| {
-                message.message == "Function type specs must use `_` or `?` as their subject"
+                message.message == "Function type specs must use `_` as their subject"
             })
         }));
         assert!(event_log.has_errors());
@@ -10512,7 +10512,7 @@ Documented:
 
     Theorem:
     given:
-    . y "in" \set:where{? is \real}
+    . y "in" \set:where{_ is \real}
     then: \needs.real{y}
     "#,
         )
@@ -10785,7 +10785,7 @@ Documented:
 
     #[test]
     fn check_applies_satisfies_of_concrete_spec_literal() {
-        // In a local set literal, `x_ satisfies (? is \real)` reduces to
+        // In a local set literal, `x_ satisfies (_ is \real)` reduces to
         // `x_ is \real`, so members are known to be reals.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("satisfies-literal.mlg");
@@ -10812,7 +10812,7 @@ Documented:
 
     Theorem:
     given:
-    . A := {x_ : x_ satisfies (? is \real)} is \set
+    . A := {x_ : x_ satisfies (_ is \real)} is \set
     . y "in" A
     then: \needs.real{y}
     "#,
@@ -10835,7 +10835,7 @@ Documented:
 
     #[test]
     fn check_reports_wrong_element_type_from_spec_literal_set() {
-        // `y "in" \set:where{? is \real}` establishes `y is \real`, so requiring
+        // `y "in" \set:where{_ is \real}` establishes `y is \real`, so requiring
         // `y is \set` must fail — the reduction must not over-derive.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("spec-literal-negative.mlg");
@@ -10868,7 +10868,7 @@ Documented:
 
     Theorem:
     given:
-    . y "in" \set:where{? is \real}
+    . y "in" \set:where{_ is \real}
     then: \needs.set{y}
     "#,
         )
@@ -10896,7 +10896,7 @@ Documented:
 
     #[test]
     fn check_rejects_type_target_for_spec_operator_literal() {
-        // `? "in" \real` uses a `Declares:` type as a spec-operator target; only
+        // `_ "in" \real` uses a `Declares:` type as a spec-operator target; only
         // values (`Defines:`) are allowed there.
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("spec-literal-bad-target.mlg");
@@ -10923,7 +10923,7 @@ Documented:
 
     Theorem:
     given:
-    . y "in" \set:where{? "in" \real}
+    . y "in" \set:where{_ "in" \real}
     then: y is \set
     "#,
         )

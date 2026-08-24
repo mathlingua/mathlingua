@@ -288,51 +288,25 @@ pub(super) fn render_function_type(
     function_type: &FunctionType,
     registry: &RenderRegistry,
 ) -> String {
-    match function_type.notation {
-        FunctionTypeNotation::Specs => format!(
-            "\\left({}\\right) \\to \\left({}\\right)",
-            function_type
-                .inputs
-                .iter()
-                .map(|spec| render_function_type_spec(spec, registry))
-                .collect::<Vec<_>>()
-                .join(", "),
-            render_function_type_spec(&function_type.output, registry)
-        ),
-        FunctionTypeNotation::Mapping => format!(
-            "\\left({}\\right) \\to \\left({}\\right)",
-            function_type
-                .inputs
-                .iter()
-                .map(|spec| render_compact_function_type_spec(spec, registry))
-                .collect::<Vec<_>>()
-                .join(", "),
-            render_compact_function_type_spec(&function_type.output, registry)
-        ),
-    }
+    format!(
+        "\\left({}\\right) \\to \\left({}\\right)",
+        function_type
+            .inputs
+            .iter()
+            .map(|spec| render_function_type_spec(spec, registry))
+            .collect::<Vec<_>>()
+            .join(", "),
+        render_function_type_spec(&function_type.output, registry)
+    )
 }
 
 fn render_function_type_spec(spec: &FunctionTypeSpec, registry: &RenderRegistry) -> String {
     match &spec.kind {
         FunctionTypeSpecKind::Is(ty) => {
-            render_is_type_with_subject("\\_".to_string(), ty, registry)
+            render_is_type_with_subject("\\cdot".to_string(), ty, registry)
         }
         FunctionTypeSpecKind::Spec { operator, target } => format!(
-            "\\_ {} {}",
-            render_quoted_operator(operator),
-            render_expression(target, registry)
-        ),
-    }
-}
-
-fn render_compact_function_type_spec(spec: &FunctionTypeSpec, registry: &RenderRegistry) -> String {
-    match &spec.kind {
-        FunctionTypeSpecKind::Is(ty) => format!(
-            "? \\textrm{{ is }} {}",
-            render_type_expression(ty, registry)
-        ),
-        FunctionTypeSpecKind::Spec { operator, target } => format!(
-            "? {} {}",
+            "\\cdot {} {}",
             render_quoted_operator(operator),
             render_expression(target, registry)
         ),
@@ -345,7 +319,7 @@ fn render_tuple_type(tuple: &TupleType, registry: &RenderRegistry) -> String {
         tuple
             .elements
             .iter()
-            .map(|spec| render_compact_function_type_spec(spec, registry))
+            .map(|spec| render_function_type_spec(spec, registry))
             .collect::<Vec<_>>()
             .join(", ")
     )
@@ -353,7 +327,7 @@ fn render_tuple_type(tuple: &TupleType, registry: &RenderRegistry) -> String {
 
 fn render_set_type(set: &SetType, registry: &RenderRegistry) -> String {
     let element = match &set.element {
-        SetTypeElement::Spec(spec) => render_compact_function_type_spec(spec, registry),
+        SetTypeElement::Spec(spec) => render_function_type_spec(spec, registry),
         SetTypeElement::Tuple(tuple) => render_tuple_type(tuple, registry),
     };
     format!("\\left\\{{{} \\: : \\: \\ldots\\right\\}}", element)

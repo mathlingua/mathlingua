@@ -5,6 +5,15 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Anonymous Spec-Literal Placeholder
+
+Spec literals now use `_` exclusively as their anonymous subject. The former
+`? is Type` and `? "op" Target` spellings are rejected; write `_ is Type` and
+`_ "op" Target` instead. Tuple, set, and function type literals accept one or
+more `_` specifications as appropriate, and the viewer renders each anonymous
+placeholder as `\cdot`. Other uses of `?`, including inferred arguments and
+predicate operators, are unchanged.
+
 ## LCD Viewer Themes
 
 The viewer theme menu now includes LCD and LCD Dark. The pair uses a grayscale
@@ -631,15 +640,15 @@ Type expressions now support structural tuple, set, and function types whose
 leaves are complete specification literals:
 
 ```text
-(? is \natural, ? "in" \reals)
-{? is \natural : ...}
-{(? is \natural, ? "in" \reals) : ...}
-(? is \natural) -> (? "in" \naturals)
-(? is \natural, ? "in" \reals) -> (? is \real)
+(_ is \natural, _ "in" \reals)
+{_ is \natural : ...}
+{(_ is \natural, _ "in" \reals) : ...}
+(_ is \natural) -> (_ "in" \naturals)
+(_ is \natural, _ "in" \reals) -> (_ is \real)
 ```
 
 The checker matches those shapes to tuple, set, and mapping terms and
-instantiates every `?` with the corresponding term component. Quoted
+instantiates every `_` with the corresponding term component. Quoted
 specification operators are retained as spec facts; they are not reduced to
 ordinary `is` facts. A function definition may therefore declare its argument
 and result components individually or declare the function itself with one of
@@ -1467,8 +1476,8 @@ A command argument written `X?` introduces `X` inline the first time it appears:
 
 ### Spec Literals And `is` Indirection
 
-- A `\\specification` value may be written with an implicit `?` subject, e.g.
-  `? is \x` or `? "in" X`, and instantiated by a `satisfies:` clause.
+- A `\\specification` value may be written with an anonymous `_` subject, e.g.
+  `_ is \x` or `_ "in" X`, and instantiated by a `satisfies:` clause.
 - `is` accepts type indirection: a type parameter can stand for a type
   (`x is T` where `T is \\type`), and `T is \\type` records that `T` is itself a
   type.

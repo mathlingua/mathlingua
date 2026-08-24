@@ -156,6 +156,8 @@ pub enum Token {
         parse_magnetic_placeholder
     )]
     MagneticPlaceholder(String),
+    #[token("_")]
+    AnonymousPlaceholder,
     #[regex(r"[A-Za-z0-9](?:[A-Za-z0-9_']*[A-Za-z0-9'])?_", parse_placeholder)]
     Placeholder(String),
     #[regex(

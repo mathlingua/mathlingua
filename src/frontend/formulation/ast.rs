@@ -270,13 +270,6 @@ pub struct FunctionType {
     pub span: Span,
     pub inputs: Vec<FunctionTypeSpec>,
     pub output: FunctionTypeSpec,
-    pub notation: FunctionTypeNotation,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FunctionTypeNotation {
-    Specs,
-    Mapping,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -529,13 +522,13 @@ pub enum ExpressionKind {
         operator: String,
         target: Box<Expression>,
     },
-    /// A spec literal: a `\\specification` value with an implicit `?` placeholder
-    /// subject, e.g. `? is \real` or `? "in" \reals`. Distinct from
+    /// A spec literal: a `\\specification` value with an anonymous `_` placeholder
+    /// subject, e.g. `_ is \real` or `_ "in" \reals`. Distinct from
     /// `InferredName` (the `A?` inferred-parameter marker).
     SpecLiteral(SpecLiteral),
     /// Applies a specification to a subject: `x satisfies spec`. When `spec` is a
-    /// concrete spec literal, substituting its `?` with `x` yields the condition
-    /// (e.g. `x satisfies (? is \real)` means `x is \real`).
+    /// concrete spec literal, substituting its `_` with `x` yields the condition
+    /// (e.g. `x satisfies (_ is \real)` means `x is \real`).
     Satisfies {
         subject: Box<Expression>,
         spec: Box<Expression>,
@@ -977,9 +970,9 @@ pub struct SpecLiteral {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SpecLiteralForm {
-    /// `? is <type>`
+    /// `_ is <type>`
     Is(TypeExpression),
-    /// `? "op" <target>` where the target may be a name or a command.
+    /// `_ "op" <target>` where the target may be a name or a command.
     Spec {
         operator: String,
         target: Box<Expression>,

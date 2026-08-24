@@ -159,12 +159,12 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
         ExpressionKind::SpecLiteral(literal) => match &literal.form {
             SpecLiteralForm::Is(ty) => {
                 format!(
-                    "? \\textrm{{ is }} {}",
+                    "\\cdot \\textrm{{ is }} {}",
                     render_type_expression(ty, registry)
                 )
             }
             SpecLiteralForm::Spec { operator, target } => format!(
-                "? {} {}",
+                "\\cdot {} {}",
                 render_quoted_operator(operator),
                 render_expression(target, registry)
             ),

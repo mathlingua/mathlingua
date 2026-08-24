@@ -5,6 +5,12 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## `\\anything` Builtin Type
+
+The universal unstructured-value builtin is now named `\\anything` instead of
+`\\opaque`. Its semantics are unchanged: every declared value satisfies it,
+and an `\\anything` fact establishes no more specific type information.
+
 ## Anonymous Spec-Literal Placeholder
 
 Spec literals now use `_` exclusively as their anonymous subject. The former
@@ -1387,7 +1393,7 @@ Builtin kinds render as plain text.
 - `\\statement` renders as `statement`.
 - `\\expression` renders as `expression`.
 - `\\specification` renders as `specification`.
-- `\\opaque` is satisfied by any value but does not establish any more specific
+- `\\anything` is satisfied by any value but does not establish any more specific
   type information.
 - The renderer no longer treats these as a newline plus italic text.
 
@@ -1443,7 +1449,7 @@ Collection targets:
 - If `A := \set@{x_ : x_ is \real}` and `x "in" A`, the checker can
   establish `x is \real`.
 - If `A is \set` without a collection literal, membership establishes
-  `x is \\opaque`.
+  `x is \\anything`.
 
 ### Set Builder Definitions
 

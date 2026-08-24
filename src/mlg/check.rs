@@ -2040,7 +2040,7 @@ then:
             &file,
             r#"[\function:on{A}:to{B}]
     Defines: A ::= B "defines" B
-    when: A, B is \\opaque
+    when: A, B is \\anything
     Documented:
     . [docs.called]
       written:
@@ -2162,26 +2162,26 @@ then:
             &file,
             r#"[\integral{f(x_, y_)}:d{f.x_}]
     Axiom:
-    then: f is? \\opaque
+    then: f is? \\anything
 
     [\integral{f(x_, y_)}:d{f.y_}]
     Axiom:
-    then: f is? \\opaque
+    then: f is? \\anything
 
     [\integral{f(x_[i_:=1...n])}:d{f.x1?_, f.x2?_}]
     Axiom:
-    then: f is? \\opaque
+    then: f is? \\anything
 
     [\integral{f(x_[i_:=1...n])}:d{f.x_[i_[j_:=1...m]]}]
     Axiom:
-    then: f is? \\opaque
+    then: f is? \\anything
 
     Theorem:
     then:
-    . \integral[x_, y_ is \\opaque]{x_}:d{x_}
-    . \integral[x_, y_ is \\opaque]{y_}:d{y_}
-    . \integral[x_, y_, z_ is \\opaque]{x_}:d{x_, y_}
-    . \integral[x_, y_, z_ is \\opaque]{x_}:d{x_, y_, z_}
+    . \integral[x_, y_ is \\anything]{x_}:d{x_}
+    . \integral[x_, y_ is \\anything]{y_}:d{y_}
+    . \integral[x_, y_, z_ is \\anything]{x_}:d{x_, y_}
+    . \integral[x_, y_, z_ is \\anything]{x_}:d{x_, y_, z_}
     "#,
         )
         .unwrap();
@@ -2209,22 +2209,22 @@ then:
             &file,
             r#"[\exact.selector{f(x_, y_)}:d{f.x_}]
     States:
-    when: f is \\opaque
-    that: f is? \\opaque
+    when: f is \\anything
+    that: f is? \\anything
     Documented:
     . called: "exact selector"
 
     [\arbitrary.selector{f(x_, y_)}:d{f.u?_}]
     States:
-    when: f is \\opaque
-    that: f is? \\opaque
+    when: f is \\anything
+    that: f is? \\anything
     Documented:
     . called: "arbitrary selector"
 
     [\variadic.selector{f(x_[i_:=1...n])}:d{f.x_[i_[j_:=1...m]]}]
     States:
-    when: f is \\opaque
-    that: f is? \\opaque
+    when: f is \\anything
+    that: f is? \\anything
     Documented:
     . called: "variadic selector"
     "#,
@@ -2269,7 +2269,7 @@ then:
     Declares: f(x__) ::= y_
     specifies:
     . x__ is \\expression
-    . y_ is \\opaque
+    . y_ is \\anything
     Documented:
     . called: "function"
 
@@ -2409,13 +2409,13 @@ then:
     . called: "natural set"
 
     [\take.pair{P}]
-    Defines: result is \\opaque
+    Defines: result is \\anything
     when: P is \natural.pair
     Documented:
     . called: "take pair"
 
     [\take.set{N}]
-    Defines: result is \\opaque
+    Defines: result is \\anything
     when: N is \natural.set
     Documented:
     . called: "take set"
@@ -2482,19 +2482,19 @@ then:
     . called: "natural set"
 
     [\take.function{f}]
-    Defines: result is \\opaque
+    Defines: result is \\anything
     when: f is \natural.function
     Documented:
     . called: "take function"
 
     [\take.pair{P}]
-    Defines: result is \\opaque
+    Defines: result is \\anything
     when: P is \natural.pair
     Documented:
     . called: "take pair"
 
     [\take.set{N}]
-    Defines: result is \\opaque
+    Defines: result is \\anything
     when: N is \natural.set
     Documented:
     . called: "take set"
@@ -2539,11 +2539,11 @@ then:
             &file,
             r#"[\integral{f(x_, y_)}:d{f.x_}]
     Axiom:
-    then: f is? \\opaque
+    then: f is? \\anything
 
     Theorem:
-    given: c is \\opaque
-    then: \integral[x_, y_ is \\opaque]{x_}:d{c}
+    given: c is \\anything
+    then: \integral[x_, y_ is \\anything]{x_}:d{c}
     "#,
         )
         .unwrap();
@@ -6793,7 +6793,7 @@ Documented:
     Theorem:
     given:
     . X is \set
-    . x is \\opaque
+    . x is \\anything
     then: x "in" X
     "#,
         )
@@ -8473,7 +8473,7 @@ Documented:
 
     [\ordered.pair:of{a}:and{b}]
     Defines: P is \set
-    when: a, b is \\opaque
+    when: a, b is \\anything
     Documented:
     . called: "ordered pair of $a?$ and $b?$"
     . written: "(a?, b?)"
@@ -9428,15 +9428,15 @@ Documented:
     Theorem:
     given:
     . A is \set
-    . a is \\opaque
+    . a is \\anything
     . f := (x_, y_) => x_ is (_ is \real, _ "in" A) -> (_ is \real)
-    then: a is? \\opaque
+    then: a is? \\anything
 
     Theorem:
-    given: a is \\opaque
+    given: a is \\anything
     then:
-    . let: x_ * y_ is (_ is \\opaque, _ is \\opaque) -> (_ is \\opaque)
-      then: a is? \\opaque
+    . let: x_ * y_ is (_ is \\anything, _ is \\anything) -> (_ is \\anything)
+      then: a is? \\anything
     "#,
         )
         .unwrap();
@@ -9774,7 +9774,7 @@ Documented:
     when: A, B is \set
     specifies:
     . x__ is \\expression
-    . y_ is \\opaque
+    . y_ is \\anything
     Documented:
     . written: "f? \: : \: A? \rightarrow B?"
 
@@ -9817,7 +9817,7 @@ Documented:
     when: A, B is \set
     specifies:
     . x__ is \\expression
-    . y_ is \\opaque
+    . y_ is \\anything
     Documented:
     . written: "f? \: : \: A? \rightarrow B?"
 
@@ -10600,9 +10600,9 @@ Documented:
 
     Theorem:
     given:
-    . a is \\opaque
+    . a is \\anything
     . f := (x_ is \real) => x_
-    then: a is? \\opaque
+    then: a is? \\anything
     "#,
         )
         .unwrap();
@@ -10635,9 +10635,9 @@ Documented:
 
     Theorem:
     given:
-    . a is \\opaque
+    . a is \\anything
     . f := (x_ is \real) => undeclared
-    then: a is? \\opaque
+    then: a is? \\anything
     "#,
         )
         .unwrap();
@@ -10676,9 +10676,9 @@ Documented:
 
     Theorem:
     given:
-    . a is \\opaque
+    . a is \\anything
     . f := x_ => x_
-    then: a is? \\opaque
+    then: a is? \\anything
     "#,
         )
         .unwrap();
@@ -10718,9 +10718,9 @@ Documented:
 
     Theorem:
     given:
-    . a is \\opaque
+    . a is \\anything
     . f := x_ => x_ is (_ is \real) -> (_ is \real)
-    then: a is? \\opaque
+    then: a is? \\anything
     "#,
         )
         .unwrap();
@@ -10761,7 +10761,7 @@ Documented:
 
     Theorem:
     given:
-    . a is \\opaque
+    . a is \\anything
     then:
     . a is? \collect{x_ : x_ is \real}
     . a is? \collect{{x_ : x_ is \real}}
@@ -11013,7 +11013,7 @@ Documented:
     Declares: f(x__) ::= y_
     specifies:
     . x__ is \\expression
-    . y_ is \\opaque
+    . y_ is \\anything
     Enables:
     . from: P ::= {(p_, q_) : ...}
       as: f(p_) := q_
@@ -11551,9 +11551,9 @@ Documented:
     }
 
     #[test]
-    fn check_treats_membership_in_unstructured_collection_as_opaque() {
+    fn check_treats_membership_in_unstructured_collection_as_anything() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("collection-membership-opaque.mlg");
+        let file = temp_dir.path().join("collection-membership-anything.mlg");
 
         write_mlg_fixture(
             &file,
@@ -11564,17 +11564,17 @@ Documented:
     Documented:
     . written: "\operatorname{set}"
 
-    [\needs.opaque{x}]
+    [\needs.anything{x}]
     Declares: y
-    when: x is \\opaque
+    when: x is \\anything
     Documented:
-    . written: "\operatorname{needsOpaque}(x?)"
+    . written: "\operatorname{needsAnything}(x?)"
 
     Theorem:
     given:
     . A is \set
     . x "in" A
-    then: \needs.opaque{x}
+    then: \needs.anything{x}
     "#,
         )
         .unwrap();
@@ -11582,7 +11582,7 @@ Documented:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("collection-membership-opaque.mlg")],
+            &[PathBuf::from("collection-membership-anything.mlg")],
             &mut event_log,
         );
 
@@ -11594,9 +11594,9 @@ Documented:
     }
 
     #[test]
-    fn check_opaque_requirements_accept_any_declared_value() {
+    fn check_anything_requirements_accept_any_declared_value() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("opaque-requirement.mlg");
+        let file = temp_dir.path().join("anything-requirement.mlg");
 
         write_mlg_fixture(
             &file,
@@ -11605,15 +11605,15 @@ Documented:
     Documented:
     . written: "\operatorname{set}"
 
-    [\accepts.opaque{X}]
+    [\accepts.anything{X}]
     Declares: Y
-    when: X is \\opaque
+    when: X is \\anything
     Documented:
-    . written: "\operatorname{acceptsOpaque}(X?)"
+    . written: "\operatorname{acceptsAnything}(X?)"
 
     Theorem:
     given: A is \set
-    then: \accepts.opaque{A}
+    then: \accepts.anything{A}
     "#,
         )
         .unwrap();
@@ -11621,7 +11621,7 @@ Documented:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("opaque-requirement.mlg")],
+            &[PathBuf::from("anything-requirement.mlg")],
             &mut event_log,
         );
 
@@ -11633,9 +11633,51 @@ Documented:
     }
 
     #[test]
-    fn check_opaque_facts_do_not_establish_concrete_types() {
+    fn check_opaque_no_longer_has_builtin_anything_semantics() {
         let temp_dir = TestDir::new();
-        let file = temp_dir.path().join("opaque-does-not-establish-set.mlg");
+        let file = temp_dir.path().join("obsolete-opaque-requirement.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\accepts.obsolete{X}]
+    Declares: Y
+    when: X is \\opaque
+    Documented:
+    . written: "\operatorname{acceptsObsolete}(X?)"
+
+    Theorem:
+    given: A is \set
+    then: \accepts.obsolete{A}
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("obsolete-opaque-requirement.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|message| {
+                message.message
+                    == "Could not establish requirement `A is \\\\opaque` for command `\\accepts.obsolete`"
+            })
+        }));
+        assert!(event_log.has_errors());
+    }
+
+    #[test]
+    fn check_anything_facts_do_not_establish_concrete_types() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("anything-does-not-establish-set.mlg");
 
         write_mlg_fixture(
             &file,
@@ -11651,7 +11693,7 @@ Documented:
     . written: "\operatorname{requiresSet}(X?)"
 
     Theorem:
-    given: A is \\opaque
+    given: A is \\anything
     then: \requires.set{A}
     "#,
         )
@@ -11660,7 +11702,7 @@ Documented:
         let mut event_log = EventLog::new();
         let result = check_in(
             temp_dir.path(),
-            &[PathBuf::from("opaque-does-not-establish-set.mlg")],
+            &[PathBuf::from("anything-does-not-establish-set.mlg")],
             &mut event_log,
         );
 
@@ -12446,7 +12488,7 @@ Documented:
         write_mlg_fixture(
             &file,
             r#"[\written.only]
-    Defines: A is \\opaque
+    Defines: A is \\anything
     Documented:
     . [docs.written]
       written:

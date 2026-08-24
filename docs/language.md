@@ -210,7 +210,7 @@ x is? \set
 Builtin types and targets are written with two leading backslashes: `\\type`
 (the type of `Declares` types), `\\statement`, `\\expression`,
 `\\specification` (the types of statements, expressions, and specification
-literals), `\\opaque` (an unstructured value), and `\\abstract` (the abstract
+literals), `\\anything` (an unstructured value), and `\\abstract` (the abstract
 `:->` or `:<->:` capability target).
 
 A named mapping call accepts both the legacy `:=` assignment spelling and `=`.
@@ -1616,9 +1616,9 @@ holds for command references whose top-level entry is a `Declares:` item.
 Thus `\set is? \\type` succeeds when `\set` is described, while
 `\sqrt is? \\type` fails when `\sqrt` is a `Defines:` item.
 
-The built-in type `\\opaque` is satisfied by any declared value. It is useful
+The built-in type `\\anything` is satisfied by any declared value. It is useful
 when a definition only needs an argument to exist but should not learn anything
-about that argument. A fact such as `A is \\opaque` does not imply `A is \set`,
+about that argument. A fact such as `A is \\anything` does not imply `A is \set`,
 does not enable set capabilities, and does not otherwise contribute concrete
 type information.
 
@@ -1823,7 +1823,7 @@ that requirement even without reducing it to a type fact. A raw fact such as
 ### Build-Backed Capabilities
 
 `Enables:` may use a `from:` group to describe capabilities supplied by a built
-literal rather than by the opaque type itself.
+literal rather than by the `\\anything` type itself.
 
 ```text
 [\set]

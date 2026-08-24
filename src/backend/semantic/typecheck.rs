@@ -14282,7 +14282,7 @@ fn builtin_fact_holds(required: &TypeFact, registry: &SignatureRegistry) -> bool
     };
 
     match signature.as_str() {
-        BUILTIN_OPAQUE_SIGNATURE => true,
+        BUILTIN_ANYTHING_SIGNATURE => true,
         BUILTIN_EXPRESSION_SIGNATURE => true,
         BUILTIN_STATEMENT_SIGNATURE => key_is_statement(subject, registry),
         BUILTIN_SPECIFICATION_SIGNATURE => key_is_specification(subject),
@@ -15639,7 +15639,7 @@ fn reduce_member_of_fact(
     }
 
     if collection_has_registered_collection_type(collection, context, registry) {
-        return vec![opaque_type_fact(subject)];
+        return vec![anything_type_fact(subject)];
     }
 
     Vec::new()
@@ -15858,11 +15858,11 @@ fn collection_has_registered_collection_type(
         .any(|signature| has_type_signature(collection, signature, context, registry))
 }
 
-fn opaque_type_fact(subject: &str) -> TypeFact {
+fn anything_type_fact(subject: &str) -> TypeFact {
     TypeFact::Is {
         subject: subject.to_owned(),
-        ty: BUILTIN_OPAQUE_SIGNATURE.to_owned(),
-        signature: BUILTIN_OPAQUE_SIGNATURE.to_owned(),
+        ty: BUILTIN_ANYTHING_SIGNATURE.to_owned(),
+        signature: BUILTIN_ANYTHING_SIGNATURE.to_owned(),
     }
 }
 

@@ -260,16 +260,16 @@ fn renders_variadic_broadcasts_symbolically() {
         Some(r#"x_{1} \in X, \; \ldots, \; x_{n} \in X"#.to_string())
     );
     assert_eq!(
-        render_formulation_latex(r#"x[1...n] is \\opaque"#, &registry),
+        render_formulation_latex(r#"x[1...n] is \\anything"#, &registry),
         Some(
-            r#"x_{1} \textrm{ is } \textrm{opaque}, \; \ldots, \; x_{n} \textrm{ is } \textrm{opaque}"#
+            r#"x_{1} \textrm{ is } \textrm{anything}, \; \ldots, \; x_{n} \textrm{ is } \textrm{anything}"#
                 .to_string()
         )
     );
     assert_eq!(
-        render_formulation_latex(r#"x[1...n] is? \\opaque"#, &registry),
+        render_formulation_latex(r#"x[1...n] is? \\anything"#, &registry),
         Some(
-            r#"x_{1} \textrm{ is } \textrm{opaque}, \; \ldots, \; x_{n} \textrm{ is } \textrm{opaque}"#
+            r#"x_{1} \textrm{ is } \textrm{anything}, \; \ldots, \; x_{n} \textrm{ is } \textrm{anything}"#
                 .to_string()
         )
     );

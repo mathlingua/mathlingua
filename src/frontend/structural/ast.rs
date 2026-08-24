@@ -445,12 +445,12 @@ pub enum Clause {
 pub enum IsOrViaItem {
     IsVia(IsViaStatement),
     Declaration(DeclarationStatement),
-    /// A `have:`/`asserting:` group standing in for a specification the checker
-    /// cannot establish on its own (allowed in a `Declares:` group's `specifies:`).
+    /// A `have:` group, optionally with `asserting:`, standing in for a
+    /// specification (allowed in a `Declares:` group's `specifies:`).
     Have(Box<HaveGroup>),
     /// A specification wrapped in a `[:label:]` (e.g. `(.x is \foo.)[:1:]`) whose
     /// `label` may match a `Justification:` entry `[label]`. When it does, that
-    /// entry's `have:`/`asserting:` group is used to establish the inner `item`;
+    /// entry's `have:` group is used to establish the inner `item`;
     /// otherwise the inner `item` is checked inline as normal.
     Labeled {
         label: Vec<String>,
@@ -920,15 +920,14 @@ pub struct IffGroup {
 }
 
 /// A `have:`/`asserting:`/`because?:`/`by?:` group: an escape hatch that states an
-/// item (`have:`) the checker cannot establish on its own, together with facts
-/// (`asserting:`) it may take as true to establish it, and optional justification
-/// (`because?:` clauses, `by?:` theorem references) that the checker only
-/// well-forms rather than proves.
+/// item (`have:`), optional facts (`asserting:`) it may take as true to establish
+/// it, and optional justification (`because?:` clauses, `by?:` theorem
+/// references) that the checker only well-forms rather than proves.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HaveGroup {
     pub heading: Option<LabelHeader>,
     pub have: HaveSection,
-    pub asserting: AssertingSection,
+    pub asserting: Option<AssertingSection>,
     pub because: Option<BecauseSection>,
     pub by: Option<HaveBySection>,
 }

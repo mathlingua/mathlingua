@@ -1106,16 +1106,17 @@ the construct supports.
 - `discoverer:`
 - `notes:`
 
-`Justification:` (placed after `Documented:`) accepts only `have:`/`asserting:`
-groups, each with a required `[label]` heading. Any grouped expression, statement,
-or specification elsewhere in the group may carry a `[:label:]`, including inside
-a nested clause or expression. For example, both a `specifies:` item
+`Justification:` (placed after `Documented:`) accepts only `have:` groups, each
+with a required `[label]` heading and an optional `asserting:` section. Any
+grouped expression, statement, or specification elsewhere in the group may carry
+a `[:label:]`, including inside a nested clause or expression. For example, both a `specifies:` item
 `(.x is \foo.)[:1:]` and a `satisfies:` clause
 ``(.*' := \restriction:of{`*`}:on{X' \.set.cross./ X'}.)[:2:]`` may reference
-entries. A matching entry establishes the labeled formulation using its
-`asserting:` items (exactly as an inline `have:`/`asserting:` group would); its
-`have:` must restate that formulation, an unmatched label is checked inline as
-usual, and every entry must be referenced by some labeled formulation.
+entries. A matching entry establishes the labeled formulation using any
+`asserting:` items (exactly as an inline `have:` group would); when `asserting:`
+is absent, only the surrounding facts are used. Its `have:` must restate that
+formulation, an unmatched label is checked inline as usual, and every entry must
+be referenced by some labeled formulation.
 
 `Aliases:` accepts `alias:` groups. `Metadata:` accepts `id:` and `version:`.
 `References:` contains resource references such as `$book.chapter` (the quoted

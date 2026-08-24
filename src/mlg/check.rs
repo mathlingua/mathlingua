@@ -6141,6 +6141,55 @@ Documented:
     }
 
     #[test]
+    fn check_accepts_have_groups_without_asserting_sections() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("have-without-asserting.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [\thing]
+    Declares: t
+    using: x is \set
+    specifies:
+    . (.x is \set.)[:known:]
+    Documented:
+    . called: "thing"
+    Justification:
+    . [known]
+      have: x is \set
+      because: x is? \set
+
+    Theorem:
+    given: x is \set
+    then:
+    . have: x is? \set
+      because: x is? \set
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("have-without-asserting.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_have_asserting_group_requires_the_assertion_to_establish_have() {
         // If the `asserting:` items do not establish the `have:` item, the
         // requirement is still reported.

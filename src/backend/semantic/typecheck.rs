@@ -3593,10 +3593,10 @@ fn assume_is_or_via_item(
     }
 }
 
-/// Checks a `have:`/`asserting:` group. The `asserting:` items are taken as true
-/// and used to check the `have:` items; `because:`/`by:` are justification whose
-/// command and theorem references are reference-validated elsewhere but which are
-/// never proven as logical consequences.
+/// Checks a `have:` group. Any `asserting:` items are taken as true and used to
+/// check the `have:` items; `because:`/`by:` are justification whose command and
+/// theorem references are reference-validated elsewhere but which are never
+/// proven as logical consequences.
 fn check_have_group(
     group: &HaveGroup,
     context: &TypeContext,
@@ -3606,8 +3606,10 @@ fn check_have_group(
     event_log: &mut EventLog,
 ) {
     let mut asserted = context.clone();
-    for clause in &group.asserting.arguments {
-        assume_asserted_clause(clause, &mut asserted, path, locator, registry, event_log);
+    if let Some(asserting) = &group.asserting {
+        for clause in &asserting.arguments {
+            assume_asserted_clause(clause, &mut asserted, path, locator, registry, event_log);
+        }
     }
     for clause in &group.have.arguments {
         check_clause(clause, &asserted, path, locator, registry, event_log);
@@ -4234,12 +4236,12 @@ fn collect_clause_referenced_labels(clause: &Clause, labels: &mut BTreeSet<Strin
             }
         }
         Clause::Have(group) => {
-            for clause in group
-                .have
-                .arguments
-                .iter()
-                .chain(group.asserting.arguments.iter())
-            {
+            for clause in group.have.arguments.iter().chain(
+                group
+                    .asserting
+                    .iter()
+                    .flat_map(|section| section.arguments.iter()),
+            ) {
                 collect_clause_referenced_labels(clause, labels);
             }
         }
@@ -5615,8 +5617,10 @@ fn collect_have_group_names(group: &HaveGroup, names: &mut BTreeSet<String>) {
     for clause in &group.have.arguments {
         collect_clause_names(clause, names);
     }
-    for clause in &group.asserting.arguments {
-        collect_clause_names(clause, names);
+    if let Some(asserting) = &group.asserting {
+        for clause in &asserting.arguments {
+            collect_clause_names(clause, names);
+        }
     }
     if let Some(section) = &group.because {
         for clause in &section.arguments {

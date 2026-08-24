@@ -810,8 +810,7 @@ fn parse_required_resource_references(
 /// Inline section arguments and formulation arguments are accepted.  Text and
 /// nested groups are diagnosed because callers requested formulation content.
 /// Parses `specifies:` items: inline `is`/`is … via …` specifications, plus
-/// `have:`/`asserting:` groups standing in for a specification the checker cannot
-/// establish on its own.
+/// `have:` groups, optionally with `asserting:`, standing in for a specification.
 fn parse_required_specify_items(
     section: &ProtoSection,
     tracker: &mut EventLog,
@@ -1334,14 +1333,15 @@ pub(super) fn parse_have_clause(group: &ProtoGroup, tracker: &mut EventLog) -> O
     })
 }
 
-/// Dispatches a `have:` clause group. `have:`/`asserting:` is the have-assertion
-/// escape hatch; `have:`/`iff:` is the shorthand iff clause.
+/// Dispatches a `have:` clause group. `have:`/`iff:` is the shorthand iff
+/// clause; every other `have:` shape is the optionally-asserting escape hatch.
 fn parse_have_or_assertion(group: &ProtoGroup, tracker: &mut EventLog) -> Option<Clause> {
-    if group
+    let has_assertion_section = group
         .sections
         .iter()
-        .any(|section| section.label == "asserting")
-    {
+        .any(|section| matches!(section.label.as_str(), "asserting" | "because" | "by"));
+    let has_iff = group.sections.iter().any(|section| section.label == "iff");
+    if has_assertion_section || !has_iff {
         parse_have_group(group, tracker).map(|group| Clause::Have(Box::new(group)))
     } else {
         parse_have_clause(group, tracker).map(Clause::Iff)
@@ -1355,20 +1355,17 @@ pub(super) fn parse_have_group(group: &ProtoGroup, tracker: &mut EventLog) -> Op
         "have",
         &group.sections,
         tracker,
-        &["have", "asserting", "because?", "by?"],
+        &["have", "asserting?", "because?", "by?"],
     )?;
     Some(HaveGroup {
         heading,
         have: HaveSection {
             arguments: parse_required_clauses(section(&sections, "have")?, "have", tracker)?,
         },
-        asserting: AssertingSection {
-            arguments: parse_required_clauses(
-                section(&sections, "asserting")?,
-                "asserting",
-                tracker,
-            )?,
-        },
+        asserting: sections.get("asserting").copied().and_then(|section| {
+            parse_required_clauses(section, "asserting", tracker)
+                .map(|arguments| AssertingSection { arguments })
+        }),
         because: sections.get("because").copied().and_then(|section| {
             parse_required_clauses(section, "because", tracker)
                 .map(|arguments| BecauseSection { arguments })

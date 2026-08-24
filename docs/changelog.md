@@ -5,6 +5,14 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Optional `asserting:` in `have:` Groups
+
+The `asserting:` section of a `have:`/`asserting:`/`because?:`/`by?:` group is
+now optional. When it is omitted, the checker validates the `have:` clauses
+against the facts already in scope, while still reference-validating any
+`because:` clauses and `by:` references. A `have:` group with `iff:` continues
+to select the separate iff shorthand.
+
 ## Refined Capabilities on Defined Values
 
 The target of a `:->` or `:<->:` spec capability may now assert a refined type,
@@ -794,7 +802,7 @@ any `Documented:` section.
 
 The former `Justified:` section (which held `label:`/`by:` prose notes) is
 **replaced** by a `Justification:` section that accepts **only**
-`have:`/`asserting:`/`because?:`/`by?:` groups, each with a required `[label]`
+`have:`/`asserting?:`/`because?:`/`by?:` groups, each with a required `[label]`
 heading. The section now appears **after** `Documented:` (it previously came
 before it).
 
@@ -804,10 +812,10 @@ For example, a `declares:` item may be written `(.x is \foo.)[:1:]`, and a
 `satisfies:` clause may be written ``(.*' := `*`.)[:2:]``. When its label matches a
 `Justification:` entry's `[label]`:
 
-- the labeled specification is established using that entry's
-  `have:`/`asserting:` group — exactly as an inline `have:`/`asserting:` item
-  would be — so an assertion the checker takes as true can discharge a
-  requirement the labeled specification could not reach on its own;
+- the labeled specification is established using that entry's `have:` group and
+  any optional `asserting:` items — exactly as an inline `have:` item would be —
+  so an assertion the checker takes as true can discharge a requirement the
+  labeled specification could not reach on its own;
 - the entry's `have:` must **restate the labeled specification exactly** (a
   mismatch is reported); and
 - **every** entry must be referenced by some labeled specification (an
@@ -815,7 +823,7 @@ For example, a `declares:` item may be written `(.x is \foo.)[:1:]`, and a
 
 A `[:label:]` with no matching entry is checked inline as an ordinary
 specification. The `because:`/`by:` of an entry are reference-validated but never
-proven, as with any `have:`/`asserting:` group.
+proven, as with any `have:` group.
 
 ## Symbol Introduction, Builds, And Operators
 
@@ -879,16 +887,18 @@ by: \cross.of.subset.is.subset.of.cross#given{X := X; Y := X1}
 
 - `have:` — the specification/statement/expression that would otherwise appear in
   this position.
-- `asserting:` — one or more items **taken as true**; the checker verifies that,
-  under them, the `have:` item holds (an infix-spec or spec *question* such as
-  `A \:subset?:/ B` is assumed as its `A \:subset:/ B` fact).
+- `asserting?:` — optional items **taken as true**; when present, the checker
+  verifies that under them the `have:` item holds (an infix-spec or spec
+  *question* such as `A \:subset?:/ B` is assumed as its `A \:subset:/ B` fact).
+  When omitted, the `have:` item is checked using only the surrounding facts.
 - `because?:` — justification clauses, and `by?:` theorem references
   (`\thm#given{…}`): these are **not** proven as logical consequences; their
   command/theorem references are still reference-validated.
 
 It is accepted wherever a clause or specification goes — `declares:`,
 `satisfies:`, `then:`, `suchThat:`, and so on. `have:`/`iff:` remains the
-shorthand iff clause; the `asserting:` section selects the assertion group.
+shorthand iff clause; the presence of `iff:` selects that group, and other
+`have:` groups use the assertion/justification form.
 
 ### Stropped Operators As Values
 

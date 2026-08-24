@@ -1192,6 +1192,24 @@ the first alias above lets the checker establish `r is \real`; knowing only
 in both directions. Either arrow may have several conclusions separated by
 `;`; reversing an equivalence requires every conclusion.
 
+The conclusion may assert a refined type, for example
+`x_ "in" omega :-> x_ is \(inductive)::set`. The refined fact also supplies its
+base fact, so if `\(inductive)::set` refines `\set`, the checker can subsequently
+establish `x is \set`.
+
+A capability on `Declares:` is owned by the declared type and applies to every
+value of that type. A capability on `Defines:` or `Realizes:` is instead owned
+by the defined command value itself. For example, a capability whose target is
+the local `omega` subject applies to `\omega` (and a parameterized defined
+command has its actual arguments substituted into the capability), but it does
+not apply to arbitrary other sets.
+
+When a function-form definition states a function type, its input specifications
+are assumptions while its definition body is checked. Consequently,
+`S(n_) is \function:on{\omega}:to{\omega}` establishes `n "in" \omega` in the
+body of `S`; the capability above can then establish both the refined type and
+its `\set` base type for `n`.
+
 The target of a spec-operator alias may also be a built-in keyword written with
 two leading backslashes, such as `\\abstract`. Command references in every
 semicolon-separated target are reference-validated. Built-in targets are

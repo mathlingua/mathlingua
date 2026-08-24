@@ -990,7 +990,7 @@ Important implementation detail:
 ```text
 SpecOperatorAlias ::= PlaceholderSpecStatement (":->" | ":<->:") SpecOperatorAliasTargets
 SpecOperatorAliasTargets ::= SpecOperatorAliasTarget (";" SpecOperatorAliasTarget)*
-SpecOperatorAliasTarget ::= IsOrSpec
+SpecOperatorAliasTarget ::= IsOrRefinedStatementSpec
                           | MemberOfExpression
                           | PlaceholderSpecStatement
                           | "\\" "\\" RawChain
@@ -998,7 +998,10 @@ MemberOfExpression ::= InfixCommandExpression "member_of" InfixCommandExpression
 PlaceholderSpecStatement ::= PlaceholderForm TopLevelQuotedOperator Name
 ```
 
-As with `parse_is_or_spec`, the quoted operator is extracted by raw scanning and may contain arbitrary text.
+Unlike an ordinary `parse_is_or_spec` declaration context, an `is` target here
+may use a refined command expression, such as
+`x_ "in" X :-> x_ is \(inductive)::set`. As with `parse_is_or_spec`, the quoted
+operator is extracted by raw scanning and may contain arbitrary text.
 Built-in targets use two leading backslashes, for example `\\abstract`.
 
 ## Header Parsers

@@ -1378,9 +1378,9 @@ fn collect_spec_operator_rules(
     info: &DefinitionTypeInfo,
     registry: &mut SignatureRegistry,
 ) {
-    let Some(_described) = info.described.as_ref() else {
+    if info.described.is_none() && info.defined_subject.is_none() {
         return;
-    };
+    }
 
     for capability in capability_aliases(item) {
         let AliasKind::SpecOperator(alias) = capability.alias else {
@@ -1650,6 +1650,8 @@ fn spec_operator_rule_from_alias(
     let placeholder = placeholder_pattern_name(&alias.placeholder_spec.placeholder_form)?;
     Some(SpecOperatorRule {
         owner_signature: info.signature.clone(),
+        owner_is_defined_value: info.defined_subject.is_some(),
+        owner_parameters: info.parameters.clone(),
         source_subject,
         source_requires_literal,
         placeholder,
@@ -7614,6 +7616,7 @@ fn assume_declaration_statement(
         if let Some(relation) = &statement.relation {
             check_declaration_relation(relation, context, path, locator, registry, event_log);
         }
+        assume_function_declaration_parameter_specs(statement, context, registry);
         check_declaration_spec_facts_supported(
             statement, context, path, locator, registry, event_log,
         );
@@ -7627,6 +7630,49 @@ fn assume_declaration_statement(
         context.add_fact(fact);
     }
     assume_destructured_declaration_components(statement, context, registry);
+}
+
+/// Gives the parameters of a function-form declaration the input facts supplied
+/// by its declared function type. This lets a definition body use the same
+/// assumptions as a call site: `S(n_) is \function:on{N}:to{N}` establishes
+/// `n "in" N` while checking the expression that defines `S(n_)`.
+fn assume_function_declaration_parameter_specs(
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+    registry: &SignatureRegistry,
+) {
+    let Some(parameters) = single_function_declaration_parameters(&statement.subject) else {
+        return;
+    };
+    let Some(DeclarationRelation::Is(ty)) = &statement.relation else {
+        return;
+    };
+    let Some(declared) =
+        fact_from_type_key_assertion(primary_subject_key(&statement.subject), ty, context)
+    else {
+        return;
+    };
+    let function_type = std::iter::once(declared.clone())
+        .chain(type_instance_output_facts(&declared, context, registry))
+        .find(|fact| matches!(fact, TypeFact::FunctionType { .. }));
+    let Some(TypeFact::FunctionType {
+        inputs,
+        variadic_tuple_input,
+        ..
+    }) = function_type
+    else {
+        return;
+    };
+
+    if variadic_tuple_input && inputs.len() == 1 {
+        for parameter in parameters {
+            context.add_fact(instantiate_function_type_spec(&inputs[0], &parameter));
+        }
+    } else if inputs.len() == parameters.len() {
+        for (input, parameter) in inputs.iter().zip(parameters) {
+            context.add_fact(instantiate_function_type_spec(input, &parameter));
+        }
+    }
 }
 
 /// Binds the components of a destructuring declaration `M ::= (X, *) is \T` (a
@@ -7710,6 +7756,7 @@ fn complete_introduced_declaration_statement(
     if let Some(relation) = &statement.relation {
         check_declaration_relation(relation, context, path, locator, registry, event_log);
     }
+    assume_function_declaration_parameter_specs(statement, context, registry);
     check_declaration_definition(statement, context, path, locator, registry, event_log);
     register_declaration_collection_literal(statement, context);
     if let Some((left, right)) = declaration_substitution(statement) {
@@ -7834,7 +7881,7 @@ fn check_spec_fact_supported(
             let target = context.normalize_key(target);
             if registry.spec_rules.iter().any(|rule| {
                 rule.operator == *operator
-                    && has_type_signature(&target, &rule.owner_signature, context, registry)
+                    && spec_rule_applies_to_target(rule, &target, context, registry)
             }) {
                 return;
             }
@@ -13012,7 +13059,7 @@ fn missing_membership_conditions(
             .filter(|rule| {
                 rule.kind == SpecOperatorAliasKind::Iff
                     && &rule.operator == operator
-                    && has_type_signature(target, &rule.owner_signature, context, registry)
+                    && spec_rule_applies_to_target(rule, target, context, registry)
                     && (!rule.source_requires_literal
                         || collection_is_literal_or_has_body(target, context, registry))
             })
@@ -14188,7 +14235,7 @@ fn spec_requirement_holds_via_provider(
         if &rule.operator != operator {
             continue;
         }
-        if !has_type_signature(target, &rule.owner_signature, context, registry) {
+        if !spec_rule_applies_to_target(rule, target, context, registry) {
             continue;
         }
         if rule.source_requires_literal
@@ -14220,6 +14267,19 @@ fn spec_rule_direct_targets(
         (rule.placeholder.clone(), subject.to_owned()),
         (rule.target.clone(), target.to_owned()),
     ]);
+    if rule.owner_is_defined_value {
+        let normalized_target = context.normalize_key(target);
+        if let Some((_, actuals)) = command_signature_and_actuals_from_key(&normalized_target)
+            .or_else(|| infix_command_signature_and_actuals_from_key(&normalized_target))
+        {
+            substitutions.extend(
+                rule.owner_parameters
+                    .iter()
+                    .zip(actuals)
+                    .map(|(parameter, actual)| (parameter.clone(), context.normalize_key(&actual))),
+            );
+        }
+    }
     if let Some(source_subject) = &rule.source_subject {
         substitutions.insert(source_subject.clone(), target.to_owned());
     }
@@ -15569,7 +15629,7 @@ fn reduce_spec_fact(
             continue;
         }
 
-        if !has_type_signature(target, &rule.owner_signature, context, registry) {
+        if !spec_rule_applies_to_target(rule, target, context, registry) {
             continue;
         }
 
@@ -15588,6 +15648,22 @@ fn reduce_spec_fact(
     }
 
     result
+}
+
+fn spec_rule_applies_to_target(
+    rule: &SpecOperatorRule,
+    target: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> bool {
+    if !rule.owner_is_defined_value {
+        return has_type_signature(target, &rule.owner_signature, context, registry);
+    }
+
+    let target = context.normalize_key(target);
+    command_signature_and_actuals_from_key(&target)
+        .or_else(|| infix_command_signature_and_actuals_from_key(&target))
+        .is_some_and(|(signature, _)| signature == rule.owner_signature)
 }
 
 fn reduce_spec_or_member_fact(
@@ -19277,6 +19353,22 @@ fn is_single_function_declaration(subject: &IsSubject) -> bool {
         ),
         _ => false,
     }
+}
+
+fn single_function_declaration_parameters(subject: &IsSubject) -> Option<Vec<String>> {
+    let IsSubjectKind::Forms(forms) = &subject.kind else {
+        return None;
+    };
+    let [
+        IsSubjectForm::Form(FormOrDeclaration {
+            kind: FormOrDeclarationKind::FunctionDeclaration { form, .. },
+            ..
+        }),
+    ] = forms.as_slice()
+    else {
+        return None;
+    };
+    Some(function_form_parameters(form))
 }
 
 fn key_for_spec_subject(subject: &SpecSubject) -> String {

@@ -5,6 +5,20 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Refined Capabilities on Defined Values
+
+The target of a `:->` or `:<->:` spec capability may now assert a refined type,
+for example `x_ "in" omega :-> x_ is \(inductive)::set`. A capability owned by
+a `Defines:` or `Realizes:` entry applies to that defined command value (with
+its parameters instantiated), while a capability owned by `Declares:` continues
+to apply to every value of the declared type. Facts derived at a refined type
+also establish that refinement's base type.
+
+Function-form definitions now receive their declared function input facts while
+their bodies are checked. Thus `S(n_) is \function:on{\omega}:to{\omega}` puts
+`n "in" \omega` in scope; a capability can refine that fact and supply a base
+requirement such as `n is \set`.
+
 ## `\\anything` Builtin Type
 
 The universal unstructured-value builtin is now named `\\anything` instead of

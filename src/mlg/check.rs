@@ -11178,6 +11178,70 @@ Documented:
     }
 
     #[test]
+    fn check_uses_refined_capabilities_declared_on_defined_values() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("defined-value-refined-capability.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Requires:
+    . capability: x_ "in" X :-> \\abstract
+    Documented:
+    . called: "set"
+
+    [\function:on{A}:to{B}]
+    Declares: f(x__) ::= y_
+    when: A, B is \set
+    specifies:
+    . x__ "in" A
+    . y_ "in" B
+    Documented:
+    . called: "function"
+
+    [\(inductive)::set]
+    Refines: I
+    Documented:
+    . adjective: "inductive"
+
+    [\omega]
+    Defines: omega is \set
+    Enables:
+    . capability: X_ "in" omega :-> X_ is \(inductive)::set
+    Documented:
+    . written: "\omega"
+
+    [\set.successor:of{X}]
+    Defines: Y is \set
+    when: X is \set
+    Documented:
+    . called: "set successor"
+
+    [\S(n_)]
+    Defines: S(n_) is \function:on{\omega}:to{\omega}
+    expresses: S(n_) := \set.successor:of{n_}
+    Documented:
+    . written: "S(n_?)"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("defined-value-refined-capability.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_follows_named_view_components_for_membership_facts() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("named-view-component.mlg");

@@ -4037,9 +4037,12 @@ fn parse_spec_operator_alias_target(input: &str) -> Result<SpecOperatorAliasTarg
         return Ok(SpecOperatorAliasTarget::PlaceholderSpec(spec));
     }
 
-    parse_is_or_spec(input)
-        .map(Box::new)
-        .map(SpecOperatorAliasTarget::IsOrSpec)
+    let target = if contains_top_level(input, " is ") {
+        parse_is_statement(input, true).map(IsOrSpec::Is)
+    } else {
+        parse_is_or_spec(input)
+    }?;
+    Ok(SpecOperatorAliasTarget::IsOrSpec(Box::new(target)))
 }
 
 /// Parses a dot-separated label heading.
@@ -4991,6 +4994,18 @@ mod tests {
         assert!(matches!(
             alias.target,
             SpecOperatorAliasTarget::Conjunction(ref targets) if targets.len() == 2
+        ));
+    }
+
+    #[test]
+    fn parses_spec_operator_aliases_with_refined_type_targets() {
+        let alias = parse_spec_operator_alias(r#"x_ "in" X :-> x_ is \(inductive)::set"#)
+            .expect("expected refined spec operator alias target");
+
+        assert!(matches!(
+            alias.target,
+            SpecOperatorAliasTarget::IsOrSpec(target)
+                if matches!(target.as_ref(), IsOrSpec::Is(statement) if matches!(&statement.ty, TypeExpression::RefinedCommand(_)))
         ));
     }
 

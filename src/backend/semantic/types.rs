@@ -203,6 +203,8 @@ pub(super) enum FunctionTypeFactSpec {
 #[derive(Clone, Debug)]
 pub(super) struct SpecOperatorRule {
     pub(super) owner_signature: String,
+    pub(super) owner_is_defined_value: bool,
+    pub(super) owner_parameters: Vec<String>,
     pub(super) source_subject: Option<String>,
     pub(super) source_requires_literal: bool,
     pub(super) placeholder: String,

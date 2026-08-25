@@ -16035,7 +16035,70 @@ fn defined_output_facts_for_key(
         ));
     }
 
+    if let Some(facts) = direct_component_facts_for_key(&key, context, registry) {
+        result.extend(facts);
+    }
+
     result
+}
+
+fn direct_component_facts_for_key(
+    key: &str,
+    context: &TypeContext,
+    registry: &SignatureRegistry,
+) -> Option<Vec<TypeFact>> {
+    let (owner_key, component_name) = key.rsplit_once("..")?;
+    let component_name = unstropped_name(component_name);
+    let (signature, actuals) = command_signature_and_actuals_from_key(owner_key)
+        .or_else(|| infix_command_signature_and_actuals_from_key(owner_key))?;
+    let info = registry.type_infos.get(&signature)?;
+    if !info
+        .component_types
+        .iter()
+        .any(|fact| unstropped_name(fact_subject(fact)) == component_name)
+    {
+        return None;
+    }
+
+    let actual_arg_groups = actual_arg_groups_for_key(owner_key);
+    let (mut substitutions, variadic_actuals) =
+        command_parameter_substitutions(info, &actuals, actual_arg_groups.as_deref(), context);
+    if let Some(owner_subject) = info.described.as_ref().or(info.defined_subject.as_ref()) {
+        substitutions.insert(owner_subject.clone(), owner_key.to_owned());
+    }
+    for fact in &info.component_types {
+        let component = fact_subject(fact);
+        substitutions.insert(
+            component.to_owned(),
+            direct_component_key(owner_key, component),
+        );
+    }
+
+    let mut result = Vec::new();
+    for fact in &info.component_types {
+        if unstropped_name(fact_subject(fact)) == component_name {
+            for instantiated in instantiate_variadic_fact(
+                fact,
+                &substitutions,
+                &info.variadic_parameters,
+                &variadic_actuals,
+            ) {
+                result.push(context.normalize_fact(&instantiated));
+            }
+        }
+    }
+    for (left, right) in &info.substitutions {
+        let substituted_right = substitute_key(right, &substitutions);
+        if unstropped_name(left) == component_name {
+            for fact in defined_output_facts_for_key(&substituted_right, context, registry) {
+                let sub_map =
+                    HashMap::from([(fact_subject(&fact).to_string(), key.to_string())]);
+                result.push(context.normalize_fact(&substitute_fact(&fact, &sub_map)));
+            }
+        }
+    }
+
+    Some(result)
 }
 
 fn defined_output_facts_for_signature(

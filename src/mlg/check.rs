@@ -13098,6 +13098,62 @@ Documented:
             user_events(&event_log)
         );
     }
+
+    #[test]
+    fn check_allows_spec_with_direct_component_target() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("direct_component_spec.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"
+[\set]
+Declares: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Documented:
+. called: "set"
+
+[\function:?on{A}:?to{B}]
+Declares: f(x__) ::= y_
+when: A, B is \set
+specifies:
+. x__ "in" A
+. y_ "in" B
+Documented:
+. called: "function"
+
+[\naturals]
+Defines: Nb ::= (N, 0, S(n_))
+abstractly:
+specifies:
+. N is \set
+. 0 "in" N
+. S is \function:on{N}:to{N}
+Documented:
+. called: "the naturals"
+
+[\natural]
+Declares: n "in" \naturals..N
+Documented:
+. called: "natural"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("direct_component_spec.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            !event_log.has_errors(),
+            "unexpected check errors: {:#?}",
+            user_events(&event_log)
+        );
+    }
 }
 
 #[cfg(test)]

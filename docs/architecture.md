@@ -565,7 +565,7 @@ Key files:
   content, argument lists, type annotations, and LaTeX.
 
 Group cards divide their sections into primary content and supporting content.
-`Documented:`, `References:`, item-level `Writing:`, `Enables:`,
+`Documented:`, `References:`, item-level `Writing:`,
 `Justification:`, and `Id:` are collapsed behind the supporting-sections toggle
 by default.
 

@@ -4,7 +4,7 @@ type InlineToken =
   | { kind: "text"; text: string }
   | { kind: "placeholder"; text: string; display: string }
   | { kind: "quotedOperator"; text: string; display: string }
-  | { kind: "arrow"; text: string; display: string }
+  | { kind: "arrow"; text: string; display: string; hasTrailingColon: boolean }
   | { kind: "operator"; text: string }
   | { kind: "command"; text: string }
   | { kind: "keyword"; text: string; display: string };
@@ -15,6 +15,7 @@ interface MathLinguaInlineProps {
 }
 
 const arrowDisplays = new Map([
+  [":<->:", "↔"],
   [":->", "→"],
   [":=>", "⇒"],
   [":~>", "⇝"],
@@ -72,6 +73,9 @@ function renderToken(token: InlineToken, index: number) {
         <span className={styles.arrow} key={index} title={token.text}>
           <span className={styles.arrowColon}>:</span>
           <span className={styles.arrowGlyph}>{token.display}</span>
+          {token.hasTrailingColon ? (
+            <span className={styles.arrowTrailingColon}>:</span>
+          ) : null}
         </span>
       );
     case "operator":
@@ -116,6 +120,7 @@ function tokenize(text: string): InlineToken[] {
         kind: "arrow",
         text: arrow,
         display: arrowDisplays.get(arrow) ?? arrow,
+        hasTrailingColon: arrow.endsWith(":") && arrow.length > 1,
       });
       index += arrow.length;
       continue;

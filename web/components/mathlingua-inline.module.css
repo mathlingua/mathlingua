@@ -38,6 +38,10 @@
   margin-right: -0.08em;
 }
 
+.arrowTrailingColon {
+  margin-left: -0.08em;
+}
+
 .arrowGlyph {
   display: inline-block;
 }

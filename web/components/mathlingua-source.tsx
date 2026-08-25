@@ -192,6 +192,7 @@ function scanWhile(
 function operatorAt(text: string, index: number): string | null {
   for (const operator of [
     "::=",
+    ":<->:",
     ":->",
     ":=>",
     ":~>",

@@ -19,7 +19,7 @@ use std::collections::BTreeMap;
 use std::ops::Range;
 use std::path::PathBuf;
 
-use crate::frontend::formulation::parse_ordinary_declaration_statement;
+use crate::frontend::formulation::parse_refined_declaration_statement;
 
 /// One expression, sub-expression, or statement resolved on a source line.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -181,7 +181,7 @@ fn push_target(row: usize, text: &str, targets: &mut Vec<Target>) {
     }
 
     let mut forms = Vec::new();
-    if let Ok(statement) = parse_ordinary_declaration_statement(text) {
+    if let Ok(statement) = parse_refined_declaration_statement(text) {
         forms.push(TargetForm::Declaration(Box::new(statement)));
     }
     if let Ok(expression) = parse_expression(text) {

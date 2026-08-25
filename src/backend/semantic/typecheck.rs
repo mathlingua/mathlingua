@@ -7108,7 +7108,7 @@ fn parse_builtin_clause_arguments(
         .filter_map(|argument| match argument {
             BuiltinCommandArgument::Text(argument) => {
                 if let Ok(statement) =
-                    crate::frontend::formulation::parse_ordinary_declaration_statement(argument)
+                    crate::frontend::formulation::parse_refined_declaration_statement(argument)
                 {
                     return Some(Clause::Declaration(statement));
                 }

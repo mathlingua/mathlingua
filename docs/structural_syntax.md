@@ -247,7 +247,7 @@ All of them use the same surface syntax:
 
 A `Clause` can be either:
 
-- a declaration statement parsed by `parse_ordinary_declaration_statement`, stored as `Clause::Declaration`
+- a declaration statement parsed by `parse_refined_declaration_statement`, stored as `Clause::Declaration`
 - a formulation expression parsed by `parse_expression`, stored as `Clause::Expression`
 - or a nested clause group such as `exists`, `if`, `piecewise`, and so on
 
@@ -416,7 +416,7 @@ Clause groups are used anywhere a section expects `Clause` values.
 
 If a clause section contains:
 
-- a formulation argument, it is first tried as `parse_ordinary_declaration_statement`, then `parse_expression`
+- a formulation argument, it is first tried as `parse_refined_declaration_statement`, then `parse_expression`
 - a nested group, it is dispatched by its first section label
 
 ### Clause inventory
@@ -498,10 +498,10 @@ The structural parser delegates section content to formulation parsers as follow
 
 - `FormOrDeclaration` — `parse_form_or_declaration`
 - `DeclaresTarget` — try `parse_form_or_declaration`, then
-  `parse_ordinary_declaration_statement`
-- `DeclarationStatement` — `parse_ordinary_declaration_statement`
+  `parse_refined_declaration_statement`
+- `DeclarationStatement` — `parse_refined_declaration_statement`
 - `RefinedDeclarationStatement` — `parse_refined_declaration_statement`
-- `IsOrViaItem` — try `parse_is_via_statement`, then `parse_ordinary_declaration_statement`
+- `IsOrViaItem` — try `parse_is_via_statement`, then `parse_refined_declaration_statement`
 - `BindingOrSpec` — `parse_refined_declaration_statement`
 - `AliasKind` — try `parse_expression_alias`, then `parse_spec_operator_alias`
 - `MappingWritingTarget` — accept a function declaration form or function-call expression; semantic checking restricts it to the enclosing `Declares:` mapping
@@ -511,7 +511,7 @@ The structural parser delegates section content to formulation parsers as follow
 - `AuthorHeader` — `parse_author_header`
 - `LabelHeader` — `parse_label_header`
 
-Clause formulation arguments are tried as `parse_ordinary_declaration_statement`, then `parse_expression`. This means helper-only forms such as comma-separated `is` subjects or quoted operators with spaces are represented as declaration statements, while expression-compatible facts can still be parsed as declaration statements when they appear in clause position.
+Clause formulation arguments are tried as `parse_refined_declaration_statement`, then `parse_expression`. This means helper-only forms such as comma-separated `is` subjects or quoted operators with spaces are represented as declaration statements, while expression-compatible facts can still be parsed as declaration statements when they appear in clause position.
 
 Declaration statements and `parse_is_via_statement` accept comma-separated form lists on the left of `is`, including placeholder forms, for example `f(x_), y_ is \set`. `parse_is_via_statement` accepts any form/declaration after `via`, such as `X` or `(X, Y)`.
 

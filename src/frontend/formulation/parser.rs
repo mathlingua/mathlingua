@@ -1160,7 +1160,7 @@ fn parse_command_context_argument(input: &str) -> Result<CommandContextArgument,
         });
     }
 
-    if let Ok(statement) = parse_ordinary_declaration_statement(input) {
+    if let Ok(statement) = parse_refined_declaration_statement(input) {
         return Ok(CommandContextArgument::Declaration(statement));
     }
 
@@ -2006,6 +2006,7 @@ fn operator_as_value(operator: &BinaryOperator) -> Operator {
 }
 
 /// Parses a declaration statement that only accepts ordinary type expressions.
+#[allow(dead_code)]
 pub fn parse_ordinary_declaration_statement(
     input: &str,
 ) -> Result<DeclarationStatement, ParseError> {

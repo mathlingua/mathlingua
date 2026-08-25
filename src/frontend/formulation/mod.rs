@@ -8,6 +8,7 @@ lalrpop_util::lalrpop_mod!(pub grammar, "/frontend/formulation/grammar.rs");
 #[allow(unused_imports)]
 pub use parser::parse_declaration_statement;
 pub(crate) use parser::parse_type_expression;
+#[allow(unused_imports)]
 pub use parser::{
     ParseError, parse_author_header, parse_command_header, parse_expression,
     parse_expression_alias, parse_expression_binding, parse_form_or_declaration,

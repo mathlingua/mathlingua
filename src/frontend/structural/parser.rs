@@ -7,9 +7,9 @@ use crate::frontend::formulation::ast::{
 use crate::frontend::formulation::{
     ParseError as FormulationParseError, parse_author_header, parse_command_header,
     parse_expression, parse_expression_alias, parse_expression_binding, parse_form_or_declaration,
-    parse_is_via_statement, parse_label_header, parse_ordinary_declaration_statement,
-    parse_refined_declaration_statement, parse_resource_header, parse_spec_operator_alias,
-    parse_topic_header, parse_type_expression, parse_writing_alias, split_via_view,
+    parse_is_via_statement, parse_label_header, parse_refined_declaration_statement,
+    parse_resource_header, parse_spec_operator_alias, parse_topic_header, parse_type_expression,
+    parse_writing_alias, split_via_view,
 };
 use crate::frontend::proto::Parser as ProtoParser;
 use crate::frontend::proto::ast::{
@@ -668,7 +668,7 @@ pub(in crate::frontend::structural::parser) fn parse_optional_clauses(
     for entry in section_entries(section) {
         match entry {
             SectionEntry::Inline { text, row } | SectionEntry::Formulation { text, row } => {
-                if let Ok(statement) = parse_ordinary_declaration_statement(text) {
+                if let Ok(statement) = parse_refined_declaration_statement(text) {
                     result.push(Clause::Declaration(statement));
                     continue;
                 }
@@ -1817,7 +1817,7 @@ pub(in crate::frontend::structural::parser) fn parse_from_group(
             section(&sections, "from")?,
             "from",
             tracker,
-            parse_ordinary_declaration_statement,
+            parse_refined_declaration_statement,
         )?,
     };
     let capability = sections.get("capability").copied();
@@ -1903,7 +1903,7 @@ pub(in crate::frontend::structural::parser) fn parse_enables_view_group(
                 section(&sections, "as")?,
                 "as",
                 tracker,
-                parse_ordinary_declaration_statement,
+                parse_refined_declaration_statement,
             )?,
         },
         signifies: sections.get("signifies").copied().and_then(|section| {
@@ -2865,7 +2865,7 @@ pub(in crate::frontend::structural::parser) fn parse_declares(
                 section,
                 "using",
                 tracker,
-                parse_ordinary_declaration_statement,
+                parse_refined_declaration_statement,
             )
             .map(|arguments| UsingSection { arguments })
         }),
@@ -2953,7 +2953,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
                 section(&sections, "Defines")?,
                 "Defines",
                 tracker,
-                parse_ordinary_declaration_statement,
+                parse_refined_declaration_statement,
             )?,
         },
         abstractly: parse_marker_section(&sections, "abstractly", tracker),
@@ -2962,7 +2962,7 @@ pub(in crate::frontend::structural::parser) fn parse_defines(
                 section,
                 "using",
                 tracker,
-                parse_ordinary_declaration_statement,
+                parse_refined_declaration_statement,
             )
             .map(|arguments| UsingSection { arguments })
         }),
@@ -3110,7 +3110,7 @@ pub(in crate::frontend::structural::parser) fn parse_realizes(
                 section(&sections, "Realizes")?,
                 "Realizes",
                 tracker,
-                parse_ordinary_declaration_statement,
+                parse_refined_declaration_statement,
             )?,
         },
         using: sections.get("using").copied().and_then(|section| {
@@ -3118,7 +3118,7 @@ pub(in crate::frontend::structural::parser) fn parse_realizes(
                 section,
                 "using",
                 tracker,
-                parse_ordinary_declaration_statement,
+                parse_refined_declaration_statement,
             )
             .map(|arguments| UsingSection { arguments })
         }),
@@ -3218,7 +3218,7 @@ pub(in crate::frontend::structural::parser) fn parse_refines(
                 section,
                 "using",
                 tracker,
-                parse_ordinary_declaration_statement,
+                parse_refined_declaration_statement,
             )
             .map(|arguments| UsingSection { arguments })
         }),
@@ -3315,7 +3315,7 @@ pub(in crate::frontend::structural::parser) fn parse_states(
                 section,
                 "using",
                 tracker,
-                parse_ordinary_declaration_statement,
+                parse_refined_declaration_statement,
             )
             .map(|arguments| UsingSection { arguments })
         }),
@@ -3395,7 +3395,7 @@ pub(in crate::frontend::structural::parser) fn parse_equivalent(
                 section,
                 "using",
                 tracker,
-                parse_ordinary_declaration_statement,
+                parse_refined_declaration_statement,
             )
             .map(|arguments| UsingSection { arguments })
         }),
@@ -3468,7 +3468,7 @@ pub(in crate::frontend::structural::parser) fn parse_relation(
                 section,
                 "using",
                 tracker,
-                parse_ordinary_declaration_statement,
+                parse_refined_declaration_statement,
             )
             .map(|arguments| UsingSection { arguments })
         }),
@@ -6354,4 +6354,48 @@ References:
         assert_eq!(references.arguments[0].page, None);
         assert_eq!(references.arguments[1].page, Some(4));
     }
+
+    #[test]
+    fn parses_refined_declaration_statement_in_clauses_and_have() {
+        let document = parse_ok(
+            r#"
+[\von.neumann.omega]
+Defines: omega is \set
+expresses:
+. let:
+  . (.A is \(inductive)::set.)[:1:]
+  . X is \set
+  then:
+  . have: X "in"? omega
+    iff:
+    . X "in"? A
+    . forAll: I is \(inductive)::set
+      then: X "in"? I
+Enables:
+. capability: X_ "in" omega :-> X_ is \set
+Documented:
+. written: "\omega"
+Justification:
+. [1]
+  have: A is \(inductive)::set
+  by: \axiom.of.infinity
+Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
+"#,
+        );
+
+        let TopLevelItem::Defines(group) = &document.items[0] else {
+            panic!("expected defines group");
+        };
+        let crate::frontend::formulation::ast::CommandHeader::Command(ref node) = group.heading else {
+            panic!("expected command header");
+        };
+        assert_eq!(
+            node.chain.parts.iter().map(|p| match p {
+                crate::frontend::formulation::ast::ChainPart::Name(name) => name.as_str(),
+                _ => "",
+            }).collect::<Vec<_>>().join("."),
+            "von.neumann.omega"
+        );
+    }
 }
+

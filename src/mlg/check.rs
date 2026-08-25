@@ -11291,6 +11291,72 @@ Documented:
     }
 
     #[test]
+    fn check_allows_refined_declaration_in_justification_have() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("von-neumann-omega.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"
+[\set]
+Declares: X ::= {x__ : ...}
+Enables:
+. capability: x_ "in" X :-> x_ member_of X
+Documented:
+. called: "set"
+
+[\(inductive)::set]
+Refines: I
+Documented:
+. adjective: "inductive"
+
+[\axiom.of.infinity]
+Axiom:
+then:
+. exists: A is \(inductive)::set
+Documented:
+. called: "axiom of infinity"
+
+[\von.neumann.omega]
+Defines: omega is \set
+expresses:
+. let:
+  . (.A is \(inductive)::set.)[:1:]
+  . X is \set
+  then:
+  . have: X "in"? omega
+    iff:
+    . X "in"? A
+    . forAll: I is \(inductive)::set
+      then: X "in"? I
+Enables:
+. capability: X_ "in" omega :-> X_ is \set
+Documented:
+. written: "\omega"
+Justification:
+. [1]
+  have: A is \(inductive)::set
+  by: \axiom.of.infinity
+Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("von-neumann-omega.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
     fn check_follows_named_view_components_for_membership_facts() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("named-view-component.mlg");

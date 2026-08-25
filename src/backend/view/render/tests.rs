@@ -1654,3 +1654,50 @@ Documented:
         )
     );
 }
+
+#[test]
+fn written_placeholder_with_underscore_matches_header_parameter() {
+    let registry = registry_for(
+        r#"
+[\set.successor:of{X}]
+Defines: Y
+Documented:
+. called: "set successor"
+
+[\von.neumann.S(n_)]
+Defines: S(n_)
+Documented:
+. written: "S(n_?)"
+. called: "Von Neumann Successor"
+"#,
+    );
+
+    assert_eq!(
+        render_group_heading_latex(
+            "Defines",
+            Some(r#"\von.neumann.S(n_)"#),
+            None,
+            &registry
+        ),
+        Some(
+            r#"\textrm{Von Neumann Successor}\quad\htmlClass{mlg-title-written}{S(n)}"#
+                .to_string()
+        )
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"\von.neumann.S(x)"#, &registry),
+        Some(r#"S(x)"#.to_string())
+    );
+
+    assert_eq!(
+        render_formulation_latex(r#"\von.neumann.S(n)"#, &registry),
+        Some(r#"S(n)"#.to_string())
+    );
+
+    assert_eq!(
+        render_documented_text_latex("written", r#"S(n_?)"#),
+        Some(r#"S(n)"#.to_string())
+    );
+}
+

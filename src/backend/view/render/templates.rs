@@ -120,7 +120,7 @@ fn substitute_called_text_segment(
     while index < chars.len() {
         match scan_placeholder(&chars, index) {
             Some(PlaceholderScan::Placeholder(placeholder)) => {
-                if let Some(value) = substitutions.get(&placeholder.name) {
+                if let Some(value) = lookup_substitution(substitutions, &placeholder.name) {
                     flush_called_text(&mut result, &mut text);
                     result.push_str(&render_template_placeholder(
                         value,
@@ -128,7 +128,7 @@ fn substitute_called_text_segment(
                         substitutions,
                     ));
                 } else {
-                    text.push_str(&placeholder.name);
+                    text.push_str(&render_template_placeholder_name(&placeholder.name));
                     text.push_str(&placeholder_notation_source(&placeholder));
                 }
                 index = placeholder.end;
@@ -190,6 +190,43 @@ fn flush_called_text(result: &mut String, text: &mut String) {
     text.clear();
 }
 
+pub(super) fn insert_parameter_substitution(
+    substitutions: &mut HashMap<String, String>,
+    name: &str,
+    value: String,
+) {
+    substitutions.insert(name.to_owned(), value.clone());
+    if let Some(stripped) = name.strip_suffix('_') {
+        if !stripped.is_empty() {
+            substitutions.insert(stripped.to_owned(), value);
+        }
+    } else {
+        substitutions.insert(format!("{name}_"), value);
+    }
+}
+
+pub(super) fn lookup_substitution<'a>(
+    substitutions: &'a HashMap<String, String>,
+    name: &str,
+) -> Option<&'a str> {
+    substitutions
+        .get(name)
+        .or_else(|| {
+            name.strip_suffix('_')
+                .filter(|s| !s.is_empty())
+                .and_then(|s| substitutions.get(s))
+        })
+        .or_else(|| {
+            if !name.ends_with('_') {
+                let with_underscore = format!("{name}_");
+                substitutions.get(&with_underscore)
+            } else {
+                None
+            }
+        })
+        .map(String::as_str)
+}
+
 pub(super) fn substitute_math_template(
     template: &str,
     substitutions: &HashMap<String, String>,
@@ -209,14 +246,14 @@ pub(super) fn substitute_math_template(
 
         match scan_placeholder(&chars, index) {
             Some(PlaceholderScan::Placeholder(placeholder)) => {
-                match substitutions.get(&placeholder.name) {
+                match lookup_substitution(substitutions, &placeholder.name) {
                     Some(value) => result.push_str(&render_template_placeholder(
                         value,
                         &placeholder,
                         substitutions,
                     )),
                     None => {
-                        result.push_str(&placeholder.name);
+                        result.push_str(&render_template_placeholder_name(&placeholder.name));
                         result.push_str(&placeholder_notation_source(&placeholder));
                     }
                 }
@@ -382,7 +419,7 @@ fn selected_conditional_branch<'a>(
     if conditional
         .variables
         .iter()
-        .all(|variable| substitutions.contains_key(variable))
+        .all(|variable| lookup_substitution(substitutions, variable).is_some())
     {
         Some(&conditional.when_present)
     } else {
@@ -407,14 +444,25 @@ pub(super) fn template_is_present(template: &str, substitutions: &HashMap<String
     let variables_unbound = !conditional
         .variables
         .iter()
-        .all(|variable| substitutions.contains_key(variable));
+        .all(|variable| lookup_substitution(substitutions, variable).is_some());
     !(spans_whole_template && conditional.when_absent.is_none() && variables_unbound)
 }
 
 pub(super) fn template_contains_placeholder(template: &str, name: &str) -> bool {
-    [format!("{name}?"), format!("{name}+?"), format!("{name}-?")]
-        .iter()
-        .any(|needle| template.contains(needle.as_str()))
+    let trimmed = name.trim_end_matches('_');
+    [
+        format!("{name}?"),
+        format!("{name}+?"),
+        format!("{name}-?"),
+        format!("{trimmed}?"),
+        format!("{trimmed}+?"),
+        format!("{trimmed}-?"),
+        format!("{trimmed}_?"),
+        format!("{trimmed}_+?"),
+        format!("{trimmed}_-?"),
+    ]
+    .iter()
+    .any(|needle| template.contains(needle.as_str()))
 }
 
 /// The parenthesis handling a placeholder asks for around its substituted value.
@@ -670,15 +718,33 @@ pub(super) fn insert_variadic_substitution(
     name: &str,
     values: &[String],
 ) {
-    substitutions.insert(
-        format!("{VARIADIC_COUNT_PREFIX}{name}"),
-        values.len().to_string(),
-    );
+    let count = values.len().to_string();
+    substitutions.insert(format!("{VARIADIC_COUNT_PREFIX}{name}"), count.clone());
+    if let Some(stripped) = name.strip_suffix('_') {
+        if !stripped.is_empty() {
+            substitutions.insert(format!("{VARIADIC_COUNT_PREFIX}{stripped}"), count.clone());
+        }
+    } else {
+        substitutions.insert(format!("{VARIADIC_COUNT_PREFIX}{name}_"), count.clone());
+    }
     for (index, value) in values.iter().enumerate() {
         substitutions.insert(
             format!("{VARIADIC_ELEMENT_PREFIX}{name}:{index}"),
             value.clone(),
         );
+        if let Some(stripped) = name.strip_suffix('_') {
+            if !stripped.is_empty() {
+                substitutions.insert(
+                    format!("{VARIADIC_ELEMENT_PREFIX}{stripped}:{index}"),
+                    value.clone(),
+                );
+            }
+        } else {
+            substitutions.insert(
+                format!("{VARIADIC_ELEMENT_PREFIX}{name}_:{index}"),
+                value.clone(),
+            );
+        }
     }
 }
 
@@ -688,26 +754,63 @@ pub(super) fn insert_variadic_2d_substitution(
     values: &[String],
     row_lengths: &[usize],
 ) {
-    substitutions.insert(
-        format!("{VARIADIC_2D_ROWS_PREFIX}{name}"),
-        row_lengths.len().to_string(),
-    );
+    let rows_str = row_lengths.len().to_string();
+    substitutions.insert(format!("{VARIADIC_2D_ROWS_PREFIX}{name}"), rows_str.clone());
+    if let Some(stripped) = name.strip_suffix('_') {
+        if !stripped.is_empty() {
+            substitutions.insert(format!("{VARIADIC_2D_ROWS_PREFIX}{stripped}"), rows_str);
+        }
+    } else {
+        substitutions.insert(format!("{VARIADIC_2D_ROWS_PREFIX}{name}_"), rows_str);
+    }
     let columns = row_lengths.first().copied().unwrap_or(0);
-    substitutions.insert(
-        format!("{VARIADIC_2D_COLUMNS_PREFIX}{name}"),
-        columns.to_string(),
-    );
+    let cols_str = columns.to_string();
+    substitutions.insert(format!("{VARIADIC_2D_COLUMNS_PREFIX}{name}"), cols_str.clone());
+    if let Some(stripped) = name.strip_suffix('_') {
+        if !stripped.is_empty() {
+            substitutions.insert(format!("{VARIADIC_2D_COLUMNS_PREFIX}{stripped}"), cols_str);
+        }
+    } else {
+        substitutions.insert(format!("{VARIADIC_2D_COLUMNS_PREFIX}{name}_"), cols_str);
+    }
     for (row, length) in row_lengths.iter().enumerate() {
+        let len_str = length.to_string();
         substitutions.insert(
             format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{name}:{row}"),
-            length.to_string(),
+            len_str.clone(),
         );
+        if let Some(stripped) = name.strip_suffix('_') {
+            if !stripped.is_empty() {
+                substitutions.insert(
+                    format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{stripped}:{row}"),
+                    len_str,
+                );
+            }
+        } else {
+            substitutions.insert(
+                format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{name}_:{row}"),
+                len_str,
+            );
+        }
     }
     for (index, value) in values.iter().enumerate() {
         substitutions.insert(
             format!("{VARIADIC_2D_ELEMENT_PREFIX}{name}:{index}"),
             value.clone(),
         );
+        if let Some(stripped) = name.strip_suffix('_') {
+            if !stripped.is_empty() {
+                substitutions.insert(
+                    format!("{VARIADIC_2D_ELEMENT_PREFIX}{stripped}:{index}"),
+                    value.clone(),
+                );
+            }
+        } else {
+            substitutions.insert(
+                format!("{VARIADIC_2D_ELEMENT_PREFIX}{name}_:{index}"),
+                value.clone(),
+            );
+        }
     }
 }
 
@@ -716,11 +819,35 @@ fn matrix_substitution_values<'a>(
     name: &str,
 ) -> Option<Vec<Vec<&'a str>>> {
     let rows = substitutions
-        .get(&format!("{VARIADIC_2D_ROWS_PREFIX}{name}"))?
+        .get(&format!("{VARIADIC_2D_ROWS_PREFIX}{name}"))
+        .or_else(|| {
+            name.strip_suffix('_')
+                .filter(|s| !s.is_empty())
+                .and_then(|s| substitutions.get(&format!("{VARIADIC_2D_ROWS_PREFIX}{s}")))
+        })
+        .or_else(|| {
+            if !name.ends_with('_') {
+                substitutions.get(&format!("{VARIADIC_2D_ROWS_PREFIX}{name}_"))
+            } else {
+                None
+            }
+        })?
         .parse::<usize>()
         .ok()?;
     let default_columns = substitutions
-        .get(&format!("{VARIADIC_2D_COLUMNS_PREFIX}{name}"))?
+        .get(&format!("{VARIADIC_2D_COLUMNS_PREFIX}{name}"))
+        .or_else(|| {
+            name.strip_suffix('_')
+                .filter(|s| !s.is_empty())
+                .and_then(|s| substitutions.get(&format!("{VARIADIC_2D_COLUMNS_PREFIX}{s}")))
+        })
+        .or_else(|| {
+            if !name.ends_with('_') {
+                substitutions.get(&format!("{VARIADIC_2D_COLUMNS_PREFIX}{name}_"))
+            } else {
+                None
+            }
+        })?
         .parse::<usize>()
         .ok()?;
     let mut offset = 0usize;
@@ -728,6 +855,22 @@ fn matrix_substitution_values<'a>(
         .map(|row| {
             let columns = substitutions
                 .get(&format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{name}:{row}"))
+                .or_else(|| {
+                    name.strip_suffix('_')
+                        .filter(|s| !s.is_empty())
+                        .and_then(|s| {
+                            substitutions
+                                .get(&format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{s}:{row}"))
+                        })
+                })
+                .or_else(|| {
+                    if !name.ends_with('_') {
+                        substitutions
+                            .get(&format!("{VARIADIC_2D_ROW_LENGTH_PREFIX}{name}_:{row}"))
+                    } else {
+                        None
+                    }
+                })
                 .and_then(|value| value.parse::<usize>().ok())
                 .unwrap_or(default_columns);
             let start = offset;
@@ -739,6 +882,26 @@ fn matrix_substitution_values<'a>(
                             "{VARIADIC_2D_ELEMENT_PREFIX}{name}:{}",
                             start + column
                         ))
+                        .or_else(|| {
+                            name.strip_suffix('_')
+                                .filter(|s| !s.is_empty())
+                                .and_then(|s| {
+                                    substitutions.get(&format!(
+                                        "{VARIADIC_2D_ELEMENT_PREFIX}{s}:{}",
+                                        start + column
+                                    ))
+                                })
+                        })
+                        .or_else(|| {
+                            if !name.ends_with('_') {
+                                substitutions.get(&format!(
+                                    "{VARIADIC_2D_ELEMENT_PREFIX}{name}_:{}",
+                                    start + column
+                                ))
+                            } else {
+                                None
+                            }
+                        })
                         .map(String::as_str)
                 })
                 .collect()
@@ -751,13 +914,39 @@ fn variadic_substitution_values<'a>(
     name: &str,
 ) -> Option<Vec<&'a str>> {
     let count = substitutions
-        .get(&format!("{VARIADIC_COUNT_PREFIX}{name}"))?
+        .get(&format!("{VARIADIC_COUNT_PREFIX}{name}"))
+        .or_else(|| {
+            name.strip_suffix('_')
+                .filter(|s| !s.is_empty())
+                .and_then(|s| substitutions.get(&format!("{VARIADIC_COUNT_PREFIX}{s}")))
+        })
+        .or_else(|| {
+            if !name.ends_with('_') {
+                substitutions.get(&format!("{VARIADIC_COUNT_PREFIX}{name}_"))
+            } else {
+                None
+            }
+        })?
         .parse::<usize>()
         .ok()?;
     (0..count)
         .map(|index| {
             substitutions
                 .get(&format!("{VARIADIC_ELEMENT_PREFIX}{name}:{index}"))
+                .or_else(|| {
+                    name.strip_suffix('_')
+                        .filter(|s| !s.is_empty())
+                        .and_then(|s| {
+                            substitutions.get(&format!("{VARIADIC_ELEMENT_PREFIX}{s}:{index}"))
+                        })
+                })
+                .or_else(|| {
+                    if !name.ends_with('_') {
+                        substitutions.get(&format!("{VARIADIC_ELEMENT_PREFIX}{name}_:{index}"))
+                    } else {
+                        None
+                    }
+                })
                 .map(String::as_str)
         })
         .collect()

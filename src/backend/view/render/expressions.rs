@@ -309,16 +309,17 @@ fn render_documented_mapping_call(
         render.invocation_written.as_deref()?
     };
     let mut substitutions = HashMap::new();
-    substitutions.insert(
-        render.function_name.clone(),
+    insert_parameter_substitution(
+        &mut substitutions,
+        &render.function_name,
         escape_math_identifier(name, registry),
     );
     for (parameter, argument) in render.parameters.iter().zip(arguments) {
-        let rendered_argument = render_expression(argument, registry);
-        substitutions.insert(parameter.clone(), rendered_argument.clone());
-        if !parameter.ends_with('_') {
-            substitutions.insert(format!("{parameter}_"), rendered_argument);
-        }
+        insert_parameter_substitution(
+            &mut substitutions,
+            parameter,
+            render_expression(argument, registry),
+        );
     }
     Some(substitute_math_template(template, &substitutions))
 }
@@ -992,16 +993,17 @@ fn render_provided_function_call(
         render.function_name == name && render.parameters.len() == arguments.len()
     })?;
     let mut substitutions = HashMap::new();
-    substitutions.insert(
-        render.owner_subject.clone(),
+    insert_parameter_substitution(
+        &mut substitutions,
+        &render.owner_subject,
         escape_math_identifier(name, registry),
     );
     for (parameter, argument) in render.parameters.iter().zip(arguments) {
-        let rendered_argument = render_expression(argument, registry);
-        substitutions.insert(parameter.clone(), rendered_argument.clone());
-        if !parameter.ends_with('_') {
-            substitutions.insert(format!("{parameter}_"), rendered_argument);
-        }
+        insert_parameter_substitution(
+            &mut substitutions,
+            parameter,
+            render_expression(argument, registry),
+        );
     }
     Some(substitute_math_template(&render.written, &substitutions))
 }
@@ -1017,16 +1019,17 @@ fn render_provided_member(
         .iter()
         .find(|render| render.member_name == name && render.parameters.len() == arguments.len())?;
     let mut substitutions = HashMap::new();
-    substitutions.insert(
-        render.owner_subject.clone(),
+    insert_parameter_substitution(
+        &mut substitutions,
+        &render.owner_subject,
         render_expression(owner, registry),
     );
     for (parameter, argument) in render.parameters.iter().zip(arguments) {
-        let rendered_argument = render_expression(argument, registry);
-        substitutions.insert(parameter.clone(), rendered_argument.clone());
-        if !parameter.ends_with('_') {
-            substitutions.insert(format!("{parameter}_"), rendered_argument);
-        }
+        insert_parameter_substitution(
+            &mut substitutions,
+            parameter,
+            render_expression(argument, registry),
+        );
     }
     Some(substitute_math_template(&render.written, &substitutions))
 }

@@ -494,7 +494,7 @@ pub(super) fn command_substitutions(
     let mut substitutions = HashMap::new();
 
     if let (Some(name), Some(value)) = (&render.subject_variable, subject_latex) {
-        substitutions.insert(name.clone(), value);
+        insert_parameter_substitution(&mut substitutions, name, value);
     }
 
     substitutions.extend(render_parameter_substitutions(
@@ -507,8 +507,9 @@ pub(super) fn command_substitutions(
         && crate::backend::semantic::mapping_parameter_invocation_signatures(command).is_some()
     {
         if let Some(rhs) = command_mapping_literal_rhs(command) {
-            substitutions.insert(
-                mapping_parameter.owner.clone(),
+            insert_parameter_substitution(
+                &mut substitutions,
+                &mapping_parameter.owner,
                 render_expression(rhs, registry),
             );
         }
@@ -517,7 +518,7 @@ pub(super) fn command_substitutions(
         // canonical selector name is `x`, so provide both spellings.
         for selector in &mapping_parameter.selectors {
             if let Some(value) = substitutions.get(selector).cloned() {
-                substitutions.insert(format!("{selector}_"), value);
+                insert_parameter_substitution(&mut substitutions, selector, value);
             }
         }
     }
@@ -525,7 +526,11 @@ pub(super) fn command_substitutions(
     if let Some(context) = &command.context {
         for argument in &context.arguments {
             if let CommandContextArgument::Assignment { name, value, .. } = argument {
-                substitutions.insert(name.clone(), render_expression(value, registry));
+                insert_parameter_substitution(
+                    &mut substitutions,
+                    name,
+                    render_expression(value, registry),
+                );
             }
         }
     }
@@ -624,16 +629,24 @@ fn render_parameter_substitutions(
     for name in &render.parameters {
         if let Some((parameter, variadic)) = variadic_values.get(name) {
             value_index += variadic.values.len();
-            substitutions.insert(name.clone(), variadic.values.join(", "));
+            insert_parameter_substitution(&mut substitutions, name, variadic.values.join(", "));
             insert_variadic_substitution(&mut substitutions, name, &variadic.values);
             if let (Some(dimensions), Some(rows)) = (&parameter.dimensions, &variadic.rows) {
                 let columns = rows.first().copied().unwrap_or(0);
                 insert_variadic_2d_substitution(&mut substitutions, name, &variadic.values, rows);
                 if let Some(length) = &dimensions.row_length {
-                    substitutions.insert(length.clone(), rows.len().to_string());
+                    insert_parameter_substitution(
+                        &mut substitutions,
+                        length,
+                        rows.len().to_string(),
+                    );
                 }
                 if let Some(length) = &dimensions.column_length {
-                    substitutions.insert(length.clone(), columns.to_string());
+                    insert_parameter_substitution(
+                        &mut substitutions,
+                        length,
+                        columns.to_string(),
+                    );
                 }
                 for (offset, value) in variadic.values.iter().enumerate() {
                     if columns == 0 {
@@ -641,13 +654,25 @@ fn render_parameter_substitutions(
                     }
                     let row = dimensions.row_start + offset / columns;
                     let column = dimensions.column_start + offset % columns;
-                    substitutions.insert(format!("{name}[{row},{column}]"), value.clone());
+                    insert_parameter_substitution(
+                        &mut substitutions,
+                        &format!("{name}[{row},{column}]"),
+                        value.clone(),
+                    );
                 }
             } else {
                 if let Some(length) = &parameter.length {
-                    substitutions.insert(length.clone(), variadic.values.len().to_string());
+                    insert_parameter_substitution(
+                        &mut substitutions,
+                        length,
+                        variadic.values.len().to_string(),
+                    );
                     if let Some(last) = variadic.values.last() {
-                        substitutions.insert(format!("{}[{length}]", parameter.name), last.clone());
+                        insert_parameter_substitution(
+                            &mut substitutions,
+                            &format!("{}[{length}]", parameter.name),
+                            last.clone(),
+                        );
                     }
                 }
                 for (offset, value) in variadic.values.iter().enumerate() {
@@ -657,15 +682,16 @@ fn render_parameter_substitutions(
                         vec![0, 1]
                     };
                     for start in starts {
-                        substitutions.insert(
-                            format!("{}[{}]", parameter.name, start + offset),
+                        insert_parameter_substitution(
+                            &mut substitutions,
+                            &format!("{}[{}]", parameter.name, start + offset),
                             value.clone(),
                         );
                     }
                 }
             }
         } else if let Some(value) = values.get(value_index) {
-            substitutions.insert(name.clone(), value.clone());
+            insert_parameter_substitution(&mut substitutions, name, value.clone());
             value_index += 1;
         }
     }
@@ -722,7 +748,11 @@ pub(super) fn command_substitutions_for_names(
     names: &[String],
     values: Vec<String>,
 ) -> HashMap<String, String> {
-    names.iter().cloned().zip(values).collect()
+    let mut substitutions = HashMap::new();
+    for (name, value) in names.iter().zip(values) {
+        insert_parameter_substitution(&mut substitutions, name, value);
+    }
+    substitutions
 }
 
 pub(super) fn command_header_substitutions(
@@ -733,12 +763,17 @@ pub(super) fn command_header_substitutions(
 
     for form in command_header_forms(header) {
         if let Some(name) = primary_form_name(form) {
-            substitutions.insert(name, render_form_or_declaration_head(form, registry));
+            insert_parameter_substitution(
+                &mut substitutions,
+                &name,
+                render_form_or_declaration_head(form, registry),
+            );
         }
     }
     for parameter in command_header_variadic_parameters(header) {
-        substitutions.insert(
-            parameter.name.clone(),
+        insert_parameter_substitution(
+            &mut substitutions,
+            &parameter.name,
             render_variadic_parameter(parameter, registry),
         );
         insert_variadic_substitution(

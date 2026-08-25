@@ -208,16 +208,17 @@ fn render_documented_mapping_form(
             && render.mapping_written.is_some()
     })?;
     let mut substitutions = HashMap::new();
-    substitutions.insert(
-        render.function_name.clone(),
+    insert_parameter_substitution(
+        &mut substitutions,
+        &render.function_name,
         escape_math_identifier(name, registry),
     );
     for parameter in &render.parameters {
-        let rendered_parameter = escape_math_identifier(parameter, registry);
-        substitutions.insert(parameter.clone(), rendered_parameter.clone());
-        if !parameter.ends_with('_') {
-            substitutions.insert(format!("{parameter}_"), rendered_parameter);
-        }
+        insert_parameter_substitution(
+            &mut substitutions,
+            parameter,
+            escape_math_identifier(parameter, registry),
+        );
     }
     Some(substitute_math_template(
         render.mapping_written.as_deref()?,

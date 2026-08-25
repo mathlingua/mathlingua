@@ -122,6 +122,14 @@ pub(in crate::backend::semantic) fn walk_clause(
             for clause in &group.then.arguments {
                 walk_clause(clause, visit);
             }
+            for branch in &group.else_if {
+                for clause in &branch.else_if.arguments {
+                    walk_clause(clause, visit);
+                }
+                for clause in &branch.then.arguments {
+                    walk_clause(clause, visit);
+                }
+            }
             if let Some(section) = &group.else_ {
                 for clause in &section.arguments {
                     walk_clause(clause, visit);

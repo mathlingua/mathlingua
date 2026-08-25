@@ -1379,34 +1379,141 @@ pub(super) fn parse_have_group(group: &ProtoGroup, tracker: &mut EventLog) -> Op
 
 /// Parses a `piecewise:` clause group.
 ///
-/// The leading section may hold descriptive text while `if:` and `then:` are
-/// required and `else:` is optional.
+/// The leading `piecewise:` section takes no arguments, followed by required `if:`
+/// and `then:` sections, zero or more `(elseIf: then:)` section pairs, and an
+/// optional `else:` section.
 pub(super) fn parse_piecewise_clause(
     group: &ProtoGroup,
     tracker: &mut EventLog,
 ) -> Option<PiecewiseGroup> {
     let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections(
-        "piecewise",
-        &group.sections,
-        tracker,
-        &["piecewise", "if", "then", "else?"],
-    )?;
-    Some(PiecewiseGroup {
-        heading,
-        piecewise: PiecewiseSection {
-            arguments: parse_optional_open_texts(sections.get("piecewise").copied(), tracker),
-        },
-        if_: IfSection {
-            arguments: parse_required_clauses(section(&sections, "if")?, "if", tracker)?,
-        },
-        then: ThenSection {
-            arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
-        },
-        else_: sections.get("else").copied().and_then(|section| {
+    let first = group.sections.first()?;
+    if first.label != "piecewise" {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            first.metadata.row,
+            format!("Expected `piecewise` section but found `{}`", first.label),
+        );
+        return None;
+    }
+    ensure_empty_section(first, "piecewise", tracker);
+
+    let pattern = "piecewise:\nif:\nthen:\n(elseIf:\nthen:)*\nelse?:";
+
+    let mut index = 1;
+    let Some(if_section) = group.sections.get(index) else {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            first.metadata.row,
+            format!("For piecewise pattern:\n\n{pattern}\n\nExpected section `if`"),
+        );
+        return None;
+    };
+    if if_section.label != "if" {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            if_section.metadata.row,
+            format!(
+                "For piecewise pattern:\n\n{pattern}\n\nExpected `if` but found `{}`",
+                if_section.label
+            ),
+        );
+        return None;
+    }
+    let if_ = IfSection {
+        arguments: parse_required_clauses(if_section, "if", tracker)?,
+    };
+    index += 1;
+
+    let Some(then_section) = group.sections.get(index) else {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            if_section.metadata.row,
+            format!("For piecewise pattern:\n\n{pattern}\n\nExpected section `then`"),
+        );
+        return None;
+    };
+    if then_section.label != "then" {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            then_section.metadata.row,
+            format!(
+                "For piecewise pattern:\n\n{pattern}\n\nExpected `then` but found `{}`",
+                then_section.label
+            ),
+        );
+        return None;
+    }
+    let then = ThenSection {
+        arguments: parse_required_clauses(then_section, "then", tracker)?,
+    };
+    index += 1;
+
+    let mut else_if = Vec::new();
+    while let Some(section) = group.sections.get(index) {
+        if section.label != "elseIf" {
+            break;
+        }
+        let else_if_section = ElseIfSection {
+            arguments: parse_required_clauses(section, "elseIf", tracker)?,
+        };
+        index += 1;
+        let Some(branch_then_section) = group.sections.get(index) else {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                section.metadata.row,
+                format!("For piecewise pattern:\n\n{pattern}\n\nExpected `then` section after `elseIf`"),
+            );
+            return None;
+        };
+        if branch_then_section.label != "then" {
+            tracker.user_error_at_row(
+                Some(ORIGIN),
+                branch_then_section.metadata.row,
+                format!(
+                    "For piecewise pattern:\n\n{pattern}\n\nExpected `then` section after `elseIf` but found `{}`",
+                    branch_then_section.label
+                ),
+            );
+            return None;
+        }
+        let branch_then = ThenSection {
+            arguments: parse_required_clauses(branch_then_section, "then", tracker)?,
+        };
+        index += 1;
+        else_if.push(PiecewiseElseIf {
+            else_if: else_if_section,
+            then: branch_then,
+        });
+    }
+
+    let else_ = match group.sections.get(index) {
+        Some(section) if section.label == "else" => {
+            index += 1;
             parse_required_clauses(section, "else", tracker)
                 .map(|arguments| ElseSection { arguments })
-        }),
+        }
+        _ => None,
+    };
+
+    if let Some(unexpected) = group.sections.get(index) {
+        tracker.user_error_at_row(
+            Some(ORIGIN),
+            unexpected.metadata.row,
+            format!(
+                "For piecewise pattern:\n\n{pattern}\n\nUnexpected section `{}`",
+                unexpected.label
+            ),
+        );
+        return None;
+    }
+
+    Some(PiecewiseGroup {
+        heading,
+        if_,
+        then,
+        else_if,
+        else_,
     })
 }
 
@@ -4342,7 +4449,6 @@ using:
 expresses:
 . [logic.expr]
   piecewise:
-  . "choose a representative"
   if:
   . x = x
   then:
@@ -6397,5 +6503,83 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
             "von.neumann.omega"
         );
     }
+
+    #[test]
+    fn parses_piecewise_with_else_if_sections() {
+        let document = parse_ok(
+            r#"
+[\foo]
+Defines: f(n_, m_)
+expresses:
+. piecewise:
+  if: n_ = 0
+  then: n_ + m_ := m_
+  elseIf: n_ = 1
+  then: n_ + m_ := m_ - 1
+  else:
+  . let: k is \natural
+    where: n_ = \naturals..S(k)
+    then: n_ + m_ := \naturals..S(n_ \.natural.+./ k)
+"#,
+        );
+        assert_eq!(document.items.len(), 1);
+        let TopLevelItem::Defines(group) = &document.items[0] else {
+            panic!("expected defines group");
+        };
+        let expresses = group.expresses.as_ref().expect("expected expresses");
+        let Clause::Piecewise(piecewise) = &expresses.arguments[0] else {
+            panic!("expected piecewise clause");
+        };
+        assert_eq!(piecewise.if_.arguments.len(), 1);
+        assert_eq!(piecewise.then.arguments.len(), 1);
+        assert_eq!(piecewise.else_if.len(), 1);
+        assert_eq!(piecewise.else_if[0].else_if.arguments.len(), 1);
+        assert_eq!(piecewise.else_if[0].then.arguments.len(), 1);
+        assert!(piecewise.else_.is_some());
+    }
+
+    #[test]
+    fn rejects_piecewise_with_arguments() {
+        let (_, diagnostics) = parse_with_diagnostics(
+            r#"
+[\foo]
+Defines: f(n_)
+expresses:
+. piecewise:
+  . "invalid text"
+  if: n_ = 0
+  then: n_ := 0
+"#,
+        );
+        assert!(!diagnostics.is_empty(), "expected error for piecewise with arguments");
+        assert!(
+            diagnostics
+                .iter()
+                .any(|e| matches!(e, Event::Message(m) if m.message.contains("Section `piecewise` does not accept content")))
+        );
+    }
+
+    #[test]
+    fn rejects_piecewise_else_if_without_then() {
+        let (_, diagnostics) = parse_with_diagnostics(
+            r#"
+[\foo]
+Defines: f(n_)
+expresses:
+. piecewise:
+  if: n_ = 0
+  then: n_ := 0
+  elseIf: n_ = 1
+  else: n_ := 2
+"#,
+        );
+        assert!(!diagnostics.is_empty(), "expected error for elseIf without then");
+        assert!(
+            diagnostics
+                .iter()
+                .any(|e| matches!(e, Event::Message(m) if m.message.contains("Expected `then` section after `elseIf`")))
+        );
+    }
 }
+
 

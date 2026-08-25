@@ -12906,6 +12906,43 @@ Id: "5800ef12-bed3-427b-985f-ae871a6080ff"
         }));
         assert!(event_log.has_errors());
     }
+
+    #[test]
+    fn check_accepts_piecewise_with_else_if_sections() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("piecewise_test.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\piecewise.test]
+Theorem:
+given: x is \\expression
+then:
+. piecewise:
+  if: x = x
+  then: x = x
+  elseIf: x = x
+  then: x = x
+  else: x = x
+Documented:
+. called: "Piecewise test theorem"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("piecewise_test.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            !event_log.has_errors(),
+            "unexpected check errors: {:#?}",
+            user_events(&event_log)
+        );
+    }
 }
 
 #[cfg(test)]
@@ -13017,3 +13054,4 @@ then:
         assert!(result.type_info.is_empty());
     }
 }
+

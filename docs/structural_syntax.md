@@ -431,7 +431,7 @@ If a clause section contains:
 - **`let`** — `LetGroup`, heading: label?. Sections: `let: BindingOrSpec`, `where?: Clause+`, `then: Clause+`
 - **`if`** — `IfGroup`, heading: label?. Sections: `if: Clause+`, `then: Clause+`
 - **`have`** — `IffGroup`, heading: label?. Sections: `have: Clause+`, `iff: Clause+`. A `have:` group without `iff:` is instead a `HaveGroup` (`Clause::Have`): `have: Clause+`, `asserting?: Clause+`, `because?: Clause+`, `by?: Expression+` — an escape hatch that checks the `have:` item using the surrounding facts plus any `asserting:` items (also accepted as a `specifies:` item). `because:`/`by:` are justification the checker only reference-validates, never proves.
-- **`piecewise`** — `PiecewiseGroup`, heading: label?. Sections: `piecewise: OpenText*`, `if: Clause+`, `then: Clause+`, `else?: Clause+`
+- **`piecewise`** — `PiecewiseGroup`, heading: label?. Sections: `piecewise:`, `if: Clause+`, `then: Clause+`, `(elseIf: Clause+ then: Clause+)*`, `else?: Clause+`
 - **`given`** — `GivenGroup`, heading: label?. Sections: `given: RefinedDeclarationStatement`, `where?: Clause+`, `then: Clause+`
 - **`equivalently`** — `EquivalentlyGroup`, heading: label?. Sections: `equivalently: Clause+`
 
@@ -1256,9 +1256,11 @@ by?: <Expression>+
 
 ```group
 [LabelHeader]?
-piecewise: <OpenText>*
+piecewise:
 if: <ClauseUnion>+
 then: <ClauseUnion>+
+(elseIf: <ClauseUnion>+
+ then: <ClauseUnion>+)*
 else?: <ClauseUnion>+
 ```
 

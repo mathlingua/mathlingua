@@ -47,7 +47,6 @@ specifies:
 expresses:
 . [logic.expr]
   piecewise:
-  . "choose a representative"
   if:
   . x = x
   then:

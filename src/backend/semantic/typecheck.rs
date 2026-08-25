@@ -219,6 +219,11 @@ fn collect_clause_bound_symbols(clause: &Clause, bound: &mut BTreeSet<String>) {
             for clause in &group.then.arguments {
                 collect_clause_bound_symbols(clause, bound);
             }
+            for branch in &group.else_if {
+                for clause in &branch.then.arguments {
+                    collect_clause_bound_symbols(clause, bound);
+                }
+            }
             if let Some(else_) = &group.else_ {
                 for clause in &else_.arguments {
                     collect_clause_bound_symbols(clause, bound);
@@ -4216,6 +4221,16 @@ fn collect_clause_referenced_labels(clause: &Clause, labels: &mut BTreeSet<Strin
             {
                 collect_clause_referenced_labels(clause, labels);
             }
+            for branch in &group.else_if {
+                for clause in branch
+                    .else_if
+                    .arguments
+                    .iter()
+                    .chain(branch.then.arguments.iter())
+                {
+                    collect_clause_referenced_labels(clause, labels);
+                }
+            }
             if let Some(section) = &group.else_ {
                 for clause in &section.arguments {
                     collect_clause_referenced_labels(clause, labels);
@@ -5536,6 +5551,14 @@ fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
             for clause in &group.then.arguments {
                 collect_clause_names(clause, names);
             }
+            for branch in &group.else_if {
+                for clause in &branch.else_if.arguments {
+                    collect_clause_names(clause, names);
+                }
+                for clause in &branch.then.arguments {
+                    collect_clause_names(clause, names);
+                }
+            }
             if let Some(else_) = &group.else_ {
                 for clause in &else_.arguments {
                     collect_clause_names(clause, names);
@@ -6506,6 +6529,17 @@ fn check_clause(
             reject_specification_clauses(&group.then.arguments, path, locator, event_log);
             for clause in &group.then.arguments {
                 check_clause(clause, &child, path, locator, registry, event_log);
+            }
+            for branch in &group.else_if {
+                let mut child = context.clone();
+                reject_specification_clauses(&branch.else_if.arguments, path, locator, event_log);
+                for clause in &branch.else_if.arguments {
+                    assume_clause(clause, &mut child, path, locator, registry, event_log);
+                }
+                reject_specification_clauses(&branch.then.arguments, path, locator, event_log);
+                for clause in &branch.then.arguments {
+                    check_clause(clause, &child, path, locator, registry, event_log);
+                }
             }
             if let Some(else_) = &group.else_ {
                 reject_specification_clauses(&else_.arguments, path, locator, event_log);

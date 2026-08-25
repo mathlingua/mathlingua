@@ -440,6 +440,8 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
             ("piecewise", true),
             ("if", true),
             ("then", true),
+            ("elseIf", false),
+            ("then", false),
             ("else", false),
         ],
     ),

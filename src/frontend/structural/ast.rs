@@ -379,7 +379,7 @@ arguments_section!(ExistsUniqueSection, BindingOrSpec);
 arguments_section!(ForAllSection, BindingOrSpec);
 arguments_section!(LetSection, BindingOrSpec);
 arguments_section!(IfSection, Clause);
-zero_or_more_arguments_section!(PiecewiseSection, OpenText);
+arguments_section!(ElseIfSection, Clause);
 arguments_section!(ElseSection, Clause);
 arguments_section!(GivenClauseSection, DeclarationStatement);
 argument_section!(TitleSection, OpenText);
@@ -935,10 +935,16 @@ pub struct HaveGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PiecewiseGroup {
     pub heading: Option<LabelHeader>,
-    pub piecewise: PiecewiseSection,
     pub if_: IfSection,
     pub then: ThenSection,
+    pub else_if: Vec<PiecewiseElseIf>,
     pub else_: Option<ElseSection>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PiecewiseElseIf {
+    pub else_if: ElseIfSection,
+    pub then: ThenSection,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

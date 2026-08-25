@@ -954,9 +954,20 @@ fn type_info_from_parts(
         }
     }
 
-    // Concrete component definitions in a `Defines:`/`Realizes:` `specifies:`
+    // Concrete component definitions in a `Defines:`/`Realizes:`/`Declares:` `specifies:`
     // section remain available when a view follows through a named component.
     if let Some(specifies) = defines_specifies {
+        for statement in specifies
+            .arguments
+            .iter()
+            .filter_map(specifies_item_statement)
+        {
+            if let Some((left, right)) = declaration_substitution(statement) {
+                context.add_substitution(left, right);
+            }
+        }
+    }
+    if let Some(specifies) = declares_specifies {
         for statement in specifies
             .arguments
             .iter()
@@ -1178,6 +1189,11 @@ fn component_type_facts(
     }
     if let Some(specifies) = specifies {
         for item in &specifies.arguments {
+            if let Some(statement) = specifies_item_statement(item) {
+                if let Some((left, right)) = declaration_substitution(statement) {
+                    fact_context.add_substitution(left, right);
+                }
+            }
             for fact in facts_from_is_or_via_item_in_context(item, &fact_context) {
                 fact_context.add_fact(fact);
             }
@@ -1216,6 +1232,11 @@ fn defines_component_type_facts(
         .into_iter()
         .flat_map(|specifies| specifies.arguments.iter())
     {
+        if let Some(statement) = specifies_item_statement(item) {
+            if let Some((left, right)) = declaration_substitution(statement) {
+                fact_context.add_substitution(left, right);
+            }
+        }
         for fact in facts_from_is_or_via_item_in_context(item, &fact_context) {
             fact_context.add_fact(fact);
         }
@@ -1664,6 +1685,7 @@ fn spec_operator_rule_from_alias(
         target: alias.placeholder_spec.name.clone(),
         kind: alias.kind,
         target_alias: alias.target.clone(),
+        substitutions: info.substitutions.clone(),
     })
 }
 
@@ -5250,7 +5272,11 @@ fn collect_is_or_via_covered_symbols(item: &IsOrViaItem, covered: &mut BTreeSet<
             collect_form_or_declaration_target_symbols(&statement.via, covered);
         }
         IsOrViaItem::Declaration(statement) => {
-            collect_declaration_statement_covered_symbols(statement, covered);
+            if statement.definition.is_some() {
+                collect_is_subject_covered_symbols(&statement.subject, covered);
+            } else {
+                collect_declaration_statement_covered_symbols(statement, covered);
+            }
         }
         IsOrViaItem::Have(group) => {
             for statement in have_group_declarations(group) {
@@ -14305,18 +14331,27 @@ fn spec_rule_direct_targets(
         (rule.placeholder.clone(), subject.to_owned()),
         (rule.target.clone(), target.to_owned()),
     ]);
-    if rule.owner_is_defined_value {
+    let param_subs: HashMap<String, String> = if rule.owner_is_defined_value {
         let normalized_target = context.normalize_key(target);
         if let Some((_, actuals)) = command_signature_and_actuals_from_key(&normalized_target)
             .or_else(|| infix_command_signature_and_actuals_from_key(&normalized_target))
         {
-            substitutions.extend(
-                rule.owner_parameters
-                    .iter()
-                    .zip(actuals)
-                    .map(|(parameter, actual)| (parameter.clone(), context.normalize_key(&actual))),
-            );
+            rule.owner_parameters
+                .iter()
+                .zip(actuals)
+                .map(|(parameter, actual)| (parameter.clone(), context.normalize_key(&actual)))
+                .collect()
+        } else {
+            HashMap::new()
         }
+    } else {
+        HashMap::new()
+    };
+    substitutions.extend(param_subs.clone());
+    for (left, right) in &rule.substitutions {
+        let substituted_left = substitute_key(left, &param_subs);
+        let substituted_right = substitute_key(right, &param_subs);
+        substitutions.insert(substituted_left, substituted_right);
     }
     if let Some(source_subject) = &rule.source_subject {
         substitutions.insert(source_subject.clone(), target.to_owned());

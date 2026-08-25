@@ -212,6 +212,7 @@ pub(super) struct SpecOperatorRule {
     pub(super) target: String,
     pub(super) kind: SpecOperatorAliasKind,
     pub(super) target_alias: SpecOperatorAliasTarget,
+    pub(super) substitutions: Vec<(String, String)>,
 }
 
 #[derive(Clone, Debug)]

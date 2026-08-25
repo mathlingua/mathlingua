@@ -12943,6 +12943,161 @@ Documented:
             user_events(&event_log)
         );
     }
+
+    #[test]
+    fn check_follows_specifies_assignments_in_capabilities_for_requirements() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("von_neumann_capability.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"
+[\set]
+Declares: X
+Requires:
+. capability: x_ "in" X :-> \\abstract
+Documented:
+. called: "set"
+
+[\empty.set]
+Defines: X is \set
+Documented:
+. called: "empty set"
+
+[\von.neumann.omega]
+Defines: omega is \set
+Enables:
+. capability: X_ "in" omega :-> X_ is \set
+Documented:
+. called: "Von Neumann Omega"
+
+[\von.neumann.S(n_)]
+Defines: S(n_) is \function:on{\von.neumann.omega}:to{\von.neumann.omega}
+expresses: S(n_) := \set.successor:of{n_}
+Documented:
+. called: "Von Neumann Successor"
+
+[\set.successor:of{X}]
+Defines: Y is \set
+when: X is \set
+Documented:
+. called: "The set successor of $X?$"
+
+[\natural]
+Declares: n
+Documented:
+. called: "natural"
+
+[\function:?on{A}:?to{B}]
+Declares: f(x__) ::= y_
+when: A, B is \set
+specifies:
+. x__ "in" A
+. y_ "in" B
+Documented:
+. called: "function"
+
+[\naturals]
+Defines: Nb ::= (N, 0, S(n_))
+abstractly:
+specifies:
+. N is \set
+. 0 "in" N
+. S is \function:on{N}:to{N}
+Documented:
+. called: "the naturals"
+
+[\von.neumann.naturals]
+Realizes: Nb ::= (N, 0, S(n_)) := \naturals
+specifies:
+. N := \von.neumann.omega
+. 0 := \empty.set
+. S(n_) := \von.neumann.S(n_)
+Enables:
+. capability: x_ "in" Nb :<->: x_ "in" N
+Documented:
+. called: "Von Neumann Naturals"
+
+[\to.von.neumann.natural{n}]
+Defines: m "in" \von.neumann.naturals
+when: n is \natural
+expresses:
+. piecewise:
+  if: n = 0
+  then: m = \empty.set
+  else:
+  . let: k is \natural
+    then: m = \set.successor:of{\to.von.neumann.natural{k}}
+Documented:
+. called: "Von Neumann Numeral"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("von_neumann_capability.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            !event_log.has_errors(),
+            "unexpected check errors: {:#?}",
+            user_events(&event_log)
+        );
+    }
+
+    #[test]
+    fn check_accepts_specifies_with_walrus_in_declares_and_defines() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("specifies_walrus.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"
+[\set]
+Declares: X
+Documented:
+. called: "set"
+
+[\empty.set]
+Defines: X is \set
+Documented:
+. called: "empty set"
+
+[\group_like]
+Declares: G ::= (X, e)
+specifies:
+. X is \set
+. e := \empty.set
+Documented:
+. called: "group like"
+
+[\concrete_group]
+Defines: G ::= (X, e) := \group_like
+specifies:
+. X := \empty.set
+. e := \empty.set
+Documented:
+. called: "concrete group"
+"#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("specifies_walrus.mlg")],
+            &mut event_log,
+        );
+
+        assert!(
+            !event_log.has_errors(),
+            "unexpected check errors: {:#?}",
+            user_events(&event_log)
+        );
+    }
 }
 
 #[cfg(test)]

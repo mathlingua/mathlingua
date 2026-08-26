@@ -41,7 +41,7 @@ Documented:
 }
 
 #[test]
-fn renders_direct_component_access_and_calls_with_the_double_dot() {
+fn renders_direct_component_access_and_calls_with_a_single_dot() {
     let registry = registry_for(
         r#"[\reals]
 Defines: Rb ::= (R, 0, succ(n_))
@@ -57,11 +57,15 @@ Documented:
 
     assert_eq!(
         render_formulation_latex(r#"\reals..0"#, &registry),
-        Some(r#"\mathbb{R}..0"#.to_string())
+        Some(r#"\mathbb{R}.0"#.to_string())
     );
     assert_eq!(
         render_formulation_latex(r#"\reals..succ(n)"#, &registry),
-        Some(r#"\mathbb{R}..succ(n)"#.to_string())
+        Some(r#"\mathbb{R}.succ(n)"#.to_string())
+    );
+    assert_eq!(
+        render_formulation_latex(r#"\reals..`*`"#, &registry),
+        Some(r#"\mathbb{R}.*"#.to_string())
     );
 }
 

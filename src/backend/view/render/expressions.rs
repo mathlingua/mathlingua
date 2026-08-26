@@ -51,9 +51,8 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 .collect::<Vec<_>>()
                 .join(", ");
             format!(
-                "{}{}{}({})",
+                "{}.{}({})",
                 render_expression(owner, registry),
-                if direct { ".." } else { "." },
                 escape_math_identifier(name, registry),
                 args
             )
@@ -64,9 +63,8 @@ pub(super) fn render_expression(expression: &Expression, registry: &RenderRegist
                 return rendered;
             }
             format!(
-                "{}{}{}",
+                "{}.{}",
                 render_expression(owner, registry),
-                if direct { ".." } else { "." },
                 escape_math_identifier(name, registry)
             )
         }

@@ -12225,6 +12225,376 @@ Id: "c13f4641-0ed5-4ad7-b309-8ec13b4c6b77"
     }
 
     #[test]
+    fn check_rejects_reintroduced_symbol_in_using_and_quantifier() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("reintroduced-symbol.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\bar]
+    Declares: x
+    Documented:
+    . written: "\operatorname{bar}"
+
+    [\baz]
+    Declares: x
+    Documented:
+    . written: "\operatorname{baz}"
+
+    [\foo2]
+    Declares: x
+    Documented:
+    . written: "\operatorname{fooTwo}"
+
+    [\baz2]
+    Declares: x
+    Documented:
+    . written: "\operatorname{bazTwo}"
+
+    [\foo{A}]
+    Declares: B is \bar
+    using: A is \baz
+    when: A is \foo2
+    satisfies:
+    . forAll: A is \baz2
+      then: A is? \baz2
+    Documented:
+    . written: "\operatorname{foo}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("reintroduced-symbol.mlg")],
+            &mut event_log,
+        );
+
+        let error_messages = user_events(&event_log)
+            .into_iter()
+            .filter_map(|event| {
+                if let Event::Message(m) = event {
+                    if m.level == Level::Error {
+                        Some(m.message)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            error_messages,
+            vec![
+                "Symbol `A` has already been defined".to_string(),
+                "Symbol `A` has already been defined".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn check_accepts_repeating_placeholders_in_quantifiers() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("repeating-placeholders.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\function]
+    Declares: f(x__)
+    Documented:
+    . written: "\operatorname{function}"
+
+    Theorem:
+    then:
+    . forAll: f(x_) is \function
+      then:
+      . exists: g(x_) is \function
+        suchThat: f(x_) = g(x_)
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        let result = check_in(
+            temp_dir.path(),
+            &[PathBuf::from("repeating-placeholders.mlg")],
+            &mut event_log,
+        );
+
+        assert_eq!(result.files_checked, 1);
+        assert_eq!(
+            user_events(&event_log),
+            [Event::user_log("Checked 1 file").with_origin("mlg_check")]
+        );
+    }
+
+    #[test]
+    fn check_rejects_duplicate_quantifier_symbol_name() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("duplicate-quantifier-symbol.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\function]
+    Declares: f(x__)
+    Documented:
+    . written: "\operatorname{function}"
+
+    Theorem:
+    then:
+    . forAll: f(x_) is \function
+      then:
+      . exists: f(x_) is \function
+        suchThat: f(x_) = f(x_)
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("duplicate-quantifier-symbol.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|m| {
+                m.level == Level::Error && m.message == "Symbol `f` has already been defined"
+            })
+        }));
+    }
+
+    #[test]
+    fn check_rejects_duplicate_definition_assignment_symbols() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("duplicate-definition-assignment.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"Theorem:
+    then:
+    . let:
+      . x := 1
+      . x := 2
+      then: x = x
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("duplicate-definition-assignment.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|m| {
+                m.level == Level::Error && m.message == "Symbol `x` has already been defined"
+            })
+        }));
+    }
+
+    #[test]
+    fn check_rejects_nested_duplicate_definition_assignment_symbols() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("nested-duplicate-definition-assignment.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"Theorem:
+    then:
+    . let: x := 1
+      then:
+      . let: x := 2
+        then: x = x
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("nested-duplicate-definition-assignment.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|m| {
+                m.level == Level::Error && m.message == "Symbol `x` has already been defined"
+            })
+        }));
+    }
+
+    #[test]
+    fn check_rejects_duplicate_given_assignment_symbols() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("duplicate-given-assignment.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"Theorem:
+    given:
+    . x := 1
+    . x := 2
+    then: x = x
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("duplicate-given-assignment.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|m| {
+                m.level == Level::Error && m.message == "Symbol `x` has already been defined"
+            })
+        }));
+    }
+
+    #[test]
+    fn check_rejects_duplicate_header_parameters() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("duplicate-header-params.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\bar{A, A}]
+    Declares: x
+    Documented:
+    . written: "\operatorname{bar}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("duplicate-header-params.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|m| {
+                m.level == Level::Error && m.message == "Symbol `A` has already been defined"
+            })
+        }));
+    }
+
+    #[test]
+    fn check_rejects_target_symbol_reintroduced_in_using() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("target-reintroduced-in-using.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\bar]
+    Declares: x
+    Documented:
+    . written: "\operatorname{bar}"
+
+    [\baz]
+    Declares: x
+    Documented:
+    . written: "\operatorname{baz}"
+
+    [\foo]
+    Declares: B is \bar
+    using: B is \baz
+    Documented:
+    . written: "\operatorname{foo}"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("target-reintroduced-in-using.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|m| {
+                m.level == Level::Error && m.message == "Symbol `B` has already been defined"
+            })
+        }));
+    }
+
+    #[test]
+    fn check_rejects_reintroduced_symbol_in_enables_view_as() {
+        let temp_dir = TestDir::new();
+        let file = temp_dir.path().join("enables-view-reintroduced.mlg");
+
+        write_mlg_fixture(
+            &file,
+            r#"[\set]
+    Declares: X
+    Documented:
+    . written: "\operatorname{set}"
+
+    [\natural]
+    Declares: x
+    Documented:
+    . written: "\operatorname{natural}"
+
+    [\function:on{A}:to{B}]
+    Declares: f(x__)
+    when: A, B is \set
+    Documented:
+    . written: "\operatorname{function}"
+
+    [\naturals]
+    Defines: Nb ::= (N, 0, S(n_))
+    abstractly:
+    specifies:
+    . N is \set
+    . 0 "in" N
+    . S is \function:on{N}:to{N}
+    expresses:
+    . forAll: n "in" N
+      then: S(n) != 0
+    . forAll: m, n "in" N
+      then: (.S(m) = S(n).) \.implies./ (.m = n.)
+    . forAll: A \:subset:/ N
+      then:
+      . if:
+        . 0 "in" A
+        . forAll: n "in" A
+          then: S(n) "in" A
+        then: A = N
+    Enables:
+    . capability: n_ "in" Nb :-> n_ is \natural
+    . view:
+      as: S := N is \set
+    Documented:
+    . called: "the naturals"
+    "#,
+        )
+        .unwrap();
+
+        let mut event_log = EventLog::new();
+        check_in(
+            temp_dir.path(),
+            &[PathBuf::from("enables-view-reintroduced.mlg")],
+            &mut event_log,
+        );
+
+        assert!(user_events(&event_log).iter().any(|event| {
+            event.as_message().is_some_and(|m| {
+                m.level == Level::Error && m.message == "Symbol `S` has already been defined"
+            })
+        }));
+    }
+
+    #[test]
     fn check_uses_nominal_typing_for_declares_type_requirements() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("nominal-declares-type.mlg");

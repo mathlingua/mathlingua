@@ -1747,7 +1747,7 @@ fn validate_equivalent_item(
 
     // Establish the `using:`/`when:` scope (this also validates their references).
     let mut context = TypeContext::default();
-    declare_header_symbols(&group.heading, &mut context, registry);
+    declare_header_symbols_checked(&group.heading, &mut context, path, locator, registry, event_log);
     assume_optional_using(
         &group.using,
         &mut context,
@@ -1756,7 +1756,7 @@ fn validate_equivalent_item(
         registry,
         event_log,
     );
-    assume_optional_clauses(
+    assume_when_clauses(
         &group.when,
         &mut context,
         path,
@@ -2094,8 +2094,22 @@ fn validate_top_level_item_types(
                 locator,
                 event_log,
             );
-            declare_header_symbols(&group.heading, &mut context, registry);
-            declare_declares_target(&group.declares.argument, &mut context);
+            declare_header_symbols_checked(
+                &group.heading,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            declare_declares_target_checked(
+                &group.heading,
+                &group.declares.argument,
+                &mut context,
+                path,
+                locator,
+                event_log,
+            );
             assume_described_type(&group.heading, &group.declares.argument, &mut context);
             assume_optional_using(
                 &group.using,
@@ -2107,7 +2121,7 @@ fn validate_top_level_item_types(
             );
             let when_parameters = declares_when_parameters_from_usage(group);
             validate_when_section(&group.when, &when_parameters, path, locator, event_log);
-            assume_optional_clauses(
+            assume_when_clauses(
                 &group.when,
                 &mut context,
                 path,
@@ -2191,8 +2205,22 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::Defines(group) => {
             let mut context = TypeContext::default();
-            declare_header_symbols(&group.heading, &mut context, registry);
-            declare_declaration_statement_subjects(&group.defines.argument, &mut context);
+            declare_header_symbols_checked(
+                &group.heading,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            declare_defines_target_checked(
+                &group.heading,
+                &group.defines.argument,
+                &mut context,
+                path,
+                locator,
+                event_log,
+            );
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -2208,7 +2236,7 @@ fn validate_top_level_item_types(
                 locator,
                 event_log,
             );
-            assume_optional_clauses(
+            assume_when_clauses(
                 &group.when,
                 &mut context,
                 path,
@@ -2271,8 +2299,22 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::Realizes(group) => {
             let mut context = TypeContext::default();
-            declare_header_symbols(&group.heading, &mut context, registry);
-            declare_declaration_statement_subjects(&group.realizes.argument, &mut context);
+            declare_header_symbols_checked(
+                &group.heading,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            declare_defines_target_checked(
+                &group.heading,
+                &group.realizes.argument,
+                &mut context,
+                path,
+                locator,
+                event_log,
+            );
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -2288,7 +2330,7 @@ fn validate_top_level_item_types(
                 locator,
                 event_log,
             );
-            assume_optional_clauses(
+            assume_when_clauses(
                 &group.when,
                 &mut context,
                 path,
@@ -2346,8 +2388,22 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::Refines(group) => {
             let mut context = TypeContext::default();
-            declare_header_symbols(&group.heading, &mut context, registry);
-            declare_declaration_statement_subjects(&group.refines.argument, &mut context);
+            declare_header_symbols_checked(
+                &group.heading,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
+            declare_refines_target_checked(
+                &group.heading,
+                &group.refines.argument,
+                &mut context,
+                path,
+                locator,
+                event_log,
+            );
             validate_refines_target(group, path, locator, registry, event_log);
             validate_refined_spec_infix_header(group, path, locator, event_log);
             assume_optional_using(
@@ -2365,7 +2421,7 @@ fn validate_top_level_item_types(
                 locator,
                 event_log,
             );
-            assume_optional_clauses(
+            assume_when_clauses(
                 &group.when,
                 &mut context,
                 path,
@@ -2426,7 +2482,14 @@ fn validate_top_level_item_types(
         }
         TopLevelItem::States(group) => {
             let mut context = TypeContext::default();
-            declare_header_symbols(&group.heading, &mut context, registry);
+            declare_header_symbols_checked(
+                &group.heading,
+                &mut context,
+                path,
+                locator,
+                registry,
+                event_log,
+            );
             assume_optional_using(
                 &group.using,
                 &mut context,
@@ -2442,7 +2505,7 @@ fn validate_top_level_item_types(
                 locator,
                 event_log,
             );
-            assume_optional_clauses(
+            assume_when_clauses(
                 &group.when,
                 &mut context,
                 path,
@@ -2547,7 +2610,7 @@ fn validate_top_level_item_types(
                 registry,
                 event_log,
             );
-            assume_optional_clauses(
+            assume_when_clauses(
                 &group.when,
                 &mut context,
                 path,
@@ -3463,11 +3526,12 @@ fn validate_theorem_like(
 ) {
     let mut context = TypeContext::default();
     if let Some(heading) = sections.heading {
-        declare_header_symbols(heading, &mut context, registry);
+        declare_header_symbols_checked(heading, &mut context, path, locator, registry, event_log);
     }
 
     if let Some(given) = sections.given {
         for statement in &given.arguments {
+            introduce_given_statement_symbols(statement, &mut context, path, locator, event_log);
             assume_declaration_statement(
                 statement,
                 &mut context,
@@ -3508,6 +3572,7 @@ fn assume_optional_using(
 ) {
     if let Some(using) = using {
         for statement in &using.arguments {
+            introduce_declaration_statement_symbols(statement, context, path, locator, event_log);
             assume_declaration_statement(statement, context, path, locator, registry, event_log);
         }
     }
@@ -4397,6 +4462,60 @@ fn declare_declares_target(target: &DeclaresTarget, context: &mut TypeContext) {
     }
 }
 
+fn declare_declares_target_checked(
+    heading: &CommandHeader,
+    target: &DeclaresTarget,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let header_symbols = header_symbols_set(heading);
+    for symbol in declares_target_symbols_list(target) {
+        if header_symbols.contains(&symbol) {
+            continue;
+        }
+        context.introduce_symbol(&symbol, path, locator, event_log);
+    }
+    declare_declares_target(target, context);
+}
+
+fn declare_defines_target_checked(
+    heading: &CommandHeader,
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let header_symbols = header_symbols_set(heading);
+    for symbol in declaration_target_symbols_list(statement) {
+        if header_symbols.contains(&symbol) {
+            continue;
+        }
+        context.introduce_symbol(&symbol, path, locator, event_log);
+    }
+    declare_declaration_statement_subjects(statement, context);
+}
+
+fn declare_refines_target_checked(
+    heading: &CommandHeader,
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    let header_symbols = header_symbols_set(heading);
+    for symbol in declaration_target_symbols_list(statement) {
+        if header_symbols.contains(&symbol) {
+            continue;
+        }
+        context.introduce_symbol(&symbol, path, locator, event_log);
+    }
+    declare_declaration_statement_subjects(statement, context);
+}
+
 fn check_declares_target(
     declares: &DeclaresSection,
     context: &TypeContext,
@@ -4450,7 +4569,7 @@ fn assume_declares_function_type(
     }
 }
 
-fn assume_optional_clauses<T>(
+fn assume_when_clauses<T>(
     section: &Option<T>,
     context: &mut TypeContext,
     path: &Path,
@@ -4462,7 +4581,50 @@ fn assume_optional_clauses<T>(
 {
     if let Some(section) = section {
         for clause in section.clauses() {
-            assume_clause(clause, context, path, locator, registry, event_log);
+            assume_when_clause(clause, context, path, locator, registry, event_log);
+        }
+    }
+}
+
+fn assume_when_clause(
+    clause: &Clause,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    match clause {
+        Clause::Declaration(statement) => {
+            assume_declaration_statement(statement, context, path, locator, registry, event_log);
+        }
+        Clause::Expression(expression)
+            if fact_from_expression_in_context(expression, context).is_some() =>
+        {
+            assume_fact_expression(expression, context, path, locator, registry, event_log);
+            if let Some(fact) = fact_from_expression_in_context(expression, context) {
+                context.add_fact(fact);
+            }
+        }
+        Clause::Expression(Expression {
+            kind: ExpressionKind::BuiltinCommand(command),
+            ..
+        }) => {
+            assume_builtin_command_expression(command, context, path, locator, registry, event_log);
+        }
+        Clause::AllOf(group) => {
+            for clause in &group.all_of.arguments {
+                assume_when_clause(clause, context, path, locator, registry, event_log);
+            }
+        }
+        Clause::Equivalently(group) => {
+            for clause in &group.equivalently.arguments {
+                assume_when_clause(clause, context, path, locator, registry, event_log);
+            }
+        }
+        _ => {
+            check_clause(clause, context, path, locator, registry, event_log);
+            collect_clause_assumptions(clause, context);
         }
     }
 }
@@ -4600,6 +4762,7 @@ fn described_spec_infix_subject(
         None
     }
 }
+
 
 /// The subject name of a form or declaration — the destructuring name `H` for
 /// `H ::= (X1, *_1, e1)`, or the whole key when the form has no primary name.
@@ -5483,6 +5646,180 @@ fn collect_form_or_declaration_target_symbols(
             symbols.insert(operator.text.clone());
         }
     }
+}
+
+fn declaration_target_symbols_list(statement: &DeclarationStatement) -> Vec<String> {
+    let mut symbols = Vec::new();
+    collect_is_subject_target_symbols_list(&statement.subject, &mut symbols);
+    if let Some(expansion) = &statement.expansion {
+        collect_is_subject_target_symbols_list(expansion, &mut symbols);
+    }
+    symbols
+}
+
+fn declares_target_symbols_list(target: &DeclaresTarget) -> Vec<String> {
+    match target {
+        DeclaresTarget::Form(form) => form_or_declaration_target_symbols_list(form),
+        DeclaresTarget::Declaration(statement) => declaration_target_symbols_list(statement),
+    }
+}
+
+fn form_or_declaration_target_symbols_list(form: &FormOrDeclaration) -> Vec<String> {
+    let mut symbols = Vec::new();
+    collect_form_or_declaration_target_symbols_list(form, &mut symbols);
+    symbols
+}
+
+fn collect_is_subject_target_symbols_list_only(subject: &IsSubject) -> Vec<String> {
+    let mut symbols = Vec::new();
+    collect_is_subject_target_symbols_list(subject, &mut symbols);
+    symbols
+}
+
+fn collect_is_subject_target_symbols_list(subject: &IsSubject, symbols: &mut Vec<String>) {
+    match &subject.kind {
+        IsSubjectKind::Forms(forms) => {
+            for form in forms {
+                if let IsSubjectForm::Form(form) = form {
+                    collect_form_or_declaration_target_symbols_list(form, symbols);
+                }
+            }
+        }
+        IsSubjectKind::Operator(operator) => {
+            symbols.push(operator.text.clone());
+        }
+    }
+}
+
+fn collect_form_or_declaration_target_symbols_list(
+    form: &FormOrDeclaration,
+    symbols: &mut Vec<String>,
+) {
+    match &form.kind {
+        FormOrDeclarationKind::Name(name) => {
+            symbols.push(name.clone());
+        }
+        FormOrDeclarationKind::MappingParameter { selector, .. } => {
+            symbols.push(selector.name().to_owned());
+        }
+        FormOrDeclarationKind::FunctionDeclaration { name, form } => {
+            if let Some(name) = name {
+                symbols.push(name.clone());
+            }
+            symbols.push(form.name.clone());
+        }
+        FormOrDeclarationKind::TupleDeclaration { name, form } => {
+            if let Some(name) = name {
+                symbols.push(name.clone());
+            }
+            for element in &form.elements {
+                match element {
+                    TupleFormElement::Form(form) => {
+                        collect_form_or_declaration_target_symbols_list(form, symbols);
+                    }
+                    TupleFormElement::Operator(operator) => {
+                        symbols.push(operator.text.clone());
+                    }
+                }
+            }
+        }
+        FormOrDeclarationKind::SetDeclaration { name, form } => {
+            if let Some(name) = name {
+                symbols.push(name.clone());
+            } else {
+                collect_set_target_symbols_list(&form.target, symbols);
+            }
+        }
+        FormOrDeclarationKind::InfixOperator { operator, .. }
+        | FormOrDeclarationKind::PrefixOperator { operator, .. }
+        | FormOrDeclarationKind::PostfixOperator { operator, .. } => {
+            symbols.push(operator.text.clone());
+        }
+    }
+}
+
+fn collect_set_target_symbols_list(target: &SetTarget, symbols: &mut Vec<String>) {
+    match &target.kind {
+        SetTargetKind::Name(name) => symbols.push(name.clone()),
+        SetTargetKind::PlaceholderForm(_) => {}
+        SetTargetKind::Expression { .. } => {}
+        SetTargetKind::Alias { name, target } | SetTargetKind::Introduction { name, target } => {
+            symbols.push(name.clone());
+            collect_set_target_symbols_list(target, symbols);
+        }
+        SetTargetKind::Function { name, arguments } => {
+            symbols.push(name.clone());
+            for arg in arguments {
+                collect_set_target_symbols_list(arg, symbols);
+            }
+        }
+        SetTargetKind::Tuple(elements) => {
+            for element in elements {
+                match element {
+                    SetTargetElement::Target(target) => {
+                        collect_set_target_symbols_list(target, symbols);
+                    }
+                    SetTargetElement::Operator(operator) => {
+                        symbols.push(operator.text.clone());
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn introduce_declaration_statement_symbols(
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    for symbol in declaration_target_symbols_list(statement) {
+        context.introduce_symbol(&symbol, path, locator, event_log);
+    }
+}
+
+fn header_symbols_set(header: &CommandHeader) -> HashSet<String> {
+    let mut symbols = HashSet::new();
+    for form in header_forms(header) {
+        for symbol in form_or_declaration_target_symbols_list(form) {
+            symbols.insert(symbol);
+        }
+    }
+    for variadic in header_variadic_parameters(header) {
+        symbols.insert(variadic.name.clone());
+        for name in variadic_parameter_auxiliary_names(variadic) {
+            symbols.insert(name);
+        }
+    }
+    symbols
+}
+
+fn is_pure_spec_fact_statement(statement: &DeclarationStatement, context: &TypeContext) -> bool {
+    if statement.definition.is_some() || statement.expansion.is_some() {
+        return false;
+    }
+    match &statement.relation {
+        Some(DeclarationRelation::InfixSpec { .. } | DeclarationRelation::Spec { .. }) => {
+            let subjects = collect_is_subject_target_symbols_list_only(&statement.subject);
+            !subjects.is_empty() && subjects.iter().all(|s| context.has_defined_symbol(s))
+        }
+        _ => false,
+    }
+}
+
+fn introduce_given_statement_symbols(
+    statement: &DeclarationStatement,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    event_log: &mut EventLog,
+) {
+    if is_pure_spec_fact_statement(statement, context) {
+        return;
+    }
+    introduce_declaration_statement_symbols(statement, context, path, locator, event_log);
 }
 
 fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
@@ -6402,6 +6739,16 @@ fn assume_clause(
 ) {
     match clause {
         Clause::Declaration(statement) => {
+            if statement.definition.is_some() {
+                let binding_symbols = if let Some(expansion) = &statement.expansion {
+                    collect_is_subject_target_symbols_list_only(expansion)
+                } else {
+                    collect_is_subject_target_symbols_list_only(&statement.subject)
+                };
+                for symbol in binding_symbols {
+                    context.introduce_symbol(&symbol, path, locator, event_log);
+                }
+            }
             assume_declaration_statement(statement, context, path, locator, registry, event_log);
         }
         Clause::Expression(expression)
@@ -6577,6 +6924,9 @@ fn check_clause(
         Clause::Given(group) => {
             let mut child = context.clone();
             for statement in &group.given.arguments {
+                introduce_given_statement_symbols(
+                    statement, &mut child, path, locator, event_log,
+                );
                 assume_declaration_statement(
                     statement, &mut child, path, locator, registry, event_log,
                 );
@@ -7266,6 +7616,7 @@ fn assume_binding_or_spec(
 ) {
     match item {
         BindingOrSpec::Declaration(statement) => {
+            introduce_declaration_statement_symbols(statement, context, path, locator, event_log);
             assume_declaration_statement(statement, context, path, locator, registry, event_log);
         }
     }
@@ -7377,6 +7728,7 @@ fn assume_relation_subject(
     event_log: &mut EventLog,
 ) {
     if let RelationSubject::Declaration(statement) = subject {
+        introduce_declaration_statement_symbols(statement, context, path, locator, event_log);
         assume_declaration_statement(statement, context, path, locator, registry, event_log);
     }
 }
@@ -7636,6 +7988,7 @@ fn inject_inferred_parameters(
             continue;
         }
         context.declare_name(name.clone());
+        context.declare_defined_symbol(name.clone());
         introduced_parameters.push(parameter.clone());
     }
 
@@ -12513,6 +12866,9 @@ fn validate_optional_enables(
                 }
 
                 let mut child = context.clone();
+                introduce_declaration_statement_symbols(
+                    statement, &mut child, path, locator, event_log,
+                );
                 declare_declaration_statement_subjects(statement, &mut child);
                 complete_introduced_declaration_statement(
                     statement, &mut child, path, locator, registry, event_log,
@@ -12541,6 +12897,7 @@ fn context_with_from_declaration(
     event_log: &mut EventLog,
 ) -> TypeContext {
     let mut child = context.clone();
+    introduce_declaration_statement_symbols(statement, &mut child, path, locator, event_log);
     declare_declaration_statement_subjects(statement, &mut child);
     complete_introduced_declaration_statement(
         statement, &mut child, path, locator, registry, event_log,
@@ -16661,6 +17018,7 @@ struct TypeContext {
     substitutions: Vec<(String, String)>,
     collection_literals: HashMap<String, SetExpression>,
     symbols: HashSet<String>,
+    defined_symbols: HashSet<String>,
     /// The configured numeric type required by each variadic parameter's
     /// indices. A one-based parameter uses `Specify:positiveInt:is`, while a
     /// zero-based parameter uses `Specify:zeroOrPositiveInt:is`.
@@ -16710,7 +17068,43 @@ impl TypeContext {
     }
 
     fn declare_name(&mut self, name: impl Into<String>) {
-        self.symbols.insert(name.into());
+        let name = name.into();
+        let unstropped = unstropped_name(&name);
+        self.symbols.insert(name);
+        self.symbols.insert(unstropped);
+    }
+
+    fn declare_defined_symbol(&mut self, name: impl Into<String>) {
+        let name = name.into();
+        let unstropped = unstropped_name(&name);
+        self.defined_symbols.insert(name.clone());
+        self.defined_symbols.insert(unstropped.clone());
+        self.symbols.insert(name);
+        self.symbols.insert(unstropped);
+    }
+
+    fn has_defined_symbol(&self, name: &str) -> bool {
+        self.defined_symbols.contains(name) || self.defined_symbols.contains(&unstropped_name(name))
+    }
+
+    fn introduce_symbol(
+        &mut self,
+        name: &str,
+        path: &Path,
+        locator: &mut SourceLocator<'_>,
+        event_log: &mut EventLog,
+    ) -> bool {
+        if self.has_defined_symbol(name) {
+            emit_error(
+                event_log,
+                path,
+                locator.locate_symbol(name),
+                format!("Symbol `{name}` has already been defined"),
+            );
+            return false;
+        }
+        self.declare_defined_symbol(name);
+        true
     }
 
     fn has_name(&self, name: &str) -> bool {
@@ -16861,18 +17255,107 @@ fn is_literal_name(name: &str) -> bool {
         || is_negative_integer_literal(name)
 }
 
+fn declare_header_symbols_checked(
+    header: &CommandHeader,
+    context: &mut TypeContext,
+    path: &Path,
+    locator: &mut SourceLocator<'_>,
+    registry: &SignatureRegistry,
+    event_log: &mut EventLog,
+) {
+    let heading_pos = locator.locate_heading(&shape_for_header(header));
+    for form in header_forms(header) {
+        for symbol in form_or_declaration_target_symbols_list(form) {
+            if context.has_defined_symbol(&symbol) {
+                emit_error(
+                    event_log,
+                    path,
+                    locator.locate_symbol(&symbol).or(heading_pos),
+                    format!("Symbol `{symbol}` has already been defined"),
+                );
+            } else {
+                context.declare_defined_symbol(&symbol);
+            }
+        }
+        declare_form_or_declaration(form, context);
+    }
+    for variadic in header_variadic_parameters(header) {
+        if context.has_defined_symbol(&variadic.name) {
+            emit_error(
+                event_log,
+                path,
+                locator.locate_symbol(&variadic.name).or(heading_pos),
+                format!("Symbol `{}` has already been defined", variadic.name),
+            );
+        } else {
+            context.declare_defined_symbol(&variadic.name);
+        }
+        for name in variadic_parameter_auxiliary_names(variadic) {
+            context.declare_defined_symbol(&name);
+        }
+        let start = variadic
+            .dimensions
+            .as_ref()
+            .map(|dimensions| dimensions.row_start)
+            .unwrap_or_else(|| {
+                if variadic.index.is_none() {
+                    1
+                } else {
+                    variadic.start
+                }
+            });
+        let specification = if start == 0 {
+            registry
+                .numeric_specifications
+                .zero_or_positive_int
+                .as_ref()
+        } else {
+            registry.numeric_specifications.positive_int.as_ref()
+        };
+        let Some(specification) = specification.cloned() else {
+            continue;
+        };
+        context
+            .variadic_index_types
+            .insert(variadic.name.clone(), specification.clone());
+
+        let mut index_names = variadic
+            .index
+            .iter()
+            .chain(variadic.length.iter())
+            .cloned()
+            .collect::<Vec<_>>();
+        if let Some(dimensions) = &variadic.dimensions {
+            index_names.push(dimensions.row_index.clone());
+            index_names.push(dimensions.column_index.clone());
+            index_names.extend(dimensions.row_length.iter().cloned());
+            index_names.extend(dimensions.column_length.iter().cloned());
+        }
+        for name in index_names {
+            context.add_fact(TypeFact::Is {
+                subject: name,
+                ty: specification.ty.clone(),
+                signature: specification.signature.clone(),
+            });
+        }
+    }
+}
+
 fn declare_header_symbols(
     header: &CommandHeader,
     context: &mut TypeContext,
     registry: &SignatureRegistry,
 ) {
     for form in header_forms(header) {
+        for symbol in form_or_declaration_target_symbols_list(form) {
+            context.declare_defined_symbol(symbol);
+        }
         declare_form_or_declaration(form, context);
     }
     for variadic in header_variadic_parameters(header) {
-        context.declare_name(variadic.name.clone());
+        context.declare_defined_symbol(variadic.name.clone());
         for name in variadic_parameter_auxiliary_names(variadic) {
-            context.declare_name(name);
+            context.declare_defined_symbol(name);
         }
         let start = variadic
             .dimensions

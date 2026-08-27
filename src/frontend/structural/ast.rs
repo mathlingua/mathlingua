@@ -381,7 +381,6 @@ arguments_section!(LetSection, BindingOrSpec);
 arguments_section!(IfSection, Clause);
 arguments_section!(ElseIfSection, Clause);
 arguments_section!(ElseSection, Clause);
-arguments_section!(GivenClauseSection, DeclarationStatement);
 argument_section!(TitleSection, OpenText);
 argument_section!(SectionTitleSection, OpenText);
 argument_section!(SubsectionTitleSection, OpenText);
@@ -435,7 +434,6 @@ pub enum Clause {
     Iff(IffGroup),
     Equivalently(EquivalentlyGroup),
     Piecewise(PiecewiseGroup),
-    Given(GivenGroup),
     Have(Box<HaveGroup>),
     Declaration(DeclarationStatement),
     Expression(Expression),
@@ -944,14 +942,6 @@ pub struct PiecewiseGroup {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PiecewiseElseIf {
     pub else_if: ElseIfSection,
-    pub then: ThenSection,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GivenGroup {
-    pub heading: Option<LabelHeader>,
-    pub given: GivenClauseSection,
-    pub where_: Option<WhereSection>,
     pub then: ThenSection,
 }
 

@@ -1517,38 +1517,6 @@ pub(super) fn parse_piecewise_clause(
     })
 }
 
-/// Parses a nested `given:` clause group.
-///
-/// This group is used inside clause lists to introduce a local assumption,
-/// optional context, and required consequence.
-pub(super) fn parse_given_clause(group: &ProtoGroup, tracker: &mut EventLog) -> Option<GivenGroup> {
-    let heading = parse_optional_label_heading(group, tracker)?;
-    let sections = identify_sections(
-        "given",
-        &group.sections,
-        tracker,
-        &["given", "where?", "then"],
-    )?;
-    Some(GivenGroup {
-        heading,
-        given: GivenClauseSection {
-            arguments: parse_required_formulations(
-                section(&sections, "given")?,
-                "given",
-                tracker,
-                parse_refined_declaration_statement,
-            )?,
-        },
-        where_: sections.get("where").copied().and_then(|section| {
-            parse_required_clauses(section, "where", tracker)
-                .map(|arguments| WhereSection { arguments })
-        }),
-        then: ThenSection {
-            arguments: parse_required_clauses(section(&sections, "then")?, "then", tracker)?,
-        },
-    })
-}
-
 /// Adapts an `alias:` group into an [`AliasItem`].
 pub(super) fn parse_alias_item_group(
     group: &ProtoGroup,
@@ -1760,7 +1728,6 @@ pub(super) fn parse_clause_group(group: &ProtoGroup, tracker: &mut EventLog) -> 
         "if" => parse_if_clause(group, tracker).map(Clause::If),
         "have" => parse_have_or_assertion(group, tracker),
         "piecewise" => parse_piecewise_clause(group, tracker).map(Clause::Piecewise),
-        "given" => parse_given_clause(group, tracker).map(Clause::Given),
         "equivalently" => parse_equivalently_clause(group, tracker).map(Clause::Equivalently),
         other => {
             tracker.user_error_at_row(
@@ -4467,8 +4434,8 @@ when:
   . x = x
 specifies: y is \(f)::[[g]]
 satisfies:
-. [logic.given]
-  given: x is \element
+. [logic.let]
+  let: x is \element
   where:
   . x = x
   then:
@@ -4712,7 +4679,7 @@ that:
                         .as_ref()
                         .expect("expected satisfies")
                         .arguments[0],
-                    Clause::Given(_)
+                    Clause::Let(_)
                 ));
             }
             other => panic!("expected refines group, got {other:?}"),
@@ -5851,7 +5818,7 @@ then:
     }
 
     #[test]
-    fn parses_quantifier_clause_groups_with_multiple_bindings() {
+    fn parses_binding_clause_groups_with_multiple_bindings() {
         let text = r#"
 [\property]
 States:
@@ -5871,7 +5838,7 @@ that:
   . n is \type{B}
   then:
   . m = n
-. given:
+. let:
   . p is \type{A}
   . q is \type{B}
   then:
@@ -5899,8 +5866,8 @@ that:
                     other => panic!("expected forAll clause, got {other:?}"),
                 }
                 match &states.that.arguments[3] {
-                    Clause::Given(group) => assert_eq!(group.given.arguments.len(), 2),
-                    other => panic!("expected given clause, got {other:?}"),
+                    Clause::Let(group) => assert_eq!(group.let_.arguments.len(), 2),
+                    other => panic!("expected let clause, got {other:?}"),
                 }
             }
             other => panic!("expected states item, got {other:?}"),
@@ -6438,6 +6405,24 @@ then:
     }
 
     #[test]
+    fn rejects_nested_given_clause_groups() {
+        let (_document, messages) = parse_with_diagnostics(
+            r#"
+Theorem:
+then:
+. given: x is \set
+  then: x is? \set
+"#,
+        );
+
+        assert!(messages.iter().any(|event| {
+            event
+                .as_message()
+                .is_some_and(|message| message.message.contains("Unexpected clause group `given`"))
+        }));
+    }
+
+    #[test]
     fn parses_quoted_and_paged_resource_references() {
         let document = parse_ok(
             r#"
@@ -6581,5 +6566,3 @@ expresses:
         );
     }
 }
-
-

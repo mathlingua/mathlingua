@@ -5,6 +5,12 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Nested `given:` Clause Removal
+
+The redundant nested `given:` / `where?:` / `then:` clause group has been
+removed. Use `let:` / `where?:` / `then:` for local bindings and assumptions.
+The `given:` section on theorem-like top-level groups remains supported.
+
 ## Duplicate Symbol Introductions Are Rejected
 
 The semantic checker now distinguishes known names from symbols that have been
@@ -1618,7 +1624,7 @@ The checker reports any ordinary symbol use that has not been introduced.
 
 - Binding and assumption sections such as `given:`, `exists:`, `existsUnique:`,
   `forAll:`, and `let:` introduce their declared subjects.
-- Clause-group `given:`, `exists:`, `existsUnique:`, `forAll:`, and `let:`
+- Clause-group `exists:`, `existsUnique:`, `forAll:`, and `let:`
   sections may contain multiple block arguments; each argument is introduced in
   order before the guard, predicate, or body is checked.
 - Declaration definitions make declaration-side symbols available to the right

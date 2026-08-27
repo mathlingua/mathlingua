@@ -9,8 +9,8 @@ when:
   . x = x
 specifies: y is \(f)::[[g]]
 satisfies:
-. [logic.given]
-  given: x is \element
+. [logic.let]
+  let: x is \element
   where:
   . x = x
   then:

@@ -79,8 +79,6 @@ then:
   then: n = n
 . let: m := n
   then: m = m
-. given: m is \natural
-  then: m = m
 . equivalently:
   . n = n
   . n = n

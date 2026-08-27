@@ -373,7 +373,6 @@ const CLAUSE_STARTERS: &[&str] = &[
     "have",
     "equivalently",
     "piecewise",
-    "given",
 ];
 
 /// Sections whose bullets contain clauses, so a bullet there can start a clause
@@ -444,10 +443,6 @@ const NESTED_GROUPS: &[(&str, &[Section])] = &[
             ("then", false),
             ("else", false),
         ],
-    ),
-    (
-        "given",
-        &[("given", true), ("where", false), ("then", true)],
     ),
     // item groups
     ("alias", &[("alias", true), ("written", false)]),
@@ -994,6 +989,7 @@ mod tests {
         assert!(got.contains(&"let".to_string()));
         assert!(got.contains(&"if".to_string()));
         assert!(got.contains(&"have".to_string()));
+        assert!(!got.contains(&"given".to_string()));
         assert!(!got.contains(&"iff".to_string()));
     }
 

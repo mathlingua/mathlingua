@@ -10047,7 +10047,7 @@ Documented:
     }
 
     #[test]
-    fn check_uses_all_quantifier_bindings_in_clause_group_blocks() {
+    fn check_uses_all_bindings_in_clause_group_blocks() {
         let temp_dir = TestDir::new();
         let file = temp_dir.path().join("multi-quantifier-bindings.mlg");
 
@@ -10079,7 +10079,7 @@ Documented:
       . f "in" B
       then:
       . e = f
-    . given:
+    . let:
       . g "in" A
       . h "in" B
       then:
@@ -13635,4 +13635,3 @@ then:
         assert!(result.type_info.is_empty());
     }
 }
-

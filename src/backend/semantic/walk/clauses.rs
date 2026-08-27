@@ -136,19 +136,6 @@ pub(in crate::backend::semantic) fn walk_clause(
                 }
             }
         }
-        Clause::Given(group) => {
-            for statement in &group.given.arguments {
-                walk_declaration_statement(statement, visit);
-            }
-            if let Some(section) = &group.where_ {
-                for clause in &section.arguments {
-                    walk_clause(clause, visit);
-                }
-            }
-            for clause in &group.then.arguments {
-                walk_clause(clause, visit);
-            }
-        }
         Clause::Have(group) => walk_have_group(group, visit),
         Clause::Declaration(statement) => walk_declaration_statement(statement, visit),
         Clause::Expression(expression) => walk_expression(expression, visit),

@@ -4324,19 +4324,6 @@ fn collect_clause_referenced_labels(clause: &Clause, labels: &mut BTreeSet<Strin
                 }
             }
         }
-        Clause::Given(group) => {
-            for statement in &group.given.arguments {
-                collect_declaration_referenced_labels(statement, labels);
-            }
-            if let Some(section) = &group.where_ {
-                for clause in &section.arguments {
-                    collect_clause_referenced_labels(clause, labels);
-                }
-            }
-            for clause in &group.then.arguments {
-                collect_clause_referenced_labels(clause, labels);
-            }
-        }
         Clause::Have(group) => {
             for clause in group.have.arguments.iter().chain(
                 group
@@ -4762,7 +4749,6 @@ fn described_spec_infix_subject(
         None
     }
 }
-
 
 /// The subject name of a form or declaration — the destructuring name `H` for
 /// `H ::= (X1, *_1, e1)`, or the whole key when the form has no primary name.
@@ -5928,19 +5914,6 @@ fn collect_clause_names(clause: &Clause, names: &mut BTreeSet<String>) {
                 }
             }
         }
-        Clause::Given(group) => {
-            for statement in &group.given.arguments {
-                collect_declaration_statement_names(statement, names);
-            }
-            if let Some(where_) = &group.where_ {
-                for clause in &where_.arguments {
-                    collect_clause_names(clause, names);
-                }
-            }
-            for clause in &group.then.arguments {
-                collect_clause_names(clause, names);
-            }
-        }
         Clause::Have(group) => collect_have_group_names(group, names),
         Clause::Declaration(statement) => collect_declaration_statement_names(statement, names),
         Clause::Expression(expression) => collect_expression_names(expression, names),
@@ -6919,26 +6892,6 @@ fn check_clause(
                 for clause in &else_.arguments {
                     check_clause(clause, context, path, locator, registry, event_log);
                 }
-            }
-        }
-        Clause::Given(group) => {
-            let mut child = context.clone();
-            for statement in &group.given.arguments {
-                introduce_given_statement_symbols(
-                    statement, &mut child, path, locator, event_log,
-                );
-                assume_declaration_statement(
-                    statement, &mut child, path, locator, registry, event_log,
-                );
-            }
-            if let Some(where_) = &group.where_ {
-                for clause in &where_.arguments {
-                    assume_clause(clause, &mut child, path, locator, registry, event_log);
-                }
-            }
-            reject_specification_clauses(&group.then.arguments, path, locator, event_log);
-            for clause in &group.then.arguments {
-                check_clause(clause, &child, path, locator, registry, event_log);
             }
         }
         Clause::Have(group) => {

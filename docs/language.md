@@ -1038,9 +1038,6 @@ expressions.
 - **`equivalently`** — a chain of biconditionals — sugar for pairwise `iff`.
 - **`piecewise`** — assumes `if:`, checks `then:`, then accepts zero or more
   `elseIf:`/`then:` pairs; the optional `else:` is checked in the outer context.
-- **`given`** — assumes one refined-capable given statement (optional `where:`),
-  then checks `then:`.
-
 For example, a `let:` clause can introduce a member for use in its body:
 
 ```text
@@ -1049,12 +1046,13 @@ For example, a `let:` clause can introduce a member for use in its body:
   then: n = n
 ```
 
-Each of these clauses also has a builtin *command* form used inline in a
-statement position: `\\not{...}`, `\\allOf{...}`, `\\anyOf{...}`, `\\oneOf{...}`,
+The formulation language also provides builtin *command* forms used inline in
+a statement position: `\\not{...}`, `\\allOf{...}`, `\\anyOf{...}`, `\\oneOf{...}`,
 `\\forAll{...}:then{...}`, `\\have{...}:iff{...}`, `\\given{...}:then{...}`, and
 `\\piecewise{...}:then{...}:else{...}`. They are checked with the same scoping
-rules as the corresponding groups, and a malformed one (wrong arity, missing
-required tail, or unknown builtin clause command) is reported.
+rules as their structural counterparts where one exists, and a malformed one
+(wrong arity, missing required tail, or unknown builtin clause command) is
+reported.
 
 Declarations can combine `::=` with `:=` to introduce symbols and create local
 syntactic substitutions.

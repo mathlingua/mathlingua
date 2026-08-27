@@ -765,6 +765,13 @@ Metadata:
 (`Declares`, `Defines`, `Realizes`, and `Refines` each have a `specifies:`
 section, with different rules for what its items may say — see below.)
 
+A `Declares:` `specifies:` section normally gives type or specification facts
+for the target's parts. It may also bind a part to an already-known value with
+`:=`. Such assignments participate in later capability reduction, so a
+capability stated in terms of the local part follows the assigned value. A
+`Defines:` or `Realizes:` `specifies:` assignment supplies the concrete value
+of that part.
+
 `Defines` introduces a value-bearing command by an `is` or spec statement, an
 optional `:=` definition, or both.
 
@@ -804,7 +811,10 @@ the object by using `..`. For example, if `\reals` defines
 Callable components use the same form, such as `\naturals..succ(n)`. The owner
 must be a `Defines:` or `Realizes:` command; ordinary bound values continue to
 use member access with one dot (`Rb.0`). Operator component names are stropped,
-as in ``\reals..`*` ``.
+as in ``\reals..`*` ``. Direct component expressions are valid wherever an
+ordinary expression may be a specification subject or target, for example
+`n "in" \naturals..N`. The source spelling remains `..`, while the viewer
+renders the resolved access with a single dot.
 
 ### Abstract declarations and `Realizes`
 
@@ -1026,8 +1036,8 @@ expressions.
 - **`if`** — assumes `if:`, checks `then:`.
 - **`have`** — assumes `iff:`, checks `have:`.
 - **`equivalently`** — a chain of biconditionals — sugar for pairwise `iff`.
-- **`piecewise`** — assumes `if:`, checks `then:`; the optional `else:` is checked
-  in the outer context.
+- **`piecewise`** — assumes `if:`, checks `then:`, then accepts zero or more
+  `elseIf:`/`then:` pairs; the optional `else:` is checked in the outer context.
 - **`given`** — assumes one refined-capable given statement (optional `where:`),
   then checks `then:`.
 
@@ -1060,7 +1070,8 @@ If the context knows `A is \real`, then `\foo{B}` may satisfy a requirement for
 `\real` because `A ::= B := B` makes the two keys normalize together.
 
 Quantifier and `let:` declarations are local to the clause group that introduces
-them.
+them. Each `elseIf:` branch has the same conditional branch behavior as the
+initial `if:` branch.
 
 ## Support Sections
 
@@ -1323,6 +1334,19 @@ at most one `Disambiguates` (`Duplicate disambiguation for
 \`{key}\``). Spec-infix headings (`\:...:/`) are allowed only on `Declares`, and
 refined headings (`::`) only on `Refines`.
 
+`SourceCollection::load` normally inserts a fresh UUID `Id:` into a missing
+top-level item before these checks run, so `mlg check`, `mlg view`, and
+`mlg export` may update source files. Hand-authored or copied IDs must still be
+valid and unique.
+
+Within one semantic scope, a symbol may be introduced as a defined binding only
+once. Duplicate header parameters, repeated `:=` bindings, a nested quantifier
+that reuses an enclosing bound function name, a `using:` declaration that
+redeclares a header or target symbol, and a `view: as:` symbol that collides with
+an existing symbol report `Symbol \`{name}\` has already been defined`.
+Placeholders local to different function forms may repeat; the callable or value
+name introduced by the form may not.
+
 ### 6. Documentation requirements
 
 `Declares`, `Defines`, `Realizes`, and `States` must include a `called:` **or**
@@ -1444,8 +1468,10 @@ allowed in \`exists:\`, \`given:\`, \`forAll:\`, or \`let:\`; use the statement 
 
 Every referenced symbol must be introduced before use, or
 `Unrecognized symbol \`{name}\`` is reported. Introduction sites are listed in
-[Symbol Scope](#symbol-scope) below. Note `:=` does **not** introduce symbols —
-its right-hand side must already be in scope — whereas `::=` does.
+[Symbol Scope](#symbol-scope) below. In a binding position, the left-hand target
+of `:=` introduces a defined symbol, but names used only on its right-hand side
+must already be in scope. `::=` additionally introduces the names in its
+expansion.
 
 ### 12. Spec facts and operators
 
@@ -1537,7 +1563,7 @@ Symbols are introduced by:
 - command header forms in definition and named theorem-like groups
 - the main `Declares:`, `Defines:`, and `Refines:` subjects
 - assumptions in `using:`, `when:`, theorem `given:`, and local clause groups
-- local declarations such as `A ::= B := B`
+- local definitions such as `x := 1` and declarations such as `A ::= B := B`
 - subject forms in assumed `is` or spec facts
 - names inside forms, tuples, set declarations, function declarations, and
   placeholder forms
@@ -1549,6 +1575,12 @@ Assumptions are processed in order. In a declaration statement, the subject and
 optional `::=` expansion introduce names before any `:=` right-hand expression
 is checked. Command arguments, spec targets, and names used only on the right
 side of `:=` must already be known from earlier context.
+
+An introduction cannot shadow another defined symbol in the same inherited
+scope. Use a fresh name for nested quantifiers and `let:` bindings, and treat
+`using:` as a place to introduce auxiliary symbols rather than to restate the
+type of a header or target symbol. Section-specific constraints such as a
+header parameter's required `when:` fact do not create a second binding.
 
 Symbols used only in a conclusion must already be known. For example:
 
@@ -1996,6 +2028,12 @@ Documented:
 Documented:
 . written: "f? \: : \: A? \rightarrow B?"
 ```
+
+A template placeholder may use either the source placeholder spelling or its
+normalized parameter name. For a header parameter `n_`, both `n_?` and `n?`
+match the same value. This is useful when mirroring a function-form heading
+literally, such as `S(n_?)`, without exposing the placeholder suffix in rendered
+output.
 
 ### Placeholder parentheses
 

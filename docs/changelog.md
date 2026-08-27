@@ -5,6 +5,56 @@ and CLI behavior implemented in this repository. It is intentionally rule-focuse
 each section captures not only the feature, but also the conditions under which
 the feature is valid.
 
+## Duplicate Symbol Introductions Are Rejected
+
+The semantic checker now distinguishes known names from symbols that have been
+introduced as definitions. A scope cannot introduce the same defined symbol
+twice: this catches duplicate command-header parameters, repeated `:=`
+bindings, nested quantifiers or `let:` groups that shadow an enclosing binding,
+`using:` declarations that redeclare header or target symbols, and colliding
+`view: as:` bindings. These cases report that the symbol has already been
+defined.
+
+Function-form placeholders remain local to their forms and may repeat in nested
+quantifiers. The callable name introduced by the form may not be rebound.
+
+## Direct Components In Specifications And Rendering
+
+Direct component expressions such as `\naturals..N` are now accepted as
+specification targets, including facts such as `n "in" \naturals..N`. The
+source continues to use `..` to distinguish direct access on a concrete
+`Defines:`/`Realizes:` command from ordinary member access on a bound value.
+Rendered mathematics uses a single dot for both forms once that distinction has
+been resolved.
+
+## Assignment-Backed `specifies:` Facts
+
+The `specifies:` sections of both `Declares:` and `Defines:` accept top-level
+`:=` assignments. Type and capability inference follows those assignments: if a
+structured definition's capability is stated in terms of a local component,
+assigning that component in a realization lets the capability apply through the
+assigned command value.
+
+## Repeated `elseIf:` Branches In `piecewise:`
+
+A structural `piecewise:` clause now accepts zero or more `elseIf:`/`then:`
+pairs between its initial `if:`/`then:` pair and optional `else:`. Each
+condition is assumed while its corresponding result branch is checked.
+
+## Placeholder Normalization In Rendering Templates
+
+`called:` and `written:` templates now match a function-form parameter whether
+the template includes its source underscore or uses the normalized name. For a
+heading parameter `n_`, `n_?` and `n?` therefore refer to the same substitution,
+and `S(n_?)` renders without exposing the source placeholder suffix.
+
+## Refined Types In Clause Bindings
+
+Clause formulations, including `have:` and theorem-like binding positions, now
+use the refined declaration parser. Bindings such as
+`A is \(inductive)::set` are accepted consistently in quantifiers,
+justifications, and other clause positions.
+
 ## Optional `asserting:` in `have:` Groups
 
 The `asserting:` section of a `have:`/`asserting:`/`because?:`/`by?:` group is

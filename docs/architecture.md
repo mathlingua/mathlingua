@@ -373,10 +373,12 @@ not by the bracket heading. The heading is then validated according to the group
 kind.
 
 Structural parsing delegates mathematical content to formulation parser
-entrypoints. For example, a `Declares:` argument uses
-`parse_form_or_declaration`, theorem `given:` uses
-`parse_is_or_refined_statement_spec`, and clause formulations use the clause
-fallback order documented in [structural_syntax.md](structural_syntax.md).
+entrypoints. For example, a `Declares:` argument first uses
+`parse_form_or_declaration` and falls back to
+`parse_refined_declaration_statement`; theorem `given:` and clause formulations
+also use refined declaration statements. Clause formulations then fall back to
+`parse_expression`, as documented in
+[structural_syntax.md](structural_syntax.md).
 
 ## Backend Architecture
 
@@ -430,8 +432,8 @@ check_documents(files, event_log)
 ```
 
 `check_documents` first validates top-level item `Id:` sections (present, a
-UUID, unique) and that at most one `Writing:` item exists, then runs three broad
-registry passes:
+UUID, unique) and that at most one `Writing:` item exists, then runs four broad
+semantic passes:
 
 1. Collect command definitions into a global signature registry (and reject
    duplicate signatures, missing `Documented:` requirements, etc.).
